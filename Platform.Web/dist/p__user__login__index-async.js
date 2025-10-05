@@ -295,7 +295,7 @@ const Login = ()=>{
                         status === 'error' && loginType === 'account' && /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(LoginMessage, {
                             content: intl.formatMessage({
                                 id: 'pages.login.accountLogin.errorMessage',
-                                defaultMessage: '账户或密码错误(admin/ant.design)'
+                                defaultMessage: '账户或密码错误'
                             })
                         }, void 0, false, {
                             fileName: "src/pages/user/login/index.tsx",

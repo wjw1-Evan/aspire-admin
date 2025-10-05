@@ -15,12 +15,14 @@ public class AuthService
     private readonly IMongoCollection<AppUser> _users;
     private readonly IJwtService _jwtService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly UserService _userService;
 
-    public AuthService(IMongoDatabase database, IJwtService jwtService, IHttpContextAccessor httpContextAccessor)
+    public AuthService(IMongoDatabase database, IJwtService jwtService, IHttpContextAccessor httpContextAccessor, UserService userService)
     {
         _users = database.GetCollection<AppUser>("users");
         _jwtService = jwtService;
         _httpContextAccessor = httpContextAccessor;
+        _userService = userService;
     }
 
     private static string HashPassword(string password)
@@ -140,6 +142,12 @@ public class AuthService
             var update = Builders<AppUser>.Update.Set(u => u.LastLoginAt, DateTime.UtcNow);
             await _users.UpdateOneAsync(u => u.Id == user.Id, update);
 
+            // 记录登录活动日志
+            var httpContext = _httpContextAccessor.HttpContext;
+            var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
+            var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
+            await _userService.LogUserActivityAsync(user.Id, "login", "用户登录", ipAddress, userAgent);
+
             // 生成 JWT token
             var token = _jwtService.GenerateToken(user);
 
@@ -162,11 +170,32 @@ public class AuthService
         }
     }
 
-    public static Task<bool> LogoutAsync()
+    public async Task<bool> LogoutAsync()
     {
-        // JWT 是无状态的，登出只需要客户端删除 token
-        // 如果需要服务端登出，可以实现 token 黑名单机制
-        return Task.FromResult(true);
+        try
+        {
+            // 从 HTTP 上下文获取当前用户信息
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext?.User?.Identity?.IsAuthenticated == true)
+            {
+                var userId = httpContext.User.FindFirst("userId")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    // 记录登出活动日志
+                    var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
+                    var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
+                    await _userService.LogUserActivityAsync(userId, "logout", "用户登出", ipAddress, userAgent);
+                }
+            }
+            
+            // JWT 是无状态的，登出只需要客户端删除 token
+            // 如果需要服务端登出，可以实现 token 黑名单机制
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     public static async Task<string> GetCaptchaAsync()
@@ -424,6 +453,12 @@ public class AuthService
 
             if (result.ModifiedCount > 0)
             {
+                // 记录修改密码活动日志
+                var httpContext = _httpContextAccessor.HttpContext;
+                var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
+                var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
+                await _userService.LogUserActivityAsync(userId, "change_password", "修改密码", ipAddress, userAgent);
+
                 return new ApiResponse<bool>
                 {
                     Success = true,

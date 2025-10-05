@@ -82,9 +82,10 @@ public class AuthController : ControllerBase
     /// 用户登出
     /// </summary>
     [HttpPost("login/outLogin")]
+    [Authorize]
     public async Task<IActionResult> Logout()
     {
-        await AuthService.LogoutAsync();
+        await _authService.LogoutAsync();
         return Ok(new { data = new { }, success = true });
     }
 

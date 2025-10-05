@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Platform.ApiService\Platform.ApiService.csproj" />
-    <ProjectReference Include="..\Platform.Web\Platform.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,6 +19,7 @@
     <PackageReference Include="Aspire.Hosting.MongoDB" Version="9.5.1" />
     <PackageReference Include="Aspire.Hosting.Yarp" Version="9.5.1-preview.1.25502.11" />
     <PackageReference Include="Scalar.Aspire" Version="0.5.3" />
+    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.1" />
 
   </ItemGroup>
 

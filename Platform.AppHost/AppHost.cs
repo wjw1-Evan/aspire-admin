@@ -10,18 +10,19 @@ var mongo = builder.AddMongoDB("mongo").WithMongoExpress()
                    .WithLifetime(ContainerLifetime.Persistent);
 
 var mongodb = mongo.AddDatabase("mongodb");
- 
+
 var services = new Dictionary<string, IResourceBuilder<ProjectResource>>
 {
     // 核心业务服务 http://localhost:15000/api/apiservice/users
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
-    .WithReference(mongodb)   
+    .WithReference(mongodb)
      .WithHttpHealthCheck("/health")
-    
-};
- 
 
-builder.AddYarp("apigateway")
+};
+
+
+
+var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
     .WithConfiguration(config =>
     {
@@ -35,6 +36,14 @@ builder.AddYarp("apigateway")
         }
     });
 
+builder.AddNpmApp("react", "../Platform.Web")
+    .WithReference(yarp)
+    .WaitFor(yarp)
+    .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
+    .WithHttpEndpoint(env: "PORT")
+    .WithExternalHttpEndpoints()
+    .PublishAsDockerFile();
+ 
 
 var scalar = builder.AddScalarApiReference();
 foreach (var service in services.Values)

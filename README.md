@@ -1,20 +1,20 @@
 # Aspire Admin Platform
 
-基于 .NET Aspire 构建的现代化微服务管理平台，提供用户管理、API 网关和 Web 界面等功能。
+基于 .NET Aspire 构建的现代化微服务管理平台，提供用户管理、API 网关和 React 前端界面等功能。
 
 ## 🚀 项目概述
 
 这是一个使用 .NET Aspire 框架构建的微服务架构项目，包含以下核心组件：
 
 - **API 服务** - 提供用户管理 REST API
-- **Web 应用** - Blazor Server 前端界面
+- **Web 应用** - React + Ant Design Pro 前端界面
 - **API 网关** - 基于 YARP 的统一入口
 - **数据库** - MongoDB 数据存储
 - **API 文档** - Scalar API 文档界面
 
 ## 🏗️ 项目结构
 
-```
+```text
 Platform/
 ├── Platform.AppHost/          # Aspire 应用主机
 ├── Platform.ApiService/       # API 服务
@@ -37,7 +37,9 @@ Platform/
 - 健康检查端点
 
 #### Platform.Web
-- Blazor Server 应用
+- React + Ant Design Pro 应用
+- 基于 UmiJS 的企业级前端框架
+- 多语言支持（中文、英文等）
 - 响应式 Web 界面
 - 与 API 服务集成
 
@@ -48,19 +50,27 @@ Platform/
 
 ## 🛠️ 技术栈
 
+### 后端技术
 - **.NET 9.0** - 最新 .NET 框架
 - **.NET Aspire** - 微服务编排框架
 - **MongoDB** - NoSQL 数据库
 - **YARP** - 反向代理和负载均衡
-- **Blazor Server** - Web UI 框架
 - **Scalar** - API 文档生成
 - **OpenTelemetry** - 可观测性
+
+### 前端技术
+- **React 19** - 现代前端框架
+- **Ant Design Pro** - 企业级UI组件库
+- **UmiJS** - 企业级前端应用框架
+- **TypeScript** - 类型安全的JavaScript
+- **Biome** - 代码格式化和检查工具
 
 ## 🚀 快速开始
 
 ### 前置要求
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [Node.js 20+](https://nodejs.org/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### 运行项目
@@ -71,12 +81,19 @@ Platform/
    cd aspire-admin
    ```
 
-2. **启动应用**
+2. **安装前端依赖**
+   ```bash
+   cd Platform.Web
+   npm install
+   cd ..
+   ```
+
+3. **启动应用**
    ```bash
    dotnet run --project Platform.AppHost
    ```
 
-3. **访问应用**
+4. **访问应用**
    - **Web 应用**: http://localhost:15000
    - **API 文档**: http://localhost:15000/scalar/v1
    - **Mongo Express**: http://localhost:15000/mongo-express
@@ -131,6 +148,13 @@ DELETE /api/apiservice/api/users/{id}
 GET /api/apiservice/api/users/search/{name}
 ```
 
+### 天气预测 API
+
+#### 获取天气预测
+```http
+GET /api/apiservice/weatherforecast
+```
+
 ## 🗄️ 数据模型
 
 ### User 模型
@@ -143,6 +167,20 @@ public class User
     public int Age { get; set; }              // 年龄
     public DateTime CreatedAt { get; set; }   // 创建时间
     public DateTime UpdatedAt { get; set; }   // 更新时间
+}
+
+public class CreateUserRequest
+{
+    public string Name { get; set; }          // 用户姓名
+    public string Email { get; set; }         // 邮箱地址
+    public int Age { get; set; }              // 年龄
+}
+
+public class UpdateUserRequest
+{
+    public string? Name { get; set; }         // 用户姓名（可选）
+    public string? Email { get; set; }        // 邮箱地址（可选）
+    public int? Age { get; set; }             // 年龄（可选）
 }
 ```
 
@@ -158,6 +196,20 @@ public class User
 - **Web 应用**: 动态分配
 - **MongoDB**: 27017
 - **Mongo Express**: 8081
+
+### 前端开发
+
+#### 独立开发前端
+```bash
+cd Platform.Web
+npm run start:dev
+```
+
+#### 可用脚本
+- `npm run start` - 启动开发服务器
+- `npm run build` - 构建生产版本
+- `npm run lint` - 代码检查和格式化
+- `npm run test` - 运行测试
 
 ## 🐳 Docker 支持
 
@@ -185,12 +237,18 @@ public class User
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## 🔗 相关链接
+## 🔗 技术文档
 
+### 后端技术文档
 - [.NET Aspire 文档](https://learn.microsoft.com/dotnet/aspire/)
 - [MongoDB 驱动文档](https://mongodb.github.io/mongo-csharp-driver/)
 - [YARP 文档](https://microsoft.github.io/reverse-proxy/)
-- [Blazor 文档](https://learn.microsoft.com/aspnet/core/blazor/)
+
+### 前端技术文档
+- [React 文档](https://react.dev/)
+- [Ant Design Pro 文档](https://pro.ant.design/)
+- [UmiJS 文档](https://umijs.org/)
+- [TypeScript 文档](https://www.typescriptlang.org/)
 
 ---
 

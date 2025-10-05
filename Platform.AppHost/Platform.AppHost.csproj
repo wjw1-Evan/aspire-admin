@@ -19,6 +19,8 @@
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.1" />
     <PackageReference Include="Aspire.Hosting.MongoDB" Version="9.5.1" />
     <PackageReference Include="Aspire.Hosting.Yarp" Version="9.5.1-preview.1.25502.11" />
+    <PackageReference Include="Scalar.Aspire" Version="0.4.10" />
+
   </ItemGroup>
 
 </Project>

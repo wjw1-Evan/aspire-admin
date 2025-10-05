@@ -21,12 +21,14 @@ declare namespace API {
     };
     address?: string;
     phone?: string;
+    isLogin?: boolean;
   };
 
   type LoginResult = {
     status?: string;
     type?: string;
     currentAuthority?: string;
+    token?: string;
   };
 
   type PageParams = {
@@ -66,6 +68,19 @@ declare namespace API {
     password?: string;
     autoLogin?: boolean;
     type?: string;
+  };
+
+  type RegisterParams = {
+    username?: string;
+    password?: string;
+    email?: string;
+  };
+
+  type RegisterResult = {
+    success?: boolean;
+    data?: any;
+    errorCode?: string;
+    errorMessage?: string;
   };
 
   type ErrorResponse = {

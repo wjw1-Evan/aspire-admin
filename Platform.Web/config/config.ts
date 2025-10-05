@@ -154,21 +154,19 @@ export default defineConfig({
   openAPI: [
     {
       requestLibPath: "import { request } from '@umijs/max'",
-      // 或者使用在线的版本
-      // schemaPath: "https://gw.alipayobjects.com/os/antfincdn/M%24jrzTTYJN/oneapi.json"
+      // 使用本地OpenAPI配置
       schemaPath: join(__dirname, 'oneapi.json'),
-      mock: false,
+      mock: false, // 禁用mock，使用真实API
     },
     {
       requestLibPath: "import { request } from '@umijs/max'",
       schemaPath:
         'https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json',
       projectName: 'swagger',
+      mock: false, // 禁用swagger的mock
     },
   ],
-  mock: {
-    include: ['mock/**/*', 'src/pages/**/_mock.ts'],
-  },
+  mock: false, // 完全禁用mock功能
   /**
    * @name 是否开启 mako
    * @description 使用 mako 极速研发

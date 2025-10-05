@@ -12,6 +12,7 @@ import {
   SelectLang,
 } from '@/components';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
+import { tokenUtils } from '@/utils/token';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 import '@ant-design/v5-patch-for-react-19';
@@ -29,16 +30,26 @@ export async function getInitialState(): Promise<{
   fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
 }> {
   const fetchUserInfo = async () => {
+    // 检查是否有 token
+    if (!tokenUtils.hasToken()) {
+      return undefined;
+    }
+    
     try {
       const msg = await queryCurrentUser({
         skipErrorHandler: true,
       });
       return msg.data;
-    } catch (_error) {
+    } catch (error) {
+      // 如果获取用户信息失败，清除 token
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.log('Failed to fetch user info:', error);
+      tokenUtils.removeToken();
       history.push(loginPath);
+      return undefined;
     }
-    return undefined;
   };
+  
   // 如果不是登录页面，执行
   const { location } = history;
   if (
@@ -116,11 +127,7 @@ export const layout: RunTimeLayoutConfig = ({
         ]
       : [],
     menuHeaderRender: undefined,
-    // 自定义 403 页面
-    // unAccessible: <div>unAccessible</div>,
-    // 增加一个 loading 的状态
     childrenRender: (children) => {
-      // if (initialState?.loading) return <PageLoading />;
       return (
         <>
           {children}
@@ -150,6 +157,43 @@ export const layout: RunTimeLayoutConfig = ({
  * @doc https://umijs.org/docs/max/request#配置
  */
 export const request: RequestConfig = {
-  baseURL: 'https://proapi.azurewebsites.net',
+  // 开发环境使用代理，生产环境需要配置实际的API地址
+  baseURL: process.env.NODE_ENV === 'development' ? '' : 'https://proapi.azurewebsites.net',
+  
+  // 请求拦截器，自动添加 Authorization 头
+  requestInterceptors: [
+    (config: any) => {
+      const token = tokenUtils.getToken();
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        };
+        console.log('Request with token:', config.url, token.substring(0, 20) + '...');
+      } else {
+        console.log('Request without token:', config.url);
+      }
+      return config;
+    },
+  ],
+
+  // 响应拦截器，处理 token 过期
+  responseInterceptors: [
+    (response) => {
+      console.log('Response received:', response.config.url, response.status);
+      return response;
+    },
+    (error: any) => {
+      console.log('Response error:', error.config?.url, error.response?.status, error.message);
+      if (error.response?.status === 401) {
+        console.log('401 Unauthorized - clearing token and redirecting to login');
+        // Token 过期或无效，清除本地存储并跳转到登录页
+        tokenUtils.removeToken();
+        history.push('/user/login');
+      }
+      return Promise.reject(new Error(error.message || 'Request failed'));
+    },
+  ],
+  
   ...errorConfig,
 };

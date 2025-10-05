@@ -85,14 +85,14 @@ export const errorConfig: RequestConfig = {
     },
   },
 
-  // 请求拦截器
-  requestInterceptors: [
-    (config: RequestOptions) => {
-      // 拦截请求配置，进行个性化处理。
-      const url = config?.url?.concat('?token=123');
-      return { ...config, url };
-    },
-  ],
+  // 请求拦截器 - 移除错误的token参数添加
+  // requestInterceptors: [
+  //   (config: RequestOptions) => {
+  //     // 拦截请求配置，进行个性化处理。
+  //     const url = config?.url?.concat('?token=123');
+  //     return { ...config, url };
+  //   },
+  // ],
 
   // 响应拦截器
   responseInterceptors: [

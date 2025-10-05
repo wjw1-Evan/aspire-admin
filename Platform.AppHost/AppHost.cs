@@ -32,7 +32,8 @@ var yarp = builder.AddYarp("apigateway")
         {
             var route = $"/api/{service.Key}/{{**catch-all}}";
             config.AddRoute(route, config.AddCluster(service.Value))
-                .WithTransformPathRouteValues("/api/{**catch-all}");
+                .WithTransformPathRouteValues("/api/{**catch-all}")
+            ;
         }
     });
 

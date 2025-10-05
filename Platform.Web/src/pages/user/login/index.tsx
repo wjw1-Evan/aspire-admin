@@ -15,17 +15,19 @@ import {
 import {
   FormattedMessage,
   Helmet,
+  Link,
   SelectLang,
   useIntl,
   useModel,
 } from '@umijs/max';
-import { Alert, App, Tabs } from 'antd';
+import { Alert, App, Button, Tabs } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
 import { login } from '@/services/ant-design-pro/api';
 import { getFakeCaptcha } from '@/services/ant-design-pro/login';
+import { tokenUtils } from '@/utils/token';
 import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(({ token }) => {
@@ -135,6 +137,11 @@ const Login: React.FC = () => {
       // 登录
       const msg = await login({ ...values, type });
       if (msg.status === 'ok') {
+        // 保存 token 到本地存储
+        if (msg.token) {
+          tokenUtils.setToken(msg.token);
+        }
+        
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',
           defaultMessage: '登录成功！',
@@ -376,16 +383,30 @@ const Login: React.FC = () => {
                 defaultMessage="自动登录"
               />
             </ProFormCheckbox>
-            <a
+            <Button
+              type="link"
               style={{
                 float: 'right',
+                padding: 0,
+                height: 'auto',
+              }}
+              onClick={() => {
+                // TODO: 实现忘记密码功能
               }}
             >
               <FormattedMessage
                 id="pages.login.forgotPassword"
                 defaultMessage="忘记密码"
               />
-            </a>
+            </Button>
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <Link to="/user/register">
+                <FormattedMessage
+                  id="pages.login.register"
+                  defaultMessage="没有账号？立即注册"
+                />
+              </Link>
+            </div>
           </div>
         </LoginForm>
       </div>

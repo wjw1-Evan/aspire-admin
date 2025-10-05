@@ -25,6 +25,7 @@ var _reactdom = __mako_require__("node_modules/react-dom/index.js");
 var _components = __mako_require__("src/components/index.ts");
 var _api = __mako_require__("src/services/ant-design-pro/api.ts");
 var _login = __mako_require__("src/services/ant-design-pro/login.ts");
+var _token = __mako_require__("src/utils/token.ts");
 var _defaultSettings = /*#__PURE__*/ _interop_require_default._(__mako_require__("config/defaultSettings.ts"));
 var prevRefreshReg;
 var prevRefreshSig;
@@ -80,21 +81,21 @@ const ActionIcons = ()=>{
                 className: styles.action
             }, "AlipayCircleOutlined", false, {
                 fileName: "src/pages/user/login/index.tsx",
-                lineNumber: 72,
+                lineNumber: 74,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_icons.TaobaoCircleOutlined, {
                 className: styles.action
             }, "TaobaoCircleOutlined", false, {
                 fileName: "src/pages/user/login/index.tsx",
-                lineNumber: 76,
+                lineNumber: 78,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_icons.WeiboCircleOutlined, {
                 className: styles.action
             }, "WeiboCircleOutlined", false, {
                 fileName: "src/pages/user/login/index.tsx",
-                lineNumber: 80,
+                lineNumber: 82,
                 columnNumber: 7
             }, this)
         ]
@@ -114,12 +115,12 @@ const Lang = ()=>{
         "data-lang": true,
         children: _max.SelectLang && /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_max.SelectLang, {}, void 0, false, {
             fileName: "src/pages/user/login/index.tsx",
-            lineNumber: 93,
+            lineNumber: 95,
             columnNumber: 22
         }, this)
     }, void 0, false, {
         fileName: "src/pages/user/login/index.tsx",
-        lineNumber: 92,
+        lineNumber: 94,
         columnNumber: 5
     }, this);
 };
@@ -139,7 +140,7 @@ const LoginMessage = ({ content })=>{
         showIcon: true
     }, void 0, false, {
         fileName: "src/pages/user/login/index.tsx",
-        lineNumber: 102,
+        lineNumber: 104,
         columnNumber: 5
     }, this);
 };
@@ -170,6 +171,8 @@ const Login = ()=>{
                 type
             });
             if (msg.status === 'ok') {
+                // 保存 token 到本地存储
+                if (msg.token) _token.tokenUtils.setToken(msg.token);
                 const defaultLoginSuccessMessage = intl.formatMessage({
                     id: 'pages.login.success',
                     defaultMessage: '登录成功！'
@@ -207,17 +210,17 @@ const Login = ()=>{
                     ]
                 }, void 0, true, {
                     fileName: "src/pages/user/login/index.tsx",
-                    lineNumber: 165,
+                    lineNumber: 172,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "src/pages/user/login/index.tsx",
-                lineNumber: 164,
+                lineNumber: 171,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(Lang, {}, void 0, false, {
                 fileName: "src/pages/user/login/index.tsx",
-                lineNumber: 173,
+                lineNumber: 180,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)("div", {
@@ -235,7 +238,7 @@ const Login = ()=>{
                         src: "/logo.svg"
                     }, void 0, false, {
                         fileName: "src/pages/user/login/index.tsx",
-                        lineNumber: 185,
+                        lineNumber: 192,
                         columnNumber: 17
                     }, void 0),
                     title: "Ant Design",
@@ -251,12 +254,12 @@ const Login = ()=>{
                             defaultMessage: "其他登录方式"
                         }, "loginWith", false, {
                             fileName: "src/pages/user/login/index.tsx",
-                            lineNumber: 194,
+                            lineNumber: 201,
                             columnNumber: 13
                         }, void 0),
                         /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(ActionIcons, {}, "icons", false, {
                             fileName: "src/pages/user/login/index.tsx",
-                            lineNumber: 199,
+                            lineNumber: 206,
                             columnNumber: 13
                         }, void 0)
                     ],
@@ -286,7 +289,7 @@ const Login = ()=>{
                             ]
                         }, void 0, false, {
                             fileName: "src/pages/user/login/index.tsx",
-                            lineNumber: 205,
+                            lineNumber: 212,
                             columnNumber: 11
                         }, this),
                         status === 'error' && loginType === 'account' && /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(LoginMessage, {
@@ -296,7 +299,7 @@ const Login = ()=>{
                             })
                         }, void 0, false, {
                             fileName: "src/pages/user/login/index.tsx",
-                            lineNumber: 228,
+                            lineNumber: 235,
                             columnNumber: 13
                         }, this),
                         type === 'account' && /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_jsxdevruntime.Fragment, {
@@ -307,7 +310,7 @@ const Login = ()=>{
                                         size: 'large',
                                         prefix: /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_icons.UserOutlined, {}, void 0, false, {
                                             fileName: "src/pages/user/login/index.tsx",
-                                            lineNumber: 241,
+                                            lineNumber: 248,
                                             columnNumber: 27
                                         }, void 0)
                                     },
@@ -323,14 +326,14 @@ const Login = ()=>{
                                                 defaultMessage: "请输入用户名!"
                                             }, void 0, false, {
                                                 fileName: "src/pages/user/login/index.tsx",
-                                                lineNumber: 251,
+                                                lineNumber: 258,
                                                 columnNumber: 23
                                             }, void 0)
                                         }
                                     ]
                                 }, void 0, false, {
                                     fileName: "src/pages/user/login/index.tsx",
-                                    lineNumber: 237,
+                                    lineNumber: 244,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_procomponents.ProFormText.Password, {
@@ -339,7 +342,7 @@ const Login = ()=>{
                                         size: 'large',
                                         prefix: /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_icons.LockOutlined, {}, void 0, false, {
                                             fileName: "src/pages/user/login/index.tsx",
-                                            lineNumber: 263,
+                                            lineNumber: 270,
                                             columnNumber: 27
                                         }, void 0)
                                     },
@@ -355,14 +358,14 @@ const Login = ()=>{
                                                 defaultMessage: "请输入密码！"
                                             }, void 0, false, {
                                                 fileName: "src/pages/user/login/index.tsx",
-                                                lineNumber: 273,
+                                                lineNumber: 280,
                                                 columnNumber: 23
                                             }, void 0)
                                         }
                                     ]
                                 }, void 0, false, {
                                     fileName: "src/pages/user/login/index.tsx",
-                                    lineNumber: 259,
+                                    lineNumber: 266,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -371,7 +374,7 @@ const Login = ()=>{
                             content: "验证码错误"
                         }, void 0, false, {
                             fileName: "src/pages/user/login/index.tsx",
-                            lineNumber: 285,
+                            lineNumber: 292,
                             columnNumber: 13
                         }, this),
                         type === 'mobile' && /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_jsxdevruntime.Fragment, {
@@ -381,7 +384,7 @@ const Login = ()=>{
                                         size: 'large',
                                         prefix: /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_icons.MobileOutlined, {}, void 0, false, {
                                             fileName: "src/pages/user/login/index.tsx",
-                                            lineNumber: 292,
+                                            lineNumber: 299,
                                             columnNumber: 27
                                         }, void 0)
                                     },
@@ -398,7 +401,7 @@ const Login = ()=>{
                                                 defaultMessage: "请输入手机号！"
                                             }, void 0, false, {
                                                 fileName: "src/pages/user/login/index.tsx",
-                                                lineNumber: 303,
+                                                lineNumber: 310,
                                                 columnNumber: 23
                                             }, void 0)
                                         },
@@ -409,14 +412,14 @@ const Login = ()=>{
                                                 defaultMessage: "手机号格式错误！"
                                             }, void 0, false, {
                                                 fileName: "src/pages/user/login/index.tsx",
-                                                lineNumber: 312,
+                                                lineNumber: 319,
                                                 columnNumber: 23
                                             }, void 0)
                                         }
                                     ]
                                 }, void 0, false, {
                                     fileName: "src/pages/user/login/index.tsx",
-                                    lineNumber: 289,
+                                    lineNumber: 296,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_procomponents.ProFormCaptcha, {
@@ -424,7 +427,7 @@ const Login = ()=>{
                                         size: 'large',
                                         prefix: /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_icons.LockOutlined, {}, void 0, false, {
                                             fileName: "src/pages/user/login/index.tsx",
-                                            lineNumber: 323,
+                                            lineNumber: 330,
                                             columnNumber: 27
                                         }, void 0)
                                     },
@@ -454,7 +457,7 @@ const Login = ()=>{
                                                 defaultMessage: "请输入验证码！"
                                             }, void 0, false, {
                                                 fileName: "src/pages/user/login/index.tsx",
-                                                lineNumber: 349,
+                                                lineNumber: 356,
                                                 columnNumber: 23
                                             }, void 0)
                                         }
@@ -468,7 +471,7 @@ const Login = ()=>{
                                     }
                                 }, void 0, false, {
                                     fileName: "src/pages/user/login/index.tsx",
-                                    lineNumber: 320,
+                                    lineNumber: 327,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -486,57 +489,88 @@ const Login = ()=>{
                                         defaultMessage: "自动登录"
                                     }, void 0, false, {
                                         fileName: "src/pages/user/login/index.tsx",
-                                        lineNumber: 374,
+                                        lineNumber: 381,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "src/pages/user/login/index.tsx",
-                                    lineNumber: 373,
+                                    lineNumber: 380,
                                     columnNumber: 13
                                 }, this),
-                                /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)("a", {
+                                /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_antd.Button, {
+                                    type: "link",
                                     style: {
-                                        float: 'right'
+                                        float: 'right',
+                                        padding: 0,
+                                        height: 'auto'
+                                    },
+                                    onClick: ()=>{
+                                    // TODO: 实现忘记密码功能
                                     },
                                     children: /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_max.FormattedMessage, {
                                         id: "pages.login.forgotPassword",
                                         defaultMessage: "忘记密码"
                                     }, void 0, false, {
                                         fileName: "src/pages/user/login/index.tsx",
-                                        lineNumber: 384,
+                                        lineNumber: 397,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "src/pages/user/login/index.tsx",
-                                    lineNumber: 379,
+                                    lineNumber: 386,
+                                    columnNumber: 13
+                                }, this),
+                                /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)("div", {
+                                    style: {
+                                        textAlign: 'center',
+                                        marginTop: 16
+                                    },
+                                    children: /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_max.Link, {
+                                        to: "/user/register",
+                                        children: /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_max.FormattedMessage, {
+                                            id: "pages.login.register",
+                                            defaultMessage: "没有账号？立即注册"
+                                        }, void 0, false, {
+                                            fileName: "src/pages/user/login/index.tsx",
+                                            lineNumber: 404,
+                                            columnNumber: 17
+                                        }, this)
+                                    }, void 0, false, {
+                                        fileName: "src/pages/user/login/index.tsx",
+                                        lineNumber: 403,
+                                        columnNumber: 15
+                                    }, this)
+                                }, void 0, false, {
+                                    fileName: "src/pages/user/login/index.tsx",
+                                    lineNumber: 402,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "src/pages/user/login/index.tsx",
-                            lineNumber: 368,
+                            lineNumber: 375,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "src/pages/user/login/index.tsx",
-                    lineNumber: 180,
+                    lineNumber: 187,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "src/pages/user/login/index.tsx",
-                lineNumber: 174,
+                lineNumber: 181,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, _jsxdevruntime.jsxDEV)(_components.Footer, {}, void 0, false, {
                 fileName: "src/pages/user/login/index.tsx",
-                lineNumber: 392,
+                lineNumber: 413,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "src/pages/user/login/index.tsx",
-        lineNumber: 163,
+        lineNumber: 170,
         columnNumber: 5
     }, this);
 };

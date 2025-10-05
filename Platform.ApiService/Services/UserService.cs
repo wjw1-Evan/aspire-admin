@@ -5,31 +5,31 @@ namespace Platform.ApiService.Services;
 
 public class UserService
 {
-    private readonly IMongoCollection<User> _users;
+    private readonly IMongoCollection<AppUser> _users;
 
     public UserService(IMongoDatabase database)
     {
-        
-        _users = database.GetCollection<User>("users");
+        _users = database.GetCollection<AppUser>("users");
     }
 
-    public async Task<List<User>> GetAllUsersAsync()
+    public async Task<List<AppUser>> GetAllUsersAsync()
     {
         return await _users.Find(user => true).ToListAsync();
     }
 
-    public async Task<User?> GetUserByIdAsync(string id)
+    public async Task<AppUser?> GetUserByIdAsync(string id)
     {
         return await _users.Find(user => user.Id == id).FirstOrDefaultAsync();
     }
 
-    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    public async Task<AppUser> CreateUserAsync(CreateUserRequest request)
     {
-        var user = new User
+        var user = new AppUser
         {
-            Name = request.Name,
+            Username = request.Name,
             Email = request.Email,
-            Age = request.Age,
+            Role = "user", // 默认为普通用户
+            IsActive = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -38,20 +38,17 @@ public class UserService
         return user;
     }
 
-    public async Task<User?> UpdateUserAsync(string id, UpdateUserRequest request)
+    public async Task<AppUser?> UpdateUserAsync(string id, UpdateUserRequest request)
     {
-        var filter = Builders<User>.Filter.Eq(user => user.Id, id);
-        var update = Builders<User>.Update
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
+        var update = Builders<AppUser>.Update
             .Set(user => user.UpdatedAt, DateTime.UtcNow);
 
         if (!string.IsNullOrEmpty(request.Name))
-            update = update.Set(user => user.Name, request.Name);
+            update = update.Set(user => user.Username, request.Name);
         
         if (!string.IsNullOrEmpty(request.Email))
             update = update.Set(user => user.Email, request.Email);
-        
-        if (request.Age.HasValue)
-            update = update.Set(user => user.Age, request.Age.Value);
 
         var result = await _users.UpdateOneAsync(filter, update);
         
@@ -69,9 +66,31 @@ public class UserService
         return result.DeletedCount > 0;
     }
 
-    public async Task<List<User>> SearchUsersByNameAsync(string name)
+    public async Task<List<AppUser>> SearchUsersByNameAsync(string name)
     {
-        var filter = Builders<User>.Filter.Regex(user => user.Name, new MongoDB.Bson.BsonRegularExpression(name, "i"));
+        var filter = Builders<AppUser>.Filter.Regex(user => user.Username, new MongoDB.Bson.BsonRegularExpression(name, "i"));
         return await _users.Find(filter).ToListAsync();
+    }
+
+    public async Task<bool> DeactivateUserAsync(string id)
+    {
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
+        var update = Builders<AppUser>.Update
+            .Set(user => user.IsActive, false)
+            .Set(user => user.UpdatedAt, DateTime.UtcNow);
+
+        var result = await _users.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
+    }
+
+    public async Task<bool> ActivateUserAsync(string id)
+    {
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
+        var update = Builders<AppUser>.Update
+            .Set(user => user.IsActive, true)
+            .Set(user => user.UpdatedAt, DateTime.UtcNow);
+
+        var result = await _users.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
     }
 }

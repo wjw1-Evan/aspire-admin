@@ -10,6 +10,7 @@ import { createStyles } from 'antd-style';
 import React from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
+import { tokenUtils } from '@/utils/token';
 import HeaderDropdown from '../HeaderDropdown';
 
 export type GlobalHeaderRightProps = {
@@ -50,6 +51,8 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
    */
   const loginOut = async () => {
     await outLogin();
+    // 清除本地存储的 token
+    tokenUtils.removeToken();
     const { search, pathname } = window.location;
     const urlParams = new URL(window.location.href).searchParams;
     const searchParams = new URLSearchParams({

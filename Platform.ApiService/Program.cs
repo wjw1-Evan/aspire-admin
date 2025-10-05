@@ -1,5 +1,6 @@
 using Platform.ApiService.Services;
 using Platform.ApiService.Models;
+using Platform.ApiService.Scripts;
 using MongoDB.Driver;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -78,5 +79,13 @@ if (app.Environment.IsDevelopment())
 
 
 app.MapDefaultEndpoints();
+
+// 初始化管理员用户
+using (var scope = app.Services.CreateScope())
+{
+    var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
+    var createAdminUser = new CreateAdminUser(database);
+    await createAdminUser.CreateDefaultAdminAsync();
+}
 
 await app.RunAsync();

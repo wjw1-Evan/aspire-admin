@@ -31,9 +31,11 @@
     "test:update": "npm run jest -- -u",
     "tsc": "tsc --noEmit"
   },
-  "browserslist": ["defaults"],
+  "browserslist": [
+    "defaults"
+  ],
   "dependencies": {
-    "@ant-design/icons": "^5.6.1",
+    "@ant-design/icons": "^6.1.0",
     "@ant-design/pro-components": "^2.7.19",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "antd": "^5.25.4",
@@ -46,8 +48,8 @@
   "devDependencies": {
     "@ant-design/pro-cli": "^3.3.0",
     "@biomejs/biome": "^2.0.6",
-    "@commitlint/cli": "^19.5.0",
-    "@commitlint/config-conventional": "^19.5.0",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.0.1",
     "@types/express": "^5.0.3",
@@ -58,12 +60,12 @@
     "@types/react-dom": "^19.1.5",
     "@types/react-helmet": "^6.1.11",
     "@umijs/max": "^4.3.24",
-    "cross-env": "^7.0.3",
-    "express": "^4.21.1",
+    "cross-env": "^10.1.0",
+    "express": "^5.1.0",
     "gh-pages": "^6.1.1",
     "husky": "^9.1.7",
     "jest": "^30.0.4",
-    "jest-environment-jsdom": "^29.7.0",
+    "jest-environment-jsdom": "^30.2.0",
     "lint-staged": "^16.1.2",
     "mockjs": "^1.1.0",
     "ts-node": "^10.9.2",
@@ -71,5 +73,7 @@
     "umi-presets-pro": "^2.0.3",
     "umi-serve": "^1.9.11"
   },
-  "engines": { "node": ">=20.0.0" }
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }

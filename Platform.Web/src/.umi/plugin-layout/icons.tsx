@@ -4,4 +4,7 @@
 import SmileOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/SmileOutlined';
 import CrownOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/CrownOutlined';
 import TableOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/TableOutlined';
-export default { SmileOutlined, CrownOutlined, TableOutlined };
+import UserOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/UserOutlined';
+import BugOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/BugOutlined';
+import ExperimentOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/ExperimentOutlined';
+export default { SmileOutlined, CrownOutlined, TableOutlined, UserOutlined, BugOutlined, ExperimentOutlined };

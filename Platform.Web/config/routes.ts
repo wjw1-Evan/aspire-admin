@@ -62,6 +62,24 @@ export default [
     component: './table-list',
   },
   {
+    name: 'user-management',
+    icon: 'user',
+    path: '/user-management',
+    component: './user-management',
+  },
+  {
+    name: 'debug',
+    icon: 'bug',
+    path: '/debug',
+    component: './user-management/debug',
+  },
+  {
+    name: 'test-menu',
+    icon: 'experiment',
+    path: '/test-menu',
+    component: './test-menu',
+  },
+  {
     path: '/',
     redirect: '/welcome',
   },

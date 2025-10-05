@@ -130,6 +130,12 @@ public class AppUser
     [BsonElement("username")]
     public string Username { get; set; } = string.Empty;
 
+    [BsonElement("name")]
+    public string? Name { get; set; }
+
+    [BsonElement("age")]
+    public int? Age { get; set; }
+
     [BsonElement("passwordHash")]
     public string PasswordHash { get; set; } = string.Empty;
 

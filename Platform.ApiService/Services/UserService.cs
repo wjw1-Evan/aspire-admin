@@ -6,10 +6,12 @@ namespace Platform.ApiService.Services;
 public class UserService
 {
     private readonly IMongoCollection<AppUser> _users;
+    private readonly IMongoCollection<UserActivityLog> _activityLogs;
 
     public UserService(IMongoDatabase database)
     {
         _users = database.GetCollection<AppUser>("users");
+        _activityLogs = database.GetCollection<UserActivityLog>("user_activity_logs");
     }
 
     public async Task<List<AppUser>> GetAllUsersAsync()
@@ -92,5 +94,176 @@ public class UserService
 
         var result = await _users.UpdateOneAsync(filter, update);
         return result.ModifiedCount > 0;
+    }
+
+    // 新增的用户管理功能
+    public async Task<UserListResponse> GetUsersWithPaginationAsync(UserListRequest request)
+    {
+        var filter = Builders<AppUser>.Filter.Empty;
+
+        // 搜索过滤
+        if (!string.IsNullOrEmpty(request.Search))
+        {
+            var searchFilter = Builders<AppUser>.Filter.Or(
+                Builders<AppUser>.Filter.Regex(user => user.Username, new MongoDB.Bson.BsonRegularExpression(request.Search, "i")),
+                Builders<AppUser>.Filter.Regex(user => user.Email, new MongoDB.Bson.BsonRegularExpression(request.Search, "i"))
+            );
+            filter = Builders<AppUser>.Filter.And(filter, searchFilter);
+        }
+
+        // 角色过滤
+        if (!string.IsNullOrEmpty(request.Role))
+        {
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Eq(user => user.Role, request.Role));
+        }
+
+        // 状态过滤
+        if (request.IsActive.HasValue)
+        {
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Eq(user => user.IsActive, request.IsActive.Value));
+        }
+
+        // 排序
+        var sortDefinition = request.SortOrder?.ToLower() == "asc" 
+            ? Builders<AppUser>.Sort.Ascending(request.SortBy)
+            : Builders<AppUser>.Sort.Descending(request.SortBy);
+
+        // 分页
+        var skip = (request.Page - 1) * request.PageSize;
+        var users = await _users.Find(filter)
+            .Sort(sortDefinition)
+            .Skip(skip)
+            .Limit(request.PageSize)
+            .ToListAsync();
+
+        var total = await _users.CountDocumentsAsync(filter);
+
+        return new UserListResponse
+        {
+            Users = users,
+            Total = (int)total,
+            Page = request.Page,
+            PageSize = request.PageSize
+        };
+    }
+
+    public async Task<UserStatisticsResponse> GetUserStatisticsAsync()
+    {
+        var totalUsers = await _users.CountDocumentsAsync(user => true);
+        var activeUsers = await _users.CountDocumentsAsync(user => user.IsActive);
+        var inactiveUsers = totalUsers - activeUsers;
+        var adminUsers = await _users.CountDocumentsAsync(user => user.Role == "admin");
+        var regularUsers = totalUsers - adminUsers;
+
+        var today = DateTime.UtcNow.Date;
+        var thisWeek = today.AddDays(-(int)today.DayOfWeek);
+        var thisMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var newUsersToday = await _users.CountDocumentsAsync(user => user.CreatedAt >= today);
+        var newUsersThisWeek = await _users.CountDocumentsAsync(user => user.CreatedAt >= thisWeek);
+        var newUsersThisMonth = await _users.CountDocumentsAsync(user => user.CreatedAt >= thisMonth);
+
+        return new UserStatisticsResponse
+        {
+            TotalUsers = (int)totalUsers,
+            ActiveUsers = (int)activeUsers,
+            InactiveUsers = (int)inactiveUsers,
+            AdminUsers = (int)adminUsers,
+            RegularUsers = (int)regularUsers,
+            NewUsersToday = (int)newUsersToday,
+            NewUsersThisWeek = (int)newUsersThisWeek,
+            NewUsersThisMonth = (int)newUsersThisMonth
+        };
+    }
+
+    public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request)
+    {
+        var filter = Builders<AppUser>.Filter.In(user => user.Id, request.UserIds);
+        var update = Builders<AppUser>.Update.Set(user => user.UpdatedAt, DateTime.UtcNow);
+
+        switch (request.Action.ToLower())
+        {
+            case "activate":
+                update = update.Set(user => user.IsActive, true);
+                break;
+            case "deactivate":
+                update = update.Set(user => user.IsActive, false);
+                break;
+            case "delete":
+                var deleteResult = await _users.DeleteManyAsync(filter);
+                return deleteResult.DeletedCount > 0;
+            default:
+                return false;
+        }
+
+        var result = await _users.UpdateManyAsync(filter, update);
+        return result.ModifiedCount > 0;
+    }
+
+    public async Task<bool> UpdateUserRoleAsync(string id, string role)
+    {
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
+        var update = Builders<AppUser>.Update
+            .Set(user => user.Role, role)
+            .Set(user => user.UpdatedAt, DateTime.UtcNow);
+
+        var result = await _users.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
+    }
+
+    public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
+    {
+        var log = new UserActivityLog
+        {
+            UserId = userId,
+            Action = action,
+            Description = description,
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _activityLogs.InsertOneAsync(log);
+    }
+
+    public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
+    {
+        return await _activityLogs
+            .Find(log => log.UserId == userId)
+            .Sort(Builders<UserActivityLog>.Sort.Descending(log => log.CreatedAt))
+            .Limit(limit)
+            .ToListAsync();
+    }
+
+    public async Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null)
+    {
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Email, email);
+        
+        if (!string.IsNullOrEmpty(excludeUserId))
+        {
+            filter = Builders<AppUser>.Filter.And(
+                filter,
+                Builders<AppUser>.Filter.Ne(user => user.Id, excludeUserId)
+            );
+        }
+
+        var count = await _users.CountDocumentsAsync(filter);
+        return count > 0;
+    }
+
+    public async Task<bool> CheckUsernameExistsAsync(string username, string? excludeUserId = null)
+    {
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Username, username);
+        
+        if (!string.IsNullOrEmpty(excludeUserId))
+        {
+            filter = Builders<AppUser>.Filter.And(
+                filter,
+                Builders<AppUser>.Filter.Ne(user => user.Id, excludeUserId)
+            );
+        }
+
+        var count = await _users.CountDocumentsAsync(filter);
+        return count > 0;
     }
 }

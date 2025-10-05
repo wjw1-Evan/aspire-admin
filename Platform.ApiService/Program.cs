@@ -1,3 +1,6 @@
+using Platform.ApiService.Services;
+using Platform.ApiService.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
@@ -10,6 +13,9 @@ builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
 builder.AddMongoDBClient(connectionName: "mongodb");
+
+// Register MongoDB services
+builder.Services.AddSingleton<UserService>();
 
 
 var app = builder.Build();
@@ -38,11 +44,67 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
+// MongoDB User API endpoints
+app.MapGet("/api/users", async (UserService userService) =>
+{
+    var users = await userService.GetAllUsersAsync();
+    return Results.Ok(users);
+})
+.WithName("GetAllUsers")
+.WithOpenApi();
+
+app.MapGet("/api/users/{id}", async (string id, UserService userService) =>
+{
+    var user = await userService.GetUserByIdAsync(id);
+    if (user == null)
+        return Results.NotFound($"User with ID {id} not found");
+    
+    return Results.Ok(user);
+})
+.WithName("GetUserById")
+.WithOpenApi();
+
+app.MapPost("/api/users", async (CreateUserRequest request, UserService userService) =>
+{
+    if (string.IsNullOrEmpty(request.Name) || string.IsNullOrEmpty(request.Email))
+        return Results.BadRequest("Name and Email are required");
+    
+    var user = await userService.CreateUserAsync(request);
+    return Results.Created($"/api/users/{user.Id}", user);
+})
+.WithName("CreateUser")
+.WithOpenApi();
+
+app.MapPut("/api/users/{id}", async (string id, UpdateUserRequest request, UserService userService) =>
+{
+    var user = await userService.UpdateUserAsync(id, request);
+    if (user == null)
+        return Results.NotFound($"User with ID {id} not found");
+    
+    return Results.Ok(user);
+})
+.WithName("UpdateUser")
+.WithOpenApi();
+
+app.MapDelete("/api/users/{id}", async (string id, UserService userService) =>
+{
+    var deleted = await userService.DeleteUserAsync(id);
+    if (!deleted)
+        return Results.NotFound($"User with ID {id} not found");
+    
+    return Results.NoContent();
+})
+.WithName("DeleteUser")
+.WithOpenApi();
+
+app.MapGet("/api/users/search/{name}", async (string name, UserService userService) =>
+{
+    var users = await userService.SearchUsersByNameAsync(name);
+    return Results.Ok(users);
+})
+.WithName("SearchUsersByName")
+.WithOpenApi();
+
 app.MapDefaultEndpoints();
 
-app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+await app.RunAsync();

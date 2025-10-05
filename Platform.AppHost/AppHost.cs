@@ -2,6 +2,7 @@
 
 using Aspire.Hosting.Yarp.Transforms;
 using Scalar.Aspire;
+using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -12,15 +13,15 @@ var mongodb = mongo.AddDatabase("mongodb");
  
 var services = new Dictionary<string, IResourceBuilder<ProjectResource>>
 {
-    // 核心业务服务
+    // 核心业务服务 http://localhost:15000/api/apiservice/users
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
-    .WithReference(mongodb)
+    .WithReference(mongodb)   
      .WithHttpHealthCheck("/health")
     
 };
  
 
-var apiGateway = builder.AddYarp("apigateway")
+builder.AddYarp("apigateway")
     .WithHostPort(15000)
     .WithConfiguration(config =>
     {
@@ -41,4 +42,4 @@ foreach (var service in services.Values)
     scalar.WithApiReference(service);
 }
 
-builder.Build().Run();
+await builder.Build().RunAsync();

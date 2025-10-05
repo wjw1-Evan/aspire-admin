@@ -146,7 +146,7 @@ public class AuthService
             var httpContext = _httpContextAccessor.HttpContext;
             var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
             var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
-            await _userService.LogUserActivityAsync(user.Id, "login", "用户登录", ipAddress, userAgent);
+            await _userService.LogUserActivityAsync(user.Id!, "login", "用户登录", ipAddress, userAgent);
 
             // 生成 JWT token
             var token = _jwtService.GenerateToken(user);
@@ -454,9 +454,9 @@ public class AuthService
             if (result.ModifiedCount > 0)
             {
                 // 记录修改密码活动日志
-                var httpContext = _httpContextAccessor.HttpContext;
-                var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
-                var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
+                var currentHttpContext = _httpContextAccessor.HttpContext;
+                var ipAddress = currentHttpContext?.Connection?.RemoteIpAddress?.ToString();
+                var userAgent = currentHttpContext?.Request?.Headers["User-Agent"].ToString();
                 await _userService.LogUserActivityAsync(userId, "change_password", "修改密码", ipAddress, userAgent);
 
                 return new ApiResponse<bool>

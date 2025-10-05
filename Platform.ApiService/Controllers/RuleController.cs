@@ -74,7 +74,7 @@ public class RuleController : ControllerBase
     /// </summary>
     /// <param name="request">更新规则请求</param>
     [HttpPut("rule")]
-    public async Task<IActionResult> UpdateRule([FromBody] UpdateRuleRequest request)
+    public IActionResult UpdateRule([FromBody] UpdateRuleRequest request)
     {
         // 这里需要根据key找到对应的id，然后更新
         // 为了简化，这里返回成功

@@ -19,6 +19,9 @@ import {
   Row,
   Col,
   Badge,
+  Form,
+  Input,
+  Card,
 } from 'antd';
 import {
   PlusOutlined,
@@ -36,13 +39,20 @@ import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
 
 const UserManagement: React.FC = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
+  const [searchForm] = Form.useForm();
   const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [viewingUser, setViewingUser] = useState<AppUser | null>(null);
   const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);
+  const [searchParams, setSearchParams] = useState<UserListRequest>({
+    Page: 1,
+    PageSize: 10,
+    SortBy: 'CreatedAt',
+    SortOrder: 'desc',
+  });
 
   // 获取用户统计信息
   const fetchStatistics = async () => {
@@ -59,21 +69,28 @@ const UserManagement: React.FC = () => {
 
   // 获取用户列表
   const fetchUsers = async (params: any) => {
+    console.log('fetchUsers 被调用，参数:', params);
+    console.log('当前搜索参数:', searchParams);
+    
     const requestData: UserListRequest = {
-      Page: params.current || 1,
-      PageSize: params.pageSize || 10,
-      Search: params.search,
-      Role: params.role,
-      IsActive: params.isActive,
-      SortBy: params.sortBy || 'CreatedAt',
-      SortOrder: params.sortOrder || 'desc',
+      Page: params.current || searchParams.Page,
+      PageSize: params.pageSize || searchParams.PageSize,
+      Search: searchParams.Search,
+      Role: searchParams.Role,
+      IsActive: searchParams.IsActive,
+      SortBy: params.sortBy || searchParams.SortBy,
+      SortOrder: params.sortOrder || searchParams.SortOrder,
     };
 
+    console.log('发送请求数据:', requestData);
+
     try {
-      const response = await request<{ success: boolean; data: UserListResponse }>('/api/user/list', {
+      const response = await request<{ success: boolean; data: any }>('/api/user/list', {
         method: 'POST',
         data: requestData,
       });
+
+      console.log('API响应:', response);
 
       return {
         data: response.data.users || [],
@@ -89,6 +106,35 @@ const UserManagement: React.FC = () => {
         total: 0,
       };
     }
+  };
+
+  // 处理搜索
+  const handleSearch = (values: any) => {
+    console.log('搜索表单提交:', values);
+    const newSearchParams: UserListRequest = {
+      Page: 1,
+      PageSize: searchParams.PageSize,
+      Search: values.search,
+      Role: values.role,
+      IsActive: values.isActive,
+      SortBy: searchParams.SortBy,
+      SortOrder: searchParams.SortOrder,
+    };
+    setSearchParams(newSearchParams);
+    actionRef.current?.reload();
+  };
+
+  // 重置搜索
+  const handleReset = () => {
+    searchForm.resetFields();
+    const resetParams: UserListRequest = {
+      Page: 1,
+      PageSize: searchParams.PageSize,
+      SortBy: 'CreatedAt',
+      SortOrder: 'desc',
+    };
+    setSearchParams(resetParams);
+    actionRef.current?.reload();
   };
 
   // 删除用户
@@ -197,9 +243,9 @@ const UserManagement: React.FC = () => {
       dataIndex: 'role',
       key: 'role',
       width: 100,
-      render: (role: string) => (
-        <Tag color={role === 'admin' ? 'red' : 'blue'}>
-          {role === 'admin' ? '管理员' : '普通用户'}
+      render: (_, record) => (
+        <Tag color={record.role === 'admin' ? 'red' : 'blue'}>
+          {record.role === 'admin' ? '管理员' : '普通用户'}
         </Tag>
       ),
       renderFormItem: (_, { record }) => (
@@ -217,10 +263,10 @@ const UserManagement: React.FC = () => {
       dataIndex: 'isActive',
       key: 'isActive',
       width: 100,
-      render: (isActive: boolean, record) => (
+      render: (_, record) => (
         <Badge
-          status={isActive ? 'success' : 'error'}
-          text={isActive ? '启用' : '禁用'}
+          status={record.isActive ? 'success' : 'error'}
+          text={record.isActive ? '启用' : '禁用'}
         />
       ),
       renderFormItem: (_, { record }) => (
@@ -357,14 +403,47 @@ const UserManagement: React.FC = () => {
         </ProCard>
       )}
 
+      {/* 搜索表单 */}
+      <Card style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout="inline"
+          onFinish={handleSearch}
+          style={{ marginBottom: 16 }}
+        >
+          <Form.Item name="search" label="搜索">
+            <Input placeholder="用户名或邮箱" style={{ width: 200 }} />
+          </Form.Item>
+          <Form.Item name="role" label="角色">
+            <Select placeholder="选择角色" style={{ width: 120 }} allowClear>
+              <Select.Option value="user">普通用户</Select.Option>
+              <Select.Option value="admin">管理员</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="isActive" label="状态">
+            <Select placeholder="选择状态" style={{ width: 120 }} allowClear>
+              <Select.Option value={true}>启用</Select.Option>
+              <Select.Option value={false}>禁用</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                查询
+              </Button>
+              <Button onClick={handleReset}>
+                重置
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
       {/* 用户列表表格 */}
       <ProTable<AppUser>
         actionRef={actionRef}
         rowKey="id"
-        search={{
-          labelWidth: 'auto',
-          defaultCollapsed: false,
-        }}
+        search={false}
         toolBarRender={() => [
           <Button
             key="activate"

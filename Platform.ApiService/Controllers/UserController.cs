@@ -40,10 +40,10 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    /// 创建新用户
+    /// 创建新用户（旧版本）
     /// </summary>
     /// <param name="request">创建用户请求</param>
-    [HttpPost]
+    [HttpPost("legacy")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
         if (string.IsNullOrEmpty(request.Name) || string.IsNullOrEmpty(request.Email))
@@ -51,6 +51,34 @@ public class UserController : ControllerBase
         
         var user = await _userService.CreateUserAsync(request);
         return Created($"/api/users/{user.Id}", user);
+    }
+
+    /// <summary>
+    /// 创建新用户（用户管理）
+    /// </summary>
+    /// <param name="request">创建用户请求</param>
+    [HttpPost("management")]
+    public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.Username))
+                return BadRequest(new { success = false, error = "用户名不能为空" });
+            
+            if (string.IsNullOrEmpty(request.Password))
+                return BadRequest(new { success = false, error = "密码不能为空" });
+
+            var user = await _userService.CreateUserManagementAsync(request);
+            return Ok(new { success = true, data = user });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, error = ex.Message, stackTrace = ex.StackTrace });
+        }
     }
 
     /// <summary>
@@ -66,6 +94,32 @@ public class UserController : ControllerBase
             return NotFound($"User with ID {id} not found");
         
         return Ok(user);
+    }
+
+    /// <summary>
+    /// 更新用户信息（用户管理）
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <param name="request">更新用户请求</param>
+    [HttpPut("{id}/update")]
+    public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
+    {
+        try
+        {
+            var user = await _userService.UpdateUserManagementAsync(id, request);
+            if (user == null)
+                return NotFound(new { success = false, error = $"用户ID {id} 不存在" });
+            
+            return Ok(new { success = true, data = user });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, error = ex.Message, stackTrace = ex.StackTrace });
+        }
     }
 
     /// <summary>

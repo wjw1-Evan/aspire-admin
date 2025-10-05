@@ -40,6 +40,43 @@ public class UserService
         return user;
     }
 
+    public async Task<AppUser> CreateUserManagementAsync(CreateUserManagementRequest request)
+    {
+        // 检查用户名是否已存在
+        var existingUser = await _users.Find(u => u.Username == request.Username).FirstOrDefaultAsync();
+        if (existingUser != null)
+        {
+            throw new InvalidOperationException("用户名已存在");
+        }
+
+        // 检查邮箱是否已存在
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            var existingEmail = await _users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
+            if (existingEmail != null)
+            {
+                throw new InvalidOperationException("邮箱已存在");
+            }
+        }
+
+        // 创建密码哈希
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        var user = new AppUser
+        {
+            Username = request.Username,
+            Email = request.Email,
+            PasswordHash = passwordHash,
+            Role = request.Role,
+            IsActive = request.IsActive,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _users.InsertOneAsync(user);
+        return user;
+    }
+
     public async Task<AppUser?> UpdateUserAsync(string id, UpdateUserRequest request)
     {
         var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
@@ -51,6 +88,50 @@ public class UserService
         
         if (!string.IsNullOrEmpty(request.Email))
             update = update.Set(user => user.Email, request.Email);
+
+        var result = await _users.UpdateOneAsync(filter, update);
+        
+        if (result.ModifiedCount > 0)
+        {
+            return await GetUserByIdAsync(id);
+        }
+        
+        return null;
+    }
+
+    public async Task<AppUser?> UpdateUserManagementAsync(string id, UpdateUserManagementRequest request)
+    {
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
+        var update = Builders<AppUser>.Update
+            .Set(user => user.UpdatedAt, DateTime.UtcNow);
+
+        if (!string.IsNullOrEmpty(request.Username))
+        {
+            // 检查用户名是否已存在（排除当前用户）
+            var existingUser = await _users.Find(u => u.Username == request.Username && u.Id != id).FirstOrDefaultAsync();
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("用户名已存在");
+            }
+            update = update.Set(user => user.Username, request.Username);
+        }
+        
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            // 检查邮箱是否已存在（排除当前用户）
+            var existingEmail = await _users.Find(u => u.Email == request.Email && u.Id != id).FirstOrDefaultAsync();
+            if (existingEmail != null)
+            {
+                throw new InvalidOperationException("邮箱已存在");
+            }
+            update = update.Set(user => user.Email, request.Email);
+        }
+
+        if (!string.IsNullOrEmpty(request.Role))
+            update = update.Set(user => user.Role, request.Role);
+
+        if (request.IsActive.HasValue)
+            update = update.Set(user => user.IsActive, request.IsActive.Value);
 
         var result = await _users.UpdateOneAsync(filter, update);
         

@@ -40,12 +40,16 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           isActive: values.isActive,
         };
 
-        await request(`/api/user/${user.id}`, {
+        const response = await request<{ success: boolean; data: AppUser }>(`/api/user/${user.id}/update`, {
           method: 'PUT',
           data: updateData,
         });
 
-        message.success('用户更新成功');
+        if (response.success) {
+          message.success('用户更新成功');
+        } else {
+          throw new Error('更新失败');
+        }
       } else {
         // 创建用户
         const createData: CreateUserRequest = {
@@ -56,12 +60,16 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           isActive: values.isActive,
         };
 
-        await request('/api/user', {
+        const response = await request<{ success: boolean; data: AppUser }>('/api/user/management', {
           method: 'POST',
           data: createData,
         });
 
-        message.success('用户创建成功');
+        if (response.success) {
+          message.success('用户创建成功');
+        } else {
+          throw new Error('创建失败');
+        }
       }
 
       onSuccess();

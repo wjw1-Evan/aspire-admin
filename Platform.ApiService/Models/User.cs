@@ -32,11 +32,30 @@ public class CreateUserRequest
     public int Age { get; set; }
 }
 
+// 新的用户管理创建请求模型
+public class CreateUserManagementRequest
+{
+    public string Username { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string Password { get; set; } = string.Empty;
+    public string Role { get; set; } = "user";
+    public bool IsActive { get; set; } = true;
+}
+
 public class UpdateUserRequest
 {
     public string? Name { get; set; }
     public string? Email { get; set; }
     public int? Age { get; set; }
+}
+
+// 新的用户管理更新请求模型
+public class UpdateUserManagementRequest
+{
+    public string? Username { get; set; }
+    public string? Email { get; set; }
+    public string? Role { get; set; }
+    public bool? IsActive { get; set; }
 }
 
 // 用户管理相关的请求和响应模型

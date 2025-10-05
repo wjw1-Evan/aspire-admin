@@ -108,4 +108,16 @@ public class AuthController : ControllerBase
         var result = await _authService.RegisterAsync(request);
         return Ok(result);
     }
+
+    /// <summary>
+    /// 修改密码
+    /// </summary>
+    /// <param name="request">修改密码请求</param>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var result = await _authService.ChangePasswordAsync(request);
+        return Ok(result);
+    }
 }

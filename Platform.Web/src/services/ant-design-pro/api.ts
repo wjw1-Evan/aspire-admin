@@ -44,6 +44,18 @@ export async function register(body: API.RegisterParams, options?: { [key: strin
   });
 }
 
+/** 修改密码接口 POST /api/change-password */
+export async function changePassword(body: API.ChangePasswordParams, options?: { [key: string]: any }) {
+  return request<API.ChangePasswordResult>('/api/change-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 此处后端没有提供注释 GET /api/notices */
 export async function getNotices(options?: { [key: string]: any }) {
   return request<API.NoticeIconList>('/api/notices', {

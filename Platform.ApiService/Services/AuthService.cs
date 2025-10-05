@@ -299,4 +299,156 @@ public class AuthService
         }
     }
 
+    public async Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordRequest request)
+    {
+        try
+        {
+            // 从 HTTP 上下文获取当前用户信息
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext?.User?.Identity?.IsAuthenticated != true)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "UNAUTHORIZED",
+                    ErrorMessage = "用户未认证"
+                };
+            }
+
+            // 从 Claims 获取用户 ID
+            var userId = httpContext.User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "UNAUTHORIZED",
+                    ErrorMessage = "用户ID不存在"
+                };
+            }
+
+            // 验证输入参数
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "INVALID_CURRENT_PASSWORD",
+                    ErrorMessage = "当前密码不能为空"
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(request.NewPassword))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "INVALID_NEW_PASSWORD",
+                    ErrorMessage = "新密码不能为空"
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(request.ConfirmPassword))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "INVALID_CONFIRM_PASSWORD",
+                    ErrorMessage = "确认密码不能为空"
+                };
+            }
+
+            // 验证新密码和确认密码是否一致
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "PASSWORD_MISMATCH",
+                    ErrorMessage = "新密码和确认密码不一致"
+                };
+            }
+
+            // 验证新密码强度
+            if (request.NewPassword.Length < 6)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "WEAK_PASSWORD",
+                    ErrorMessage = "新密码长度至少6个字符"
+                };
+            }
+
+            // 验证新密码不能与当前密码相同
+            if (request.CurrentPassword == request.NewPassword)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "SAME_PASSWORD",
+                    ErrorMessage = "新密码不能与当前密码相同"
+                };
+            }
+
+            // 从数据库获取用户信息
+            var user = await _users.Find(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "USER_NOT_FOUND",
+                    ErrorMessage = "用户不存在或已被禁用"
+                };
+            }
+
+            // 验证当前密码是否正确
+            if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "INVALID_CURRENT_PASSWORD",
+                    ErrorMessage = "当前密码不正确"
+                };
+            }
+
+            // 更新密码
+            var newPasswordHash = HashPassword(request.NewPassword);
+            var update = Builders<AppUser>.Update
+                .Set(u => u.PasswordHash, newPasswordHash)
+                .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+            var result = await _users.UpdateOneAsync(u => u.Id == userId, update);
+
+            if (result.ModifiedCount > 0)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Data = true
+                };
+            }
+            else
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    ErrorCode = "UPDATE_FAILED",
+                    ErrorMessage = "密码更新失败"
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                ErrorCode = "CHANGE_PASSWORD_ERROR",
+                ErrorMessage = $"修改密码失败: {ex.Message}"
+            };
+        }
+    }
+
 }

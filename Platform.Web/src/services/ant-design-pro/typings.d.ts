@@ -83,6 +83,19 @@ declare namespace API {
     errorMessage?: string;
   };
 
+  type ChangePasswordParams = {
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  };
+
+  type ChangePasswordResult = {
+    success?: boolean;
+    data?: boolean;
+    errorCode?: string;
+    errorMessage?: string;
+  };
+
   type ErrorResponse = {
     /** 业务约定的错误码 */
     errorCode: string;

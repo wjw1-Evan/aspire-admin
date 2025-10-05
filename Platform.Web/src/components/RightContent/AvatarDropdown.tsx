@@ -2,6 +2,7 @@ import {
   LogoutOutlined,
   SettingOutlined,
   UserOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
@@ -81,6 +82,10 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       loginOut();
       return;
     }
+    if (key === 'change-password') {
+      history.push('/user/change-password');
+      return;
+    }
     history.push(`/account/${key}`);
   };
 
@@ -102,7 +107,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
 
   const { currentUser } = initialState;
 
-  if (!currentUser || !currentUser.name) {
+  if (!currentUser?.name) {
     return loading;
   }
 
@@ -118,6 +123,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
             key: 'settings',
             icon: <SettingOutlined />,
             label: '个人设置',
+          },
+          {
+            key: 'change-password',
+            icon: <LockOutlined />,
+            label: '修改密码',
           },
           {
             type: 'divider' as const,

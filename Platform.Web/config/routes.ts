@@ -80,6 +80,12 @@ export default [
     component: './test-menu',
   },
   {
+    name: 'change-password',
+    path: '/user/change-password',
+    component: './user/change-password',
+    hideInMenu: true,
+  },
+  {
     path: '/',
     redirect: '/welcome',
   },

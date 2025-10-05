@@ -5,7 +5,7 @@ using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var mongo = builder.AddMongoDB("mongo")
+var mongo = builder.AddMongoDB("mongo").WithMongoExpress()
                    .WithLifetime(ContainerLifetime.Persistent);
 
 var mongodb = mongo.AddDatabase("mongodb");

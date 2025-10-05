@@ -56,6 +56,63 @@ export async function changePassword(body: API.ChangePasswordParams, options?: {
   });
 }
 
+/** 获取当前用户信息（个人中心） GET /api/user/profile */
+export async function getCurrentUserProfile(options?: { [key: string]: any }) {
+  return request<{
+    success: boolean;
+    data: API.CurrentUser;
+    error?: string;
+  }>('/api/user/profile', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/** 更新当前用户信息（个人中心） PUT /api/user/profile */
+export async function updateUserProfile(body: API.UpdateProfileParams, options?: { [key: string]: any }) {
+  return request<{
+    success: boolean;
+    data: API.CurrentUser;
+    error?: string;
+  }>('/api/user/profile', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 修改当前用户密码 PUT /api/user/profile/password */
+export async function changeCurrentUserPassword(body: API.ChangePasswordParams, options?: { [key: string]: any }) {
+  return request<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }>('/api/user/profile/password', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 获取当前用户活动日志 GET /api/user/profile/activity-logs */
+export async function getUserActivityLogs(params?: { limit?: number }, options?: { [key: string]: any }) {
+  return request<{
+    success: boolean;
+    data: API.UserActivityLog[];
+    error?: string;
+  }>('/api/user/profile/activity-logs', {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
 /** 此处后端没有提供注释 GET /api/notices */
 export async function getNotices(options?: { [key: string]: any }) {
   return request<API.NoticeIconList>('/api/notices', {

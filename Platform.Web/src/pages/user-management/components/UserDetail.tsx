@@ -43,13 +43,18 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
 
     setLoading(true);
     try {
-      const response = await request<{ data: UserActivityLog[] }>(`/api/user/${user.id}/activity-logs`, {
+      const response = await request<{ success: boolean; data: UserActivityLog[] }>(`/api/user/${user.id}/activity-logs`, {
         method: 'GET',
         params: { limit: 20 },
       });
-      setActivityLogs(response.data || []);
+      if (response.success && response.data) {
+        setActivityLogs(response.data);
+      } else {
+        setActivityLogs([]);
+      }
     } catch (error) {
       console.error('获取活动日志失败:', error);
+      setActivityLogs([]);
     } finally {
       setLoading(false);
     }
@@ -61,9 +66,15 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       logout: 'orange',
       update_profile: 'blue',
       change_password: 'purple',
-      create: 'cyan',
-      update: 'blue',
-      delete: 'red',
+      view_profile: 'purple',
+      // 用户管理操作
+      create_user: 'cyan',
+      update_user: 'blue',
+      delete_user: 'red',
+      activate_user: 'green',
+      deactivate_user: 'orange',
+      update_user_role: 'purple',
+      bulk_action: 'geekblue',
     };
     return actionColors[action] || 'default';
   };
@@ -74,9 +85,15 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       logout: '登出',
       update_profile: '更新资料',
       change_password: '修改密码',
-      create: '创建',
-      update: '更新',
-      delete: '删除',
+      view_profile: '查看资料',
+      // 用户管理操作
+      create_user: '创建用户',
+      update_user: '更新用户',
+      delete_user: '删除用户',
+      activate_user: '启用用户',
+      deactivate_user: '禁用用户',
+      update_user_role: '更新角色',
+      bulk_action: '批量操作',
     };
     return actionTexts[action] || action;
   };

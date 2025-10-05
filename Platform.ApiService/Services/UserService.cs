@@ -347,4 +347,70 @@ public class UserService
         var count = await _users.CountDocumentsAsync(filter);
         return count > 0;
     }
+
+    // 个人中心相关方法
+    public async Task<AppUser?> UpdateUserProfileAsync(string userId, UpdateProfileRequest request)
+    {
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, userId);
+        var update = Builders<AppUser>.Update
+            .Set(user => user.UpdatedAt, DateTime.UtcNow);
+
+        if (!string.IsNullOrEmpty(request.Username))
+        {
+            // 检查用户名是否已存在（排除当前用户）
+            var existingUser = await _users.Find(u => u.Username == request.Username && u.Id != userId).FirstOrDefaultAsync();
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("用户名已存在");
+            }
+            update = update.Set(user => user.Username, request.Username);
+        }
+        
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            // 检查邮箱是否已存在（排除当前用户）
+            var existingEmail = await _users.Find(u => u.Email == request.Email && u.Id != userId).FirstOrDefaultAsync();
+            if (existingEmail != null)
+            {
+                throw new InvalidOperationException("邮箱已存在");
+            }
+            update = update.Set(user => user.Email, request.Email);
+        }
+
+        if (!string.IsNullOrEmpty(request.Name))
+            update = update.Set(user => user.Name, request.Name);
+
+        if (request.Age.HasValue)
+            update = update.Set(user => user.Age, request.Age.Value);
+
+        var result = await _users.UpdateOneAsync(filter, update);
+        
+        if (result.ModifiedCount > 0)
+        {
+            return await GetUserByIdAsync(userId);
+        }
+        
+        return null;
+    }
+
+    public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
+    {
+        var user = await GetUserByIdAsync(userId);
+        if (user == null)
+            return false;
+
+        // 验证当前密码
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+            return false;
+
+        // 更新密码
+        var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        var filter = Builders<AppUser>.Filter.Eq(u => u.Id, userId);
+        var update = Builders<AppUser>.Update
+            .Set(u => u.PasswordHash, newPasswordHash)
+            .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+        var result = await _users.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
+    }
 }

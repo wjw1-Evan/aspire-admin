@@ -85,7 +85,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "preset",
@@ -145,7 +145,7 @@
             0
           ]
         },
-        "register": 3
+        "register": 4
       },
       "enableBy": "register",
       "type": "plugin",
@@ -176,7 +176,7 @@
       "time": {
         "hooks": {
           "modifyRoutes": [
-            0
+            1
           ]
         },
         "register": 0
@@ -206,10 +206,10 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            19
+            21
           ]
         },
-        "register": 14
+        "register": 15
       },
       "enableBy": "register",
       "type": "plugin",
@@ -222,7 +222,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -242,7 +242,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -259,7 +259,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -272,7 +272,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -289,7 +289,7 @@
             0
           ]
         },
-        "register": 6
+        "register": 7
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1141,7 +1141,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1158,7 +1158,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1171,7 +1171,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1184,7 +1184,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 58
+        "register": 60
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1214,7 +1214,7 @@
             0
           ]
         },
-        "register": 15
+        "register": 16
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1270,7 +1270,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 23
+        "register": 24
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/mock/mock.js",
@@ -1282,7 +1282,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1302,7 +1302,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/okam/okam.js",
@@ -1327,7 +1327,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1382,7 +1382,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1395,7 +1395,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1421,7 +1421,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1434,7 +1434,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1447,7 +1447,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/routeProps/routeProps.js",
@@ -1472,7 +1472,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1536,7 +1536,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 14
+        "register": 16
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1574,7 +1574,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1587,7 +1587,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1600,7 +1600,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/webpack/webpack.js",
@@ -1616,7 +1616,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1685,7 +1685,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 16
+        "register": 20
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad.js",
@@ -1710,7 +1710,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1736,7 +1736,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 23
+        "register": 25
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1750,13 +1750,13 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            10
+            15
           ],
           "onStart": [
             0
           ]
         },
-        "register": 27
+        "register": 25
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/dev/dev.js",
@@ -1768,7 +1768,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1820,7 +1820,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1898,7 +1898,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1911,7 +1911,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1976,7 +1976,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1989,7 +1989,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2002,7 +2002,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 13
+        "register": 15
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2015,7 +2015,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2056,7 +2056,7 @@
       },
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/analytics.js",
@@ -2069,13 +2069,13 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            3
           ],
           "modifyAppData": [
             0
           ]
         },
-        "register": 5
+        "register": 4
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/antd.js",
@@ -2125,7 +2125,7 @@
             1
           ]
         },
-        "register": 4
+        "register": 3
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2194,7 +2194,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2207,7 +2207,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/qiankun/master.js",
@@ -2219,7 +2219,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/qiankun/slave.js",
@@ -2231,7 +2231,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2244,7 +2244,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2270,7 +2270,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2384,7 +2384,7 @@
             0
           ]
         },
-        "register": 173
+        "register": 174
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2397,7 +2397,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 85
+        "register": 95
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2441,7 +2441,7 @@
             0
           ]
         },
-        "register": 37
+        "register": 44
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/request-record/dist/cjs/index.js",
@@ -2453,7 +2453,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2544,6 +2544,12 @@
         "name": "change-password",
         "path": "/user/change-password",
         "component": "./user/change-password",
+        "hideInMenu": true
+      },
+      {
+        "name": "account.center",
+        "path": "/account/center",
+        "component": "./account/center",
         "hideInMenu": true
       },
       {
@@ -2751,6 +2757,12 @@
         "name": "change-password",
         "path": "/user/change-password",
         "component": "./user/change-password",
+        "hideInMenu": true
+      },
+      {
+        "name": "account.center",
+        "path": "/account/center",
+        "component": "./account/center",
         "hideInMenu": true
       },
       {
@@ -3912,17 +3924,29 @@
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/user/change-password/index.tsx"
     },
     "14": {
+      "name": "account.center",
+      "path": "/account/center",
+      "hideInMenu": true,
+      "file": "@/pages/account/center/index.tsx",
+      "parentId": "ant-design-pro-layout",
+      "id": "14",
+      "absPath": "/account/center",
+      "__content": "import {\n  EditOutlined,\n  UserOutlined,\n  MailOutlined,\n  CalendarOutlined,\n  SafetyOutlined,\n  HistoryOutlined,\n} from '@ant-design/icons';\nimport { ProCard, ProForm, ProFormText, ProFormDigit } from '@ant-design/pro-components';\nimport { FormattedMessage, Helmet, useIntl } from '@umijs/max';\nimport { Avatar, Button, Descriptions, Divider, List, message, Space, Tag, Typography } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useEffect, useState } from 'react';\nimport { getCurrentUserProfile, updateUserProfile, getUserActivityLogs } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst { Title, Text } = Typography;\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      padding: '24px',\n      width: '100%',\n    },\n    profileCard: {\n      marginBottom: '24px',\n    },\n    avatarSection: {\n      textAlign: 'center',\n      padding: '24px',\n    },\n    infoSection: {\n      padding: '24px',\n    },\n    activityCard: {\n      marginTop: '24px',\n    },\n    editButton: {\n      marginBottom: '16px',\n    },\n  };\n});\n\ninterface UserProfile {\n  id: string;\n  username: string;\n  name?: string;\n  email?: string;\n  age?: number;\n  role: string;\n  isActive: boolean;\n  createdAt: string;\n  updatedAt: string;\n  lastLoginAt?: string;\n}\n\ninterface ActivityLog {\n  id: string;\n  action: string;\n  description: string;\n  ipAddress?: string;\n  userAgent?: string;\n  createdAt: string;\n}\n\nconst UserCenter: React.FC = () => {\n  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);\n  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [editing, setEditing] = useState(false);\n  const [form] = ProForm.useForm();\n  const { styles } = useStyles();\n  const intl = useIntl();\n\n  // 获取用户信息\n  const fetchUserProfile = async () => {\n    try {\n      setLoading(true);\n      const response = await getCurrentUserProfile();\n      if (response.success && response.data) {\n        setUserProfile(response.data);\n        form.setFieldsValue({\n          username: response.data.username,\n          name: response.data.name,\n          email: response.data.email,\n          age: response.data.age,\n        });\n      }\n    } catch (error) {\n      console.error('获取用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.fetchFailed', defaultMessage: '获取用户信息失败' }));\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  // 获取活动日志\n  const fetchActivityLogs = async () => {\n    try {\n      const response = await getUserActivityLogs();\n      if (response.success && response.data) {\n        setActivityLogs(response.data);\n      }\n    } catch (error) {\n      console.error('获取活动日志失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.activityFailed', defaultMessage: '获取活动日志失败' }));\n    }\n  };\n\n  useEffect(() => {\n    fetchUserProfile();\n    fetchActivityLogs();\n  }, []);\n\n  // 更新用户信息\n  const handleUpdateProfile = async (values: any) => {\n    try {\n      const response = await updateUserProfile(values);\n      if (response.success) {\n        message.success(intl.formatMessage({ id: 'pages.account.center.updateSuccess', defaultMessage: '个人信息更新成功' }));\n        setEditing(false);\n        fetchUserProfile(); // 重新获取用户信息\n      } else {\n        message.error(response.error || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));\n      }\n    } catch (error) {\n      console.error('更新用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '个人信息更新失败' }));\n    }\n  };\n\n  // 取消编辑\n  const handleCancelEdit = () => {\n    setEditing(false);\n    form.resetFields();\n  };\n\n  // 格式化时间\n  const formatDateTime = (dateString: string) => {\n    return new Date(dateString).toLocaleString('zh-CN');\n  };\n\n  // 获取角色标签颜色\n  const getRoleTagColor = (role: string) => {\n    switch (role) {\n      case 'admin':\n        return 'red';\n      case 'user':\n        return 'blue';\n      default:\n        return 'default';\n    }\n  };\n\n  // 获取活动类型标签\n  const getActivityTag = (action: string) => {\n    const actionMap: { [key: string]: { text: string; color: string } } = {\n      login: { text: intl.formatMessage({ id: 'pages.account.center.activity.login', defaultMessage: '登录' }), color: 'green' },\n      logout: { text: intl.formatMessage({ id: 'pages.account.center.activity.logout', defaultMessage: '退出' }), color: 'orange' },\n      update_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.updateProfile', defaultMessage: '更新资料' }), color: 'blue' },\n      change_password: { text: intl.formatMessage({ id: 'pages.account.center.activity.changePassword', defaultMessage: '修改密码' }), color: 'red' },\n      view_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.viewProfile', defaultMessage: '查看资料' }), color: 'purple' },\n      // 用户管理操作\n      create_user: { text: '创建用户', color: 'cyan' },\n      update_user: { text: '更新用户', color: 'blue' },\n      delete_user: { text: '删除用户', color: 'red' },\n      activate_user: { text: '启用用户', color: 'green' },\n      deactivate_user: { text: '禁用用户', color: 'orange' },\n      update_user_role: { text: '更新角色', color: 'purple' },\n      bulk_action: { text: '批量操作', color: 'geekblue' },\n    };\n    return actionMap[action] || { text: action, color: 'default' };\n  };\n\n  if (loading) {\n    return <div><FormattedMessage id=\"pages.account.center.loading\" defaultMessage=\"加载中...\" /></div>;\n  }\n\n  if (!userProfile) {\n    return <div><FormattedMessage id=\"pages.account.center.userNotExist\" defaultMessage=\"用户信息不存在\" /></div>;\n  }\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.account.center',\n            defaultMessage: '个人中心',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n\n      <Title level={2}>\n        <UserOutlined style={{ marginRight: '8px' }} />\n        <FormattedMessage id=\"pages.account.center.title\" defaultMessage=\"个人中心\" />\n      </Title>\n\n      {/* 个人信息卡片 */}\n      <ProCard\n        title={<FormattedMessage id=\"pages.account.center.profile\" defaultMessage=\"个人信息\" />}\n        className={styles.profileCard}\n        extra={\n          <Button\n            type=\"primary\"\n            icon={<EditOutlined />}\n            onClick={() => setEditing(true)}\n            disabled={editing}\n          >\n            <FormattedMessage id=\"pages.account.center.editProfile\" defaultMessage=\"编辑资料\" />\n          </Button>\n        }\n      >\n        <div className={styles.avatarSection}>\n          <Avatar size={80} icon={<UserOutlined />} />\n          <div style={{ marginTop: '16px' }}>\n            <Title level={4}>{userProfile.name || userProfile.username}</Title>\n            <Tag color={getRoleTagColor(userProfile.role)}>\n              {userProfile.role === 'admin' ? \n                <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n              }\n            </Tag>\n          </div>\n        </div>\n\n        <Divider />\n\n        {editing ? (\n          <ProForm\n            form={form}\n            onFinish={handleUpdateProfile}\n            submitter={{\n              searchConfig: {\n                submitText: '保存',\n                resetText: '取消',\n              },\n              render: (props, doms) => {\n                return (\n                  <div style={{ textAlign: 'right' }}>\n                    <Space>\n                      <Button onClick={handleCancelEdit}>取消</Button>\n                      <Button type=\"primary\" htmlType=\"submit\">保存</Button>\n                    </Space>\n                  </div>\n                );\n              },\n              resetButtonProps: {\n                style: { display: 'none' }\n              },\n              submitButtonProps: {\n                style: { display: 'none' }\n              }\n            }}\n          >\n            <ProFormText\n              name=\"username\"\n              label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}\n              rules={[{ required: true, message: '请输入用户名' }]}\n            />\n            <ProFormText\n              name=\"name\"\n              label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}\n              placeholder=\"请输入姓名\"\n            />\n            <ProFormText\n              name=\"email\"\n              label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}\n              rules={[\n                { type: 'email', message: '请输入有效的邮箱地址' }\n              ]}\n            />\n            <ProFormDigit\n              name=\"age\"\n              label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}\n              min={1}\n              max={150}\n              placeholder=\"请输入年龄\"\n            />\n          </ProForm>\n        ) : (\n          <Descriptions column={2} bordered>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}>\n              <Text strong>{userProfile.username}</Text>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}>\n              {userProfile.name || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}>\n              <MailOutlined style={{ marginRight: '4px' }} />\n              {userProfile.email || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}>\n              {userProfile.age || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.role\" defaultMessage=\"角色\" />}>\n              <Tag color={getRoleTagColor(userProfile.role)}>\n                {userProfile.role === 'admin' ? \n                  <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                  <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.status\" defaultMessage=\"状态\" />}>\n              <Tag color={userProfile.isActive ? 'green' : 'red'}>\n                {userProfile.isActive ? \n                  <FormattedMessage id=\"pages.account.center.active\" defaultMessage=\"正常\" /> : \n                  <FormattedMessage id=\"pages.account.center.inactive\" defaultMessage=\"禁用\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.registerTime\" defaultMessage=\"注册时间\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.createdAt)}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastUpdate\" defaultMessage=\"最后更新\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.updatedAt)}\n            </Descriptions.Item>\n            {userProfile.lastLoginAt && (\n              <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastLogin\" defaultMessage=\"最后登录\" />} span={2}>\n                <CalendarOutlined style={{ marginRight: '4px' }} />\n                {formatDateTime(userProfile.lastLoginAt)}\n              </Descriptions.Item>\n            )}\n          </Descriptions>\n        )}\n      </ProCard>\n\n      {/* 活动日志卡片 */}\n      <ProCard\n        title={\n          <Space>\n            <HistoryOutlined />\n            <FormattedMessage id=\"pages.account.center.recentActivity\" defaultMessage=\"最近活动\" />\n          </Space>\n        }\n        className={styles.activityCard}\n      >\n        <List\n          dataSource={activityLogs}\n          renderItem={(item) => {\n            const activityTag = getActivityTag(item.action);\n            return (\n              <List.Item>\n                <List.Item.Meta\n                  avatar={<SafetyOutlined />}\n                  title={\n                    <Space>\n                      <Tag color={activityTag.color}>{activityTag.text}</Tag>\n                      <Text>{item.description}</Text>\n                    </Space>\n                  }\n                  description={\n                    <Space direction=\"vertical\" size=\"small\">\n                      <Text type=\"secondary\">\n                        {formatDateTime(item.createdAt)}\n                      </Text>\n                      {item.ipAddress && (\n                        <Text type=\"secondary\" style={{ fontSize: '12px' }}>\n                          IP: {item.ipAddress}\n                        </Text>\n                      )}\n                    </Space>\n                  }\n                />\n              </List.Item>\n            );\n          }}\n        />\n      </ProCard>\n    </div>\n  );\n};\n\nexport default UserCenter;\n",
+      "__isJSFile": true,
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/account/center/index.tsx"
+    },
+    "15": {
       "path": "/",
       "redirect": "/welcome",
       "parentId": "ant-design-pro-layout",
-      "id": "14",
+      "id": "15",
       "absPath": "/"
     },
-    "15": {
+    "16": {
       "path": "*",
       "layout": false,
       "file": "@/pages/404.tsx",
-      "id": "15",
+      "id": "16",
       "absPath": "/*",
       "__content": "import { history, useIntl } from '@umijs/max';\nimport { Button, Card, Result } from 'antd';\nimport React from 'react';\n\nconst NoFoundPage: React.FC = () => (\n  <Card variant=\"borderless\">\n    <Result\n      status=\"404\"\n      title=\"404\"\n      subTitle={useIntl().formatMessage({ id: 'pages.404.subTitle' })}\n      extra={\n        <Button type=\"primary\" onClick={() => history.push('/')}>\n          {useIntl().formatMessage({ id: 'pages.404.buttonText' })}\n        </Button>\n      }\n    />\n  </Card>\n);\n\nexport default NoFoundPage;\n",
       "__isJSFile": true,
@@ -3990,7 +4014,7 @@
     "tslibVersion": "2.8.1"
   },
   "faviconFiles": [],
-  "port": 61843,
+  "port": 63745,
   "host": "0.0.0.0",
   "ip": "192.168.0.130",
   "antd": {

@@ -121,3 +121,12 @@ public class UserActivityLog
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
+
+// 个人中心相关模型
+public class UpdateProfileRequest
+{
+    public string? Username { get; set; }
+    public string? Email { get; set; }
+    public string? Name { get; set; }
+    public int? Age { get; set; }
+}

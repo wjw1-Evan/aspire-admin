@@ -86,6 +86,12 @@ export default [
     hideInMenu: true,
   },
   {
+    name: 'account.center',
+    path: '/account/center',
+    component: './account/center',
+    hideInMenu: true,
+  },
+  {
     path: '/',
     redirect: '/welcome',
   },

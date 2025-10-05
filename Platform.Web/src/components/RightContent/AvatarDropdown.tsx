@@ -86,6 +86,10 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       history.push('/user/change-password');
       return;
     }
+    if (key === 'center') {
+      history.push('/account/center');
+      return;
+    }
     history.push(`/account/${key}`);
   };
 
@@ -118,11 +122,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
             key: 'center',
             icon: <UserOutlined />,
             label: '个人中心',
-          },
-          {
-            key: 'settings',
-            icon: <SettingOutlined />,
-            label: '个人设置',
           },
           {
             key: 'change-password',

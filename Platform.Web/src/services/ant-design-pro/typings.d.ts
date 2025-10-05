@@ -126,4 +126,22 @@ declare namespace API {
     description?: string;
     type?: NoticeIconItemType;
   };
+
+  // 个人中心相关类型
+  type UpdateProfileParams = {
+    username?: string;
+    name?: string;
+    email?: string;
+    age?: number;
+  };
+
+  type UserActivityLog = {
+    id?: string;
+    userId?: string;
+    action?: string;
+    description?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    createdAt?: string;
+  };
 }

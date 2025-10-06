@@ -1,0 +1,320 @@
+---
+globs: **/services/**,**/api/**,**/hooks/use-*.ts
+description: API 集成和网络请求规范
+---
+
+# API 集成和网络请求规范
+
+## 🌐 API 架构
+
+### 服务端点
+- **API 网关**: http://localhost:15000
+- **API 服务**: http://localhost:15000/apiservice/
+- **API 文档**: http://localhost:15000/scalar/v1
+
+### 认证方式
+所有 API 请求使用 JWT Token 认证：
+```typescript
+// ✅ 推荐：API 请求配置
+const apiClient = axios.create({
+  baseURL: 'http://localhost:15000/apiservice',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// 添加认证拦截器
+apiClient.interceptors.request.use((config) => {
+  const token = getStoredToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+## 🔧 服务层设计
+
+### API 服务封装
+```typescript
+// ✅ 推荐：API 服务类
+export class UserService {
+  private static readonly BASE_URL = '/apiservice/api/users';
+  
+  static async getUsers(): Promise<User[]> {
+    try {
+      const response = await apiClient.get(this.BASE_URL);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      throw error;
+    }
+  }
+  
+  static async createUser(userData: CreateUserRequest): Promise<User> {
+    try {
+      const response = await apiClient.post(this.BASE_URL, userData);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      throw error;
+    }
+  }
+  
+  static async updateUser(id: string, userData: UpdateUserRequest): Promise<User> {
+    try {
+      const response = await apiClient.put(`${this.BASE_URL}/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      throw error;
+    }
+  }
+  
+  static async deleteUser(id: string): Promise<void> {
+    try {
+      await apiClient.delete(`${this.BASE_URL}/${id}`);
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      throw error;
+    }
+  }
+}
+```
+
+### 认证服务
+```typescript
+// ✅ 推荐：认证服务
+export class AuthService {
+  private static readonly BASE_URL = '/apiservice/api';
+  
+  static async login(credentials: LoginRequest): Promise<LoginResponse> {
+    try {
+      const response = await apiClient.post(`${this.BASE_URL}/login/account`, credentials);
+      const { token, user } = response.data;
+      
+      // 存储 token
+      await AsyncStorage.setItem('auth_token', token);
+      await AsyncStorage.setItem('user_info', JSON.stringify(user));
+      
+      return response.data;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  }
+  
+  static async logout(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem('auth_token');
+      await AsyncStorage.removeItem('user_info');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }
+  
+  static async getStoredToken(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem('auth_token');
+    } catch (error) {
+      console.error('Failed to get stored token:', error);
+      return null;
+    }
+  }
+}
+```
+
+## 🎣 自定义 Hooks
+
+### 数据获取 Hook
+```typescript
+// ✅ 推荐：数据获取 Hook
+export function useUsers() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await UserService.getUsers();
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '获取用户列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+  
+  return { users, loading, error, refetch: fetchUsers };
+}
+```
+
+### 认证状态 Hook
+```typescript
+// ✅ 推荐：认证状态 Hook
+export function useAuth() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+  
+  const checkAuthStatus = async () => {
+    try {
+      const token = await AuthService.getStoredToken();
+      const userInfo = await AsyncStorage.getItem('user_info');
+      
+      if (token && userInfo) {
+        setUser(JSON.parse(userInfo));
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const login = async (credentials: LoginRequest) => {
+    try {
+      const response = await AuthService.login(credentials);
+      setUser(response.user);
+      setIsAuthenticated(true);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+  
+  const logout = async () => {
+    await AuthService.logout();
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+  
+  return { isAuthenticated, user, loading, login, logout };
+}
+```
+
+## 🔄 错误处理
+
+### 统一错误处理
+```typescript
+// ✅ 推荐：错误处理拦截器
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token 过期，清除本地存储并跳转到登录页
+      AuthService.logout();
+      router.replace('/auth/login');
+    }
+    
+    // 统一错误格式
+    const errorMessage = error.response?.data?.message || error.message || '请求失败';
+    throw new Error(errorMessage);
+  }
+);
+```
+
+### 组件错误处理
+```typescript
+// ✅ 推荐：组件中的错误处理
+export default function UserList() {
+  const { users, loading, error, refetch } = useUsers();
+  
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+  
+  if (error) {
+    return (
+      <ErrorView 
+        message={error} 
+        onRetry={refetch}
+      />
+    );
+  }
+  
+  return (
+    <FlatList
+      data={users}
+      renderItem={({ item }) => <UserCard user={item} />}
+      keyExtractor={(item) => item.id}
+    />
+  );
+}
+```
+
+## 📱 移动端特定
+
+### 网络状态检测
+```typescript
+// ✅ 推荐：网络状态检测
+import NetInfo from '@react-native-community/netinfo';
+
+export function useNetworkStatus() {
+  const [isConnected, setIsConnected] = useState(true);
+  
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected ?? false);
+    });
+    
+    return unsubscribe;
+  }, []);
+  
+  return isConnected;
+}
+```
+
+### 离线处理
+```typescript
+// ✅ 推荐：离线数据缓存
+export function useOfflineData<T>(key: string, fetchFn: () => Promise<T>) {
+  const [data, setData] = useState<T | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+  
+  const loadData = async () => {
+    try {
+      const result = await fetchFn();
+      setData(result);
+      await AsyncStorage.setItem(key, JSON.stringify(result));
+    } catch (error) {
+      // 网络错误时尝试从缓存加载
+      const cached = await AsyncStorage.getItem(key);
+      if (cached) {
+        setData(JSON.parse(cached));
+        setIsOffline(true);
+      }
+    }
+  };
+  
+  return { data, isOffline, refetch: loadData };
+}
+```
+
+## 🚫 避免的做法
+
+- 不要直接使用 fetch 或 axios，使用封装的服务类
+- 不要忘记处理网络错误和超时
+- 不要忽略认证状态检查
+- 不要忘记清理网络请求（组件卸载时）
+- 不要在生产环境中硬编码 API 地址
+
+## 🔧 最佳实践
+
+1. **统一错误处理** - 使用拦截器处理通用错误
+2. **缓存策略** - 合理使用缓存减少网络请求
+3. **加载状态** - 提供良好的加载和错误状态反馈
+4. **离线支持** - 考虑网络不可用的情况
+5. **安全存储** - 敏感信息使用安全存储方式

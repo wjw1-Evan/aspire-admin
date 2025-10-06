@@ -1,0 +1,163 @@
+---
+globs: *.tsx,*.jsx
+description: React 组件开发规范和最佳实践
+---
+
+# React 组件开发规范
+
+## 🎯 组件设计原则
+
+### 组件结构
+```typescript
+// ✅ 推荐：标准的组件结构
+import React from 'react';
+import { Button, Card } from 'antd';
+import type { UserCardProps } from './types';
+
+export default function UserCard({ user, onEdit }: UserCardProps) {
+  // 1. Hooks
+  const [loading, setLoading] = useState(false);
+  
+  // 2. 事件处理函数
+  const handleEdit = useCallback(() => {
+    onEdit?.(user);
+  }, [user, onEdit]);
+  
+  // 3. 渲染逻辑
+  return (
+    <Card>
+      <h3>{user.name}</h3>
+      <Button onClick={handleEdit}>编辑</Button>
+    </Card>
+  );
+}
+```
+
+### Props 设计
+```typescript
+// ✅ 推荐：明确的 Props 接口
+interface UserCardProps {
+  readonly user: User;
+  readonly onEdit?: (user: User) => void;
+  readonly onDelete?: (userId: string) => void;
+  readonly loading?: boolean;
+  readonly className?: string;
+}
+```
+
+## 🎨 样式规范
+
+### 主题化组件
+在移动端应用中使用主题化组件：
+
+```typescript
+// ✅ 推荐：使用主题化组件
+import { ThemedText, ThemedView, ThemedButton } from '@/components';
+
+export default function ProfileScreen() {
+  const backgroundColor = useThemeColor({}, 'background');
+  
+  return (
+    <ThemedView style={{ backgroundColor }}>
+      <ThemedText type="title">个人中心</ThemedText>
+      <ThemedButton title="编辑资料" />
+    </ThemedView>
+  );
+}
+```
+
+### 样式组织
+```typescript
+// ✅ 推荐：使用 StyleSheet
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+});
+```
+
+## 🔄 状态管理
+
+### 本地状态
+```typescript
+// ✅ 推荐：使用 useState 和 useCallback
+function UserForm() {
+  const [formData, setFormData] = useState<UserFormData>({
+    name: '',
+    email: '',
+  });
+  
+  const handleSubmit = useCallback(async () => {
+    try {
+      await submitUser(formData);
+      message.success('保存成功');
+    } catch (error) {
+      message.error('保存失败');
+    }
+  }, [formData]);
+}
+```
+
+### 全局状态
+```typescript
+// ✅ 推荐：使用 Context 进行主题管理
+const { themeMode, setThemeMode, isDark } = useTheme();
+```
+
+## 📱 移动端特定规范
+
+### 导航
+```typescript
+// ✅ 推荐：使用 Expo Router
+import { router } from 'expo-router';
+
+const navigateToProfile = () => {
+  router.push('/profile');
+};
+```
+
+### 平台适配
+```typescript
+// ✅ 推荐：使用 Platform 进行平台适配
+import { Platform } from 'react-native';
+
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: Platform.OS === 'ios' ? 44 : 24,
+  },
+});
+```
+
+## 🚫 避免的做法
+
+- 不要直接修改 props
+- 不要使用 `componentWillMount` 等已废弃的生命周期
+- 不要忘记添加 `key` 属性到列表项
+- 不要在内联函数中创建对象或数组
+- 不要忘记清理副作用（useEffect 的清理函数）
+
+## 🔧 性能优化
+
+### 记忆化
+```typescript
+// ✅ 推荐：使用 useMemo 和 useCallback
+const expensiveValue = useMemo(() => {
+  return computeExpensiveValue(data);
+}, [data]);
+
+const handleClick = useCallback(() => {
+  onItemClick(item.id);
+}, [item.id, onItemClick]);
+```
+
+### 懒加载
+```typescript
+// ✅ 推荐：使用 React.lazy 进行代码分割
+const UserManagement = lazy(() => import('./UserManagement'));
+```

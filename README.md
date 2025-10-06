@@ -136,11 +136,11 @@ Platform/
 
 ### 认证 API
 
-所有 API 通过网关访问：`http://localhost:15000/api/apiservice/`
+所有 API 通过网关访问：`http://localhost:15000/apiservice/`
 
 #### 用户登录
 ```http
-POST /api/apiservice/api/login/account
+POST /apiservice/api/login/account
 Content-Type: application/json
 
 {
@@ -153,19 +153,19 @@ Content-Type: application/json
 
 #### 获取当前用户信息
 ```http
-GET /api/apiservice/api/currentUser
+GET /apiservice/api/currentUser
 Authorization: Bearer {token}
 ```
 
 #### 用户登出
 ```http
-POST /api/apiservice/api/login/outLogin
+POST /apiservice/api/login/outLogin
 Authorization: Bearer {token}
 ```
 
 #### 用户注册
 ```http
-POST /api/apiservice/api/register
+POST /apiservice/api/register
 Content-Type: application/json
 
 {
@@ -179,7 +179,7 @@ Content-Type: application/json
 
 #### 获取用户列表（分页）
 ```http
-POST /api/apiservice/api/users/list
+POST /apiservice/api/users/list
 Content-Type: application/json
 
 {
@@ -193,7 +193,7 @@ Content-Type: application/json
 
 #### 创建用户
 ```http
-POST /api/apiservice/api/users/management
+POST /apiservice/api/users/management
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -208,7 +208,7 @@ Content-Type: application/json
 
 #### 更新用户
 ```http
-PUT /api/apiservice/api/users/{id}/update
+PUT /apiservice/api/users/{id}/update
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -222,13 +222,13 @@ Content-Type: application/json
 
 #### 删除用户
 ```http
-DELETE /api/apiservice/api/users/{id}
+DELETE /apiservice/api/users/{id}
 Authorization: Bearer {token}
 ```
 
 #### 批量操作用户
 ```http
-POST /api/apiservice/api/users/bulk-action
+POST /apiservice/api/users/bulk-action
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -240,20 +240,20 @@ Content-Type: application/json
 
 #### 获取用户统计信息
 ```http
-GET /api/apiservice/api/users/statistics
+GET /apiservice/api/users/statistics
 ```
 
 ### 个人中心 API
 
 #### 获取个人资料
 ```http
-GET /api/apiservice/api/users/profile
+GET /apiservice/api/users/profile
 Authorization: Bearer {token}
 ```
 
 #### 更新个人资料
 ```http
-PUT /api/apiservice/api/users/profile
+PUT /apiservice/api/users/profile
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -267,7 +267,7 @@ Content-Type: application/json
 
 #### 修改密码
 ```http
-PUT /api/apiservice/api/users/profile/password
+PUT /apiservice/api/users/profile/password
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -282,7 +282,7 @@ Content-Type: application/json
 
 #### 获取天气预测
 ```http
-GET /api/apiservice/weatherforecast
+GET /apiservice/weatherforecast
 ```
 
 ## 🗄️ 数据模型

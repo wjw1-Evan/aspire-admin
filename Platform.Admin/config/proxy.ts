@@ -12,15 +12,15 @@
 export default {
   // 开发环境代理配置 - 指向Aspire网关
   dev: {
-    // localhost:8000/api/** -> http://localhost:15000/api/apiservice/**
+    // localhost:8000/api/** -> http://localhost:15000/apiservice/**
     '/api/': {
       // 要代理的地址 - Aspire网关地址
       target: 'http://localhost:15000',
       // 配置了这个可以从 http 代理到 https
       // 依赖 origin 的功能可能需要这个，比如 cookie
       changeOrigin: true,
-      // 路径重写：将 /api/ 重写为 /api/apiservice/
-      pathRewrite: { '^/api/': '/api/apiservice/' },
+      // 路径重写：将 /api/ 重写为 /apiservice/
+      pathRewrite: { '^/api/': '/apiservice/' },
       // 确保请求头正确传递
       headers: {
         'Connection': 'keep-alive',

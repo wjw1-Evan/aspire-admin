@@ -1,7 +1,7 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
+import { SymbolViewProps } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
@@ -18,6 +18,28 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'person.fill': 'person',
+  'person.circle.fill': 'account-circle',
+  'envelope.fill': 'email',
+  'phone.fill': 'phone',
+  'location.fill': 'location-on',
+  'calendar.fill': 'event',
+  'sun.max.fill': 'light-mode',
+  'moon.fill': 'dark-mode',
+  'bell.fill': 'notifications',
+  'lock.fill': 'lock',
+  'gear': 'settings',
+  'questionmark.circle.fill': 'help',
+  'info.circle.fill': 'info',
+  'arrow.clockwise': 'refresh',
+  'camera.fill': 'camera-alt',
+  'power': 'power-settings-new',
+  'checkmark.circle.fill': 'check-circle',
+  'bolt.fill': 'flash-on',
+  'xmark': 'close',
+  'checkmark': 'check',
+  'eye.fill': 'visibility',
+  'eye.slash.fill': 'visibility-off',
 } as IconMapping;
 
 /**
@@ -31,11 +53,10 @@ export function IconSymbol({
   color,
   style,
 }: {
-  name: IconSymbolName;
-  size?: number;
-  color: string | OpaqueColorValue;
-  style?: StyleProp<TextStyle>;
-  weight?: SymbolWeight;
+  readonly name: IconSymbolName;
+  readonly size?: number;
+  readonly color: string | OpaqueColorValue;
+  readonly style?: StyleProp<TextStyle>;
 }) {
   return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
 }

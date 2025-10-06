@@ -1,0 +1,439 @@
+---
+globs: **/Platform.App/**,**/app/**,**/components/**,**/hooks/**,**/services/**
+description: React Native 和 Expo 移动端开发规范
+---
+
+# React Native 和 Expo 移动端开发规范
+
+## 📱 项目架构
+
+### 技术栈
+- **React Native** - 跨平台移动应用框架
+- **Expo** - React Native 开发平台
+- **Expo Router** - 基于文件系统的路由
+- **TypeScript** - 类型安全的 JavaScript
+- **AsyncStorage** - 本地数据存储
+
+### 目录结构
+```
+Platform.App/
+├── app/                    # 页面路由 (Expo Router)
+│   ├── (tabs)/            # 标签页路由
+│   ├── auth/              # 认证相关页面
+│   └── _layout.tsx        # 根布局
+├── components/            # 可复用组件
+├── contexts/              # React Context
+├── hooks/                 # 自定义 Hooks
+├── services/              # API 服务
+├── types/                 # TypeScript 类型定义
+├── utils/                 # 工具函数
+└── constants/             # 常量配置
+```
+
+## 🎯 路由系统
+
+### Expo Router 使用
+```typescript
+// ✅ 推荐：页面路由定义
+// app/(tabs)/index.tsx - 首页
+// app/(tabs)/profile.tsx - 个人中心
+// app/auth/login.tsx - 登录页面
+// app/auth/register.tsx - 注册页面
+
+// ✅ 推荐：导航使用
+import { router } from 'expo-router';
+
+const navigateToProfile = () => {
+  router.push('/profile');
+};
+
+const navigateBack = () => {
+  router.back();
+};
+
+const replaceRoute = () => {
+  router.replace('/auth/login');
+};
+```
+
+### 标签页配置
+```typescript
+// ✅ 推荐：标签页布局
+import { Tabs } from 'expo-router';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: Colors.light.tint,
+        headerShown: false,
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: '首页',
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol name="house" color={color} size={24} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: '我',
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol name="person" color={color} size={24} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
+```
+
+## 🎨 主题化组件
+
+### 主题化组件使用
+```typescript
+// ✅ 推荐：使用主题化组件
+import { ThemedText, ThemedView, ThemedButton, ThemedInput } from '@/components';
+
+export default function MyScreen() {
+  return (
+    <ThemedView style={styles.container}>
+      <ThemedText type="title">标题</ThemedText>
+      <ThemedText type="subtitle">副标题</ThemedText>
+      <ThemedInput placeholder="输入内容" />
+      <ThemedButton title="按钮" />
+    </ThemedView>
+  );
+}
+```
+
+### 主题颜色获取
+```typescript
+// ✅ 推荐：获取主题颜色
+import { useThemeColor } from '@/hooks/use-theme-color';
+
+export default function CustomComponent() {
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const borderColor = useThemeColor({}, 'border');
+  
+  return (
+    <View style={{ backgroundColor, borderColor }}>
+      <Text style={{ color: textColor }}>自定义组件</Text>
+    </View>
+  );
+}
+```
+
+## 🔧 组件开发
+
+### 组件结构
+```typescript
+// ✅ 推荐：标准组件结构
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { ThemedText } from '@/components';
+
+interface CustomCardProps {
+  readonly title: string;
+  readonly content: string;
+  readonly onPress?: () => void;
+}
+
+export function CustomCard({ title, content, onPress }: CustomCardProps) {
+  return (
+    <View style={styles.container}>
+      <ThemedText type="subtitle">{title}</ThemedText>
+      <ThemedText>{content}</ThemedText>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+});
+```
+
+### 图标使用
+```typescript
+// ✅ 推荐：使用 IconSymbol 组件
+import { IconSymbol } from '@/components/ui/icon-symbol';
+
+export function IconExample() {
+  return (
+    <View>
+      <IconSymbol name="house" size={24} color="#000" />
+      <IconSymbol name="person" size={32} color="#007AFF" />
+      <IconSymbol name="gear" size={20} color="#FF3B30" />
+    </View>
+  );
+}
+```
+
+## 📱 平台适配
+
+### 平台特定代码
+```typescript
+// ✅ 推荐：平台适配
+import { Platform, StyleSheet } from 'react-native';
+
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: Platform.OS === 'ios' ? 44 : 24,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+  },
+  shadow: Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    android: {
+      elevation: 4,
+    },
+  }),
+});
+```
+
+### 状态栏处理
+```typescript
+// ✅ 推荐：状态栏配置
+import { StatusBar } from 'expo-status-bar';
+import { useTheme } from '@/contexts/ThemeContext';
+
+export default function App() {
+  const { isDark } = useTheme();
+  
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      {/* 应用内容 */}
+    </>
+  );
+}
+```
+
+## 💾 数据存储
+
+### AsyncStorage 使用
+```typescript
+// ✅ 推荐：数据存储服务
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export class StorageService {
+  static async setItem(key: string, value: any): Promise<void> {
+    try {
+      const jsonValue = JSON.stringify(value);
+      await AsyncStorage.setItem(key, jsonValue);
+    } catch (error) {
+      console.error('Error saving data:', error);
+    }
+  }
+  
+  static async getItem<T>(key: string): Promise<T | null> {
+    try {
+      const jsonValue = await AsyncStorage.getItem(key);
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (error) {
+      console.error('Error reading data:', error);
+      return null;
+    }
+  }
+  
+  static async removeItem(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch (error) {
+      console.error('Error removing data:', error);
+    }
+  }
+}
+```
+
+### 认证状态管理
+```typescript
+// ✅ 推荐：认证状态 Hook
+import { useState, useEffect } from 'react';
+import { StorageService } from '@/services/StorageService';
+
+export function useAuth() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+  
+  const checkAuthStatus = async () => {
+    try {
+      const token = await StorageService.getItem<string>('auth_token');
+      const userInfo = await StorageService.getItem<User>('user_info');
+      
+      if (token && userInfo) {
+        setUser(userInfo);
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const login = async (credentials: LoginRequest) => {
+    try {
+      const response = await AuthService.login(credentials);
+      await StorageService.setItem('auth_token', response.token);
+      await StorageService.setItem('user_info', response.user);
+      
+      setUser(response.user);
+      setIsAuthenticated(true);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+  
+  const logout = async () => {
+    await StorageService.removeItem('auth_token');
+    await StorageService.removeItem('user_info');
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+  
+  return { isAuthenticated, user, loading, login, logout };
+}
+```
+
+## 🎣 自定义 Hooks
+
+### 数据获取 Hook
+```typescript
+// ✅ 推荐：数据获取 Hook
+import { useState, useEffect, useCallback } from 'react';
+import { UserService } from '@/services/UserService';
+
+export function useUsers() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await UserService.getUsers();
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '获取用户列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+  
+  return { users, loading, error, refetch: fetchUsers };
+}
+```
+
+### 主题 Hook
+```typescript
+// ✅ 推荐：主题 Hook
+import { useTheme } from '@/contexts/ThemeContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
+
+export function useThemedStyles() {
+  const { isDark, themeMode } = useTheme();
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const cardColor = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  
+  return {
+    isDark,
+    themeMode,
+    colors: {
+      background: backgroundColor,
+      text: textColor,
+      card: cardColor,
+      border: borderColor,
+    },
+  };
+}
+```
+
+## 🚫 避免的做法
+
+- 不要直接使用 `fetch`，使用封装的服务类
+- 不要忘记处理网络错误和加载状态
+- 不要硬编码样式值，使用主题系统
+- 不要忽略平台差异
+- 不要忘记清理副作用和监听器
+
+## 🔧 性能优化
+
+### 列表优化
+```typescript
+// ✅ 推荐：FlatList 优化
+import { FlatList } from 'react-native';
+
+export function UserList({ users }: { users: User[] }) {
+  const renderItem = useCallback(({ item }: { item: User }) => (
+    <UserCard user={item} />
+  ), []);
+  
+  const keyExtractor = useCallback((item: User) => item.id, []);
+  
+  return (
+    <FlatList
+      data={users}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={10}
+      windowSize={10}
+    />
+  );
+}
+```
+
+### 图片优化
+```typescript
+// ✅ 推荐：使用 Expo Image
+import { Image } from 'expo-image';
+
+export function OptimizedImage({ uri, style }: { uri: string; style?: any }) {
+  return (
+    <Image
+      source={{ uri }}
+      style={style}
+      contentFit="cover"
+      transition={200}
+      cachePolicy="memory-disk"
+    />
+  );
+}
+```
+
+## 🎯 最佳实践
+
+1. **使用主题化组件** - 确保所有 UI 元素都能正确适配主题
+2. **平台适配** - 考虑 iOS 和 Android 的差异
+3. **性能优化** - 使用适当的优化技术
+4. **错误处理** - 提供良好的错误反馈
+5. **用户体验** - 关注加载状态和交互反馈

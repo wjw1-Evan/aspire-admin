@@ -28,11 +28,11 @@ var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
     .WithConfiguration(config =>
     {
-        // 微服务路由配置 - 统一通过/api/{service}路径访问
+        // 微服务路由配置 - 统一通过/{service}路径访问
         // 使用通配符{**catch-all}捕获所有子路径
         foreach (var service in services)
         {
-            var route = $"/api/{service.Key}/{{**catch-all}}";
+            var route = $"/{service.Key}/{{**catch-all}}";
             config.AddRoute(route, config.AddCluster(service.Value))
                 .WithTransformPathRouteValues("/api/{**catch-all}")
             ;

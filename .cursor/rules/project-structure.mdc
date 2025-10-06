@@ -1,0 +1,51 @@
+---
+alwaysApply: true
+description: 项目结构和架构指南
+---
+
+# Aspire Admin Platform 项目结构指南
+
+这是一个基于 .NET Aspire 构建的现代化微服务管理平台，包含以下核心组件：
+
+## 🏗️ 项目架构
+
+### 核心组件
+- **Platform.AppHost** - Aspire 应用主机，负责服务编排和配置
+- **Platform.ApiService** - API 服务，提供用户管理、认证等 REST API
+- **Platform.Admin** - React + Ant Design Pro 企业级管理后台
+- **Platform.App** - React Native + Expo 跨平台移动应用
+- **Platform.ServiceDefaults** - 共享服务配置
+
+### 技术栈
+- **后端**: .NET 9.0, .NET Aspire, MongoDB, YARP, Scalar API 文档
+- **前端**: React 19, Ant Design Pro, UmiJS, TypeScript, Biome
+- **移动端**: React Native, Expo, Expo Router, TypeScript
+
+## 📁 目录结构
+
+```
+Platform/
+├── Platform.AppHost/          # 应用编排和配置中心
+├── Platform.ApiService/       # API 服务 (C#)
+├── Platform.Admin/            # 管理后台 (React + Ant Design Pro)
+├── Platform.App/              # 移动应用 (React Native + Expo)
+└── Platform.ServiceDefaults/  # 共享服务配置
+```
+
+## 🔧 开发指南
+
+### 启动项目
+```bash
+dotnet run --project Platform.AppHost
+```
+
+### 访问地址
+- 管理后台: http://localhost:15001
+- 移动应用: http://localhost:15002
+- API 网关: http://localhost:15000
+- API 文档: http://localhost:15000/scalar/v1
+
+### 默认账户
+- 用户名: `admin`
+- 密码: `admin123`
+- 角色: `admin`

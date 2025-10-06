@@ -1,8 +1,6 @@
 using MongoDB.Driver;
 using Platform.ApiService.Models;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Platform.ApiService.Services;
 
@@ -27,9 +25,7 @@ public class AuthService
 
     private static string HashPassword(string password)
     {
-        using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(hashedBytes);
+        return BCrypt.Net.BCrypt.HashPassword(password);
     }
 
     private static bool VerifyPassword(string? password, string hashedPassword)
@@ -37,8 +33,7 @@ public class AuthService
         if (string.IsNullOrEmpty(password))
             return false;
             
-        var hashedInput = HashPassword(password);
-        return hashedInput == hashedPassword;
+        return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
     }
 
     public async Task<CurrentUser?> GetCurrentUserAsync()

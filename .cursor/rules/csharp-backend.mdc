@@ -1,0 +1,208 @@
+---
+globs: *.cs
+description: C# 后端开发规范和最佳实践
+---
+
+# C# 后端开发规范
+
+## 🎯 项目结构
+
+### 服务架构
+- **Platform.ApiService** - 主要的 API 服务
+- **Platform.ServiceDefaults** - 共享服务配置
+- **Platform.AppHost** - 应用编排和配置
+
+### 目录结构
+```
+Platform.ApiService/
+├── Controllers/          # API 控制器
+├── Models/              # 数据模型
+├── Services/            # 业务逻辑服务
+├── Scripts/             # 数据库脚本
+└── Program.cs           # 应用程序入口
+```
+
+## 🏗️ 代码规范
+
+### 命名约定
+- **类**: 使用 PascalCase (如 `UserService`)
+- **方法**: 使用 PascalCase (如 `GetUserById`)
+- **属性**: 使用 PascalCase (如 `UserName`)
+- **字段**: 使用 camelCase 或 _camelCase (如 `_userRepository`)
+- **常量**: 使用 UPPER_SNAKE_CASE (如 `MAX_RETRY_COUNT`)
+
+### 控制器设计
+```csharp
+// ✅ 推荐：标准的 API 控制器
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
+{
+    private readonly IUserService _userService;
+    
+    public UsersController(IUserService userService)
+    {
+        _userService = userService;
+    }
+    
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    {
+        var users = await _userService.GetAllUsersAsync();
+        return Ok(users);
+    }
+    
+    [HttpPost]
+    public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserRequest request)
+    {
+        var user = await _userService.CreateUserAsync(request);
+        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+    }
+}
+```
+
+### 服务层设计
+```csharp
+// ✅ 推荐：服务接口和实现
+public interface IUserService
+{
+    Task<IEnumerable<User>> GetAllUsersAsync();
+    Task<User?> GetUserByIdAsync(string id);
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<bool> UpdateUserAsync(string id, UpdateUserRequest request);
+    Task<bool> DeleteUserAsync(string id);
+}
+
+public class UserService : IUserService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly ILogger<UserService> _logger;
+    
+    public UserService(IUserRepository userRepository, ILogger<UserService> logger)
+    {
+        _userRepository = userRepository;
+        _logger = logger;
+    }
+    
+    public async Task<IEnumerable<User>> GetAllUsersAsync()
+    {
+        try
+        {
+            return await _userRepository.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving users");
+            throw;
+        }
+    }
+}
+```
+
+## 🗄️ 数据访问
+
+### MongoDB 集成
+```csharp
+// ✅ 推荐：MongoDB 数据模型
+public class User
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = string.Empty;
+    
+    [BsonElement("username")]
+    public string Username { get; set; } = string.Empty;
+    
+    [BsonElement("email")]
+    public string Email { get; set; } = string.Empty;
+    
+    [BsonElement("role")]
+    public string Role { get; set; } = "user";
+    
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+```
+
+### 仓储模式
+```csharp
+// ✅ 推荐：仓储接口和实现
+public interface IUserRepository
+{
+    Task<IEnumerable<User>> GetAllAsync();
+    Task<User?> GetByIdAsync(string id);
+    Task<User> CreateAsync(User user);
+    Task<bool> UpdateAsync(string id, User user);
+    Task<bool> DeleteAsync(string id);
+}
+
+public class UserRepository : IUserRepository
+{
+    private readonly IMongoCollection<User> _users;
+    
+    public UserRepository(IMongoDatabase database)
+    {
+        _users = database.GetCollection<User>("users");
+    }
+    
+    public async Task<IEnumerable<User>> GetAllAsync()
+    {
+        return await _users.Find(_ => true).ToListAsync();
+    }
+}
+```
+
+## 🔐 认证和授权
+
+### JWT 认证
+```csharp
+// ✅ 推荐：JWT 配置
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
+```
+
+## 🚫 避免的做法
+
+- 不要使用 `async void`（除了事件处理程序）
+- 不要忽略异常（使用适当的异常处理）
+- 不要使用 `string` 代替强类型
+- 不要忘记配置依赖注入
+- 不要在生产环境中暴露敏感信息
+
+## 🔧 配置管理
+
+### 应用配置
+```csharp
+// ✅ 推荐：使用 IConfiguration
+public class DatabaseSettings
+{
+    public string ConnectionString { get; set; } = string.Empty;
+    public string DatabaseName { get; set; } = string.Empty;
+}
+
+// 在 Program.cs 中配置
+builder.Services.Configure<DatabaseSettings>(
+    builder.Configuration.GetSection("Database"));
+```
+
+### 环境配置
+```csharp
+// ✅ 推荐：环境特定配置
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSwaggerGen();
+}
+```

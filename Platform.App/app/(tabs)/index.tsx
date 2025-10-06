@@ -1,98 +1,226 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
+import { StyleSheet, ScrollView, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { ThemeDebug } from '@/components/theme-debug';
+import { PrussianBluePalette } from '@/components/prussian-blue-palette';
+import { StorageDebug } from '@/components/storage-debug';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { user } = useAuth();
+  const backgroundColor = useThemeColor({}, 'background');
+  const cardBackgroundColor = useThemeColor(
+    { light: '#FFFFFF', dark: '#1E293B' },
+    'card'
+  );
+  const borderColor = useThemeColor({}, 'border');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
+  return (
+    <ScrollView style={[styles.container, { backgroundColor }]}>
+      {/* 欢迎区域 */}
+      <ThemedView style={styles.welcomeSection}>
+        <View style={styles.welcomeContent}>
+          <ThemedText type="title" style={styles.welcomeTitle}>
+            欢迎回来！
+          </ThemedText>
+          <ThemedText style={styles.welcomeSubtitle}>
+            {user?.name || user?.userid || '用户'}
+          </ThemedText>
+        </View>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
+
+      {/* 用户信息卡片 */}
+      <ThemedView style={[styles.userCard, { backgroundColor: cardBackgroundColor }]}>
+        <View style={styles.cardHeader}>
+          <IconSymbol name="person.circle.fill" size={24} color={useThemeColor({}, 'tint')} />
+          <ThemedText type="subtitle" style={styles.cardTitle}>
+            个人信息
+          </ThemedText>
+        </View>
+        <View style={styles.userInfo}>
+          <View style={[styles.infoRow, { borderBottomColor: borderColor }]}>
+            <ThemedText style={styles.infoLabel}>用户名</ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {user?.name || user?.userid || '未知'}
+            </ThemedText>
+          </View>
+          {user?.email && (
+            <View style={[styles.infoRow, { borderBottomColor: borderColor }]}>
+              <ThemedText style={styles.infoLabel}>邮箱</ThemedText>
+              <ThemedText style={styles.infoValue}>{user.email}</ThemedText>
+            </View>
+          )}
+          {user?.title && (
+            <View style={[styles.infoRow, { borderBottomColor: borderColor }]}>
+              <ThemedText style={styles.infoLabel}>职位</ThemedText>
+              <ThemedText style={styles.infoValue}>{user.title}</ThemedText>
+            </View>
+          )}
+        </View>
       </ThemedView>
-    </ParallaxScrollView>
+
+      {/* 应用信息 */}
+      <ThemedView style={[styles.appInfoCard, { backgroundColor: cardBackgroundColor }]}>
+        <View style={styles.cardHeader}>
+          <IconSymbol name="info.circle.fill" size={24} color={useThemeColor({}, 'success')} />
+          <ThemedText type="subtitle" style={styles.cardTitle}>
+            应用信息
+          </ThemedText>
+        </View>
+        <ThemedText style={styles.appDescription}>
+          基于 .NET Aspire 构建的现代化微服务管理平台，提供用户管理、API 网关和移动端应用等功能。
+        </ThemedText>
+        <View style={styles.featureList}>
+          <View style={styles.featureItem}>
+            <IconSymbol name="checkmark.circle.fill" size={16} color={useThemeColor({}, 'success')} />
+            <ThemedText style={styles.featureText}>用户认证与管理</ThemedText>
+          </View>
+          <View style={styles.featureItem}>
+            <IconSymbol name="checkmark.circle.fill" size={16} color={useThemeColor({}, 'success')} />
+            <ThemedText style={styles.featureText}>微服务架构</ThemedText>
+          </View>
+          <View style={styles.featureItem}>
+            <IconSymbol name="checkmark.circle.fill" size={16} color={useThemeColor({}, 'success')} />
+            <ThemedText style={styles.featureText}>跨平台支持</ThemedText>
+          </View>
+        </View>
+      </ThemedView>
+
+      {/* 快速操作 */}
+      <ThemedView style={[styles.quickActionsCard, { backgroundColor: cardBackgroundColor }]}>
+        <View style={styles.cardHeader}>
+          <IconSymbol name="bolt.fill" size={24} color={useThemeColor({}, 'warning')} />
+          <ThemedText type="subtitle" style={styles.cardTitle}>
+            快速操作
+          </ThemedText>
+        </View>
+        <ThemedText style={styles.quickActionsDescription}>
+          点击底部导航栏访问更多功能
+        </ThemedText>
+        <View style={styles.quickActionsList}>
+          <View style={styles.quickActionItem}>
+            <IconSymbol name="person.fill" size={20} color={useThemeColor({}, 'tint')} />
+            <ThemedText style={styles.quickActionText}>个人中心</ThemedText>
+          </View>
+          <View style={styles.quickActionItem}>
+            <IconSymbol name="paperplane.fill" size={20} color={useThemeColor({}, 'tint')} />
+            <ThemedText style={styles.quickActionText}>探索功能</ThemedText>
+          </View>
+        </View>
+      </ThemedView>
+
+      {/* 主题调试信息 */}
+      <ThemeDebug />
+
+      {/* 普鲁士蓝配色展示 */}
+      <PrussianBluePalette />
+
+      {/* 存储调试工具 */}
+      <StorageDebug />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
+  welcomeSection: {
+    padding: 24,
+    marginBottom: 12,
+  },
+  welcomeContent: {
+    alignItems: 'center',
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  welcomeSubtitle: {
+    fontSize: 16,
+    opacity: 0.7,
+  },
+  userCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    marginHorizontal: 16,
+  },
+  appInfoCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    marginHorizontal: 16,
+  },
+  quickActionsCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    marginHorizontal: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  userInfo: {
+    marginTop: 4,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  infoValue: {
+    fontSize: 14,
+    flex: 1,
+    textAlign: 'right',
+  },
+  appDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  featureList: {
+    marginTop: 8,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  featureText: {
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  quickActionsDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  quickActionsList: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  quickActionItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  quickActionText: {
+    fontSize: 12,
+    marginTop: 4,
   },
 });

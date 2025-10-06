@@ -37,7 +37,15 @@ var yarp = builder.AddYarp("apigateway")
         }
     });
 
-builder.AddNpmApp("react", "../Platform.Web")
+builder.AddNpmApp("admin", "../Platform.Web")
+    .WithReference(yarp)
+    .WaitFor(yarp)
+    .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
+    .WithHttpEndpoint(env: "PORT")
+    .WithExternalHttpEndpoints()
+    .PublishAsDockerFile();
+ 
+ builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start

@@ -37,7 +37,7 @@ var yarp = builder.AddYarp("apigateway")
         }
     });
 
-builder.AddNpmApp("admin", "../Platform.Web")
+builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start

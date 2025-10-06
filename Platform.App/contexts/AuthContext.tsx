@@ -247,6 +247,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // 初始化时检查认证状态
   useEffect(() => {
+    // 设置API服务的登出回调
+    apiService.setLogoutCallback(logout);
+    
     checkAuth();
     
     // 监听API服务的认证状态变化
@@ -260,7 +263,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       apiService.removeAuthStateChangeListener(handleAuthStateChange);
     };
-  }, []);
+  }, [logout]);
 
   const value: AuthContextType = useMemo(() => ({
     ...state,

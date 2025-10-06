@@ -11,9 +11,15 @@ const TOKEN_KEY = 'auth_token';
 class ApiService {
   private readonly baseURL: string;
   private authStateChangeListeners: (() => void)[] = [];
+  private logoutCallback: (() => Promise<void>) | null = null;
 
   constructor() {
     this.baseURL = API_BASE_URL;
+  }
+
+  // 设置登出回调函数
+  setLogoutCallback(callback: () => Promise<void>) {
+    this.logoutCallback = callback;
   }
 
   // 添加认证状态变化监听器
@@ -35,6 +41,26 @@ class ApiService {
         console.error('Error in auth state change listener:', error);
       }
     });
+  }
+
+  // 处理认证失败
+  private async handleAuthFailure() {
+    console.log('API: Authentication failed, logging out user');
+    
+    // 清除本地token
+    await this.removeToken();
+    
+    // 如果有登出回调，调用它来更新认证状态
+    if (this.logoutCallback) {
+      try {
+        await this.logoutCallback();
+      } catch (error) {
+        console.error('API: Error calling logout callback:', error);
+      }
+    }
+    
+    // 触发认证状态变化事件
+    this.triggerAuthStateChange();
   }
 
   private async request<T>(
@@ -66,9 +92,8 @@ class ApiService {
       
       // 检查是否是认证相关的错误
       if (response.status === 401 || response.status === 403) {
-        await this.removeToken();
-        // 触发认证状态更新事件
-        this.triggerAuthStateChange();
+        await this.handleAuthFailure();
+        throw new Error('Authentication failed. Please login again.');
       }
       
       if (!response.ok) {
@@ -157,7 +182,7 @@ class ApiService {
       });
 
       if (response.status === 401 || response.status === 403) {
-        await this.removeToken();
+        await this.handleAuthFailure();
         return false;
       }
 

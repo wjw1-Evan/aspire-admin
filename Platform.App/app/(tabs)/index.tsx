@@ -1,6 +1,7 @@
 import { StyleSheet, ScrollView, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ThemedButton } from '@/components/themed-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -119,6 +120,32 @@ export default function HomeScreen() {
 
       {/* 存储调试工具 */}
       <StorageDebug />
+
+      {/* 401测试工具 */}
+      <ThemedView style={[styles.testCard, { backgroundColor: cardBackgroundColor }]}>
+        <View style={styles.cardHeader}>
+          <IconSymbol name="exclamationmark.triangle.fill" size={24} color={useThemeColor({}, 'warning')} />
+          <ThemedText type="subtitle" style={styles.cardTitle}>
+            401测试工具
+          </ThemedText>
+        </View>
+        <ThemedText style={styles.testDescription}>
+          测试API返回401状态码时的自动登出功能
+        </ThemedText>
+        <ThemedButton
+          title="测试401处理"
+          onPress={async () => {
+            try {
+              const { TokenTestUtils } = await import('@/utils/token-test');
+              await TokenTestUtils.test401Handling();
+            } catch (error) {
+              console.error('401测试失败:', error);
+            }
+          }}
+          variant="danger"
+          style={styles.testButton}
+        />
+      </ThemedView>
     </ScrollView>
   );
 }
@@ -222,5 +249,18 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 12,
     marginTop: 4,
+  },
+  testCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    marginHorizontal: 16,
+  },
+  testDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  testButton: {
+    borderRadius: 8,
   },
 });

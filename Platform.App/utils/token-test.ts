@@ -99,6 +99,50 @@ export class TokenTestUtils {
     
     console.log('=== API请求Token验证测试结束 ===');
   }
+  
+  // 测试401状态码处理和自动登出
+  static async test401Handling() {
+    console.log('=== 401状态码处理测试开始 ===');
+    
+    try {
+      // 1. 先获取当前token
+      const currentToken = await apiService.getToken();
+      console.log('1. 当前token状态:', currentToken ? '存在' : '不存在');
+      
+      if (!currentToken) {
+        console.log('没有token，跳过401测试');
+        return;
+      }
+      
+      // 2. 模拟设置一个无效的token（过期或无效）
+      console.log('2. 设置无效token进行测试...');
+      await apiService.setToken('invalid_token_for_testing');
+      
+      // 3. 尝试调用需要认证的API，应该返回401
+      console.log('3. 尝试调用API，预期返回401...');
+      try {
+        const response = await authService.getCurrentUser();
+        console.log('API调用成功（意外）:', response);
+      } catch (error) {
+        console.log('API调用失败（预期）:', error);
+        
+        // 4. 检查token是否被清除
+        const tokenAfter401 = await apiService.getToken();
+        console.log('4. 401处理后token状态:', tokenAfter401 ? '仍存在' : '已清除');
+        
+        if (!tokenAfter401) {
+          console.log('✅ 401处理成功：token已被清除');
+        } else {
+          console.log('❌ 401处理失败：token未被清除');
+        }
+      }
+      
+    } catch (error) {
+      console.error('401状态码处理测试失败:', error);
+    }
+    
+    console.log('=== 401状态码处理测试结束 ===');
+  }
 }
 
 // 导出测试函数供开发时使用
@@ -106,4 +150,5 @@ export const runTokenTests = async () => {
   await TokenTestUtils.testTokenValidation();
   await TokenTestUtils.simulateTokenExpiration();
   await TokenTestUtils.testApiRequestWithInvalidToken();
+  await TokenTestUtils.test401Handling();
 };

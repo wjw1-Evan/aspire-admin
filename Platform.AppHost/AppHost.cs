@@ -7,18 +7,20 @@ using Microsoft.Extensions.Hosting;
 var builder = DistributedApplication.CreateBuilder(args);
 
 var mongo = builder.AddMongoDB("mongo").WithMongoExpress()
-                   .WithLifetime(ContainerLifetime.Persistent);
+                   .WithLifetime(ContainerLifetime.Persistent)
+                   // 不暴露对外端口，只供内部服务访问
+                   ;
 
 var mongodb = mongo.AddDatabase("mongodb");
 
 var services = new Dictionary<string, IResourceBuilder<ProjectResource>>
 {
-    // 核心业务服务 http://localhost:15000/api/apiservice/users
+    // 核心业务服务（端口不暴露，仅供内部访问）
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(mongodb)
-     .WithHttpHealthCheck("/health")
-
-};
+    .WithHttpEndpoint()
+    .WithHttpHealthCheck("/health")
+ };
 
 
 
@@ -41,16 +43,14 @@ builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
-    .WithHttpEndpoint(env: "PORT")
-    .WithExternalHttpEndpoints()
+    .WithHttpEndpoint(env: "PORT",port:15001)
     .PublishAsDockerFile();
  
  builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
-    .WithHttpEndpoint(env: "PORT")
-    .WithExternalHttpEndpoints()
+    .WithHttpEndpoint(env: "PORT",port:15002)
     .PublishAsDockerFile();
  
 

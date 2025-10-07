@@ -38,7 +38,7 @@ export function useTokenValidation() {
           
           if (!isValid) {
             // Token 无效，执行登出
-            console.log('Token validation failed, user will be logged out');
+            // 登出逻辑由AuthContext处理
           }
         } catch (error) {
           console.error('Token validation error:', error);

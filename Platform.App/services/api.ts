@@ -366,7 +366,6 @@ class ApiService {
 
       // 检查响应是否成功
       if (!response.ok) {
-        console.error('API: Token validation failed with status:', response.status);
         return false;
       }
 
@@ -376,13 +375,11 @@ class ApiService {
         if (data && typeof data === 'object') {
           // 检查响应格式是否符合预期
           if (data.success === false || (data.data && data.data.isLogin === false)) {
-            console.log('API: User not logged in according to response data');
             return false;
           }
           return true;
         }
-      } catch (parseError) {
-        console.error('API: Failed to parse token validation response:', parseError);
+      } catch {
         return false;
       }
 

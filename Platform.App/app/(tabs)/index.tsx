@@ -1,7 +1,6 @@
-import { StyleSheet, ScrollView, View, Alert } from 'react-native';
+import { StyleSheet, ScrollView, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { ThemedButton } from '@/components/themed-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -121,63 +120,6 @@ export default function HomeScreen() {
       {/* 存储调试工具 */}
       <StorageDebug />
 
-      {/* 认证调试工具 */}
-      <ThemedView style={[styles.testCard, { backgroundColor: cardBackgroundColor }]}>
-        <View style={styles.cardHeader}>
-          <IconSymbol name="wrench.and.screwdriver.fill" size={24} color={useThemeColor({}, 'warning')} />
-          <ThemedText type="subtitle" style={styles.cardTitle}>
-            认证调试工具
-          </ThemedText>
-        </View>
-        <ThemedText style={styles.testDescription}>
-          调试认证流程和token验证问题
-        </ThemedText>
-        <View style={styles.testButtons}>
-          <ThemedButton
-            title="测试认证流程"
-            onPress={async () => {
-              try {
-                const { AuthDebugUtils } = await import('@/utils/auth-debug');
-                await AuthDebugUtils.testAuthFlow();
-                Alert.alert('调试完成', '请查看控制台日志获取详细信息');
-              } catch (error) {
-                console.error('认证流程测试失败:', error);
-                Alert.alert('测试失败', error instanceof Error ? error.message : '未知错误');
-              }
-            }}
-            variant="primary"
-            style={[styles.testButton, styles.thirdButton]}
-          />
-          <ThemedButton
-            title="测试Token验证"
-            onPress={async () => {
-              try {
-                const { AuthDebugUtils } = await import('@/utils/auth-debug');
-                await AuthDebugUtils.testTokenValidationFix();
-                Alert.alert('测试完成', '请查看控制台日志获取详细信息');
-              } catch (error) {
-                console.error('Token验证测试失败:', error);
-                Alert.alert('测试失败', error instanceof Error ? error.message : '未知错误');
-              }
-            }}
-            variant="secondary"
-            style={[styles.testButton, styles.thirdButton]}
-          />
-          <ThemedButton
-            title="测试401处理"
-            onPress={async () => {
-              try {
-                const { TokenTestUtils } = await import('@/utils/token-test');
-                await TokenTestUtils.test401Handling();
-              } catch (error) {
-                console.error('401测试失败:', error);
-              }
-            }}
-            variant="danger"
-            style={[styles.testButton, styles.thirdButton]}
-          />
-        </View>
-      </ThemedView>
     </ScrollView>
   );
 }
@@ -291,19 +233,5 @@ const styles = StyleSheet.create({
   testDescription: {
     fontSize: 14,
     marginBottom: 16,
-  },
-  testButton: {
-    borderRadius: 8,
-  },
-  testButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  halfButton: {
-    flex: 1,
-  },
-  thirdButton: {
-    flex: 1,
   },
 });

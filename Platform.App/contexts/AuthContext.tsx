@@ -182,12 +182,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       dispatch({ type: 'AUTH_START' });
       
       const result = await authService.login(credentials);
-      console.log('AuthContext: Login result:', result);
       
       if (result.status === 'ok' && result.token && result.refreshToken) {
         // 获取用户信息
         const userResponse = await authService.getCurrentUser();
-        console.log('AuthContext: User response:', userResponse);
         
         if (userResponse.success && userResponse.data && userResponse.data.isLogin !== false) {
           const tokenExpiresAt = result.expiresAt ? new Date(result.expiresAt).getTime() : undefined;
@@ -200,13 +198,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
               tokenExpiresAt,
             },
           });
-          console.log('AuthContext: Login successful');
         } else {
-          console.log('AuthContext: User not logged in or invalid user data');
           throw new Error('获取用户信息失败');
         }
       } else {
-        console.log('AuthContext: Login failed - invalid result');
         throw new Error('登录失败');
       }
     } catch (error) {
@@ -301,7 +296,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       
       // 如果刷新失败，执行登出
-      console.log('AuthContext: Refresh auth failed, logging out');
       await logout();
     } catch (error) {
       console.error('AuthContext: Refresh auth failed:', error);
@@ -336,11 +330,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             },
           });
         } else {
-          console.log('AuthContext: User not logged in or invalid user data');
           await logout();
         }
       } else {
-        console.log('AuthContext: Token validation failed');
         await logout();
       }
     } catch (error) {

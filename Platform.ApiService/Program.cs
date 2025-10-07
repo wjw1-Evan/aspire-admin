@@ -15,6 +15,17 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
 
+// 配置 CORS - 允许全部跨域请求
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

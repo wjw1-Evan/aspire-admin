@@ -15,6 +15,7 @@ export function useTokenValidation() {
   const { isAuthenticated, validateToken } = useAuth();
   const validationInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef(AppState.currentState);
+  const lastValidationTime = useRef<number>(0);
 
   // 开始定期验证
   const startTokenValidation = useCallback(() => {
@@ -22,11 +23,18 @@ export function useTokenValidation() {
       clearInterval(validationInterval.current);
     }
 
-    // 每 5 分钟验证一次 token
+    // 每 10 分钟验证一次 token（减少频率）
     validationInterval.current = setInterval(async () => {
       if (isAuthenticated) {
+        // 避免频繁验证，如果最近已经验证过就跳过
+        const now = Date.now();
+        if (now - lastValidationTime.current < 5 * 60 * 1000) { // 5分钟内不重复验证
+          return;
+        }
+
         try {
           const isValid = await validateToken();
+          lastValidationTime.current = now;
           
           if (!isValid) {
             // Token 无效，执行登出
@@ -36,7 +44,7 @@ export function useTokenValidation() {
           console.error('Token validation error:', error);
         }
       }
-    }, 5 * 60 * 1000); // 5 分钟
+    }, 10 * 60 * 1000); // 改为10分钟
   }, [isAuthenticated, validateToken]);
 
   // 停止验证
@@ -50,9 +58,16 @@ export function useTokenValidation() {
   // 处理应用状态变化
   const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
     if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-      // 应用从后台回到前台时验证 token
+      // 应用从后台回到前台时验证 token（但要避免频繁验证）
       if (isAuthenticated) {
-        validateToken();
+        const now = Date.now();
+        if (now - lastValidationTime.current > 2 * 60 * 1000) { // 2分钟内不重复验证
+          validateToken().then(() => {
+            lastValidationTime.current = now;
+          }).catch(error => {
+            console.error('App state change token validation error:', error);
+          });
+        }
       }
     }
     

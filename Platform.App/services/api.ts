@@ -356,6 +356,7 @@ class ApiService {
         },
       });
 
+      // 检查HTTP状态码
       if (response.status === 401 || response.status === 403) {
         const authError = new Error('认证失败') as ApiError;
         authError.response = response;
@@ -363,7 +364,29 @@ class ApiService {
         return false;
       }
 
-      return response.ok;
+      // 检查响应是否成功
+      if (!response.ok) {
+        console.error('API: Token validation failed with status:', response.status);
+        return false;
+      }
+
+      // 检查响应内容，确保用户已登录
+      try {
+        const data = await response.json();
+        if (data && typeof data === 'object') {
+          // 检查响应格式是否符合预期
+          if (data.success === false || (data.data && data.data.isLogin === false)) {
+            console.log('API: User not logged in according to response data');
+            return false;
+          }
+          return true;
+        }
+      } catch (parseError) {
+        console.error('API: Failed to parse token validation response:', parseError);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('API: Token validation error:', error);
       return false;

@@ -18,6 +18,8 @@ export class AuthService {
   async login(credentials: LoginRequest): Promise<LoginResult> {
     try {
       const response = await apiService.post<LoginResult>('/login/account', credentials);
+
+      console.log('response', response);
       
       if (response.status === 'ok' && response.token && response.refreshToken) {
         // 保存 token 和刷新token到本地存储

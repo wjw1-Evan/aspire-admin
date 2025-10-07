@@ -315,23 +315,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
       
-      // 验证 token 有效性
-      const isValid = await validateToken();
-      
-      if (isValid) {
-        // 获取用户信息
-        const userResponse = await authService.getCurrentUser();
-        if (userResponse.success && userResponse.data && userResponse.data.isLogin !== false) {
-          dispatch({
-            type: 'AUTH_SUCCESS',
-            payload: {
-              user: userResponse.data,
-              token,
-            },
-          });
-        } else {
-          await logout();
-        }
+      // 直接获取用户信息来验证token（避免重复调用）
+      const userResponse = await authService.getCurrentUser();
+      if (userResponse.success && userResponse.data && userResponse.data.isLogin !== false) {
+        dispatch({
+          type: 'AUTH_SUCCESS',
+          payload: {
+            user: userResponse.data,
+            token,
+          },
+        });
       } else {
         await logout();
       }
@@ -339,7 +332,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('AuthContext: Check auth error:', error);
       await logout();
     }
-  }, [logout, validateToken]);
+  }, [logout]);
 
   // 更新用户资料
   const updateProfile = useCallback(async (profileData: Partial<CurrentUser>) => {

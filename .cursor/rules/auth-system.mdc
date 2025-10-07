@@ -1,0 +1,565 @@
+---
+globs: **/auth*.ts,**/auth*.tsx,**/Auth*.tsx,**/contexts/AuthContext.tsx,**/services/auth.ts,**/hooks/use-auth.ts
+description: 认证系统开发规范和最佳实践
+---
+
+# 认证系统开发规范
+
+## 🎯 系统架构
+
+### 统一认证架构
+
+项目采用前后端完全统一的认证系统：
+
+- **JWT Token 认证** - 基于 JWT 的简单 token 机制
+- **统一 API 接口** - 前后端使用相同的认证端点
+- **基于 access 字段的权限系统** - 简化的权限控制
+- **自动 token 验证** - 智能的网络重试机制
+
+### 核心组件
+
+- **AuthContext** - 全局认证状态管理
+- **AuthService** - 认证 API 服务
+- **AuthGuard** - 权限守卫组件
+- **RouteGuard** - 路由守卫组件
+- **useAuth** - 认证状态 Hook
+- **usePermissions** - 权限检查 Hook
+
+## 🔧 认证服务
+
+### API 接口规范
+
+```typescript
+// ✅ 推荐：统一的认证接口
+interface AuthEndpoints {
+  login: 'POST /login/account';           // 用户登录
+  logout: 'POST /login/outLogin';         // 用户登出
+  currentUser: 'GET /currentUser';        // 获取当前用户
+  register: 'POST /register';             // 用户注册
+  changePassword: 'POST /change-password'; // 修改密码
+  captcha: 'GET /login/captcha';          // 获取验证码
+}
+```
+
+### 认证服务实现
+
+```typescript
+// ✅ 推荐：认证服务类
+export class AuthService {
+  private static readonly BASE_URL = '/apiservice/api';
+  
+  static async login(credentials: LoginRequest): Promise<LoginResult> {
+    try {
+      const response = await apiClient.post(`${this.BASE_URL}/login/account`, credentials);
+      const { token, currentAuthority } = response.data;
+      
+      // 存储 token
+      await AsyncStorage.setItem('auth_token', token);
+      
+      return response.data;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  }
+  
+  static async logout(): Promise<void> {
+    try {
+      // 调用后端登出接口
+      await apiClient.post(`${this.BASE_URL}/login/outLogin`);
+      
+      // 清除本地存储
+      await AsyncStorage.removeItem('auth_token');
+      await AsyncStorage.removeItem('user_info');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }
+  
+  static async getCurrentUser(): Promise<CurrentUser> {
+    try {
+      const response = await apiClient.get(`${this.BASE_URL}/currentUser`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+      throw error;
+    }
+  }
+}
+```
+
+## 🎣 认证 Hooks
+
+### useAuth Hook
+
+```typescript
+// ✅ 推荐：认证状态管理 Hook
+export function useAuth() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+  
+  const checkAuthStatus = async () => {
+    try {
+      const token = await AuthService.getStoredToken();
+      
+      if (token) {
+        // 验证 token 有效性
+        const currentUser = await AuthService.getCurrentUser();
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      setError('认证验证失败');
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const login = async (credentials: LoginRequest) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await AuthService.login(credentials);
+      
+      // 获取用户信息
+      const currentUser = await AuthService.getCurrentUser();
+      setUser(currentUser);
+      setIsAuthenticated(true);
+      
+      return response;
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '登录失败');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const logout = async () => {
+    try {
+      await AuthService.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+  
+  return { isAuthenticated, user, loading, error, login, logout, checkAuthStatus };
+}
+```
+
+### usePermissions Hook
+
+```typescript
+// ✅ 推荐：权限检查 Hook
+export function usePermissions() {
+  const { user, isAuthenticated } = useAuth();
+  
+  const checkPermission = useCallback((check: PermissionCheck): boolean => {
+    if (!isAuthenticated || !user) {
+      return false;
+    }
+    
+    const { access, role } = check;
+    
+    // 检查角色（兼容性）
+    if (role && user.access === role) {
+      return true;
+    }
+    
+    // 检查权限（基于 access 字段）
+    if (access && user.access === access) {
+      return true;
+    }
+    
+    return false;
+  }, [user, isAuthenticated]);
+  
+  const checkRole = useCallback((role: string): boolean => {
+    return checkPermission({ role });
+  }, [checkPermission]);
+  
+  const checkAllRoles = useCallback((roles: string[]): boolean => {
+    return roles.every(role => checkRole(role));
+  }, [checkRole]);
+  
+  return {
+    checkPermission,
+    checkRole,
+    checkAllRoles,
+    user,
+    isAuthenticated,
+  };
+}
+```
+
+## 🛡️ 权限守卫
+
+### AuthGuard 组件
+
+```typescript
+// ✅ 推荐：权限守卫组件
+interface AuthGuardProps {
+  readonly permission?: PermissionCheck;
+  readonly fallback?: React.ReactNode;
+  readonly children: React.ReactNode;
+}
+
+export function AuthGuard({ permission, fallback, children }: AuthGuardProps) {
+  const { isAuthenticated, loading } = useAuth();
+  const { checkPermission } = usePermissions();
+  
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" replace />;
+  }
+  
+  if (permission && !checkPermission(permission)) {
+    return fallback || <AccessDenied />;
+  }
+  
+  return <>{children}</>;
+}
+```
+
+### RouteGuard 组件
+
+```typescript
+// ✅ 推荐：路由守卫组件
+export function RouteGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <LoadingScreen />;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" replace />;
+  }
+  
+  return <>{children}</>;
+}
+```
+
+## 📱 移动端认证
+
+### 认证上下文集成
+
+```typescript
+// ✅ 推荐：移动端认证上下文
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(authReducer, initialState);
+  
+  const value = useMemo(() => ({
+    ...state,
+    login: (credentials: LoginRequest) => dispatch({ type: 'LOGIN_START', payload: credentials }),
+    logout: () => dispatch({ type: 'LOGOUT' }),
+    checkAuth: () => dispatch({ type: 'CHECK_AUTH' }),
+  }), [state]);
+  
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+```
+
+### 认证错误处理
+
+```typescript
+// ✅ 推荐：认证错误处理组件
+export function AuthErrorHandler({ children }: { children: React.ReactNode }) {
+  const { error, clearError } = useAuth();
+  
+  useEffect(() => {
+    if (error) {
+      Alert.alert('认证错误', error, [
+        { text: '确定', onPress: clearError }
+      ]);
+    }
+  }, [error, clearError]);
+  
+  return <>{children}</>;
+}
+```
+
+## 🔄 认证流程
+
+### 登录流程
+
+```
+用户输入 → LoginRequest → POST /login/account → 
+LoginResult → 保存token → 获取用户信息 → 更新状态
+```
+
+### 权限检查流程
+
+```
+组件 → usePermissions → 检查user.access → 
+返回权限结果 → 渲染决策
+```
+
+### Token验证流程
+
+```
+定期检查 → validateToken() → GET /currentUser → 
+验证响应 → 更新用户状态
+```
+
+## 🔄 使用token刷新功能
+
+### 刷新Token机制
+
+项目已实现完整的token刷新功能，提升用户体验和安全性：
+
+#### 后端实现
+
+```csharp
+// ✅ 推荐：JWT服务中的刷新token方法
+public string GenerateRefreshToken(AppUser user)
+{
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(ClaimTypes.Role, user.Access),
+        new Claim("token_type", "refresh")
+    };
+
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_refreshTokenSecret));
+    var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+    var token = new JwtSecurityToken(
+        issuer: _issuer,
+        audience: _audience,
+        claims: claims,
+        expires: DateTime.UtcNow.AddDays(_refreshTokenExpirationDays),
+        signingCredentials: credentials
+    );
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+
+// ✅ 推荐：认证服务中的刷新token方法
+public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
+{
+    // 验证刷新token
+    var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
+    if (principal == null)
+    {
+        return new RefreshTokenResult
+        {
+            Status = "error",
+            ErrorMessage = "无效的刷新token"
+        };
+    }
+
+    // 获取用户信息并生成新token
+    var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
+    var user = await _users.Find(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync();
+    
+    if (user == null)
+    {
+        return new RefreshTokenResult
+        {
+            Status = "error",
+            ErrorMessage = "用户不存在或已被禁用"
+        };
+    }
+
+    // 生成新的访问token和刷新token
+    var newToken = _jwtService.GenerateToken(user);
+    var newRefreshToken = _jwtService.GenerateRefreshToken(user);
+
+    return new RefreshTokenResult
+    {
+        Status = "ok",
+        Token = newToken,
+        RefreshToken = newRefreshToken,
+        ExpiresAt = DateTime.UtcNow.AddMinutes(60)
+    };
+}
+```
+
+#### 移动端实现
+```typescript
+// ✅ 推荐：认证服务中的刷新token方法
+async refreshToken(refreshToken: string): Promise<ApiResponse<RefreshTokenResult>> {
+  try {
+    const request: RefreshTokenRequest = { refreshToken };
+    const response = await apiService.post<RefreshTokenResult>('/refresh-token', request);
+    
+    if (response.status === 'ok' && response.token && response.refreshToken) {
+      // 保存新的token和刷新token
+      const expiresAt = response.expiresAt ? new Date(response.expiresAt).getTime() : undefined;
+      await apiService.setTokens(response.token, response.refreshToken, expiresAt);
+      
+      return {
+        success: true,
+        data: response
+      };
+    } else {
+      return {
+        success: false,
+        errorMessage: response.errorMessage || '刷新token失败'
+      };
+    }
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    return {
+      success: false,
+      errorMessage: '刷新token失败'
+    };
+  }
+}
+
+// ✅ 推荐：认证上下文中的自动刷新逻辑
+const refreshAuth = useCallback(async () => {
+  try {
+    // 检查 token 是否存在且未过期
+    if (state.token && !isTokenExpired()) {
+      // 尝试获取最新用户信息
+      const userResponse = await authService.getCurrentUser();
+      if (userResponse.success && userResponse.data) {
+        dispatch({ type: 'AUTH_UPDATE_USER', payload: userResponse.data });
+        return;
+      }
+    }
+    
+    // 如果 token 无效或过期，尝试刷新 token
+    if (state.refreshToken) {
+      const refreshResult = await authService.refreshToken(state.refreshToken);
+      if (refreshResult.success && refreshResult.data) {
+        const { token, refreshToken, expiresAt } = refreshResult.data;
+        const tokenExpiresAt = expiresAt ? new Date(expiresAt).getTime() : undefined;
+        dispatch({
+          type: 'AUTH_REFRESH_TOKEN',
+          payload: { token, refreshToken, expiresAt: tokenExpiresAt },
+        });
+        
+        // 获取用户信息
+        const userResponse = await authService.getCurrentUser();
+        if (userResponse.success && userResponse.data) {
+          dispatch({ type: 'AUTH_UPDATE_USER', payload: userResponse.data });
+        }
+        return;
+      }
+    }
+    
+    // 如果刷新失败，执行登出
+    await logout();
+  } catch (error) {
+    console.error('AuthContext: Refresh auth failed:', error);
+    await logout();
+  }
+}, [state.token, state.refreshToken, state.tokenExpiresAt, logout]);
+```
+
+#### 管理后台实现
+```typescript
+// ✅ 推荐：自动token刷新拦截器
+const responseInterceptors = [
+  {
+    onFulfilled: (response: any) => response,
+    onRejected: async (error: any) => {
+      const { response } = error;
+      
+      if (response?.status === 401) {
+        console.log('401 Unauthorized - attempting to refresh token');
+        
+        const refreshToken = tokenUtils.getRefreshToken();
+        if (refreshToken) {
+          try {
+            const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
+            const refreshResult = await refreshTokenAPI({ refreshToken });
+            
+            if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
+              const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
+              tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
+              
+              // 重试原始请求
+              const originalRequest = error.config;
+              originalRequest.headers.Authorization = `Bearer ${refreshResult.token}`;
+              return request(originalRequest);
+            }
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+          }
+        }
+        
+        // 刷新失败，跳转到登录页
+        window.location.href = '/user/login';
+      }
+      
+      return Promise.reject(error);
+    },
+  },
+];
+```
+
+### 刷新Token配置
+```json
+// ✅ 推荐：后端配置
+{
+  "JwtSettings": {
+    "SecretKey": "your-secret-key",
+    "Issuer": "Platform.ApiService",
+    "Audience": "Platform.Users",
+    "ExpirationMinutes": 60,
+    "RefreshTokenSecret": "your-refresh-secret-key",
+    "RefreshTokenExpirationDays": 7
+  }
+}
+```
+
+### 刷新Token最佳实践
+
+1. **自动刷新机制** - 在token即将过期时自动刷新
+2. **失败处理** - 刷新失败时自动登出用户
+3. **安全存储** - 分别存储访问token和刷新token
+4. **活动日志** - 记录token刷新活动
+5. **错误重试** - 网络请求失败时自动重试
+6. **用户体验** - 无感知的token刷新
+
+## 🚫 避免的做法
+
+- 不要忽略token过期处理，实现自动刷新机制
+- 不要硬编码权限逻辑，使用统一的权限系统
+- 不要忘记处理认证错误，提供用户友好的错误提示
+- 不要在生产环境中暴露敏感信息
+- 不要使用不安全的token存储方式
+- 不要在刷新token失败时不进行登出处理
+
+## 🔧 最佳实践
+
+1. **统一认证接口** - 前后端使用相同的 API 端点
+2. **简化权限系统** - 基于 access 字段的简单权限控制
+3. **自动 token 验证** - 定期验证 token 有效性
+4. **Token刷新机制** - 实现无感知的token自动刷新
+5. **错误处理** - 提供统一的错误处理和用户反馈
+6. **安全存储** - 使用安全的 token 存储方式
+7. **性能优化** - 使用 useMemo 和 useCallback 优化性能
+8. **活动日志** - 记录用户认证和token刷新活动
+9. **网络重试** - 实现智能的网络请求重试机制
+10. **用户体验** - 提供流畅的认证体验，减少用户操作
+
+## 📚 相关文档
+
+- [认证系统架构说明](mdc:Platform.App/AUTH-ARCHITECTURE.md)
+- [认证系统统一总结](mdc:Platform.App/AUTH-SYNC-SUMMARY.md)
+- [认证系统使用指南](mdc:Platform.App/README-AUTH.md)

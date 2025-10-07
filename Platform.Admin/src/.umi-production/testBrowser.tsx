@@ -3,16 +3,16 @@
 // DO NOT CHANGE IT MANUALLY!
 import React, { useEffect, useState } from 'react';
 import { ApplyPluginsType } from 'umi';
-import { renderClient, RenderClientOpts } from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/renderer-react';
+import { renderClient, RenderClientOpts } from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/renderer-react';
 import { createHistory } from './core/history';
 import { createPluginManager } from './core/plugin';
 import { getRoutes } from './core/route';
 import type { Location } from 'history';
 
-import Loading from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/loading.tsx';
+import Loading from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/loading.tsx';
 
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/global.less';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/global.tsx';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/global.less';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/global.tsx';
 import 'antd/dist/reset.css';
 const publicPath = '/';
 const runtimePublicPath = false;

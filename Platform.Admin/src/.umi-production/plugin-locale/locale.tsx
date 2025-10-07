@@ -4,15 +4,15 @@
 import React from 'react';
 import { ConfigProvider } from 'antd';
 
-import moment from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs/locale/bn-bd';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs/locale/en';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs/locale/fa';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs/locale/id';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs/locale/ja';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs/locale/pt-br';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs/locale/zh-cn';
-import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs/locale/zh-tw';
+import moment from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs/locale/bn-bd';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs/locale/en';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs/locale/fa';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs/locale/id';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs/locale/ja';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs/locale/pt-br';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs/locale/zh-cn';
+import '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs/locale/zh-tw';
 import { RawIntlProvider, getLocale, getDirection , setIntl, getIntl, localeInfo, event, LANG_CHANGE_EVENT } from './localeExports';
 
 

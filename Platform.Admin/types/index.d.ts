@@ -116,5 +116,30 @@ export namespace API {
     type: string;
     /** example: admin */
     currentAuthority: string;
+    /** example: eyJhbGciOiJIUzI1NiIs... */
+    token?: string;
+    /** example: eyJhbGciOiJIUzI1NiIs... */
+    refreshToken?: string;
+    /** example: 2025-10-07T09:34:06.363161Z */
+    expiresAt?: string;
+  };
+
+  /** POST /api/refresh-token */
+  export type POST_API_REFRESH_TOKEN_PAYLOAD = {
+    /** example: eyJhbGciOiJIUzI1NiIs... */
+    refreshToken: string;
+  };
+
+  export type POST_API_REFRESH_TOKEN_RES = {
+    /** example: ok */
+    status: string;
+    /** example: eyJhbGciOiJIUzI1NiIs... */
+    token?: string;
+    /** example: eyJhbGciOiJIUzI1NiIs... */
+    refreshToken?: string;
+    /** example: 2025-10-07T09:34:12.608212Z */
+    expiresAt?: string;
+    /** example: 刷新token失败 */
+    errorMessage?: string;
   };
 }

@@ -143,15 +143,18 @@ public class AuthService
             var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
             await _userService.LogUserActivityAsync(user.Id!, "login", "用户登录", ipAddress, userAgent);
 
-            // 生成 JWT token
+            // 生成 JWT token 和刷新token
             var token = _jwtService.GenerateToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken(user);
 
             return new LoginResult
             {
                 Status = "ok",
                 Type = request.Type,
                 CurrentAuthority = user.Role,
-                Token = token
+                Token = token,
+                RefreshToken = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(60) // 访问token过期时间
             };
         }
         catch (Exception)
@@ -477,6 +480,81 @@ public class AuthService
                 Success = false,
                 ErrorCode = "CHANGE_PASSWORD_ERROR",
                 ErrorMessage = $"修改密码失败: {ex.Message}"
+            };
+        }
+    }
+
+    public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
+    {
+        try
+        {
+            // 验证输入参数
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            {
+                return new RefreshTokenResult
+                {
+                    Status = "error",
+                    ErrorMessage = "刷新token不能为空"
+                };
+            }
+
+            // 验证刷新token
+            var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
+            if (principal == null)
+            {
+                return new RefreshTokenResult
+                {
+                    Status = "error",
+                    ErrorMessage = "无效的刷新token"
+                };
+            }
+
+            // 从刷新token中获取用户ID
+            var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return new RefreshTokenResult
+                {
+                    Status = "error",
+                    ErrorMessage = "无法从刷新token中获取用户信息"
+                };
+            }
+
+            // 从数据库获取用户信息
+            var user = await _users.Find(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return new RefreshTokenResult
+                {
+                    Status = "error",
+                    ErrorMessage = "用户不存在或已被禁用"
+                };
+            }
+
+            // 生成新的访问token和刷新token
+            var newToken = _jwtService.GenerateToken(user);
+            var newRefreshToken = _jwtService.GenerateRefreshToken(user);
+
+            // 记录刷新token活动日志
+            var httpContext = _httpContextAccessor.HttpContext;
+            var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
+            var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
+            await _userService.LogUserActivityAsync(userId, "refresh_token", "刷新访问token", ipAddress, userAgent);
+
+            return new RefreshTokenResult
+            {
+                Status = "ok",
+                Token = newToken,
+                RefreshToken = newRefreshToken,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(60) // 访问token过期时间
+            };
+        }
+        catch (Exception ex)
+        {
+            return new RefreshTokenResult
+            {
+                Status = "error",
+                ErrorMessage = $"刷新token失败: {ex.Message}"
             };
         }
     }

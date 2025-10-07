@@ -35,6 +35,38 @@ export async function getInitialState(): Promise<{
       return undefined;
     }
     
+    // 检查token是否过期，如果过期且存在刷新token，尝试刷新
+    if (tokenUtils.isTokenExpired()) {
+      const refreshToken = tokenUtils.getRefreshToken();
+      if (refreshToken) {
+        try {
+          const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
+          const refreshResult = await refreshTokenAPI({ refreshToken });
+          
+          if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
+            console.log('Token refreshed during initialization');
+            const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
+            tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
+          } else {
+            console.log('Token refresh failed during initialization');
+            tokenUtils.clearAllTokens();
+            history.push(loginPath);
+            return undefined;
+          }
+        } catch (refreshError) {
+          console.log('Token refresh error during initialization:', refreshError);
+          tokenUtils.clearAllTokens();
+          history.push(loginPath);
+          return undefined;
+        }
+      } else {
+        console.log('No refresh token available');
+        tokenUtils.clearAllTokens();
+        history.push(loginPath);
+        return undefined;
+      }
+    }
+    
     try {
       const msg = await queryCurrentUser({
         skipErrorHandler: true,
@@ -44,7 +76,7 @@ export async function getInitialState(): Promise<{
       // 如果获取用户信息失败，清除 token
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       console.log('Failed to fetch user info:', error);
-      tokenUtils.removeToken();
+      tokenUtils.clearAllTokens();
       history.push(loginPath);
       return undefined;
     }
@@ -183,14 +215,41 @@ export const request: RequestConfig = {
       console.log('Response received:', response.config.url, response.status);
       return response;
     },
-    (error: any) => {
+    async (error: any) => {
       console.log('Response error:', error.config?.url, error.response?.status, error.message);
+      
       if (error.response?.status === 401) {
-        console.log('401 Unauthorized - clearing token and redirecting to login');
-        // Token 过期或无效，清除本地存储并跳转到登录页
-        tokenUtils.removeToken();
+        console.log('401 Unauthorized - attempting to refresh token');
+        
+        // 尝试刷新token
+        const refreshToken = tokenUtils.getRefreshToken();
+        if (refreshToken) {
+          try {
+            const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
+            const refreshResult = await refreshTokenAPI({ refreshToken });
+            
+            if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
+              console.log('Token refreshed successfully');
+              // 保存新的token
+              const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
+              tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
+              
+              // 重试原始请求
+              const originalRequest = error.config;
+              originalRequest.headers.Authorization = `Bearer ${refreshResult.token}`;
+              return request(originalRequest);
+            }
+          } catch (refreshError) {
+            console.log('Token refresh failed:', refreshError);
+          }
+        }
+        
+        // 刷新失败或没有刷新token，清除本地存储并跳转到登录页
+        console.log('Clearing tokens and redirecting to login');
+        tokenUtils.clearAllTokens();
         history.push('/user/login');
       }
+      
       return Promise.reject(new Error(error.message || 'Request failed'));
     },
   ],

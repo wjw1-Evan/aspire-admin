@@ -56,6 +56,37 @@ const replaceRoute = () => {
 };
 ```
 
+### 认证守卫组件
+```typescript
+// ✅ 推荐：认证守卫组件
+import { AuthGuard } from '@/components/auth-guard';
+import { RouteGuard } from '@/components/route-guard';
+
+// 页面级认证守卫
+export default function ProtectedScreen() {
+  return (
+    <AuthGuard 
+      permission={{ access: 'admin' }}
+      fallback={<AccessDenied />}
+    >
+      <AdminContent />
+    </AuthGuard>
+  );
+}
+
+// 路由级认证守卫
+export default function AppLayout() {
+  return (
+    <RouteGuard>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+      </Stack>
+    </RouteGuard>
+  );
+}
+```
+
 ### 标签页配置
 ```typescript
 // ✅ 推荐：标签页布局
@@ -377,6 +408,55 @@ export function useThemedStyles() {
 }
 ```
 
+## 🔐 认证系统集成
+
+### 认证状态管理
+```typescript
+// ✅ 推荐：使用统一的认证 Hook
+import { useAuth, usePermissions } from '@/hooks/use-auth';
+
+export default function ProfileScreen() {
+  const { isAuthenticated, user, login, logout, loading } = useAuth();
+  const { checkPermission, checkRole } = usePermissions();
+  
+  // 权限检查
+  const canEdit = checkPermission({ access: 'admin' });
+  const isAdmin = checkRole('admin');
+  
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+  
+  if (!isAuthenticated) {
+    return <LoginForm onLogin={login} />;
+  }
+  
+  return (
+    <View>
+      <Text>欢迎, {user?.name}</Text>
+      {canEdit && <EditButton />}
+      <Button title="登出" onPress={logout} />
+    </View>
+  );
+}
+```
+
+### 认证错误处理
+```typescript
+// ✅ 推荐：认证错误处理组件
+import { AuthErrorHandler } from '@/components/auth-error-handler';
+
+export default function App() {
+  return (
+    <AuthErrorHandler>
+      <NavigationContainer>
+        {/* 应用内容 */}
+      </NavigationContainer>
+    </AuthErrorHandler>
+  );
+}
+```
+
 ## 🚫 避免的做法
 
 - 不要直接使用 `fetch`，使用封装的服务类
@@ -384,6 +464,8 @@ export function useThemedStyles() {
 - 不要硬编码样式值，使用主题系统
 - 不要忽略平台差异
 - 不要忘记清理副作用和监听器
+- 不要硬编码认证逻辑，使用统一的认证系统
+- 不要忽略权限检查，始终验证用户权限
 
 ## 🔧 性能优化
 

@@ -1,5 +1,5 @@
 {
-  "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+  "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
   "pkg": {
     "name": "ant-design-pro",
     "version": "6.0.0",
@@ -79,7 +79,7 @@
       "node": ">=20.0.0"
     }
   },
-  "pkgPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/package.json",
+  "pkgPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/package.json",
   "plugins": {
     "./node_modules/@umijs/core/dist/service/servicePlugin": {
       "config": {},
@@ -89,8 +89,8 @@
       },
       "enableBy": "register",
       "type": "preset",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/core/dist/service/servicePlugin.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/core/dist/service/servicePlugin.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/core/dist/service/servicePlugin",
       "key": "servicePlugin"
     },
@@ -98,12 +98,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 8
+        "register": 9
       },
       "enableBy": "register",
       "type": "preset",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/index.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/index.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "@umijs/preset-umi",
       "key": "umi"
     },
@@ -111,12 +111,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 6
+        "register": 1
       },
       "enableBy": "register",
       "type": "preset",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/max/dist/preset.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/max/dist/preset.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/max/dist/preset",
       "key": "preset"
     },
@@ -128,12 +128,12 @@
             1
           ]
         },
-        "register": 4
+        "register": 3
       },
       "enableBy": "register",
       "type": "preset",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/umi-presets-pro/dist/index.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/umi-presets-pro/dist/index.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "umi-presets-pro",
       "key": "umiPresetsPro"
     },
@@ -145,12 +145,12 @@
             0
           ]
         },
-        "register": 7
+        "register": 3
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/registerMethods.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/registerMethods.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/registerMethods",
       "key": "registerMethods"
     },
@@ -166,8 +166,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/did-you-know/dist/plugin.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/did-you-know/dist/plugin.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "@umijs/did-you-know",
       "key": "umijsDidYouKnow"
     },
@@ -179,12 +179,12 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/404/404.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/404/404.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/404/404",
       "key": "404"
     },
@@ -196,8 +196,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/aiDev/aiDev.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/aiDev/aiDev.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/aiDev/aiDev",
       "key": "aiDev"
     },
@@ -206,15 +206,15 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            35
+            18
           ]
         },
-        "register": 19
+        "register": 14
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/appData/appData.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/appData/appData.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/appData/appData",
       "key": "appData"
     },
@@ -222,12 +222,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/appData/umiInfo.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/appData/umiInfo.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/appData/umiInfo",
       "key": "umiInfo"
     },
@@ -242,12 +242,12 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/check/check.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/check/check.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/check/check",
       "key": "check"
     },
@@ -259,12 +259,12 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/check/babel722.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/check/babel722.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/check/babel722",
       "key": "babel722"
     },
@@ -272,12 +272,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/codeSplitting/codeSplitting.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/codeSplitting/codeSplitting.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/codeSplitting/codeSplitting",
       "key": "codeSplitting"
     },
@@ -289,12 +289,12 @@
             0
           ]
         },
-        "register": 8
+        "register": 7
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/configPlugins/configPlugins.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/configPlugins/configPlugins.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/configPlugins/configPlugins",
       "key": "configPlugins"
     },
@@ -1124,10 +1124,10 @@
       "config": {
         "default": {
           "umi": "@@/exports",
-          "react": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react",
-          "react-dom": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react-dom",
-          "react-router": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react-router",
-          "react-router-dom": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react-router-dom"
+          "react": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react",
+          "react-dom": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react-dom",
+          "react-router": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react-router",
+          "react-router-dom": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react-router-dom"
         }
       },
       "type": "plugin",
@@ -1141,12 +1141,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/crossorigin/crossorigin.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/crossorigin/crossorigin.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/crossorigin/crossorigin",
       "key": "crossorigin"
     },
@@ -1158,12 +1158,12 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/depsOnDemand/depsOnDemand.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/depsOnDemand/depsOnDemand.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/depsOnDemand/depsOnDemand",
       "key": "depsOnDemand"
     },
@@ -1171,12 +1171,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/devTool/devTool.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/devTool/devTool.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/devTool/devTool",
       "key": "devTool"
     },
@@ -1184,12 +1184,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 82
+        "register": 51
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/esbuildHelperChecker/esbuildHelperChecker.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/esbuildHelperChecker/esbuildHelperChecker.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/esbuildHelperChecker/esbuildHelperChecker",
       "key": "esbuildHelperChecker"
     },
@@ -1197,12 +1197,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 31
+        "register": 26
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/esmi/esmi.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/esmi/esmi.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/esmi/esmi",
       "key": "esmi"
     },
@@ -1214,12 +1214,12 @@
             0
           ]
         },
-        "register": 16
+        "register": 10
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/exportStatic/exportStatic.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/exportStatic/exportStatic.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/exportStatic/exportStatic",
       "key": "exportStatic"
     },
@@ -1235,8 +1235,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/favicons/favicons.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/favicons/favicons.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/favicons/favicons",
       "key": "favicons"
     },
@@ -1248,8 +1248,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/helmet/helmet.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/helmet/helmet.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/helmet/helmet",
       "key": "helmet"
     },
@@ -1261,8 +1261,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/icons/icons.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/icons/icons.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/icons/icons",
       "key": "icons"
     },
@@ -1270,11 +1270,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 30
+        "register": 23
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/mock/mock.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/mock/mock.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/mock/mock",
       "key": "mock"
     },
@@ -1286,8 +1286,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/mpa/mpa.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/mpa/mpa.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/mpa/mpa",
       "key": "mpa"
     },
@@ -1302,11 +1302,11 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/okam/okam.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/okam/okam.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/okam/okam",
       "key": "okam"
     },
@@ -1318,8 +1318,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/overrides/overrides.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/overrides/overrides.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/overrides/overrides",
       "key": "overrides"
     },
@@ -1327,12 +1327,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/phantomDependency/phantomDependency.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/phantomDependency/phantomDependency.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/phantomDependency/phantomDependency",
       "key": "phantomDependency"
     },
@@ -1347,8 +1347,8 @@
         "register": 1
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/polyfill/polyfill.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/polyfill/polyfill.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/polyfill/polyfill",
       "key": "polyfill"
     },
@@ -1360,8 +1360,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/polyfill/publicPathPolyfill.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/polyfill/publicPathPolyfill.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/polyfill/publicPathPolyfill",
       "key": "publicPathPolyfill"
     },
@@ -1369,12 +1369,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/prepare/prepare.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/prepare/prepare.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/prepare/prepare",
       "key": "prepare"
     },
@@ -1386,8 +1386,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/routePrefetch/routePrefetch.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routePrefetch/routePrefetch.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/routePrefetch/routePrefetch",
       "key": "routePrefetch"
     },
@@ -1399,8 +1399,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/stagewise/stagewise.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/stagewise/stagewise.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/stagewise/stagewise",
       "key": "stagewise"
     },
@@ -1412,8 +1412,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/terminal/terminal.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/terminal/terminal.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/terminal/terminal",
       "key": "terminal"
     },
@@ -1425,8 +1425,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/tmpFiles/tmpFiles.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/tmpFiles/tmpFiles.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/tmpFiles/tmpFiles",
       "key": "tmpFiles"
     },
@@ -1434,12 +1434,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/clientLoader/clientLoader.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/clientLoader/clientLoader.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/clientLoader/clientLoader",
       "key": "clientLoader"
     },
@@ -1447,11 +1447,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/routeProps/routeProps.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routeProps/routeProps.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/routeProps/routeProps",
       "key": "routeProps"
     },
@@ -1463,8 +1463,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/ssr/ssr.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/ssr/ssr.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/ssr/ssr",
       "key": "ssr"
     },
@@ -1472,12 +1472,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/tmpFiles/configTypes.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/tmpFiles/configTypes.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/tmpFiles/configTypes",
       "key": "configTypes"
     },
@@ -1489,8 +1489,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/transform/transform.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/transform/transform.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/transform/transform",
       "key": "transform"
     },
@@ -1498,12 +1498,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/lowImport/lowImport.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/lowImport/lowImport.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/lowImport/lowImport",
       "key": "lowImport"
     },
@@ -1511,12 +1511,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/vite/vite.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/vite/vite.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/vite/vite",
       "key": "vite"
     },
@@ -1524,11 +1524,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 4
+        "register": 3
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/apiRoute/apiRoute.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/apiRoute/apiRoute.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/apiRoute/apiRoute",
       "key": "apiRoute"
     },
@@ -1536,12 +1536,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 17
+        "register": 15
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/monorepo/redirect.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/monorepo/redirect.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/monorepo/redirect",
       "key": "monorepoRedirect"
     },
@@ -1549,11 +1549,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/test/test.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/test/test.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/test/test",
       "key": "test"
     },
@@ -1561,11 +1561,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/clickToComponent/clickToComponent.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/clickToComponent/clickToComponent.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/clickToComponent/clickToComponent",
       "key": "clickToComponent"
     },
@@ -1577,8 +1577,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/legacy/legacy.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/legacy/legacy.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/legacy/legacy",
       "key": "legacy"
     },
@@ -1590,8 +1590,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/classPropertiesLoose/classPropertiesLoose.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/classPropertiesLoose/classPropertiesLoose.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/classPropertiesLoose/classPropertiesLoose",
       "key": "classPropertiesLoose"
     },
@@ -1599,11 +1599,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/webpack/webpack.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/webpack/webpack.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/webpack/webpack",
       "key": "preset-umi:webpack"
     },
@@ -1615,12 +1615,12 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/swc/swc.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/swc/swc.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/swc/swc",
       "key": "swc"
     },
@@ -1628,11 +1628,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 2
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/ui/ui.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/ui/ui.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/ui/ui",
       "key": "ui"
     },
@@ -1651,8 +1651,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/mako/mako.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/mako/mako.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/mako/mako",
       "key": "mako"
     },
@@ -1660,11 +1660,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/utoopack/utoopack.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/utoopack/utoopack.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/utoopack/utoopack",
       "key": "utoopack"
     },
@@ -1672,11 +1672,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/hmrGuardian/hmrGuardian.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/hmrGuardian/hmrGuardian.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/hmrGuardian/hmrGuardian",
       "key": "hmrGuardian"
     },
@@ -1684,11 +1684,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 25
+        "register": 19
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad",
       "key": "routePreloadOnLoad"
     },
@@ -1700,8 +1700,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/forget/forget.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/forget/forget.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/forget/forget",
       "key": "forget"
     },
@@ -1709,12 +1709,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/features/bundler/bundler.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/bundler/bundler.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/features/bundler/bundler",
       "key": "preset-umi:bundler"
     },
@@ -1726,8 +1726,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/build.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/build.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/build",
       "key": "build"
     },
@@ -1735,12 +1735,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 32
+        "register": 21
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/config/config.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/config/config.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/config/config",
       "key": "config"
     },
@@ -1748,11 +1748,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 26
+        "register": 25
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/dev/dev.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/dev/dev.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/dev/dev",
       "key": "dev"
     },
@@ -1764,8 +1764,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/help.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/help.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/help",
       "key": "help"
     },
@@ -1777,8 +1777,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/lint.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/lint.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/lint",
       "key": "lint"
     },
@@ -1790,8 +1790,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/setup.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/setup.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/setup",
       "key": "setup"
     },
@@ -1803,8 +1803,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/deadcode.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/deadcode.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/deadcode",
       "key": "deadcode"
     },
@@ -1816,8 +1816,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/version.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/version.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/version",
       "key": "version"
     },
@@ -1825,12 +1825,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/page.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/page.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/page",
       "key": "generator:page"
     },
@@ -1838,12 +1838,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/prettier.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/prettier.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/prettier",
       "key": "generator:prettier"
     },
@@ -1855,8 +1855,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/tsconfig.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/tsconfig.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/tsconfig",
       "key": "generator:tsconfig"
     },
@@ -1864,12 +1864,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/jest.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/jest.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/jest",
       "key": "generator:jest"
     },
@@ -1877,12 +1877,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/tailwindcss.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/tailwindcss.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/tailwindcss",
       "key": "generator:tailwindcss"
     },
@@ -1894,8 +1894,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/dva.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/dva.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/dva",
       "key": "generator:dva"
     },
@@ -1907,8 +1907,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/component.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/component.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/component",
       "key": "generator:component"
     },
@@ -1920,8 +1920,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/mock.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/mock.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/mock",
       "key": "generator:mock"
     },
@@ -1933,8 +1933,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/cypress.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/cypress.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/cypress",
       "key": "generator:cypress"
     },
@@ -1946,8 +1946,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/api.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/api.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/api",
       "key": "generator:api"
     },
@@ -1959,8 +1959,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/generators/precommit.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/generators/precommit.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/generators/precommit",
       "key": "generator:precommit"
     },
@@ -1972,8 +1972,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/plugin.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/plugin.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/plugin",
       "key": "command:plugin"
     },
@@ -1981,12 +1981,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/verify-commit.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/verify-commit.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/verify-commit",
       "key": "verifyCommit"
     },
@@ -1994,12 +1994,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 16
+        "register": 14
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/preview.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/preview.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/preview",
       "key": "preview"
     },
@@ -2011,8 +2011,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/dist/commands/mfsu/mfsu.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/mfsu/mfsu.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/preset-umi/dist/commands/mfsu/mfsu",
       "key": "mfsu-cli"
     },
@@ -2024,8 +2024,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugin-run/dist/index.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugin-run/dist/index.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "@umijs/plugin-run",
       "key": "run"
     },
@@ -2037,8 +2037,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/access.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/access.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/access",
       "key": "access"
     },
@@ -2048,11 +2048,11 @@
       },
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/analytics.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/analytics.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/analytics",
       "key": "analytics"
     },
@@ -2064,14 +2064,14 @@
             2
           ],
           "modifyAppData": [
-            1
+            0
           ]
         },
         "register": 4
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/antd.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/antd.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/antd",
       "key": "antd"
     },
@@ -2079,12 +2079,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 10
+        "register": 5
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/dva.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/dva.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/dva",
       "key": "dva"
     },
@@ -2092,12 +2092,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/initial-state.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/initial-state.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/initial-state",
       "key": "initialState"
     },
@@ -2111,18 +2111,18 @@
             0
           ],
           "addLayouts": [
-            1
+            0
           ],
           "modifyAppData": [
-            0
+            1
           ]
         },
         "register": 3
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/layout.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/layout.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/layout",
       "key": "layout"
     },
@@ -2134,8 +2134,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/locale.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/locale.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/locale",
       "key": "locale"
     },
@@ -2143,12 +2143,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 6
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/mf.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/mf.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/mf",
       "key": "mf"
     },
@@ -2156,12 +2156,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/model.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/model.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/model",
       "key": "model"
     },
@@ -2170,15 +2170,15 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            0
           ]
         },
         "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/moment2dayjs.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/moment2dayjs.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/moment2dayjs",
       "key": "moment2dayjs"
     },
@@ -2186,12 +2186,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/qiankun.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/qiankun.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/qiankun",
       "key": "qiankun"
     },
@@ -2199,11 +2199,11 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/qiankun/master.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/qiankun/master.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/qiankun/master",
       "key": "qiankun-master"
     },
@@ -2214,8 +2214,8 @@
         "register": 1
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/qiankun/slave.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/qiankun/slave.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/qiankun/slave",
       "key": "qiankun-slave"
     },
@@ -2223,12 +2223,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/react-query.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/react-query.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/react-query",
       "key": "reactQuery"
     },
@@ -2236,12 +2236,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/request.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/request.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/request",
       "key": "request"
     },
@@ -2253,8 +2253,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/styled-components.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/styled-components.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/styled-components",
       "key": "styledComponents"
     },
@@ -2266,8 +2266,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/tailwindcss.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/tailwindcss.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/tailwindcss",
       "key": "tailwindcss"
     },
@@ -2279,8 +2279,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/plugins/dist/valtio.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/valtio.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/plugins/dist/valtio",
       "key": "valtio"
     },
@@ -2296,8 +2296,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/max/dist/plugins/maxAlias.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/max/dist/plugins/maxAlias.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/max/dist/plugins/maxAlias",
       "key": "maxAlias"
     },
@@ -2313,8 +2313,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/max/dist/plugins/maxAppData.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/max/dist/plugins/maxAppData.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/max/dist/plugins/maxAppData",
       "key": "maxAppData"
     },
@@ -2330,8 +2330,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/max/dist/plugins/maxChecker.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/max/dist/plugins/maxChecker.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/max/dist/plugins/maxChecker",
       "key": "maxChecker"
     },
@@ -2347,8 +2347,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/umi-presets-pro/dist/features/proconfig.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/umi-presets-pro/dist/features/proconfig.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/umi-presets-pro/dist/features/proconfig",
       "key": "proconfig"
     },
@@ -2360,8 +2360,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/umi-presets-pro/dist/features/maxtabs.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/umi-presets-pro/dist/features/maxtabs.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/umi-presets-pro/dist/features/maxtabs",
       "key": "maxtabs"
     },
@@ -2373,12 +2373,12 @@
             0
           ]
         },
-        "register": 218
+        "register": 172
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/max-plugin-openapi/dist/index.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/max-plugin-openapi/dist/index.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "@umijs/max-plugin-openapi",
       "key": "openAPI"
     },
@@ -2386,12 +2386,12 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 136
+        "register": 89
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@alita/plugins/dist/keepalive.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@alita/plugins/dist/keepalive.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@alita/plugins/dist/keepalive",
       "key": "keepalive"
     },
@@ -2405,8 +2405,8 @@
       },
       "enableBy": "config",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@alita/plugins/dist/tabs-layout.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@alita/plugins/dist/tabs-layout.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@alita/plugins/dist/tabs-layout",
       "key": "tabsLayout"
     },
@@ -2424,17 +2424,17 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            0
+            1
           ],
           "modifyAppData": [
             0
           ]
         },
-        "register": 70
+        "register": 38
       },
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/request-record/dist/cjs/index.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/request-record/dist/cjs/index.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "@umijs/request-record",
       "key": "requestRecord"
     },
@@ -2446,8 +2446,8 @@
       },
       "enableBy": "register",
       "type": "plugin",
-      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/core/dist/service/generatePlugin.js",
-      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web",
+      "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/core/dist/service/generatePlugin.js",
+      "cwd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin",
       "id": "./node_modules/@umijs/core/dist/service/generatePlugin",
       "key": "generatePlugin"
     }
@@ -2530,6 +2530,18 @@
         "component": "./test-menu"
       },
       {
+        "name": "change-password",
+        "path": "/user/change-password",
+        "component": "./user/change-password",
+        "hideInMenu": true
+      },
+      {
+        "name": "account.center",
+        "path": "/account/center",
+        "component": "./account/center",
+        "hideInMenu": true
+      },
+      {
         "path": "/",
         "redirect": "/welcome"
       },
@@ -2545,7 +2557,7 @@
         "target": "http://localhost:15000",
         "changeOrigin": true,
         "pathRewrite": {
-          "^/api/": "/api/apiservice/"
+          "^/api/": "/apiservice/"
         },
         "headers": {
           "Connection": "keep-alive"
@@ -2607,7 +2619,7 @@
     "openAPI": [
       {
         "requestLibPath": "import { request } from '@umijs/max'",
-        "schemaPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/config/oneapi.json",
+        "schemaPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/config/oneapi.json",
         "mock": false
       },
       {
@@ -2623,7 +2635,7 @@
     "requestRecord": {},
     "exportStatic": {}
   },
-  "mainConfigFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/config/config.ts",
+  "mainConfigFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/config/config.ts",
   "config": {
     "routeLoader": {
       "moduleType": "esm"
@@ -2641,15 +2653,15 @@
     "autoCSSModules": true,
     "alias": {
       "umi": "@@/exports",
-      "react": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react",
-      "react-dom": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react-dom",
-      "react-router": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react-router",
-      "react-router-dom": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react-router-dom",
-      "@": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src",
-      "@@": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/.umi-production",
-      "regenerator-runtime": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@umijs/preset-umi/node_modules/regenerator-runtime",
-      "antd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/antd",
-      "moment": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/dayjs",
+      "react": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react",
+      "react-dom": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react-dom",
+      "react-router": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react-router",
+      "react-router-dom": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react-router-dom",
+      "@": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src",
+      "@@": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/.umi-production",
+      "regenerator-runtime": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/node_modules/regenerator-runtime",
+      "antd": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/antd",
+      "moment": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/dayjs",
       "@umijs/max": "@@/exports"
     },
     "requestRecord": {
@@ -2731,6 +2743,18 @@
         "component": "./test-menu"
       },
       {
+        "name": "change-password",
+        "path": "/user/change-password",
+        "component": "./user/change-password",
+        "hideInMenu": true
+      },
+      {
+        "name": "account.center",
+        "path": "/account/center",
+        "component": "./account/center",
+        "hideInMenu": true
+      },
+      {
         "path": "/",
         "redirect": "/welcome"
       },
@@ -2745,7 +2769,7 @@
         "target": "http://localhost:15000",
         "changeOrigin": true,
         "pathRewrite": {
-          "^/api/": "/api/apiservice/"
+          "^/api/": "/apiservice/"
         },
         "headers": {
           "Connection": "keep-alive"
@@ -2807,7 +2831,7 @@
     "openAPI": [
       {
         "requestLibPath": "import { request } from '@umijs/max'",
-        "schemaPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/config/oneapi.json",
+        "schemaPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/config/oneapi.json",
         "mock": false
       },
       {
@@ -3763,9 +3787,9 @@
       "parentId": "1",
       "id": "2",
       "absPath": "/user/login",
-      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MobileOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormCaptcha,\n  ProFormCheckbox,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  Link,\n  SelectLang,\n  useIntl,\n  useModel,\n} from '@umijs/max';\nimport { Alert, App, Button, Tabs } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { flushSync } from 'react-dom';\nimport { Footer } from '@/components';\nimport { login } from '@/services/ant-design-pro/api';\nimport { getFakeCaptcha } from '@/services/ant-design-pro/login';\nimport { tokenUtils } from '@/utils/token';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst LoginMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Login: React.FC = () => {\n  const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});\n  const [type, setType] = useState<string>('account');\n  const { initialState, setInitialState } = useModel('@@initialState');\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const fetchUserInfo = async () => {\n    const userInfo = await initialState?.fetchUserInfo?.();\n    if (userInfo) {\n      flushSync(() => {\n        setInitialState((s) => ({\n          ...s,\n          currentUser: userInfo,\n        }));\n      });\n    }\n  };\n\n  const handleSubmit = async (values: API.LoginParams) => {\n    try {\n      // 登录\n      const msg = await login({ ...values, type });\n      if (msg.status === 'ok') {\n        // 保存 token 到本地存储\n        if (msg.token) {\n          tokenUtils.setToken(msg.token);\n        }\n        \n        const defaultLoginSuccessMessage = intl.formatMessage({\n          id: 'pages.login.success',\n          defaultMessage: '登录成功！',\n        });\n        message.success(defaultLoginSuccessMessage);\n        await fetchUserInfo();\n        const urlParams = new URL(window.location.href).searchParams;\n        window.location.href = urlParams.get('redirect') || '/';\n        return;\n      }\n      console.log(msg);\n      // 如果失败去设置用户错误信息\n      setUserLoginState(msg);\n    } catch (error) {\n      const defaultLoginFailureMessage = intl.formatMessage({\n        id: 'pages.login.failure',\n        defaultMessage: '登录失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultLoginFailureMessage);\n    }\n  };\n  const { status, type: loginType } = userLoginState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.login',\n            defaultMessage: '登录页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          initialValues={{\n            autoLogin: true,\n          }}\n          actions={[\n            <FormattedMessage\n              key=\"loginWith\"\n              id=\"pages.login.loginWith\"\n              defaultMessage=\"其他登录方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.LoginParams);\n          }}\n        >\n          <Tabs\n            activeKey={type}\n            onChange={setType}\n            centered\n            items={[\n              {\n                key: 'account',\n                label: intl.formatMessage({\n                  id: 'pages.login.accountLogin.tab',\n                  defaultMessage: '账户密码登录',\n                }),\n              },\n              {\n                key: 'mobile',\n                label: intl.formatMessage({\n                  id: 'pages.login.phoneLogin.tab',\n                  defaultMessage: '手机号登录',\n                }),\n              },\n            ]}\n          />\n\n          {status === 'error' && loginType === 'account' && (\n            <LoginMessage\n              content={intl.formatMessage({\n                id: 'pages.login.accountLogin.errorMessage',\n                defaultMessage: '账户或密码错误',\n              })}\n            />\n          )}\n          {type === 'account' && (\n            <>\n              <ProFormText\n                name=\"username\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <UserOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.username.placeholder',\n                  defaultMessage: '用户名: admin or user',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.username.required\"\n                        defaultMessage=\"请输入用户名!\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText.Password\n                name=\"password\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.password.placeholder',\n                  defaultMessage: '密码: ant.design',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.password.required\"\n                        defaultMessage=\"请输入密码！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n            </>\n          )}\n\n          {status === 'error' && loginType === 'mobile' && (\n            <LoginMessage content=\"验证码错误\" />\n          )}\n          {type === 'mobile' && (\n            <>\n              <ProFormText\n                fieldProps={{\n                  size: 'large',\n                  prefix: <MobileOutlined />,\n                }}\n                name=\"mobile\"\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.phoneNumber.placeholder',\n                  defaultMessage: '手机号',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.required\"\n                        defaultMessage=\"请输入手机号！\"\n                      />\n                    ),\n                  },\n                  {\n                    pattern: /^1\\d{10}$/,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.invalid\"\n                        defaultMessage=\"手机号格式错误！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormCaptcha\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                captchaProps={{\n                  size: 'large',\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.captcha.placeholder',\n                  defaultMessage: '请输入验证码',\n                })}\n                captchaTextRender={(timing, count) => {\n                  if (timing) {\n                    return `${count} ${intl.formatMessage({\n                      id: 'pages.getCaptchaSecondText',\n                      defaultMessage: '获取验证码',\n                    })}`;\n                  }\n                  return intl.formatMessage({\n                    id: 'pages.login.phoneLogin.getVerificationCode',\n                    defaultMessage: '获取验证码',\n                  });\n                }}\n                name=\"captcha\"\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.captcha.required\"\n                        defaultMessage=\"请输入验证码！\"\n                      />\n                    ),\n                  },\n                ]}\n                onGetCaptcha={async (phone) => {\n                  const result = await getFakeCaptcha({\n                    phone,\n                  });\n                  if (!result) {\n                    return;\n                  }\n                  message.success('获取验证码成功！验证码为：1234');\n                }}\n              />\n            </>\n          )}\n          <div\n            style={{\n              marginBottom: 24,\n            }}\n          >\n            <ProFormCheckbox noStyle name=\"autoLogin\">\n              <FormattedMessage\n                id=\"pages.login.rememberMe\"\n                defaultMessage=\"自动登录\"\n              />\n            </ProFormCheckbox>\n            <Button\n              type=\"link\"\n              style={{\n                float: 'right',\n                padding: 0,\n                height: 'auto',\n              }}\n              onClick={() => {\n                // TODO: 实现忘记密码功能\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.login.forgotPassword\"\n                defaultMessage=\"忘记密码\"\n              />\n            </Button>\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/register\">\n                <FormattedMessage\n                  id=\"pages.login.register\"\n                  defaultMessage=\"没有账号？立即注册\"\n                />\n              </Link>\n            </div>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Login;\n",
+      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MobileOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormCaptcha,\n  ProFormCheckbox,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  Link,\n  SelectLang,\n  useIntl,\n  useModel,\n} from '@umijs/max';\nimport { Alert, App, Button, Tabs } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { flushSync } from 'react-dom';\nimport { Footer } from '@/components';\nimport { login } from '@/services/ant-design-pro/api';\nimport { getFakeCaptcha } from '@/services/ant-design-pro/login';\nimport { tokenUtils } from '@/utils/token';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst LoginMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Login: React.FC = () => {\n  const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});\n  const [type, setType] = useState<string>('account');\n  const { initialState, setInitialState } = useModel('@@initialState');\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const fetchUserInfo = async () => {\n    const userInfo = await initialState?.fetchUserInfo?.();\n    if (userInfo) {\n      flushSync(() => {\n        setInitialState((s) => ({\n          ...s,\n          currentUser: userInfo,\n        }));\n      });\n    }\n  };\n\n  const handleSubmit = async (values: API.LoginParams) => {\n    try {\n      // 登录\n      const msg = await login({ ...values, type });\n      if (msg.status === 'ok') {\n        // 保存 token 和刷新token到本地存储\n        if (msg.token && msg.refreshToken) {\n          const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;\n          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);\n        } else if (msg.token) {\n          // 兼容旧版本，只保存token\n          tokenUtils.setToken(msg.token);\n        }\n        \n        const defaultLoginSuccessMessage = intl.formatMessage({\n          id: 'pages.login.success',\n          defaultMessage: '登录成功！',\n        });\n        message.success(defaultLoginSuccessMessage);\n        await fetchUserInfo();\n        const urlParams = new URL(window.location.href).searchParams;\n        window.location.href = urlParams.get('redirect') || '/';\n        return;\n      }\n      console.log(msg);\n      // 如果失败去设置用户错误信息\n      setUserLoginState(msg);\n    } catch (error) {\n      const defaultLoginFailureMessage = intl.formatMessage({\n        id: 'pages.login.failure',\n        defaultMessage: '登录失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultLoginFailureMessage);\n    }\n  };\n  const { status, type: loginType } = userLoginState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.login',\n            defaultMessage: '登录页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          initialValues={{\n            autoLogin: true,\n          }}\n          actions={[\n            <FormattedMessage\n              key=\"loginWith\"\n              id=\"pages.login.loginWith\"\n              defaultMessage=\"其他登录方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.LoginParams);\n          }}\n        >\n          <Tabs\n            activeKey={type}\n            onChange={setType}\n            centered\n            items={[\n              {\n                key: 'account',\n                label: intl.formatMessage({\n                  id: 'pages.login.accountLogin.tab',\n                  defaultMessage: '账户密码登录',\n                }),\n              },\n              {\n                key: 'mobile',\n                label: intl.formatMessage({\n                  id: 'pages.login.phoneLogin.tab',\n                  defaultMessage: '手机号登录',\n                }),\n              },\n            ]}\n          />\n\n          {status === 'error' && loginType === 'account' && (\n            <LoginMessage\n              content={intl.formatMessage({\n                id: 'pages.login.accountLogin.errorMessage',\n                defaultMessage: '账户或密码错误',\n              })}\n            />\n          )}\n          {type === 'account' && (\n            <>\n              <ProFormText\n                name=\"username\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <UserOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.username.placeholder',\n                  defaultMessage: '用户名: admin or user',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.username.required\"\n                        defaultMessage=\"请输入用户名!\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText.Password\n                name=\"password\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.password.placeholder',\n                  defaultMessage: '密码: ant.design',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.password.required\"\n                        defaultMessage=\"请输入密码！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n            </>\n          )}\n\n          {status === 'error' && loginType === 'mobile' && (\n            <LoginMessage content=\"验证码错误\" />\n          )}\n          {type === 'mobile' && (\n            <>\n              <ProFormText\n                fieldProps={{\n                  size: 'large',\n                  prefix: <MobileOutlined />,\n                }}\n                name=\"mobile\"\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.phoneNumber.placeholder',\n                  defaultMessage: '手机号',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.required\"\n                        defaultMessage=\"请输入手机号！\"\n                      />\n                    ),\n                  },\n                  {\n                    pattern: /^1\\d{10}$/,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.invalid\"\n                        defaultMessage=\"手机号格式错误！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormCaptcha\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                captchaProps={{\n                  size: 'large',\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.captcha.placeholder',\n                  defaultMessage: '请输入验证码',\n                })}\n                captchaTextRender={(timing, count) => {\n                  if (timing) {\n                    return `${count} ${intl.formatMessage({\n                      id: 'pages.getCaptchaSecondText',\n                      defaultMessage: '获取验证码',\n                    })}`;\n                  }\n                  return intl.formatMessage({\n                    id: 'pages.login.phoneLogin.getVerificationCode',\n                    defaultMessage: '获取验证码',\n                  });\n                }}\n                name=\"captcha\"\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.captcha.required\"\n                        defaultMessage=\"请输入验证码！\"\n                      />\n                    ),\n                  },\n                ]}\n                onGetCaptcha={async (phone) => {\n                  const result = await getFakeCaptcha({\n                    phone,\n                  });\n                  if (!result) {\n                    return;\n                  }\n                  message.success('获取验证码成功！验证码为：1234');\n                }}\n              />\n            </>\n          )}\n          <div\n            style={{\n              marginBottom: 24,\n            }}\n          >\n            <ProFormCheckbox noStyle name=\"autoLogin\">\n              <FormattedMessage\n                id=\"pages.login.rememberMe\"\n                defaultMessage=\"自动登录\"\n              />\n            </ProFormCheckbox>\n            <Button\n              type=\"link\"\n              style={{\n                float: 'right',\n                padding: 0,\n                height: 'auto',\n              }}\n              onClick={() => {\n                // TODO: 实现忘记密码功能\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.login.forgotPassword\"\n                defaultMessage=\"忘记密码\"\n              />\n            </Button>\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/register\">\n                <FormattedMessage\n                  id=\"pages.login.register\"\n                  defaultMessage=\"没有账号？立即注册\"\n                />\n              </Link>\n            </div>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Login;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/user/login/index.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/login/index.tsx"
     },
     "3": {
       "name": "register",
@@ -3776,7 +3800,7 @@
       "absPath": "/user/register",
       "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MailOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  SelectLang,\n  useIntl,\n  history,\n  Link,\n} from '@umijs/max';\nimport { Alert, App } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { Footer } from '@/components';\nimport { register } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst RegisterMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Register: React.FC = () => {\n  const [registerState, setRegisterState] = useState<API.RegisterResult>({});\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const handleSubmit = async (values: API.RegisterParams) => {\n    try {\n      // 注册\n      const result = await register(values);\n      if (result.success) {\n        const defaultRegisterSuccessMessage = intl.formatMessage({\n          id: 'pages.register.success',\n          defaultMessage: '注册成功！',\n        });\n        message.success(defaultRegisterSuccessMessage);\n        \n        // 注册成功后跳转到注册结果页面\n        history.push('/user/register-result');\n        return;\n      }\n      \n      // 如果失败去设置用户错误信息\n      setRegisterState(result);\n    } catch (error) {\n      const defaultRegisterFailureMessage = intl.formatMessage({\n        id: 'pages.register.failure',\n        defaultMessage: '注册失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultRegisterFailureMessage);\n    }\n  };\n\n  const { errorCode, errorMessage } = registerState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.register',\n            defaultMessage: '注册页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          actions={[\n            <FormattedMessage\n              key=\"registerWith\"\n              id=\"pages.register.registerWith\"\n              defaultMessage=\"其他注册方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.RegisterParams);\n          }}\n          submitter={{\n            searchConfig: {\n              submitText: intl.formatMessage({\n                id: 'pages.register.submit',\n                defaultMessage: '注册',\n              }),\n            },\n          }}\n        >\n          {errorCode && (\n            <RegisterMessage content={errorMessage || '注册失败'} />\n          )}\n\n          <ProFormText\n            name=\"username\"\n            fieldProps={{\n              size: 'large',\n              prefix: <UserOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.register.username.placeholder',\n              defaultMessage: '用户名',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.username.required\"\n                    defaultMessage=\"请输入用户名!\"\n                  />\n                ),\n              },\n              {\n                min: 3,\n                max: 20,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.username.length\"\n                    defaultMessage=\"用户名长度必须在3-20个字符之间\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText.Password\n            name=\"password\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.register.password.placeholder',\n              defaultMessage: '密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.password.required\"\n                    defaultMessage=\"请输入密码！\"\n                  />\n                ),\n              },\n              {\n                min: 6,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.password.length\"\n                    defaultMessage=\"密码长度至少6个字符\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText\n            name=\"email\"\n            fieldProps={{\n              size: 'large',\n              prefix: <MailOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.register.email.placeholder',\n              defaultMessage: '邮箱（可选）',\n            })}\n            rules={[\n              {\n                type: 'email',\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.email.invalid\"\n                    defaultMessage=\"邮箱格式不正确！\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <div\n            style={{\n              marginBottom: 24,\n              textAlign: 'center',\n            }}\n          >\n            <Link to=\"/user/login\">\n              <FormattedMessage\n                id=\"pages.register.backToLogin\"\n                defaultMessage=\"已有账号？立即登录\"\n              />\n            </Link>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Register;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/user/register/index.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/register/index.tsx"
     },
     "4": {
       "name": "register-result",
@@ -3787,7 +3811,7 @@
       "absPath": "/user/register-result",
       "__content": "import { CheckCircleOutlined } from '@ant-design/icons';\nimport { Result, Button } from 'antd';\nimport { FormattedMessage, history, useIntl } from '@umijs/max';\nimport { createStyles } from 'antd-style';\nimport React from 'react';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n    content: {\n      flex: '1',\n      padding: '32px 0',\n      display: 'flex',\n      alignItems: 'center',\n      justifyContent: 'center',\n    },\n  };\n});\n\nconst RegisterResult: React.FC = () => {\n  const { styles } = useStyles();\n  const intl = useIntl();\n\n  return (\n    <div className={styles.container}>\n      <div className={styles.content}>\n        <Result\n          icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}\n          title={intl.formatMessage({\n            id: 'pages.register.result.title',\n            defaultMessage: '注册成功',\n          })}\n          subTitle={intl.formatMessage({\n            id: 'pages.register.result.subtitle',\n            defaultMessage: '恭喜您，账号注册成功！',\n          })}\n          extra={[\n            <Button\n              type=\"primary\"\n              key=\"login\"\n              onClick={() => {\n                history.push('/user/login');\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.register.result.login\"\n                defaultMessage=\"立即登录\"\n              />\n            </Button>,\n            <Button\n              key=\"home\"\n              onClick={() => {\n                history.push('/');\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.register.result.home\"\n                defaultMessage=\"返回首页\"\n              />\n            </Button>,\n          ]}\n        />\n      </div>\n    </div>\n  );\n};\n\nexport default RegisterResult;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/user/register-result/index.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/register-result/index.tsx"
     },
     "5": {
       "path": "/welcome",
@@ -3799,7 +3823,7 @@
       "absPath": "/welcome",
       "__content": "import { PageContainer } from '@ant-design/pro-components';\nimport { useModel } from '@umijs/max';\nimport { Card, theme } from 'antd';\nimport React from 'react';\n\n/**\n * 每个单独的卡片，为了复用样式抽成了组件\n * @param param0\n * @returns\n */\nconst InfoCard: React.FC<{\n  title: string;\n  index: number;\n  desc: string;\n  href: string;\n}> = ({ title, href, index, desc }) => {\n  const { useToken } = theme;\n\n  const { token } = useToken();\n\n  return (\n    <div\n      style={{\n        backgroundColor: token.colorBgContainer,\n        boxShadow: token.boxShadow,\n        borderRadius: '8px',\n        fontSize: '14px',\n        color: token.colorTextSecondary,\n        lineHeight: '22px',\n        padding: '16px 19px',\n        minWidth: '220px',\n        flex: 1,\n      }}\n    >\n      <div\n        style={{\n          display: 'flex',\n          gap: '4px',\n          alignItems: 'center',\n        }}\n      >\n        <div\n          style={{\n            width: 48,\n            height: 48,\n            lineHeight: '22px',\n            backgroundSize: '100%',\n            textAlign: 'center',\n            padding: '8px 16px 16px 12px',\n            color: '#FFF',\n            fontWeight: 'bold',\n            backgroundImage:\n              \"url('https://gw.alipayobjects.com/zos/bmw-prod/daaf8d50-8e6d-4251-905d-676a24ddfa12.svg')\",\n          }}\n        >\n          {index}\n        </div>\n        <div\n          style={{\n            fontSize: '16px',\n            color: token.colorText,\n            paddingBottom: 8,\n          }}\n        >\n          {title}\n        </div>\n      </div>\n      <div\n        style={{\n          fontSize: '14px',\n          color: token.colorTextSecondary,\n          textAlign: 'justify',\n          lineHeight: '22px',\n          marginBottom: 8,\n        }}\n      >\n        {desc}\n      </div>\n      <a href={href} target=\"_blank\" rel=\"noreferrer\">\n        了解更多 {'>'}\n      </a>\n    </div>\n  );\n};\n\nconst Welcome: React.FC = () => {\n  const { token } = theme.useToken();\n  const { initialState } = useModel('@@initialState');\n  return (\n    <PageContainer>\n      <Card\n        style={{\n          borderRadius: 8,\n        }}\n        styles={{\n          body: {\n            backgroundImage:\n              initialState?.settings?.navTheme === 'realDark'\n                ? 'background-image: linear-gradient(75deg, #1A1B1F 0%, #191C1F 100%)'\n                : 'background-image: linear-gradient(75deg, #FBFDFF 0%, #F5F7FF 100%)',\n          },\n        }}\n      >\n        <div\n          style={{\n            backgroundPosition: '100% -30%',\n            backgroundRepeat: 'no-repeat',\n            backgroundSize: '274px auto',\n            backgroundImage:\n              \"url('https://gw.alipayobjects.com/mdn/rms_a9745b/afts/img/A*BuFmQqsB2iAAAAAAAAAAAAAAARQnAQ')\",\n          }}\n        >\n          <div\n            style={{\n              fontSize: '20px',\n              color: token.colorTextHeading,\n            }}\n          >\n            欢迎使用 Ant Design Pro\n          </div>\n          <p\n            style={{\n              fontSize: '14px',\n              color: token.colorTextSecondary,\n              lineHeight: '22px',\n              marginTop: 16,\n              marginBottom: 32,\n              width: '65%',\n            }}\n          >\n            Ant Design Pro 是一个整合了 umi，Ant Design 和 ProComponents\n            的脚手架方案。致力于在设计规范和基础组件的基础上，继续向上构建，提炼出典型模板/业务组件/配套设计资源，进一步提升企业级中后台产品设计研发过程中的『用户』和『设计者』的体验。\n          </p>\n          <div\n            style={{\n              display: 'flex',\n              flexWrap: 'wrap',\n              gap: 16,\n            }}\n          >\n            <InfoCard\n              index={1}\n              href=\"https://umijs.org/docs/introduce/introduce\"\n              title=\"了解 umi\"\n              desc=\"umi 是一个可扩展的企业级前端应用框架,umi 以路由为基础的，同时支持配置式路由和约定式路由，保证路由的功能完备，并以此进行功能扩展。\"\n            />\n            <InfoCard\n              index={2}\n              title=\"了解 ant design\"\n              href=\"https://ant.design\"\n              desc=\"antd 是基于 Ant Design 设计体系的 React UI 组件库，主要用于研发企业级中后台产品。\"\n            />\n            <InfoCard\n              index={3}\n              title=\"了解 Pro Components\"\n              href=\"https://procomponents.ant.design\"\n              desc=\"ProComponents 是一个基于 Ant Design 做了更高抽象的模板组件，以 一个组件就是一个页面为开发理念，为中后台开发带来更好的体验。\"\n            />\n          </div>\n        </div>\n      </Card>\n    </PageContainer>\n  );\n};\n\nexport default Welcome;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/Welcome.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/Welcome.tsx"
     },
     "6": {
       "path": "/admin",
@@ -3826,7 +3850,7 @@
       "absPath": "/admin/sub-page",
       "__content": "import { HeartTwoTone, SmileTwoTone } from '@ant-design/icons';\nimport { PageContainer } from '@ant-design/pro-components';\nimport { useIntl } from '@umijs/max';\nimport { Alert, Card, Typography } from 'antd';\nimport React from 'react';\n\nconst Admin: React.FC = () => {\n  const intl = useIntl();\n  return (\n    <PageContainer\n      content={intl.formatMessage({\n        id: 'pages.admin.subPage.title',\n        defaultMessage: 'This page can only be viewed by admin',\n      })}\n    >\n      <Card>\n        <Alert\n          message={intl.formatMessage({\n            id: 'pages.welcome.alertMessage',\n            defaultMessage:\n              'Faster and stronger heavy-duty components have been released.',\n          })}\n          type=\"success\"\n          showIcon\n          banner\n          style={{\n            margin: -12,\n            marginBottom: 48,\n          }}\n        />\n        <Typography.Title level={2} style={{ textAlign: 'center' }}>\n          <SmileTwoTone /> Ant Design Pro{' '}\n          <HeartTwoTone twoToneColor=\"#eb2f96\" /> You\n        </Typography.Title>\n      </Card>\n      <p style={{ textAlign: 'center', marginTop: 24 }}>\n        Want to add more pages? Please refer to{' '}\n        <a\n          href=\"https://pro.ant.design/docs/block-cn\"\n          target=\"_blank\"\n          rel=\"noopener noreferrer\"\n        >\n          use block\n        </a>\n        。\n      </p>\n    </PageContainer>\n  );\n};\n\nexport default Admin;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/Admin.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/Admin.tsx"
     },
     "9": {
       "name": "list.table-list",
@@ -3838,7 +3862,7 @@
       "absPath": "/list",
       "__content": "import type {\n  ActionType,\n  ProColumns,\n  ProDescriptionsItemProps,\n} from '@ant-design/pro-components';\nimport {\n  FooterToolbar,\n  PageContainer,\n  ProDescriptions,\n  ProTable,\n} from '@ant-design/pro-components';\nimport { FormattedMessage, useIntl, useRequest } from '@umijs/max';\nimport { Button, Drawer, Input, message } from 'antd';\nimport React, { useCallback, useRef, useState } from 'react';\nimport { removeRule, rule } from '@/services/ant-design-pro/api';\nimport CreateForm from './components/CreateForm';\nimport UpdateForm from './components/UpdateForm';\n\nconst TableList: React.FC = () => {\n  const actionRef = useRef<ActionType | null>(null);\n\n  const [showDetail, setShowDetail] = useState<boolean>(false);\n  const [currentRow, setCurrentRow] = useState<API.RuleListItem>();\n  const [selectedRowsState, setSelectedRows] = useState<API.RuleListItem[]>([]);\n\n  /**\n   * @en-US International configuration\n   * @zh-CN 国际化配置\n   * */\n  const intl = useIntl();\n\n  const [messageApi, contextHolder] = message.useMessage();\n\n  const { run: delRun, loading } = useRequest(removeRule, {\n    manual: true,\n    onSuccess: () => {\n      setSelectedRows([]);\n      actionRef.current?.reloadAndRest?.();\n\n      messageApi.success('Deleted successfully and will refresh soon');\n    },\n    onError: () => {\n      messageApi.error('Delete failed, please try again');\n    },\n  });\n\n  const columns: ProColumns<API.RuleListItem>[] = [\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.updateForm.ruleName.nameLabel\"\n          defaultMessage=\"Rule name\"\n        />\n      ),\n      dataIndex: 'name',\n      render: (dom, entity) => {\n        return (\n          <a\n            onClick={() => {\n              setCurrentRow(entity);\n              setShowDetail(true);\n            }}\n          >\n            {dom}\n          </a>\n        );\n      },\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleDesc\"\n          defaultMessage=\"Description\"\n        />\n      ),\n      dataIndex: 'desc',\n      valueType: 'textarea',\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleCallNo\"\n          defaultMessage=\"Number of service calls\"\n        />\n      ),\n      dataIndex: 'callNo',\n      sorter: true,\n      hideInForm: true,\n      renderText: (val: string) =>\n        `${val}${intl.formatMessage({\n          id: 'pages.searchTable.tenThousand',\n          defaultMessage: ' 万 ',\n        })}`,\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleStatus\"\n          defaultMessage=\"Status\"\n        />\n      ),\n      dataIndex: 'status',\n      hideInForm: true,\n      valueEnum: {\n        0: {\n          text: (\n            <FormattedMessage\n              id=\"pages.searchTable.nameStatus.default\"\n              defaultMessage=\"Shut down\"\n            />\n          ),\n          status: 'Default',\n        },\n        1: {\n          text: (\n            <FormattedMessage\n              id=\"pages.searchTable.nameStatus.running\"\n              defaultMessage=\"Running\"\n            />\n          ),\n          status: 'Processing',\n        },\n        2: {\n          text: (\n            <FormattedMessage\n              id=\"pages.searchTable.nameStatus.online\"\n              defaultMessage=\"Online\"\n            />\n          ),\n          status: 'Success',\n        },\n        3: {\n          text: (\n            <FormattedMessage\n              id=\"pages.searchTable.nameStatus.abnormal\"\n              defaultMessage=\"Abnormal\"\n            />\n          ),\n          status: 'Error',\n        },\n      },\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleUpdatedAt\"\n          defaultMessage=\"Last scheduled time\"\n        />\n      ),\n      sorter: true,\n      dataIndex: 'updatedAt',\n      valueType: 'dateTime',\n      renderFormItem: (item, { defaultRender, ...rest }, form) => {\n        const status = form.getFieldValue('status');\n        if (`${status}` === '0') {\n          return false;\n        }\n        if (`${status}` === '3') {\n          return (\n            <Input\n              {...rest}\n              placeholder={intl.formatMessage({\n                id: 'pages.searchTable.exception',\n                defaultMessage: 'Please enter the reason for the exception!',\n              })}\n            />\n          );\n        }\n        return defaultRender(item);\n      },\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleOption\"\n          defaultMessage=\"Operating\"\n        />\n      ),\n      dataIndex: 'option',\n      valueType: 'option',\n      render: (_, record) => [\n        <UpdateForm\n          trigger={\n            <a>\n              <FormattedMessage\n                id=\"pages.searchTable.config\"\n                defaultMessage=\"Configuration\"\n              />\n            </a>\n          }\n          key=\"config\"\n          onOk={actionRef.current?.reload}\n          values={record}\n        />,\n        <a key=\"subscribeAlert\" href=\"https://procomponents.ant.design/\">\n          <FormattedMessage\n            id=\"pages.searchTable.subscribeAlert\"\n            defaultMessage=\"Subscribe to alerts\"\n          />\n        </a>,\n      ],\n    },\n  ];\n\n  /**\n   *  Delete node\n   * @zh-CN 删除节点\n   *\n   * @param selectedRows\n   */\n  const handleRemove = useCallback(\n    async (selectedRows: API.RuleListItem[]) => {\n      if (!selectedRows?.length) {\n        messageApi.warning('请选择删除项');\n\n        return;\n      }\n\n      await delRun({\n        data: {\n          key: selectedRows.map((row) => row.key),\n        },\n      });\n    },\n    [delRun, messageApi.warning],\n  );\n\n  return (\n    <PageContainer>\n      {contextHolder}\n      <ProTable<API.RuleListItem, API.PageParams>\n        headerTitle={intl.formatMessage({\n          id: 'pages.searchTable.title',\n          defaultMessage: 'Enquiry form',\n        })}\n        actionRef={actionRef}\n        rowKey=\"key\"\n        search={{\n          labelWidth: 120,\n        }}\n        toolBarRender={() => [\n          <CreateForm key=\"create\" reload={actionRef.current?.reload} />,\n        ]}\n        request={rule}\n        columns={columns}\n        rowSelection={{\n          onChange: (_, selectedRows) => {\n            setSelectedRows(selectedRows);\n          },\n        }}\n      />\n      {selectedRowsState?.length > 0 && (\n        <FooterToolbar\n          extra={\n            <div>\n              <FormattedMessage\n                id=\"pages.searchTable.chosen\"\n                defaultMessage=\"Chosen\"\n              />{' '}\n              <a style={{ fontWeight: 600 }}>{selectedRowsState.length}</a>{' '}\n              <FormattedMessage\n                id=\"pages.searchTable.item\"\n                defaultMessage=\"项\"\n              />\n              &nbsp;&nbsp;\n              <span>\n                <FormattedMessage\n                  id=\"pages.searchTable.totalServiceCalls\"\n                  defaultMessage=\"Total number of service calls\"\n                />{' '}\n                {selectedRowsState.reduce(\n                  (pre, item) => pre + (item.callNo ?? 0),\n                  0,\n                )}{' '}\n                <FormattedMessage\n                  id=\"pages.searchTable.tenThousand\"\n                  defaultMessage=\"万\"\n                />\n              </span>\n            </div>\n          }\n        >\n          <Button\n            loading={loading}\n            onClick={() => {\n              handleRemove(selectedRowsState);\n            }}\n          >\n            <FormattedMessage\n              id=\"pages.searchTable.batchDeletion\"\n              defaultMessage=\"Batch deletion\"\n            />\n          </Button>\n          <Button type=\"primary\">\n            <FormattedMessage\n              id=\"pages.searchTable.batchApproval\"\n              defaultMessage=\"Batch approval\"\n            />\n          </Button>\n        </FooterToolbar>\n      )}\n\n      <Drawer\n        width={600}\n        open={showDetail}\n        onClose={() => {\n          setCurrentRow(undefined);\n          setShowDetail(false);\n        }}\n        closable={false}\n      >\n        {currentRow?.name && (\n          <ProDescriptions<API.RuleListItem>\n            column={2}\n            title={currentRow?.name}\n            request={async () => ({\n              data: currentRow || {},\n            })}\n            params={{\n              id: currentRow?.name,\n            }}\n            columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}\n          />\n        )}\n      </Drawer>\n    </PageContainer>\n  );\n};\n\nexport default TableList;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/table-list/index.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/table-list/index.tsx"
     },
     "10": {
       "name": "user-management",
@@ -3848,9 +3872,9 @@
       "parentId": "ant-design-pro-layout",
       "id": "10",
       "absPath": "/user-management",
-      "__content": "import React, { useRef, useState } from 'react';\nimport type { ActionType, ProColumns } from '@ant-design/pro-components';\nimport {\n  PageContainer,\n  ProTable,\n  ProCard,\n} from '@ant-design/pro-components';\nimport {\n  Button,\n  Tag,\n  Space,\n  Popconfirm,\n  message,\n  Modal,\n  Select,\n  Switch,\n  Drawer,\n  Statistic,\n  Row,\n  Col,\n  Badge,\n} from 'antd';\nimport {\n  PlusOutlined,\n  EditOutlined,\n  DeleteOutlined,\n  UserOutlined,\n  TeamOutlined,\n  CheckCircleOutlined,\n  EyeOutlined,\n  ReloadOutlined,\n} from '@ant-design/icons';\nimport { request } from '@umijs/max';\nimport type { AppUser, UserListRequest, UserStatisticsResponse } from './types';\nimport UserForm from './components/UserForm';\nimport UserDetail from './components/UserDetail';\n\nconst UserManagement: React.FC = () => {\n  const actionRef = useRef<ActionType>(null);\n  const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);\n  const [formVisible, setFormVisible] = useState(false);\n  const [detailVisible, setDetailVisible] = useState(false);\n  const [editingUser, setEditingUser] = useState<AppUser | null>(null);\n  const [viewingUser, setViewingUser] = useState<AppUser | null>(null);\n  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);\n\n  // 获取用户统计信息\n  const fetchStatistics = async () => {\n    try {\n      const response = await request<{ success: boolean; data: UserStatisticsResponse }>('/api/user/statistics', {\n        method: 'GET',\n      });\n      setStatistics(response.data);\n    } catch (error) {\n      console.error('获取统计信息失败:', error);\n      message.error('获取统计信息失败');\n    }\n  };\n\n  // 获取用户列表\n  const fetchUsers = async (params: any) => {\n    console.log('fetchUsers 被调用，参数:', params);\n    \n    const requestData: UserListRequest = {\n      Page: params.current || 1,\n      PageSize: params.pageSize || 10,\n      Search: params.search,\n      Role: params.role,\n      IsActive: params.isActive,\n      SortBy: params.sortBy || 'CreatedAt',\n      SortOrder: params.sortOrder || 'desc',\n    };\n\n    console.log('发送请求数据:', requestData);\n\n    try {\n      const response = await request<{ success: boolean; data: any }>('/api/user/list', {\n        method: 'POST',\n        data: requestData,\n      });\n\n      console.log('API响应:', response);\n\n      return {\n        data: response.data.users || [],\n        success: true,\n        total: response.data.total || 0,\n      };\n    } catch (error) {\n      console.error('获取用户列表失败:', error);\n      message.error('获取用户列表失败');\n      return {\n        data: [],\n        success: false,\n        total: 0,\n      };\n    }\n  };\n\n  // 删除用户\n  const handleDelete = async (userId: string) => {\n    try {\n      await request(`/api/user/${userId}`, {\n        method: 'DELETE',\n      });\n      message.success('删除成功');\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('删除用户失败:', error);\n      message.error('删除失败');\n    }\n  };\n\n  // 批量操作\n  const handleBulkAction = async (action: string) => {\n    if (selectedRows.length === 0) {\n      message.warning('请选择要操作的用户');\n      return;\n    }\n\n    try {\n      await request('/api/user/bulk-action', {\n        method: 'POST',\n        data: {\n          UserIds: selectedRows.map(user => user.id),\n          Action: action,\n        },\n      });\n\n      const actionText = {\n        activate: '启用',\n        deactivate: '禁用',\n        delete: '删除',\n      }[action] || '操作';\n\n      message.success(`批量${actionText}成功`);\n      setSelectedRows([]);\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('批量操作失败:', error);\n      message.error('批量操作失败');\n    }\n  };\n\n  // 切换用户状态\n  const handleToggleStatus = async (user: AppUser) => {\n    try {\n      const endpoint = user.isActive ? 'deactivate' : 'activate';\n      await request(`/api/user/${user.id}/${endpoint}`, {\n        method: 'PUT',\n      });\n\n      message.success(`用户已${user.isActive ? '禁用' : '启用'}`);\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('切换用户状态失败:', error);\n      message.error('操作失败');\n    }\n  };\n\n  // 更新用户角色\n  const handleUpdateRole = async (userId: string, role: string) => {\n    try {\n      await request(`/api/user/${userId}/role`, {\n        method: 'PUT',\n        data: { Role: role },\n      });\n\n      message.success('角色更新成功');\n      actionRef.current?.reload();\n    } catch (error) {\n      console.error('更新用户角色失败:', error);\n      message.error('角色更新失败');\n    }\n  };\n\n  // 表格列定义\n  const columns: ProColumns<AppUser>[] = [\n    {\n      title: '用户名',\n      dataIndex: 'username',\n      key: 'username',\n      width: 120,\n      hideInSearch: false,\n      render: (text, record) => (\n        <Space>\n          <UserOutlined />\n          {text}\n        </Space>\n      ),\n    },\n    {\n      title: '邮箱',\n      dataIndex: 'email',\n      key: 'email',\n      width: 200,\n      ellipsis: true,\n      hideInSearch: false,\n    },\n    {\n      title: '角色',\n      dataIndex: 'role',\n      key: 'role',\n      width: 100,\n      valueType: 'select',\n      valueEnum: {\n        user: { text: '普通用户', status: 'Default' },\n        admin: { text: '管理员', status: 'Error' },\n      },\n      hideInSearch: false,\n      render: (_, record) => (\n        <Tag color={record.role === 'admin' ? 'red' : 'blue'}>\n          {record.role === 'admin' ? '管理员' : '普通用户'}\n        </Tag>\n      ),\n      renderFormItem: (_, { record }) => (\n        <Select\n          defaultValue={record?.role}\n          onChange={(value) => record?.id && handleUpdateRole(record.id, value)}\n        >\n          <Select.Option value=\"user\">普通用户</Select.Option>\n          <Select.Option value=\"admin\">管理员</Select.Option>\n        </Select>\n      ),\n    },\n    {\n      title: '状态',\n      dataIndex: 'isActive',\n      key: 'isActive',\n      width: 100,\n      valueType: 'select',\n      valueEnum: {\n        true: { text: '启用', status: 'Success' },\n        false: { text: '禁用', status: 'Error' },\n      },\n      hideInSearch: false,\n      render: (_, record) => (\n        <Badge\n          status={record.isActive ? 'success' : 'error'}\n          text={record.isActive ? '启用' : '禁用'}\n        />\n      ),\n      renderFormItem: (_, { record }) => (\n        <Switch\n          checked={record?.isActive}\n          onChange={() => record && handleToggleStatus(record)}\n        />\n      ),\n    },\n    {\n      title: '创建时间',\n      dataIndex: 'createdAt',\n      key: 'createdAt',\n      width: 180,\n      valueType: 'dateTime',\n      sorter: true,\n    },\n    {\n      title: '最后登录',\n      dataIndex: 'lastLoginAt',\n      key: 'lastLoginAt',\n      width: 180,\n      valueType: 'dateTime',\n      render: (text) => text || '-',\n    },\n    {\n      title: '操作',\n      key: 'action',\n      width: 200,\n      render: (_, record) => (\n        <Space>\n          <Button\n            type=\"link\"\n            icon={<EyeOutlined />}\n            onClick={() => {\n              setViewingUser(record);\n              setDetailVisible(true);\n            }}\n          >\n            查看\n          </Button>\n          <Button\n            type=\"link\"\n            icon={<EditOutlined />}\n            onClick={() => {\n              setEditingUser(record);\n              setFormVisible(true);\n            }}\n          >\n            编辑\n          </Button>\n          <Popconfirm\n            title=\"确定要删除这个用户吗？\"\n            onConfirm={() => record.id && handleDelete(record.id)}\n            okText=\"确定\"\n            cancelText=\"取消\"\n          >\n            <Button type=\"link\" danger icon={<DeleteOutlined />}>\n              删除\n            </Button>\n          </Popconfirm>\n        </Space>\n      ),\n    },\n  ];\n\n  React.useEffect(() => {\n    fetchStatistics();\n  }, []);\n\n  return (\n    <PageContainer\n      title=\"用户管理\"\n      extra={[\n        <Button\n          key=\"refresh\"\n          icon={<ReloadOutlined />}\n          onClick={() => {\n            actionRef.current?.reload();\n            fetchStatistics();\n          }}\n        >\n          刷新\n        </Button>,\n        <Button\n          key=\"add\"\n          type=\"primary\"\n          icon={<PlusOutlined />}\n          onClick={() => {\n            setEditingUser(null);\n            setFormVisible(true);\n          }}\n        >\n          新增用户\n        </Button>,\n      ]}\n    >\n      {/* 统计卡片 */}\n      {statistics && (\n        <ProCard style={{ marginBottom: 16 }}>\n          <Row gutter={16}>\n            <Col span={6}>\n              <Statistic\n                title=\"总用户数\"\n                value={statistics.totalUsers}\n                prefix={<TeamOutlined />}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"活跃用户\"\n                value={statistics.activeUsers}\n                prefix={<CheckCircleOutlined />}\n                valueStyle={{ color: '#3f8600' }}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"管理员\"\n                value={statistics.adminUsers}\n                prefix={<UserOutlined />}\n                valueStyle={{ color: '#cf1322' }}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"本月新增\"\n                value={statistics.newUsersThisMonth}\n                prefix={<PlusOutlined />}\n                valueStyle={{ color: '#1890ff' }}\n              />\n            </Col>\n          </Row>\n        </ProCard>\n      )}\n\n      {/* 用户列表表格 */}\n      <ProTable<AppUser>\n        actionRef={actionRef}\n        rowKey=\"id\"\n        search={{\n          labelWidth: 'auto',\n          defaultCollapsed: false,\n          optionRender: ({ searchText, resetText }, { form }) => [\n            <Button\n              key=\"search\"\n              type=\"primary\"\n              onClick={() => {\n                form?.submit();\n              }}\n            >\n              {searchText}\n            </Button>,\n            <Button\n              key=\"reset\"\n              onClick={() => {\n                form?.resetFields();\n                actionRef.current?.reload();\n              }}\n            >\n              {resetText}\n            </Button>,\n          ],\n        }}\n        toolBarRender={() => [\n          <Button\n            key=\"activate\"\n            onClick={() => handleBulkAction('activate')}\n            disabled={selectedRows.length === 0}\n          >\n            批量启用\n          </Button>,\n          <Button\n            key=\"deactivate\"\n            onClick={() => handleBulkAction('deactivate')}\n            disabled={selectedRows.length === 0}\n          >\n            批量禁用\n          </Button>,\n          <Button\n            key=\"delete\"\n            danger\n            onClick={() => handleBulkAction('delete')}\n            disabled={selectedRows.length === 0}\n          >\n            批量删除\n          </Button>,\n        ]}\n        request={fetchUsers}\n        columns={columns}\n        rowSelection={{\n          onChange: (_, selectedRows) => {\n            setSelectedRows(selectedRows);\n          },\n        }}\n        pagination={{\n          defaultPageSize: 10,\n          showSizeChanger: true,\n          showQuickJumper: true,\n          showTotal: (total, range) =>\n            `第 ${range[0]}-${range[1]} 条/总共 ${total} 条`,\n        }}\n      />\n\n      {/* 用户表单弹窗 */}\n      <Modal\n        title={editingUser ? '编辑用户' : '新增用户'}\n        open={formVisible}\n        onCancel={() => setFormVisible(false)}\n        footer={null}\n        width={600}\n      >\n        <UserForm\n          user={editingUser}\n          onSuccess={() => {\n            setFormVisible(false);\n            actionRef.current?.reload();\n            fetchStatistics();\n          }}\n          onCancel={() => setFormVisible(false)}\n        />\n      </Modal>\n\n      {/* 用户详情抽屉 */}\n      <Drawer\n        title=\"用户详情\"\n        open={detailVisible}\n        onClose={() => setDetailVisible(false)}\n        width={600}\n      >\n        {viewingUser && (\n          <UserDetail\n            user={viewingUser}\n            onClose={() => setDetailVisible(false)}\n          />\n        )}\n      </Drawer>\n    </PageContainer>\n  );\n};\n\nexport default UserManagement;\n",
+      "__content": "import React, { useRef, useState } from 'react';\nimport type { ActionType, ProColumns } from '@ant-design/pro-components';\nimport {\n  PageContainer,\n  ProTable,\n  ProCard,\n} from '@ant-design/pro-components';\nimport {\n  Button,\n  Tag,\n  Space,\n  Popconfirm,\n  message,\n  Modal,\n  Select,\n  Switch,\n  Drawer,\n  Statistic,\n  Row,\n  Col,\n  Badge,\n  Form,\n  Input,\n  Card,\n} from 'antd';\nimport {\n  PlusOutlined,\n  EditOutlined,\n  DeleteOutlined,\n  UserOutlined,\n  TeamOutlined,\n  CheckCircleOutlined,\n  EyeOutlined,\n  ReloadOutlined,\n} from '@ant-design/icons';\nimport { request } from '@umijs/max';\nimport type { AppUser, UserListRequest, UserStatisticsResponse } from './types';\nimport UserForm from './components/UserForm';\nimport UserDetail from './components/UserDetail';\n\nconst UserManagement: React.FC = () => {\n  const actionRef = useRef<ActionType>(null);\n  const [searchForm] = Form.useForm();\n  const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);\n  const [formVisible, setFormVisible] = useState(false);\n  const [detailVisible, setDetailVisible] = useState(false);\n  const [editingUser, setEditingUser] = useState<AppUser | null>(null);\n  const [viewingUser, setViewingUser] = useState<AppUser | null>(null);\n  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);\n  const [searchParams, setSearchParams] = useState<UserListRequest>({\n    Page: 1,\n    PageSize: 10,\n    SortBy: 'CreatedAt',\n    SortOrder: 'desc',\n  });\n\n  // 获取用户统计信息\n  const fetchStatistics = async () => {\n    try {\n      const response = await request<{ success: boolean; data: UserStatisticsResponse }>('/api/user/statistics', {\n        method: 'GET',\n      });\n      setStatistics(response.data);\n    } catch (error) {\n      console.error('获取统计信息失败:', error);\n      message.error('获取统计信息失败');\n    }\n  };\n\n  // 获取用户列表\n  const fetchUsers = async (params: any) => {\n    console.log('fetchUsers 被调用，参数:', params);\n    console.log('当前搜索参数:', searchParams);\n    \n    const requestData: UserListRequest = {\n      Page: params.current || searchParams.Page,\n      PageSize: params.pageSize || searchParams.PageSize,\n      Search: searchParams.Search,\n      Role: searchParams.Role,\n      IsActive: searchParams.IsActive,\n      SortBy: params.sortBy || searchParams.SortBy,\n      SortOrder: params.sortOrder || searchParams.SortOrder,\n    };\n\n    console.log('发送请求数据:', requestData);\n\n    try {\n      const response = await request<{ success: boolean; data: any }>('/api/user/list', {\n        method: 'POST',\n        data: requestData,\n      });\n\n      console.log('API响应:', response);\n\n      return {\n        data: response.data.users || [],\n        success: true,\n        total: response.data.total || 0,\n      };\n    } catch (error) {\n      console.error('获取用户列表失败:', error);\n      message.error('获取用户列表失败');\n      return {\n        data: [],\n        success: false,\n        total: 0,\n      };\n    }\n  };\n\n  // 处理搜索\n  const handleSearch = (values: any) => {\n    console.log('搜索表单提交:', values);\n    const newSearchParams: UserListRequest = {\n      Page: 1,\n      PageSize: searchParams.PageSize,\n      Search: values.search,\n      Role: values.role,\n      IsActive: values.isActive,\n      SortBy: searchParams.SortBy,\n      SortOrder: searchParams.SortOrder,\n    };\n    setSearchParams(newSearchParams);\n    actionRef.current?.reload();\n  };\n\n  // 重置搜索\n  const handleReset = () => {\n    searchForm.resetFields();\n    const resetParams: UserListRequest = {\n      Page: 1,\n      PageSize: searchParams.PageSize,\n      SortBy: 'CreatedAt',\n      SortOrder: 'desc',\n    };\n    setSearchParams(resetParams);\n    actionRef.current?.reload();\n  };\n\n  // 删除用户\n  const handleDelete = async (userId: string) => {\n    try {\n      await request(`/api/user/${userId}`, {\n        method: 'DELETE',\n      });\n      message.success('删除成功');\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('删除用户失败:', error);\n      message.error('删除失败');\n    }\n  };\n\n  // 批量操作\n  const handleBulkAction = async (action: string) => {\n    if (selectedRows.length === 0) {\n      message.warning('请选择要操作的用户');\n      return;\n    }\n\n    try {\n      await request('/api/user/bulk-action', {\n        method: 'POST',\n        data: {\n          UserIds: selectedRows.map(user => user.id),\n          Action: action,\n        },\n      });\n\n      const actionText = {\n        activate: '启用',\n        deactivate: '禁用',\n        delete: '删除',\n      }[action] || '操作';\n\n      message.success(`批量${actionText}成功`);\n      setSelectedRows([]);\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('批量操作失败:', error);\n      message.error('批量操作失败');\n    }\n  };\n\n  // 切换用户状态\n  const handleToggleStatus = async (user: AppUser) => {\n    try {\n      const endpoint = user.isActive ? 'deactivate' : 'activate';\n      await request(`/api/user/${user.id}/${endpoint}`, {\n        method: 'PUT',\n      });\n\n      message.success(`用户已${user.isActive ? '禁用' : '启用'}`);\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('切换用户状态失败:', error);\n      message.error('操作失败');\n    }\n  };\n\n  // 更新用户角色\n  const handleUpdateRole = async (userId: string, role: string) => {\n    try {\n      await request(`/api/user/${userId}/role`, {\n        method: 'PUT',\n        data: { Role: role },\n      });\n\n      message.success('角色更新成功');\n      actionRef.current?.reload();\n    } catch (error) {\n      console.error('更新用户角色失败:', error);\n      message.error('角色更新失败');\n    }\n  };\n\n  // 表格列定义\n  const columns: ProColumns<AppUser>[] = [\n    {\n      title: '用户名',\n      dataIndex: 'username',\n      key: 'username',\n      width: 120,\n      render: (text, record) => (\n        <Space>\n          <UserOutlined />\n          {text}\n        </Space>\n      ),\n    },\n    {\n      title: '邮箱',\n      dataIndex: 'email',\n      key: 'email',\n      width: 200,\n      ellipsis: true,\n    },\n    {\n      title: '角色',\n      dataIndex: 'role',\n      key: 'role',\n      width: 100,\n      render: (_, record) => (\n        <Tag color={record.role === 'admin' ? 'red' : 'blue'}>\n          {record.role === 'admin' ? '管理员' : '普通用户'}\n        </Tag>\n      ),\n      renderFormItem: (_, { record }) => (\n        <Select\n          defaultValue={record?.role}\n          onChange={(value) => record?.id && handleUpdateRole(record.id, value)}\n        >\n          <Select.Option value=\"user\">普通用户</Select.Option>\n          <Select.Option value=\"admin\">管理员</Select.Option>\n        </Select>\n      ),\n    },\n    {\n      title: '状态',\n      dataIndex: 'isActive',\n      key: 'isActive',\n      width: 100,\n      render: (_, record) => (\n        <Badge\n          status={record.isActive ? 'success' : 'error'}\n          text={record.isActive ? '启用' : '禁用'}\n        />\n      ),\n      renderFormItem: (_, { record }) => (\n        <Switch\n          checked={record?.isActive}\n          onChange={() => record && handleToggleStatus(record)}\n        />\n      ),\n    },\n    {\n      title: '创建时间',\n      dataIndex: 'createdAt',\n      key: 'createdAt',\n      width: 180,\n      valueType: 'dateTime',\n      sorter: true,\n    },\n    {\n      title: '最后登录',\n      dataIndex: 'lastLoginAt',\n      key: 'lastLoginAt',\n      width: 180,\n      valueType: 'dateTime',\n      render: (text) => text || '-',\n    },\n    {\n      title: '操作',\n      key: 'action',\n      width: 200,\n      render: (_, record) => (\n        <Space>\n          <Button\n            type=\"link\"\n            icon={<EyeOutlined />}\n            onClick={() => {\n              setViewingUser(record);\n              setDetailVisible(true);\n            }}\n          >\n            查看\n          </Button>\n          <Button\n            type=\"link\"\n            icon={<EditOutlined />}\n            onClick={() => {\n              setEditingUser(record);\n              setFormVisible(true);\n            }}\n          >\n            编辑\n          </Button>\n          <Popconfirm\n            title=\"确定要删除这个用户吗？\"\n            onConfirm={() => record.id && handleDelete(record.id)}\n            okText=\"确定\"\n            cancelText=\"取消\"\n          >\n            <Button type=\"link\" danger icon={<DeleteOutlined />}>\n              删除\n            </Button>\n          </Popconfirm>\n        </Space>\n      ),\n    },\n  ];\n\n  React.useEffect(() => {\n    fetchStatistics();\n  }, []);\n\n  return (\n    <PageContainer\n      title=\"用户管理\"\n      extra={[\n        <Button\n          key=\"refresh\"\n          icon={<ReloadOutlined />}\n          onClick={() => {\n            actionRef.current?.reload();\n            fetchStatistics();\n          }}\n        >\n          刷新\n        </Button>,\n        <Button\n          key=\"add\"\n          type=\"primary\"\n          icon={<PlusOutlined />}\n          onClick={() => {\n            setEditingUser(null);\n            setFormVisible(true);\n          }}\n        >\n          新增用户\n        </Button>,\n      ]}\n    >\n      {/* 统计卡片 */}\n      {statistics && (\n        <ProCard style={{ marginBottom: 16 }}>\n          <Row gutter={16}>\n            <Col span={6}>\n              <Statistic\n                title=\"总用户数\"\n                value={statistics.totalUsers}\n                prefix={<TeamOutlined />}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"活跃用户\"\n                value={statistics.activeUsers}\n                prefix={<CheckCircleOutlined />}\n                valueStyle={{ color: '#3f8600' }}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"管理员\"\n                value={statistics.adminUsers}\n                prefix={<UserOutlined />}\n                valueStyle={{ color: '#cf1322' }}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"本月新增\"\n                value={statistics.newUsersThisMonth}\n                prefix={<PlusOutlined />}\n                valueStyle={{ color: '#1890ff' }}\n              />\n            </Col>\n          </Row>\n        </ProCard>\n      )}\n\n      {/* 搜索表单 */}\n      <Card style={{ marginBottom: 16 }}>\n        <Form\n          form={searchForm}\n          layout=\"inline\"\n          onFinish={handleSearch}\n          style={{ marginBottom: 16 }}\n        >\n          <Form.Item name=\"search\" label=\"搜索\">\n            <Input placeholder=\"用户名或邮箱\" style={{ width: 200 }} />\n          </Form.Item>\n          <Form.Item name=\"role\" label=\"角色\">\n            <Select placeholder=\"选择角色\" style={{ width: 120 }} allowClear>\n              <Select.Option value=\"user\">普通用户</Select.Option>\n              <Select.Option value=\"admin\">管理员</Select.Option>\n            </Select>\n          </Form.Item>\n          <Form.Item name=\"isActive\" label=\"状态\">\n            <Select placeholder=\"选择状态\" style={{ width: 120 }} allowClear>\n              <Select.Option value={true}>启用</Select.Option>\n              <Select.Option value={false}>禁用</Select.Option>\n            </Select>\n          </Form.Item>\n          <Form.Item>\n            <Space>\n              <Button type=\"primary\" htmlType=\"submit\">\n                查询\n              </Button>\n              <Button onClick={handleReset}>\n                重置\n              </Button>\n            </Space>\n          </Form.Item>\n        </Form>\n      </Card>\n\n      {/* 用户列表表格 */}\n      <ProTable<AppUser>\n        actionRef={actionRef}\n        rowKey=\"id\"\n        search={false}\n        toolBarRender={() => [\n          <Button\n            key=\"activate\"\n            onClick={() => handleBulkAction('activate')}\n            disabled={selectedRows.length === 0}\n          >\n            批量启用\n          </Button>,\n          <Button\n            key=\"deactivate\"\n            onClick={() => handleBulkAction('deactivate')}\n            disabled={selectedRows.length === 0}\n          >\n            批量禁用\n          </Button>,\n          <Button\n            key=\"delete\"\n            danger\n            onClick={() => handleBulkAction('delete')}\n            disabled={selectedRows.length === 0}\n          >\n            批量删除\n          </Button>,\n        ]}\n        request={fetchUsers}\n        columns={columns}\n        rowSelection={{\n          onChange: (_, selectedRows) => {\n            setSelectedRows(selectedRows);\n          },\n        }}\n        pagination={{\n          defaultPageSize: 10,\n          showSizeChanger: true,\n          showQuickJumper: true,\n          showTotal: (total, range) =>\n            `第 ${range[0]}-${range[1]} 条/总共 ${total} 条`,\n        }}\n      />\n\n      {/* 用户表单弹窗 */}\n      <Modal\n        title={editingUser ? '编辑用户' : '新增用户'}\n        open={formVisible}\n        onCancel={() => setFormVisible(false)}\n        footer={null}\n        width={600}\n      >\n        <UserForm\n          user={editingUser}\n          onSuccess={() => {\n            setFormVisible(false);\n            actionRef.current?.reload();\n            fetchStatistics();\n          }}\n          onCancel={() => setFormVisible(false)}\n        />\n      </Modal>\n\n      {/* 用户详情抽屉 */}\n      <Drawer\n        title=\"用户详情\"\n        open={detailVisible}\n        onClose={() => setDetailVisible(false)}\n        width={600}\n      >\n        {viewingUser && (\n          <UserDetail\n            user={viewingUser}\n            onClose={() => setDetailVisible(false)}\n          />\n        )}\n      </Drawer>\n    </PageContainer>\n  );\n};\n\nexport default UserManagement;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/user-management/index.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user-management/index.tsx"
     },
     "11": {
       "name": "debug",
@@ -3862,7 +3886,7 @@
       "absPath": "/debug",
       "__content": "import React from 'react';\nimport { Card, Descriptions, Button, message } from 'antd';\nimport { useModel } from '@umijs/max';\n\nconst DebugPage: React.FC = () => {\n  const { initialState } = useModel('@@initialState');\n\n  const checkAccess = () => {\n    const { currentUser } = initialState ?? {};\n    const canAdmin = currentUser && currentUser.access === 'admin';\n    \n    message.info(`当前用户权限: ${canAdmin ? '管理员' : '普通用户'}`);\n    console.log('Current user:', currentUser);\n    console.log('Can admin:', canAdmin);\n  };\n\n  return (\n    <div style={{ padding: 24 }}>\n      <Card title=\"用户权限调试信息\">\n        <Descriptions column={1}>\n          <Descriptions.Item label=\"当前用户\">\n            {initialState?.currentUser ? '已登录' : '未登录'}\n          </Descriptions.Item>\n          <Descriptions.Item label=\"用户信息\">\n            <pre>{JSON.stringify(initialState?.currentUser, null, 2)}</pre>\n          </Descriptions.Item>\n          <Descriptions.Item label=\"权限检查\">\n            <Button onClick={checkAccess}>检查权限</Button>\n          </Descriptions.Item>\n        </Descriptions>\n      </Card>\n    </div>\n  );\n};\n\nexport default DebugPage;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/user-management/debug.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user-management/debug.tsx"
     },
     "12": {
       "name": "test-menu",
@@ -3874,32 +3898,56 @@
       "absPath": "/test-menu",
       "__content": "import React from 'react';\nimport { Card, List, Typography } from 'antd';\n\nconst { Title, Text } = Typography;\n\nconst TestMenuPage: React.FC = () => {\n  return (\n    <div style={{ padding: 24 }}>\n      <Card>\n        <Title level={2}>菜单测试页面</Title>\n        <Text>如果您能看到这个页面，说明路由配置正确。</Text>\n        \n        <Title level={4} style={{ marginTop: 24 }}>测试步骤：</Title>\n        <List\n          size=\"small\"\n          dataSource={[\n            '1. 检查左侧菜单是否显示\"用户管理\"',\n            '2. 点击\"用户管理\"菜单项',\n            '3. 如果能看到用户管理页面，说明功能正常',\n            '4. 如果看不到菜单，请检查权限配置',\n            '5. 使用 admin/admin123 登录测试管理员权限'\n          ]}\n          renderItem={(item) => <List.Item>{item}</List.Item>}\n        />\n      </Card>\n    </div>\n  );\n};\n\nexport default TestMenuPage;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/test-menu/index.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/test-menu/index.tsx"
     },
     "13": {
+      "name": "change-password",
+      "path": "/user/change-password",
+      "hideInMenu": true,
+      "file": "@/pages/user/change-password/index.tsx",
+      "parentId": "ant-design-pro-layout",
+      "id": "13",
+      "absPath": "/user/change-password",
+      "__content": "import { LockOutlined } from '@ant-design/icons';\nimport { ProForm, ProFormText } from '@ant-design/pro-components';\nimport { FormattedMessage, Helmet, useIntl } from '@umijs/max';\nimport { Alert, App, Card } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { changePassword } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      padding: '24px',\n      maxWidth: '600px',\n      margin: '0 auto',\n    },\n    card: {\n      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',\n    },\n  };\n});\n\n\nconst ChangePasswordMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst ChangePassword: React.FC = () => {\n  const [changePasswordState, setChangePasswordState] = useState<API.ChangePasswordResult>({});\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const handleSubmit = async (values: API.ChangePasswordParams) => {\n    try {\n      // 修改密码\n      const result = await changePassword(values);\n      if (result.success) {\n        const defaultChangePasswordSuccessMessage = intl.formatMessage({\n          id: 'pages.changePassword.success',\n          defaultMessage: '密码修改成功！',\n        });\n        message.success(defaultChangePasswordSuccessMessage);\n        \n        // 修改成功后清空表单\n        setChangePasswordState({});\n        return;\n      }\n      \n      // 如果失败去设置用户错误信息\n      setChangePasswordState(result);\n    } catch (error) {\n      const defaultChangePasswordFailureMessage = intl.formatMessage({\n        id: 'pages.changePassword.failure',\n        defaultMessage: '密码修改失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultChangePasswordFailureMessage);\n    }\n  };\n\n  const { errorCode, errorMessage } = changePasswordState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.changePassword',\n            defaultMessage: '修改密码',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      \n      <Card \n        title={intl.formatMessage({\n          id: 'menu.changePassword',\n          defaultMessage: '修改密码',\n        })}\n        className={styles.card}\n      >\n        <ProForm\n          onFinish={async (values) => {\n            await handleSubmit(values as API.ChangePasswordParams);\n          }}\n          submitter={{\n            searchConfig: {\n              submitText: intl.formatMessage({\n                id: 'pages.changePassword.submit',\n                defaultMessage: '修改密码',\n              }),\n            },\n          }}\n        >\n          {errorCode && (\n            <ChangePasswordMessage content={errorMessage || '密码修改失败'} />\n          )}\n\n          <ProFormText.Password\n            name=\"currentPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.currentPassword.placeholder',\n              defaultMessage: '请输入当前密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.currentPassword.required\"\n                    defaultMessage=\"请输入当前密码!\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText.Password\n            name=\"newPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.newPassword.placeholder',\n              defaultMessage: '请输入新密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.newPassword.required\"\n                    defaultMessage=\"请输入新密码！\"\n                  />\n                ),\n              },\n              {\n                min: 6,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.newPassword.length\"\n                    defaultMessage=\"密码长度至少6个字符\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText.Password\n            name=\"confirmPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.confirmPassword.placeholder',\n              defaultMessage: '请确认新密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.confirmPassword.required\"\n                    defaultMessage=\"请确认新密码！\"\n                  />\n                ),\n              },\n              ({ getFieldValue }) => ({\n                validator(_, value) {\n                  if (!value || getFieldValue('newPassword') === value) {\n                    return Promise.resolve();\n                  }\n                  return Promise.reject(new Error('两次输入的密码不一致！'));\n                },\n              }),\n            ]}\n          />\n        </ProForm>\n      </Card>\n    </div>\n  );\n};\n\nexport default ChangePassword;\n",
+      "__isJSFile": true,
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/change-password/index.tsx"
+    },
+    "14": {
+      "name": "account.center",
+      "path": "/account/center",
+      "hideInMenu": true,
+      "file": "@/pages/account/center/index.tsx",
+      "parentId": "ant-design-pro-layout",
+      "id": "14",
+      "absPath": "/account/center",
+      "__content": "import {\n  EditOutlined,\n  UserOutlined,\n  MailOutlined,\n  CalendarOutlined,\n  SafetyOutlined,\n  HistoryOutlined,\n} from '@ant-design/icons';\nimport { ProCard, ProForm, ProFormText, ProFormDigit } from '@ant-design/pro-components';\nimport { FormattedMessage, Helmet, useIntl } from '@umijs/max';\nimport { Avatar, Button, Descriptions, Divider, List, message, Space, Tag, Typography } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useEffect, useState } from 'react';\nimport { getCurrentUserProfile, updateUserProfile, getUserActivityLogs } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst { Title, Text } = Typography;\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      padding: '24px',\n      width: '100%',\n    },\n    profileCard: {\n      marginBottom: '24px',\n    },\n    avatarSection: {\n      textAlign: 'center',\n      padding: '24px',\n    },\n    infoSection: {\n      padding: '24px',\n    },\n    activityCard: {\n      marginTop: '24px',\n    },\n    editButton: {\n      marginBottom: '16px',\n    },\n  };\n});\n\ninterface UserProfile {\n  id: string;\n  username: string;\n  name?: string;\n  email?: string;\n  age?: number;\n  role: string;\n  isActive: boolean;\n  createdAt: string;\n  updatedAt: string;\n  lastLoginAt?: string;\n}\n\ninterface ActivityLog {\n  id: string;\n  action: string;\n  description: string;\n  ipAddress?: string;\n  userAgent?: string;\n  createdAt: string;\n}\n\nconst UserCenter: React.FC = () => {\n  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);\n  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [editing, setEditing] = useState(false);\n  const [form] = ProForm.useForm();\n  const { styles } = useStyles();\n  const intl = useIntl();\n\n  // 获取用户信息\n  const fetchUserProfile = async () => {\n    try {\n      setLoading(true);\n      const response = await getCurrentUserProfile();\n      if (response.success && response.data) {\n        setUserProfile(response.data);\n        form.setFieldsValue({\n          username: response.data.username,\n          name: response.data.name,\n          email: response.data.email,\n          age: response.data.age,\n        });\n      }\n    } catch (error) {\n      console.error('获取用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.fetchFailed', defaultMessage: '获取用户信息失败' }));\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  // 获取活动日志\n  const fetchActivityLogs = async () => {\n    try {\n      const response = await getUserActivityLogs();\n      if (response.success && response.data) {\n        setActivityLogs(response.data);\n      }\n    } catch (error) {\n      console.error('获取活动日志失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.activityFailed', defaultMessage: '获取活动日志失败' }));\n    }\n  };\n\n  useEffect(() => {\n    fetchUserProfile();\n    fetchActivityLogs();\n  }, []);\n\n  // 更新用户信息\n  const handleUpdateProfile = async (values: any) => {\n    try {\n      const response = await updateUserProfile(values);\n      if (response.success) {\n        message.success(intl.formatMessage({ id: 'pages.account.center.updateSuccess', defaultMessage: '个人信息更新成功' }));\n        setEditing(false);\n        fetchUserProfile(); // 重新获取用户信息\n      } else {\n        message.error(response.error || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));\n      }\n    } catch (error) {\n      console.error('更新用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '个人信息更新失败' }));\n    }\n  };\n\n  // 取消编辑\n  const handleCancelEdit = () => {\n    setEditing(false);\n    form.resetFields();\n  };\n\n  // 格式化时间\n  const formatDateTime = (dateString: string) => {\n    return new Date(dateString).toLocaleString('zh-CN');\n  };\n\n  // 获取角色标签颜色\n  const getRoleTagColor = (role: string) => {\n    switch (role) {\n      case 'admin':\n        return 'red';\n      case 'user':\n        return 'blue';\n      default:\n        return 'default';\n    }\n  };\n\n  // 获取活动类型标签\n  const getActivityTag = (action: string) => {\n    const actionMap: { [key: string]: { text: string; color: string } } = {\n      login: { text: intl.formatMessage({ id: 'pages.account.center.activity.login', defaultMessage: '登录' }), color: 'green' },\n      logout: { text: intl.formatMessage({ id: 'pages.account.center.activity.logout', defaultMessage: '退出' }), color: 'orange' },\n      update_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.updateProfile', defaultMessage: '更新资料' }), color: 'blue' },\n      change_password: { text: intl.formatMessage({ id: 'pages.account.center.activity.changePassword', defaultMessage: '修改密码' }), color: 'red' },\n      view_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.viewProfile', defaultMessage: '查看资料' }), color: 'purple' },\n      // 用户管理操作\n      create_user: { text: '创建用户', color: 'cyan' },\n      update_user: { text: '更新用户', color: 'blue' },\n      delete_user: { text: '删除用户', color: 'red' },\n      activate_user: { text: '启用用户', color: 'green' },\n      deactivate_user: { text: '禁用用户', color: 'orange' },\n      update_user_role: { text: '更新角色', color: 'purple' },\n      bulk_action: { text: '批量操作', color: 'geekblue' },\n    };\n    return actionMap[action] || { text: action, color: 'default' };\n  };\n\n  if (loading) {\n    return <div><FormattedMessage id=\"pages.account.center.loading\" defaultMessage=\"加载中...\" /></div>;\n  }\n\n  if (!userProfile) {\n    return <div><FormattedMessage id=\"pages.account.center.userNotExist\" defaultMessage=\"用户信息不存在\" /></div>;\n  }\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.account.center',\n            defaultMessage: '个人中心',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n\n      <Title level={2}>\n        <UserOutlined style={{ marginRight: '8px' }} />\n        <FormattedMessage id=\"pages.account.center.title\" defaultMessage=\"个人中心\" />\n      </Title>\n\n      {/* 个人信息卡片 */}\n      <ProCard\n        title={<FormattedMessage id=\"pages.account.center.profile\" defaultMessage=\"个人信息\" />}\n        className={styles.profileCard}\n        extra={\n          <Button\n            type=\"primary\"\n            icon={<EditOutlined />}\n            onClick={() => setEditing(true)}\n            disabled={editing}\n          >\n            <FormattedMessage id=\"pages.account.center.editProfile\" defaultMessage=\"编辑资料\" />\n          </Button>\n        }\n      >\n        <div className={styles.avatarSection}>\n          <Avatar size={80} icon={<UserOutlined />} />\n          <div style={{ marginTop: '16px' }}>\n            <Title level={4}>{userProfile.name || userProfile.username}</Title>\n            <Tag color={getRoleTagColor(userProfile.role)}>\n              {userProfile.role === 'admin' ? \n                <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n              }\n            </Tag>\n          </div>\n        </div>\n\n        <Divider />\n\n        {editing ? (\n          <ProForm\n            form={form}\n            onFinish={handleUpdateProfile}\n            submitter={{\n              searchConfig: {\n                submitText: '保存',\n                resetText: '取消',\n              },\n              render: (props, doms) => {\n                return (\n                  <div style={{ textAlign: 'right' }}>\n                    <Space>\n                      <Button onClick={handleCancelEdit}>取消</Button>\n                      <Button type=\"primary\" htmlType=\"submit\">保存</Button>\n                    </Space>\n                  </div>\n                );\n              },\n              resetButtonProps: {\n                style: { display: 'none' }\n              },\n              submitButtonProps: {\n                style: { display: 'none' }\n              }\n            }}\n          >\n            <ProFormText\n              name=\"username\"\n              label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}\n              rules={[{ required: true, message: '请输入用户名' }]}\n            />\n            <ProFormText\n              name=\"name\"\n              label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}\n              placeholder=\"请输入姓名\"\n            />\n            <ProFormText\n              name=\"email\"\n              label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}\n              rules={[\n                { type: 'email', message: '请输入有效的邮箱地址' }\n              ]}\n            />\n            <ProFormDigit\n              name=\"age\"\n              label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}\n              min={1}\n              max={150}\n              placeholder=\"请输入年龄\"\n            />\n          </ProForm>\n        ) : (\n          <Descriptions column={2} bordered>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}>\n              <Text strong>{userProfile.username}</Text>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}>\n              {userProfile.name || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}>\n              <MailOutlined style={{ marginRight: '4px' }} />\n              {userProfile.email || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}>\n              {userProfile.age || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.role\" defaultMessage=\"角色\" />}>\n              <Tag color={getRoleTagColor(userProfile.role)}>\n                {userProfile.role === 'admin' ? \n                  <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                  <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.status\" defaultMessage=\"状态\" />}>\n              <Tag color={userProfile.isActive ? 'green' : 'red'}>\n                {userProfile.isActive ? \n                  <FormattedMessage id=\"pages.account.center.active\" defaultMessage=\"正常\" /> : \n                  <FormattedMessage id=\"pages.account.center.inactive\" defaultMessage=\"禁用\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.registerTime\" defaultMessage=\"注册时间\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.createdAt)}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastUpdate\" defaultMessage=\"最后更新\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.updatedAt)}\n            </Descriptions.Item>\n            {userProfile.lastLoginAt && (\n              <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastLogin\" defaultMessage=\"最后登录\" />} span={2}>\n                <CalendarOutlined style={{ marginRight: '4px' }} />\n                {formatDateTime(userProfile.lastLoginAt)}\n              </Descriptions.Item>\n            )}\n          </Descriptions>\n        )}\n      </ProCard>\n\n      {/* 活动日志卡片 */}\n      <ProCard\n        title={\n          <Space>\n            <HistoryOutlined />\n            <FormattedMessage id=\"pages.account.center.recentActivity\" defaultMessage=\"最近活动\" />\n          </Space>\n        }\n        className={styles.activityCard}\n      >\n        <List\n          dataSource={activityLogs}\n          renderItem={(item) => {\n            const activityTag = getActivityTag(item.action);\n            return (\n              <List.Item>\n                <List.Item.Meta\n                  avatar={<SafetyOutlined />}\n                  title={\n                    <Space>\n                      <Tag color={activityTag.color}>{activityTag.text}</Tag>\n                      <Text>{item.description}</Text>\n                    </Space>\n                  }\n                  description={\n                    <Space direction=\"vertical\" size=\"small\">\n                      <Text type=\"secondary\">\n                        {formatDateTime(item.createdAt)}\n                      </Text>\n                      {item.ipAddress && (\n                        <Text type=\"secondary\" style={{ fontSize: '12px' }}>\n                          IP: {item.ipAddress}\n                        </Text>\n                      )}\n                    </Space>\n                  }\n                />\n              </List.Item>\n            );\n          }}\n        />\n      </ProCard>\n    </div>\n  );\n};\n\nexport default UserCenter;\n",
+      "__isJSFile": true,
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/account/center/index.tsx"
+    },
+    "15": {
       "path": "/",
       "redirect": "/welcome",
       "parentId": "ant-design-pro-layout",
-      "id": "13",
+      "id": "15",
       "absPath": "/"
     },
-    "14": {
+    "16": {
       "path": "*",
       "layout": false,
       "file": "@/pages/404.tsx",
-      "id": "14",
+      "id": "16",
       "absPath": "/*",
       "__content": "import { history, useIntl } from '@umijs/max';\nimport { Button, Card, Result } from 'antd';\nimport React from 'react';\n\nconst NoFoundPage: React.FC = () => (\n  <Card variant=\"borderless\">\n    <Result\n      status=\"404\"\n      title=\"404\"\n      subTitle={useIntl().formatMessage({ id: 'pages.404.subTitle' })}\n      extra={\n        <Button type=\"primary\" onClick={() => history.push('/')}>\n          {useIntl().formatMessage({ id: 'pages.404.buttonText' })}\n        </Button>\n      }\n    />\n  </Card>\n);\n\nexport default NoFoundPage;\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/pages/404.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/404.tsx"
     },
     "ant-design-pro-layout": {
       "id": "ant-design-pro-layout",
       "path": "/",
-      "file": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/.umi-production/plugin-layout/Layout.tsx",
+      "file": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/.umi-production/plugin-layout/Layout.tsx",
       "absPath": "/",
       "isLayout": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/.umi-production/plugin-layout/Layout.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/.umi-production/plugin-layout/Layout.tsx"
     }
   },
   "apiRoutes": {},
@@ -3916,14 +3964,14 @@
   },
   "react": {
     "version": "19.2.0",
-    "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react"
+    "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react"
   },
   "react-dom": {
     "version": "19.2.0",
-    "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/react-dom"
+    "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/react-dom"
   },
   "appJS": {
-    "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/app.tsx",
+    "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/app.tsx",
     "exports": [
       "getInitialState",
       "layout",
@@ -3932,13 +3980,13 @@
   },
   "locale": "C",
   "globalCSS": [
-    "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/global.less"
+    "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/global.less"
   ],
   "globalJS": [
-    "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/global.tsx"
+    "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/global.tsx"
   ],
   "overridesCSS": [],
-  "globalLoading": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/src/loading.tsx",
+  "globalLoading": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/loading.tsx",
   "bundler": "mako",
   "git": {
     "originUrl": "https://github.com/wjw1-Evan/aspire-admin.git"
@@ -3950,11 +3998,11 @@
   },
   "faviconFiles": [],
   "antd": {
-    "pkgPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/antd",
+    "pkgPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/antd",
     "version": "5.27.4"
   },
   "pluginLayout": {
-    "pkgPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Web/node_modules/@ant-design/pro-components",
+    "pkgPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@ant-design/pro-components",
     "version": "2.8.10"
   }
 }

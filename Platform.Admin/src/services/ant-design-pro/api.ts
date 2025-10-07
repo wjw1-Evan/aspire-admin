@@ -44,6 +44,18 @@ export async function register(body: API.RegisterParams, options?: { [key: strin
   });
 }
 
+/** 刷新token接口 POST /api/refresh-token */
+export async function refreshToken(body: API.POST_API_REFRESH_TOKEN_PAYLOAD, options?: { [key: string]: any }) {
+  return request<API.POST_API_REFRESH_TOKEN_RES>('/api/refresh-token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 修改密码接口 POST /api/change-password */
 export async function changePassword(body: API.ChangePasswordParams, options?: { [key: string]: any }) {
   return request<API.ChangePasswordResult>('/api/change-password', {

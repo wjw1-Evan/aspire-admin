@@ -10,6 +10,7 @@ description: 项目结构和架构指南
 ## 🏗️ 项目架构
 
 ### 核心组件
+
 - **Platform.AppHost** - Aspire 应用主机，负责服务编排和配置
 - **Platform.ApiService** - API 服务，提供用户管理、认证等 REST API
 - **Platform.Admin** - React + Ant Design Pro 企业级管理后台
@@ -43,9 +44,36 @@ dotnet run --project Platform.AppHost
 - 管理后台: http://localhost:15001
 - 移动应用: http://localhost:15002
 - API 网关: http://localhost:15000
-- API 文档: http://localhost:15000/scalar/v1
+
 
 ### 默认账户
 - 用户名: `admin`
 - 密码: `admin123`
 - 角色: `admin`
+
+## 🔐 认证系统架构
+
+### 统一认证系统
+项目采用前后端统一的认证架构：
+
+- **JWT Token 认证** - 基于 JWT 的简单 token 机制
+- **统一 API 接口** - 前后端使用相同的认证端点
+- **基于 access 字段的权限系统** - 简化的权限控制
+- **自动 token 验证** - 智能的网络重试机制
+
+### 认证流程
+1. **登录**: `POST /login/account` → 获取 JWT token
+2. **权限检查**: 基于 `user.access` 字段进行权限验证
+3. **Token 验证**: 定期调用 `/currentUser` 验证 token 有效性
+4. **登出**: `POST /login/outLogin` → 清除本地 token
+
+### 权限系统
+- **Admin 权限**: `access: 'admin'`
+- **User 权限**: `access: 'user'`
+- **Guest 权限**: `access: 'guest'`
+
+## 📚 重要文档
+
+- [认证系统架构说明](mdc:Platform.App/AUTH-ARCHITECTURE.md)
+- [认证系统统一总结](mdc:Platform.App/AUTH-SYNC-SUMMARY.md)
+- [认证系统使用指南](mdc:Platform.App/README-AUTH.md)

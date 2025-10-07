@@ -121,4 +121,15 @@ public class AuthController : ControllerBase
         var result = await _authService.ChangePasswordAsync(request);
         return Ok(result);
     }
+
+    /// <summary>
+    /// 刷新访问token
+    /// </summary>
+    /// <param name="request">刷新token请求</param>
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        var result = await _authService.RefreshTokenAsync(request);
+        return Ok(result);
+    }
 }

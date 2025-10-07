@@ -137,8 +137,12 @@ const Login: React.FC = () => {
       // 登录
       const msg = await login({ ...values, type });
       if (msg.status === 'ok') {
-        // 保存 token 到本地存储
-        if (msg.token) {
+        // 保存 token 和刷新token到本地存储
+        if (msg.token && msg.refreshToken) {
+          const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;
+          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);
+        } else if (msg.token) {
+          // 兼容旧版本，只保存token
           tokenUtils.setToken(msg.token);
         }
         

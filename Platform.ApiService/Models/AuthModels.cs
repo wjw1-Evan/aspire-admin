@@ -105,6 +105,8 @@ public class LoginResult
     public string? Type { get; set; }
     public string? CurrentAuthority { get; set; }
     public string? Token { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime? ExpiresAt { get; set; }
 }
 
 public class ApiResponse<T>
@@ -170,4 +172,18 @@ public class ChangePasswordRequest
     public string CurrentPassword { get; set; } = string.Empty;
     public string NewPassword { get; set; } = string.Empty;
     public string ConfirmPassword { get; set; } = string.Empty;
+}
+
+public class RefreshTokenRequest
+{
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+public class RefreshTokenResult
+{
+    public string? Status { get; set; }
+    public string? Token { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public string? ErrorMessage { get; set; }
 }

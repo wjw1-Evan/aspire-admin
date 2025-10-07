@@ -84,18 +84,17 @@ export class UserService {
 
 ### 认证服务
 ```typescript
-// ✅ 推荐：认证服务
+// ✅ 推荐：统一的认证服务（与Admin端完全一致）
 export class AuthService {
   private static readonly BASE_URL = '/apiservice/api';
   
-  static async login(credentials: LoginRequest): Promise<LoginResponse> {
+  static async login(credentials: LoginRequest): Promise<LoginResult> {
     try {
       const response = await apiClient.post(`${this.BASE_URL}/login/account`, credentials);
-      const { token, user } = response.data;
+      const { token, currentAuthority } = response.data;
       
       // 存储 token
       await AsyncStorage.setItem('auth_token', token);
-      await AsyncStorage.setItem('user_info', JSON.stringify(user));
       
       return response.data;
     } catch (error) {
@@ -106,10 +105,24 @@ export class AuthService {
   
   static async logout(): Promise<void> {
     try {
+      // 调用后端登出接口
+      await apiClient.post(`${this.BASE_URL}/login/outLogin`);
+      
+      // 清除本地存储
       await AsyncStorage.removeItem('auth_token');
       await AsyncStorage.removeItem('user_info');
     } catch (error) {
       console.error('Logout failed:', error);
+    }
+  }
+  
+  static async getCurrentUser(): Promise<CurrentUser> {
+    try {
+      const response = await apiClient.get(`${this.BASE_URL}/currentUser`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+      throw error;
     }
   }
   
@@ -158,11 +171,12 @@ export function useUsers() {
 
 ### 认证状态 Hook
 ```typescript
-// ✅ 推荐：认证状态 Hook
+// ✅ 推荐：简化的认证状态 Hook（与Admin端统一）
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     checkAuthStatus();
@@ -171,14 +185,17 @@ export function useAuth() {
   const checkAuthStatus = async () => {
     try {
       const token = await AuthService.getStoredToken();
-      const userInfo = await AsyncStorage.getItem('user_info');
       
-      if (token && userInfo) {
-        setUser(JSON.parse(userInfo));
+      if (token) {
+        // 验证 token 有效性
+        const currentUser = await AuthService.getCurrentUser();
+        setUser(currentUser);
         setIsAuthenticated(true);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      setError('认证验证失败');
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
@@ -186,22 +203,80 @@ export function useAuth() {
   
   const login = async (credentials: LoginRequest) => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const response = await AuthService.login(credentials);
-      setUser(response.user);
+      
+      // 获取用户信息
+      const currentUser = await AuthService.getCurrentUser();
+      setUser(currentUser);
       setIsAuthenticated(true);
+      
       return response;
     } catch (error) {
+      setError(error instanceof Error ? error.message : '登录失败');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
   
   const logout = async () => {
-    await AuthService.logout();
-    setUser(null);
-    setIsAuthenticated(false);
+    try {
+      await AuthService.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
   
-  return { isAuthenticated, user, loading, login, logout };
+  return { isAuthenticated, user, loading, error, login, logout, checkAuthStatus };
+}
+
+### 权限检查 Hook
+```typescript
+// ✅ 推荐：基于 access 字段的权限检查 Hook
+export function usePermissions() {
+  const { user, isAuthenticated } = useAuth();
+  
+  const checkPermission = useCallback((check: PermissionCheck): boolean => {
+    if (!isAuthenticated || !user) {
+      return false;
+    }
+    
+    const { access, role } = check;
+    
+    // 检查角色（兼容性）
+    if (role && user.access === role) {
+      return true;
+    }
+    
+    // 检查权限（基于 access 字段）
+    if (access && user.access === access) {
+      return true;
+    }
+    
+    return false;
+  }, [user, isAuthenticated]);
+  
+  const checkRole = useCallback((role: string): boolean => {
+    return checkPermission({ role });
+  }, [checkPermission]);
+  
+  const checkAllRoles = useCallback((roles: string[]): boolean => {
+    return roles.every(role => checkRole(role));
+  }, [checkRole]);
+  
+  return {
+    checkPermission,
+    checkRole,
+    checkAllRoles,
+    user,
+    isAuthenticated,
+  };
 }
 ```
 

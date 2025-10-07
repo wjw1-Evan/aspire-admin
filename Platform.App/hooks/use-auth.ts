@@ -229,15 +229,12 @@ export function useNetworkStatus() {
   const [isOnline, setIsOnline] = React.useState(true); // 默认假设在线
 
   useEffect(() => {
-    // 使用 React Native 的网络检测
+    // 使用 apiService 进行网络检测
     const checkNetworkStatus = async () => {
       try {
-        // 在 React Native 中，我们可以使用 fetch 来检测网络状态
-        await fetch('https://www.google.com', { 
-          method: 'HEAD',
-          mode: 'no-cors'
-        });
-        setIsOnline(true);
+        const { apiService } = await import('@/services/api');
+        const isOnline = await apiService.isOnline();
+        setIsOnline(isOnline);
       } catch {
         setIsOnline(false);
       }

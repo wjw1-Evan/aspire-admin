@@ -3,7 +3,7 @@
 import React, { ReactNode, useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthGuard } from '@/hooks/use-auth';
+import { useAuthGuard } from '@/components/auth-guard';
 import { PermissionCheck } from '@/types/auth';
 
 interface RouteGuardProps {
@@ -110,15 +110,22 @@ export function AdvancedRouteGuard({
   // 获取当前路由路径
   const currentPath = `/${segments.join('/')}`;
 
+  // 查找当前路由的权限配置
+  const routePermission = routePermissions.find(route => 
+    currentPath.startsWith(route.path)
+  );
+
+  // 检查权限 - 移到组件顶层
+  const { canAccess } = useAuthGuard(
+    routePermission?.permission,
+    routePermission?.roles,
+    routePermission?.requireAllRoles
+  );
+
   useEffect(() => {
     if (loading) {
       return;
     }
-
-    // 查找当前路由的权限配置
-    const routePermission = routePermissions.find(route => 
-      currentPath.startsWith(route.path)
-    );
 
     // 如果没有找到权限配置，使用默认逻辑
     if (!routePermission) {
@@ -135,12 +142,6 @@ export function AdvancedRouteGuard({
     }
 
     // 检查权限
-    const { canAccess } = useAuthGuard(
-      routePermission.permission,
-      routePermission.roles,
-      routePermission.requireAllRoles
-    );
-
     if (!canAccess) {
       router.replace(unauthorizedRedirect);
       return;
@@ -149,7 +150,8 @@ export function AdvancedRouteGuard({
     isAuthenticated,
     loading,
     currentPath,
-    routePermissions,
+    canAccess,
+    routePermission,
     defaultRedirect,
     unauthorizedRedirect,
     router,

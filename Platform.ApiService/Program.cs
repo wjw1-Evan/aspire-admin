@@ -15,17 +15,6 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
 
-// Add CORS services
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .SetPreflightMaxAge(TimeSpan.FromSeconds(2520));
-    });
-});
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -77,31 +66,20 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-// Enable CORS (must be before authentication)
-app.UseCors("AllowAll");
-
 // Add authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseCors();
+
+
 // Configure controllers
 app.MapControllers();
-
-// Handle OPTIONS requests globally for CORS
-app.MapMethods("/{*path}", new[] { "OPTIONS" }, async (HttpContext context) =>
-{
-    context.Response.Headers["Access-Control-Allow-Origin"] = "*";
-    context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-    context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-    context.Response.StatusCode = 200;
-    await context.Response.WriteAsync("");
-});
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
 
 app.MapDefaultEndpoints();
 

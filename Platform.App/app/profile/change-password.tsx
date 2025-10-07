@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { authService } from '@/services/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedInput } from '@/components/themed-input';
@@ -69,6 +69,7 @@ export default function ChangePasswordScreen() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
+  const { changePassword } = useAuth();
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useThemeColor(
     { light: '#f8f9fa', dark: '#2c2c2e' },
@@ -111,7 +112,7 @@ export default function ChangePasswordScreen() {
 
     try {
       setLoading(true);
-      const response = await authService.changePassword({
+      const response = await changePassword({
         currentPassword: currentPassword.trim(),
         newPassword: newPassword.trim(),
         confirmPassword: confirmPassword.trim(),

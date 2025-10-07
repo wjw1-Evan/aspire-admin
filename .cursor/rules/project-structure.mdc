@@ -40,6 +40,9 @@ Platform/
 dotnet run --project Platform.AppHost
 ```
 
+> ⚠️ **调试提示**：调试时请务必通过 `Platform.AppHost` 启动项目（`dotnet run --project Platform.AppHost`），否则微服务、API 及前端应用将无法正确编排和联动。
+
+
 ### 访问地址
 - 管理后台: http://localhost:15001
 - 移动应用: http://localhost:15002

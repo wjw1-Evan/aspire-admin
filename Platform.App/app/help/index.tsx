@@ -19,7 +19,7 @@ const HelpItem = ({
   showArrow = true,
   borderColor
 }: {
-  icon: string;
+  icon: 'envelope.fill' | 'phone.fill' | 'questionmark.circle.fill' | 'info.circle.fill' | 'arrow.clockwise' | 'lock.fill' | 'gear';
   title: string;
   onPress?: () => void;
   showArrow?: boolean;

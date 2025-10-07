@@ -2,10 +2,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthError, AuthErrorType } from '@/types/auth';
-
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:15000/apiservice/api' 
-  : 'https://your-production-api.com/apiservice/api';
+import { getApiBaseUrl } from '@/constants/api-config';
 
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
@@ -18,13 +15,24 @@ interface RequestConfig {
   retryDelay?: number;
 }
 
+// API 错误类型
+interface ApiError extends Error {
+  response?: {
+    status: number;
+    statusText: string;
+  };
+  code?: string;
+}
+
 class ApiService {
-  private readonly baseURL: string;
   private authStateChangeListeners: (() => void)[] = [];
   private logoutCallback: (() => Promise<void>) | null = null;
 
-  constructor() {
-    this.baseURL = API_BASE_URL;
+  // 动态获取 API 基础 URL
+  private getBaseURL(): string {
+    const baseURL = getApiBaseUrl();
+    console.log('动态获取 API_BASE_URL:', baseURL);
+    return baseURL;
   }
 
   // 设置登出回调函数
@@ -54,7 +62,7 @@ class ApiService {
   }
 
   // 处理认证失败
-  private async handleAuthFailure(error?: any): Promise<AuthError> {
+  private async handleAuthFailure(error?: ApiError): Promise<AuthError> {
     console.log('API: Authentication failed, logging out user');
     
     // 清除本地token
@@ -104,18 +112,18 @@ class ApiService {
   ): Promise<T> {
     const { timeout = 10000, retries = 3, retryDelay = 1000 } = config;
     
-    let lastError: any;
+    let lastError: ApiError | undefined;
     
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const result = await this.request<T>(endpoint, options, timeout);
         return result;
       } catch (error) {
-        lastError = error;
+        lastError = error as ApiError;
         
         // 如果是认证错误，不重试
-        if (error?.response?.status === 401 || error?.response?.status === 403) {
-          throw await this.handleAuthFailure(error);
+        if (lastError?.response?.status === 401 || lastError?.response?.status === 403) {
+          throw await this.handleAuthFailure(lastError);
         }
         
         // 如果不是最后一次尝试，等待后重试
@@ -125,7 +133,7 @@ class ApiService {
       }
     }
     
-    throw lastError;
+    throw lastError || new Error('请求失败');
   }
 
   // 基础请求方法
@@ -134,7 +142,9 @@ class ApiService {
     options: RequestInit = {},
     timeout: number = 10000
   ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+    const url = `${this.getBaseURL()}${endpoint}`;
+
+    console.log('url', url);
     
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
@@ -168,7 +178,9 @@ class ApiService {
       
       // 检查是否是认证相关的错误
       if (response.status === 401 || response.status === 403) {
-        throw await this.handleAuthFailure({ response });
+        const authError = new Error('认证失败') as ApiError;
+        authError.response = response;
+        throw await this.handleAuthFailure(authError);
       }
       
       if (!response.ok) {
@@ -180,12 +192,12 @@ class ApiService {
 
       const data = await response.json();
       return data;
-    } catch (error) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
       
-      if (error.name === 'AbortError') {
-        const timeoutError = new Error('请求超时，请检查网络连接');
-        (timeoutError as any).code = 'TIMEOUT';
+      if (error instanceof Error && error.name === 'AbortError') {
+        const timeoutError = new Error('请求超时，请检查网络连接') as ApiError;
+        timeoutError.code = 'TIMEOUT';
         throw timeoutError;
       }
       
@@ -314,11 +326,14 @@ class ApiService {
   // 设置所有token信息
   async setTokens(token: string, refreshToken: string, expiresAt?: number): Promise<void> {
     try {
-      await AsyncStorage.multiSet([
+      const items: [string, string][] = [
         [TOKEN_KEY, token],
         [REFRESH_TOKEN_KEY, refreshToken],
-        ...(expiresAt ? [[TOKEN_EXPIRES_KEY, expiresAt.toString()]] : [])
-      ]);
+      ];
+      if (expiresAt) {
+        items.push([TOKEN_EXPIRES_KEY, expiresAt.toString()]);
+      }
+      await AsyncStorage.multiSet(items);
     } catch (error) {
       console.error('Failed to set tokens:', error);
     }
@@ -333,7 +348,7 @@ class ApiService {
       }
 
       // 尝试调用一个需要认证的接口来验证token
-      const response = await fetch(`${this.baseURL}/currentUser`, {
+      const response = await fetch(`${this.getBaseURL()}/currentUser`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -342,7 +357,9 @@ class ApiService {
       });
 
       if (response.status === 401 || response.status === 403) {
-        await this.handleAuthFailure({ response });
+        const authError = new Error('认证失败') as ApiError;
+        authError.response = response;
+        await this.handleAuthFailure(authError);
         return false;
       }
 
@@ -357,12 +374,21 @@ class ApiService {
   async isOnline(): Promise<boolean> {
     try {
       // 尝试访问一个简单的端点来检查网络连接
-      const response = await fetch(`${this.baseURL}/health`, {
-        method: 'GET',
-        timeout: 5000,
-      });
-      return response.ok;
-    } catch (error) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      try {
+        const response = await fetch(`${this.getBaseURL()}/health`, {
+          method: 'GET',
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return response.ok;
+      } catch {
+        clearTimeout(timeoutId);
+        return false;
+      }
+    } catch {
       return false;
     }
   }

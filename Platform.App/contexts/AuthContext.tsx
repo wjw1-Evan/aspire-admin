@@ -246,6 +246,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  // Token 验证 - 简化以匹配Admin端
+  const validateToken = useCallback(async (): Promise<boolean> => {
+    try {
+      if (!state.token) {
+        return false;
+      }
+      
+      // 调用 API 验证 token
+      return await apiService.validateToken();
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
+  }, [state.token]);
+
   // 刷新认证状态 - 简化以匹配Admin端
   const refreshAuth = useCallback(async () => {
     try {
@@ -380,21 +395,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const hasRole = useCallback((role: string): boolean => {
     return state.user?.access === role;
   }, [state.user]);
-
-  // Token 验证 - 简化以匹配Admin端
-  const validateToken = useCallback(async (): Promise<boolean> => {
-    try {
-      if (!state.token) {
-        return false;
-      }
-      
-      // 调用 API 验证 token
-      return await apiService.validateToken();
-    } catch (error) {
-      console.error('Token validation error:', error);
-      return false;
-    }
-  }, [state.token]);
 
   // 应用状态变化处理
   const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {

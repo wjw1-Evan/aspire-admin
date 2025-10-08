@@ -3,7 +3,7 @@
 
 declare namespace API {
   // 统一的 API 响应格式
-  type UnifiedApiResponse<T = any> = {
+  type ApiResponse<T = any> = {
     success: boolean;
     data?: T;
     errorCode?: string;

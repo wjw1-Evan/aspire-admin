@@ -4,7 +4,7 @@
  */
 
 // 统一 API 响应格式
-export interface UnifiedApiResponse<T = any> {
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   errorCode?: string;

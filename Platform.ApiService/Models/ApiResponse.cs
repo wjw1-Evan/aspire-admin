@@ -6,7 +6,7 @@ namespace Platform.ApiService.Models;
 /// 统一的 API 响应格式
 /// </summary>
 /// <typeparam name="T">数据类型</typeparam>
-public class UnifiedApiResponse<T>
+public class ApiResponse<T>
 {
     /// <summary>
     /// 操作是否成功
@@ -46,9 +46,9 @@ public class UnifiedApiResponse<T>
     /// <param name="data">响应数据</param>
     /// <param name="traceId">追踪ID</param>
     /// <returns>成功响应</returns>
-    public static UnifiedApiResponse<T> SuccessResult(T data, string? traceId = null)
+    public static ApiResponse<T> SuccessResult(T data, string? traceId = null)
     {
-        return new UnifiedApiResponse<T>
+        return new ApiResponse<T>
         {
             success = true,
             data = data,
@@ -63,9 +63,9 @@ public class UnifiedApiResponse<T>
     /// <param name="errorMessage">错误消息</param>
     /// <param name="traceId">追踪ID</param>
     /// <returns>失败响应</returns>
-    public static UnifiedApiResponse<T> ErrorResult(string errorCode, string errorMessage, string? traceId = null)
+    public static ApiResponse<T> ErrorResult(string errorCode, string errorMessage, string? traceId = null)
     {
-        return new UnifiedApiResponse<T>
+        return new ApiResponse<T>
         {
             success = false,
             errorCode = errorCode,
@@ -80,9 +80,9 @@ public class UnifiedApiResponse<T>
     /// <param name="errorMessage">错误消息</param>
     /// <param name="traceId">追踪ID</param>
     /// <returns>验证错误响应</returns>
-    public static UnifiedApiResponse<T> ValidationErrorResult(string errorMessage, string? traceId = null)
+    public static ApiResponse<T> ValidationErrorResult(string errorMessage, string? traceId = null)
     {
-        return new UnifiedApiResponse<T>
+        return new ApiResponse<T>
         {
             success = false,
             errorCode = "VALIDATION_ERROR",
@@ -97,9 +97,9 @@ public class UnifiedApiResponse<T>
     /// <param name="errorMessage">错误消息</param>
     /// <param name="traceId">追踪ID</param>
     /// <returns>未授权响应</returns>
-    public static UnifiedApiResponse<T> UnauthorizedResult(string errorMessage = "未授权访问", string? traceId = null)
+    public static ApiResponse<T> UnauthorizedResult(string errorMessage = "未授权访问", string? traceId = null)
     {
-        return new UnifiedApiResponse<T>
+        return new ApiResponse<T>
         {
             success = false,
             errorCode = "UNAUTHORIZED",
@@ -114,9 +114,9 @@ public class UnifiedApiResponse<T>
     /// <param name="errorMessage">错误消息</param>
     /// <param name="traceId">追踪ID</param>
     /// <returns>未找到响应</returns>
-    public static UnifiedApiResponse<T> NotFoundResult(string errorMessage = "资源未找到", string? traceId = null)
+    public static ApiResponse<T> NotFoundResult(string errorMessage = "资源未找到", string? traceId = null)
     {
-        return new UnifiedApiResponse<T>
+        return new ApiResponse<T>
         {
             success = false,
             errorCode = "NOT_FOUND",
@@ -131,9 +131,9 @@ public class UnifiedApiResponse<T>
     /// <param name="errorMessage">错误消息</param>
     /// <param name="traceId">追踪ID</param>
     /// <returns>服务器错误响应</returns>
-    public static UnifiedApiResponse<T> ServerErrorResult(string errorMessage = "服务器内部错误", string? traceId = null)
+    public static ApiResponse<T> ServerErrorResult(string errorMessage = "服务器内部错误", string? traceId = null)
     {
-        return new UnifiedApiResponse<T>
+        return new ApiResponse<T>
         {
             success = false,
             errorCode = "INTERNAL_SERVER_ERROR",
@@ -146,7 +146,7 @@ public class UnifiedApiResponse<T>
 /// <summary>
 /// 无数据响应的简化版本
 /// </summary>
-public class UnifiedApiResponse : UnifiedApiResponse<object>
+public class ApiResponse : ApiResponse<object>
 {
     /// <summary>
     /// 创建成功响应（无数据）
@@ -154,9 +154,9 @@ public class UnifiedApiResponse : UnifiedApiResponse<object>
     /// <param name="message">成功消息</param>
     /// <param name="traceId">追踪ID</param>
     /// <returns>成功响应</returns>
-    public static UnifiedApiResponse SuccessResult(string message = "操作成功", string? traceId = null)
+    public static ApiResponse SuccessResult(string message = "操作成功", string? traceId = null)
     {
-        return new UnifiedApiResponse
+        return new ApiResponse
         {
             success = true,
             data = new { message },

@@ -16,7 +16,7 @@
 ### 标准响应结构
 
 ```typescript
-interface UnifiedApiResponse<T = any> {
+interface ApiResponse<T = any> {
   success: boolean;        // 操作是否成功
   data?: T;               // 响应数据
   errorCode?: string;     // 错误代码
@@ -105,7 +105,7 @@ interface UnifiedApiResponse<T = any> {
 
 ```csharp
 // 使用统一响应格式
-public class UnifiedApiResponse<T>
+public class ApiResponse<T>
 {
     public bool success { get; set; }
     public T? data { get; set; }
@@ -115,12 +115,12 @@ public class UnifiedApiResponse<T>
     public string? traceId { get; set; }
     
     // 静态工厂方法
-    public static UnifiedApiResponse<T> SuccessResult(T data, string? traceId = null);
-    public static UnifiedApiResponse<T> ErrorResult(string errorCode, string errorMessage, string? traceId = null);
-    public static UnifiedApiResponse<T> ValidationErrorResult(string errorMessage, string? traceId = null);
-    public static UnifiedApiResponse<T> UnauthorizedResult(string errorMessage = "未授权访问", string? traceId = null);
-    public static UnifiedApiResponse<T> NotFoundResult(string errorMessage = "资源未找到", string? traceId = null);
-    public static UnifiedApiResponse<T> ServerErrorResult(string errorMessage = "服务器内部错误", string? traceId = null);
+    public static ApiResponse<T> SuccessResult(T data, string? traceId = null);
+    public static ApiResponse<T> ErrorResult(string errorCode, string errorMessage, string? traceId = null);
+    public static ApiResponse<T> ValidationErrorResult(string errorMessage, string? traceId = null);
+    public static ApiResponse<T> UnauthorizedResult(string errorMessage = "未授权访问", string? traceId = null);
+    public static ApiResponse<T> NotFoundResult(string errorMessage = "资源未找到", string? traceId = null);
+    public static ApiResponse<T> ServerErrorResult(string errorMessage = "服务器内部错误", string? traceId = null);
 }
 
 // 控制器使用示例
@@ -136,7 +136,7 @@ public async Task<IActionResult> Login([FromBody] LoginRequest request)
 
 ```typescript
 // 统一类型定义
-interface UnifiedApiResponse<T = any> {
+interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   errorCode?: string;
@@ -147,7 +147,7 @@ interface UnifiedApiResponse<T = any> {
 
 // API 服务基类
 class BaseApiService {
-  protected async request<T>(url: string, options?: RequestInit): Promise<UnifiedApiResponse<T>> {
+  protected async request<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
     // 统一的请求处理逻辑
     const response = await fetch(url, {
       headers: {

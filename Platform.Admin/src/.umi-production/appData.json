@@ -85,7 +85,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "preset",
@@ -98,7 +98,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 9
+        "register": 10
       },
       "enableBy": "register",
       "type": "preset",
@@ -111,7 +111,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 7
       },
       "enableBy": "register",
       "type": "preset",
@@ -128,7 +128,7 @@
             1
           ]
         },
-        "register": 3
+        "register": 6
       },
       "enableBy": "register",
       "type": "preset",
@@ -145,7 +145,7 @@
             0
           ]
         },
-        "register": 3
+        "register": 4
       },
       "enableBy": "register",
       "type": "plugin",
@@ -159,7 +159,7 @@
       "time": {
         "hooks": {
           "onStart": [
-            1
+            2
           ]
         },
         "register": 2
@@ -179,7 +179,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -192,7 +192,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -206,10 +206,10 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            18
+            20
           ]
         },
-        "register": 14
+        "register": 18
       },
       "enableBy": "register",
       "type": "plugin",
@@ -242,7 +242,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -259,7 +259,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -272,7 +272,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -289,7 +289,7 @@
             0
           ]
         },
-        "register": 7
+        "register": 6
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1141,7 +1141,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1184,7 +1184,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 51
+        "register": 60
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1197,7 +1197,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 26
+        "register": 30
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1214,7 +1214,7 @@
             0
           ]
         },
-        "register": 10
+        "register": 11
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1231,7 +1231,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1244,7 +1244,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1270,7 +1270,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 23
+        "register": 26
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/mock/mock.js",
@@ -1282,7 +1282,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1302,7 +1302,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/okam/okam.js",
@@ -1327,7 +1327,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1382,7 +1382,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1408,7 +1408,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1421,7 +1421,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 3
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1434,7 +1434,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1472,7 +1472,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1511,7 +1511,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1536,7 +1536,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 15
+        "register": 16
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1549,7 +1549,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/test/test.js",
@@ -1561,7 +1561,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/clickToComponent/clickToComponent.js",
@@ -1599,7 +1599,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/webpack/webpack.js",
@@ -1615,7 +1615,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1647,7 +1647,7 @@
             1
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1672,7 +1672,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/hmrGuardian/hmrGuardian.js",
@@ -1684,7 +1684,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 19
+        "register": 21
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad.js",
@@ -1709,7 +1709,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1773,7 +1773,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1786,7 +1786,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1916,7 +1916,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1929,7 +1929,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1955,7 +1955,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1968,7 +1968,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2061,13 +2061,13 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            2
+            1
           ],
           "modifyAppData": [
             0
           ]
         },
-        "register": 4
+        "register": 5
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/antd.js",
@@ -2079,7 +2079,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 5
+        "register": 6
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2108,13 +2108,13 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            0
+            1
           ],
           "addLayouts": [
             0
           ],
           "modifyAppData": [
-            1
+            0
           ]
         },
         "register": 3
@@ -2173,7 +2173,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2186,7 +2186,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2199,7 +2199,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/qiankun/master.js",
@@ -2223,7 +2223,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2236,7 +2236,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2373,7 +2373,7 @@
             0
           ]
         },
-        "register": 172
+        "register": 198
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2386,7 +2386,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 89
+        "register": 101
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2424,13 +2424,13 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            0
           ],
           "modifyAppData": [
             0
           ]
         },
-        "register": 38
+        "register": 40
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/request-record/dist/cjs/index.js",
@@ -2442,7 +2442,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",

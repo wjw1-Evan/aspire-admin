@@ -12,7 +12,6 @@ import {
   UpdateProfileParams,
   RefreshTokenRequest,
   RefreshTokenResult,
-  UnifiedApiResponse,
   LoginData
 } from '@/types/unified-api';
 
@@ -20,7 +19,7 @@ export class AuthService {
   // 用户登录 - 使用统一 API 响应格式
   async login(credentials: LoginRequest): Promise<LoginResult> {
     try {
-      const response = await apiService.post<UnifiedApiResponse<LoginData>>('/login/account', credentials);
+      const response = await apiService.post<ApiResponse<LoginData>>('/login/account', credentials);
 
       if (response.success && response.data?.token && response.data?.refreshToken) {
         // 保存 token 和刷新token到本地存储
@@ -47,7 +46,7 @@ export class AuthService {
   }
 
   // 处理统一格式的登录响应错误
-  private handleUnifiedLoginError(response: UnifiedApiResponse<LoginData>): never {
+  private handleUnifiedLoginError(response: ApiResponse<LoginData>): never {
     if (!response.success && response.errorCode) {
       throw new Error(this.getDetailedErrorMessage(response.errorCode, response.errorMessage));
     }
@@ -142,7 +141,7 @@ export class AuthService {
   // 用户注册 - 使用统一 API 响应格式
   async register(userData: RegisterRequest): Promise<ApiResponse<AppUser>> {
     try {
-      const response = await apiService.post<UnifiedApiResponse<AppUser>>('/register', userData);
+      const response = await apiService.post<ApiResponse<AppUser>>('/register', userData);
       
       if (response.success && response.data) {
         return {
@@ -176,7 +175,7 @@ export class AuthService {
   // 获取当前用户信息 - 使用统一 API 响应格式
   async getCurrentUser(): Promise<ApiResponse<CurrentUser>> {
     try {
-      const response = await apiService.get<UnifiedApiResponse<CurrentUser>>('/currentUser');
+      const response = await apiService.get<ApiResponse<CurrentUser>>('/currentUser');
       
       if (response.success && response.data) {
         return {
@@ -218,7 +217,7 @@ export class AuthService {
   // 修改密码 - 使用统一 API 响应格式
   async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<boolean>> {
     try {
-      const response = await apiService.post<UnifiedApiResponse<boolean>>('/change-password', request);
+      const response = await apiService.post<ApiResponse<boolean>>('/change-password', request);
       
       if (response.success && response.data !== undefined) {
         return {

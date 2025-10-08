@@ -54,7 +54,7 @@ export const isValidApiGatewayUrl = (url: string): boolean => {
 /**
  * 测试API连接
  */
-export const testApiConnection = async (baseUrl: string): Promise<boolean> => {
+export const testApiConnection = async (_baseUrl: string): Promise<boolean> => {
   try {
     // 使用 apiService 进行连接测试
     const { apiService } = await import('@/services/api');

@@ -7,9 +7,9 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
-import { useTokenValidation } from '@/hooks/use-auth';
-import { AuthErrorHandler, NetworkStatusIndicator } from '@/components/auth-error-handler';
-import { RouteGuard } from '@/components/route-guard';
+import { useTokenValidation } from '@/hooks/useAuth';
+import { AuthErrorHandler, NetworkStatusIndicator } from '@/components/AuthErrorHandler';
+import { RouteGuard } from '@/components/RouteGuard';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -42,7 +42,7 @@ function AuthRouter() {
   return (
     <AuthErrorHandler>
       <RouteGuard
-        protectedRoutes={['/(tabs)', '/profile', '/help', '/about', '/modal']}
+        protectedRoutes={['/(tabs)', '/profile', '/about/index', '/modal']}
         publicRoutes={['/auth']}
         redirectTo="/auth"
       >
@@ -57,8 +57,7 @@ function AuthRouter() {
                 <Stack.Screen key="(tabs)" name="(tabs)" />,
                 <Stack.Screen key="modal" name="modal" options={{ presentation: 'modal' }} />,
                 <Stack.Screen key="profile" name="profile" />,
-                <Stack.Screen key="help" name="help" />,
-                <Stack.Screen key="about" name="about" />
+                <Stack.Screen key="about" name="about/index" />
               ]
             ) : (
               <Stack.Screen name="auth" />

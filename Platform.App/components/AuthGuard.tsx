@@ -3,8 +3,8 @@
 import React, { ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePermissions } from '@/hooks/use-auth';
-import { PermissionCheck } from '@/types/auth';
+import { usePermissions } from '@/hooks/useAuth';
+import { PermissionCheck } from '@/types/unified-api';
 
 interface AuthGuardProps {
   readonly children: ReactNode;

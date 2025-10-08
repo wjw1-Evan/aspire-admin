@@ -3,10 +3,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { ThemeDebug } from '@/components/theme-debug';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { PrussianBluePalette } from '@/components/prussian-blue-palette';
-import { StorageDebug } from '@/components/storage-debug';
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -111,14 +109,8 @@ export default function HomeScreen() {
         </View>
       </ThemedView>
 
-      {/* 主题调试信息 */}
-      <ThemeDebug />
-
       {/* 普鲁士蓝配色展示 */}
       <PrussianBluePalette />
-
-      {/* 存储调试工具 */}
-      <StorageDebug />
 
     </ScrollView>
   );

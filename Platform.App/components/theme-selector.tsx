@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface ThemeSelectorProps {
   readonly trigger?: React.ReactNode;
@@ -105,7 +105,7 @@ export function ThemeSelector({ trigger, style }: ThemeSelectorProps) {
                   <View style={styles.optionContent}>
                     <View style={styles.optionLeft}>
                       <IconSymbol
-                        name={option.icon}
+                        name={option.icon as any}
                         size={24}
                         color={themeMode === option.mode ? tintColor : textColor}
                       />

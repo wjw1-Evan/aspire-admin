@@ -2,8 +2,9 @@
 
 import React, { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useAuthError } from '@/hooks/use-auth';
-import { AuthErrorType } from '@/types/auth';
+import { usePathname } from 'expo-router';
+import { useAuthError } from '@/hooks/useAuth';
+import { AuthErrorType } from '@/types/unified-api';
 
 interface AuthErrorHandlerProps {
   children: ReactNode;
@@ -16,11 +17,18 @@ export function AuthErrorHandler({
   children, 
   showErrorModal = true,
   customErrorComponent 
-}: AuthErrorHandlerProps) {
+}: Readonly<AuthErrorHandlerProps>) {
   const { error, getErrorType, getUserFriendlyMessage, isRetryable, clearError } = useAuthError();
+  const pathname = usePathname();
 
   // 处理错误显示
   React.useEffect(() => {
+    // 如果在登录页面，不显示原生 Alert，让页面自己的错误处理组件处理
+    if (pathname?.startsWith('/auth')) {
+      console.log('AuthErrorHandler: Skipping error display on auth page, pathname:', pathname);
+      return;
+    }
+    
     if (error && showErrorModal) {
       const errorType = getErrorType();
       const message = getUserFriendlyMessage();
@@ -38,7 +46,7 @@ export function AuthErrorHandler({
         case AuthErrorType.NETWORK_ERROR:
           Alert.alert(
             '网络错误',
-            message,
+            message || '认证出错',
             [
               {
                 text: '重试',
@@ -59,7 +67,7 @@ export function AuthErrorHandler({
         case AuthErrorType.PERMISSION_DENIED:
           Alert.alert(
             '权限不足',
-            message,
+            message || '认证出错',
             [
               {
                 text: '确定',
@@ -72,7 +80,7 @@ export function AuthErrorHandler({
         case AuthErrorType.LOGIN_FAILED:
           Alert.alert(
             '登录失败',
-            message,
+            message || '认证出错',
             [
               {
                 text: '确定',
@@ -86,7 +94,7 @@ export function AuthErrorHandler({
           if (retryable) {
             Alert.alert(
               '操作失败',
-              message,
+              message || '认证出错',
               [
                 {
                   text: '重试',
@@ -105,7 +113,7 @@ export function AuthErrorHandler({
           } else {
             Alert.alert(
               '错误',
-              message,
+              message || '认证出错',
               [
                 {
                   text: '确定',
@@ -117,7 +125,7 @@ export function AuthErrorHandler({
           break;
       }
     }
-  }, [error, showErrorModal, getErrorType, getUserFriendlyMessage, isRetryable, clearError]);
+  }, [error, showErrorModal, getErrorType, getUserFriendlyMessage, isRetryable, clearError, pathname]);
 
   // 如果有自定义错误组件，使用它
   if (error && customErrorComponent) {
@@ -139,7 +147,7 @@ interface ErrorBannerProps {
   onRetry?: () => void;
 }
 
-export function ErrorBanner({ error, onDismiss, onRetry }: ErrorBannerProps) {
+export function ErrorBanner({ error, onDismiss, onRetry }: Readonly<ErrorBannerProps>) {
   const { getUserFriendlyMessage, isRetryable } = useAuthError();
 
   if (!error) {

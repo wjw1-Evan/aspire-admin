@@ -109,13 +109,18 @@ public class LoginResult
     public DateTime? ExpiresAt { get; set; }
 }
 
-public class ApiResponse<T>
+/// <summary>
+/// 登录数据
+/// </summary>
+public class LoginData
 {
-    public bool Success { get; set; }
-    public T? Data { get; set; }
-    public string? ErrorCode { get; set; }
-    public string? ErrorMessage { get; set; }
+    public string? Type { get; set; }
+    public string? CurrentAuthority { get; set; }
+    public string? Token { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime? ExpiresAt { get; set; }
 }
+
 
 public class PageParams
 {

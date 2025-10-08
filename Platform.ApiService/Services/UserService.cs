@@ -355,17 +355,8 @@ public class UserService
         var update = Builders<AppUser>.Update
             .Set(user => user.UpdatedAt, DateTime.UtcNow);
 
-        if (!string.IsNullOrEmpty(request.Username))
-        {
-            // 检查用户名是否已存在（排除当前用户）
-            var existingUser = await _users.Find(u => u.Username == request.Username && u.Id != userId).FirstOrDefaultAsync();
-            if (existingUser != null)
-            {
-                throw new InvalidOperationException("用户名已存在");
-            }
-            update = update.Set(user => user.Username, request.Username);
-        }
-        
+        // 注意：用户名（Username）字段禁止修改，已在控制器层过滤
+
         if (!string.IsNullOrEmpty(request.Email))
         {
             // 检查邮箱是否已存在（排除当前用户）
@@ -384,12 +375,12 @@ public class UserService
             update = update.Set(user => user.Age, request.Age.Value);
 
         var result = await _users.UpdateOneAsync(filter, update);
-        
+
         if (result.ModifiedCount > 0)
         {
             return await GetUserByIdAsync(userId);
         }
-        
+
         return null;
     }
 

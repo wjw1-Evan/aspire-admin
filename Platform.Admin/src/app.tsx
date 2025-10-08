@@ -14,7 +14,7 @@ import {
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import defaultSettings from '../config/defaultSettings';
-import { errorConfig } from './requestErrorConfig';
+import { errorConfig } from './request-error-config';
 import '@ant-design/v5-patch-for-react-19';
 
 const isDev = process.env.NODE_ENV === 'development';

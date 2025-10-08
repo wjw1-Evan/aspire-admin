@@ -43,9 +43,6 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "packagerOpts": {
-      "config": "metro.config.js"
     }
   }
 }

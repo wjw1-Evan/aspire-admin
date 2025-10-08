@@ -43,7 +43,7 @@ function main() {
     console.log('\n3. 或使用原始环境变量名:');
     console.log(`   export services__apigateway__http__0="${gatewayUrl}"`);
     
-    console.log('\n3. 或修改 constants/api-config.ts 文件:');
+    console.log('\n3. 或修改 constants/apiConfig.ts 文件:');
     console.log(`   GATEWAY_URL: '${gatewayUrl}',`);
     
     console.log('\n🚀 配置完成后，重启移动端应用即可正常访问API。');

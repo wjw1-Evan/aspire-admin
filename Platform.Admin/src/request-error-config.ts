@@ -10,12 +10,14 @@ enum ErrorShowType {
   NOTIFICATION = 3,
   REDIRECT = 9,
 }
-// 与后端约定的响应数据格式
+// 与后端约定的响应数据格式 - 统一 API 标准
 interface ResponseStructure {
   success: boolean;
-  data: any;
-  errorCode?: number;
+  data?: any;
+  errorCode?: string;
   errorMessage?: string;
+  timestamp: string;
+  traceId?: string;
   showType?: ErrorShowType;
 }
 

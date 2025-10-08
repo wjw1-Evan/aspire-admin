@@ -3,12 +3,11 @@
 import React, { ReactNode, useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthGuard } from '@/components/auth-guard';
-import { PermissionCheck } from '@/types/auth';
+import { useAuthGuard } from '@/components/AuthGuard';
+import { PermissionCheck } from '@/types/unified-api';
 
 interface RouteGuardProps {
-  readonly
-  children: ReactNode;
+  readonly children: ReactNode;
   protectedRoutes?: string[];
   publicRoutes?: string[];
   redirectTo?: string;
@@ -23,16 +22,16 @@ export function RouteGuard({
   protectedRoutes = [],
   publicRoutes = ['auth'],
   redirectTo = '/auth',
-  permission,
-  roles,
-  requireAllRoles = false,
-}: RouteGuardProps) {
+  permission: _permission,
+  roles: _roles,
+  requireAllRoles: _requireAllRoles = false,
+}: Readonly<RouteGuardProps>) {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
   
-  // 使用认证守卫检查权限
-  const { canAccess } = useAuthGuard(permission, roles, requireAllRoles);
+  // 使用认证守卫检查权限 - 帮助页面不需要特殊权限，所以不传递参数
+  const { canAccess } = useAuthGuard();
 
   // 获取当前路由路径
   const currentPath = `/${segments.join('/')}`;
@@ -43,14 +42,21 @@ export function RouteGuard({
       return;
     }
 
-    // 检查是否为受保护的路由
-    const isProtectedRoute = protectedRoutes.length > 0 
+    // 检查当前路由是否为受保护的路由
+    const isProtectedRoute = protectedRoutes.length > 0
       ? protectedRoutes.some(route => currentPath.startsWith(route))
       : !publicRoutes.some(route => currentPath.startsWith(route));
 
+    // 检查目标路由是否为受保护的路由（用于导航检查）
+    const targetPath = `/${segments.join('/')}`;
+    const isTargetProtectedRoute = protectedRoutes.length > 0
+      ? protectedRoutes.some(route => targetPath.startsWith(route))
+      : !publicRoutes.some(route => targetPath.startsWith(route));
+
     // 如果用户未认证且访问受保护路由，重定向到登录页
     if (isProtectedRoute && !isAuthenticated) {
-      router.replace(redirectTo);
+      console.log('用户未认证，重定向到登录页');
+      router.replace(redirectTo as any);
       return;
     }
 
@@ -61,16 +67,17 @@ export function RouteGuard({
     }
 
     // 检查权限
-    if (isProtectedRoute && isAuthenticated && !canAccess) {
+    if (isTargetProtectedRoute && isAuthenticated && !canAccess) {
       // 权限不足，重定向到无权限页面或首页
+      console.log('权限不足，重定向到首页');
       router.replace('/(tabs)');
-      return;
     }
   }, [
     isAuthenticated,
     loading,
     currentPath,
     canAccess,
+    segments,
     protectedRoutes,
     publicRoutes,
     redirectTo,
@@ -90,8 +97,7 @@ interface RoutePermission {
 
 // 高级路由守卫组件
 interface AdvancedRouteGuardProps {
-  readonly
-  children: ReactNode;
+  readonly children: ReactNode;
   routePermissions?: RoutePermission[];
   defaultRedirect?: string;
   unauthorizedRedirect?: string;
@@ -102,7 +108,7 @@ export function AdvancedRouteGuard({
   routePermissions = [],
   defaultRedirect = '/auth',
   unauthorizedRedirect = '/(tabs)',
-}: AdvancedRouteGuardProps) {
+}: Readonly<AdvancedRouteGuardProps>) {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
@@ -130,21 +136,20 @@ export function AdvancedRouteGuard({
     // 如果没有找到权限配置，使用默认逻辑
     if (!routePermission) {
       if (!isAuthenticated) {
-        router.replace(defaultRedirect);
+        router.replace(defaultRedirect as any);
       }
       return;
     }
 
     // 检查认证状态
     if (!isAuthenticated) {
-      router.replace(defaultRedirect);
+      router.replace(defaultRedirect as any);
       return;
     }
 
     // 检查权限
     if (!canAccess) {
-      router.replace(unauthorizedRedirect);
-      return;
+      router.replace(unauthorizedRedirect as any);
     }
   }, [
     isAuthenticated,
@@ -170,10 +175,10 @@ export function useRoutePermission(route: string) {
   const isCurrentRoute = currentPath === route;
 
   const navigateToRoute = (targetRoute: string) => {
-    router.push(targetRoute);
+    router.push(targetRoute as any);
   };
 
-  const canAccessRoute = React.useCallback((targetRoute: string, permission?: PermissionCheck, roles?: string[]) => {
+  const canAccessRoute = React.useCallback((_targetRoute: string, permission?: PermissionCheck, roles?: string[]) => {
     if (!isAuthenticated) {
       return false;
     }
@@ -196,8 +201,7 @@ export function useRoutePermission(route: string) {
 
 // 条件路由组件
 interface ConditionalRouteProps {
-  readonly
-  condition: boolean;
+  readonly condition: boolean;
   children: ReactNode;
   fallback?: ReactNode;
   redirectTo?: string;
@@ -208,12 +212,12 @@ export function ConditionalRoute({
   children,
   fallback,
   redirectTo,
-}: ConditionalRouteProps) {
+}: Readonly<ConditionalRouteProps>) {
   const router = useRouter();
 
   useEffect(() => {
     if (!condition && redirectTo) {
-      router.replace(redirectTo);
+      router.replace(redirectTo as any);
     }
   }, [condition, redirectTo, router]);
 

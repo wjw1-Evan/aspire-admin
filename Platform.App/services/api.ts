@@ -1,8 +1,8 @@
 // 重新设计的 API 服务配置和基础请求方法
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthError, AuthErrorType } from '@/types/auth';
-import { getApiBaseUrl } from '@/constants/api-config';
+import { AuthError, AuthErrorType } from '@/types/unified-api';
+import { getApiBaseUrl } from '@/constants/apiConfig';
 
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
@@ -184,9 +184,37 @@ class ApiService {
       }
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.errorMessage || `HTTP ${response.status}: ${response.statusText}`);
-        (error as any).response = response;
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        let errorCode: string | undefined;
+        
+        try {
+          const errorData = await response.json();
+          
+          // 优先使用后端返回的详细错误信息
+          if (errorData.errorMessage) {
+            errorMessage = errorData.errorMessage;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+          
+          // 保存错误代码
+          if (errorData.errorCode) {
+            errorCode = errorData.errorCode;
+          } else if (errorData.type) {
+            // 如果后端返回的是type字段，也保存为errorCode
+            errorCode = errorData.type;
+          }
+        } catch {
+          // 如果无法解析JSON，使用默认错误消息
+        }
+        
+        const error = new Error(errorMessage) as ApiError;
+        error.response = response;
+        if (errorCode) {
+          (error as any).errorCode = errorCode;
+        }
         throw error;
       }
 
@@ -199,6 +227,13 @@ class ApiService {
         const timeoutError = new Error('请求超时，请检查网络连接') as ApiError;
         timeoutError.code = 'TIMEOUT';
         throw timeoutError;
+      }
+      
+      // 处理网络连接错误
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        const networkError = new Error('网络连接失败，请检查网络设置') as ApiError;
+        networkError.code = 'NETWORK_ERROR';
+        throw networkError;
       }
       
       console.error('API Request failed:', error);

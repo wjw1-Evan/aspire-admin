@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, type TouchableOpacityProps, StyleSheet } from 'react-native';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type ThemedButtonProps = TouchableOpacityProps & {
   title: string;

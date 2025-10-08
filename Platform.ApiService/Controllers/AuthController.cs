@@ -28,42 +28,20 @@ public class AuthController : ControllerBase
             // 检查用户是否已认证
             if (!User.Identity?.IsAuthenticated ?? true)
             {
-                return Ok(new ApiResponse<CurrentUser>
-                {
-                    Success = true,
-                    Data = new CurrentUser { IsLogin = false },
-                    ErrorCode = "401",
-                    ErrorMessage = "用户未认证"
-                });
+                return Ok(UnifiedApiResponse<CurrentUser>.UnauthorizedResult("用户未认证"));
             }
 
             var user = await _authService.GetCurrentUserAsync();
             if (user == null || !user.IsLogin)
             {
-                return Ok(new ApiResponse<CurrentUser>
-                {
-                    Success = true,
-                    Data = new CurrentUser { IsLogin = false },
-                    ErrorCode = "401",
-                    ErrorMessage = "请先登录！"
-                });
+                return Ok(UnifiedApiResponse<CurrentUser>.UnauthorizedResult("请先登录！"));
             }
             
-            return Ok(new ApiResponse<CurrentUser>
-            {
-                Success = true,
-                Data = user
-            });
+            return Ok(UnifiedApiResponse<CurrentUser>.SuccessResult(user));
         }
         catch (Exception ex)
         {
-            return Ok(new ApiResponse<CurrentUser>
-            {
-                Success = false,
-                Data = new CurrentUser { IsLogin = false },
-                ErrorCode = "500",
-                ErrorMessage = $"获取用户信息失败: {ex.Message}"
-            });
+            return Ok(UnifiedApiResponse<CurrentUser>.ServerErrorResult($"获取用户信息失败: {ex.Message}"));
         }
     }
 
@@ -86,7 +64,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout()
     {
         await _authService.LogoutAsync();
-        return Ok(new { data = new { }, success = true });
+        return Ok(UnifiedApiResponse.SuccessResult("登出成功"));
     }
 
     /// <summary>

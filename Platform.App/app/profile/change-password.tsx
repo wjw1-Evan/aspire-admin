@@ -17,7 +17,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedInput } from '@/components/themed-input';
 import { ThemedButton } from '@/components/themed-button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 const PasswordInput = ({ 
   label, 

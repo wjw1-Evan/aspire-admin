@@ -2,7 +2,7 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet, View, Text } from 'react-native';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface ThemeToggleProps {
   size?: 'small' | 'medium' | 'large';

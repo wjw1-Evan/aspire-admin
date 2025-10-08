@@ -2,6 +2,16 @@
 /* eslint-disable */
 
 declare namespace API {
+  // 统一的 API 响应格式
+  type UnifiedApiResponse<T = any> = {
+    success: boolean;
+    data?: T;
+    errorCode?: string;
+    errorMessage?: string;
+    timestamp: string;
+    traceId?: string;
+  };
+
   type CurrentUser = {
     name?: string;
     avatar?: string;
@@ -29,6 +39,18 @@ declare namespace API {
     type?: string;
     currentAuthority?: string;
     token?: string;
+    refreshToken?: string;
+    expiresAt?: string;
+    errorCode?: string;
+    errorMessage?: string;
+  };
+
+  type LoginData = {
+    type?: string;
+    currentAuthority?: string;
+    token?: string;
+    refreshToken?: string;
+    expiresAt?: string;
   };
 
   type PageParams = {
@@ -83,6 +105,20 @@ declare namespace API {
     errorMessage?: string;
   };
 
+  type AppUser = {
+    id?: string;
+    username: string;
+    name?: string;
+    age?: number;
+    passwordHash?: string;
+    email?: string;
+    role: string;
+    isActive: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    lastLoginAt?: string;
+  };
+
   type ChangePasswordParams = {
     currentPassword?: string;
     newPassword?: string;
@@ -129,7 +165,6 @@ declare namespace API {
 
   // 个人中心相关类型
   type UpdateProfileParams = {
-    username?: string;
     name?: string;
     email?: string;
     age?: number;

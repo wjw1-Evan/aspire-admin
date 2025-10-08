@@ -11,7 +11,7 @@ import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { Image } from 'expo-image';
 
 const InfoItem = ({
@@ -22,7 +22,7 @@ const InfoItem = ({
   showArrow = false,
   borderColor
 }: {
-  icon: string;
+  icon: 'info.circle.fill' | 'person.fill' | 'calendar.fill' | 'arrow.clockwise' | 'envelope.fill' | 'phone.fill' | 'location.fill';
   title: string;
   value?: string;
   onPress?: () => void;
@@ -35,7 +35,7 @@ const InfoItem = ({
     disabled={!onPress}
   >
     <View style={styles.infoItemLeft}>
-      <IconSymbol name={icon} size={24} color="#666" />
+      <IconSymbol name={icon as any} size={24} color="#666" />
       <ThemedText style={styles.infoItemTitle}>{title}</ThemedText>
     </View>
     <View style={styles.infoItemRight}>

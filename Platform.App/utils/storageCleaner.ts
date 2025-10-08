@@ -93,7 +93,7 @@ export class StorageCleaner {
       return {
         totalKeys: keys.length,
         userRelatedKeys,
-        allKeys: keys
+        allKeys: [...keys]
       };
     } catch (error) {
       console.error('StorageCleaner: Failed to get storage info:', error);

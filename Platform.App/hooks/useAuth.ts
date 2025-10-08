@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useAuth as useAuthContext } from '@/contexts/AuthContext';
-import { PermissionCheck } from '@/types/auth';
+import { PermissionCheck } from '@/types/unified-api';
 
 // 基础认证 Hook
 export function useAuth() {

@@ -449,7 +449,16 @@ public class UserController : ControllerBase
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { success = false, error = "未找到用户信息" });
 
-            var user = await _userService.UpdateUserProfileAsync(userId, request);
+            // 禁止修改用户名 - 过滤掉Username字段
+            var filteredRequest = new UpdateProfileRequest
+            {
+                Name = request.Name,
+                Email = request.Email,
+                Age = request.Age,
+                // Username 字段被过滤掉，不允许修改
+            };
+
+            var user = await _userService.UpdateUserProfileAsync(userId, filteredRequest);
             if (user == null)
                 return NotFound(new { success = false, error = "用户不存在" });
 

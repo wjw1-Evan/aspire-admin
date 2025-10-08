@@ -3,7 +3,7 @@ import { TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-na
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/AuthContext';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { LogoutModal } from '@/components/logout-modal';
 
 interface LogoutButtonProps {

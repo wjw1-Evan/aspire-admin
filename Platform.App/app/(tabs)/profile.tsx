@@ -18,19 +18,19 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ThemeSelector } from '@/components/theme-selector';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { router } from 'expo-router';
 import { LogoutButton } from '@/components/logout-button';
 
-const ProfileItem = ({ 
-  icon, 
-  title, 
-  value, 
-  onPress, 
+const ProfileItem = ({
+  icon,
+  title,
+  value,
+  onPress,
   showArrow = true,
   borderColor
 }: {
-  icon: string;
+  icon: 'person.fill' | 'envelope.fill' | 'phone.fill' | 'location.fill' | 'calendar.fill' | 'lock.fill' | 'gear' | 'questionmark.circle.fill' | 'info.circle.fill' | 'arrow.clockwise';
   title: string;
   value?: string;
   onPress?: () => void;
@@ -43,7 +43,7 @@ const ProfileItem = ({
     disabled={!onPress}
   >
     <View style={styles.profileItemLeft}>
-      <IconSymbol name={icon} size={24} color="#666" />
+      <IconSymbol name={icon as any} size={24} color="#666" />
       <ThemedText style={styles.profileItemTitle}>{title}</ThemedText>
     </View>
     <View style={styles.profileItemRight}>
@@ -55,15 +55,15 @@ const ProfileItem = ({
   </TouchableOpacity>
 );
 
-const SettingItem = ({ 
-  icon, 
-  title, 
-  value, 
+const SettingItem = ({
+  icon,
+  title,
+  value,
   onValueChange,
   type = 'switch',
   borderColor
 }: {
-  icon: string;
+  icon: 'paintbrush.fill' | 'bell.fill';
   title: string;
   value?: boolean;
   onValueChange?: (value: boolean) => void;
@@ -72,7 +72,7 @@ const SettingItem = ({
 }) => (
   <View style={[styles.settingItem, { borderBottomColor: borderColor }]}>
     <View style={styles.settingItemLeft}>
-      <IconSymbol name={icon} size={24} color="#666" />
+      <IconSymbol name={icon as any} size={24} color="#666" />
       <ThemedText style={styles.settingItemTitle}>{title}</ThemedText>
     </View>
     <View style={styles.settingItemRight}>
@@ -96,21 +96,21 @@ const ThemeSettingItem = ({
   themeMode,
   borderColor
 }: {
-  icon: string;
+  icon: 'paintbrush.fill';
   title: string;
   themeMode: string;
   borderColor?: string;
 }) => {
   const getThemeInfo = (mode: string) => {
     switch (mode) {
-      case 'light': 
-        return { label: '浅色模式', icon: 'sun.max.fill' };
-      case 'dark': 
-        return { label: '深色模式', icon: 'moon.fill' };
-      case 'system': 
-        return { label: '跟随系统', icon: 'gear' };
-      default: 
-        return { label: '跟随系统', icon: 'gear' };
+      case 'light':
+        return { label: '浅色模式', icon: 'sun.max.fill' as const };
+      case 'dark':
+        return { label: '深色模式', icon: 'moon.fill' as const };
+      case 'system':
+        return { label: '跟随系统', icon: 'gear' as const };
+      default:
+        return { label: '跟随系统', icon: 'gear' as const };
     }
   };
 
@@ -119,12 +119,12 @@ const ThemeSettingItem = ({
   return (
     <View style={[styles.settingItem, { borderBottomColor: borderColor }]}>
       <View style={styles.settingItemLeft}>
-        <IconSymbol name={icon} size={24} color={useThemeColor({}, 'icon')} />
+        <IconSymbol name={icon as any} size={24} color={useThemeColor({}, 'icon')} />
         <ThemedText style={styles.settingItemTitle}>{title}</ThemedText>
       </View>
       <View style={styles.settingItemRight}>
         <View style={styles.themeInfo}>
-          <IconSymbol name={currentTheme.icon} size={16} color={useThemeColor({}, 'icon')} />
+          <IconSymbol name={currentTheme.icon as any} size={16} color={useThemeColor({}, 'icon')} />
           <ThemedText style={styles.settingItemValue}>{currentTheme.label}</ThemedText>
         </View>
         <ThemeSelector />
@@ -153,7 +153,6 @@ export default function ProfileScreen() {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    address: user?.address || '',
   });
 
   const handleEdit = () => {
@@ -162,14 +161,18 @@ export default function ProfileScreen() {
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      address: user?.address || '',
     });
   };
 
   const handleSave = async () => {
     try {
       setLoading(true);
-      await updateProfile(editData);
+      // 只发送可以修改的字段：name和email，不包含username（用户名不可修改）
+      const dataToSend = {
+        name: editData.name,
+        email: editData.email,
+      };
+      await updateProfile(dataToSend);
       setIsEditing(false);
       Alert.alert('成功', '个人信息已更新');
     } catch (error) {
@@ -186,7 +189,6 @@ export default function ProfileScreen() {
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      address: user?.address || '',
     });
   };
 
@@ -242,24 +244,13 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>电话</ThemedText>
+            <ThemedText style={styles.inputLabel}>用户名</ThemedText>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: '#f5f5f5' }]}
               value={editData.phone}
-              onChangeText={(text) => setEditData({ ...editData, phone: text })}
-              placeholder="请输入电话"
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>地址</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={editData.address}
-              onChangeText={(text) => setEditData({ ...editData, address: text })}
-              placeholder="请输入地址"
-              multiline
+              editable={false}
+              placeholder="用户名不可修改"
+              placeholderTextColor="#999"
             />
           </View>
 
@@ -291,7 +282,7 @@ export default function ProfileScreen() {
           
           <ProfileItem
             icon="person.fill"
-            title="用户名"
+            title="姓名"
             value={user?.name || user?.userid || '未知'}
             borderColor={borderColor}
           />
@@ -302,15 +293,9 @@ export default function ProfileScreen() {
             borderColor={borderColor}
           />
           <ProfileItem
-            icon="phone.fill"
-            title="电话"
+            icon="person.fill"
+            title="用户名"
             value={user?.phone || '未设置'}
-            borderColor={borderColor}
-          />
-          <ProfileItem
-            icon="location.fill"
-            title="地址"
-            value={user?.address || '未设置'}
             borderColor={borderColor}
           />
           <ProfileItem
@@ -369,15 +354,9 @@ export default function ProfileScreen() {
         </ThemedText>
         
         <ProfileItem
-          icon="questionmark.circle.fill"
-          title="帮助与反馈"
-          onPress={() => router.push('/help')}
-          borderColor={borderColor}
-        />
-        <ProfileItem
           icon="info.circle.fill"
           title="关于我们"
-          onPress={() => router.push('/about')}
+          onPress={() => router.push('/about/index' as any)}
           borderColor={borderColor}
         />
         <ProfileItem

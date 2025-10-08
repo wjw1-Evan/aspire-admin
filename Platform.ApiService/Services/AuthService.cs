@@ -105,7 +105,7 @@ public class AuthService
         };
     }
 
-    public async Task<LoginResult> LoginAsync(LoginRequest request)
+    public async Task<UnifiedApiResponse<LoginData>> LoginAsync(LoginRequest request)
     {
         try
         {
@@ -114,23 +114,19 @@ public class AuthService
             
             if (user == null)
             {
-                return new LoginResult
-                {
-                    Status = "error",
-                    Type = request.Type,
-                    CurrentAuthority = GuestRole
-                };
+                return UnifiedApiResponse<LoginData>.ErrorResult(
+                    "LOGIN_FAILED", 
+                    "用户名或密码错误，请检查后重试"
+                );
             }
 
             // 验证密码
             if (!VerifyPassword(request.Password, user.PasswordHash))
             {
-                return new LoginResult
-                {
-                    Status = "error",
-                    Type = request.Type,
-                    CurrentAuthority = GuestRole
-                };
+                return UnifiedApiResponse<LoginData>.ErrorResult(
+                    "LOGIN_FAILED", 
+                    "用户名或密码错误，请检查后重试"
+                );
             }
 
             // 更新最后登录时间
@@ -147,24 +143,22 @@ public class AuthService
             var token = _jwtService.GenerateToken(user);
             var refreshToken = _jwtService.GenerateRefreshToken(user);
 
-            return new LoginResult
+            var loginData = new LoginData
             {
-                Status = "ok",
                 Type = request.Type,
                 CurrentAuthority = user.Role,
                 Token = token,
                 RefreshToken = refreshToken,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(60) // 访问token过期时间
             };
+
+            return UnifiedApiResponse<LoginData>.SuccessResult(loginData);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return new LoginResult
-            {
-                Status = "error",
-                Type = request.Type,
-                CurrentAuthority = GuestRole
-            };
+            return UnifiedApiResponse<LoginData>.ServerErrorResult(
+                $"登录失败: {ex.Message}"
+            );
         }
     }
 
@@ -203,51 +197,31 @@ public class AuthService
         return "captcha-xxx";
     }
 
-    public async Task<ApiResponse<AppUser>> RegisterAsync(RegisterRequest request)
+    public async Task<UnifiedApiResponse<AppUser>> RegisterAsync(RegisterRequest request)
     {
         try
         {
             // 验证输入参数
             if (string.IsNullOrWhiteSpace(request.Username))
             {
-                return new ApiResponse<AppUser>
-                {
-                    Success = false,
-                    ErrorCode = "INVALID_USERNAME",
-                    ErrorMessage = "用户名不能为空"
-                };
+                return UnifiedApiResponse<AppUser>.ValidationErrorResult("用户名不能为空");
             }
 
             if (string.IsNullOrWhiteSpace(request.Password))
             {
-                return new ApiResponse<AppUser>
-                {
-                    Success = false,
-                    ErrorCode = "INVALID_PASSWORD",
-                    ErrorMessage = "密码不能为空"
-                };
+                return UnifiedApiResponse<AppUser>.ValidationErrorResult("密码不能为空");
             }
 
             // 验证用户名长度和格式
             if (request.Username.Length < 3 || request.Username.Length > 20)
             {
-                return new ApiResponse<AppUser>
-                {
-                    Success = false,
-                    ErrorCode = "INVALID_USERNAME_LENGTH",
-                    ErrorMessage = "用户名长度必须在3-20个字符之间"
-                };
+                return UnifiedApiResponse<AppUser>.ValidationErrorResult("用户名长度必须在3-20个字符之间");
             }
 
             // 验证密码强度
             if (request.Password.Length < 6)
             {
-                return new ApiResponse<AppUser>
-                {
-                    Success = false,
-                    ErrorCode = "WEAK_PASSWORD",
-                    ErrorMessage = "密码长度至少6个字符"
-                };
+                return UnifiedApiResponse<AppUser>.ValidationErrorResult("密码长度至少6个字符");
             }
 
             // 验证邮箱格式（如果提供了邮箱）
@@ -256,12 +230,7 @@ public class AuthService
                 var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
                 if (!emailRegex.IsMatch(request.Email))
                 {
-                    return new ApiResponse<AppUser>
-                    {
-                        Success = false,
-                        ErrorCode = "INVALID_EMAIL",
-                        ErrorMessage = "邮箱格式不正确"
-                    };
+                    return UnifiedApiResponse<AppUser>.ValidationErrorResult("邮箱格式不正确");
                 }
             }
 
@@ -269,12 +238,7 @@ public class AuthService
             var existingUser = await _users.Find(u => u.Username == request.Username).FirstOrDefaultAsync();
             if (existingUser != null)
             {
-                return new ApiResponse<AppUser>
-                {
-                    Success = false,
-                    ErrorCode = "USER_EXISTS",
-                    ErrorMessage = "用户名已存在"
-                };
+                return UnifiedApiResponse<AppUser>.ErrorResult("USER_EXISTS", "用户名已存在");
             }
 
             // 检查邮箱是否已存在（如果提供了邮箱）
@@ -283,12 +247,7 @@ public class AuthService
                 var existingEmail = await _users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
                 if (existingEmail != null)
                 {
-                    return new ApiResponse<AppUser>
-                    {
-                        Success = false,
-                        ErrorCode = "EMAIL_EXISTS",
-                        ErrorMessage = "邮箱已被使用"
-                    };
+                    return UnifiedApiResponse<AppUser>.ErrorResult("EMAIL_EXISTS", "邮箱已被使用");
                 }
             }
 
@@ -309,24 +268,15 @@ public class AuthService
             // 不返回密码哈希
             newUser.PasswordHash = string.Empty;
 
-            return new ApiResponse<AppUser>
-            {
-                Success = true,
-                Data = newUser
-            };
+            return UnifiedApiResponse<AppUser>.SuccessResult(newUser);
         }
         catch (Exception ex)
         {
-            return new ApiResponse<AppUser>
-            {
-                Success = false,
-                ErrorCode = "REGISTER_ERROR",
-                ErrorMessage = $"注册失败: {ex.Message}"
-            };
+            return UnifiedApiResponse<AppUser>.ServerErrorResult($"注册失败: {ex.Message}");
         }
     }
 
-    public async Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordRequest request)
+    public async Task<UnifiedApiResponse<bool>> ChangePasswordAsync(ChangePasswordRequest request)
     {
         try
         {
@@ -334,111 +284,61 @@ public class AuthService
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext?.User?.Identity?.IsAuthenticated != true)
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "UNAUTHORIZED",
-                    ErrorMessage = "用户未认证"
-                };
+                return UnifiedApiResponse<bool>.UnauthorizedResult("用户未认证");
             }
 
             // 从 Claims 获取用户 ID
             var userId = httpContext.User.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "UNAUTHORIZED",
-                    ErrorMessage = "用户ID不存在"
-                };
+                return UnifiedApiResponse<bool>.UnauthorizedResult("用户ID不存在");
             }
 
             // 验证输入参数
             if (string.IsNullOrWhiteSpace(request.CurrentPassword))
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "INVALID_CURRENT_PASSWORD",
-                    ErrorMessage = "当前密码不能为空"
-                };
+                return UnifiedApiResponse<bool>.ValidationErrorResult("当前密码不能为空");
             }
 
             if (string.IsNullOrWhiteSpace(request.NewPassword))
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "INVALID_NEW_PASSWORD",
-                    ErrorMessage = "新密码不能为空"
-                };
+                return UnifiedApiResponse<bool>.ValidationErrorResult("新密码不能为空");
             }
 
             if (string.IsNullOrWhiteSpace(request.ConfirmPassword))
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "INVALID_CONFIRM_PASSWORD",
-                    ErrorMessage = "确认密码不能为空"
-                };
+                return UnifiedApiResponse<bool>.ValidationErrorResult("确认密码不能为空");
             }
 
             // 验证新密码和确认密码是否一致
             if (request.NewPassword != request.ConfirmPassword)
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "PASSWORD_MISMATCH",
-                    ErrorMessage = "新密码和确认密码不一致"
-                };
+                return UnifiedApiResponse<bool>.ValidationErrorResult("新密码和确认密码不一致");
             }
 
             // 验证新密码强度
             if (request.NewPassword.Length < 6)
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "WEAK_PASSWORD",
-                    ErrorMessage = "新密码长度至少6个字符"
-                };
+                return UnifiedApiResponse<bool>.ValidationErrorResult("新密码长度至少6个字符");
             }
 
             // 验证新密码不能与当前密码相同
             if (request.CurrentPassword == request.NewPassword)
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "SAME_PASSWORD",
-                    ErrorMessage = "新密码不能与当前密码相同"
-                };
+                return UnifiedApiResponse<bool>.ValidationErrorResult("新密码不能与当前密码相同");
             }
 
             // 从数据库获取用户信息
             var user = await _users.Find(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync();
             if (user == null)
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "USER_NOT_FOUND",
-                    ErrorMessage = "用户不存在或已被禁用"
-                };
+                return UnifiedApiResponse<bool>.NotFoundResult("用户不存在或已被禁用");
             }
 
             // 验证当前密码是否正确
             if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "INVALID_CURRENT_PASSWORD",
-                    ErrorMessage = "当前密码不正确"
-                };
+                return UnifiedApiResponse<bool>.ErrorResult("INVALID_CURRENT_PASSWORD", "当前密码不正确");
             }
 
             // 更新密码
@@ -457,30 +357,16 @@ public class AuthService
                 var userAgent = currentHttpContext?.Request?.Headers["User-Agent"].ToString();
                 await _userService.LogUserActivityAsync(userId, "change_password", "修改密码", ipAddress, userAgent);
 
-                return new ApiResponse<bool>
-                {
-                    Success = true,
-                    Data = true
-                };
+                return UnifiedApiResponse<bool>.SuccessResult(true);
             }
             else
             {
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    ErrorCode = "UPDATE_FAILED",
-                    ErrorMessage = "密码更新失败"
-                };
+                return UnifiedApiResponse<bool>.ErrorResult("UPDATE_FAILED", "密码更新失败");
             }
         }
         catch (Exception ex)
         {
-            return new ApiResponse<bool>
-            {
-                Success = false,
-                ErrorCode = "CHANGE_PASSWORD_ERROR",
-                ErrorMessage = $"修改密码失败: {ex.Message}"
-            };
+            return UnifiedApiResponse<bool>.ServerErrorResult($"修改密码失败: {ex.Message}");
         }
     }
 

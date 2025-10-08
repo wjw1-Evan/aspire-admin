@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,17 +14,27 @@ import { Image } from 'expo-image';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedInput } from '@/components/themed-input';
 import { ThemedButton } from '@/components/themed-button';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { EnhancedErrorToast } from '@/components/EnhancedErrorToast';
+import { InputWithValidation } from '@/components/InputWithValidation';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { useLoginAttempts } from '@/hooks/useLoginAttempts';
+import { AuthError, AuthErrorType } from '@/types/unified-api';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<AuthError | null>(null);
+  const [showError, setShowError] = useState(false);
   const { login } = useAuth();
+  const { 
+    recordAttempt, 
+    canAttemptLogin, 
+    getRemainingAttempts, 
+    getLockInfo,
+    clearAttempts 
+  } = useLoginAttempts();
   
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useThemeColor(
@@ -37,12 +46,33 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert('错误', '请输入用户名和密码');
+      setError({
+        type: AuthErrorType.LOGIN_FAILED,
+        message: '请输入用户名和密码',
+        retryable: false,
+      });
+      setShowError(true);
       return;
     }
 
+    // 检查是否可以尝试登录
+    if (!canAttemptLogin(username.trim())) {
+      const lockInfo = getLockInfo();
+      if (lockInfo) {
+        setError({
+          type: AuthErrorType.LOGIN_FAILED,
+          message: lockInfo.reason,
+          retryable: false,
+        });
+        setShowError(true);
+        return;
+      }
+    }
+
     try {
-      setLoading(true);
+      setError(null);
+      setShowError(false);
+      
       await login({
         username: username.trim(),
         password: password.trim(),
@@ -50,20 +80,62 @@ export default function LoginScreen() {
         type: 'account',
       });
       
+      // 登录成功，清除尝试记录
+      await clearAttempts();
+      
       // 登录成功后跳转到主页
       router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert('登录失败', error instanceof Error ? error.message : '登录失败，请重试');
-    } finally {
-      setLoading(false);
+      // 记录失败的登录尝试
+      await recordAttempt(username.trim(), false);
+      
+      // 检查错误是否是 AuthError 类型
+      let authError: AuthError;
+      if (error && typeof error === 'object' && 'type' in error && 'message' in error) {
+        // 如果已经是 AuthError 类型，直接使用
+        authError = error as AuthError;
+      } else {
+        // 如果不是，创建一个新的 AuthError
+        const errorMessage = error instanceof Error ? error.message : '登录失败，请稍后重试';
+        authError = {
+          type: AuthErrorType.LOGIN_FAILED,
+          message: errorMessage,
+          retryable: true,
+        };
+      }
+      
+      setError(authError);
+      setShowError(true);
     }
   };
+
+  const handleDismissError = () => {
+    setShowError(false);
+    setError(null);
+  };
+
+  const handleRetryLogin = () => {
+    setShowError(false);
+    setError(null);
+    handleLogin();
+  };
+
 
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* 增强错误提示组件 */}
+      <EnhancedErrorToast
+        error={error}
+        visible={showError}
+        onDismiss={handleDismissError}
+        onRetry={error?.retryable ? handleRetryLogin : undefined}
+        remainingAttempts={getRemainingAttempts(username.trim())}
+        lockInfo={getLockInfo()}
+      />
+      
       <ScrollView 
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -94,57 +166,49 @@ export default function LoginScreen() {
 
           {/* 表单区域 */}
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-            <View style={styles.inputLabelContainer}>
-              <IconSymbol name="person.fill" size={16} color={useThemeColor({}, 'icon')} />
-              <ThemedText style={styles.label}>用户名</ThemedText>
-            </View>
-              <ThemedInput
-                value={username}
-                onChangeText={setUsername}
-                placeholder="请输入用户名"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!loading}
-                style={styles.input}
-              />
-            </View>
+            <InputWithValidation
+              value={username}
+              onChangeText={setUsername}
+              label="用户名"
+              placeholder="请输入用户名"
+              leftIcon="person.fill"
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={true}
+              validation={{
+                required: true,
+                minLength: 2,
+                maxLength: 50,
+              }}
+              showValidation={true}
+            />
 
-            <View style={styles.inputContainer}>
-            <View style={styles.inputLabelContainer}>
-              <IconSymbol name="lock.fill" size={16} color={useThemeColor({}, 'icon')} />
-              <ThemedText style={styles.label}>密码</ThemedText>
-            </View>
-              <View style={styles.passwordContainer}>
-                <ThemedInput
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="请输入密码"
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                  style={[styles.input, styles.passwordInput]}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <IconSymbol
-                    name={showPassword ? "eye.slash.fill" : "eye.fill"}
-                    size={20}
-                    color={useThemeColor({}, 'icon')}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
+            <InputWithValidation
+              value={password}
+              onChangeText={setPassword}
+              label="密码"
+              placeholder="请输入密码"
+              leftIcon="lock.fill"
+              rightIcon={showPassword ? "eye.slash.fill" : "eye.fill"}
+              onRightIconPress={() => setShowPassword(!showPassword)}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={true}
+              validation={{
+                required: true,
+                minLength: 6,
+                maxLength: 100,
+              }}
+              showValidation={true}
+            />
 
             <ThemedButton
-              title={loading ? "登录中..." : "登录"}
+              title="登录"
               onPress={handleLogin}
-              disabled={loading}
               style={styles.loginButton}
             />
+
 
             {/* 忘记密码链接 */}
             <TouchableOpacity style={styles.forgotPassword}>
@@ -257,35 +321,6 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  input: {
-    borderRadius: 12,
-  },
-  passwordContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    paddingRight: 50,
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 15,
-    top: '50%',
-    transform: [{ translateY: -10 }],
-    padding: 5,
   },
   loginButton: {
     marginTop: 8,

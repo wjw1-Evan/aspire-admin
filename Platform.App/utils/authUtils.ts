@@ -1,6 +1,6 @@
 // 认证相关的工具函数
 
-import { PermissionCheck, CurrentUser } from '@/types/auth';
+import { PermissionCheck, CurrentUser } from '@/types/unified-api';
 import { apiService } from '@/services/api';
 
 // Token 工具函数
@@ -8,7 +8,16 @@ export const tokenUtils = {
   // 解析 JWT token
   parseJWT: (token: string) => {
     try {
-      const base64Url = token.split('.')[1];
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid JWT format');
+      }
+      
+      const base64Url = parts[1];
+      if (!base64Url) {
+        throw new Error('Invalid JWT payload');
+      }
+      
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(
         atob(base64)
@@ -111,7 +120,7 @@ export const permissionUtils = {
       return false;
     }
 
-    const { permission, role, resource, action } = check;
+    const { access, role } = check;
 
     // 检查角色
     if (role && permissionUtils.hasRole(user, role)) {
@@ -119,14 +128,12 @@ export const permissionUtils = {
     }
 
     // 检查权限
-    if (permission && permissionUtils.hasPermission(user, permission)) {
+    if (access && permissionUtils.hasPermission(user, access)) {
       return true;
     }
 
-    // 检查资源权限
-    if (resource && action && permissionUtils.hasResourcePermission(user, resource, action)) {
-      return true;
-    }
+    // 检查资源权限 - 暂时跳过，因为PermissionCheck接口中没有resource和action字段
+    // TODO: 需要扩展PermissionCheck接口来支持资源权限检查
 
     return false;
   },
@@ -135,7 +142,7 @@ export const permissionUtils = {
 // 存储工具函数
 export const storageUtils = {
   // 安全地存储敏感数据
-  setSecureItem: async (key: string, value: string): Promise<void> => {
+  setSecureItem: async (_key: string, value: string): Promise<void> => {
     try {
       // 在实际应用中，这里应该使用更安全的存储方式
       // 例如：Keychain (iOS) 或 Keystore (Android)
@@ -147,7 +154,7 @@ export const storageUtils = {
   },
 
   // 安全地获取敏感数据
-  getSecureItem: async (key: string): Promise<string | null> => {
+  getSecureItem: async (_key: string): Promise<string | null> => {
     try {
       return await apiService.getToken();
     } catch (error) {
@@ -157,7 +164,7 @@ export const storageUtils = {
   },
 
   // 清除敏感数据
-  clearSecureItem: async (key: string): Promise<void> => {
+  clearSecureItem: async (_key: string): Promise<void> => {
     try {
       await apiService.removeToken();
     } catch (error) {

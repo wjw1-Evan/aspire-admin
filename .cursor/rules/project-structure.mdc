@@ -18,13 +18,14 @@ description: 项目结构和架构指南
 - **Platform.ServiceDefaults** - 共享服务配置
 
 ### 技术栈
+
 - **后端**: .NET 9.0, .NET Aspire, MongoDB, YARP, Scalar API 文档
 - **前端**: React 19, Ant Design Pro, UmiJS, TypeScript, Biome
 - **移动端**: React Native, Expo, Expo Router, TypeScript
 
 ## 📁 目录结构
 
-```
+```text
 Platform/
 ├── Platform.AppHost/          # 应用编排和配置中心
 ├── Platform.ApiService/       # API 服务 (C#)
@@ -36,20 +37,21 @@ Platform/
 ## 🔧 开发指南
 
 ### 启动项目
+
 ```bash
 dotnet run --project Platform.AppHost
 ```
 
 > ⚠️ **调试提示**：调试时请务必通过 `Platform.AppHost` 启动项目（`dotnet run --project Platform.AppHost`），否则微服务、API 及前端应用将无法正确编排和联动。
 
-
 ### 访问地址
-- 管理后台: http://localhost:15001
-- 移动应用: http://localhost:15002
-- API 网关: http://localhost:15000
 
+- 管理后台: <http://localhost:15001>
+- 移动应用: <http://localhost:15002>
+- API 网关: <http://localhost:15000>
 
 ### 默认账户
+
 - 用户名: `admin`
 - 密码: `admin123`
 - 角色: `admin`
@@ -57,6 +59,7 @@ dotnet run --project Platform.AppHost
 ## 🔐 认证系统架构
 
 ### 统一认证系统
+
 项目采用前后端统一的认证架构：
 
 - **JWT Token 认证** - 基于 JWT 的简单 token 机制
@@ -65,12 +68,14 @@ dotnet run --project Platform.AppHost
 - **自动 token 验证** - 智能的网络重试机制
 
 ### 认证流程
+
 1. **登录**: `POST /login/account` → 获取 JWT token
 2. **权限检查**: 基于 `user.access` 字段进行权限验证
 3. **Token 验证**: 定期调用 `/currentUser` 验证 token 有效性
 4. **登出**: `POST /login/outLogin` → 清除本地 token
 
 ### 权限系统
+
 - **Admin 权限**: `access: 'admin'`
 - **User 权限**: `access: 'user'`
 - **Guest 权限**: `access: 'guest'`

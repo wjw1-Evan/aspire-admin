@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { AuthState, CurrentUser, LoginRequest, RegisterRequest, AuthError, AuthErrorType, PermissionCheck, ChangePasswordRequest } from '@/types/auth';
+import { AuthState, CurrentUser, LoginRequest, RegisterRequest, AuthError, AuthErrorType, PermissionCheck, ChangePasswordRequest, UpdateProfileParams, ApiResponse } from '@/types/unified-api';
 import { authService } from '@/services/auth';
 import { apiService } from '@/services/api';
 
@@ -117,8 +117,8 @@ interface AuthContextType extends AuthState {
   setLoading: (loading: boolean) => void;
   
   // 用户管理
-  updateProfile: (profileData: Partial<CurrentUser>) => Promise<void>;
-  changePassword: (request: ChangePasswordRequest) => Promise<void>;
+  updateProfile: (profileData: UpdateProfileParams) => Promise<void>;
+  changePassword: (request: ChangePasswordRequest) => Promise<ApiResponse<boolean>>;
   
   // 权限检查 - 基于Admin端的access字段
   hasPermission: (check: PermissionCheck) => boolean;
@@ -143,8 +143,20 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // 错误处理工具函数
+  // 错误处理工具函数 - 增强错误信息
   const handleAuthError = useCallback((error: any): AuthError => {
+    console.log('AuthContext: Handling error:', error);
+    
+    // 网络相关错误
+    if (error?.code === 'NETWORK_ERROR' || error?.code === 'TIMEOUT') {
+      return {
+        type: AuthErrorType.NETWORK_ERROR,
+        message: '网络连接异常，请检查网络设置后重试',
+        retryable: true,
+      };
+    }
+    
+    // HTTP 状态码错误
     if (error?.response?.status === 401) {
       return {
         type: AuthErrorType.TOKEN_EXPIRED,
@@ -156,19 +168,56 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (error?.response?.status === 403) {
       return {
         type: AuthErrorType.PERMISSION_DENIED,
-        message: '权限不足',
+        message: '权限不足，请联系管理员',
         retryable: false,
       };
     }
     
-    if (error?.code === 'NETWORK_ERROR') {
+    if (error?.response?.status === 404) {
       return {
-        type: AuthErrorType.NETWORK_ERROR,
-        message: '网络连接异常，请检查网络设置',
+        type: AuthErrorType.LOGIN_FAILED,
+        message: '服务不可用，请稍后重试',
         retryable: true,
       };
     }
     
+    if (error?.response?.status >= 500) {
+      return {
+        type: AuthErrorType.UNKNOWN_ERROR,
+        message: '服务器错误，请稍后重试',
+        retryable: true,
+      };
+    }
+    
+    // 登录特定错误
+    if (error?.message?.includes('用户名') || error?.message?.includes('密码')) {
+      return {
+        type: AuthErrorType.LOGIN_FAILED,
+        message: error.message,
+        retryable: false,
+      };
+    }
+    
+    if (error?.message?.includes('登录失败') || error?.message?.includes('认证失败')) {
+      return {
+        type: AuthErrorType.LOGIN_FAILED,
+        message: error.message,
+        retryable: false,
+      };
+    }
+    
+    // 处理后端返回的错误代码
+    const errorWithCode = error as any;
+    if (errorWithCode?.errorCode) {
+      const errorCode = errorWithCode.errorCode;
+      return {
+        type: getErrorTypeFromCode(errorCode),
+        message: error.message,
+        retryable: isRetryableError(errorCode),
+      };
+    }
+    
+    // 默认错误
     return {
       type: AuthErrorType.UNKNOWN_ERROR,
       message: error?.message || '操作失败，请稍后重试',
@@ -176,18 +225,66 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
+  // 根据错误代码获取错误类型
+  const getErrorTypeFromCode = useCallback((errorCode: string): AuthErrorType => {
+    switch (errorCode) {
+      case 'INVALID_USERNAME':
+      case 'INVALID_PASSWORD':
+      case 'USER_NOT_FOUND':
+      case 'INVALID_CURRENT_PASSWORD':
+      case 'LOGIN_FAILED':
+        return AuthErrorType.LOGIN_FAILED;
+      case 'UNAUTHORIZED':
+        return AuthErrorType.TOKEN_EXPIRED;
+      case 'PERMISSION_DENIED':
+        return AuthErrorType.PERMISSION_DENIED;
+      case 'NETWORK_ERROR':
+      case 'TIMEOUT':
+        return AuthErrorType.NETWORK_ERROR;
+      default:
+        return AuthErrorType.UNKNOWN_ERROR;
+    }
+  }, []);
+
+  // 判断错误是否可重试
+  const isRetryableError = useCallback((errorCode: string): boolean => {
+    const retryableCodes = [
+      'NETWORK_ERROR',
+      'TIMEOUT',
+      'UPDATE_FAILED',
+      'REGISTER_ERROR',
+      'CHANGE_PASSWORD_ERROR',
+      'REFRESH_TOKEN_ERROR'
+    ];
+    return retryableCodes.includes(errorCode);
+  }, []);
+
   // 登录 - 匹配Admin端流程
   const login = useCallback(async (credentials: LoginRequest) => {
     try {
       dispatch({ type: 'AUTH_START' });
       
+      console.log('=== AUTH CONTEXT LOGIN START ===');
       const result = await authService.login(credentials);
       
+      console.log('=== AUTH CONTEXT LOGIN RESULT ===');
+      console.log('Result:', result);
+      console.log('Result status:', result.status);
+      console.log('Result token:', result.token);
+      console.log('Result refreshToken:', result.refreshToken);
+      
       if (result.status === 'ok' && result.token && result.refreshToken) {
+        console.log('=== AUTH CONTEXT GETTING USER INFO ===');
         // 获取用户信息
         const userResponse = await authService.getCurrentUser();
         
+        console.log('User response:', userResponse);
+        console.log('User response success:', userResponse.success);
+        console.log('User response data:', userResponse.data);
+        console.log('User isLogin:', userResponse.data?.isLogin);
+        
         if (userResponse.success && userResponse.data && userResponse.data.isLogin !== false) {
+          console.log('=== AUTH CONTEXT DISPATCHING SUCCESS ===');
           const tokenExpiresAt = result.expiresAt ? new Date(result.expiresAt).getTime() : undefined;
           dispatch({
             type: 'AUTH_SUCCESS',
@@ -199,9 +296,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             },
           });
         } else {
+          console.log('=== AUTH CONTEXT USER INFO FAILED ===');
           throw new Error('获取用户信息失败');
         }
       } else {
+        console.log('=== AUTH CONTEXT LOGIN FAILED ===');
         throw new Error('登录失败');
       }
     } catch (error) {
@@ -283,7 +382,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const tokenExpiresAt = expiresAt ? new Date(expiresAt).getTime() : undefined;
           dispatch({
             type: 'AUTH_REFRESH_TOKEN',
-            payload: { token, refreshToken, expiresAt: tokenExpiresAt },
+            payload: { token: token || '', refreshToken: refreshToken || '', expiresAt: tokenExpiresAt },
           });
           
           // 获取用户信息
@@ -351,16 +450,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [handleAuthError]);
 
   // 修改密码 - 匹配Admin端
-  const changePassword = useCallback(async (request: ChangePasswordRequest) => {
+  const changePassword = useCallback(async (request: ChangePasswordRequest): Promise<ApiResponse<boolean>> => {
     try {
       const response = await authService.changePassword(request);
-      
+
       if (!response.success) {
-        throw new Error(response.errorMessage || '修改密码失败');
+        return {
+          success: false,
+          errorMessage: response.errorMessage || '修改密码失败'
+        };
       }
+
+      return {
+        success: true,
+        data: true
+      };
     } catch (error) {
       const authError = handleAuthError(error);
-      throw authError;
+      return {
+        success: false,
+        errorMessage: authError.message
+      };
     }
   }, [handleAuthError]);
 

@@ -545,3 +545,6 @@ logs
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+.umi/
+.umi-production/

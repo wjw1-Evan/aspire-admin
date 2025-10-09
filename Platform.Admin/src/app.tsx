@@ -2,7 +2,7 @@ import { LinkOutlined } from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { history, Link } from '@umijs/max';
+import { history, Link, request as requestClient } from '@umijs/max';
 import React from 'react';
 import {
   AvatarDropdown,
@@ -41,14 +41,24 @@ export async function getInitialState(): Promise<{
       if (refreshToken) {
         try {
           const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
-          const refreshResult = await refreshTokenAPI({ refreshToken });
-          
-          if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
-            console.log('Token refreshed during initialization');
-            const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
-            tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
+          const refreshResponse = await refreshTokenAPI({ refreshToken });
+
+          // 处理统一的 API 响应格式
+          if (refreshResponse.success && refreshResponse.data) {
+            const refreshResult = refreshResponse.data;
+
+            if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
+              console.log('Token refreshed during initialization');
+              const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
+              tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
+            } else {
+              console.log('Token refresh failed during initialization');
+              tokenUtils.clearAllTokens();
+              history.push(loginPath);
+              return undefined;
+            }
           } else {
-            console.log('Token refresh failed during initialization');
+            console.log('Token refresh failed during initialization - invalid response format');
             tokenUtils.clearAllTokens();
             history.push(loginPath);
             return undefined;
@@ -120,7 +130,7 @@ export const layout: RunTimeLayoutConfig = ({
       },
     },
     waterMarkProps: {
-      content: initialState?.currentUser?.name,
+      content: '',
     },
     footerRender: () => <Footer />,
     onPageChange: () => {
@@ -226,18 +236,23 @@ export const request: RequestConfig = {
         if (refreshToken) {
           try {
             const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
-            const refreshResult = await refreshTokenAPI({ refreshToken });
-            
-            if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
-              console.log('Token refreshed successfully');
-              // 保存新的token
-              const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
-              tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
-              
-              // 重试原始请求
-              const originalRequest = error.config;
-              originalRequest.headers.Authorization = `Bearer ${refreshResult.token}`;
-              return request(originalRequest);
+            const refreshResponse = await refreshTokenAPI({ refreshToken });
+
+            // 处理统一的 API 响应格式
+            if (refreshResponse.success && refreshResponse.data) {
+              const refreshResult = refreshResponse.data;
+
+              if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
+                console.log('Token refreshed successfully');
+                // 保存新的token
+                const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
+                tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
+
+                // 重试原始请求
+                const originalRequest = error.config;
+                originalRequest.headers.Authorization = `Bearer ${refreshResult.token}`;
+                return requestClient(originalRequest);
+              }
             }
           } catch (refreshError) {
             console.log('Token refresh failed:', refreshError);

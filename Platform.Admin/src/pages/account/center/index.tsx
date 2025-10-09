@@ -78,12 +78,25 @@ const UserCenter: React.FC = () => {
       setLoading(true);
       const response = await getCurrentUserProfile();
       if (response.success && response.data) {
-        setUserProfile(response.data);
+        // 将 CurrentUser 转换为 UserProfile 格式
+        const currentUser = response.data;
+        const profile: UserProfile = {
+          id: currentUser.userid || '',
+          username: currentUser.name || '',
+          name: currentUser.name,
+          email: currentUser.email,
+          age: 18, // 使用默认年龄，因为CurrentUser中没有age字段
+          role: currentUser.access || 'user',
+          isActive: currentUser.isLogin || false,
+          createdAt: '', // CurrentUser中没有这些时间字段，使用空字符串
+          updatedAt: '',
+          lastLoginAt: '',
+        };
+        setUserProfile(profile);
         form.setFieldsValue({
-          username: response.data.username,
-          name: response.data.name,
-          email: response.data.email,
-          age: response.data.age,
+          name: currentUser.name,
+          email: currentUser.email,
+          age: 18, // CurrentUser中没有age字段，使用默认值
         });
       }
     } catch (error) {
@@ -99,7 +112,16 @@ const UserCenter: React.FC = () => {
     try {
       const response = await getUserActivityLogs();
       if (response.success && response.data) {
-        setActivityLogs(response.data);
+        // 将 UserActivityLog[] 转换为 ActivityLog[] 格式
+        const logs: ActivityLog[] = response.data.map(log => ({
+          id: log.id || '',
+          action: log.action || '',
+          description: log.description || '',
+          ipAddress: log.ipAddress,
+          userAgent: log.userAgent,
+          createdAt: log.createdAt || '',
+        }));
+        setActivityLogs(logs);
       }
     } catch (error) {
       console.error('获取活动日志失败:', error);
@@ -121,7 +143,7 @@ const UserCenter: React.FC = () => {
         setEditing(false);
         fetchUserProfile(); // 重新获取用户信息
       } else {
-        message.error(response.error || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));
+        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));
       }
     } catch (error) {
       console.error('更新用户信息失败:', error);

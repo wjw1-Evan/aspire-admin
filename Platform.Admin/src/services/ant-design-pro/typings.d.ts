@@ -132,6 +132,18 @@ declare namespace API {
     errorMessage?: string;
   };
 
+  type POST_API_REFRESH_TOKEN_PAYLOAD = {
+    refreshToken: string;
+  };
+
+  type POST_API_REFRESH_TOKEN_RES = {
+    status?: string;
+    token?: string;
+    refreshToken?: string;
+    expiresAt?: string;
+    errorMessage?: string;
+  };
+
   type ErrorResponse = {
     /** 业务约定的错误码 */
     errorCode: string;

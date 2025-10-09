@@ -135,8 +135,12 @@ const Login: React.FC = () => {
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
-      const msg = await login({ ...values, type });
-      if (msg.status === 'ok') {
+      const response = await login({ ...values, type });
+
+      // 处理统一的 API 响应格式
+      if (response.success && response.data) {
+        const msg = response.data;
+
         // 保存 token 和刷新token到本地存储
         if (msg.token && msg.refreshToken) {
           const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;
@@ -145,7 +149,7 @@ const Login: React.FC = () => {
           // 兼容旧版本，只保存token
           tokenUtils.setToken(msg.token);
         }
-        
+
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',
           defaultMessage: '登录成功！',
@@ -156,9 +160,10 @@ const Login: React.FC = () => {
         window.location.href = urlParams.get('redirect') || '/';
         return;
       }
-      console.log(msg);
-      // 如果失败去设置用户错误信息
-      setUserLoginState(msg);
+
+      // 如果失败，处理错误信息
+      const errorMsg = response.errorMessage || '登录失败，请重试！';
+      setUserLoginState({ status: 'error', errorMessage: errorMsg });
     } catch (error) {
       const defaultLoginFailureMessage = intl.formatMessage({
         id: 'pages.login.failure',

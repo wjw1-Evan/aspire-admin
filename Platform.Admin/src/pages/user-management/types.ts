@@ -5,6 +5,7 @@ export interface AppUser {
   username: string;
   email?: string;
   role: string;
+  roleIds?: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -44,7 +45,8 @@ export interface CreateUserRequest {
   username: string;
   email?: string;
   password: string;
-  role: string;
+  role?: string;
+  roleIds?: string[];
   isActive: boolean;
 }
 
@@ -52,6 +54,7 @@ export interface UpdateUserRequest {
   username?: string;
   email?: string;
   role?: string;
+  roleIds?: string[];
   isActive?: boolean;
 }
 

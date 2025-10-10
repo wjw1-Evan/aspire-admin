@@ -152,6 +152,9 @@ public class AppUser
     [BsonElement("role")]
     public string Role { get; set; } = "user";
 
+    [BsonElement("roleIds")]
+    public List<string> RoleIds { get; set; } = new();
+
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 

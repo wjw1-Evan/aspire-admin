@@ -67,7 +67,8 @@ public class UserService
             Username = request.Username,
             Email = request.Email,
             PasswordHash = passwordHash,
-            Role = request.Role,
+            Role = request.Role ?? "user", // 如果未提供，默认为 user
+            RoleIds = request.RoleIds ?? new List<string>(),
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -129,6 +130,9 @@ public class UserService
 
         if (!string.IsNullOrEmpty(request.Role))
             update = update.Set(user => user.Role, request.Role);
+
+        if (request.RoleIds != null)
+            update = update.Set(user => user.RoleIds, request.RoleIds);
 
         if (request.IsActive.HasValue)
             update = update.Set(user => user.IsActive, request.IsActive.Value);

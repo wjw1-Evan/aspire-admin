@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, Input, Select, Switch, Button, Space, message } from 'antd';
 import { request } from '@umijs/max';
+import { getAllRoles } from '@/services/role/api';
 import type { AppUser, CreateUserRequest, UpdateUserRequest } from '../types';
+import type { Role } from '@/services/role/types';
 
 interface UserFormProps {
   user?: AppUser | null;
@@ -11,16 +13,37 @@ interface UserFormProps {
 
 const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
   const [form] = Form.useForm();
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
 
   const isEdit = !!user;
+
+  // 加载角色列表
+  useEffect(() => {
+    const fetchRoles = async () => {
+      setLoadingRoles(true);
+      try {
+        const response = await getAllRoles();
+        if (response.success && response.data) {
+          setRoles(response.data.roles.filter(r => r.isActive));
+        }
+      } catch (error) {
+        console.error('加载角色列表失败:', error);
+        message.error('加载角色列表失败');
+      } finally {
+        setLoadingRoles(false);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     if (user) {
       form.setFieldsValue({
         username: user.username,
         email: user.email,
-        role: user.role,
+        roleIds: user.roleIds || [],
         isActive: user.isActive,
       });
     } else {
@@ -36,7 +59,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         const updateData: UpdateUserRequest = {
           username: values.username,
           email: values.email,
-          role: values.role,
+          roleIds: values.roleIds || [],
           isActive: values.isActive,
         };
 
@@ -56,7 +79,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           username: values.username,
           email: values.email,
           password: values.password,
-          role: values.role,
+          roleIds: values.roleIds || [],
           isActive: values.isActive,
         };
 
@@ -131,7 +154,6 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
       layout="vertical"
       onFinish={handleSubmit}
       initialValues={{
-        role: 'user',
         isActive: true,
       }}
     >
@@ -173,14 +195,25 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
       )}
 
       <Form.Item
-        name="role"
+        name="roleIds"
         label="角色"
-        rules={[{ required: true, message: '请选择角色' }]}
+        rules={[{ required: true, message: '请选择至少一个角色' }]}
+        tooltip="从角色管理系统中选择角色，支持多选"
       >
-        <Select placeholder="请选择角色">
-          <Select.Option value="user">普通用户</Select.Option>
-          <Select.Option value="admin">管理员</Select.Option>
-        </Select>
+        <Select
+          mode="multiple"
+          placeholder="请选择角色"
+          loading={loadingRoles}
+          allowClear
+          showSearch
+          filterOption={(input, option) =>
+            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+          }
+          options={roles.map(role => ({
+            label: role.name,
+            value: role.id!,
+          }))}
+        />
       </Form.Item>
 
       <Form.Item

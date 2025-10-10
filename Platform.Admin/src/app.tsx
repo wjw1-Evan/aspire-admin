@@ -1,4 +1,5 @@
 import { LinkOutlined } from '@ant-design/icons';
+import * as Icons from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
@@ -12,6 +13,7 @@ import {
   SelectLang,
 } from '@/components';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
+import { getUserMenus } from '@/services/menu/api';
 import { tokenUtils } from '@/utils/token';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
@@ -42,6 +44,23 @@ export async function getInitialState(): Promise<{
       const msg = await queryCurrentUser({
         skipErrorHandler: true,
       });
+      
+      // 获取用户菜单
+      try {
+        const menuResponse = await getUserMenus({
+          skipErrorHandler: true,
+        });
+        if (menuResponse.success && menuResponse.data) {
+          // 将菜单数据附加到用户信息
+          return {
+            ...msg.data,
+            menus: menuResponse.data,
+          };
+        }
+      } catch (menuError) {
+        console.log('Failed to fetch user menus, using default menus:', menuError);
+      }
+      
       return msg.data;
     } catch (error) {
       // 如果获取用户信息失败（包括 token 过期），清除 token
@@ -73,6 +92,62 @@ export async function getInitialState(): Promise<{
   };
 }
 
+/**
+ * 根据图标名称获取图标组件
+ */
+function getIconComponent(iconName?: string): React.ReactNode {
+  if (!iconName) return undefined;
+  
+  // 将图标名称转换为 PascalCase + 'Outlined' 格式
+  // 例如: 'smile' -> 'SmileOutlined', 'user' -> 'UserOutlined'
+  const formatIconName = (name: string) => {
+    return name
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
+  };
+  
+  // 尝试多种图标后缀
+  const suffixes = ['Outlined', 'Filled', 'TwoTone', ''];
+  
+  for (const suffix of suffixes) {
+    const iconComponentName = formatIconName(iconName) + suffix;
+    const IconComponent = (Icons as any)[iconComponentName];
+    
+    if (IconComponent) {
+      return React.createElement(IconComponent);
+    }
+  }
+  
+  console.warn(`Icon not found: ${iconName}`);
+  return undefined;
+}
+
+/**
+ * 将菜单树转换为 ProLayout 菜单格式
+ */
+function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
+  return menus
+    .filter(menu => !menu.hideInMenu)
+    .map(menu => {
+      const menuItem: any = {
+        name: menu.name,
+        path: menu.path,
+        icon: getIconComponent(menu.icon),
+      };
+
+      if (menu.isExternal) {
+        menuItem.target = menu.openInNewTab ? '_blank' : '_self';
+      }
+
+      if (menu.children && menu.children.length > 0) {
+        menuItem.routes = convertMenuTreeToProLayout(menu.children);
+      }
+
+      return menuItem;
+    });
+}
+
 // ProLayout 支持的api https://procomponents.ant.design/components/layout
 export const layout: RunTimeLayoutConfig = ({
   initialState,
@@ -100,6 +175,17 @@ export const layout: RunTimeLayoutConfig = ({
       if (!initialState?.currentUser && location.pathname !== loginPath) {
         history.push(loginPath);
       }
+    },
+    // 动态渲染菜单
+    menuDataRender: (menuData) => {
+      // 如果用户有自定义菜单，使用自定义菜单；否则使用默认菜单
+      if (initialState?.currentUser?.menus && initialState.currentUser.menus.length > 0) {
+        const dynamicMenus = convertMenuTreeToProLayout(initialState.currentUser.menus);
+        console.log('Using dynamic menus:', dynamicMenus);
+        return dynamicMenus;
+      }
+      console.log('Using default menus:', menuData);
+      return menuData;
     },
     bgLayoutImgList: [
       {

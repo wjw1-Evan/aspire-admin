@@ -5,6 +5,9 @@ import SmileOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Adm
 import CrownOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/CrownOutlined';
 import TableOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/TableOutlined';
 import UserOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/UserOutlined';
+import SettingOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/SettingOutlined';
+import TeamOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/TeamOutlined';
+import MenuOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/MenuOutlined';
 import BugOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/BugOutlined';
 import ExperimentOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/ExperimentOutlined';
-export default { SmileOutlined, CrownOutlined, TableOutlined, UserOutlined, BugOutlined, ExperimentOutlined };
+export default { SmileOutlined, CrownOutlined, TableOutlined, UserOutlined, SettingOutlined, TeamOutlined, MenuOutlined, BugOutlined, ExperimentOutlined };

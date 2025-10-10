@@ -68,6 +68,35 @@ export default [
     component: './user-management',
   },
   {
+    name: 'system',
+    icon: 'setting',
+    path: '/system',
+    routes: [
+      {
+        path: '/system',
+        redirect: '/system/user-management',
+      },
+      {
+        name: 'user-management',
+        icon: 'user',
+        path: '/system/user-management',
+        component: './user-management',
+      },
+      {
+        name: 'role-management',
+        icon: 'team',
+        path: '/system/role-management',
+        component: './role-management',
+      },
+      {
+        name: 'menu-management',
+        icon: 'menu',
+        path: '/system/menu-management',
+        component: './menu-management',
+      },
+    ],
+  },
+  {
     name: 'debug',
     icon: 'bug',
     path: '/debug',

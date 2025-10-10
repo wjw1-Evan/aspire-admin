@@ -20,6 +20,7 @@ import {
   HistoryOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
+import { getAllRoles } from '@/services/role/api';
 import type { AppUser, UserActivityLog } from '../types';
 import dayjs from 'dayjs';
 
@@ -33,10 +34,32 @@ interface UserDetailProps {
 const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
   const [activityLogs, setActivityLogs] = useState<UserActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
+  const [roleMap, setRoleMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     fetchActivityLogs();
   }, [user.id]);
+
+  const fetchRoles = async () => {
+    try {
+      const response = await getAllRoles();
+      if (response.success && response.data) {
+        const map: Record<string, string> = {};
+        response.data.roles.forEach(role => {
+          if (role.id) {
+            map[role.id] = role.name;
+          }
+        });
+        setRoleMap(map);
+      }
+    } catch (error) {
+      console.error('加载角色列表失败:', error);
+    }
+  };
 
   const fetchActivityLogs = async () => {
     if (!user.id) return;
@@ -126,9 +149,17 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
           </Descriptions.Item>
 
           <Descriptions.Item label="角色">
-            <Tag color={user.role === 'admin' ? 'red' : 'blue'}>
-              {user.role === 'admin' ? '管理员' : '普通用户'}
-            </Tag>
+            {!user.roleIds || user.roleIds.length === 0 ? (
+              <Tag color="default">未分配</Tag>
+            ) : (
+              <Space wrap>
+                {user.roleIds.map(roleId => (
+                  <Tag key={roleId} color="blue">
+                    {roleMap[roleId] || roleId}
+                  </Tag>
+                ))}
+              </Space>
+            )}
           </Descriptions.Item>
 
           <Descriptions.Item label="状态">

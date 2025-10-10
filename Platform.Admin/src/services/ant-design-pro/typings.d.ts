@@ -12,6 +12,24 @@ declare namespace API {
     traceId?: string;
   };
 
+  type MenuTreeNode = {
+    id?: string;
+    name: string;
+    path: string;
+    component?: string;
+    icon?: string;
+    sortOrder: number;
+    isEnabled: boolean;
+    isExternal: boolean;
+    openInNewTab: boolean;
+    hideInMenu: boolean;
+    parentId?: string;
+    permissions: string[];
+    children: MenuTreeNode[];
+    createdAt?: string;
+    updatedAt?: string;
+  };
+
   type CurrentUser = {
     name?: string;
     avatar?: string;
@@ -32,6 +50,7 @@ declare namespace API {
     address?: string;
     phone?: string;
     isLogin?: boolean;
+    menus?: MenuTreeNode[];
   };
 
   type LoginResult = {

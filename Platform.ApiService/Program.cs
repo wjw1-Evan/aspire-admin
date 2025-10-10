@@ -44,6 +44,8 @@ builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<RuleService>();
 builder.Services.AddSingleton<NoticeService>();
 builder.Services.AddSingleton<TagService>();
+builder.Services.AddSingleton<MenuService>();
+builder.Services.AddSingleton<RoleService>();
 
 // Configure JWT authentication
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "your-super-secret-key-that-is-at-least-32-characters-long-for-production-use";
@@ -94,12 +96,18 @@ if (app.Environment.IsDevelopment())
 
 app.MapDefaultEndpoints();
 
-// 初始化管理员用户
+// 初始化管理员用户和菜单角色
 using (var scope = app.Services.CreateScope())
 {
     var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
+    
+    // 初始化管理员用户
     var createAdminUser = new CreateAdminUser(database);
     await createAdminUser.CreateDefaultAdminAsync();
+    
+    // 初始化菜单和角色
+    var initialMenuData = new InitialMenuData(database);
+    await initialMenuData.InitializeAsync();
 }
 
 await app.RunAsync();

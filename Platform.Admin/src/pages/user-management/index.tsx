@@ -34,6 +34,7 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
+import { getAllRoles } from '@/services/role/api';
 import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
 import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
@@ -47,12 +48,35 @@ const UserManagement: React.FC = () => {
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [viewingUser, setViewingUser] = useState<AppUser | null>(null);
   const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);
+  const [roleMap, setRoleMap] = useState<Record<string, string>>({});
   const [searchParams, setSearchParams] = useState<UserListRequest>({
     Page: 1,
     PageSize: 10,
     SortBy: 'CreatedAt',
     SortOrder: 'desc',
   });
+
+  // 加载角色列表
+  React.useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await getAllRoles();
+        if (response.success && response.data) {
+          // 创建角色 ID 到名称的映射
+          const map: Record<string, string> = {};
+          response.data.roles.forEach(role => {
+            if (role.id) {
+              map[role.id] = role.name;
+            }
+          });
+          setRoleMap(map);
+        }
+      } catch (error) {
+        console.error('加载角色列表失败:', error);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   // 获取用户统计信息
   const fetchStatistics = async () => {
@@ -201,22 +225,6 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  // 更新用户角色
-  const handleUpdateRole = async (userId: string, role: string) => {
-    try {
-      await request(`/api/user/${userId}/role`, {
-        method: 'PUT',
-        data: { Role: role },
-      });
-
-      message.success('角色更新成功');
-      actionRef.current?.reload();
-    } catch (error) {
-      console.error('更新用户角色失败:', error);
-      message.error('角色更新失败');
-    }
-  };
-
   // 表格列定义
   const columns: ProColumns<AppUser>[] = [
     {
@@ -240,23 +248,23 @@ const UserManagement: React.FC = () => {
     },
     {
       title: '角色',
-      dataIndex: 'role',
-      key: 'role',
-      width: 100,
-      render: (_, record) => (
-        <Tag color={record.role === 'admin' ? 'red' : 'blue'}>
-          {record.role === 'admin' ? '管理员' : '普通用户'}
-        </Tag>
-      ),
-      renderFormItem: (_, { record }) => (
-        <Select
-          defaultValue={record?.role}
-          onChange={(value) => record?.id && handleUpdateRole(record.id, value)}
-        >
-          <Select.Option value="user">普通用户</Select.Option>
-          <Select.Option value="admin">管理员</Select.Option>
-        </Select>
-      ),
+      dataIndex: 'roleIds',
+      key: 'roleIds',
+      width: 200,
+      render: (_, record) => {
+        if (!record.roleIds || record.roleIds.length === 0) {
+          return <Tag color="default">未分配</Tag>;
+        }
+        return (
+          <Space wrap>
+            {record.roleIds.map(roleId => (
+              <Tag key={roleId} color="blue">
+                {roleMap[roleId] || roleId}
+              </Tag>
+            ))}
+          </Space>
+        );
+      },
     },
     {
       title: '状态',

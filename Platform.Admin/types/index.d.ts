@@ -1,4 +1,30 @@
 export namespace API {
+  // 通用API响应类型
+  export interface ApiResponse<T> {
+    success: boolean;
+    data?: T;
+    errorMessage?: string;
+  }
+
+  // 菜单树节点类型
+  export interface MenuTreeNode {
+    id?: string;
+    name: string;
+    path: string;
+    component?: string;
+    icon?: string;
+    sortOrder: number;
+    isEnabled: boolean;
+    isExternal: boolean;
+    openInNewTab: boolean;
+    hideInMenu: boolean;
+    parentId?: string;
+    permissions: string[];
+    children: MenuTreeNode[];
+    createdAt?: string;
+    updatedAt?: string;
+  }
+
   /** GET /api/currentUser */
   export type GET_API_CURRENT_USER_QUERY = {
     /** example:  123 */

@@ -3,7 +3,7 @@
 import React, { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { usePathname } from 'expo-router';
-import { useAuthError } from '@/hooks/useAuth';
+import { useAuthError } from '@/hooks/useAuthError';
 import { AuthErrorType } from '@/types/unified-api';
 
 interface AuthErrorHandlerProps {

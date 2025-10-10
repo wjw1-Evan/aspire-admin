@@ -42,6 +42,7 @@ public class AuthService
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext?.User?.Identity?.IsAuthenticated != true)
         {
+            // 未认证：用户未登录或 token 无效
             return new CurrentUser
             {
                 IsLogin = false
@@ -52,6 +53,7 @@ public class AuthService
         var userId = httpContext.User.FindFirst("userId")?.Value;
         if (string.IsNullOrEmpty(userId))
         {
+            // Token 有效但缺少用户 ID：token 格式错误
             return new CurrentUser
             {
                 IsLogin = false
@@ -60,8 +62,18 @@ public class AuthService
 
         // 从数据库获取用户信息
         var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
-        if (user == null || !user.IsActive)
+        if (user == null)
         {
+            // 用户不存在：可能已被删除
+            return new CurrentUser
+            {
+                IsLogin = false
+            };
+        }
+        
+        if (!user.IsActive)
+        {
+            // 用户已被禁用：账户被管理员停用
             return new CurrentUser
             {
                 IsLogin = false
@@ -69,6 +81,8 @@ public class AuthService
         }
 
         // 构建用户信息
+        // 注意：数据库使用 Role 字段存储用户角色，但返回给前端时使用 Access 字段
+        // 这是为了保持前端权限系统的一致性（前端使用 access 字段进行权限检查）
         return new CurrentUser
         {
             Id = user.Id,
@@ -91,7 +105,7 @@ public class AuthService
             NotifyCount = 12,
             UnreadCount = 11,
             Country = "China",
-            Access = user.Role,
+            Access = user.Role, // 将数据库的 Role 字段映射为前端的 Access 字段
             Geographic = new GeographicInfo
             {
                 Province = new LocationInfo { Label = "浙江省", Key = "330000" },

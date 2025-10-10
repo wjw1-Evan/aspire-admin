@@ -2,6 +2,11 @@ const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const TOKEN_EXPIRES_KEY = 'token_expires_at';
 
+// Token 过期缓冲时间（毫秒）
+// 提前这个时间认为 token 过期，以便有时间刷新
+// 统一配置：与移动端保持一致
+const TOKEN_EXPIRY_BUFFER = 5 * 60 * 1000; // 5 分钟
+
 export const tokenUtils = {
   // 保存 token
   setToken: (token: string) => {
@@ -73,8 +78,7 @@ export const tokenUtils = {
       return false; // 如果没有过期时间，假设不过期
     }
     
-    // 提前 5 分钟认为 token 过期，以便有时间刷新
-    const bufferTime = 5 * 60 * 1000; // 5 分钟
-    return Date.now() >= (expiresAt - bufferTime);
+    // 使用统一的缓冲时间
+    return Date.now() >= (expiresAt - TOKEN_EXPIRY_BUFFER);
   }
 };

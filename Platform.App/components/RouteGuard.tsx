@@ -1,60 +1,52 @@
-// 重新设计的路由守卫组件
+/**
+ * 路由守卫组件
+ * 控制路由级别的访问权限
+ */
 
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect, useMemo } from 'react';
 import { useRouter, useSegments } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useAuthGuard } from '@/components/AuthGuard';
 import { PermissionCheck } from '@/types/unified-api';
+import { isProtectedRoute } from '@/utils/guardUtils';
 
 interface RouteGuardProps {
   readonly children: ReactNode;
   protectedRoutes?: string[];
   publicRoutes?: string[];
   redirectTo?: string;
-  permission?: PermissionCheck;
-  roles?: string[];
-  requireAllRoles?: boolean;
+  unauthorizedRedirect?: string;
 }
 
-// 路由守卫组件
+/**
+ * 简单路由守卫组件
+ */
 export function RouteGuard({
   children,
   protectedRoutes = [],
-  publicRoutes = ['auth'],
+  publicRoutes = ['/auth'],
   redirectTo = '/auth',
-  permission: _permission,
-  roles: _roles,
-  requireAllRoles: _requireAllRoles = false,
+  unauthorizedRedirect = '/(tabs)',
 }: Readonly<RouteGuardProps>) {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
   
-  // 使用认证守卫检查权限 - 帮助页面不需要特殊权限，所以不传递参数
   const { canAccess } = useAuthGuard();
 
   // 获取当前路由路径
   const currentPath = `/${segments.join('/')}`;
 
+  // 判断当前路由是否受保护
+  const isProtected = useMemo(() => {
+    return isProtectedRoute(currentPath, protectedRoutes, publicRoutes);
+  }, [currentPath, protectedRoutes, publicRoutes]);
+
   useEffect(() => {
-    // 如果还在加载，不进行路由检查
-    if (loading) {
-      return;
-    }
-
-    // 检查当前路由是否为受保护的路由
-    const isProtectedRoute = protectedRoutes.length > 0
-      ? protectedRoutes.some(route => currentPath.startsWith(route))
-      : !publicRoutes.some(route => currentPath.startsWith(route));
-
-    // 检查目标路由是否为受保护的路由（用于导航检查）
-    const targetPath = `/${segments.join('/')}`;
-    const isTargetProtectedRoute = protectedRoutes.length > 0
-      ? protectedRoutes.some(route => targetPath.startsWith(route))
-      : !publicRoutes.some(route => targetPath.startsWith(route));
+    if (loading) return;
 
     // 如果用户未认证且访问受保护路由，重定向到登录页
-    if (isProtectedRoute && !isAuthenticated) {
+    if (isProtected && !isAuthenticated) {
       console.log('用户未认证，重定向到登录页');
       router.replace(redirectTo as any);
       return;
@@ -67,27 +59,28 @@ export function RouteGuard({
     }
 
     // 检查权限
-    if (isTargetProtectedRoute && isAuthenticated && !canAccess) {
-      // 权限不足，重定向到无权限页面或首页
-      console.log('权限不足，重定向到首页');
-      router.replace('/(tabs)');
+    if (isProtected && isAuthenticated && !canAccess) {
+      console.log('权限不足，重定向');
+      router.replace(unauthorizedRedirect as any);
     }
   }, [
     isAuthenticated,
     loading,
     currentPath,
+    isProtected,
     canAccess,
-    segments,
-    protectedRoutes,
-    publicRoutes,
     redirectTo,
+    unauthorizedRedirect,
     router,
+    publicRoutes,
   ]);
 
   return <>{children}</>;
 }
 
-// 路由权限配置类型
+/**
+ * 高级路由守卫组件
+ */
 interface RoutePermission {
   path: string;
   permission?: PermissionCheck;
@@ -95,7 +88,6 @@ interface RoutePermission {
   requireAllRoles?: boolean;
 }
 
-// 高级路由守卫组件
 interface AdvancedRouteGuardProps {
   readonly children: ReactNode;
   routePermissions?: RoutePermission[];
@@ -113,15 +105,14 @@ export function AdvancedRouteGuard({
   const router = useRouter();
   const segments = useSegments();
 
-  // 获取当前路由路径
   const currentPath = `/${segments.join('/')}`;
 
   // 查找当前路由的权限配置
-  const routePermission = routePermissions.find(route => 
-    currentPath.startsWith(route.path)
-  );
+  const routePermission = useMemo(() => {
+    return routePermissions.find(route => currentPath.startsWith(route.path));
+  }, [currentPath, routePermissions]);
 
-  // 检查权限 - 移到组件顶层
+  // 检查权限
   const { canAccess } = useAuthGuard(
     routePermission?.permission,
     routePermission?.roles,
@@ -129,9 +120,7 @@ export function AdvancedRouteGuard({
   );
 
   useEffect(() => {
-    if (loading) {
-      return;
-    }
+    if (loading) return;
 
     // 如果没有找到权限配置，使用默认逻辑
     if (!routePermission) {
@@ -165,41 +154,9 @@ export function AdvancedRouteGuard({
   return <>{children}</>;
 }
 
-// 路由权限检查 Hook
-export function useRoutePermission(route: string) {
-  const { isAuthenticated } = useAuth();
-  const router = useRouter();
-  const segments = useSegments();
-
-  const currentPath = `/${segments.join('/')}`;
-  const isCurrentRoute = currentPath === route;
-
-  const navigateToRoute = (targetRoute: string) => {
-    router.push(targetRoute as any);
-  };
-
-  const canAccessRoute = React.useCallback((_targetRoute: string, permission?: PermissionCheck, roles?: string[]) => {
-    if (!isAuthenticated) {
-      return false;
-    }
-
-    if (permission || roles) {
-      // 这里不能直接调用Hook，需要从外部传入权限检查结果
-      return false; // 临时返回false，实际使用时需要传入权限检查结果
-    }
-
-    return true;
-  }, [isAuthenticated]);
-
-  return {
-    isCurrentRoute,
-    navigateToRoute,
-    canAccessRoute,
-    currentPath,
-  };
-}
-
-// 条件路由组件
+/**
+ * 条件路由组件
+ */
 interface ConditionalRouteProps {
   readonly condition: boolean;
   children: ReactNode;
@@ -228,24 +185,25 @@ export function ConditionalRoute({
   return <>{children}</>;
 }
 
-// 路由监听器 Hook
-export function useRouteChange() {
+/**
+ * 路由权限检查 Hook
+ */
+export function useRoutePermission(route: string) {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const segments = useSegments();
-  const [previousPath, setPreviousPath] = React.useState<string>('');
 
   const currentPath = `/${segments.join('/')}`;
+  const isCurrentRoute = currentPath === route;
 
-  useEffect(() => {
-    if (previousPath !== currentPath) {
-      // 路由发生变化
-      console.log('Route changed from', previousPath, 'to', currentPath);
-      setPreviousPath(currentPath);
-    }
-  }, [currentPath, previousPath]);
+  const navigateToRoute = (targetRoute: string) => {
+    router.push(targetRoute as any);
+  };
 
   return {
+    isCurrentRoute,
+    navigateToRoute,
     currentPath,
-    previousPath,
-    hasRouteChanged: previousPath !== currentPath,
+    isAuthenticated,
   };
 }

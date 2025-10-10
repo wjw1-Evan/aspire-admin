@@ -7,7 +7,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
-import { useTokenValidation } from '@/hooks/useAuth';
+import { useTokenValidation } from '@/hooks/useTokenValidation';
 import { AuthErrorHandler, NetworkStatusIndicator } from '@/components/AuthErrorHandler';
 import { RouteGuard } from '@/components/RouteGuard';
 

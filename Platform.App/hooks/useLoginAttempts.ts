@@ -1,4 +1,7 @@
-// 登录尝试跟踪 Hook - 防止暴力破解
+/**
+ * 登录尝试跟踪 Hook
+ * 防止暴力破解，限制登录尝试次数
+ */
 
 import { useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,67 +12,73 @@ interface LoginAttempt {
   readonly success: boolean;
 }
 
+interface LoginAttemptsConfig {
+  readonly maxAttempts: number;
+  readonly lockDuration: number; // 毫秒
+  readonly attemptWindow: number; // 毫秒
+}
+
 interface LoginAttemptsState {
   readonly attempts: LoginAttempt[];
   readonly isLocked: boolean;
   readonly lockTimeRemaining: number;
-  readonly maxAttempts: number;
-  readonly lockDuration: number; // 锁定时间（毫秒）
 }
 
 const STORAGE_KEY = 'login_attempts';
-const MAX_ATTEMPTS = 5; // 最大尝试次数
-const LOCK_DURATION = 15 * 60 * 1000; // 锁定15分钟
-const ATTEMPT_WINDOW = 5 * 60 * 1000; // 5分钟内的尝试计入
 
-export function useLoginAttempts() {
+const DEFAULT_CONFIG: LoginAttemptsConfig = {
+  maxAttempts: 5,
+  lockDuration: 15 * 60 * 1000, // 15分钟
+  attemptWindow: 5 * 60 * 1000, // 5分钟
+};
+
+export function useLoginAttempts(config: Partial<LoginAttemptsConfig> = {}) {
+  const finalConfig = { ...DEFAULT_CONFIG, ...config };
+  
   const [state, setState] = useState<LoginAttemptsState>({
     attempts: [],
     isLocked: false,
     lockTimeRemaining: 0,
-    maxAttempts: MAX_ATTEMPTS,
-    lockDuration: LOCK_DURATION,
   });
 
   // 从存储中加载登录尝试记录
   const loadAttempts = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const attempts: LoginAttempt[] = JSON.parse(stored);
-        const now = Date.now();
-        
-        // 过滤掉过期的尝试记录
-        const validAttempts = attempts.filter(
-          attempt => now - attempt.timestamp < ATTEMPT_WINDOW
-        );
-        
-        // 检查是否被锁定
-        const recentFailedAttempts = validAttempts.filter(
-          attempt => !attempt.success && now - attempt.timestamp < LOCK_DURATION
-        );
-        
-        const isLocked = recentFailedAttempts.length >= MAX_ATTEMPTS;
-        const lockTimeRemaining = isLocked 
-          ? LOCK_DURATION - (now - Math.min(...recentFailedAttempts.map(a => a.timestamp)))
-          : 0;
-        
-        setState(prev => ({
-          ...prev,
-          attempts: validAttempts,
-          isLocked,
-          lockTimeRemaining: Math.max(0, lockTimeRemaining),
-        }));
-        
-        // 如果数据有变化，更新存储
-        if (validAttempts.length !== attempts.length) {
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(validAttempts));
-        }
+      if (!stored) return;
+
+      const attempts: LoginAttempt[] = JSON.parse(stored);
+      const now = Date.now();
+      
+      // 过滤掉过期的尝试记录
+      const validAttempts = attempts.filter(
+        attempt => now - attempt.timestamp < finalConfig.attemptWindow
+      );
+      
+      // 检查是否被锁定
+      const recentFailedAttempts = validAttempts.filter(
+        attempt => !attempt.success && now - attempt.timestamp < finalConfig.lockDuration
+      );
+      
+      const isLocked = recentFailedAttempts.length >= finalConfig.maxAttempts;
+      const lockTimeRemaining = isLocked 
+        ? finalConfig.lockDuration - (now - Math.min(...recentFailedAttempts.map(a => a.timestamp)))
+        : 0;
+      
+      setState({
+        attempts: validAttempts,
+        isLocked,
+        lockTimeRemaining: Math.max(0, lockTimeRemaining),
+      });
+      
+      // 如果数据有变化，更新存储
+      if (validAttempts.length !== attempts.length) {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(validAttempts));
       }
     } catch (error) {
       console.error('Failed to load login attempts:', error);
     }
-  }, []);
+  }, [finalConfig]);
 
   // 记录登录尝试
   const recordAttempt = useCallback(async (username: string, success: boolean) => {
@@ -85,43 +94,41 @@ export function useLoginAttempts() {
       
       // 过滤掉过期的尝试记录
       const validAttempts = updatedAttempts.filter(
-        attempt => now - attempt.timestamp < ATTEMPT_WINDOW
+        attempt => now - attempt.timestamp < finalConfig.attemptWindow
       );
       
       // 检查是否被锁定
       const recentFailedAttempts = validAttempts.filter(
-        attempt => !attempt.success && now - attempt.timestamp < LOCK_DURATION
+        attempt => !attempt.success && now - attempt.timestamp < finalConfig.lockDuration
       );
       
-      const isLocked = recentFailedAttempts.length >= MAX_ATTEMPTS;
+      const isLocked = recentFailedAttempts.length >= finalConfig.maxAttempts;
       const lockTimeRemaining = isLocked 
-        ? LOCK_DURATION - (now - Math.min(...recentFailedAttempts.map(a => a.timestamp)))
+        ? finalConfig.lockDuration - (now - Math.min(...recentFailedAttempts.map(a => a.timestamp)))
         : 0;
       
-      setState(prev => ({
-        ...prev,
+      setState({
         attempts: validAttempts,
         isLocked,
         lockTimeRemaining: Math.max(0, lockTimeRemaining),
-      }));
+      });
       
       // 保存到存储
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(validAttempts));
     } catch (error) {
       console.error('Failed to record login attempt:', error);
     }
-  }, [state.attempts]);
+  }, [state.attempts, finalConfig]);
 
   // 清除登录尝试记录
   const clearAttempts = useCallback(async () => {
     try {
       await AsyncStorage.removeItem(STORAGE_KEY);
-      setState(prev => ({
-        ...prev,
+      setState({
         attempts: [],
         isLocked: false,
         lockTimeRemaining: 0,
-      }));
+      });
     } catch (error) {
       console.error('Failed to clear login attempts:', error);
     }
@@ -132,13 +139,13 @@ export function useLoginAttempts() {
     const now = Date.now();
     const recentAttempts = state.attempts.filter(
       attempt => 
-        now - attempt.timestamp < ATTEMPT_WINDOW &&
+        now - attempt.timestamp < finalConfig.attemptWindow &&
         (!username || attempt.username === username)
     );
     
     const failedAttempts = recentAttempts.filter(attempt => !attempt.success);
-    return Math.max(0, MAX_ATTEMPTS - failedAttempts.length);
-  }, [state.attempts]);
+    return Math.max(0, finalConfig.maxAttempts - failedAttempts.length);
+  }, [state.attempts, finalConfig]);
 
   // 格式化锁定剩余时间
   const formatLockTime = useCallback((milliseconds: number) => {
@@ -177,27 +184,28 @@ export function useLoginAttempts() {
 
   // 定期更新锁定状态
   useEffect(() => {
-    if (state.isLocked && state.lockTimeRemaining > 0) {
-      const timer = setInterval(() => {
-        setState(prev => {
-          const newTimeRemaining = Math.max(0, prev.lockTimeRemaining - 1000);
-          return {
-            ...prev,
-            lockTimeRemaining: newTimeRemaining,
-            isLocked: newTimeRemaining > 0,
-          };
-        });
-      }, 1000);
-      
-      return () => clearInterval(timer);
+    if (!state.isLocked || state.lockTimeRemaining <= 0) {
+      return;
     }
+
+    const timer = setInterval(() => {
+      setState(prev => {
+        const newTimeRemaining = Math.max(0, prev.lockTimeRemaining - 1000);
+        return {
+          ...prev,
+          lockTimeRemaining: newTimeRemaining,
+          isLocked: newTimeRemaining > 0,
+        };
+      });
+    }, 1000);
     
-    // 如果没有锁定状态，返回空的清理函数
-    return () => {};
+    return () => clearInterval(timer);
   }, [state.isLocked, state.lockTimeRemaining]);
 
   return {
     ...state,
+    maxAttempts: finalConfig.maxAttempts,
+    lockDuration: finalConfig.lockDuration,
     recordAttempt,
     clearAttempts,
     getRemainingAttempts,

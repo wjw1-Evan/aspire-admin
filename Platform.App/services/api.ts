@@ -1,57 +1,48 @@
-// 重新设计的 API 服务配置和基础请求方法
+/**
+ * API 服务
+ * 提供统一的网络请求接口和 token 管理
+ */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthError, AuthErrorType } from '@/types/unified-api';
 import { getApiBaseUrl } from '@/constants/apiConfig';
-
-const TOKEN_KEY = 'auth_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
-const TOKEN_EXPIRES_KEY = 'token_expires_at';
-
-// 请求配置
-interface RequestConfig {
-  timeout?: number;
-  retries?: number;
-  retryDelay?: number;
-}
-
-// API 错误类型
-interface ApiError extends Error {
-  response?: {
-    status: number;
-    statusText: string;
-  };
-  code?: string;
-}
+import {
+  DEFAULT_REQUEST_CONFIG,
+  STORAGE_KEYS,
+  RequestConfig,
+  calculateRetryDelay,
+  shouldRetryError,
+} from './apiConfig';
+import { handleError, ApiError, createAuthError } from './errorHandler';
+import { AuthErrorType } from '@/types/unified-api';
 
 class ApiService {
   private authStateChangeListeners: (() => void)[] = [];
-  private logoutCallback: (() => Promise<void>) | null = null;
 
-  // 动态获取 API 基础 URL
+  /**
+   * 获取 API 基础 URL
+   */
   private getBaseURL(): string {
-    const baseURL = getApiBaseUrl();
-    console.log('动态获取 API_BASE_URL:', baseURL);
-    return baseURL;
+    return getApiBaseUrl();
   }
 
-  // 设置登出回调函数
-  setLogoutCallback(callback: () => Promise<void>) {
-    this.logoutCallback = callback;
-  }
-
-  // 添加认证状态变化监听器
-  addAuthStateChangeListener(listener: () => void) {
+  /**
+   * 添加认证状态变化监听器
+   */
+  addAuthStateChangeListener(listener: () => void): void {
     this.authStateChangeListeners.push(listener);
   }
 
-  // 移除认证状态变化监听器
-  removeAuthStateChangeListener(listener: () => void) {
+  /**
+   * 移除认证状态变化监听器
+   */
+  removeAuthStateChangeListener(listener: () => void): void {
     this.authStateChangeListeners = this.authStateChangeListeners.filter(l => l !== listener);
   }
 
-  // 触发认证状态变化事件
-  private triggerAuthStateChange() {
+  /**
+   * 触发认证状态变化事件
+   */
+  private triggerAuthStateChange(): void {
     this.authStateChangeListeners.forEach(listener => {
       try {
         listener();
@@ -61,108 +52,35 @@ class ApiService {
     });
   }
 
-  // 处理认证失败
-  private async handleAuthFailure(error?: ApiError): Promise<AuthError> {
-    console.log('API: Authentication failed, logging out user');
-    
-    // 清除本地token
+  /**
+   * 处理认证失败
+   */
+  private async handleAuthFailure(): Promise<void> {
+    console.log('API: Authentication failed, clearing tokens');
     await this.clearAllTokens();
-    
-    // 如果有登出回调，调用它来更新认证状态
-    if (this.logoutCallback) {
-      try {
-        await this.logoutCallback();
-      } catch (callbackError) {
-        console.error('API: Error calling logout callback:', callbackError);
-      }
-    }
-    
-    // 触发认证状态变化事件
     this.triggerAuthStateChange();
-    
-    // 返回适当的错误信息
-    if (error?.response?.status === 401) {
-      return {
-        type: AuthErrorType.TOKEN_EXPIRED,
-        message: '登录已过期，请重新登录',
-        retryable: false,
-      };
-    }
-    
-    if (error?.response?.status === 403) {
-      return {
-        type: AuthErrorType.PERMISSION_DENIED,
-        message: '权限不足',
-        retryable: false,
-      };
-    }
-    
-    return {
-      type: AuthErrorType.UNAUTHORIZED,
-      message: '认证失败，请重新登录',
-      retryable: false,
-    };
   }
 
-  // 带重试的请求方法
-  private async requestWithRetry<T>(
-    endpoint: string,
-    options: RequestInit = {},
-    config: RequestConfig = {}
-  ): Promise<T> {
-    const { timeout = 10000, retries = 3, retryDelay = 1000 } = config;
-    
-    let lastError: ApiError | undefined;
-    
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const result = await this.request<T>(endpoint, options, timeout);
-        return result;
-      } catch (error) {
-        lastError = error as ApiError;
-        
-        // 如果是认证错误，不重试
-        if (lastError?.response?.status === 401 || lastError?.response?.status === 403) {
-          throw await this.handleAuthFailure(lastError);
-        }
-        
-        // 如果不是最后一次尝试，等待后重试
-        if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
-        }
-      }
-    }
-    
-    throw lastError || new Error('请求失败');
-  }
-
-  // 基础请求方法
+  /**
+   * 基础请求方法
+   */
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    timeout: number = 10000
+    timeout = DEFAULT_REQUEST_CONFIG.timeout
   ): Promise<T> {
     const url = `${this.getBaseURL()}${endpoint}`;
-
-    console.log('url', url);
     
-    const defaultHeaders: HeadersInit = {
+    const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      ...options.headers,
     };
 
     // 添加认证头
     const token = await this.getToken();
     if (token) {
-      defaultHeaders.Authorization = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
-
-    const config: RequestInit = {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    };
 
     // 创建 AbortController 用于超时控制
     const controller = new AbortController();
@@ -170,83 +88,127 @@ class ApiService {
 
     try {
       const response = await fetch(url, {
-        ...config,
+        ...options,
+        headers,
         signal: controller.signal,
       });
       
       clearTimeout(timeoutId);
       
-      // 检查是否是认证相关的错误
+      // 处理认证错误
       if (response.status === 401 || response.status === 403) {
-        const authError = new Error('认证失败') as ApiError;
-        authError.response = response;
-        throw await this.handleAuthFailure(authError);
+        await this.handleAuthFailure();
+        throw createAuthError(
+          response.status === 401 ? AuthErrorType.TOKEN_EXPIRED : AuthErrorType.PERMISSION_DENIED,
+          response.status === 401 ? '登录已过期，请重新登录' : '权限不足',
+          false
+        );
       }
       
+      // 处理其他错误
       if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        let errorCode: string | undefined;
-        
-        try {
-          const errorData = await response.json();
-          
-          // 优先使用后端返回的详细错误信息
-          if (errorData.errorMessage) {
-            errorMessage = errorData.errorMessage;
-          } else if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-          
-          // 保存错误代码
-          if (errorData.errorCode) {
-            errorCode = errorData.errorCode;
-          } else if (errorData.type) {
-            // 如果后端返回的是type字段，也保存为errorCode
-            errorCode = errorData.type;
-          }
-        } catch {
-          // 如果无法解析JSON，使用默认错误消息
-        }
-        
-        const error = new Error(errorMessage) as ApiError;
-        error.response = response;
-        if (errorCode) {
-          (error as any).errorCode = errorCode;
+        const errorData = await this.parseErrorResponse(response);
+        const error = new Error(errorData.message) as ApiError;
+        error.response = {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData,
+        };
+        if (errorData.errorCode) {
+          (error as any).errorCode = errorData.errorCode;
         }
         throw error;
       }
 
-      const data = await response.json();
-      return data;
+      return await response.json();
     } catch (error: unknown) {
       clearTimeout(timeoutId);
       
+      // 处理超时错误
       if (error instanceof Error && error.name === 'AbortError') {
         const timeoutError = new Error('请求超时，请检查网络连接') as ApiError;
         timeoutError.code = 'TIMEOUT';
         throw timeoutError;
       }
       
-      // 处理网络连接错误
+      // 处理网络错误
       if (error instanceof TypeError && error.message.includes('fetch')) {
         const networkError = new Error('网络连接失败，请检查网络设置') as ApiError;
         networkError.code = 'NETWORK_ERROR';
         throw networkError;
       }
       
-      console.error('API Request failed:', error);
       throw error;
     }
   }
 
-  // GET 请求
+  /**
+   * 解析错误响应
+   */
+  private async parseErrorResponse(response: Response): Promise<{
+    message: string;
+    errorCode?: string;
+  }> {
+    try {
+      const errorData = await response.json();
+      return {
+        message: errorData.errorMessage || errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        errorCode: errorData.errorCode || errorData.type,
+      };
+    } catch {
+      return {
+        message: `HTTP ${response.status}: ${response.statusText}`,
+      };
+    }
+  }
+
+  /**
+   * 带重试的请求方法
+   */
+  private async requestWithRetry<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    config: RequestConfig = {}
+  ): Promise<T> {
+    const { timeout, retries } = { ...DEFAULT_REQUEST_CONFIG, ...config };
+    
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await this.request<T>(endpoint, options, timeout);
+      } catch (error) {
+        lastError = error;
+        
+        // 如果是认证错误，不重试
+        const authError = handleError(error);
+        if (authError.type === AuthErrorType.TOKEN_EXPIRED || 
+            authError.type === AuthErrorType.PERMISSION_DENIED) {
+          throw authError;
+        }
+        
+        // 如果不是最后一次尝试且可以重试，等待后重试
+        if (attempt < retries && shouldRetryError(error)) {
+          await new Promise(resolve => setTimeout(resolve, calculateRetryDelay(attempt)));
+        } else if (attempt >= retries) {
+          break;
+        }
+      }
+    }
+    
+    throw handleError(lastError);
+  }
+
+  /**
+   * GET 请求
+   */
   async get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, { method: 'GET' }, config);
   }
 
-  // POST 请求
+  /**
+   * POST 请求
+   */
   async post<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: 'POST',
@@ -254,7 +216,9 @@ class ApiService {
     }, config);
   }
 
-  // PUT 请求
+  /**
+   * PUT 请求
+   */
   async put<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: 'PUT',
@@ -262,16 +226,18 @@ class ApiService {
     }, config);
   }
 
-  // DELETE 请求
+  /**
+   * DELETE 请求
+   */
   async delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, { method: 'DELETE' }, config);
   }
 
-  // Token 管理
+  // ==================== Token 管理 ====================
+
   async getToken(): Promise<string | null> {
     try {
-      const token = await AsyncStorage.getItem(TOKEN_KEY);
-      return token;
+      return await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
     } catch (error) {
       console.error('Failed to get token:', error);
       return null;
@@ -280,7 +246,7 @@ class ApiService {
 
   async setToken(token: string): Promise<void> {
     try {
-      await AsyncStorage.setItem(TOKEN_KEY, token);
+      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, token);
     } catch (error) {
       console.error('Failed to set token:', error);
     }
@@ -288,27 +254,16 @@ class ApiService {
 
   async removeToken(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(TOKEN_KEY);
+      await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
       this.triggerAuthStateChange();
     } catch (error) {
       console.error('Failed to remove token:', error);
     }
   }
 
-  async clearAllTokens(): Promise<void> {
-    try {
-      await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY, TOKEN_EXPIRES_KEY]);
-      this.triggerAuthStateChange();
-    } catch (error) {
-      console.error('Failed to clear all tokens:', error);
-    }
-  }
-
-  // 刷新token管理
   async getRefreshToken(): Promise<string | null> {
     try {
-      const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
-      return refreshToken;
+      return await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     } catch (error) {
       console.error('Failed to get refresh token:', error);
       return null;
@@ -317,7 +272,7 @@ class ApiService {
 
   async setRefreshToken(refreshToken: string): Promise<void> {
     try {
-      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     } catch (error) {
       console.error('Failed to set refresh token:', error);
     }
@@ -325,16 +280,15 @@ class ApiService {
 
   async removeRefreshToken(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+      await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     } catch (error) {
       console.error('Failed to remove refresh token:', error);
     }
   }
 
-  // Token过期时间管理
   async getTokenExpiresAt(): Promise<number | null> {
     try {
-      const expiresAt = await AsyncStorage.getItem(TOKEN_EXPIRES_KEY);
+      const expiresAt = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES);
       return expiresAt ? parseInt(expiresAt, 10) : null;
     } catch (error) {
       console.error('Failed to get token expires at:', error);
@@ -344,7 +298,7 @@ class ApiService {
 
   async setTokenExpiresAt(expiresAt: number): Promise<void> {
     try {
-      await AsyncStorage.setItem(TOKEN_EXPIRES_KEY, expiresAt.toString());
+      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString());
     } catch (error) {
       console.error('Failed to set token expires at:', error);
     }
@@ -352,21 +306,20 @@ class ApiService {
 
   async removeTokenExpiresAt(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(TOKEN_EXPIRES_KEY);
+      await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES);
     } catch (error) {
       console.error('Failed to remove token expires at:', error);
     }
   }
 
-  // 设置所有token信息
   async setTokens(token: string, refreshToken: string, expiresAt?: number): Promise<void> {
     try {
       const items: [string, string][] = [
-        [TOKEN_KEY, token],
-        [REFRESH_TOKEN_KEY, refreshToken],
+        [STORAGE_KEYS.TOKEN, token],
+        [STORAGE_KEYS.REFRESH_TOKEN, refreshToken],
       ];
       if (expiresAt) {
-        items.push([TOKEN_EXPIRES_KEY, expiresAt.toString()]);
+        items.push([STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString()]);
       }
       await AsyncStorage.multiSet(items);
     } catch (error) {
@@ -374,7 +327,22 @@ class ApiService {
     }
   }
 
-  // 验证token有效性
+  async clearAllTokens(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.TOKEN,
+        STORAGE_KEYS.REFRESH_TOKEN,
+        STORAGE_KEYS.TOKEN_EXPIRES,
+      ]);
+      this.triggerAuthStateChange();
+    } catch (error) {
+      console.error('Failed to clear all tokens:', error);
+    }
+  }
+
+  /**
+   * 验证 token 有效性
+   */
   async validateToken(): Promise<boolean> {
     try {
       const token = await this.getToken();
@@ -382,7 +350,6 @@ class ApiService {
         return false;
       }
 
-      // 尝试调用一个需要认证的接口来验证token
       const response = await fetch(`${this.getBaseURL()}/currentUser`, {
         method: 'GET',
         headers: {
@@ -391,24 +358,18 @@ class ApiService {
         },
       });
 
-      // 检查HTTP状态码
       if (response.status === 401 || response.status === 403) {
-        const authError = new Error('认证失败') as ApiError;
-        authError.response = response;
-        await this.handleAuthFailure(authError);
+        await this.handleAuthFailure();
         return false;
       }
 
-      // 检查响应是否成功
       if (!response.ok) {
         return false;
       }
 
-      // 检查响应内容，确保用户已登录
       try {
         const data = await response.json();
         if (data && typeof data === 'object') {
-          // 检查响应格式是否符合预期
           if (data.success === false || (data.data && data.data.isLogin === false)) {
             return false;
           }
@@ -425,10 +386,11 @@ class ApiService {
     }
   }
 
-  // 检查网络连接状态
+  /**
+   * 检查网络连接状态
+   */
   async isOnline(): Promise<boolean> {
     try {
-      // 尝试访问一个简单的端点来检查网络连接
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       

@@ -35,56 +35,17 @@ export async function getInitialState(): Promise<{
       return undefined;
     }
     
-    // 检查token是否过期，如果过期且存在刷新token，尝试刷新
-    if (tokenUtils.isTokenExpired()) {
-      const refreshToken = tokenUtils.getRefreshToken();
-      if (refreshToken) {
-        try {
-          const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
-          const refreshResponse = await refreshTokenAPI({ refreshToken });
-
-          // 处理统一的 API 响应格式
-          if (refreshResponse.success && refreshResponse.data) {
-            const refreshResult = refreshResponse.data;
-
-            if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
-              console.log('Token refreshed during initialization');
-              const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
-              tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
-            } else {
-              console.log('Token refresh failed during initialization');
-              tokenUtils.clearAllTokens();
-              history.push(loginPath);
-              return undefined;
-            }
-          } else {
-            console.log('Token refresh failed during initialization - invalid response format');
-            tokenUtils.clearAllTokens();
-            history.push(loginPath);
-            return undefined;
-          }
-        } catch (refreshError) {
-          console.log('Token refresh error during initialization:', refreshError);
-          tokenUtils.clearAllTokens();
-          history.push(loginPath);
-          return undefined;
-        }
-      } else {
-        console.log('No refresh token available');
-        tokenUtils.clearAllTokens();
-        history.push(loginPath);
-        return undefined;
-      }
-    }
-    
+    // 不在初始化时主动检查 token 是否过期，而是直接尝试获取用户信息
+    // 如果 token 过期，会在请求拦截器中自动触发刷新逻辑
+    // 这样可以避免不必要的初始化延迟，提升用户体验
     try {
       const msg = await queryCurrentUser({
         skipErrorHandler: true,
       });
       return msg.data;
     } catch (error) {
-      // 如果获取用户信息失败，清除 token
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // 如果获取用户信息失败（包括 token 过期），清除 token
+      // 响应拦截器已经处理了 token 刷新，如果走到这里说明刷新也失败了
       console.log('Failed to fetch user info:', error);
       tokenUtils.clearAllTokens();
       history.push(loginPath);
@@ -229,6 +190,20 @@ export const request: RequestConfig = {
       console.log('Response error:', error.config?.url, error.response?.status, error.message);
       
       if (error.response?.status === 401) {
+        // 检查是否已经是刷新token请求，避免递归
+        const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
+        
+        // 检查是否已经重试过，避免无限循环
+        const isRetryRequest = error.config?._retry;
+        
+        if (isRefreshTokenRequest || isRetryRequest) {
+          // 如果是刷新token请求失败或已经重试过，直接登出
+          console.log('Refresh token failed or already retried, redirecting to login');
+          tokenUtils.clearAllTokens();
+          history.push('/user/login');
+          return Promise.reject(error);
+        }
+        
         console.log('401 Unauthorized - attempting to refresh token');
         
         // 尝试刷新token
@@ -248,8 +223,9 @@ export const request: RequestConfig = {
                 const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
                 tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
 
-                // 重试原始请求
+                // 重试原始请求，标记为已重试
                 const originalRequest = error.config;
+                originalRequest._retry = true;
                 originalRequest.headers.Authorization = `Bearer ${refreshResult.token}`;
                 return requestClient(originalRequest);
               }

@@ -1,10 +1,14 @@
-// 重新设计的认证守卫组件 - 与Admin端保持统一
+/**
+ * 认证守卫组件
+ * 控制组件的访问权限
+ */
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePermissions } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionCheck } from '@/types/unified-api';
+import { canAccess } from '@/utils/guardUtils';
 
 interface AuthGuardProps {
   readonly children: ReactNode;
@@ -17,7 +21,9 @@ interface AuthGuardProps {
   errorComponent?: ReactNode;
 }
 
-// 权限守卫组件
+/**
+ * 权限守卫组件
+ */
 export function AuthGuard({
   children,
   requireAuth = true,
@@ -27,93 +33,17 @@ export function AuthGuard({
   fallback,
   loadingComponent,
   errorComponent,
-}: AuthGuardProps) {
+}: Readonly<AuthGuardProps>) {
   const { isAuthenticated, loading, error } = useAuth();
   const { checkPermission, checkAllRoles, checkAnyRole } = usePermissions();
 
-  // 显示加载状态
-  if (loading) {
-    return loadingComponent || (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>加载中...</Text>
-      </View>
-    );
-  }
-
-  // 显示错误状态
-  if (error) {
-    return errorComponent || (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>认证错误: {error.message}</Text>
-      </View>
-    );
-  }
-
-  // 检查是否需要认证
-  if (requireAuth && !isAuthenticated) {
-    return fallback || (
-      <View style={styles.container}>
-        <Text style={styles.messageText}>请先登录</Text>
-      </View>
-    );
-  }
-
-  // 检查权限
-  if (permission && !checkPermission(permission)) {
-    return fallback || (
-      <View style={styles.container}>
-        <Text style={styles.messageText}>权限不足</Text>
-      </View>
-    );
-  }
-
-  // 检查角色
-  if (roles && roles.length > 0) {
-    const hasRequiredRoles = requireAllRoles 
-      ? checkAllRoles(roles)
-      : checkAnyRole(roles);
-
-    if (!hasRequiredRoles) {
-      return fallback || (
-        <View style={styles.container}>
-          <Text style={styles.messageText}>角色权限不足</Text>
-        </View>
-      );
-    }
-  }
-
-  return <>{children}</>;
-}
-
-// 高阶组件版本的认证守卫
-export function withAuthGuard<P extends object>(
-  WrappedComponent: React.ComponentType<P>,
-  guardOptions: Omit<AuthGuardProps, 'children'> = {}
-) {
-  return function AuthGuardedComponent(props: P) {
-    return (
-      <AuthGuard {...guardOptions}>
-        <WrappedComponent {...props} />
-      </AuthGuard>
-    );
-  };
-}
-
-// 权限检查 Hook
-export function useAuthGuard(
-  permission?: PermissionCheck,
-  roles?: string[],
-  requireAllRoles = false
-) {
-  const { isAuthenticated, loading, error } = useAuth();
-  const { checkPermission, checkAllRoles, checkAnyRole } = usePermissions();
-
-  const canAccess = React.useMemo(() => {
+  // 检查访问权限
+  const hasAccess = useMemo(() => {
     if (loading || error) {
       return false;
     }
 
-    if (!isAuthenticated) {
+    if (requireAuth && !isAuthenticated) {
       return false;
     }
 
@@ -133,9 +63,10 @@ export function useAuthGuard(
 
     return true;
   }, [
-    isAuthenticated,
     loading,
     error,
+    requireAuth,
+    isAuthenticated,
     permission,
     roles,
     requireAllRoles,
@@ -144,8 +75,70 @@ export function useAuthGuard(
     checkAnyRole,
   ]);
 
+  // 显示加载状态
+  if (loading) {
+    return loadingComponent || (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>加载中...</Text>
+      </View>
+    );
+  }
+
+  // 显示错误状态
+  if (error) {
+    return errorComponent || (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>认证错误: {error.message}</Text>
+      </View>
+    );
+  }
+
+  // 检查权限
+  if (!hasAccess) {
+    return fallback || (
+      <View style={styles.container}>
+        <Text style={styles.messageText}>
+          {!isAuthenticated ? '请先登录' : '权限不足'}
+        </Text>
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+/**
+ * 高阶组件版本的认证守卫
+ */
+export function withAuthGuard<P extends object>(
+  WrappedComponent: React.ComponentType<P>,
+  guardOptions: Omit<AuthGuardProps, 'children'> = {}
+) {
+  return function AuthGuardedComponent(props: P) {
+    return (
+      <AuthGuard {...guardOptions}>
+        <WrappedComponent {...props} />
+      </AuthGuard>
+    );
+  };
+}
+
+/**
+ * 权限检查 Hook
+ */
+export function useAuthGuard(
+  permission?: PermissionCheck,
+  roles?: string[],
+  requireAllRoles = false
+) {
+  const { isAuthenticated, user, loading, error } = useAuth();
+
+  const hasAccess = useMemo(() => {
+    return canAccess(user, isAuthenticated, permission, roles, requireAllRoles);
+  }, [user, isAuthenticated, permission, roles, requireAllRoles]);
+
   return {
-    canAccess,
+    canAccess: hasAccess,
     isAuthenticated,
     loading,
     error,

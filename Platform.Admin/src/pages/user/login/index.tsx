@@ -19,6 +19,7 @@ import {
   SelectLang,
   useIntl,
   useModel,
+  history,
 } from '@umijs/max';
 import { Alert, App, Button, Tabs } from 'antd';
 import { createStyles } from 'antd-style';
@@ -156,8 +157,11 @@ const Login: React.FC = () => {
         });
         message.success(defaultLoginSuccessMessage);
         await fetchUserInfo();
+        
+        // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性
         const urlParams = new URL(window.location.href).searchParams;
-        window.location.href = urlParams.get('redirect') || '/';
+        const redirect = urlParams.get('redirect');
+        history.push(redirect || '/');
         return;
       }
 
@@ -399,8 +403,10 @@ const Login: React.FC = () => {
                 padding: 0,
                 height: 'auto',
               }}
+              disabled
               onClick={() => {
-                // TODO: 实现忘记密码功能
+                // 忘记密码功能待实现
+                message.info('忘记密码功能开发中');
               }}
             >
               <FormattedMessage

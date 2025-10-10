@@ -1,0 +1,604 @@
+---
+globs: **/contexts/**/*.tsx,**/contexts/**/*.ts,**/hooks/use-*.ts,**/hooks/use-*.tsx
+description: 状态管理规范和最佳实践
+---
+
+# 状态管理规范
+
+## 🎯 状态管理架构
+
+### 技术选型
+
+项目采用 React Context + Hooks 的状态管理方案：
+
+- **React Context** - 全局状态共享
+- **useReducer** - 复杂状态逻辑
+- **useState** - 简单组件状态
+- **自定义 Hooks** - 状态逻辑复用
+
+### 为什么不使用 Redux/Zustand?
+
+- 项目规模适中，Context 足够
+- 减少学习成本和依赖
+- 更符合 React 原生思维
+- TypeScript 类型支持更好
+
+## 📁 Context 设计模式
+
+### 标准 Context 结构
+
+```typescript
+// ✅ 推荐：contexts/AuthContext.tsx
+import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import type { CurrentUser } from '@/types/unified-api';
+
+// 1. 定义状态接口
+interface AuthState {
+  isAuthenticated: boolean;
+  user: CurrentUser | null;
+  token: string | null;
+  refreshToken: string | null;
+  tokenExpiresAt: number | null;
+  loading: boolean;
+  error: string | null;
+}
+
+// 2. 定义 Action 类型
+type AuthAction =
+  | { type: 'AUTH_START' }
+  | { type: 'AUTH_SUCCESS'; payload: { user: CurrentUser; token: string; refreshToken: string } }
+  | { type: 'AUTH_FAILURE'; payload: string }
+  | { type: 'AUTH_LOGOUT' }
+  | { type: 'AUTH_REFRESH_TOKEN'; payload: { token: string; refreshToken: string; expiresAt?: number } }
+  | { type: 'AUTH_UPDATE_USER'; payload: CurrentUser };
+
+// 3. 初始状态
+const initialState: AuthState = {
+  isAuthenticated: false,
+  user: null,
+  token: null,
+  refreshToken: null,
+  tokenExpiresAt: null,
+  loading: true,
+  error: null,
+};
+
+// 4. Reducer 函数
+function authReducer(state: AuthState, action: AuthAction): AuthState {
+  switch (action.type) {
+    case 'AUTH_START':
+      return { ...state, loading: true, error: null };
+      
+    case 'AUTH_SUCCESS':
+      return {
+        ...state,
+        isAuthenticated: true,
+        user: action.payload.user,
+        token: action.payload.token,
+        refreshToken: action.payload.refreshToken,
+        loading: false,
+        error: null,
+      };
+      
+    case 'AUTH_FAILURE':
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        refreshToken: null,
+        loading: false,
+        error: action.payload,
+      };
+      
+    case 'AUTH_LOGOUT':
+      return {
+        ...initialState,
+        loading: false,
+      };
+      
+    case 'AUTH_REFRESH_TOKEN':
+      return {
+        ...state,
+        token: action.payload.token,
+        refreshToken: action.payload.refreshToken,
+        tokenExpiresAt: action.payload.expiresAt || null,
+      };
+      
+    case 'AUTH_UPDATE_USER':
+      return {
+        ...state,
+        user: action.payload,
+      };
+      
+    default:
+      return state;
+  }
+}
+
+// 5. Context 接口
+interface AuthContextValue extends AuthState {
+  login: (credentials: LoginRequest) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshAuth: () => Promise<void>;
+  updateUser: (user: CurrentUser) => void;
+}
+
+// 6. 创建 Context
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+// 7. Provider 组件
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(authReducer, initialState);
+
+  // 登录
+  const login = useCallback(async (credentials: LoginRequest) => {
+    dispatch({ type: 'AUTH_START' });
+    
+    try {
+      const response = await authService.login(credentials);
+      
+      if (response.success && response.data) {
+        const { token, refreshToken } = response.data;
+        
+        // 获取用户信息
+        const userResponse = await authService.getCurrentUser();
+        
+        if (userResponse.success && userResponse.data) {
+          dispatch({
+            type: 'AUTH_SUCCESS',
+            payload: {
+              user: userResponse.data,
+              token,
+              refreshToken,
+            },
+          });
+        }
+      } else {
+        dispatch({
+          type: 'AUTH_FAILURE',
+          payload: response.errorMessage || '登录失败',
+        });
+      }
+    } catch (error) {
+      dispatch({
+        type: 'AUTH_FAILURE',
+        payload: error instanceof Error ? error.message : '登录失败',
+      });
+    }
+  }, []);
+
+  // 登出
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      dispatch({ type: 'AUTH_LOGOUT' });
+    }
+  }, []);
+
+  // 刷新认证
+  const refreshAuth = useCallback(async () => {
+    try {
+      if (state.refreshToken) {
+        const refreshResult = await authService.refreshToken(state.refreshToken);
+        
+        if (refreshResult.success && refreshResult.data) {
+          const { token, refreshToken, expiresAt } = refreshResult.data;
+          const tokenExpiresAt = expiresAt ? new Date(expiresAt).getTime() : undefined;
+          
+          dispatch({
+            type: 'AUTH_REFRESH_TOKEN',
+            payload: { token, refreshToken, expiresAt: tokenExpiresAt },
+          });
+        } else {
+          await logout();
+        }
+      }
+    } catch (error) {
+      console.error('Refresh auth failed:', error);
+      await logout();
+    }
+  }, [state.refreshToken, logout]);
+
+  // 更新用户信息
+  const updateUser = useCallback((user: CurrentUser) => {
+    dispatch({ type: 'AUTH_UPDATE_USER', payload: user });
+  }, []);
+
+  // 使用 useMemo 优化性能
+  const value = useMemo(
+    () => ({
+      ...state,
+      login,
+      logout,
+      refreshAuth,
+      updateUser,
+    }),
+    [state, login, logout, refreshAuth, updateUser]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// 8. 自定义 Hook
+export function useAuth() {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
+}
+```
+
+### 主题 Context 示例
+
+```typescript
+// ✅ 推荐：contexts/ThemeContext.tsx
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+interface ThemeContextValue {
+  themeMode: ThemeMode;
+  isDark: boolean;
+  setThemeMode: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+const THEME_STORAGE_KEY = 'theme_mode';
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const systemColorScheme = useColorScheme();
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
+
+  // 加载保存的主题偏好
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+        if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+          setThemeModeState(savedTheme as ThemeMode);
+        }
+      } catch (error) {
+        console.error('Failed to load theme:', error);
+      }
+    };
+    
+    loadTheme();
+  }, []);
+
+  // 计算实际的暗色模式状态
+  const isDark = useMemo(() => {
+    if (themeMode === 'system') {
+      return systemColorScheme === 'dark';
+    }
+    return themeMode === 'dark';
+  }, [themeMode, systemColorScheme]);
+
+  // 设置主题模式
+  const setThemeMode = useCallback(async (mode: ThemeMode) => {
+    try {
+      await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
+      setThemeModeState(mode);
+    } catch (error) {
+      console.error('Failed to save theme:', error);
+    }
+  }, []);
+
+  // 切换主题
+  const toggleTheme = useCallback(() => {
+    const newMode = isDark ? 'light' : 'dark';
+    setThemeMode(newMode);
+  }, [isDark, setThemeMode]);
+
+  const value = useMemo(
+    () => ({ themeMode, isDark, setThemeMode, toggleTheme }),
+    [themeMode, isDark, setThemeMode, toggleTheme]
+  );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+export function useTheme() {
+  const context = useContext(ThemeContext);
+  
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  
+  return context;
+}
+```
+
+## 🎣 自定义 Hooks
+
+### 数据获取 Hook
+
+```typescript
+// ✅ 推荐：hooks/use-users.ts
+import { useState, useEffect, useCallback } from 'react';
+import { UserService } from '@/services/UserService';
+import type { User } from '@/types/api';
+
+export function useUsers() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await UserService.getUsers();
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '获取用户列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  return { users, loading, error, refetch: fetchUsers };
+}
+```
+
+### 表单 Hook
+
+```typescript
+// ✅ 推荐：hooks/use-form.ts
+import { useState, useCallback } from 'react';
+
+export function useForm<T extends Record<string, any>>(
+  initialValues: T,
+  onSubmit: (values: T) => Promise<void>
+) {
+  const [values, setValues] = useState<T>(initialValues);
+  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleChange = useCallback((name: keyof T, value: any) => {
+    setValues((prev) => ({ ...prev, [name]: value }));
+    // 清除字段错误
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  }, [errors]);
+
+  const handleSubmit = useCallback(async () => {
+    setSubmitting(true);
+    setErrors({});
+
+    try {
+      await onSubmit(values);
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrors({ general: error.message } as any);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }, [values, onSubmit]);
+
+  const reset = useCallback(() => {
+    setValues(initialValues);
+    setErrors({});
+  }, [initialValues]);
+
+  return {
+    values,
+    errors,
+    submitting,
+    handleChange,
+    handleSubmit,
+    reset,
+  };
+}
+```
+
+### 权限 Hook
+
+```typescript
+// ✅ 推荐：hooks/use-permissions.ts
+import { useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+
+export interface PermissionCheck {
+  access?: string;
+  role?: string;
+  roles?: string[];
+}
+
+export function usePermissions() {
+  const { user, isAuthenticated } = useAuth();
+
+  const checkPermission = useCallback(
+    (check: PermissionCheck): boolean => {
+      if (!isAuthenticated || !user) {
+        return false;
+      }
+
+      const { access, role, roles } = check;
+
+      // 检查单个角色
+      if (role && user.access === role) {
+        return true;
+      }
+
+      // 检查多个角色
+      if (roles && roles.includes(user.access)) {
+        return true;
+      }
+
+      // 检查权限（基于 access 字段）
+      if (access && user.access === access) {
+        return true;
+      }
+
+      return false;
+    },
+    [user, isAuthenticated]
+  );
+
+  const checkRole = useCallback(
+    (role: string): boolean => {
+      return checkPermission({ role });
+    },
+    [checkPermission]
+  );
+
+  const checkAllRoles = useCallback(
+    (roles: string[]): boolean => {
+      return roles.every((role) => checkRole(role));
+    },
+    [checkRole]
+  );
+
+  return {
+    checkPermission,
+    checkRole,
+    checkAllRoles,
+    user,
+    isAuthenticated,
+  };
+}
+```
+
+## 🔄 状态更新模式
+
+### 不可变更新
+
+```typescript
+// ✅ 推荐：不可变状态更新
+// 更新对象
+setUser((prev) => ({ ...prev, name: 'New Name' }));
+
+// 更新数组 - 添加
+setItems((prev) => [...prev, newItem]);
+
+// 更新数组 - 删除
+setItems((prev) => prev.filter((item) => item.id !== id));
+
+// 更新数组 - 修改
+setItems((prev) =>
+  prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
+);
+
+// ❌ 避免：直接修改状态
+user.name = 'New Name'; // 错误
+items.push(newItem); // 错误
+```
+
+### 批量更新
+
+```typescript
+// ✅ 推荐：使用 useReducer 批量更新
+function dataReducer(state: DataState, action: DataAction): DataState {
+  switch (action.type) {
+    case 'FETCH_START':
+      return { ...state, loading: true, error: null };
+      
+    case 'FETCH_SUCCESS':
+      return {
+        ...state,
+        data: action.payload,
+        loading: false,
+        error: null,
+        lastUpdated: Date.now(),
+      };
+      
+    case 'FETCH_FAILURE':
+      return { ...state, loading: false, error: action.payload };
+      
+    default:
+      return state;
+  }
+}
+```
+
+## 📱 性能优化
+
+### useMemo 和 useCallback
+
+```typescript
+// ✅ 推荐：正确使用 useMemo 和 useCallback
+function UserList({ users }: { users: User[] }) {
+  // 缓存计算结果
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => a.name.localeCompare(b.name));
+  }, [users]);
+
+  // 缓存回调函数
+  const handleEdit = useCallback((user: User) => {
+    console.log('Edit user:', user);
+  }, []);
+
+  return (
+    <FlatList
+      data={sortedUsers}
+      renderItem={({ item }) => (
+        <UserCard user={item} onEdit={handleEdit} />
+      )}
+      keyExtractor={(item) => item.id}
+    />
+  );
+}
+```
+
+### Context 性能优化
+
+```typescript
+// ✅ 推荐：拆分 Context 避免不必要的重渲染
+// 将频繁变化的状态和不常变化的状态分开
+
+// 用户信息 Context（不常变化）
+const UserContext = createContext<User | null>(null);
+
+// 主题 Context（可能频繁变化）
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+// ❌ 避免：所有状态都放在一个 Context 中
+// const AppContext = createContext<{ user, theme, ... }>(...)
+```
+
+## 🚫 避免的做法
+
+- 不要在渲染函数中创建新的 Context Provider
+- 不要忘记使用 useMemo 优化 Context value
+- 不要过度使用 Context，简单状态用 props
+- 不要在组件外部直接修改状态
+- 不要忘记清理副作用（useEffect 的清理函数）
+
+## 🔧 最佳实践
+
+1. **Context + Hooks** - 使用 Context 和 Hooks 管理全局状态
+2. **合理拆分** - 按功能拆分不同的 Context
+3. **类型安全** - 使用 TypeScript 确保类型安全
+4. **性能优化** - 使用 useMemo 和 useCallback 优化性能
+5. **不可变更新** - 始终以不可变的方式更新状态
+6. **错误处理** - 在 Context 中处理错误状态
+7. **持久化** - 使用 AsyncStorage 持久化重要状态
+8. **初始化** - 在应用启动时恢复持久化状态
+
+## 📚 相关资源
+
+- [React Context 文档](https://react.dev/reference/react/createContext)
+- [React Hooks 文档](https://react.dev/reference/react)
+- [useReducer 文档](https://react.dev/reference/react/useReducer)

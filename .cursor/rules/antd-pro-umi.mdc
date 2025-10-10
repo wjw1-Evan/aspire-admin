@@ -1,0 +1,611 @@
+---
+globs: **/Platform.Admin/**/*.ts,**/Platform.Admin/**/*.tsx,**/config/**/*.ts
+description: Ant Design Pro 和 UmiJS 开发规范
+---
+
+# Ant Design Pro + UmiJS 开发规范
+
+## 🎯 技术栈概览
+
+### 核心技术
+- **Ant Design Pro** - 企业级中后台 UI 解决方案
+- **UmiJS 4** - 企业级前端应用框架
+- **React 19** - 用户界面库
+- **TypeScript** - 类型安全的 JavaScript
+- **Biome** - 代码格式化和 Lint 工具
+
+## 🏗️ 项目结构
+
+### 标准目录结构
+
+```text
+Platform.Admin/
+├── config/                   # UmiJS 配置
+│   ├── config.ts            # 主配置文件
+│   ├── defaultSettings.ts   # 默认设置
+│   ├── proxy.ts            # 开发代理配置
+│   └── routes.ts           # 路由配置
+├── src/
+│   ├── components/         # 全局组件
+│   ├── pages/             # 页面组件
+│   ├── services/          # API 服务
+│   ├── utils/             # 工具函数
+│   ├── app.tsx            # 应用入口配置
+│   └── request-error-config.ts  # 请求错误配置
+├── biome.json             # Biome 配置
+└── package.json           # 依赖配置
+```
+
+## 🎨 应用配置
+
+### app.tsx 运行时配置
+
+```typescript
+// ✅ 推荐：app.tsx 标准结构
+import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
+import { history } from '@umijs/max';
+import { tokenUtils } from '@/utils/token';
+import defaultSettings from '../config/defaultSettings';
+import { errorConfig } from './request-error-config';
+
+// 获取初始状态
+export async function getInitialState() {
+  const fetchUserInfo = async () => {
+    // 检查 token
+    if (!tokenUtils.hasToken()) {
+      return undefined;
+    }
+    
+    try {
+      const msg = await queryCurrentUser({
+        skipErrorHandler: true,
+      });
+      return msg.data;
+    } catch (error) {
+      tokenUtils.clearAllTokens();
+      history.push('/user/login');
+      return undefined;
+    }
+  };
+  
+  // 非登录页面执行初始化
+  const { location } = history;
+  if (!['/user/login', '/user/register'].includes(location.pathname)) {
+    const currentUser = await fetchUserInfo();
+    return {
+      fetchUserInfo,
+      currentUser,
+      settings: defaultSettings,
+    };
+  }
+  
+  return {
+    fetchUserInfo,
+    settings: defaultSettings,
+  };
+}
+
+// ProLayout 配置
+export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) => {
+  return {
+    actionsRender: () => [<Question key="doc" />, <SelectLang key="SelectLang" />],
+    avatarProps: {
+      src: initialState?.currentUser?.avatar,
+      title: <AvatarName />,
+      render: (_, avatarChildren) => {
+        return <AvatarDropdown menu>{avatarChildren}</AvatarDropdown>;
+      },
+    },
+    footerRender: () => <Footer />,
+    onPageChange: () => {
+      const { location } = history;
+      // 未登录重定向
+      if (!initialState?.currentUser && location.pathname !== '/user/login') {
+        history.push('/user/login');
+      }
+    },
+    // 动态菜单渲染
+    menuDataRender: (menuData) => {
+      if (initialState?.currentUser?.menus) {
+        return convertMenuTreeToProLayout(initialState.currentUser.menus);
+      }
+      return menuData;
+    },
+    ...initialState?.settings,
+  };
+};
+```
+
+## 🌐 网络请求配置
+
+### 请求拦截器
+
+```typescript
+// ✅ 推荐：请求配置
+export const request: RequestConfig = {
+  baseURL: process.env.NODE_ENV === 'development' ? '' : 'https://api.example.com',
+  
+  // 请求拦截器 - 添加认证头
+  requestInterceptors: [
+    (config: any) => {
+      const token = tokenUtils.getToken();
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        };
+      }
+      return config;
+    },
+  ],
+
+  // 响应拦截器 - 处理 token 过期
+  responseInterceptors: [
+    (response) => response,
+    async (error: any) => {
+      if (error.response?.status === 401) {
+        // 检查是否是刷新token请求，避免递归
+        const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
+        const isRetryRequest = error.config?._retry;
+        
+        if (isRefreshTokenRequest || isRetryRequest) {
+          tokenUtils.clearAllTokens();
+          history.push('/user/login');
+          return Promise.reject(error);
+        }
+        
+        // 尝试刷新token
+        const refreshToken = tokenUtils.getRefreshToken();
+        if (refreshToken) {
+          try {
+            const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
+            const refreshResponse = await refreshTokenAPI({ refreshToken });
+
+            if (refreshResponse.success && refreshResponse.data) {
+              const refreshResult = refreshResponse.data;
+              if (refreshResult.status === 'ok' && refreshResult.token) {
+                // 保存新token并重试请求
+                const expiresAt = refreshResult.expiresAt 
+                  ? new Date(refreshResult.expiresAt).getTime() 
+                  : undefined;
+                tokenUtils.setTokens(
+                  refreshResult.token, 
+                  refreshResult.refreshToken, 
+                  expiresAt
+                );
+
+                // 重试原始请求
+                const originalRequest = error.config;
+                originalRequest._retry = true;
+                originalRequest.headers.Authorization = `Bearer ${refreshResult.token}`;
+                return requestClient(originalRequest);
+              }
+            }
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+          }
+        }
+        
+        // 刷新失败，跳转登录
+        tokenUtils.clearAllTokens();
+        history.push('/user/login');
+      }
+      
+      return Promise.reject(error);
+    },
+  ],
+  
+  ...errorConfig,
+};
+```
+
+### 错误处理配置
+
+```typescript
+// ✅ 推荐：统一错误处理
+import { message, notification } from 'antd';
+
+export enum ErrorShowType {
+  SILENT = 0,
+  WARN_MESSAGE = 1,
+  ERROR_MESSAGE = 2,
+  NOTIFICATION = 3,
+  REDIRECT = 9,
+}
+
+export const errorConfig: RequestConfig = {
+  errorConfig: {
+    // 错误抛出
+    errorThrower: (res) => {
+      const { success, data, errorCode, errorMessage, showType } = res;
+      if (!success) {
+        const error: any = new Error(errorMessage);
+        error.name = 'BizError';
+        error.info = { errorCode, errorMessage, showType, data };
+        throw error;
+      }
+    },
+    
+    // 错误接收及处理
+    errorHandler: (error: any, opts: any) => {
+      if (opts?.skipErrorHandler) throw error;
+      
+      if (error.name === 'BizError') {
+        const errorInfo = error.info;
+        if (errorInfo) {
+          const { errorMessage, errorCode } = errorInfo;
+          switch (errorInfo.showType) {
+            case ErrorShowType.SILENT:
+              break;
+            case ErrorShowType.WARN_MESSAGE:
+              message.warning(errorMessage);
+              break;
+            case ErrorShowType.ERROR_MESSAGE:
+              message.error(errorMessage);
+              break;
+            case ErrorShowType.NOTIFICATION:
+              notification.open({
+                description: errorMessage,
+                message: errorCode,
+              });
+              break;
+            default:
+              message.error(errorMessage);
+          }
+        }
+      } else if (error.response) {
+        message.error(`Response status: ${error.response.status}`);
+      } else if (error.request) {
+        message.error('None response! Please retry.');
+      } else {
+        message.error('Request error, please retry.');
+      }
+    },
+  },
+};
+```
+
+## 📁 服务层设计
+
+### API 服务封装
+
+```typescript
+// ✅ 推荐：services/ant-design-pro/api.ts
+import { request } from '@umijs/max';
+import type { ApiResponse } from '@/types/unified-api';
+
+/** 获取当前用户 GET /api/currentUser */
+export async function currentUser(options?: { [key: string]: any }) {
+  return request<ApiResponse<API.CurrentUser>>('/api/currentUser', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/** 登录接口 POST /api/login/account */
+export async function login(
+  body: API.LoginParams, 
+  options?: { [key: string]: any }
+) {
+  return request<ApiResponse<API.LoginData>>('/api/login/account', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 刷新token接口 POST /api/refresh-token */
+export async function refreshToken(
+  body: API.RefreshTokenRequest, 
+  options?: { [key: string]: any }
+) {
+  return request<API.ApiResponse<API.RefreshTokenResult>>('/api/refresh-token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 退出登录 POST /api/login/outLogin */
+export async function outLogin(options?: { [key: string]: any }) {
+  return request<Record<string, any>>('/api/login/outLogin', {
+    method: 'POST',
+    ...(options || {}),
+  });
+}
+```
+
+### Token 工具封装
+
+```typescript
+// ✅ 推荐：utils/token.ts
+const TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'auth_refresh_token';
+const TOKEN_EXPIRES_KEY = 'auth_token_expires';
+
+export const tokenUtils = {
+  getToken(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
+  },
+
+  setToken(token: string): void {
+    localStorage.setItem(TOKEN_KEY, token);
+  },
+
+  removeToken(): void {
+    localStorage.removeItem(TOKEN_KEY);
+  },
+
+  hasToken(): boolean {
+    return !!this.getToken();
+  },
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  },
+
+  setRefreshToken(refreshToken: string): void {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  },
+
+  removeRefreshToken(): void {
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  },
+
+  getTokenExpiresAt(): number | null {
+    const expires = localStorage.getItem(TOKEN_EXPIRES_KEY);
+    return expires ? parseInt(expires, 10) : null;
+  },
+
+  setTokenExpiresAt(expiresAt: number): void {
+    localStorage.setItem(TOKEN_EXPIRES_KEY, expiresAt.toString());
+  },
+
+  removeTokenExpiresAt(): void {
+    localStorage.removeItem(TOKEN_EXPIRES_KEY);
+  },
+
+  setTokens(token: string, refreshToken: string, expiresAt?: number): void {
+    this.setToken(token);
+    this.setRefreshToken(refreshToken);
+    if (expiresAt) {
+      this.setTokenExpiresAt(expiresAt);
+    }
+  },
+
+  clearAllTokens(): void {
+    this.removeToken();
+    this.removeRefreshToken();
+    this.removeTokenExpiresAt();
+  },
+
+  isTokenExpired(): boolean {
+    const expiresAt = this.getTokenExpiresAt();
+    if (!expiresAt) return false;
+    return Date.now() >= expiresAt;
+  },
+};
+```
+
+## 📊 页面开发
+
+### ProTable 使用
+
+```typescript
+// ✅ 推荐：使用 ProTable
+import { ProTable } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
+
+const UserManagement: React.FC = () => {
+  const actionRef = useRef<ActionType>();
+  
+  const columns: ProColumns<API.AppUser>[] = [
+    {
+      title: '用户名',
+      dataIndex: 'username',
+      copyable: true,
+      ellipsis: true,
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+      copyable: true,
+    },
+    {
+      title: '角色',
+      dataIndex: 'access',
+      valueEnum: {
+        admin: { text: '管理员', status: 'Success' },
+        user: { text: '用户', status: 'Default' },
+      },
+    },
+    {
+      title: '操作',
+      valueType: 'option',
+      render: (_, record) => [
+        <a key="edit" onClick={() => handleEdit(record)}>编辑</a>,
+        <a key="delete" onClick={() => handleDelete(record)}>删除</a>,
+      ],
+    },
+  ];
+
+  return (
+    <ProTable<API.AppUser>
+      headerTitle="用户列表"
+      actionRef={actionRef}
+      rowKey="id"
+      search={{
+        labelWidth: 120,
+      }}
+      toolBarRender={() => [
+        <Button key="primary" type="primary" onClick={() => handleAdd()}>
+          新建
+        </Button>,
+      ]}
+      request={async (params, sort, filter) => {
+        const msg = await getUsers({ ...params, ...sort, ...filter });
+        return {
+          data: msg.data,
+          success: msg.success,
+          total: msg.total,
+        };
+      }}
+      columns={columns}
+    />
+  );
+};
+```
+
+### ProForm 使用
+
+```typescript
+// ✅ 推荐：使用 ProForm
+import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-components';
+
+const UserForm: React.FC<UserFormProps> = ({ visible, onCancel, onSubmit, initialValues }) => {
+  return (
+    <ModalForm
+      title={initialValues ? '编辑用户' : '新建用户'}
+      open={visible}
+      onFinish={async (values) => {
+        await onSubmit(values);
+        return true;
+      }}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+      initialValues={initialValues}
+    >
+      <ProFormText
+        name="username"
+        label="用户名"
+        placeholder="请输入用户名"
+        rules={[{ required: true, message: '请输入用户名' }]}
+      />
+      
+      <ProFormText
+        name="email"
+        label="邮箱"
+        placeholder="请输入邮箱"
+        rules={[
+          { required: true, message: '请输入邮箱' },
+          { type: 'email', message: '邮箱格式不正确' },
+        ]}
+      />
+      
+      <ProFormSelect
+        name="access"
+        label="角色"
+        valueEnum={{
+          admin: '管理员',
+          user: '用户',
+          guest: '访客',
+        }}
+        rules={[{ required: true, message: '请选择角色' }]}
+      />
+    </ModalForm>
+  );
+};
+```
+
+## 🎯 路由配置
+
+### routes.ts 配置
+
+```typescript
+// ✅ 推荐：config/routes.ts
+export default [
+  {
+    path: '/user',
+    layout: false,
+    routes: [
+      { path: '/user/login', component: './user/login' },
+      { path: '/user/register', component: './user/register' },
+    ],
+  },
+  {
+    path: '/welcome',
+    name: '欢迎',
+    icon: 'smile',
+    component: './Welcome',
+  },
+  {
+    path: '/admin',
+    name: '系统管理',
+    icon: 'crown',
+    access: 'canAdmin',
+    routes: [
+      {
+        path: '/admin/user-management',
+        name: '用户管理',
+        component: './user-management',
+      },
+      {
+        path: '/admin/role-management',
+        name: '角色管理',
+        component: './role-management',
+      },
+    ],
+  },
+  { path: '/', redirect: '/welcome' },
+  { path: '*', layout: false, component: './404' },
+];
+```
+
+### 动态菜单
+
+```typescript
+// ✅ 推荐：动态菜单渲染
+function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
+  return menus
+    .filter(menu => !menu.hideInMenu)
+    .map(menu => {
+      const menuItem: any = {
+        name: menu.name,
+        path: menu.path,
+        icon: getIconComponent(menu.icon),
+      };
+
+      if (menu.isExternal) {
+        menuItem.target = menu.openInNewTab ? '_blank' : '_self';
+      }
+
+      if (menu.children && menu.children.length > 0) {
+        menuItem.routes = convertMenuTreeToProLayout(menu.children);
+      }
+
+      return menuItem;
+    });
+}
+```
+
+## 🚫 避免的做法
+
+- 不要直接修改 ProComponents 的内部状态
+- 不要忽略 TypeScript 类型检查
+- 不要在组件中直接使用 localStorage，使用 tokenUtils
+- 不要忘记处理异步请求的错误
+- 不要硬编码 API 地址，使用代理配置
+
+## 🔧 最佳实践
+
+1. **使用 ProComponents** - 充分利用 Ant Design Pro 组件
+2. **统一状态管理** - 使用 initialState 管理全局状态
+3. **请求拦截器** - 统一处理认证和错误
+4. **类型定义** - 使用 TypeScript 类型定义
+5. **代码规范** - 遵循 Biome 配置
+6. **权限控制** - 使用 access 控制页面访问
+7. **动态菜单** - 支持后端动态菜单配置
+8. **Token 刷新** - 实现自动 token 刷新机制
+
+## 📚 相关资源
+
+- [Ant Design Pro 文档](https://pro.ant.design)
+- [UmiJS 文档](https://umijs.org)
+- [ProComponents 文档](https://procomponents.ant.design)

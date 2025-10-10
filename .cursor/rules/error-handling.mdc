@@ -1,0 +1,582 @@
+---
+globs: **/error*.ts,**/error*.tsx,**/utils/*error*.ts,**/services/**/*.ts
+description: 统一错误处理规范
+---
+
+# 统一错误处理规范
+
+## 🎯 错误处理架构
+
+### 错误分类
+
+1. **网络错误** - 请求超时、连接失败
+2. **认证错误** - Token 过期、权限不足
+3. **业务错误** - 业务逻辑错误
+4. **系统错误** - 服务器错误、未知错误
+
+## 🏗️ 前端错误处理
+
+### 管理后台 (Ant Design Pro)
+
+#### 错误类型定义
+
+```typescript
+// ✅ 推荐：错误类型定义
+export enum ErrorShowType {
+  SILENT = 0,           // 不显示错误
+  WARN_MESSAGE = 1,     // 警告消息
+  ERROR_MESSAGE = 2,    // 错误消息
+  NOTIFICATION = 3,     // 通知提醒
+  REDIRECT = 9,         // 页面跳转
+}
+
+export interface ResponseStructure<T = any> {
+  success: boolean;
+  data?: T;
+  errorCode?: string;
+  errorMessage?: string;
+  showType?: ErrorShowType;
+  traceId?: string;
+}
+
+export interface ApiError extends Error {
+  info?: ResponseStructure;
+  response?: {
+    status: number;
+    statusText: string;
+    data: any;
+  };
+}
+```
+
+#### 统一错误配置
+
+```typescript
+// ✅ 推荐：request-error-config.ts
+import { message, notification } from 'antd';
+import type { RequestConfig } from '@umijs/max';
+
+export const errorConfig: RequestConfig = {
+  errorConfig: {
+    // 错误抛出
+    errorThrower: (res) => {
+      const { success, data, errorCode, errorMessage, showType } = 
+        res as unknown as ResponseStructure;
+      
+      if (!success) {
+        const error: any = new Error(errorMessage);
+        error.name = 'BizError';
+        error.info = { errorCode, errorMessage, showType, data };
+        throw error;
+      }
+    },
+    
+    // 错误接收及处理
+    errorHandler: (error: any, opts: any) => {
+      // 跳过错误处理
+      if (opts?.skipErrorHandler) throw error;
+      
+      // 业务错误
+      if (error.name === 'BizError') {
+        const errorInfo: ResponseStructure | undefined = error.info;
+        if (errorInfo) {
+          const { errorMessage, errorCode } = errorInfo;
+          
+          switch (errorInfo.showType) {
+            case ErrorShowType.SILENT:
+              // 不显示错误
+              break;
+            case ErrorShowType.WARN_MESSAGE:
+              message.warning(errorMessage);
+              break;
+            case ErrorShowType.ERROR_MESSAGE:
+              message.error(errorMessage);
+              break;
+            case ErrorShowType.NOTIFICATION:
+              notification.open({
+                description: errorMessage,
+                message: errorCode,
+              });
+              break;
+            case ErrorShowType.REDIRECT:
+              // 页面跳转逻辑
+              break;
+            default:
+              message.error(errorMessage);
+          }
+        }
+      } 
+      // HTTP 错误
+      else if (error.response) {
+        message.error(`Response status: ${error.response.status}`);
+      } 
+      // 请求错误
+      else if (error.request) {
+        message.error('None response! Please retry.');
+      } 
+      // 其他错误
+      else {
+        message.error('Request error, please retry.');
+      }
+    },
+  },
+  
+  responseInterceptors: [
+    (response) => {
+      // 拦截响应数据，进行个性化处理
+      const { data } = response as unknown as ResponseStructure;
+      
+      if (data?.success === false) {
+        // 可以在这里添加全局错误处理逻辑
+        console.error('Request failed:', data.errorMessage);
+      }
+      
+      return response;
+    },
+  ],
+};
+```
+
+### 移动端 (React Native + Expo)
+
+#### 错误类型定义
+
+```typescript
+// ✅ 推荐：types/unified-api.ts
+export enum AuthErrorType {
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+  TOKEN_INVALID = 'TOKEN_INVALID',
+  PERMISSION_DENIED = 'PERMISSION_DENIED',
+  NOT_AUTHENTICATED = 'NOT_AUTHENTICATED',
+}
+
+export interface ApiError extends Error {
+  code?: string;
+  type?: AuthErrorType;
+  statusCode?: number;
+  canRetry?: boolean;
+  response?: {
+    status: number;
+    statusText: string;
+    data: any;
+  };
+}
+```
+
+#### 错误处理服务
+
+```typescript
+// ✅ 推荐：services/errorHandler.ts
+import { AuthErrorType } from '@/types/unified-api';
+
+export function createAuthError(
+  type: AuthErrorType,
+  message: string,
+  canRetry: boolean = false
+): ApiError {
+  const error = new Error(message) as ApiError;
+  error.type = type;
+  error.canRetry = canRetry;
+  return error;
+}
+
+export function handleError(error: unknown): ApiError {
+  // 已经是 ApiError
+  if (error instanceof Error && 'type' in error) {
+    return error as ApiError;
+  }
+  
+  // HTTP 错误
+  if (error instanceof Error && 'response' in error) {
+    const httpError = error as any;
+    const status = httpError.response?.status;
+    
+    switch (status) {
+      case 401:
+        return createAuthError(
+          AuthErrorType.TOKEN_EXPIRED,
+          '登录已过期，请重新登录',
+          false
+        );
+      case 403:
+        return createAuthError(
+          AuthErrorType.PERMISSION_DENIED,
+          '权限不足',
+          false
+        );
+      default:
+        const apiError = new Error(
+          httpError.message || '请求失败'
+        ) as ApiError;
+        apiError.statusCode = status;
+        apiError.response = httpError.response;
+        apiError.canRetry = shouldRetryError(error);
+        return apiError;
+    }
+  }
+  
+  // 网络错误
+  if (error instanceof TypeError) {
+    const networkError = new Error('网络连接失败') as ApiError;
+    networkError.code = 'NETWORK_ERROR';
+    networkError.canRetry = true;
+    return networkError;
+  }
+  
+  // 超时错误
+  if (error instanceof Error && error.name === 'AbortError') {
+    const timeoutError = new Error('请求超时') as ApiError;
+    timeoutError.code = 'TIMEOUT';
+    timeoutError.canRetry = true;
+    return timeoutError;
+  }
+  
+  // 未知错误
+  const unknownError = new Error('未知错误') as ApiError;
+  unknownError.code = 'UNKNOWN_ERROR';
+  return unknownError;
+}
+
+export function shouldRetryError(error: unknown): boolean {
+  if (error instanceof Error && 'code' in error) {
+    const apiError = error as ApiError;
+    // 网络错误和超时错误可以重试
+    return apiError.code === 'NETWORK_ERROR' || apiError.code === 'TIMEOUT';
+  }
+  
+  if (error instanceof Error && 'response' in error) {
+    const httpError = error as any;
+    const status = httpError.response?.status;
+    // 5xx 错误可以重试
+    return status >= 500 && status < 600;
+  }
+  
+  return false;
+}
+```
+
+#### API 服务错误处理
+
+```typescript
+// ✅ 推荐：services/api.ts
+export class ApiService {
+  private async requestWithRetry<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    config: RequestConfig = {}
+  ): Promise<T> {
+    const { timeout, retries } = { ...DEFAULT_REQUEST_CONFIG, ...config };
+    
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await this.request<T>(endpoint, options, timeout);
+      } catch (error) {
+        lastError = error;
+        
+        // 认证错误不重试
+        const apiError = handleError(error);
+        if (apiError.type === AuthErrorType.TOKEN_EXPIRED || 
+            apiError.type === AuthErrorType.PERMISSION_DENIED) {
+          throw apiError;
+        }
+        
+        // 如果不是最后一次尝试且可以重试，等待后重试
+        if (attempt < retries && shouldRetryError(error)) {
+          const delay = calculateRetryDelay(attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else if (attempt >= retries) {
+          break;
+        }
+      }
+    }
+    
+    throw handleError(lastError);
+  }
+}
+```
+
+#### 重试策略
+
+```typescript
+// ✅ 推荐：重试配置
+export const DEFAULT_REQUEST_CONFIG = {
+  timeout: 30000,      // 30秒超时
+  retries: 2,          // 重试2次
+};
+
+export function calculateRetryDelay(attempt: number): number {
+  // 指数退避：第1次 1秒，第2次 2秒，第3次 4秒
+  return Math.min(1000 * Math.pow(2, attempt), 10000);
+}
+
+export function shouldRetryError(error: unknown): boolean {
+  const apiError = handleError(error);
+  
+  // 网络错误可以重试
+  if (apiError.code === 'NETWORK_ERROR' || apiError.code === 'TIMEOUT') {
+    return true;
+  }
+  
+  // 5xx 错误可以重试
+  if (apiError.statusCode && apiError.statusCode >= 500) {
+    return true;
+  }
+  
+  // 认证错误不重试
+  if (apiError.type === AuthErrorType.TOKEN_EXPIRED || 
+      apiError.type === AuthErrorType.PERMISSION_DENIED) {
+    return false;
+  }
+  
+  return false;
+}
+```
+
+## 🔧 后端错误处理 (C#)
+
+### 统一响应格式
+
+```csharp
+// ✅ 推荐：统一响应模型
+public class ApiResponse<T>
+{
+    public bool Success { get; set; }
+    public T? Data { get; set; }
+    public string? ErrorCode { get; set; }
+    public string? ErrorMessage { get; set; }
+    public int? ShowType { get; set; }
+    public string? TraceId { get; set; }
+}
+```
+
+### 全局异常处理
+
+```csharp
+// ✅ 推荐：全局异常处理中间件
+public class GlobalExceptionHandler : IExceptionHandler
+{
+    private readonly ILogger<GlobalExceptionHandler> _logger;
+
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    {
+        _logger = logger;
+    }
+
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext httpContext,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+        
+        _logger.LogError(exception, 
+            "Error occurred. TraceId: {TraceId}, Path: {Path}", 
+            traceId, 
+            httpContext.Request.Path);
+
+        var response = exception switch
+        {
+            UnauthorizedAccessException => CreateResponse(
+                false, 
+                "未授权访问", 
+                "UNAUTHORIZED", 
+                StatusCodes.Status401Unauthorized,
+                traceId),
+                
+            ArgumentException => CreateResponse(
+                false, 
+                exception.Message, 
+                "BAD_REQUEST", 
+                StatusCodes.Status400BadRequest,
+                traceId),
+                
+            KeyNotFoundException => CreateResponse(
+                false, 
+                "资源不存在", 
+                "NOT_FOUND", 
+                StatusCodes.Status404NotFound,
+                traceId),
+                
+            _ => CreateResponse(
+                false, 
+                "服务器内部错误", 
+                "INTERNAL_ERROR", 
+                StatusCodes.Status500InternalServerError,
+                traceId)
+        };
+
+        httpContext.Response.StatusCode = response.StatusCode;
+        await httpContext.Response.WriteAsJsonAsync(response.Body, cancellationToken);
+
+        return true;
+    }
+
+    private (int StatusCode, object Body) CreateResponse(
+        bool success, 
+        string message, 
+        string errorCode, 
+        int statusCode,
+        string traceId)
+    {
+        return (statusCode, new
+        {
+            success,
+            errorMessage = message,
+            errorCode,
+            showType = 2, // ERROR_MESSAGE
+            traceId
+        });
+    }
+}
+```
+
+### 控制器错误处理
+
+```csharp
+// ✅ 推荐：控制器中的错误处理
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
+{
+    private readonly IUserService _userService;
+    private readonly ILogger<UsersController> _logger;
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ApiResponse<User>>> GetUser(string id)
+    {
+        try
+        {
+            var user = await _userService.GetUserByIdAsync(id);
+            
+            if (user == null)
+            {
+                return NotFound(new ApiResponse<User>
+                {
+                    Success = false,
+                    ErrorCode = "USER_NOT_FOUND",
+                    ErrorMessage = "用户不存在",
+                    ShowType = 2
+                });
+            }
+
+            return Ok(new ApiResponse<User>
+            {
+                Success = true,
+                Data = user
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user {UserId}", id);
+            
+            return StatusCode(500, new ApiResponse<User>
+            {
+                Success = false,
+                ErrorCode = "INTERNAL_ERROR",
+                ErrorMessage = "获取用户信息失败",
+                ShowType = 2
+            });
+        }
+    }
+}
+```
+
+## 📱 组件级错误处理
+
+### 错误边界
+
+```typescript
+// ✅ 推荐：React 错误边界
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 20, textAlign: 'center' }}>
+          <h1>出错了</h1>
+          <p>{this.state.error?.message}</p>
+          <button onClick={() => window.location.reload()}>
+            刷新页面
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+### 移动端错误显示
+
+```typescript
+// ✅ 推荐：移动端错误组件
+import { Alert } from 'react-native';
+
+export function showError(error: ApiError) {
+  const message = error.message || '操作失败';
+  const canRetry = error.canRetry || false;
+  
+  if (canRetry) {
+    Alert.alert(
+      '操作失败',
+      message,
+      [
+        { text: '取消', style: 'cancel' },
+        { text: '重试', onPress: () => handleRetry() },
+      ]
+    );
+  } else {
+    Alert.alert('错误', message, [{ text: '确定' }]);
+  }
+}
+
+export function AuthErrorHandler({ children }: { children: React.ReactNode }) {
+  const { error, clearError } = useAuth();
+  
+  useEffect(() => {
+    if (error) {
+      showError(error);
+      clearError();
+    }
+  }, [error, clearError]);
+  
+  return <>{children}</>;
+}
+```
+
+## 🚫 避免的做法
+
+- 不要忽略错误，至少要记录日志
+- 不要向用户暴露敏感的错误信息
+- 不要在多个地方重复错误处理逻辑
+- 不要忘记清理错误状态
+- 不要无限重试失败的请求
+
+## 🔧 最佳实践
+
+1. **统一错误格式** - 前后端使用统一的错误响应格式
+2. **错误分类** - 明确区分不同类型的错误
+3. **用户友好** - 向用户显示友好的错误信息
+4. **日志记录** - 记录详细的错误日志用于调试
+5. **智能重试** - 对可重试的错误自动重试
+6. **错误边界** - 使用错误边界防止应用崩溃
+7. **TraceId** - 使用 TraceId 追踪错误
+8. **监控告警** - 对关键错误设置监控告警

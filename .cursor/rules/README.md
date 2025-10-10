@@ -6,86 +6,222 @@
 
 ### 🏗️ 项目架构
 - **`project-structure.mdc`** - 项目整体结构和架构指南
-  - 始终应用，提供项目概览
-  - 包含技术栈、目录结构、开发指南、认证系统架构
+  - ⚡ 始终自动应用
+  - 包含技术栈、目录结构、.NET Aspire 编排、认证系统架构、部署架构
+  - 提供开发指南、常见问题解答
 
-### 💻 开发规范
+### 💻 前端开发规范
+
+#### TypeScript & React
 - **`typescript-coding-standards.mdc`** - TypeScript 编码规范
-  - 应用于 `*.ts` 和 `*.tsx` 文件
-  - 包含代码风格、命名约定、最佳实践
+  - 📁 应用于 `*.ts` 和 `*.tsx` 文件
+  - 包含代码风格、命名约定、类型定义、最佳实践
+  - Biome 配置规范
 
 - **`react-components.mdc`** - React 组件开发规范
-  - 应用于 `*.tsx` 和 `*.jsx` 文件
-  - 包含组件设计、样式规范、状态管理
+  - 📁 应用于 `*.tsx` 和 `*.jsx` 文件
+  - 包含组件设计、Props 设计、样式规范、状态管理
+  - 性能优化和最佳实践
 
-- **`csharp-backend.mdc`** - C# 后端开发规范
-  - 应用于 `*.cs` 文件
-  - 包含控制器设计、服务层、数据访问
+#### Ant Design Pro & UmiJS
+- **`antd-pro-umi.mdc`** - Ant Design Pro 和 UmiJS 开发规范
+  - 📁 应用于 `Platform.Admin` 相关文件
+  - app.tsx 运行时配置、网络请求拦截器
+  - ProTable、ProForm 使用规范
+  - 路由配置和动态菜单
 
-### 🎨 主题系统
-- **`theme-system.mdc`** - 主题系统使用指南
-  - 应用于主题相关文件
-  - 包含主题化组件、颜色系统、主题切换
-
-### 📱 移动端开发
+#### 移动端开发
 - **`mobile-development.mdc`** - React Native 和 Expo 开发规范
-  - 应用于移动端相关文件
-  - 包含路由系统、平台适配、性能优化
+  - 📁 应用于移动端相关文件
+  - Expo Router 路由系统、主题化组件
+  - 平台适配、性能优化
+  - 认证守卫组件
 
-### 🌐 API 集成
+### 🎨 UI & 主题
+- **`theme-system.mdc`** - 主题系统使用指南
+  - 📁 应用于主题相关文件
+  - 主题化组件、普鲁士蓝色系
+  - ThemeContext、主题切换
+  - 状态栏适配
+
+### 🌐 API & 网络
 - **`api-integration.mdc`** - API 集成和网络请求规范
-  - 应用于服务层和 API 相关文件
-  - 包含服务封装、错误处理、认证管理
+  - 📁 应用于服务层和 API 相关文件
+  - API 服务封装、认证服务
+  - 自定义 Hooks、错误处理
+  - 网络状态检测、离线处理
 
-### 🧪 测试规范
-- **`testing-standards.mdc`** - 测试规范和最佳实践
-  - 应用于测试文件
-  - 包含单元测试、集成测试、测试配置
+- **`error-handling.mdc`** - 统一错误处理规范
+  - 📁 应用于错误处理相关文件
+  - 前后端统一错误格式
+  - 错误分类和处理策略
+  - 重试机制、错误边界
 
 ### 🔐 认证系统
 - **`auth-system.mdc`** - 认证系统开发规范
-  - 应用于认证相关文件
-  - 包含认证服务、权限管理、认证守卫
+  - 📁 应用于认证相关文件
+  - JWT Token 认证、Token 刷新机制
+  - AuthContext、useAuth Hook
+  - 权限守卫、路由守卫
+
+### 🔄 状态管理
+- **`state-management.mdc`** - 状态管理规范和最佳实践
+  - 📁 应用于 Context 和 Hooks 文件
+  - React Context + useReducer 模式
+  - 自定义 Hooks 设计
+  - 性能优化、不可变更新
+
+### 🖥️ 后端开发
+- **`csharp-backend.mdc`** - C# 后端开发规范
+  - 📁 应用于 `*.cs` 文件
+  - 控制器设计、服务层、数据访问
+  - MongoDB 集成、JWT 认证
+  - 命名约定和最佳实践
+
+### 🧪 测试规范
+- **`testing-standards.mdc`** - 测试规范和最佳实践
+  - 📁 应用于测试文件
+  - 单元测试、集成测试、端到端测试
+  - Jest 配置、测试工具函数
+  - React Testing Library、Expo Testing
+
+### 🚀 部署运维
+- **`deployment.mdc`** - 部署和运维规范
+  - Docker 容器化部署
+  - 生产环境配置、Nginx 配置
+  - 监控日志、健康检查
+  - CI/CD 流程、备份恢复
 
 ## 🎯 使用方式
 
-### 自动应用
-- **`project-structure.mdc`** 会在每次对话中自动应用
-- 其他规则会根据文件类型自动匹配
+### 自动应用规则
+- **`project-structure.mdc`** - 始终自动应用，提供项目概览
+- 其他规则根据 `globs` 模式自动匹配相应文件类型
 
-### 手动引用
-如果需要特定规则的详细信息，可以在对话中引用：
+### 手动引用规则
+在对话中可以手动引用特定规则：
 ```
 请参考 typescript-coding-standards 规则
+请参考 auth-system 规则来实现认证功能
 ```
 
-### 规则更新
-当项目规范发生变化时，请及时更新相应的规则文件，确保 AI 能够获得最新的开发指导。
+### 规则匹配示例
+- 编辑 `*.ts` 文件时，自动应用 `typescript-coding-standards.mdc`
+- 编辑 `*.tsx` 文件时，自动应用 `react-components.mdc`
+- 编辑认证相关文件时，自动应用 `auth-system.mdc`
+- 编辑 Context 文件时，自动应用 `state-management.mdc`
+
+## 📊 规则统计
+
+| 类型 | 数量 | 说明 |
+|------|------|------|
+| 项目架构 | 1 | 始终应用 |
+| 前端规范 | 6 | TypeScript、React、Ant Design Pro、移动端 |
+| 后端规范 | 1 | C# 和 .NET |
+| 系统规范 | 5 | API、认证、主题、错误处理、状态管理 |
+| 工程规范 | 2 | 测试、部署 |
+| **总计** | **15** | 涵盖全栈开发各个方面 |
 
 ## 🔧 规则文件格式
 
-每个规则文件都包含：
-- **Frontmatter** - 元数据配置
-  - `alwaysApply`: 是否始终应用
-  - `globs`: 文件匹配模式
-  - `description`: 规则描述
-- **Markdown 内容** - 具体的开发规范和指南
+每个规则文件包含：
+
+### Frontmatter 元数据
+```yaml
+---
+# 选项 1: 始终应用
+alwaysApply: true
+
+# 选项 2: 文件匹配模式
+globs: *.ts,*.tsx
+
+# 选项 3: 手动引用描述
+description: TypeScript 编码规范和最佳实践
+---
+```
+
+### Markdown 内容结构
+- 🎯 概述和技术栈
+- 🏗️ 架构和模式
+- ✅ 推荐做法（带代码示例）
+- ❌ 避免的做法
+- 🔧 最佳实践
+- 📚 相关资源
 
 ## 📝 维护建议
 
-1. **定期更新** - 随着项目发展更新规则内容
-2. **保持一致性** - 确保规则与实际代码风格一致
-3. **添加示例** - 提供具体的代码示例
-4. **分类清晰** - 按功能模块组织规则文件
+### 更新规则
+1. **及时同步** - 代码规范变化时同步更新规则
+2. **添加示例** - 基于实际项目代码提供示例
+3. **保持一致** - 确保规则与实际代码风格一致
+4. **测试验证** - 更新后验证规则是否正确触发
+
+### 编写规则
+1. **明确目标** - 规则应该解决具体问题
+2. **结构清晰** - 使用标准的 Markdown 结构
+3. **示例丰富** - 提供正反面代码示例
+4. **类型安全** - 使用 TypeScript 类型定义
 
 ## 🚀 扩展规则
 
-如需添加新的规则文件：
-1. 在 `.cursor/rules/` 目录下创建 `.mdc` 文件
-2. 添加适当的 frontmatter 配置
-3. 编写详细的开发规范内容
-4. 更新本 README 文件
+添加新规则的步骤：
+
+1. **创建文件**
+   ```bash
+   touch .cursor/rules/new-rule.mdc
+   ```
+
+2. **添加 Frontmatter**
+   ```yaml
+   ---
+   globs: *.example.ts
+   description: 新规则描述
+   ---
+   ```
+
+3. **编写内容**
+   - 使用标准模板
+   - 添加代码示例
+   - 提供最佳实践
+
+4. **更新 README**
+   - 在本文件中添加规则说明
+   - 更新规则统计
+
+5. **测试验证**
+   - 创建测试文件验证规则触发
+   - 确认 AI 能正确理解规则
+
+## 🎓 学习路径
+
+### 新手入门
+1. 阅读 `project-structure.mdc` 了解项目架构
+2. 学习 `typescript-coding-standards.mdc` 掌握代码规范
+3. 参考 `react-components.mdc` 开始组件开发
+
+### 前端开发
+1. `antd-pro-umi.mdc` - 管理后台开发
+2. `mobile-development.mdc` - 移动端开发
+3. `theme-system.mdc` - 主题定制
+4. `state-management.mdc` - 状态管理
+
+### 后端开发
+1. `csharp-backend.mdc` - C# 开发规范
+2. `api-integration.mdc` - API 设计
+3. `auth-system.mdc` - 认证授权
+
+### 进阶主题
+1. `error-handling.mdc` - 错误处理
+2. `testing-standards.mdc` - 测试规范
+3. `deployment.mdc` - 部署运维
+
+## 📚 相关资源
+
+- [Cursor Rules 文档](https://docs.cursor.com/context/rules-for-ai)
+- [项目 GitHub 仓库](https://github.com/your-repo)
+- [.NET Aspire 文档](https://learn.microsoft.com/aspnet/core/aspire/)
+- [Ant Design Pro 文档](https://pro.ant.design)
 
 ---
 
-这些规则将帮助 Cursor AI 更好地理解项目结构，提供更准确的代码建议和帮助。
+💡 **提示**: 这些规则由项目团队维护，确保 Cursor AI 能够提供准确、一致的代码建议。如有问题或建议，欢迎提出！

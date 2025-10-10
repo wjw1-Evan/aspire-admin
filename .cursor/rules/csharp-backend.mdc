@@ -154,24 +154,482 @@ public class UserRepository : IUserRepository
 
 ## 🔐 认证和授权
 
-### JWT 认证
+### JWT 服务实现
+
 ```csharp
-// ✅ 推荐：JWT 配置
+// ✅ 推荐：JWT 服务接口和实现
+public interface IJwtService
+{
+    string GenerateToken(AppUser user);
+    string GenerateRefreshToken(AppUser user);
+    ClaimsPrincipal? ValidateToken(string token);
+    ClaimsPrincipal? ValidateRefreshToken(string refreshToken);
+    string? GetUserIdFromToken(string token);
+    string? GetUserIdFromRefreshToken(string refreshToken);
+}
+
+public class JwtService : IJwtService
+{
+    private readonly string _secretKey;
+    private readonly string _issuer;
+    private readonly string _audience;
+    private readonly int _expirationMinutes;
+    private readonly int _refreshTokenExpirationDays;
+
+    public JwtService(IConfiguration configuration)
+    {
+        _secretKey = configuration["Jwt:SecretKey"] 
+            ?? throw new ArgumentNullException("Jwt:SecretKey");
+        _issuer = configuration["Jwt:Issuer"] ?? "Platform.ApiService";
+        _audience = configuration["Jwt:Audience"] ?? "Platform.Web";
+        _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "60");
+        _refreshTokenExpirationDays = int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+    }
+
+    public string GenerateToken(AppUser user)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(_secretKey);
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
+            new(ClaimTypes.Name, user.Username),
+            new(ClaimTypes.Email, user.Email ?? string.Empty),
+            new(ClaimTypes.Role, user.Role),
+            new("userId", user.Id ?? string.Empty),
+            new("username", user.Username),
+            new("role", user.Role)
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(_expirationMinutes),
+            Issuer = _issuer,
+            Audience = _audience,
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key), 
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+
+    public string GenerateRefreshToken(AppUser user)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(_secretKey);
+
+        var claims = new List<Claim>
+        {
+            new("type", "refresh"),
+            new("userId", user.Id ?? string.Empty),
+            new("username", user.Username),
+            new("role", user.Role),
+            new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), 
+                ClaimValueTypes.Integer64)
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays),
+            Issuer = _issuer,
+            Audience = _audience,
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key), 
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+
+    public ClaimsPrincipal? ValidateToken(string token)
+    {
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_secretKey);
+
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = _issuer,
+                ValidateAudience = true,
+                ValidAudience = _audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+            return principal;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public ClaimsPrincipal? ValidateRefreshToken(string refreshToken)
+    {
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_secretKey);
+
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = _issuer,
+                ValidateAudience = true,
+                ValidAudience = _audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            var principal = tokenHandler.ValidateToken(refreshToken, validationParameters, out _);
+            
+            // 验证是否为刷新token
+            var tokenType = principal.FindFirst("type")?.Value;
+            if (tokenType != "refresh")
+            {
+                return null;
+            }
+
+            return principal;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public string? GetUserIdFromToken(string token)
+    {
+        var principal = ValidateToken(token);
+        return principal?.FindFirst("userId")?.Value;
+    }
+
+    public string? GetUserIdFromRefreshToken(string refreshToken)
+    {
+        var principal = ValidateRefreshToken(refreshToken);
+        return principal?.FindFirst("userId")?.Value;
+    }
+}
+```
+
+### 认证控制器
+
+```csharp
+// ✅ 推荐：认证控制器实现
+[ApiController]
+[Route("api")]
+public class AuthController : ControllerBase
+{
+    private readonly AuthService _authService;
+
+    public AuthController(AuthService authService)
+    {
+        _authService = authService;
+    }
+
+    /// <summary>
+    /// 获取当前用户信息
+    /// </summary>
+    [HttpGet("currentUser")]
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        try
+        {
+            // 检查用户是否已认证
+            if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                return Ok(ApiResponse<CurrentUser>.UnauthorizedResult("用户未认证"));
+            }
+
+            var user = await _authService.GetCurrentUserAsync();
+            if (user == null || !user.IsLogin)
+            {
+                return Ok(ApiResponse<CurrentUser>.UnauthorizedResult("请先登录！"));
+            }
+            
+            return Ok(ApiResponse<CurrentUser>.SuccessResult(user));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResponse<CurrentUser>.ServerErrorResult(
+                $"获取用户信息失败: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// 用户登录
+    /// </summary>
+    [HttpPost("login/account")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        var result = await _authService.LoginAsync(request);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// 刷新访问token
+    /// </summary>
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        var result = await _authService.RefreshTokenAsync(request);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// 用户登出
+    /// </summary>
+    [HttpPost("login/outLogin")]
+    [Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        await _authService.LogoutAsync();
+        return Ok(ApiResponse.SuccessResult("登出成功"));
+    }
+
+    /// <summary>
+    /// 用户注册
+    /// </summary>
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        var result = await _authService.RegisterAsync(request);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// 修改密码
+    /// </summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var result = await _authService.ChangePasswordAsync(request);
+        return Ok(result);
+    }
+}
+```
+
+### JWT 配置
+
+```csharp
+// ✅ 推荐：Program.cs 中的 JWT 配置
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] 
+    ?? throw new InvalidOperationException("JWT Secret Key not configured");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Platform.Web";
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                Encoding.ASCII.GetBytes(jwtSecretKey)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+            RequireExpirationTime = true,
+            RequireSignedTokens = true
         };
     });
+
+builder.Services.AddAuthorization();
+```
+
+## 📊 统一响应模型
+
+### API 响应封装
+
+```csharp
+// ✅ 推荐：统一响应模型
+public class ApiResponse
+{
+    public bool Success { get; set; }
+    public string? ErrorMessage { get; set; }
+    public string? ErrorCode { get; set; }
+    public int? ShowType { get; set; }
+
+    public static ApiResponse SuccessResult(string message = "操作成功")
+    {
+        return new ApiResponse
+        {
+            Success = true,
+            ErrorMessage = message,
+            ShowType = 1
+        };
+    }
+
+    public static ApiResponse ErrorResult(string message, string? errorCode = null)
+    {
+        return new ApiResponse
+        {
+            Success = false,
+            ErrorMessage = message,
+            ErrorCode = errorCode,
+            ShowType = 2
+        };
+    }
+}
+
+public class ApiResponse<T> : ApiResponse
+{
+    public T? Data { get; set; }
+
+    public static ApiResponse<T> SuccessResult(T data, string message = "操作成功")
+    {
+        return new ApiResponse<T>
+        {
+            Success = true,
+            Data = data,
+            ErrorMessage = message,
+            ShowType = 1
+        };
+    }
+
+    public static ApiResponse<T> UnauthorizedResult(string message = "未授权")
+    {
+        return new ApiResponse<T>
+        {
+            Success = false,
+            ErrorMessage = message,
+            ErrorCode = "UNAUTHORIZED",
+            ShowType = 2
+        };
+    }
+
+    public static ApiResponse<T> ServerErrorResult(string message = "服务器错误")
+    {
+        return new ApiResponse<T>
+        {
+            Success = false,
+            ErrorMessage = message,
+            ErrorCode = "SERVER_ERROR",
+            ShowType = 2
+        };
+    }
+}
+```
+
+## 🗄️ MongoDB 高级用法
+
+### 复杂查询
+
+```csharp
+// ✅ 推荐：MongoDB 查询示例
+public class UserService
+{
+    private readonly IMongoCollection<AppUser> _users;
+
+    public UserService(IMongoDatabase database)
+    {
+        _users = database.GetCollection<AppUser>("users");
+    }
+
+    // 分页查询
+    public async Task<(List<AppUser> users, long total)> GetUsersPaginatedAsync(
+        int page, 
+        int pageSize, 
+        string? keyword = null)
+    {
+        var filterBuilder = Builders<AppUser>.Filter;
+        var filter = filterBuilder.Empty;
+
+        // 关键词搜索
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            var keywordFilter = filterBuilder.Or(
+                filterBuilder.Regex(u => u.Username, new BsonRegularExpression(keyword, "i")),
+                filterBuilder.Regex(u => u.Email, new BsonRegularExpression(keyword, "i"))
+            );
+            filter &= keywordFilter;
+        }
+
+        // 只查询活跃用户
+        filter &= filterBuilder.Eq(u => u.IsActive, true);
+
+        var total = await _users.CountDocumentsAsync(filter);
+        var users = await _users.Find(filter)
+            .Sort(Builders<AppUser>.Sort.Descending(u => u.CreatedAt))
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
+
+        return (users, total);
+    }
+
+    // 批量更新
+    public async Task<long> BulkUpdateUsersAsync(List<string> userIds, UpdateDefinition<AppUser> update)
+    {
+        var filter = Builders<AppUser>.Filter.In(u => u.Id, userIds);
+        var result = await _users.UpdateManyAsync(filter, update);
+        return result.ModifiedCount;
+    }
+
+    // 聚合查询
+    public async Task<Dictionary<string, int>> GetUserStatsByRoleAsync()
+    {
+        var pipeline = new[]
+        {
+            new BsonDocument("$group", new BsonDocument
+            {
+                { "_id", "$access" },
+                { "count", new BsonDocument("$sum", 1) }
+            })
+        };
+
+        var results = await _users.Aggregate<BsonDocument>(pipeline).ToListAsync();
+        return results.ToDictionary(
+            r => r["_id"].AsString,
+            r => r["count"].AsInt32
+        );
+    }
+}
+```
+
+### 索引管理
+
+```csharp
+// ✅ 推荐：创建索引
+public static async Task CreateIndexesAsync(IMongoDatabase database)
+{
+    var users = database.GetCollection<AppUser>("users");
+
+    // 创建唯一索引
+    var usernameIndex = Builders<AppUser>.IndexKeys.Ascending(u => u.Username);
+    await users.Indexes.CreateOneAsync(new CreateIndexModel<AppUser>(
+        usernameIndex,
+        new CreateIndexOptions { Unique = true }
+    ));
+
+    // 创建复合索引
+    var emailAccessIndex = Builders<AppUser>.IndexKeys
+        .Ascending(u => u.Email)
+        .Ascending(u => u.Access);
+    await users.Indexes.CreateOneAsync(new CreateIndexModel<AppUser>(emailAccessIndex));
+
+    // 创建文本索引（用于全文搜索）
+    var textIndex = Builders<AppUser>.IndexKeys.Text(u => u.Username).Text(u => u.Email);
+    await users.Indexes.CreateOneAsync(new CreateIndexModel<AppUser>(textIndex));
+}
 ```
 
 ## 🚫 避免的做法
@@ -181,28 +639,116 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 - 不要使用 `string` 代替强类型
 - 不要忘记配置依赖注入
 - 不要在生产环境中暴露敏感信息
+- 不要在控制器中编写业务逻辑
+- 不要忘记验证输入参数
+- 不要硬编码配置值
+- 不要忘记添加 XML 文档注释
 
 ## 🔧 配置管理
 
 ### 应用配置
+
 ```csharp
-// ✅ 推荐：使用 IConfiguration
-public class DatabaseSettings
+// ✅ 推荐：使用 IConfiguration 和 Options 模式
+public class JwtSettings
 {
-    public string ConnectionString { get; set; } = string.Empty;
-    public string DatabaseName { get; set; } = string.Empty;
+    public string SecretKey { get; set; } = string.Empty;
+    public string RefreshTokenSecret { get; set; } = string.Empty;
+    public string Issuer { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+    public int ExpirationMinutes { get; set; } = 60;
+    public int RefreshTokenExpirationDays { get; set; } = 7;
 }
 
 // 在 Program.cs 中配置
-builder.Services.Configure<DatabaseSettings>(
-    builder.Configuration.GetSection("Database"));
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
+// 在服务中使用
+public class AuthService
+{
+    private readonly JwtSettings _jwtSettings;
+
+    public AuthService(IOptions<JwtSettings> jwtSettings)
+    {
+        _jwtSettings = jwtSettings.Value;
+    }
+}
 ```
 
 ### 环境配置
+
 ```csharp
 // ✅ 推荐：环境特定配置
 if (builder.Environment.IsDevelopment())
 {
-    builder.Services.AddSwaggerGen();
+    app.MapOpenApi();
+    app.UseDeveloperExceptionPage();
 }
+else
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+}
+
+// 配置 CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            policy.WithOrigins(builder.Configuration["AllowedOrigins"]!)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+    });
+});
 ```
+
+## 🔧 依赖注入
+
+### 服务注册
+
+```csharp
+// ✅ 推荐：Program.cs 中的服务注册
+// MongoDB
+builder.AddMongoDBClient(connectionName: "mongodb");
+
+// 业务服务
+builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<AuthService>();
+builder.Services.AddSingleton<RoleService>();
+builder.Services.AddSingleton<MenuService>();
+
+// HTTP 上下文访问器
+builder.Services.AddHttpContextAccessor();
+
+// 健康检查
+builder.Services.AddHealthChecks()
+    .AddMongoDb(
+        builder.Configuration.GetConnectionString("mongodb")!,
+        name: "mongodb",
+        timeout: TimeSpan.FromSeconds(3));
+```
+
+## 🎯 最佳实践
+
+1. **使用异步编程** - 所有 I/O 操作都应该是异步的
+2. **依赖注入** - 使用依赖注入管理服务生命周期
+3. **配置管理** - 使用 Options 模式管理配置
+4. **日志记录** - 使用 ILogger 记录日志
+5. **错误处理** - 使用统一的错误处理机制
+6. **API 文档** - 使用 XML 注释和 Swagger/OpenAPI
+7. **验证** - 使用数据注解或 FluentValidation 验证输入
+8. **分离关注点** - 控制器只负责 HTTP 相关逻辑
+9. **使用强类型** - 避免使用 `string` 或 `object`
+10. **安全性** - 使用 JWT 认证和授权

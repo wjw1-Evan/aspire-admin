@@ -28,10 +28,34 @@ description: 项目结构和架构指南
 ```text
 Platform/
 ├── Platform.AppHost/          # 应用编排和配置中心
+│   ├── AppHost.cs            # Aspire 编排配置
+│   └── appsettings.json      # 应用配置
 ├── Platform.ApiService/       # API 服务 (C#)
+│   ├── Controllers/          # API 控制器
+│   ├── Models/              # 数据模型
+│   ├── Services/            # 业务逻辑服务
+│   ├── Scripts/             # 数据库初始化脚本
+│   └── Program.cs           # 服务入口
 ├── Platform.Admin/            # 管理后台 (React + Ant Design Pro)
+│   ├── config/              # UmiJS 配置
+│   ├── src/
+│   │   ├── components/      # 可复用组件
+│   │   ├── pages/          # 页面组件
+│   │   ├── services/       # API 服务
+│   │   ├── utils/          # 工具函数
+│   │   └── app.tsx         # 应用入口配置
+│   ├── biome.json          # Biome 配置
+│   └── package.json        # 依赖配置
 ├── Platform.App/              # 移动应用 (React Native + Expo)
+│   ├── app/                # Expo Router 页面
+│   ├── components/         # 可复用组件
+│   ├── contexts/           # React Context
+│   ├── hooks/              # 自定义 Hooks
+│   ├── services/           # API 服务
+│   ├── types/              # TypeScript 类型
+│   └── app.json            # Expo 配置
 └── Platform.ServiceDefaults/  # 共享服务配置
+    └── Extensions.cs        # 服务扩展方法
 ```
 
 ## 🔧 开发指南
@@ -39,16 +63,32 @@ Platform/
 ### 启动项目
 
 ```bash
+# 完整启动（推荐）
 dotnet run --project Platform.AppHost
+
+# 仅启动后端服务（用于调试）
+dotnet run --project Platform.ApiService
+
+# 仅启动管理后台
+cd Platform.Admin && npm start
+
+# 仅启动移动应用
+cd Platform.App && npm start
 ```
 
-> ⚠️ **调试提示**：调试时请务必通过 `Platform.AppHost` 启动项目（`dotnet run --project Platform.AppHost`），否则微服务、API 及前端应用将无法正确编排和联动。
+> ⚠️ **重要提示**：
+> - 调试时请务必通过 `Platform.AppHost` 启动项目，否则微服务、API 及前端应用将无法正确编排和联动
+> - AppHost 会自动启动 MongoDB、API 服务、管理后台和移动应用
+> - AppHost 提供统一的服务发现和配置管理
 
 ### 访问地址
 
-- 管理后台: <http://localhost:15001>
-- 移动应用: <http://localhost:15002>
-- API 网关: <http://localhost:15000>
+- **Aspire Dashboard**: <http://localhost:15003> (服务监控面板)
+- **管理后台**: <http://localhost:15001>
+- **移动应用**: <http://localhost:15002>
+- **API 网关**: <http://localhost:15000>
+- **API 文档**: <http://localhost:15000/scalar/v1>
+- **MongoDB Express**: <http://localhost:8081> (数据库管理)
 
 ### 默认账户
 
@@ -56,32 +96,178 @@ dotnet run --project Platform.AppHost
 - 密码: `admin123`
 - 角色: `admin`
 
+## 🎯 .NET Aspire 架构
+
+### 服务编排
+
+Platform.AppHost 负责整个应用的服务编排：
+
+```csharp
+// AppHost.cs 核心配置
+var builder = DistributedApplication.CreateBuilder(args);
+
+// 1. 添加 MongoDB 数据库
+var mongo = builder.AddMongoDB("mongo")
+    .WithMongoExpress()
+    .WithLifetime(ContainerLifetime.Persistent);
+var mongodb = mongo.AddDatabase("mongodb");
+
+// 2. 添加 API 服务
+var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+    .WithReference(mongodb)
+    .WithHttpHealthCheck("/health");
+
+// 3. 配置 YARP 网关
+var yarp = builder.AddYarp("apigateway")
+    .WithHostPort(15000)
+    .WithConfiguration(config => {
+        // 自动路由配置
+        config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
+            .WithTransformPathRouteValues("/api/{**catch-all}");
+    });
+
+// 4. 添加前端应用
+builder.AddNpmApp("admin", "../Platform.Admin")
+    .WithReference(yarp)
+    .WaitFor(yarp)
+    .WithHttpEndpoint(env: "PORT", port: 15001);
+
+builder.AddNpmApp("app", "../Platform.App")
+    .WithReference(yarp)
+    .WaitFor(yarp)
+    .WithHttpEndpoint(env: "PORT", port: 15002);
+```
+
+### 服务发现
+
+- 所有服务通过 Aspire 自动注册和发现
+- API 网关 (YARP) 提供统一入口
+- 前端应用通过环境变量获取 API 地址
+
+### 健康检查
+
+- API 服务提供 `/health` 端点
+- Aspire Dashboard 实时监控服务状态
+- 自动重启失败的服务
+
 ## 🔐 认证系统架构
 
 ### 统一认证系统
 
 项目采用前后端统一的认证架构：
 
-- **JWT Token 认证** - 基于 JWT 的简单 token 机制
+- **JWT Token 认证** - 基于 JWT 的 token 机制，包含 Access Token 和 Refresh Token
 - **统一 API 接口** - 前后端使用相同的认证端点
 - **基于 access 字段的权限系统** - 简化的权限控制
-- **自动 token 验证** - 智能的网络重试机制
+- **自动 token 刷新** - 智能的 token 刷新和重试机制
 
 ### 认证流程
 
-1. **登录**: `POST /login/account` → 获取 JWT token
+1. **登录**: `POST /login/account` → 获取 JWT token 和 refresh token
 2. **权限检查**: 基于 `user.access` 字段进行权限验证
-3. **Token 验证**: 定期调用 `/currentUser` 验证 token 有效性
-4. **登出**: `POST /login/outLogin` → 清除本地 token
+3. **Token 刷新**: Token 过期时自动调用 `/refresh-token` 刷新
+4. **Token 验证**: 定期调用 `/currentUser` 验证 token 有效性
+5. **登出**: `POST /login/outLogin` → 清除本地 token
 
 ### 权限系统
 
-- **Admin 权限**: `access: 'admin'`
-- **User 权限**: `access: 'user'`
-- **Guest 权限**: `access: 'guest'`
+- **Admin 权限**: `access: 'admin'` - 完全管理权限
+- **User 权限**: `access: 'user'` - 普通用户权限
+- **Guest 权限**: `access: 'guest'` - 访客权限
+
+## 🚀 部署架构
+
+### 开发环境
+
+- 通过 `dotnet run --project Platform.AppHost` 启动
+- 所有服务在本地运行
+- MongoDB 使用 Docker 容器
+
+### 生产环境
+
+- 使用 Docker Compose 或 Kubernetes 部署
+- API 服务独立扩展
+- 前端应用通过 CDN 分发
+- MongoDB 使用云服务（如 MongoDB Atlas）
+
+## 🔧 配置管理
+
+### 环境配置
+
+项目支持多环境配置：
+
+```json
+// appsettings.json (默认)
+// appsettings.Development.json (开发环境)
+// appsettings.Production.json (生产环境)
+{
+  "ConnectionStrings": {
+    "mongodb": "mongodb://localhost:27017"
+  },
+  "JwtSettings": {
+    "SecretKey": "your-secret-key",
+    "Issuer": "Platform.ApiService",
+    "Audience": "Platform.Users",
+    "ExpirationMinutes": 60,
+    "RefreshTokenExpirationDays": 7
+  }
+}
+```
+
+### 前端配置
+
+```typescript
+// Platform.Admin/config/proxy.ts - 开发代理配置
+// Platform.Admin/.env - 环境变量
+// Platform.App/constants/apiConfig.ts - API 配置
+```
+
+## 📊 监控和日志
+
+### Aspire Dashboard
+
+- 服务状态实时监控
+- 请求追踪和性能分析
+- 日志聚合和查询
+- 指标可视化
+
+### 日志系统
+
+- 使用 .NET 内置日志框架
+- 结构化日志输出
+- 支持日志级别配置
+
+## 🚫 常见问题
+
+### Q: 启动失败怎么办？
+
+1. 检查 Docker 是否运行
+2. 确保端口未被占用（15000-15003, 27017, 8081）
+3. 清理 Docker 容器：`docker system prune`
+4. 重新构建：`dotnet build`
+
+### Q: 如何单独调试某个服务？
+
+- API 服务：`dotnet run --project Platform.ApiService`
+- 管理后台：`cd Platform.Admin && npm start`
+- 移动应用：`cd Platform.App && npm start`
+
+### Q: 数据库如何初始化？
+
+- AppHost 启动时自动初始化 MongoDB
+- Platform.ApiService 启动时自动创建管理员账户
+- 查看 `Platform.ApiService/Scripts/` 目录了解初始化逻辑
 
 ## 📚 重要文档
 
 - [认证系统架构说明](mdc:Platform.App/AUTH-ARCHITECTURE.md)
 - [认证系统统一总结](mdc:Platform.App/AUTH-SYNC-SUMMARY.md)
 - [认证系统使用指南](mdc:Platform.App/README-AUTH.md)
+
+## 🎯 最佳实践
+
+1. **始终通过 AppHost 启动** - 确保所有服务正确编排
+2. **使用 Aspire Dashboard** - 监控服务状态和性能
+3. **遵循代码规范** - 使用 Biome (前端) 和 .editorconfig (后端)
+4. **编写单元测试** - 保证代码质量
+5. **更新文档** - 及时更新项目文档和规则

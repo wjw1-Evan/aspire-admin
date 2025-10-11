@@ -14,6 +14,7 @@ import {
 } from '@/components';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
+import { getMyPermissions } from '@/services/permission';
 import { tokenUtils } from '@/utils/token';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
@@ -45,15 +46,16 @@ export async function getInitialState(): Promise<{
         skipErrorHandler: true,
       });
       
+      let userInfo = msg.data;
+      
       // 获取用户菜单
       try {
         const menuResponse = await getUserMenus({
           skipErrorHandler: true,
         });
         if (menuResponse.success && menuResponse.data) {
-          // 将菜单数据附加到用户信息
-          return {
-            ...msg.data,
+          userInfo = {
+            ...userInfo,
             menus: menuResponse.data,
           };
         }
@@ -61,7 +63,22 @@ export async function getInitialState(): Promise<{
         console.log('Failed to fetch user menus, using default menus:', menuError);
       }
       
-      return msg.data;
+      // 获取用户权限
+      try {
+        const permissionsResponse = await getMyPermissions({
+          skipErrorHandler: true,
+        });
+        if (permissionsResponse.success && permissionsResponse.data) {
+          userInfo = {
+            ...userInfo,
+            permissions: permissionsResponse.data.allPermissionCodes || [],
+          };
+        }
+      } catch (permissionsError) {
+        console.log('Failed to fetch user permissions, using default permissions:', permissionsError);
+      }
+      
+      return userInfo;
     } catch (error) {
       // 如果获取用户信息失败（包括 token 过期），清除 token
       // 响应拦截器已经处理了 token 刷新，如果走到这里说明刷新也失败了

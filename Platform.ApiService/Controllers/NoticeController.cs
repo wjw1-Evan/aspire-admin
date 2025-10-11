@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 
@@ -19,6 +20,7 @@ public class NoticeController : BaseApiController
     /// 获取所有通知
     /// </summary>
     [HttpGet("notices")]
+    [RequirePermission("notice", "read")]
     public async Task<IActionResult> GetNotices()
     {
         var result = await _noticeService.GetNoticesAsync();
@@ -30,13 +32,14 @@ public class NoticeController : BaseApiController
     /// </summary>
     /// <param name="id">通知ID</param>
     [HttpGet("{id}")]
+    [RequirePermission("notice", "read")]
     public async Task<IActionResult> GetNoticeById(string id)
     {
         var notice = await _noticeService.GetNoticeByIdAsync(id);
         if (notice == null)
-            return NotFound($"Notice with ID {id} not found");
+            throw new KeyNotFoundException($"通知 {id} 不存在");
         
-        return Ok(notice);
+        return Success(notice);
     }
 
     /// <summary>
@@ -44,10 +47,11 @@ public class NoticeController : BaseApiController
     /// </summary>
     /// <param name="request">创建通知请求</param>
     [HttpPost]
+    [RequirePermission("notice", "create")]
     public async Task<IActionResult> CreateNotice([FromBody] CreateNoticeRequest request)
     {
         var notice = await _noticeService.CreateNoticeAsync(request);
-        return Created($"/api/notices/{notice.Id}", notice);
+        return Success(notice, "创建成功");
     }
 
     /// <summary>
@@ -56,13 +60,14 @@ public class NoticeController : BaseApiController
     /// <param name="id">通知ID</param>
     /// <param name="request">更新通知请求</param>
     [HttpPut("{id}")]
+    [RequirePermission("notice", "update")]
     public async Task<IActionResult> UpdateNotice(string id, [FromBody] UpdateNoticeRequest request)
     {
         var notice = await _noticeService.UpdateNoticeAsync(id, request);
         if (notice == null)
-            return NotFound($"Notice with ID {id} not found");
+            throw new KeyNotFoundException($"通知 {id} 不存在");
         
-        return Ok(notice);
+        return Success(notice, "更新成功");
     }
 
     /// <summary>
@@ -70,12 +75,13 @@ public class NoticeController : BaseApiController
     /// </summary>
     /// <param name="id">通知ID</param>
     [HttpDelete("{id}")]
+    [RequirePermission("notice", "delete")]
     public async Task<IActionResult> DeleteNotice(string id)
     {
         var deleted = await _noticeService.DeleteNoticeAsync(id);
         if (!deleted)
-            return NotFound($"Notice with ID {id} not found");
+            throw new KeyNotFoundException($"通知 {id} 不存在");
         
-        return NoContent();
+        return Success("删除成功");
     }
 }

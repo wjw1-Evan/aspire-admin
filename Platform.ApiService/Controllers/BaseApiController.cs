@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
+using Platform.ApiService.Services;
 
 namespace Platform.ApiService.Controllers;
 
@@ -92,6 +93,47 @@ public abstract class BaseApiController : ControllerBase
     protected IActionResult UnauthorizedError(string message = "未授权访问")
     {
         return Unauthorized(new { success = false, error = message, errorCode = "UNAUTHORIZED", showType = 2 });
+    }
+
+    /// <summary>
+    /// 检查当前用户是否有指定权限
+    /// </summary>
+    protected async Task<bool> HasPermissionAsync(string resource, string action)
+    {
+        var permissionService = HttpContext.RequestServices.GetRequiredService<IPermissionCheckService>();
+        var userId = GetRequiredUserId();
+        return await permissionService.HasPermissionAsync(userId, $"{resource}:{action}");
+    }
+
+    /// <summary>
+    /// 要求当前用户有指定权限，否则抛出异常
+    /// </summary>
+    protected async Task RequirePermissionAsync(string resource, string action)
+    {
+        if (!await HasPermissionAsync(resource, action))
+        {
+            throw new UnauthorizedAccessException($"无权执行操作: {resource}:{action}");
+        }
+    }
+
+    /// <summary>
+    /// 检查当前用户是否有任意一个权限
+    /// </summary>
+    protected async Task<bool> HasAnyPermissionAsync(params string[] permissionCodes)
+    {
+        var permissionService = HttpContext.RequestServices.GetRequiredService<IPermissionCheckService>();
+        var userId = GetRequiredUserId();
+        return await permissionService.HasAnyPermissionAsync(userId, permissionCodes);
+    }
+
+    /// <summary>
+    /// 检查当前用户是否拥有所有指定权限
+    /// </summary>
+    protected async Task<bool> HasAllPermissionsAsync(params string[] permissionCodes)
+    {
+        var permissionService = HttpContext.RequestServices.GetRequiredService<IPermissionCheckService>();
+        var userId = GetRequiredUserId();
+        return await permissionService.HasAllPermissionsAsync(userId, permissionCodes);
     }
 }
 

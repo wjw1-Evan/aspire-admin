@@ -1,4 +1,4 @@
-import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Tag } from 'antd';
 import React, { useRef } from 'react';
 import { getUserActivityLogs } from '@/services/user-log/api';
@@ -121,57 +121,65 @@ const UserLog: React.FC = () => {
   ];
 
   return (
-    <ProTable<UserActivityLog>
-      headerTitle="用户操作日志"
-      actionRef={actionRef}
-      rowKey="id"
-      search={{
-        labelWidth: 120,
-        optionRender: (searchConfig, formProps, dom) => {
-          const reversed = [...dom];
-          reversed.reverse();
-          return reversed;
-        },
+    <PageContainer
+      header={{
+        title: '用户操作日志',
+        subTitle: '系统用户活动记录和审计日志',
       }}
-      request={async (params, sort) => {
-        const { current = 1, pageSize = 20, action } = params;
-        
-        try {
-          const response = await getUserActivityLogs({
-            page: current,
-            pageSize,
-            action,
-          });
+    >
+      <ProTable<UserActivityLog>
+        actionRef={actionRef}
+        rowKey="id"
+        search={{
+          labelWidth: 120,
+          optionRender: (searchConfig, formProps, dom) => {
+            const reversed = [...dom];
+            reversed.reverse();
+            return reversed;
+          },
+        }}
+        request={async (params, sort) => {
+          const { current = 1, pageSize = 20, action } = params;
+          
+          try {
+            const response = await getUserActivityLogs({
+              page: current,
+              pageSize,
+              action,
+            });
 
-          if (response.success && response.data) {
+            if (response.success && response.data) {
+              // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
+              const result = response.data as any;
+              return {
+                data: result.data || [],
+                total: result.total || 0,
+                success: true,
+              };
+            }
+
             return {
-              data: response.data,
-              total: response.total,
-              success: true,
+              data: [],
+              total: 0,
+              success: false,
+            };
+          } catch (error) {
+            console.error('Failed to load user activity logs:', error);
+            return {
+              data: [],
+              total: 0,
+              success: false,
             };
           }
-
-          return {
-            data: [],
-            total: 0,
-            success: false,
-          };
-        } catch (error) {
-          console.error('Failed to load user activity logs:', error);
-          return {
-            data: [],
-            total: 0,
-            success: false,
-          };
-        }
-      }}
-      columns={columns}
-      pagination={{
-        defaultPageSize: 20,
-        showSizeChanger: true,
-        showQuickJumper: true,
-      }}
-    />
+        }}
+        columns={columns}
+        pagination={{
+          defaultPageSize: 20,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+      />
+    </PageContainer>
   );
 };
 

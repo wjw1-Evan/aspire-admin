@@ -1,16 +1,20 @@
-import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
-import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, message, Popconfirm, Space, Tag } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, MoreOutlined, KeyOutlined } from '@ant-design/icons';
+import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
+import { Button, message, Popconfirm, Space, Tag, Dropdown, Modal } from 'antd';
+import type { MenuProps } from 'antd';
 import React, { useRef, useState } from 'react';
 import { getAllRoles, deleteRole } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
 import MenuPermissionModal from './components/MenuPermissionModal';
+import PermissionConfigModal from './components/PermissionConfigModal';
+import PermissionControl from '@/components/PermissionControl';
 
 const RoleManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [modalVisible, setModalVisible] = useState(false);
-  const [permissionModalVisible, setPermissionModalVisible] = useState(false);
+  const [menuPermissionModalVisible, setMenuPermissionModalVisible] = useState(false);
+  const [operationPermissionModalVisible, setOperationPermissionModalVisible] = useState(false);
   const [currentRole, setCurrentRole] = useState<Role | undefined>();
 
   /**
@@ -93,66 +97,98 @@ const RoleManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 250,
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="link"
-            size="small"
-            icon={<SettingOutlined />}
-            onClick={() => {
+      width: 180,
+      render: (_, record) => {
+        const moreItems: MenuProps['items'] = [
+          {
+            key: 'menu-permission',
+            icon: <SettingOutlined />,
+            label: '菜单权限',
+            onClick: () => {
               setCurrentRole(record);
-              setPermissionModalVisible(true);
-            }}
-          >
-            分配权限
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
+              setMenuPermissionModalVisible(true);
+            },
+          },
+          {
+            key: 'operation-permission',
+            icon: <KeyOutlined />,
+            label: '操作权限',
+            onClick: () => {
               setCurrentRole(record);
-              setModalVisible(true);
-            }}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这个角色吗？"
-            description="删除后，已分配此角色的用户将受到影响。"
-            onConfirm={() => handleDelete(record.id!)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
+              setOperationPermissionModalVisible(true);
+            },
+          },
+          {
+            type: 'divider',
+          },
+          {
+            key: 'delete',
+            icon: <DeleteOutlined />,
+            label: '删除',
+            danger: true,
+            onClick: () => {
+              Modal.confirm({
+                title: '确定要删除这个角色吗？',
+                content: '删除后，已分配此角色的用户将受到影响。',
+                okText: '确定',
+                cancelText: '取消',
+                okType: 'danger',
+                onOk: () => handleDelete(record.id!),
+              });
+            },
+          },
+        ];
+
+        return (
+          <Space size="small">
+            <PermissionControl permission="role:update">
+              <Button
+                type="link"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setCurrentRole(record);
+                  setModalVisible(true);
+                }}
+              >
+                编辑
+              </Button>
+            </PermissionControl>
+            <Dropdown menu={{ items: moreItems }} trigger={['click']}>
+              <Button type="link" size="small" icon={<MoreOutlined />}>
+                更多
+              </Button>
+            </Dropdown>
+          </Space>
+        );
+      },
     },
   ];
 
   return (
-    <>
+    <PageContainer
+      header={{
+        title: '角色管理',
+        subTitle: '系统角色配置和权限管理',
+      }}
+    >
       <ProTable<Role>
-        headerTitle="角色管理"
         actionRef={actionRef}
         rowKey="id"
         search={false}
         toolBarRender={() => [
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setCurrentRole(undefined);
-              setModalVisible(true);
-            }}
-          >
-            新增角色
-          </Button>,
+          <PermissionControl permission="role:create" key="create">
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setCurrentRole(undefined);
+                setModalVisible(true);
+              }}
+            >
+              新增角色
+            </Button>
+          </PermissionControl>,
         ]}
         request={loadRoleData}
         columns={columns}
@@ -173,19 +209,34 @@ const RoleManagement: React.FC = () => {
       />
 
       <MenuPermissionModal
-        visible={permissionModalVisible}
+        visible={menuPermissionModalVisible}
         role={currentRole}
         onCancel={() => {
-          setPermissionModalVisible(false);
+          setMenuPermissionModalVisible(false);
           setCurrentRole(undefined);
         }}
         onSuccess={() => {
-          setPermissionModalVisible(false);
+          setMenuPermissionModalVisible(false);
           setCurrentRole(undefined);
-          message.success('权限分配成功');
+          message.success('菜单权限分配成功');
         }}
       />
-    </>
+
+      <PermissionConfigModal
+        visible={operationPermissionModalVisible}
+        role={currentRole}
+        onCancel={() => {
+          setOperationPermissionModalVisible(false);
+          setCurrentRole(undefined);
+        }}
+        onSuccess={() => {
+          setOperationPermissionModalVisible(false);
+          setCurrentRole(undefined);
+          message.success('操作权限分配成功');
+          actionRef.current?.reload();
+        }}
+      />
+    </PageContainer>
   );
 };
 

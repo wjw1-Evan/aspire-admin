@@ -14,5 +14,7 @@ public interface IRoleService
     Task<bool> DeleteRoleAsync(string id, string? reason = null);
     Task<bool> AssignMenusToRoleAsync(string roleId, List<string> menuIds);
     Task<List<string>> GetRoleMenuIdsAsync(string roleId);
+    Task<bool> AssignPermissionsToRoleAsync(string roleId, List<string> permissionIds);
+    Task<List<Permission>> GetRolePermissionsAsync(string roleId);
 }
 

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using System.Security.Claims;
@@ -24,7 +25,7 @@ public class MenuController : BaseApiController
     /// 获取所有菜单（仅管理员）
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "admin")]
+    [RequirePermission("menu", "read")]
     public async Task<ActionResult<ApiResponse<List<Menu>>>> GetAllMenus()
     {
         var menus = await _menuService.GetAllMenusAsync();
@@ -35,7 +36,7 @@ public class MenuController : BaseApiController
     /// 获取菜单树结构（仅管理员）
     /// </summary>
     [HttpGet("tree")]
-    [Authorize(Roles = "admin")]
+    [RequirePermission("menu", "read")]
     public async Task<ActionResult<ApiResponse<List<MenuTreeNode>>>> GetMenuTree()
     {
         var menuTree = await _menuService.GetMenuTreeAsync();
@@ -66,7 +67,7 @@ public class MenuController : BaseApiController
     /// 根据ID获取菜单（仅管理员）
     /// </summary>
     [HttpGet("{id}")]
-    [Authorize(Roles = "admin")]
+    [RequirePermission("menu", "read")]
     public async Task<ActionResult<ApiResponse<Menu>>> GetMenuById(string id)
     {
         var menu = await _menuService.GetMenuByIdAsync(id);
@@ -80,7 +81,7 @@ public class MenuController : BaseApiController
     /// 创建菜单（仅管理员）
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "admin")]
+    [RequirePermission("menu", "create")]
     public async Task<ActionResult<ApiResponse<Menu>>> CreateMenu([FromBody] CreateMenuRequest request)
     {
         var menu = await _menuService.CreateMenuAsync(request);
@@ -91,7 +92,7 @@ public class MenuController : BaseApiController
     /// 更新菜单（仅管理员）
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "admin")]
+    [RequirePermission("menu", "update")]
     public async Task<ActionResult<ApiResponse<bool>>> UpdateMenu(string id, [FromBody] UpdateMenuRequest request)
     {
         var success = await _menuService.UpdateMenuAsync(id, request);
@@ -107,7 +108,7 @@ public class MenuController : BaseApiController
     /// <param name="id">菜单ID</param>
     /// <param name="reason">删除原因（可选）</param>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "admin")]
+    [RequirePermission("menu", "delete")]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteMenu(string id, [FromQuery] string? reason = null)
     {
         var success = await _menuService.DeleteMenuAsync(id, reason);
@@ -121,7 +122,7 @@ public class MenuController : BaseApiController
     /// 菜单排序（仅管理员）
     /// </summary>
     [HttpPost("reorder")]
-    [Authorize(Roles = "admin")]
+    [RequirePermission("menu", "update")]
     public async Task<ActionResult<ApiResponse<bool>>> ReorderMenus([FromBody] ReorderMenusRequest request)
     {
         var success = await _menuService.ReorderMenusAsync(request.MenuIds, request.ParentId);

@@ -100,5 +100,28 @@ public class RoleController : BaseApiController
         var menuIds = await _roleService.GetRoleMenuIdsAsync(id);
         return Ok(ApiResponse<List<string>>.SuccessResult(menuIds));
     }
+
+    /// <summary>
+    /// 获取角色的操作权限
+    /// </summary>
+    [HttpGet("{id}/permissions")]
+    public async Task<ActionResult<ApiResponse<List<Permission>>>> GetRolePermissions(string id)
+    {
+        var permissions = await _roleService.GetRolePermissionsAsync(id);
+        return Ok(ApiResponse<List<Permission>>.SuccessResult(permissions));
+    }
+
+    /// <summary>
+    /// 为角色分配操作权限
+    /// </summary>
+    [HttpPost("{id}/permissions")]
+    public async Task<ActionResult<ApiResponse<bool>>> AssignPermissionsToRole(string id, [FromBody] AssignPermissionsRequest request)
+    {
+        var success = await _roleService.AssignPermissionsToRoleAsync(id, request.PermissionIds);
+        if (!success)
+            throw new KeyNotFoundException("Role not found or permissions not assigned");
+        
+        return Ok(ApiResponse<bool>.SuccessResult(true));
+    }
 }
 

@@ -33,7 +33,7 @@ public class ActivityLogMiddleware
         _configuration = configuration;
     }
 
-    public async Task InvokeAsync(HttpContext context, UserActivityLogService logService)
+    public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
     {
         // 检查是否启用日志记录
         var enabled = _configuration.GetValue<bool>("ActivityLog:Enabled", true);
@@ -110,7 +110,7 @@ public class ActivityLogMiddleware
     /// </summary>
     private async Task LogRequestAsync(
         HttpContext context,
-        UserActivityLogService logService,
+        IUserActivityLogService logService,
         long durationMs)
     {
         // 提取用户信息

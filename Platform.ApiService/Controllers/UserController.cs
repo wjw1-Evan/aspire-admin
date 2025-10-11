@@ -408,6 +408,46 @@ public class UserController : BaseApiController
         var logs = await _userService.GetUserActivityLogsAsync(userId, limit);
         return Success(logs);
     }
+
+    /// <summary>
+    /// 获取用户的所有权限
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    [HttpGet("{id}/permissions")]
+    [Authorize]
+    public async Task<IActionResult> GetUserPermissions(string id)
+    {
+        var permissions = await _userService.GetUserAllPermissionsAsync(id);
+        return Success(permissions);
+    }
+
+    /// <summary>
+    /// 为用户分配自定义权限
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <param name="request">分配权限请求</param>
+    [HttpPost("{id}/custom-permissions")]
+    [Authorize]
+    public async Task<IActionResult> AssignCustomPermissions(string id, [FromBody] AssignPermissionsRequest request)
+    {
+        var success = await _userService.AssignCustomPermissionsAsync(id, request.PermissionIds);
+        if (!success)
+            throw new KeyNotFoundException($"用户ID {id} 不存在");
+        
+        return Success("权限分配成功");
+    }
+
+    /// <summary>
+    /// 获取当前用户的所有权限
+    /// </summary>
+    [HttpGet("my-permissions")]
+    [Authorize]
+    public async Task<IActionResult> GetMyPermissions()
+    {
+        var userId = GetRequiredUserId();
+        var permissions = await _userService.GetUserAllPermissionsAsync(userId);
+        return Success(permissions);
+    }
 }
 
 public class UpdateUserRoleRequest

@@ -44,6 +44,9 @@ public class FixAllEntitiesIsDeletedField
         // 修复规则
         totalFixed += await FixCollectionAsync<RuleListItem>("rules", "规则");
 
+        // 修复权限
+        totalFixed += await FixCollectionAsync<Permission>("permissions", "权限");
+
         Console.WriteLine("\n========================================");
         Console.WriteLine($"修复完成！共修复 {totalFixed} 条记录");
         Console.WriteLine("========================================\n");

@@ -1,11 +1,12 @@
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import * as Icons from '@ant-design/icons';
-import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, message, Popconfirm, Space, Tag } from 'antd';
 import React, { useRef, useState } from 'react';
 import { getMenuTree, deleteMenu } from '@/services/menu/api';
 import type { MenuTreeNode } from '@/services/menu/types';
 import MenuForm from './components/MenuForm';
+import PermissionControl from '@/components/PermissionControl';
 
 const MenuManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -162,51 +163,60 @@ const MenuManagement: React.FC = () => {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setCurrentMenu(record);
-              setModalVisible(true);
-            }}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这个菜单吗？"
-            onConfirm={() => handleDelete(record.id!)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
+          <PermissionControl permission="menu:update">
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setCurrentMenu(record);
+                setModalVisible(true);
+              }}
+            >
+              编辑
             </Button>
-          </Popconfirm>
+          </PermissionControl>
+          <PermissionControl permission="menu:delete">
+            <Popconfirm
+              title="确定要删除这个菜单吗？"
+              onConfirm={() => handleDelete(record.id!)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                删除
+              </Button>
+            </Popconfirm>
+          </PermissionControl>
         </Space>
       ),
     },
   ];
 
   return (
-    <>
+    <PageContainer
+      header={{
+        title: '菜单管理',
+        subTitle: '系统菜单配置和层级管理',
+      }}
+    >
       <ProTable<MenuTreeNode>
-        headerTitle="菜单管理"
         actionRef={actionRef}
         rowKey="id"
         search={false}
         toolBarRender={() => [
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setCurrentMenu(undefined);
-              setModalVisible(true);
-            }}
-          >
-            新增菜单
-          </Button>,
+          <PermissionControl permission="menu:create" key="create">
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setCurrentMenu(undefined);
+                setModalVisible(true);
+              }}
+            >
+              新增菜单
+            </Button>
+          </PermissionControl>,
         ]}
         request={loadMenuData}
         columns={columns}
@@ -229,7 +239,7 @@ const MenuManagement: React.FC = () => {
           actionRef.current?.reload();
         }}
       />
-    </>
+    </PageContainer>
   );
 };
 

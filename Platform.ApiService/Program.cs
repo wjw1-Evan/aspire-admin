@@ -67,6 +67,8 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<IRuleService, RuleService>();
 builder.Services.AddScoped<IUserActivityLogService, UserActivityLogService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IPermissionCheckService, PermissionCheckService>();
 
 // Captcha service (Singleton - 使用内存缓存)
 builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
@@ -129,14 +131,12 @@ app.UseMiddleware<Platform.ApiService.Middleware.ResponseFormattingMiddleware>()
 // Configure controllers
 app.MapControllers();
 
-// Map health check endpoint
-app.MapHealthChecks("/health");
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
+// Map default endpoints (includes health checks)
 app.MapDefaultEndpoints();
 
 // 初始化管理员用户和菜单角色
@@ -155,6 +155,11 @@ using (var scope = app.Services.CreateScope())
     // 初始化菜单和角色
     var initialMenuData = new InitialMenuData(database);
     await initialMenuData.InitializeAsync();
+    
+    // 初始化权限系统
+    var initializePermissions = new InitializePermissions(database, 
+        scope.ServiceProvider.GetRequiredService<ILogger<InitializePermissions>>());
+    await initializePermissions.InitializeAsync();
 }
 
 await app.RunAsync();

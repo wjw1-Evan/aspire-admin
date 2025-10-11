@@ -7,4 +7,5 @@ import UserOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admi
 import TeamOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/TeamOutlined';
 import MenuOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/MenuOutlined';
 import FileTextOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/FileTextOutlined';
-export default { SmileOutlined, SettingOutlined, UserOutlined, TeamOutlined, MenuOutlined, FileTextOutlined };
+import SafetyOutlined from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ant-design/icons/es/icons/SafetyOutlined';
+export default { SmileOutlined, SettingOutlined, UserOutlined, TeamOutlined, MenuOutlined, FileTextOutlined, SafetyOutlined };

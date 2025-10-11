@@ -22,7 +22,9 @@ import {
   Form,
   Input,
   Card,
+  Dropdown,
 } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -32,12 +34,16 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   ReloadOutlined,
+  MoreOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
 import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
 import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
+import UserPermissionModal from './components/UserPermissionModal';
+import PermissionControl from '@/components/PermissionControl';
 
 const UserManagement: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
@@ -45,8 +51,10 @@ const UserManagement: React.FC = () => {
   const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [permissionModalVisible, setPermissionModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [viewingUser, setViewingUser] = useState<AppUser | null>(null);
+  const [configuringUser, setConfiguringUser] = useState<AppUser | null>(null);
   const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
   const [searchParams, setSearchParams] = useState<UserListRequest>({
@@ -303,41 +311,92 @@ const UserManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 200,
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EyeOutlined />}
-            onClick={() => {
+      fixed: 'right',
+      width: 180,
+      render: (_, record) => {
+        const items: MenuProps['items'] = [
+          {
+            key: 'view',
+            icon: <EyeOutlined />,
+            label: '查看详情',
+            onClick: () => {
               setViewingUser(record);
               setDetailVisible(true);
-            }}
-          >
-            查看
-          </Button>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => {
+            },
+          },
+          {
+            key: 'edit',
+            icon: <EditOutlined />,
+            label: '编辑',
+            onClick: () => {
               setEditingUser(record);
               setFormVisible(true);
-            }}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这个用户吗？"
-            onConfirm={() => record.id && handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
+            },
+          },
+          {
+            key: 'permission',
+            icon: <KeyOutlined />,
+            label: '配置权限',
+            onClick: () => {
+              setConfiguringUser(record);
+              setPermissionModalVisible(true);
+            },
+          },
+          {
+            type: 'divider',
+          },
+          {
+            key: 'delete',
+            icon: <DeleteOutlined />,
+            label: '删除',
+            danger: true,
+            onClick: () => {
+              Modal.confirm({
+                title: '确定要删除这个用户吗？',
+                content: '此操作不可恢复',
+                okText: '确定',
+                cancelText: '取消',
+                okType: 'danger',
+                onOk: () => record.id && handleDelete(record.id),
+              });
+            },
+          },
+        ];
+
+        return (
+          <Space size="small">
+            <Button
+              type="link"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => {
+                setViewingUser(record);
+                setDetailVisible(true);
+              }}
+            >
+              查看
             </Button>
-          </Popconfirm>
-        </Space>
-      ),
+            <PermissionControl permission="user:update">
+              <Button
+                type="link"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditingUser(record);
+                  setFormVisible(true);
+                }}
+              >
+                编辑
+              </Button>
+            </PermissionControl>
+            <Dropdown menu={{ items: items.slice(2) }} trigger={['click']}>
+              <Button type="link" size="small" icon={<MoreOutlined />}>
+                更多
+              </Button>
+            </Dropdown>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -359,17 +418,18 @@ const UserManagement: React.FC = () => {
         >
           刷新
         </Button>,
-        <Button
-          key="add"
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            setEditingUser(null);
-            setFormVisible(true);
-          }}
-        >
-          新增用户
-        </Button>,
+        <PermissionControl permission="user:create" key="add">
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingUser(null);
+              setFormVisible(true);
+            }}
+          >
+            新增用户
+          </Button>
+        </PermissionControl>,
       ]}
     >
       {/* 统计卡片 */}
@@ -525,6 +585,21 @@ const UserManagement: React.FC = () => {
           />
         )}
       </Drawer>
+
+      {/* 用户权限配置模态框 */}
+      <UserPermissionModal
+        visible={permissionModalVisible}
+        user={configuringUser}
+        onCancel={() => {
+          setPermissionModalVisible(false);
+          setConfiguringUser(null);
+        }}
+        onSuccess={() => {
+          setPermissionModalVisible(false);
+          setConfiguringUser(null);
+          actionRef.current?.reload();
+        }}
+      />
     </PageContainer>
   );
 };

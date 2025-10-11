@@ -8,6 +8,7 @@ export default {
   'menu.system.role-management': 'Role Management',
   'menu.system.menu-management': 'Menu Management',
   'menu.system.user-log': 'User Log',
+  'menu.system.permission-management': 'Permission Management',
   'menu.account': 'Account',
   'menu.account.center': 'Account Center',
 };

@@ -7,6 +7,7 @@ public class RoleService : IRoleService
 {
     private readonly IMongoCollection<Role> _roles;
     private readonly IMongoCollection<AppUser> _users;
+    private readonly IMongoCollection<Permission> _permissions;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<RoleService> _logger;
 
@@ -17,6 +18,7 @@ public class RoleService : IRoleService
     {
         _roles = database.GetCollection<Role>("roles");
         _users = database.GetCollection<AppUser>("users");
+        _permissions = database.GetCollection<Permission>("permissions");
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
@@ -180,6 +182,40 @@ public class RoleService : IRoleService
     {
         var role = await GetRoleByIdAsync(roleId);
         return role?.MenuIds ?? new List<string>();
+    }
+
+    /// <summary>
+    /// 为角色分配操作权限
+    /// </summary>
+    public async Task<bool> AssignPermissionsToRoleAsync(string roleId, List<string> permissionIds)
+    {
+        var result = await _roles.UpdateOneAsync(
+            r => r.Id == roleId,
+            Builders<Role>.Update
+                .Set(r => r.PermissionIds, permissionIds)
+                .Set(r => r.UpdatedAt, DateTime.UtcNow)
+        );
+
+        _logger.LogInformation("Assigned {Count} permissions to role {RoleId}", permissionIds.Count, roleId);
+        return result.ModifiedCount > 0;
+    }
+
+    /// <summary>
+    /// 获取角色的操作权限
+    /// </summary>
+    public async Task<List<Permission>> GetRolePermissionsAsync(string roleId)
+    {
+        var role = await GetRoleByIdAsync(roleId);
+        if (role == null || role.PermissionIds == null || role.PermissionIds.Count == 0)
+        {
+            return new List<Permission>();
+        }
+
+        var filter = Builders<Permission>.Filter.And(
+            Builders<Permission>.Filter.In(p => p.Id, role.PermissionIds),
+            SoftDeleteExtensions.NotDeleted<Permission>()
+        );
+        return await _permissions.Find(filter).ToListAsync();
     }
 }
 

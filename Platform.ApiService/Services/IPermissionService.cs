@@ -1,0 +1,23 @@
+using Platform.ApiService.Models;
+
+namespace Platform.ApiService.Services;
+
+public interface IPermissionService
+{
+    // 基础 CRUD
+    Task<List<Permission>> GetAllPermissionsAsync();
+    Task<Permission?> GetPermissionByIdAsync(string id);
+    Task<Permission?> GetPermissionByCodeAsync(string code);
+    Task<Permission> CreatePermissionAsync(CreatePermissionRequest request, string createdBy);
+    Task<bool> UpdatePermissionAsync(string id, UpdatePermissionRequest request, string updatedBy);
+    Task<bool> DeletePermissionAsync(string id, string deletedBy, string? reason = null);
+    
+    // 权限查询
+    Task<List<Permission>> GetPermissionsByResourceAsync(string resource);
+    Task<List<Permission>> GetPermissionsByCodesAsync(List<string> codes);
+    Task<List<PermissionGroup>> GetPermissionsGroupedByResourceAsync();
+    
+    // 初始化系统默认权限
+    Task InitializeDefaultPermissionsAsync();
+}
+

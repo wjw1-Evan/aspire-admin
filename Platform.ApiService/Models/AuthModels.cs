@@ -162,6 +162,9 @@ public class AppUser : ISoftDeletable
     [BsonElement("roleIds")]
     public List<string> RoleIds { get; set; } = new();
 
+    [BsonElement("customPermissionIds")]
+    public List<string> CustomPermissionIds { get; set; } = new();
+
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 

@@ -22,6 +22,9 @@ public class Role : ISoftDeletable
     [BsonElement("menuIds")]
     public List<string> MenuIds { get; set; } = new();
 
+    [BsonElement("permissionIds")]
+    public List<string> PermissionIds { get; set; } = new();
+
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 

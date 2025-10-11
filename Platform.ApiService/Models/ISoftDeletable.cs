@@ -32,3 +32,4 @@ public interface ISoftDeletable
     string? DeletedReason { get; set; }
 }
 
+

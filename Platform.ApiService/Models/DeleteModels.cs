@@ -27,3 +27,4 @@ public class BulkDeleteRequest
     public string? Reason { get; set; }
 }
 
+

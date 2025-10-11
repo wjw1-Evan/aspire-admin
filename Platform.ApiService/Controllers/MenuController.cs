@@ -9,49 +9,37 @@ namespace Platform.ApiService.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class MenuController : ControllerBase
+public class MenuController : BaseApiController
 {
-    private readonly MenuService _menuService;
-    private readonly UserService _userService;
+    private readonly IMenuService _menuService;
+    private readonly IUserService _userService;
 
-    public MenuController(MenuService menuService, UserService userService)
+    public MenuController(IMenuService menuService, IUserService userService)
     {
         _menuService = menuService;
         _userService = userService;
     }
 
     /// <summary>
-    /// 获取所有菜单
+    /// 获取所有菜单（仅管理员）
     /// </summary>
     [HttpGet]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ApiResponse<List<Menu>>>> GetAllMenus()
     {
-        try
-        {
-            var menus = await _menuService.GetAllMenusAsync();
-            return Ok(ApiResponse<List<Menu>>.SuccessResult(menus));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ApiResponse<List<Menu>>.ServerErrorResult($"Failed to get menus: {ex.Message}"));
-        }
+        var menus = await _menuService.GetAllMenusAsync();
+        return Ok(ApiResponse<List<Menu>>.SuccessResult(menus));
     }
 
     /// <summary>
-    /// 获取菜单树结构
+    /// 获取菜单树结构（仅管理员）
     /// </summary>
     [HttpGet("tree")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ApiResponse<List<MenuTreeNode>>>> GetMenuTree()
     {
-        try
-        {
-            var menuTree = await _menuService.GetMenuTreeAsync();
-            return Ok(ApiResponse<List<MenuTreeNode>>.SuccessResult(menuTree));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ApiResponse<List<MenuTreeNode>>.ServerErrorResult($"Failed to get menu tree: {ex.Message}"));
-        }
+        var menuTree = await _menuService.GetMenuTreeAsync();
+        return Ok(ApiResponse<List<MenuTreeNode>>.SuccessResult(menuTree));
     }
 
     /// <summary>
@@ -60,133 +48,84 @@ public class MenuController : ControllerBase
     [HttpGet("user")]
     public async Task<ActionResult<ApiResponse<List<MenuTreeNode>>>> GetUserMenus()
     {
-        try
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(ApiResponse<List<MenuTreeNode>>.UnauthorizedResult("User not authenticated"));
-            }
+        var userId = GetRequiredUserId();
+        var user = await _userService.GetUserByIdAsync(userId);
+        if (user == null)
+            throw new KeyNotFoundException("User not found");
 
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user == null)
-            {
-                return NotFound(ApiResponse<List<MenuTreeNode>>.NotFoundResult("User not found"));
-            }
+        // 如果用户有 roleIds，使用它；否则返回空列表
+        var roleIds = user.RoleIds != null && user.RoleIds.Any()
+            ? user.RoleIds
+            : new List<string>();
 
-            // 如果用户有 roleIds，使用它；否则返回空列表或基于旧的 role 字段
-            var roleIds = user.RoleIds != null && user.RoleIds.Any() 
-                ? user.RoleIds 
-                : new List<string>();
-
-            var userMenus = await _menuService.GetUserMenusAsync(roleIds);
-            return Ok(ApiResponse<List<MenuTreeNode>>.SuccessResult(userMenus));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ApiResponse<List<MenuTreeNode>>.ServerErrorResult($"Failed to get user menus: {ex.Message}"));
-        }
+        var userMenus = await _menuService.GetUserMenusAsync(roleIds);
+        return Ok(ApiResponse<List<MenuTreeNode>>.SuccessResult(userMenus));
     }
 
     /// <summary>
-    /// 根据ID获取菜单
+    /// 根据ID获取菜单（仅管理员）
     /// </summary>
     [HttpGet("{id}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ApiResponse<Menu>>> GetMenuById(string id)
     {
-        try
-        {
-            var menu = await _menuService.GetMenuByIdAsync(id);
-            if (menu == null)
-            {
-                return NotFound(ApiResponse<Menu>.NotFoundResult("Menu not found"));
-            }
-            return Ok(ApiResponse<Menu>.SuccessResult(menu));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ApiResponse<Menu>.ServerErrorResult($"Failed to get menu: {ex.Message}"));
-        }
+        var menu = await _menuService.GetMenuByIdAsync(id);
+        if (menu == null)
+            throw new KeyNotFoundException("Menu not found");
+        
+        return Ok(ApiResponse<Menu>.SuccessResult(menu));
     }
 
     /// <summary>
-    /// 创建菜单
+    /// 创建菜单（仅管理员）
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ApiResponse<Menu>>> CreateMenu([FromBody] CreateMenuRequest request)
     {
-        try
-        {
-            var menu = await _menuService.CreateMenuAsync(request);
-            return Ok(ApiResponse<Menu>.SuccessResult(menu));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ApiResponse<Menu>.ServerErrorResult($"Failed to create menu: {ex.Message}"));
-        }
+        var menu = await _menuService.CreateMenuAsync(request);
+        return Ok(ApiResponse<Menu>.SuccessResult(menu));
     }
 
     /// <summary>
-    /// 更新菜单
+    /// 更新菜单（仅管理员）
     /// </summary>
     [HttpPut("{id}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ApiResponse<bool>>> UpdateMenu(string id, [FromBody] UpdateMenuRequest request)
     {
-        try
-        {
-            var success = await _menuService.UpdateMenuAsync(id, request);
-            if (!success)
-            {
-                return NotFound(ApiResponse<bool>.NotFoundResult("Menu not found or not updated"));
-            }
-            return Ok(ApiResponse<bool>.SuccessResult(true));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ApiResponse<bool>.ServerErrorResult($"Failed to update menu: {ex.Message}"));
-        }
+        var success = await _menuService.UpdateMenuAsync(id, request);
+        if (!success)
+            throw new KeyNotFoundException("Menu not found or not updated");
+        
+        return Ok(ApiResponse<bool>.SuccessResult(true));
     }
 
     /// <summary>
-    /// 删除菜单
+    /// 软删除菜单（仅管理员）
     /// </summary>
+    /// <param name="id">菜单ID</param>
+    /// <param name="reason">删除原因（可选）</param>
     [HttpDelete("{id}")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteMenu(string id)
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteMenu(string id, [FromQuery] string? reason = null)
     {
-        try
-        {
-            var success = await _menuService.DeleteMenuAsync(id);
-            if (!success)
-            {
-                return NotFound(ApiResponse<bool>.NotFoundResult("Menu not found"));
-            }
-            return Ok(ApiResponse<bool>.SuccessResult(true));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<bool>.ErrorResult("BAD_REQUEST", ex.Message));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ApiResponse<bool>.ServerErrorResult($"Failed to delete menu: {ex.Message}"));
-        }
+        var success = await _menuService.DeleteMenuAsync(id, reason);
+        if (!success)
+            throw new KeyNotFoundException("Menu not found");
+        
+        return Ok(ApiResponse<bool>.SuccessResult(true));
     }
 
     /// <summary>
-    /// 菜单排序
+    /// 菜单排序（仅管理员）
     /// </summary>
     [HttpPost("reorder")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ApiResponse<bool>>> ReorderMenus([FromBody] ReorderMenusRequest request)
     {
-        try
-        {
-            var success = await _menuService.ReorderMenusAsync(request.MenuIds, request.ParentId);
-            return Ok(ApiResponse<bool>.SuccessResult(success));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ApiResponse<bool>.ServerErrorResult($"Failed to reorder menus: {ex.Message}"));
-        }
+        var success = await _menuService.ReorderMenusAsync(request.MenuIds, request.ParentId);
+        return Ok(ApiResponse<bool>.SuccessResult(success));
     }
 }
 

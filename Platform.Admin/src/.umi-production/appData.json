@@ -85,7 +85,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "preset",
@@ -98,7 +98,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 10
+        "register": 9
       },
       "enableBy": "register",
       "type": "preset",
@@ -111,7 +111,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 7
+        "register": 1
       },
       "enableBy": "register",
       "type": "preset",
@@ -125,10 +125,10 @@
       "time": {
         "hooks": {
           "onStart": [
-            1
+            0
           ]
         },
-        "register": 6
+        "register": 2
       },
       "enableBy": "register",
       "type": "preset",
@@ -145,7 +145,7 @@
             0
           ]
         },
-        "register": 4
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -159,7 +159,7 @@
       "time": {
         "hooks": {
           "onStart": [
-            2
+            1
           ]
         },
         "register": 2
@@ -179,7 +179,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -192,7 +192,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -206,10 +206,10 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            20
+            15
           ]
         },
-        "register": 18
+        "register": 15
       },
       "enableBy": "register",
       "type": "plugin",
@@ -242,7 +242,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1155,10 +1155,10 @@
       "time": {
         "hooks": {
           "onStart": [
-            0
+            1
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1171,7 +1171,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1184,7 +1184,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 60
+        "register": 57
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1197,7 +1197,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 30
+        "register": 40
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1214,7 +1214,7 @@
             0
           ]
         },
-        "register": 11
+        "register": 12
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1282,7 +1282,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1327,7 +1327,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 3
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1344,7 +1344,7 @@
             1
           ]
         },
-        "register": 1
+        "register": 2
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/polyfill/polyfill.js",
@@ -1356,7 +1356,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1382,7 +1382,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1421,7 +1421,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 4
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1447,7 +1447,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routeProps/routeProps.js",
@@ -1485,7 +1485,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 3
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1498,7 +1498,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1511,7 +1511,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1524,7 +1524,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 6
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/apiRoute/apiRoute.js",
@@ -1536,7 +1536,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 16
+        "register": 19
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1573,7 +1573,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1586,7 +1586,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1599,7 +1599,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/webpack/webpack.js",
@@ -1615,7 +1615,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1644,10 +1644,10 @@
             0
           ],
           "onStart": [
-            1
+            3
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1660,7 +1660,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/utoopack/utoopack.js",
@@ -1684,7 +1684,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 21
+        "register": 22
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad.js",
@@ -1748,7 +1748,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 25
+        "register": 27
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/dev/dev.js",
@@ -1773,7 +1773,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1786,7 +1786,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1916,7 +1916,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1929,7 +1929,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1955,7 +1955,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1968,7 +1968,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1981,7 +1981,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1994,7 +1994,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 14
+        "register": 13
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2061,13 +2061,13 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            2
           ],
           "modifyAppData": [
             0
           ]
         },
-        "register": 5
+        "register": 3
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/antd.js",
@@ -2079,7 +2079,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 6
+        "register": 5
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2092,7 +2092,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2108,7 +2108,7 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            0
           ],
           "addLayouts": [
             0
@@ -2117,7 +2117,7 @@
             0
           ]
         },
-        "register": 3
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2143,7 +2143,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2173,7 +2173,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2186,7 +2186,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2211,7 +2211,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/qiankun/slave.js",
@@ -2223,7 +2223,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2236,7 +2236,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2249,7 +2249,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2326,7 +2326,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2343,7 +2343,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2373,7 +2373,7 @@
             0
           ]
         },
-        "register": 198
+        "register": 182
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2386,7 +2386,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 101
+        "register": 96
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2401,7 +2401,7 @@
       },
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2430,7 +2430,7 @@
             0
           ]
         },
-        "register": 40
+        "register": 39
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/request-record/dist/cjs/index.js",
@@ -2442,7 +2442,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2489,45 +2489,39 @@
         "component": "./Welcome"
       },
       {
-        "path": "/admin",
-        "name": "admin",
-        "icon": "crown",
-        "access": "canAdmin",
+        "name": "system",
+        "icon": "setting",
+        "path": "/system",
         "routes": [
           {
-            "path": "/admin",
-            "redirect": "/admin/sub-page"
+            "path": "/system",
+            "redirect": "/system/user-management"
           },
           {
-            "path": "/admin/sub-page",
-            "name": "sub-page",
-            "component": "./Admin"
+            "name": "user-management",
+            "icon": "user",
+            "path": "/system/user-management",
+            "component": "./user-management"
+          },
+          {
+            "name": "role-management",
+            "icon": "team",
+            "path": "/system/role-management",
+            "component": "./role-management"
+          },
+          {
+            "name": "menu-management",
+            "icon": "menu",
+            "path": "/system/menu-management",
+            "component": "./menu-management"
+          },
+          {
+            "name": "user-log",
+            "icon": "file-text",
+            "path": "/system/user-log",
+            "component": "./user-log"
           }
         ]
-      },
-      {
-        "name": "list.table-list",
-        "icon": "table",
-        "path": "/list",
-        "component": "./table-list"
-      },
-      {
-        "name": "user-management",
-        "icon": "user",
-        "path": "/user-management",
-        "component": "./user-management"
-      },
-      {
-        "name": "debug",
-        "icon": "bug",
-        "path": "/debug",
-        "component": "./user-management/debug"
-      },
-      {
-        "name": "test-menu",
-        "icon": "experiment",
-        "path": "/test-menu",
-        "component": "./test-menu"
       },
       {
         "name": "change-password",
@@ -2702,45 +2696,39 @@
         "component": "./Welcome"
       },
       {
-        "path": "/admin",
-        "name": "admin",
-        "icon": "crown",
-        "access": "canAdmin",
+        "name": "system",
+        "icon": "setting",
+        "path": "/system",
         "routes": [
           {
-            "path": "/admin",
-            "redirect": "/admin/sub-page"
+            "path": "/system",
+            "redirect": "/system/user-management"
           },
           {
-            "path": "/admin/sub-page",
-            "name": "sub-page",
-            "component": "./Admin"
+            "name": "user-management",
+            "icon": "user",
+            "path": "/system/user-management",
+            "component": "./user-management"
+          },
+          {
+            "name": "role-management",
+            "icon": "team",
+            "path": "/system/role-management",
+            "component": "./role-management"
+          },
+          {
+            "name": "menu-management",
+            "icon": "menu",
+            "path": "/system/menu-management",
+            "component": "./menu-management"
+          },
+          {
+            "name": "user-log",
+            "icon": "file-text",
+            "path": "/system/user-log",
+            "component": "./user-log"
           }
         ]
-      },
-      {
-        "name": "list.table-list",
-        "icon": "table",
-        "path": "/list",
-        "component": "./table-list"
-      },
-      {
-        "name": "user-management",
-        "icon": "user",
-        "path": "/user-management",
-        "component": "./user-management"
-      },
-      {
-        "name": "debug",
-        "icon": "bug",
-        "path": "/debug",
-        "component": "./user-management/debug"
-      },
-      {
-        "name": "test-menu",
-        "icon": "experiment",
-        "path": "/test-menu",
-        "component": "./test-menu"
       },
       {
         "name": "change-password",
@@ -3787,7 +3775,7 @@
       "parentId": "1",
       "id": "2",
       "absPath": "/user/login",
-      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MobileOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormCaptcha,\n  ProFormCheckbox,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  Link,\n  SelectLang,\n  useIntl,\n  useModel,\n} from '@umijs/max';\nimport { Alert, App, Button, Tabs } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { flushSync } from 'react-dom';\nimport { Footer } from '@/components';\nimport { login } from '@/services/ant-design-pro/api';\nimport { getFakeCaptcha } from '@/services/ant-design-pro/login';\nimport { tokenUtils } from '@/utils/token';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst LoginMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Login: React.FC = () => {\n  const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});\n  const [type, setType] = useState<string>('account');\n  const { initialState, setInitialState } = useModel('@@initialState');\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const fetchUserInfo = async () => {\n    const userInfo = await initialState?.fetchUserInfo?.();\n    if (userInfo) {\n      flushSync(() => {\n        setInitialState((s) => ({\n          ...s,\n          currentUser: userInfo,\n        }));\n      });\n    }\n  };\n\n  const handleSubmit = async (values: API.LoginParams) => {\n    try {\n      // 登录\n      const msg = await login({ ...values, type });\n      if (msg.status === 'ok') {\n        // 保存 token 和刷新token到本地存储\n        if (msg.token && msg.refreshToken) {\n          const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;\n          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);\n        } else if (msg.token) {\n          // 兼容旧版本，只保存token\n          tokenUtils.setToken(msg.token);\n        }\n        \n        const defaultLoginSuccessMessage = intl.formatMessage({\n          id: 'pages.login.success',\n          defaultMessage: '登录成功！',\n        });\n        message.success(defaultLoginSuccessMessage);\n        await fetchUserInfo();\n        const urlParams = new URL(window.location.href).searchParams;\n        window.location.href = urlParams.get('redirect') || '/';\n        return;\n      }\n      console.log(msg);\n      // 如果失败去设置用户错误信息\n      setUserLoginState(msg);\n    } catch (error) {\n      const defaultLoginFailureMessage = intl.formatMessage({\n        id: 'pages.login.failure',\n        defaultMessage: '登录失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultLoginFailureMessage);\n    }\n  };\n  const { status, type: loginType } = userLoginState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.login',\n            defaultMessage: '登录页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          initialValues={{\n            autoLogin: true,\n          }}\n          actions={[\n            <FormattedMessage\n              key=\"loginWith\"\n              id=\"pages.login.loginWith\"\n              defaultMessage=\"其他登录方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.LoginParams);\n          }}\n        >\n          <Tabs\n            activeKey={type}\n            onChange={setType}\n            centered\n            items={[\n              {\n                key: 'account',\n                label: intl.formatMessage({\n                  id: 'pages.login.accountLogin.tab',\n                  defaultMessage: '账户密码登录',\n                }),\n              },\n              {\n                key: 'mobile',\n                label: intl.formatMessage({\n                  id: 'pages.login.phoneLogin.tab',\n                  defaultMessage: '手机号登录',\n                }),\n              },\n            ]}\n          />\n\n          {status === 'error' && loginType === 'account' && (\n            <LoginMessage\n              content={intl.formatMessage({\n                id: 'pages.login.accountLogin.errorMessage',\n                defaultMessage: '账户或密码错误',\n              })}\n            />\n          )}\n          {type === 'account' && (\n            <>\n              <ProFormText\n                name=\"username\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <UserOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.username.placeholder',\n                  defaultMessage: '用户名: admin or user',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.username.required\"\n                        defaultMessage=\"请输入用户名!\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText.Password\n                name=\"password\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.password.placeholder',\n                  defaultMessage: '密码: ant.design',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.password.required\"\n                        defaultMessage=\"请输入密码！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n            </>\n          )}\n\n          {status === 'error' && loginType === 'mobile' && (\n            <LoginMessage content=\"验证码错误\" />\n          )}\n          {type === 'mobile' && (\n            <>\n              <ProFormText\n                fieldProps={{\n                  size: 'large',\n                  prefix: <MobileOutlined />,\n                }}\n                name=\"mobile\"\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.phoneNumber.placeholder',\n                  defaultMessage: '手机号',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.required\"\n                        defaultMessage=\"请输入手机号！\"\n                      />\n                    ),\n                  },\n                  {\n                    pattern: /^1\\d{10}$/,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.invalid\"\n                        defaultMessage=\"手机号格式错误！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormCaptcha\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                captchaProps={{\n                  size: 'large',\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.captcha.placeholder',\n                  defaultMessage: '请输入验证码',\n                })}\n                captchaTextRender={(timing, count) => {\n                  if (timing) {\n                    return `${count} ${intl.formatMessage({\n                      id: 'pages.getCaptchaSecondText',\n                      defaultMessage: '获取验证码',\n                    })}`;\n                  }\n                  return intl.formatMessage({\n                    id: 'pages.login.phoneLogin.getVerificationCode',\n                    defaultMessage: '获取验证码',\n                  });\n                }}\n                name=\"captcha\"\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.captcha.required\"\n                        defaultMessage=\"请输入验证码！\"\n                      />\n                    ),\n                  },\n                ]}\n                onGetCaptcha={async (phone) => {\n                  const result = await getFakeCaptcha({\n                    phone,\n                  });\n                  if (!result) {\n                    return;\n                  }\n                  message.success('获取验证码成功！验证码为：1234');\n                }}\n              />\n            </>\n          )}\n          <div\n            style={{\n              marginBottom: 24,\n            }}\n          >\n            <ProFormCheckbox noStyle name=\"autoLogin\">\n              <FormattedMessage\n                id=\"pages.login.rememberMe\"\n                defaultMessage=\"自动登录\"\n              />\n            </ProFormCheckbox>\n            <Button\n              type=\"link\"\n              style={{\n                float: 'right',\n                padding: 0,\n                height: 'auto',\n              }}\n              onClick={() => {\n                // TODO: 实现忘记密码功能\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.login.forgotPassword\"\n                defaultMessage=\"忘记密码\"\n              />\n            </Button>\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/register\">\n                <FormattedMessage\n                  id=\"pages.login.register\"\n                  defaultMessage=\"没有账号？立即注册\"\n                />\n              </Link>\n            </div>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Login;\n",
+      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MobileOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormCaptcha,\n  ProFormCheckbox,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  Link,\n  SelectLang,\n  useIntl,\n  useModel,\n  history,\n} from '@umijs/max';\nimport { Alert, App, Button, Tabs } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { flushSync } from 'react-dom';\nimport { Footer } from '@/components';\nimport { login } from '@/services/ant-design-pro/api';\nimport { getFakeCaptcha } from '@/services/ant-design-pro/login';\nimport { tokenUtils } from '@/utils/token';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst LoginMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Login: React.FC = () => {\n  const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});\n  const [type, setType] = useState<string>('account');\n  const { initialState, setInitialState } = useModel('@@initialState');\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const fetchUserInfo = async () => {\n    const userInfo = await initialState?.fetchUserInfo?.();\n    if (userInfo) {\n      flushSync(() => {\n        setInitialState((s) => ({\n          ...s,\n          currentUser: userInfo,\n        }));\n      });\n    }\n  };\n\n  const handleSubmit = async (values: API.LoginParams) => {\n    try {\n      // 登录\n      const response = await login({ ...values, type });\n\n      // 处理统一的 API 响应格式\n      if (response.success && response.data) {\n        const msg = response.data;\n\n        // 保存 token 和刷新token到本地存储\n        if (msg.token && msg.refreshToken) {\n          const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;\n          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);\n        } else if (msg.token) {\n          // 兼容旧版本，只保存token\n          tokenUtils.setToken(msg.token);\n        }\n\n        const defaultLoginSuccessMessage = intl.formatMessage({\n          id: 'pages.login.success',\n          defaultMessage: '登录成功！',\n        });\n        message.success(defaultLoginSuccessMessage);\n        await fetchUserInfo();\n        \n        // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性\n        const urlParams = new URL(window.location.href).searchParams;\n        const redirect = urlParams.get('redirect');\n        history.push(redirect || '/');\n        return;\n      }\n\n      // 如果失败，处理错误信息\n      const errorMsg = response.errorMessage || '登录失败，请重试！';\n      setUserLoginState({ status: 'error', errorMessage: errorMsg });\n    } catch (error) {\n      const defaultLoginFailureMessage = intl.formatMessage({\n        id: 'pages.login.failure',\n        defaultMessage: '登录失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultLoginFailureMessage);\n    }\n  };\n  const { status, type: loginType } = userLoginState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.login',\n            defaultMessage: '登录页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          initialValues={{\n            autoLogin: true,\n          }}\n          actions={[\n            <FormattedMessage\n              key=\"loginWith\"\n              id=\"pages.login.loginWith\"\n              defaultMessage=\"其他登录方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.LoginParams);\n          }}\n        >\n          <Tabs\n            activeKey={type}\n            onChange={setType}\n            centered\n            items={[\n              {\n                key: 'account',\n                label: intl.formatMessage({\n                  id: 'pages.login.accountLogin.tab',\n                  defaultMessage: '账户密码登录',\n                }),\n              },\n              {\n                key: 'mobile',\n                label: intl.formatMessage({\n                  id: 'pages.login.phoneLogin.tab',\n                  defaultMessage: '手机号登录',\n                }),\n              },\n            ]}\n          />\n\n          {status === 'error' && loginType === 'account' && (\n            <LoginMessage\n              content={intl.formatMessage({\n                id: 'pages.login.accountLogin.errorMessage',\n                defaultMessage: '账户或密码错误',\n              })}\n            />\n          )}\n          {type === 'account' && (\n            <>\n              <ProFormText\n                name=\"username\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <UserOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.username.placeholder',\n                  defaultMessage: '用户名: admin or user',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.username.required\"\n                        defaultMessage=\"请输入用户名!\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText.Password\n                name=\"password\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.password.placeholder',\n                  defaultMessage: '密码: ant.design',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.password.required\"\n                        defaultMessage=\"请输入密码！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n            </>\n          )}\n\n          {status === 'error' && loginType === 'mobile' && (\n            <LoginMessage content=\"验证码错误\" />\n          )}\n          {type === 'mobile' && (\n            <>\n              <ProFormText\n                fieldProps={{\n                  size: 'large',\n                  prefix: <MobileOutlined />,\n                }}\n                name=\"mobile\"\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.phoneNumber.placeholder',\n                  defaultMessage: '手机号',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.required\"\n                        defaultMessage=\"请输入手机号！\"\n                      />\n                    ),\n                  },\n                  {\n                    pattern: /^1\\d{10}$/,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.invalid\"\n                        defaultMessage=\"手机号格式错误！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormCaptcha\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                captchaProps={{\n                  size: 'large',\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.captcha.placeholder',\n                  defaultMessage: '请输入验证码',\n                })}\n                captchaTextRender={(timing, count) => {\n                  if (timing) {\n                    return `${count} ${intl.formatMessage({\n                      id: 'pages.getCaptchaSecondText',\n                      defaultMessage: '获取验证码',\n                    })}`;\n                  }\n                  return intl.formatMessage({\n                    id: 'pages.login.phoneLogin.getVerificationCode',\n                    defaultMessage: '获取验证码',\n                  });\n                }}\n                name=\"captcha\"\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.captcha.required\"\n                        defaultMessage=\"请输入验证码！\"\n                      />\n                    ),\n                  },\n                ]}\n                onGetCaptcha={async (phone) => {\n                  try {\n                    const result = await getFakeCaptcha({ phone });\n                    \n                    if (result.success && result.data) {\n                      // 开发环境显示验证码（生产环境应该发送短信）\n                      message.success(\n                        `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,\n                        5\n                      );\n                      console.log(`验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`);\n                    } else {\n                      message.error('获取验证码失败');\n                    }\n                  } catch (error) {\n                    message.error('获取验证码失败，请稍后重试');\n                    console.error('获取验证码错误:', error);\n                  }\n                }}\n              />\n            </>\n          )}\n          <div\n            style={{\n              marginBottom: 24,\n            }}\n          >\n            <ProFormCheckbox noStyle name=\"autoLogin\">\n              <FormattedMessage\n                id=\"pages.login.rememberMe\"\n                defaultMessage=\"自动登录\"\n              />\n            </ProFormCheckbox>\n            <Button\n              type=\"link\"\n              style={{\n                float: 'right',\n                padding: 0,\n                height: 'auto',\n              }}\n              disabled\n              onClick={() => {\n                // 忘记密码功能待实现\n                message.info('忘记密码功能开发中');\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.login.forgotPassword\"\n                defaultMessage=\"忘记密码\"\n              />\n            </Button>\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/register\">\n                <FormattedMessage\n                  id=\"pages.login.register\"\n                  defaultMessage=\"没有账号？立即注册\"\n                />\n              </Link>\n            </div>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Login;\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/login/index.tsx"
     },
@@ -3826,116 +3814,104 @@
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/Welcome.tsx"
     },
     "6": {
-      "path": "/admin",
-      "name": "admin",
-      "icon": "crown",
-      "access": "canAdmin",
+      "name": "system",
+      "icon": "setting",
+      "path": "/system",
       "parentId": "ant-design-pro-layout",
       "id": "6",
-      "absPath": "/admin"
+      "absPath": "/system"
     },
     "7": {
-      "path": "/admin",
-      "redirect": "/admin/sub-page",
+      "path": "/system",
+      "redirect": "/system/user-management",
       "parentId": "6",
       "id": "7",
-      "absPath": "/admin"
+      "absPath": "/system"
     },
     "8": {
-      "path": "/admin/sub-page",
-      "name": "sub-page",
-      "file": "@/pages/Admin.tsx",
-      "parentId": "6",
-      "id": "8",
-      "absPath": "/admin/sub-page",
-      "__content": "import { HeartTwoTone, SmileTwoTone } from '@ant-design/icons';\nimport { PageContainer } from '@ant-design/pro-components';\nimport { useIntl } from '@umijs/max';\nimport { Alert, Card, Typography } from 'antd';\nimport React from 'react';\n\nconst Admin: React.FC = () => {\n  const intl = useIntl();\n  return (\n    <PageContainer\n      content={intl.formatMessage({\n        id: 'pages.admin.subPage.title',\n        defaultMessage: 'This page can only be viewed by admin',\n      })}\n    >\n      <Card>\n        <Alert\n          message={intl.formatMessage({\n            id: 'pages.welcome.alertMessage',\n            defaultMessage:\n              'Faster and stronger heavy-duty components have been released.',\n          })}\n          type=\"success\"\n          showIcon\n          banner\n          style={{\n            margin: -12,\n            marginBottom: 48,\n          }}\n        />\n        <Typography.Title level={2} style={{ textAlign: 'center' }}>\n          <SmileTwoTone /> Ant Design Pro{' '}\n          <HeartTwoTone twoToneColor=\"#eb2f96\" /> You\n        </Typography.Title>\n      </Card>\n      <p style={{ textAlign: 'center', marginTop: 24 }}>\n        Want to add more pages? Please refer to{' '}\n        <a\n          href=\"https://pro.ant.design/docs/block-cn\"\n          target=\"_blank\"\n          rel=\"noopener noreferrer\"\n        >\n          use block\n        </a>\n        。\n      </p>\n    </PageContainer>\n  );\n};\n\nexport default Admin;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/Admin.tsx"
-    },
-    "9": {
-      "name": "list.table-list",
-      "icon": "table",
-      "path": "/list",
-      "file": "@/pages/table-list/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "9",
-      "absPath": "/list",
-      "__content": "import type {\n  ActionType,\n  ProColumns,\n  ProDescriptionsItemProps,\n} from '@ant-design/pro-components';\nimport {\n  FooterToolbar,\n  PageContainer,\n  ProDescriptions,\n  ProTable,\n} from '@ant-design/pro-components';\nimport { FormattedMessage, useIntl, useRequest } from '@umijs/max';\nimport { Button, Drawer, Input, message } from 'antd';\nimport React, { useCallback, useRef, useState } from 'react';\nimport { removeRule, rule } from '@/services/ant-design-pro/api';\nimport CreateForm from './components/CreateForm';\nimport UpdateForm from './components/UpdateForm';\n\nconst TableList: React.FC = () => {\n  const actionRef = useRef<ActionType | null>(null);\n\n  const [showDetail, setShowDetail] = useState<boolean>(false);\n  const [currentRow, setCurrentRow] = useState<API.RuleListItem>();\n  const [selectedRowsState, setSelectedRows] = useState<API.RuleListItem[]>([]);\n\n  /**\n   * @en-US International configuration\n   * @zh-CN 国际化配置\n   * */\n  const intl = useIntl();\n\n  const [messageApi, contextHolder] = message.useMessage();\n\n  const { run: delRun, loading } = useRequest(removeRule, {\n    manual: true,\n    onSuccess: () => {\n      setSelectedRows([]);\n      actionRef.current?.reloadAndRest?.();\n\n      messageApi.success('Deleted successfully and will refresh soon');\n    },\n    onError: () => {\n      messageApi.error('Delete failed, please try again');\n    },\n  });\n\n  const columns: ProColumns<API.RuleListItem>[] = [\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.updateForm.ruleName.nameLabel\"\n          defaultMessage=\"Rule name\"\n        />\n      ),\n      dataIndex: 'name',\n      render: (dom, entity) => {\n        return (\n          <a\n            onClick={() => {\n              setCurrentRow(entity);\n              setShowDetail(true);\n            }}\n          >\n            {dom}\n          </a>\n        );\n      },\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleDesc\"\n          defaultMessage=\"Description\"\n        />\n      ),\n      dataIndex: 'desc',\n      valueType: 'textarea',\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleCallNo\"\n          defaultMessage=\"Number of service calls\"\n        />\n      ),\n      dataIndex: 'callNo',\n      sorter: true,\n      hideInForm: true,\n      renderText: (val: string) =>\n        `${val}${intl.formatMessage({\n          id: 'pages.searchTable.tenThousand',\n          defaultMessage: ' 万 ',\n        })}`,\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleStatus\"\n          defaultMessage=\"Status\"\n        />\n      ),\n      dataIndex: 'status',\n      hideInForm: true,\n      valueEnum: {\n        0: {\n          text: (\n            <FormattedMessage\n              id=\"pages.searchTable.nameStatus.default\"\n              defaultMessage=\"Shut down\"\n            />\n          ),\n          status: 'Default',\n        },\n        1: {\n          text: (\n            <FormattedMessage\n              id=\"pages.searchTable.nameStatus.running\"\n              defaultMessage=\"Running\"\n            />\n          ),\n          status: 'Processing',\n        },\n        2: {\n          text: (\n            <FormattedMessage\n              id=\"pages.searchTable.nameStatus.online\"\n              defaultMessage=\"Online\"\n            />\n          ),\n          status: 'Success',\n        },\n        3: {\n          text: (\n            <FormattedMessage\n              id=\"pages.searchTable.nameStatus.abnormal\"\n              defaultMessage=\"Abnormal\"\n            />\n          ),\n          status: 'Error',\n        },\n      },\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleUpdatedAt\"\n          defaultMessage=\"Last scheduled time\"\n        />\n      ),\n      sorter: true,\n      dataIndex: 'updatedAt',\n      valueType: 'dateTime',\n      renderFormItem: (item, { defaultRender, ...rest }, form) => {\n        const status = form.getFieldValue('status');\n        if (`${status}` === '0') {\n          return false;\n        }\n        if (`${status}` === '3') {\n          return (\n            <Input\n              {...rest}\n              placeholder={intl.formatMessage({\n                id: 'pages.searchTable.exception',\n                defaultMessage: 'Please enter the reason for the exception!',\n              })}\n            />\n          );\n        }\n        return defaultRender(item);\n      },\n    },\n    {\n      title: (\n        <FormattedMessage\n          id=\"pages.searchTable.titleOption\"\n          defaultMessage=\"Operating\"\n        />\n      ),\n      dataIndex: 'option',\n      valueType: 'option',\n      render: (_, record) => [\n        <UpdateForm\n          trigger={\n            <a>\n              <FormattedMessage\n                id=\"pages.searchTable.config\"\n                defaultMessage=\"Configuration\"\n              />\n            </a>\n          }\n          key=\"config\"\n          onOk={actionRef.current?.reload}\n          values={record}\n        />,\n        <a key=\"subscribeAlert\" href=\"https://procomponents.ant.design/\">\n          <FormattedMessage\n            id=\"pages.searchTable.subscribeAlert\"\n            defaultMessage=\"Subscribe to alerts\"\n          />\n        </a>,\n      ],\n    },\n  ];\n\n  /**\n   *  Delete node\n   * @zh-CN 删除节点\n   *\n   * @param selectedRows\n   */\n  const handleRemove = useCallback(\n    async (selectedRows: API.RuleListItem[]) => {\n      if (!selectedRows?.length) {\n        messageApi.warning('请选择删除项');\n\n        return;\n      }\n\n      await delRun({\n        data: {\n          key: selectedRows.map((row) => row.key),\n        },\n      });\n    },\n    [delRun, messageApi.warning],\n  );\n\n  return (\n    <PageContainer>\n      {contextHolder}\n      <ProTable<API.RuleListItem, API.PageParams>\n        headerTitle={intl.formatMessage({\n          id: 'pages.searchTable.title',\n          defaultMessage: 'Enquiry form',\n        })}\n        actionRef={actionRef}\n        rowKey=\"key\"\n        search={{\n          labelWidth: 120,\n        }}\n        toolBarRender={() => [\n          <CreateForm key=\"create\" reload={actionRef.current?.reload} />,\n        ]}\n        request={rule}\n        columns={columns}\n        rowSelection={{\n          onChange: (_, selectedRows) => {\n            setSelectedRows(selectedRows);\n          },\n        }}\n      />\n      {selectedRowsState?.length > 0 && (\n        <FooterToolbar\n          extra={\n            <div>\n              <FormattedMessage\n                id=\"pages.searchTable.chosen\"\n                defaultMessage=\"Chosen\"\n              />{' '}\n              <a style={{ fontWeight: 600 }}>{selectedRowsState.length}</a>{' '}\n              <FormattedMessage\n                id=\"pages.searchTable.item\"\n                defaultMessage=\"项\"\n              />\n              &nbsp;&nbsp;\n              <span>\n                <FormattedMessage\n                  id=\"pages.searchTable.totalServiceCalls\"\n                  defaultMessage=\"Total number of service calls\"\n                />{' '}\n                {selectedRowsState.reduce(\n                  (pre, item) => pre + (item.callNo ?? 0),\n                  0,\n                )}{' '}\n                <FormattedMessage\n                  id=\"pages.searchTable.tenThousand\"\n                  defaultMessage=\"万\"\n                />\n              </span>\n            </div>\n          }\n        >\n          <Button\n            loading={loading}\n            onClick={() => {\n              handleRemove(selectedRowsState);\n            }}\n          >\n            <FormattedMessage\n              id=\"pages.searchTable.batchDeletion\"\n              defaultMessage=\"Batch deletion\"\n            />\n          </Button>\n          <Button type=\"primary\">\n            <FormattedMessage\n              id=\"pages.searchTable.batchApproval\"\n              defaultMessage=\"Batch approval\"\n            />\n          </Button>\n        </FooterToolbar>\n      )}\n\n      <Drawer\n        width={600}\n        open={showDetail}\n        onClose={() => {\n          setCurrentRow(undefined);\n          setShowDetail(false);\n        }}\n        closable={false}\n      >\n        {currentRow?.name && (\n          <ProDescriptions<API.RuleListItem>\n            column={2}\n            title={currentRow?.name}\n            request={async () => ({\n              data: currentRow || {},\n            })}\n            params={{\n              id: currentRow?.name,\n            }}\n            columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}\n          />\n        )}\n      </Drawer>\n    </PageContainer>\n  );\n};\n\nexport default TableList;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/table-list/index.tsx"
-    },
-    "10": {
       "name": "user-management",
       "icon": "user",
-      "path": "/user-management",
+      "path": "/system/user-management",
       "file": "@/pages/user-management/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "10",
-      "absPath": "/user-management",
-      "__content": "import React, { useRef, useState } from 'react';\nimport type { ActionType, ProColumns } from '@ant-design/pro-components';\nimport {\n  PageContainer,\n  ProTable,\n  ProCard,\n} from '@ant-design/pro-components';\nimport {\n  Button,\n  Tag,\n  Space,\n  Popconfirm,\n  message,\n  Modal,\n  Select,\n  Switch,\n  Drawer,\n  Statistic,\n  Row,\n  Col,\n  Badge,\n  Form,\n  Input,\n  Card,\n} from 'antd';\nimport {\n  PlusOutlined,\n  EditOutlined,\n  DeleteOutlined,\n  UserOutlined,\n  TeamOutlined,\n  CheckCircleOutlined,\n  EyeOutlined,\n  ReloadOutlined,\n} from '@ant-design/icons';\nimport { request } from '@umijs/max';\nimport type { AppUser, UserListRequest, UserStatisticsResponse } from './types';\nimport UserForm from './components/UserForm';\nimport UserDetail from './components/UserDetail';\n\nconst UserManagement: React.FC = () => {\n  const actionRef = useRef<ActionType>(null);\n  const [searchForm] = Form.useForm();\n  const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);\n  const [formVisible, setFormVisible] = useState(false);\n  const [detailVisible, setDetailVisible] = useState(false);\n  const [editingUser, setEditingUser] = useState<AppUser | null>(null);\n  const [viewingUser, setViewingUser] = useState<AppUser | null>(null);\n  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);\n  const [searchParams, setSearchParams] = useState<UserListRequest>({\n    Page: 1,\n    PageSize: 10,\n    SortBy: 'CreatedAt',\n    SortOrder: 'desc',\n  });\n\n  // 获取用户统计信息\n  const fetchStatistics = async () => {\n    try {\n      const response = await request<{ success: boolean; data: UserStatisticsResponse }>('/api/user/statistics', {\n        method: 'GET',\n      });\n      setStatistics(response.data);\n    } catch (error) {\n      console.error('获取统计信息失败:', error);\n      message.error('获取统计信息失败');\n    }\n  };\n\n  // 获取用户列表\n  const fetchUsers = async (params: any) => {\n    console.log('fetchUsers 被调用，参数:', params);\n    console.log('当前搜索参数:', searchParams);\n    \n    const requestData: UserListRequest = {\n      Page: params.current || searchParams.Page,\n      PageSize: params.pageSize || searchParams.PageSize,\n      Search: searchParams.Search,\n      Role: searchParams.Role,\n      IsActive: searchParams.IsActive,\n      SortBy: params.sortBy || searchParams.SortBy,\n      SortOrder: params.sortOrder || searchParams.SortOrder,\n    };\n\n    console.log('发送请求数据:', requestData);\n\n    try {\n      const response = await request<{ success: boolean; data: any }>('/api/user/list', {\n        method: 'POST',\n        data: requestData,\n      });\n\n      console.log('API响应:', response);\n\n      return {\n        data: response.data.users || [],\n        success: true,\n        total: response.data.total || 0,\n      };\n    } catch (error) {\n      console.error('获取用户列表失败:', error);\n      message.error('获取用户列表失败');\n      return {\n        data: [],\n        success: false,\n        total: 0,\n      };\n    }\n  };\n\n  // 处理搜索\n  const handleSearch = (values: any) => {\n    console.log('搜索表单提交:', values);\n    const newSearchParams: UserListRequest = {\n      Page: 1,\n      PageSize: searchParams.PageSize,\n      Search: values.search,\n      Role: values.role,\n      IsActive: values.isActive,\n      SortBy: searchParams.SortBy,\n      SortOrder: searchParams.SortOrder,\n    };\n    setSearchParams(newSearchParams);\n    actionRef.current?.reload();\n  };\n\n  // 重置搜索\n  const handleReset = () => {\n    searchForm.resetFields();\n    const resetParams: UserListRequest = {\n      Page: 1,\n      PageSize: searchParams.PageSize,\n      SortBy: 'CreatedAt',\n      SortOrder: 'desc',\n    };\n    setSearchParams(resetParams);\n    actionRef.current?.reload();\n  };\n\n  // 删除用户\n  const handleDelete = async (userId: string) => {\n    try {\n      await request(`/api/user/${userId}`, {\n        method: 'DELETE',\n      });\n      message.success('删除成功');\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('删除用户失败:', error);\n      message.error('删除失败');\n    }\n  };\n\n  // 批量操作\n  const handleBulkAction = async (action: string) => {\n    if (selectedRows.length === 0) {\n      message.warning('请选择要操作的用户');\n      return;\n    }\n\n    try {\n      await request('/api/user/bulk-action', {\n        method: 'POST',\n        data: {\n          UserIds: selectedRows.map(user => user.id),\n          Action: action,\n        },\n      });\n\n      const actionText = {\n        activate: '启用',\n        deactivate: '禁用',\n        delete: '删除',\n      }[action] || '操作';\n\n      message.success(`批量${actionText}成功`);\n      setSelectedRows([]);\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('批量操作失败:', error);\n      message.error('批量操作失败');\n    }\n  };\n\n  // 切换用户状态\n  const handleToggleStatus = async (user: AppUser) => {\n    try {\n      const endpoint = user.isActive ? 'deactivate' : 'activate';\n      await request(`/api/user/${user.id}/${endpoint}`, {\n        method: 'PUT',\n      });\n\n      message.success(`用户已${user.isActive ? '禁用' : '启用'}`);\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('切换用户状态失败:', error);\n      message.error('操作失败');\n    }\n  };\n\n  // 更新用户角色\n  const handleUpdateRole = async (userId: string, role: string) => {\n    try {\n      await request(`/api/user/${userId}/role`, {\n        method: 'PUT',\n        data: { Role: role },\n      });\n\n      message.success('角色更新成功');\n      actionRef.current?.reload();\n    } catch (error) {\n      console.error('更新用户角色失败:', error);\n      message.error('角色更新失败');\n    }\n  };\n\n  // 表格列定义\n  const columns: ProColumns<AppUser>[] = [\n    {\n      title: '用户名',\n      dataIndex: 'username',\n      key: 'username',\n      width: 120,\n      render: (text, record) => (\n        <Space>\n          <UserOutlined />\n          {text}\n        </Space>\n      ),\n    },\n    {\n      title: '邮箱',\n      dataIndex: 'email',\n      key: 'email',\n      width: 200,\n      ellipsis: true,\n    },\n    {\n      title: '角色',\n      dataIndex: 'role',\n      key: 'role',\n      width: 100,\n      render: (_, record) => (\n        <Tag color={record.role === 'admin' ? 'red' : 'blue'}>\n          {record.role === 'admin' ? '管理员' : '普通用户'}\n        </Tag>\n      ),\n      renderFormItem: (_, { record }) => (\n        <Select\n          defaultValue={record?.role}\n          onChange={(value) => record?.id && handleUpdateRole(record.id, value)}\n        >\n          <Select.Option value=\"user\">普通用户</Select.Option>\n          <Select.Option value=\"admin\">管理员</Select.Option>\n        </Select>\n      ),\n    },\n    {\n      title: '状态',\n      dataIndex: 'isActive',\n      key: 'isActive',\n      width: 100,\n      render: (_, record) => (\n        <Badge\n          status={record.isActive ? 'success' : 'error'}\n          text={record.isActive ? '启用' : '禁用'}\n        />\n      ),\n      renderFormItem: (_, { record }) => (\n        <Switch\n          checked={record?.isActive}\n          onChange={() => record && handleToggleStatus(record)}\n        />\n      ),\n    },\n    {\n      title: '创建时间',\n      dataIndex: 'createdAt',\n      key: 'createdAt',\n      width: 180,\n      valueType: 'dateTime',\n      sorter: true,\n    },\n    {\n      title: '最后登录',\n      dataIndex: 'lastLoginAt',\n      key: 'lastLoginAt',\n      width: 180,\n      valueType: 'dateTime',\n      render: (text) => text || '-',\n    },\n    {\n      title: '操作',\n      key: 'action',\n      width: 200,\n      render: (_, record) => (\n        <Space>\n          <Button\n            type=\"link\"\n            icon={<EyeOutlined />}\n            onClick={() => {\n              setViewingUser(record);\n              setDetailVisible(true);\n            }}\n          >\n            查看\n          </Button>\n          <Button\n            type=\"link\"\n            icon={<EditOutlined />}\n            onClick={() => {\n              setEditingUser(record);\n              setFormVisible(true);\n            }}\n          >\n            编辑\n          </Button>\n          <Popconfirm\n            title=\"确定要删除这个用户吗？\"\n            onConfirm={() => record.id && handleDelete(record.id)}\n            okText=\"确定\"\n            cancelText=\"取消\"\n          >\n            <Button type=\"link\" danger icon={<DeleteOutlined />}>\n              删除\n            </Button>\n          </Popconfirm>\n        </Space>\n      ),\n    },\n  ];\n\n  React.useEffect(() => {\n    fetchStatistics();\n  }, []);\n\n  return (\n    <PageContainer\n      title=\"用户管理\"\n      extra={[\n        <Button\n          key=\"refresh\"\n          icon={<ReloadOutlined />}\n          onClick={() => {\n            actionRef.current?.reload();\n            fetchStatistics();\n          }}\n        >\n          刷新\n        </Button>,\n        <Button\n          key=\"add\"\n          type=\"primary\"\n          icon={<PlusOutlined />}\n          onClick={() => {\n            setEditingUser(null);\n            setFormVisible(true);\n          }}\n        >\n          新增用户\n        </Button>,\n      ]}\n    >\n      {/* 统计卡片 */}\n      {statistics && (\n        <ProCard style={{ marginBottom: 16 }}>\n          <Row gutter={16}>\n            <Col span={6}>\n              <Statistic\n                title=\"总用户数\"\n                value={statistics.totalUsers}\n                prefix={<TeamOutlined />}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"活跃用户\"\n                value={statistics.activeUsers}\n                prefix={<CheckCircleOutlined />}\n                valueStyle={{ color: '#3f8600' }}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"管理员\"\n                value={statistics.adminUsers}\n                prefix={<UserOutlined />}\n                valueStyle={{ color: '#cf1322' }}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"本月新增\"\n                value={statistics.newUsersThisMonth}\n                prefix={<PlusOutlined />}\n                valueStyle={{ color: '#1890ff' }}\n              />\n            </Col>\n          </Row>\n        </ProCard>\n      )}\n\n      {/* 搜索表单 */}\n      <Card style={{ marginBottom: 16 }}>\n        <Form\n          form={searchForm}\n          layout=\"inline\"\n          onFinish={handleSearch}\n          style={{ marginBottom: 16 }}\n        >\n          <Form.Item name=\"search\" label=\"搜索\">\n            <Input placeholder=\"用户名或邮箱\" style={{ width: 200 }} />\n          </Form.Item>\n          <Form.Item name=\"role\" label=\"角色\">\n            <Select placeholder=\"选择角色\" style={{ width: 120 }} allowClear>\n              <Select.Option value=\"user\">普通用户</Select.Option>\n              <Select.Option value=\"admin\">管理员</Select.Option>\n            </Select>\n          </Form.Item>\n          <Form.Item name=\"isActive\" label=\"状态\">\n            <Select placeholder=\"选择状态\" style={{ width: 120 }} allowClear>\n              <Select.Option value={true}>启用</Select.Option>\n              <Select.Option value={false}>禁用</Select.Option>\n            </Select>\n          </Form.Item>\n          <Form.Item>\n            <Space>\n              <Button type=\"primary\" htmlType=\"submit\">\n                查询\n              </Button>\n              <Button onClick={handleReset}>\n                重置\n              </Button>\n            </Space>\n          </Form.Item>\n        </Form>\n      </Card>\n\n      {/* 用户列表表格 */}\n      <ProTable<AppUser>\n        actionRef={actionRef}\n        rowKey=\"id\"\n        search={false}\n        toolBarRender={() => [\n          <Button\n            key=\"activate\"\n            onClick={() => handleBulkAction('activate')}\n            disabled={selectedRows.length === 0}\n          >\n            批量启用\n          </Button>,\n          <Button\n            key=\"deactivate\"\n            onClick={() => handleBulkAction('deactivate')}\n            disabled={selectedRows.length === 0}\n          >\n            批量禁用\n          </Button>,\n          <Button\n            key=\"delete\"\n            danger\n            onClick={() => handleBulkAction('delete')}\n            disabled={selectedRows.length === 0}\n          >\n            批量删除\n          </Button>,\n        ]}\n        request={fetchUsers}\n        columns={columns}\n        rowSelection={{\n          onChange: (_, selectedRows) => {\n            setSelectedRows(selectedRows);\n          },\n        }}\n        pagination={{\n          defaultPageSize: 10,\n          showSizeChanger: true,\n          showQuickJumper: true,\n          showTotal: (total, range) =>\n            `第 ${range[0]}-${range[1]} 条/总共 ${total} 条`,\n        }}\n      />\n\n      {/* 用户表单弹窗 */}\n      <Modal\n        title={editingUser ? '编辑用户' : '新增用户'}\n        open={formVisible}\n        onCancel={() => setFormVisible(false)}\n        footer={null}\n        width={600}\n      >\n        <UserForm\n          user={editingUser}\n          onSuccess={() => {\n            setFormVisible(false);\n            actionRef.current?.reload();\n            fetchStatistics();\n          }}\n          onCancel={() => setFormVisible(false)}\n        />\n      </Modal>\n\n      {/* 用户详情抽屉 */}\n      <Drawer\n        title=\"用户详情\"\n        open={detailVisible}\n        onClose={() => setDetailVisible(false)}\n        width={600}\n      >\n        {viewingUser && (\n          <UserDetail\n            user={viewingUser}\n            onClose={() => setDetailVisible(false)}\n          />\n        )}\n      </Drawer>\n    </PageContainer>\n  );\n};\n\nexport default UserManagement;\n",
+      "parentId": "6",
+      "id": "8",
+      "absPath": "/system/user-management",
+      "__content": "import React, { useRef, useState } from 'react';\nimport type { ActionType, ProColumns } from '@ant-design/pro-components';\nimport {\n  PageContainer,\n  ProTable,\n  ProCard,\n} from '@ant-design/pro-components';\nimport {\n  Button,\n  Tag,\n  Space,\n  Popconfirm,\n  message,\n  Modal,\n  Select,\n  Switch,\n  Drawer,\n  Statistic,\n  Row,\n  Col,\n  Badge,\n  Form,\n  Input,\n  Card,\n} from 'antd';\nimport {\n  PlusOutlined,\n  EditOutlined,\n  DeleteOutlined,\n  UserOutlined,\n  TeamOutlined,\n  CheckCircleOutlined,\n  EyeOutlined,\n  ReloadOutlined,\n} from '@ant-design/icons';\nimport { request } from '@umijs/max';\nimport { getAllRoles } from '@/services/role/api';\nimport type { AppUser, UserListRequest, UserStatisticsResponse } from './types';\nimport UserForm from './components/UserForm';\nimport UserDetail from './components/UserDetail';\n\nconst UserManagement: React.FC = () => {\n  const actionRef = useRef<ActionType>(null);\n  const [searchForm] = Form.useForm();\n  const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);\n  const [formVisible, setFormVisible] = useState(false);\n  const [detailVisible, setDetailVisible] = useState(false);\n  const [editingUser, setEditingUser] = useState<AppUser | null>(null);\n  const [viewingUser, setViewingUser] = useState<AppUser | null>(null);\n  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);\n  const [roleMap, setRoleMap] = useState<Record<string, string>>({});\n  const [searchParams, setSearchParams] = useState<UserListRequest>({\n    Page: 1,\n    PageSize: 10,\n    SortBy: 'CreatedAt',\n    SortOrder: 'desc',\n  });\n\n  // 加载角色列表\n  React.useEffect(() => {\n    const fetchRoles = async () => {\n      try {\n        const response = await getAllRoles();\n        if (response.success && response.data) {\n          // 创建角色 ID 到名称的映射\n          const map: Record<string, string> = {};\n          response.data.roles.forEach(role => {\n            if (role.id) {\n              map[role.id] = role.name;\n            }\n          });\n          setRoleMap(map);\n        }\n      } catch (error) {\n        console.error('加载角色列表失败:', error);\n      }\n    };\n    fetchRoles();\n  }, []);\n\n  // 获取用户统计信息\n  const fetchStatistics = async () => {\n    try {\n      const response = await request<{ success: boolean; data: UserStatisticsResponse }>('/api/user/statistics', {\n        method: 'GET',\n      });\n      setStatistics(response.data);\n    } catch (error) {\n      console.error('获取统计信息失败:', error);\n      message.error('获取统计信息失败');\n    }\n  };\n\n  // 获取用户列表\n  const fetchUsers = async (params: any) => {\n    console.log('fetchUsers 被调用，参数:', params);\n    console.log('当前搜索参数:', searchParams);\n    \n    const requestData: UserListRequest = {\n      Page: params.current || searchParams.Page,\n      PageSize: params.pageSize || searchParams.PageSize,\n      Search: searchParams.Search,\n      Role: searchParams.Role,\n      IsActive: searchParams.IsActive,\n      SortBy: params.sortBy || searchParams.SortBy,\n      SortOrder: params.sortOrder || searchParams.SortOrder,\n    };\n\n    console.log('发送请求数据:', requestData);\n\n    try {\n      const response = await request<{ success: boolean; data: any }>('/api/user/list', {\n        method: 'POST',\n        data: requestData,\n      });\n\n      console.log('API响应:', response);\n\n      return {\n        data: response.data.users || [],\n        success: true,\n        total: response.data.total || 0,\n      };\n    } catch (error) {\n      console.error('获取用户列表失败:', error);\n      message.error('获取用户列表失败');\n      return {\n        data: [],\n        success: false,\n        total: 0,\n      };\n    }\n  };\n\n  // 处理搜索\n  const handleSearch = (values: any) => {\n    console.log('搜索表单提交:', values);\n    const newSearchParams: UserListRequest = {\n      Page: 1,\n      PageSize: searchParams.PageSize,\n      Search: values.search,\n      Role: values.role,\n      IsActive: values.isActive,\n      SortBy: searchParams.SortBy,\n      SortOrder: searchParams.SortOrder,\n    };\n    setSearchParams(newSearchParams);\n    actionRef.current?.reload();\n  };\n\n  // 重置搜索\n  const handleReset = () => {\n    searchForm.resetFields();\n    const resetParams: UserListRequest = {\n      Page: 1,\n      PageSize: searchParams.PageSize,\n      SortBy: 'CreatedAt',\n      SortOrder: 'desc',\n    };\n    setSearchParams(resetParams);\n    actionRef.current?.reload();\n  };\n\n  // 删除用户\n  const handleDelete = async (userId: string) => {\n    try {\n      await request(`/api/user/${userId}`, {\n        method: 'DELETE',\n      });\n      message.success('删除成功');\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('删除用户失败:', error);\n      message.error('删除失败');\n    }\n  };\n\n  // 批量操作\n  const handleBulkAction = async (action: string) => {\n    if (selectedRows.length === 0) {\n      message.warning('请选择要操作的用户');\n      return;\n    }\n\n    try {\n      await request('/api/user/bulk-action', {\n        method: 'POST',\n        data: {\n          UserIds: selectedRows.map(user => user.id),\n          Action: action,\n        },\n      });\n\n      const actionText = {\n        activate: '启用',\n        deactivate: '禁用',\n        delete: '删除',\n      }[action] || '操作';\n\n      message.success(`批量${actionText}成功`);\n      setSelectedRows([]);\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('批量操作失败:', error);\n      message.error('批量操作失败');\n    }\n  };\n\n  // 切换用户状态\n  const handleToggleStatus = async (user: AppUser) => {\n    try {\n      const endpoint = user.isActive ? 'deactivate' : 'activate';\n      await request(`/api/user/${user.id}/${endpoint}`, {\n        method: 'PUT',\n      });\n\n      message.success(`用户已${user.isActive ? '禁用' : '启用'}`);\n      actionRef.current?.reload();\n      fetchStatistics();\n    } catch (error) {\n      console.error('切换用户状态失败:', error);\n      message.error('操作失败');\n    }\n  };\n\n  // 表格列定义\n  const columns: ProColumns<AppUser>[] = [\n    {\n      title: '用户名',\n      dataIndex: 'username',\n      key: 'username',\n      width: 120,\n      render: (text, record) => (\n        <Space>\n          <UserOutlined />\n          {text}\n        </Space>\n      ),\n    },\n    {\n      title: '邮箱',\n      dataIndex: 'email',\n      key: 'email',\n      width: 200,\n      ellipsis: true,\n    },\n    {\n      title: '角色',\n      dataIndex: 'roleIds',\n      key: 'roleIds',\n      width: 200,\n      render: (_, record) => {\n        if (!record.roleIds || record.roleIds.length === 0) {\n          return <Tag color=\"default\">未分配</Tag>;\n        }\n        return (\n          <Space wrap>\n            {record.roleIds.map(roleId => (\n              <Tag key={roleId} color=\"blue\">\n                {roleMap[roleId] || roleId}\n              </Tag>\n            ))}\n          </Space>\n        );\n      },\n    },\n    {\n      title: '状态',\n      dataIndex: 'isActive',\n      key: 'isActive',\n      width: 100,\n      render: (_, record) => (\n        <Badge\n          status={record.isActive ? 'success' : 'error'}\n          text={record.isActive ? '启用' : '禁用'}\n        />\n      ),\n      renderFormItem: (_, { record }) => (\n        <Switch\n          checked={record?.isActive}\n          onChange={() => record && handleToggleStatus(record)}\n        />\n      ),\n    },\n    {\n      title: '创建时间',\n      dataIndex: 'createdAt',\n      key: 'createdAt',\n      width: 180,\n      valueType: 'dateTime',\n      sorter: true,\n    },\n    {\n      title: '最后登录',\n      dataIndex: 'lastLoginAt',\n      key: 'lastLoginAt',\n      width: 180,\n      valueType: 'dateTime',\n      render: (text) => text || '-',\n    },\n    {\n      title: '操作',\n      key: 'action',\n      width: 200,\n      render: (_, record) => (\n        <Space>\n          <Button\n            type=\"link\"\n            icon={<EyeOutlined />}\n            onClick={() => {\n              setViewingUser(record);\n              setDetailVisible(true);\n            }}\n          >\n            查看\n          </Button>\n          <Button\n            type=\"link\"\n            icon={<EditOutlined />}\n            onClick={() => {\n              setEditingUser(record);\n              setFormVisible(true);\n            }}\n          >\n            编辑\n          </Button>\n          <Popconfirm\n            title=\"确定要删除这个用户吗？\"\n            onConfirm={() => record.id && handleDelete(record.id)}\n            okText=\"确定\"\n            cancelText=\"取消\"\n          >\n            <Button type=\"link\" danger icon={<DeleteOutlined />}>\n              删除\n            </Button>\n          </Popconfirm>\n        </Space>\n      ),\n    },\n  ];\n\n  React.useEffect(() => {\n    fetchStatistics();\n  }, []);\n\n  return (\n    <PageContainer\n      title=\"用户管理\"\n      extra={[\n        <Button\n          key=\"refresh\"\n          icon={<ReloadOutlined />}\n          onClick={() => {\n            actionRef.current?.reload();\n            fetchStatistics();\n          }}\n        >\n          刷新\n        </Button>,\n        <Button\n          key=\"add\"\n          type=\"primary\"\n          icon={<PlusOutlined />}\n          onClick={() => {\n            setEditingUser(null);\n            setFormVisible(true);\n          }}\n        >\n          新增用户\n        </Button>,\n      ]}\n    >\n      {/* 统计卡片 */}\n      {statistics && (\n        <ProCard style={{ marginBottom: 16 }}>\n          <Row gutter={16}>\n            <Col span={6}>\n              <Statistic\n                title=\"总用户数\"\n                value={statistics.totalUsers}\n                prefix={<TeamOutlined />}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"活跃用户\"\n                value={statistics.activeUsers}\n                prefix={<CheckCircleOutlined />}\n                valueStyle={{ color: '#3f8600' }}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"管理员\"\n                value={statistics.adminUsers}\n                prefix={<UserOutlined />}\n                valueStyle={{ color: '#cf1322' }}\n              />\n            </Col>\n            <Col span={6}>\n              <Statistic\n                title=\"本月新增\"\n                value={statistics.newUsersThisMonth}\n                prefix={<PlusOutlined />}\n                valueStyle={{ color: '#1890ff' }}\n              />\n            </Col>\n          </Row>\n        </ProCard>\n      )}\n\n      {/* 搜索表单 */}\n      <Card style={{ marginBottom: 16 }}>\n        <Form\n          form={searchForm}\n          layout=\"inline\"\n          onFinish={handleSearch}\n          style={{ marginBottom: 16 }}\n        >\n          <Form.Item name=\"search\" label=\"搜索\">\n            <Input placeholder=\"用户名或邮箱\" style={{ width: 200 }} />\n          </Form.Item>\n          <Form.Item name=\"role\" label=\"角色\">\n            <Select placeholder=\"选择角色\" style={{ width: 120 }} allowClear>\n              <Select.Option value=\"user\">普通用户</Select.Option>\n              <Select.Option value=\"admin\">管理员</Select.Option>\n            </Select>\n          </Form.Item>\n          <Form.Item name=\"isActive\" label=\"状态\">\n            <Select placeholder=\"选择状态\" style={{ width: 120 }} allowClear>\n              <Select.Option value={true}>启用</Select.Option>\n              <Select.Option value={false}>禁用</Select.Option>\n            </Select>\n          </Form.Item>\n          <Form.Item>\n            <Space>\n              <Button type=\"primary\" htmlType=\"submit\">\n                查询\n              </Button>\n              <Button onClick={handleReset}>\n                重置\n              </Button>\n            </Space>\n          </Form.Item>\n        </Form>\n      </Card>\n\n      {/* 用户列表表格 */}\n      <ProTable<AppUser>\n        actionRef={actionRef}\n        rowKey=\"id\"\n        search={false}\n        toolBarRender={() => [\n          <Button\n            key=\"activate\"\n            onClick={() => handleBulkAction('activate')}\n            disabled={selectedRows.length === 0}\n          >\n            批量启用\n          </Button>,\n          <Button\n            key=\"deactivate\"\n            onClick={() => handleBulkAction('deactivate')}\n            disabled={selectedRows.length === 0}\n          >\n            批量禁用\n          </Button>,\n          <Button\n            key=\"delete\"\n            danger\n            onClick={() => handleBulkAction('delete')}\n            disabled={selectedRows.length === 0}\n          >\n            批量删除\n          </Button>,\n        ]}\n        request={fetchUsers}\n        columns={columns}\n        rowSelection={{\n          onChange: (_, selectedRows) => {\n            setSelectedRows(selectedRows);\n          },\n        }}\n        pagination={{\n          defaultPageSize: 10,\n          showSizeChanger: true,\n          showQuickJumper: true,\n          showTotal: (total, range) =>\n            `第 ${range[0]}-${range[1]} 条/总共 ${total} 条`,\n        }}\n      />\n\n      {/* 用户表单弹窗 */}\n      <Modal\n        title={editingUser ? '编辑用户' : '新增用户'}\n        open={formVisible}\n        onCancel={() => setFormVisible(false)}\n        footer={null}\n        width={600}\n      >\n        <UserForm\n          user={editingUser}\n          onSuccess={() => {\n            setFormVisible(false);\n            actionRef.current?.reload();\n            fetchStatistics();\n          }}\n          onCancel={() => setFormVisible(false)}\n        />\n      </Modal>\n\n      {/* 用户详情抽屉 */}\n      <Drawer\n        title=\"用户详情\"\n        open={detailVisible}\n        onClose={() => setDetailVisible(false)}\n        width={600}\n      >\n        {viewingUser && (\n          <UserDetail\n            user={viewingUser}\n            onClose={() => setDetailVisible(false)}\n          />\n        )}\n      </Drawer>\n    </PageContainer>\n  );\n};\n\nexport default UserManagement;\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user-management/index.tsx"
     },
-    "11": {
-      "name": "debug",
-      "icon": "bug",
-      "path": "/debug",
-      "file": "@/pages/user-management/debug.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "11",
-      "absPath": "/debug",
-      "__content": "import React from 'react';\nimport { Card, Descriptions, Button, message } from 'antd';\nimport { useModel } from '@umijs/max';\n\nconst DebugPage: React.FC = () => {\n  const { initialState } = useModel('@@initialState');\n\n  const checkAccess = () => {\n    const { currentUser } = initialState ?? {};\n    const canAdmin = currentUser && currentUser.access === 'admin';\n    \n    message.info(`当前用户权限: ${canAdmin ? '管理员' : '普通用户'}`);\n    console.log('Current user:', currentUser);\n    console.log('Can admin:', canAdmin);\n  };\n\n  return (\n    <div style={{ padding: 24 }}>\n      <Card title=\"用户权限调试信息\">\n        <Descriptions column={1}>\n          <Descriptions.Item label=\"当前用户\">\n            {initialState?.currentUser ? '已登录' : '未登录'}\n          </Descriptions.Item>\n          <Descriptions.Item label=\"用户信息\">\n            <pre>{JSON.stringify(initialState?.currentUser, null, 2)}</pre>\n          </Descriptions.Item>\n          <Descriptions.Item label=\"权限检查\">\n            <Button onClick={checkAccess}>检查权限</Button>\n          </Descriptions.Item>\n        </Descriptions>\n      </Card>\n    </div>\n  );\n};\n\nexport default DebugPage;\n",
+    "9": {
+      "name": "role-management",
+      "icon": "team",
+      "path": "/system/role-management",
+      "file": "@/pages/role-management/index.tsx",
+      "parentId": "6",
+      "id": "9",
+      "absPath": "/system/role-management",
+      "__content": "import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';\nimport { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';\nimport { Button, message, Popconfirm, Space, Tag } from 'antd';\nimport React, { useRef, useState } from 'react';\nimport { getAllRoles, deleteRole } from '@/services/role/api';\nimport type { Role } from '@/services/role/types';\nimport RoleForm from './components/RoleForm';\nimport MenuPermissionModal from './components/MenuPermissionModal';\n\nconst RoleManagement: React.FC = () => {\n  const actionRef = useRef<ActionType>();\n  const [modalVisible, setModalVisible] = useState(false);\n  const [permissionModalVisible, setPermissionModalVisible] = useState(false);\n  const [currentRole, setCurrentRole] = useState<Role | undefined>();\n\n  /**\n   * 加载角色数据\n   */\n  const loadRoleData = async () => {\n    try {\n      const response = await getAllRoles();\n      if (response.success && response.data) {\n        return {\n          data: response.data.roles,\n          total: response.data.total,\n          success: true,\n        };\n      }\n      return {\n        data: [],\n        total: 0,\n        success: false,\n      };\n    } catch (error) {\n      message.error('加载角色失败');\n      return {\n        data: [],\n        total: 0,\n        success: false,\n      };\n    }\n  };\n\n  /**\n   * 删除角色\n   */\n  const handleDelete = async (id: string) => {\n    try {\n      const response = await deleteRole(id);\n      if (response.success) {\n        message.success('删除成功');\n        actionRef.current?.reload();\n      } else {\n        message.error(response.errorMessage || '删除失败');\n      }\n    } catch (error: any) {\n      message.error(error.message || '删除失败');\n    }\n  };\n\n  /**\n   * 表格列定义\n   */\n  const columns: ProColumns<Role>[] = [\n    {\n      title: '角色名称',\n      dataIndex: 'name',\n      key: 'name',\n    },\n    {\n      title: '描述',\n      dataIndex: 'description',\n      key: 'description',\n      ellipsis: true,\n    },\n    {\n      title: '状态',\n      dataIndex: 'isActive',\n      key: 'isActive',\n      render: (_, record) => (\n        <Tag color={record.isActive ? 'success' : 'default'}>\n          {record.isActive ? '启用' : '禁用'}\n        </Tag>\n      ),\n    },\n    {\n      title: '创建时间',\n      dataIndex: 'createdAt',\n      key: 'createdAt',\n      valueType: 'dateTime',\n    },\n    {\n      title: '操作',\n      key: 'action',\n      fixed: 'right',\n      width: 250,\n      render: (_, record) => (\n        <Space size=\"small\">\n          <Button\n            type=\"link\"\n            size=\"small\"\n            icon={<SettingOutlined />}\n            onClick={() => {\n              setCurrentRole(record);\n              setPermissionModalVisible(true);\n            }}\n          >\n            分配权限\n          </Button>\n          <Button\n            type=\"link\"\n            size=\"small\"\n            icon={<EditOutlined />}\n            onClick={() => {\n              setCurrentRole(record);\n              setModalVisible(true);\n            }}\n          >\n            编辑\n          </Button>\n          <Popconfirm\n            title=\"确定要删除这个角色吗？\"\n            description=\"删除后，已分配此角色的用户将受到影响。\"\n            onConfirm={() => handleDelete(record.id!)}\n            okText=\"确定\"\n            cancelText=\"取消\"\n          >\n            <Button type=\"link\" size=\"small\" danger icon={<DeleteOutlined />}>\n              删除\n            </Button>\n          </Popconfirm>\n        </Space>\n      ),\n    },\n  ];\n\n  return (\n    <>\n      <ProTable<Role>\n        headerTitle=\"角色管理\"\n        actionRef={actionRef}\n        rowKey=\"id\"\n        search={false}\n        toolBarRender={() => [\n          <Button\n            key=\"create\"\n            type=\"primary\"\n            icon={<PlusOutlined />}\n            onClick={() => {\n              setCurrentRole(undefined);\n              setModalVisible(true);\n            }}\n          >\n            新增角色\n          </Button>,\n        ]}\n        request={loadRoleData}\n        columns={columns}\n      />\n      \n      <RoleForm\n        visible={modalVisible}\n        current={currentRole}\n        onCancel={() => {\n          setModalVisible(false);\n          setCurrentRole(undefined);\n        }}\n        onSuccess={() => {\n          setModalVisible(false);\n          setCurrentRole(undefined);\n          actionRef.current?.reload();\n        }}\n      />\n\n      <MenuPermissionModal\n        visible={permissionModalVisible}\n        role={currentRole}\n        onCancel={() => {\n          setPermissionModalVisible(false);\n          setCurrentRole(undefined);\n        }}\n        onSuccess={() => {\n          setPermissionModalVisible(false);\n          setCurrentRole(undefined);\n          message.success('权限分配成功');\n        }}\n      />\n    </>\n  );\n};\n\nexport default RoleManagement;\n\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user-management/debug.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/role-management/index.tsx"
+    },
+    "10": {
+      "name": "menu-management",
+      "icon": "menu",
+      "path": "/system/menu-management",
+      "file": "@/pages/menu-management/index.tsx",
+      "parentId": "6",
+      "id": "10",
+      "absPath": "/system/menu-management",
+      "__content": "import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';\nimport * as Icons from '@ant-design/icons';\nimport { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';\nimport { Button, message, Popconfirm, Space, Tag } from 'antd';\nimport React, { useRef, useState } from 'react';\nimport { getMenuTree, deleteMenu } from '@/services/menu/api';\nimport type { MenuTreeNode } from '@/services/menu/types';\nimport MenuForm from './components/MenuForm';\n\nconst MenuManagement: React.FC = () => {\n  const actionRef = useRef<ActionType>();\n  const [modalVisible, setModalVisible] = useState(false);\n  const [currentMenu, setCurrentMenu] = useState<MenuTreeNode | undefined>();\n\n  /**\n   * 根据图标名称获取图标组件\n   */\n  const getIconComponent = (iconName?: string): React.ReactNode => {\n    if (!iconName) return null;\n    \n    const formatIconName = (name: string) => {\n      return name\n        .split('-')\n        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())\n        .join('');\n    };\n    \n    const suffixes = ['Outlined', 'Filled', 'TwoTone', ''];\n    \n    for (const suffix of suffixes) {\n      const iconComponentName = formatIconName(iconName) + suffix;\n      const IconComponent = (Icons as any)[iconComponentName];\n      \n      if (IconComponent) {\n        return React.createElement(IconComponent);\n      }\n    }\n    \n    return null;\n  };\n\n  /**\n   * 加载菜单数据\n   */\n  const loadMenuData = async () => {\n    try {\n      const response = await getMenuTree();\n      if (response.success && response.data) {\n        return {\n          data: response.data,\n          success: true,\n        };\n      }\n      return {\n        data: [],\n        success: false,\n      };\n    } catch (error) {\n      message.error('加载菜单失败');\n      return {\n        data: [],\n        success: false,\n      };\n    }\n  };\n\n  /**\n   * 删除菜单\n   */\n  const handleDelete = async (id: string) => {\n    try {\n      const response = await deleteMenu(id);\n      if (response.success) {\n        message.success('删除成功');\n        actionRef.current?.reload();\n      } else {\n        message.error(response.errorMessage || '删除失败');\n      }\n    } catch (error: any) {\n      message.error(error.message || '删除失败');\n    }\n  };\n\n  /**\n   * 表格列定义\n   */\n  const columns: ProColumns<MenuTreeNode>[] = [\n    {\n      title: '菜单名称',\n      dataIndex: 'name',\n      key: 'name',\n      width: 200,\n    },\n    {\n      title: '路径',\n      dataIndex: 'path',\n      key: 'path',\n      width: 200,\n    },\n    {\n      title: '图标',\n      dataIndex: 'icon',\n      key: 'icon',\n      width: 100,\n      render: (_, record) => (\n        <Space>\n          {getIconComponent(record.icon)}\n          <span>{record.icon || '-'}</span>\n        </Space>\n      ),\n    },\n    {\n      title: '组件',\n      dataIndex: 'component',\n      key: 'component',\n      width: 200,\n      ellipsis: true,\n    },\n    {\n      title: '排序',\n      dataIndex: 'sortOrder',\n      key: 'sortOrder',\n      width: 80,\n    },\n    {\n      title: '状态',\n      dataIndex: 'isEnabled',\n      key: 'isEnabled',\n      width: 80,\n      render: (_, record) => (\n        <Tag color={record.isEnabled ? 'success' : 'default'}>\n          {record.isEnabled ? '启用' : '禁用'}\n        </Tag>\n      ),\n    },\n    {\n      title: '外部链接',\n      dataIndex: 'isExternal',\n      key: 'isExternal',\n      width: 100,\n      render: (_, record) => (\n        <Tag color={record.isExternal ? 'blue' : 'default'}>\n          {record.isExternal ? '是' : '否'}\n        </Tag>\n      ),\n    },\n    {\n      title: '隐藏菜单',\n      dataIndex: 'hideInMenu',\n      key: 'hideInMenu',\n      width: 100,\n      render: (_, record) => (\n        <Tag color={record.hideInMenu ? 'warning' : 'default'}>\n          {record.hideInMenu ? '是' : '否'}\n        </Tag>\n      ),\n    },\n    {\n      title: '操作',\n      key: 'action',\n      fixed: 'right',\n      width: 150,\n      render: (_, record) => (\n        <Space size=\"small\">\n          <Button\n            type=\"link\"\n            size=\"small\"\n            icon={<EditOutlined />}\n            onClick={() => {\n              setCurrentMenu(record);\n              setModalVisible(true);\n            }}\n          >\n            编辑\n          </Button>\n          <Popconfirm\n            title=\"确定要删除这个菜单吗？\"\n            onConfirm={() => handleDelete(record.id!)}\n            okText=\"确定\"\n            cancelText=\"取消\"\n          >\n            <Button type=\"link\" size=\"small\" danger icon={<DeleteOutlined />}>\n              删除\n            </Button>\n          </Popconfirm>\n        </Space>\n      ),\n    },\n  ];\n\n  return (\n    <>\n      <ProTable<MenuTreeNode>\n        headerTitle=\"菜单管理\"\n        actionRef={actionRef}\n        rowKey=\"id\"\n        search={false}\n        toolBarRender={() => [\n          <Button\n            key=\"create\"\n            type=\"primary\"\n            icon={<PlusOutlined />}\n            onClick={() => {\n              setCurrentMenu(undefined);\n              setModalVisible(true);\n            }}\n          >\n            新增菜单\n          </Button>,\n        ]}\n        request={loadMenuData}\n        columns={columns}\n        pagination={false}\n        expandable={{\n          defaultExpandAllRows: true,\n        }}\n      />\n      \n      <MenuForm\n        visible={modalVisible}\n        current={currentMenu}\n        onCancel={() => {\n          setModalVisible(false);\n          setCurrentMenu(undefined);\n        }}\n        onSuccess={() => {\n          setModalVisible(false);\n          setCurrentMenu(undefined);\n          actionRef.current?.reload();\n        }}\n      />\n    </>\n  );\n};\n\nexport default MenuManagement;\n\n",
+      "__isJSFile": true,
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/menu-management/index.tsx"
+    },
+    "11": {
+      "name": "user-log",
+      "icon": "file-text",
+      "path": "/system/user-log",
+      "file": "@/pages/user-log/index.tsx",
+      "parentId": "6",
+      "id": "11",
+      "absPath": "/system/user-log",
+      "__content": "import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';\nimport { Tag } from 'antd';\nimport React, { useRef } from 'react';\nimport { getUserActivityLogs } from '@/services/user-log/api';\nimport type { UserActivityLog } from '@/services/user-log/types';\n\nconst UserLog: React.FC = () => {\n  const actionRef = useRef<ActionType>();\n\n  /**\n   * 获取操作类型标签颜色\n   */\n  const getActionTagColor = (action: string): string => {\n    const colorMap: Record<string, string> = {\n      login: 'green',\n      logout: 'default',\n      create_user: 'blue',\n      update_user: 'cyan',\n      delete_user: 'red',\n      change_password: 'orange',\n      update_profile: 'purple',\n      refresh_token: 'geekblue',\n      activate_user: 'green',\n      deactivate_user: 'volcano',\n      bulk_action: 'magenta',\n      update_user_role: 'gold',\n      view_profile: 'lime',\n    };\n    return colorMap[action] || 'default';\n  };\n\n  /**\n   * 获取操作类型显示文本\n   */\n  const getActionText = (action: string): string => {\n    const textMap: Record<string, string> = {\n      login: '登录',\n      logout: '登出',\n      create_user: '创建用户',\n      update_user: '更新用户',\n      delete_user: '删除用户',\n      change_password: '修改密码',\n      update_profile: '更新个人信息',\n      refresh_token: '刷新Token',\n      activate_user: '启用用户',\n      deactivate_user: '禁用用户',\n      bulk_action: '批量操作',\n      update_user_role: '更新用户角色',\n      view_profile: '查看个人信息',\n    };\n    return textMap[action] || action;\n  };\n\n  const columns: ProColumns<UserActivityLog>[] = [\n    {\n      title: '用户',\n      dataIndex: 'username',\n      key: 'username',\n      width: 120,\n      ellipsis: true,\n    },\n    {\n      title: '操作类型',\n      dataIndex: 'action',\n      key: 'action',\n      width: 120,\n      render: (_, record) => (\n        <Tag color={getActionTagColor(record.action)}>\n          {getActionText(record.action)}\n        </Tag>\n      ),\n      valueType: 'select',\n      valueEnum: {\n        login: { text: '登录' },\n        logout: { text: '登出' },\n        create_user: { text: '创建用户' },\n        update_user: { text: '更新用户' },\n        delete_user: { text: '删除用户' },\n        change_password: { text: '修改密码' },\n        update_profile: { text: '更新个人信息' },\n        refresh_token: { text: '刷新Token' },\n        activate_user: { text: '启用用户' },\n        deactivate_user: { text: '禁用用户' },\n        bulk_action: { text: '批量操作' },\n        update_user_role: { text: '更新用户角色' },\n        view_profile: { text: '查看个人信息' },\n      },\n    },\n    {\n      title: '描述',\n      dataIndex: 'description',\n      key: 'description',\n      ellipsis: true,\n      search: false,\n    },\n    {\n      title: 'IP地址',\n      dataIndex: 'ipAddress',\n      key: 'ipAddress',\n      width: 140,\n      search: false,\n      ellipsis: true,\n    },\n    {\n      title: '用户代理',\n      dataIndex: 'userAgent',\n      key: 'userAgent',\n      search: false,\n      ellipsis: true,\n      hideInTable: true,\n    },\n    {\n      title: '操作时间',\n      dataIndex: 'createdAt',\n      key: 'createdAt',\n      width: 180,\n      valueType: 'dateTime',\n      search: false,\n      sorter: true,\n    },\n  ];\n\n  return (\n    <ProTable<UserActivityLog>\n      headerTitle=\"用户操作日志\"\n      actionRef={actionRef}\n      rowKey=\"id\"\n      search={{\n        labelWidth: 120,\n        optionRender: (searchConfig, formProps, dom) => {\n          const reversed = [...dom];\n          reversed.reverse();\n          return reversed;\n        },\n      }}\n      request={async (params, sort) => {\n        const { current = 1, pageSize = 20, action } = params;\n        \n        try {\n          const response = await getUserActivityLogs({\n            page: current,\n            pageSize,\n            action,\n          });\n\n          if (response.success && response.data) {\n            return {\n              data: response.data,\n              total: response.total,\n              success: true,\n            };\n          }\n\n          return {\n            data: [],\n            total: 0,\n            success: false,\n          };\n        } catch (error) {\n          console.error('Failed to load user activity logs:', error);\n          return {\n            data: [],\n            total: 0,\n            success: false,\n          };\n        }\n      }}\n      columns={columns}\n      pagination={{\n        defaultPageSize: 20,\n        showSizeChanger: true,\n        showQuickJumper: true,\n      }}\n    />\n  );\n};\n\nexport default UserLog;\n\n",
+      "__isJSFile": true,
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user-log/index.tsx"
     },
     "12": {
-      "name": "test-menu",
-      "icon": "experiment",
-      "path": "/test-menu",
-      "file": "@/pages/test-menu/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "12",
-      "absPath": "/test-menu",
-      "__content": "import React from 'react';\nimport { Card, List, Typography } from 'antd';\n\nconst { Title, Text } = Typography;\n\nconst TestMenuPage: React.FC = () => {\n  return (\n    <div style={{ padding: 24 }}>\n      <Card>\n        <Title level={2}>菜单测试页面</Title>\n        <Text>如果您能看到这个页面，说明路由配置正确。</Text>\n        \n        <Title level={4} style={{ marginTop: 24 }}>测试步骤：</Title>\n        <List\n          size=\"small\"\n          dataSource={[\n            '1. 检查左侧菜单是否显示\"用户管理\"',\n            '2. 点击\"用户管理\"菜单项',\n            '3. 如果能看到用户管理页面，说明功能正常',\n            '4. 如果看不到菜单，请检查权限配置',\n            '5. 使用 admin/admin123 登录测试管理员权限'\n          ]}\n          renderItem={(item) => <List.Item>{item}</List.Item>}\n        />\n      </Card>\n    </div>\n  );\n};\n\nexport default TestMenuPage;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/test-menu/index.tsx"
-    },
-    "13": {
       "name": "change-password",
       "path": "/user/change-password",
       "hideInMenu": true,
       "file": "@/pages/user/change-password/index.tsx",
       "parentId": "ant-design-pro-layout",
-      "id": "13",
+      "id": "12",
       "absPath": "/user/change-password",
       "__content": "import { LockOutlined } from '@ant-design/icons';\nimport { ProForm, ProFormText } from '@ant-design/pro-components';\nimport { FormattedMessage, Helmet, useIntl } from '@umijs/max';\nimport { Alert, App, Card } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { changePassword } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      padding: '24px',\n      maxWidth: '600px',\n      margin: '0 auto',\n    },\n    card: {\n      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',\n    },\n  };\n});\n\n\nconst ChangePasswordMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst ChangePassword: React.FC = () => {\n  const [changePasswordState, setChangePasswordState] = useState<API.ChangePasswordResult>({});\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const handleSubmit = async (values: API.ChangePasswordParams) => {\n    try {\n      // 修改密码\n      const result = await changePassword(values);\n      if (result.success) {\n        const defaultChangePasswordSuccessMessage = intl.formatMessage({\n          id: 'pages.changePassword.success',\n          defaultMessage: '密码修改成功！',\n        });\n        message.success(defaultChangePasswordSuccessMessage);\n        \n        // 修改成功后清空表单\n        setChangePasswordState({});\n        return;\n      }\n      \n      // 如果失败去设置用户错误信息\n      setChangePasswordState(result);\n    } catch (error) {\n      const defaultChangePasswordFailureMessage = intl.formatMessage({\n        id: 'pages.changePassword.failure',\n        defaultMessage: '密码修改失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultChangePasswordFailureMessage);\n    }\n  };\n\n  const { errorCode, errorMessage } = changePasswordState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.changePassword',\n            defaultMessage: '修改密码',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      \n      <Card \n        title={intl.formatMessage({\n          id: 'menu.changePassword',\n          defaultMessage: '修改密码',\n        })}\n        className={styles.card}\n      >\n        <ProForm\n          onFinish={async (values) => {\n            await handleSubmit(values as API.ChangePasswordParams);\n          }}\n          submitter={{\n            searchConfig: {\n              submitText: intl.formatMessage({\n                id: 'pages.changePassword.submit',\n                defaultMessage: '修改密码',\n              }),\n            },\n          }}\n        >\n          {errorCode && (\n            <ChangePasswordMessage content={errorMessage || '密码修改失败'} />\n          )}\n\n          <ProFormText.Password\n            name=\"currentPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.currentPassword.placeholder',\n              defaultMessage: '请输入当前密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.currentPassword.required\"\n                    defaultMessage=\"请输入当前密码!\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText.Password\n            name=\"newPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.newPassword.placeholder',\n              defaultMessage: '请输入新密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.newPassword.required\"\n                    defaultMessage=\"请输入新密码！\"\n                  />\n                ),\n              },\n              {\n                min: 6,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.newPassword.length\"\n                    defaultMessage=\"密码长度至少6个字符\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText.Password\n            name=\"confirmPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.confirmPassword.placeholder',\n              defaultMessage: '请确认新密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.confirmPassword.required\"\n                    defaultMessage=\"请确认新密码！\"\n                  />\n                ),\n              },\n              ({ getFieldValue }) => ({\n                validator(_, value) {\n                  if (!value || getFieldValue('newPassword') === value) {\n                    return Promise.resolve();\n                  }\n                  return Promise.reject(new Error('两次输入的密码不一致！'));\n                },\n              }),\n            ]}\n          />\n        </ProForm>\n      </Card>\n    </div>\n  );\n};\n\nexport default ChangePassword;\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/change-password/index.tsx"
     },
-    "14": {
+    "13": {
       "name": "account.center",
       "path": "/account/center",
       "hideInMenu": true,
       "file": "@/pages/account/center/index.tsx",
       "parentId": "ant-design-pro-layout",
-      "id": "14",
+      "id": "13",
       "absPath": "/account/center",
-      "__content": "import {\n  EditOutlined,\n  UserOutlined,\n  MailOutlined,\n  CalendarOutlined,\n  SafetyOutlined,\n  HistoryOutlined,\n} from '@ant-design/icons';\nimport { ProCard, ProForm, ProFormText, ProFormDigit } from '@ant-design/pro-components';\nimport { FormattedMessage, Helmet, useIntl } from '@umijs/max';\nimport { Avatar, Button, Descriptions, Divider, List, message, Space, Tag, Typography } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useEffect, useState } from 'react';\nimport { getCurrentUserProfile, updateUserProfile, getUserActivityLogs } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst { Title, Text } = Typography;\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      padding: '24px',\n      width: '100%',\n    },\n    profileCard: {\n      marginBottom: '24px',\n    },\n    avatarSection: {\n      textAlign: 'center',\n      padding: '24px',\n    },\n    infoSection: {\n      padding: '24px',\n    },\n    activityCard: {\n      marginTop: '24px',\n    },\n    editButton: {\n      marginBottom: '16px',\n    },\n  };\n});\n\ninterface UserProfile {\n  id: string;\n  username: string;\n  name?: string;\n  email?: string;\n  age?: number;\n  role: string;\n  isActive: boolean;\n  createdAt: string;\n  updatedAt: string;\n  lastLoginAt?: string;\n}\n\ninterface ActivityLog {\n  id: string;\n  action: string;\n  description: string;\n  ipAddress?: string;\n  userAgent?: string;\n  createdAt: string;\n}\n\nconst UserCenter: React.FC = () => {\n  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);\n  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [editing, setEditing] = useState(false);\n  const [form] = ProForm.useForm();\n  const { styles } = useStyles();\n  const intl = useIntl();\n\n  // 获取用户信息\n  const fetchUserProfile = async () => {\n    try {\n      setLoading(true);\n      const response = await getCurrentUserProfile();\n      if (response.success && response.data) {\n        setUserProfile(response.data);\n        form.setFieldsValue({\n          username: response.data.username,\n          name: response.data.name,\n          email: response.data.email,\n          age: response.data.age,\n        });\n      }\n    } catch (error) {\n      console.error('获取用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.fetchFailed', defaultMessage: '获取用户信息失败' }));\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  // 获取活动日志\n  const fetchActivityLogs = async () => {\n    try {\n      const response = await getUserActivityLogs();\n      if (response.success && response.data) {\n        setActivityLogs(response.data);\n      }\n    } catch (error) {\n      console.error('获取活动日志失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.activityFailed', defaultMessage: '获取活动日志失败' }));\n    }\n  };\n\n  useEffect(() => {\n    fetchUserProfile();\n    fetchActivityLogs();\n  }, []);\n\n  // 更新用户信息\n  const handleUpdateProfile = async (values: any) => {\n    try {\n      const response = await updateUserProfile(values);\n      if (response.success) {\n        message.success(intl.formatMessage({ id: 'pages.account.center.updateSuccess', defaultMessage: '个人信息更新成功' }));\n        setEditing(false);\n        fetchUserProfile(); // 重新获取用户信息\n      } else {\n        message.error(response.error || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));\n      }\n    } catch (error) {\n      console.error('更新用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '个人信息更新失败' }));\n    }\n  };\n\n  // 取消编辑\n  const handleCancelEdit = () => {\n    setEditing(false);\n    form.resetFields();\n  };\n\n  // 格式化时间\n  const formatDateTime = (dateString: string) => {\n    return new Date(dateString).toLocaleString('zh-CN');\n  };\n\n  // 获取角色标签颜色\n  const getRoleTagColor = (role: string) => {\n    switch (role) {\n      case 'admin':\n        return 'red';\n      case 'user':\n        return 'blue';\n      default:\n        return 'default';\n    }\n  };\n\n  // 获取活动类型标签\n  const getActivityTag = (action: string) => {\n    const actionMap: { [key: string]: { text: string; color: string } } = {\n      login: { text: intl.formatMessage({ id: 'pages.account.center.activity.login', defaultMessage: '登录' }), color: 'green' },\n      logout: { text: intl.formatMessage({ id: 'pages.account.center.activity.logout', defaultMessage: '退出' }), color: 'orange' },\n      update_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.updateProfile', defaultMessage: '更新资料' }), color: 'blue' },\n      change_password: { text: intl.formatMessage({ id: 'pages.account.center.activity.changePassword', defaultMessage: '修改密码' }), color: 'red' },\n      view_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.viewProfile', defaultMessage: '查看资料' }), color: 'purple' },\n      // 用户管理操作\n      create_user: { text: '创建用户', color: 'cyan' },\n      update_user: { text: '更新用户', color: 'blue' },\n      delete_user: { text: '删除用户', color: 'red' },\n      activate_user: { text: '启用用户', color: 'green' },\n      deactivate_user: { text: '禁用用户', color: 'orange' },\n      update_user_role: { text: '更新角色', color: 'purple' },\n      bulk_action: { text: '批量操作', color: 'geekblue' },\n    };\n    return actionMap[action] || { text: action, color: 'default' };\n  };\n\n  if (loading) {\n    return <div><FormattedMessage id=\"pages.account.center.loading\" defaultMessage=\"加载中...\" /></div>;\n  }\n\n  if (!userProfile) {\n    return <div><FormattedMessage id=\"pages.account.center.userNotExist\" defaultMessage=\"用户信息不存在\" /></div>;\n  }\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.account.center',\n            defaultMessage: '个人中心',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n\n      <Title level={2}>\n        <UserOutlined style={{ marginRight: '8px' }} />\n        <FormattedMessage id=\"pages.account.center.title\" defaultMessage=\"个人中心\" />\n      </Title>\n\n      {/* 个人信息卡片 */}\n      <ProCard\n        title={<FormattedMessage id=\"pages.account.center.profile\" defaultMessage=\"个人信息\" />}\n        className={styles.profileCard}\n        extra={\n          <Button\n            type=\"primary\"\n            icon={<EditOutlined />}\n            onClick={() => setEditing(true)}\n            disabled={editing}\n          >\n            <FormattedMessage id=\"pages.account.center.editProfile\" defaultMessage=\"编辑资料\" />\n          </Button>\n        }\n      >\n        <div className={styles.avatarSection}>\n          <Avatar size={80} icon={<UserOutlined />} />\n          <div style={{ marginTop: '16px' }}>\n            <Title level={4}>{userProfile.name || userProfile.username}</Title>\n            <Tag color={getRoleTagColor(userProfile.role)}>\n              {userProfile.role === 'admin' ? \n                <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n              }\n            </Tag>\n          </div>\n        </div>\n\n        <Divider />\n\n        {editing ? (\n          <ProForm\n            form={form}\n            onFinish={handleUpdateProfile}\n            submitter={{\n              searchConfig: {\n                submitText: '保存',\n                resetText: '取消',\n              },\n              render: (props, doms) => {\n                return (\n                  <div style={{ textAlign: 'right' }}>\n                    <Space>\n                      <Button onClick={handleCancelEdit}>取消</Button>\n                      <Button type=\"primary\" htmlType=\"submit\">保存</Button>\n                    </Space>\n                  </div>\n                );\n              },\n              resetButtonProps: {\n                style: { display: 'none' }\n              },\n              submitButtonProps: {\n                style: { display: 'none' }\n              }\n            }}\n          >\n            <ProFormText\n              name=\"username\"\n              label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}\n              rules={[{ required: true, message: '请输入用户名' }]}\n            />\n            <ProFormText\n              name=\"name\"\n              label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}\n              placeholder=\"请输入姓名\"\n            />\n            <ProFormText\n              name=\"email\"\n              label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}\n              rules={[\n                { type: 'email', message: '请输入有效的邮箱地址' }\n              ]}\n            />\n            <ProFormDigit\n              name=\"age\"\n              label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}\n              min={1}\n              max={150}\n              placeholder=\"请输入年龄\"\n            />\n          </ProForm>\n        ) : (\n          <Descriptions column={2} bordered>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}>\n              <Text strong>{userProfile.username}</Text>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}>\n              {userProfile.name || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}>\n              <MailOutlined style={{ marginRight: '4px' }} />\n              {userProfile.email || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}>\n              {userProfile.age || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.role\" defaultMessage=\"角色\" />}>\n              <Tag color={getRoleTagColor(userProfile.role)}>\n                {userProfile.role === 'admin' ? \n                  <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                  <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.status\" defaultMessage=\"状态\" />}>\n              <Tag color={userProfile.isActive ? 'green' : 'red'}>\n                {userProfile.isActive ? \n                  <FormattedMessage id=\"pages.account.center.active\" defaultMessage=\"正常\" /> : \n                  <FormattedMessage id=\"pages.account.center.inactive\" defaultMessage=\"禁用\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.registerTime\" defaultMessage=\"注册时间\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.createdAt)}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastUpdate\" defaultMessage=\"最后更新\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.updatedAt)}\n            </Descriptions.Item>\n            {userProfile.lastLoginAt && (\n              <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastLogin\" defaultMessage=\"最后登录\" />} span={2}>\n                <CalendarOutlined style={{ marginRight: '4px' }} />\n                {formatDateTime(userProfile.lastLoginAt)}\n              </Descriptions.Item>\n            )}\n          </Descriptions>\n        )}\n      </ProCard>\n\n      {/* 活动日志卡片 */}\n      <ProCard\n        title={\n          <Space>\n            <HistoryOutlined />\n            <FormattedMessage id=\"pages.account.center.recentActivity\" defaultMessage=\"最近活动\" />\n          </Space>\n        }\n        className={styles.activityCard}\n      >\n        <List\n          dataSource={activityLogs}\n          renderItem={(item) => {\n            const activityTag = getActivityTag(item.action);\n            return (\n              <List.Item>\n                <List.Item.Meta\n                  avatar={<SafetyOutlined />}\n                  title={\n                    <Space>\n                      <Tag color={activityTag.color}>{activityTag.text}</Tag>\n                      <Text>{item.description}</Text>\n                    </Space>\n                  }\n                  description={\n                    <Space direction=\"vertical\" size=\"small\">\n                      <Text type=\"secondary\">\n                        {formatDateTime(item.createdAt)}\n                      </Text>\n                      {item.ipAddress && (\n                        <Text type=\"secondary\" style={{ fontSize: '12px' }}>\n                          IP: {item.ipAddress}\n                        </Text>\n                      )}\n                    </Space>\n                  }\n                />\n              </List.Item>\n            );\n          }}\n        />\n      </ProCard>\n    </div>\n  );\n};\n\nexport default UserCenter;\n",
+      "__content": "import {\n  EditOutlined,\n  UserOutlined,\n  MailOutlined,\n  CalendarOutlined,\n  SafetyOutlined,\n  HistoryOutlined,\n} from '@ant-design/icons';\nimport { ProCard, ProForm, ProFormText, ProFormDigit } from '@ant-design/pro-components';\nimport { FormattedMessage, Helmet, useIntl } from '@umijs/max';\nimport { Avatar, Button, Descriptions, Divider, List, message, Space, Tag, Typography } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useEffect, useState } from 'react';\nimport { getCurrentUserProfile, updateUserProfile, getUserActivityLogs } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst { Title, Text } = Typography;\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      padding: '24px',\n      width: '100%',\n    },\n    profileCard: {\n      marginBottom: '24px',\n    },\n    avatarSection: {\n      textAlign: 'center',\n      padding: '24px',\n    },\n    infoSection: {\n      padding: '24px',\n    },\n    activityCard: {\n      marginTop: '24px',\n    },\n    editButton: {\n      marginBottom: '16px',\n    },\n  };\n});\n\ninterface UserProfile {\n  id: string;\n  username: string;\n  name?: string;\n  email?: string;\n  age?: number;\n  role: string;\n  isActive: boolean;\n  createdAt: string;\n  updatedAt: string;\n  lastLoginAt?: string;\n}\n\ninterface ActivityLog {\n  id: string;\n  action: string;\n  description: string;\n  ipAddress?: string;\n  userAgent?: string;\n  createdAt: string;\n}\n\nconst UserCenter: React.FC = () => {\n  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);\n  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [editing, setEditing] = useState(false);\n  const [form] = ProForm.useForm();\n  const { styles } = useStyles();\n  const intl = useIntl();\n\n  // 获取用户信息\n  const fetchUserProfile = async () => {\n    try {\n      setLoading(true);\n      const response = await getCurrentUserProfile();\n      if (response.success && response.data) {\n        // 将 CurrentUser 转换为 UserProfile 格式\n        const currentUser = response.data;\n        const profile: UserProfile = {\n          id: currentUser.userid || '',\n          username: currentUser.name || '',\n          name: currentUser.name,\n          email: currentUser.email,\n          age: 18, // 使用默认年龄，因为CurrentUser中没有age字段\n          role: currentUser.access || 'user',\n          isActive: currentUser.isLogin || false,\n          createdAt: '', // CurrentUser中没有这些时间字段，使用空字符串\n          updatedAt: '',\n          lastLoginAt: '',\n        };\n        setUserProfile(profile);\n        form.setFieldsValue({\n          name: currentUser.name,\n          email: currentUser.email,\n          age: 18, // CurrentUser中没有age字段，使用默认值\n        });\n      }\n    } catch (error) {\n      console.error('获取用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.fetchFailed', defaultMessage: '获取用户信息失败' }));\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  // 获取活动日志\n  const fetchActivityLogs = async () => {\n    try {\n      const response = await getUserActivityLogs();\n      if (response.success && response.data) {\n        // 将 UserActivityLog[] 转换为 ActivityLog[] 格式\n        const logs: ActivityLog[] = response.data.map(log => ({\n          id: log.id || '',\n          action: log.action || '',\n          description: log.description || '',\n          ipAddress: log.ipAddress,\n          userAgent: log.userAgent,\n          createdAt: log.createdAt || '',\n        }));\n        setActivityLogs(logs);\n      }\n    } catch (error) {\n      console.error('获取活动日志失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.activityFailed', defaultMessage: '获取活动日志失败' }));\n    }\n  };\n\n  useEffect(() => {\n    fetchUserProfile();\n    fetchActivityLogs();\n  }, []);\n\n  // 更新用户信息\n  const handleUpdateProfile = async (values: any) => {\n    try {\n      const response = await updateUserProfile(values);\n      if (response.success) {\n        message.success(intl.formatMessage({ id: 'pages.account.center.updateSuccess', defaultMessage: '个人信息更新成功' }));\n        setEditing(false);\n        fetchUserProfile(); // 重新获取用户信息\n      } else {\n        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));\n      }\n    } catch (error) {\n      console.error('更新用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '个人信息更新失败' }));\n    }\n  };\n\n  // 取消编辑\n  const handleCancelEdit = () => {\n    setEditing(false);\n    form.resetFields();\n  };\n\n  // 格式化时间\n  const formatDateTime = (dateString: string) => {\n    return new Date(dateString).toLocaleString('zh-CN');\n  };\n\n  // 获取角色标签颜色\n  const getRoleTagColor = (role: string) => {\n    switch (role) {\n      case 'admin':\n        return 'red';\n      case 'user':\n        return 'blue';\n      default:\n        return 'default';\n    }\n  };\n\n  // 获取活动类型标签\n  const getActivityTag = (action: string) => {\n    const actionMap: { [key: string]: { text: string; color: string } } = {\n      login: { text: intl.formatMessage({ id: 'pages.account.center.activity.login', defaultMessage: '登录' }), color: 'green' },\n      logout: { text: intl.formatMessage({ id: 'pages.account.center.activity.logout', defaultMessage: '退出' }), color: 'orange' },\n      update_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.updateProfile', defaultMessage: '更新资料' }), color: 'blue' },\n      change_password: { text: intl.formatMessage({ id: 'pages.account.center.activity.changePassword', defaultMessage: '修改密码' }), color: 'red' },\n      view_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.viewProfile', defaultMessage: '查看资料' }), color: 'purple' },\n      // 用户管理操作\n      create_user: { text: '创建用户', color: 'cyan' },\n      update_user: { text: '更新用户', color: 'blue' },\n      delete_user: { text: '删除用户', color: 'red' },\n      activate_user: { text: '启用用户', color: 'green' },\n      deactivate_user: { text: '禁用用户', color: 'orange' },\n      update_user_role: { text: '更新角色', color: 'purple' },\n      bulk_action: { text: '批量操作', color: 'geekblue' },\n    };\n    return actionMap[action] || { text: action, color: 'default' };\n  };\n\n  if (loading) {\n    return <div><FormattedMessage id=\"pages.account.center.loading\" defaultMessage=\"加载中...\" /></div>;\n  }\n\n  if (!userProfile) {\n    return <div><FormattedMessage id=\"pages.account.center.userNotExist\" defaultMessage=\"用户信息不存在\" /></div>;\n  }\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.account.center',\n            defaultMessage: '个人中心',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n\n      <Title level={2}>\n        <UserOutlined style={{ marginRight: '8px' }} />\n        <FormattedMessage id=\"pages.account.center.title\" defaultMessage=\"个人中心\" />\n      </Title>\n\n      {/* 个人信息卡片 */}\n      <ProCard\n        title={<FormattedMessage id=\"pages.account.center.profile\" defaultMessage=\"个人信息\" />}\n        className={styles.profileCard}\n        extra={\n          <Button\n            type=\"primary\"\n            icon={<EditOutlined />}\n            onClick={() => setEditing(true)}\n            disabled={editing}\n          >\n            <FormattedMessage id=\"pages.account.center.editProfile\" defaultMessage=\"编辑资料\" />\n          </Button>\n        }\n      >\n        <div className={styles.avatarSection}>\n          <Avatar size={80} icon={<UserOutlined />} />\n          <div style={{ marginTop: '16px' }}>\n            <Title level={4}>{userProfile.name || userProfile.username}</Title>\n            <Tag color={getRoleTagColor(userProfile.role)}>\n              {userProfile.role === 'admin' ? \n                <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n              }\n            </Tag>\n          </div>\n        </div>\n\n        <Divider />\n\n        {editing ? (\n          <ProForm\n            form={form}\n            onFinish={handleUpdateProfile}\n            submitter={{\n              searchConfig: {\n                submitText: '保存',\n                resetText: '取消',\n              },\n              render: (props, doms) => {\n                return (\n                  <div style={{ textAlign: 'right' }}>\n                    <Space>\n                      <Button onClick={handleCancelEdit}>取消</Button>\n                      <Button type=\"primary\" htmlType=\"submit\">保存</Button>\n                    </Space>\n                  </div>\n                );\n              },\n              resetButtonProps: {\n                style: { display: 'none' }\n              },\n              submitButtonProps: {\n                style: { display: 'none' }\n              }\n            }}\n          >\n            <ProFormText\n              name=\"username\"\n              label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}\n              rules={[{ required: true, message: '请输入用户名' }]}\n            />\n            <ProFormText\n              name=\"name\"\n              label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}\n              placeholder=\"请输入姓名\"\n            />\n            <ProFormText\n              name=\"email\"\n              label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}\n              rules={[\n                { type: 'email', message: '请输入有效的邮箱地址' }\n              ]}\n            />\n            <ProFormDigit\n              name=\"age\"\n              label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}\n              min={1}\n              max={150}\n              placeholder=\"请输入年龄\"\n            />\n          </ProForm>\n        ) : (\n          <Descriptions column={2} bordered>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}>\n              <Text strong>{userProfile.username}</Text>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}>\n              {userProfile.name || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}>\n              <MailOutlined style={{ marginRight: '4px' }} />\n              {userProfile.email || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}>\n              {userProfile.age || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.role\" defaultMessage=\"角色\" />}>\n              <Tag color={getRoleTagColor(userProfile.role)}>\n                {userProfile.role === 'admin' ? \n                  <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                  <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.status\" defaultMessage=\"状态\" />}>\n              <Tag color={userProfile.isActive ? 'green' : 'red'}>\n                {userProfile.isActive ? \n                  <FormattedMessage id=\"pages.account.center.active\" defaultMessage=\"正常\" /> : \n                  <FormattedMessage id=\"pages.account.center.inactive\" defaultMessage=\"禁用\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.registerTime\" defaultMessage=\"注册时间\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.createdAt)}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastUpdate\" defaultMessage=\"最后更新\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.updatedAt)}\n            </Descriptions.Item>\n            {userProfile.lastLoginAt && (\n              <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastLogin\" defaultMessage=\"最后登录\" />} span={2}>\n                <CalendarOutlined style={{ marginRight: '4px' }} />\n                {formatDateTime(userProfile.lastLoginAt)}\n              </Descriptions.Item>\n            )}\n          </Descriptions>\n        )}\n      </ProCard>\n\n      {/* 活动日志卡片 */}\n      <ProCard\n        title={\n          <Space>\n            <HistoryOutlined />\n            <FormattedMessage id=\"pages.account.center.recentActivity\" defaultMessage=\"最近活动\" />\n          </Space>\n        }\n        className={styles.activityCard}\n      >\n        <List\n          dataSource={activityLogs}\n          renderItem={(item) => {\n            const activityTag = getActivityTag(item.action);\n            return (\n              <List.Item>\n                <List.Item.Meta\n                  avatar={<SafetyOutlined />}\n                  title={\n                    <Space>\n                      <Tag color={activityTag.color}>{activityTag.text}</Tag>\n                      <Text>{item.description}</Text>\n                    </Space>\n                  }\n                  description={\n                    <Space direction=\"vertical\" size=\"small\">\n                      <Text type=\"secondary\">\n                        {formatDateTime(item.createdAt)}\n                      </Text>\n                      {item.ipAddress && (\n                        <Text type=\"secondary\" style={{ fontSize: '12px' }}>\n                          IP: {item.ipAddress}\n                        </Text>\n                      )}\n                    </Space>\n                  }\n                />\n              </List.Item>\n            );\n          }}\n        />\n      </ProCard>\n    </div>\n  );\n};\n\nexport default UserCenter;\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/account/center/index.tsx"
     },
-    "15": {
+    "14": {
       "path": "/",
       "redirect": "/welcome",
       "parentId": "ant-design-pro-layout",
-      "id": "15",
+      "id": "14",
       "absPath": "/"
     },
-    "16": {
+    "15": {
       "path": "*",
       "layout": false,
       "file": "@/pages/404.tsx",
-      "id": "16",
+      "id": "15",
       "absPath": "/*",
       "__content": "import { history, useIntl } from '@umijs/max';\nimport { Button, Card, Result } from 'antd';\nimport React from 'react';\n\nconst NoFoundPage: React.FC = () => (\n  <Card variant=\"borderless\">\n    <Result\n      status=\"404\"\n      title=\"404\"\n      subTitle={useIntl().formatMessage({ id: 'pages.404.subTitle' })}\n      extra={\n        <Button type=\"primary\" onClick={() => history.push('/')}>\n          {useIntl().formatMessage({ id: 'pages.404.buttonText' })}\n        </Button>\n      }\n    />\n  </Card>\n);\n\nexport default NoFoundPage;\n",
       "__isJSFile": true,

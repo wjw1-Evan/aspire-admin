@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Platform.ApiService.Models;
 
-public class RuleListItem
+public class RuleListItem : ISoftDeletable
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -44,6 +44,19 @@ public class RuleListItem
 
     [BsonElement("progress")]
     public int Progress { get; set; }
+
+    // 软删除字段
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
 }
 
 public class CreateRuleRequest

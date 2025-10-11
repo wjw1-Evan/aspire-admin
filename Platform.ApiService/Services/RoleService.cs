@@ -3,15 +3,30 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class RoleService
+public class RoleService : IRoleService
 {
     private readonly IMongoCollection<Role> _roles;
     private readonly IMongoCollection<AppUser> _users;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<RoleService> _logger;
 
-    public RoleService(IMongoDatabase database)
+    public RoleService(
+        IMongoDatabase database, 
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<RoleService> logger)
     {
         _roles = database.GetCollection<Role>("roles");
-        _users = database.GetCollection<AppUser>("app_users");
+        _users = database.GetCollection<AppUser>("users");
+        _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// 获取当前操作用户ID
+    /// </summary>
+    private string? GetCurrentUserId()
+    {
+        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
     }
 
     /// <summary>
@@ -19,7 +34,8 @@ public class RoleService
     /// </summary>
     public async Task<RoleListResponse> GetAllRolesAsync()
     {
-        var roles = await _roles.Find(_ => true)
+        var filter = SoftDeleteExtensions.NotDeleted<Role>();
+        var roles = await _roles.Find(filter)
             .SortBy(r => r.CreatedAt)
             .ToListAsync();
 
@@ -35,7 +51,11 @@ public class RoleService
     /// </summary>
     public async Task<Role?> GetRoleByIdAsync(string id)
     {
-        return await _roles.Find(r => r.Id == id).FirstOrDefaultAsync();
+        var filter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.Eq(r => r.Id, id),
+            SoftDeleteExtensions.NotDeleted<Role>()
+        );
+        return await _roles.Find(filter).FirstOrDefaultAsync();
     }
 
     /// <summary>
@@ -43,7 +63,11 @@ public class RoleService
     /// </summary>
     public async Task<Role?> GetRoleByNameAsync(string name)
     {
-        return await _roles.Find(r => r.Name == name).FirstOrDefaultAsync();
+        var filter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.Eq(r => r.Name, name),
+            SoftDeleteExtensions.NotDeleted<Role>()
+        );
+        return await _roles.Find(filter).FirstOrDefaultAsync();
     }
 
     /// <summary>
@@ -64,6 +88,7 @@ public class RoleService
             Description = request.Description,
             MenuIds = request.MenuIds,
             IsActive = request.IsActive,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -110,19 +135,27 @@ public class RoleService
     }
 
     /// <summary>
-    /// 删除角色（检查是否有用户使用）
+    /// 软删除角色（检查是否有用户使用）
     /// </summary>
-    public async Task<bool> DeleteRoleAsync(string id)
+    public async Task<bool> DeleteRoleAsync(string id, string? reason = null)
     {
-        // 检查是否有用户使用此角色
-        var usersWithRole = await _users.Find(u => u.RoleIds.Contains(id)).AnyAsync();
+        // 检查是否有未删除的用户使用此角色
+        var usersFilter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.AnyIn(u => u.RoleIds, new[] { id }),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
+        var usersWithRole = await _users.Find(usersFilter).AnyAsync();
         if (usersWithRole)
         {
             throw new InvalidOperationException("Cannot delete role that is assigned to users. Please reassign users first.");
         }
 
-        var result = await _roles.DeleteOneAsync(r => r.Id == id);
-        return result.DeletedCount > 0;
+        var currentUserId = GetCurrentUserId();
+        var filter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.Eq(r => r.Id, id),
+            SoftDeleteExtensions.NotDeleted<Role>()
+        );
+        return await _roles.SoftDeleteOneAsync(filter, currentUserId, reason);
     }
 
     /// <summary>

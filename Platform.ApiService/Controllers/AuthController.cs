@@ -7,13 +7,15 @@ namespace Platform.ApiService.Controllers;
 
 [ApiController]
 [Route("api")]
-public class AuthController : ControllerBase
+public class AuthController : BaseApiController
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
+    private readonly ICaptchaService _captchaService;
 
-    public AuthController(AuthService authService)
+    public AuthController(IAuthService authService, ICaptchaService captchaService)
     {
         _authService = authService;
+        _captchaService = captchaService;
     }
 
     /// <summary>
@@ -23,26 +25,15 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
-        try
-        {
-            // 检查用户是否已认证
-            if (!User.Identity?.IsAuthenticated ?? true)
-            {
-                return Ok(ApiResponse<CurrentUser>.UnauthorizedResult("用户未认证"));
-            }
+        // 检查用户是否已认证
+        if (!IsAuthenticated)
+            throw new UnauthorizedAccessException("用户未认证");
 
-            var user = await _authService.GetCurrentUserAsync();
-            if (user == null || !user.IsLogin)
-            {
-                return Ok(ApiResponse<CurrentUser>.UnauthorizedResult("请先登录！"));
-            }
-            
-            return Ok(ApiResponse<CurrentUser>.SuccessResult(user));
-        }
-        catch (Exception ex)
-        {
-            return Ok(ApiResponse<CurrentUser>.ServerErrorResult($"获取用户信息失败: {ex.Message}"));
-        }
+        var user = await _authService.GetCurrentUserAsync();
+        if (user == null || !user.IsLogin)
+            throw new UnauthorizedAccessException("请先登录");
+        
+        return Ok(ApiResponse<CurrentUser>.SuccessResult(user));
     }
 
     /// <summary>
@@ -70,11 +61,37 @@ public class AuthController : ControllerBase
     /// <summary>
     /// 获取验证码
     /// </summary>
+    /// <param name="phone">手机号</param>
     [HttpGet("login/captcha")]
-    public async Task<IActionResult> GetCaptcha()
+    public async Task<IActionResult> GetCaptcha([FromQuery] string phone)
     {
-        var captcha = await AuthService.GetCaptchaAsync();
-        return Ok(captcha);
+        if (string.IsNullOrWhiteSpace(phone))
+            throw new ArgumentException("手机号不能为空");
+
+        var result = await _captchaService.GenerateCaptchaAsync(phone);
+        
+        return Success(new
+        {
+            captcha = result.Code,
+            expiresIn = result.ExpiresIn
+        });
+    }
+
+    /// <summary>
+    /// 验证验证码（可选 - 用于测试）
+    /// </summary>
+    [HttpPost("login/verify-captcha")]
+    public async Task<IActionResult> VerifyCaptcha([FromBody] VerifyCaptchaRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Phone))
+            throw new ArgumentException("手机号不能为空");
+
+        if (string.IsNullOrWhiteSpace(request.Code))
+            throw new ArgumentException("验证码不能为空");
+
+        var isValid = await _captchaService.ValidateCaptchaAsync(request.Phone, request.Code);
+        
+        return Success(new { valid = isValid });
     }
 
     /// <summary>

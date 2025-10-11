@@ -4,7 +4,7 @@
 import React from 'react';
 
 export async function getRoutes() {
-  const routes = {"1":{"path":"/user","layout":false,"id":"1"},"2":{"name":"login","path":"/user/login","parentId":"1","id":"2"},"3":{"name":"register","path":"/user/register","parentId":"1","id":"3"},"4":{"name":"register-result","path":"/user/register-result","parentId":"1","id":"4"},"5":{"path":"/welcome","name":"welcome","icon":"smile","parentId":"ant-design-pro-layout","id":"5"},"6":{"path":"/admin","name":"admin","icon":"crown","access":"canAdmin","parentId":"ant-design-pro-layout","id":"6"},"7":{"path":"/admin","redirect":"/admin/sub-page","parentId":"6","id":"7"},"8":{"path":"/admin/sub-page","name":"sub-page","parentId":"6","id":"8"},"9":{"name":"list.table-list","icon":"table","path":"/list","parentId":"ant-design-pro-layout","id":"9"},"10":{"name":"user-management","icon":"user","path":"/user-management","parentId":"ant-design-pro-layout","id":"10"},"11":{"name":"debug","icon":"bug","path":"/debug","parentId":"ant-design-pro-layout","id":"11"},"12":{"name":"test-menu","icon":"experiment","path":"/test-menu","parentId":"ant-design-pro-layout","id":"12"},"13":{"name":"change-password","path":"/user/change-password","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"13"},"14":{"name":"account.center","path":"/account/center","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"14"},"15":{"path":"/","redirect":"/welcome","parentId":"ant-design-pro-layout","id":"15"},"16":{"path":"*","layout":false,"id":"16"},"ant-design-pro-layout":{"id":"ant-design-pro-layout","path":"/","isLayout":true}} as const;
+  const routes = {"1":{"path":"/user","layout":false,"id":"1"},"2":{"name":"login","path":"/user/login","parentId":"1","id":"2"},"3":{"name":"register","path":"/user/register","parentId":"1","id":"3"},"4":{"name":"register-result","path":"/user/register-result","parentId":"1","id":"4"},"5":{"path":"/welcome","name":"welcome","icon":"smile","parentId":"ant-design-pro-layout","id":"5"},"6":{"name":"system","icon":"setting","path":"/system","parentId":"ant-design-pro-layout","id":"6"},"7":{"path":"/system","redirect":"/system/user-management","parentId":"6","id":"7"},"8":{"name":"user-management","icon":"user","path":"/system/user-management","parentId":"6","id":"8"},"9":{"name":"role-management","icon":"team","path":"/system/role-management","parentId":"6","id":"9"},"10":{"name":"menu-management","icon":"menu","path":"/system/menu-management","parentId":"6","id":"10"},"11":{"name":"user-log","icon":"file-text","path":"/system/user-log","parentId":"6","id":"11"},"12":{"name":"change-password","path":"/user/change-password","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"12"},"13":{"name":"account.center","path":"/account/center","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"13"},"14":{"path":"/","redirect":"/welcome","parentId":"ant-design-pro-layout","id":"14"},"15":{"path":"*","layout":false,"id":"15"},"ant-design-pro-layout":{"id":"ant-design-pro-layout","path":"/","isLayout":true}} as const;
   return {
     routes,
     routeComponents: {
@@ -15,15 +15,14 @@ export async function getRoutes() {
 '5': React.lazy(() => import(/* webpackChunkName: "p__Welcome" */'@/pages/Welcome.tsx')),
 '6': React.lazy(() => import('./EmptyRoute')),
 '7': React.lazy(() => import('./EmptyRoute')),
-'8': React.lazy(() => import(/* webpackChunkName: "p__Admin" */'@/pages/Admin.tsx')),
-'9': React.lazy(() => import(/* webpackChunkName: "p__table-list__index" */'@/pages/table-list/index.tsx')),
-'10': React.lazy(() => import(/* webpackChunkName: "p__user-management__index" */'@/pages/user-management/index.tsx')),
-'11': React.lazy(() => import(/* webpackChunkName: "p__user-management__debug" */'@/pages/user-management/debug.tsx')),
-'12': React.lazy(() => import(/* webpackChunkName: "p__test-menu__index" */'@/pages/test-menu/index.tsx')),
-'13': React.lazy(() => import(/* webpackChunkName: "p__user__change-password__index" */'@/pages/user/change-password/index.tsx')),
-'14': React.lazy(() => import(/* webpackChunkName: "p__account__center__index" */'@/pages/account/center/index.tsx')),
-'15': React.lazy(() => import('./EmptyRoute')),
-'16': React.lazy(() => import(/* webpackChunkName: "p__404" */'@/pages/404.tsx')),
+'8': React.lazy(() => import(/* webpackChunkName: "p__user-management__index" */'@/pages/user-management/index.tsx')),
+'9': React.lazy(() => import(/* webpackChunkName: "p__role-management__index" */'@/pages/role-management/index.tsx')),
+'10': React.lazy(() => import(/* webpackChunkName: "p__menu-management__index" */'@/pages/menu-management/index.tsx')),
+'11': React.lazy(() => import(/* webpackChunkName: "p__user-log__index" */'@/pages/user-log/index.tsx')),
+'12': React.lazy(() => import(/* webpackChunkName: "p__user__change-password__index" */'@/pages/user/change-password/index.tsx')),
+'13': React.lazy(() => import(/* webpackChunkName: "p__account__center__index" */'@/pages/account/center/index.tsx')),
+'14': React.lazy(() => import('./EmptyRoute')),
+'15': React.lazy(() => import(/* webpackChunkName: "p__404" */'@/pages/404.tsx')),
 'ant-design-pro-layout': React.lazy(() => import(/* webpackChunkName: "t__plugin-layout__Layout" */'/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/.umi-production/plugin-layout/Layout.tsx')),
 },
   };

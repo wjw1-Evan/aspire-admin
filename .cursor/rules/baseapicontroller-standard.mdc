@@ -1,0 +1,262 @@
+---
+alwaysApply: true
+description: BaseApiController 统一标准 - 所有控制器必须继承
+---
+
+# BaseApiController 统一标准
+
+## 🎯 强制规范
+
+**所有控制器必须继承 `BaseApiController`，禁止直接继承 `ControllerBase`**
+
+## ✅ 正确示例
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class MyController : BaseApiController  // ✅ 正确
+{
+    [HttpGet]
+    public async Task<IActionResult> GetData()
+    {
+        // 使用基类方法获取用户信息
+        var userId = GetRequiredUserId();
+        
+        var data = await _service.GetDataAsync(userId);
+        
+        // 使用基类方法返回响应
+        return Success(data);
+    }
+}
+```
+
+## ❌ 错误示例
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class MyController : ControllerBase  // ❌ 禁止直接继承 ControllerBase
+{
+    // ...
+}
+```
+
+## 📚 BaseApiController 提供的能力
+
+### 用户信息属性
+- `CurrentUserId` - 当前用户ID（可空）
+- `CurrentUsername` - 当前用户名（可空）
+- `CurrentUserRole` - 当前用户角色（可空）
+- `IsAdmin` - 是否为管理员
+- `IsAuthenticated` - 是否已认证
+
+### 安全获取用户信息
+```csharp
+// 获取必需的用户ID（为空则自动抛出 UnauthorizedAccessException）
+var userId = GetRequiredUserId();
+```
+
+### 统一响应方法
+
+#### 成功响应
+```csharp
+// 返回数据
+return Success(data);
+
+// 返回数据和消息
+return Success(data, "获取成功");
+
+// 返回消息
+return Success("操作成功");
+
+// ApiResponse 格式
+return SuccessResponse(data);
+```
+
+#### 错误响应
+```csharp
+// 通用错误（建议：直接抛异常，由 GlobalExceptionMiddleware 处理）
+throw new InvalidOperationException("操作失败");
+
+// 特定错误
+throw new KeyNotFoundException("资源不存在");
+throw new ArgumentException("参数错误");
+throw new UnauthorizedAccessException("未授权");
+
+// 手动返回错误（不推荐）
+return Error("错误消息");
+return NotFoundError("资源不存在");
+return UnauthorizedError("未授权访问");
+```
+
+## 🚫 禁止的做法
+
+### ❌ 手动提取用户信息
+```csharp
+// ❌ 不要这样做
+var userId = User.FindFirst("userId")?.Value;
+if (string.IsNullOrEmpty(userId))
+    return Unauthorized(new { success = false, error = "未找到用户信息" });
+
+// ✅ 应该这样做
+var userId = GetRequiredUserId();
+```
+
+### ❌ 手动构建响应格式
+```csharp
+// ❌ 不要这样做
+return Ok(new { success = true, data = result });
+
+// ✅ 应该这样做
+return Success(result);
+```
+
+### ❌ 手动 try-catch
+```csharp
+// ❌ 不要这样做
+try
+{
+    var result = await _service.DoSomething();
+    return Ok(new { success = true, data = result });
+}
+catch (Exception ex)
+{
+    return StatusCode(500, new { success = false, error = ex.Message });
+}
+
+// ✅ 应该这样做（GlobalExceptionMiddleware 会自动处理）
+var result = await _service.DoSomething();
+return Success(result);
+```
+
+## 🎯 完整示例
+
+```csharp
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Platform.ApiService.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class ProductController : BaseApiController
+{
+    private readonly IProductService _productService;
+
+    public ProductController(IProductService productService)
+    {
+        _productService = productService;
+    }
+
+    /// <summary>
+    /// 获取所有产品
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var products = await _productService.GetAllAsync();
+        return Success(products);
+    }
+
+    /// <summary>
+    /// 根据ID获取产品
+    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var product = await _productService.GetByIdAsync(id);
+        if (product == null)
+            throw new KeyNotFoundException($"产品 {id} 不存在");
+        
+        return Success(product);
+    }
+
+    /// <summary>
+    /// 创建产品
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateProductRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Name))
+            throw new ArgumentException("产品名称不能为空");
+        
+        // 使用基类方法获取当前用户ID
+        var userId = GetRequiredUserId();
+        
+        var product = await _productService.CreateAsync(request, userId);
+        return Success(product, "创建成功");
+    }
+
+    /// <summary>
+    /// 更新产品
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateProductRequest request)
+    {
+        var success = await _productService.UpdateAsync(id, request);
+        if (!success)
+            throw new KeyNotFoundException($"产品 {id} 不存在");
+        
+        return Success("更新成功");
+    }
+
+    /// <summary>
+    /// 删除产品
+    /// </summary>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var success = await _productService.DeleteAsync(id);
+        if (!success)
+            throw new KeyNotFoundException($"产品 {id} 不存在");
+        
+        return NoContent();
+    }
+
+    /// <summary>
+    /// 获取我的产品（需要用户认证）
+    /// </summary>
+    [HttpGet("my-products")]
+    public async Task<IActionResult> GetMyProducts()
+    {
+        // 自动获取当前用户ID，如果未认证会自动抛异常
+        var userId = GetRequiredUserId();
+        
+        var products = await _productService.GetUserProductsAsync(userId);
+        return Success(products);
+    }
+
+    /// <summary>
+    /// 管理员操作（检查权限）
+    /// </summary>
+    [HttpPost("admin-action")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> AdminAction()
+    {
+        // 可以使用 IsAdmin 属性进行额外检查
+        if (!IsAdmin)
+            throw new UnauthorizedAccessException("需要管理员权限");
+        
+        // 执行管理员操作
+        await _productService.DoAdminActionAsync();
+        return Success("操作成功");
+    }
+}
+```
+
+## 📖 相关文档
+
+- [BaseApiController 实现](mdc:Platform.ApiService/Controllers/BaseApiController.cs)
+- [全局异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
+- [统一标准报告](mdc:BASEAPICONTROLLER-STANDARDIZATION.md)
+
+## 🎯 核心原则
+
+1. **统一继承** - 所有控制器必须继承 `BaseApiController`
+2. **使用基类方法** - 使用基类提供的便捷方法
+3. **抛出异常** - 不要手动 try-catch，抛出异常由中间件处理
+4. **统一响应** - 使用 `Success()` 等方法统一响应格式
+5. **简化代码** - 让基类和中间件处理通用逻辑
+
+遵循这些规范，代码将更简洁、更易维护、更统一！

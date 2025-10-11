@@ -6,11 +6,11 @@ namespace Platform.ApiService.Controllers;
 
 [ApiController]
 [Route("api")]
-public class RuleController : ControllerBase
+public class RuleController : BaseApiController
 {
-    private readonly RuleService _ruleService;
+    private readonly IRuleService _ruleService;
 
-    public RuleController(RuleService ruleService)
+    public RuleController(IRuleService ruleService)
     {
         _ruleService = ruleService;
     }
@@ -76,9 +76,8 @@ public class RuleController : ControllerBase
     [HttpPut("rule")]
     public IActionResult UpdateRule([FromBody] UpdateRuleRequest request)
     {
-        // 这里需要根据key找到对应的id，然后更新
-        // 为了简化，这里返回成功
-        return Ok(new { success = true });
+        // TODO: 此功能需要完善 - UpdateRuleRequest 需要添加标识字段（Key 或 Id）
+        return Success("功能开发中");
     }
 
     /// <summary>
@@ -88,11 +87,13 @@ public class RuleController : ControllerBase
     [HttpDelete("rule")]
     public async Task<IActionResult> DeleteRule([FromBody] DeleteRuleRequest request)
     {
-        if (request.Key.HasValue)
-        {
-            var deleted = await _ruleService.DeleteRulesAsync(new List<int> { request.Key.Value });
-            return Ok(new { success = deleted });
-        }
-        return BadRequest("Key is required for delete operation");
+        if (!request.Key.HasValue)
+            throw new ArgumentException("Key不能为空");
+        
+        var deleted = await _ruleService.DeleteRulesAsync(new List<int> { request.Key.Value });
+        if (!deleted)
+            throw new KeyNotFoundException($"规则 {request.Key.Value} 不存在");
+        
+        return Success("删除成功");
     }
 }

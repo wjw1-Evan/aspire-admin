@@ -3,25 +3,45 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class UserService
+public class UserService : IUserService
 {
     private readonly IMongoCollection<AppUser> _users;
     private readonly IMongoCollection<UserActivityLog> _activityLogs;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(IMongoDatabase database)
+    public UserService(
+        IMongoDatabase database, 
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<UserService> logger)
     {
         _users = database.GetCollection<AppUser>("users");
         _activityLogs = database.GetCollection<UserActivityLog>("user_activity_logs");
+        _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// 获取当前操作用户ID
+    /// </summary>
+    private string? GetCurrentUserId()
+    {
+        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
     }
 
     public async Task<List<AppUser>> GetAllUsersAsync()
     {
-        return await _users.Find(user => true).ToListAsync();
+        var filter = SoftDeleteExtensions.NotDeleted<AppUser>();
+        return await _users.Find(filter).ToListAsync();
     }
 
     public async Task<AppUser?> GetUserByIdAsync(string id)
     {
-        return await _users.Find(user => user.Id == id).FirstOrDefaultAsync();
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(user => user.Id, id),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
+        return await _users.Find(filter).FirstOrDefaultAsync();
     }
 
     public async Task<AppUser> CreateUserAsync(CreateUserRequest request)
@@ -32,6 +52,7 @@ public class UserService
             Email = request.Email,
             Role = "user", // 默认为普通用户
             IsActive = true,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -43,7 +64,11 @@ public class UserService
     public async Task<AppUser> CreateUserManagementAsync(CreateUserManagementRequest request)
     {
         // 检查用户名是否已存在
-        var existingUser = await _users.Find(u => u.Username == request.Username).FirstOrDefaultAsync();
+        var usernameFilter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(u => u.Username, request.Username),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
+        var existingUser = await _users.Find(usernameFilter).FirstOrDefaultAsync();
         if (existingUser != null)
         {
             throw new InvalidOperationException("用户名已存在");
@@ -52,7 +77,11 @@ public class UserService
         // 检查邮箱是否已存在
         if (!string.IsNullOrEmpty(request.Email))
         {
-            var existingEmail = await _users.Find(u => u.Email == request.Email).FirstOrDefaultAsync();
+            var emailFilter = Builders<AppUser>.Filter.And(
+                Builders<AppUser>.Filter.Eq(u => u.Email, request.Email),
+                SoftDeleteExtensions.NotDeleted<AppUser>()
+            );
+            var existingEmail = await _users.Find(emailFilter).FirstOrDefaultAsync();
             if (existingEmail != null)
             {
                 throw new InvalidOperationException("邮箱已存在");
@@ -70,6 +99,7 @@ public class UserService
             Role = request.Role ?? "user", // 如果未提供，默认为 user
             RoleIds = request.RoleIds ?? new List<string>(),
             IsActive = request.IsActive,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -109,7 +139,12 @@ public class UserService
         if (!string.IsNullOrEmpty(request.Username))
         {
             // 检查用户名是否已存在（排除当前用户）
-            var existingUser = await _users.Find(u => u.Username == request.Username && u.Id != id).FirstOrDefaultAsync();
+            var usernameFilter = Builders<AppUser>.Filter.And(
+                Builders<AppUser>.Filter.Eq(u => u.Username, request.Username),
+                Builders<AppUser>.Filter.Ne(u => u.Id, id),
+                SoftDeleteExtensions.NotDeleted<AppUser>()
+            );
+            var existingUser = await _users.Find(usernameFilter).FirstOrDefaultAsync();
             if (existingUser != null)
             {
                 throw new InvalidOperationException("用户名已存在");
@@ -120,7 +155,12 @@ public class UserService
         if (!string.IsNullOrEmpty(request.Email))
         {
             // 检查邮箱是否已存在（排除当前用户）
-            var existingEmail = await _users.Find(u => u.Email == request.Email && u.Id != id).FirstOrDefaultAsync();
+            var emailFilter = Builders<AppUser>.Filter.And(
+                Builders<AppUser>.Filter.Eq(u => u.Email, request.Email),
+                Builders<AppUser>.Filter.Ne(u => u.Id, id),
+                SoftDeleteExtensions.NotDeleted<AppUser>()
+            );
+            var existingEmail = await _users.Find(emailFilter).FirstOrDefaultAsync();
             if (existingEmail != null)
             {
                 throw new InvalidOperationException("邮箱已存在");
@@ -147,15 +187,25 @@ public class UserService
         return null;
     }
 
-    public async Task<bool> DeleteUserAsync(string id)
+    /// <summary>
+    /// 软删除用户
+    /// </summary>
+    public async Task<bool> DeleteUserAsync(string id, string? reason = null)
     {
-        var result = await _users.DeleteOneAsync(user => user.Id == id);
-        return result.DeletedCount > 0;
+        var currentUserId = GetCurrentUserId();
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(user => user.Id, id),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
+        return await _users.SoftDeleteOneAsync(filter, currentUserId, reason);
     }
 
     public async Task<List<AppUser>> SearchUsersByNameAsync(string name)
     {
-        var filter = Builders<AppUser>.Filter.Regex(user => user.Username, new MongoDB.Bson.BsonRegularExpression(name, "i"));
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Regex(user => user.Username, new MongoDB.Bson.BsonRegularExpression(name, "i")),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
         return await _users.Find(filter).ToListAsync();
     }
 
@@ -184,7 +234,7 @@ public class UserService
     // 新增的用户管理功能
     public async Task<UserListResponse> GetUsersWithPaginationAsync(UserListRequest request)
     {
-        var filter = Builders<AppUser>.Filter.Empty;
+        var filter = SoftDeleteExtensions.NotDeleted<AppUser>();
 
         // 搜索过滤
         if (!string.IsNullOrEmpty(request.Search))
@@ -234,19 +284,35 @@ public class UserService
 
     public async Task<UserStatisticsResponse> GetUserStatisticsAsync()
     {
-        var totalUsers = await _users.CountDocumentsAsync(user => true);
-        var activeUsers = await _users.CountDocumentsAsync(user => user.IsActive);
+        var notDeletedFilter = SoftDeleteExtensions.NotDeleted<AppUser>();
+        
+        var totalUsers = await _users.CountDocumentsAsync(notDeletedFilter);
+        
+        var activeFilter = Builders<AppUser>.Filter.And(notDeletedFilter, 
+            Builders<AppUser>.Filter.Eq(user => user.IsActive, true));
+        var activeUsers = await _users.CountDocumentsAsync(activeFilter);
         var inactiveUsers = totalUsers - activeUsers;
-        var adminUsers = await _users.CountDocumentsAsync(user => user.Role == "admin");
+        
+        var adminFilter = Builders<AppUser>.Filter.And(notDeletedFilter,
+            Builders<AppUser>.Filter.Eq(user => user.Role, "admin"));
+        var adminUsers = await _users.CountDocumentsAsync(adminFilter);
         var regularUsers = totalUsers - adminUsers;
 
         var today = DateTime.UtcNow.Date;
         var thisWeek = today.AddDays(-(int)today.DayOfWeek);
         var thisMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var newUsersToday = await _users.CountDocumentsAsync(user => user.CreatedAt >= today);
-        var newUsersThisWeek = await _users.CountDocumentsAsync(user => user.CreatedAt >= thisWeek);
-        var newUsersThisMonth = await _users.CountDocumentsAsync(user => user.CreatedAt >= thisMonth);
+        var todayFilter = Builders<AppUser>.Filter.And(notDeletedFilter,
+            Builders<AppUser>.Filter.Gte(user => user.CreatedAt, today));
+        var newUsersToday = await _users.CountDocumentsAsync(todayFilter);
+        
+        var weekFilter = Builders<AppUser>.Filter.And(notDeletedFilter,
+            Builders<AppUser>.Filter.Gte(user => user.CreatedAt, thisWeek));
+        var newUsersThisWeek = await _users.CountDocumentsAsync(weekFilter);
+        
+        var monthFilter = Builders<AppUser>.Filter.And(notDeletedFilter,
+            Builders<AppUser>.Filter.Gte(user => user.CreatedAt, thisMonth));
+        var newUsersThisMonth = await _users.CountDocumentsAsync(monthFilter);
 
         return new UserStatisticsResponse
         {
@@ -261,9 +327,15 @@ public class UserService
         };
     }
 
-    public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request)
+    /// <summary>
+    /// 批量操作用户（激活、停用、软删除）
+    /// </summary>
+    public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? deleteReason = null)
     {
-        var filter = Builders<AppUser>.Filter.In(user => user.Id, request.UserIds);
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.In(user => user.Id, request.UserIds),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
         var update = Builders<AppUser>.Update.Set(user => user.UpdatedAt, DateTime.UtcNow);
 
         switch (request.Action.ToLower())
@@ -275,8 +347,9 @@ public class UserService
                 update = update.Set(user => user.IsActive, false);
                 break;
             case "delete":
-                var deleteResult = await _users.DeleteManyAsync(filter);
-                return deleteResult.DeletedCount > 0;
+                var currentUserId = GetCurrentUserId();
+                var deleteCount = await _users.SoftDeleteManyAsync(filter, currentUserId, deleteReason);
+                return deleteCount > 0;
             default:
                 return false;
         }
@@ -305,6 +378,7 @@ public class UserService
             Description = description,
             IpAddress = ipAddress,
             UserAgent = userAgent,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -320,9 +394,62 @@ public class UserService
             .ToListAsync();
     }
 
+    /// <summary>
+    /// 获取所有用户的活动日志（分页）
+    /// </summary>
+    public async Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(
+        int page = 1, 
+        int pageSize = 20, 
+        string? userId = null,
+        string? action = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null)
+    {
+        var filterBuilder = Builders<UserActivityLog>.Filter;
+        var filter = filterBuilder.Empty;
+
+        // 按用户ID过滤
+        if (!string.IsNullOrEmpty(userId))
+        {
+            filter &= filterBuilder.Eq(log => log.UserId, userId);
+        }
+
+        // 按操作类型过滤
+        if (!string.IsNullOrEmpty(action))
+        {
+            filter &= filterBuilder.Eq(log => log.Action, action);
+        }
+
+        // 按日期范围过滤
+        if (startDate.HasValue)
+        {
+            filter &= filterBuilder.Gte(log => log.CreatedAt, startDate.Value);
+        }
+        if (endDate.HasValue)
+        {
+            filter &= filterBuilder.Lte(log => log.CreatedAt, endDate.Value);
+        }
+
+        // 获取总数
+        var total = await _activityLogs.CountDocumentsAsync(filter);
+
+        // 获取分页数据
+        var logs = await _activityLogs
+            .Find(filter)
+            .Sort(Builders<UserActivityLog>.Sort.Descending(log => log.CreatedAt))
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
+
+        return (logs, total);
+    }
+
     public async Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null)
     {
-        var filter = Builders<AppUser>.Filter.Eq(user => user.Email, email);
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(user => user.Email, email),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
@@ -338,7 +465,10 @@ public class UserService
 
     public async Task<bool> CheckUsernameExistsAsync(string username, string? excludeUserId = null)
     {
-        var filter = Builders<AppUser>.Filter.Eq(user => user.Username, username);
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(user => user.Username, username),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
@@ -364,7 +494,12 @@ public class UserService
         if (!string.IsNullOrEmpty(request.Email))
         {
             // 检查邮箱是否已存在（排除当前用户）
-            var existingEmail = await _users.Find(u => u.Email == request.Email && u.Id != userId).FirstOrDefaultAsync();
+            var emailFilter = Builders<AppUser>.Filter.And(
+                Builders<AppUser>.Filter.Eq(u => u.Email, request.Email),
+                Builders<AppUser>.Filter.Ne(u => u.Id, userId),
+                SoftDeleteExtensions.NotDeleted<AppUser>()
+            );
+            var existingEmail = await _users.Find(emailFilter).FirstOrDefaultAsync();
             if (existingEmail != null)
             {
                 throw new InvalidOperationException("邮箱已存在");

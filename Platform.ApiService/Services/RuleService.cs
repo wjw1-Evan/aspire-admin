@@ -4,14 +4,15 @@ using System.Text.Json;
 
 namespace Platform.ApiService.Services;
 
-public class RuleService
+public class RuleService : IRuleService
 {
     private readonly IMongoCollection<RuleListItem> _rules;
+    private readonly ILogger<RuleService> _logger;
 
-    public RuleService(IMongoDatabase database)
+    public RuleService(IMongoDatabase database, ILogger<RuleService> logger)
     {
         _rules = database.GetCollection<RuleListItem>("rules");
-        
+        _logger = logger;
     }
  
 
@@ -39,18 +40,11 @@ public class RuleService
         // 排序处理
         if (!string.IsNullOrEmpty(queryParams.Sorter))
         {
-            try
+            var sorter = JsonSerializer.Deserialize<Dictionary<string, string>>(queryParams.Sorter);
+            if (sorter != null)
             {
-                var sorter = JsonSerializer.Deserialize<Dictionary<string, string>>(queryParams.Sorter);
-                if (sorter != null)
-                {
-                    // 这里可以根据需要实现更复杂的排序逻辑
-                    rules = rules.OrderBy(r => r.Name).ToList();
-                }
-            }
-            catch
-            {
-                // 忽略排序错误
+                // 这里可以根据需要实现更复杂的排序逻辑
+                rules = rules.OrderBy(r => r.Name).ToList();
             }
         }
 
@@ -83,6 +77,7 @@ public class RuleService
             Status = request.Status,
             Progress = request.Progress,
             Disabled = request.Disabled,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -132,6 +127,7 @@ public class RuleService
         
         return null;
     }
+
 
     public async Task<bool> DeleteRuleAsync(string id)
     {

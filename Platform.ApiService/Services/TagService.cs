@@ -3,14 +3,15 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class TagService
+public class TagService : ITagService
 {
     private readonly IMongoCollection<TagItem> _tags;
+    private readonly ILogger<TagService> _logger;
 
-    public TagService(IMongoDatabase database)
+    public TagService(IMongoDatabase database, ILogger<TagService> logger)
     {
         _tags = database.GetCollection<TagItem>("tags");
-   
+        _logger = logger;
     }
 
     public async Task<TagListResponse> GetTagsAsync()
@@ -40,6 +41,7 @@ public class TagService
             Name = request.Name,
             Value = request.Value,
             Type = request.Type,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

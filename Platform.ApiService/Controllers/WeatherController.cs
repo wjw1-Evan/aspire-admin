@@ -5,7 +5,7 @@ namespace Platform.ApiService.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class WeatherController : ControllerBase
+public class WeatherController : BaseApiController
 {
     private readonly string[] _summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
 

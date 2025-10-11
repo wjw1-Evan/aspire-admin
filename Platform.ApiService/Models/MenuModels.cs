@@ -1,12 +1,13 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
 
 /// <summary>
 /// 菜单实体
 /// </summary>
-public class Menu
+public class Menu : ISoftDeletable
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -14,6 +15,9 @@ public class Menu
 
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
+
+    [BsonElement("title")]
+    public string Title { get; set; } = string.Empty;
 
     [BsonElement("path")]
     public string Path { get; set; } = string.Empty;
@@ -50,6 +54,19 @@ public class Menu
 
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // 软删除字段
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
 }
 
 /// <summary>
@@ -57,10 +74,24 @@ public class Menu
 /// </summary>
 public class CreateMenuRequest
 {
+    [Required(ErrorMessage = "菜单名称不能为空")]
+    [StringLength(50, ErrorMessage = "菜单名称长度不能超过50个字符")]
     public string Name { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "菜单标题不能为空")]
+    [StringLength(100, ErrorMessage = "菜单标题长度不能超过100个字符")]
+    public string Title { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "菜单路径不能为空")]
+    [StringLength(200, ErrorMessage = "菜单路径长度不能超过200个字符")]
     public string Path { get; set; } = string.Empty;
+    
+    [StringLength(200, ErrorMessage = "组件路径长度不能超过200个字符")]
     public string? Component { get; set; }
+    
+    [StringLength(50, ErrorMessage = "图标名称长度不能超过50个字符")]
     public string? Icon { get; set; }
+    
     public int SortOrder { get; set; }
     public bool IsEnabled { get; set; } = true;
     public bool IsExternal { get; set; } = false;
@@ -75,10 +106,21 @@ public class CreateMenuRequest
 /// </summary>
 public class UpdateMenuRequest
 {
+    [StringLength(50, ErrorMessage = "菜单名称长度不能超过50个字符")]
     public string? Name { get; set; }
+    
+    [StringLength(100, ErrorMessage = "菜单标题长度不能超过100个字符")]
+    public string? Title { get; set; }
+    
+    [StringLength(200, ErrorMessage = "菜单路径长度不能超过200个字符")]
     public string? Path { get; set; }
+    
+    [StringLength(200, ErrorMessage = "组件路径长度不能超过200个字符")]
     public string? Component { get; set; }
+    
+    [StringLength(50, ErrorMessage = "图标名称长度不能超过50个字符")]
     public string? Icon { get; set; }
+    
     public int? SortOrder { get; set; }
     public bool? IsEnabled { get; set; }
     public bool? IsExternal { get; set; }
@@ -95,6 +137,7 @@ public class MenuTreeNode
 {
     public string? Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
     public string Path { get; set; } = string.Empty;
     public string? Component { get; set; }
     public string? Icon { get; set; }

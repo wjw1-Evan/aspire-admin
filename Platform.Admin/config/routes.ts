@@ -39,35 +39,6 @@ export default [
     component: './Welcome',
   },
   {
-    path: '/admin',
-    name: 'admin',
-    icon: 'crown',
-    access: 'canAdmin',
-    routes: [
-      {
-        path: '/admin',
-        redirect: '/admin/sub-page',
-      },
-      {
-        path: '/admin/sub-page',
-        name: 'sub-page',
-        component: './Admin',
-      },
-    ],
-  },
-  {
-    name: 'list.table-list',
-    icon: 'table',
-    path: '/list',
-    component: './table-list',
-  },
-  {
-    name: 'user-management',
-    icon: 'user',
-    path: '/user-management',
-    component: './user-management',
-  },
-  {
     name: 'system',
     icon: 'setting',
     path: '/system',
@@ -94,19 +65,13 @@ export default [
         path: '/system/menu-management',
         component: './menu-management',
       },
+      {
+        name: 'user-log',
+        icon: 'file-text',
+        path: '/system/user-log',
+        component: './user-log',
+      },
     ],
-  },
-  {
-    name: 'debug',
-    icon: 'bug',
-    path: '/debug',
-    component: './user-management/debug',
-  },
-  {
-    name: 'test-menu',
-    icon: 'experiment',
-    path: '/test-menu',
-    component: './test-menu',
   },
   {
     name: 'change-password',

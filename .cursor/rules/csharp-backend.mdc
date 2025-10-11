@@ -32,11 +32,14 @@ Platform.ApiService/
 - **常量**: 使用 UPPER_SNAKE_CASE (如 `MAX_RETRY_COUNT`)
 
 ### 控制器设计
+
+**⚠️ 重要：所有控制器必须继承 `BaseApiController`**
+
 ```csharp
-// ✅ 推荐：标准的 API 控制器
+// ✅ 推荐：继承 BaseApiController
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController : ControllerBase
+public class UsersController : BaseApiController  // ✅ 必须继承 BaseApiController
 {
     private readonly IUserService _userService;
     
@@ -46,18 +49,41 @@ public class UsersController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    public async Task<IActionResult> GetUsers()
     {
         var users = await _userService.GetAllUsersAsync();
-        return Ok(users);
+        return Success(users);  // ✅ 使用基类方法
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUser(string id)
+    {
+        var user = await _userService.GetUserByIdAsync(id);
+        if (user == null)
+            throw new KeyNotFoundException($"用户 {id} 不存在");  // ✅ 抛出异常
+        
+        return Success(user);
     }
     
     [HttpPost]
-    public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserRequest request)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
-        var user = await _userService.CreateUserAsync(request);
-        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+        if (string.IsNullOrEmpty(request.Name))
+            throw new ArgumentException("用户名不能为空");  // ✅ 参数验证
+        
+        var userId = GetRequiredUserId();  // ✅ 使用基类方法获取用户ID
+        var user = await _userService.CreateUserAsync(request, userId);
+        
+        return Success(user, "创建成功");
     }
+}
+
+// ❌ 禁止：直接继承 ControllerBase
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase  // ❌ 禁止
+{
+    // ...
 }
 ```
 
@@ -632,17 +658,137 @@ public static async Task CreateIndexesAsync(IMongoDatabase database)
 }
 ```
 
+## 🎯 BaseApiController 统一标准
+
+### 核心规范
+**所有控制器必须继承 `BaseApiController`，禁止直接继承 `ControllerBase`**
+
+### BaseApiController 提供的能力
+
+#### 用户信息属性
+```csharp
+protected string? CurrentUserId          // 当前用户ID
+protected string? CurrentUsername        // 当前用户名
+protected string? CurrentUserRole        // 当前用户角色
+protected bool IsAdmin                   // 是否管理员
+protected bool IsAuthenticated           // 是否已认证
+```
+
+#### 安全获取用户信息
+```csharp
+// 获取必需的用户ID（为空则自动抛出 UnauthorizedAccessException）
+var userId = GetRequiredUserId();
+```
+
+#### 统一响应方法
+```csharp
+// 成功响应
+return Success(data);
+return Success(data, "操作成功");
+return Success("操作成功");
+return SuccessResponse(data);
+
+// 错误响应（不推荐，建议直接抛异常）
+return Error("错误消息");
+return NotFoundError("资源不存在");
+return UnauthorizedError("未授权访问");
+```
+
+### 最佳实践
+
+#### ✅ 正确的异常处理
+```csharp
+// ✅ 推荐：直接抛出异常，由 GlobalExceptionMiddleware 处理
+[HttpGet("{id}")]
+public async Task<IActionResult> GetUser(string id)
+{
+    var user = await _userService.GetUserByIdAsync(id);
+    if (user == null)
+        throw new KeyNotFoundException($"用户 {id} 不存在");
+    
+    return Success(user);
+}
+
+// ❌ 不推荐：手动 try-catch
+[HttpGet("{id}")]
+public async Task<IActionResult> GetUser(string id)
+{
+    try
+    {
+        var user = await _userService.GetUserByIdAsync(id);
+        return Ok(new { success = true, data = user });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { success = false, error = ex.Message });
+    }
+}
+```
+
+#### ✅ 使用基类方法
+```csharp
+// ✅ 推荐：使用基类方法
+var userId = GetRequiredUserId();
+return Success(data);
+
+// ❌ 不推荐：手动提取和构建响应
+var userId = User.FindFirst("userId")?.Value;
+if (string.IsNullOrEmpty(userId))
+    return Unauthorized(new { success = false, error = "未找到用户信息" });
+return Ok(new { success = true, data = data });
+```
+
+## 🔧 中间件架构
+
+项目使用以下中间件处理通用功能：
+
+### GlobalExceptionMiddleware
+- 自动捕获所有未处理的异常
+- 转换为统一的错误响应格式
+- 自动添加 traceId 用于追踪
+- 根据异常类型返回合适的 HTTP 状态码
+
+### ActivityLogMiddleware
+- 自动记录所有 API 请求
+- 记录用户信息、请求路径、状态码、耗时等
+- 智能生成操作类型和中文描述
+- 异步记录，不阻塞响应
+
+### ResponseFormattingMiddleware
+- 自动包装所有成功响应
+- 确保响应格式统一
+- 自动添加 timestamp
+
+### 中间件顺序
+```csharp
+app.UseMiddleware<GlobalExceptionMiddleware>();       // 1. 异常处理（最外层）
+app.UseAuthentication();                              // 2. 认证
+app.UseAuthorization();                               // 3. 授权
+app.UseMiddleware<ActivityLogMiddleware>();           // 4. 日志记录
+app.UseCors();                                        // 5. 跨域
+app.UseMiddleware<ResponseFormattingMiddleware>();    // 6. 响应格式化
+app.MapControllers();                                 // 7. 控制器
+```
+
 ## 🚫 避免的做法
 
-- 不要使用 `async void`（除了事件处理程序）
-- 不要忽略异常（使用适当的异常处理）
-- 不要使用 `string` 代替强类型
-- 不要忘记配置依赖注入
-- 不要在生产环境中暴露敏感信息
-- 不要在控制器中编写业务逻辑
-- 不要忘记验证输入参数
-- 不要硬编码配置值
-- 不要忘记添加 XML 文档注释
+### 控制器相关
+- ❌ 不要直接继承 `ControllerBase`（必须继承 `BaseApiController`）
+- ❌ 不要手动提取用户信息（使用 `GetRequiredUserId()`）
+- ❌ 不要手动构建响应格式（使用 `Success()` 方法）
+- ❌ 不要使用 try-catch 包裹业务逻辑（由中间件处理）
+- ❌ 不要手动记录日志（由 ActivityLogMiddleware 处理）
+- ❌ 不要在控制器中编写业务逻辑
+
+### 通用规范
+- ❌ 不要使用 `async void`（除了事件处理程序）
+- ❌ 不要忽略异常（使用适当的异常处理）
+- ❌ 不要使用 `string` 代替强类型
+- ❌ 不要忘记配置依赖注入
+- ❌ 不要在生产环境中暴露敏感信息
+- ❌ 不要忘记验证输入参数
+- ❌ 不要硬编码配置值
+- ❌ 不要忘记添加 XML 文档注释
 
 ## 🔧 配置管理
 
@@ -742,13 +888,66 @@ builder.Services.AddHealthChecks()
 
 ## 🎯 最佳实践
 
-1. **使用异步编程** - 所有 I/O 操作都应该是异步的
-2. **依赖注入** - 使用依赖注入管理服务生命周期
-3. **配置管理** - 使用 Options 模式管理配置
-4. **日志记录** - 使用 ILogger 记录日志
-5. **错误处理** - 使用统一的错误处理机制
-6. **API 文档** - 使用 XML 注释和 Swagger/OpenAPI
-7. **验证** - 使用数据注解或 FluentValidation 验证输入
-8. **分离关注点** - 控制器只负责 HTTP 相关逻辑
-9. **使用强类型** - 避免使用 `string` 或 `object`
-10. **安全性** - 使用 JWT 认证和授权
+### 控制器开发
+1. **继承 BaseApiController** - 所有控制器必须继承 BaseApiController
+2. **抛出异常** - 不要使用 try-catch，直接抛出异常由中间件处理
+3. **使用基类方法** - 使用 `GetRequiredUserId()` 和 `Success()` 等方法
+4. **参数验证** - 使用 `ArgumentException` 进行参数验证
+5. **统一响应** - 使用基类提供的响应方法
+
+### 通用开发
+6. **使用异步编程** - 所有 I/O 操作都应该是异步的
+7. **依赖注入** - 使用依赖注入管理服务生命周期
+8. **配置管理** - 使用 Options 模式管理配置
+9. **日志记录** - 使用 ILogger 记录日志（不要手动记录活动日志）
+10. **错误处理** - 依赖 GlobalExceptionMiddleware 统一处理
+11. **API 文档** - 使用 XML 注释和 Swagger/OpenAPI
+12. **验证** - 使用数据注解或 FluentValidation 验证输入
+13. **分离关注点** - 控制器只负责 HTTP 相关逻辑
+14. **使用强类型** - 避免使用 `string` 或 `object`
+15. **安全性** - 使用 JWT 认证和授权
+
+### 完整示例
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class ProductController : BaseApiController  // ✅ 继承基类
+{
+    private readonly IProductService _productService;
+
+    public ProductController(IProductService productService)
+    {
+        _productService = productService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var products = await _productService.GetAllAsync();
+        return Success(products);  // ✅ 使用基类方法
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var product = await _productService.GetByIdAsync(id);
+        if (product == null)
+            throw new KeyNotFoundException($"产品 {id} 不存在");  // ✅ 抛出异常
+        
+        return Success(product);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateProductRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Name))
+            throw new ArgumentException("产品名称不能为空");  // ✅ 参数验证
+        
+        var userId = GetRequiredUserId();  // ✅ 使用基类方法
+        var product = await _productService.CreateAsync(request, userId);
+        
+        return Success(product, "创建成功");
+    }
+}
+```

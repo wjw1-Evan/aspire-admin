@@ -6,11 +6,11 @@ namespace Platform.ApiService.Controllers;
 
 [ApiController]
 [Route("api")]
-public class NoticeController : ControllerBase
+public class NoticeController : BaseApiController
 {
-    private readonly NoticeService _noticeService;
+    private readonly INoticeService _noticeService;
 
-    public NoticeController(NoticeService noticeService)
+    public NoticeController(INoticeService noticeService)
     {
         _noticeService = noticeService;
     }

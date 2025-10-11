@@ -374,13 +374,23 @@ const Login: React.FC = () => {
                   },
                 ]}
                 onGetCaptcha={async (phone) => {
-                  const result = await getFakeCaptcha({
-                    phone,
-                  });
-                  if (!result) {
-                    return;
+                  try {
+                    const result = await getFakeCaptcha({ phone });
+                    
+                    if (result.success && result.data) {
+                      // 开发环境显示验证码（生产环境应该发送短信）
+                      message.success(
+                        `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,
+                        5
+                      );
+                      console.log(`验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`);
+                    } else {
+                      message.error('获取验证码失败');
+                    }
+                  } catch (error) {
+                    message.error('获取验证码失败，请稍后重试');
+                    console.error('获取验证码错误:', error);
                   }
-                  message.success('获取验证码成功！验证码为：1234');
                 }}
               />
             </>

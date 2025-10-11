@@ -6,12 +6,12 @@ using Platform.ApiService.Services;
 namespace Platform.ApiService.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class UserController : ControllerBase
+[Route("api/user")]
+public class UserController : BaseApiController
 {
-    private readonly UserService _userService;
+    private readonly IUserService _userService;
 
-    public UserController(UserService userService)
+    public UserController(IUserService userService)
     {
         _userService = userService;
     }
@@ -23,7 +23,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _userService.GetAllUsersAsync();
-        return Ok(users);
+        return Success(users);
     }
 
     /// <summary>
@@ -35,9 +35,9 @@ public class UserController : ControllerBase
     {
         var user = await _userService.GetUserByIdAsync(id);
         if (user == null)
-            return NotFound($"User with ID {id} not found");
+            throw new KeyNotFoundException($"User with ID {id} not found");
         
-        return Ok(user);
+        return Success(user);
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
         if (string.IsNullOrEmpty(request.Name) || string.IsNullOrEmpty(request.Email))
-            return BadRequest("Name and Email are required");
+            throw new ArgumentException("Name and Email are required");
         
         var user = await _userService.CreateUserAsync(request);
         return Created($"/api/users/{user.Id}", user);
@@ -62,33 +62,14 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
     {
-        try
-        {
-            if (string.IsNullOrEmpty(request.Username))
-                return BadRequest(new { success = false, error = "用户名不能为空" });
-            
-            if (string.IsNullOrEmpty(request.Password))
-                return BadRequest(new { success = false, error = "密码不能为空" });
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException("用户名不能为空");
+        
+        if (string.IsNullOrEmpty(request.Password))
+            throw new ArgumentException("密码不能为空");
 
-            var user = await _userService.CreateUserManagementAsync(request);
-            
-            // 记录管理员操作日志
-            var currentUserId = User.FindFirst("userId")?.Value;
-            if (!string.IsNullOrEmpty(currentUserId))
-            {
-                await _userService.LogUserActivityAsync(currentUserId, "create_user", $"创建用户: {user.Username}");
-            }
-            
-            return Ok(new { success = true, data = user });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { success = false, error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, error = ex.Message, stackTrace = ex.StackTrace });
-        }
+        var user = await _userService.CreateUserManagementAsync(request);
+        return Success(user);
     }
 
     /// <summary>
@@ -101,9 +82,9 @@ public class UserController : ControllerBase
     {
         var user = await _userService.UpdateUserAsync(id, request);
         if (user == null)
-            return NotFound($"User with ID {id} not found");
+            throw new KeyNotFoundException($"User with ID {id} not found");
         
-        return Ok(user);
+        return Success(user);
     }
 
     /// <summary>
@@ -115,54 +96,25 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
     {
-        try
-        {
-            var user = await _userService.UpdateUserManagementAsync(id, request);
-            if (user == null)
-                return NotFound(new { success = false, error = $"用户ID {id} 不存在" });
-            
-            // 记录管理员操作日志
-            var currentUserId = User.FindFirst("userId")?.Value;
-            if (!string.IsNullOrEmpty(currentUserId))
-            {
-                await _userService.LogUserActivityAsync(currentUserId, "update_user", $"更新用户: {user.Username}");
-            }
-            
-            return Ok(new { success = true, data = user });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { success = false, error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, error = ex.Message, stackTrace = ex.StackTrace });
-        }
+        var user = await _userService.UpdateUserManagementAsync(id, request);
+        if (user == null)
+            throw new KeyNotFoundException($"用户ID {id} 不存在");
+        
+        return Success(user);
     }
 
     /// <summary>
-    /// 删除用户
+    /// 软删除用户
     /// </summary>
     /// <param name="id">用户ID</param>
+    /// <param name="reason">删除原因（可选）</param>
     [HttpDelete("{id}")]
     [Authorize]
-    public async Task<IActionResult> DeleteUser(string id)
+    public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)
     {
-        // 先获取用户信息用于日志记录
-        var user = await _userService.GetUserByIdAsync(id);
-        if (user == null)
-            return NotFound($"User with ID {id} not found");
-        
-        var deleted = await _userService.DeleteUserAsync(id);
+        var deleted = await _userService.DeleteUserAsync(id, reason);
         if (!deleted)
-            return NotFound($"User with ID {id} not found");
-        
-        // 记录管理员操作日志
-        var currentUserId = User.FindFirst("userId")?.Value;
-        if (!string.IsNullOrEmpty(currentUserId))
-        {
-            await _userService.LogUserActivityAsync(currentUserId, "delete_user", $"删除用户: {user.Username}");
-        }
+            throw new KeyNotFoundException($"用户ID {id} 不存在");
         
         return NoContent();
     }
@@ -185,15 +137,8 @@ public class UserController : ControllerBase
     [HttpPost("list")]
     public async Task<IActionResult> GetUsersList([FromBody] UserListRequest request)
     {
-        try
-        {
-            var result = await _userService.GetUsersWithPaginationAsync(request);
-            return Ok(new { success = true, data = result });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, error = ex.Message, stackTrace = ex.StackTrace });
-        }
+        var result = await _userService.GetUsersWithPaginationAsync(request);
+        return Success(result);
     }
 
     /// <summary>
@@ -202,15 +147,8 @@ public class UserController : ControllerBase
     [HttpGet("statistics")]
     public async Task<IActionResult> GetUserStatistics()
     {
-        try
-        {
-            var statistics = await _userService.GetUserStatisticsAsync();
-            return Ok(new { success = true, data = statistics });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, error = ex.Message, stackTrace = ex.StackTrace });
-        }
+        var statistics = await _userService.GetUserStatisticsAsync();
+        return Success(statistics);
     }
 
     /// <summary>
@@ -219,33 +157,23 @@ public class UserController : ControllerBase
     [HttpGet("test-list")]
     public async Task<IActionResult> TestUserList()
     {
-        try
+        var users = await _userService.GetAllUsersAsync();
+        return Success(new
         {
-            var users = await _userService.GetAllUsersAsync();
-            return Ok(new { 
-                success = true, 
-                count = users.Count, 
-                users = users.Select(u => new { 
-                    id = u.Id, 
-                    username = u.Username, 
-                    email = u.Email, 
-                    role = u.Role,
-                    isActive = u.IsActive 
-                }) 
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { 
-                success = false, 
-                error = ex.Message, 
-                stackTrace = ex.StackTrace 
-            });
-        }
+            count = users.Count,
+            users = users.Select(u => new
+            {
+                id = u.Id,
+                username = u.Username,
+                email = u.Email,
+                role = u.Role,
+                isActive = u.IsActive
+            })
+        });
     }
 
     /// <summary>
-    /// 批量操作用户
+    /// 批量操作用户（激活、停用、软删除）
     /// </summary>
     /// <param name="request">批量操作请求</param>
     [HttpPost("bulk-action")]
@@ -253,27 +181,13 @@ public class UserController : ControllerBase
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
         if (request.UserIds == null || !request.UserIds.Any())
-            return BadRequest("用户ID列表不能为空");
+            throw new ArgumentException("用户ID列表不能为空");
 
-        var success = await _userService.BulkUpdateUsersAsync(request);
+        var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
-            return BadRequest("批量操作失败");
+            throw new InvalidOperationException("批量操作失败");
 
-        // 记录管理员操作日志
-        var currentUserId = User.FindFirst("userId")?.Value;
-        if (!string.IsNullOrEmpty(currentUserId))
-        {
-            var actionText = request.Action switch
-            {
-                "activate" => "批量启用",
-                "deactivate" => "批量禁用", 
-                "delete" => "批量删除",
-                _ => "批量操作"
-            };
-            await _userService.LogUserActivityAsync(currentUserId, "bulk_action", $"{actionText}用户 ({request.UserIds.Count}个用户)");
-        }
-
-        return Ok(new { message = "批量操作成功" });
+        return Success("批量操作成功");
     }
 
     /// <summary>
@@ -286,25 +200,13 @@ public class UserController : ControllerBase
     public async Task<IActionResult> UpdateUserRole(string id, [FromBody] UpdateUserRoleRequest request)
     {
         if (string.IsNullOrEmpty(request.Role))
-            return BadRequest("角色不能为空");
-
-        // 先获取用户信息用于日志记录
-        var user = await _userService.GetUserByIdAsync(id);
-        if (user == null)
-            return NotFound($"用户ID {id} 不存在");
+            throw new ArgumentException("角色不能为空");
 
         var success = await _userService.UpdateUserRoleAsync(id, request.Role);
         if (!success)
-            return NotFound($"用户ID {id} 不存在");
+            throw new KeyNotFoundException($"用户ID {id} 不存在");
 
-        // 记录管理员操作日志
-        var currentUserId = User.FindFirst("userId")?.Value;
-        if (!string.IsNullOrEmpty(currentUserId))
-        {
-            await _userService.LogUserActivityAsync(currentUserId, "update_user_role", $"更新用户角色: {user.Username} -> {request.Role}");
-        }
-
-        return Ok(new { message = "角色更新成功" });
+        return Success("角色更新成功");
     }
 
     /// <summary>
@@ -316,15 +218,71 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUserActivityLogs(string id, [FromQuery] int limit = 50)
     {
-        try
+        var logs = await _userService.GetUserActivityLogsAsync(id, limit);
+        return Success(logs);
+    }
+
+    /// <summary>
+    /// 获取所有用户活动日志（仅管理员）
+    /// </summary>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="userId">用户ID（可选）</param>
+    /// <param name="action">操作类型（可选）</param>
+    /// <param name="startDate">开始日期（可选）</param>
+    /// <param name="endDate">结束日期（可选）</param>
+    [HttpGet("/api/users/activity-logs")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> GetAllActivityLogs(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? userId = null,
+        [FromQuery] string? action = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
+    {
+        var (logs, total) = await _userService.GetAllActivityLogsAsync(
+            page, 
+            pageSize, 
+            userId, 
+            action, 
+            startDate, 
+            endDate);
+
+        // 获取日志关联的用户信息
+        var userIds = logs.Select(log => log.UserId).Distinct().ToList();
+        var users = new Dictionary<string, AppUser>();
+        
+        foreach (var uid in userIds)
         {
-            var logs = await _userService.GetUserActivityLogsAsync(id, limit);
-            return Ok(new { success = true, data = logs });
+            var user = await _userService.GetUserByIdAsync(uid);
+            if (user != null)
+            {
+                users[uid] = user;
+            }
         }
-        catch (Exception ex)
+
+        // 组装返回数据，包含用户信息
+        var logsWithUserInfo = logs.Select(log => new
         {
-            return StatusCode(500, new { success = false, error = ex.Message });
-        }
+            log.Id,
+            log.UserId,
+            Username = users.ContainsKey(log.UserId) ? users[log.UserId].Username : "未知用户",
+            log.Action,
+            log.Description,
+            log.IpAddress,
+            log.UserAgent,
+            log.CreatedAt
+        }).ToList();
+
+        return Success(new
+        {
+            data = logsWithUserInfo,
+            total,
+            page,
+            pageSize,
+            totalPages = (int)Math.Ceiling((double)total / pageSize)
+        });
     }
 
     /// <summary>
@@ -336,7 +294,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> CheckEmailExists([FromQuery] string email, [FromQuery] string? excludeUserId = null)
     {
         var exists = await _userService.CheckEmailExistsAsync(email, excludeUserId);
-        return Ok(new { exists });
+        return Success(new { exists });
     }
 
     /// <summary>
@@ -348,7 +306,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> CheckUsernameExists([FromQuery] string username, [FromQuery] string? excludeUserId = null)
     {
         var exists = await _userService.CheckUsernameExistsAsync(username, excludeUserId);
-        return Ok(new { exists });
+        return Success(new { exists });
     }
 
     /// <summary>
@@ -359,23 +317,11 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ActivateUser(string id)
     {
-        // 先获取用户信息用于日志记录
-        var user = await _userService.GetUserByIdAsync(id);
-        if (user == null)
-            return NotFound($"用户ID {id} 不存在");
-        
         var success = await _userService.ActivateUserAsync(id);
         if (!success)
-            return NotFound($"用户ID {id} 不存在");
+            throw new KeyNotFoundException($"用户ID {id} 不存在");
 
-        // 记录管理员操作日志
-        var currentUserId = User.FindFirst("userId")?.Value;
-        if (!string.IsNullOrEmpty(currentUserId))
-        {
-            await _userService.LogUserActivityAsync(currentUserId, "activate_user", $"启用用户: {user.Username}");
-        }
-
-        return Ok(new { message = "用户已启用" });
+        return Success("用户已启用");
     }
 
     /// <summary>
@@ -386,23 +332,11 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeactivateUser(string id)
     {
-        // 先获取用户信息用于日志记录
-        var user = await _userService.GetUserByIdAsync(id);
-        if (user == null)
-            return NotFound($"用户ID {id} 不存在");
-        
         var success = await _userService.DeactivateUserAsync(id);
         if (!success)
-            return NotFound($"用户ID {id} 不存在");
+            throw new KeyNotFoundException($"用户ID {id} 不存在");
 
-        // 记录管理员操作日志
-        var currentUserId = User.FindFirst("userId")?.Value;
-        if (!string.IsNullOrEmpty(currentUserId))
-        {
-            await _userService.LogUserActivityAsync(currentUserId, "deactivate_user", $"禁用用户: {user.Username}");
-        }
-
-        return Ok(new { message = "用户已禁用" });
+        return Success("用户已禁用");
     }
 
     /// <summary>
@@ -412,26 +346,12 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUserProfile()
     {
-        try
-        {
-            // 从JWT token中获取用户ID
-            var userId = User.FindFirst("userId")?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { success = false, error = "未找到用户信息" });
+        var userId = GetRequiredUserId();
+        var user = await _userService.GetUserByIdAsync(userId);
+        if (user == null)
+            throw new KeyNotFoundException("用户不存在");
 
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user == null)
-                return NotFound(new { success = false, error = "用户不存在" });
-
-            // 记录用户活动
-            await _userService.LogUserActivityAsync(userId, "view_profile", "查看个人中心");
-
-            return Ok(new { success = true, data = user });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, error = ex.Message });
-        }
+        return Success(user);
     }
 
     /// <summary>
@@ -442,39 +362,22 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UpdateProfileRequest request)
     {
-        try
+        var userId = GetRequiredUserId();
+
+        // 禁止修改用户名 - 过滤掉Username字段
+        var filteredRequest = new UpdateProfileRequest
         {
-            // 从JWT token中获取用户ID
-            var userId = User.FindFirst("userId")?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { success = false, error = "未找到用户信息" });
+            Name = request.Name,
+            Email = request.Email,
+            Age = request.Age,
+            // Username 字段被过滤掉，不允许修改
+        };
 
-            // 禁止修改用户名 - 过滤掉Username字段
-            var filteredRequest = new UpdateProfileRequest
-            {
-                Name = request.Name,
-                Email = request.Email,
-                Age = request.Age,
-                // Username 字段被过滤掉，不允许修改
-            };
+        var user = await _userService.UpdateUserProfileAsync(userId, filteredRequest);
+        if (user == null)
+            throw new KeyNotFoundException("用户不存在");
 
-            var user = await _userService.UpdateUserProfileAsync(userId, filteredRequest);
-            if (user == null)
-                return NotFound(new { success = false, error = "用户不存在" });
-
-            // 记录用户活动
-            await _userService.LogUserActivityAsync(userId, "update_profile", "更新个人信息");
-
-            return Ok(new { success = true, data = user });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { success = false, error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, error = ex.Message });
-        }
+        return Success(user);
     }
 
     /// <summary>
@@ -485,26 +388,12 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ChangeCurrentUserPassword([FromBody] ChangePasswordRequest request)
     {
-        try
-        {
-            // 从JWT token中获取用户ID
-            var userId = User.FindFirst("userId")?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { success = false, error = "未找到用户信息" });
+        var userId = GetRequiredUserId();
+        var success = await _userService.ChangePasswordAsync(userId, request);
+        if (!success)
+            throw new InvalidOperationException("当前密码错误或修改失败");
 
-            var success = await _userService.ChangePasswordAsync(userId, request);
-            if (!success)
-                return BadRequest(new { success = false, error = "当前密码错误或修改失败" });
-
-            // 记录用户活动
-            await _userService.LogUserActivityAsync(userId, "change_password", "修改密码");
-
-            return Ok(new { success = true, message = "密码修改成功" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, error = ex.Message });
-        }
+        return Success("密码修改成功");
     }
 
     /// <summary>
@@ -515,20 +404,9 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUserActivityLogs([FromQuery] int limit = 20)
     {
-        try
-        {
-            // 从JWT token中获取用户ID
-            var userId = User.FindFirst("userId")?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { success = false, error = "未找到用户信息" });
-
-            var logs = await _userService.GetUserActivityLogsAsync(userId, limit);
-            return Ok(new { success = true, data = logs });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, error = ex.Message });
-        }
+        var userId = GetRequiredUserId();
+        var logs = await _userService.GetUserActivityLogsAsync(userId, limit);
+        return Success(logs);
     }
 }
 

@@ -59,6 +59,7 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
         setCheckedKeys(permissionResponse.data);
       }
     } catch (error) {
+      console.error('Failed to load menu permission data:', error);
       message.error('加载数据失败');
     } finally {
       setLoading(false);
@@ -71,7 +72,7 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
   const convertToTreeData = (menus: MenuTreeNode[]): DataNode[] => {
     return menus.map(menu => ({
       key: menu.id!,
-      title: menu.name,
+      title: menu.title || menu.name,
       children: menu.children && menu.children.length > 0 
         ? convertToTreeData(menu.children) 
         : undefined,
@@ -138,7 +139,6 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
       onOk={handleSave}
       confirmLoading={saving}
       width={600}
-      destroyOnClose
     >
       <div style={{ marginBottom: 16 }}>
         <Button type="link" onClick={handleSelectAll} style={{ padding: 0 }}>

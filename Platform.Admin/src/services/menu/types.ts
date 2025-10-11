@@ -4,6 +4,7 @@
 export interface MenuItem {
   id?: string;
   name: string;
+  title: string;
   path: string;
   component?: string;
   icon?: string;
@@ -30,6 +31,7 @@ export interface MenuTreeNode extends MenuItem {
  */
 export interface CreateMenuRequest {
   name: string;
+  title: string;
   path: string;
   component?: string;
   icon?: string;
@@ -47,6 +49,7 @@ export interface CreateMenuRequest {
  */
 export interface UpdateMenuRequest {
   name?: string;
+  title?: string;
   path?: string;
   component?: string;
   icon?: string;

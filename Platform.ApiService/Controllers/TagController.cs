@@ -6,11 +6,11 @@ namespace Platform.ApiService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TagController : ControllerBase
+public class TagController : BaseApiController
 {
-    private readonly TagService _tagService;
+    private readonly ITagService _tagService;
 
-    public TagController(TagService tagService)
+    public TagController(ITagService tagService)
     {
         _tagService = tagService;
     }

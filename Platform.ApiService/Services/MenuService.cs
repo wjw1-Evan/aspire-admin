@@ -3,15 +3,30 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class MenuService
+public class MenuService : IMenuService
 {
     private readonly IMongoCollection<Menu> _menus;
     private readonly IMongoCollection<Role> _roles;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<MenuService> _logger;
 
-    public MenuService(IMongoDatabase database)
+    public MenuService(
+        IMongoDatabase database, 
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<MenuService> logger)
     {
         _menus = database.GetCollection<Menu>("menus");
         _roles = database.GetCollection<Role>("roles");
+        _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// 获取当前操作用户ID
+    /// </summary>
+    private string? GetCurrentUserId()
+    {
+        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
     }
 
     /// <summary>
@@ -19,7 +34,8 @@ public class MenuService
     /// </summary>
     public async Task<List<Menu>> GetAllMenusAsync()
     {
-        return await _menus.Find(_ => true)
+        var filter = SoftDeleteExtensions.NotDeleted<Menu>();
+        return await _menus.Find(filter)
             .SortBy(m => m.SortOrder)
             .ToListAsync();
     }
@@ -38,8 +54,12 @@ public class MenuService
     /// </summary>
     public async Task<List<MenuTreeNode>> GetUserMenusAsync(List<string> roleIds)
     {
-        // 获取用户的所有角色
-        var userRoles = await _roles.Find(r => roleIds.Contains(r.Id!))
+        // 获取用户的所有未删除角色
+        var rolesFilter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.In(r => r.Id, roleIds),
+            SoftDeleteExtensions.NotDeleted<Role>()
+        );
+        var userRoles = await _roles.Find(rolesFilter)
             .ToListAsync();
 
         // 收集所有角色可访问的菜单ID
@@ -48,9 +68,14 @@ public class MenuService
             .Distinct()
             .ToList();
 
-        // 获取这些菜单
+        // 获取这些菜单（未删除且已启用）
+        var menusFilter = Builders<Menu>.Filter.And(
+            Builders<Menu>.Filter.In(m => m.Id, accessibleMenuIds),
+            Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
+            SoftDeleteExtensions.NotDeleted<Menu>()
+        );
         var accessibleMenus = await _menus
-            .Find(m => accessibleMenuIds.Contains(m.Id!) && m.IsEnabled)
+            .Find(menusFilter)
             .SortBy(m => m.SortOrder)
             .ToListAsync();
 
@@ -61,8 +86,13 @@ public class MenuService
             await AddParentMenuIds(menu.ParentId!, allMenuIds);
         }
 
+        var allMenusFilter = Builders<Menu>.Filter.And(
+            Builders<Menu>.Filter.In(m => m.Id, allMenuIds.ToList()),
+            Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
+            SoftDeleteExtensions.NotDeleted<Menu>()
+        );
         var allAccessibleMenus = await _menus
-            .Find(m => allMenuIds.Contains(m.Id!) && m.IsEnabled)
+            .Find(allMenusFilter)
             .SortBy(m => m.SortOrder)
             .ToListAsync();
 
@@ -77,7 +107,11 @@ public class MenuService
         if (menuIds.Contains(parentId))
             return;
 
-        var parentMenu = await _menus.Find(m => m.Id == parentId).FirstOrDefaultAsync();
+        var filter = Builders<Menu>.Filter.And(
+            Builders<Menu>.Filter.Eq(m => m.Id, parentId),
+            SoftDeleteExtensions.NotDeleted<Menu>()
+        );
+        var parentMenu = await _menus.Find(filter).FirstOrDefaultAsync();
         if (parentMenu != null)
         {
             menuIds.Add(parentId);
@@ -93,7 +127,11 @@ public class MenuService
     /// </summary>
     public async Task<Menu?> GetMenuByIdAsync(string id)
     {
-        return await _menus.Find(m => m.Id == id).FirstOrDefaultAsync();
+        var filter = Builders<Menu>.Filter.And(
+            Builders<Menu>.Filter.Eq(m => m.Id, id),
+            SoftDeleteExtensions.NotDeleted<Menu>()
+        );
+        return await _menus.Find(filter).FirstOrDefaultAsync();
     }
 
     /// <summary>
@@ -114,6 +152,7 @@ public class MenuService
             HideInMenu = request.HideInMenu,
             ParentId = request.ParentId,
             Permissions = request.Permissions,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -165,19 +204,27 @@ public class MenuService
     }
 
     /// <summary>
-    /// 删除菜单（级联检查子菜单）
+    /// 软删除菜单（级联检查子菜单）
     /// </summary>
-    public async Task<bool> DeleteMenuAsync(string id)
+    public async Task<bool> DeleteMenuAsync(string id, string? reason = null)
     {
-        // 检查是否有子菜单
-        var hasChildren = await _menus.Find(m => m.ParentId == id).AnyAsync();
+        // 检查是否有未删除的子菜单
+        var childrenFilter = Builders<Menu>.Filter.And(
+            Builders<Menu>.Filter.Eq(m => m.ParentId, id),
+            SoftDeleteExtensions.NotDeleted<Menu>()
+        );
+        var hasChildren = await _menus.Find(childrenFilter).AnyAsync();
         if (hasChildren)
         {
             throw new InvalidOperationException("Cannot delete menu with children. Please delete child menus first.");
         }
 
-        var result = await _menus.DeleteOneAsync(m => m.Id == id);
-        return result.DeletedCount > 0;
+        var currentUserId = GetCurrentUserId();
+        var filter = Builders<Menu>.Filter.And(
+            Builders<Menu>.Filter.Eq(m => m.Id, id),
+            SoftDeleteExtensions.NotDeleted<Menu>()
+        );
+        return await _menus.SoftDeleteOneAsync(filter, currentUserId, reason);
     }
 
     /// <summary>
@@ -209,6 +256,7 @@ public class MenuService
             {
                 Id = m.Id,
                 Name = m.Name,
+                Title = m.Title,
                 Path = m.Path,
                 Component = m.Component,
                 Icon = m.Icon,

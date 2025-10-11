@@ -104,6 +104,31 @@ declare namespace API {
     status?: string;
   };
 
+  // 验证码响应
+  type CaptchaResponse = {
+    success: boolean;
+    data: {
+      captcha: string;
+      expiresIn: number;
+    };
+    message?: string;
+  };
+
+  // 验证验证码请求
+  type VerifyCaptchaRequest = {
+    phone: string;
+    code: string;
+  };
+
+  // 验证验证码响应
+  type VerifyCaptchaResponse = {
+    success: boolean;
+    data: {
+      valid: boolean;
+    };
+    message?: string;
+  };
+
   type LoginParams = {
     username?: string;
     password?: string;

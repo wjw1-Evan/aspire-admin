@@ -3,14 +3,15 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class NoticeService
+public class NoticeService : INoticeService
 {
     private readonly IMongoCollection<NoticeIconItem> _notices;
+    private readonly ILogger<NoticeService> _logger;
 
-    public NoticeService(IMongoDatabase database)
+    public NoticeService(IMongoDatabase database, ILogger<NoticeService> logger)
     {
         _notices = database.GetCollection<NoticeIconItem>("notices");
-      
+        _logger = logger;
     }
 
 
@@ -46,6 +47,7 @@ public class NoticeService
             Type = request.Type,
             ClickClose = request.ClickClose,
             Datetime = request.Datetime ?? DateTime.UtcNow,
+            IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

@@ -262,7 +262,7 @@ public class UserController : BaseApiController
             }
         }
 
-        // 组装返回数据，包含用户信息
+        // 组装返回数据，包含用户信息和完整的日志字段
         var logsWithUserInfo = logs.Select(log => new
         {
             log.Id,
@@ -272,6 +272,11 @@ public class UserController : BaseApiController
             log.Description,
             log.IpAddress,
             log.UserAgent,
+            log.HttpMethod,
+            log.Path,
+            log.QueryString,
+            log.StatusCode,
+            log.Duration,
             log.CreatedAt
         }).ToList();
 

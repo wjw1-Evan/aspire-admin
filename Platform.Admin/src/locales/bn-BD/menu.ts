@@ -12,7 +12,6 @@ export default {
   'menu.system.role-management': 'ভূমিকা ব্যবস্থাপনা',
   'menu.system.menu-management': 'মেনু ব্যবস্থাপনা',
   'menu.system.user-log': 'ব্যবহারকারী লগ',
-  'menu.system.permission-management': 'অনুমতি ব্যবস্থাপনা',
   'menu.dashboard': 'ড্যাশবোর্ড',
   'menu.dashboard.analysis': 'বিশ্লেষণ',
   'menu.dashboard.monitor': 'নিরীক্ষণ',

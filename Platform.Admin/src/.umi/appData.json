@@ -98,7 +98,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 7
+        "register": 12
       },
       "enableBy": "register",
       "type": "preset",
@@ -111,7 +111,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 3
       },
       "enableBy": "register",
       "type": "preset",
@@ -125,10 +125,10 @@
       "time": {
         "hooks": {
           "onStart": [
-            0
+            1
           ]
         },
-        "register": 3
+        "register": 4
       },
       "enableBy": "register",
       "type": "preset",
@@ -145,7 +145,7 @@
             0
           ]
         },
-        "register": 3
+        "register": 4
       },
       "enableBy": "register",
       "type": "plugin",
@@ -159,10 +159,10 @@
       "time": {
         "hooks": {
           "onStart": [
-            1
+            2
           ]
         },
-        "register": 2
+        "register": 3
       },
       "enableBy": "register",
       "type": "plugin",
@@ -179,7 +179,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -192,7 +192,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -206,10 +206,10 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            23
+            119
           ]
         },
-        "register": 15
+        "register": 26
       },
       "enableBy": "register",
       "type": "plugin",
@@ -222,7 +222,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -239,7 +239,7 @@
             0
           ],
           "onCheck": [
-            1
+            0
           ]
         },
         "register": 1
@@ -272,7 +272,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -289,7 +289,7 @@
             0
           ]
         },
-        "register": 7
+        "register": 10
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1155,7 +1155,7 @@
       "time": {
         "hooks": {
           "onStart": [
-            0
+            1
           ]
         },
         "register": 0
@@ -1171,7 +1171,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1184,7 +1184,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 66
+        "register": 217
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1197,7 +1197,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 29
+        "register": 44
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1214,7 +1214,7 @@
             0
           ]
         },
-        "register": 17
+        "register": 20
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1257,7 +1257,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 3
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1270,7 +1270,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 24
+        "register": 52
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/mock/mock.js",
@@ -1356,7 +1356,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1369,7 +1369,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1395,7 +1395,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1421,7 +1421,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 21
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1434,7 +1434,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 4
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1447,7 +1447,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routeProps/routeProps.js",
@@ -1472,7 +1472,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 3
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1536,7 +1536,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 23
+        "register": 22
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1549,7 +1549,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/test/test.js",
@@ -1600,7 +1600,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/webpack/webpack.js",
@@ -1613,10 +1613,10 @@
       "time": {
         "hooks": {
           "addOnDemandDeps": [
-            0
+            1
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1629,7 +1629,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 2
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/ui/ui.js",
@@ -1645,7 +1645,7 @@
             0
           ],
           "onStart": [
-            1
+            3
           ]
         },
         "register": 1
@@ -1661,7 +1661,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/utoopack/utoopack.js",
@@ -1673,7 +1673,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 3
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/hmrGuardian/hmrGuardian.js",
@@ -1685,7 +1685,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 29
+        "register": 28
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad.js",
@@ -1697,7 +1697,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1723,7 +1723,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 5
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1736,7 +1736,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 36
+        "register": 43
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1750,13 +1750,13 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            10
+            254
           ],
           "onStart": [
             0
           ]
         },
-        "register": 35
+        "register": 49
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/dev/dev.js",
@@ -1768,7 +1768,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1781,7 +1781,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1794,7 +1794,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1807,7 +1807,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1820,7 +1820,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1833,7 +1833,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1872,7 +1872,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1898,7 +1898,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1911,7 +1911,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1937,7 +1937,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1963,7 +1963,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1989,7 +1989,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2002,7 +2002,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 25
+        "register": 34
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2041,7 +2041,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2056,7 +2056,7 @@
       },
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/analytics.js",
@@ -2072,10 +2072,10 @@
             2
           ],
           "modifyAppData": [
-            0
+            1
           ]
         },
-        "register": 17
+        "register": 6
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/antd.js",
@@ -2087,7 +2087,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 5
+        "register": 9
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2119,10 +2119,10 @@
             0
           ],
           "addLayouts": [
-            1
+            0
           ],
           "modifyAppData": [
-            0
+            1
           ]
         },
         "register": 4
@@ -2151,7 +2151,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2164,7 +2164,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2181,7 +2181,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2270,7 +2270,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2283,7 +2283,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 5
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2300,7 +2300,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2331,10 +2331,10 @@
       "time": {
         "hooks": {
           "onCheckPkgJSON": [
-            0
+            1
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2348,10 +2348,10 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2384,7 +2384,7 @@
             0
           ]
         },
-        "register": 201
+        "register": 222
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2397,7 +2397,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 103
+        "register": 133
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2412,7 +2412,7 @@
       },
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2441,7 +2441,7 @@
             0
           ]
         },
-        "register": 70
+        "register": 72
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/request-record/dist/cjs/index.js",
@@ -2453,7 +2453,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2531,12 +2531,6 @@
             "icon": "file-text",
             "path": "/system/user-log",
             "component": "./user-log"
-          },
-          {
-            "name": "permission-management",
-            "icon": "safety",
-            "path": "/system/permission-management",
-            "component": "./permission-management"
           }
         ]
       },
@@ -2744,12 +2738,6 @@
             "icon": "file-text",
             "path": "/system/user-log",
             "component": "./user-log"
-          },
-          {
-            "name": "permission-management",
-            "icon": "safety",
-            "path": "/system/permission-management",
-            "component": "./permission-management"
           }
         ]
       },
@@ -3900,53 +3888,41 @@
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user-log/index.tsx"
     },
     "12": {
-      "name": "permission-management",
-      "icon": "safety",
-      "path": "/system/permission-management",
-      "file": "@/pages/permission-management/index.tsx",
-      "parentId": "6",
-      "id": "12",
-      "absPath": "/system/permission-management",
-      "__content": "import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';\nimport { PageContainer, ProCard } from '@ant-design/pro-components';\nimport { Button, Collapse, message, Space, Table, Tag } from 'antd';\nimport type { ColumnsType } from 'antd/es/table';\nimport React, { useEffect, useState } from 'react';\nimport { getPermissionsGrouped, initializePermissions } from '@/services/permission';\nimport type { Permission, PermissionGroup } from '@/services/permission/types';\n\nconst { Panel } = Collapse;\n\nconst PermissionManagement: React.FC = () => {\n  const [loading, setLoading] = useState(false);\n  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);\n\n  /**\n   * 加载权限数据\n   */\n  const loadPermissions = async () => {\n    setLoading(true);\n    try {\n      const response = await getPermissionsGrouped();\n      if (response.success && response.data) {\n        setPermissionGroups(response.data);\n      }\n    } catch (error) {\n      console.error('Failed to load permissions:', error);\n      message.error('加载权限失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  /**\n   * 初始化默认权限\n   */\n  const handleInitialize = async () => {\n    setLoading(true);\n    try {\n      const response = await initializePermissions();\n      if (response.success) {\n        message.success('权限初始化成功');\n        await loadPermissions();\n      }\n    } catch (error) {\n      console.error('Failed to initialize permissions:', error);\n      message.error('权限初始化失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    loadPermissions();\n  }, []);\n\n  const columns: ColumnsType<Permission> = [\n    {\n      title: '权限代码',\n      dataIndex: 'code',\n      key: 'code',\n      render: (text: string) => <Tag color=\"blue\">{text}</Tag>,\n    },\n    {\n      title: '操作',\n      dataIndex: 'actionTitle',\n      key: 'actionTitle',\n      render: (text: string, record: Permission) => {\n        const colors: Record<string, string> = {\n          create: 'green',\n          read: 'blue',\n          update: 'orange',\n          delete: 'red',\n        };\n        return <Tag color={colors[record.action] || 'default'}>{text}</Tag>;\n      },\n    },\n    {\n      title: '描述',\n      dataIndex: 'description',\n      key: 'description',\n    },\n  ];\n\n  return (\n    <PageContainer\n      header={{\n        title: '权限管理',\n        subTitle: '系统权限配置和管理',\n      }}\n    >\n      <ProCard>\n        <Space style={{ marginBottom: 16 }}>\n          <Button\n            type=\"primary\"\n            icon={<ReloadOutlined />}\n            onClick={loadPermissions}\n            loading={loading}\n          >\n            刷新\n          </Button>\n          <Button icon={<PlusOutlined />} onClick={handleInitialize} loading={loading}>\n            初始化默认权限\n          </Button>\n        </Space>\n\n        <Collapse defaultActiveKey={permissionGroups.map((g) => g.resourceName)}>\n          {permissionGroups.map((group) => (\n            <Panel\n              header={\n                <Space>\n                  <strong>{group.resourceTitle}</strong>\n                  <Tag>{group.permissions.length} 个权限</Tag>\n                </Space>\n              }\n              key={group.resourceName}\n            >\n              <Table\n                columns={columns}\n                dataSource={group.permissions}\n                rowKey=\"id\"\n                pagination={false}\n                size=\"small\"\n              />\n            </Panel>\n          ))}\n        </Collapse>\n\n        {permissionGroups.length === 0 && !loading && (\n          <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>\n            <p>暂无权限数据</p>\n            <Button type=\"primary\" onClick={handleInitialize}>\n              初始化默认权限\n            </Button>\n          </div>\n        )}\n      </ProCard>\n    </PageContainer>\n  );\n};\n\nexport default PermissionManagement;\n\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/permission-management/index.tsx"
-    },
-    "13": {
       "name": "change-password",
       "path": "/user/change-password",
       "hideInMenu": true,
       "file": "@/pages/user/change-password/index.tsx",
       "parentId": "ant-design-pro-layout",
-      "id": "13",
+      "id": "12",
       "absPath": "/user/change-password",
       "__content": "import { LockOutlined } from '@ant-design/icons';\nimport { ProForm, ProFormText } from '@ant-design/pro-components';\nimport { FormattedMessage, Helmet, useIntl } from '@umijs/max';\nimport { Alert, App, Card } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { changePassword } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      padding: '24px',\n      maxWidth: '600px',\n      margin: '0 auto',\n    },\n    card: {\n      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',\n    },\n  };\n});\n\n\nconst ChangePasswordMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst ChangePassword: React.FC = () => {\n  const [changePasswordState, setChangePasswordState] = useState<API.ChangePasswordResult>({});\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const handleSubmit = async (values: API.ChangePasswordParams) => {\n    try {\n      // 修改密码\n      const result = await changePassword(values);\n      if (result.success) {\n        const defaultChangePasswordSuccessMessage = intl.formatMessage({\n          id: 'pages.changePassword.success',\n          defaultMessage: '密码修改成功！',\n        });\n        message.success(defaultChangePasswordSuccessMessage);\n        \n        // 修改成功后清空表单\n        setChangePasswordState({});\n        return;\n      }\n      \n      // 如果失败去设置用户错误信息\n      setChangePasswordState(result);\n    } catch (error) {\n      const defaultChangePasswordFailureMessage = intl.formatMessage({\n        id: 'pages.changePassword.failure',\n        defaultMessage: '密码修改失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultChangePasswordFailureMessage);\n    }\n  };\n\n  const { errorCode, errorMessage } = changePasswordState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.changePassword',\n            defaultMessage: '修改密码',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      \n      <Card \n        title={intl.formatMessage({\n          id: 'menu.changePassword',\n          defaultMessage: '修改密码',\n        })}\n        className={styles.card}\n      >\n        <ProForm\n          onFinish={async (values) => {\n            await handleSubmit(values as API.ChangePasswordParams);\n          }}\n          submitter={{\n            searchConfig: {\n              submitText: intl.formatMessage({\n                id: 'pages.changePassword.submit',\n                defaultMessage: '修改密码',\n              }),\n            },\n          }}\n        >\n          {errorCode && (\n            <ChangePasswordMessage content={errorMessage || '密码修改失败'} />\n          )}\n\n          <ProFormText.Password\n            name=\"currentPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.currentPassword.placeholder',\n              defaultMessage: '请输入当前密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.currentPassword.required\"\n                    defaultMessage=\"请输入当前密码!\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText.Password\n            name=\"newPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.newPassword.placeholder',\n              defaultMessage: '请输入新密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.newPassword.required\"\n                    defaultMessage=\"请输入新密码！\"\n                  />\n                ),\n              },\n              {\n                min: 6,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.newPassword.length\"\n                    defaultMessage=\"密码长度至少6个字符\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText.Password\n            name=\"confirmPassword\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.changePassword.confirmPassword.placeholder',\n              defaultMessage: '请确认新密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.changePassword.confirmPassword.required\"\n                    defaultMessage=\"请确认新密码！\"\n                  />\n                ),\n              },\n              ({ getFieldValue }) => ({\n                validator(_, value) {\n                  if (!value || getFieldValue('newPassword') === value) {\n                    return Promise.resolve();\n                  }\n                  return Promise.reject(new Error('两次输入的密码不一致！'));\n                },\n              }),\n            ]}\n          />\n        </ProForm>\n      </Card>\n    </div>\n  );\n};\n\nexport default ChangePassword;\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/change-password/index.tsx"
     },
-    "14": {
+    "13": {
       "name": "account.center",
       "path": "/account/center",
       "hideInMenu": true,
       "file": "@/pages/account/center/index.tsx",
       "parentId": "ant-design-pro-layout",
-      "id": "14",
+      "id": "13",
       "absPath": "/account/center",
       "__content": "import {\n  EditOutlined,\n  UserOutlined,\n  MailOutlined,\n  CalendarOutlined,\n  SafetyOutlined,\n  HistoryOutlined,\n} from '@ant-design/icons';\nimport { ProCard, ProForm, ProFormText, ProFormDigit } from '@ant-design/pro-components';\nimport { FormattedMessage, Helmet, useIntl } from '@umijs/max';\nimport { Avatar, Button, Descriptions, Divider, List, message, Space, Tag, Typography } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useEffect, useState } from 'react';\nimport { getCurrentUserProfile, updateUserProfile, getUserActivityLogs } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst { Title, Text } = Typography;\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    container: {\n      padding: '24px',\n      width: '100%',\n    },\n    profileCard: {\n      marginBottom: '24px',\n    },\n    avatarSection: {\n      textAlign: 'center',\n      padding: '24px',\n    },\n    infoSection: {\n      padding: '24px',\n    },\n    activityCard: {\n      marginTop: '24px',\n    },\n    editButton: {\n      marginBottom: '16px',\n    },\n  };\n});\n\ninterface UserProfile {\n  id: string;\n  username: string;\n  name?: string;\n  email?: string;\n  age?: number;\n  role: string;\n  isActive: boolean;\n  createdAt: string;\n  updatedAt: string;\n  lastLoginAt?: string;\n}\n\ninterface ActivityLog {\n  id: string;\n  action: string;\n  description: string;\n  ipAddress?: string;\n  userAgent?: string;\n  createdAt: string;\n}\n\nconst UserCenter: React.FC = () => {\n  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);\n  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [editing, setEditing] = useState(false);\n  const [form] = ProForm.useForm();\n  const { styles } = useStyles();\n  const intl = useIntl();\n\n  // 获取用户信息\n  const fetchUserProfile = async () => {\n    try {\n      setLoading(true);\n      const response = await getCurrentUserProfile();\n      if (response.success && response.data) {\n        // 将 CurrentUser 转换为 UserProfile 格式\n        const currentUser = response.data;\n        const profile: UserProfile = {\n          id: currentUser.userid || '',\n          username: currentUser.name || '',\n          name: currentUser.name,\n          email: currentUser.email,\n          age: 18, // 使用默认年龄，因为CurrentUser中没有age字段\n          role: currentUser.access || 'user',\n          isActive: currentUser.isLogin || false,\n          createdAt: '', // CurrentUser中没有这些时间字段，使用空字符串\n          updatedAt: '',\n          lastLoginAt: '',\n        };\n        setUserProfile(profile);\n        form.setFieldsValue({\n          name: currentUser.name,\n          email: currentUser.email,\n          age: 18, // CurrentUser中没有age字段，使用默认值\n        });\n      }\n    } catch (error) {\n      console.error('获取用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.fetchFailed', defaultMessage: '获取用户信息失败' }));\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  // 获取活动日志\n  const fetchActivityLogs = async () => {\n    try {\n      const response = await getUserActivityLogs();\n      if (response.success && response.data) {\n        // 将 UserActivityLog[] 转换为 ActivityLog[] 格式\n        const logs: ActivityLog[] = response.data.map(log => ({\n          id: log.id || '',\n          action: log.action || '',\n          description: log.description || '',\n          ipAddress: log.ipAddress,\n          userAgent: log.userAgent,\n          createdAt: log.createdAt || '',\n        }));\n        setActivityLogs(logs);\n      }\n    } catch (error) {\n      console.error('获取活动日志失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.activityFailed', defaultMessage: '获取活动日志失败' }));\n    }\n  };\n\n  useEffect(() => {\n    fetchUserProfile();\n    fetchActivityLogs();\n  }, []);\n\n  // 更新用户信息\n  const handleUpdateProfile = async (values: any) => {\n    try {\n      const response = await updateUserProfile(values);\n      if (response.success) {\n        message.success(intl.formatMessage({ id: 'pages.account.center.updateSuccess', defaultMessage: '个人信息更新成功' }));\n        setEditing(false);\n        fetchUserProfile(); // 重新获取用户信息\n      } else {\n        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '更新失败' }));\n      }\n    } catch (error) {\n      console.error('更新用户信息失败:', error);\n      message.error(intl.formatMessage({ id: 'pages.account.center.updateFailed', defaultMessage: '个人信息更新失败' }));\n    }\n  };\n\n  // 取消编辑\n  const handleCancelEdit = () => {\n    setEditing(false);\n    form.resetFields();\n  };\n\n  // 格式化时间\n  const formatDateTime = (dateString: string) => {\n    return new Date(dateString).toLocaleString('zh-CN');\n  };\n\n  // 获取角色标签颜色\n  const getRoleTagColor = (role: string) => {\n    switch (role) {\n      case 'admin':\n        return 'red';\n      case 'user':\n        return 'blue';\n      default:\n        return 'default';\n    }\n  };\n\n  // 获取活动类型标签\n  const getActivityTag = (action: string) => {\n    const actionMap: { [key: string]: { text: string; color: string } } = {\n      login: { text: intl.formatMessage({ id: 'pages.account.center.activity.login', defaultMessage: '登录' }), color: 'green' },\n      logout: { text: intl.formatMessage({ id: 'pages.account.center.activity.logout', defaultMessage: '退出' }), color: 'orange' },\n      update_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.updateProfile', defaultMessage: '更新资料' }), color: 'blue' },\n      change_password: { text: intl.formatMessage({ id: 'pages.account.center.activity.changePassword', defaultMessage: '修改密码' }), color: 'red' },\n      view_profile: { text: intl.formatMessage({ id: 'pages.account.center.activity.viewProfile', defaultMessage: '查看资料' }), color: 'purple' },\n      // 用户管理操作\n      create_user: { text: '创建用户', color: 'cyan' },\n      update_user: { text: '更新用户', color: 'blue' },\n      delete_user: { text: '删除用户', color: 'red' },\n      activate_user: { text: '启用用户', color: 'green' },\n      deactivate_user: { text: '禁用用户', color: 'orange' },\n      update_user_role: { text: '更新角色', color: 'purple' },\n      bulk_action: { text: '批量操作', color: 'geekblue' },\n    };\n    return actionMap[action] || { text: action, color: 'default' };\n  };\n\n  if (loading) {\n    return <div><FormattedMessage id=\"pages.account.center.loading\" defaultMessage=\"加载中...\" /></div>;\n  }\n\n  if (!userProfile) {\n    return <div><FormattedMessage id=\"pages.account.center.userNotExist\" defaultMessage=\"用户信息不存在\" /></div>;\n  }\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.account.center',\n            defaultMessage: '个人中心',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n\n      <Title level={2}>\n        <UserOutlined style={{ marginRight: '8px' }} />\n        <FormattedMessage id=\"pages.account.center.title\" defaultMessage=\"个人中心\" />\n      </Title>\n\n      {/* 个人信息卡片 */}\n      <ProCard\n        title={<FormattedMessage id=\"pages.account.center.profile\" defaultMessage=\"个人信息\" />}\n        className={styles.profileCard}\n        extra={\n          <Button\n            type=\"primary\"\n            icon={<EditOutlined />}\n            onClick={() => setEditing(true)}\n            disabled={editing}\n          >\n            <FormattedMessage id=\"pages.account.center.editProfile\" defaultMessage=\"编辑资料\" />\n          </Button>\n        }\n      >\n        <div className={styles.avatarSection}>\n          <Avatar size={80} icon={<UserOutlined />} />\n          <div style={{ marginTop: '16px' }}>\n            <Title level={4}>{userProfile.name || userProfile.username}</Title>\n            <Tag color={getRoleTagColor(userProfile.role)}>\n              {userProfile.role === 'admin' ? \n                <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n              }\n            </Tag>\n          </div>\n        </div>\n\n        <Divider />\n\n        {editing ? (\n          <ProForm\n            form={form}\n            onFinish={handleUpdateProfile}\n            submitter={{\n              searchConfig: {\n                submitText: '保存',\n                resetText: '取消',\n              },\n              render: (props, doms) => {\n                return (\n                  <div style={{ textAlign: 'right' }}>\n                    <Space>\n                      <Button onClick={handleCancelEdit}>取消</Button>\n                      <Button type=\"primary\" htmlType=\"submit\">保存</Button>\n                    </Space>\n                  </div>\n                );\n              },\n              resetButtonProps: {\n                style: { display: 'none' }\n              },\n              submitButtonProps: {\n                style: { display: 'none' }\n              }\n            }}\n          >\n            <ProFormText\n              name=\"username\"\n              label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}\n              rules={[{ required: true, message: '请输入用户名' }]}\n            />\n            <ProFormText\n              name=\"name\"\n              label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}\n              placeholder=\"请输入姓名\"\n            />\n            <ProFormText\n              name=\"email\"\n              label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}\n              rules={[\n                { type: 'email', message: '请输入有效的邮箱地址' }\n              ]}\n            />\n            <ProFormDigit\n              name=\"age\"\n              label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}\n              min={1}\n              max={150}\n              placeholder=\"请输入年龄\"\n            />\n          </ProForm>\n        ) : (\n          <Descriptions column={2} bordered>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.username\" defaultMessage=\"用户名\" />}>\n              <Text strong>{userProfile.username}</Text>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.name\" defaultMessage=\"姓名\" />}>\n              {userProfile.name || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.email\" defaultMessage=\"邮箱\" />}>\n              <MailOutlined style={{ marginRight: '4px' }} />\n              {userProfile.email || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.age\" defaultMessage=\"年龄\" />}>\n              {userProfile.age || <FormattedMessage id=\"pages.account.center.notSet\" defaultMessage=\"未设置\" />}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.role\" defaultMessage=\"角色\" />}>\n              <Tag color={getRoleTagColor(userProfile.role)}>\n                {userProfile.role === 'admin' ? \n                  <FormattedMessage id=\"pages.account.center.admin\" defaultMessage=\"管理员\" /> : \n                  <FormattedMessage id=\"pages.account.center.user\" defaultMessage=\"普通用户\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.status\" defaultMessage=\"状态\" />}>\n              <Tag color={userProfile.isActive ? 'green' : 'red'}>\n                {userProfile.isActive ? \n                  <FormattedMessage id=\"pages.account.center.active\" defaultMessage=\"正常\" /> : \n                  <FormattedMessage id=\"pages.account.center.inactive\" defaultMessage=\"禁用\" />\n                }\n              </Tag>\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.registerTime\" defaultMessage=\"注册时间\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.createdAt)}\n            </Descriptions.Item>\n            <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastUpdate\" defaultMessage=\"最后更新\" />}>\n              <CalendarOutlined style={{ marginRight: '4px' }} />\n              {formatDateTime(userProfile.updatedAt)}\n            </Descriptions.Item>\n            {userProfile.lastLoginAt && (\n              <Descriptions.Item label={<FormattedMessage id=\"pages.account.center.lastLogin\" defaultMessage=\"最后登录\" />} span={2}>\n                <CalendarOutlined style={{ marginRight: '4px' }} />\n                {formatDateTime(userProfile.lastLoginAt)}\n              </Descriptions.Item>\n            )}\n          </Descriptions>\n        )}\n      </ProCard>\n\n      {/* 活动日志卡片 */}\n      <ProCard\n        title={\n          <Space>\n            <HistoryOutlined />\n            <FormattedMessage id=\"pages.account.center.recentActivity\" defaultMessage=\"最近活动\" />\n          </Space>\n        }\n        className={styles.activityCard}\n      >\n        <List\n          dataSource={activityLogs}\n          renderItem={(item) => {\n            const activityTag = getActivityTag(item.action);\n            return (\n              <List.Item>\n                <List.Item.Meta\n                  avatar={<SafetyOutlined />}\n                  title={\n                    <Space>\n                      <Tag color={activityTag.color}>{activityTag.text}</Tag>\n                      <Text>{item.description}</Text>\n                    </Space>\n                  }\n                  description={\n                    <Space direction=\"vertical\" size=\"small\">\n                      <Text type=\"secondary\">\n                        {formatDateTime(item.createdAt)}\n                      </Text>\n                      {item.ipAddress && (\n                        <Text type=\"secondary\" style={{ fontSize: '12px' }}>\n                          IP: {item.ipAddress}\n                        </Text>\n                      )}\n                    </Space>\n                  }\n                />\n              </List.Item>\n            );\n          }}\n        />\n      </ProCard>\n    </div>\n  );\n};\n\nexport default UserCenter;\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/account/center/index.tsx"
     },
-    "15": {
+    "14": {
       "path": "/",
       "redirect": "/welcome",
       "parentId": "ant-design-pro-layout",
-      "id": "15",
+      "id": "14",
       "absPath": "/"
     },
-    "16": {
+    "15": {
       "path": "*",
       "layout": false,
       "file": "@/pages/404.tsx",
-      "id": "16",
+      "id": "15",
       "absPath": "/*",
       "__content": "import { history, useIntl } from '@umijs/max';\nimport { Button, Card, Result } from 'antd';\nimport React from 'react';\n\nconst NoFoundPage: React.FC = () => (\n  <Card variant=\"borderless\">\n    <Result\n      status=\"404\"\n      title=\"404\"\n      subTitle={useIntl().formatMessage({ id: 'pages.404.subTitle' })}\n      extra={\n        <Button type=\"primary\" onClick={() => history.push('/')}>\n          {useIntl().formatMessage({ id: 'pages.404.buttonText' })}\n        </Button>\n      }\n    />\n  </Card>\n);\n\nexport default NoFoundPage;\n",
       "__isJSFile": true,
@@ -4014,7 +3990,7 @@
     "tslibVersion": "2.8.1"
   },
   "faviconFiles": [],
-  "port": 63583,
+  "port": 54964,
   "host": "0.0.0.0",
   "ip": "192.168.0.130",
   "antd": {

@@ -71,12 +71,6 @@ export default [
         path: '/system/user-log',
         component: './user-log',
       },
-      {
-        name: 'permission-management',
-        icon: 'safety',
-        path: '/system/permission-management',
-        component: './permission-management',
-      },
     ],
   },
   {

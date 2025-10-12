@@ -12,7 +12,6 @@ export default {
   'menu.system.role-management': 'ロール管理',
   'menu.system.menu-management': 'メニュー管理',
   'menu.system.user-log': 'ユーザーログ',
-  'menu.system.permission-management': '権限管理',
   'menu.dashboard': 'ダッシュボード',
   'menu.dashboard.analysis': '分析',
   'menu.dashboard.monitor': 'モニター',

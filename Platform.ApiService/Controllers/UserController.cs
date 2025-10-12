@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 
@@ -43,7 +44,7 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="request">创建用户请求</param>
     [HttpPost("management")]
-    [Authorize]
+    [RequirePermission("user", "create")]
     public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
     {
         if (string.IsNullOrEmpty(request.Username))
@@ -62,7 +63,7 @@ public class UserController : BaseApiController
     /// <param name="id">用户ID</param>
     /// <param name="request">更新用户请求</param>
     [HttpPut("{id}")]
-    [Authorize]
+    [RequirePermission("user", "update")]
     public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
     {
         // 检查是否修改自己的角色（不允许）
@@ -85,7 +86,7 @@ public class UserController : BaseApiController
     /// <param name="id">用户ID</param>
     /// <param name="reason">删除原因（可选）</param>
     [HttpDelete("{id}")]
-    [Authorize]
+    [RequirePermission("user", "delete")]
     public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)
     {
         // 检查是否删除自己（不允许）
@@ -117,12 +118,9 @@ public class UserController : BaseApiController
     /// 获取用户统计信息（需要权限）
     /// </summary>
     [HttpGet("statistics")]
-    [Authorize]
+    [RequirePermission("user", "read")]
     public async Task<IActionResult> GetUserStatistics()
     {
-        // 需要 user:read 权限
-        await RequirePermissionAsync("user", "read");
-        
         var statistics = await _userService.GetUserStatisticsAsync();
         return Success(statistics);
     }
@@ -136,6 +134,16 @@ public class UserController : BaseApiController
     [Authorize]
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
+        // 批量操作需要 user:update 或 user:delete 权限
+        if (request.Action == "delete")
+        {
+            await RequirePermissionAsync("user", "delete");
+        }
+        else
+        {
+            await RequirePermissionAsync("user", "update");
+        }
+        
         if (request.UserIds == null || !request.UserIds.Any())
             throw new ArgumentException("用户ID列表不能为空");
 
@@ -161,7 +169,7 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
-    /// 获取所有用户活动日志（仅管理员）
+    /// 获取所有用户活动日志（需要权限）
     /// </summary>
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
@@ -170,7 +178,7 @@ public class UserController : BaseApiController
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     [HttpGet("/api/users/activity-logs")]
-    [Authorize(Roles = "admin")]
+    [RequirePermission("activity-log", "read")]
     public async Task<IActionResult> GetAllActivityLogs(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,

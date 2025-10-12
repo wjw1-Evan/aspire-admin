@@ -18,7 +18,7 @@ var services = new Dictionary<string, IResourceBuilder<ProjectResource>>
     // 核心业务服务（端口不暴露，仅供内部访问）
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(mongodb)
-    .WithHttpEndpoint()
+    .WithHttpEndpoint().WithReplicas(3)
     .WithHttpHealthCheck("/health")
  };
 

@@ -280,25 +280,6 @@ public class InitialMenuData
             UpdatedAt = DateTime.UtcNow
         });
 
-        // 7. 权限管理
-        menus.Add(new Menu
-        {
-            Name = "permission-management",
-            Title = "权限管理",
-            Path = "/system/permission-management",
-            Component = "./permission-management",
-            Icon = "safety",
-            SortOrder = 4,
-            IsEnabled = true,
-            IsExternal = false,
-            OpenInNewTab = false,
-            HideInMenu = false,
-            ParentId = null,
-            Permissions = new List<string>(),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        });
-
         return menus;
     }
 

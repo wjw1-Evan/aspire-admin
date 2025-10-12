@@ -12,7 +12,6 @@ export default {
   'menu.system.role-management': 'مدیریت نقش‌ها',
   'menu.system.menu-management': 'مدیریت منو',
   'menu.system.user-log': 'گزارش کاربران',
-  'menu.system.permission-management': 'مدیریت مجوزها',
   'menu.dashboard': 'داشبورد',
   'menu.dashboard.analysis': 'تحلیل و بررسی',
   'menu.dashboard.monitor': 'نظارت',

@@ -12,7 +12,6 @@ export default {
   'menu.system.role-management': 'Manajemen Peran',
   'menu.system.menu-management': 'Manajemen Menu',
   'menu.system.user-log': 'Log Pengguna',
-  'menu.system.permission-management': 'Manajemen Izin',
   'menu.dashboard': 'Dasbor',
   'menu.dashboard.analysis': 'Analisis',
   'menu.dashboard.monitor': 'Monitor',

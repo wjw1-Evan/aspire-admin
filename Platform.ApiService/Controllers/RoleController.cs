@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 
@@ -21,6 +22,7 @@ public class RoleController : BaseApiController
     /// 获取所有角色
     /// </summary>
     [HttpGet]
+    [RequirePermission("role", "read")]
     public async Task<IActionResult> GetAllRoles()
     {
         var roles = await _roleService.GetAllRolesAsync();
@@ -31,6 +33,7 @@ public class RoleController : BaseApiController
     /// 获取所有角色（带统计信息）
     /// </summary>
     [HttpGet("with-stats")]
+    [RequirePermission("role", "read")]
     public async Task<IActionResult> GetAllRolesWithStats()
     {
         var roles = await _roleService.GetAllRolesWithStatsAsync();
@@ -41,6 +44,7 @@ public class RoleController : BaseApiController
     /// 根据ID获取角色
     /// </summary>
     [HttpGet("{id}")]
+    [RequirePermission("role", "read")]
     public async Task<IActionResult> GetRoleById(string id)
     {
         var role = await _roleService.GetRoleByIdAsync(id);
@@ -54,6 +58,7 @@ public class RoleController : BaseApiController
     /// 创建角色
     /// </summary>
     [HttpPost]
+    [RequirePermission("role", "create")]
     public async Task<IActionResult> CreateRole([FromBody] CreateRoleRequest request)
     {
         var role = await _roleService.CreateRoleAsync(request);
@@ -64,6 +69,7 @@ public class RoleController : BaseApiController
     /// 更新角色
     /// </summary>
     [HttpPut("{id}")]
+    [RequirePermission("role", "update")]
     public async Task<IActionResult> UpdateRole(string id, [FromBody] UpdateRoleRequest request)
     {
         var success = await _roleService.UpdateRoleAsync(id, request);
@@ -79,6 +85,7 @@ public class RoleController : BaseApiController
     /// <param name="id">角色ID</param>
     /// <param name="reason">删除原因（可选）</param>
     [HttpDelete("{id}")]
+    [RequirePermission("role", "delete")]
     public async Task<IActionResult> DeleteRole(string id, [FromQuery] string? reason = null)
     {
         var success = await _roleService.DeleteRoleAsync(id, reason);
@@ -92,6 +99,7 @@ public class RoleController : BaseApiController
     /// 为角色分配菜单权限
     /// </summary>
     [HttpPost("{id}/menus")]
+    [RequirePermission("role", "update")]
     public async Task<IActionResult> AssignMenusToRole(string id, [FromBody] AssignMenusToRoleRequest request)
     {
         var success = await _roleService.AssignMenusToRoleAsync(id, request.MenuIds);
@@ -105,6 +113,7 @@ public class RoleController : BaseApiController
     /// 获取角色的菜单权限
     /// </summary>
     [HttpGet("{id}/menus")]
+    [RequirePermission("role", "read")]
     public async Task<IActionResult> GetRoleMenus(string id)
     {
         var menuIds = await _roleService.GetRoleMenuIdsAsync(id);
@@ -115,6 +124,7 @@ public class RoleController : BaseApiController
     /// 获取角色的操作权限
     /// </summary>
     [HttpGet("{id}/permissions")]
+    [RequirePermission("role", "read")]
     public async Task<IActionResult> GetRolePermissions(string id)
     {
         var permissions = await _roleService.GetRolePermissionsAsync(id);
@@ -125,6 +135,7 @@ public class RoleController : BaseApiController
     /// 为角色分配操作权限
     /// </summary>
     [HttpPost("{id}/permissions")]
+    [RequirePermission("role", "update")]
     public async Task<IActionResult> AssignPermissionsToRole(string id, [FromBody] AssignPermissionsRequest request)
     {
         var success = await _roleService.AssignPermissionsToRoleAsync(id, request.PermissionIds);

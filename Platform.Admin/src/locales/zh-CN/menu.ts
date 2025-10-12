@@ -9,7 +9,6 @@ export default {
   'menu.system.role-management': '角色管理',
   'menu.system.menu-management': '菜单管理',
   'menu.system.user-log': '用户日志',
-  'menu.system.permission-management': '权限管理',
   'menu.account': '个人页',
   'menu.account.center': '个人中心',
 };

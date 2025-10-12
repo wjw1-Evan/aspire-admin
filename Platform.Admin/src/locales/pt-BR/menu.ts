@@ -12,7 +12,6 @@ export default {
   'menu.system.role-management': 'Gerenciamento de Funções',
   'menu.system.menu-management': 'Gerenciamento de Menus',
   'menu.system.user-log': 'Log de Usuários',
-  'menu.system.permission-management': 'Gerenciamento de Permissões',
   'menu.dashboard': 'Dashboard',
   'menu.dashboard.analysis': 'Análise',
   'menu.dashboard.monitor': 'Monitor',

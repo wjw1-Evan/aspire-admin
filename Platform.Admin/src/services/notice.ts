@@ -34,9 +34,22 @@ export async function markNoticeAsRead(id: string) {
   });
 }
 
+/** 标记为未读 */
+export async function markNoticeAsUnread(id: string) {
+  return request(`/api/notices/${id}`, {
+    method: 'PUT',
+    data: { read: false },
+  });
+}
+
 /** 批量标记已读 */
 export async function markAllAsRead(ids: string[]) {
   return Promise.all(ids.map(id => markNoticeAsRead(id)));
+}
+
+/** 批量标记未读 */
+export async function markAllAsUnread(ids: string[]) {
+  return Promise.all(ids.map(id => markNoticeAsUnread(id)));
 }
 
 /** 删除通知 */

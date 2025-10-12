@@ -6,11 +6,15 @@ namespace Platform.ApiService.Services;
 public class PermissionService : IPermissionService
 {
     private readonly IMongoCollection<Permission> _permissions;
+    private readonly IMongoCollection<Role> _roles;
+    private readonly IMongoCollection<AppUser> _users;
     private readonly ILogger<PermissionService> _logger;
 
     public PermissionService(IMongoDatabase database, ILogger<PermissionService> logger)
     {
         _permissions = database.GetCollection<Permission>("permissions");
+        _roles = database.GetCollection<Role>("roles");
+        _users = database.GetCollection<AppUser>("users");
         _logger = logger;
     }
 
@@ -67,7 +71,6 @@ public class PermissionService : IPermissionService
         };
 
         await _permissions.InsertOneAsync(permission);
-        _logger.LogInformation("Created permission {Code} by {UserId}", code, createdBy);
         
         return permission;
     }
@@ -123,17 +126,72 @@ public class PermissionService : IPermissionService
         var update = updateBuilder.Combine(updates);
         var result = await _permissions.UpdateOneAsync(p => p.Id == id, update);
 
-        _logger.LogInformation("Updated permission {Id} by {UserId}", id, updatedBy);
         return result.ModifiedCount > 0;
     }
 
     public async Task<bool> DeletePermissionAsync(string id, string deletedBy, string? reason = null)
     {
+        // 检查权限是否存在
+        var permission = await GetPermissionByIdAsync(id);
+        if (permission == null)
+        {
+            return false;
+        }
+        
+        // 查找引用此权限的角色
+        var rolesFilter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.AnyIn(r => r.PermissionIds, new[] { id }),
+            SoftDeleteExtensions.NotDeleted<Role>()
+        );
+        var rolesWithPermission = await _roles.Find(rolesFilter).ToListAsync();
+        
+        // 自动从所有角色的 PermissionIds 中移除此权限
+        if (rolesWithPermission.Count > 0)
+        {
+            foreach (var role in rolesWithPermission)
+            {
+                var newPermissionIds = role.PermissionIds.Where(pid => pid != id).ToList();
+                
+                var update = Builders<Role>.Update
+                    .Set(r => r.PermissionIds, newPermissionIds)
+                    .Set(r => r.UpdatedAt, DateTime.UtcNow);
+                    
+                await _roles.UpdateOneAsync(r => r.Id == role.Id, update);
+            }
+            
+            _logger.LogInformation($"已从 {rolesWithPermission.Count} 个角色的权限列表中移除权限 {permission.Code} ({id})");
+        }
+        
+        // 查找自定义权限包含此权限的用户
+        var usersFilter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.AnyIn(u => u.CustomPermissionIds, new[] { id }),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
+        var usersWithPermission = await _users.Find(usersFilter).ToListAsync();
+        
+        // 自动从所有用户的 CustomPermissionIds 中移除此权限
+        if (usersWithPermission.Count > 0)
+        {
+            foreach (var user in usersWithPermission)
+            {
+                var newCustomPermissionIds = user.CustomPermissionIds.Where(pid => pid != id).ToList();
+                
+                var update = Builders<AppUser>.Update
+                    .Set(u => u.CustomPermissionIds, newCustomPermissionIds)
+                    .Set(u => u.UpdatedAt, DateTime.UtcNow);
+                    
+                await _users.UpdateOneAsync(u => u.Id == user.Id, update);
+            }
+            
+            _logger.LogInformation($"已从 {usersWithPermission.Count} 个用户的自定义权限列表中移除权限 {permission.Code} ({id})");
+        }
+        
+        // 软删除权限
         var result = await _permissions.SoftDeleteByIdAsync(id, deletedBy, reason);
         
         if (result)
         {
-            _logger.LogInformation("Deleted permission {Id} by {UserId}", id, deletedBy);
+            _logger.LogInformation($"已删除权限: {permission.Code} ({id}), 原因: {reason ?? "未提供"}");
         }
         
         return result;
@@ -185,8 +243,6 @@ public class PermissionService : IPermissionService
 
     public async Task InitializeDefaultPermissionsAsync()
     {
-        _logger.LogInformation("Initializing default permissions...");
-
         // 定义系统资源
         var resources = new[]
         {
@@ -240,11 +296,6 @@ public class PermissionService : IPermissionService
         if (permissionsToCreate.Count > 0)
         {
             await _permissions.InsertManyAsync(permissionsToCreate);
-            _logger.LogInformation("Created {Count} default permissions", permissionsToCreate.Count);
-        }
-        else
-        {
-            _logger.LogInformation("Default permissions already exist");
         }
     }
 }

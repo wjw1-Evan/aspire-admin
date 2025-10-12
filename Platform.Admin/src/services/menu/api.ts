@@ -76,9 +76,10 @@ export async function updateMenu(
 /**
  * 删除菜单
  */
-export async function deleteMenu(id: string, options?: Record<string, any>) {
+export async function deleteMenu(id: string, reason?: string, options?: Record<string, any>) {
   return request<API.ApiResponse<boolean>>(`/api/menu/${id}`, {
     method: 'DELETE',
+    params: { reason },
     ...(options || {}),
   });
 }

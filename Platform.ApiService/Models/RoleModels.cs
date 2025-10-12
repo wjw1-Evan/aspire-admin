@@ -96,3 +96,32 @@ public class RoleListResponse
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 带统计信息的角色
+/// </summary>
+public class RoleWithStats
+{
+    public string? Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public List<string> MenuIds { get; set; } = new();
+    public List<string> PermissionIds { get; set; } = new();
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    
+    // 统计信息
+    public int UserCount { get; set; }          // 使用此角色的用户数量
+    public int MenuCount { get; set; }          // 菜单数量
+    public int PermissionCount { get; set; }    // 权限数量
+}
+
+/// <summary>
+/// 带统计信息的角色列表响应
+/// </summary>
+public class RoleListWithStatsResponse
+{
+    public List<RoleWithStats> Roles { get; set; } = new();
+    public int Total { get; set; }
+}
+

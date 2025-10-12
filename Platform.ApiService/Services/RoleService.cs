@@ -9,7 +9,6 @@ public class RoleService : IRoleService
     private readonly IMongoCollection<AppUser> _users;
     private readonly IMongoCollection<Permission> _permissions;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<RoleService> _logger;
 
     public RoleService(
         IMongoDatabase database, 
@@ -20,7 +19,6 @@ public class RoleService : IRoleService
         _users = database.GetCollection<AppUser>("users");
         _permissions = database.GetCollection<Permission>("permissions");
         _httpContextAccessor = httpContextAccessor;
-        _logger = logger;
     }
 
     /// <summary>
@@ -45,6 +43,50 @@ public class RoleService : IRoleService
         {
             Roles = roles,
             Total = roles.Count
+        };
+    }
+    
+    /// <summary>
+    /// 获取所有角色（带统计信息）
+    /// </summary>
+    public async Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync()
+    {
+        var filter = SoftDeleteExtensions.NotDeleted<Role>();
+        var roles = await _roles.Find(filter)
+            .SortBy(r => r.CreatedAt)
+            .ToListAsync();
+
+        var rolesWithStats = new List<RoleWithStats>();
+        
+        foreach (var role in roles)
+        {
+            // 统计使用此角色的用户数量
+            var userFilter = Builders<AppUser>.Filter.And(
+                Builders<AppUser>.Filter.AnyIn(u => u.RoleIds, new[] { role.Id! }),
+                SoftDeleteExtensions.NotDeleted<AppUser>()
+            );
+            var userCount = await _users.CountDocumentsAsync(userFilter);
+            
+            rolesWithStats.Add(new RoleWithStats
+            {
+                Id = role.Id,
+                Name = role.Name,
+                Description = role.Description,
+                MenuIds = role.MenuIds ?? new List<string>(),
+                PermissionIds = role.PermissionIds ?? new List<string>(),
+                IsActive = role.IsActive,
+                CreatedAt = role.CreatedAt,
+                UpdatedAt = role.UpdatedAt,
+                UserCount = (int)userCount,
+                MenuCount = role.MenuIds?.Count ?? 0,
+                PermissionCount = role.PermissionIds?.Count ?? 0
+            });
+        }
+
+        return new RoleListWithStatsResponse
+        {
+            Roles = rolesWithStats,
+            Total = rolesWithStats.Count
         };
     }
 
@@ -81,7 +123,7 @@ public class RoleService : IRoleService
         var existingRole = await GetRoleByNameAsync(request.Name);
         if (existingRole != null)
         {
-            throw new InvalidOperationException($"Role with name '{request.Name}' already exists.");
+            throw new InvalidOperationException($"角色名称 '{request.Name}' 已存在");
         }
 
         var role = new Role
@@ -116,7 +158,7 @@ public class RoleService : IRoleService
             var existingRole = await GetRoleByNameAsync(request.Name);
             if (existingRole != null && existingRole.Id != id)
             {
-                throw new InvalidOperationException($"Role with name '{request.Name}' already exists.");
+                throw new InvalidOperationException($"角色名称 '{request.Name}' 已存在");
             }
             updates.Add(updateBuilder.Set(r => r.Name, request.Name));
         }
@@ -137,27 +179,68 @@ public class RoleService : IRoleService
     }
 
     /// <summary>
-    /// 软删除角色（检查是否有用户使用）
+    /// 软删除角色（自动清理用户的角色引用）
     /// </summary>
     public async Task<bool> DeleteRoleAsync(string id, string? reason = null)
     {
-        // 检查是否有未删除的用户使用此角色
+        // 检查角色是否存在
+        var role = await GetRoleByIdAsync(id);
+        if (role == null)
+        {
+            return false;
+        }
+        
+        // 防止删除系统管理员角色
+        if (role.Name?.ToLower() == "admin" || role.Name?.ToLower() == "系统管理员")
+        {
+            throw new InvalidOperationException("不能删除系统管理员角色");
+        }
+        
+        // 查找使用此角色的用户数量（仅用于日志）
         var usersFilter = Builders<AppUser>.Filter.And(
             Builders<AppUser>.Filter.AnyIn(u => u.RoleIds, new[] { id }),
             SoftDeleteExtensions.NotDeleted<AppUser>()
         );
-        var usersWithRole = await _users.Find(usersFilter).AnyAsync();
-        if (usersWithRole)
+        var usersWithRole = await _users.Find(usersFilter).ToListAsync();
+        
+        // 自动从所有用户的 RoleIds 中移除此角色
+        if (usersWithRole.Count > 0)
         {
-            throw new InvalidOperationException("Cannot delete role that is assigned to users. Please reassign users first.");
+            foreach (var user in usersWithRole)
+            {
+                var newRoleIds = user.RoleIds.Where(rid => rid != id).ToList();
+                
+                // 检查是否是最后一个管理员角色
+                if (role.Name?.ToLower() == "admin" && newRoleIds.Count == 0)
+                {
+                    throw new InvalidOperationException("不能移除最后一个管理员的角色，必须至少保留一个管理员");
+                }
+                
+                var update = Builders<AppUser>.Update
+                    .Set(u => u.RoleIds, newRoleIds)
+                    .Set(u => u.UpdatedAt, DateTime.UtcNow);
+                    
+                await _users.UpdateOneAsync(u => u.Id == user.Id, update);
+            }
+            
+            Console.WriteLine($"已从 {usersWithRole.Count} 个用户的角色列表中移除角色 {role.Name} ({id})");
         }
 
+        // 软删除角色
         var currentUserId = GetCurrentUserId();
         var filter = Builders<Role>.Filter.And(
             Builders<Role>.Filter.Eq(r => r.Id, id),
             SoftDeleteExtensions.NotDeleted<Role>()
         );
-        return await _roles.SoftDeleteOneAsync(filter, currentUserId, reason);
+        
+        var deleted = await _roles.SoftDeleteOneAsync(filter, currentUserId, reason);
+        
+        if (deleted)
+        {
+            Console.WriteLine($"已删除角色: {role.Name} ({id}), 原因: {reason ?? "未提供"}");
+        }
+        
+        return deleted;
     }
 
     /// <summary>
@@ -196,7 +279,6 @@ public class RoleService : IRoleService
                 .Set(r => r.UpdatedAt, DateTime.UtcNow)
         );
 
-        _logger.LogInformation("Assigned {Count} permissions to role {RoleId}", permissionIds.Count, roleId);
         return result.ModifiedCount > 0;
     }
 

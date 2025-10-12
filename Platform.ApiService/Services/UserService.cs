@@ -10,7 +10,6 @@ public class UserService : IUserService
     private readonly IMongoCollection<Permission> _permissions;
     private readonly IMongoCollection<Role> _roles;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<UserService> _logger;
 
     public UserService(
         IMongoDatabase database, 
@@ -22,7 +21,6 @@ public class UserService : IUserService
         _permissions = database.GetCollection<Permission>("permissions");
         _roles = database.GetCollection<Role>("roles");
         _httpContextAccessor = httpContextAccessor;
-        _logger = logger;
     }
 
     /// <summary>
@@ -54,7 +52,7 @@ public class UserService : IUserService
         {
             Username = request.Name,
             Email = request.Email,
-            Role = "user", // 默认为普通用户
+            RoleIds = new List<string>(), // 空角色列表，需要管理员分配
             IsActive = true,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
@@ -100,7 +98,6 @@ public class UserService : IUserService
             Username = request.Username,
             Email = request.Email,
             PasswordHash = passwordHash,
-            Role = request.Role ?? "user", // 如果未提供，默认为 user
             RoleIds = request.RoleIds ?? new List<string>(),
             IsActive = request.IsActive,
             IsDeleted = false,
@@ -171,9 +168,6 @@ public class UserService : IUserService
             }
             update = update.Set(user => user.Email, request.Email);
         }
-
-        if (!string.IsNullOrEmpty(request.Role))
-            update = update.Set(user => user.Role, request.Role);
 
         if (request.RoleIds != null)
             update = update.Set(user => user.RoleIds, request.RoleIds);
@@ -250,10 +244,20 @@ public class UserService : IUserService
             filter = Builders<AppUser>.Filter.And(filter, searchFilter);
         }
 
-        // 角色过滤
-        if (!string.IsNullOrEmpty(request.Role))
+        // 角色过滤（按 RoleIds）
+        if (request.RoleIds != null && request.RoleIds.Count > 0)
         {
-            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Eq(user => user.Role, request.Role));
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.AnyIn(user => user.RoleIds, request.RoleIds));
+        }
+        
+        // 日期范围过滤
+        if (request.StartDate.HasValue)
+        {
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Gte(user => user.CreatedAt, request.StartDate.Value));
+        }
+        if (request.EndDate.HasValue)
+        {
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Lte(user => user.CreatedAt, request.EndDate.Value));
         }
 
         // 状态过滤
@@ -297,10 +301,10 @@ public class UserService : IUserService
         var activeUsers = await _users.CountDocumentsAsync(activeFilter);
         var inactiveUsers = totalUsers - activeUsers;
         
-        var adminFilter = Builders<AppUser>.Filter.And(notDeletedFilter,
-            Builders<AppUser>.Filter.Eq(user => user.Role, "admin"));
-        var adminUsers = await _users.CountDocumentsAsync(adminFilter);
-        var regularUsers = totalUsers - adminUsers;
+        // 注意：由于移除了 Role 字段，这里暂时返回 0
+        // 需要根据角色系统重新实现
+        var adminUsers = 0L;
+        var regularUsers = totalUsers;
 
         var today = DateTime.UtcNow.Date;
         var thisWeek = today.AddDays(-(int)today.DayOfWeek);
@@ -334,7 +338,7 @@ public class UserService : IUserService
     /// <summary>
     /// 批量操作用户（激活、停用、软删除）
     /// </summary>
-    public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? deleteReason = null)
+    public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null)
     {
         var filter = Builders<AppUser>.Filter.And(
             Builders<AppUser>.Filter.In(user => user.Id, request.UserIds),
@@ -352,7 +356,7 @@ public class UserService : IUserService
                 break;
             case "delete":
                 var currentUserId = GetCurrentUserId();
-                var deleteCount = await _users.SoftDeleteManyAsync(filter, currentUserId, deleteReason);
+                var deleteCount = await _users.SoftDeleteManyAsync(filter, currentUserId, reason);
                 return deleteCount > 0;
             default:
                 return false;
@@ -362,15 +366,10 @@ public class UserService : IUserService
         return result.ModifiedCount > 0;
     }
 
-    public async Task<bool> UpdateUserRoleAsync(string id, string role)
+    public Task<bool> UpdateUserRoleAsync(string id, string role)
     {
-        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
-        var update = Builders<AppUser>.Update
-            .Set(user => user.Role, role)
-            .Set(user => user.UpdatedAt, DateTime.UtcNow);
-
-        var result = await _users.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        // 注意：此方法已废弃，使用 RoleIds 代替
+        throw new InvalidOperationException("此方法已废弃，请使用 UpdateUserManagementAsync 更新用户的 RoleIds");
     }
 
     public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
@@ -399,8 +398,9 @@ public class UserService : IUserService
     }
 
     /// <summary>
-    /// 获取所有用户的活动日志（分页）
+    /// 获取所有用户的活动日志（分页）- 旧版本，存在 N+1 问题
     /// </summary>
+    [Obsolete("此方法存在 N+1 查询问题，请使用 GetAllActivityLogsWithUsersAsync 代替")]
     public async Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(
         int page = 1, 
         int pageSize = 20, 
@@ -446,6 +446,67 @@ public class UserService : IUserService
             .ToListAsync();
 
         return (logs, total);
+    }
+    
+    /// <summary>
+    /// 获取所有用户的活动日志（分页）- 优化版本，使用批量查询
+    /// </summary>
+    public async Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(
+        int page = 1, 
+        int pageSize = 20, 
+        string? userId = null,
+        string? action = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null)
+    {
+        var filterBuilder = Builders<UserActivityLog>.Filter;
+        var filter = filterBuilder.Empty;
+
+        // 按用户ID过滤
+        if (!string.IsNullOrEmpty(userId))
+        {
+            filter &= filterBuilder.Eq(log => log.UserId, userId);
+        }
+
+        // 按操作类型过滤
+        if (!string.IsNullOrEmpty(action))
+        {
+            filter &= filterBuilder.Eq(log => log.Action, action);
+        }
+
+        // 按日期范围过滤
+        if (startDate.HasValue)
+        {
+            filter &= filterBuilder.Gte(log => log.CreatedAt, startDate.Value);
+        }
+        if (endDate.HasValue)
+        {
+            filter &= filterBuilder.Lte(log => log.CreatedAt, endDate.Value);
+        }
+
+        // 获取总数
+        var total = await _activityLogs.CountDocumentsAsync(filter);
+
+        // 获取分页数据
+        var logs = await _activityLogs
+            .Find(filter)
+            .Sort(Builders<UserActivityLog>.Sort.Descending(log => log.CreatedAt))
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
+
+        // 批量获取用户信息（解决 N+1 问题）
+        var userIds = logs.Select(log => log.UserId).Distinct().ToList();
+        var userFilter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.In(u => u.Id, userIds),
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
+        var users = await _users.Find(userFilter).ToListAsync();
+        
+        // 构建用户 ID 到用户名的映射
+        var userMap = users.ToDictionary(u => u.Id!, u => u.Username);
+
+        return (logs, total, userMap);
     }
 
     public async Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null)
@@ -560,7 +621,6 @@ public class UserService : IUserService
                 .Set(u => u.UpdatedAt, DateTime.UtcNow)
         );
 
-        _logger.LogInformation("Assigned {Count} custom permissions to user {UserId}", permissionIds.Count, userId);
         return result.ModifiedCount > 0;
     }
 

@@ -23,8 +23,10 @@ public abstract class BaseApiController : ControllerBase
 
     /// <summary>
     /// 当前用户角色（从 JWT token）
+    /// 注意：JWT token 不再包含 role claim，此属性已废弃
     /// </summary>
-    protected string? CurrentUserRole => User.FindFirst("role")?.Value;
+    [Obsolete("JWT token 不再包含 role claim，请使用权限系统进行权限检查")]
+    protected string? CurrentUserRole => null;
 
     /// <summary>
     /// 获取必需的用户 ID（如果为空则抛出异常）
@@ -39,8 +41,10 @@ public abstract class BaseApiController : ControllerBase
 
     /// <summary>
     /// 检查当前用户是否为管理员
+    /// 注意：此方法已废弃，请使用 HasPermissionAsync 进行权限检查
     /// </summary>
-    protected bool IsAdmin => CurrentUserRole == "admin";
+    [Obsolete("请使用 HasPermissionAsync 进行权限检查，而不是依赖 IsAdmin")]
+    protected bool IsAdmin => false;
 
     /// <summary>
     /// 检查当前用户是否已认证

@@ -6,9 +6,6 @@ namespace Platform.ApiService.Services;
 
 public class AuthService : IAuthService
 {
-    private const string AdminRole = "admin";
-    private const string UserRole = "user";
-    
     private readonly IMongoCollection<AppUser> _users;
     private readonly IJwtService _jwtService;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -87,8 +84,8 @@ public class AuthService : IAuthService
         }
 
         // 构建用户信息
-        // 注意：数据库使用 Role 字段存储用户角色，但返回给前端时使用 Access 字段
-        // 这是为了保持前端权限系统的一致性（前端使用 access 字段进行权限检查）
+        // 注意：用户的权限基于 RoleIds，前端使用 access 字段进行权限检查
+        // 这里暂时设置为 "user"，实际权限由角色系统决定
         return new CurrentUser
         {
             Id = user.Id,
@@ -97,7 +94,7 @@ public class AuthService : IAuthService
             UserId = user.Id,
             Email = user.Email,
             Signature = "海纳百川，有容乃大",
-            Title = user.Role == AdminRole ? "系统管理员" : "普通用户",
+            Title = "平台用户",
             Group = "平台管理团队",
             Tags = new List<UserTag>
             {
@@ -111,7 +108,7 @@ public class AuthService : IAuthService
             NotifyCount = 12,
             UnreadCount = 11,
             Country = "China",
-            Access = user.Role, // 将数据库的 Role 字段映射为前端的 Access 字段
+            Access = "user", // 默认 access，实际权限由角色和权限系统决定
             Geographic = new GeographicInfo
             {
                 Province = new LocationInfo { Label = "浙江省", Key = "330000" },
@@ -169,7 +166,7 @@ public class AuthService : IAuthService
         var loginData = new LoginData
         {
             Type = request.Type,
-            CurrentAuthority = user.Role,
+            CurrentAuthority = "user", // 默认权限，实际权限由角色系统决定
             Token = token,
             RefreshToken = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddMinutes(60) // 访问token过期时间
@@ -260,18 +257,18 @@ public class AuthService : IAuthService
             }
         }
 
-        // 创建新用户
+        // 创建新用户（无默认角色，需要管理员分配）
         var newUser = new AppUser
         {
             Username = request.Username.Trim(),
             PasswordHash = HashPassword(request.Password),
             Email = string.IsNullOrEmpty(request.Email) ? null : request.Email.Trim(),
-                Role = UserRole, // 默认为普通用户
-                IsActive = true,
-                IsDeleted = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            RoleIds = new List<string>(), // 空角色列表，需要管理员分配
+            IsActive = true,
+            IsDeleted = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
 
             await _users.InsertOneAsync(newUser);
 

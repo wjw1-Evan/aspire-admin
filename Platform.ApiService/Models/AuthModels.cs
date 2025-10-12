@@ -135,6 +135,7 @@ public class PageParams
     public int PageSize { get; set; } = 10;
 }
 
+[BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如旧的 role 字段）
 public class AppUser : ISoftDeletable
 {
     [BsonId]
@@ -155,9 +156,6 @@ public class AppUser : ISoftDeletable
 
     [BsonElement("email")]
     public string? Email { get; set; }
-
-    [BsonElement("role")]
-    public string Role { get; set; } = "user";
 
     [BsonElement("roleIds")]
     public List<string> RoleIds { get; set; } = new();

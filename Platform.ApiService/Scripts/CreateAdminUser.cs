@@ -16,6 +16,7 @@ public class CreateAdminUser
     public async Task CreateDefaultAdminAsync()
     {
         var users = _database.GetCollection<AppUser>("users");
+        var roles = _database.GetCollection<Role>("roles");
         
         // 首先检查未删除的 admin 用户
         var filter = Builders<AppUser>.Filter.And(
@@ -26,7 +27,6 @@ public class CreateAdminUser
         
         if (existingAdmin != null)
         {
-            Console.WriteLine($"✓ 管理员用户已存在: {existingAdmin.Username} (ID: {existingAdmin.Id})");
             return;
         }
 
@@ -50,12 +50,32 @@ public class CreateAdminUser
 
             await users.UpdateOneAsync(u => u.Id == deletedAdmin.Id, update);
             
-            Console.WriteLine("✓ 恢复已软删除的管理员用户:");
-            Console.WriteLine($"  - 用户名: {deletedAdmin.Username}");
-            Console.WriteLine($"  - 邮箱: {deletedAdmin.Email}");
-            Console.WriteLine($"  - ID: {deletedAdmin.Id}");
-            Console.WriteLine($"  - 删除时间: {deletedAdmin.DeletedAt}");
             return;
+        }
+
+        // 确保 admin 角色存在
+        var adminRoleFilter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.Eq(r => r.Name, "admin"),
+            SoftDeleteExtensions.NotDeleted<Role>()
+        );
+        var adminRole = await roles.Find(adminRoleFilter).FirstOrDefaultAsync();
+        
+        if (adminRole == null)
+        {
+            // 创建 admin 角色
+            adminRole = new Role
+            {
+                Name = "admin",
+                Description = "系统管理员角色",
+                MenuIds = new List<string>(),
+                PermissionIds = new List<string>(),
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await roles.InsertOneAsync(adminRole);
+            Console.WriteLine($"创建系统管理员角色: {adminRole.Id}");
         }
 
         // 创建默认管理员用户
@@ -64,7 +84,7 @@ public class CreateAdminUser
             Username = "admin",
             Email = "admin@example.com",
             PasswordHash = HashPassword("admin123"),
-            Role = "admin",
+            RoleIds = new List<string> { adminRole.Id! },  // 分配 admin 角色
             IsActive = true,
             IsDeleted = false,  // 显式设置软删除标志
             CreatedAt = DateTime.UtcNow,
@@ -72,11 +92,7 @@ public class CreateAdminUser
         };
 
         await users.InsertOneAsync(adminUser);
-        Console.WriteLine("✓ 默认管理员用户创建成功:");
-        Console.WriteLine($"  - 用户名: {adminUser.Username}");
-        Console.WriteLine($"  - 密码: admin123");
-        Console.WriteLine($"  - 邮箱: {adminUser.Email}");
-        Console.WriteLine($"  - ID: {adminUser.Id}");
+        Console.WriteLine($"创建默认管理员用户: {adminUser.Username}");
     }
 
     private static string HashPassword(string password)

@@ -179,13 +179,11 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
       title: '资源',
       dataIndex: 'resourceTitle',
       key: 'resourceTitle',
-      width: 150,
       render: (text: string) => <strong>{text}</strong>,
     },
     {
       title: '创建',
       key: 'create',
-      width: 80,
       align: 'center' as const,
       render: (_: any, record: PermissionRow) => {
         const permission = record.permissions.find((p) => p.action === 'create');
@@ -195,7 +193,6 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
     {
       title: '查看',
       key: 'read',
-      width: 80,
       align: 'center' as const,
       render: (_: any, record: PermissionRow) => {
         const permission = record.permissions.find((p) => p.action === 'read');
@@ -205,7 +202,6 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
     {
       title: '修改',
       key: 'update',
-      width: 80,
       align: 'center' as const,
       render: (_: any, record: PermissionRow) => {
         const permission = record.permissions.find((p) => p.action === 'update');
@@ -215,7 +211,6 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
     {
       title: '删除',
       key: 'delete',
-      width: 80,
       align: 'center' as const,
       render: (_: any, record: PermissionRow) => {
         const permission = record.permissions.find((p) => p.action === 'delete');

@@ -43,10 +43,8 @@ public class JwtService : IJwtService
             new(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.Role, user.Role),
             new("userId", user.Id ?? string.Empty),
-            new("username", user.Username),
-            new("role", user.Role)
+            new("username", user.Username)
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -100,7 +98,6 @@ public class JwtService : IJwtService
             new("type", "refresh"),
             new("userId", user.Id ?? string.Empty),
             new("username", user.Username),
-            new("role", user.Role),
             new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 

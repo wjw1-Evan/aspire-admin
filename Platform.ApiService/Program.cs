@@ -160,6 +160,19 @@ using (var scope = app.Services.CreateScope())
     var initializePermissions = new InitializePermissions(database, 
         scope.ServiceProvider.GetRequiredService<ILogger<InitializePermissions>>());
     await initializePermissions.InitializeAsync();
+    
+    // 数据迁移：将 Role 字段迁移到 RoleIds
+    await MigrateRoleToRoleIds.ExecuteAsync(database);
+    
+    // 创建数据库索引（提升查询性能）
+    await CreateDatabaseIndexes.ExecuteAsync(database);
+    
+    // 迁移通知 type 字段从数字到字符串
+    await MigrateNoticeTypeToString.ExecuteAsync(database);
+    
+    // 初始化 v2.0 欢迎通知（右上角通知铃铛）
+    var noticeService = scope.ServiceProvider.GetRequiredService<INoticeService>();
+    await noticeService.InitializeWelcomeNoticeAsync();
 }
 
 await app.RunAsync();

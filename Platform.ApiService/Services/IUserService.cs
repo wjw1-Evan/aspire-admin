@@ -23,6 +23,7 @@ public interface IUserService
     Task<bool> DeactivateUserAsync(string id);
     Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);
     Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(int page = 1, int pageSize = 20, string? userId = null, string? action = null, DateTime? startDate = null, DateTime? endDate = null);
+    Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(int page = 1, int pageSize = 20, string? userId = null, string? action = null, DateTime? startDate = null, DateTime? endDate = null);
     Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null);
     Task<AppUser?> UpdateUserProfileAsync(string userId, UpdateProfileRequest request);
     Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request);

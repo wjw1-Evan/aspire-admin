@@ -7,6 +7,8 @@ import styles from './index.less';
 interface NoticeListProps {
   readonly data: any[];
   readonly onClick?: (item: any) => void;
+  readonly onMarkAsRead?: (item: any) => void;
+  readonly onMarkAsUnread?: (item: any) => void;
   readonly onClear?: () => void;
   readonly onMarkAllRead?: () => void;
   readonly emptyText?: string;
@@ -15,6 +17,8 @@ interface NoticeListProps {
 export default function NoticeList({
   data,
   onClick,
+  onMarkAsRead,
+  onMarkAsUnread,
   onClear,
   onMarkAllRead,
   emptyText = '暂无数据',
@@ -27,7 +31,12 @@ export default function NoticeList({
       <List
         dataSource={data}
         renderItem={(item) => (
-          <NoticeItem item={item} onClick={() => onClick?.(item)} />
+          <NoticeItem 
+            item={item} 
+            onClick={() => onClick?.(item)}
+            onMarkAsRead={onMarkAsRead}
+            onMarkAsUnread={onMarkAsUnread}
+          />
         )}
         locale={{ emptyText }}
       />

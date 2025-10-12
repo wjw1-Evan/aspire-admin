@@ -17,8 +17,6 @@ public class InitializePermissions
 
     public async Task InitializeAsync()
     {
-        _logger.LogInformation("=== 开始初始化权限系统 ===");
-
         try
         {
             // 1. 初始化默认权限
@@ -26,8 +24,6 @@ public class InitializePermissions
 
             // 2. 为超级管理员分配所有权限
             await AssignAllPermissionsToSuperAdminAsync();
-
-            _logger.LogInformation("=== 权限系统初始化完成 ===");
         }
         catch (Exception ex)
         {
@@ -38,8 +34,6 @@ public class InitializePermissions
 
     private async Task InitializeDefaultPermissionsAsync()
     {
-        _logger.LogInformation("初始化默认权限...");
-
         var permissions = _database.GetCollection<Permission>("permissions");
 
         // 定义系统资源
@@ -97,18 +91,11 @@ public class InitializePermissions
         if (permissionsToCreate.Count > 0)
         {
             await permissions.InsertManyAsync(permissionsToCreate);
-            _logger.LogInformation("创建了 {Count} 个默认权限", permissionsToCreate.Count);
-        }
-        else
-        {
-            _logger.LogInformation("默认权限已存在");
         }
     }
 
     private async Task AssignAllPermissionsToSuperAdminAsync()
     {
-        _logger.LogInformation("为超级管理员分配所有权限...");
-
         var roles = _database.GetCollection<Role>("roles");
         var permissions = _database.GetCollection<Permission>("permissions");
 
@@ -132,8 +119,6 @@ public class InitializePermissions
             .Set(r => r.UpdatedAt, DateTime.UtcNow);
 
         await roles.UpdateOneAsync(r => r.Id == superAdminRole.Id, update);
-        
-        _logger.LogInformation("已为超级管理员分配 {Count} 个权限", allPermissionIds.Count);
     }
 }
 

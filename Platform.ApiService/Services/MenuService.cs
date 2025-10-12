@@ -204,10 +204,17 @@ public class MenuService : IMenuService
     }
 
     /// <summary>
-    /// 软删除菜单（级联检查子菜单）
+    /// 软删除菜单（自动清理角色的菜单引用）
     /// </summary>
     public async Task<bool> DeleteMenuAsync(string id, string? reason = null)
     {
+        // 检查菜单是否存在
+        var menu = await GetMenuByIdAsync(id);
+        if (menu == null)
+        {
+            return false;
+        }
+        
         // 检查是否有未删除的子菜单
         var childrenFilter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.Eq(m => m.ParentId, id),
@@ -216,15 +223,48 @@ public class MenuService : IMenuService
         var hasChildren = await _menus.Find(childrenFilter).AnyAsync();
         if (hasChildren)
         {
-            throw new InvalidOperationException("Cannot delete menu with children. Please delete child menus first.");
+            throw new InvalidOperationException("不能删除有子菜单的菜单，请先删除子菜单");
         }
 
+        // 查找引用此菜单的角色
+        var rolesFilter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.AnyIn(r => r.MenuIds, new[] { id }),
+            SoftDeleteExtensions.NotDeleted<Role>()
+        );
+        var rolesWithMenu = await _roles.Find(rolesFilter).ToListAsync();
+        
+        // 自动从所有角色的 MenuIds 中移除此菜单
+        if (rolesWithMenu.Count > 0)
+        {
+            foreach (var role in rolesWithMenu)
+            {
+                var newMenuIds = role.MenuIds.Where(mid => mid != id).ToList();
+                
+                var update = Builders<Role>.Update
+                    .Set(r => r.MenuIds, newMenuIds)
+                    .Set(r => r.UpdatedAt, DateTime.UtcNow);
+                    
+                await _roles.UpdateOneAsync(r => r.Id == role.Id, update);
+            }
+            
+            _logger.LogInformation($"已从 {rolesWithMenu.Count} 个角色的菜单列表中移除菜单 {menu.Name} ({id})");
+        }
+
+        // 软删除菜单
         var currentUserId = GetCurrentUserId();
         var filter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.Eq(m => m.Id, id),
             SoftDeleteExtensions.NotDeleted<Menu>()
         );
-        return await _menus.SoftDeleteOneAsync(filter, currentUserId, reason);
+        
+        var deleted = await _menus.SoftDeleteOneAsync(filter, currentUserId, reason);
+        
+        if (deleted)
+        {
+            _logger.LogInformation($"已删除菜单: {menu.Name} ({id}), 原因: {reason ?? "未提供"}");
+        }
+        
+        return deleted;
     }
 
     /// <summary>

@@ -1,9 +1,9 @@
 import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, MoreOutlined, KeyOutlined } from '@ant-design/icons';
 import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, message, Popconfirm, Space, Tag, Dropdown, Modal } from 'antd';
+import { Button, message, Popconfirm, Space, Tag, Dropdown, Modal, Input, Badge } from 'antd';
 import type { MenuProps } from 'antd';
 import React, { useRef, useState } from 'react';
-import { getAllRoles, deleteRole } from '@/services/role/api';
+import { getAllRoles, getAllRolesWithStats, deleteRole } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
 import MenuPermissionModal from './components/MenuPermissionModal';
@@ -18,11 +18,11 @@ const RoleManagement: React.FC = () => {
   const [currentRole, setCurrentRole] = useState<Role | undefined>();
 
   /**
-   * 加载角色数据
+   * 加载角色数据（带统计信息）
    */
   const loadRoleData = async () => {
     try {
-      const response = await getAllRoles();
+      const response = await getAllRolesWithStats();
       if (response.success && response.data) {
         return {
           data: response.data.roles,
@@ -46,20 +46,41 @@ const RoleManagement: React.FC = () => {
   };
 
   /**
-   * 删除角色
+   * 删除角色（带删除原因）
    */
-  const handleDelete = async (id: string) => {
-    try {
-      const response = await deleteRole(id);
-      if (response.success) {
-        message.success('删除成功');
-        actionRef.current?.reload();
-      } else {
-        message.error(response.errorMessage || '删除失败');
-      }
-    } catch (error: any) {
-      message.error(error.message || '删除失败');
-    }
+  const handleDelete = async (id: string, roleName: string) => {
+    let deleteReason = '';
+    Modal.confirm({
+      title: `确定要删除角色"${roleName}"吗？`,
+      content: (
+        <div>
+          <p>删除角色将自动从所有用户的角色列表中移除此角色</p>
+          <p>请输入删除原因：</p>
+          <Input.TextArea
+            rows={3}
+            placeholder="请输入删除原因（选填）"
+            onChange={(e) => { deleteReason = e.target.value; }}
+            maxLength={200}
+          />
+        </div>
+      ),
+      okText: '确定删除',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          const response = await deleteRole(id, deleteReason);
+          if (response.success) {
+            message.success('删除成功');
+            actionRef.current?.reload();
+          } else {
+            message.error(response.errorMessage || '删除失败');
+          }
+        } catch (error: any) {
+          message.error(error.message || '删除失败');
+        }
+      },
+    });
   };
 
   /**
@@ -70,6 +91,14 @@ const RoleManagement: React.FC = () => {
       title: '角色名称',
       dataIndex: 'name',
       key: 'name',
+      render: (text, record: any) => (
+        <Space>
+          {text}
+          {record.userCount > 0 && (
+            <Badge count={record.userCount} style={{ backgroundColor: '#52c41a' }} title={`${record.userCount} 个用户`} />
+          )}
+        </Space>
+      ),
     },
     {
       title: '描述',
@@ -88,6 +117,17 @@ const RoleManagement: React.FC = () => {
       ),
     },
     {
+      title: '统计',
+      key: 'stats',
+      render: (_, record: any) => (
+        <Space split="|">
+          <span>用户: {record.userCount || 0}</span>
+          <span>菜单: {record.menuCount || 0}</span>
+          <span>权限: {record.permissionCount || 0}</span>
+        </Space>
+      ),
+    },
+    {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
@@ -97,7 +137,6 @@ const RoleManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 180,
       render: (_, record) => {
         const moreItems: MenuProps['items'] = [
           {
@@ -127,14 +166,7 @@ const RoleManagement: React.FC = () => {
             label: '删除',
             danger: true,
             onClick: () => {
-              Modal.confirm({
-                title: '确定要删除这个角色吗？',
-                content: '删除后，已分配此角色的用户将受到影响。',
-                okText: '确定',
-                cancelText: '取消',
-                okType: 'danger',
-                onOk: () => handleDelete(record.id!),
-              });
+              handleDelete(record.id!, record.name);
             },
           },
         ];

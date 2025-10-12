@@ -8,6 +8,7 @@ namespace Platform.ApiService.Services;
 public interface IRoleService
 {
     Task<RoleListResponse> GetAllRolesAsync();
+    Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync();
     Task<Role?> GetRoleByIdAsync(string id);
     Task<Role> CreateRoleAsync(CreateRoleRequest request);
     Task<bool> UpdateRoleAsync(string id, UpdateRoleRequest request);

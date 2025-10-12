@@ -15,7 +15,6 @@ public class CaptchaService : ICaptchaService
 {
     private readonly IMemoryCache _cache;
     private readonly ILogger<CaptchaService> _logger;
-    private const int CAPTCHA_LENGTH = 6;
     private const int EXPIRATION_MINUTES = 5;
     private const string CACHE_KEY_PREFIX = "captcha_";
 
@@ -46,12 +45,6 @@ public class CaptchaService : ICaptchaService
         };
 
         _cache.Set(cacheKey, captcha, cacheOptions);
-
-        _logger.LogInformation(
-            "[验证码] 为 {Phone} 生成验证码: {Captcha}，有效期 {Minutes} 分钟", 
-            phone, 
-            captcha, 
-            EXPIRATION_MINUTES);
 
         return new CaptchaResult
         {
@@ -86,11 +79,7 @@ public class CaptchaService : ICaptchaService
 
             var isValid = storedCode == code;
 
-            if (isValid)
-            {
-                _logger.LogInformation("[验证码] 验证成功 - 手机号: {Phone}", phone);
-            }
-            else
+            if (!isValid)
             {
                 _logger.LogWarning(
                     "[验证码] 验证失败 - 手机号: {Phone}, 期望: {Expected}, 实际: {Actual}", 

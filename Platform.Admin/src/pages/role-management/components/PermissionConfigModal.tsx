@@ -142,7 +142,6 @@ const PermissionConfigModal: React.FC<PermissionConfigModalProps> = ({
       title: '资源',
       dataIndex: 'resourceTitle',
       key: 'resourceTitle',
-      width: 150,
       render: (text: string, record: PermissionRow) => {
         const allSelected = record.permissions.every((p) =>
           selectedPermissionIds.includes(p.id!),
@@ -165,7 +164,6 @@ const PermissionConfigModal: React.FC<PermissionConfigModalProps> = ({
     {
       title: '创建',
       key: 'create',
-      width: 80,
       align: 'center' as const,
       render: (_: any, record: PermissionRow) => {
         const permission = record.permissions.find((p) => p.action === 'create');
@@ -181,7 +179,6 @@ const PermissionConfigModal: React.FC<PermissionConfigModalProps> = ({
     {
       title: '查看',
       key: 'read',
-      width: 80,
       align: 'center' as const,
       render: (_: any, record: PermissionRow) => {
         const permission = record.permissions.find((p) => p.action === 'read');
@@ -197,7 +194,6 @@ const PermissionConfigModal: React.FC<PermissionConfigModalProps> = ({
     {
       title: '修改',
       key: 'update',
-      width: 80,
       align: 'center' as const,
       render: (_: any, record: PermissionRow) => {
         const permission = record.permissions.find((p) => p.action === 'update');
@@ -213,7 +209,6 @@ const PermissionConfigModal: React.FC<PermissionConfigModalProps> = ({
     {
       title: '删除',
       key: 'delete',
-      width: 80,
       align: 'center' as const,
       render: (_: any, record: PermissionRow) => {
         const permission = record.permissions.find((p) => p.action === 'delete');

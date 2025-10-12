@@ -18,6 +18,16 @@ export async function getAllRoles(options?: Record<string, any>) {
 }
 
 /**
+ * 获取所有角色（带统计信息）
+ */
+export async function getAllRolesWithStats(options?: Record<string, any>) {
+  return request<API.ApiResponse<any>>('/api/role/with-stats', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/**
  * 根据ID获取角色
  */
 export async function getRoleById(id: string, options?: Record<string, any>) {
@@ -56,9 +66,10 @@ export async function updateRole(
 /**
  * 删除角色
  */
-export async function deleteRole(id: string, options?: Record<string, any>) {
+export async function deleteRole(id: string, reason?: string, options?: Record<string, any>) {
   return request<API.ApiResponse<boolean>>(`/api/role/${id}`, {
     method: 'DELETE',
+    params: { reason },
     ...(options || {}),
   });
 }

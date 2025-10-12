@@ -4,8 +4,7 @@ export interface AppUser {
   id?: string;
   username: string;
   email?: string;
-  role: string;
-  roleIds?: string[];
+  roleIds: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -16,10 +15,12 @@ export interface UserListRequest {
   Page: number;
   PageSize: number;
   Search?: string;
-  Role?: string;
+  RoleIds?: string[];  // 按角色ID列表搜索
   IsActive?: boolean;
   SortBy?: string;
   SortOrder?: string;
+  StartDate?: string;  // 按创建时间范围搜索
+  EndDate?: string;
 }
 
 export interface UserListResponse {
@@ -45,7 +46,6 @@ export interface CreateUserRequest {
   username: string;
   email?: string;
   password: string;
-  role?: string;
   roleIds?: string[];
   isActive: boolean;
 }
@@ -53,7 +53,6 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   username?: string;
   email?: string;
-  role?: string;
   roleIds?: string[];
   isActive?: boolean;
 }
@@ -71,8 +70,5 @@ export interface UserActivityLog {
 export interface BulkUserActionRequest {
   userIds: string[];
   action: string; // "activate", "deactivate", "delete"
-}
-
-export interface UpdateUserRoleRequest {
-  role: string;
+  reason?: string; // 删除原因（仅用于 delete 操作）
 }

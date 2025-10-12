@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Text.Json.Serialization;
 
 namespace Platform.ApiService.Models;
 
@@ -34,6 +35,8 @@ public class NoticeIconItem : ISoftDeletable
     public string? Description { get; set; }
 
     [BsonElement("type")]
+    [BsonRepresentation(BsonType.String)]  // MongoDB 存储为字符串
+    [JsonConverter(typeof(JsonStringEnumConverter))]  // JSON 序列化为字符串
     public NoticeIconItemType Type { get; set; }
 
     [BsonElement("clickClose")]
@@ -59,10 +62,24 @@ public class NoticeIconItem : ISoftDeletable
     public string? DeletedReason { get; set; }
 }
 
+/// <summary>
+/// 通知类型枚举
+/// </summary>
 public enum NoticeIconItemType
 {
+    /// <summary>
+    /// 通知
+    /// </summary>
     Notification,
+    
+    /// <summary>
+    /// 消息
+    /// </summary>
     Message,
+    
+    /// <summary>
+    /// 事件/待办
+    /// </summary>
     Event
 }
 

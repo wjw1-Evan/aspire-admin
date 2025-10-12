@@ -1,6 +1,6 @@
 import React from 'react';
-import { List, Avatar, Tag, Typography, Badge } from 'antd';
-import { NotificationOutlined, MessageOutlined, CalendarOutlined } from '@ant-design/icons';
+import { List, Avatar, Tag, Typography, Badge, Button, Tooltip } from 'antd';
+import { NotificationOutlined, MessageOutlined, CalendarOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -20,13 +20,54 @@ const typeIcons = {
 interface NoticeItemProps {
   readonly item: any;
   readonly onClick?: () => void;
+  readonly onMarkAsRead?: (item: any) => void;
+  readonly onMarkAsUnread?: (item: any) => void;
 }
 
-export default function NoticeItem({ item, onClick }: NoticeItemProps) {
+export default function NoticeItem({ item, onClick, onMarkAsRead, onMarkAsUnread }: NoticeItemProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    // 如果点击的是按钮，不触发整个 item 的 onClick
+    if ((e.target as HTMLElement).closest('.ant-btn')) {
+      return;
+    }
+    onClick?.();
+  };
+
+  const handleMarkAsRead = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onMarkAsRead?.(item);
+  };
+
+  const handleMarkAsUnread = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onMarkAsUnread?.(item);
+  };
+
   return (
     <List.Item
       className={`${styles.noticeItem} ${!item.read ? styles.unread : ''}`}
-      onClick={onClick}
+      onClick={handleClick}
+      actions={[
+        item.read ? (
+          <Tooltip title="标记为未读" key="unread">
+            <Button
+              type="text"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={handleMarkAsUnread}
+            />
+          </Tooltip>
+        ) : (
+          <Tooltip title="标记为已读" key="read">
+            <Button
+              type="text"
+              size="small"
+              icon={<CheckOutlined />}
+              onClick={handleMarkAsRead}
+            />
+          </Tooltip>
+        ),
+      ]}
     >
       <List.Item.Meta
         avatar={

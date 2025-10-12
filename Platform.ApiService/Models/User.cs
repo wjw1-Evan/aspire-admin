@@ -67,7 +67,6 @@ public class CreateUserManagementRequest
     [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
     public string Password { get; set; } = string.Empty;
     
-    public string? Role { get; set; } = "user";
     public List<string>? RoleIds { get; set; }
     public bool IsActive { get; set; } = true;
 }
@@ -84,7 +83,6 @@ public class UpdateUserManagementRequest
 {
     public string? Username { get; set; }
     public string? Email { get; set; }
-    public string? Role { get; set; }
     public List<string>? RoleIds { get; set; }
     public bool? IsActive { get; set; }
 }
@@ -95,10 +93,12 @@ public class UserListRequest
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
     public string? Search { get; set; }
-    public string? Role { get; set; }
+    public List<string>? RoleIds { get; set; }  // 按角色ID列表搜索
     public bool? IsActive { get; set; }
     public string? SortBy { get; set; } = "CreatedAt";
     public string? SortOrder { get; set; } = "desc";
+    public DateTime? StartDate { get; set; }  // 按创建时间范围搜索
+    public DateTime? EndDate { get; set; }
 }
 
 public class UserListResponse

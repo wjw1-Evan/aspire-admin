@@ -58,14 +58,12 @@ const PermissionManagement: React.FC = () => {
       title: '权限代码',
       dataIndex: 'code',
       key: 'code',
-      width: 200,
       render: (text: string) => <Tag color="blue">{text}</Tag>,
     },
     {
       title: '操作',
       dataIndex: 'actionTitle',
       key: 'actionTitle',
-      width: 100,
       render: (text: string, record: Permission) => {
         const colors: Record<string, string> = {
           create: 'green',

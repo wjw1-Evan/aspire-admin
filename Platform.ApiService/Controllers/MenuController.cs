@@ -26,10 +26,10 @@ public class MenuController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequirePermission("menu", "read")]
-    public async Task<ActionResult<ApiResponse<List<Menu>>>> GetAllMenus()
+    public async Task<IActionResult> GetAllMenus()
     {
         var menus = await _menuService.GetAllMenusAsync();
-        return Ok(ApiResponse<List<Menu>>.SuccessResult(menus));
+        return Success(menus);
     }
 
     /// <summary>
@@ -37,22 +37,22 @@ public class MenuController : BaseApiController
     /// </summary>
     [HttpGet("tree")]
     [RequirePermission("menu", "read")]
-    public async Task<ActionResult<ApiResponse<List<MenuTreeNode>>>> GetMenuTree()
+    public async Task<IActionResult> GetMenuTree()
     {
         var menuTree = await _menuService.GetMenuTreeAsync();
-        return Ok(ApiResponse<List<MenuTreeNode>>.SuccessResult(menuTree));
+        return Success(menuTree);
     }
 
     /// <summary>
     /// 获取当前用户可访问菜单
     /// </summary>
     [HttpGet("user")]
-    public async Task<ActionResult<ApiResponse<List<MenuTreeNode>>>> GetUserMenus()
+    public async Task<IActionResult> GetUserMenus()
     {
         var userId = GetRequiredUserId();
         var user = await _userService.GetUserByIdAsync(userId);
         if (user == null)
-            throw new KeyNotFoundException("User not found");
+            throw new KeyNotFoundException("用户不存在");
 
         // 如果用户有 roleIds，使用它；否则返回空列表
         var roleIds = user.RoleIds != null && user.RoleIds.Any()
@@ -60,7 +60,7 @@ public class MenuController : BaseApiController
             : new List<string>();
 
         var userMenus = await _menuService.GetUserMenusAsync(roleIds);
-        return Ok(ApiResponse<List<MenuTreeNode>>.SuccessResult(userMenus));
+        return Success(userMenus);
     }
 
     /// <summary>
@@ -68,13 +68,13 @@ public class MenuController : BaseApiController
     /// </summary>
     [HttpGet("{id}")]
     [RequirePermission("menu", "read")]
-    public async Task<ActionResult<ApiResponse<Menu>>> GetMenuById(string id)
+    public async Task<IActionResult> GetMenuById(string id)
     {
         var menu = await _menuService.GetMenuByIdAsync(id);
         if (menu == null)
-            throw new KeyNotFoundException("Menu not found");
+            throw new KeyNotFoundException("菜单不存在");
         
-        return Ok(ApiResponse<Menu>.SuccessResult(menu));
+        return Success(menu);
     }
 
     /// <summary>
@@ -82,10 +82,10 @@ public class MenuController : BaseApiController
     /// </summary>
     [HttpPost]
     [RequirePermission("menu", "create")]
-    public async Task<ActionResult<ApiResponse<Menu>>> CreateMenu([FromBody] CreateMenuRequest request)
+    public async Task<IActionResult> CreateMenu([FromBody] CreateMenuRequest request)
     {
         var menu = await _menuService.CreateMenuAsync(request);
-        return Ok(ApiResponse<Menu>.SuccessResult(menu));
+        return Success(menu, "创建成功");
     }
 
     /// <summary>
@@ -93,29 +93,29 @@ public class MenuController : BaseApiController
     /// </summary>
     [HttpPut("{id}")]
     [RequirePermission("menu", "update")]
-    public async Task<ActionResult<ApiResponse<bool>>> UpdateMenu(string id, [FromBody] UpdateMenuRequest request)
+    public async Task<IActionResult> UpdateMenu(string id, [FromBody] UpdateMenuRequest request)
     {
         var success = await _menuService.UpdateMenuAsync(id, request);
         if (!success)
-            throw new KeyNotFoundException("Menu not found or not updated");
+            throw new KeyNotFoundException("菜单不存在或更新失败");
         
-        return Ok(ApiResponse<bool>.SuccessResult(true));
+        return Success("更新成功");
     }
 
     /// <summary>
-    /// 软删除菜单（仅管理员）
+    /// 软删除菜单（自动清理角色的菜单引用）
     /// </summary>
     /// <param name="id">菜单ID</param>
     /// <param name="reason">删除原因（可选）</param>
     [HttpDelete("{id}")]
     [RequirePermission("menu", "delete")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteMenu(string id, [FromQuery] string? reason = null)
+    public async Task<IActionResult> DeleteMenu(string id, [FromQuery] string? reason = null)
     {
         var success = await _menuService.DeleteMenuAsync(id, reason);
         if (!success)
-            throw new KeyNotFoundException("Menu not found");
+            throw new KeyNotFoundException("菜单不存在");
         
-        return Ok(ApiResponse<bool>.SuccessResult(true));
+        return Success("删除成功");
     }
 
     /// <summary>
@@ -123,10 +123,10 @@ public class MenuController : BaseApiController
     /// </summary>
     [HttpPost("reorder")]
     [RequirePermission("menu", "update")]
-    public async Task<ActionResult<ApiResponse<bool>>> ReorderMenus([FromBody] ReorderMenusRequest request)
+    public async Task<IActionResult> ReorderMenus([FromBody] ReorderMenusRequest request)
     {
         var success = await _menuService.ReorderMenusAsync(request.MenuIds, request.ParentId);
-        return Ok(ApiResponse<bool>.SuccessResult(success));
+        return Success(success ? "排序成功" : "排序失败");
     }
 }
 

@@ -178,14 +178,12 @@ const UserLog: React.FC = () => {
       title: '用户',
       dataIndex: 'username',
       key: 'username',
-    
       ellipsis: true,
     },
     {
       title: '操作类型',
       dataIndex: 'action',
       key: 'action',
-     
       render: (_, record) => (
         <Tag color={getActionTagColor(record.action)}>
           {getActionText(record.action)}
@@ -259,14 +257,12 @@ const UserLog: React.FC = () => {
       title: '描述',
       dataIndex: 'description',
       key: 'description',
-      search: false
-     
+      search: false,
     },
     {
       title: 'IP地址',
       dataIndex: 'ipAddress',
       key: 'ipAddress',
-      
       search: false,
       ellipsis: true,
     },
@@ -282,7 +278,6 @@ const UserLog: React.FC = () => {
       title: '操作时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-    
       valueType: 'dateTime',
       search: false,
       sorter: true,
@@ -291,8 +286,6 @@ const UserLog: React.FC = () => {
       title: '操作',
       key: 'option',
       valueType: 'option',
-      
-      fixed: 'right',
       render: (_, record) => [
         <Button
           key="view"

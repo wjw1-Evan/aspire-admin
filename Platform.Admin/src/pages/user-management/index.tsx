@@ -23,6 +23,7 @@ import {
   Input,
   Card,
   Dropdown,
+  DatePicker,
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -108,10 +109,12 @@ const UserManagement: React.FC = () => {
       Page: params.current || searchParams.Page,
       PageSize: params.pageSize || searchParams.PageSize,
       Search: searchParams.Search,
-      Role: searchParams.Role,
+      RoleIds: searchParams.RoleIds,
       IsActive: searchParams.IsActive,
       SortBy: params.sortBy || searchParams.SortBy,
       SortOrder: params.sortOrder || searchParams.SortOrder,
+      StartDate: searchParams.StartDate,
+      EndDate: searchParams.EndDate,
     };
 
     console.log('发送请求数据:', requestData);
@@ -147,10 +150,12 @@ const UserManagement: React.FC = () => {
       Page: 1,
       PageSize: searchParams.PageSize,
       Search: values.search,
-      Role: values.role,
+      RoleIds: values.roleIds ? (Array.isArray(values.roleIds) ? values.roleIds : [values.roleIds]) : undefined,
       IsActive: values.isActive,
       SortBy: searchParams.SortBy,
       SortOrder: searchParams.SortOrder,
+      StartDate: values.dateRange?.[0]?.format('YYYY-MM-DD'),
+      EndDate: values.dateRange?.[1]?.format('YYYY-MM-DD'),
     };
     setSearchParams(newSearchParams);
     actionRef.current?.reload();
@@ -169,25 +174,89 @@ const UserManagement: React.FC = () => {
     actionRef.current?.reload();
   };
 
-  // 删除用户
+  // 删除用户（带删除原因）
   const handleDelete = async (userId: string) => {
-    try {
-      await request(`/api/user/${userId}`, {
-        method: 'DELETE',
-      });
-      message.success('删除成功');
-      actionRef.current?.reload();
-      fetchStatistics();
-    } catch (error) {
-      console.error('删除用户失败:', error);
-      message.error('删除失败');
-    }
+    let deleteReason = '';
+    Modal.confirm({
+      title: '确定要删除这个用户吗？',
+      content: (
+        <div>
+          <p>此操作不可恢复，请输入删除原因：</p>
+          <Input.TextArea
+            rows={3}
+            placeholder="请输入删除原因（选填）"
+            onChange={(e) => { deleteReason = e.target.value; }}
+            maxLength={200}
+          />
+        </div>
+      ),
+      okText: '确定删除',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await request(`/api/user/${userId}`, {
+            method: 'DELETE',
+            params: { reason: deleteReason },
+          });
+          message.success('删除成功');
+          actionRef.current?.reload();
+          fetchStatistics();
+        } catch (error) {
+          console.error('删除用户失败:', error);
+          message.error('删除失败');
+        }
+      },
+    });
   };
 
   // 批量操作
   const handleBulkAction = async (action: string) => {
     if (selectedRows.length === 0) {
       message.warning('请选择要操作的用户');
+      return;
+    }
+
+    // 如果是删除操作，弹窗输入删除原因
+    if (action === 'delete') {
+      let deleteReason = '';
+      Modal.confirm({
+        title: `确定要批量删除 ${selectedRows.length} 个用户吗？`,
+        content: (
+          <div>
+            <p>此操作不可恢复，请输入删除原因：</p>
+            <Input.TextArea
+              rows={3}
+              placeholder="请输入删除原因（选填）"
+              onChange={(e) => { deleteReason = e.target.value; }}
+              maxLength={200}
+            />
+          </div>
+        ),
+        okText: '确定删除',
+        cancelText: '取消',
+        okType: 'danger',
+        onOk: async () => {
+          try {
+            await request('/api/user/bulk-action', {
+              method: 'POST',
+              data: {
+                UserIds: selectedRows.map(user => user.id),
+                Action: action,
+                Reason: deleteReason,
+              },
+            });
+
+            message.success(`批量删除成功`);
+            setSelectedRows([]);
+            actionRef.current?.reload();
+            fetchStatistics();
+          } catch (error) {
+            console.error('批量删除失败:', error);
+            message.error('批量删除失败');
+          }
+        },
+      });
       return;
     }
 
@@ -203,7 +272,6 @@ const UserManagement: React.FC = () => {
       const actionText = {
         activate: '启用',
         deactivate: '禁用',
-        delete: '删除',
       }[action] || '操作';
 
       message.success(`批量${actionText}成功`);
@@ -239,7 +307,6 @@ const UserManagement: React.FC = () => {
       title: '用户名',
       dataIndex: 'username',
       key: 'username',
-      width: 120,
       render: (text, record) => (
         <Space>
           <UserOutlined />
@@ -251,14 +318,12 @@ const UserManagement: React.FC = () => {
       title: '邮箱',
       dataIndex: 'email',
       key: 'email',
-      width: 200,
       ellipsis: true,
     },
     {
       title: '角色',
       dataIndex: 'roleIds',
       key: 'roleIds',
-      width: 200,
       render: (_, record) => {
         if (!record.roleIds || record.roleIds.length === 0) {
           return <Tag color="default">未分配</Tag>;
@@ -278,7 +343,6 @@ const UserManagement: React.FC = () => {
       title: '状态',
       dataIndex: 'isActive',
       key: 'isActive',
-      width: 100,
       render: (_, record) => (
         <Badge
           status={record.isActive ? 'success' : 'error'}
@@ -296,7 +360,6 @@ const UserManagement: React.FC = () => {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      width: 180,
       valueType: 'dateTime',
       sorter: true,
     },
@@ -304,7 +367,6 @@ const UserManagement: React.FC = () => {
       title: '最后登录',
       dataIndex: 'lastLoginAt',
       key: 'lastLoginAt',
-      width: 180,
       valueType: 'dateTime',
       render: (text) => text || '-',
     },
@@ -312,7 +374,6 @@ const UserManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 180,
       render: (_, record) => {
         const items: MenuProps['items'] = [
           {
@@ -351,14 +412,7 @@ const UserManagement: React.FC = () => {
             label: '删除',
             danger: true,
             onClick: () => {
-              Modal.confirm({
-                title: '确定要删除这个用户吗？',
-                content: '此操作不可恢复',
-                okText: '确定',
-                cancelText: '取消',
-                okType: 'danger',
-                onOk: () => record.id && handleDelete(record.id),
-              });
+              record.id && handleDelete(record.id);
             },
           },
         ];
@@ -482,10 +536,19 @@ const UserManagement: React.FC = () => {
           <Form.Item name="search" label="搜索">
             <Input placeholder="用户名或邮箱" style={{ width: 200 }} />
           </Form.Item>
-          <Form.Item name="role" label="角色">
-            <Select placeholder="选择角色" style={{ width: 120 }} allowClear>
-              <Select.Option value="user">普通用户</Select.Option>
-              <Select.Option value="admin">管理员</Select.Option>
+          <Form.Item name="roleIds" label="角色">
+            <Select 
+              mode="multiple"
+              placeholder="选择角色" 
+              style={{ width: 200 }} 
+              allowClear
+              loading={Object.keys(roleMap).length === 0}
+            >
+              {Object.entries(roleMap).map(([id, name]) => (
+                <Select.Option key={id} value={id}>
+                  {name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
           <Form.Item name="isActive" label="状态">
@@ -493,6 +556,9 @@ const UserManagement: React.FC = () => {
               <Select.Option value={true}>启用</Select.Option>
               <Select.Option value={false}>禁用</Select.Option>
             </Select>
+          </Form.Item>
+          <Form.Item name="dateRange" label="创建时间">
+            <DatePicker.RangePicker style={{ width: 240 }} />
           </Form.Item>
           <Form.Item>
             <Space>

@@ -11,7 +11,6 @@ public class InitialMenuData
     private readonly IMongoCollection<AppUser> _users;
 
     // 常量定义
-    private const string SEPARATOR = "========================================";
     private const string MENU_NAME_SYSTEM = "system";
     private const string MENU_NAME_WELCOME = "welcome";
     private const string ROLE_NAME_SUPER_ADMIN = "super-admin";
@@ -26,10 +25,6 @@ public class InitialMenuData
 
     public async Task InitializeAsync()
     {
-        Console.WriteLine(SEPARATOR);
-        Console.WriteLine("开始检查数据完整性...");
-        Console.WriteLine(SEPARATOR);
-
         // 1. 检查并补全菜单
         var menuIds = await EnsureMenusIntegrityAsync();
         
@@ -38,10 +33,6 @@ public class InitialMenuData
         
         // 3. 检查并修复管理员用户角色
         await ValidateAndFixAdminUserRolesAsync();
-
-        Console.WriteLine(SEPARATOR);
-        Console.WriteLine("数据完整性检查完成");
-        Console.WriteLine(SEPARATOR);
     }
 
     /// <summary>
@@ -49,46 +40,24 @@ public class InitialMenuData
     /// </summary>
     private async Task<Dictionary<string, string>> EnsureMenusIntegrityAsync()
     {
-        Console.WriteLine("\n[菜单完整性检查]");
-        
         var menuIds = new Dictionary<string, string>();
         var defaultMenus = GetDefaultMenus();
-        
-        int existingCount = 0;
-        int createdCount = 0;
-        int restoredCount = 0;
 
         // 第一步：创建或获取父菜单（system）
-        var systemResult = await ProcessSystemMenuAsync(menuIds, defaultMenus);
-        existingCount += systemResult.existingCount;
-        createdCount += systemResult.createdCount;
-        restoredCount += systemResult.restoredCount;
+        await ProcessSystemMenuAsync(menuIds, defaultMenus);
 
         // 第二步：创建或获取其他菜单
-        var otherResult = await ProcessOtherMenusAsync(menuIds, defaultMenus);
-        existingCount += otherResult.existingCount;
-        createdCount += otherResult.createdCount;
-        restoredCount += otherResult.restoredCount;
-
-        var summary = $"\n  菜单检查完成: 已存在 {existingCount} 个，新创建 {createdCount} 个";
-        if (restoredCount > 0)
-            summary += $"，恢复 {restoredCount} 个";
-        summary += $"，共 {menuIds.Count} 个";
-        Console.WriteLine(summary);
+        await ProcessOtherMenusAsync(menuIds, defaultMenus);
         
         return menuIds;
     }
 
-    private async Task<(int existingCount, int createdCount, int restoredCount)> ProcessSystemMenuAsync(
+    private async Task ProcessSystemMenuAsync(
         Dictionary<string, string> menuIds, 
         List<Menu> defaultMenus)
     {
-        int existingCount = 0;
-        int createdCount = 0;
-        int restoredCount = 0;
-
         var systemMenu = defaultMenus.FirstOrDefault(m => m.Name == MENU_NAME_SYSTEM);
-        if (systemMenu == null) return (existingCount, createdCount, restoredCount);
+        if (systemMenu == null) return;
 
         // 首先检查未删除的菜单
         var filter = Builders<Menu>.Filter.And(
@@ -100,8 +69,6 @@ public class InitialMenuData
         if (existing != null)
         {
             menuIds[MENU_NAME_SYSTEM] = existing.Id!;
-            Console.WriteLine($"  ✓ 菜单已存在: {existing.Title} ({MENU_NAME_SYSTEM})");
-            existingCount++;
         }
         else
         {
@@ -125,29 +92,19 @@ public class InitialMenuData
 
                 await _menus.UpdateOneAsync(m => m.Id == deletedMenu.Id, update);
                 menuIds[MENU_NAME_SYSTEM] = deletedMenu.Id!;
-                Console.WriteLine($"  ↻ 恢复已删除菜单: {deletedMenu.Title} ({MENU_NAME_SYSTEM})");
-                restoredCount++;
             }
             else
             {
                 await _menus.InsertOneAsync(systemMenu);
                 menuIds[MENU_NAME_SYSTEM] = systemMenu.Id!;
-                Console.WriteLine($"  + 创建菜单: {systemMenu.Title} ({MENU_NAME_SYSTEM})");
-                createdCount++;
             }
         }
-
-        return (existingCount, createdCount, restoredCount);
     }
 
-    private async Task<(int existingCount, int createdCount, int restoredCount)> ProcessOtherMenusAsync(
+    private async Task ProcessOtherMenusAsync(
         Dictionary<string, string> menuIds, 
         List<Menu> defaultMenus)
     {
-        int existingCount = 0;
-        int createdCount = 0;
-        int restoredCount = 0;
-
         foreach (var defaultMenu in defaultMenus.Where(m => m.Name != MENU_NAME_SYSTEM))
         {
             // 首先检查未删除的菜单
@@ -160,8 +117,6 @@ public class InitialMenuData
             if (existing != null)
             {
                 menuIds[defaultMenu.Name] = existing.Id!;
-                Console.WriteLine($"  ✓ 菜单已存在: {existing.Title} ({existing.Name})");
-                existingCount++;
             }
             else
             {
@@ -185,8 +140,6 @@ public class InitialMenuData
 
                     await _menus.UpdateOneAsync(m => m.Id == deletedMenu.Id, update);
                     menuIds[defaultMenu.Name] = deletedMenu.Id!;
-                    Console.WriteLine($"  ↻ 恢复已删除菜单: {deletedMenu.Title} ({deletedMenu.Name})");
-                    restoredCount++;
                 }
                 else
                 {
@@ -198,13 +151,9 @@ public class InitialMenuData
                     
                     await _menus.InsertOneAsync(defaultMenu);
                     menuIds[defaultMenu.Name] = defaultMenu.Id!;
-                    Console.WriteLine($"  + 创建菜单: {defaultMenu.Title} ({defaultMenu.Name})");
-                    createdCount++;
                 }
             }
         }
-
-        return (existingCount, createdCount, restoredCount);
     }
 
     /// <summary>
@@ -358,14 +307,7 @@ public class InitialMenuData
     /// </summary>
     private async Task EnsureRolesIntegrityAsync(Dictionary<string, string> menuIds)
     {
-        Console.WriteLine("\n[角色完整性检查]");
-        
         var defaultRoles = GetDefaultRoles(menuIds);
-        
-        int existingCount = 0;
-        int createdCount = 0;
-        int updatedCount = 0;
-        int restoredCount = 0;
 
         foreach (var defaultRole in defaultRoles)
         {
@@ -378,9 +320,6 @@ public class InitialMenuData
             
             if (existing != null)
             {
-                Console.WriteLine($"  ✓ 角色已存在: {existing.Name} ({existing.Description})");
-                existingCount++;
-                
                 // 检查菜单权限是否需要更新
                 var expectedMenuIds = defaultRole.MenuIds.OrderBy(x => x).ToList();
                 var actualMenuIds = (existing.MenuIds ?? new List<string>()).OrderBy(x => x).ToList();
@@ -392,8 +331,6 @@ public class InitialMenuData
                         .Set(r => r.UpdatedAt, DateTime.UtcNow);
                     
                     await _roles.UpdateOneAsync(r => r.Id == existing.Id, updateDefinition);
-                    Console.WriteLine($"    → 更新菜单权限: {defaultRole.MenuIds.Count} 个菜单");
-                    updatedCount++;
                 }
             }
             else
@@ -418,24 +355,13 @@ public class InitialMenuData
                         .Set(r => r.UpdatedAt, DateTime.UtcNow);
 
                     await _roles.UpdateOneAsync(r => r.Id == deletedRole.Id, update);
-                    Console.WriteLine($"  ↻ 恢复已删除角色: {deletedRole.Name} ({deletedRole.Description})");
-                    restoredCount++;
                 }
                 else
                 {
                     await _roles.InsertOneAsync(defaultRole);
-                    Console.WriteLine($"  + 创建角色: {defaultRole.Name} ({defaultRole.Description})");
-                    createdCount++;
                 }
             }
         }
-
-        var summary = $"\n  角色检查完成: 已存在 {existingCount} 个，新创建 {createdCount} 个";
-        if (restoredCount > 0)
-            summary += $"，恢复 {restoredCount} 个";
-        if (updatedCount > 0)
-            summary += $"，更新 {updatedCount} 个";
-        Console.WriteLine(summary);
     }
 
     /// <summary>
@@ -496,13 +422,10 @@ public class InitialMenuData
     /// </summary>
     private async Task ValidateAndFixAdminUserRolesAsync()
     {
-        Console.WriteLine("\n[管理员用户角色检查]");
-        
         // 查询 admin 用户
         var adminUser = await _users.Find(u => u.Username == USERNAME_ADMIN).FirstOrDefaultAsync();
         if (adminUser == null)
         {
-            Console.WriteLine($"  ⚠ 未找到 {USERNAME_ADMIN} 用户，跳过角色检查");
             return;
         }
 
@@ -510,25 +433,19 @@ public class InitialMenuData
         var superAdminRole = await _roles.Find(r => r.Name == ROLE_NAME_SUPER_ADMIN).FirstOrDefaultAsync();
         if (superAdminRole == null)
         {
-            Console.WriteLine($"  ⚠ 未找到 {ROLE_NAME_SUPER_ADMIN} 角色，跳过角色分配");
             return;
         }
 
         // 检查 admin 用户是否有 super-admin 角色
         var currentRoleIds = adminUser.RoleIds ?? new List<string>();
         
-        if (currentRoleIds.Contains(superAdminRole.Id!))
-        {
-            Console.WriteLine($"  ✓ {USERNAME_ADMIN} 用户已拥有 {ROLE_NAME_SUPER_ADMIN} 角色");
-        }
-        else
+        if (!currentRoleIds.Contains(superAdminRole.Id!))
         {
             var updateDefinition = Builders<AppUser>.Update
                 .Set(u => u.RoleIds, new List<string> { superAdminRole.Id! })
                 .Set(u => u.UpdatedAt, DateTime.UtcNow);
 
             await _users.UpdateOneAsync(u => u.Id == adminUser.Id, updateDefinition);
-            Console.WriteLine($"  + 为 {USERNAME_ADMIN} 用户分配 {ROLE_NAME_SUPER_ADMIN} 角色");
         }
     }
 }

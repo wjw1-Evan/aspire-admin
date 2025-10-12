@@ -1,7 +1,7 @@
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import * as Icons from '@ant-design/icons';
 import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, message, Popconfirm, Space, Tag } from 'antd';
+import { Button, message, Popconfirm, Space, Tag, Modal, Input } from 'antd';
 import React, { useRef, useState } from 'react';
 import { getMenuTree, deleteMenu } from '@/services/menu/api';
 import type { MenuTreeNode } from '@/services/menu/types';
@@ -66,20 +66,47 @@ const MenuManagement: React.FC = () => {
   };
 
   /**
-   * 删除菜单
+   * 删除菜单（带删除原因和级联提示）
    */
-  const handleDelete = async (id: string) => {
-    try {
-      const response = await deleteMenu(id);
-      if (response.success) {
-        message.success('删除成功');
-        actionRef.current?.reload();
-      } else {
-        message.error(response.errorMessage || '删除失败');
-      }
-    } catch (error: any) {
-      message.error(error.message || '删除失败');
-    }
+  const handleDelete = async (id: string, menuName: string) => {
+    let deleteReason = '';
+    Modal.confirm({
+      title: `确定要删除菜单"${menuName}"吗？`,
+      content: (
+        <div>
+          <p style={{ color: '#ff4d4f' }}>
+            删除菜单将自动从所有角色的菜单列表中移除此菜单
+          </p>
+          <p style={{ color: '#ff4d4f' }}>
+            如果有子菜单，必须先删除所有子菜单
+          </p>
+          <p>请输入删除原因：</p>
+          <Input.TextArea
+            rows={3}
+            placeholder="请输入删除原因（选填）"
+            onChange={(e) => { deleteReason = e.target.value; }}
+            maxLength={200}
+          />
+        </div>
+      ),
+      okText: '确定删除',
+      cancelText: '取消',
+      okType: 'danger',
+      width: 520,
+      onOk: async () => {
+        try {
+          const response = await deleteMenu(id, deleteReason);
+          if (response.success) {
+            message.success('删除成功');
+            actionRef.current?.reload();
+          } else {
+            message.error(response.errorMessage || '删除失败');
+          }
+        } catch (error: any) {
+          message.error(error.message || '删除失败');
+        }
+      },
+    });
   };
 
   /**
@@ -90,19 +117,16 @@ const MenuManagement: React.FC = () => {
       title: '菜单名称',
       dataIndex: 'name',
       key: 'name',
-      width: 200,
     },
     {
       title: '路径',
       dataIndex: 'path',
       key: 'path',
-      width: 200,
     },
     {
       title: '图标',
       dataIndex: 'icon',
       key: 'icon',
-      width: 100,
       render: (_, record) => (
         <Space>
           {getIconComponent(record.icon)}
@@ -114,20 +138,17 @@ const MenuManagement: React.FC = () => {
       title: '组件',
       dataIndex: 'component',
       key: 'component',
-      width: 200,
       ellipsis: true,
     },
     {
       title: '排序',
       dataIndex: 'sortOrder',
       key: 'sortOrder',
-      width: 80,
     },
     {
       title: '状态',
       dataIndex: 'isEnabled',
       key: 'isEnabled',
-      width: 80,
       render: (_, record) => (
         <Tag color={record.isEnabled ? 'success' : 'default'}>
           {record.isEnabled ? '启用' : '禁用'}
@@ -138,7 +159,6 @@ const MenuManagement: React.FC = () => {
       title: '外部链接',
       dataIndex: 'isExternal',
       key: 'isExternal',
-      width: 100,
       render: (_, record) => (
         <Tag color={record.isExternal ? 'blue' : 'default'}>
           {record.isExternal ? '是' : '否'}
@@ -149,7 +169,6 @@ const MenuManagement: React.FC = () => {
       title: '隐藏菜单',
       dataIndex: 'hideInMenu',
       key: 'hideInMenu',
-      width: 100,
       render: (_, record) => (
         <Tag color={record.hideInMenu ? 'warning' : 'default'}>
           {record.hideInMenu ? '是' : '否'}
@@ -160,7 +179,6 @@ const MenuManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 150,
       render: (_, record) => (
         <Space size="small">
           <PermissionControl permission="menu:update">
@@ -177,16 +195,15 @@ const MenuManagement: React.FC = () => {
             </Button>
           </PermissionControl>
           <PermissionControl permission="menu:delete">
-            <Popconfirm
-              title="确定要删除这个菜单吗？"
-              onConfirm={() => handleDelete(record.id!)}
-              okText="确定"
-              cancelText="取消"
+            <Button 
+              type="link" 
+              size="small" 
+              danger 
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record.id!, record.name)}
             >
-              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                删除
-              </Button>
-            </Popconfirm>
+              删除
+            </Button>
           </PermissionControl>
         </Space>
       ),

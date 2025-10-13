@@ -67,6 +67,7 @@ docs/
 - [用户日志重设计](features/USER-LOG-REDESIGN.md) - 日志系统优化
 - [用户控制器路由修复](bugfixes/USER-CONTROLLER-ROUTES-FIX.md) - 路由问题
 - [用户软删除修复](bugfixes/USER-ISDELETED-FIX.md) - IsDeleted 字段
+- [用户统计管理员数量修复](bugfixes/USER-STATISTICS-ADMIN-COUNT-FIX.md) - 管理员统计修复
 
 #### 验证码系统
 - [验证码解决方案](features/CAPTCHA-SOLUTION.md) - 验证码功能

@@ -199,7 +199,7 @@ public class UserController : BaseApiController
         // 组装返回数据，包含用户信息和完整的日志字段
         var logsWithUserInfo = logs.Select(log => new ActivityLogWithUserResponse
         {
-            Id = log.Id,
+            Id = log.Id ?? string.Empty,
             UserId = log.UserId,
             Username = userMap.ContainsKey(log.UserId) ? userMap[log.UserId] : "未知用户",
             Action = log.Action,

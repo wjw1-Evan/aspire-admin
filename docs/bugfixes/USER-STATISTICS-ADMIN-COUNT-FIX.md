@@ -161,6 +161,7 @@ if (adminRoleIds.Any())
 | 文件 | 修改内容 | 行号 |
 |---|---|---|
 | `Platform.ApiService/Services/UserService.cs` | 修复 `GetUserStatisticsAsync` 方法 | 289-349 |
+| `Platform.ApiService/Controllers/UserController.cs` | 修复 CS8601 空引用警告 | 202 |
 
 ### 涉及的模型
 
@@ -299,6 +300,22 @@ if (adminRoleIds.Any())
 - ✅ 支持多角色用户（不会重复计数）
 - ✅ 考虑软删除用户（已删除的不计入统计）
 
+### 额外修复
+
+在修复过程中，同时解决了以下编译警告：
+
+**CS8601 警告**：`Platform.ApiService/Controllers/UserController.cs(202,18)`
+- **问题**：`UserActivityLog.Id` 类型为 `string?`，赋值给 `ActivityLogWithUserResponse.Id`（`string` 类型）时可能为 null
+- **修复**：使用空合并操作符 `log.Id ?? string.Empty`
+- **代码**：
+  ```csharp
+  // 修复前
+  Id = log.Id,
+  
+  // 修复后
+  Id = log.Id ?? string.Empty,
+  ```
+
 ### 遗留问题
 
 - ⚠️ UserService.cs 第 416 行存在一个待清理的过期代码警告（与本次修复无关）
@@ -330,6 +347,7 @@ if (adminRoleIds.Any())
 
 ```bash
 git add Platform.ApiService/Services/UserService.cs
+git add Platform.ApiService/Controllers/UserController.cs
 git add docs/bugfixes/USER-STATISTICS-ADMIN-COUNT-FIX.md
 git commit -m "fix: 修复用户统计管理员数量显示为0的问题
 
@@ -337,10 +355,13 @@ git commit -m "fix: 修复用户统计管理员数量显示为0的问题
 - 支持 admin 和 super-admin 两种管理员角色
 - 使用 MongoDB Filter.AnyIn 查询数组字段
 - 添加软删除过滤和空值安全检查
+- 修复 UserController.cs 中的 CS8601 空引用警告
 
 相关问题：用户管理页面管理员统计显示为0
 影响范围：用户统计功能
-修改文件：Platform.ApiService/Services/UserService.cs"
+修改文件：
+  - Platform.ApiService/Services/UserService.cs
+  - Platform.ApiService/Controllers/UserController.cs"
 ```
 
 ---

@@ -11,23 +11,17 @@ const Footer: React.FC = () => {
       copyright="Powered by Ant Desgin"
       links={[
         {
-          key: 'Ant Design Pro',
-          title: 'Ant Design Pro',
-          href: 'https://pro.ant.design',
+          key: 'Aspire Admin',
+          title: 'Aspire Admin',
+          href: 'https://learn.microsoft.com/zh-cn/dotnet/aspire/',
           blankTarget: true,
         },
         {
           key: 'github',
           title: <GithubOutlined />,
-          href: 'https://github.com/ant-design/ant-design-pro',
+          href: 'https://github.com/wjw1-Evan/aspire-admin',
           blankTarget: true,
-        },
-        {
-          key: 'Ant Design',
-          title: 'Ant Design',
-          href: 'https://ant.design',
-          blankTarget: true,
-        },
+        }
       ]}
     />
   );

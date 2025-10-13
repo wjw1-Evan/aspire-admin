@@ -297,10 +297,27 @@ public class UserService : IUserService
         var activeUsers = await _users.CountDocumentsAsync(activeFilter);
         var inactiveUsers = totalUsers - activeUsers;
         
-        // 注意：由于移除了 Role 字段，这里暂时返回 0
-        // 需要根据角色系统重新实现
+        // 查询所有管理员角色（admin 和 super-admin）
+        var adminRoleNames = new[] { "admin", "super-admin" };
+        var adminRoleFilter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.In(r => r.Name, adminRoleNames),
+            SoftDeleteExtensions.NotDeleted<Role>()
+        );
+        var adminRoles = await _roles.Find(adminRoleFilter).ToListAsync();
+        var adminRoleIds = adminRoles.Select(r => r.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+        
+        // 统计拥有管理员角色的用户数量
         var adminUsers = 0L;
-        var regularUsers = totalUsers;
+        if (adminRoleIds.Any())
+        {
+            var adminUserFilter = Builders<AppUser>.Filter.And(
+                notDeletedFilter,
+                Builders<AppUser>.Filter.AnyIn(u => u.RoleIds, adminRoleIds)
+            );
+            adminUsers = await _users.CountDocumentsAsync(adminUserFilter);
+        }
+        
+        var regularUsers = totalUsers - adminUsers;
 
         var today = DateTime.UtcNow.Date;
         var thisWeek = today.AddDays(-(int)today.DayOfWeek);

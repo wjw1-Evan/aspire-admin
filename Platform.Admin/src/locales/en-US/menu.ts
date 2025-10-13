@@ -10,4 +10,10 @@ export default {
   'menu.system.user-log': 'User Log',
   'menu.account': 'Account',
   'menu.account.center': 'Account Center',
+  'menu.permission.assign': 'Assign Permissions',
+  'menu.permission.loading': 'Failed to load data',
+  'menu.permission.success': 'Permissions assigned successfully',
+  'menu.permission.failed': 'Failed to assign permissions',
+  'menu.permission.selectAll': 'Select All',
+  'menu.permission.unselectAll': 'Deselect All',
 };

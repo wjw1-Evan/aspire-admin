@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ApiService.Constants;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
@@ -54,7 +56,7 @@ public class PermissionCheckService : IPermissionCheckService
             var roleFilter = Builders<Role>.Filter.And(
                 Builders<Role>.Filter.In(r => r.Id, user.RoleIds),
                 Builders<Role>.Filter.Eq(r => r.IsActive, true),
-                SoftDeleteExtensions.NotDeleted<Role>()
+                MongoFilterExtensions.NotDeleted<Role>()
             );
             var roles = await _roles.Find(roleFilter).ToListAsync();
 
@@ -63,7 +65,7 @@ public class PermissionCheckService : IPermissionCheckService
             {
                 var permFilter = Builders<Permission>.Filter.And(
                     Builders<Permission>.Filter.In(p => p.Id, rolePermissionIds),
-                    SoftDeleteExtensions.NotDeleted<Permission>()
+                    MongoFilterExtensions.NotDeleted<Permission>()
                 );
                 rolePermissions = await _permissions.Find(permFilter).ToListAsync();
             }
@@ -74,7 +76,7 @@ public class PermissionCheckService : IPermissionCheckService
         {
             var customPermFilter = Builders<Permission>.Filter.And(
                 Builders<Permission>.Filter.In(p => p.Id, user.CustomPermissionIds),
-                SoftDeleteExtensions.NotDeleted<Permission>()
+                MongoFilterExtensions.NotDeleted<Permission>()
             );
             customPermissions = await _permissions.Find(customPermFilter).ToListAsync();
         }

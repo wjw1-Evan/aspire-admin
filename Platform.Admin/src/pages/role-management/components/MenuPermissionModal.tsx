@@ -1,5 +1,6 @@
 import { Modal, Tree, message, Spin, Button } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import { getMenuTree } from '@/services/menu/api';
 import { assignMenusToRole, getRoleMenus } from '@/services/role/api';
 import type { MenuTreeNode } from '@/services/menu/types';
@@ -19,6 +20,7 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
   onCancel,
   onSuccess,
 }) => {
+  const intl = useIntl();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [menuTree, setMenuTree] = useState<DataNode[]>([]);
@@ -60,7 +62,7 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
       }
     } catch (error) {
       console.error('Failed to load menu permission data:', error);
-      message.error('加载数据失败');
+      message.error(intl.formatMessage({ id: 'menu.permission.loading' }));
     } finally {
       setLoading(false);
     }
@@ -108,13 +110,13 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
       });
 
       if (response.success) {
-        message.success('权限分配成功');
+        message.success(intl.formatMessage({ id: 'menu.permission.success' }));
         onSuccess();
       } else {
-        message.error(response.errorMessage || '权限分配失败');
+        message.error(response.errorMessage || intl.formatMessage({ id: 'menu.permission.failed' }));
       }
     } catch (error: any) {
-      message.error(error.message || '权限分配失败');
+      message.error(error.message || intl.formatMessage({ id: 'menu.permission.failed' }));
     } finally {
       setSaving(false);
     }
@@ -133,7 +135,7 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
 
   return (
     <Modal
-      title={`分配权限 - ${role?.name}`}
+      title={`${intl.formatMessage({ id: 'menu.permission.assign' })} - ${role?.name}`}
       open={visible}
       onCancel={onCancel}
       onOk={handleSave}
@@ -142,7 +144,10 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
     >
       <div style={{ marginBottom: 16 }}>
         <Button type="link" onClick={handleSelectAll} style={{ padding: 0 }}>
-          {checkedKeys.length === expandedKeys.length ? '取消全选' : '全选'}
+          {checkedKeys.length === expandedKeys.length 
+            ? intl.formatMessage({ id: 'menu.permission.unselectAll' })
+            : intl.formatMessage({ id: 'menu.permission.selectAll' })
+          }
         </Button>
       </div>
       

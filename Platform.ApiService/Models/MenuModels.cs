@@ -7,7 +7,7 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 菜单实体
 /// </summary>
-public class Menu : ISoftDeletable
+public class Menu : ISoftDeletable, INamedEntity
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

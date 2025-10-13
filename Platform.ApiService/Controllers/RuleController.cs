@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 
@@ -52,10 +53,7 @@ public class RuleController : BaseApiController
     public async Task<IActionResult> GetRuleById(string id)
     {
         var rule = await _ruleService.GetRuleByIdAsync(id);
-        if (rule == null)
-            return NotFound($"Rule with ID {id} not found");
-        
-        return Ok(rule);
+        return Success(rule.EnsureFound("规则", id));
     }
 
     /// <summary>
@@ -91,9 +89,7 @@ public class RuleController : BaseApiController
             throw new ArgumentException("Key不能为空");
         
         var deleted = await _ruleService.DeleteRulesAsync(new List<int> { request.Key.Value });
-        if (!deleted)
-            throw new KeyNotFoundException($"规则 {request.Key.Value} 不存在");
-        
+        deleted.EnsureSuccess("规则", request.Key.Value.ToString());
         return Success("删除成功");
     }
 }

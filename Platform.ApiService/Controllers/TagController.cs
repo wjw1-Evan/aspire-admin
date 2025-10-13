@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 
@@ -36,10 +37,7 @@ public class TagController : BaseApiController
     public async Task<IActionResult> GetTagById(string id)
     {
         var tag = await _tagService.GetTagByIdAsync(id);
-        if (tag == null)
-            throw new KeyNotFoundException($"标签 {id} 不存在");
-        
-        return Success(tag);
+        return Success(tag.EnsureFound("标签", id));
     }
 
     /// <summary>
@@ -64,10 +62,7 @@ public class TagController : BaseApiController
     public async Task<IActionResult> UpdateTag(string id, [FromBody] UpdateTagRequest request)
     {
         var tag = await _tagService.UpdateTagAsync(id, request);
-        if (tag == null)
-            throw new KeyNotFoundException($"标签 {id} 不存在");
-        
-        return Success(tag, "更新成功");
+        return Success(tag.EnsureFound("标签", id), "更新成功");
     }
 
     /// <summary>
@@ -79,9 +74,7 @@ public class TagController : BaseApiController
     public async Task<IActionResult> DeleteTag(string id)
     {
         var deleted = await _tagService.DeleteTagAsync(id);
-        if (!deleted)
-            throw new KeyNotFoundException($"标签 {id} 不存在");
-        
+        deleted.EnsureSuccess("标签", id);
         return Success("删除成功");
     }
 }

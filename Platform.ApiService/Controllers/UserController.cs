@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
+using Platform.ApiService.Constants;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;
 
 namespace Platform.ApiService.Controllers;
@@ -27,16 +30,13 @@ public class UserController : BaseApiController
     {
         // 检查权限：只能查看自己的信息，或者需要 user:read 权限
         var currentUserId = CurrentUserId;
-        if (currentUserId != id && !await HasPermissionAsync("user", "read"))
+        if (currentUserId != id && !await HasPermissionAsync(PermissionResources.User, PermissionActions.Read))
         {
-            throw new UnauthorizedAccessException("无权查看其他用户信息");
+            throw new UnauthorizedAccessException(ErrorMessages.Unauthorized);
         }
         
         var user = await _userService.GetUserByIdAsync(id);
-        if (user == null)
-            throw new KeyNotFoundException($"用户 {id} 不存在");
-        
-        return Success(user);
+        return Success(user.EnsureFound("用户", id));
     }
 
     /// <summary>
@@ -44,17 +44,17 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="request">创建用户请求</param>
     [HttpPost("management")]
-    [RequirePermission("user", "create")]
+    [RequirePermission(PermissionResources.User, PermissionActions.Create)]
     public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
     {
         if (string.IsNullOrEmpty(request.Username))
-            throw new ArgumentException("用户名不能为空");
+            throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "用户名"));
         
         if (string.IsNullOrEmpty(request.Password))
-            throw new ArgumentException("密码不能为空");
+            throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "密码"));
 
         var user = await _userService.CreateUserManagementAsync(request);
-        return Success(user);
+        return Success(user, ErrorMessages.CreateSuccess);
     }
 
     /// <summary>
@@ -63,42 +63,42 @@ public class UserController : BaseApiController
     /// <param name="id">用户ID</param>
     /// <param name="request">更新用户请求</param>
     [HttpPut("{id}")]
-    [RequirePermission("user", "update")]
+    [RequirePermission(PermissionResources.User, PermissionActions.Update)]
     public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
     {
         // 检查是否修改自己的角色（不允许）
         var currentUserId = CurrentUserId;
         if (currentUserId == id && request.RoleIds != null)
         {
-            throw new InvalidOperationException("不能修改自己的角色");
+            throw new InvalidOperationException(ErrorMessages.CannotModifyOwnRole);
         }
         
         var user = await _userService.UpdateUserManagementAsync(id, request);
         if (user == null)
-            throw new KeyNotFoundException($"用户 {id} 不存在");
+            throw new KeyNotFoundException(string.Format(ErrorMessages.ResourceNotFound, "用户"));
         
-        return Success(user);
+        return Success(user, ErrorMessages.UpdateSuccess);
     }
 
     /// <summary>
     /// 软删除用户
     /// </summary>
     /// <param name="id">用户ID</param>
-    /// <param name="reason">删除原因（可选）</param>
+    /// <param name="reason">删除原因（可选，最大长度200字符）</param>
     [HttpDelete("{id}")]
-    [RequirePermission("user", "delete")]
+    [RequirePermission(PermissionResources.User, PermissionActions.Delete)]
     public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)
     {
         // 检查是否删除自己（不允许）
         var currentUserId = CurrentUserId;
         if (currentUserId == id)
         {
-            throw new InvalidOperationException("不能删除自己的账户");
+            throw new InvalidOperationException(ErrorMessages.CannotDeleteSelf);
         }
         
         var deleted = await _userService.DeleteUserAsync(id, reason);
         if (!deleted)
-            throw new KeyNotFoundException($"用户 {id} 不存在");
+            throw new KeyNotFoundException(string.Format(ErrorMessages.ResourceNotFound, "用户"));
         
         return NoContent();
     }
@@ -118,7 +118,7 @@ public class UserController : BaseApiController
     /// 获取用户统计信息（需要权限）
     /// </summary>
     [HttpGet("statistics")]
-    [RequirePermission("user", "read")]
+    [RequirePermission(PermissionResources.User, PermissionActions.Read)]
     public async Task<IActionResult> GetUserStatistics()
     {
         var statistics = await _userService.GetUserStatisticsAsync();
@@ -135,23 +135,23 @@ public class UserController : BaseApiController
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
         // 批量操作需要 user:update 或 user:delete 权限
-        if (request.Action == "delete")
+        if (request.Action == BulkActionTypes.Delete)
         {
-            await RequirePermissionAsync("user", "delete");
+            await RequirePermissionAsync(PermissionResources.User, PermissionActions.Delete);
         }
         else
         {
-            await RequirePermissionAsync("user", "update");
+            await RequirePermissionAsync(PermissionResources.User, PermissionActions.Update);
         }
         
         if (request.UserIds == null || !request.UserIds.Any())
-            throw new ArgumentException("用户ID列表不能为空");
+            throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "用户ID列表"));
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
             throw new InvalidOperationException("批量操作失败");
 
-        return Success("批量操作成功");
+        return Success(ErrorMessages.OperationSuccess);
     }
 
 
@@ -178,7 +178,7 @@ public class UserController : BaseApiController
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     [HttpGet("/api/users/activity-logs")]
-    [RequirePermission("activity-log", "read")]
+    [RequirePermission(PermissionResources.ActivityLog, PermissionActions.Read)]
     public async Task<IActionResult> GetAllActivityLogs(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -197,31 +197,32 @@ public class UserController : BaseApiController
             endDate);
 
         // 组装返回数据，包含用户信息和完整的日志字段
-        var logsWithUserInfo = logs.Select(log => new
+        var logsWithUserInfo = logs.Select(log => new ActivityLogWithUserResponse
         {
-            log.Id,
-            log.UserId,
+            Id = log.Id,
+            UserId = log.UserId,
             Username = userMap.ContainsKey(log.UserId) ? userMap[log.UserId] : "未知用户",
-            log.Action,
-            log.Description,
-            log.IpAddress,
-            log.UserAgent,
-            log.HttpMethod,
-            log.Path,
-            log.QueryString,
-            log.StatusCode,
-            log.Duration,
-            log.CreatedAt
+            Action = log.Action,
+            Description = log.Description,
+            IpAddress = log.IpAddress,
+            UserAgent = log.UserAgent,
+            HttpMethod = log.HttpMethod,
+            Path = log.Path,
+            QueryString = log.QueryString,
+            StatusCode = log.StatusCode,
+            Duration = log.Duration,
+            CreatedAt = log.CreatedAt
         }).ToList();
 
-        return Success(new
+        var response = new PaginatedResponse<ActivityLogWithUserResponse>
         {
-            data = logsWithUserInfo,
-            total,
-            page,
-            pageSize,
-            totalPages = (int)Math.Ceiling((double)total / pageSize)
-        });
+            Data = logsWithUserInfo,
+            Total = total,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Success(response);
     }
 
     /// <summary>
@@ -387,9 +388,4 @@ public class UserController : BaseApiController
         var permissions = await _userService.GetUserAllPermissionsAsync(userId);
         return Success(permissions);
     }
-}
-
-public class UpdateUserRoleRequest
-{
-    public string Role { get; set; } = string.Empty;
 }

@@ -66,7 +66,7 @@ export default function LogDetailDrawer({ open, log, onClose }: LogDetailDrawerP
       width={720}
       open={open}
       onClose={onClose}
-      destroyOnClose
+      
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {/* 基本信息 */}
@@ -78,7 +78,7 @@ export default function LogDetailDrawer({ open, log, onClose }: LogDetailDrawerP
             <Space>
               <Text strong>{log.username}</Text>
               <Text type="secondary" copyable={{ text: log.userId }}>
-                (ID: {log.userId.substring(0, 8)}...)
+                (ID: {log.userId})
               </Text>
             </Space>
           </Descriptions.Item>

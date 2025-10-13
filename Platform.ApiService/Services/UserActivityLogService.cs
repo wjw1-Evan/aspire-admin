@@ -308,7 +308,7 @@ public class UserActivityLogService : IUserActivityLogService
         {
             var targetUserId = ExtractIdFromPath(path, "user");
             var targetInfo = !string.IsNullOrEmpty(targetUserId) 
-                ? $"目标用户: {targetUserId.Substring(0, Math.Min(8, targetUserId.Length))}..." 
+                ? $"目标用户: {targetUserId}" 
                 : "";
             
             if (lowerPath.Contains("/profile"))
@@ -316,10 +316,12 @@ public class UserActivityLogService : IUserActivityLogService
                 if (lowerPath.Contains("/password")) 
                     return success ? $"{statusIcon} 密码已更新" : $"{statusIcon} 密码更新失败 - 原密码错误";
                 if (lowerPath.Contains("/activity-logs")) 
-                    return $"{statusIcon} 查询个人活动记录";
-                return httpMethod == "GET" 
-                    ? $"{statusIcon} 访问个人中心" 
-                    : success ? $"{statusIcon} 个人信息已更新" : $"{statusIcon} 更新失败";
+                    return $"{statusIcon} 查询个人活动记录 - {path}" + (!string.IsNullOrEmpty(queryString) ? $"?{queryString}" : "");
+                
+                if (httpMethod == "GET")
+                    return $"{statusIcon} 访问个人中心";
+                
+                return success ? $"{statusIcon} 个人信息已更新" : $"{statusIcon} 更新失败";
             }
             if (lowerPath.Contains("/activate")) 
                 return success ? $"{statusIcon} {targetInfo} - 已启用" : $"{statusIcon} {targetInfo} - 启用失败";
@@ -354,7 +356,7 @@ public class UserActivityLogService : IUserActivityLogService
         if (lowerPath.Contains("/role") && !lowerPath.Contains("/user"))
         {
             var roleId = ExtractIdFromPath(path, "role");
-            var roleInfo = !string.IsNullOrEmpty(roleId) ? $"角色ID: {roleId.Substring(0, Math.Min(8, roleId.Length))}..." : "";
+            var roleInfo = !string.IsNullOrEmpty(roleId) ? $"角色ID: {roleId}" : "";
             
             return httpMethod switch
             {
@@ -370,7 +372,7 @@ public class UserActivityLogService : IUserActivityLogService
         if (lowerPath.Contains("/menu"))
         {
             var menuId = ExtractIdFromPath(path, "menu");
-            var menuInfo = !string.IsNullOrEmpty(menuId) ? $"菜单ID: {menuId.Substring(0, Math.Min(8, menuId.Length))}..." : "";
+            var menuInfo = !string.IsNullOrEmpty(menuId) ? $"菜单ID: {menuId}" : "";
             
             if (lowerPath.Contains("/tree")) 
                 return $"{statusIcon} 加载菜单树结构";
@@ -389,7 +391,7 @@ public class UserActivityLogService : IUserActivityLogService
         if (lowerPath.Contains("/notice"))
         {
             var noticeId = ExtractIdFromPath(path, "notice");
-            var noticeInfo = !string.IsNullOrEmpty(noticeId) ? $"通知ID: {noticeId.Substring(0, Math.Min(8, noticeId.Length))}..." : "";
+            var noticeInfo = !string.IsNullOrEmpty(noticeId) ? $"通知ID: {noticeId}" : "";
             
             return httpMethod switch
             {
@@ -405,7 +407,7 @@ public class UserActivityLogService : IUserActivityLogService
         if (lowerPath.Contains("/tag"))
         {
             var tagId = ExtractIdFromPath(path, "tag");
-            var tagInfo = !string.IsNullOrEmpty(tagId) ? $"标签ID: {tagId.Substring(0, Math.Min(8, tagId.Length))}..." : "";
+            var tagInfo = !string.IsNullOrEmpty(tagId) ? $"标签ID: {tagId}" : "";
             
             return httpMethod switch
             {
@@ -421,7 +423,7 @@ public class UserActivityLogService : IUserActivityLogService
         if (lowerPath.Contains("/rule"))
         {
             var ruleId = ExtractIdFromPath(path, "rule");
-            var ruleInfo = !string.IsNullOrEmpty(ruleId) ? $"规则ID: {ruleId.Substring(0, Math.Min(8, ruleId.Length))}..." : "";
+            var ruleInfo = !string.IsNullOrEmpty(ruleId) ? $"规则ID: {ruleId}" : "";
             
             return httpMethod switch
             {
@@ -437,7 +439,7 @@ public class UserActivityLogService : IUserActivityLogService
         if (lowerPath.Contains("/permission"))
         {
             var permId = ExtractIdFromPath(path, "permission");
-            var permInfo = !string.IsNullOrEmpty(permId) ? $"权限ID: {permId.Substring(0, Math.Min(8, permId.Length))}..." : "";
+            var permInfo = !string.IsNullOrEmpty(permId) ? $"权限ID: {permId}" : "";
             
             return httpMethod switch
             {

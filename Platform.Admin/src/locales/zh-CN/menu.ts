@@ -11,4 +11,10 @@ export default {
   'menu.system.user-log': '用户日志',
   'menu.account': '个人页',
   'menu.account.center': '个人中心',
+  'menu.permission.assign': '分配权限',
+  'menu.permission.loading': '加载数据失败',
+  'menu.permission.success': '权限分配成功',
+  'menu.permission.failed': '权限分配失败',
+  'menu.permission.selectAll': '全选',
+  'menu.permission.unselectAll': '取消全选',
 };

@@ -32,6 +32,13 @@ docs/
 - [优化用户指南](optimization/OPTIMIZATION-USER-GUIDE.md) - 用户使用指南
 - [API 变更清单](optimization/API-CHANGES-CHECKLIST.md) - API 接口变更
 
+### v3.0 版本更新（最新）
+- [v3.0 优化总结](optimization/OPTIMIZATION-V3.md) - 代码质量优化详情
+- [v3.0 完成总结](optimization/OPTIMIZATION-V3-SUMMARY.md) - 优化成果总结
+- [v3.0 最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - 完整的最终报告
+- [代码质量改进指南](optimization/CODE-QUALITY-IMPROVEMENTS.md) - 最佳实践指南
+- [组件优化指南](optimization/COMPONENT-OPTIMIZATION-GUIDE.md) - 组件拆分和性能优化
+
 ### 核心功能
 
 #### 通知系统
@@ -88,6 +95,8 @@ docs/
 
 #### Bug 修复
 - [菜单国际化修复](bugfixes/BUGFIX-MENU-I18N.md) - 菜单 i18n
+- [菜单权限弹窗国际化修复](bugfixes/MENU-PERMISSION-I18N-FIX.md) - 分配权限弹窗多语言支持
+- [菜单标题字段缺失修复](bugfixes/MENU-TITLE-FIELD-FIX.md) - 菜单 Title 字段修复和数据迁移
 - [路由修复](bugfixes/BUGFIX-ROUTES.md) - 路由问题
 - [用户日志修复](bugfixes/BUGFIX-USER-LOG.md) - 日志问题
 - [表格操作列修复](bugfixes/TABLE-ACTION-COLUMN-FIX.md) - 表格组件
@@ -110,6 +119,14 @@ docs/
 - [业务逻辑优化总结](optimization/BUSINESS-LOGIC-OPTIMIZATION-SUMMARY.md) - 业务优化
 - [优化变更日志](optimization/OPTIMIZATION-CHANGELOG.md) - 变更记录
 - [优化 v2](optimization/OPTIMIZATION-V2.md) - v2 优化
+- [v3.0 优化最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - v3.0 完整报告
+- [代码清理报告](optimization/CODE-CLEANUP-REPORT.md) - 代码清理
+- [v4.0 重构优化计划](optimization/REFACTORING-PLAN.md) - v4.0 重构计划
+- [v4.0 重构结果报告](optimization/REFACTORING-RESULTS-V4.md) - v4.0 详细对比
+- [v4.0 优化总结](optimization/V4-OPTIMIZATION-SUMMARY.md) - v4.0 完成总结
+- [v4.0 最终完整报告](optimization/V4-FINAL-COMPLETE-REPORT.md) - v4.0 完整报告
+- [v4.0 快速参考](optimization/V4-QUICK-REFERENCE.md) - v4.0 快速上手
+- [v4.0 扩展优化报告](optimization/V4-EXTENDED-OPTIMIZATION.md) - v4.0 继续优化 ⭐ **新增**
 
 ### 数据完整性
 - [数据完整性检查](features/DATA-INTEGRITY-CHECK.md) - 数据检查机制

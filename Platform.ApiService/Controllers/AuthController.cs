@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 
@@ -11,11 +12,16 @@ public class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;
     private readonly ICaptchaService _captchaService;
+    private readonly IPhoneValidationService _phoneValidationService;
 
-    public AuthController(IAuthService authService, ICaptchaService captchaService)
+    public AuthController(
+        IAuthService authService, 
+        ICaptchaService captchaService,
+        IPhoneValidationService phoneValidationService)
     {
         _authService = authService;
         _captchaService = captchaService;
+        _phoneValidationService = phoneValidationService;
     }
 
     /// <summary>
@@ -30,10 +36,7 @@ public class AuthController : BaseApiController
             throw new UnauthorizedAccessException("用户未认证");
 
         var user = await _authService.GetCurrentUserAsync();
-        if (user == null || !user.IsLogin)
-            throw new UnauthorizedAccessException("请先登录");
-        
-        return Ok(ApiResponse<CurrentUser>.SuccessResult(user));
+        return Ok(ApiResponse<CurrentUser>.SuccessResult(user.EnsureFound("用户")));
     }
 
     /// <summary>
@@ -65,9 +68,7 @@ public class AuthController : BaseApiController
     [HttpGet("login/captcha")]
     public async Task<IActionResult> GetCaptcha([FromQuery] string phone)
     {
-        if (string.IsNullOrWhiteSpace(phone))
-            throw new ArgumentException("手机号不能为空");
-
+        _phoneValidationService.ValidatePhone(phone);
         var result = await _captchaService.GenerateCaptchaAsync(phone);
         
         return Success(new
@@ -83,11 +84,8 @@ public class AuthController : BaseApiController
     [HttpPost("login/verify-captcha")]
     public async Task<IActionResult> VerifyCaptcha([FromBody] VerifyCaptchaRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Phone))
-            throw new ArgumentException("手机号不能为空");
-
-        if (string.IsNullOrWhiteSpace(request.Code))
-            throw new ArgumentException("验证码不能为空");
+        _phoneValidationService.ValidatePhone(request.Phone);
+        _phoneValidationService.ValidateCaptchaCode(request.Code);
 
         var isValid = await _captchaService.ValidateCaptchaAsync(request.Phone, request.Code);
         

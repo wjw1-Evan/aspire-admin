@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 
@@ -36,10 +37,7 @@ public class NoticeController : BaseApiController
     public async Task<IActionResult> GetNoticeById(string id)
     {
         var notice = await _noticeService.GetNoticeByIdAsync(id);
-        if (notice == null)
-            throw new KeyNotFoundException($"通知 {id} 不存在");
-        
-        return Success(notice);
+        return Success(notice.EnsureFound("通知", id));
     }
 
     /// <summary>
@@ -63,10 +61,7 @@ public class NoticeController : BaseApiController
         {
             // 只修改 Read 状态，允许
             var notice = await _noticeService.UpdateNoticeAsync(id, request);
-            if (notice == null)
-                throw new KeyNotFoundException($"通知 {id} 不存在");
-            
-            return Success(notice, "更新成功");
+            return Success(notice.EnsureFound("通知", id), "更新成功");
         }
         
         // 其他修改需要权限
@@ -93,9 +88,7 @@ public class NoticeController : BaseApiController
     public async Task<IActionResult> DeleteNotice(string id)
     {
         var deleted = await _noticeService.DeleteNoticeAsync(id);
-        if (!deleted)
-            throw new KeyNotFoundException($"通知 {id} 不存在");
-        
+        deleted.EnsureSuccess("通知", id);
         return Success("删除成功");
     }
 }

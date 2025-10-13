@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
 
-public class User : ISoftDeletable
+public class User : ISoftDeletable, IEntity
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -129,7 +129,7 @@ public class UserStatisticsResponse
     public int NewUsersThisMonth { get; set; }
 }
 
-public class UserActivityLog : ISoftDeletable
+public class UserActivityLog : ISoftDeletable, IEntity
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

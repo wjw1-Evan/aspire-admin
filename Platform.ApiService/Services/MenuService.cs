@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ApiService.Constants;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
@@ -34,7 +36,7 @@ public class MenuService : IMenuService
     /// </summary>
     public async Task<List<Menu>> GetAllMenusAsync()
     {
-        var filter = SoftDeleteExtensions.NotDeleted<Menu>();
+        var filter = MongoFilterExtensions.NotDeleted<Menu>();
         return await _menus.Find(filter)
             .SortBy(m => m.SortOrder)
             .ToListAsync();
@@ -72,7 +74,7 @@ public class MenuService : IMenuService
         var menusFilter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.In(m => m.Id, accessibleMenuIds),
             Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
-            SoftDeleteExtensions.NotDeleted<Menu>()
+            MongoFilterExtensions.NotDeleted<Menu>()
         );
         var accessibleMenus = await _menus
             .Find(menusFilter)
@@ -89,7 +91,7 @@ public class MenuService : IMenuService
         var allMenusFilter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.In(m => m.Id, allMenuIds.ToList()),
             Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
-            SoftDeleteExtensions.NotDeleted<Menu>()
+            MongoFilterExtensions.NotDeleted<Menu>()
         );
         var allAccessibleMenus = await _menus
             .Find(allMenusFilter)
@@ -109,7 +111,7 @@ public class MenuService : IMenuService
 
         var filter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.Eq(m => m.Id, parentId),
-            SoftDeleteExtensions.NotDeleted<Menu>()
+            MongoFilterExtensions.NotDeleted<Menu>()
         );
         var parentMenu = await _menus.Find(filter).FirstOrDefaultAsync();
         if (parentMenu != null)
@@ -129,7 +131,7 @@ public class MenuService : IMenuService
     {
         var filter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.Eq(m => m.Id, id),
-            SoftDeleteExtensions.NotDeleted<Menu>()
+            MongoFilterExtensions.NotDeleted<Menu>()
         );
         return await _menus.Find(filter).FirstOrDefaultAsync();
     }
@@ -142,6 +144,7 @@ public class MenuService : IMenuService
         var menu = new Menu
         {
             Name = request.Name,
+            Title = request.Title,
             Path = request.Path,
             Component = request.Component,
             Icon = request.Icon,
@@ -174,6 +177,8 @@ public class MenuService : IMenuService
 
         if (request.Name != null)
             updates.Add(updateBuilder.Set(m => m.Name, request.Name));
+        if (request.Title != null)
+            updates.Add(updateBuilder.Set(m => m.Title, request.Title));
         if (request.Path != null)
             updates.Add(updateBuilder.Set(m => m.Path, request.Path));
         if (request.Component != null)
@@ -218,7 +223,7 @@ public class MenuService : IMenuService
         // 检查是否有未删除的子菜单
         var childrenFilter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.Eq(m => m.ParentId, id),
-            SoftDeleteExtensions.NotDeleted<Menu>()
+            MongoFilterExtensions.NotDeleted<Menu>()
         );
         var hasChildren = await _menus.Find(childrenFilter).AnyAsync();
         if (hasChildren)
@@ -254,7 +259,7 @@ public class MenuService : IMenuService
         var currentUserId = GetCurrentUserId();
         var filter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.Eq(m => m.Id, id),
-            SoftDeleteExtensions.NotDeleted<Menu>()
+            MongoFilterExtensions.NotDeleted<Menu>()
         );
         
         var deleted = await _menus.SoftDeleteOneAsync(filter, currentUserId, reason);

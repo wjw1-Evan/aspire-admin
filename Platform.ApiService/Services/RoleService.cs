@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ApiService.Constants;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
@@ -34,7 +36,7 @@ public class RoleService : IRoleService
     /// </summary>
     public async Task<RoleListResponse> GetAllRolesAsync()
     {
-        var filter = SoftDeleteExtensions.NotDeleted<Role>();
+        var filter = MongoFilterExtensions.NotDeleted<Role>();
         var roles = await _roles.Find(filter)
             .SortBy(r => r.CreatedAt)
             .ToListAsync();
@@ -51,7 +53,7 @@ public class RoleService : IRoleService
     /// </summary>
     public async Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync()
     {
-        var filter = SoftDeleteExtensions.NotDeleted<Role>();
+        var filter = MongoFilterExtensions.NotDeleted<Role>();
         var roles = await _roles.Find(filter)
             .SortBy(r => r.CreatedAt)
             .ToListAsync();
@@ -97,7 +99,7 @@ public class RoleService : IRoleService
     {
         var filter = Builders<Role>.Filter.And(
             Builders<Role>.Filter.Eq(r => r.Id, id),
-            SoftDeleteExtensions.NotDeleted<Role>()
+            MongoFilterExtensions.NotDeleted<Role>()
         );
         return await _roles.Find(filter).FirstOrDefaultAsync();
     }
@@ -109,7 +111,7 @@ public class RoleService : IRoleService
     {
         var filter = Builders<Role>.Filter.And(
             Builders<Role>.Filter.Eq(r => r.Name, name),
-            SoftDeleteExtensions.NotDeleted<Role>()
+            MongoFilterExtensions.NotDeleted<Role>()
         );
         return await _roles.Find(filter).FirstOrDefaultAsync();
     }
@@ -230,7 +232,7 @@ public class RoleService : IRoleService
         var currentUserId = GetCurrentUserId();
         var filter = Builders<Role>.Filter.And(
             Builders<Role>.Filter.Eq(r => r.Id, id),
-            SoftDeleteExtensions.NotDeleted<Role>()
+            MongoFilterExtensions.NotDeleted<Role>()
         );
         
         var deleted = await _roles.SoftDeleteOneAsync(filter, currentUserId, reason);

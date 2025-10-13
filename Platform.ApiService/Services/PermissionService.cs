@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ApiService.Constants;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
@@ -20,7 +22,7 @@ public class PermissionService : IPermissionService
 
     public async Task<List<Permission>> GetAllPermissionsAsync()
     {
-        var filter = SoftDeleteExtensions.NotDeleted<Permission>();
+        var filter = MongoFilterExtensions.NotDeleted<Permission>();
         return await _permissions.Find(filter)
             .SortBy(p => p.ResourceName)
             .ThenBy(p => p.Action)
@@ -31,7 +33,7 @@ public class PermissionService : IPermissionService
     {
         var filter = Builders<Permission>.Filter.And(
             Builders<Permission>.Filter.Eq(p => p.Id, id),
-            SoftDeleteExtensions.NotDeleted<Permission>()
+            MongoFilterExtensions.NotDeleted<Permission>()
         );
         return await _permissions.Find(filter).FirstOrDefaultAsync();
     }
@@ -40,7 +42,7 @@ public class PermissionService : IPermissionService
     {
         var filter = Builders<Permission>.Filter.And(
             Builders<Permission>.Filter.Eq(p => p.Code, code),
-            SoftDeleteExtensions.NotDeleted<Permission>()
+            MongoFilterExtensions.NotDeleted<Permission>()
         );
         return await _permissions.Find(filter).FirstOrDefaultAsync();
     }
@@ -201,7 +203,7 @@ public class PermissionService : IPermissionService
     {
         var filter = Builders<Permission>.Filter.And(
             Builders<Permission>.Filter.Eq(p => p.ResourceName, resource.ToLower()),
-            SoftDeleteExtensions.NotDeleted<Permission>()
+            MongoFilterExtensions.NotDeleted<Permission>()
         );
         return await _permissions.Find(filter)
             .SortBy(p => p.Action)
@@ -218,7 +220,7 @@ public class PermissionService : IPermissionService
         var lowerCodes = codes.Select(c => c.ToLower()).ToList();
         var filter = Builders<Permission>.Filter.And(
             Builders<Permission>.Filter.In(p => p.Code, lowerCodes),
-            SoftDeleteExtensions.NotDeleted<Permission>()
+            MongoFilterExtensions.NotDeleted<Permission>()
         );
         return await _permissions.Find(filter).ToListAsync();
     }

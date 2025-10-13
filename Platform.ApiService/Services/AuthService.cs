@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ApiService.Constants;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using System.Security.Claims;
 
@@ -11,19 +13,25 @@ public class AuthService : IAuthService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
     private readonly ILogger<AuthService> _logger;
+    private readonly IUniquenessChecker _uniquenessChecker;
+    private readonly IFieldValidationService _validationService;
 
     public AuthService(
         IMongoDatabase database, 
         IJwtService jwtService, 
         IHttpContextAccessor httpContextAccessor, 
         IUserService userService,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        IUniquenessChecker uniquenessChecker,
+        IFieldValidationService validationService)
     {
         _users = database.GetCollection<AppUser>("users");
         _jwtService = jwtService;
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
         _logger = logger;
+        _uniquenessChecker = uniquenessChecker;
+        _validationService = validationService;
     }
 
     private static string HashPassword(string password)
@@ -128,7 +136,7 @@ public class AuthService : IAuthService
         var filter = Builders<AppUser>.Filter.And(
             Builders<AppUser>.Filter.Eq(u => u.Username, request.Username),
             Builders<AppUser>.Filter.Eq(u => u.IsActive, true),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
+            MongoFilterExtensions.NotDeleted<AppUser>()
         );
         var user = await _users.Find(filter).FirstOrDefaultAsync();
         
@@ -199,62 +207,29 @@ public class AuthService : IAuthService
 
     public async Task<ApiResponse<AppUser>> RegisterAsync(RegisterRequest request)
     {
-        // 验证输入参数
-        if (string.IsNullOrWhiteSpace(request.Username))
+        // 使用通用验证服务（捕获异常转换为ApiResponse）
+        try
         {
-            return ApiResponse<AppUser>.ValidationErrorResult("用户名不能为空");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Password))
-        {
-            return ApiResponse<AppUser>.ValidationErrorResult("密码不能为空");
-        }
-
-        // 验证用户名长度和格式
-        if (request.Username.Length < 3 || request.Username.Length > 20)
-        {
-            return ApiResponse<AppUser>.ValidationErrorResult("用户名长度必须在3-20个字符之间");
-        }
-
-        // 验证密码强度
-        if (request.Password.Length < 6)
-        {
-            return ApiResponse<AppUser>.ValidationErrorResult("密码长度至少6个字符");
-        }
-
-        // 验证邮箱格式（如果提供了邮箱）
-        if (!string.IsNullOrEmpty(request.Email))
-        {
-            var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-            if (!emailRegex.IsMatch(request.Email))
+            _validationService.ValidateUsername(request.Username);
+            _validationService.ValidatePassword(request.Password);
+            _validationService.ValidateEmail(request.Email);
+            
+            // 使用唯一性检查服务
+            await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username);
+            if (!string.IsNullOrEmpty(request.Email))
             {
-                return ApiResponse<AppUser>.ValidationErrorResult("邮箱格式不正确");
+                await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
             }
         }
-
-        // 检查用户名是否已存在（排除已删除用户）
-        var usernameFilter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(u => u.Username, request.Username),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
-        );
-        var existingUser = await _users.Find(usernameFilter).FirstOrDefaultAsync();
-        if (existingUser != null)
+        catch (ArgumentException ex)
         {
-            return ApiResponse<AppUser>.ErrorResult("USER_EXISTS", "用户名已存在");
+            return ApiResponse<AppUser>.ValidationErrorResult(ex.Message);
         }
-
-        // 检查邮箱是否已存在（如果提供了邮箱，排除已删除用户）
-        if (!string.IsNullOrEmpty(request.Email))
+        catch (InvalidOperationException ex)
         {
-            var emailFilter = Builders<AppUser>.Filter.And(
-                Builders<AppUser>.Filter.Eq(u => u.Email, request.Email),
-                SoftDeleteExtensions.NotDeleted<AppUser>()
-            );
-            var existingEmail = await _users.Find(emailFilter).FirstOrDefaultAsync();
-            if (existingEmail != null)
-            {
-                return ApiResponse<AppUser>.ErrorResult("EMAIL_EXISTS", "邮箱已被使用");
-            }
+            // 唯一性检查失败
+            var errorCode = ex.Message.Contains("用户名") ? "USER_EXISTS" : "EMAIL_EXISTS";
+            return ApiResponse<AppUser>.ErrorResult(errorCode, ex.Message);
         }
 
         // 创建新用户（无默认角色，需要管理员分配）

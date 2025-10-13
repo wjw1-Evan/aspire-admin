@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ApiService.Constants;
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
@@ -10,17 +12,23 @@ public class UserService : IUserService
     private readonly IMongoCollection<Permission> _permissions;
     private readonly IMongoCollection<Role> _roles;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IUniquenessChecker _uniquenessChecker;
+    private readonly IFieldValidationService _validationService;
 
     public UserService(
         IMongoDatabase database, 
         IHttpContextAccessor httpContextAccessor,
-        ILogger<UserService> logger)
+        ILogger<UserService> logger,
+        IUniquenessChecker uniquenessChecker,
+        IFieldValidationService validationService)
     {
         _users = database.GetCollection<AppUser>("users");
         _activityLogs = database.GetCollection<UserActivityLog>("user_activity_logs");
         _permissions = database.GetCollection<Permission>("permissions");
         _roles = database.GetCollection<Role>("roles");
         _httpContextAccessor = httpContextAccessor;
+        _uniquenessChecker = uniquenessChecker;
+        _validationService = validationService;
     }
 
     /// <summary>
@@ -31,18 +39,23 @@ public class UserService : IUserService
         return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
     }
 
+    /// <summary>
+    /// 获取所有未删除的用户
+    /// </summary>
     public async Task<List<AppUser>> GetAllUsersAsync()
     {
-        var filter = SoftDeleteExtensions.NotDeleted<AppUser>();
+        var filter = MongoFilterExtensions.NotDeleted<AppUser>();
         return await _users.Find(filter).ToListAsync();
     }
 
+    /// <summary>
+    /// 根据ID获取用户
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <returns>用户对象，不存在或已删除则返回 null</returns>
     public async Task<AppUser?> GetUserByIdAsync(string id)
     {
-        var filter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(user => user.Id, id),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
-        );
+        var filter = MongoFilterExtensions.ByIdAndNotDeleted<AppUser>(id);
         return await _users.Find(filter).FirstOrDefaultAsync();
     }
 
@@ -63,31 +76,24 @@ public class UserService : IUserService
         return user;
     }
 
+    /// <summary>
+    /// 创建用户（用户管理）
+    /// </summary>
+    /// <param name="request">创建用户请求</param>
+    /// <returns>创建的用户对象</returns>
+    /// <exception cref="InvalidOperationException">用户名或邮箱已存在时抛出</exception>
     public async Task<AppUser> CreateUserManagementAsync(CreateUserManagementRequest request)
     {
-        // 检查用户名是否已存在
-        var usernameFilter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(u => u.Username, request.Username),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
-        );
-        var existingUser = await _users.Find(usernameFilter).FirstOrDefaultAsync();
-        if (existingUser != null)
-        {
-            throw new InvalidOperationException("用户名已存在");
-        }
+        // 使用通用验证服务
+        _validationService.ValidateUsername(request.Username);
+        _validationService.ValidatePassword(request.Password);
+        _validationService.ValidateEmail(request.Email);
 
-        // 检查邮箱是否已存在
+        // 使用唯一性检查服务
+        await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username);
         if (!string.IsNullOrEmpty(request.Email))
         {
-            var emailFilter = Builders<AppUser>.Filter.And(
-                Builders<AppUser>.Filter.Eq(u => u.Email, request.Email),
-                SoftDeleteExtensions.NotDeleted<AppUser>()
-            );
-            var existingEmail = await _users.Find(emailFilter).FirstOrDefaultAsync();
-            if (existingEmail != null)
-            {
-                throw new InvalidOperationException("邮箱已存在");
-            }
+            await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
         }
 
         // 创建密码哈希
@@ -131,6 +137,13 @@ public class UserService : IUserService
         return null;
     }
 
+    /// <summary>
+    /// 更新用户（用户管理）
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <param name="request">更新用户请求</param>
+    /// <returns>更新后的用户对象，不存在则返回 null</returns>
+    /// <exception cref="InvalidOperationException">用户名或邮箱已存在时抛出</exception>
     public async Task<AppUser?> UpdateUserManagementAsync(string id, UpdateUserManagementRequest request)
     {
         var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
@@ -139,33 +152,16 @@ public class UserService : IUserService
 
         if (!string.IsNullOrEmpty(request.Username))
         {
-            // 检查用户名是否已存在（排除当前用户）
-            var usernameFilter = Builders<AppUser>.Filter.And(
-                Builders<AppUser>.Filter.Eq(u => u.Username, request.Username),
-                Builders<AppUser>.Filter.Ne(u => u.Id, id),
-                SoftDeleteExtensions.NotDeleted<AppUser>()
-            );
-            var existingUser = await _users.Find(usernameFilter).FirstOrDefaultAsync();
-            if (existingUser != null)
-            {
-                throw new InvalidOperationException("用户名已存在");
-            }
+            // 使用唯一性检查服务
+            await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username, excludeUserId: id);
             update = update.Set(user => user.Username, request.Username);
         }
-        
+
         if (!string.IsNullOrEmpty(request.Email))
         {
-            // 检查邮箱是否已存在（排除当前用户）
-            var emailFilter = Builders<AppUser>.Filter.And(
-                Builders<AppUser>.Filter.Eq(u => u.Email, request.Email),
-                Builders<AppUser>.Filter.Ne(u => u.Id, id),
-                SoftDeleteExtensions.NotDeleted<AppUser>()
-            );
-            var existingEmail = await _users.Find(emailFilter).FirstOrDefaultAsync();
-            if (existingEmail != null)
-            {
-                throw new InvalidOperationException("邮箱已存在");
-            }
+            // 使用唯一性检查服务
+            _validationService.ValidateEmail(request.Email);
+            await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email, excludeUserId: id);
             update = update.Set(user => user.Email, request.Email);
         }
 
@@ -232,7 +228,7 @@ public class UserService : IUserService
     // 新增的用户管理功能
     public async Task<UserListResponse> GetUsersWithPaginationAsync(UserListRequest request)
     {
-        var filter = SoftDeleteExtensions.NotDeleted<AppUser>();
+        var filter = MongoFilterExtensions.NotDeleted<AppUser>();
 
         // 搜索过滤
         if (!string.IsNullOrEmpty(request.Search))

@@ -7,7 +7,7 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 角色实体
 /// </summary>
-public class Role : ISoftDeletable
+public class Role : ISoftDeletable, INamedEntity
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

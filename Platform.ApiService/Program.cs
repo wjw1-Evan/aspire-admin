@@ -70,6 +70,11 @@ builder.Services.AddScoped<IUserActivityLogService, UserActivityLogService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IPermissionCheckService, PermissionCheckService>();
 
+// 通用工具服务（v4.0 优化）
+builder.Services.AddScoped<IUniquenessChecker, UniquenessChecker>();
+builder.Services.AddScoped<IFieldValidationService, FieldValidationService>();
+builder.Services.AddScoped<IPhoneValidationService, PhoneValidationService>();
+
 // Captcha service (Singleton - 使用内存缓存)
 builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
 
@@ -155,6 +160,11 @@ using (var scope = app.Services.CreateScope())
     // 初始化菜单和角色
     var initialMenuData = new InitialMenuData(database);
     await initialMenuData.InitializeAsync();
+    
+    // 迁移菜单标题（为旧菜单添加中文标题）
+    var migrateMenuTitles = new MigrateMenuTitles(database,
+        scope.ServiceProvider.GetRequiredService<ILogger<MigrateMenuTitles>>());
+    await migrateMenuTitles.MigrateAsync();
     
     // 初始化权限系统
     var initializePermissions = new InitializePermissions(database, 

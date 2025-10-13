@@ -25,6 +25,7 @@ docs/
 - [开始使用](reports/START-HERE.md) - 项目快速入门指南
 - [系统就绪](reports/READY-TO-TEST.md) - 系统就绪状态
 - [完成报告](reports/ALL-DONE.md) - 项目完成总结
+- [**v5.0 优化完成**](reports/V5-OPTIMIZATION-COMPLETE.md) - v5.0 后端架构优化完成 ⭐ **最新**
 
 ### v2.0 版本更新
 - [v2.0 更新总结](features/v2.0-UPDATES-SUMMARY.md) - 完整的 v2.0 版本更新说明
@@ -52,6 +53,7 @@ docs/
 #### 帮助系统
 - [帮助模块功能](features/HELP-MODULE-FEATURE.md) - 系统内帮助模块
 - [帮助模块调试](bugfixes/HELP-MODAL-DEBUG.md) - 问题排查指南
+- [**v5.0 帮助系统更新**](features/V5-HELP-SYSTEM-UPDATE.md) - v5.0 架构升级内容同步 ⭐ **新增**
 
 #### 权限系统
 - [权限系统概述](permissions/PERMISSIONS-INDEX.md) - 权限系统索引
@@ -127,7 +129,12 @@ docs/
 - [v4.0 优化总结](optimization/V4-OPTIMIZATION-SUMMARY.md) - v4.0 完成总结
 - [v4.0 最终完整报告](optimization/V4-FINAL-COMPLETE-REPORT.md) - v4.0 完整报告
 - [v4.0 快速参考](optimization/V4-QUICK-REFERENCE.md) - v4.0 快速上手
-- [v4.0 扩展优化报告](optimization/V4-EXTENDED-OPTIMIZATION.md) - v4.0 继续优化 ⭐ **新增**
+- [v4.0 扩展优化报告](optimization/V4-EXTENDED-OPTIMIZATION.md) - v4.0 继续优化
+- [**v5.0 优化完成摘要**](optimization/OPTIMIZATION-V5-SUMMARY.md) - v5.0 架构优化总结 ⭐ **最新**
+- [**v5.0 优化前后对比**](optimization/V5-BEFORE-AFTER-COMPARISON.md) - 代码对比展示 ⭐ **推荐**
+- [**后端代码优化报告**](optimization/BACKEND-CODE-OPTIMIZATION-REPORT.md) - 后端架构优化详情 ⭐ **新增**
+- [**基础组件使用指南**](optimization/BASE-COMPONENTS-GUIDE.md) - 基础组件开发指南 ⭐ **新增**
+- [**Cursor Rules 使用指南**](optimization/CURSOR-RULES-GUIDE.md) - 代码规则配置说明 ⭐ **新增**
 
 ### 数据完整性
 - [数据完整性检查](features/DATA-INTEGRITY-CHECK.md) - 数据检查机制

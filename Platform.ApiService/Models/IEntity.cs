@@ -12,6 +12,22 @@ public interface IEntity
 }
 
 /// <summary>
+/// 时间戳接口，包含创建和更新时间
+/// </summary>
+public interface ITimestamped
+{
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    DateTime CreatedAt { get; set; }
+    
+    /// <summary>
+    /// 更新时间
+    /// </summary>
+    DateTime UpdatedAt { get; set; }
+}
+
+/// <summary>
 /// 命名实体接口，用于有名称属性的实体
 /// </summary>
 public interface INamedEntity : IEntity

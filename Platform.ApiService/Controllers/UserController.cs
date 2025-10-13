@@ -47,11 +47,9 @@ public class UserController : BaseApiController
     [RequirePermission(PermissionResources.User, PermissionActions.Create)]
     public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
     {
-        if (string.IsNullOrEmpty(request.Username))
-            throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "用户名"));
-        
-        if (string.IsNullOrEmpty(request.Password))
-            throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "密码"));
+        // 使用扩展方法简化参数验证
+        request.Username.EnsureNotEmpty("用户名");
+        request.Password.EnsureNotEmpty("密码");
 
         var user = await _userService.CreateUserManagementAsync(request);
         return Success(user, ErrorMessages.CreateSuccess);
@@ -144,12 +142,12 @@ public class UserController : BaseApiController
             await RequirePermissionAsync(PermissionResources.User, PermissionActions.Update);
         }
         
-        if (request.UserIds == null || !request.UserIds.Any())
-            throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "用户ID列表"));
+        // 使用扩展方法简化验证
+        request.UserIds.EnsureNotEmpty("用户ID列表");
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
-            throw new InvalidOperationException("批量操作失败");
+            throw new InvalidOperationException(ErrorMessages.OperationFailed);
 
         return Success(ErrorMessages.OperationSuccess);
     }
@@ -258,9 +256,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> ActivateUser(string id)
     {
         var success = await _userService.ActivateUserAsync(id);
-        if (!success)
-            throw new KeyNotFoundException($"用户ID {id} 不存在");
-
+        success.EnsureSuccess("用户", id);
         return Success("用户已启用");
     }
 
@@ -273,9 +269,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> DeactivateUser(string id)
     {
         var success = await _userService.DeactivateUserAsync(id);
-        if (!success)
-            throw new KeyNotFoundException($"用户ID {id} 不存在");
-
+        success.EnsureSuccess("用户", id);
         return Success("用户已禁用");
     }
 
@@ -371,9 +365,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> AssignCustomPermissions(string id, [FromBody] AssignPermissionsRequest request)
     {
         var success = await _userService.AssignCustomPermissionsAsync(id, request.PermissionIds);
-        if (!success)
-            throw new KeyNotFoundException($"用户ID {id} 不存在");
-        
+        success.EnsureSuccess("用户", id);
         return Success("权限分配成功");
     }
 

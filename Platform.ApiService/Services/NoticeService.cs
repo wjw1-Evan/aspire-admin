@@ -3,25 +3,27 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class NoticeService : INoticeService
+public class NoticeService : BaseService, INoticeService
 {
-    private readonly IMongoCollection<NoticeIconItem> _notices;
-    private readonly ILogger<NoticeService> _logger;
+    private readonly BaseRepository<NoticeIconItem> _noticeRepository;
+    
+    // 快捷访问器
+    private IMongoCollection<NoticeIconItem> _notices => _noticeRepository.Collection;
 
-    public NoticeService(IMongoDatabase database, ILogger<NoticeService> logger)
+    public NoticeService(
+        IMongoDatabase database, 
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<NoticeService> logger)
+        : base(database, httpContextAccessor, logger)
     {
-        _notices = database.GetCollection<NoticeIconItem>("notices");
-        _logger = logger;
+        _noticeRepository = new BaseRepository<NoticeIconItem>(database, "notices", httpContextAccessor);
     }
-
 
     public async Task<NoticeIconListResponse> GetNoticesAsync()
     {
         // 从数据库获取通知数据，只获取未删除的记录，按时间倒序排列
-        var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.IsDeleted, false);
-        var notices = await _notices.Find(filter)
-            .SortByDescending(n => n.Datetime)
-            .ToListAsync();
+        var sort = Builders<NoticeIconItem>.Sort.Descending(n => n.Datetime);
+        var notices = await _noticeRepository.GetAllAsync(sort);
 
         return new NoticeIconListResponse
         {
@@ -33,12 +35,7 @@ public class NoticeService : INoticeService
 
     public async Task<NoticeIconItem?> GetNoticeByIdAsync(string id)
     {
-        // 只获取未删除的通知
-        var filter = Builders<NoticeIconItem>.Filter.And(
-            Builders<NoticeIconItem>.Filter.Eq(n => n.Id, id),
-            Builders<NoticeIconItem>.Filter.Eq(n => n.IsDeleted, false)
-        );
-        return await _notices.Find(filter).FirstOrDefaultAsync();
+        return await _noticeRepository.GetByIdAsync(id);
     }
 
     public async Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request)
@@ -52,84 +49,69 @@ public class NoticeService : INoticeService
             Extra = request.Extra,
             Type = request.Type,
             ClickClose = request.ClickClose,
-            Datetime = request.Datetime ?? DateTime.UtcNow,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            Datetime = request.Datetime ?? DateTime.UtcNow
         };
 
-        await _notices.InsertOneAsync(notice);
-        return notice;
+        return await _noticeRepository.CreateAsync(notice);
     }
 
     public async Task<NoticeIconItem?> UpdateNoticeAsync(string id, UpdateNoticeRequest request)
     {
-        var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Id, id);
-        var update = Builders<NoticeIconItem>.Update.Set(n => n.UpdatedAt, DateTime.UtcNow);
+        var updateBuilder = Builders<NoticeIconItem>.Update;
+        var updates = new List<UpdateDefinition<NoticeIconItem>>();
 
         if (!string.IsNullOrEmpty(request.Title))
-            update = update.Set(n => n.Title, request.Title);
+            updates.Add(updateBuilder.Set(n => n.Title, request.Title));
         
         if (!string.IsNullOrEmpty(request.Description))
-            update = update.Set(n => n.Description, request.Description);
+            updates.Add(updateBuilder.Set(n => n.Description, request.Description));
         
         if (!string.IsNullOrEmpty(request.Avatar))
-            update = update.Set(n => n.Avatar, request.Avatar);
+            updates.Add(updateBuilder.Set(n => n.Avatar, request.Avatar));
         
         if (!string.IsNullOrEmpty(request.Status))
-            update = update.Set(n => n.Status, request.Status);
+            updates.Add(updateBuilder.Set(n => n.Status, request.Status));
         
         if (!string.IsNullOrEmpty(request.Extra))
-            update = update.Set(n => n.Extra, request.Extra);
+            updates.Add(updateBuilder.Set(n => n.Extra, request.Extra));
         
         if (request.Type.HasValue)
-            update = update.Set(n => n.Type, request.Type.Value);
+            updates.Add(updateBuilder.Set(n => n.Type, request.Type.Value));
         
         if (request.ClickClose.HasValue)
-            update = update.Set(n => n.ClickClose, request.ClickClose.Value);
+            updates.Add(updateBuilder.Set(n => n.ClickClose, request.ClickClose.Value));
         
         if (request.Read.HasValue)
-            update = update.Set(n => n.Read, request.Read.Value);
+            updates.Add(updateBuilder.Set(n => n.Read, request.Read.Value));
         
         if (request.Datetime.HasValue)
-            update = update.Set(n => n.Datetime, request.Datetime.Value);
+            updates.Add(updateBuilder.Set(n => n.Datetime, request.Datetime.Value));
 
-        var result = await _notices.UpdateOneAsync(filter, update);
-        
-        if (result.ModifiedCount > 0)
-        {
-            return await GetNoticeByIdAsync(id);
-        }
-        
-        return null;
+        if (updates.Count == 0)
+            return null;
+
+        var updated = await _noticeRepository.UpdateAsync(id, updateBuilder.Combine(updates));
+        return updated ? await GetNoticeByIdAsync(id) : null;
     }
 
     public async Task<bool> DeleteNoticeAsync(string id)
     {
-        var result = await _notices.DeleteOneAsync(n => n.Id == id);
-        return result.DeletedCount > 0;
+        return await _noticeRepository.SoftDeleteAsync(id);
     }
 
     public async Task<bool> MarkAsReadAsync(string id)
     {
-        var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Id, id);
-        var update = Builders<NoticeIconItem>.Update
-            .Set(n => n.Read, true)
-            .Set(n => n.UpdatedAt, DateTime.UtcNow);
-
-        var result = await _notices.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var update = Builders<NoticeIconItem>.Update.Set(n => n.Read, true);
+        return await _noticeRepository.UpdateAsync(id, update);
     }
 
     public async Task<bool> MarkAllAsReadAsync()
     {
         var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Read, false);
-        var update = Builders<NoticeIconItem>.Update
-            .Set(n => n.Read, true)
-            .Set(n => n.UpdatedAt, DateTime.UtcNow);
-
-        var result = await _notices.UpdateManyAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var update = Builders<NoticeIconItem>.Update.Set(n => n.Read, true);
+        
+        var count = await _noticeRepository.UpdateManyAsync(filter, update);
+        return count > 0;
     }
 
     /// <summary>
@@ -143,7 +125,7 @@ public class NoticeService : INoticeService
         
         if (deleteResult.DeletedCount > 0)
         {
-            _logger.LogInformation($"删除了 {deleteResult.DeletedCount} 条旧的 v2.0 通知");
+            LogInformation("删除了 {Count} 条旧的 v2.0 通知", deleteResult.DeletedCount);
         }
 
         // 创建欢迎通知
@@ -157,14 +139,11 @@ public class NoticeService : INoticeService
             Extra = null,   // 不显示额外文字
             Datetime = DateTime.UtcNow,
             Read = false,
-            ClickClose = false,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            ClickClose = false
         };
 
-        await _notices.InsertOneAsync(welcomeNotice);
-        _logger.LogInformation("已创建 v2.0 欢迎通知");
+        await _noticeRepository.CreateAsync(welcomeNotice);
+        LogInformation("已创建 v2.0 欢迎通知");
     }
 
 }

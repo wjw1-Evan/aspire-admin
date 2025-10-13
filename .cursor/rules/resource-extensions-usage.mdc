@@ -1,0 +1,183 @@
+---
+description: 资源检查规范 - 使用 ResourceExtensions 扩展方法
+globs: Platform.ApiService/Controllers/*.cs,Platform.ApiService/Services/*.cs
+---
+
+# 资源检查扩展方法使用规范
+
+## 🎯 核心原则
+
+使用 `ResourceExtensions` 扩展方法简化 null 检查和错误抛出，让代码更流畅易读。
+
+## ✅ 推荐的使用方式
+
+### 1. EnsureFound - 确保资源存在
+
+```csharp
+// 控制器层
+[HttpGet("{id}")]
+public async Task<IActionResult> GetById(string id)
+{
+    var user = await _userService.GetUserByIdAsync(id);
+    return Success(user.EnsureFound("用户", id));  // ✅ 流畅的链式调用
+}
+
+// 服务层
+public async Task<User> GetUserAsync(string id)
+{
+    var user = await _repository.GetByIdAsync(id);
+    return user.EnsureFound("用户", id);  // ✅ 不存在则抛异常
+}
+```
+
+### 2. EnsureSuccess - 确保操作成功
+
+```csharp
+[HttpPut("{id}/activate")]
+public async Task<IActionResult> Activate(string id)
+{
+    var success = await _service.ActivateAsync(id);
+    success.EnsureSuccess("用户", id);  // ✅ 失败则抛异常
+    return Success("激活成功");
+}
+
+[HttpDelete("{id}")]
+public async Task<IActionResult> Delete(string id)
+{
+    var success = await _service.DeleteAsync(id);
+    success.EnsureSuccess("用户", id);  // ✅ 简洁清晰
+    return Success(ErrorMessages.DeleteSuccess);
+}
+```
+
+## ❌ 禁止的做法
+
+```csharp
+// ❌ 不要手动检查 null
+[HttpGet("{id}")]
+public async Task<IActionResult> GetById(string id)
+{
+    var user = await _userService.GetUserByIdAsync(id);
+    if (user == null)
+        throw new KeyNotFoundException($"用户 {id} 不存在");
+    return Success(user);
+}
+
+// ❌ 不要手动检查布尔结果
+[HttpPut("{id}/activate")]
+public async Task<IActionResult> Activate(string id)
+{
+    var success = await _service.ActivateAsync(id);
+    if (!success)
+        throw new KeyNotFoundException($"用户 {id} 不存在");
+    return Success("激活成功");
+}
+
+// ❌ 不要使用不一致的错误消息
+throw new KeyNotFoundException($"用户ID {id} 不存在");
+throw new KeyNotFoundException($"找不到用户 {id}");
+```
+
+## 🔧 扩展方法详解
+
+### EnsureFound<T>
+
+```csharp
+// 签名
+public static T EnsureFound<T>(this T? resource, string resourceName, string? resourceId = null) where T : class
+
+// 用法示例
+var user = await GetUserByIdAsync(id);
+return user.EnsureFound("用户", id);
+
+// 不提供 ID 的情况
+var settings = await GetSettingsAsync();
+return settings.EnsureFound("系统设置");
+
+// 如果 resource 为 null，会抛出 KeyNotFoundException
+// 消息格式: "{resourceName} {resourceId} 不存在" 或 "{resourceName}不存在"
+```
+
+### EnsureSuccess
+
+```csharp
+// 签名
+public static void EnsureSuccess(this bool success, string resourceName, string? resourceId = null)
+
+// 用法示例
+var success = await UpdateAsync(id, request);
+success.EnsureSuccess("用户", id);
+
+// 不提供 ID 的情况
+var success = await SendEmailAsync();
+success.EnsureSuccess("邮件发送");
+
+// 如果 success 为 false，会抛出 KeyNotFoundException
+// 消息格式: "{resourceName} {resourceId} 不存在" 或 "{resourceName}不存在"
+```
+
+## 💡 使用模式
+
+### 模式 1: 链式调用（最推荐）
+```csharp
+[HttpGet("{id}")]
+public async Task<IActionResult> GetById(string id)
+{
+    var entity = await _service.GetByIdAsync(id);
+    return Success(entity.EnsureFound("实体", id));  // ✅ 一行搞定
+}
+```
+
+### 模式 2: 中间验证
+```csharp
+public async Task<User> ProcessUser(string id)
+{
+    var user = await _repository.GetByIdAsync(id);
+    user.EnsureFound("用户", id);  // ✅ 验证后继续处理
+    
+    // 继续处理用户...
+    return user;
+}
+```
+
+### 模式 3: 布尔结果检查
+```csharp
+[HttpPut("{id}")]
+public async Task<IActionResult> Update(string id, [FromBody] UpdateRequest request)
+{
+    var success = await _service.UpdateAsync(id, request);
+    success.EnsureSuccess("实体", id);  // ✅ 检查操作结果
+    return Success(ErrorMessages.UpdateSuccess);
+}
+```
+
+## 🎯 与其他扩展方法配合
+
+```csharp
+// 配合 ValidationExtensions
+[HttpPost]
+public async Task<IActionResult> Create([FromBody] CreateRequest request)
+{
+    request.Name.EnsureNotEmpty("名称");  // ValidationExtensions
+    request.Email.EnsureValidEmail();     // ValidationExtensions
+    
+    var entity = await _service.CreateAsync(request);
+    return Success(entity, ErrorMessages.CreateSuccess);  // ErrorMessages
+}
+
+// 配合 BaseRepository
+public async Task<Entity> GetActiveEntity(string id)
+{
+    var entity = await _repository.GetByIdAsync(id);
+    return entity.EnsureFound("实体", id);  // ResourceExtensions
+}
+```
+
+## 📚 参考实现
+
+查看以下文件作为标准示例：
+- [UserController.cs](mdc:Platform.ApiService/Controllers/UserController.cs)
+- [RoleController.cs](mdc:Platform.ApiService/Controllers/RoleController.cs)
+- [MenuController.cs](mdc:Platform.ApiService/Controllers/MenuController.cs)
+- [ResourceExtensions.cs](mdc:Platform.ApiService/Extensions/ResourceExtensions.cs)
+- [基础组件使用指南](mdc:docs/optimization/BASE-COMPONENTS-GUIDE.md)

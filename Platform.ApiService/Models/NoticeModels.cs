@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Platform.ApiService.Models;
 
-public class NoticeIconItem : ISoftDeletable
+public class NoticeIconItem : ISoftDeletable, IEntity, ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

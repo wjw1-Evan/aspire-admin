@@ -1,0 +1,166 @@
+---
+description: 错误消息规范 - 使用 ErrorMessages 常量类
+globs: Platform.ApiService/Controllers/*.cs,Platform.ApiService/Services/*.cs
+---
+
+# 错误消息使用规范
+
+## 🎯 核心原则
+
+使用 `ErrorMessages` 常量类管理所有错误和成功消息，禁止硬编码字符串。
+
+## ✅ 正确的使用方式
+
+```csharp
+using Platform.ApiService.Constants;
+
+// 成功消息
+return Success(data, ErrorMessages.CreateSuccess);
+return Success(ErrorMessages.UpdateSuccess);
+return Success(ErrorMessages.DeleteSuccess);
+return Success(ErrorMessages.OperationSuccess);
+
+// 格式化消息
+throw new KeyNotFoundException(
+    string.Format(ErrorMessages.ResourceNotFound, "用户")
+);
+
+throw new ArgumentException(
+    string.Format(ErrorMessages.ParameterRequired, "用户名")
+);
+
+throw new InvalidOperationException(
+    string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称")
+);
+
+// 直接使用常量
+throw new UnauthorizedAccessException(ErrorMessages.Unauthorized);
+throw new InvalidOperationException(ErrorMessages.CannotDeleteSelf);
+throw new InvalidOperationException(ErrorMessages.CannotModifyOwnRole);
+```
+
+## ❌ 禁止的做法
+
+```csharp
+// ❌ 不要硬编码成功消息
+return Success(data, "创建成功");
+return Success("操作成功");
+
+// ❌ 不要硬编码错误消息
+throw new KeyNotFoundException($"用户 {id} 不存在");
+throw new ArgumentException("用户名不能为空");
+throw new InvalidOperationException("角色名称已存在");
+
+// ❌ 不要在代码中直接拼接错误消息
+throw new InvalidOperationException($"不能删除有 {count} 个子菜单的菜单");
+```
+
+## 📋 常用 ErrorMessages 常量
+
+### 操作结果
+```csharp
+ErrorMessages.OperationSuccess      // "操作成功"
+ErrorMessages.OperationFailed       // "操作失败"
+ErrorMessages.CreateSuccess         // "创建成功"
+ErrorMessages.UpdateSuccess         // "更新成功"
+ErrorMessages.DeleteSuccess         // "删除成功"
+```
+
+### 资源相关（需要格式化）
+```csharp
+ErrorMessages.ResourceNotFound      // "{0}不存在"
+ErrorMessages.ResourceAlreadyExists // "{0}已存在"
+
+// 使用方式
+string.Format(ErrorMessages.ResourceNotFound, "用户")
+string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称")
+```
+
+### 参数验证（需要格式化）
+```csharp
+ErrorMessages.ParameterRequired     // "{0}不能为空"
+ErrorMessages.ParameterInvalid      // "{0}格式不正确"
+ErrorMessages.ParameterTooLong      // "{0}长度不能超过{1}个字符"
+ErrorMessages.ParameterTooShort     // "{0}长度不能少于{1}个字符"
+
+// 使用方式
+string.Format(ErrorMessages.ParameterRequired, "用户名")
+string.Format(ErrorMessages.ParameterTooLong, "描述", 200)
+```
+
+### 权限相关
+```csharp
+ErrorMessages.Unauthorized          // "无权执行此操作"
+ErrorMessages.PermissionDenied      // "权限不足"
+ErrorMessages.NotAuthenticated      // "未找到用户信息"
+```
+
+### 业务规则
+```csharp
+ErrorMessages.CannotDeleteSelf              // "不能删除自己的账户"
+ErrorMessages.CannotModifyOwnRole           // "不能修改自己的角色"
+ErrorMessages.SystemRoleCannotDelete        // "不能删除系统管理员角色"
+ErrorMessages.CannotRemoveLastAdmin         // "不能移除最后一个管理员的角色"
+ErrorMessages.CannotDeleteMenuWithChildren  // "不能删除有子菜单的菜单，请先删除子菜单"
+```
+
+### 验证消息
+```csharp
+ErrorMessages.InvalidEmailFormat    // "邮箱格式不正确"
+ErrorMessages.InvalidPhoneFormat    // "手机号格式不正确"
+ErrorMessages.InvalidUsernameFormat // "用户名格式不正确"
+ErrorMessages.PasswordTooShort      // "密码长度不能少于6个字符"
+ErrorMessages.PasswordTooLong       // "密码长度不能超过50个字符"
+```
+
+## 💡 最佳实践
+
+### 1. 优先使用常量
+```csharp
+// ✅ 好
+return Success(ErrorMessages.CreateSuccess);
+
+// ❌ 差
+return Success("创建成功");
+```
+
+### 2. 需要格式化时使用 string.Format
+```csharp
+// ✅ 好
+throw new KeyNotFoundException(
+    string.Format(ErrorMessages.ResourceNotFound, "用户")
+);
+
+// ❌ 差
+throw new KeyNotFoundException($"用户 {id} 不存在");
+```
+
+### 3. 配合 ResourceExtensions 使用
+```csharp
+// ✅ 最佳实践
+var user = await _service.GetUserByIdAsync(id);
+return Success(user.EnsureFound("用户", id));
+
+// ResourceExtensions.EnsureFound 会使用 ErrorMessages.ResourceNotFound
+```
+
+## 🎯 添加新的错误消息
+
+如果需要添加新的错误消息，在 [UserConstants.cs](mdc:Platform.ApiService/Constants/UserConstants.cs) 的 `ErrorMessages` 类中添加：
+
+```csharp
+public static class ErrorMessages
+{
+    // 现有常量...
+    
+    // 添加新常量
+    public const string YourNewMessage = "你的新消息";
+    public const string YourFormattedMessage = "{0} 的格式化消息 {1}";
+}
+```
+
+## 📚 参考文档
+
+- [ErrorMessages 定义](mdc:Platform.ApiService/Constants/UserConstants.cs)
+- [基础组件使用指南](mdc:docs/optimization/BASE-COMPONENTS-GUIDE.md)
+- [v5.0 优化前后对比](mdc:docs/optimization/V5-BEFORE-AFTER-COMPARISON.md)

@@ -5,15 +5,17 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class UserService : IUserService
+public class UserService : BaseService, IUserService
 {
-    private readonly IMongoCollection<AppUser> _users;
+    private readonly BaseRepository<AppUser> _userRepository;
     private readonly IMongoCollection<UserActivityLog> _activityLogs;
     private readonly IMongoCollection<Permission> _permissions;
     private readonly IMongoCollection<Role> _roles;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
+    
+    // 快捷访问器，用于需要直接访问集合的场景
+    private IMongoCollection<AppUser> _users => _userRepository.Collection;
 
     public UserService(
         IMongoDatabase database, 
@@ -21,22 +23,14 @@ public class UserService : IUserService
         ILogger<UserService> logger,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService)
+        : base(database, httpContextAccessor, logger)
     {
-        _users = database.GetCollection<AppUser>("users");
-        _activityLogs = database.GetCollection<UserActivityLog>("user_activity_logs");
-        _permissions = database.GetCollection<Permission>("permissions");
-        _roles = database.GetCollection<Role>("roles");
-        _httpContextAccessor = httpContextAccessor;
+        _userRepository = new BaseRepository<AppUser>(database, "users", httpContextAccessor);
+        _activityLogs = GetCollection<UserActivityLog>("user_activity_logs");
+        _permissions = GetCollection<Permission>("permissions");
+        _roles = GetCollection<Role>("roles");
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
-    }
-
-    /// <summary>
-    /// 获取当前操作用户ID
-    /// </summary>
-    private string? GetCurrentUserId()
-    {
-        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
     }
 
     /// <summary>
@@ -44,8 +38,7 @@ public class UserService : IUserService
     /// </summary>
     public async Task<List<AppUser>> GetAllUsersAsync()
     {
-        var filter = MongoFilterExtensions.NotDeleted<AppUser>();
-        return await _users.Find(filter).ToListAsync();
+        return await _userRepository.GetAllAsync();
     }
 
     /// <summary>
@@ -55,8 +48,7 @@ public class UserService : IUserService
     /// <returns>用户对象，不存在或已删除则返回 null</returns>
     public async Task<AppUser?> GetUserByIdAsync(string id)
     {
-        var filter = MongoFilterExtensions.ByIdAndNotDeleted<AppUser>(id);
-        return await _users.Find(filter).FirstOrDefaultAsync();
+        return await _userRepository.GetByIdAsync(id);
     }
 
     public async Task<AppUser> CreateUserAsync(CreateUserRequest request)
@@ -186,43 +178,25 @@ public class UserService : IUserService
     /// </summary>
     public async Task<bool> DeleteUserAsync(string id, string? reason = null)
     {
-        var currentUserId = GetCurrentUserId();
-        var filter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(user => user.Id, id),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
-        );
-        return await _users.SoftDeleteOneAsync(filter, currentUserId, reason);
+        return await _userRepository.SoftDeleteAsync(id, reason);
     }
 
     public async Task<List<AppUser>> SearchUsersByNameAsync(string name)
     {
-        var filter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Regex(user => user.Username, new MongoDB.Bson.BsonRegularExpression(name, "i")),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
-        );
-        return await _users.Find(filter).ToListAsync();
+        var filter = Builders<AppUser>.Filter.Regex(user => user.Username, new MongoDB.Bson.BsonRegularExpression(name, "i"));
+        return await _userRepository.FindAsync(filter);
     }
 
     public async Task<bool> DeactivateUserAsync(string id)
     {
-        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
-        var update = Builders<AppUser>.Update
-            .Set(user => user.IsActive, false)
-            .Set(user => user.UpdatedAt, DateTime.UtcNow);
-
-        var result = await _users.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var update = Builders<AppUser>.Update.Set(user => user.IsActive, false);
+        return await _userRepository.UpdateAsync(id, update);
     }
 
     public async Task<bool> ActivateUserAsync(string id)
     {
-        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, id);
-        var update = Builders<AppUser>.Update
-            .Set(user => user.IsActive, true)
-            .Set(user => user.UpdatedAt, DateTime.UtcNow);
-
-        var result = await _users.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var update = Builders<AppUser>.Update.Set(user => user.IsActive, true);
+        return await _userRepository.UpdateAsync(id, update);
     }
 
     // 新增的用户管理功能
@@ -524,40 +498,26 @@ public class UserService : IUserService
 
     public async Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null)
     {
-        var filter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(user => user.Email, email),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
-        );
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Email, email);
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filter = Builders<AppUser>.Filter.And(
-                filter,
-                Builders<AppUser>.Filter.Ne(user => user.Id, excludeUserId)
-            );
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Ne(user => user.Id, excludeUserId));
         }
 
-        var count = await _users.CountDocumentsAsync(filter);
-        return count > 0;
+        return await _userRepository.ExistsAsync(filter);
     }
 
     public async Task<bool> CheckUsernameExistsAsync(string username, string? excludeUserId = null)
     {
-        var filter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(user => user.Username, username),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
-        );
+        var filter = Builders<AppUser>.Filter.Eq(user => user.Username, username);
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filter = Builders<AppUser>.Filter.And(
-                filter,
-                Builders<AppUser>.Filter.Ne(user => user.Id, excludeUserId)
-            );
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Ne(user => user.Id, excludeUserId));
         }
 
-        var count = await _users.CountDocumentsAsync(filter);
-        return count > 0;
+        return await _userRepository.ExistsAsync(filter);
     }
 
     // 个人中心相关方法

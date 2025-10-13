@@ -1,0 +1,132 @@
+---
+description: 参数验证规范 - 使用 ValidationExtensions 扩展方法
+globs: Platform.ApiService/Controllers/*.cs,Platform.ApiService/Services/*.cs
+---
+
+# 参数验证规范
+
+## 🎯 核心原则
+
+使用 `ValidationExtensions` 扩展方法进行参数验证，避免冗长的 if-else 判断。
+
+## ✅ 推荐的验证方式
+
+```csharp
+// 字符串验证
+request.Username.EnsureNotEmpty("用户名");
+request.Email.EnsureValidEmail();
+request.Password.EnsureValidPassword();
+
+// 对象验证
+request.EnsureNotNull("请求对象");
+
+// 集合验证
+request.UserIds.EnsureNotEmpty("用户ID列表");
+
+// 长度验证
+request.Name.EnsureLength("姓名", 2, 50);
+
+// 范围验证
+request.Age.EnsureInRange("年龄", 18, 120);
+
+// 可选验证（返回布尔值）
+if (email.IsValidEmail())
+{
+    // 处理有效的邮箱
+}
+```
+
+## ❌ 禁止的做法
+
+```csharp
+// ❌ 不要使用冗长的 if 判断
+if (string.IsNullOrEmpty(request.Username))
+    throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "用户名"));
+
+// ❌ 不要重复编写验证逻辑
+if (string.IsNullOrWhiteSpace(email))
+{
+    throw new ArgumentException("邮箱不能为空");
+}
+try
+{
+    var addr = new System.Net.Mail.MailAddress(email);
+    if (addr.Address != email)
+    {
+        throw new ArgumentException("邮箱格式不正确");
+    }
+}
+catch
+{
+    throw new ArgumentException("邮箱格式不正确");
+}
+
+// ❌ 不要硬编码错误消息
+throw new ArgumentException("用户名不能为空");
+
+// ✅ 应该使用
+request.Username.EnsureNotEmpty("用户名");
+```
+
+## 📋 可用的验证方法
+
+### 字符串验证
+- `EnsureNotEmpty(paramName)` - 确保不为空
+- `EnsureLength(paramName, min, max)` - 验证长度范围
+- `EnsureValidEmail(paramName)` - 验证邮箱格式
+- `EnsureValidUsername(paramName)` - 验证用户名格式（3-20字符，字母数字下划线）
+- `EnsureValidPassword(paramName)` - 验证密码强度（6-50字符）
+
+### 对象验证
+- `EnsureNotNull(paramName)` - 确保对象不为null
+
+### 集合验证
+- `EnsureNotEmpty(paramName)` - 确保集合不为空且有元素
+
+### 数值验证
+- `EnsureInRange(paramName, min, max)` - 验证值在范围内
+
+### 判断方法（不抛异常）
+- `IsValidEmail()` - 判断邮箱是否有效
+- `IsValidUsername()` - 判断用户名是否有效
+- `IsValidPassword()` - 判断密码是否有效
+
+### 实用方法
+- `NullIfEmpty()` - 空字符串转 null（用于可选参数）
+- `Truncate(maxLength)` - 截断字符串到指定长度
+
+## 🎯 使用场景
+
+### 控制器层
+```csharp
+[HttpPost]
+public async Task<IActionResult> Create([FromBody] CreateRequest request)
+{
+    // ✅ 使用扩展方法验证
+    request.Name.EnsureNotEmpty("名称");
+    request.Email.EnsureValidEmail();
+    request.UserIds.EnsureNotEmpty("用户列表");
+    
+    var result = await _service.CreateAsync(request);
+    return Success(result, ErrorMessages.CreateSuccess);
+}
+```
+
+### 服务层
+```csharp
+public async Task<User> CreateUserAsync(CreateUserRequest request)
+{
+    // ✅ 在服务层也可以使用
+    request.Username.EnsureValidUsername();
+    request.Password.EnsureValidPassword();
+    request.Email.EnsureValidEmail();
+    
+    // 业务逻辑...
+}
+```
+
+## 📚 参考文档
+
+- [ValidationExtensions.cs](mdc:Platform.ApiService/Extensions/ValidationExtensions.cs)
+- [ErrorMessages 常量](mdc:Platform.ApiService/Constants/UserConstants.cs)
+- [基础组件使用指南](mdc:docs/optimization/BASE-COMPONENTS-GUIDE.md)

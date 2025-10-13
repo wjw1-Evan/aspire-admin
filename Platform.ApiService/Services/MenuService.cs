@@ -5,30 +5,22 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class MenuService : IMenuService
+public class MenuService : BaseService, IMenuService
 {
-    private readonly IMongoCollection<Menu> _menus;
+    private readonly BaseRepository<Menu> _menuRepository;
     private readonly IMongoCollection<Role> _roles;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<MenuService> _logger;
+    
+    // 快捷访问器
+    private IMongoCollection<Menu> _menus => _menuRepository.Collection;
 
     public MenuService(
         IMongoDatabase database, 
         IHttpContextAccessor httpContextAccessor,
         ILogger<MenuService> logger)
+        : base(database, httpContextAccessor, logger)
     {
-        _menus = database.GetCollection<Menu>("menus");
-        _roles = database.GetCollection<Role>("roles");
-        _httpContextAccessor = httpContextAccessor;
-        _logger = logger;
-    }
-
-    /// <summary>
-    /// 获取当前操作用户ID
-    /// </summary>
-    private string? GetCurrentUserId()
-    {
-        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
+        _menuRepository = new BaseRepository<Menu>(database, "menus", httpContextAccessor);
+        _roles = GetCollection<Role>("roles");
     }
 
     /// <summary>
@@ -36,10 +28,8 @@ public class MenuService : IMenuService
     /// </summary>
     public async Task<List<Menu>> GetAllMenusAsync()
     {
-        var filter = MongoFilterExtensions.NotDeleted<Menu>();
-        return await _menus.Find(filter)
-            .SortBy(m => m.SortOrder)
-            .ToListAsync();
+        var sort = Builders<Menu>.Sort.Ascending(m => m.SortOrder);
+        return await _menuRepository.GetAllAsync(sort);
     }
 
     /// <summary>
@@ -129,11 +119,7 @@ public class MenuService : IMenuService
     /// </summary>
     public async Task<Menu?> GetMenuByIdAsync(string id)
     {
-        var filter = Builders<Menu>.Filter.And(
-            Builders<Menu>.Filter.Eq(m => m.Id, id),
-            MongoFilterExtensions.NotDeleted<Menu>()
-        );
-        return await _menus.Find(filter).FirstOrDefaultAsync();
+        return await _menuRepository.GetByIdAsync(id);
     }
 
     /// <summary>
@@ -154,14 +140,10 @@ public class MenuService : IMenuService
             OpenInNewTab = request.OpenInNewTab,
             HideInMenu = request.HideInMenu,
             ParentId = request.ParentId,
-            Permissions = request.Permissions,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            Permissions = request.Permissions
         };
 
-        await _menus.InsertOneAsync(menu);
-        return menu;
+        return await _menuRepository.CreateAsync(menu);
     }
 
     /// <summary>
@@ -170,10 +152,7 @@ public class MenuService : IMenuService
     public async Task<bool> UpdateMenuAsync(string id, UpdateMenuRequest request)
     {
         var updateBuilder = Builders<Menu>.Update;
-        var updates = new List<UpdateDefinition<Menu>>
-        {
-            updateBuilder.Set(m => m.UpdatedAt, DateTime.UtcNow)
-        };
+        var updates = new List<UpdateDefinition<Menu>>();
 
         if (request.Name != null)
             updates.Add(updateBuilder.Set(m => m.Name, request.Name));
@@ -200,12 +179,10 @@ public class MenuService : IMenuService
         if (request.Permissions != null)
             updates.Add(updateBuilder.Set(m => m.Permissions, request.Permissions));
 
-        var result = await _menus.UpdateOneAsync(
-            m => m.Id == id,
-            updateBuilder.Combine(updates)
-        );
+        if (updates.Count == 0)
+            return false;
 
-        return result.ModifiedCount > 0;
+        return await _menuRepository.UpdateAsync(id, updateBuilder.Combine(updates));
     }
 
     /// <summary>
@@ -252,21 +229,15 @@ public class MenuService : IMenuService
                 await _roles.UpdateOneAsync(r => r.Id == role.Id, update);
             }
             
-            _logger.LogInformation($"已从 {rolesWithMenu.Count} 个角色的菜单列表中移除菜单 {menu.Name} ({id})");
+            LogInformation("已从 {RoleCount} 个角色的菜单列表中移除菜单 {MenuName} ({MenuId})", rolesWithMenu.Count, menu.Name, id);
         }
 
         // 软删除菜单
-        var currentUserId = GetCurrentUserId();
-        var filter = Builders<Menu>.Filter.And(
-            Builders<Menu>.Filter.Eq(m => m.Id, id),
-            MongoFilterExtensions.NotDeleted<Menu>()
-        );
-        
-        var deleted = await _menus.SoftDeleteOneAsync(filter, currentUserId, reason);
+        var deleted = await _menuRepository.SoftDeleteAsync(id, reason);
         
         if (deleted)
         {
-            _logger.LogInformation($"已删除菜单: {menu.Name} ({id}), 原因: {reason ?? "未提供"}");
+            LogInformation("已删除菜单: {MenuName} ({MenuId}), 原因: {Reason}", menu.Name, id, reason ?? "未提供");
         }
         
         return deleted;

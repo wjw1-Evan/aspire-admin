@@ -136,7 +136,7 @@ public class PageParams
 }
 
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如旧的 role 字段）
-public class AppUser : ISoftDeletable, IEntity
+public class AppUser : ISoftDeletable, IEntity, ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

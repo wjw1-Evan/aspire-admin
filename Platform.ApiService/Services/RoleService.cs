@@ -5,30 +5,24 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class RoleService : IRoleService
+public class RoleService : BaseService, IRoleService
 {
-    private readonly IMongoCollection<Role> _roles;
+    private readonly BaseRepository<Role> _roleRepository;
     private readonly IMongoCollection<AppUser> _users;
     private readonly IMongoCollection<Permission> _permissions;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    
+    // 快捷访问器
+    private IMongoCollection<Role> _roles => _roleRepository.Collection;
 
     public RoleService(
         IMongoDatabase database, 
         IHttpContextAccessor httpContextAccessor,
         ILogger<RoleService> logger)
+        : base(database, httpContextAccessor, logger)
     {
-        _roles = database.GetCollection<Role>("roles");
-        _users = database.GetCollection<AppUser>("users");
-        _permissions = database.GetCollection<Permission>("permissions");
-        _httpContextAccessor = httpContextAccessor;
-    }
-
-    /// <summary>
-    /// 获取当前操作用户ID
-    /// </summary>
-    private string? GetCurrentUserId()
-    {
-        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
+        _roleRepository = new BaseRepository<Role>(database, "roles", httpContextAccessor);
+        _users = GetCollection<AppUser>("users");
+        _permissions = GetCollection<Permission>("permissions");
     }
 
     /// <summary>
@@ -36,10 +30,8 @@ public class RoleService : IRoleService
     /// </summary>
     public async Task<RoleListResponse> GetAllRolesAsync()
     {
-        var filter = MongoFilterExtensions.NotDeleted<Role>();
-        var roles = await _roles.Find(filter)
-            .SortBy(r => r.CreatedAt)
-            .ToListAsync();
+        var sort = Builders<Role>.Sort.Ascending(r => r.CreatedAt);
+        var roles = await _roleRepository.GetAllAsync(sort);
 
         return new RoleListResponse
         {
@@ -97,11 +89,7 @@ public class RoleService : IRoleService
     /// </summary>
     public async Task<Role?> GetRoleByIdAsync(string id)
     {
-        var filter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.Eq(r => r.Id, id),
-            MongoFilterExtensions.NotDeleted<Role>()
-        );
-        return await _roles.Find(filter).FirstOrDefaultAsync();
+        return await _roleRepository.GetByIdAsync(id);
     }
 
     /// <summary>
@@ -109,11 +97,8 @@ public class RoleService : IRoleService
     /// </summary>
     public async Task<Role?> GetRoleByNameAsync(string name)
     {
-        var filter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.Eq(r => r.Name, name),
-            MongoFilterExtensions.NotDeleted<Role>()
-        );
-        return await _roles.Find(filter).FirstOrDefaultAsync();
+        var filter = Builders<Role>.Filter.Eq(r => r.Name, name);
+        return await _roleRepository.FindOneAsync(filter);
     }
 
     /// <summary>
@@ -125,7 +110,7 @@ public class RoleService : IRoleService
         var existingRole = await GetRoleByNameAsync(request.Name);
         if (existingRole != null)
         {
-            throw new InvalidOperationException($"角色名称 '{request.Name}' 已存在");
+            throw new InvalidOperationException(string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称"));
         }
 
         var role = new Role
@@ -133,14 +118,10 @@ public class RoleService : IRoleService
             Name = request.Name,
             Description = request.Description,
             MenuIds = request.MenuIds,
-            IsActive = request.IsActive,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsActive = request.IsActive
         };
 
-        await _roles.InsertOneAsync(role);
-        return role;
+        return await _roleRepository.CreateAsync(role);
     }
 
     /// <summary>
@@ -149,10 +130,7 @@ public class RoleService : IRoleService
     public async Task<bool> UpdateRoleAsync(string id, UpdateRoleRequest request)
     {
         var updateBuilder = Builders<Role>.Update;
-        var updates = new List<UpdateDefinition<Role>>
-        {
-            updateBuilder.Set(r => r.UpdatedAt, DateTime.UtcNow)
-        };
+        var updates = new List<UpdateDefinition<Role>>();
 
         if (request.Name != null)
         {
@@ -160,7 +138,7 @@ public class RoleService : IRoleService
             var existingRole = await GetRoleByNameAsync(request.Name);
             if (existingRole != null && existingRole.Id != id)
             {
-                throw new InvalidOperationException($"角色名称 '{request.Name}' 已存在");
+                throw new InvalidOperationException(string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称"));
             }
             updates.Add(updateBuilder.Set(r => r.Name, request.Name));
         }
@@ -172,12 +150,10 @@ public class RoleService : IRoleService
         if (request.IsActive.HasValue)
             updates.Add(updateBuilder.Set(r => r.IsActive, request.IsActive.Value));
 
-        var result = await _roles.UpdateOneAsync(
-            r => r.Id == id,
-            updateBuilder.Combine(updates)
-        );
+        if (updates.Count == 0)
+            return false;
 
-        return result.ModifiedCount > 0;
+        return await _roleRepository.UpdateAsync(id, updateBuilder.Combine(updates));
     }
 
     /// <summary>
@@ -229,17 +205,11 @@ public class RoleService : IRoleService
         }
 
         // 软删除角色
-        var currentUserId = GetCurrentUserId();
-        var filter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.Eq(r => r.Id, id),
-            MongoFilterExtensions.NotDeleted<Role>()
-        );
-        
-        var deleted = await _roles.SoftDeleteOneAsync(filter, currentUserId, reason);
+        var deleted = await _roleRepository.SoftDeleteAsync(id, reason);
         
         if (deleted)
         {
-            Console.WriteLine($"已删除角色: {role.Name} ({id}), 原因: {reason ?? "未提供"}");
+            LogInformation("已删除角色: {RoleName} ({RoleId}), 原因: {Reason}", role.Name, id, reason ?? "未提供");
         }
         
         return deleted;

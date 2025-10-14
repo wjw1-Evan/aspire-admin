@@ -28,14 +28,20 @@ export const CompanySwitcher: React.FC = () => {
         '/api/company/my-companies',
         {
           method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
         }
       );
 
       if (response.success && response.data) {
         setCompanies(response.data);
+      } else {
+        message.error(response.errorMessage || '加载企业列表失败');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('加载企业列表失败:', error);
+      message.error(error.message || '加载企业列表失败');
     } finally {
       setLoading(false);
     }
@@ -54,6 +60,10 @@ export const CompanySwitcher: React.FC = () => {
         '/api/company/switch',
         {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
           data: {
             targetCompanyId,
           },
@@ -62,6 +72,11 @@ export const CompanySwitcher: React.FC = () => {
 
       if (response.success && response.data) {
         message.success(`已切换到：${response.data.companyName}`);
+
+        // 更新本地存储的token（如果后端返回了新token）
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
 
         // 重新加载用户信息
         if (initialState?.fetchUserInfo) {

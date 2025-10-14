@@ -382,6 +382,7 @@ declare namespace API {
     companyName: string;
     menus: MenuTreeNode[];
     permissionCodes: string[];
+    token?: string;  // 可选的新token
   };
 
   type CompanyMemberItem = {

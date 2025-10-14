@@ -2,6 +2,8 @@ using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 
+#pragma warning disable CS0618 // 抑制过时API警告 - 脚本需要访问过时属性以确保兼容性
+
 namespace Platform.ApiService.Scripts;
 
 public class CreateAdminUser

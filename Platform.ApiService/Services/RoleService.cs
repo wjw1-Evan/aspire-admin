@@ -10,6 +10,7 @@ public class RoleService : BaseService, IRoleService
     private readonly BaseRepository<Role> _roleRepository;
     private readonly IMongoCollection<AppUser> _users;
     private readonly IMongoCollection<Permission> _permissions;
+    private readonly IMongoCollection<UserCompany> _userCompanies;
     
     // 快捷访问器
     private IMongoCollection<Role> _roles => _roleRepository.Collection;
@@ -24,6 +25,7 @@ public class RoleService : BaseService, IRoleService
         _roleRepository = new BaseRepository<Role>(database, "roles", httpContextAccessor, tenantContext);
         _users = GetCollection<AppUser>("users");
         _permissions = GetCollection<Permission>("permissions");
+        _userCompanies = GetCollection<UserCompany>("user_companies");
     }
 
     /// <summary>
@@ -55,12 +57,13 @@ public class RoleService : BaseService, IRoleService
         
         foreach (var role in roles)
         {
-            // 统计使用此角色的用户数量
-            var userFilter = Builders<AppUser>.Filter.And(
-                Builders<AppUser>.Filter.AnyIn(u => u.RoleIds, new[] { role.Id! }),
-                SoftDeleteExtensions.NotDeleted<AppUser>()
+            // v3.1: 从 UserCompany 表统计使用此角色的用户数量
+            var userCompanyFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, new[] { role.Id! }),
+                Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
             );
-            var userCount = await _users.CountDocumentsAsync(userFilter);
+            var userCount = await _userCompanies.CountDocumentsAsync(userCompanyFilter);
             
             rolesWithStats.Add(new RoleWithStats
             {
@@ -175,34 +178,49 @@ public class RoleService : BaseService, IRoleService
             throw new InvalidOperationException("不能删除系统管理员角色");
         }
         
-        // 查找使用此角色的用户数量（仅用于日志）
-        var usersFilter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.AnyIn(u => u.RoleIds, new[] { id }),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
+        // v3.1: 从 UserCompany 表查找使用此角色的记录
+        var userCompanyFilter = Builders<UserCompany>.Filter.And(
+            Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, new[] { id }),
+            Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
         );
-        var usersWithRole = await _users.Find(usersFilter).ToListAsync();
+        var userCompaniesWithRole = await _userCompanies.Find(userCompanyFilter).ToListAsync();
         
-        // 自动从所有用户的 RoleIds 中移除此角色
-        if (usersWithRole.Count > 0)
+        // 自动从所有 UserCompany 记录的 RoleIds 中移除此角色
+        if (userCompaniesWithRole.Count > 0)
         {
-            foreach (var user in usersWithRole)
+            foreach (var userCompany in userCompaniesWithRole)
             {
-                var newRoleIds = user.RoleIds.Where(rid => rid != id).ToList();
+                var newRoleIds = userCompany.RoleIds.Where(rid => rid != id).ToList();
                 
-                // 检查是否是最后一个管理员角色
-                if (role.Name?.ToLower() == "admin" && newRoleIds.Count == 0)
+                // 检查是否是最后一个管理员角色，如果用户是管理员且没有其他角色
+                if (userCompany.IsAdmin && newRoleIds.Count == 0)
                 {
-                    throw new InvalidOperationException("不能移除最后一个管理员的角色，必须至少保留一个管理员");
+                    // 检查该企业是否还有其他管理员
+                    var otherAdminFilter = Builders<UserCompany>.Filter.And(
+                        Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, userCompany.CompanyId),
+                        Builders<UserCompany>.Filter.Ne(uc => uc.Id, userCompany.Id),
+                        Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true),
+                        Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+                        Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+                    );
+                    var hasOtherAdmin = await _userCompanies.Find(otherAdminFilter).AnyAsync();
+                    
+                    if (!hasOtherAdmin)
+                    {
+                        throw new InvalidOperationException("不能移除最后一个管理员的角色，必须至少保留一个管理员");
+                    }
                 }
                 
-                var update = Builders<AppUser>.Update
-                    .Set(u => u.RoleIds, newRoleIds)
-                    .Set(u => u.UpdatedAt, DateTime.UtcNow);
+                var update = Builders<UserCompany>.Update
+                    .Set(uc => uc.RoleIds, newRoleIds)
+                    .Set(uc => uc.UpdatedAt, DateTime.UtcNow);
                     
-                await _users.UpdateOneAsync(u => u.Id == user.Id, update);
+                await _userCompanies.UpdateOneAsync(uc => uc.Id == userCompany.Id, update);
             }
             
-            Console.WriteLine($"已从 {usersWithRole.Count} 个用户的角色列表中移除角色 {role.Name} ({id})");
+            LogInformation("删除角色 {RoleName} 时，自动从 {UserCompanyCount} 个 UserCompany 记录中移除", 
+                role.Name!, userCompaniesWithRole.Count);
         }
 
         // 软删除角色
@@ -210,7 +228,7 @@ public class RoleService : BaseService, IRoleService
         
         if (deleted)
         {
-            LogInformation("已删除角色: {RoleName} ({RoleId}), 原因: {Reason}", role.Name, id, reason ?? "未提供");
+            LogInformation("已删除角色: {RoleName} ({RoleId}), 原因: {Reason}", role.Name!, id, reason ?? "未提供");
         }
         
         return deleted;

@@ -82,7 +82,7 @@ public class CompanyService : BaseService, ICompanyService
         {
             // 2. 创建默认权限（属于该企业）
             var permissions = await CreateDefaultPermissionsAsync(company.Id!);
-            LogInformation("为企业 {CompanyId} 创建了 {Count} 个默认权限", company.Id, permissions.Count);
+            LogInformation("为企业 {CompanyId} 创建了 {Count} 个默认权限", company.Id!, permissions.Count);
 
             // 3. 创建默认管理员角色（拥有所有权限）
             var adminRole = new Role
@@ -95,11 +95,11 @@ public class CompanyService : BaseService, ICompanyService
                 IsActive = true
             };
             await _roles.InsertOneAsync(adminRole);
-            LogInformation("为企业 {CompanyId} 创建管理员角色: {RoleId}", company.Id, adminRole.Id);
+            LogInformation("为企业 {CompanyId} 创建管理员角色: {RoleId}", company.Id!, adminRole.Id!);
 
             // 4. 创建默认菜单（属于该企业）
             var menus = await CreateDefaultMenusAsync(company.Id!);
-            LogInformation("为企业 {CompanyId} 创建了 {Count} 个默认菜单", company.Id, menus.Count);
+            LogInformation("为企业 {CompanyId} 创建了 {Count} 个默认菜单", company.Id!, menus.Count);
 
             // 5. 更新管理员角色的菜单权限
             var update = Builders<Role>.Update.Set(r => r.MenuIds, menus.Select(m => m.Id!).ToList());
@@ -111,12 +111,12 @@ public class CompanyService : BaseService, ICompanyService
                 Username = request.AdminUsername,
                 Email = request.AdminEmail,
                 PasswordHash = _passwordHasher.HashPassword(request.AdminPassword),
-                CompanyId = company.Id!,
-                RoleIds = new List<string> { adminRole.Id! },
+                CurrentCompanyId = company.Id!,  // v3.1: 使用 CurrentCompanyId
+                // v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，而不是 AppUser.RoleIds
                 IsActive = true
             };
             await _users.InsertOneAsync(adminUser);
-            LogInformation("为企业 {CompanyId} 创建管理员用户: {Username}", company.Id, adminUser.Username);
+            LogInformation("为企业 {CompanyId} 创建管理员用户: {Username}", company.Id!, adminUser.Username!);
 
             return company;
         }
@@ -124,7 +124,7 @@ public class CompanyService : BaseService, ICompanyService
         {
             // 如果后续步骤失败，删除已创建的企业
             await _companies.DeleteOneAsync(c => c.Id == company.Id);
-            LogError(ex, "企业注册失败，回滚已创建的企业: {CompanyId}", company.Id);
+            LogError(ex, "企业注册失败，回滚已创建的企业: {CompanyId}", company.Id!);
             throw new InvalidOperationException($"企业注册失败: {ex.Message}", ex);
         }
     }
@@ -200,7 +200,10 @@ public class CompanyService : BaseService, ICompanyService
             throw new KeyNotFoundException(CompanyErrorMessages.CompanyNotFound);
         }
 
+        // TODO: v3.1重构 - 应该基于 UserCompany 关系统计用户数量
+#pragma warning disable CS0618 // 抑制过时API警告 - 暂时保留以确保兼容性
         var companyFilter = Builders<AppUser>.Filter.Eq(u => u.CompanyId, companyId);
+#pragma warning restore CS0618
         var notDeletedFilter = Builders<AppUser>.Filter.Eq(u => u.IsDeleted, false);
         var activeFilter = Builders<AppUser>.Filter.Eq(u => u.IsActive, true);
 

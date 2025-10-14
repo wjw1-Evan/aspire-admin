@@ -105,7 +105,7 @@ public class JwtService : IJwtService
             new("type", "refresh"),
             new("userId", user.Id ?? string.Empty),
             new("username", user.Username),
-            new("companyId", user.CompanyId),  // 新增：企业ID
+            new("companyId", user.CurrentCompanyId ?? string.Empty),  // v3.1: 使用 CurrentCompanyId
             new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 

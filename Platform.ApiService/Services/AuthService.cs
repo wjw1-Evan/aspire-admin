@@ -349,7 +349,7 @@ public class AuthService : IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await companies.InsertOneAsync(company, new InsertOneOptions(), session);
+            await companies.InsertOneAsync(session, company, new InsertOneOptions());
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
             
             // 2. 创建默认权限
@@ -373,7 +373,7 @@ public class AuthService : IAuthService
                 permissionList.Add(permission);
             }
             
-            await permissions.InsertManyAsync(permissionList, new InsertManyOptions(), session);
+            await permissions.InsertManyAsync(session, permissionList, new InsertManyOptions());
             _logger.LogInformation("创建 {Count} 个默认权限", permissionList.Count);
             
             // 3. 创建管理员角色
@@ -389,11 +389,11 @@ public class AuthService : IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await roles.InsertOneAsync(adminRole, new InsertOneOptions(), session);
+            await roles.InsertOneAsync(session, adminRole, new InsertOneOptions());
             
             // 4. 创建默认菜单
             var defaultMenus = CreateDefaultMenus(company.Id!);
-            await menus.InsertManyAsync(defaultMenus, new InsertManyOptions(), session);
+            await menus.InsertManyAsync(session, defaultMenus, new InsertManyOptions());
             
             // 5. 更新角色的菜单权限
             var updateRole = Builders<Role>.Update.Set(r => r.MenuIds, defaultMenus.Select(m => m.Id!).ToList());
@@ -416,7 +416,7 @@ public class AuthService : IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await userCompanies.InsertOneAsync(userCompany, new InsertOneOptions(), session);
+            await userCompanies.InsertOneAsync(session, userCompany, new InsertOneOptions());
             
             // P0修复: 提交事务
             await session.CommitTransactionAsync();

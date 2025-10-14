@@ -64,12 +64,8 @@ public class UserController : BaseApiController
     [RequirePermission(PermissionResources.User, PermissionActions.Update)]
     public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
     {
-        // 检查是否修改自己的角色（不允许）
-        var currentUserId = CurrentUserId;
-        if (currentUserId == id && request.RoleIds != null)
-        {
-            throw new InvalidOperationException(ErrorMessages.CannotModifyOwnRole);
-        }
+        // v3.1: 角色管理已移至 UserCompanyService，通过企业成员管理API处理
+        // 用户角色的修改请使用 PUT /api/company/{companyId}/members/{userId}/roles
         
         var user = await _userService.UpdateUserManagementAsync(id, request);
         if (user == null)

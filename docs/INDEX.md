@@ -29,6 +29,9 @@ docs/
 - [**业务逻辑检查与修复**](reports/BUSINESS-LOGIC-REVIEW-AND-FIXES.md) - v3.0 业务流程优化报告 ⭐ **最新**
 - [**用户加入流程实施**](reports/USER-JOIN-FLOW-IMPLEMENTATION.md) - 用户注册流程修复
 - [**v3.0 多租户实施完成**](reports/MULTI-TENANT-IMPLEMENTATION-COMPLETE.md) - 多企业多用户管理系统实施报告
+- [业务逻辑修复总结](reports/BUSINESS-LOGIC-FIXES-SUMMARY.md) - v3.0 业务逻辑修复清单
+- [业务流程分析](reports/BUSINESS-PROCESS-ANALYSIS.md) - v3.1 业务流程分析报告
+- [第二轮修复总结](reports/SECOND-ROUND-FIXES-SUMMARY.md) - v3.0 第二轮业务逻辑修复总结
 
 ### v2.0 版本更新
 - [v2.0 更新总结](features/v2.0-UPDATES-SUMMARY.md) - 完整的 v2.0 版本更新说明
@@ -42,6 +45,18 @@ docs/
 - [v3.0 最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - 完整的最终报告
 - [代码质量改进指南](optimization/CODE-QUALITY-IMPROVEMENTS.md) - 最佳实践指南
 - [组件优化指南](optimization/COMPONENT-OPTIMIZATION-GUIDE.md) - 组件拆分和性能优化
+
+### v3.1 版本更新（多企业隶属架构）
+- [v3.1 快速开始](features/QUICK-START-V3.1.md) - v3.1 多企业隶属架构快速上手指南 ⭐ **推荐**
+- [v3.1 架构变更提案](features/V3.1-ARCHITECTURE-CHANGE-PROPOSAL.md) - 多企业隶属架构设计方案
+- [多租户系统说明](features/MULTI-TENANT-README.md) - 多租户系统实施完成说明
+- [v3.1 实施完成](reports/V3.1-IMPLEMENTATION-COMPLETE.md) - 完整实施报告
+- [v3.1 最终总结](reports/V3.1-FINAL-SUMMARY.md) - 项目完成总结
+- [v3.1 后端完成](reports/V3.1-BACKEND-COMPLETE.md) - 后端架构完成报告
+- [v3.1 核心功能完成](reports/V3.1-CORE-FEATURES-COMPLETE.md) - 核心功能实现报告
+- [v3.1 实施进度](reports/V3.1-IMPLEMENTATION-PROGRESS.md) - 实施进度跟踪
+- [v3.1 中期报告](reports/V3.1-INTERIM-REPORT.md) - 中期实施报告
+- [v3.1 阶段2完成](reports/V3.1-PHASE2-COMPLETE.md) - 核心架构完成报告
 
 ### 核心功能
 
@@ -117,6 +132,11 @@ docs/
 - [路由修复](bugfixes/BUGFIX-ROUTES.md) - 路由问题
 - [用户日志修复](bugfixes/BUGFIX-USER-LOG.md) - 日志问题
 - [表格操作列修复](bugfixes/TABLE-ACTION-COLUMN-FIX.md) - 表格组件
+
+#### 登录和安全修复
+- [紧急登录修复](bugfixes/CRITICAL-LOGIN-FIX-SUMMARY.md) - 登录安全漏洞修复报告 ⚠️ **重要**
+- [登录企业代码问题分析](bugfixes/LOGIN-COMPANY-CODE-ISSUE-ANALYSIS.md) - 企业代码登录问题排查
+- [企业代码验证问题](bugfixes/WHY-ANY-COMPANY-CODE-WORKS.md) - 企业代码验证逻辑问题
 
 #### API 修复
 - [API 504 错误修复](reports/API-504-ERROR-FIX.md) - 网关超时问题

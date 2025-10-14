@@ -16,11 +16,13 @@ public class MenuController : BaseApiController
 {
     private readonly IMenuService _menuService;
     private readonly IUserService _userService;
+    private readonly IUserCompanyService _userCompanyService;
 
-    public MenuController(IMenuService menuService, IUserService userService)
+    public MenuController(IMenuService menuService, IUserService userService, IUserCompanyService userCompanyService)
     {
         _menuService = menuService;
         _userService = userService;
+        _userCompanyService = userCompanyService;
     }
 
     /// <summary>
@@ -53,11 +55,15 @@ public class MenuController : BaseApiController
     {
         var userId = GetRequiredUserId();
         var user = (await _userService.GetUserByIdAsync(userId)).EnsureFound("用户", userId);
+        
+        if (string.IsNullOrEmpty(user.CurrentCompanyId))
+        {
+            return Success(new List<MenuTreeNode>());
+        }
 
-        // 如果用户有 roleIds，使用它；否则返回空列表
-        var roleIds = user.RoleIds != null && user.RoleIds.Any()
-            ? user.RoleIds
-            : new List<string>();
+        // v3.1: 从 UserCompany 表获取用户在当前企业的角色
+        var userCompany = await _userCompanyService.GetUserCompanyAsync(userId, user.CurrentCompanyId);
+        var roleIds = userCompany?.RoleIds ?? new List<string>();
 
         var userMenus = await _menuService.GetUserMenusAsync(roleIds);
         return Success(userMenus);

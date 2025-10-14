@@ -1,6 +1,8 @@
 using MongoDB.Driver;
 using Platform.ApiService.Models;
 
+#pragma warning disable CS0618 // 抑制过时API警告 - 迁移脚本需要访问过时属性
+
 namespace Platform.ApiService.Scripts;
 
 /// <summary>

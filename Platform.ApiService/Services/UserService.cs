@@ -11,6 +11,7 @@ public class UserService : BaseService, IUserService
     private readonly IMongoCollection<UserActivityLog> _activityLogs;
     private readonly IMongoCollection<Permission> _permissions;
     private readonly IMongoCollection<Role> _roles;
+    private readonly IMongoCollection<UserCompany> _userCompanies;
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
     
@@ -30,6 +31,7 @@ public class UserService : BaseService, IUserService
         _activityLogs = GetCollection<UserActivityLog>("user_activity_logs");
         _permissions = GetCollection<Permission>("permissions");
         _roles = GetCollection<Role>("roles");
+        _userCompanies = GetCollection<UserCompany>("user_companies");
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
     }
@@ -58,7 +60,7 @@ public class UserService : BaseService, IUserService
         {
             Username = request.Name,
             Email = request.Email,
-            RoleIds = new List<string>(), // 空角色列表，需要管理员分配
+            // v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，而不是 AppUser.RoleIds
             IsActive = true,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
@@ -102,7 +104,7 @@ public class UserService : BaseService, IUserService
                 // 统计当前企业的用户数（不包括已删除）
                 var currentUserCount = await _users.CountDocumentsAsync(
                     Builders<AppUser>.Filter.And(
-                        Builders<AppUser>.Filter.Eq(u => u.CompanyId, companyId),
+                        Builders<AppUser>.Filter.Eq(u => u.CurrentCompanyId, companyId),
                         Builders<AppUser>.Filter.Eq(u => u.IsDeleted, false)
                     )
                 );
@@ -129,7 +131,8 @@ public class UserService : BaseService, IUserService
             Username = request.Username,
             Email = request.Email,
             PasswordHash = passwordHash,
-            RoleIds = validatedRoleIds,
+            // v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，而不是 AppUser.RoleIds
+            // 角色分配将在创建用户后通过 UserCompany 关系处理
             IsActive = request.IsActive,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
@@ -190,12 +193,8 @@ public class UserService : BaseService, IUserService
             update = update.Set(user => user.Email, request.Email);
         }
 
-        // v3.0 多租户：验证角色归属
-        if (request.RoleIds != null)
-        {
-            var validatedRoleIds = await ValidateRoleOwnershipAsync(request.RoleIds);
-            update = update.Set(user => user.RoleIds, validatedRoleIds);
-        }
+        // v3.1: 角色管理已移至 UserCompany 表，通过 UserCompanyService 处理
+        // 如果需要更新用户角色，请使用 UserCompanyService.UpdateMemberRolesAsync
 
         if (request.IsActive.HasValue)
             update = update.Set(user => user.IsActive, request.IsActive.Value);
@@ -251,10 +250,27 @@ public class UserService : BaseService, IUserService
             filter = Builders<AppUser>.Filter.And(filter, searchFilter);
         }
 
-        // 角色过滤（按 RoleIds）
+        // v3.1: 角色过滤基于 UserCompany.RoleIds
         if (request.RoleIds != null && request.RoleIds.Count > 0)
         {
-            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.AnyIn(user => user.RoleIds, request.RoleIds));
+            // 首先从 UserCompany 表获取拥有指定角色的用户ID列表
+            var userCompanyFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, request.RoleIds),
+                Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+            );
+            var userCompaniesWithRoles = await _userCompanies.Find(userCompanyFilter).ToListAsync();
+            var userIdsWithRoles = userCompaniesWithRoles.Select(uc => uc.UserId).Distinct().ToList();
+            
+            if (userIdsWithRoles.Count > 0)
+            {
+                filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.In(user => user.Id, userIdsWithRoles));
+            }
+            else
+            {
+                // 如果没有用户拥有指定角色，返回空结果
+                filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Eq(user => user.Id, "nonexistent"));
+            }
         }
         
         // 日期范围过滤
@@ -317,16 +333,28 @@ public class UserService : BaseService, IUserService
         var adminRoles = await _roles.Find(adminRoleFilter).ToListAsync();
         var adminRoleIds = adminRoles.Select(r => r.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
         
-        // 统计拥有管理员角色的用户数量
+        // v3.1: 从 UserCompany 表统计拥有管理员角色的用户数量
         var adminUsers = 0L;
         if (adminRoleIds.Any())
         {
-            var adminUserFilter = Builders<AppUser>.Filter.And(
-                notDeletedFilter,
-                Builders<AppUser>.Filter.AnyIn(u => u.RoleIds, adminRoleIds)
+            var adminUserCompanyFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, adminRoleIds),
+                Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
             );
-            adminUsers = await _users.CountDocumentsAsync(adminUserFilter);
+            adminUsers = await _userCompanies.CountDocumentsAsync(adminUserCompanyFilter);
         }
+        
+        // 另外，直接统计标记为管理员的用户
+        var directAdminFilter = Builders<UserCompany>.Filter.And(
+            Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true),
+            Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+        );
+        var directAdminUsers = await _userCompanies.CountDocumentsAsync(directAdminFilter);
+        
+        // 取最大值（可能存在既有管理员角色又标记为管理员的情况）
+        adminUsers = Math.Max(adminUsers, directAdminUsers);
         
         var regularUsers = totalUsers - adminUsers;
 
@@ -659,7 +687,8 @@ public class UserService : BaseService, IUserService
         var rolePermissions = new List<Permission>();
         var customPermissions = new List<Permission>();
 
-        // 获取角色权限
+        // TODO: v3.1重构 - 角色权限应该从 UserCompany.RoleIds 获取
+#pragma warning disable CS0618 // 抑制过时API警告 - 暂时保留以确保兼容性
         if (user.RoleIds != null && user.RoleIds.Count > 0)
         {
             var roleFilter = Builders<Role>.Filter.And(
@@ -667,6 +696,7 @@ public class UserService : BaseService, IUserService
                 Builders<Role>.Filter.Eq(r => r.IsActive, true),
                 SoftDeleteExtensions.NotDeleted<Role>()
             );
+#pragma warning restore CS0618
             var roles = await _roles.Find(roleFilter).ToListAsync();
 
             var rolePermissionIds = roles.SelectMany(r => r.PermissionIds).Distinct().ToList();

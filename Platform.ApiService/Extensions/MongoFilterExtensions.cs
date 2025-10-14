@@ -92,6 +92,8 @@ public static class MongoFilterExtensions
     /// </summary>
     /// <param name="roleId">角色ID</param>
     /// <returns>根据角色查找且未删除的过滤器</returns>
+    [Obsolete("v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，此方法已过时")]
+#pragma warning disable CS0618 // 抑制过时API警告 - 此方法本身使用过时属性
     public static FilterDefinition<AppUser> ByRoleAndNotDeleted(string roleId)
     {
         var builder = Builders<AppUser>.Filter;
@@ -100,6 +102,7 @@ public static class MongoFilterExtensions
             builder.Eq(x => x.IsDeleted, false)
         );
     }
+#pragma warning restore CS0618
 
     /// <summary>
     /// 创建文本搜索且未删除的过滤器

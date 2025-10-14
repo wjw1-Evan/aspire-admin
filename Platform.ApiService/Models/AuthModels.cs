@@ -4,63 +4,133 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
 
+/// <summary>
+/// 统一的用户信息模型（前端使用）
+/// 修复：统一字段命名，简化权限系统
+/// </summary>
 public class CurrentUser
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
 
-    [BsonElement("name")]
-    public string? Name { get; set; }
+    /// <summary>
+    /// 用户名（对应 AppUser.Username）
+    /// </summary>
+    [BsonElement("username")]
+    public string Username { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 显示名称（对应 AppUser.Name）
+    /// </summary>
+    [BsonElement("displayName")]
+    public string? DisplayName { get; set; }
+
+    /// <summary>
+    /// 头像
+    /// </summary>
     [BsonElement("avatar")]
     public string? Avatar { get; set; }
 
-    [BsonElement("userid")]
-    public string? UserId { get; set; }
-
+    /// <summary>
+    /// 邮箱
+    /// </summary>
     [BsonElement("email")]
     public string? Email { get; set; }
 
+    /// <summary>
+    /// 个人签名
+    /// </summary>
     [BsonElement("signature")]
     public string? Signature { get; set; }
 
+    /// <summary>
+    /// 职位
+    /// </summary>
     [BsonElement("title")]
     public string? Title { get; set; }
 
+    /// <summary>
+    /// 组织
+    /// </summary>
     [BsonElement("group")]
     public string? Group { get; set; }
 
+    /// <summary>
+    /// 标签
+    /// </summary>
     [BsonElement("tags")]
     public List<UserTag>? Tags { get; set; }
 
+    /// <summary>
+    /// 通知数量
+    /// </summary>
     [BsonElement("notifyCount")]
     public int NotifyCount { get; set; }
 
+    /// <summary>
+    /// 未读数量
+    /// </summary>
     [BsonElement("unreadCount")]
     public int UnreadCount { get; set; }
 
+    /// <summary>
+    /// 国家
+    /// </summary>
     [BsonElement("country")]
     public string? Country { get; set; }
 
-    [BsonElement("access")]
-    public string? Access { get; set; }
+    /// <summary>
+    /// 角色列表（简化权限系统）
+    /// </summary>
+    [BsonElement("roles")]
+    public List<string> Roles { get; set; } = new();
 
+    /// <summary>
+    /// 权限列表（简化权限系统）
+    /// </summary>
+    [BsonElement("permissions")]
+    public List<string> Permissions { get; set; } = new();
+
+    /// <summary>
+    /// 地理信息
+    /// </summary>
     [BsonElement("geographic")]
     public GeographicInfo? Geographic { get; set; }
 
+    /// <summary>
+    /// 地址
+    /// </summary>
     [BsonElement("address")]
     public string? Address { get; set; }
 
+    /// <summary>
+    /// 电话
+    /// </summary>
     [BsonElement("phone")]
     public string? Phone { get; set; }
 
+    /// <summary>
+    /// 是否已登录
+    /// </summary>
     [BsonElement("isLogin")]
     public bool IsLogin { get; set; } = true;
 
+    /// <summary>
+    /// 当前企业ID
+    /// </summary>
+    [BsonElement("currentCompanyId")]
+    public string? CurrentCompanyId { get; set; }
+
+    /// <summary>
+    /// 创建时间
+    /// </summary>
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// 更新时间
+    /// </summary>
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
@@ -138,13 +208,13 @@ public class PageParams
     public int PageSize { get; set; } = 10;
 }
 
+/// <summary>
+/// 应用用户实体（简化模型）
+/// 修复：使用基础实体类，简化多租户设计
+/// </summary>
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如旧的 role 字段）
-public class AppUser : ISoftDeletable, IEntity, ITimestamped
+public class AppUser : BaseEntity
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
-
     [BsonElement("username")]
     public string Username { get; set; } = string.Empty;
 
@@ -171,15 +241,6 @@ public class AppUser : ISoftDeletable, IEntity, ITimestamped
 
     [BsonElement("customPermissionIds")]
     public List<string> CustomPermissionIds { get; set; } = new();
-
-    /// <summary>
-    /// 企业ID（v3.0 已废弃，v3.1使用 CurrentCompanyId）
-    /// 保留用于向后兼容和数据迁移，但不再使用
-    /// </summary>
-    [BsonElement("companyId")]
-    [BsonIgnoreIfNull]
-    [Obsolete("v3.1: 使用 CurrentCompanyId 代替，此字段已废弃")]
-    public string? CompanyId { get; set; }
     
     /// <summary>
     /// 当前选中的企业ID（v3.1新增）
@@ -196,27 +257,8 @@ public class AppUser : ISoftDeletable, IEntity, ITimestamped
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
     [BsonElement("lastLoginAt")]
     public DateTime? LastLoginAt { get; set; }
-
-    // 软删除字段
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 }
 
 public class RegisterRequest

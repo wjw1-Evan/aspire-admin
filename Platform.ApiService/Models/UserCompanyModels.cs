@@ -6,13 +6,10 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 用户-企业关联表（多对多关系）
 /// v3.1: 支持用户隶属多个企业
+/// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class UserCompany : IEntity, ISoftDeletable, ITimestamped
+public class UserCompany : BaseEntity
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
-    
     /// <summary>
     /// 用户ID
     /// </summary>
@@ -60,37 +57,14 @@ public class UserCompany : IEntity, ISoftDeletable, ITimestamped
     /// </summary>
     [BsonElement("approvedAt")]
     public DateTime? ApprovedAt { get; set; }
-    
-    // ISoftDeletable
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-    
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-    
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-    
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
-    
-    // ITimestamped
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
-/// 企业加入申请表
+/// 企业加入申请表（简化模型）
+/// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class CompanyJoinRequest : IEntity, ISoftDeletable, ITimestamped
+public class CompanyJoinRequest : BaseEntity
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
-    
     /// <summary>
     /// 申请人用户ID
     /// </summary>
@@ -132,26 +106,6 @@ public class CompanyJoinRequest : IEntity, ISoftDeletable, ITimestamped
     /// </summary>
     [BsonElement("rejectReason")]
     public string? RejectReason { get; set; }
-    
-    // ISoftDeletable
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-    
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-    
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-    
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
-    
-    // ITimestamped
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>

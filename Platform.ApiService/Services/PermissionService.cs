@@ -347,5 +347,125 @@ public class PermissionService : IPermissionService
             await _permissions.InsertManyAsync(permissionsToCreate);
         }
     }
+
+    /// <summary>
+    /// 获取用户所有权限
+    /// </summary>
+    public async Task<List<Permission>> GetUserAllPermissionsAsync(string userId)
+    {
+        // 获取用户信息
+        var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        if (user == null)
+        {
+            return new List<Permission>();
+        }
+
+        // 获取用户的所有权限（角色权限 + 自定义权限）
+        var allPermissionIds = new List<string>();
+        
+        // 1. 获取角色权限
+        if (user.RoleIds != null && user.RoleIds.Any())
+        {
+            var roleFilter = Builders<Role>.Filter.And(
+                Builders<Role>.Filter.In(r => r.Id, user.RoleIds),
+                MongoFilterExtensions.NotDeleted<Role>()
+            );
+            var roles = await _roles.Find(roleFilter).ToListAsync();
+            
+            foreach (var role in roles)
+            {
+                if (role.PermissionIds != null)
+                {
+                    allPermissionIds.AddRange(role.PermissionIds);
+                }
+            }
+        }
+        
+        // 2. 获取自定义权限
+        if (user.CustomPermissionIds != null && user.CustomPermissionIds.Any())
+        {
+            allPermissionIds.AddRange(user.CustomPermissionIds);
+        }
+        
+        // 3. 去重并获取权限详情
+        var uniquePermissionIds = allPermissionIds.Distinct().ToList();
+        if (!uniquePermissionIds.Any())
+        {
+            return new List<Permission>();
+        }
+        
+        var permissionFilter = Builders<Permission>.Filter.And(
+            Builders<Permission>.Filter.In(p => p.Id, uniquePermissionIds),
+            MongoFilterExtensions.NotDeleted<Permission>()
+        );
+        
+        return await _permissions.Find(permissionFilter).ToListAsync();
+    }
+
+    /// <summary>
+    /// 获取用户权限信息（包含角色名和权限代码）
+    /// </summary>
+    public async Task<UserPermissionsResponse> GetUserPermissionsAsync(string userId)
+    {
+        // 获取用户信息
+        var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        if (user == null)
+        {
+            return new UserPermissionsResponse();
+        }
+
+        var roleNames = new List<string>();
+        var allPermissionCodes = new List<string>();
+        var rolePermissions = new List<Permission>();
+        var customPermissions = new List<Permission>();
+
+        // 1. 获取角色权限
+        if (user.RoleIds != null && user.RoleIds.Any())
+        {
+            var roleFilter = Builders<Role>.Filter.And(
+                Builders<Role>.Filter.In(r => r.Id, user.RoleIds),
+                MongoFilterExtensions.NotDeleted<Role>()
+            );
+            var roles = await _roles.Find(roleFilter).ToListAsync();
+            
+            foreach (var role in roles)
+            {
+                roleNames.Add(role.Name);
+                
+                if (role.PermissionIds != null && role.PermissionIds.Any())
+                {
+                    var permissionFilter = Builders<Permission>.Filter.And(
+                        Builders<Permission>.Filter.In(p => p.Id, role.PermissionIds),
+                        MongoFilterExtensions.NotDeleted<Permission>()
+                    );
+                    var permissions = await _permissions.Find(permissionFilter).ToListAsync();
+                    rolePermissions.AddRange(permissions);
+                    allPermissionCodes.AddRange(permissions.Select(p => p.Code));
+                }
+            }
+        }
+        
+        // 2. 获取自定义权限
+        if (user.CustomPermissionIds != null && user.CustomPermissionIds.Any())
+        {
+            var customPermissionFilter = Builders<Permission>.Filter.And(
+                Builders<Permission>.Filter.In(p => p.Id, user.CustomPermissionIds),
+                MongoFilterExtensions.NotDeleted<Permission>()
+            );
+            customPermissions = await _permissions.Find(customPermissionFilter).ToListAsync();
+            allPermissionCodes.AddRange(customPermissions.Select(p => p.Code));
+        }
+        
+        // 3. 去重
+        allPermissionCodes = allPermissionCodes.Distinct().ToList();
+
+        return new UserPermissionsResponse
+        {
+            RolePermissions = rolePermissions,
+            CustomPermissions = customPermissions,
+            AllPermissionCodes = allPermissionCodes,
+            RoleNames = roleNames
+        };
+    }
 }
 

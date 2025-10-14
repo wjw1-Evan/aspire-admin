@@ -5,14 +5,11 @@ using System.ComponentModel.DataAnnotations;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 权限实体
+/// 权限实体（简化模型）
+/// 修复：使用多租户基础实体类，简化软删除实现
 /// </summary>
-public class Permission : ISoftDeletable, IEntity, ITimestamped
+public class Permission : MultiTenantEntity
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
-
     [BsonElement("resourceName")]
     public string ResourceName { get; set; } = string.Empty;
 
@@ -30,28 +27,6 @@ public class Permission : ISoftDeletable, IEntity, ITimestamped
 
     [BsonElement("description")]
     public string? Description { get; set; }
-
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    // 软删除字段
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 }
 
 /// <summary>
@@ -120,6 +95,7 @@ public class UserPermissionsResponse
     public List<Permission> RolePermissions { get; set; } = new();
     public List<Permission> CustomPermissions { get; set; } = new();
     public List<string> AllPermissionCodes { get; set; } = new();
+    public List<string> RoleNames { get; set; } = new();
 }
 
 /// <summary>

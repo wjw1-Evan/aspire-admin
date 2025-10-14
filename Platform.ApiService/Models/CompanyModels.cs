@@ -5,14 +5,11 @@ using System.ComponentModel.DataAnnotations;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 企业实体
+/// 企业实体（简化模型）
+/// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class Company : ISoftDeletable, IEntity, ITimestamped
+public class Company : BaseEntity
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
-
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
@@ -45,25 +42,6 @@ public class Company : ISoftDeletable, IEntity, ITimestamped
 
     [BsonElement("expiresAt")]
     public DateTime? ExpiresAt { get; set; }
-
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    // 软删除字段
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 }
 
 /// <summary>

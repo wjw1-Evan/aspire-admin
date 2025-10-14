@@ -91,6 +91,10 @@ builder.Services.AddScoped<IPhoneValidationService, PhoneValidationService>();
 // Captcha service (Singleton - 使用内存缓存)
 builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
 
+// 数据库初始化服务（v5.0 新增）
+builder.Services.AddSingleton<IDistributedLockService, DistributedLockService>();
+builder.Services.AddScoped<IDatabaseInitializerService, DatabaseInitializerService>();
+
 // Configure JWT authentication
 // JWT SecretKey 必须配置，不提供默认值以确保安全
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] 
@@ -157,46 +161,11 @@ if (app.Environment.IsDevelopment())
 // Map default endpoints (includes health checks)
 app.MapDefaultEndpoints();
 
-// 初始化管理员用户和菜单角色
+// v5.0: 数据库初始化（使用分布式锁保护，多实例安全）
 using (var scope = app.Services.CreateScope())
 {
-    var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
-    
-    // 修复所有实体的 IsDeleted 字段（一次性修复脚本）
-    var fixAllEntities = new FixAllEntitiesIsDeletedField(database);
-    await fixAllEntities.FixAsync();
-    
-    // ⚠️ 重要：多租户数据迁移（v3.0 新增）
-    // 必须在其他初始化脚本之前执行
-    var migrateToMultiTenant = new MigrateToMultiTenant(database,
-        scope.ServiceProvider.GetRequiredService<ILogger<MigrateToMultiTenant>>());
-    await migrateToMultiTenant.MigrateAsync();
-    
-    // 迁移菜单标题（为旧菜单添加中文标题）
-    var migrateMenuTitles = new MigrateMenuTitles(database,
-        scope.ServiceProvider.GetRequiredService<ILogger<MigrateMenuTitles>>());
-    await migrateMenuTitles.MigrateAsync();
-    
-    // 数据迁移：将 Role 字段迁移到 RoleIds
-    await MigrateRoleToRoleIds.ExecuteAsync(database);
-    
-    // 创建数据库索引（提升查询性能）
-    await CreateDatabaseIndexes.ExecuteAsync(database);
-    
-    // 创建多租户索引（v3.0 新增）
-    await CreateMultiTenantIndexes.ExecuteAsync(database,
-        scope.ServiceProvider.GetRequiredService<ILogger<CreateMultiTenantIndexes>>());
-    
-    // v3.1: 多企业隶属架构数据迁移和索引
-    await MigrateToMultiCompany.MigrateAsync(database);
-    await CreateMultiCompanyIndexes.ExecuteAsync(database);
-    
-    // 迁移通知 type 字段从数字到字符串
-    await MigrateNoticeTypeToString.ExecuteAsync(database);
-    
-    // 初始化 v2.0 欢迎通知（右上角通知铃铛）
-    var noticeService = scope.ServiceProvider.GetRequiredService<INoticeService>();
-    await noticeService.InitializeWelcomeNoticeAsync();
+    var initializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializerService>();
+    await initializer.InitializeAsync();
 }
 
 await app.RunAsync();

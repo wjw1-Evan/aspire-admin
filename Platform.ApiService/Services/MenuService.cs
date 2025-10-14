@@ -7,11 +7,8 @@ namespace Platform.ApiService.Services;
 
 public class MenuService : BaseService, IMenuService
 {
-    private readonly BaseRepository<Menu> _menuRepository;
+    private readonly IMongoCollection<Menu> _menus;
     private readonly IMongoCollection<Role> _roles;
-    
-    // 快捷访问器
-    private IMongoCollection<Menu> _menus => _menuRepository.Collection;
 
     public MenuService(
         IMongoDatabase database, 
@@ -20,17 +17,20 @@ public class MenuService : BaseService, IMenuService
         ILogger<MenuService> logger)
         : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _menuRepository = new BaseRepository<Menu>(database, "menus", httpContextAccessor, tenantContext);
+        // 菜单是全局资源，不使用 BaseRepository（避免 CompanyId 过滤）
+        _menus = database.GetCollection<Menu>("menus");
         _roles = GetCollection<Role>("roles");
     }
 
     /// <summary>
-    /// 获取所有菜单
+    /// 获取所有菜单（菜单是全局资源，无需过滤 CompanyId）
     /// </summary>
     public async Task<List<Menu>> GetAllMenusAsync()
     {
-        var sort = Builders<Menu>.Sort.Ascending(m => m.SortOrder);
-        return await _menuRepository.GetAllAsync(sort);
+        var filter = Builders<Menu>.Filter.Eq(m => m.IsDeleted, false);
+        return await _menus.Find(filter)
+            .SortBy(m => m.SortOrder)
+            .ToListAsync();
     }
 
     /// <summary>
@@ -120,145 +120,11 @@ public class MenuService : BaseService, IMenuService
     /// </summary>
     public async Task<Menu?> GetMenuByIdAsync(string id)
     {
-        return await _menuRepository.GetByIdAsync(id);
-    }
-
-    /// <summary>
-    /// 创建菜单
-    /// </summary>
-    public async Task<Menu> CreateMenuAsync(CreateMenuRequest request)
-    {
-        var menu = new Menu
-        {
-            Name = request.Name,
-            Title = request.Title,
-            Path = request.Path,
-            Component = request.Component,
-            Icon = request.Icon,
-            SortOrder = request.SortOrder,
-            IsEnabled = request.IsEnabled,
-            IsExternal = request.IsExternal,
-            OpenInNewTab = request.OpenInNewTab,
-            HideInMenu = request.HideInMenu,
-            ParentId = request.ParentId,
-            Permissions = request.Permissions
-        };
-
-        return await _menuRepository.CreateAsync(menu);
-    }
-
-    /// <summary>
-    /// 更新菜单
-    /// </summary>
-    public async Task<bool> UpdateMenuAsync(string id, UpdateMenuRequest request)
-    {
-        var updateBuilder = Builders<Menu>.Update;
-        var updates = new List<UpdateDefinition<Menu>>();
-
-        if (request.Name != null)
-            updates.Add(updateBuilder.Set(m => m.Name, request.Name));
-        if (request.Title != null)
-            updates.Add(updateBuilder.Set(m => m.Title, request.Title));
-        if (request.Path != null)
-            updates.Add(updateBuilder.Set(m => m.Path, request.Path));
-        if (request.Component != null)
-            updates.Add(updateBuilder.Set(m => m.Component, request.Component));
-        if (request.Icon != null)
-            updates.Add(updateBuilder.Set(m => m.Icon, request.Icon));
-        if (request.SortOrder.HasValue)
-            updates.Add(updateBuilder.Set(m => m.SortOrder, request.SortOrder.Value));
-        if (request.IsEnabled.HasValue)
-            updates.Add(updateBuilder.Set(m => m.IsEnabled, request.IsEnabled.Value));
-        if (request.IsExternal.HasValue)
-            updates.Add(updateBuilder.Set(m => m.IsExternal, request.IsExternal.Value));
-        if (request.OpenInNewTab.HasValue)
-            updates.Add(updateBuilder.Set(m => m.OpenInNewTab, request.OpenInNewTab.Value));
-        if (request.HideInMenu.HasValue)
-            updates.Add(updateBuilder.Set(m => m.HideInMenu, request.HideInMenu.Value));
-        if (request.ParentId != null)
-            updates.Add(updateBuilder.Set(m => m.ParentId, request.ParentId));
-        if (request.Permissions != null)
-            updates.Add(updateBuilder.Set(m => m.Permissions, request.Permissions));
-
-        if (updates.Count == 0)
-            return false;
-
-        return await _menuRepository.UpdateAsync(id, updateBuilder.Combine(updates));
-    }
-
-    /// <summary>
-    /// 软删除菜单（自动清理角色的菜单引用）
-    /// </summary>
-    public async Task<bool> DeleteMenuAsync(string id, string? reason = null)
-    {
-        // 检查菜单是否存在
-        var menu = await GetMenuByIdAsync(id);
-        if (menu == null)
-        {
-            return false;
-        }
-        
-        // 检查是否有未删除的子菜单
-        var childrenFilter = Builders<Menu>.Filter.And(
-            Builders<Menu>.Filter.Eq(m => m.ParentId, id),
-            MongoFilterExtensions.NotDeleted<Menu>()
+        var filter = Builders<Menu>.Filter.And(
+            Builders<Menu>.Filter.Eq(m => m.Id, id),
+            Builders<Menu>.Filter.Eq(m => m.IsDeleted, false)
         );
-        var hasChildren = await _menus.Find(childrenFilter).AnyAsync();
-        if (hasChildren)
-        {
-            throw new InvalidOperationException("不能删除有子菜单的菜单，请先删除子菜单");
-        }
-
-        // 查找引用此菜单的角色
-        var rolesFilter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.AnyIn(r => r.MenuIds, new[] { id }),
-            SoftDeleteExtensions.NotDeleted<Role>()
-        );
-        var rolesWithMenu = await _roles.Find(rolesFilter).ToListAsync();
-        
-        // 自动从所有角色的 MenuIds 中移除此菜单
-        if (rolesWithMenu.Count > 0)
-        {
-            foreach (var role in rolesWithMenu)
-            {
-                var newMenuIds = role.MenuIds.Where(mid => mid != id).ToList();
-                
-                var update = Builders<Role>.Update
-                    .Set(r => r.MenuIds, newMenuIds)
-                    .Set(r => r.UpdatedAt, DateTime.UtcNow);
-                    
-                await _roles.UpdateOneAsync(r => r.Id == role.Id, update);
-            }
-            
-            LogInformation("已从 {RoleCount} 个角色的菜单列表中移除菜单 {MenuName} ({MenuId})", rolesWithMenu.Count, menu.Name, id);
-        }
-
-        // 软删除菜单
-        var deleted = await _menuRepository.SoftDeleteAsync(id, reason);
-        
-        if (deleted)
-        {
-            LogInformation("已删除菜单: {MenuName} ({MenuId}), 原因: {Reason}", menu.Name, id, reason ?? "未提供");
-        }
-        
-        return deleted;
-    }
-
-    /// <summary>
-    /// 菜单排序
-    /// </summary>
-    public async Task<bool> ReorderMenusAsync(List<string> menuIds, string? parentId)
-    {
-        for (int i = 0; i < menuIds.Count; i++)
-        {
-            await _menus.UpdateOneAsync(
-                m => m.Id == menuIds[i],
-                Builders<Menu>.Update
-                    .Set(m => m.SortOrder, i)
-                    .Set(m => m.UpdatedAt, DateTime.UtcNow)
-            );
-        }
-        return true;
+        return await _menus.Find(filter).FirstOrDefaultAsync();
     }
 
     /// <summary>

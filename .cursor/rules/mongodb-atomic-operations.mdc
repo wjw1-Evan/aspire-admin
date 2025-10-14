@@ -1,0 +1,332 @@
+---
+description: MongoDB 原子操作最佳实践，避免并发竞态条件
+---
+# MongoDB 原子操作最佳实践
+
+## 🎯 核心原则
+
+**在并发场景下，始终使用 MongoDB 的原子操作，避免"先查询再更新"的模式**
+
+## ✅ 原子操作模式
+
+### 1. 插入或忽略（Insert or Ignore）
+
+```csharp
+// ✅ 使用 try-catch 处理唯一索引冲突
+try
+{
+    var document = new MyDocument { UniqueField = value };
+    await collection.InsertOneAsync(document);
+    return (true, document);  // 插入成功
+}
+catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+{
+    // 文档已存在，获取现有文档
+    var existing = await collection.Find(x => x.UniqueField == value).FirstOrDefaultAsync();
+    return (false, existing);  // 已存在
+}
+
+// ❌ 错误：先查询再插入（有竞态条件）
+var exists = await collection.Find(x => x.UniqueField == value).AnyAsync();
+if (!exists)
+{
+    await collection.InsertOneAsync(new MyDocument { UniqueField = value });
+}
+```
+
+### 2. 更新或插入（Upsert）
+
+```csharp
+// ✅ 使用 Upsert 原子操作
+var filter = Builders<MyDocument>.Filter.Eq(x => x.Id, id);
+var update = Builders<MyDocument>.Update
+    .Set(x => x.Name, newName)
+    .Set(x => x.UpdatedAt, DateTime.UtcNow);
+
+var options = new UpdateOptions { IsUpsert = true };
+await collection.UpdateOneAsync(filter, update, options);
+
+// ❌ 错误：先查询再决定插入或更新
+var doc = await collection.Find(x => x.Id == id).FirstOrDefaultAsync();
+if (doc == null)
+{
+    await collection.InsertOneAsync(new MyDocument { Id = id, Name = newName });
+}
+else
+{
+    await collection.UpdateOneAsync(x => x.Id == id, update);
+}
+```
+
+### 3. 条件更新（Compare-and-Set）
+
+```csharp
+// ✅ 使用 FindOneAndUpdate 原子更新
+var filter = Builders<MyDocument>.Filter.And(
+    Builders<MyDocument>.Filter.Eq(x => x.Id, id),
+    Builders<MyDocument>.Filter.Eq(x => x.Status, "pending")  // 只更新 pending 状态的
+);
+
+var update = Builders<MyDocument>.Update.Set(x => x.Status, "processing");
+
+var options = new FindOneAndUpdateOptions<MyDocument>
+{
+    ReturnDocument = ReturnDocument.After
+};
+
+var result = await collection.FindOneAndUpdateAsync(filter, update, options);
+if (result != null)
+{
+    // 更新成功
+    return result;
+}
+else
+{
+    // 状态不符合或文档不存在
+    throw new InvalidOperationException("Document not in expected state");
+}
+
+// ❌ 错误：先查询状态再更新
+var doc = await collection.Find(x => x.Id == id).FirstOrDefaultAsync();
+if (doc?.Status == "pending")
+{
+    await collection.UpdateOneAsync(
+        x => x.Id == id, 
+        Builders<MyDocument>.Update.Set(x => x.Status, "processing")
+    );
+}
+```
+
+### 4. 原子递增/递减
+
+```csharp
+// ✅ 使用 $inc 原子操作
+var filter = Builders<Counter>.Filter.Eq(x => x.Name, "page-views");
+var update = Builders<Counter>.Update.Inc(x => x.Count, 1);
+
+var options = new FindOneAndUpdateOptions<Counter>
+{
+    IsUpsert = true,
+    ReturnDocument = ReturnDocument.After
+};
+
+var result = await counters.FindOneAndUpdateAsync(filter, update, options);
+return result.Count;
+
+// ❌ 错误：读取、加1、写入（非原子）
+var counter = await counters.Find(x => x.Name == "page-views").FirstOrDefaultAsync();
+var newCount = (counter?.Count ?? 0) + 1;
+await counters.UpdateOneAsync(
+    x => x.Name == "page-views",
+    Builders<Counter>.Update.Set(x => x.Count, newCount)
+);
+```
+
+### 5. 数组原子操作
+
+```csharp
+// ✅ 使用 $addToSet 添加唯一元素
+var filter = Builders<MyDocument>.Filter.Eq(x => x.Id, id);
+var update = Builders<MyDocument>.Update.AddToSet(x => x.Tags, newTag);
+await collection.UpdateOneAsync(filter, update);
+
+// ✅ 使用 $pull 删除元素
+var update = Builders<MyDocument>.Update.Pull(x => x.Tags, tagToRemove);
+await collection.UpdateOneAsync(filter, update);
+
+// ❌ 错误：读取数组、修改、写回
+var doc = await collection.Find(x => x.Id == id).FirstOrDefaultAsync();
+if (!doc.Tags.Contains(newTag))
+{
+    doc.Tags.Add(newTag);
+    await collection.ReplaceOneAsync(x => x.Id == id, doc);
+}
+```
+
+## 🔒 唯一索引配合原子操作
+
+### 创建唯一索引
+
+```csharp
+// ✅ 使用唯一索引保证唯一性
+var indexKeys = Builders<MyDocument>.IndexKeys.Ascending(x => x.UniqueField);
+var indexOptions = new CreateIndexOptions 
+{ 
+    Unique = true,
+    Name = "idx_uniqueField_unique" 
+};
+
+await collection.Indexes.CreateOneAsync(
+    new CreateIndexModel<MyDocument>(indexKeys, indexOptions)
+);
+```
+
+### 复合唯一索引
+
+```csharp
+// ✅ 多字段组合唯一
+var indexKeys = Builders<MyDocument>.IndexKeys
+    .Ascending(x => x.CompanyId)
+    .Ascending(x => x.Code);
+
+var indexOptions = new CreateIndexOptions 
+{ 
+    Unique = true,
+    Name = "idx_company_code_unique" 
+};
+
+await collection.Indexes.CreateOneAsync(
+    new CreateIndexModel<MyDocument>(indexKeys, indexOptions)
+);
+```
+
+## ⚠️ 常见陷阱
+
+### 陷阱 1: 认为查询+更新是安全的
+
+```csharp
+// ❌ 危险：在并发场景下不安全
+var user = await users.Find(x => x.Username == username).FirstOrDefaultAsync();
+if (user == null)
+{
+    // 两个请求可能同时到达这里！
+    await users.InsertOneAsync(new User { Username = username });
+}
+
+// ✅ 安全：使用原子操作
+try
+{
+    await users.InsertOneAsync(new User { Username = username });
+}
+catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+{
+    throw new InvalidOperationException("Username already exists");
+}
+```
+
+### 陷阱 2: 使用错误的 Filter 条件
+
+```csharp
+// ❌ 错误：逻辑矛盾的 filter
+var filter = Builders<Lock>.Filter.Or(
+    Builders<Lock>.Filter.Eq(l => l.Name, name) 
+        & Builders<Lock>.Filter.Exists(l => l.Id, false),  // ❌ 这两个条件无法同时满足
+    Builders<Lock>.Filter.Lt(l => l.ExpiresAt, now)
+);
+
+// ✅ 正确：使用清晰的逻辑
+var filter = Builders<Lock>.Filter.And(
+    Builders<Lock>.Filter.Eq(l => l.Name, name),
+    Builders<Lock>.Filter.Lt(l => l.ExpiresAt, now)
+);
+```
+
+### 陷阱 3: 忘记验证更新结果
+
+```csharp
+// ❌ 不完整：没有检查是否真的更新了
+var result = await collection.FindOneAndUpdateAsync(filter, update);
+// 如果 filter 没匹配到文档，result 是 null
+
+// ✅ 正确：验证结果
+var result = await collection.FindOneAndUpdateAsync(filter, update);
+if (result == null)
+{
+    throw new InvalidOperationException("Document not found or condition not met");
+}
+return result;
+```
+
+## 📊 性能优化
+
+### 批量操作
+
+```csharp
+// ✅ 使用批量写入
+var bulkOps = new List<WriteModel<MyDocument>>();
+
+foreach (var item in items)
+{
+    var filter = Builders<MyDocument>.Filter.Eq(x => x.Id, item.Id);
+    var update = Builders<MyDocument>.Update.Set(x => x.Value, item.Value);
+    bulkOps.Add(new UpdateOneModel<MyDocument>(filter, update) { IsUpsert = true });
+}
+
+await collection.BulkWriteAsync(bulkOps);
+
+// ❌ 低效：循环中单独更新
+foreach (var item in items)
+{
+    await collection.UpdateOneAsync(
+        x => x.Id == item.Id,
+        Builders<MyDocument>.Update.Set(x => x.Value, item.Value)
+    );
+}
+```
+
+### 投影优化
+
+```csharp
+// ✅ 只获取需要的字段
+var projection = Builders<MyDocument>.Projection
+    .Include(x => x.Id)
+    .Include(x => x.Name)
+    .Exclude(x => x.Id);  // 排除 _id（如果不需要）
+
+var result = await collection.Find(filter)
+    .Project(projection)
+    .FirstOrDefaultAsync();
+
+// ❌ 获取整个文档（当文档很大时浪费带宽）
+var result = await collection.Find(filter).FirstOrDefaultAsync();
+```
+
+## 🧪 测试原子性
+
+### 并发测试示例
+
+```csharp
+// 测试原子插入
+[Fact]
+public async Task InsertOne_Should_Be_Atomic_Under_Concurrency()
+{
+    var tasks = Enumerable.Range(0, 10).Select(async i =>
+    {
+        try
+        {
+            await collection.InsertOneAsync(new Document { UniqueField = "test" });
+            return true;
+        }
+        catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            return false;
+        }
+    });
+
+    var results = await Task.WhenAll(tasks);
+    
+    // 应该只有一个成功
+    Assert.Single(results.Where(r => r));
+    
+    // 数据库中应该只有一条记录
+    var count = await collection.CountDocumentsAsync(x => x.UniqueField == "test");
+    Assert.Equal(1, count);
+}
+```
+
+## 📚 相关文档
+
+- [MongoDB 原子操作文档](https://docs.mongodb.com/manual/core/write-operations-atomicity/)
+- [分布式锁实现](mdc:Platform.ApiService/Services/DistributedLockService.cs)
+- [分布式锁逻辑修复](mdc:docs/bugfixes/DISTRIBUTED-LOCK-LOGIC-FIX.md)
+
+## 🎯 最佳实践总结
+
+1. ✅ 使用 `InsertOne` + try-catch 处理唯一性
+2. ✅ 使用 `FindOneAndUpdate` 实现条件更新
+3. ✅ 使用唯一索引强制数据唯一性
+4. ✅ 使用 `$inc`、`$addToSet`、`$pull` 等原子操作符
+5. ✅ 批量操作使用 `BulkWriteAsync`
+6. ❌ 避免"查询+更新"的非原子模式
+7. ❌ 避免逻辑矛盾的 filter 条件
+8. ❌ 不要忘记验证操作结果

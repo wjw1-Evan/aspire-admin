@@ -97,15 +97,7 @@ public class CompanyService : BaseService, ICompanyService
             await _roles.InsertOneAsync(adminRole);
             LogInformation("为企业 {CompanyId} 创建管理员角色: {RoleId}", company.Id!, adminRole.Id!);
 
-            // 4. 创建默认菜单（属于该企业）
-            var menus = await CreateDefaultMenusAsync(company.Id!);
-            LogInformation("为企业 {CompanyId} 创建了 {Count} 个默认菜单", company.Id!, menus.Count);
-
-            // 5. 更新管理员角色的菜单权限
-            var update = Builders<Role>.Update.Set(r => r.MenuIds, menus.Select(m => m.Id!).ToList());
-            await _roles.UpdateOneAsync(r => r.Id == adminRole.Id, update);
-
-            // 6. 创建管理员用户
+            // 4. 创建管理员用户
             var adminUser = new AppUser
             {
                 Username = request.AdminUsername,
@@ -214,10 +206,6 @@ public class CompanyService : BaseService, ICompanyService
         var roleNotDeletedFilter = Builders<Role>.Filter.Eq(r => r.IsDeleted, false);
         var totalRoles = await _roles.CountDocumentsAsync(roleCompanyFilter & roleNotDeletedFilter);
 
-        var menuCompanyFilter = Builders<Menu>.Filter.Eq(m => m.CompanyId, companyId);
-        var menuNotDeletedFilter = Builders<Menu>.Filter.Eq(m => m.IsDeleted, false);
-        var totalMenus = await _menus.CountDocumentsAsync(menuCompanyFilter & menuNotDeletedFilter);
-
         var permCompanyFilter = Builders<Permission>.Filter.Eq(p => p.CompanyId, companyId);
         var permNotDeletedFilter = Builders<Permission>.Filter.Eq(p => p.IsDeleted, false);
         var totalPermissions = await _permissions.CountDocumentsAsync(permCompanyFilter & permNotDeletedFilter);
@@ -227,7 +215,7 @@ public class CompanyService : BaseService, ICompanyService
             TotalUsers = (int)totalUsers,
             ActiveUsers = (int)activeUsers,
             TotalRoles = (int)totalRoles,
-            TotalMenus = (int)totalMenus,
+            TotalMenus = 0,  // 菜单是全局资源，不再统计
             TotalPermissions = (int)totalPermissions,
             MaxUsers = company.MaxUsers,
             RemainingUsers = company.MaxUsers - (int)totalUsers,
@@ -272,78 +260,6 @@ public class CompanyService : BaseService, ICompanyService
 
         await _permissions.InsertManyAsync(permissions);
         return permissions;
-    }
-
-    /// <summary>
-    /// 创建默认菜单
-    /// </summary>
-    private async Task<List<Menu>> CreateDefaultMenusAsync(string companyId)
-    {
-        var menus = new List<Menu>
-        {
-            // 仪表板
-            new Menu
-            {
-                Name = "dashboard",
-                Title = "仪表板",
-                Path = "/dashboard",
-                Component = "./dashboard",
-                Icon = "DashboardOutlined",
-                SortOrder = 1,
-                IsEnabled = true,
-                CompanyId = companyId
-            },
-            // 用户管理
-            new Menu
-            {
-                Name = "user-management",
-                Title = "用户管理",
-                Path = "/user-management",
-                Component = "./user-management",
-                Icon = "UserOutlined",
-                SortOrder = 2,
-                IsEnabled = true,
-                CompanyId = companyId
-            },
-            // 角色管理
-            new Menu
-            {
-                Name = "role-management",
-                Title = "角色管理",
-                Path = "/role-management",
-                Component = "./role-management",
-                Icon = "TeamOutlined",
-                SortOrder = 3,
-                IsEnabled = true,
-                CompanyId = companyId
-            },
-            // 菜单管理
-            new Menu
-            {
-                Name = "menu-management",
-                Title = "菜单管理",
-                Path = "/menu-management",
-                Component = "./menu-management",
-                Icon = "MenuOutlined",
-                SortOrder = 4,
-                IsEnabled = true,
-                CompanyId = companyId
-            },
-            // 系统设置
-            new Menu
-            {
-                Name = "system",
-                Title = "系统设置",
-                Path = "/system",
-                Icon = "SettingOutlined",
-                SortOrder = 10,
-                IsEnabled = true,
-                CompanyId = companyId
-            }
-        };
-
-        await _menus.InsertManyAsync(menus);
-        return menus;
     }
 
     #endregion

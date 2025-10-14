@@ -19,16 +19,6 @@ public static class CompanyConstants
     /// 企业代码最大长度
     /// </summary>
     public const int MaxCompanyCodeLength = 20;
-
-    /// <summary>
-    /// 默认企业代码（用于数据迁移）
-    /// </summary>
-    public const string DefaultCompanyCode = "default";
-
-    /// <summary>
-    /// 默认企业名称（用于数据迁移）
-    /// </summary>
-    public const string DefaultCompanyName = "默认企业";
 }
 
 /// <summary>

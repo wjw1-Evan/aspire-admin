@@ -247,20 +247,19 @@ public class PermissionService : IPermissionService
 
     /// <summary>
     /// 获取默认权限定义（用于企业注册时创建）
+    /// 注意：菜单是全局系统资源，不需要管理权限
     /// </summary>
     public List<(string ResourceName, string ResourceTitle, string Action, string ActionTitle, string? Description)> GetDefaultPermissions()
     {
-        // 定义系统资源
+        // 定义系统资源（不包括菜单，菜单是全局资源）
         var resources = new[]
         {
             ("user", "用户"),
             ("role", "角色"),
-            ("menu", "菜单"),
             ("notice", "公告"),
             ("tag", "标签"),
-            ("permission", "权限"),
             ("activity-log", "活动日志"),
-            ("company", "企业")  // 新增企业管理权限
+            ("company", "企业")
         };
 
         // 定义操作类型
@@ -294,16 +293,15 @@ public class PermissionService : IPermissionService
 
     public async Task InitializeDefaultPermissionsAsync()
     {
-        // 定义系统资源
+        // 定义系统资源（不包括菜单，菜单是全局资源）
         var resources = new[]
         {
             ("user", "用户"),
             ("role", "角色"),
-            ("menu", "菜单"),
             ("notice", "公告"),
             ("tag", "标签"),
-            ("permission", "权限"),
-            ("activity-log", "活动日志")
+            ("activity-log", "活动日志"),
+            ("company", "企业")
         };
 
         // 定义操作类型

@@ -12,6 +12,5 @@ public interface INoticeService
     Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request);
     Task<NoticeIconItem?> UpdateNoticeAsync(string id, UpdateNoticeRequest request);
     Task<bool> DeleteNoticeAsync(string id);
-    Task InitializeWelcomeNoticeAsync();
 }
 

@@ -226,16 +226,18 @@ export const layout: RunTimeLayoutConfig = ({
         console.log('Token expired but refresh token exists, will refresh on next request');
       }
     },
-    // 动态渲染菜单
-    menuDataRender: (menuData) => {
-      // 如果用户有自定义菜单，使用自定义菜单；否则使用默认菜单
+    // 动态渲染菜单（完全从数据库加载）
+    menuDataRender: () => {
+      // v5.0: 菜单完全从数据库加载，不使用静态路由
       if (initialState?.currentUser?.menus && initialState.currentUser.menus.length > 0) {
         const dynamicMenus = convertMenuTreeToProLayout(initialState.currentUser.menus);
-        console.log('Using dynamic menus:', dynamicMenus);
+        console.log('✅ 使用数据库菜单:', dynamicMenus);
         return dynamicMenus;
       }
-      console.log('Using default menus:', menuData);
-      return menuData;
+      
+      // 数据库没有菜单时，返回空数组（不使用 routes.ts 作为后备）
+      console.warn('⚠️ 数据库中没有菜单，请检查系统初始化是否完成');
+      return [];
     },
     bgLayoutImgList: [
       {
@@ -306,6 +308,7 @@ function handleCurrentUserResponse(response: any): any {
     console.log('User not found or inactive, clearing tokens and redirecting to login');
     tokenUtils.clearAllTokens();
     history.push('/user/login');
+    throw new Error('User not found or inactive');
   }
   
   return response;

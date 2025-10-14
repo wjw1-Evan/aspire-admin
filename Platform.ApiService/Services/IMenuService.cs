@@ -3,7 +3,8 @@ using Platform.ApiService.Models;
 namespace Platform.ApiService.Services;
 
 /// <summary>
-/// 菜单服务接口
+/// 菜单服务接口（只读）
+/// 菜单是全局系统资源，由系统初始化创建，用户不能修改
 /// </summary>
 public interface IMenuService
 {
@@ -11,9 +12,5 @@ public interface IMenuService
     Task<List<MenuTreeNode>> GetMenuTreeAsync();
     Task<List<MenuTreeNode>> GetUserMenusAsync(List<string> roleIds);
     Task<Menu?> GetMenuByIdAsync(string id);
-    Task<Menu> CreateMenuAsync(CreateMenuRequest request);
-    Task<bool> UpdateMenuAsync(string id, UpdateMenuRequest request);
-    Task<bool> DeleteMenuAsync(string id, string? reason = null);
-    Task<bool> ReorderMenusAsync(List<string> menuIds, string? parentId);
 }
 

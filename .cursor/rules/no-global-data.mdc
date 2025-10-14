@@ -148,20 +148,30 @@ db.permissions.find({ companyId: null })
 
 | 实体 | 基类 | CompanyId 要求 |
 |------|------|---------------|
-| **Menu** | MultiTenantEntity | ✅ 必须 |
 | **Role** | ISoftDeletable | ✅ 必须 |
 | **Permission** | MultiTenantEntity | ✅ 必须 |
 | **Notice** | MultiTenantEntity | ✅ 必须 |
 | **Tag** | MultiTenantEntity | ✅ 必须 |
 | **ActivityLog** | MultiTenantEntity | ✅ 必须 |
 
-### 特殊实体
+### 特殊实体（无 CompanyId 的合理例外）
 
 | 实体 | CompanyId | 说明 |
 |------|-----------|------|
 | **Company** | ❌ 不需要 | 企业实体本身 |
-| **AppUser** | ✅ 需要 | 通过 MultiTenantEntity |
+| **Menu** | ❌ 不需要 | ⭐ v5.0: 全局系统资源，所有企业共享 |
+| **AppUser** | ✅ 需要 | 通过 CurrentCompanyId 关联企业 |
 | **UserCompany** | ✅ 需要 | 关联表，有 CompanyId 字段 |
+
+### ⭐ v5.0 重要变更：Menu 是全局资源
+
+**Menu 不再有 CompanyId**，原因：
+- 所有企业使用相同的系统菜单
+- 通过角色的 MenuIds 控制用户可见菜单
+- 通过权限控制菜单内的功能访问
+- 菜单在系统初始化时创建，用户不能管理
+
+详见：[全局菜单架构](mdc:.cursor/rules/global-menu-architecture.mdc)
 
 ## 🚫 已废弃的初始化脚本
 

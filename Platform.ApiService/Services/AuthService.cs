@@ -337,7 +337,6 @@ public class AuthService : IAuthService
         Company? company = null;
         List<Permission>? permissionList = null;
         Role? adminRole = null;
-        List<Menu>? defaultMenus = null;
         
         try
         {
@@ -394,18 +393,9 @@ public class AuthService : IAuthService
             };
             
             await roles.InsertOneAsync(adminRole);
+            _logger.LogInformation("创建管理员角色: {RoleId}", adminRole.Id);
             
-            // 4. 创建默认菜单
-            defaultMenus = CreateDefaultMenus(company.Id!);
-            await menus.InsertManyAsync(defaultMenus);
-            
-            // 5. 更新角色的菜单权限
-            var updateRole = Builders<Role>.Update.Set(r => r.MenuIds, defaultMenus.Select(m => m.Id!).ToList());
-            await roles.UpdateOneAsync(r => r.Id == adminRole.Id, updateRole);
-            
-            _logger.LogInformation("创建 {Count} 个默认菜单", defaultMenus.Count);
-            
-            // 6. 创建用户-企业关联（用户是管理员）
+            // 4. 创建用户-企业关联（用户是管理员）
             var userCompany = new UserCompany
             {
                 UserId = user.Id!,
@@ -440,13 +430,6 @@ public class AuthService : IAuthService
                     _logger.LogInformation("已清理角色: {RoleId}", adminRole.Id);
                 }
                 
-                if (defaultMenus != null && defaultMenus.Count > 0)
-                {
-                    var menuIds = defaultMenus.Select(m => m.Id!).ToList();
-                    await menus.DeleteManyAsync(m => menuIds.Contains(m.Id!));
-                    _logger.LogInformation("已清理菜单: {Count}个", defaultMenus.Count);
-                }
-                
                 if (permissionList != null && permissionList.Count > 0)
                 {
                     var permissionIds = permissionList.Select(p => p.Id!).ToList();
@@ -467,54 +450,6 @@ public class AuthService : IAuthService
             
             throw new InvalidOperationException($"注册失败: {ex.Message}", ex);
         }
-    }
-    
-    /// <summary>
-    /// 创建默认菜单
-    /// </summary>
-    private static List<Menu> CreateDefaultMenus(string companyId)
-    {
-        return new List<Menu>
-        {
-            new Menu
-            {
-                Name = "dashboard",
-                Title = "仪表板",
-                Path = "/dashboard",
-                Component = "./dashboard",
-                Icon = "DashboardOutlined",
-                SortOrder = 1,
-                IsEnabled = true,
-                CompanyId = companyId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            },
-            new Menu
-            {
-                Name = "user-management",
-                Title = "用户管理",
-                Path = "/user-management",
-                Component = "./user-management",
-                Icon = "UserOutlined",
-                SortOrder = 2,
-                IsEnabled = true,
-                CompanyId = companyId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            },
-            new Menu
-            {
-                Name = "system",
-                Title = "系统设置",
-                Path = "/system",
-                Icon = "SettingOutlined",
-                SortOrder = 10,
-                IsEnabled = true,
-                CompanyId = companyId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            }
-        };
     }
 
     public async Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordRequest request)

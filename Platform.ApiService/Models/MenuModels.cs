@@ -5,10 +5,10 @@ using System.ComponentModel.DataAnnotations;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 菜单实体（简化模型）
-/// 修复：使用多租户基础实体类，简化软删除实现
+/// 菜单实体（全局系统资源）
+/// 菜单不属于任何企业，通过权限控制显示，所有企业共享相同菜单
 /// </summary>
-public class Menu : MultiTenantEntity, INamedEntity
+public class Menu : BaseEntity, INamedEntity
 {
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;

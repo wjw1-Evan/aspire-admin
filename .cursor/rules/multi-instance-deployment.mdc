@@ -1,0 +1,394 @@
+---
+description: 多实例部署注意事项和最佳实践
+---
+# 多实例部署注意事项
+
+## 🎯 核心原则
+
+**所有代码都应该假设会在多实例环境中运行，确保并发安全和数据一致性**
+
+## ✅ 多实例安全的实现模式
+
+### 1. 使用分布式锁保护关键操作
+
+```csharp
+// ✅ 数据库初始化使用分布式锁
+await _lockService.ExecuteWithLockAsync("database-initialization", async () =>
+{
+    await CreateIndexesAsync();
+    await SeedDataAsync();
+});
+
+// ✅ 定时任务使用分布式锁
+await _lockService.ExecuteWithLockAsync($"daily-report-{date:yyyy-MM-dd}", async () =>
+{
+    await GenerateDailyReportAsync(date);
+});
+
+// ❌ 错误：假设只有一个实例运行
+await CreateIndexesAsync();  // 多个实例可能同时创建
+await GenerateDailyReportAsync(date);  // 可能生成重复报表
+```
+
+### 2. 避免使用内存状态
+
+```csharp
+// ❌ 错误：使用静态变量存储状态（实例间不共享）
+private static bool _isInitialized = false;
+
+public async Task InitializeAsync()
+{
+    if (!_isInitialized)
+    {
+        await DoInitializationAsync();
+        _isInitialized = true;  // 只在当前实例有效
+    }
+}
+
+// ✅ 正确：使用数据库或缓存存储状态
+public async Task InitializeAsync()
+{
+    var initialized = await _database.GetCollection<InitFlag>("init_flags")
+        .Find(x => x.Name == "database-initialized")
+        .AnyAsync();
+        
+    if (!initialized)
+    {
+        await _lockService.ExecuteWithLockAsync("initialization", async () =>
+        {
+            // 双重检查
+            if (!await IsInitializedAsync())
+            {
+                await DoInitializationAsync();
+                await MarkAsInitializedAsync();
+            }
+        });
+    }
+}
+```
+
+### 3. 使用原子操作而非状态检查
+
+```csharp
+// ❌ 错误：检查状态后操作（有竞态条件）
+var exists = await _collection.Find(x => x.Id == id).AnyAsync();
+if (!exists)
+{
+    await _collection.InsertOneAsync(new Document { Id = id });
+}
+
+// ✅ 正确：使用原子操作
+try
+{
+    await _collection.InsertOneAsync(new Document { Id = id });
+}
+catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+{
+    // 已存在，处理冲突
+}
+```
+
+### 4. 幂等性设计
+
+```csharp
+// ✅ 所有操作都应该是幂等的（可以安全重复执行）
+
+// 索引创建是幂等的
+public async Task CreateIndexesAsync()
+{
+    try
+    {
+        await _collection.Indexes.CreateOneAsync(...);
+    }
+    catch (MongoCommandException ex) when (ex.CodeName == "IndexOptionsConflict")
+    {
+        // 索引已存在，跳过
+    }
+}
+
+// 数据初始化是幂等的
+public async Task SeedDataAsync()
+{
+    var exists = await _collection.Find(x => x.Id == seedId).AnyAsync();
+    if (!exists)
+    {
+        await _collection.InsertOneAsync(seedData);
+    }
+}
+```
+
+## ⚠️ 多实例场景下的常见问题
+
+### 问题 1: 重复的定时任务
+
+```csharp
+// ❌ 错误：所有实例都会执行定时任务
+public class DailyReportJob : IHostedService
+{
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await GenerateReportAsync();  // 所有实例都执行！
+            await Task.Delay(TimeSpan.FromDays(1), cancellationToken);
+        }
+    }
+}
+
+// ✅ 正确：使用分布式锁
+public class DailyReportJob : IHostedService
+{
+    private readonly IDistributedLockService _lockService;
+    
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var lockName = $"daily-report-{DateTime.UtcNow:yyyy-MM-dd}";
+            
+            await _lockService.ExecuteWithLockAsync(lockName, async () =>
+            {
+                await GenerateReportAsync();  // 只有一个实例执行
+            });
+            
+            await Task.Delay(TimeSpan.FromDays(1), cancellationToken);
+        }
+    }
+}
+```
+
+### 问题 2: 并发创建相同资源
+
+```csharp
+// ❌ 错误：可能创建重复的资源
+public async Task<Company> GetOrCreateCompanyAsync(string code)
+{
+    var company = await _companies.Find(x => x.Code == code).FirstOrDefaultAsync();
+    if (company == null)
+    {
+        company = new Company { Code = code };
+        await _companies.InsertOneAsync(company);  // 多个实例可能同时执行
+    }
+    return company;
+}
+
+// ✅ 正确：使用原子操作
+public async Task<Company> GetOrCreateCompanyAsync(string code)
+{
+    try
+    {
+        var company = new Company { Code = code };
+        await _companies.InsertOneAsync(company);
+        return company;
+    }
+    catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+    {
+        return await _companies.Find(x => x.Code == code).FirstOrDefaultAsync()
+            ?? throw new InvalidOperationException("Company should exist");
+    }
+}
+```
+
+### 问题 3: Session 或缓存不共享
+
+```csharp
+// ❌ 错误：使用内存缓存存储会话（实例间不共享）
+private static readonly Dictionary<string, UserSession> _sessions = new();
+
+public void StoreSession(string sessionId, UserSession session)
+{
+    _sessions[sessionId] = session;  // 只在当前实例有效
+}
+
+// ✅ 正确：使用 Redis 或数据库存储会话
+public async Task StoreSessionAsync(string sessionId, UserSession session)
+{
+    await _redis.StringSetAsync(
+        $"session:{sessionId}", 
+        JsonSerializer.Serialize(session),
+        TimeSpan.FromHours(1)
+    );
+}
+```
+
+### 问题 4: 文件上传处理
+
+```csharp
+// ❌ 错误：保存到本地文件系统（实例间不共享）
+public async Task<string> SaveFileAsync(IFormFile file)
+{
+    var path = Path.Combine("/uploads", file.FileName);
+    using var stream = File.Create(path);
+    await file.CopyToAsync(stream);
+    return path;  // 其他实例无法访问此文件
+}
+
+// ✅ 正确：使用对象存储或共享存储
+public async Task<string> SaveFileAsync(IFormFile file)
+{
+    using var stream = file.OpenReadStream();
+    var blobName = $"{Guid.NewGuid()}/{file.FileName}";
+    
+    await _blobStorage.UploadAsync(blobName, stream);
+    return _blobStorage.GetUrl(blobName);  // 所有实例都能访问
+}
+```
+
+## 📊 负载均衡考虑
+
+### 健康检查端点
+
+```csharp
+// ✅ 提供健康检查端点
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description
+            })
+        };
+        await context.Response.WriteAsJsonAsync(response);
+    }
+});
+
+// 添加依赖项健康检查
+builder.Services.AddHealthChecks()
+    .AddMongoDb(mongoConnectionString, name: "mongodb")
+    .AddCheck<CustomHealthCheck>("custom");
+```
+
+### 优雅关闭
+
+```csharp
+// ✅ 处理优雅关闭信号
+public class GracefulShutdownHostedService : IHostedService
+{
+    private readonly IHostApplicationLifetime _lifetime;
+    private readonly ILogger<GracefulShutdownHostedService> _logger;
+    
+    public GracefulShutdownHostedService(
+        IHostApplicationLifetime lifetime,
+        ILogger<GracefulShutdownHostedService> logger)
+    {
+        _lifetime = lifetime;
+        _logger = logger;
+    }
+    
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _lifetime.ApplicationStopping.Register(() =>
+        {
+            _logger.LogInformation("应用正在关闭，停止接受新请求...");
+            // 清理资源
+        });
+        
+        return Task.CompletedTask;
+    }
+    
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+```
+
+## 🧪 测试多实例场景
+
+### 本地测试
+
+```bash
+# 启动多个实例测试
+ASPNETCORE_URLS="http://localhost:5001" dotnet run &
+ASPNETCORE_URLS="http://localhost:5002" dotnet run &
+ASPNETCORE_URLS="http://localhost:5003" dotnet run &
+
+# 观察日志
+tail -f instance-*.log
+```
+
+### 使用测试脚本
+
+```bash
+# 运行并发启动测试
+./test-concurrent-startup.sh
+
+# 预期结果：
+# - 只有一个实例执行初始化
+# - 其他实例跳过初始化
+# - 所有实例正常运行
+```
+
+## 📋 部署清单
+
+部署到多实例环境前，确保：
+
+- [ ] 所有数据库操作使用原子操作
+- [ ] 关键操作使用分布式锁保护
+- [ ] 不使用内存状态（静态变量、单例缓存）
+- [ ] 定时任务使用分布式锁
+- [ ] 文件上传使用对象存储
+- [ ] Session 使用 Redis 或数据库
+- [ ] 配置健康检查端点
+- [ ] 实现优雅关闭
+- [ ] 所有操作都是幂等的
+- [ ] 在多实例环境中测试过
+
+## 🔧 Kubernetes 部署示例
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-api
+spec:
+  replicas: 3  # 多实例部署
+  selector:
+    matchLabels:
+      app: platform-api
+  template:
+    metadata:
+      labels:
+        app: platform-api
+    spec:
+      containers:
+      - name: api
+        image: platform-api:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+```
+
+## 📚 相关文档
+
+- [分布式锁使用规范](mdc:.cursor/rules/distributed-lock-usage.mdc)
+- [MongoDB 原子操作](mdc:.cursor/rules/mongodb-atomic-operations.mdc)
+- [数据库初始化优化](mdc:docs/optimization/DATABASE-INITIALIZATION-OPTIMIZATION.md)
+- [分布式锁服务](mdc:Platform.ApiService/Services/DistributedLockService.cs)
+
+## 🎯 核心要点
+
+1. **假设多实例运行**：代码设计时就考虑并发场景
+2. **分布式锁保护**：关键操作必须使用分布式锁
+3. **原子操作优先**：避免"检查-执行"模式
+4. **无状态设计**：不依赖内存状态
+5. **幂等性**：所有操作可以安全重复执行
+6. **测试验证**：在多实例环境中充分测试

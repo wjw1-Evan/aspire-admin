@@ -1,0 +1,136 @@
+---
+alwaysApply: true
+---
+# 数据库初始化规范
+
+## 🎯 核心原则
+
+**所有数据库初始化必须支持多实例并发安全启动**
+
+## ✅ 正确的初始化方式
+
+### 使用统一的初始化服务
+
+```csharp
+// ✅ 在 Program.cs 中使用 DatabaseInitializerService
+using (var scope = app.Services.CreateScope())
+{
+    var initializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializerService>();
+    await initializer.InitializeAsync();
+}
+```
+
+### 使用分布式锁保护
+
+```csharp
+// ✅ 关键操作必须使用分布式锁
+await _lockService.ExecuteWithLockAsync("operation-name", async () =>
+{
+    // 只有一个实例会执行这里的代码
+    await DoInitializationAsync();
+}, timeoutSeconds: 60);
+```
+
+### 确保幂等性
+
+所有初始化操作都必须是幂等的（可以安全地重复执行）：
+
+```csharp
+// ✅ 索引创建是幂等的
+try
+{
+    await collection.Indexes.CreateOneAsync(...);
+}
+catch (MongoCommandException ex) when (ex.CodeName == "IndexOptionsConflict")
+{
+    // 索引已存在，跳过
+}
+
+// ✅ 数据插入前检查
+var exists = await collection.Find(x => x.Id == id).AnyAsync();
+if (!exists)
+{
+    await collection.InsertOneAsync(document);
+}
+```
+
+## ❌ 禁止的做法
+
+### 不要在 Program.cs 中直接初始化
+
+```csharp
+// ❌ 禁止：直接调用初始化脚本
+var fixAllEntities = new FixAllEntitiesIsDeletedField(database);
+await fixAllEntities.FixAsync();
+
+var migrateToMultiTenant = new MigrateToMultiTenant(database, logger);
+await migrateToMultiTenant.MigrateAsync();
+```
+
+### 不要创建全局数据（有合理例外）
+
+```csharp
+// ❌ 禁止：系统启动时创建全局业务数据
+var welcomeNotice = new Notice { /* ... */ };
+await _notices.InsertOneAsync(welcomeNotice);
+
+// ❌ 禁止：系统启动时创建默认企业
+var defaultCompany = new Company { Code = "default", Name = "默认企业" };
+await _companies.InsertOneAsync(defaultCompany);
+
+// ✅ 正确：在用户注册时创建企业专属数据
+var notice = new Notice 
+{ 
+    CompanyId = company.Id,  // 必须有 CompanyId
+    /* ... */
+};
+
+// ✅ 例外：可以创建全局系统菜单（v5.0）
+// 菜单是所有企业共享的系统资源
+var menu = new Menu
+{
+    Name = "user-management",
+    Title = "用户管理",
+    Path = "/system/user-management",
+    // 无 CompanyId - 这是合理的例外
+};
+```
+
+### 不要使用非原子操作
+
+```csharp
+// ❌ 禁止：先查询再更新（有竞态条件）
+var lock = await _locks.Find(l => l.Name == name).FirstOrDefaultAsync();
+if (lock == null)
+{
+    await _locks.InsertOneAsync(new Lock { Name = name });
+}
+
+// ✅ 正确：使用原子操作
+try
+{
+    await _locks.InsertOneAsync(new Lock { Name = name });
+}
+catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+{
+    // 已存在，处理冲突
+}
+```
+
+## 📋 初始化检查清单
+
+在添加新的初始化逻辑时，确保：
+
+- [ ] 使用 `DatabaseInitializerService` 统一管理
+- [ ] 使用分布式锁保护关键操作
+- [ ] 所有操作都是幂等的
+- [ ] 不创建全局数据（必须有 CompanyId）
+- [ ] 使用 MongoDB 原子操作
+- [ ] 有详细的日志输出
+- [ ] 异常不会阻塞应用启动
+
+## 📚 相关文档
+
+- [数据库初始化优化报告](mdc:docs/optimization/DATABASE-INITIALIZATION-OPTIMIZATION.md)
+- [DatabaseInitializerService](mdc:Platform.ApiService/Services/DatabaseInitializerService.cs)
+- [DistributedLockService](mdc:Platform.ApiService/Services/DistributedLockService.cs)

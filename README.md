@@ -1,17 +1,18 @@
 # Aspire Admin Platform
 
-基于 .NET Aspire 构建的现代化微服务管理平台，提供用户管理、API 网关、React 前端界面和移动端应用等功能。
+基于 .NET Aspire 构建的现代化多租户微服务管理平台，提供企业级用户管理、权限控制、通知系统、React 前端界面和移动端应用等功能。
 
 ## 🚀 项目概述
 
-这是一个使用 .NET Aspire 框架构建的微服务架构项目，包含以下核心组件：
+这是一个使用 .NET Aspire 框架构建的微服务架构项目，采用多租户 SaaS 模式，包含以下核心组件：
 
-- **API 服务** - 提供用户管理、认证、通知等 REST API
+- **多租户 API 服务** - 提供企业级用户管理、认证、权限控制、通知等 REST API
 - **管理后台** - React + Ant Design Pro 企业级前端界面
 - **移动应用** - React Native + Expo 跨平台移动应用
 - **API 网关** - 基于 YARP 的统一入口
-- **数据库** - MongoDB 数据存储
+- **多租户数据库** - MongoDB 数据存储，支持企业数据隔离
 - **API 文档** - Scalar API 文档界面
+- **帮助系统** - 内置系统帮助模块
 
 ## 🏗️ 项目结构
 
@@ -34,48 +35,60 @@ Platform/
 - 管理前端和移动应用的构建与部署
 
 #### Platform.ApiService
-- 用户管理 REST API（CRUD、搜索、分页、批量操作）
-- JWT 认证和授权系统
-- 用户活动日志记录
-- 通知管理 API
-- 规则管理 API
-- 标签管理 API
-- MongoDB 数据访问
-- OpenAPI 文档支持
-- 健康检查端点
+- **多租户架构** - 基于 CompanyId 的企业数据隔离
+- **企业自助注册** - 企业可自助注册，首个用户自动成为管理员
+- **用户管理 API** - 支持 CRUD、搜索、分页、批量操作
+- **统一权限控制** - 基于 [RequirePermission] 特性的声明式权限管理
+- **JWT 认证系统** - 支持多企业切换的认证机制
+- **用户活动日志** - 自动记录用户操作日志
+- **通知管理 API** - 企业级通知系统
+- **角色权限管理** - 企业独立管理角色和权限
+- **菜单管理 API** - 动态菜单配置
+- **标签管理 API** - 用户标签分类管理
+- **MongoDB 数据访问** - 支持软删除和时间戳
+- **OpenAPI 文档支持** - 完整的 API 文档
+- **健康检查端点** - 服务状态监控
 
 #### Platform.Admin
-- React 19 + Ant Design Pro 企业级管理后台
-- 基于 UmiJS 的前端应用框架
-- 用户管理界面（列表、创建、编辑、删除）
-- 个人中心（资料管理、密码修改）
-- 多语言支持（中文、英文等）
-- 响应式 Web 界面
-- JWT Token 认证集成
+- **React 19 + Ant Design Pro** - 企业级管理后台
+- **基于 UmiJS** - 企业级前端应用框架
+- **多租户支持** - 企业注册、切换、管理功能
+- **用户管理界面** - 列表、创建、编辑、删除、批量操作
+- **权限管理** - 角色分配、权限配置、菜单管理
+- **个人中心** - 资料管理、密码修改、企业切换
+- **通知系统** - 企业通知、消息管理、未读提醒
+- **帮助系统** - 内置系统帮助模块和使用指南
+- **多语言支持** - 中文、英文等多语言界面
+- **响应式设计** - 适配桌面、平板、手机等设备
+- **JWT 认证集成** - 统一认证和权限控制
 
 #### Platform.App
-- React Native + Expo 跨平台移动应用
-- 支持 iOS、Android 和 Web 平台
-- 基于 Expo Router 的路由系统
-- 现代化 UI 设计
-- 与后端 API 服务集成
+- **React Native + Expo** - 跨平台移动应用
+- **多平台支持** - iOS、Android 和 Web 平台
+- **基于 Expo Router** - 文件系统路由
+- **现代化 UI 设计** - 企业级移动端界面
+- **多租户支持** - 企业切换和用户管理
+- **与后端 API 集成** - 统一的认证和权限控制
 
 #### Platform.ServiceDefaults
-- 共享服务配置
-- OpenTelemetry 集成
-- 服务发现配置
-- JWT 认证配置
-- MongoDB 驱动配置
+- **共享服务配置** - 统一的服务配置管理
+- **OpenTelemetry 集成** - 分布式追踪和监控
+- **服务发现配置** - 微服务自动发现
+- **JWT 认证配置** - 统一认证配置
+- **MongoDB 驱动配置** - 数据库连接配置
+- **多租户支持** - 企业数据隔离配置
 
 ## 🛠️ 技术栈
 
 ### 后端技术
 - **.NET 9.0** - 最新 .NET 框架
 - **.NET Aspire** - 微服务编排框架
-- **MongoDB** - NoSQL 数据库
+- **MongoDB** - NoSQL 数据库，支持多租户数据隔离
 - **YARP** - 反向代理和负载均衡
 - **Scalar** - API 文档生成
 - **OpenTelemetry** - 可观测性
+- **JWT** - 多企业认证和授权
+- **软删除** - 数据安全删除机制
 
 ### 前端技术
 - **React 19** - 现代前端框架
@@ -83,12 +96,15 @@ Platform/
 - **UmiJS** - 企业级前端应用框架
 - **TypeScript** - 类型安全的JavaScript
 - **Biome** - 代码格式化和检查工具
+- **多语言支持** - 国际化框架
+- **帮助系统** - 内置用户指南
 
 ### 移动端技术
 - **React Native** - 跨平台移动应用框架
 - **Expo** - React Native 开发平台
 - **Expo Router** - 基于文件系统的路由
 - **TypeScript** - 类型安全的JavaScript
+- **多租户支持** - 企业切换和管理
 
 ## 🚀 快速开始
 
@@ -131,12 +147,43 @@ Platform/
    - **API 网关**: http://localhost:15000
    - **API 文档**: http://localhost:15000/scalar/v1
    - **Mongo Express**: http://localhost:15000/mongo-express
+   - **Aspire Dashboard**: http://localhost:15003
+
+## 🏢 多租户功能
+
+### 企业注册和登录
+1. **企业自助注册** - 访问注册页面创建新企业
+2. **首个用户自动成为管理员** - 注册企业的第一个用户自动获得管理员权限
+3. **企业切换** - 用户可以在多个企业间自由切换
+4. **数据完全隔离** - 每个企业的数据完全独立，确保安全性
+
+### 默认账户
+系统启动时会自动创建默认企业和管理员账户：
+- **企业名称**: `默认企业`
+- **企业代码**: `DEFAULT`
+- **用户名**: `admin`
+- **密码**: `admin123`
+- **角色**: `admin`
 
 ## 📡 API 接口
 
 ### 认证 API
 
 所有 API 通过网关访问：`http://localhost:15000/apiservice/`
+
+#### 企业注册
+```http
+POST /apiservice/api/company/register
+Content-Type: application/json
+
+{
+  "companyName": "新企业",
+  "companyCode": "NEWCOMPANY",
+  "username": "admin",
+  "password": "admin123",
+  "email": "admin@newcompany.com"
+}
+```
 
 #### 用户登录
 ```http
@@ -243,6 +290,71 @@ Content-Type: application/json
 GET /apiservice/api/users/statistics
 ```
 
+### 企业管理 API
+
+#### 获取企业信息
+```http
+GET /apiservice/api/company/info
+Authorization: Bearer {token}
+```
+
+#### 更新企业信息
+```http
+PUT /apiservice/api/company/info
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "更新后的企业名称",
+  "description": "企业描述",
+  "industry": "IT行业"
+}
+```
+
+#### 切换企业
+```http
+POST /apiservice/api/company/switch
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "companyId": "目标企业ID"
+}
+```
+
+### 权限管理 API
+
+#### 获取角色列表
+```http
+GET /apiservice/api/roles
+Authorization: Bearer {token}
+```
+
+#### 创建角色
+```http
+POST /apiservice/api/roles
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "新角色",
+  "description": "角色描述",
+  "permissions": ["user:read", "user:create"]
+}
+```
+
+#### 获取菜单列表
+```http
+GET /apiservice/api/menus
+Authorization: Bearer {token}
+```
+
+#### 获取通知列表
+```http
+GET /apiservice/api/notices
+Authorization: Bearer {token}
+```
+
 ### 个人中心 API
 
 #### 获取个人资料
@@ -287,9 +399,33 @@ GET /apiservice/weatherforecast
 
 ## 🗄️ 数据模型
 
+### 多租户模型
+
+#### 企业模型
+```csharp
+public class Company : ISoftDeletable, IEntity, ITimestamped
+{
+    public string? Id { get; set; }           // MongoDB ObjectId
+    public string Name { get; set; }          // 企业名称
+    public string Code { get; set; }          // 企业代码（唯一）
+    public string? Logo { get; set; }         // 企业Logo
+    public string? Description { get; set; }  // 企业描述
+    public string? Industry { get; set; }     // 行业
+    public string? ContactName { get; set; }  // 联系人
+    public string? ContactEmail { get; set; } // 联系邮箱
+    public string? ContactPhone { get; set; } // 联系电话
+    public bool IsActive { get; set; }        // 是否激活
+    public int MaxUsers { get; set; }         // 最大用户数
+    public DateTime? ExpiresAt { get; set; }  // 过期时间（可选）
+    public bool IsDeleted { get; set; }       // 软删除标记
+    public DateTime CreatedAt { get; set; }   // 创建时间
+    public DateTime UpdatedAt { get; set; }   // 更新时间
+}
+```
+
 ### 用户模型
 ```csharp
-public class AppUser
+public class AppUser : ISoftDeletable, IEntity, ITimestamped
 {
     public string? Id { get; set; }           // MongoDB ObjectId
     public string Username { get; set; }      // 用户名
@@ -299,9 +435,11 @@ public class AppUser
     public string? Email { get; set; }        // 邮箱地址
     public string Role { get; set; }          // 用户角色 (admin/user)
     public bool IsActive { get; set; }        // 是否激活
+    public string CompanyId { get; set; }     // 所属企业ID（多租户）
+    public DateTime? LastLoginAt { get; set; } // 最后登录时间
+    public bool IsDeleted { get; set; }       // 软删除标记
     public DateTime CreatedAt { get; set; }   // 创建时间
     public DateTime UpdatedAt { get; set; }   // 更新时间
-    public DateTime? LastLoginAt { get; set; } // 最后登录时间
 }
 
 public class CurrentUser
@@ -459,32 +597,83 @@ npm start
 
 ## 📱 功能特性
 
+### 多租户功能 ⭐ **v3.1 新增**
+- ✅ **企业自助注册** - 企业可独立注册和管理
+- ✅ **数据完全隔离** - 基于 CompanyId 的企业数据隔离
+- ✅ **企业切换** - 用户可在多个企业间自由切换
+- ✅ **企业配额管理** - 支持企业用户数量限制
+- ✅ **企业过期控制** - 支持企业过期时间设置
+
 ### 管理后台功能
-- ✅ 用户认证（登录、注册、登出）
-- ✅ 用户管理（CRUD、搜索、分页、批量操作）
-- ✅ 个人中心（资料管理、密码修改）
-- ✅ 用户活动日志
-- ✅ 响应式设计
-- ✅ 多语言支持
-- ✅ JWT Token 认证
+- ✅ **用户认证** - 登录、注册、登出、企业切换
+- ✅ **用户管理** - CRUD、搜索、分页、批量操作
+- ✅ **权限管理** - 角色分配、权限配置、菜单管理
+- ✅ **企业管理** - 企业信息、用户配额、过期设置
+- ✅ **通知系统** - 企业通知、消息管理、未读提醒
+- ✅ **帮助系统** - 内置系统帮助模块和使用指南
+- ✅ **个人中心** - 资料管理、密码修改、企业切换
+- ✅ **用户活动日志** - 自动记录用户操作
+- ✅ **响应式设计** - 适配多种设备
+- ✅ **多语言支持** - 中文、英文等
+- ✅ **JWT Token 认证** - 统一认证和权限控制
 
 ### 移动应用功能
-- ✅ 跨平台支持（iOS、Android、Web）
-- ✅ 现代化 UI 设计
-- ✅ 基于文件系统的路由
-- ✅ 与后端 API 集成
+- ✅ **跨平台支持** - iOS、Android、Web
+- ✅ **多租户支持** - 企业切换和管理
+- ✅ **现代化 UI 设计** - 企业级移动端界面
+- ✅ **基于文件系统的路由** - Expo Router
+- ✅ **与后端 API 集成** - 统一认证和权限控制
 
 ### 后端 API 功能
-- ✅ JWT 认证和授权
-- ✅ 用户管理 API
-- ✅ 用户活动日志记录
-- ✅ 通知管理 API
-- ✅ 规则管理 API
-- ✅ 标签管理 API
-- ✅ MongoDB 数据存储
-- ✅ OpenAPI 文档
-- ✅ 健康检查
+- ✅ **多租户架构** - 企业数据隔离和管理
+- ✅ **统一权限控制** - 基于 [RequirePermission] 特性的声明式权限管理
+- ✅ **JWT 认证和授权** - 支持多企业切换
+- ✅ **用户管理 API** - 完整的用户 CRUD 操作
+- ✅ **企业管理 API** - 企业注册、切换、管理
+- ✅ **权限管理 API** - 角色、菜单、权限管理
+- ✅ **通知管理 API** - 企业级通知系统
+- ✅ **用户活动日志** - 自动记录和查询
+- ✅ **软删除机制** - 数据安全删除
+- ✅ **MongoDB 数据存储** - 支持多租户和软删除
+- ✅ **OpenAPI 文档** - 完整的 API 文档
+- ✅ **健康检查** - 服务状态监控
+
+## 🎯 版本历史
+
+### v5.0 - 后端架构优化（最新）
+- ✅ **代码重构** - 减少 50% 重复代码，提高代码复用性
+- ✅ **统一错误处理** - 50+ 个错误消息统一管理
+- ✅ **基础组件** - BaseService、BaseRepository、ValidationExtensions
+- ✅ **软删除机制** - 数据安全删除，支持恢复
+- ✅ **时间戳管理** - ITimestamped 接口统一时间管理
+
+### v3.1 - 多企业隶属架构
+- ✅ **多租户系统** - 企业自助注册，数据完全隔离
+- ✅ **企业切换** - 用户可在多个企业间自由切换
+- ✅ **权限系统** - 企业级独立权限管理
+- ✅ **数据迁移** - 现有数据无缝迁移到默认企业
+
+### v2.0 - 功能完善
+- ✅ **通知系统** - 企业级通知管理
+- ✅ **帮助系统** - 内置用户指南
+- ✅ **权限控制** - 统一权限管理
+- ✅ **用户日志** - 活动日志记录
+
+## 📚 相关文档
+
+### 快速开始
+- [v3.1 快速开始指南](docs/features/QUICK-START-V3.1.md) - 5分钟快速上手多租户系统
+- [多租户系统说明](docs/features/MULTI-TENANT-SYSTEM.md) - 完整的多租户架构文档
+
+### 开发指南
+- [v5.0 优化完成报告](docs/reports/V5-OPTIMIZATION-COMPLETE.md) - 后端架构优化详情
+- [权限系统快速开始](docs/permissions/CRUD-PERMISSION-QUICK-START.md) - 权限管理指南
+- [帮助系统功能](docs/features/HELP-MODULE-FEATURE.md) - 内置帮助模块说明
+
+### 技术文档
+- [文档总索引](docs/INDEX.md) - 完整的项目文档导航
+- [API 端点汇总](docs/features/API-ENDPOINTS-SUMMARY.md) - 所有 API 接口列表
 
 ---
 
-**注意**: 这是一个基于 .NET Aspire 的完整微服务项目，展示了现代微服务架构的最佳实践，包含完整的前后端和移动端应用。
+**注意**: 这是一个基于 .NET Aspire 的完整多租户微服务项目，展示了现代微服务架构和 SaaS 应用的最佳实践，包含完整的前后端和移动端应用。

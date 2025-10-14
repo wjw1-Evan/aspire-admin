@@ -9,6 +9,10 @@ export interface Role {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
+  // 统计字段
+  userCount?: number;
+  menuCount?: number;
+  permissionCount?: number;
 }
 
 /**

@@ -209,11 +209,11 @@ public class PageParams
 }
 
 /// <summary>
-/// 应用用户实体（简化模型）
-/// 修复：使用基础实体类，简化多租户设计
+/// 应用用户实体（多租户模型）
+/// 修复：继承 MultiTenantEntity 以支持多企业功能
 /// </summary>
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如旧的 role 字段）
-public class AppUser : BaseEntity
+public class AppUser : MultiTenantEntity
 {
     [BsonElement("username")]
     public string Username { get; set; } = string.Empty;

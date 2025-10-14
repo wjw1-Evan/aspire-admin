@@ -46,11 +46,3 @@ public abstract class MultiTenantEntity : BaseEntity
     [BsonElement("companyId")]
     public string CompanyId { get; set; } = string.Empty;
 }
-
-/// <summary>
-/// 命名实体接口 - 用于有名称的实体
-/// </summary>
-public interface INamedEntity
-{
-    string Name { get; set; }
-}

@@ -3,7 +3,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, KeyOutline
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, message, Space, Tag, Badge } from 'antd';
-import { getAllRolesWithStats } from '@/services/role/api';
+import { getAllRolesWithStats, deleteRole } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
 import MenuPermissionModal from './components/MenuPermissionModal';
@@ -11,7 +11,6 @@ import PermissionConfigModal from './components/PermissionConfigModal';
 import PermissionControl from '@/components/PermissionControl';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { deleteRole } from '@/services/role/api';
 
 /**
  * 角色管理页面组件（优化版本）
@@ -22,7 +21,7 @@ import { deleteRole } from '@/services/role/api';
  * 3. 代码结构更清晰
  */
 const RoleManagement: React.FC = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [menuPermissionModalVisible, setMenuPermissionModalVisible] = useState(false);
   const [operationPermissionModalVisible, setOperationPermissionModalVisible] = useState(false);
@@ -33,7 +32,7 @@ const RoleManagement: React.FC = () => {
     requireReason: true,
     onSuccess: () => {
       message.success('删除成功');
-      actionRef.current?.reload();
+      actionRef.current?.reload(true);
     },
     onError: (error: any) => {
       message.error(error.message || '删除失败');
@@ -59,6 +58,7 @@ const RoleManagement: React.FC = () => {
         success: false,
       };
     } catch (error) {
+      console.error('加载角色失败:', error);
       message.error('加载角色失败');
       return {
         data: [],
@@ -140,7 +140,7 @@ const RoleManagement: React.FC = () => {
         key: 'userCount',
         width: 100,
         align: 'center',
-        render: (count: number) => <Tag color="blue">{count || 0}</Tag>,
+        render: (_: any, record: Role) => <Tag color="blue">{record.userCount || 0}</Tag>,
       },
       {
         title: '菜单数',
@@ -148,7 +148,7 @@ const RoleManagement: React.FC = () => {
         key: 'menuCount',
         width: 100,
         align: 'center',
-        render: (count: number) => <Tag color="green">{count || 0}</Tag>,
+        render: (_: any, record: Role) => <Tag color="green">{record.menuCount || 0}</Tag>,
       },
       {
         title: '权限数',
@@ -156,16 +156,16 @@ const RoleManagement: React.FC = () => {
         key: 'permissionCount',
         width: 100,
         align: 'center',
-        render: (count: number) => <Tag color="orange">{count || 0}</Tag>,
+        render: (_: any, record: Role) => <Tag color="orange">{record.permissionCount || 0}</Tag>,
       },
       {
         title: '状态',
         dataIndex: 'isActive',
         key: 'isActive',
         width: 100,
-        render: (isActive: boolean) => (
-          <Tag color={isActive ? 'success' : 'default'}>
-            {isActive ? '启用' : '禁用'}
+        render: (_: any, record: Role) => (
+          <Tag color={record.isActive ? 'success' : 'default'}>
+            {record.isActive ? '启用' : '禁用'}
           </Tag>
         ),
       },
@@ -262,11 +262,11 @@ const RoleManagement: React.FC = () => {
       {/* 角色表单对话框 */}
       <RoleForm
         visible={modalVisible}
-        role={currentRole}
-        onSubmit={async () => {
+        current={currentRole}
+        onSuccess={() => {
           setModalVisible(false);
           setCurrentRole(undefined);
-          actionRef.current?.reload();
+          actionRef.current?.reload(true);
         }}
         onCancel={() => {
           setModalVisible(false);
@@ -278,10 +278,14 @@ const RoleManagement: React.FC = () => {
       <MenuPermissionModal
         visible={menuPermissionModalVisible}
         role={currentRole}
-        onClose={() => {
+        onSuccess={() => {
           setMenuPermissionModalVisible(false);
           setCurrentRole(undefined);
-          actionRef.current?.reload();
+          actionRef.current?.reload(true);
+        }}
+        onCancel={() => {
+          setMenuPermissionModalVisible(false);
+          setCurrentRole(undefined);
         }}
       />
 
@@ -289,10 +293,14 @@ const RoleManagement: React.FC = () => {
       <PermissionConfigModal
         visible={operationPermissionModalVisible}
         role={currentRole}
-        onClose={() => {
+        onSuccess={() => {
           setOperationPermissionModalVisible(false);
           setCurrentRole(undefined);
-          actionRef.current?.reload();
+          actionRef.current?.reload(true);
+        }}
+        onCancel={() => {
+          setOperationPermissionModalVisible(false);
+          setCurrentRole(undefined);
         }}
       />
 

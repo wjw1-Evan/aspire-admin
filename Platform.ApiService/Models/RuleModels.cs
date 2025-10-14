@@ -74,6 +74,7 @@ public class CreateRuleRequest
 
 public class UpdateRuleRequest
 {
+    public int? Key { get; set; }
     public string? Name { get; set; }
     public string? Desc { get; set; }
     public string? Owner { get; set; }

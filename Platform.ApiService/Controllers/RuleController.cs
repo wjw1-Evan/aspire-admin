@@ -72,10 +72,14 @@ public class RuleController : BaseApiController
     /// </summary>
     /// <param name="request">更新规则请求</param>
     [HttpPut("rule")]
-    public IActionResult UpdateRule([FromBody] UpdateRuleRequest request)
+    public async Task<IActionResult> UpdateRule([FromBody] UpdateRuleRequest request)
     {
-        // TODO: 此功能需要完善 - UpdateRuleRequest 需要添加标识字段（Key 或 Id）
-        return Success("功能开发中");
+        if (!request.Key.HasValue)
+            throw new ArgumentException("Key不能为空");
+        
+        var id = request.Key.Value.ToString();
+        var rule = await _ruleService.UpdateRuleAsync(id, request);
+        return Success(rule.EnsureFound("规则", id), "更新成功");
     }
 
     /// <summary>

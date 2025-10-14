@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Tag, Space, message, Switch, Badge, Dropdown } from 'antd';
+import { Button, Tag, Space, message, Badge, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   PlusOutlined,
@@ -164,15 +164,17 @@ const UserManagement: React.FC = () => {
   // 处理搜索（优化：使用 useCallback）
   const handleSearch = useCallback(
     (values: any) => {
+      // 处理角色 ID 数组
+      let roleIds: string[] | undefined;
+      if (values.roleIds) {
+        roleIds = Array.isArray(values.roleIds) ? values.roleIds : [values.roleIds];
+      }
+
       const newSearchParams: UserListRequest = {
         Page: 1,
         PageSize: searchParams.PageSize,
         Search: values.search,
-        RoleIds: values.roleIds
-          ? Array.isArray(values.roleIds)
-            ? values.roleIds
-            : [values.roleIds]
-          : undefined,
+        RoleIds: roleIds,
         IsActive: values.isActive,
         SortBy: searchParams.SortBy,
         SortOrder: searchParams.SortOrder,
@@ -239,22 +241,17 @@ const UserManagement: React.FC = () => {
     [selectedRows.length, bulkActionConfirm],
   );
 
-  // 切换用户状态
-  const handleToggleStatus = useCallback(async (user: AppUser) => {
-    try {
-      const endpoint = user.isActive ? 'deactivate' : 'activate';
-      await request(`/api/user/${user.id}/${endpoint}`, {
-        method: 'PUT',
-      });
-
-      message.success(`用户已${user.isActive ? '禁用' : '启用'}`);
-      actionRef.current?.reload();
-      fetchStatistics();
-    } catch (error) {
-      console.error('切换用户状态失败:', error);
-      message.error('操作失败');
-    }
-  }, [fetchStatistics]);
+  // 表格警告渲染（优化：使用 useCallback）
+  const renderTableAlert = useCallback(
+    ({ selectedRowKeys }: any) => (
+      <Space size={24}>
+        <span>
+          已选择 <span style={{ fontWeight: 600 }}>{selectedRowKeys.length}</span> 项
+        </span>
+      </Space>
+    ),
+    [],
+  );
 
   // 表格列定义（优化：使用 useMemo）
   const columns: ProColumns<AppUser>[] = useMemo(
@@ -432,13 +429,7 @@ const UserManagement: React.FC = () => {
             </Dropdown>
           </PermissionControl>,
         ]}
-        tableAlertRender={({ selectedRowKeys }) => (
-          <Space size={24}>
-            <span>
-              已选择 <a style={{ fontWeight: 600 }}>{selectedRowKeys.length}</a> 项
-            </span>
-          </Space>
-        )}
+        tableAlertRender={renderTableAlert}
       />
 
       {/* 用户表单对话框 */}

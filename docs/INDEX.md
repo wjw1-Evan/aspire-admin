@@ -82,6 +82,9 @@ docs/
 - [权限快速参考](permissions/PERMISSION-QUICK-REFERENCE.md) - 快速查询
 - [权限系统说明](permissions/PERMISSION-SYSTEM-README.md) - 系统说明文档
 
+#### 系统初始化
+- [**管理员初始化 v3.1**](features/ADMIN-INITIALIZATION-V3.1.md) - 管理员、企业、角色初始化说明 ⭐ **v3.1 新增**
+
 #### 用户管理
 - [用户日志实现](features/USER-LOG-IMPLEMENTATION.md) - 活动日志
 - [用户日志重设计](features/USER-LOG-REDESIGN.md) - 日志系统优化

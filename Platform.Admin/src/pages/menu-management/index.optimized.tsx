@@ -79,6 +79,7 @@ const MenuManagement: React.FC = () => {
         success: false,
       };
     } catch (error) {
+      console.error('加载菜单失败:', error);
       message.error('加载菜单失败');
       return {
         data: [],

@@ -67,7 +67,6 @@ function CrudPage<T extends Record<string, any>>({
     data,
     loading,
     currentItem,
-    itemLoading,
     refresh,
     loadById,
     handleCreate,
@@ -149,10 +148,10 @@ function CrudPage<T extends Record<string, any>>({
             刷新
           </Button>
           
-          {renderActions && renderActions(refresh)}
+          {renderActions?.(refresh)}
         </Space>
         
-        {renderHeader && renderHeader()}
+        {renderHeader?.()}
       </div>
 
       {/* 数据表格 */}

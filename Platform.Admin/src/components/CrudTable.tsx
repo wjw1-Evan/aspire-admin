@@ -3,11 +3,15 @@ import { Table, Button, Space, Popconfirm } from 'antd';
 import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { TableColumnsType, TableProps } from 'antd';
 
-export interface CrudTableColumn<T = any> extends Exclude<TableColumnsType<T>[number], undefined> {
+export interface CrudTableColumn<T = any> {
   key: string;
   title: string;
   dataIndex?: keyof T;
+  width?: number;
+  fixed?: 'left' | 'right';
+  align?: 'left' | 'center' | 'right';
   render?: (value: any, record: T, index: number) => React.ReactNode;
+  [key: string]: any;
 }
 
 export interface CrudTableProps<T = any> extends Omit<TableProps<T>, 'columns'> {
@@ -40,7 +44,7 @@ export interface CrudTableProps<T = any> extends Omit<TableProps<T>, 'columns'> 
  * 通用CRUD表格组件
  * 提供标准的查看、编辑、删除操作
  */
-function CrudTable<T extends Record<string, any>>({
+function CrudTable<T extends Record<string, any> = any>({
   columns,
   data,
   loading = false,
@@ -129,7 +133,9 @@ function CrudTable<T extends Record<string, any>>({
   };
   
   // 合并列配置
-  const finalColumns = showActions ? [...columns, actionColumn] : columns;
+  const finalColumns: TableColumnsType<T> = showActions 
+    ? [...columns as any, actionColumn as any] 
+    : columns as any;
   
   return (
     <Table<T>

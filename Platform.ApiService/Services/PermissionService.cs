@@ -10,6 +10,7 @@ public class PermissionService : IPermissionService
     private readonly IMongoCollection<Permission> _permissions;
     private readonly IMongoCollection<Role> _roles;
     private readonly IMongoCollection<AppUser> _users;
+    private readonly IMongoCollection<UserCompany> _userCompanies;
     private readonly ILogger<PermissionService> _logger;
 
     public PermissionService(IMongoDatabase database, ILogger<PermissionService> logger)
@@ -17,6 +18,7 @@ public class PermissionService : IPermissionService
         _permissions = database.GetCollection<Permission>("permissions");
         _roles = database.GetCollection<Role>("roles");
         _users = database.GetCollection<AppUser>("users");
+        _userCompanies = database.GetCollection<UserCompany>("userCompanies");
         _logger = logger;
     }
 
@@ -363,20 +365,30 @@ public class PermissionService : IPermissionService
         // 获取用户的所有权限（角色权限 + 自定义权限）
         var allPermissionIds = new List<string>();
         
-        // 1. 获取角色权限
-        if (user.RoleIds != null && user.RoleIds.Any())
+        // 1. 获取当前企业的角色权限（v3.1: 使用 UserCompany 系统）
+        if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            var roleFilter = Builders<Role>.Filter.And(
-                Builders<Role>.Filter.In(r => r.Id, user.RoleIds),
-                MongoFilterExtensions.NotDeleted<Role>()
+            var userCompanyFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, user.CurrentCompanyId),
+                MongoFilterExtensions.NotDeleted<UserCompany>()
             );
-            var roles = await _roles.Find(roleFilter).ToListAsync();
             
-            foreach (var role in roles)
+            var userCompany = await _userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
+            if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
             {
-                if (role.PermissionIds != null)
+                var roleFilter = Builders<Role>.Filter.And(
+                    Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
+                    MongoFilterExtensions.NotDeleted<Role>()
+                );
+                var roles = await _roles.Find(roleFilter).ToListAsync();
+                
+                foreach (var role in roles)
                 {
-                    allPermissionIds.AddRange(role.PermissionIds);
+                    if (role.PermissionIds != null)
+                    {
+                        allPermissionIds.AddRange(role.PermissionIds);
+                    }
                 }
             }
         }
@@ -419,28 +431,38 @@ public class PermissionService : IPermissionService
         var rolePermissions = new List<Permission>();
         var customPermissions = new List<Permission>();
 
-        // 1. 获取角色权限
-        if (user.RoleIds != null && user.RoleIds.Any())
+        // 1. 获取当前企业的角色权限（v3.1: 使用 UserCompany 系统）
+        if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            var roleFilter = Builders<Role>.Filter.And(
-                Builders<Role>.Filter.In(r => r.Id, user.RoleIds),
-                MongoFilterExtensions.NotDeleted<Role>()
+            var userCompanyFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, user.CurrentCompanyId),
+                MongoFilterExtensions.NotDeleted<UserCompany>()
             );
-            var roles = await _roles.Find(roleFilter).ToListAsync();
             
-            foreach (var role in roles)
+            var userCompany = await _userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
+            if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
             {
-                roleNames.Add(role.Name);
+                var roleFilter = Builders<Role>.Filter.And(
+                    Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
+                    MongoFilterExtensions.NotDeleted<Role>()
+                );
+                var roles = await _roles.Find(roleFilter).ToListAsync();
                 
-                if (role.PermissionIds != null && role.PermissionIds.Any())
+                foreach (var role in roles)
                 {
-                    var permissionFilter = Builders<Permission>.Filter.And(
-                        Builders<Permission>.Filter.In(p => p.Id, role.PermissionIds),
-                        MongoFilterExtensions.NotDeleted<Permission>()
-                    );
-                    var permissions = await _permissions.Find(permissionFilter).ToListAsync();
-                    rolePermissions.AddRange(permissions);
-                    allPermissionCodes.AddRange(permissions.Select(p => p.Code));
+                    roleNames.Add(role.Name);
+                    
+                    if (role.PermissionIds != null && role.PermissionIds.Any())
+                    {
+                        var permissionFilter = Builders<Permission>.Filter.And(
+                            Builders<Permission>.Filter.In(p => p.Id, role.PermissionIds),
+                            MongoFilterExtensions.NotDeleted<Permission>()
+                        );
+                        var permissions = await _permissions.Find(permissionFilter).ToListAsync();
+                        rolePermissions.AddRange(permissions);
+                        allPermissionCodes.AddRange(permissions.Select(p => p.Code));
+                    }
                 }
             }
         }

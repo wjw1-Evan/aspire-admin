@@ -22,15 +22,11 @@ docs/
 ## 🎯 快速导航
 
 ### 新手入门
-- [开始使用](reports/START-HERE.md) - 项目快速入门指南
-- [系统就绪](reports/READY-TO-TEST.md) - 系统就绪状态
-- [完成报告](reports/ALL-DONE.md) - 项目完成总结
 - [**v5.0 优化完成**](reports/V5-OPTIMIZATION-COMPLETE.md) - v5.0 后端架构优化完成
 - [**业务逻辑检查与修复**](reports/BUSINESS-LOGIC-REVIEW-AND-FIXES.md) - v3.0 业务流程优化报告 ⭐ **最新**
 - [**用户加入流程实施**](reports/USER-JOIN-FLOW-IMPLEMENTATION.md) - 用户注册流程修复
 - [**v3.0 多租户实施完成**](reports/MULTI-TENANT-IMPLEMENTATION-COMPLETE.md) - 多企业多用户管理系统实施报告
 - [业务逻辑修复总结](reports/BUSINESS-LOGIC-FIXES-SUMMARY.md) - v3.0 业务逻辑修复清单
-- [业务流程分析](reports/BUSINESS-PROCESS-ANALYSIS.md) - v3.1 业务流程分析报告
 - [第二轮修复总结](reports/SECOND-ROUND-FIXES-SUMMARY.md) - v3.0 第二轮业务逻辑修复总结
 
 ### v2.0 版本更新
@@ -40,8 +36,6 @@ docs/
 - [API 变更清单](optimization/API-CHANGES-CHECKLIST.md) - API 接口变更
 
 ### v3.0 版本更新（最新）
-- [v3.0 优化总结](optimization/OPTIMIZATION-V3.md) - 代码质量优化详情
-- [v3.0 完成总结](optimization/OPTIMIZATION-V3-SUMMARY.md) - 优化成果总结
 - [v3.0 最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - 完整的最终报告
 - [代码质量改进指南](optimization/CODE-QUALITY-IMPROVEMENTS.md) - 最佳实践指南
 - [组件优化指南](optimization/COMPONENT-OPTIMIZATION-GUIDE.md) - 组件拆分和性能优化
@@ -49,14 +43,9 @@ docs/
 ### v3.1 版本更新（多企业隶属架构）
 - [v3.1 快速开始](features/QUICK-START-V3.1.md) - v3.1 多企业隶属架构快速上手指南 ⭐ **推荐**
 - [v3.1 架构变更提案](features/V3.1-ARCHITECTURE-CHANGE-PROPOSAL.md) - 多企业隶属架构设计方案
-- [多租户系统说明](features/MULTI-TENANT-README.md) - 多租户系统实施完成说明
+- [多租户系统说明](features/MULTI-TENANT-SYSTEM.md) - 多租户系统完整文档
 - [v3.1 实施完成](reports/V3.1-IMPLEMENTATION-COMPLETE.md) - 完整实施报告
 - [v3.1 最终总结](reports/V3.1-FINAL-SUMMARY.md) - 项目完成总结
-- [v3.1 后端完成](reports/V3.1-BACKEND-COMPLETE.md) - 后端架构完成报告
-- [v3.1 核心功能完成](reports/V3.1-CORE-FEATURES-COMPLETE.md) - 核心功能实现报告
-- [v3.1 实施进度](reports/V3.1-IMPLEMENTATION-PROGRESS.md) - 实施进度跟踪
-- [v3.1 中期报告](reports/V3.1-INTERIM-REPORT.md) - 中期实施报告
-- [v3.1 阶段2完成](reports/V3.1-PHASE2-COMPLETE.md) - 核心架构完成报告
 
 ### 核心功能
 
@@ -68,7 +57,6 @@ docs/
 - [API 端点汇总](features/API-ENDPOINTS-SUMMARY.md) - 完整的 API 列表
 - [API 检查报告](features/API-CHECK-REPORT.md) - API 测试状态
 - [多租户测试指南](features/MULTI-TENANT-TESTING-GUIDE.md) - 完整的测试文档
-- [多租户实施状态](features/MULTI-TENANT-IMPLEMENTATION-STATUS.md) - 实施进度和技术细节
 - [多租户变更日志](features/MULTI-TENANT-CHANGELOG.md) - v3.0 变更记录
 
 #### 通知系统
@@ -92,6 +80,7 @@ docs/
 - [权限最佳实践](permissions/PERMISSION-BEST-PRACTICES.md) - 最佳实践
 - [权限 API 示例](permissions/PERMISSION-API-EXAMPLES.md) - API 使用示例
 - [权限快速参考](permissions/PERMISSION-QUICK-REFERENCE.md) - 快速查询
+- [权限系统说明](permissions/PERMISSION-SYSTEM-README.md) - 系统说明文档
 
 #### 用户管理
 - [用户日志实现](features/USER-LOG-IMPLEMENTATION.md) - 活动日志
@@ -154,16 +143,8 @@ docs/
 - [优化 README](optimization/README.md) - 优化说明
 - [测试指南](optimization/TESTING-GUIDE.md) - 测试方法
 - [业务逻辑优化总结](optimization/BUSINESS-LOGIC-OPTIMIZATION-SUMMARY.md) - 业务优化
-- [优化变更日志](optimization/OPTIMIZATION-CHANGELOG.md) - 变更记录
-- [优化 v2](optimization/OPTIMIZATION-V2.md) - v2 优化
 - [v3.0 优化最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - v3.0 完整报告
 - [代码清理报告](optimization/CODE-CLEANUP-REPORT.md) - 代码清理
-- [v4.0 重构优化计划](optimization/REFACTORING-PLAN.md) - v4.0 重构计划
-- [v4.0 重构结果报告](optimization/REFACTORING-RESULTS-V4.md) - v4.0 详细对比
-- [v4.0 优化总结](optimization/V4-OPTIMIZATION-SUMMARY.md) - v4.0 完成总结
-- [v4.0 最终完整报告](optimization/V4-FINAL-COMPLETE-REPORT.md) - v4.0 完整报告
-- [v4.0 快速参考](optimization/V4-QUICK-REFERENCE.md) - v4.0 快速上手
-- [v4.0 扩展优化报告](optimization/V4-EXTENDED-OPTIMIZATION.md) - v4.0 继续优化
 - [**v5.0 优化完成摘要**](optimization/OPTIMIZATION-V5-SUMMARY.md) - v5.0 架构优化总结 ⭐ **最新**
 - [**v5.0 优化前后对比**](optimization/V5-BEFORE-AFTER-COMPARISON.md) - 代码对比展示 ⭐ **推荐**
 - [**后端代码优化报告**](optimization/BACKEND-CODE-OPTIMIZATION-REPORT.md) - 后端架构优化详情 ⭐ **新增**

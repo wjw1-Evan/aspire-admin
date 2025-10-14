@@ -212,7 +212,9 @@ public class UserCompanyService : BaseService, IUserCompanyService
                 RoleIds = membership.RoleIds,
                 RoleNames = roleNames,
                 JoinedAt = membership.JoinedAt,
-                IsActive = user.IsActive
+                IsActive = user.IsActive,
+                Status = membership.Status,
+                CompanyId = companyId
             });
         }
         

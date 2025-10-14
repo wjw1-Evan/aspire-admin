@@ -393,6 +393,8 @@ declare namespace API {
     roleNames: string[];
     joinedAt: string;
     isActive: boolean;
+    status: string;
+    companyId: string;
   };
 
   type UpdateMemberRolesRequest = {

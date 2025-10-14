@@ -209,6 +209,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 获取企业成员列表（管理员）
     /// </summary>
     [HttpGet("{companyId}/members")]
+    [RequirePermission("company", "read")]
     public async Task<IActionResult> GetCompanyMembers(string companyId)
     {
         var members = await _userCompanyService.GetCompanyMembersAsync(companyId);
@@ -219,6 +220,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 更新成员角色（管理员）
     /// </summary>
     [HttpPut("{companyId}/members/{userId}/roles")]
+    [RequirePermission("company", "update")]
     public async Task<IActionResult> UpdateMemberRoles(
         string companyId, 
         string userId, 
@@ -235,6 +237,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 设置/取消成员管理员权限（管理员）
     /// </summary>
     [HttpPut("{companyId}/members/{userId}/admin")]
+    [RequirePermission("company", "update")]
     public async Task<IActionResult> SetMemberAdmin(
         string companyId,
         string userId,

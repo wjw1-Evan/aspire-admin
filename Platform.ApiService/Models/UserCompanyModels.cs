@@ -230,3 +230,20 @@ public class JoinRequestDetail
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>
+/// 企业成员信息
+/// </summary>
+public class CompanyMemberItem
+{
+    public string UserId { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public bool IsAdmin { get; set; }
+    public List<string> RoleIds { get; set; } = new();
+    public List<string> RoleNames { get; set; } = new();
+    public DateTime JoinedAt { get; set; }
+    public bool IsActive { get; set; }
+    public string Status { get; set; } = "active";
+    public string CompanyId { get; set; } = string.Empty;
+}
+

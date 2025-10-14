@@ -149,3 +149,4 @@ function CrudTable<T extends Record<string, any>>({
 
 export default CrudTable;
 
+

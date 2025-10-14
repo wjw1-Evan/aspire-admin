@@ -9,5 +9,14 @@ import Footer from './Footer';
 import { Question, SelectLang } from './RightContent';
 import { AvatarDropdown, AvatarName } from './RightContent/AvatarDropdown';
 import NoticeIcon from './NoticeIcon';
+import { CompanySwitcher } from './CompanySwitcher';
 
-export { AvatarDropdown, AvatarName, Footer, NoticeIcon, Question, SelectLang };
+export { 
+  AvatarDropdown, 
+  AvatarName, 
+  Footer, 
+  NoticeIcon, 
+  Question, 
+  SelectLang,
+  CompanySwitcher  // v3.1: 企业切换器
+};

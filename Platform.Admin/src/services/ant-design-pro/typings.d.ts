@@ -130,6 +130,7 @@ declare namespace API {
   };
 
   type LoginParams = {
+    // v3.1: 移除 companyCode，用户名全局唯一
     username?: string;
     password?: string;
     autoLogin?: boolean;
@@ -235,4 +236,176 @@ declare namespace API {
     userAgent?: string;
     createdAt?: string;
   };
+
+  // 企业相关类型 (v3.0 新增)
+  type Company = {
+    id?: string;
+    name: string;
+    code: string;
+    logo?: string;
+    description?: string;
+    industry?: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    isActive: boolean;
+    maxUsers: number;
+    expiresAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+
+  type RegisterCompanyRequest = {
+    companyName: string;
+    companyCode: string;
+    companyDescription?: string;
+    industry?: string;
+    adminUsername: string;
+    adminPassword: string;
+    adminEmail: string;
+    contactName?: string;
+    contactPhone?: string;
+  };
+
+  type RegisterCompanyResult = {
+    company?: Company;
+    token?: string;
+    refreshToken?: string;
+    expiresAt?: string;
+  };
+
+  type UpdateCompanyRequest = {
+    name?: string;
+    description?: string;
+    industry?: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    logo?: string;
+  };
+
+  type CompanyStatistics = {
+    totalUsers: number;
+    activeUsers: number;
+    totalRoles: number;
+    totalMenus: number;
+    totalPermissions: number;
+    maxUsers: number;
+    remainingUsers: number;
+    isExpired: boolean;
+    expiresAt?: string;
+  };
+
+  type RefreshTokenRequest = {
+    refreshToken: string;
+  };
+
+  type RefreshTokenResult = {
+    status?: string;
+    token?: string;
+    refreshToken?: string;
+    expiresAt?: string;
+    errorMessage?: string;
+  };
+
+  // v3.1: 多企业隶属相关类型
+  type UserCompany = {
+    id?: string;
+    userId: string;
+    companyId: string;
+    roleIds: string[];
+    isAdmin: boolean;
+    status: string;  // active, pending, rejected
+    joinedAt: string;
+    approvedBy?: string;
+    approvedAt?: string;
+  };
+
+  type UserCompanyItem = {
+    companyId: string;
+    companyName: string;
+    companyCode: string;
+    isAdmin: boolean;
+    isCurrent: boolean;
+    isPersonal: boolean;
+    joinedAt: string;
+    roleNames: string[];
+  };
+
+  type CompanyJoinRequest = {
+    id?: string;
+    userId: string;
+    companyId: string;
+    status: string;  // pending, approved, rejected, cancelled
+    reason?: string;
+    reviewedBy?: string;
+    reviewedAt?: string;
+    rejectReason?: string;
+    createdAt?: string;
+  };
+
+  type JoinRequestDetail = {
+    id: string;
+    userId: string;
+    username: string;
+    userEmail?: string;
+    companyId: string;
+    companyName: string;
+    status: string;
+    reason?: string;
+    reviewedBy?: string;
+    reviewedByName?: string;
+    reviewedAt?: string;
+    rejectReason?: string;
+    createdAt: string;
+  };
+
+  type ApplyToJoinCompanyRequest = {
+    companyId: string;
+    reason?: string;
+  };
+
+  type CompanySearchResult = {
+    company: Company;
+    isMember: boolean;
+    hasPendingRequest: boolean;
+    memberStatus?: string;
+    memberCount: number;
+  };
+
+  type SwitchCompanyRequest = {
+    targetCompanyId: string;
+  };
+
+  type SwitchCompanyResult = {
+    companyId: string;
+    companyName: string;
+    menus: MenuTreeNode[];
+    permissionCodes: string[];
+  };
+
+  type CompanyMemberItem = {
+    userId: string;
+    username: string;
+    email?: string;
+    isAdmin: boolean;
+    roleIds: string[];
+    roleNames: string[];
+    joinedAt: string;
+    isActive: boolean;
+  };
+
+  type UpdateMemberRolesRequest = {
+    roleIds: string[];
+  };
+
+  type SetAdminRequest = {
+    isAdmin: boolean;
+  };
+
+  type ReviewJoinRequestRequest = {
+    defaultRoleIds?: string[];
+    rejectReason?: string;
+  };
 }
+

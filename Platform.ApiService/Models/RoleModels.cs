@@ -25,6 +25,9 @@ public class Role : ISoftDeletable, INamedEntity, ITimestamped
     [BsonElement("permissionIds")]
     public List<string> PermissionIds { get; set; } = new();
 
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 

@@ -49,6 +49,9 @@ public class Menu : ISoftDeletable, INamedEntity, ITimestamped
     [BsonElement("permissions")]
     public List<string> Permissions { get; set; } = new();
 
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

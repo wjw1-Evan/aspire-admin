@@ -40,6 +40,22 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
+    /// v3.1: 当前企业ID
+    /// </summary>
+    protected string? CurrentCompanyId => User?.FindFirst("currentCompanyId")?.Value 
+                                        ?? User?.FindFirst("companyId")?.Value;
+
+    /// <summary>
+    /// v3.1: 获取必需的企业 ID（如果为空则抛出异常）
+    /// </summary>
+    protected string GetRequiredCompanyId()
+    {
+        if (string.IsNullOrEmpty(CurrentCompanyId))
+            throw new UnauthorizedAccessException("未找到企业信息");
+        return CurrentCompanyId;
+    }
+
+    /// <summary>
     /// 检查当前用户是否为管理员
     /// 注意：此方法已废弃，请使用 HasPermissionAsync 进行权限检查
     /// </summary>

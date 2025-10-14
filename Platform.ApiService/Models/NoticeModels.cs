@@ -42,6 +42,9 @@ public class NoticeIconItem : ISoftDeletable, IEntity, ITimestamped
     [BsonElement("clickClose")]
     public bool ClickClose { get; set; }
 
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

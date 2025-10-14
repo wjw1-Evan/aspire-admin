@@ -7,7 +7,7 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 权限实体
 /// </summary>
-public class Permission : ISoftDeletable
+public class Permission : ISoftDeletable, IEntity, ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -30,6 +30,9 @@ public class Permission : ISoftDeletable
 
     [BsonElement("description")]
     public string? Description { get; set; }
+
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -13,10 +13,11 @@ public class NoticeService : BaseService, INoticeService
     public NoticeService(
         IMongoDatabase database, 
         IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger<NoticeService> logger)
-        : base(database, httpContextAccessor, logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _noticeRepository = new BaseRepository<NoticeIconItem>(database, "notices", httpContextAccessor);
+        _noticeRepository = new BaseRepository<NoticeIconItem>(database, "notices", httpContextAccessor, tenantContext);
     }
 
     public async Task<NoticeIconListResponse> GetNoticesAsync()

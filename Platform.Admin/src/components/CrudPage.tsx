@@ -243,3 +243,4 @@ function CrudPage<T extends Record<string, any>>({
 
 export default CrudPage;
 
+

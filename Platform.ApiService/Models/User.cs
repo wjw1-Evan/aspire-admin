@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
 
-public class User : ISoftDeletable, IEntity
+public class User : ISoftDeletable, IEntity, ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -18,6 +18,9 @@ public class User : ISoftDeletable, IEntity
 
     [BsonElement("age")]
     public int Age { get; set; }
+
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -167,6 +170,9 @@ public class UserActivityLog : ISoftDeletable, IEntity
 
     [BsonElement("duration")]
     public long? Duration { get; set; }
+
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -1,0 +1,387 @@
+---
+description: 新增业务实体开发清单
+---
+
+# 新增业务实体开发清单
+
+## 🎯 适用场景
+
+当你需要创建新的业务实体（如 Product、Order、Customer 等）时，必须遵循以下清单。
+
+## ✅ 强制清单
+
+### 1. 实体类定义
+
+```csharp
+// ✅ 必须实现的接口
+public class MyEntity : IEntity, ISoftDeletable, ITimestamped
+{
+    // ✅ 主键（必须）
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? Id { get; set; }
+    
+    // ✅ 多租户字段（v3.0 必须）
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+    
+    // ✅ 软删除字段（必须）
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+    
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+    
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+    
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
+    
+    // ✅ 时间戳字段（必须）
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    
+    // ✅ 业务字段
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+    
+    // ... 其他业务字段
+}
+```
+
+### 2. 请求/响应模型
+
+```csharp
+// ✅ 创建请求模型
+public class CreateMyEntityRequest
+{
+    [Required(ErrorMessage = "名称不能为空")]
+    [StringLength(100, ErrorMessage = "名称长度不能超过100个字符")]
+    public string Name { get; set; } = string.Empty;
+    
+    // ... 其他字段
+}
+
+// ✅ 更新请求模型
+public class UpdateMyEntityRequest
+{
+    public string? Name { get; set; }
+    // ... 其他字段（都是可选）
+}
+```
+
+### 3. 服务层实现
+
+```csharp
+// ✅ 服务接口
+public interface IMyEntityService
+{
+    Task<List<MyEntity>> GetAllAsync();
+    Task<MyEntity?> GetByIdAsync(string id);
+    Task<MyEntity> CreateAsync(CreateMyEntityRequest request);
+    Task<bool> UpdateAsync(string id, UpdateMyEntityRequest request);
+    Task<bool> DeleteAsync(string id, string? reason = null);
+}
+
+// ✅ 服务实现
+public class MyEntityService : BaseService, IMyEntityService
+{
+    private readonly BaseRepository<MyEntity> _repository;
+    
+    public MyEntityService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,  // ✅ 必须包含
+        ILogger<MyEntityService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
+    {
+        _repository = new BaseRepository<MyEntity>(
+            database, 
+            "my_entities",  // ✅ 集合名称
+            httpContextAccessor, 
+            tenantContext  // ✅ 必须传递
+        );
+    }
+    
+    public async Task<List<MyEntity>> GetAllAsync()
+    {
+        return await _repository.GetAllAsync();  // ✅ 自动租户过滤
+    }
+    
+    public async Task<MyEntity> CreateAsync(CreateMyEntityRequest request)
+    {
+        var entity = new MyEntity
+        {
+            Name = request.Name
+            // ✅ CompanyId, CreatedAt, UpdatedAt, IsDeleted 自动设置
+        };
+        
+        return await _repository.CreateAsync(entity);
+    }
+    
+    public async Task<bool> UpdateAsync(string id, UpdateMyEntityRequest request)
+    {
+        var updateBuilder = Builders<MyEntity>.Update;
+        var updates = new List<UpdateDefinition<MyEntity>>();
+        
+        if (request.Name != null)
+            updates.Add(updateBuilder.Set(e => e.Name, request.Name));
+        
+        var update = updateBuilder.Combine(updates);
+        return await _repository.UpdateAsync(id, update);
+    }
+    
+    public async Task<bool> DeleteAsync(string id, string? reason = null)
+    {
+        return await _repository.SoftDeleteAsync(id, reason);
+    }
+}
+```
+
+### 4. 控制器实现
+
+```csharp
+[ApiController]
+[Route("api/my-entity")]
+[Authorize]  // ✅ 控制器级别要求登录
+public class MyEntityController : BaseApiController
+{
+    private readonly IMyEntityService _service;
+
+    public MyEntityController(IMyEntityService service)
+    {
+        _service = service;
+    }
+
+    /// <summary>
+    /// 获取所有实体
+    /// </summary>
+    [HttpGet]
+    [RequirePermission("my-entity", "read")]  // ✅ 声明式权限
+    public async Task<IActionResult> GetAll()
+    {
+        var entities = await _service.GetAllAsync();
+        return Success(entities);
+    }
+
+    /// <summary>
+    /// 根据ID获取实体
+    /// </summary>
+    [HttpGet("{id}")]
+    [RequirePermission("my-entity", "read")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var entity = await _service.GetByIdAsync(id);
+        return Success(entity.EnsureFound("实体", id));
+    }
+
+    /// <summary>
+    /// 创建实体
+    /// </summary>
+    [HttpPost]
+    [RequirePermission("my-entity", "create")]
+    public async Task<IActionResult> Create([FromBody] CreateMyEntityRequest request)
+    {
+        request.Name.EnsureNotEmpty("名称");
+        
+        var entity = await _service.CreateAsync(request);
+        return Success(entity, ErrorMessages.CreateSuccess);
+    }
+
+    /// <summary>
+    /// 更新实体
+    /// </summary>
+    [HttpPut("{id}")]
+    [RequirePermission("my-entity", "update")]
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateMyEntityRequest request)
+    {
+        var success = await _service.UpdateAsync(id, request);
+        success.EnsureSuccess("实体", id);
+        return Success(ErrorMessages.UpdateSuccess);
+    }
+
+    /// <summary>
+    /// 删除实体
+    /// </summary>
+    [HttpDelete("{id}")]
+    [RequirePermission("my-entity", "delete")]
+    public async Task<IActionResult> Delete(string id, [FromQuery] string? reason = null)
+    {
+        var success = await _service.DeleteAsync(id, reason);
+        success.EnsureSuccess("实体", id);
+        return Success(ErrorMessages.DeleteSuccess);
+    }
+}
+```
+
+### 5. 服务注册
+
+在 [Program.cs](mdc:Platform.ApiService/Program.cs) 中注册：
+
+```csharp
+builder.Services.AddScoped<IMyEntityService, MyEntityService>();
+```
+
+### 6. 数据库索引
+
+在 [CreateMultiTenantIndexes.cs](mdc:Platform.ApiService/Scripts/CreateMultiTenantIndexes.cs) 中添加索引：
+
+```csharp
+private async Task CreateMyEntityIndexesAsync()
+{
+    var collection = _database.GetCollection<MyEntity>("my_entities");
+
+    // (CompanyId, Name) 复合唯一索引 - 企业内名称唯一
+    var companyNameIndex = Builders<MyEntity>.IndexKeys
+        .Ascending(e => e.CompanyId)
+        .Ascending(e => e.Name);
+    await collection.Indexes.CreateOneAsync(
+        new CreateIndexModel<MyEntity>(companyNameIndex, new CreateIndexOptions
+        {
+            Unique = true,
+            Name = "idx_myentity_company_name_unique"
+        })
+    );
+
+    // (CompanyId, IsDeleted) 复合索引
+    var companyDeletedIndex = Builders<MyEntity>.IndexKeys
+        .Ascending(e => e.CompanyId)
+        .Ascending(e => e.IsDeleted);
+    await collection.Indexes.CreateOneAsync(
+        new CreateIndexModel<MyEntity>(companyDeletedIndex, new CreateIndexOptions
+        {
+            Name = "idx_myentity_company_isdeleted"
+        })
+    );
+
+    _logger.LogInformation("MyEntity 索引创建完成");
+}
+```
+
+并在 `CreateIndexesAsync()` 方法中调用：
+
+```csharp
+public async Task CreateIndexesAsync()
+{
+    // ... 现有索引
+    
+    // 7. MyEntity 索引
+    await CreateMyEntityIndexesAsync();
+    
+    _logger.LogInformation("多租户索引创建完成！");
+}
+```
+
+### 7. 权限初始化
+
+在 [PermissionService.cs](mdc:Platform.ApiService/Services/PermissionService.cs) 的 `GetDefaultPermissions()` 方法中添加：
+
+```csharp
+var resources = new[]
+{
+    // ... 现有资源
+    ("my-entity", "我的实体"),  // 新增
+};
+```
+
+## 🔍 常见错误
+
+### 错误 1：忘记添加 CompanyId
+
+```csharp
+// ❌ 错误：缺少 companyId 字段
+public class MyEntity : IEntity, ISoftDeletable, ITimestamped
+{
+    public string? Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    // ❌ 缺少 CompanyId！
+}
+
+// ✅ 正确：包含 companyId
+public class MyEntity : IEntity, ISoftDeletable, ITimestamped
+{
+    public string? Id { get; set; }
+    
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;  // ✅
+    
+    public string Name { get; set; } = string.Empty;
+}
+```
+
+### 错误 2：服务构造函数缺少 ITenantContext
+
+```csharp
+// ❌ 错误：缺少 ITenantContext
+public MyService(
+    IMongoDatabase database,
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<MyService> logger)
+    : base(database, httpContextAccessor, logger)  // ❌ 编译错误
+
+// ✅ 正确：包含 ITenantContext
+public MyService(
+    IMongoDatabase database,
+    IHttpContextAccessor httpContextAccessor,
+    ITenantContext tenantContext,  // ✅
+    ILogger<MyService> logger)
+    : base(database, httpContextAccessor, tenantContext, logger)
+```
+
+### 错误 3：BaseRepository 实例化缺少参数
+
+```csharp
+// ❌ 错误：缺少 tenantContext
+_repository = new BaseRepository<MyEntity>(
+    database, 
+    "my_entities", 
+    httpContextAccessor
+);  // ❌ 编译错误
+
+// ✅ 正确：包含 tenantContext
+_repository = new BaseRepository<MyEntity>(
+    database, 
+    "my_entities", 
+    httpContextAccessor, 
+    tenantContext  // ✅
+);
+```
+
+### 错误 4：直接使用 IMongoCollection
+
+```csharp
+// ❌ 错误：绕过租户过滤
+var collection = _database.GetCollection<MyEntity>("my_entities");
+var all = await collection.Find(_ => true).ToListAsync();
+
+// ✅ 正确：使用 BaseRepository
+var all = await _repository.GetAllAsync();
+```
+
+## 📝 完整开发清单
+
+新增业务实体时，按顺序完成：
+
+- [ ] 1. 创建实体类（包含 CompanyId）
+- [ ] 2. 实现 IEntity, ISoftDeletable, ITimestamped
+- [ ] 3. 创建请求/响应模型
+- [ ] 4. 创建服务接口和实现（继承 BaseService）
+- [ ] 5. 使用 BaseRepository（传递 ITenantContext）
+- [ ] 6. 创建控制器（继承 BaseApiController）
+- [ ] 7. 在 Program.cs 注册服务
+- [ ] 8. 创建数据库索引（CompanyId 相关）
+- [ ] 9. 添加权限定义到 PermissionService
+- [ ] 10. 测试数据隔离（创建多个企业验证）
+
+## 🎯 记住
+
+**三个必须：**
+1. ✅ 实体必须有 `companyId` 字段
+2. ✅ 服务必须包含 `ITenantContext` 依赖
+3. ✅ 必须使用 `BaseRepository` 进行数据访问
+
+遵循清单，确保多租户架构的完整性！

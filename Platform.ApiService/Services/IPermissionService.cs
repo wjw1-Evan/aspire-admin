@@ -19,5 +19,8 @@ public interface IPermissionService
     
     // 初始化系统默认权限
     Task InitializeDefaultPermissionsAsync();
+    
+    // 获取默认权限定义（用于企业注册）
+    List<(string ResourceName, string ResourceTitle, string Action, string ActionTitle, string? Description)> GetDefaultPermissions();
 }
 

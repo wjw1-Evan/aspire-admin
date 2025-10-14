@@ -94,6 +94,9 @@ public class LocationInfo
 
 public class LoginRequest
 {
+    /// <summary>
+    /// 用户名（v3.1: 全局唯一，不需要企业代码）
+    /// </summary>
     [Required(ErrorMessage = "用户名不能为空")]
     [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
     public string? Username { get; set; }
@@ -157,11 +160,38 @@ public class AppUser : ISoftDeletable, IEntity, ITimestamped
     [BsonElement("email")]
     public string? Email { get; set; }
 
+    /// <summary>
+    /// 角色ID列表（v3.0 已废弃，v3.1使用 UserCompany.RoleIds）
+    /// 保留用于向后兼容和数据迁移
+    /// </summary>
     [BsonElement("roleIds")]
-    public List<string> RoleIds { get; set; } = new();
+    [BsonIgnoreIfNull]
+    [Obsolete("v3.1: 使用 UserCompany.RoleIds 代替")]
+    public List<string>? RoleIds { get; set; }
 
     [BsonElement("customPermissionIds")]
     public List<string> CustomPermissionIds { get; set; } = new();
+
+    /// <summary>
+    /// 企业ID（v3.0 已废弃，v3.1使用 CurrentCompanyId）
+    /// 保留用于向后兼容和数据迁移
+    /// </summary>
+    [BsonElement("companyId")]
+    [BsonIgnoreIfNull]
+    [Obsolete("v3.1: 使用 CurrentCompanyId 代替")]
+    public string? CompanyId { get; set; }
+    
+    /// <summary>
+    /// 当前选中的企业ID（v3.1新增）
+    /// </summary>
+    [BsonElement("currentCompanyId")]
+    public string? CurrentCompanyId { get; set; }
+    
+    /// <summary>
+    /// 个人企业ID（注册时自动创建，v3.1新增）
+    /// </summary>
+    [BsonElement("personalCompanyId")]
+    public string? PersonalCompanyId { get; set; }
 
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;

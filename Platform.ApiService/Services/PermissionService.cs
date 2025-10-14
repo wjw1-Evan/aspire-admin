@@ -243,6 +243,53 @@ public class PermissionService : IPermissionService
         return groups;
     }
 
+    /// <summary>
+    /// 获取默认权限定义（用于企业注册时创建）
+    /// </summary>
+    public List<(string ResourceName, string ResourceTitle, string Action, string ActionTitle, string? Description)> GetDefaultPermissions()
+    {
+        // 定义系统资源
+        var resources = new[]
+        {
+            ("user", "用户"),
+            ("role", "角色"),
+            ("menu", "菜单"),
+            ("notice", "公告"),
+            ("tag", "标签"),
+            ("permission", "权限"),
+            ("activity-log", "活动日志"),
+            ("company", "企业")  // 新增企业管理权限
+        };
+
+        // 定义操作类型
+        var actions = new[]
+        {
+            ("create", "创建"),
+            ("read", "查看"),
+            ("update", "修改"),
+            ("delete", "删除")
+        };
+
+        var permissions = new List<(string, string, string, string, string?)>();
+
+        // 为每个资源生成 4 个权限（CRUD）
+        foreach (var (resourceName, resourceTitle) in resources)
+        {
+            foreach (var (action, actionTitle) in actions)
+            {
+                permissions.Add((
+                    resourceName,
+                    resourceTitle,
+                    action,
+                    actionTitle,
+                    $"{resourceTitle}{actionTitle}权限"
+                ));
+            }
+        }
+
+        return permissions;
+    }
+
     public async Task InitializeDefaultPermissionsAsync()
     {
         // 定义系统资源

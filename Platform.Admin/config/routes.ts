@@ -33,6 +33,17 @@ export default [
     ],
   },
   {
+    path: '/company',
+    layout: false,
+    routes: [
+      {
+        name: 'company-register',
+        path: '/company/register',
+        component: './company/register',
+      },
+    ],
+  },
+  {
     path: '/welcome',
     name: 'welcome',
     icon: 'smile',
@@ -71,6 +82,12 @@ export default [
         path: '/system/user-log',
         component: './user-log',
       },
+      {
+        name: 'company-settings',
+        icon: 'bank',
+        path: '/system/company-settings',
+        component: './company/settings',
+      },
     ],
   },
   {
@@ -83,6 +100,25 @@ export default [
     name: 'account.center',
     path: '/account/center',
     component: './account/center',
+    hideInMenu: true,
+  },
+  // v3.1: 企业管理相关页面
+  {
+    name: 'company-search',
+    path: '/company/search',
+    component: './company/search',
+    hideInMenu: true,
+  },
+  {
+    name: 'my-join-requests',
+    path: '/join-requests/my',
+    component: './join-requests/my',
+    hideInMenu: true,
+  },
+  {
+    name: 'pending-join-requests',
+    path: '/join-requests/pending',
+    component: './join-requests/pending',
     hideInMenu: true,
   },
   {

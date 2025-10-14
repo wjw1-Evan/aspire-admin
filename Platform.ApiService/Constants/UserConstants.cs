@@ -124,6 +124,15 @@ public static class ErrorMessages
     public const string InvalidUsernameFormat = "用户名格式不正确";
     public const string PasswordTooShort = "密码长度不能少于6个字符";
     public const string PasswordTooLong = "密码长度不能超过50个字符";
+    
+    // 企业相关
+    public const string CompanyNotFound = "企业不存在";
+    public const string CompanyCodeExists = "企业代码已存在";
+    public const string CompanyExpired = "企业已过期，请联系管理员续费";
+    public const string CompanyInactive = "企业未激活，请联系管理员";
+    public const string MaxUsersReached = "已达到最大用户数限制";
+    public const string InvalidCompanyCode = "企业代码格式不正确";
+    public const string CompanyRequired = "未找到企业信息";
 }
 
 

@@ -17,10 +17,11 @@ public class RoleService : BaseService, IRoleService
     public RoleService(
         IMongoDatabase database, 
         IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger<RoleService> logger)
-        : base(database, httpContextAccessor, logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _roleRepository = new BaseRepository<Role>(database, "roles", httpContextAccessor);
+        _roleRepository = new BaseRepository<Role>(database, "roles", httpContextAccessor, tenantContext);
         _users = GetCollection<AppUser>("users");
         _permissions = GetCollection<Permission>("permissions");
     }

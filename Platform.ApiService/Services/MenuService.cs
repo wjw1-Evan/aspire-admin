@@ -16,10 +16,11 @@ public class MenuService : BaseService, IMenuService
     public MenuService(
         IMongoDatabase database, 
         IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger<MenuService> logger)
-        : base(database, httpContextAccessor, logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _menuRepository = new BaseRepository<Menu>(database, "menus", httpContextAccessor);
+        _menuRepository = new BaseRepository<Menu>(database, "menus", httpContextAccessor, tenantContext);
         _roles = GetCollection<Role>("roles");
     }
 

@@ -46,6 +46,13 @@ public class JwtService : IJwtService
             new("userId", user.Id ?? string.Empty),
             new("username", user.Username)
         };
+        
+        // v3.1: 添加当前企业ID到token
+        if (!string.IsNullOrEmpty(user.CurrentCompanyId))
+        {
+            claims.Add(new("currentCompanyId", user.CurrentCompanyId));
+            claims.Add(new("companyId", user.CurrentCompanyId));  // 兼容性
+        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -98,6 +105,7 @@ public class JwtService : IJwtService
             new("type", "refresh"),
             new("userId", user.Id ?? string.Empty),
             new("username", user.Username),
+            new("companyId", user.CompanyId),  // 新增：企业ID
             new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 

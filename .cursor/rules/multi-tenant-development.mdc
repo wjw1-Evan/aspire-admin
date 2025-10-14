@@ -1,0 +1,558 @@
+---
+description: 多租户系统开发规范和最佳实践
+---
+
+# 多租户系统开发规范
+
+## 🎯 核心原则
+
+本项目采用**共享数据库 + CompanyId 字段**的多租户架构：
+- 用户与企业：一对一关系
+- 数据隔离：通过 `companyId` 字段100%隔离
+- 自动过滤：BaseRepository 自动处理租户过滤
+- JWT Token：包含 `companyId` claim
+
+## ✅ 正确的开发方式
+
+### 1. 新增业务实体时
+
+**必须执行的步骤：**
+
+#### ① 添加 CompanyId 字段
+
+```csharp
+// ✅ 正确：所有业务实体都必须添加 companyId
+[BsonElement("companyId")]
+public string CompanyId { get; set; } = string.Empty;
+```
+
+#### ② 实现必需的接口
+
+```csharp
+// ✅ 正确：实现三个接口
+public class MyEntity : IEntity, ISoftDeletable, ITimestamped
+{
+    public string? Id { get; set; }
+    
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+    
+    // ISoftDeletable 字段
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+    public string? DeletedReason { get; set; }
+    
+    // ITimestamped 字段
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    
+    // 业务字段...
+}
+```
+
+#### ③ 使用 BaseRepository
+
+```csharp
+// ✅ 正确：使用 BaseRepository
+public class MyService : BaseService, IMyService
+{
+    private readonly BaseRepository<MyEntity> _repository;
+    
+    public MyService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,  // ✅ 必须包含
+        ILogger<MyService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
+    {
+        _repository = new BaseRepository<MyEntity>(
+            database, 
+            "my_entities", 
+            httpContextAccessor, 
+            tenantContext  // ✅ 必须传递
+        );
+    }
+    
+    // ✅ 查询自动过滤到当前企业
+    public async Task<List<MyEntity>> GetAllAsync()
+    {
+        return await _repository.GetAllAsync();
+        // 自动查询：WHERE companyId = currentCompanyId AND isDeleted = false
+    }
+    
+    // ✅ 创建时自动设置 CompanyId
+    public async Task<MyEntity> CreateAsync(CreateRequest request)
+    {
+        var entity = new MyEntity
+        {
+            Name = request.Name
+            // CompanyId 会自动设置
+        };
+        
+        return await _repository.CreateAsync(entity);
+    }
+}
+```
+
+### 2. 查询数据时
+
+```csharp
+// ✅ 正确：使用 BaseRepository 方法（自动租户过滤）
+var users = await _userRepository.GetAllAsync();
+var user = await _userRepository.GetByIdAsync(id);
+var exists = await _userRepository.ExistsAsync(filter);
+
+// ❌ 错误：直接使用 IMongoCollection（绕过租户过滤）
+var users = await _users.Find(_ => true).ToListAsync();
+```
+
+### 3. 创建数据时
+
+```csharp
+// ✅ 正确：使用 BaseRepository.CreateAsync（自动设置 CompanyId）
+var entity = new MyEntity { Name = "Test" };
+await _repository.CreateAsync(entity);
+
+// ❌ 错误：直接插入（CompanyId 不会自动设置）
+await _collection.InsertOneAsync(entity);
+
+// ❌ 错误：手动设置 CompanyId（应该让系统自动处理）
+entity.CompanyId = GetCurrentCompanyId();
+await _collection.InsertOneAsync(entity);
+```
+
+### 4. 服务层开发
+
+```csharp
+// ✅ 正确：继承 BaseService 并包含 ITenantContext
+public class MyService : BaseService, IMyService
+{
+    public MyService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,  // ✅ 必须
+        ILogger<MyService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
+    {
+        // 初始化...
+    }
+    
+    // ✅ 可以使用基类提供的方法
+    protected string GetCompanyId() => GetCurrentCompanyId();
+    protected string GetRequiredCompanyId() => GetRequiredCompanyId();
+}
+
+// ❌ 错误：缺少 ITenantContext
+public MyService(
+    IMongoDatabase database,
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<MyService> logger)
+    : base(database, httpContextAccessor, logger)  // ❌ 编译错误
+```
+
+### 5. 获取租户信息
+
+```csharp
+// ✅ 正确：使用 BaseService 提供的方法
+var companyId = GetCurrentCompanyId();      // 可为 null
+var requiredId = GetRequiredCompanyId();    // 不存在则抛异常
+
+// ✅ 正确：使用 TenantContext（如果直接注入）
+var companyId = _tenantContext.GetCurrentCompanyId();
+
+// ❌ 错误：手动从 HttpContext 提取
+var companyId = _httpContextAccessor.HttpContext?.User?.FindFirst("companyId")?.Value;
+```
+
+## 🚫 禁止的做法
+
+### ❌ 不要绕过租户过滤
+
+```csharp
+// ❌ 禁止：直接使用 IMongoCollection 查询所有数据
+var allUsers = await _users.Find(_ => true).ToListAsync();
+
+// ✅ 正确：使用 BaseRepository
+var users = await _userRepository.GetAllAsync();
+```
+
+### ❌ 不要手动过滤 CompanyId
+
+```csharp
+// ❌ 禁止：手动添加 CompanyId 过滤
+var companyId = GetCurrentCompanyId();
+var filter = Builders<AppUser>.Filter.Eq(u => u.CompanyId, companyId);
+var users = await _users.Find(filter).ToListAsync();
+
+// ✅ 正确：让 BaseRepository 自动处理
+var users = await _userRepository.GetAllAsync();
+```
+
+### ❌ 不要手动设置 CompanyId
+
+```csharp
+// ❌ 禁止：手动设置 CompanyId
+var entity = new MyEntity
+{
+    Name = "Test",
+    CompanyId = GetCurrentCompanyId()  // ❌ 不需要手动设置
+};
+await _collection.InsertOneAsync(entity);
+
+// ✅ 正确：使用 BaseRepository（自动设置）
+var entity = new MyEntity { Name = "Test" };
+await _repository.CreateAsync(entity);
+```
+
+### ❌ 不要跨企业操作
+
+```csharp
+// ❌ 禁止：尝试访问其他企业的数据
+var otherCompanyId = "other-company-id";
+var filter = Builders<AppUser>.Filter.Eq(u => u.CompanyId, otherCompanyId);
+var users = await _users.Find(filter).ToListAsync();
+
+// ✅ 正确：只能访问当前企业的数据
+var users = await _userRepository.GetAllAsync();
+```
+
+## 🔧 特殊场景处理
+
+### 场景1：需要访问多个企业数据（系统级操作）
+
+```csharp
+// ⚠️ 特殊场景：超级管理员功能
+// 直接使用 IMongoCollection，绕过租户过滤
+public async Task<List<Company>> GetAllCompaniesAsync()
+{
+    // 系统级操作，不使用租户过滤
+    var companies = _database.GetCollection<Company>("companies");
+    var filter = Builders<Company>.Filter.Eq(c => c.IsDeleted, false);
+    return await companies.Find(filter).ToListAsync();
+}
+
+// ⚠️ 必须添加注释说明为什么绕过租户过滤
+```
+
+### 场景2：跨企业关联查询
+
+```csharp
+// 如果确实需要跨企业查询（非常罕见）
+// 必须有明确的业务理由和安全检查
+public async Task<MyEntity?> GetByIdWithoutTenantFilter(string id)
+{
+    // ⚠️ 警告：绕过租户过滤，仅用于系统级操作
+    var filter = Builders<MyEntity>.Filter.And(
+        Builders<MyEntity>.Filter.Eq(e => e.Id, id),
+        Builders<MyEntity>.Filter.Eq(e => e.IsDeleted, false)
+    );
+    return await _collection.Find(filter).FirstOrDefaultAsync();
+}
+```
+
+### 场景3：检查企业配额
+
+```csharp
+// ✅ 创建用户前检查配额
+public async Task<AppUser> CreateUserAsync(CreateUserRequest request)
+{
+    var companyId = GetRequiredCompanyId();
+    
+    // 检查企业用户配额
+    var companies = Database.GetCollection<Company>("companies");
+    var company = await companies
+        .Find(c => c.Id == companyId && c.IsDeleted == false)
+        .FirstOrDefaultAsync();
+    
+    if (company != null)
+    {
+        var currentUserCount = await _users.CountDocumentsAsync(
+            Builders<AppUser>.Filter.And(
+                Builders<AppUser>.Filter.Eq(u => u.CompanyId, companyId),
+                Builders<AppUser>.Filter.Eq(u => u.IsDeleted, false)
+            )
+        );
+
+        if (currentUserCount >= company.MaxUsers)
+        {
+            throw new InvalidOperationException(ErrorMessages.MaxUsersReached);
+        }
+    }
+    
+    // 创建用户...
+}
+```
+
+### 场景4：检查企业状态
+
+```csharp
+// ✅ 登录时检查企业状态
+public async Task<ApiResponse<LoginData>> LoginAsync(LoginRequest request)
+{
+    // 验证用户...
+    
+    // 检查企业状态
+    var companies = _database.GetCollection<Company>("companies");
+    var company = await companies
+        .Find(c => c.Id == user.CompanyId && c.IsDeleted == false)
+        .FirstOrDefaultAsync();
+    
+    if (company == null)
+        return ApiResponse<LoginData>.ErrorResult("COMPANY_NOT_FOUND", "企业不存在");
+        
+    if (!company.IsActive)
+        return ApiResponse<LoginData>.ErrorResult("COMPANY_INACTIVE", "企业未激活");
+        
+    if (company.ExpiresAt.HasValue && company.ExpiresAt.Value < DateTime.UtcNow)
+        return ApiResponse<LoginData>.ErrorResult("COMPANY_EXPIRED", "企业已过期");
+    
+    // 生成 Token...
+}
+```
+
+## 📋 开发清单
+
+### 新增业务实体时
+
+- [ ] 实体添加 `companyId` 字段（string 类型，`[BsonElement("companyId")]`）
+- [ ] 实体实现 `IEntity`, `ISoftDeletable`, `ITimestamped` 接口
+- [ ] 使用 `BaseRepository<T>` 进行数据访问
+- [ ] 服务继承 `BaseService`（构造函数包含 `ITenantContext`）
+- [ ] 创建 BaseRepository 时传递 `tenantContext` 参数
+- [ ] 测试数据隔离（创建多个企业测试）
+- [ ] 创建或更新数据库索引（`companyId` 相关）
+
+### 代码审查清单
+
+- [ ] 所有业务实体都有 `companyId` 字段
+- [ ] 所有查询都使用 `BaseRepository`（不直接使用 IMongoCollection）
+- [ ] 所有服务的构造函数包含 `ITenantContext`
+- [ ] 创建 BaseRepository 时传递了 `tenantContext`
+- [ ] 没有手动设置 `CompanyId`（由 BaseRepository 自动设置）
+- [ ] 没有手动过滤 `CompanyId`（由 BaseRepository 自动过滤）
+- [ ] JWT Token 包含 `companyId` claim
+- [ ] 登录时检查企业状态（是否激活、是否过期）
+- [ ] 创建用户时检查企业配额
+
+## 🏗️ BaseRepository 工作原理
+
+### 自动租户过滤机制
+
+```csharp
+protected FilterDefinition<T> BuildTenantFilter(FilterDefinition<T>? additionalFilter = null)
+{
+    var builder = Builders<T>.Filter;
+    var filters = new List<FilterDefinition<T>>
+    {
+        builder.Eq(e => e.IsDeleted, false)  // 自动过滤已删除
+    };
+
+    // ✅ 使用反射检测实体是否有 CompanyId 属性
+    if (typeof(T).GetProperty("CompanyId") != null)
+    {
+        var companyId = _tenantContext.GetCurrentCompanyId();
+        if (!string.IsNullOrEmpty(companyId))
+        {
+            filters.Add(builder.Eq("companyId", companyId));  // 自动租户过滤
+        }
+    }
+
+    if (additionalFilter != null)
+        filters.Add(additionalFilter);
+        
+    return builder.And(filters);
+}
+```
+
+**关键点：**
+- 使用反射检测 `CompanyId` 属性
+- 从 `TenantContext` 获取当前企业ID
+- 自动添加过滤条件
+- 所有查询方法都使用此过滤器
+
+### 自动设置 CompanyId
+
+```csharp
+public virtual async Task<T> CreateAsync(T entity)
+{
+    entity.CreatedAt = DateTime.UtcNow;
+    entity.UpdatedAt = DateTime.UtcNow;
+    entity.IsDeleted = false;
+    
+    // ✅ 如果实体有 CompanyId 属性，自动设置
+    if (typeof(T).GetProperty("CompanyId") != null)
+    {
+        var companyId = _tenantContext.GetCurrentCompanyId();
+        if (!string.IsNullOrEmpty(companyId))
+        {
+            typeof(T).GetProperty("CompanyId")?.SetValue(entity, companyId);
+        }
+    }
+    
+    await Collection.InsertOneAsync(entity);
+    return entity;
+}
+```
+
+## 💡 最佳实践
+
+### 1. 始终使用 BaseRepository
+
+```csharp
+// ✅ 推荐
+private readonly BaseRepository<AppUser> _userRepository;
+
+// ❌ 不推荐（除非有特殊需求）
+private readonly IMongoCollection<AppUser> _users;
+```
+
+### 2. 服务构造函数标准模板
+
+```csharp
+public class MyService : BaseService, IMyService
+{
+    private readonly BaseRepository<MyEntity> _repository;
+    
+    public MyService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,  // ✅ 必须
+        ILogger<MyService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
+    {
+        _repository = new BaseRepository<MyEntity>(
+            database, 
+            "collection_name", 
+            httpContextAccessor, 
+            tenantContext  // ✅ 必须
+        );
+    }
+}
+```
+
+### 3. 查询模式
+
+```csharp
+// ✅ 简单查询
+var all = await _repository.GetAllAsync();
+var one = await _repository.GetByIdAsync(id);
+
+// ✅ 条件查询
+var filter = Builders<MyEntity>.Filter.Eq(e => e.Status, "active");
+var items = await _repository.FindAsync(filter);
+
+// ✅ 分页查询
+var (items, total) = await _repository.GetPagedAsync(filter, page, pageSize);
+```
+
+### 4. 更新和删除
+
+```csharp
+// ✅ 更新
+var update = Builders<MyEntity>.Update.Set(e => e.Status, "updated");
+await _repository.UpdateAsync(id, update);
+
+// ✅ 软删除
+await _repository.SoftDeleteAsync(id, reason);
+
+// ✅ 批量操作
+await _repository.UpdateManyAsync(filter, update);
+await _repository.SoftDeleteManyAsync(filter, reason);
+```
+
+## 🔐 安全考虑
+
+### 1. CompanyId 来源
+
+**安全的来源：**
+- ✅ 从 JWT Token 的 `companyId` claim 获取
+- ✅ 由 `TenantContext` 提供
+- ✅ JWT 由服务器签名，客户端无法篡改
+
+**不安全的来源：**
+- ❌ 从请求参数获取（用户可篡改）
+- ❌ 从 HTTP Header 获取（用户可篡改）
+- ❌ 从 Cookie 获取（用户可篡改）
+
+### 2. 数据访问权限
+
+```csharp
+// ✅ 只能访问当前企业的数据
+var users = await _userRepository.GetAllAsync();
+
+// ❌ 禁止尝试访问其他企业的数据
+var filter = Builders<AppUser>.Filter.Eq(u => u.CompanyId, "other-company-id");
+```
+
+### 3. 跨企业访问防护
+
+系统自动防护：
+- BaseRepository 自动添加 CompanyId 过滤
+- 无法通过修改查询条件访问其他企业数据
+- CompanyId 在 JWT 中，无法篡改
+
+## 📊 索引设计原则
+
+### 多租户索引规范
+
+```javascript
+// ✅ 正确：CompanyId 作为第一列
+db.users.createIndex({ companyId: 1, username: 1 }, { unique: true })
+db.users.createIndex({ companyId: 1, email: 1 })
+db.users.createIndex({ companyId: 1, isDeleted: 1, isActive: 1 })
+
+// ❌ 错误：CompanyId 不在第一列
+db.users.createIndex({ username: 1, companyId: 1 })
+```
+
+**原则：**
+1. CompanyId 始终作为复合索引的第一列
+2. 业务唯一性约束改为"企业内唯一"
+3. 所有常用查询都应有对应的复合索引
+
+### 索引创建位置
+
+在 [CreateMultiTenantIndexes.cs](mdc:Platform.ApiService/Scripts/CreateMultiTenantIndexes.cs) 中添加新索引。
+
+## 🧪 测试要求
+
+### 必须测试的场景
+
+1. **数据隔离测试**
+   - 创建多个企业
+   - 验证企业间数据互不可见
+
+2. **自动过滤测试**
+   - 查询只返回当前企业的数据
+   - 无法通过 ID 访问其他企业的数据
+
+3. **自动设置测试**
+   - 创建的实体自动设置正确的 CompanyId
+   - CompanyId 不为空
+
+## 📚 参考文档
+
+- [多租户系统完整文档](mdc:docs/features/MULTI-TENANT-SYSTEM.md)
+- [快速开始指南](mdc:docs/features/MULTI-TENANT-QUICK-START.md)
+- [测试指南](mdc:docs/features/MULTI-TENANT-TESTING-GUIDE.md)
+- [BaseRepository 实现](mdc:Platform.ApiService/Services/BaseRepository.cs)
+- [TenantContext 实现](mdc:Platform.ApiService/Services/TenantContext.cs)
+- [CompanyService 示例](mdc:Platform.ApiService/Services/CompanyService.cs)
+
+## 🎯 记住
+
+**核心原则：**
+1. ✅ 所有业务实体必须有 `companyId` 字段
+2. ✅ 始终使用 BaseRepository 进行数据访问
+3. ✅ 从不手动过滤或设置 CompanyId
+4. ✅ 服务必须包含 ITenantContext 依赖
+5. ✅ 创建索引时 CompanyId 作为第一列
+
+**系统保证：**
+- 100% 数据隔离
+- 自动租户过滤
+- 防止跨企业访问
+- JWT 签名保护
+
+遵循这些规范，确保多租户架构的安全性和正确性！

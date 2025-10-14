@@ -10,12 +10,14 @@ public class PermissionCheckService : IPermissionCheckService
     private readonly IMongoCollection<AppUser> _users;
     private readonly IMongoCollection<Role> _roles;
     private readonly IMongoCollection<Permission> _permissions;
+    private readonly ITenantContext _tenantContext;
 
-    public PermissionCheckService(IMongoDatabase database)
+    public PermissionCheckService(IMongoDatabase database, ITenantContext tenantContext)
     {
         _users = database.GetCollection<AppUser>("users");
         _roles = database.GetCollection<Role>("roles");
         _permissions = database.GetCollection<Permission>("permissions");
+        _tenantContext = tenantContext;
     }
 
     public async Task<bool> HasPermissionAsync(string userId, string permissionCode)
@@ -49,12 +51,14 @@ public class PermissionCheckService : IPermissionCheckService
 
         var rolePermissions = new List<Permission>();
         var customPermissions = new List<Permission>();
+        var companyId = user.CompanyId; // 使用用户的 CompanyId 确保安全性
 
-        // 获取角色权限
+        // 获取角色权限（v3.0 多租户：添加 CompanyId 过滤）
         if (user.RoleIds != null && user.RoleIds.Count > 0)
         {
             var roleFilter = Builders<Role>.Filter.And(
                 Builders<Role>.Filter.In(r => r.Id, user.RoleIds),
+                Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),  // v3.0: 企业过滤
                 Builders<Role>.Filter.Eq(r => r.IsActive, true),
                 MongoFilterExtensions.NotDeleted<Role>()
             );
@@ -65,17 +69,19 @@ public class PermissionCheckService : IPermissionCheckService
             {
                 var permFilter = Builders<Permission>.Filter.And(
                     Builders<Permission>.Filter.In(p => p.Id, rolePermissionIds),
+                    Builders<Permission>.Filter.Eq(p => p.CompanyId, companyId),  // v3.0: 企业过滤
                     MongoFilterExtensions.NotDeleted<Permission>()
                 );
                 rolePermissions = await _permissions.Find(permFilter).ToListAsync();
             }
         }
 
-        // 获取用户自定义权限
+        // 获取用户自定义权限（v3.0 多租户：添加 CompanyId 过滤）
         if (user.CustomPermissionIds != null && user.CustomPermissionIds.Count > 0)
         {
             var customPermFilter = Builders<Permission>.Filter.And(
                 Builders<Permission>.Filter.In(p => p.Id, user.CustomPermissionIds),
+                Builders<Permission>.Filter.Eq(p => p.CompanyId, companyId),  // v3.0: 企业过滤
                 MongoFilterExtensions.NotDeleted<Permission>()
             );
             customPermissions = await _permissions.Find(customPermFilter).ToListAsync();

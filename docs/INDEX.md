@@ -25,7 +25,10 @@ docs/
 - [开始使用](reports/START-HERE.md) - 项目快速入门指南
 - [系统就绪](reports/READY-TO-TEST.md) - 系统就绪状态
 - [完成报告](reports/ALL-DONE.md) - 项目完成总结
-- [**v5.0 优化完成**](reports/V5-OPTIMIZATION-COMPLETE.md) - v5.0 后端架构优化完成 ⭐ **最新**
+- [**v5.0 优化完成**](reports/V5-OPTIMIZATION-COMPLETE.md) - v5.0 后端架构优化完成
+- [**业务逻辑检查与修复**](reports/BUSINESS-LOGIC-REVIEW-AND-FIXES.md) - v3.0 业务流程优化报告 ⭐ **最新**
+- [**用户加入流程实施**](reports/USER-JOIN-FLOW-IMPLEMENTATION.md) - 用户注册流程修复
+- [**v3.0 多租户实施完成**](reports/MULTI-TENANT-IMPLEMENTATION-COMPLETE.md) - 多企业多用户管理系统实施报告
 
 ### v2.0 版本更新
 - [v2.0 更新总结](features/v2.0-UPDATES-SUMMARY.md) - 完整的 v2.0 版本更新说明
@@ -41,6 +44,17 @@ docs/
 - [组件优化指南](optimization/COMPONENT-OPTIMIZATION-GUIDE.md) - 组件拆分和性能优化
 
 ### 核心功能
+
+#### 多租户系统 ⭐ **v3.0 新增**
+- [多租户快速开始](features/MULTI-TENANT-QUICK-START.md) - 5分钟快速上手指南 ⭐ **推荐**
+- [多租户系统完整文档](features/MULTI-TENANT-SYSTEM.md) - 多企业多用户管理系统
+- [用户加入指南](features/USER-ONBOARDING-GUIDE.md) - 用户如何加入企业 ⭐ **重要**
+- [用户加入流程设计](features/USER-JOIN-COMPANY-DESIGN.md) - 技术设计方案
+- [API 端点汇总](features/API-ENDPOINTS-SUMMARY.md) - 完整的 API 列表
+- [API 检查报告](features/API-CHECK-REPORT.md) - API 测试状态
+- [多租户测试指南](features/MULTI-TENANT-TESTING-GUIDE.md) - 完整的测试文档
+- [多租户实施状态](features/MULTI-TENANT-IMPLEMENTATION-STATUS.md) - 实施进度和技术细节
+- [多租户变更日志](features/MULTI-TENANT-CHANGELOG.md) - v3.0 变更记录
 
 #### 通知系统
 - [欢迎通知功能](features/WELCOME-NOTICE-FEATURE.md) - v2.0 欢迎通知

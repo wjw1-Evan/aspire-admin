@@ -9,15 +9,18 @@ public abstract class BaseService
 {
     protected readonly IMongoDatabase Database;
     protected readonly IHttpContextAccessor HttpContextAccessor;
+    protected readonly ITenantContext TenantContext;
     protected readonly ILogger Logger;
 
     protected BaseService(
         IMongoDatabase database,
         IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger logger)
     {
         Database = database;
         HttpContextAccessor = httpContextAccessor;
+        TenantContext = tenantContext;
         Logger = logger;
     }
 
@@ -26,7 +29,7 @@ public abstract class BaseService
     /// </summary>
     protected string? GetCurrentUserId()
     {
-        return HttpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
+        return TenantContext.GetCurrentUserId();
     }
 
     /// <summary>
@@ -34,8 +37,41 @@ public abstract class BaseService
     /// </summary>
     protected string? GetCurrentUsername()
     {
-        return HttpContextAccessor.HttpContext?.User?.FindFirst("username")?.Value
-               ?? HttpContextAccessor.HttpContext?.User?.Identity?.Name;
+        return TenantContext.GetCurrentUsername();
+    }
+
+    /// <summary>
+    /// 获取当前企业ID
+    /// </summary>
+    protected string? GetCurrentCompanyId()
+    {
+        return TenantContext.GetCurrentCompanyId();
+    }
+
+    /// <summary>
+    /// 获取当前用户ID（必需，不存在则抛异常）
+    /// </summary>
+    protected string GetRequiredUserId()
+    {
+        var userId = GetCurrentUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new UnauthorizedAccessException("未找到用户信息");
+        }
+        return userId;
+    }
+
+    /// <summary>
+    /// 获取当前企业ID（必需，不存在则抛异常）
+    /// </summary>
+    protected string GetRequiredCompanyId()
+    {
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到企业信息");
+        }
+        return companyId;
     }
 
     /// <summary>

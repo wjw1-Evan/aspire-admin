@@ -58,6 +58,12 @@ builder.Services.AddMemoryCache();
 // Register services
 // 使用 Scoped 生命周期以支持 MongoDB 操作和请求范围
 // 使用接口注册以提高可测试性和解耦
+
+// 多租户上下文（v3.0 新增）
+builder.Services.AddScoped<ITenantContext, TenantContext>();
+
+// 核心服务
+builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -69,6 +75,13 @@ builder.Services.AddScoped<IRuleService, RuleService>();
 builder.Services.AddScoped<IUserActivityLogService, UserActivityLogService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IPermissionCheckService, PermissionCheckService>();
+
+// 企业管理服务（v3.0 新增）
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+
+// v3.1: 多企业隶属服务
+builder.Services.AddScoped<IUserCompanyService, UserCompanyService>();
+builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
 
 // 通用工具服务（v4.0 优化）
 builder.Services.AddScoped<IUniquenessChecker, UniquenessChecker>();
@@ -153,6 +166,12 @@ using (var scope = app.Services.CreateScope())
     var fixAllEntities = new FixAllEntitiesIsDeletedField(database);
     await fixAllEntities.FixAsync();
     
+    // ⚠️ 重要：多租户数据迁移（v3.0 新增）
+    // 必须在其他初始化脚本之前执行
+    var migrateToMultiTenant = new MigrateToMultiTenant(database,
+        scope.ServiceProvider.GetRequiredService<ILogger<MigrateToMultiTenant>>());
+    await migrateToMultiTenant.MigrateAsync();
+    
     // 初始化管理员用户
     var createAdminUser = new CreateAdminUser(database);
     await createAdminUser.CreateDefaultAdminAsync();
@@ -176,6 +195,14 @@ using (var scope = app.Services.CreateScope())
     
     // 创建数据库索引（提升查询性能）
     await CreateDatabaseIndexes.ExecuteAsync(database);
+    
+    // 创建多租户索引（v3.0 新增）
+    await CreateMultiTenantIndexes.ExecuteAsync(database,
+        scope.ServiceProvider.GetRequiredService<ILogger<CreateMultiTenantIndexes>>());
+    
+    // v3.1: 多企业隶属架构数据迁移和索引
+    await MigrateToMultiCompany.MigrateAsync(database);
+    await CreateMultiCompanyIndexes.ExecuteAsync(database);
     
     // 迁移通知 type 字段从数字到字符串
     await MigrateNoticeTypeToString.ExecuteAsync(database);

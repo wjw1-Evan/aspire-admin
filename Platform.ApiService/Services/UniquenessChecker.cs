@@ -18,10 +18,12 @@ public interface IUniquenessChecker
 public class UniquenessChecker : IUniquenessChecker
 {
     private readonly IMongoCollection<AppUser> _users;
+    private readonly ITenantContext _tenantContext;
 
-    public UniquenessChecker(IMongoDatabase database)
+    public UniquenessChecker(IMongoDatabase database, ITenantContext tenantContext)
     {
         _users = database.GetCollection<AppUser>("users");
+        _tenantContext = tenantContext;
     }
 
     /// <summary>
@@ -47,29 +49,31 @@ public class UniquenessChecker : IUniquenessChecker
     }
 
     /// <summary>
-    /// 检查用户名是否唯一
+    /// 检查用户名是否唯一（v3.1: 全局唯一）
     /// </summary>
     public async Task<bool> IsUsernameUniqueAsync(string username, string? excludeUserId = null)
     {
         var filterBuilder = Builders<AppUser>.Filter;
-        var filter = filterBuilder.Eq(u => u.Username, username);
+        var filters = new List<FilterDefinition<AppUser>>
+        {
+            filterBuilder.Eq(u => u.Username, username)
+        };
+        
+        // v3.1: 用户名全局唯一，不再按企业过滤
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filter = filterBuilder.And(
-                filter,
-                filterBuilder.Ne(u => u.Id, excludeUserId)
-            );
+            filters.Add(filterBuilder.Ne(u => u.Id, excludeUserId));
         }
         
-        filter = filter.AndNotDeleted();
+        var filter = filterBuilder.And(filters).AndNotDeleted();
         
         var existing = await _users.Find(filter).FirstOrDefaultAsync();
         return existing == null;
     }
 
     /// <summary>
-    /// 检查邮箱是否唯一
+    /// 检查邮箱是否唯一（v3.1: 全局唯一）
     /// </summary>
     public async Task<bool> IsEmailUniqueAsync(string email, string? excludeUserId = null)
     {
@@ -77,17 +81,19 @@ public class UniquenessChecker : IUniquenessChecker
             return true;
             
         var filterBuilder = Builders<AppUser>.Filter;
-        var filter = filterBuilder.Eq(u => u.Email, email);
+        var filters = new List<FilterDefinition<AppUser>>
+        {
+            filterBuilder.Eq(u => u.Email, email)
+        };
+        
+        // v3.1: 邮箱全局唯一，不再按企业过滤
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filter = filterBuilder.And(
-                filter,
-                filterBuilder.Ne(u => u.Id, excludeUserId)
-            );
+            filters.Add(filterBuilder.Ne(u => u.Id, excludeUserId));
         }
         
-        filter = filter.AndNotDeleted();
+        var filter = filterBuilder.And(filters).AndNotDeleted();
         
         var existing = await _users.Find(filter).FirstOrDefaultAsync();
         return existing == null;

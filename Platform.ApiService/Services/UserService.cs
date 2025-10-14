@@ -20,12 +20,13 @@ public class UserService : BaseService, IUserService
     public UserService(
         IMongoDatabase database, 
         IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger<UserService> logger,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService)
-        : base(database, httpContextAccessor, logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _userRepository = new BaseRepository<AppUser>(database, "users", httpContextAccessor);
+        _userRepository = new BaseRepository<AppUser>(database, "users", httpContextAccessor, tenantContext);
         _activityLogs = GetCollection<UserActivityLog>("user_activity_logs");
         _permissions = GetCollection<Permission>("permissions");
         _roles = GetCollection<Role>("roles");
@@ -88,15 +89,47 @@ public class UserService : BaseService, IUserService
             await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
         }
 
+        // v3.0 多租户：检查企业用户配额
+        var companyId = GetCurrentCompanyId();
+        if (!string.IsNullOrEmpty(companyId))
+        {
+            var companies = Database.GetCollection<Company>("companies");
+            var company = await companies.Find(c => c.Id == companyId && c.IsDeleted == false)
+                .FirstOrDefaultAsync();
+            
+            if (company != null)
+            {
+                // 统计当前企业的用户数（不包括已删除）
+                var currentUserCount = await _users.CountDocumentsAsync(
+                    Builders<AppUser>.Filter.And(
+                        Builders<AppUser>.Filter.Eq(u => u.CompanyId, companyId),
+                        Builders<AppUser>.Filter.Eq(u => u.IsDeleted, false)
+                    )
+                );
+
+                if (currentUserCount >= company.MaxUsers)
+                {
+                    throw new InvalidOperationException(ErrorMessages.MaxUsersReached);
+                }
+            }
+        }
+
         // 创建密码哈希
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        // v3.0 多租户：验证角色归属
+        var validatedRoleIds = new List<string>();
+        if (request.RoleIds != null && request.RoleIds.Count > 0)
+        {
+            validatedRoleIds = await ValidateRoleOwnershipAsync(request.RoleIds);
+        }
 
         var user = new AppUser
         {
             Username = request.Username,
             Email = request.Email,
             PasswordHash = passwordHash,
-            RoleIds = request.RoleIds ?? new List<string>(),
+            RoleIds = validatedRoleIds,
             IsActive = request.IsActive,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
@@ -157,8 +190,12 @@ public class UserService : BaseService, IUserService
             update = update.Set(user => user.Email, request.Email);
         }
 
+        // v3.0 多租户：验证角色归属
         if (request.RoleIds != null)
-            update = update.Set(user => user.RoleIds, request.RoleIds);
+        {
+            var validatedRoleIds = await ValidateRoleOwnershipAsync(request.RoleIds);
+            update = update.Set(user => user.RoleIds, validatedRoleIds);
+        }
 
         if (request.IsActive.HasValue)
             update = update.Set(user => user.IsActive, request.IsActive.Value);
@@ -531,17 +568,9 @@ public class UserService : BaseService, IUserService
 
         if (!string.IsNullOrEmpty(request.Email))
         {
-            // 检查邮箱是否已存在（排除当前用户）
-            var emailFilter = Builders<AppUser>.Filter.And(
-                Builders<AppUser>.Filter.Eq(u => u.Email, request.Email),
-                Builders<AppUser>.Filter.Ne(u => u.Id, userId),
-                SoftDeleteExtensions.NotDeleted<AppUser>()
-            );
-            var existingEmail = await _users.Find(emailFilter).FirstOrDefaultAsync();
-            if (existingEmail != null)
-            {
-                throw new InvalidOperationException("邮箱已存在");
-            }
+            // v3.0 多租户：使用统一的唯一性检查服务（企业内唯一）
+            _validationService.ValidateEmail(request.Email);
+            await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email, excludeUserId: userId);
             update = update.Set(user => user.Email, request.Email);
         }
 
@@ -674,4 +703,49 @@ public class UserService : BaseService, IUserService
             AllPermissionCodes = allPermissionCodes
         };
     }
+
+    #region 私有辅助方法
+
+    /// <summary>
+    /// 验证角色是否属于当前企业
+    /// </summary>
+    /// <param name="roleIds">要验证的角色ID列表</param>
+    /// <returns>验证通过的角色ID列表</returns>
+    /// <exception cref="InvalidOperationException">部分角色不存在或不属于当前企业</exception>
+    private async Task<List<string>> ValidateRoleOwnershipAsync(List<string> roleIds)
+    {
+        if (roleIds == null || roleIds.Count == 0)
+        {
+            return new List<string>();
+        }
+
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            // 如果没有企业上下文（如企业注册时创建管理员），直接返回
+            return roleIds;
+        }
+
+        // 查询属于当前企业的角色
+        var roleFilter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.In(r => r.Id, roleIds),
+            Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),
+            Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
+        );
+        var validRoles = await _roles.Find(roleFilter).ToListAsync();
+
+        // 验证所有请求的角色都存在且属于当前企业
+        if (validRoles.Count != roleIds.Count)
+        {
+            var invalidRoleIds = roleIds.Except(validRoles.Select(r => r.Id!)).ToList();
+            throw new InvalidOperationException(
+                $"部分角色不存在或不属于当前企业: {string.Join(", ", invalidRoleIds)}"
+            );
+        }
+
+        return roleIds;
+    }
+
+    #endregion
 }
+

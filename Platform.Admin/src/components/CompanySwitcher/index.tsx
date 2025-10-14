@@ -1,8 +1,9 @@
-import { BankOutlined, CheckOutlined, SwapOutlined } from '@ant-design/icons';
+import { BankOutlined, CheckOutlined, PlusOutlined } from '@ant-design/icons';
 import { Dropdown, Spin, App as AntApp } from 'antd';
 import type { MenuProps } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { request, useModel } from '@umijs/max';
+import { JoinCompanyModal } from '../JoinCompanyModal';
 import styles from './index.less';
 
 /**
@@ -15,6 +16,7 @@ export const CompanySwitcher: React.FC = () => {
   const [companies, setCompanies] = useState<API.UserCompanyItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
 
   // 加载用户的企业列表
   useEffect(() => {
@@ -131,20 +133,19 @@ export const CompanySwitcher: React.FC = () => {
     onClick: () => handleSwitch(company.companyId),
   }));
 
-  // 添加搜索企业选项
+  // 添加加入新企业选项
   menuItems.push({
     type: 'divider',
   });
   menuItems.push({
-    key: 'search',
+    key: 'join-company',
     label: (
-      <div className={styles.searchCompany}>
-        <SwapOutlined /> 加入其他企业
+      <div className={styles.joinCompany}>
+        <PlusOutlined /> 加入新企业
       </div>
     ),
     onClick: () => {
-      // 跳转到企业搜索页面
-      window.location.href = '/company/search';
+      setJoinModalOpen(true);
     },
   });
 
@@ -164,20 +165,31 @@ export const CompanySwitcher: React.FC = () => {
   }
 
   return (
-    <Dropdown
-      menu={{ items: menuItems }}
-      trigger={['click']}
-      placement="bottomRight"
-      disabled={switching}
-    >
-      <div className={styles.companySwitcher}>
-        <BankOutlined className={styles.icon} />
-        <span className={styles.companyName}>
-          {currentCompany.companyName}
-        </span>
-        {switching && <Spin size="small" style={{ marginLeft: 8 }} />}
-      </div>
-    </Dropdown>
+    <>
+      <Dropdown
+        menu={{ items: menuItems }}
+        trigger={['click']}
+        placement="bottomRight"
+        disabled={switching}
+      >
+        <div className={styles.companySwitcher}>
+          <BankOutlined className={styles.icon} />
+          <span className={styles.companyName}>
+            {currentCompany.companyName}
+          </span>
+          {switching && <Spin size="small" style={{ marginLeft: 8 }} />}
+        </div>
+      </Dropdown>
+
+      <JoinCompanyModal
+        open={joinModalOpen}
+        onClose={() => setJoinModalOpen(false)}
+        onSuccess={() => {
+          // 申请成功后刷新企业列表
+          loadCompanies();
+        }}
+      />
+    </>
   );
 };
 

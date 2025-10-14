@@ -18,6 +18,7 @@ public interface ICompanyService
 
 public class CompanyService : BaseService, ICompanyService
 {
+    private readonly IMongoDatabase _database;
     private readonly IMongoCollection<Company> _companies;
     private readonly IMongoCollection<AppUser> _users;
     private readonly IMongoCollection<Role> _roles;
@@ -35,6 +36,7 @@ public class CompanyService : BaseService, ICompanyService
         ILogger<CompanyService> logger)
         : base(database, httpContextAccessor, tenantContext, logger)
     {
+        _database = database;
         _companies = database.GetCollection<Company>("companies");
         _users = database.GetCollection<AppUser>("users");
         _roles = database.GetCollection<Role>("roles");
@@ -192,30 +194,56 @@ public class CompanyService : BaseService, ICompanyService
             throw new KeyNotFoundException(CompanyErrorMessages.CompanyNotFound);
         }
 
-        // TODO: v3.1重构 - 应该基于 UserCompany 关系统计用户数量
-#pragma warning disable CS0618 // 抑制过时API警告 - 暂时保留以确保兼容性
-        var companyFilter = Builders<AppUser>.Filter.Eq(u => u.CompanyId, companyId);
-#pragma warning restore CS0618
-        var notDeletedFilter = Builders<AppUser>.Filter.Eq(u => u.IsDeleted, false);
-        var activeFilter = Builders<AppUser>.Filter.Eq(u => u.IsActive, true);
+        // v3.1: 使用 UserCompany 表统计用户数量
+        var userCompanies = _database.GetCollection<UserCompany>("userCompanies");
+        
+        var ucFilter = Builders<UserCompany>.Filter.And(
+            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
+            Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+        );
+        var totalUsers = await userCompanies.CountDocumentsAsync(ucFilter);
+        
+        // 统计活跃用户（需要关联 AppUser 表）
+        var activeUserIds = await userCompanies
+            .Find(ucFilter)
+            .Project(uc => uc.UserId)
+            .ToListAsync();
+        
+        var activeUserFilter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.In(u => u.Id, activeUserIds),
+            Builders<AppUser>.Filter.Eq(u => u.IsActive, true),
+            Builders<AppUser>.Filter.Eq(u => u.IsDeleted, false)
+        );
+        var activeUsers = await _users.CountDocumentsAsync(activeUserFilter);
 
-        var totalUsers = await _users.CountDocumentsAsync(companyFilter & notDeletedFilter);
-        var activeUsers = await _users.CountDocumentsAsync(companyFilter & notDeletedFilter & activeFilter);
+        // 角色统计
+        var roleFilter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),
+            Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
+        );
+        var totalRoles = await _roles.CountDocumentsAsync(roleFilter);
 
-        var roleCompanyFilter = Builders<Role>.Filter.Eq(r => r.CompanyId, companyId);
-        var roleNotDeletedFilter = Builders<Role>.Filter.Eq(r => r.IsDeleted, false);
-        var totalRoles = await _roles.CountDocumentsAsync(roleCompanyFilter & roleNotDeletedFilter);
+        // 权限统计
+        var permFilter = Builders<Permission>.Filter.And(
+            Builders<Permission>.Filter.Eq(p => p.CompanyId, companyId),
+            Builders<Permission>.Filter.Eq(p => p.IsDeleted, false)
+        );
+        var totalPermissions = await _permissions.CountDocumentsAsync(permFilter);
 
-        var permCompanyFilter = Builders<Permission>.Filter.Eq(p => p.CompanyId, companyId);
-        var permNotDeletedFilter = Builders<Permission>.Filter.Eq(p => p.IsDeleted, false);
-        var totalPermissions = await _permissions.CountDocumentsAsync(permCompanyFilter & permNotDeletedFilter);
+        // 菜单统计：统计系统中所有启用的菜单
+        var menuFilter = Builders<Menu>.Filter.And(
+            Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
+            Builders<Menu>.Filter.Eq(m => m.IsDeleted, false)
+        );
+        var totalMenus = await _menus.CountDocumentsAsync(menuFilter);
 
         return new CompanyStatistics
         {
             TotalUsers = (int)totalUsers,
             ActiveUsers = (int)activeUsers,
             TotalRoles = (int)totalRoles,
-            TotalMenus = 0,  // 菜单是全局资源，不再统计
+            TotalMenus = (int)totalMenus,
             TotalPermissions = (int)totalPermissions,
             MaxUsers = company.MaxUsers,
             RemainingUsers = company.MaxUsers - (int)totalUsers,

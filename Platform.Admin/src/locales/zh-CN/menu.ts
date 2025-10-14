@@ -9,6 +9,7 @@ export default {
   'menu.system.role-management': '角色管理',
   'menu.system.menu-management': '菜单管理',
   'menu.system.user-log': '用户日志',
+  'menu.system.company-settings': '企业设置',
   'menu.account': '个人页',
   'menu.account.center': '个人中心',
   'menu.permission.assign': '分配权限',
@@ -17,4 +18,11 @@ export default {
   'menu.permission.failed': '权限分配失败',
   'menu.permission.selectAll': '全选',
   'menu.permission.unselectAll': '取消全选',
+  // 企业切换器
+  'component.companySwitcher.title': '切换企业',
+  'component.companySwitcher.join': '加入新企业',
+  'component.companySwitcher.search': '搜索企业',
+  'component.companySwitcher.applyReason': '申请理由',
+  'component.companySwitcher.submit': '提交申请',
+  'component.companySwitcher.cancel': '取消',
 };

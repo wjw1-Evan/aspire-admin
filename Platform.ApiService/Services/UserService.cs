@@ -54,6 +54,22 @@ public class UserService : BaseService, IUserService
         return await _userRepository.GetByIdAsync(id);
     }
 
+    /// <summary>
+    /// 根据ID获取用户（不使用多租户过滤）
+    /// v3.1: 用于获取个人中心信息等跨企业场景
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <returns>用户对象，不存在或已删除则返回 null</returns>
+    public async Task<AppUser?> GetUserByIdWithoutTenantFilterAsync(string id)
+    {
+        var users = GetCollection<AppUser>("users");
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(u => u.Id, id),
+            Builders<AppUser>.Filter.Eq(u => u.IsDeleted, false)
+        );
+        return await users.Find(filter).FirstOrDefaultAsync();
+    }
+
     public async Task<AppUser> CreateUserAsync(CreateUserRequest request)
     {
         var user = new AppUser
@@ -588,7 +604,13 @@ public class UserService : BaseService, IUserService
     // 个人中心相关方法
     public async Task<AppUser?> UpdateUserProfileAsync(string userId, UpdateProfileRequest request)
     {
-        var filter = Builders<AppUser>.Filter.Eq(user => user.Id, userId);
+        // v3.1: 使用不带多租户过滤的方式更新，因为用户可能属于多个企业
+        var users = GetCollection<AppUser>("users");
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(user => user.Id, userId),
+            Builders<AppUser>.Filter.Eq(user => user.IsDeleted, false)
+        );
+        
         var update = Builders<AppUser>.Update
             .Set(user => user.UpdatedAt, DateTime.UtcNow);
 
@@ -608,11 +630,12 @@ public class UserService : BaseService, IUserService
         if (request.Age.HasValue)
             update = update.Set(user => user.Age, request.Age.Value);
 
-        var result = await _users.UpdateOneAsync(filter, update);
+        var result = await users.UpdateOneAsync(filter, update);
 
         if (result.ModifiedCount > 0)
         {
-            return await GetUserByIdAsync(userId);
+            // v3.1: 使用不带多租户过滤的方式获取更新后的用户
+            return await GetUserByIdWithoutTenantFilterAsync(userId);
         }
 
         return null;
@@ -620,7 +643,8 @@ public class UserService : BaseService, IUserService
 
     public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
     {
-        var user = await GetUserByIdAsync(userId);
+        // v3.1: 修改密码时不使用多租户过滤
+        var user = await GetUserByIdWithoutTenantFilterAsync(userId);
         if (user == null)
             return false;
 

@@ -8,6 +8,7 @@ import React from 'react';
 import {
   AvatarDropdown,
   AvatarName,
+  CompanySwitcher,
   Footer,
   NoticeIcon,
   Question,
@@ -170,6 +171,7 @@ export const layout: RunTimeLayoutConfig = ({
   return {
     actionsRender: () => [
       <NoticeIcon key="NoticeIcon" />,
+      <CompanySwitcher key="CompanySwitcher" />,
       <Question key="doc" />,
       <SelectLang key="SelectLang" />,
     ],

@@ -78,25 +78,26 @@ const UserCenter: React.FC = () => {
       setLoading(true);
       const response = await getCurrentUserProfile();
       if (response.success && response.data) {
-        // 将 CurrentUser 转换为 UserProfile 格式
-        const currentUser = response.data;
+        // API 返回的是 AppUser 对象，包含 username, name, email 等字段
+        const apiUser = response.data as any;
         const profile: UserProfile = {
-          id: currentUser.userid || '',
-          username: currentUser.name || '',
-          name: currentUser.name,
-          email: currentUser.email,
-          age: 18, // 使用默认年龄，因为CurrentUser中没有age字段
-          role: currentUser.access || 'user',
-          isActive: currentUser.isLogin || false,
-          createdAt: '', // CurrentUser中没有这些时间字段，使用空字符串
-          updatedAt: '',
-          lastLoginAt: '',
+          id: apiUser.id || apiUser.userid || '',
+          username: apiUser.username || '',  // ✅ 使用 username 字段
+          name: apiUser.name || apiUser.username || '',  // name 可选，降级到 username
+          email: apiUser.email,
+          age: apiUser.age || 18,
+          role: apiUser.access || 'user',
+          isActive: apiUser.isActive || apiUser.isLogin || false,
+          createdAt: apiUser.createdAt || '',
+          updatedAt: apiUser.updatedAt || apiUser.updateAt || '',
+          lastLoginAt: apiUser.lastLoginAt || '',
         };
         setUserProfile(profile);
         form.setFieldsValue({
-          name: currentUser.name,
-          email: currentUser.email,
-          age: 18, // CurrentUser中没有age字段，使用默认值
+          username: apiUser.username,  // ✅ 设置 username（只读，不可修改）
+          name: apiUser.name || apiUser.username,  // 表单使用 name，如果没有则用 username
+          email: apiUser.email,
+          age: apiUser.age || 18,
         });
       }
     } catch (error) {
@@ -134,10 +135,25 @@ const UserCenter: React.FC = () => {
     fetchActivityLogs();
   }, []);
 
+  // 当打开编辑模式时，重新设置表单值
+  useEffect(() => {
+    if (editing && userProfile) {
+      form.setFieldsValue({
+        username: userProfile.username,
+        name: userProfile.name,
+        email: userProfile.email,
+        age: userProfile.age,
+      });
+    }
+  }, [editing, userProfile, form]);
+
   // 更新用户信息
   const handleUpdateProfile = async (values: any) => {
     try {
-      const response = await updateUserProfile(values);
+      // ✅ 过滤掉 username 字段，因为后端不允许修改用户名
+      const { username, ...updateData } = values;
+      
+      const response = await updateUserProfile(updateData);
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.account.center.updateSuccess', defaultMessage: '个人信息更新成功' }));
         setEditing(false);
@@ -279,7 +295,11 @@ const UserCenter: React.FC = () => {
             <ProFormText
               name="username"
               label={<FormattedMessage id="pages.account.center.username" defaultMessage="用户名" />}
-              rules={[{ required: true, message: '请输入用户名' }]}
+              disabled
+              tooltip="用户名不可修改"
+              fieldProps={{
+                style: { color: 'rgba(0, 0, 0, 0.45)' }
+              }}
             />
             <ProFormText
               name="name"

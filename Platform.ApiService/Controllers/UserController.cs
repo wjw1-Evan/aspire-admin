@@ -277,7 +277,8 @@ public class UserController : BaseApiController
     public async Task<IActionResult> GetCurrentUserProfile()
     {
         var userId = GetRequiredUserId();
-        var user = await _userService.GetUserByIdAsync(userId);
+        // v3.1: 获取用户信息时不使用多租户过滤，因为用户可以属于多个企业
+        var user = await _userService.GetUserByIdWithoutTenantFilterAsync(userId);
         if (user == null)
             throw new KeyNotFoundException("用户不存在");
 

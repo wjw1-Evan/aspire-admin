@@ -10,11 +10,13 @@ import { Question, SelectLang } from './RightContent';
 import { AvatarDropdown, AvatarName } from './RightContent/AvatarDropdown';
 import NoticeIcon from './NoticeIcon';
 import { CompanySwitcher } from './CompanySwitcher';
+import { JoinCompanyModal } from './JoinCompanyModal';
 
 export { 
   AvatarDropdown, 
   AvatarName, 
   Footer, 
+  JoinCompanyModal,
   NoticeIcon, 
   Question, 
   SelectLang,

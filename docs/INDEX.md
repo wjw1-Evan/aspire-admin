@@ -53,6 +53,7 @@ docs/
 #### 多租户系统 ⭐ **v3.0 新增**
 - [多租户快速开始](features/MULTI-TENANT-QUICK-START.md) - 5分钟快速上手指南 ⭐ **推荐**
 - [多租户系统完整文档](features/MULTI-TENANT-SYSTEM.md) - 多企业多用户管理系统
+- [企业切换和加入功能](features/COMPANY-SWITCHER-AND-JOIN.md) - 企业切换器和加入企业申请 ⭐ **新增**
 - [用户加入指南](features/USER-ONBOARDING-GUIDE.md) - 用户如何加入企业 ⭐ **重要**
 - [用户加入流程设计](features/USER-JOIN-COMPANY-DESIGN.md) - 技术设计方案
 - [API 端点汇总](features/API-ENDPOINTS-SUMMARY.md) - 完整的 API 列表

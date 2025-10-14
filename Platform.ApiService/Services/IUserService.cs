@@ -9,6 +9,7 @@ public interface IUserService
 {
     Task<List<AppUser>> GetAllUsersAsync();
     Task<AppUser?> GetUserByIdAsync(string id);
+    Task<AppUser?> GetUserByIdWithoutTenantFilterAsync(string id);
     Task<AppUser> CreateUserAsync(CreateUserRequest request);
     Task<AppUser?> UpdateUserAsync(string id, UpdateUserRequest request);
     Task<AppUser> CreateUserManagementAsync(CreateUserManagementRequest request);

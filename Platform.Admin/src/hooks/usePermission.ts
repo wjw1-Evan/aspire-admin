@@ -15,6 +15,13 @@ export function usePermission() {
   };
 
   /**
+   * 检查是否有指定角色
+   */
+  const hasRole = (roleName: string): boolean => {
+    return currentUser?.roles?.includes(roleName) ?? false;
+  };
+
+  /**
    * 检查是否有资源的指定操作权限
    */
   const can = (resource: string, action: string): boolean => {
@@ -35,11 +42,20 @@ export function usePermission() {
     return permissionCodes.every((code) => hasPermission(code));
   };
 
+  /**
+   * 检查是否为管理员
+   */
+  const isAdmin = (): boolean => {
+    return hasRole('admin') || hasRole('管理员');
+  };
+
   return {
     hasPermission,
+    hasRole,
     can,
     hasAnyPermission,
     hasAllPermissions,
+    isAdmin,
   };
 }
 

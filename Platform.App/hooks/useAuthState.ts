@@ -1,46 +1,59 @@
 /**
- * 认证状态 Hook
- * 提供认证状态相关的工具函数
+ * 简化的移动端认证状态管理 Hook
+ * 修复：统一状态管理，简化 API 调用
  */
 
-import { useCallback } from 'react';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCallback, useMemo } from 'react';
 
 export function useAuthState() {
-  const auth = useAuth();
+  const authContext = useAuth();
 
-  // 是否正在加载
-  const isLoading = auth.loading;
+  // 简化的权限检查
+  const hasPermission = useCallback((permissionCode: string): boolean => {
+    return authContext.hasPermission(permissionCode);
+  }, [authContext.hasPermission]);
 
-  // 是否已认证
-  const isAuthenticated = auth.isAuthenticated;
+  // 简化的角色检查
+  const hasRole = useCallback((roleName: string): boolean => {
+    return authContext.hasRole(roleName);
+  }, [authContext.hasRole]);
 
-  // 是否有错误
-  const hasError = !!auth.error;
+  // 简化的资源权限检查
+  const can = useCallback((resource: string, action: string): boolean => {
+    return authContext.can(resource, action);
+  }, [authContext.can]);
 
-  // 获取错误信息
-  const getErrorMessage = useCallback((): string | null => {
-    return auth.error?.message || null;
-  }, [auth.error]);
+  // 检查是否为管理员
+  const isAdmin = useCallback((): boolean => {
+    return hasRole('admin') || hasRole('管理员');
+  }, [hasRole]);
 
-  // 错误是否可重试
-  const isRetryable = useCallback((): boolean => {
-    return auth.error?.retryable || false;
-  }, [auth.error]);
-
-  // 清除错误
-  const clearError = useCallback(() => {
-    auth.clearError();
-  }, [auth]);
+  // 权限检查方法
+  const permissionMethods = useMemo(() => ({
+    hasPermission,
+    hasRole,
+    can,
+    isAdmin,
+  }), [hasPermission, hasRole, can, isAdmin]);
 
   return {
-    ...auth,
-    isLoading,
-    isAuthenticated,
-    hasError,
-    getErrorMessage,
-    isRetryable,
-    clearError,
+    // 状态
+    user: authContext.user,
+    isAuthenticated: authContext.isAuthenticated,
+    loading: authContext.loading,
+    error: authContext.error,
+    
+    // 权限检查
+    ...permissionMethods,
+    
+    // 认证方法
+    login: authContext.login,
+    logout: authContext.logout,
+    register: authContext.register,
+    refreshAuth: authContext.refreshAuth,
+    updateProfile: authContext.updateProfile,
+    changePassword: authContext.changePassword,
+    clearError: authContext.clearError,
   };
 }
-

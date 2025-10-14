@@ -17,6 +17,10 @@ public interface IPermissionService
     Task<List<Permission>> GetPermissionsByCodesAsync(List<string> codes);
     Task<List<PermissionGroup>> GetPermissionsGroupedByResourceAsync();
     
+    // 用户权限查询
+    Task<List<Permission>> GetUserAllPermissionsAsync(string userId);
+    Task<UserPermissionsResponse> GetUserPermissionsAsync(string userId);
+    
     // 初始化系统默认权限
     Task InitializeDefaultPermissionsAsync();
     

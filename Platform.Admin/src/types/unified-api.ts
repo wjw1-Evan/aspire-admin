@@ -30,12 +30,12 @@ export interface LoginData {
   expiresAt?: string;
 }
 
-// 用户信息
+// 用户信息（统一模型）
 export interface CurrentUser {
   id?: string;
-  name?: string;
+  username?: string;        // 用户名（对应后端 Username）
+  displayName?: string;     // 显示名称（对应后端 Name）
   avatar?: string;
-  userid?: string;
   email?: string;
   signature?: string;
   title?: string;
@@ -44,15 +44,15 @@ export interface CurrentUser {
   notifyCount?: number;
   unreadCount?: number;
   country?: string;
-  access?: string;
+  roles?: string[];         // 角色列表（简化权限系统）
+  permissions?: string[];   // 权限列表（简化权限系统）
   geographic?: GeographicInfo;
   address?: string;
   phone?: string;
   isLogin?: boolean;
+  currentCompanyId?: string; // 当前企业ID
   createdAt?: string;
   updatedAt?: string;
-  permissions?: string[];
-  roles?: string[];
 }
 
 export interface UserTag {

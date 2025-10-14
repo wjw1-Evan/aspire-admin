@@ -99,15 +99,16 @@ public class AuthService : IAuthService
             };
         }
 
-        // 构建用户信息
-        // 注意：用户的权限基于 RoleIds，前端使用 access 字段进行权限检查
-        // 这里暂时设置为 "user"，实际权限由角色系统决定
+        // 获取用户权限信息
+        var userPermissions = await _permissionService.GetUserPermissionsAsync(user.Id!);
+        
+        // 构建统一的用户信息
         return new CurrentUser
         {
             Id = user.Id,
-            Name = user.Username,
+            Username = user.Username,
+            DisplayName = user.Name,
             Avatar = "https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png",
-            UserId = user.Id,
             Email = user.Email,
             Signature = "海纳百川，有容乃大",
             Title = "平台用户",
@@ -124,7 +125,8 @@ public class AuthService : IAuthService
             NotifyCount = 12,
             UnreadCount = 11,
             Country = "China",
-            Access = "user", // 默认 access，实际权限由角色和权限系统决定
+            Roles = userPermissions.RoleNames,
+            Permissions = userPermissions.AllPermissionCodes,
             Geographic = new GeographicInfo
             {
                 Province = new LocationInfo { Label = "浙江省", Key = "330000" },
@@ -133,6 +135,7 @@ public class AuthService : IAuthService
             Address = "西湖区工专路 77 号",
             Phone = "0752-268888888",
             IsLogin = true,
+            CurrentCompanyId = user.CurrentCompanyId,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt
         };

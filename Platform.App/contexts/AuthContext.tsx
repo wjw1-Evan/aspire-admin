@@ -45,8 +45,9 @@ interface AuthContextType extends AuthState {
   changePassword: (request: ChangePasswordRequest) => Promise<ApiResponse<boolean>>;
   
   // 权限检查
-  hasPermission: (check: PermissionCheck) => boolean;
-  hasRole: (role: string) => boolean;
+  hasPermission: (permissionCode: string) => boolean;
+  hasRole: (roleName: string) => boolean;
+  can: (resource: string, action: string) => boolean;
   
   // Token 管理
   validateToken: () => Promise<boolean>;
@@ -124,28 +125,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   // 权限检查
-  const hasPermission = useCallback((check: PermissionCheck): boolean => {
-    if (!state.user || !state.isAuthenticated) {
+  const hasPermission = useCallback((permissionCode: string): boolean => {
+    if (!state.user || !state.isAuthenticated || !state.user.permissions) {
       return false;
     }
     
-    const { access, role } = check;
-    
-    if (role && state.user.access === role) {
-      return true;
-    }
-    
-    if (access && state.user.access === access) {
-      return true;
-    }
-    
-    return false;
+    return state.user.permissions.includes(permissionCode);
   }, [state.user, state.isAuthenticated]);
 
   // 角色检查
-  const hasRole = useCallback((role: string): boolean => {
-    return state.user?.access === role;
+  const hasRole = useCallback((roleName: string): boolean => {
+    if (!state.user || !state.user.roles) {
+      return false;
+    }
+    
+    return state.user.roles.includes(roleName);
   }, [state.user]);
+
+  // 检查是否有资源的指定操作权限
+  const can = useCallback((resource: string, action: string): boolean => {
+    return hasPermission(`${resource}:${action}`);
+  }, [hasPermission]);
 
   // 应用状态变化处理
   const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
@@ -204,6 +204,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     changePassword,
     hasPermission,
     hasRole,
+    can,
     validateToken,
     isTokenExpired,
     handleAppStateChange,
@@ -219,6 +220,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     changePassword,
     hasPermission,
     hasRole,
+    can,
     validateToken,
     isTokenExpired,
     handleAppStateChange,

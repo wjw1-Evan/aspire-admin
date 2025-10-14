@@ -5,14 +5,11 @@ using System.ComponentModel.DataAnnotations;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 菜单实体
+/// 菜单实体（简化模型）
+/// 修复：使用多租户基础实体类，简化软删除实现
 /// </summary>
-public class Menu : ISoftDeletable, INamedEntity, ITimestamped
+public class Menu : MultiTenantEntity, INamedEntity
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
-
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
@@ -48,28 +45,6 @@ public class Menu : ISoftDeletable, INamedEntity, ITimestamped
 
     [BsonElement("permissions")]
     public List<string> Permissions { get; set; } = new();
-
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    // 软删除字段
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 }
 
 /// <summary>

@@ -69,6 +69,16 @@ export default function access(
   };
   
   /**
+   * 检查是否有指定角色
+   */
+  const hasRole = (roleName: string): boolean => {
+    if (!currentUser || !currentUser.roles) {
+      return false;
+    }
+    return currentUser.roles.includes(roleName);
+  };
+  
+  /**
    * 检查是否有资源的指定操作权限
    */
   const can = (resource: string, action: string): boolean => {
@@ -76,10 +86,11 @@ export default function access(
   };
   
   return {
-    canAdmin: currentUser && currentUser.access === 'admin',
+    canAdmin: hasRole('admin') || hasRole('管理员'),
     canAccessMenu,
     canAccessPath,
     hasPermission,
+    hasRole,
     can,
     
     // 用户权限

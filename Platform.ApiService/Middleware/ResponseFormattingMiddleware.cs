@@ -10,6 +10,16 @@ public class ResponseFormattingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ResponseFormattingMiddleware> _logger;
+    
+    /// <summary>
+    /// JSON 序列化选项 - 使用 camelCase 命名策略
+    /// </summary>
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
 
     public ResponseFormattingMiddleware(RequestDelegate next, ILogger<ResponseFormattingMiddleware> logger)
     {
@@ -45,11 +55,11 @@ public class ResponseFormattingMiddleware
                         var wrappedResponse = new
                         {
                             success = true,
-                            data = JsonSerializer.Deserialize<object>(bodyText),
+                            data = JsonSerializer.Deserialize<object>(bodyText, JsonOptions),
                             timestamp = DateTime.UtcNow
                         };
 
-                        bodyText = JsonSerializer.Serialize(wrappedResponse);
+                        bodyText = JsonSerializer.Serialize(wrappedResponse, JsonOptions);
                         
                         // 更新 Content-Length
                         var bytes = Encoding.UTF8.GetBytes(bodyText);

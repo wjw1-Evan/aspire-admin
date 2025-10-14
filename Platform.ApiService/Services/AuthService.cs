@@ -107,7 +107,7 @@ public class AuthService : IAuthService
         {
             Id = user.Id,
             Username = user.Username,
-            DisplayName = user.Name,
+            DisplayName = user.Name ?? user.Username,  // 如果 Name 为空，使用 Username
             Avatar = "https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png",
             Email = user.Email,
             Signature = "海纳百川，有容乃大",
@@ -379,23 +379,28 @@ public class AuthService : IAuthService
             await permissions.InsertManyAsync(permissionList);
             _logger.LogInformation("创建 {Count} 个默认权限", permissionList.Count);
             
-            // 3. 创建管理员角色
+            // 3. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
+            var allMenus = await menus.Find(m => m.IsEnabled && !m.IsDeleted).ToListAsync();
+            var allMenuIds = allMenus.Select(m => m.Id!).ToList();
+            _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
+            
+            // 4. 创建管理员角色（分配所有菜单和权限）
             adminRole = new Role
             {
                 Name = "管理员",
                 Description = "企业管理员，拥有所有权限",
                 CompanyId = company.Id!,
                 PermissionIds = permissionList.Select(p => p.Id!).ToList(),
-                MenuIds = new List<string>(),
+                MenuIds = allMenuIds,  // ✅ 分配所有全局菜单
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
             
             await roles.InsertOneAsync(adminRole);
-            _logger.LogInformation("创建管理员角色: {RoleId}", adminRole.Id);
+            _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
             
-            // 4. 创建用户-企业关联（用户是管理员）
+            // 5. 创建用户-企业关联（用户是管理员）
             var userCompany = new UserCompany
             {
                 UserId = user.Id!,

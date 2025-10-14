@@ -13,7 +13,14 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // 配置 JSON 序列化选项
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.WriteIndented = false;
+    });
 
 // 配置 CORS - 根据环境区分安全策略
 builder.Services.AddCors(options =>
@@ -124,12 +131,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 // 添加健康检查
-builder.Services.AddHealthChecks()
-    .AddMongoDb(
-        mongodbConnectionString: builder.Configuration.GetConnectionString("mongodb") ?? "mongodb://localhost:27017",
-        name: "mongodb",
-        timeout: TimeSpan.FromSeconds(3),
-        tags: new[] { "database", "mongodb" });
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 

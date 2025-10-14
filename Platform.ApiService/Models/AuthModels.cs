@@ -24,6 +24,7 @@ public class CurrentUser
     /// 显示名称（对应 AppUser.Name）
     /// </summary>
     [BsonElement("displayName")]
+    [System.Text.Json.Serialization.JsonPropertyName("name")]
     public string? DisplayName { get; set; }
 
     /// <summary>

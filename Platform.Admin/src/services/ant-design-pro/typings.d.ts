@@ -31,7 +31,7 @@ declare namespace API {
   };
 
   type CurrentUser = {
-    name?: string;
+    name?: string;          // 对应后端 DisplayName (通过 JsonPropertyName 映射)
     avatar?: string;
     userid?: string;
     email?: string;
@@ -42,7 +42,9 @@ declare namespace API {
     notifyCount?: number;
     unreadCount?: number;
     country?: string;
-    access?: string;
+    access?: string;        // 已废弃，使用 roles 和 permissions
+    roles?: string[];       // v5.0: 角色列表
+    permissions?: string[]; // v5.0: 权限列表
     geographic?: {
       province?: { label?: string; key?: string };
       city?: { label?: string; key?: string };
@@ -51,6 +53,7 @@ declare namespace API {
     phone?: string;
     isLogin?: boolean;
     menus?: MenuTreeNode[];
+    currentCompanyId?: string;
   };
 
   type LoginResult = {

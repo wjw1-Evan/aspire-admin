@@ -3,16 +3,18 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class UserActivityLogService : IUserActivityLogService
+public class UserActivityLogService : BaseService, IUserActivityLogService
 {
     private readonly IMongoCollection<UserActivityLog> _activityLogs;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<UserActivityLogService> _logger;
 
     public UserActivityLogService(
-        IMongoDatabase database, 
+        IMongoDatabase database,
         IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger<UserActivityLogService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
         _activityLogs = database.GetCollection<UserActivityLog>("user_activity_logs");
         _httpContextAccessor = httpContextAccessor;
@@ -25,7 +27,19 @@ public class UserActivityLogService : IUserActivityLogService
     public async Task LogActivityAsync(string userId, string username, string action, string description)
     {
         var httpContext = _httpContextAccessor.HttpContext;
-        
+
+        // 获取当前企业上下文（如果有的话）
+        string? companyId = null;
+        try
+        {
+            companyId = GetCurrentCompanyId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // 如果无法获取企业上下文（如用户未登录），companyId 保持 null
+            companyId = null;
+        }
+
         var log = new UserActivityLog
         {
             UserId = userId,
@@ -34,6 +48,7 @@ public class UserActivityLogService : IUserActivityLogService
             Description = description,
             IpAddress = httpContext?.Connection.RemoteIpAddress?.ToString(),
             UserAgent = httpContext?.Request.Headers["User-Agent"].ToString(),
+            CompanyId = companyId ?? string.Empty,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -48,6 +63,29 @@ public class UserActivityLogService : IUserActivityLogService
     {
         var filterBuilder = Builders<UserActivityLog>.Filter;
         var filter = filterBuilder.Eq(log => log.IsDeleted, false);
+
+        // 获取当前企业ID进行多租户过滤
+        string? companyId = null;
+        try
+        {
+            companyId = GetCurrentCompanyId();
+            if (!string.IsNullOrEmpty(companyId))
+            {
+                filter &= filterBuilder.Eq(log => log.CompanyId, companyId);
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // 如果无法获取企业上下文，返回空结果
+            return new UserActivityLogPagedResponse
+            {
+                Data = new List<UserActivityLog>(),
+                Total = 0,
+                Page = request.Page,
+                PageSize = request.PageSize,
+                TotalPages = 0
+            };
+        }
 
         // 按用户ID筛选
         if (!string.IsNullOrEmpty(request.UserId))
@@ -99,10 +137,26 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
     {
-        var filter = Builders<UserActivityLog>.Filter.And(
-            Builders<UserActivityLog>.Filter.Eq(log => log.UserId, userId),
-            Builders<UserActivityLog>.Filter.Eq(log => log.IsDeleted, false)
+        var filterBuilder = Builders<UserActivityLog>.Filter;
+        var filter = filterBuilder.And(
+            filterBuilder.Eq(log => log.UserId, userId),
+            filterBuilder.Eq(log => log.IsDeleted, false)
         );
+
+        // 获取当前企业ID进行多租户过滤
+        try
+        {
+            var companyId = GetCurrentCompanyId();
+            if (!string.IsNullOrEmpty(companyId))
+            {
+                filter &= filterBuilder.Eq(log => log.CompanyId, companyId);
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // 如果无法获取企业上下文，返回空结果
+            return new List<UserActivityLog>();
+        }
 
         return await _activityLogs.Find(filter)
             .Sort(Builders<UserActivityLog>.Sort.Descending(log => log.CreatedAt))

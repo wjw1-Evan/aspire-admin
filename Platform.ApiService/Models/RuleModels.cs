@@ -9,6 +9,9 @@ public class RuleListItem : ISoftDeletable
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
 
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+
     [BsonElement("key")]
     public int Key { get; set; }
 

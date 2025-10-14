@@ -33,6 +33,8 @@ public class CreateAllIndexes
         await CreateRoleIndexesAsync();
         await CreateMenuIndexesAsync();
         await CreateNoticeIndexesAsync();
+        await CreateTagIndexesAsync();
+        await CreateRuleIndexesAsync();
         await CreateActivityLogIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
@@ -456,6 +458,84 @@ public class CreateAllIndexes
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建 Notice 索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建 Tag 索引
+    /// </summary>
+    private async Task CreateTagIndexesAsync()
+    {
+        var collection = _database.GetCollection<TagItem>("tags");
+
+        try
+        {
+            // CompanyId + IsDeleted 复合索引
+            await CreateIndexAsync(collection,
+                Builders<TagItem>.IndexKeys
+                    .Ascending(t => t.CompanyId)
+                    .Ascending(t => t.IsDeleted),
+                new CreateIndexOptions { Name = "idx_company_isdeleted" },
+                "tags.companyId + isDeleted");
+
+            // CompanyId + Type 复合索引
+            await CreateIndexAsync(collection,
+                Builders<TagItem>.IndexKeys
+                    .Ascending(t => t.CompanyId)
+                    .Ascending(t => t.Type),
+                new CreateIndexOptions { Name = "idx_company_type" },
+                "tags.companyId + type");
+
+            // CompanyId + Name 复合索引
+            await CreateIndexAsync(collection,
+                Builders<TagItem>.IndexKeys
+                    .Ascending(t => t.CompanyId)
+                    .Ascending(t => t.Name),
+                new CreateIndexOptions { Name = "idx_company_name" },
+                "tags.companyId + name");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建 Tag 索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建 Rule 索引
+    /// </summary>
+    private async Task CreateRuleIndexesAsync()
+    {
+        var collection = _database.GetCollection<RuleListItem>("rules");
+
+        try
+        {
+            // CompanyId + IsDeleted 复合索引
+            await CreateIndexAsync(collection,
+                Builders<RuleListItem>.IndexKeys
+                    .Ascending(r => r.CompanyId)
+                    .Ascending(r => r.IsDeleted),
+                new CreateIndexOptions { Name = "idx_company_isdeleted" },
+                "rules.companyId + isDeleted");
+
+            // CompanyId + Key 复合索引（唯一索引）
+            await CreateIndexAsync(collection,
+                Builders<RuleListItem>.IndexKeys
+                    .Ascending(r => r.CompanyId)
+                    .Ascending(r => r.Key),
+                new CreateIndexOptions { Name = "idx_company_key_unique", Unique = true },
+                "rules.companyId + key (unique)");
+
+            // CompanyId + Name 复合索引
+            await CreateIndexAsync(collection,
+                Builders<RuleListItem>.IndexKeys
+                    .Ascending(r => r.CompanyId)
+                    .Ascending(r => r.Name),
+                new CreateIndexOptions { Name = "idx_company_name" },
+                "rules.companyId + name");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建 Rule 索引失败");
         }
     }
 

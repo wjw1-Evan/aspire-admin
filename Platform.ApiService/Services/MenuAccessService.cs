@@ -8,7 +8,7 @@ namespace Platform.ApiService.Services;
 /// <summary>
 /// 菜单访问权限服务实现
 /// </summary>
-public class MenuAccessService : IMenuAccessService
+public class MenuAccessService : BaseService, IMenuAccessService
 {
     private readonly IMongoCollection<AppUser> _users;
     private readonly IMongoCollection<Role> _roles;
@@ -18,7 +18,10 @@ public class MenuAccessService : IMenuAccessService
 
     public MenuAccessService(
         IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger<MenuAccessService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
         _users = database.GetCollection<AppUser>("users");
         _roles = database.GetCollection<Role>("roles");
@@ -54,11 +57,12 @@ public class MenuAccessService : IMenuAccessService
             var menuIds = new List<string>();
 
             // 获取用户在当前企业的角色
-            if (!string.IsNullOrEmpty(user.CurrentCompanyId))
+            var companyId = GetCurrentCompanyId();
+            if (!string.IsNullOrEmpty(companyId))
             {
                 var userCompanyFilter = Builders<UserCompany>.Filter.And(
                     Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-                    Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, user.CurrentCompanyId),
+                    Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
                     MongoFilterExtensions.NotDeleted<UserCompany>()
                 );
 

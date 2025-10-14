@@ -4,12 +4,17 @@ using System.Text.Json;
 
 namespace Platform.ApiService.Services;
 
-public class RuleService : IRuleService
+public class RuleService : BaseService, IRuleService
 {
     private readonly IMongoCollection<RuleListItem> _rules;
     private readonly ILogger<RuleService> _logger;
 
-    public RuleService(IMongoDatabase database, ILogger<RuleService> logger)
+    public RuleService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
+        ILogger<RuleService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
         _rules = database.GetCollection<RuleListItem>("rules");
         _logger = logger;
@@ -18,13 +23,24 @@ public class RuleService : IRuleService
 
     public async Task<RuleListResponse> GetRulesAsync(RuleQueryParams queryParams)
     {
-        var filter = Builders<RuleListItem>.Filter.Empty;
+        // 获取当前企业ID进行多租户过滤
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        var filter = Builders<RuleListItem>.Filter.And(
+            Builders<RuleListItem>.Filter.Eq(r => r.CompanyId, companyId),
+            Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false)
+        );
 
         // 按名称筛选
         if (!string.IsNullOrEmpty(queryParams.Name))
         {
-            filter = Builders<RuleListItem>.Filter.Regex(r => r.Name, 
-                new MongoDB.Bson.BsonRegularExpression(queryParams.Name, "i"));
+            filter = Builders<RuleListItem>.Filter.And(filter,
+                Builders<RuleListItem>.Filter.Regex(r => r.Name,
+                new MongoDB.Bson.BsonRegularExpression(queryParams.Name, "i")));
         }
 
         // 获取总数
@@ -60,13 +76,32 @@ public class RuleService : IRuleService
 
     public async Task<RuleListItem?> GetRuleByIdAsync(string id)
     {
-        return await _rules.Find(r => r.Id == id).FirstOrDefaultAsync();
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        var filter = Builders<RuleListItem>.Filter.And(
+            Builders<RuleListItem>.Filter.Eq(r => r.Id, id),
+            Builders<RuleListItem>.Filter.Eq(r => r.CompanyId, companyId),
+            Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false)
+        );
+
+        return await _rules.Find(filter).FirstOrDefaultAsync();
     }
 
     public async Task<RuleListItem> CreateRuleAsync(CreateRuleRequest request)
     {
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
         var rule = new RuleListItem
         {
+            CompanyId = companyId,
             Key = await GetNextKeyAsync(),
             Name = request.Name ?? string.Empty,
             Desc = request.Desc ?? string.Empty,
@@ -88,7 +123,17 @@ public class RuleService : IRuleService
 
     public async Task<RuleListItem?> UpdateRuleAsync(string id, UpdateRuleRequest request)
     {
-        var filter = Builders<RuleListItem>.Filter.Eq(r => r.Id, id);
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        var filter = Builders<RuleListItem>.Filter.And(
+            Builders<RuleListItem>.Filter.Eq(r => r.Id, id),
+            Builders<RuleListItem>.Filter.Eq(r => r.CompanyId, companyId),
+            Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false)
+        );
         var update = Builders<RuleListItem>.Update.Set(r => r.UpdatedAt, DateTime.UtcNow);
 
         if (!string.IsNullOrEmpty(request.Name))
@@ -131,23 +176,56 @@ public class RuleService : IRuleService
 
     public async Task<bool> DeleteRuleAsync(string id)
     {
-        var result = await _rules.DeleteOneAsync(r => r.Id == id);
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        var filter = Builders<RuleListItem>.Filter.And(
+            Builders<RuleListItem>.Filter.Eq(r => r.Id, id),
+            Builders<RuleListItem>.Filter.Eq(r => r.CompanyId, companyId),
+            Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false)
+        );
+
+        var result = await _rules.DeleteOneAsync(filter);
         return result.DeletedCount > 0;
     }
 
     public async Task<bool> DeleteRulesAsync(List<int> keys)
     {
-        var filter = Builders<RuleListItem>.Filter.In(r => r.Key, keys);
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        var filter = Builders<RuleListItem>.Filter.And(
+            Builders<RuleListItem>.Filter.In(r => r.Key, keys),
+            Builders<RuleListItem>.Filter.Eq(r => r.CompanyId, companyId),
+            Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false)
+        );
         var result = await _rules.DeleteManyAsync(filter);
         return result.DeletedCount > 0;
     }
 
     private async Task<int> GetNextKeyAsync()
     {
-        var lastRule = await _rules.Find(Builders<RuleListItem>.Filter.Empty)
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        var filter = Builders<RuleListItem>.Filter.And(
+            Builders<RuleListItem>.Filter.Eq(r => r.CompanyId, companyId),
+            Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false)
+        );
+
+        var lastRule = await _rules.Find(filter)
             .SortByDescending(r => r.Key)
             .FirstOrDefaultAsync();
-        
+
         return lastRule?.Key + 1 ?? 1;
     }
 

@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace Platform.ApiService.Services;
 
-public class AuthService : IAuthService
+public class AuthService : BaseService, IAuthService
 {
     private readonly IMongoDatabase _database;
     private readonly IMongoCollection<AppUser> _users;
@@ -19,14 +19,16 @@ public class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
 
     public AuthService(
-        IMongoDatabase database, 
-        IJwtService jwtService, 
-        IHttpContextAccessor httpContextAccessor, 
+        IMongoDatabase database,
+        IJwtService jwtService,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         IUserService userService,
         ILogger<AuthService> logger,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
         IPasswordHasher passwordHasher)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
         _database = database;
         _users = database.GetCollection<AppUser>("users");

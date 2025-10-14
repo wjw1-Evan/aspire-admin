@@ -249,10 +249,24 @@ public class UserService : BaseService, IUserService
         return await _userRepository.UpdateAsync(id, update);
     }
 
-    // 新增的用户管理功能
+    /// <summary>
+    /// 获取用户列表（分页、搜索、过滤）
+    /// 修复：确保多租户数据隔离，只返回当前企业用户
+    /// </summary>
     public async Task<UserListResponse> GetUsersWithPaginationAsync(UserListRequest request)
     {
-        var filter = MongoFilterExtensions.NotDeleted<AppUser>();
+        // ✅ 获取当前企业ID进行多租户过滤
+        var currentCompanyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(currentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        // 基础过滤：只查询当前企业的活跃用户
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(u => u.CompanyId, currentCompanyId), // ✅ 企业隔离
+            MongoFilterExtensions.NotDeleted<AppUser>()
+        );
 
         // 搜索过滤
         if (!string.IsNullOrEmpty(request.Search))
@@ -264,12 +278,13 @@ public class UserService : BaseService, IUserService
             filter = Builders<AppUser>.Filter.And(filter, searchFilter);
         }
 
-        // v3.1: 角色过滤基于 UserCompany.RoleIds
+        // v3.1: 角色过滤基于 UserCompany.RoleIds（限制在当前企业内）
         if (request.RoleIds != null && request.RoleIds.Count > 0)
         {
-            // 首先从 UserCompany 表获取拥有指定角色的用户ID列表
+            // 从 UserCompany 表获取当前企业内拥有指定角色的用户ID列表
             var userCompanyFilter = Builders<UserCompany>.Filter.And(
                 Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, request.RoleIds),
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId), // ✅ 企业隔离
                 Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
                 Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
             );
@@ -308,7 +323,7 @@ public class UserService : BaseService, IUserService
             ? Builders<AppUser>.Sort.Ascending(request.SortBy)
             : Builders<AppUser>.Sort.Descending(request.SortBy);
 
-        // 分页
+        // ✅ 分页查询：仍然使用集合但已添加企业过滤
         var skip = (request.Page - 1) * request.PageSize;
         var users = await _users.Find(filter)
             .Sort(sortDefinition)
@@ -327,41 +342,59 @@ public class UserService : BaseService, IUserService
         };
     }
 
+    /// <summary>
+    /// 获取用户统计信息
+    /// 修复：确保多租户数据隔离，只统计当前企业用户
+    /// </summary>
     public async Task<UserStatisticsResponse> GetUserStatisticsAsync()
     {
-        var notDeletedFilter = SoftDeleteExtensions.NotDeleted<AppUser>();
+        // ✅ 获取当前企业ID进行多租户过滤
+        var currentCompanyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(currentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        // ✅ 基础过滤：只统计当前企业的未删除用户
+        var baseFilter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(u => u.CompanyId, currentCompanyId), // 企业隔离
+            SoftDeleteExtensions.NotDeleted<AppUser>()
+        );
         
-        var totalUsers = await _users.CountDocumentsAsync(notDeletedFilter);
+        var totalUsers = await _users.CountDocumentsAsync(baseFilter);
         
-        var activeFilter = Builders<AppUser>.Filter.And(notDeletedFilter, 
+        var activeFilter = Builders<AppUser>.Filter.And(baseFilter, 
             Builders<AppUser>.Filter.Eq(user => user.IsActive, true));
         var activeUsers = await _users.CountDocumentsAsync(activeFilter);
         var inactiveUsers = totalUsers - activeUsers;
         
-        // 查询所有管理员角色（admin 和 super-admin）
+        // ✅ 查询当前企业的管理员角色（添加企业过滤）
         var adminRoleNames = new[] { "admin", "super-admin" };
         var adminRoleFilter = Builders<Role>.Filter.And(
             Builders<Role>.Filter.In(r => r.Name, adminRoleNames),
+            Builders<Role>.Filter.Eq(r => r.CompanyId, currentCompanyId), // ✅ 企业隔离
             SoftDeleteExtensions.NotDeleted<Role>()
         );
         var adminRoles = await _roles.Find(adminRoleFilter).ToListAsync();
         var adminRoleIds = adminRoles.Select(r => r.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
         
-        // v3.1: 从 UserCompany 表统计拥有管理员角色的用户数量
+        // v3.1: 从 UserCompany 表统计当前企业内拥有管理员角色的用户数量
         var adminUsers = 0L;
         if (adminRoleIds.Any())
         {
             var adminUserCompanyFilter = Builders<UserCompany>.Filter.And(
                 Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, adminRoleIds),
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId), // ✅ 企业隔离
                 Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
                 Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
             );
             adminUsers = await _userCompanies.CountDocumentsAsync(adminUserCompanyFilter);
         }
         
-        // 另外，直接统计标记为管理员的用户
+        // 另外，直接统计当前企业内标记为管理员的用户
         var directAdminFilter = Builders<UserCompany>.Filter.And(
             Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true),
+            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId), // ✅ 企业隔离
             Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
             Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
         );
@@ -376,15 +409,16 @@ public class UserService : BaseService, IUserService
         var thisWeek = today.AddDays(-(int)today.DayOfWeek);
         var thisMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var todayFilter = Builders<AppUser>.Filter.And(notDeletedFilter,
+        // ✅ 新增用户统计：添加企业过滤
+        var todayFilter = Builders<AppUser>.Filter.And(baseFilter,
             Builders<AppUser>.Filter.Gte(user => user.CreatedAt, today));
         var newUsersToday = await _users.CountDocumentsAsync(todayFilter);
         
-        var weekFilter = Builders<AppUser>.Filter.And(notDeletedFilter,
+        var weekFilter = Builders<AppUser>.Filter.And(baseFilter,
             Builders<AppUser>.Filter.Gte(user => user.CreatedAt, thisWeek));
         var newUsersThisWeek = await _users.CountDocumentsAsync(weekFilter);
         
-        var monthFilter = Builders<AppUser>.Filter.And(notDeletedFilter,
+        var monthFilter = Builders<AppUser>.Filter.And(baseFilter,
             Builders<AppUser>.Filter.Gte(user => user.CreatedAt, thisMonth));
         var newUsersThisMonth = await _users.CountDocumentsAsync(monthFilter);
 
@@ -403,13 +437,24 @@ public class UserService : BaseService, IUserService
 
     /// <summary>
     /// 批量操作用户（激活、停用、软删除）
+    /// 修复：确保多租户数据隔离，只能操作当前企业用户
     /// </summary>
     public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null)
     {
+        // ✅ 获取当前企业ID进行多租户过滤
+        var currentCompanyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(currentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        // ✅ 过滤器：只能操作当前企业的未删除用户
         var filter = Builders<AppUser>.Filter.And(
             Builders<AppUser>.Filter.In(user => user.Id, request.UserIds),
+            Builders<AppUser>.Filter.Eq(user => user.CompanyId, currentCompanyId), // ✅ 企业隔离
             SoftDeleteExtensions.NotDeleted<AppUser>()
         );
+        
         var update = Builders<AppUser>.Update.Set(user => user.UpdatedAt, DateTime.UtcNow);
 
         switch (request.Action.ToLower())

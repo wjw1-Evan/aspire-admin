@@ -2,7 +2,7 @@ import { ProTable } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
 import { Tag, Button, Space, App, Modal, Input } from 'antd';
 import React, { useRef, useState } from 'react';
-import { request } from '@umijs/max';
+import { getPendingRequests, approveRequest, rejectRequest } from '@/services/company';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 
@@ -31,13 +31,7 @@ const PendingJoinRequests: React.FC = () => {
       onOk: async () => {
         setLoading(true);
         try {
-          const response = await request<API.ApiResponse<boolean>>(
-            `/api/join-request/${record.id}/approve`,
-            {
-              method: 'POST',
-              data: {},
-            }
-          );
+          const response = await approveRequest(record.id);
 
           if (response.success) {
             message.success('申请已通过');
@@ -83,15 +77,9 @@ const PendingJoinRequests: React.FC = () => {
 
         setLoading(true);
         try {
-          const response = await request<API.ApiResponse<boolean>>(
-            `/api/join-request/${record.id}/reject`,
-            {
-              method: 'POST',
-              data: {
-                rejectReason: rejectReason.trim(),
-              },
-            }
-          );
+          const response = await rejectRequest(record.id, {
+            rejectReason: rejectReason.trim(),
+          });
 
           if (response.success) {
             message.success('申请已拒绝');
@@ -190,12 +178,7 @@ const PendingJoinRequests: React.FC = () => {
         actionRef={actionRef}
         request={async (params, sort) => {
           try {
-            const response = await request<API.ApiResponse<API.JoinRequestDetail[]>>(
-              '/api/join-request/pending',
-              {
-                method: 'GET',
-              }
-            );
+            const response = await getPendingRequests();
 
             if (response.success && response.data) {
               return {

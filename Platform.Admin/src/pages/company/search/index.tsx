@@ -3,7 +3,7 @@ import { ProCard } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
 import { Input, Card, List, Button, Tag, Space, Empty, Spin, App, Modal } from 'antd';
 import React, { useState } from 'react';
-import { request } from '@umijs/max';
+import { searchCompanies, applyToJoinCompany } from '@/services/company';
 import type { FormInstance } from 'antd';
 
 const { TextArea } = Input;
@@ -28,13 +28,7 @@ const CompanySearch: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await request<API.ApiResponse<API.CompanySearchResult[]>>(
-        '/api/company/search',
-        {
-          method: 'GET',
-          params: { keyword: keyword.trim() },
-        }
-      );
+      const response = await searchCompanies(keyword.trim());
 
       if (response.success && response.data) {
         setSearchResults(response.data);
@@ -74,16 +68,10 @@ const CompanySearch: React.FC = () => {
       onOk: async () => {
         setApplyingId(company.id || '');
         try {
-          const response = await request<API.ApiResponse<API.CompanyJoinRequest>>(
-            '/api/join-request',
-            {
-              method: 'POST',
-              data: {
-                companyId: company.id,
-                reason: reason || undefined,
-              },
-            }
-          );
+          const response = await applyToJoinCompany({
+            companyId: company.id || '',
+            reason: reason || undefined,
+          });
 
           if (response.success) {
             message.success('申请已提交，请等待企业管理员审核');

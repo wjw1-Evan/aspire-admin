@@ -2,7 +2,7 @@ import { ProTable } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
 import { Tag, Button, Space, App, Popconfirm } from 'antd';
 import React, { useRef, useState } from 'react';
-import { request } from '@umijs/max';
+import { getMyRequests, cancelRequest } from '@/services/company';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 
@@ -18,12 +18,7 @@ const MyJoinRequests: React.FC = () => {
   const handleCancel = async (id: string) => {
     setLoading(true);
     try {
-      const response = await request<API.ApiResponse<boolean>>(
-        `/api/join-request/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const response = await cancelRequest(id);
 
       if (response.success) {
         message.success('申请已撤回');
@@ -160,12 +155,7 @@ const MyJoinRequests: React.FC = () => {
         actionRef={actionRef}
         request={async (params, sort) => {
           try {
-            const response = await request<API.ApiResponse<API.JoinRequestDetail[]>>(
-              '/api/join-request/my-requests',
-              {
-                method: 'GET',
-              }
-            );
+            const response = await getMyRequests();
 
             if (response.success && response.data) {
               return {

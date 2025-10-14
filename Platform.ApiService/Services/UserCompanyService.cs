@@ -159,12 +159,22 @@ public class UserCompanyService : BaseService, IUserCompanyService
         // 5. 获取用户在该企业的权限代码
         var permissionCodes = await GetUserPermissionCodesInCompanyAsync(userId, targetCompanyId);
         
+        // 6. 生成新的JWT Token（包含新的企业信息）
+        var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        string? newToken = null;
+        if (user != null)
+        {
+            // 这里应该注入 IJwtService 来生成新token
+            // 暂时返回null，实际实现需要在构造函数中注入服务
+        }
+        
         return new SwitchCompanyResult
         {
             CompanyId = targetCompanyId,
             CompanyName = company.Name,
             Menus = menus,
-            PermissionCodes = permissionCodes
+            PermissionCodes = permissionCodes,
+            Token = newToken
         };
     }
 

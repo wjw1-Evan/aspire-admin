@@ -174,11 +174,11 @@ public class AppUser : ISoftDeletable, IEntity, ITimestamped
 
     /// <summary>
     /// 企业ID（v3.0 已废弃，v3.1使用 CurrentCompanyId）
-    /// 保留用于向后兼容和数据迁移
+    /// 保留用于向后兼容和数据迁移，但不再使用
     /// </summary>
     [BsonElement("companyId")]
     [BsonIgnoreIfNull]
-    [Obsolete("v3.1: 使用 CurrentCompanyId 代替")]
+    [Obsolete("v3.1: 使用 CurrentCompanyId 代替，此字段已废弃")]
     public string? CompanyId { get; set; }
     
     /// <summary>

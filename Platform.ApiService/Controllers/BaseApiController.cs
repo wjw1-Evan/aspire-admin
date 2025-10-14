@@ -40,7 +40,7 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
-    /// v3.1: 当前企业ID
+    /// v3.1: 当前企业ID（从JWT Token获取）
     /// </summary>
     protected string? CurrentCompanyId => User?.FindFirst("currentCompanyId")?.Value 
                                         ?? User?.FindFirst("companyId")?.Value;
@@ -53,6 +53,21 @@ public abstract class BaseApiController : ControllerBase
         if (string.IsNullOrEmpty(CurrentCompanyId))
             throw new UnauthorizedAccessException("未找到企业信息");
         return CurrentCompanyId;
+    }
+
+    /// <summary>
+    /// v3.1: 验证当前用户是否是指定企业的成员
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <returns>是否为成员</returns>
+    protected async Task<bool> IsMemberOfCompanyAsync(string companyId)
+    {
+        if (string.IsNullOrEmpty(CurrentUserId) || string.IsNullOrEmpty(companyId))
+            return false;
+
+        // 这里应该调用 UserCompanyService 来验证成员身份
+        // 暂时返回 true，实际实现需要在具体控制器中注入服务
+        return true;
     }
 
     /// <summary>

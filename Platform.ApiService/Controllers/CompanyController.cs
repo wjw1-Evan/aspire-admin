@@ -94,22 +94,8 @@ public class CompanyController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetCurrentCompany()
     {
-        var companyId = CurrentUserId;  // 从 JWT 中获取
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException(CompanyErrorMessages.CompanyRequired);
-        }
-
-        // 从 TenantContext 获取 CompanyId
-        var httpContext = HttpContext;
-        var contextCompanyId = httpContext.User?.FindFirst("companyId")?.Value;
-        
-        if (string.IsNullOrEmpty(contextCompanyId))
-        {
-            throw new UnauthorizedAccessException(CompanyErrorMessages.CompanyRequired);
-        }
-
-        var company = await _companyService.GetCompanyByIdAsync(contextCompanyId);
+        var companyId = GetRequiredCompanyId();
+        var company = await _companyService.GetCompanyByIdAsync(companyId);
         return Success(company.EnsureFound("企业"));
     }
 
@@ -121,15 +107,9 @@ public class CompanyController : BaseApiController
     [Authorize]
     public async Task<IActionResult> UpdateCurrentCompany([FromBody] UpdateCompanyRequest request)
     {
-        var contextCompanyId = HttpContext.User?.FindFirst("companyId")?.Value;
-        
-        if (string.IsNullOrEmpty(contextCompanyId))
-        {
-            throw new UnauthorizedAccessException(CompanyErrorMessages.CompanyRequired);
-        }
-
-        var success = await _companyService.UpdateCompanyAsync(contextCompanyId, request);
-        success.EnsureSuccess("企业", contextCompanyId);
+        var companyId = GetRequiredCompanyId();
+        var success = await _companyService.UpdateCompanyAsync(companyId, request);
+        success.EnsureSuccess("企业", companyId);
 
         return Success("企业信息更新成功");
     }
@@ -141,14 +121,8 @@ public class CompanyController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetStatistics()
     {
-        var contextCompanyId = HttpContext.User?.FindFirst("companyId")?.Value;
-        
-        if (string.IsNullOrEmpty(contextCompanyId))
-        {
-            throw new UnauthorizedAccessException(CompanyErrorMessages.CompanyRequired);
-        }
-
-        var statistics = await _companyService.GetCompanyStatisticsAsync(contextCompanyId);
+        var companyId = GetRequiredCompanyId();
+        var statistics = await _companyService.GetCompanyStatisticsAsync(companyId);
         return Success(statistics);
     }
 
@@ -174,6 +148,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 搜索企业
     /// </summary>
     [HttpGet("search")]
+    [Authorize]
     public async Task<IActionResult> SearchCompanies([FromQuery] string keyword)
     {
         keyword.EnsureNotEmpty("搜索关键词");
@@ -186,6 +161,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 获取我的企业列表
     /// </summary>
     [HttpGet("my-companies")]
+    [Authorize]
     public async Task<IActionResult> GetMyCompanies()
     {
         var userId = GetRequiredUserId();
@@ -197,6 +173,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 切换当前企业
     /// </summary>
     [HttpPost("switch")]
+    [Authorize]
     public async Task<IActionResult> SwitchCompany([FromBody] SwitchCompanyRequest request)
     {
         request.TargetCompanyId.EnsureNotEmpty("目标企业ID");
@@ -209,8 +186,15 @@ public class CompanyController : BaseApiController
     /// v3.1: 获取企业成员列表（管理员）
     /// </summary>
     [HttpGet("{companyId}/members")]
+    [Authorize]
     public async Task<IActionResult> GetCompanyMembers(string companyId)
     {
+        // 验证当前用户是否是该企业的管理员
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(GetRequiredUserId(), companyId))
+        {
+            throw new UnauthorizedAccessException("只有企业管理员可以查看成员列表");
+        }
+        
         var members = await _userCompanyService.GetCompanyMembersAsync(companyId);
         return Success(members);
     }
@@ -219,11 +203,18 @@ public class CompanyController : BaseApiController
     /// v3.1: 更新成员角色（管理员）
     /// </summary>
     [HttpPut("{companyId}/members/{userId}/roles")]
+    [Authorize]
     public async Task<IActionResult> UpdateMemberRoles(
         string companyId, 
         string userId, 
         [FromBody] UpdateMemberRolesRequest request)
     {
+        // 验证当前用户是否是该企业的管理员
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(GetRequiredUserId(), companyId))
+        {
+            throw new UnauthorizedAccessException("只有企业管理员可以分配角色");
+        }
+        
         var success = await _userCompanyService.UpdateMemberRolesAsync(companyId, userId, request.RoleIds);
         if (!success)
             throw new KeyNotFoundException("成员不存在");
@@ -235,11 +226,18 @@ public class CompanyController : BaseApiController
     /// v3.1: 设置/取消成员管理员权限（管理员）
     /// </summary>
     [HttpPut("{companyId}/members/{userId}/admin")]
+    [Authorize]
     public async Task<IActionResult> SetMemberAdmin(
         string companyId,
         string userId,
         [FromBody] SetAdminRequest request)
     {
+        // 验证当前用户是否是该企业的管理员
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(GetRequiredUserId(), companyId))
+        {
+            throw new UnauthorizedAccessException("只有企业管理员可以设置管理员权限");
+        }
+        
         var success = await _userCompanyService.SetMemberAsAdminAsync(companyId, userId, request.IsAdmin);
         if (!success)
             throw new KeyNotFoundException("成员不存在");
@@ -251,8 +249,15 @@ public class CompanyController : BaseApiController
     /// v3.1: 移除企业成员（管理员）
     /// </summary>
     [HttpDelete("{companyId}/members/{userId}")]
+    [Authorize]
     public async Task<IActionResult> RemoveMember(string companyId, string userId)
     {
+        // 验证当前用户是否是该企业的管理员
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(GetRequiredUserId(), companyId))
+        {
+            throw new UnauthorizedAccessException("只有企业管理员可以移除成员");
+        }
+        
         var success = await _userCompanyService.RemoveMemberAsync(companyId, userId);
         if (!success)
             throw new KeyNotFoundException("成员不存在");

@@ -161,11 +161,8 @@ public class CreateAllIndexes
                 new CreateIndexOptions { Name = "idx_current_company_isdeleted" },
                 "users.currentCompanyId + isDeleted");
 
-            // RoleIds 多键索引
-            await CreateIndexAsync(collection,
-                Builders<AppUser>.IndexKeys.Ascending(u => u.RoleIds),
-                new CreateIndexOptions { Name = "idx_roleIds" },
-                "users.roleIds");
+            // v3.1: RoleIds 已废弃，角色信息现在存储在 UserCompany.RoleIds 中
+            // 不再为 AppUser.RoleIds 创建索引
 
             // IsActive + IsDeleted 复合索引
             await CreateIndexAsync(collection,

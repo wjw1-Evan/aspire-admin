@@ -57,16 +57,17 @@ public abstract class BaseApiController : ControllerBase
 
     /// <summary>
     /// v3.1: 验证当前用户是否是指定企业的成员
+    /// 注意：此方法为占位实现，实际验证应在具体控制器中通过 UserCompanyService 进行
     /// </summary>
     /// <param name="companyId">企业ID</param>
     /// <returns>是否为成员</returns>
-    protected async Task<bool> IsMemberOfCompanyAsync(string companyId)
+    [Obsolete("请在控制器中直接注入 IUserCompanyService 进行成员身份验证", false)]
+    protected bool IsMemberOfCompany(string companyId)
     {
         if (string.IsNullOrEmpty(CurrentUserId) || string.IsNullOrEmpty(companyId))
             return false;
 
-        // 这里应该调用 UserCompanyService 来验证成员身份
-        // 暂时返回 true，实际实现需要在具体控制器中注入服务
+        // 占位实现，实际应该调用 UserCompanyService.GetUserCompanyAsync()
         return true;
     }
 

@@ -74,6 +74,7 @@ export async function getInitialState(): Promise<{
         const permissionsResponse = await getMyPermissions();
         if (permissionsResponse.success && permissionsResponse.data) {
           (userInfo as any).permissions = permissionsResponse.data.allPermissionCodes || [];
+          console.log('🔑 用户权限更新:', permissionsResponse.data.allPermissionCodes);
         }
       } catch (permissionsError) {
         console.log('Failed to fetch user permissions, using default permissions:', permissionsError);

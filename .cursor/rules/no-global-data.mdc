@@ -22,18 +22,9 @@ var initializePermissions = new InitializePermissions(database, logger);
 await initializePermissions.InitializeAsync();  // 创建的数据没有 CompanyId
 ```
 
-### 2. 创建没有 CompanyId 的实体
+### 2. 创建没有 CompanyId 的业务数据
 
 ```csharp
-// ❌ 禁止：Menu 没有 CompanyId
-var menu = new Menu
-{
-    Name = "dashboard",
-    Title = "仪表板",
-    Path = "/dashboard",
-    // ❌ 缺少 CompanyId，会成为孤儿数据
-};
-
 // ❌ 禁止：Role 没有 CompanyId
 var role = new Role
 {
@@ -42,30 +33,28 @@ var role = new Role
     // ❌ 缺少 CompanyId
 };
 
-// ❌ 禁止：Permission 没有 CompanyId
-var permission = new Permission
+// ❌ 禁止：Notice 没有 CompanyId
+var notice = new Notice
 {
-    ResourceName = "user",
-    Action = "create",
-    Code = "user:create",
+    Title = "系统通知",
+    Content = "欢迎使用系统",
+    // ❌ 缺少 CompanyId，会成为孤儿数据
+};
+
+// ❌ 禁止：Tag 没有 CompanyId
+var tag = new Tag
+{
+    Name = "重要",
+    Color = "#ff0000",
     // ❌ 缺少 CompanyId
 };
 ```
 
 ## ✅ 正确的做法
 
-### 1. 所有实体必须设置 CompanyId
+### 1. 业务数据必须设置 CompanyId
 
 ```csharp
-// ✅ 正确：Menu 设置 CompanyId
-var menu = new Menu
-{
-    Name = "dashboard",
-    Title = "仪表板",
-    Path = "/dashboard",
-    CompanyId = company.Id!  // ✅ 必须设置
-};
-
 // ✅ 正确：Role 设置 CompanyId
 var role = new Role
 {
@@ -74,12 +63,19 @@ var role = new Role
     CompanyId = company.Id!  // ✅ 必须设置
 };
 
-// ✅ 正确：Permission 设置 CompanyId
-var permission = new Permission
+// ✅ 正确：Notice 设置 CompanyId
+var notice = new Notice
 {
-    ResourceName = "user",
-    Action = "create",
-    Code = "user:create",
+    Title = "企业通知",
+    Content = "欢迎使用系统",
+    CompanyId = company.Id!  // ✅ 必须设置
+};
+
+// ✅ 正确：Tag 设置 CompanyId
+var tag = new Tag
+{
+    Name = "重要",
+    Color = "#ff0000",
     CompanyId = company.Id!  // ✅ 必须设置
 };
 ```
@@ -87,16 +83,20 @@ var permission = new Permission
 ### 2. 使用多租户基类
 
 ```csharp
-// ✅ Menu 继承 MultiTenantEntity
-public class Menu : MultiTenantEntity, INamedEntity
+// ✅ Notice 继承 MultiTenantEntity
+public class Notice : MultiTenantEntity
 {
     // CompanyId 由 MultiTenantEntity 提供
+    public string Title { get; set; }
+    public string Content { get; set; }
 }
 
-// ✅ Permission 继承 MultiTenantEntity
-public class Permission : MultiTenantEntity
+// ✅ Tag 继承 MultiTenantEntity
+public class Tag : MultiTenantEntity
 {
     // CompanyId 由 MultiTenantEntity 提供
+    public string Name { get; set; }
+    public string Color { get; set; }
 }
 ```
 
@@ -104,20 +104,20 @@ public class Permission : MultiTenantEntity
 
 ```csharp
 // ✅ 创建前验证
-public async Task<Menu> CreateMenuAsync(CreateMenuRequest request)
+public async Task<Notice> CreateNoticeAsync(CreateNoticeRequest request)
 {
     var companyId = GetRequiredCompanyId();  // 获取当前企业ID
     
-    var menu = new Menu
+    var notice = new Notice
     {
-        Name = request.Name,
         Title = request.Title,
+        Content = request.Content,
         CompanyId = companyId,  // ✅ 设置企业ID
         // ...
     };
     
-    await _menus.InsertOneAsync(menu);
-    return menu;
+    await _notices.InsertOneAsync(notice);
+    return notice;
 }
 ```
 
@@ -126,18 +126,18 @@ public async Task<Menu> CreateMenuAsync(CreateMenuRequest request)
 ### 查询可能的孤儿数据
 
 ```javascript
-// MongoDB 查询
-db.menus.find({ companyId: { $exists: false } })
-db.menus.find({ companyId: "" })
-db.menus.find({ companyId: null })
-
+// MongoDB 查询检查业务数据是否有企业归属
 db.roles.find({ companyId: { $exists: false } })
 db.roles.find({ companyId: "" })
 db.roles.find({ companyId: null })
 
-db.permissions.find({ companyId: { $exists: false } })
-db.permissions.find({ companyId: "" })
-db.permissions.find({ companyId: null })
+db.notices.find({ companyId: { $exists: false } })
+db.notices.find({ companyId: "" })
+db.notices.find({ companyId: null })
+
+db.tags.find({ companyId: { $exists: false } })
+db.tags.find({ companyId: "" })
+db.tags.find({ companyId: null })
 ```
 
 **预期结果**: 所有查询都应该返回空结果
@@ -149,7 +149,6 @@ db.permissions.find({ companyId: null })
 | 实体 | 基类 | CompanyId 要求 |
 |------|------|---------------|
 | **Role** | ISoftDeletable | ✅ 必须 |
-| **Permission** | MultiTenantEntity | ✅ 必须 |
 | **Notice** | MultiTenantEntity | ✅ 必须 |
 | **Tag** | MultiTenantEntity | ✅ 必须 |
 | **ActivityLog** | MultiTenantEntity | ✅ 必须 |
@@ -224,13 +223,14 @@ public async Task<Company> CreatePersonalCompanyAsync(AppUser user)
 
 在创建或修改多租户数据时，检查：
 
-- [ ] 所有 Menu 实体都设置了 CompanyId
 - [ ] 所有 Role 实体都设置了 CompanyId
-- [ ] 所有 Permission 实体都设置了 CompanyId
 - [ ] 所有 Notice 实体都设置了 CompanyId
-- [ ] 不在系统启动时创建全局数据
+- [ ] 所有 Tag 实体都设置了 CompanyId
+- [ ] 所有 ActivityLog 实体都设置了 CompanyId
+- [ ] 不在系统启动时创建全局业务数据
 - [ ] 不调用已废弃的初始化脚本
 - [ ] 数据创建使用事务保护
+- [ ] Menu 实体正确地作为全局资源（无 CompanyId）
 
 ## 🎯 核心原则重申
 

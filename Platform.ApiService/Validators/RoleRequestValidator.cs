@@ -80,23 +80,6 @@ public static class RoleRequestValidator
 
         return errors;
     }
-
-    /// <summary>
-    /// 验证分配权限请求
-    /// </summary>
-    public static List<string> ValidateAssignPermissionsRequest(AssignPermissionsRequest request)
-    {
-        var errors = new List<string>();
-
-        // PermissionIds 可以为空（表示清空所有权限）
-        // 但如果提供了，需要确保是有效的列表
-        if (request.PermissionIds != null && request.PermissionIds.Any(string.IsNullOrWhiteSpace))
-        {
-            errors.Add("权限ID列表包含无效的ID");
-        }
-
-        return errors;
-    }
 }
 
 

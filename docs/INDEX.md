@@ -12,10 +12,11 @@ docs/
 ├── bugfixes/         # 问题修复文档
 ├── reports/          # 报告和总结
 ├── optimization/     # 优化相关文档
-├── permissions/      # 权限系统文档
 ├── refactoring/      # 重构文档
 ├── middleware/       # 中间件文档
 ├── soft-delete/      # 软删除相关文档
+├── archived/         # 归档文档（已废弃）
+│   └── permissions-v5/  # v5.0 CRUD权限系统文档归档
 └── INDEX.md          # 本文档索引
 ```
 
@@ -83,15 +84,16 @@ docs/
 - [**MongoDB事务错误修复**](bugfixes/MONGODB-TRANSACTION-FIX.md) - 修复单机模式不支持事务问题
 - [**删除企业注册页面**](reports/REMOVE-COMPANY-REGISTRATION-PAGE.md) - 简化注册流程，统一使用用户注册
 
-#### 权限系统
-- [权限系统概述](permissions/PERMISSIONS-INDEX.md) - 权限系统索引
-- [CRUD 权限快速开始](permissions/CRUD-PERMISSION-QUICK-START.md) - 快速上手
-- [CRUD 权限系统](permissions/CRUD-PERMISSION-SYSTEM.md) - 完整说明
-- [权限测试指南](permissions/CRUD-PERMISSION-TEST-GUIDE.md) - 测试方法
-- [权限最佳实践](permissions/PERMISSION-BEST-PRACTICES.md) - 最佳实践
-- [权限 API 示例](permissions/PERMISSION-API-EXAMPLES.md) - API 使用示例
-- [权限快速参考](permissions/PERMISSION-QUICK-REFERENCE.md) - 快速查询
-- [权限系统说明](permissions/PERMISSION-SYSTEM-README.md) - 系统说明文档
+#### 权限系统 (v6.0)
+- [**菜单级权限使用指南**](features/MENU-LEVEL-PERMISSION-GUIDE.md) - v6.0 菜单级权限系统使用指南 ⭐ **最新**
+- [**菜单级权限重构**](refactoring/MENU-LEVEL-PERMISSION-REFACTORING.md) - v6.0 权限系统架构重构文档 ⭐ **重要**
+- [**v6.0 菜单权限快速入门**](features/MENU-PERMISSION-V6-README.md) - v6.0 菜单级权限系统快速入门指南 ⭐ **推荐**
+- [**v6.0 重构检查清单**](refactoring/V6-REFACTORING-CHECKLIST.md) - v6.0 重构完成状态检查清单
+- [**v6.0 重构完成总结**](reports/V6-REFACTORING-SUMMARY.md) - v6.0 菜单级权限重构完成报告
+- [**数据库清理指南**](optimization/DATABASE-CLEANUP-GUIDE.md) - v6.0 权限系统重构后数据库清理指南
+
+> ⚠️ **v5.0 CRUD权限系统已完全废弃**  
+> 旧的权限文档已归档至 [archived/permissions-v5/](archived/permissions-v5/) 目录。
 
 #### 用户管理
 - [用户日志实现](features/USER-LOG-IMPLEMENTATION.md) - 活动日志
@@ -206,10 +208,10 @@ docs/
 | **问题修复** | `bugfixes/` | Bug 修复和问题排查 |
 | **报告总结** | `reports/` | 项目报告和阶段总结 |
 | **优化文档** | `optimization/` | 性能和业务逻辑优化 |
-| **权限系统** | `permissions/` | 权限相关的所有文档 |
 | **重构文档** | `refactoring/` | 代码重构相关文档 |
 | **中间件** | `middleware/` | 中间件设计和实现 |
 | **软删除** | `soft-delete/` | 软删除机制相关 |
+| **归档文档** | `archived/` | 已废弃的历史文档 |
 
 ### 文档模板
 
@@ -242,6 +244,10 @@ docs/
 - 问题修复 → `docs/bugfixes/`
 - 项目报告 → `docs/reports/`
 - 优化文档 → `docs/optimization/`
+- 重构文档 → `docs/refactoring/`
+- 中间件文档 → `docs/middleware/`
+- 软删除文档 → `docs/soft-delete/`
+- 归档文档 → `docs/archived/`
 
 ### ❌ 禁止
 - 在项目根目录创建 `.md` 文件（除 README.md 外）
@@ -276,13 +282,21 @@ docs/
 ## 🎉 总结
 
 已完成：
-- ✅ 移动 5 个根目录文档到 docs 文件夹
+- ✅ 移动根目录文档到 docs 相应子目录（v6.0 相关文档）
+- ✅ 归档 v5.0 已废弃的 CRUD 权限系统文档
 - ✅ 创建文档索引和导航
-- ✅ 记住文档存放规则
-- ✅ 定义文档分类和规范
+- ✅ 更新文档组织结构和分类规范
 - ✅ 修复 P0 优先级设计问题
+- ✅ 完成 v6.0 菜单级权限系统重构
 - ✅ 统一认证系统和权限管理
 - ✅ 简化数据库模型和状态管理
+
+## 📋 最新状态 (2025-10-14)
+
+### v6.0 权限系统重构完成
+- **菜单级权限** 替代复杂的 CRUD 权限系统
+- **文档整理** 过期内容归档，新文档规范组织
+- **架构简化** 减少70%的权限相关代码
 
 现在所有文档都井然有序，系统架构得到显著改善！
 

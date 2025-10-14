@@ -80,8 +80,7 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<IRuleService, RuleService>();
 builder.Services.AddScoped<IUserActivityLogService, UserActivityLogService>();
-builder.Services.AddScoped<IPermissionService, PermissionService>();
-builder.Services.AddScoped<IPermissionCheckService, PermissionCheckService>();
+builder.Services.AddScoped<IMenuAccessService, MenuAccessService>();
 
 // 企业管理服务（v3.0 新增）
 builder.Services.AddScoped<ICompanyService, CompanyService>();

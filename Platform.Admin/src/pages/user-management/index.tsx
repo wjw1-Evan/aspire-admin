@@ -43,8 +43,6 @@ import { getAllRoles } from '@/services/role/api';
 import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
 import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
-import UserPermissionModal from './components/UserPermissionModal';
-import PermissionControl from '@/components/PermissionControl';
 
 const UserManagement: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
@@ -52,10 +50,8 @@ const UserManagement: React.FC = () => {
   const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
-  const [permissionModalVisible, setPermissionModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [viewingUser, setViewingUser] = useState<AppUser | null>(null);
-  const [configuringUser, setConfiguringUser] = useState<AppUser | null>(null);
   const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
   const [searchParams, setSearchParams] = useState<UserListRequest>({
@@ -395,15 +391,6 @@ const UserManagement: React.FC = () => {
             },
           },
           {
-            key: 'permission',
-            icon: <KeyOutlined />,
-            label: '配置权限',
-            onClick: () => {
-              setConfiguringUser(record);
-              setPermissionModalVisible(true);
-            },
-          },
-          {
             type: 'divider',
           },
           {
@@ -430,19 +417,17 @@ const UserManagement: React.FC = () => {
             >
               查看
             </Button>
-            <PermissionControl permission="user:update">
-              <Button
-                type="link"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => {
-                  setEditingUser(record);
-                  setFormVisible(true);
-                }}
-              >
-                编辑
-              </Button>
-            </PermissionControl>
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingUser(record);
+                setFormVisible(true);
+              }}
+            >
+              编辑
+            </Button>
             <Dropdown menu={{ items: items.slice(2) }} trigger={['click']}>
               <Button type="link" size="small" icon={<MoreOutlined />}>
                 更多
@@ -472,18 +457,17 @@ const UserManagement: React.FC = () => {
         >
           刷新
         </Button>,
-        <PermissionControl permission="user:create" key="add">
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingUser(null);
-              setFormVisible(true);
-            }}
-          >
-            新增用户
-          </Button>
-        </PermissionControl>,
+        <Button
+          key="add"
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            setEditingUser(null);
+            setFormVisible(true);
+          }}
+        >
+          新增用户
+        </Button>,
       ]}
     >
       {/* 统计卡片 */}
@@ -652,20 +636,6 @@ const UserManagement: React.FC = () => {
         )}
       </Drawer>
 
-      {/* 用户权限配置模态框 */}
-      <UserPermissionModal
-        visible={permissionModalVisible}
-        user={configuringUser}
-        onCancel={() => {
-          setPermissionModalVisible(false);
-          setConfiguringUser(null);
-        }}
-        onSuccess={() => {
-          setPermissionModalVisible(false);
-          setConfiguringUser(null);
-          actionRef.current?.reload();
-        }}
-      />
     </PageContainer>
   );
 };

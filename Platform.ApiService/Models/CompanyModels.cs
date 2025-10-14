@@ -150,7 +150,6 @@ public class CompanyStatistics
     public int ActiveUsers { get; set; }
     public int TotalRoles { get; set; }
     public int TotalMenus { get; set; }
-    public int TotalPermissions { get; set; }
     public int MaxUsers { get; set; }
     public int RemainingUsers { get; set; }
     public bool IsExpired { get; set; }

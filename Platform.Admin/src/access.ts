@@ -59,16 +59,6 @@ export default function access(
   };
   
   /**
-   * 检查是否有指定权限
-   */
-  const hasPermission = (permissionCode: string): boolean => {
-    if (!currentUser || !currentUser.permissions) {
-      return false;
-    }
-    return currentUser.permissions.includes(permissionCode);
-  };
-  
-  /**
    * 检查是否有指定角色
    */
   const hasRole = (roleName: string): boolean => {
@@ -78,58 +68,10 @@ export default function access(
     return currentUser.roles.includes(roleName);
   };
   
-  /**
-   * 检查是否有资源的指定操作权限
-   */
-  const can = (resource: string, action: string): boolean => {
-    return hasPermission(`${resource}:${action}`);
-  };
-  
   return {
     canAdmin: hasRole('admin') || hasRole('管理员'),
     canAccessMenu,
     canAccessPath,
-    hasPermission,
     hasRole,
-    can,
-    
-    // 用户权限
-    canCreateUser: can('user', 'create'),
-    canReadUser: can('user', 'read'),
-    canUpdateUser: can('user', 'update'),
-    canDeleteUser: can('user', 'delete'),
-    
-    // 角色权限
-    canCreateRole: can('role', 'create'),
-    canReadRole: can('role', 'read'),
-    canUpdateRole: can('role', 'update'),
-    canDeleteRole: can('role', 'delete'),
-    
-    // 菜单权限
-    canCreateMenu: can('menu', 'create'),
-    canReadMenu: can('menu', 'read'),
-    canUpdateMenu: can('menu', 'update'),
-    canDeleteMenu: can('menu', 'delete'),
-    
-    // 公告权限
-    canCreateNotice: can('notice', 'create'),
-    canReadNotice: can('notice', 'read'),
-    canUpdateNotice: can('notice', 'update'),
-    canDeleteNotice: can('notice', 'delete'),
-    
-    // 标签权限
-    canCreateTag: can('tag', 'create'),
-    canReadTag: can('tag', 'read'),
-    canUpdateTag: can('tag', 'update'),
-    canDeleteTag: can('tag', 'delete'),
-    
-    // 权限管理权限
-    canCreatePermission: can('permission', 'create'),
-    canReadPermission: can('permission', 'read'),
-    canUpdatePermission: can('permission', 'update'),
-    canDeletePermission: can('permission', 'delete'),
-    
-    // 活动日志权限
-    canReadActivityLog: can('activity-log', 'read'),
   };
 }

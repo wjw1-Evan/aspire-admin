@@ -1,0 +1,363 @@
+# 菜单级权限控制规范
+
+## 🎯 核心原则
+
+**系统采用菜单级权限控制，移除操作级权限管理。用户能访问某个菜单，就能调用该菜单下的所有API功能。**
+
+## ✅ 正确的权限控制方式
+
+### 后端API实现
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]  // 控制器级别要求登录
+public class UserController : BaseApiController
+{
+    [HttpGet]
+    [RequireMenu("user-management")]
+    public async Task<IActionResult> GetAll()
+    {
+        var users = await _userService.GetAllAsync();
+        return Success(users);
+    }
+    
+    [HttpPost]
+    [RequireMenu("user-management")]
+    public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
+    {
+        var user = await _userService.CreateAsync(request);
+        return Success(user, "创建成功");
+    }
+    
+    [HttpPut("{id}")]
+    [RequireMenu("user-management")]
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateUserRequest request)
+    {
+        var success = await _userService.UpdateAsync(id, request);
+        success.EnsureSuccess("用户", id);
+        return Success("更新成功");
+    }
+    
+    [HttpDelete("{id}")]
+    [RequireMenu("user-management")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var success = await _userService.DeleteAsync(id);
+        success.EnsureSuccess("用户", id);
+        return Success("删除成功");
+    }
+}
+```
+
+### BaseApiController辅助方法
+
+```csharp
+// 检查菜单访问权限
+protected async Task<bool> HasMenuAccessAsync(string menuName)
+
+// 要求菜单访问权限（无权限抛异常）
+protected async Task RequireMenuAccessAsync(string menuName)
+
+// 检查是否有任意一个菜单的权限
+protected async Task<bool> HasAnyMenuAccessAsync(params string[] menuNames)
+```
+
+### 条件权限检查
+
+```csharp
+[HttpPost("bulk-action")]
+[Authorize]
+public async Task<IActionResult> BulkAction([FromBody] BulkActionRequest request)
+{
+    // 根据操作类型检查不同菜单权限
+    if (request.Action == "delete")
+        await RequireMenuAccessAsync("user-management");
+    else if (request.Action == "export")
+        await RequireMenuAccessAsync("data-export");
+    
+    // 执行操作
+    var result = await _service.BulkActionAsync(request);
+    return Success(result);
+}
+```
+
+### 自己或有权限模式
+
+```csharp
+[HttpGet("{id}")]
+[Authorize]
+public async Task<IActionResult> GetUser(string id)
+{
+    // 可以查看自己的信息，或者需要user-management菜单权限
+    var currentUserId = CurrentUserId;
+    if (currentUserId != id && !await HasMenuAccessAsync("user-management"))
+    {
+        throw new UnauthorizedAccessException("无权查看其他用户信息");
+    }
+    
+    var user = await _userService.GetUserByIdAsync(id);
+    return Success(user.EnsureFound("用户", id));
+}
+```
+
+## 📋 菜单与API映射
+
+| 菜单名称 | 菜单路径 | API路径 | 说明 |
+|---------|---------|---------|------|
+| `user-management` | `/system/user-management` | `/api/user/management/*` | 用户管理 |
+| `role-management` | `/system/role-management` | `/api/role/*` | 角色管理 |
+| `user-log` | `/system/user-log` | `/api/users/activity-logs` | 活动日志 |
+| `tag` | `/system/tag` | `/api/tag/*` | 标签管理 |
+| `notice` | `/notice` | `/api/notices/*` | 通知管理 |
+| `company-settings` | `/system/company-settings` | `/api/company/*` | 企业设置 |
+| `welcome` | `/welcome` | - | 欢迎页（所有用户） |
+
+## 🎨 前端实现
+
+### 菜单显示
+
+菜单由后端API返回，前端自动渲染：
+
+```typescript
+// app.tsx - 自动处理
+menuDataRender: (menuData) => {
+  if (initialState?.currentUser?.menus) {
+    return convertMenuTreeToProLayout(initialState.currentUser.menus);
+  }
+  return menuData;
+}
+```
+
+### 按钮显示
+
+**v6.0重要变更**: 所有用户看到相同的按钮，不做前端权限控制
+
+```tsx
+// ✅ 正确：直接显示按钮
+<Button type="primary" onClick={handleCreate}>
+  新增用户
+</Button>
+
+<Button type="link" onClick={handleEdit}>
+  编辑
+</Button>
+
+<Button type="link" danger onClick={handleDelete}>
+  删除
+</Button>
+
+// ❌ 已废弃：不再使用PermissionControl
+<PermissionControl permission="user:create">
+  <Button type="primary">新增用户</Button>
+</PermissionControl>
+```
+
+### 错误处理
+
+当用户点击无权限的按钮时，后端返回403错误：
+
+```typescript
+try {
+  await deleteUser(id);
+  message.success('删除成功');
+} catch (error) {
+  // 后端返回: "无权访问菜单: user-management"
+  message.error(error.message || '操作失败');
+}
+```
+
+## 👥 角色配置
+
+### 创建角色流程
+
+1. **基本信息**: 填写角色名称和描述
+2. **菜单权限**: 选择该角色可访问的菜单
+3. **保存**: 创建角色
+
+### 菜单分配示例
+
+```typescript
+// 管理员角色 - 拥有所有菜单
+{
+  name: "管理员",
+  menuIds: [
+    "welcome-id",
+    "user-management-id",
+    "role-management-id",
+    "user-log-id",
+    "company-settings-id"
+  ]
+}
+
+// 普通用户角色 - 有限菜单
+{
+  name: "普通用户",
+  menuIds: [
+    "welcome-id"
+  ]
+}
+```
+
+## 🔧 开发指南
+
+### 新增需要权限的功能
+
+#### 步骤1: 添加菜单定义
+
+```csharp
+// DatabaseInitializerService.cs
+new Models.Menu
+{
+    Name = "data-export",
+    Title = "数据导出",
+    Path = "/system/data-export",
+    Component = "./data-export",
+    Icon = "download",
+    ParentId = systemMenu.Id,
+    SortOrder = 7,
+    IsEnabled = true,
+    CreatedAt = now,
+    UpdatedAt = now
+}
+```
+
+#### 步骤2: 添加Controller
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class DataExportController : BaseApiController
+{
+    [HttpPost("export")]
+    [RequireMenu("data-export")]
+    public async Task<IActionResult> Export([FromBody] ExportRequest request)
+    {
+        var data = await _service.ExportAsync(request);
+        return File(data, "application/octet-stream", "export.xlsx");
+    }
+}
+```
+
+#### 步骤3: 添加前端路由
+
+```typescript
+// config/routes.ts
+{
+    path: '/system/data-export',
+    component: './data-export',
+    hideInMenu: true,
+}
+```
+
+#### 步骤4: 分配给角色
+
+通过角色管理页面，将新菜单分配给需要的角色。
+
+## 🚫 禁止的做法
+
+### ❌ 不要使用已废弃的Permission系统
+
+```csharp
+// ❌ 错误：Permission实体已删除
+var permission = new Permission { ... };
+
+// ❌ 错误：RequirePermission特性已删除
+[RequirePermission("user", "create")]
+
+// ❌ 错误：方法已删除
+await HasPermissionAsync("user", "create");
+```
+
+### ❌ 不要在前端隐藏按钮
+
+```tsx
+// ❌ 错误：PermissionControl组件已删除
+<PermissionControl permission="user:create">
+  <Button>新增用户</Button>
+</PermissionControl>
+
+// ❌ 错误：access权限检查函数已删除
+{access.canCreateUser && <Button>新增用户</Button>}
+
+// ✅ 正确：直接显示按钮
+<Button onClick={handleCreate}>新增用户</Button>
+```
+
+### ❌ 不要创建过度细分的菜单
+
+```csharp
+// ❌ 不好：过度细分
+new Menu { Name = "user-view", Title = "查看用户" }
+new Menu { Name = "user-create", Title = "创建用户" }
+new Menu { Name = "user-update", Title = "编辑用户" }
+new Menu { Name = "user-delete", Title = "删除用户" }
+
+// ✅ 好：合理粒度
+new Menu { Name = "user-management", Title = "用户管理" }
+```
+
+## 📊 权限控制模式
+
+### 模式1: 标准菜单权限（97%的情况）
+
+```csharp
+[RequireMenu("menu-name")]
+```
+
+**适用场景**：
+- 标准的增删改查操作
+- 权限要求固定不变
+- 不需要条件判断
+
+### 模式2: 条件菜单权限（3%的情况）
+
+```csharp
+[Authorize]
+public async Task<IActionResult> Operation(...)
+{
+    if (condition)
+        await RequireMenuAccessAsync("menu-1");
+    else
+        await RequireMenuAccessAsync("menu-2");
+}
+```
+
+**适用场景**：
+- 需要根据参数判断权限
+- 复杂的权限逻辑
+- 多种操作类型的批量接口
+
+### 模式3: 公共接口（无特殊权限）
+
+```csharp
+[Authorize]  // 只检查登录
+public async Task<IActionResult> GetPublicData()
+```
+
+**适用场景**：
+- 所有登录用户都可访问的功能
+- 查看通知、获取公共配置等
+
+### 模式4: 匿名访问
+
+```csharp
+[AllowAnonymous]
+public async Task<IActionResult> GetAnonymousData()
+```
+
+**适用场景**：
+- 登录、注册、忘记密码等
+- 公开的API文档
+- 健康检查端点
+
+## 🎯 核心原则
+
+1. **简化优于复杂** - 菜单级权限足够满足大多数场景
+2. **后端为主** - 权限验证主要在后端API层面进行
+3. **用户体验** - 前端不隐藏按钮，避免用户困惑
+4. **安全第一** - API层面的权限验证确保安全性
+5. **粗粒度控制** - 合理的菜单划分，避免过度细分
+
+遵循这些规范，实现简洁、安全、易维护的权限系统！

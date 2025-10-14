@@ -24,7 +24,6 @@ declare namespace API {
     openInNewTab: boolean;
     hideInMenu: boolean;
     parentId?: string;
-    permissions: string[];
     children: MenuTreeNode[];
     createdAt?: string;
     updatedAt?: string;
@@ -42,9 +41,8 @@ declare namespace API {
     notifyCount?: number;
     unreadCount?: number;
     country?: string;
-    access?: string;        // 已废弃，使用 roles 和 permissions
-    roles?: string[];       // v5.0: 角色列表
-    permissions?: string[]; // v5.0: 权限列表
+    access?: string;        // 已废弃，使用 roles
+    roles?: string[];       // 角色列表
     geographic?: {
       province?: { label?: string; key?: string };
       city?: { label?: string; key?: string };
@@ -292,7 +290,6 @@ declare namespace API {
     activeUsers: number;
     totalRoles: number;
     totalMenus: number;
-    totalPermissions: number;
     maxUsers: number;
     remainingUsers: number;
     isExpired: boolean;
@@ -384,7 +381,6 @@ declare namespace API {
     companyId: string;
     companyName: string;
     menus: MenuTreeNode[];
-    permissionCodes: string[];
     token?: string;  // 可选的新token
   };
 

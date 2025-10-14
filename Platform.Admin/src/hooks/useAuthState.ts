@@ -65,6 +65,31 @@ export function useAuthState() {
     }
   }, [fetchUserInfo, initialState, setInitialState, clearUser]);
 
+  // 强制刷新权限（清除缓存）
+  const refreshPermissions = useCallback(async () => {
+    if (currentUser) {
+      try {
+        // 清除缓存的用户信息
+        setInitialState({
+          ...initialState,
+          currentUser: undefined
+        });
+
+        // 重新获取用户信息（会重新获取权限）
+        if (fetchUserInfo) {
+          const user = await fetchUserInfo();
+          setInitialState({
+            ...initialState,
+            currentUser: user
+          });
+          console.log('🔄 权限已刷新');
+        }
+      } catch (error) {
+        console.error('Failed to refresh permissions:', error);
+      }
+    }
+  }, [currentUser, initialState, setInitialState, fetchUserInfo]);
+
   // 权限检查方法
   const permissionMethods = useMemo(() => ({
     hasPermission,
@@ -78,7 +103,8 @@ export function useAuthState() {
     updateUser,
     clearUser,
     refreshUser,
-  }), [updateUser, clearUser, refreshUser]);
+    refreshPermissions,
+  }), [updateUser, clearUser, refreshUser, refreshPermissions]);
 
   return {
     // 状态

@@ -23,9 +23,9 @@ public abstract class BaseApiController : ControllerBase
 
     /// <summary>
     /// 当前用户角色（从 JWT token）
-    /// 注意：JWT token 不再包含 role claim，此属性已废弃
+    /// 注意：v6.0 已改为菜单级权限系统，不再使用 role claim
     /// </summary>
-    [Obsolete("JWT token 不再包含 role claim，请使用权限系统进行权限检查")]
+    [Obsolete("v6.0 已改为菜单级权限系统，请使用 HasMenuAccessAsync 进行权限检查")]
     protected string? CurrentUserRole => null;
 
     /// <summary>
@@ -73,9 +73,9 @@ public abstract class BaseApiController : ControllerBase
 
     /// <summary>
     /// 检查当前用户是否为管理员
-    /// 注意：此方法已废弃，请使用 HasPermissionAsync 进行权限检查
+    /// 注意：v6.0 已改为菜单级权限系统，不再使用 IsAdmin
     /// </summary>
-    [Obsolete("请使用 HasPermissionAsync 进行权限检查，而不是依赖 IsAdmin")]
+    [Obsolete("v6.0 已改为菜单级权限系统，请使用 HasMenuAccessAsync 进行权限检查")]
     protected bool IsAdmin => false;
 
     /// <summary>
@@ -132,44 +132,34 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
-    /// 检查当前用户是否有指定权限
+    /// 检查当前用户是否有访问指定菜单的权限
     /// </summary>
-    protected async Task<bool> HasPermissionAsync(string resource, string action)
+    protected async Task<bool> HasMenuAccessAsync(string menuName)
     {
-        var permissionService = HttpContext.RequestServices.GetRequiredService<IPermissionCheckService>();
+        var menuAccessService = HttpContext.RequestServices.GetRequiredService<IMenuAccessService>();
         var userId = GetRequiredUserId();
-        return await permissionService.HasPermissionAsync(userId, $"{resource}:{action}");
+        return await menuAccessService.HasMenuAccessAsync(userId, menuName);
     }
 
     /// <summary>
-    /// 要求当前用户有指定权限，否则抛出异常
+    /// 要求当前用户有访问指定菜单的权限，否则抛出异常
     /// </summary>
-    protected async Task RequirePermissionAsync(string resource, string action)
+    protected async Task RequireMenuAccessAsync(string menuName)
     {
-        if (!await HasPermissionAsync(resource, action))
+        if (!await HasMenuAccessAsync(menuName))
         {
-            throw new UnauthorizedAccessException($"无权执行操作: {resource}:{action}");
+            throw new UnauthorizedAccessException($"无权访问菜单: {menuName}");
         }
     }
 
     /// <summary>
-    /// 检查当前用户是否有任意一个权限
+    /// 检查当前用户是否有访问任意一个菜单的权限
     /// </summary>
-    protected async Task<bool> HasAnyPermissionAsync(params string[] permissionCodes)
+    protected async Task<bool> HasAnyMenuAccessAsync(params string[] menuNames)
     {
-        var permissionService = HttpContext.RequestServices.GetRequiredService<IPermissionCheckService>();
+        var menuAccessService = HttpContext.RequestServices.GetRequiredService<IMenuAccessService>();
         var userId = GetRequiredUserId();
-        return await permissionService.HasAnyPermissionAsync(userId, permissionCodes);
-    }
-
-    /// <summary>
-    /// 检查当前用户是否拥有所有指定权限
-    /// </summary>
-    protected async Task<bool> HasAllPermissionsAsync(params string[] permissionCodes)
-    {
-        var permissionService = HttpContext.RequestServices.GetRequiredService<IPermissionCheckService>();
-        var userId = GetRequiredUserId();
-        return await permissionService.HasAllPermissionsAsync(userId, permissionCodes);
+        return await menuAccessService.HasAnyMenuAccessAsync(userId, menuNames);
     }
 }
 

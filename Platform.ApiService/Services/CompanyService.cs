@@ -23,16 +23,13 @@ public class CompanyService : BaseService, ICompanyService
     private readonly IMongoCollection<AppUser> _users;
     private readonly IMongoCollection<Role> _roles;
     private readonly IMongoCollection<Menu> _menus;
-    private readonly IMongoCollection<Permission> _permissions;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IPermissionService _permissionService;
 
     public CompanyService(
         IMongoDatabase database,
         IHttpContextAccessor httpContextAccessor,
         ITenantContext tenantContext,
         IPasswordHasher passwordHasher,
-        IPermissionService permissionService,
         ILogger<CompanyService> logger)
         : base(database, httpContextAccessor, tenantContext, logger)
     {
@@ -41,9 +38,7 @@ public class CompanyService : BaseService, ICompanyService
         _users = database.GetCollection<AppUser>("users");
         _roles = database.GetCollection<Role>("roles");
         _menus = database.GetCollection<Menu>("menus");
-        _permissions = database.GetCollection<Permission>("permissions");
         _passwordHasher = passwordHasher;
-        _permissionService = permissionService;
     }
 
     /// <summary>
@@ -82,18 +77,18 @@ public class CompanyService : BaseService, ICompanyService
 
         try
         {
-            // 2. 创建默认权限（属于该企业）
-            var permissions = await CreateDefaultPermissionsAsync(company.Id!);
-            LogInformation("为企业 {CompanyId} 创建了 {Count} 个默认权限", company.Id!, permissions.Count);
+            // 2. 获取所有全局菜单
+            var allMenus = await _menus.Find(m => m.IsEnabled && !m.IsDeleted).ToListAsync();
+            var allMenuIds = allMenus.Select(m => m.Id!).ToList();
+            LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
 
-            // 3. 创建默认管理员角色（拥有所有权限）
+            // 3. 创建默认管理员角色（拥有所有菜单访问权限）
             var adminRole = new Role
             {
                 Name = "管理员",
-                Description = "系统管理员，拥有所有权限",
+                Description = "系统管理员，拥有所有菜单访问权限",
                 CompanyId = company.Id!,
-                PermissionIds = permissions.Select(p => p.Id!).ToList(),
-                MenuIds = new List<string>(),  // 稍后创建菜单后更新
+                MenuIds = allMenuIds,
                 IsActive = true
             };
             await _roles.InsertOneAsync(adminRole);
@@ -224,13 +219,6 @@ public class CompanyService : BaseService, ICompanyService
         );
         var totalRoles = await _roles.CountDocumentsAsync(roleFilter);
 
-        // 权限统计
-        var permFilter = Builders<Permission>.Filter.And(
-            Builders<Permission>.Filter.Eq(p => p.CompanyId, companyId),
-            Builders<Permission>.Filter.Eq(p => p.IsDeleted, false)
-        );
-        var totalPermissions = await _permissions.CountDocumentsAsync(permFilter);
-
         // 菜单统计：统计系统中所有启用的菜单
         var menuFilter = Builders<Menu>.Filter.And(
             Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
@@ -244,7 +232,6 @@ public class CompanyService : BaseService, ICompanyService
             ActiveUsers = (int)activeUsers,
             TotalRoles = (int)totalRoles,
             TotalMenus = (int)totalMenus,
-            TotalPermissions = (int)totalPermissions,
             MaxUsers = company.MaxUsers,
             RemainingUsers = company.MaxUsers - (int)totalUsers,
             IsExpired = company.ExpiresAt.HasValue && company.ExpiresAt.Value < DateTime.UtcNow,
@@ -262,33 +249,6 @@ public class CompanyService : BaseService, ICompanyService
     }
 
     #region 私有辅助方法
-
-    /// <summary>
-    /// 创建默认权限
-    /// </summary>
-    private async Task<List<Permission>> CreateDefaultPermissionsAsync(string companyId)
-    {
-        var defaultPermissions = _permissionService.GetDefaultPermissions();
-        var permissions = new List<Permission>();
-
-        foreach (var perm in defaultPermissions)
-        {
-            var permission = new Permission
-            {
-                ResourceName = perm.ResourceName,
-                ResourceTitle = perm.ResourceTitle,
-                Action = perm.Action,
-                ActionTitle = perm.ActionTitle,
-                Code = $"{perm.ResourceName}:{perm.Action}",
-                Description = perm.Description,
-                CompanyId = companyId
-            };
-            permissions.Add(permission);
-        }
-
-        await _permissions.InsertManyAsync(permissions);
-        return permissions;
-    }
 
     #endregion
 

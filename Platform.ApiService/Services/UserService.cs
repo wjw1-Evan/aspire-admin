@@ -9,7 +9,6 @@ public class UserService : BaseService, IUserService
 {
     private readonly BaseRepository<AppUser> _userRepository;
     private readonly IMongoCollection<UserActivityLog> _activityLogs;
-    private readonly IMongoCollection<Permission> _permissions;
     private readonly IMongoCollection<Role> _roles;
     private readonly IMongoCollection<UserCompany> _userCompanies;
     private readonly IUniquenessChecker _uniquenessChecker;
@@ -29,7 +28,6 @@ public class UserService : BaseService, IUserService
     {
         _userRepository = new BaseRepository<AppUser>(database, "users", httpContextAccessor, tenantContext);
         _activityLogs = GetCollection<UserActivityLog>("user_activity_logs");
-        _permissions = GetCollection<Permission>("permissions");
         _roles = GetCollection<Role>("roles");
         _userCompanies = GetCollection<UserCompany>("user_companies");
         _uniquenessChecker = uniquenessChecker;
@@ -663,101 +661,6 @@ public class UserService : BaseService, IUserService
         return result.ModifiedCount > 0;
     }
 
-    /// <summary>
-    /// 为用户分配自定义权限
-    /// </summary>
-    public async Task<bool> AssignCustomPermissionsAsync(string userId, List<string> permissionIds)
-    {
-        var result = await _users.UpdateOneAsync(
-            u => u.Id == userId,
-            Builders<AppUser>.Update
-                .Set(u => u.CustomPermissionIds, permissionIds)
-                .Set(u => u.UpdatedAt, DateTime.UtcNow)
-        );
-
-        return result.ModifiedCount > 0;
-    }
-
-    /// <summary>
-    /// 获取用户的自定义权限
-    /// </summary>
-    public async Task<List<Permission>> GetUserCustomPermissionsAsync(string userId)
-    {
-        var user = await GetUserByIdAsync(userId);
-        if (user == null || user.CustomPermissionIds == null || user.CustomPermissionIds.Count == 0)
-        {
-            return new List<Permission>();
-        }
-
-        var filter = Builders<Permission>.Filter.And(
-            Builders<Permission>.Filter.In(p => p.Id, user.CustomPermissionIds),
-            SoftDeleteExtensions.NotDeleted<Permission>()
-        );
-        return await _permissions.Find(filter).ToListAsync();
-    }
-
-    /// <summary>
-    /// 获取用户的所有权限（角色权限 + 自定义权限）
-    /// </summary>
-    public async Task<UserPermissionsResponse> GetUserAllPermissionsAsync(string userId)
-    {
-        // 直接实现权限获取逻辑，避免循环依赖
-        var user = await GetUserByIdAsync(userId);
-        if (user == null)
-        {
-            return new UserPermissionsResponse();
-        }
-
-        var rolePermissions = new List<Permission>();
-        var customPermissions = new List<Permission>();
-
-        // TODO: v3.1重构 - 角色权限应该从 UserCompany.RoleIds 获取
-#pragma warning disable CS0618 // 抑制过时API警告 - 暂时保留以确保兼容性
-        if (user.RoleIds != null && user.RoleIds.Count > 0)
-        {
-            var roleFilter = Builders<Role>.Filter.And(
-                Builders<Role>.Filter.In(r => r.Id, user.RoleIds),
-                Builders<Role>.Filter.Eq(r => r.IsActive, true),
-                SoftDeleteExtensions.NotDeleted<Role>()
-            );
-#pragma warning restore CS0618
-            var roles = await _roles.Find(roleFilter).ToListAsync();
-
-            var rolePermissionIds = roles.SelectMany(r => r.PermissionIds).Distinct().ToList();
-            if (rolePermissionIds.Count > 0)
-            {
-                var permFilter = Builders<Permission>.Filter.And(
-                    Builders<Permission>.Filter.In(p => p.Id, rolePermissionIds),
-                    SoftDeleteExtensions.NotDeleted<Permission>()
-                );
-                rolePermissions = await _permissions.Find(permFilter).ToListAsync();
-            }
-        }
-
-        // 获取用户自定义权限
-        if (user.CustomPermissionIds != null && user.CustomPermissionIds.Count > 0)
-        {
-            var customPermFilter = Builders<Permission>.Filter.And(
-                Builders<Permission>.Filter.In(p => p.Id, user.CustomPermissionIds),
-                SoftDeleteExtensions.NotDeleted<Permission>()
-            );
-            customPermissions = await _permissions.Find(customPermFilter).ToListAsync();
-        }
-
-        // 合并所有权限代码（去重）
-        var allPermissionCodes = rolePermissions.Select(p => p.Code)
-            .Concat(customPermissions.Select(p => p.Code))
-            .Distinct()
-            .ToList();
-
-        return new UserPermissionsResponse
-        {
-            RolePermissions = rolePermissions,
-            CustomPermissions = customPermissions,
-            AllPermissionCodes = allPermissionCodes
-        };
-    }
-
     #region 私有辅助方法
 
     /// <summary>
@@ -801,5 +704,71 @@ public class UserService : BaseService, IUserService
     }
 
     #endregion
+
+    /// <summary>
+    /// 获取用户的所有权限信息
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <returns>权限信息</returns>
+    public async Task<object> GetUserPermissionsAsync(string userId)
+    {
+        // 获取用户信息
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"用户 {userId} 不存在");
+        }
+
+        // 获取用户在当前企业的角色
+        var companyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            // 没有企业上下文，返回空权限
+            return new
+            {
+                allPermissionCodes = new string[0],
+                rolePermissions = new string[0],
+                customPermissions = new string[0]
+            };
+        }
+
+        var userCompanyFilter = Builders<UserCompany>.Filter.And(
+            Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
+            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
+            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+        );
+
+        var userCompany = await _userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
+        
+        var allPermissionCodes = new List<string>();
+        var rolePermissions = new List<string>();
+
+        if (userCompany?.RoleIds != null && userCompany.RoleIds.Count > 0)
+        {
+            // 获取用户角色对应的菜单权限
+            var roleFilter = Builders<Role>.Filter.And(
+                Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
+                Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),
+                Builders<Role>.Filter.Eq(r => r.IsDeleted, false),
+                Builders<Role>.Filter.Eq(r => r.IsActive, true)
+            );
+
+            var roles = await _roles.Find(roleFilter).ToListAsync();
+            
+            // 收集所有角色的菜单权限
+            var menuIds = roles.SelectMany(r => r.MenuIds).Distinct().ToList();
+            
+            // 将菜单ID作为权限代码（简化的权限模型）
+            rolePermissions.AddRange(menuIds);
+            allPermissionCodes.AddRange(menuIds);
+        }
+
+        return new
+        {
+            allPermissionCodes = allPermissionCodes.Distinct().ToArray(),
+            rolePermissions = rolePermissions.ToArray(),
+            customPermissions = new string[0] // 当前版本暂不支持自定义权限
+        };
+    }
 }
 

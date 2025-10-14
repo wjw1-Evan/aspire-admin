@@ -21,7 +21,7 @@ public class TagController : BaseApiController
     /// 获取所有标签
     /// </summary>
     [HttpGet]
-    [RequirePermission("tag", "read")]
+    [RequireMenu("tag")]
     public async Task<IActionResult> GetTags()
     {
         var result = await _tagService.GetTagsAsync();
@@ -33,7 +33,7 @@ public class TagController : BaseApiController
     /// </summary>
     /// <param name="id">标签ID</param>
     [HttpGet("{id}")]
-    [RequirePermission("tag", "read")]
+    [RequireMenu("tag")]
     public async Task<IActionResult> GetTagById(string id)
     {
         var tag = await _tagService.GetTagByIdAsync(id);
@@ -45,7 +45,7 @@ public class TagController : BaseApiController
     /// </summary>
     /// <param name="request">创建标签请求</param>
     [HttpPost]
-    [RequirePermission("tag", "create")]
+    [RequireMenu("tag")]
     public async Task<IActionResult> CreateTag([FromBody] CreateTagRequest request)
     {
         var tag = await _tagService.CreateTagAsync(request);
@@ -58,7 +58,7 @@ public class TagController : BaseApiController
     /// <param name="id">标签ID</param>
     /// <param name="request">更新标签请求</param>
     [HttpPut("{id}")]
-    [RequirePermission("tag", "update")]
+    [RequireMenu("tag")]
     public async Task<IActionResult> UpdateTag(string id, [FromBody] UpdateTagRequest request)
     {
         var tag = await _tagService.UpdateTagAsync(id, request);
@@ -70,7 +70,7 @@ public class TagController : BaseApiController
     /// </summary>
     /// <param name="id">标签ID</param>
     [HttpDelete("{id}")]
-    [RequirePermission("tag", "delete")]
+    [RequireMenu("tag")]
     public async Task<IActionResult> DeleteTag(string id)
     {
         var deleted = await _tagService.DeleteTagAsync(id);

@@ -22,9 +22,6 @@ public class Role : ISoftDeletable, INamedEntity, ITimestamped
     [BsonElement("menuIds")]
     public List<string> MenuIds { get; set; } = new();
 
-    [BsonElement("permissionIds")]
-    public List<string> PermissionIds { get; set; } = new();
-
     [BsonElement("companyId")]
     public string CompanyId { get; set; } = string.Empty;
 
@@ -108,7 +105,6 @@ public class RoleWithStats
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public List<string> MenuIds { get; set; } = new();
-    public List<string> PermissionIds { get; set; } = new();
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -116,7 +112,6 @@ public class RoleWithStats
     // 统计信息
     public int UserCount { get; set; }          // 使用此角色的用户数量
     public int MenuCount { get; set; }          // 菜单数量
-    public int PermissionCount { get; set; }    // 权限数量
 }
 
 /// <summary>

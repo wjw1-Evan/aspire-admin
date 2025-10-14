@@ -137,7 +137,6 @@ public class SwitchCompanyResult
     public string CompanyId { get; set; } = string.Empty;
     public string CompanyName { get; set; } = string.Empty;
     public List<MenuTreeNode> Menus { get; set; } = new();
-    public List<string> PermissionCodes { get; set; } = new();
     public string? Token { get; set; }  // 可选的新token
 }
 

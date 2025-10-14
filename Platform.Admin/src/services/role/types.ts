@@ -12,7 +12,6 @@ export interface Role {
   // 统计字段
   userCount?: number;
   menuCount?: number;
-  permissionCount?: number;
 }
 
 /**

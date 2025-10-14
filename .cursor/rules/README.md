@@ -149,11 +149,11 @@
   - 通过权限控制显示
 
 #### 权限控制
-- **`permission-control.mdc`** - 权限控制实现规范
+- **`menu-level-permission.mdc`** - 菜单级权限控制规范
   - 📁 应用于控制器和权限相关文件
-  - 使用 [RequirePermission] 特性
-  - BaseApiController 权限辅助方法
-  - 权限命名规范
+  - 使用 [RequireMenu] 特性
+  - BaseApiController 菜单权限辅助方法
+  - 菜单权限映射规范
 
 #### 验证和扩展方法
 - **`validation-extensions.mdc`** - 参数验证规范
@@ -243,7 +243,7 @@
 | 系统规范 | 4 | API、认证、主题、错误处理、状态管理 |
 | 工程规范 | 2 | 测试、部署 |
 | 实体开发 | 1 | 新增实体清单 |
-| **总计** | **32** | 涵盖全栈开发各个方面 |
+| **总计** | **31** | 涵盖全栈开发各个方面 |
 
 ## 🆕 v5.0 新增规则
 

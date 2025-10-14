@@ -16,7 +16,6 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
-    private readonly IPermissionService _permissionService;
     private readonly IPasswordHasher _passwordHasher;
 
     public AuthService(
@@ -27,7 +26,6 @@ public class AuthService : IAuthService
         ILogger<AuthService> logger,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
-        IPermissionService permissionService,
         IPasswordHasher passwordHasher)
     {
         _database = database;
@@ -38,7 +36,6 @@ public class AuthService : IAuthService
         _logger = logger;
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
-        _permissionService = permissionService;
         _passwordHasher = passwordHasher;
     }
 
@@ -99,8 +96,30 @@ public class AuthService : IAuthService
             };
         }
 
-        // 获取用户权限信息
-        var userPermissions = await _permissionService.GetUserPermissionsAsync(user.Id!);
+        // 获取用户角色信息
+        var roleNames = new List<string>();
+        if (!string.IsNullOrEmpty(user.CurrentCompanyId))
+        {
+            var userCompanies = _database.GetCollection<UserCompany>("userCompanies");
+            var roles = _database.GetCollection<Role>("roles");
+            
+            var userCompanyFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, user.Id),
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, user.CurrentCompanyId),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+            );
+            
+            var userCompany = await userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
+            if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
+            {
+                var roleFilter = Builders<Role>.Filter.And(
+                    Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
+                    Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
+                );
+                var userRoles = await roles.Find(roleFilter).ToListAsync();
+                roleNames = userRoles.Select(r => r.Name).ToList();
+            }
+        }
         
         // 构建统一的用户信息
         return new CurrentUser
@@ -125,8 +144,7 @@ public class AuthService : IAuthService
             NotifyCount = 12,
             UnreadCount = 11,
             Country = "China",
-            Roles = userPermissions.RoleNames,
-            Permissions = userPermissions.AllPermissionCodes,
+            Roles = roleNames,
             Geographic = new GeographicInfo
             {
                 Province = new LocationInfo { Label = "浙江省", Key = "330000" },
@@ -331,11 +349,9 @@ public class AuthService : IAuthService
         var companies = _database.GetCollection<Company>("companies");
         var roles = _database.GetCollection<Role>("roles");
         var menus = _database.GetCollection<Menu>("menus");
-        var permissions = _database.GetCollection<Permission>("permissions");
         var userCompanies = _database.GetCollection<UserCompany>("user_companies");
         
         Company? company = null;
-        List<Permission>? permissionList = null;
         Role? adminRole = null;
         
         try
@@ -355,43 +371,18 @@ public class AuthService : IAuthService
             await companies.InsertOneAsync(company);
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
             
-            // 2. 创建默认权限
-            var defaultPermissions = _permissionService.GetDefaultPermissions();
-            permissionList = new List<Permission>();
-            
-            foreach (var perm in defaultPermissions)
-            {
-                var permission = new Permission
-                {
-                    ResourceName = perm.ResourceName,
-                    ResourceTitle = perm.ResourceTitle,
-                    Action = perm.Action,
-                    ActionTitle = perm.ActionTitle,
-                    Code = $"{perm.ResourceName}:{perm.Action}",
-                    Description = perm.Description,
-                    CompanyId = company.Id!,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                permissionList.Add(permission);
-            }
-            
-            await permissions.InsertManyAsync(permissionList);
-            _logger.LogInformation("创建 {Count} 个默认权限", permissionList.Count);
-            
-            // 3. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
+            // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
             var allMenus = await menus.Find(m => m.IsEnabled && !m.IsDeleted).ToListAsync();
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
             
-            // 4. 创建管理员角色（分配所有菜单和权限）
+            // 3. 创建管理员角色（分配所有菜单）
             adminRole = new Role
             {
                 Name = "管理员",
-                Description = "企业管理员，拥有所有权限",
+                Description = "企业管理员，拥有所有菜单访问权限",
                 CompanyId = company.Id!,
-                PermissionIds = permissionList.Select(p => p.Id!).ToList(),
-                MenuIds = allMenuIds,  // ✅ 分配所有全局菜单
+                MenuIds = allMenuIds,  // 分配所有全局菜单
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -400,7 +391,7 @@ public class AuthService : IAuthService
             await roles.InsertOneAsync(adminRole);
             _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
             
-            // 5. 创建用户-企业关联（用户是管理员）
+            // 4. 创建用户-企业关联（用户是管理员）
             var userCompany = new UserCompany
             {
                 UserId = user.Id!,
@@ -433,13 +424,6 @@ public class AuthService : IAuthService
                 {
                     await roles.DeleteOneAsync(r => r.Id == adminRole.Id);
                     _logger.LogInformation("已清理角色: {RoleId}", adminRole.Id);
-                }
-                
-                if (permissionList != null && permissionList.Count > 0)
-                {
-                    var permissionIds = permissionList.Select(p => p.Id!).ToList();
-                    await permissions.DeleteManyAsync(p => permissionIds.Contains(p.Id!));
-                    _logger.LogInformation("已清理权限: {Count}个", permissionList.Count);
                 }
                 
                 if (company?.Id != null)

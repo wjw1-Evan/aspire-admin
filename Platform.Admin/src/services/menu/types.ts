@@ -14,7 +14,6 @@ export interface MenuItem {
   openInNewTab: boolean;
   hideInMenu: boolean;
   parentId?: string;
-  permissions: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -41,7 +40,6 @@ export interface CreateMenuRequest {
   openInNewTab: boolean;
   hideInMenu: boolean;
   parentId?: string;
-  permissions: string[];
 }
 
 /**
@@ -59,7 +57,6 @@ export interface UpdateMenuRequest {
   openInNewTab?: boolean;
   hideInMenu?: boolean;
   parentId?: string;
-  permissions?: string[];
 }
 
 /**

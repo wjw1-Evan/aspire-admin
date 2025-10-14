@@ -660,83 +660,15 @@ public static async Task CreateIndexesAsync(IMongoDatabase database)
 
 ## 🎯 BaseApiController 统一标准
 
-### 核心规范
 **所有控制器必须继承 `BaseApiController`，禁止直接继承 `ControllerBase`**
 
-### BaseApiController 提供的能力
+基类提供的核心功能：
+- **用户信息获取** - `CurrentUserId`, `GetRequiredUserId()` 等
+- **统一响应格式** - `Success()`, `Error()` 等方法
+- **异常处理** - 直接抛异常，由中间件处理
+- **企业上下文** - `CurrentCompanyId`, `GetRequiredCompanyId()` 等
 
-#### 用户信息属性
-```csharp
-protected string? CurrentUserId          // 当前用户ID
-protected string? CurrentUsername        // 当前用户名
-protected string? CurrentUserRole        // 当前用户角色
-protected bool IsAdmin                   // 是否管理员
-protected bool IsAuthenticated           // 是否已认证
-```
-
-#### 安全获取用户信息
-```csharp
-// 获取必需的用户ID（为空则自动抛出 UnauthorizedAccessException）
-var userId = GetRequiredUserId();
-```
-
-#### 统一响应方法
-```csharp
-// 成功响应
-return Success(data);
-return Success(data, "操作成功");
-return Success("操作成功");
-return SuccessResponse(data);
-
-// 错误响应（不推荐，建议直接抛异常）
-return Error("错误消息");
-return NotFoundError("资源不存在");
-return UnauthorizedError("未授权访问");
-```
-
-### 最佳实践
-
-#### ✅ 正确的异常处理
-```csharp
-// ✅ 推荐：直接抛出异常，由 GlobalExceptionMiddleware 处理
-[HttpGet("{id}")]
-public async Task<IActionResult> GetUser(string id)
-{
-    var user = await _userService.GetUserByIdAsync(id);
-    if (user == null)
-        throw new KeyNotFoundException($"用户 {id} 不存在");
-    
-    return Success(user);
-}
-
-// ❌ 不推荐：手动 try-catch
-[HttpGet("{id}")]
-public async Task<IActionResult> GetUser(string id)
-{
-    try
-    {
-        var user = await _userService.GetUserByIdAsync(id);
-        return Ok(new { success = true, data = user });
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { success = false, error = ex.Message });
-    }
-}
-```
-
-#### ✅ 使用基类方法
-```csharp
-// ✅ 推荐：使用基类方法
-var userId = GetRequiredUserId();
-return Success(data);
-
-// ❌ 不推荐：手动提取和构建响应
-var userId = User.FindFirst("userId")?.Value;
-if (string.IsNullOrEmpty(userId))
-    return Unauthorized(new { success = false, error = "未找到用户信息" });
-return Ok(new { success = true, data = data });
-```
+详细规范请参考：[BaseApiController 统一标准](mdc:.cursor/rules/baseapicontroller-standard.mdc)
 
 ## 🔧 中间件架构
 

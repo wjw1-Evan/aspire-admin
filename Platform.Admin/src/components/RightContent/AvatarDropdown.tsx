@@ -3,6 +3,7 @@ import {
   SettingOutlined,
   UserOutlined,
   LockOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
@@ -82,6 +83,23 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       loginOut();
       return;
     }
+    if (key === 'refresh-permissions') {
+      // 刷新权限
+      flushSync(() => {
+        setInitialState((s) => ({ ...s, currentUser: undefined }));
+      });
+      // 重新获取用户信息（会重新获取权限）
+      setTimeout(async () => {
+        try {
+          const userInfo = await initialState?.fetchUserInfo?.();
+          setInitialState((s) => ({ ...s, currentUser: userInfo }));
+          console.log('🔄 权限已刷新');
+        } catch (error) {
+          console.error('刷新权限失败:', error);
+        }
+      }, 100);
+      return;
+    }
     if (key === 'change-password') {
       history.push('/user/change-password');
       return;
@@ -127,6 +145,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
             key: 'change-password',
             icon: <LockOutlined />,
             label: '修改密码',
+          },
+          {
+            key: 'refresh-permissions',
+            icon: <ReloadOutlined />,
+            label: '刷新权限',
           },
           {
             type: 'divider' as const,

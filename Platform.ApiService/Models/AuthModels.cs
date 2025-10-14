@@ -82,16 +82,10 @@ public class CurrentUser
     public string? Country { get; set; }
 
     /// <summary>
-    /// 角色列表（简化权限系统）
+    /// 角色列表
     /// </summary>
     [BsonElement("roles")]
     public List<string> Roles { get; set; } = new();
-
-    /// <summary>
-    /// 权限列表（简化权限系统）
-    /// </summary>
-    [BsonElement("permissions")]
-    public List<string> Permissions { get; set; } = new();
 
     /// <summary>
     /// 地理信息
@@ -232,16 +226,13 @@ public class AppUser : MultiTenantEntity
     public string? Email { get; set; }
 
     /// <summary>
-    /// 角色ID列表（v3.0 已废弃，v3.1使用 UserCompany.RoleIds）
-    /// 保留用于向后兼容和数据迁移
+    /// 角色ID列表（v3.1 后改为 UserCompany.RoleIds）
+    /// 保留用于向后兼容和数据迁移，v6.0 仍在使用
     /// </summary>
     [BsonElement("roleIds")]
     [BsonIgnoreIfNull]
     [Obsolete("v3.1: 使用 UserCompany.RoleIds 代替")]
     public List<string>? RoleIds { get; set; }
-
-    [BsonElement("customPermissionIds")]
-    public List<string> CustomPermissionIds { get; set; } = new();
     
     /// <summary>
     /// 当前选中的企业ID（v3.1新增）

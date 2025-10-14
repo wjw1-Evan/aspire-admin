@@ -156,10 +156,7 @@ public class UserCompanyService : BaseService, IUserCompanyService
         // 4. 获取用户在该企业的菜单
         var menus = await _menuService.GetUserMenusAsync(membership.RoleIds);
         
-        // 5. 获取用户在该企业的权限代码
-        var permissionCodes = await GetUserPermissionCodesInCompanyAsync(userId, targetCompanyId);
-        
-        // 6. 生成新的JWT Token（包含新的企业信息）
+        // 5. 生成新的JWT Token（包含新的企业信息）
         var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
         string? newToken = null;
         if (user != null)
@@ -173,7 +170,6 @@ public class UserCompanyService : BaseService, IUserCompanyService
             CompanyId = targetCompanyId,
             CompanyName = company.Name,
             Menus = menus,
-            PermissionCodes = permissionCodes,
             Token = newToken
         };
     }
@@ -338,43 +334,6 @@ public class UserCompanyService : BaseService, IUserCompanyService
     }
 
     #region 私有辅助方法
-
-    /// <summary>
-    /// 获取用户在企业中的权限代码列表
-    /// </summary>
-    private async Task<List<string>> GetUserPermissionCodesInCompanyAsync(string userId, string companyId)
-    {
-        var membership = await GetUserCompanyAsync(userId, companyId);
-        if (membership == null || membership.RoleIds.Count == 0)
-        {
-            return new List<string>();
-        }
-        
-        // 获取角色的权限
-        var roleFilter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.In(r => r.Id, membership.RoleIds),
-            Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),
-            Builders<Role>.Filter.Eq(r => r.IsActive, true),
-            Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
-        );
-        var roles = await _roles.Find(roleFilter).ToListAsync();
-        
-        var permissionIds = roles.SelectMany(r => r.PermissionIds).Distinct().ToList();
-        if (permissionIds.Count == 0)
-        {
-            return new List<string>();
-        }
-        
-        var permissions = Database.GetCollection<Permission>("permissions");
-        var permFilter = Builders<Permission>.Filter.And(
-            Builders<Permission>.Filter.In(p => p.Id, permissionIds),
-            Builders<Permission>.Filter.Eq(p => p.CompanyId, companyId),
-            Builders<Permission>.Filter.Eq(p => p.IsDeleted, false)
-        );
-        var perms = await permissions.Find(permFilter).ToListAsync();
-        
-        return perms.Select(p => p.Code).ToList();
-    }
 
     #endregion
 }

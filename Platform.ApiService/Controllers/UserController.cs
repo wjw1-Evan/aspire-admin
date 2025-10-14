@@ -28,9 +28,9 @@ public class UserController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetUserById(string id)
     {
-        // 检查权限：只能查看自己的信息，或者需要 user:read 权限
+        // 检查权限：只能查看自己的信息，或者需要访问用户管理菜单的权限
         var currentUserId = CurrentUserId;
-        if (currentUserId != id && !await HasPermissionAsync(PermissionResources.User, PermissionActions.Read))
+        if (currentUserId != id && !await HasMenuAccessAsync("user-management"))
         {
             throw new UnauthorizedAccessException(ErrorMessages.Unauthorized);
         }
@@ -44,7 +44,7 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="request">创建用户请求</param>
     [HttpPost("management")]
-    [RequirePermission(PermissionResources.User, PermissionActions.Create)]
+    [RequireMenu("user-management")]
     public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
     {
         // 使用扩展方法简化参数验证
@@ -61,7 +61,7 @@ public class UserController : BaseApiController
     /// <param name="id">用户ID</param>
     /// <param name="request">更新用户请求</param>
     [HttpPut("{id}")]
-    [RequirePermission(PermissionResources.User, PermissionActions.Update)]
+    [RequireMenu("user-management")]
     public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
     {
         // v3.1: 角色管理已移至 UserCompanyService，通过企业成员管理API处理
@@ -80,7 +80,7 @@ public class UserController : BaseApiController
     /// <param name="id">用户ID</param>
     /// <param name="reason">删除原因（可选，最大长度200字符）</param>
     [HttpDelete("{id}")]
-    [RequirePermission(PermissionResources.User, PermissionActions.Delete)]
+    [RequireMenu("user-management")]
     public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)
     {
         // 检查是否删除自己（不允许）
@@ -112,7 +112,7 @@ public class UserController : BaseApiController
     /// 获取用户统计信息（需要权限）
     /// </summary>
     [HttpGet("statistics")]
-    [RequirePermission(PermissionResources.User, PermissionActions.Read)]
+    [RequireMenu("user-management")]
     public async Task<IActionResult> GetUserStatistics()
     {
         var statistics = await _userService.GetUserStatisticsAsync();
@@ -128,15 +128,8 @@ public class UserController : BaseApiController
     [Authorize]
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
-        // 批量操作需要 user:update 或 user:delete 权限
-        if (request.Action == BulkActionTypes.Delete)
-        {
-            await RequirePermissionAsync(PermissionResources.User, PermissionActions.Delete);
-        }
-        else
-        {
-            await RequirePermissionAsync(PermissionResources.User, PermissionActions.Update);
-        }
+        // 批量操作需要访问用户管理菜单的权限
+        await RequireMenuAccessAsync("user-management");
         
         // 使用扩展方法简化验证
         request.UserIds.EnsureNotEmpty("用户ID列表");
@@ -172,7 +165,7 @@ public class UserController : BaseApiController
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     [HttpGet("/api/users/activity-logs")]
-    [RequirePermission(PermissionResources.ActivityLog, PermissionActions.Read)]
+    [RequireMenu("user-log")]
     public async Task<IActionResult> GetAllActivityLogs(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -341,32 +334,6 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
-    /// 获取用户的所有权限
-    /// </summary>
-    /// <param name="id">用户ID</param>
-    [HttpGet("{id}/permissions")]
-    [Authorize]
-    public async Task<IActionResult> GetUserPermissions(string id)
-    {
-        var permissions = await _userService.GetUserAllPermissionsAsync(id);
-        return Success(permissions);
-    }
-
-    /// <summary>
-    /// 为用户分配自定义权限
-    /// </summary>
-    /// <param name="id">用户ID</param>
-    /// <param name="request">分配权限请求</param>
-    [HttpPost("{id}/custom-permissions")]
-    [Authorize]
-    public async Task<IActionResult> AssignCustomPermissions(string id, [FromBody] AssignPermissionsRequest request)
-    {
-        var success = await _userService.AssignCustomPermissionsAsync(id, request.PermissionIds);
-        success.EnsureSuccess("用户", id);
-        return Success("权限分配成功");
-    }
-
-    /// <summary>
     /// 获取当前用户的所有权限
     /// </summary>
     [HttpGet("my-permissions")]
@@ -374,7 +341,8 @@ public class UserController : BaseApiController
     public async Task<IActionResult> GetMyPermissions()
     {
         var userId = GetRequiredUserId();
-        var permissions = await _userService.GetUserAllPermissionsAsync(userId);
+        var permissions = await _userService.GetUserPermissionsAsync(userId);
         return Success(permissions);
     }
+
 }

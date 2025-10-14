@@ -9,7 +9,6 @@ public class RoleService : BaseService, IRoleService
 {
     private readonly BaseRepository<Role> _roleRepository;
     private readonly IMongoCollection<AppUser> _users;
-    private readonly IMongoCollection<Permission> _permissions;
     private readonly IMongoCollection<UserCompany> _userCompanies;
     
     // 快捷访问器
@@ -24,7 +23,6 @@ public class RoleService : BaseService, IRoleService
     {
         _roleRepository = new BaseRepository<Role>(database, "roles", httpContextAccessor, tenantContext);
         _users = GetCollection<AppUser>("users");
-        _permissions = GetCollection<Permission>("permissions");
         _userCompanies = GetCollection<UserCompany>("user_companies");
     }
 
@@ -45,21 +43,24 @@ public class RoleService : BaseService, IRoleService
     
     /// <summary>
     /// 获取所有角色（带统计信息）
+    /// 修复：使用BaseRepository确保多租户数据隔离
     /// </summary>
     public async Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync()
     {
-        var filter = MongoFilterExtensions.NotDeleted<Role>();
-        var roles = await _roles.Find(filter)
-            .SortBy(r => r.CreatedAt)
-            .ToListAsync();
-
+        // ✅ 使用 BaseRepository 自动过滤当前企业的角色
+        var sort = Builders<Role>.Sort.Ascending(r => r.CreatedAt);
+        var roles = await _roleRepository.GetAllAsync(sort);
+        
+        // 获取当前企业ID用于统计过滤
+        var currentCompanyId = GetCurrentCompanyId();
         var rolesWithStats = new List<RoleWithStats>();
         
         foreach (var role in roles)
         {
-            // v3.1: 从 UserCompany 表统计使用此角色的用户数量
+            // v3.1: 从 UserCompany 表统计使用此角色的用户数量（限制在当前企业内）
             var userCompanyFilter = Builders<UserCompany>.Filter.And(
                 Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, new[] { role.Id! }),
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId), // ✅ 添加企业过滤
                 Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
                 Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
             );
@@ -71,13 +72,11 @@ public class RoleService : BaseService, IRoleService
                 Name = role.Name,
                 Description = role.Description,
                 MenuIds = role.MenuIds ?? new List<string>(),
-                PermissionIds = role.PermissionIds ?? new List<string>(),
                 IsActive = role.IsActive,
                 CreatedAt = role.CreatedAt,
                 UpdatedAt = role.UpdatedAt,
                 UserCount = (int)userCount,
-                MenuCount = role.MenuIds?.Count ?? 0,
-                PermissionCount = role.PermissionIds?.Count ?? 0
+                MenuCount = role.MenuIds?.Count ?? 0
             });
         }
 
@@ -236,17 +235,16 @@ public class RoleService : BaseService, IRoleService
 
     /// <summary>
     /// 为角色分配菜单权限
+    /// 修复：使用BaseRepository确保只能修改当前企业的角色
     /// </summary>
     public async Task<bool> AssignMenusToRoleAsync(string roleId, List<string> menuIds)
     {
-        var result = await _roles.UpdateOneAsync(
-            r => r.Id == roleId,
-            Builders<Role>.Update
-                .Set(r => r.MenuIds, menuIds)
-                .Set(r => r.UpdatedAt, DateTime.UtcNow)
-        );
-
-        return result.ModifiedCount > 0;
+        // ✅ 使用 BaseRepository 确保只能修改当前企业的角色
+        var update = Builders<Role>.Update
+            .Set(r => r.MenuIds, menuIds)
+            .Set(r => r.UpdatedAt, DateTime.UtcNow);
+        
+        return await _roleRepository.UpdateAsync(roleId, update);
     }
 
     /// <summary>
@@ -258,37 +256,5 @@ public class RoleService : BaseService, IRoleService
         return role?.MenuIds ?? new List<string>();
     }
 
-    /// <summary>
-    /// 为角色分配操作权限
-    /// </summary>
-    public async Task<bool> AssignPermissionsToRoleAsync(string roleId, List<string> permissionIds)
-    {
-        var result = await _roles.UpdateOneAsync(
-            r => r.Id == roleId,
-            Builders<Role>.Update
-                .Set(r => r.PermissionIds, permissionIds)
-                .Set(r => r.UpdatedAt, DateTime.UtcNow)
-        );
-
-        return result.ModifiedCount > 0;
-    }
-
-    /// <summary>
-    /// 获取角色的操作权限
-    /// </summary>
-    public async Task<List<Permission>> GetRolePermissionsAsync(string roleId)
-    {
-        var role = await GetRoleByIdAsync(roleId);
-        if (role == null || role.PermissionIds == null || role.PermissionIds.Count == 0)
-        {
-            return new List<Permission>();
-        }
-
-        var filter = Builders<Permission>.Filter.And(
-            Builders<Permission>.Filter.In(p => p.Id, role.PermissionIds),
-            SoftDeleteExtensions.NotDeleted<Permission>()
-        );
-        return await _permissions.Find(filter).ToListAsync();
-    }
 }
 

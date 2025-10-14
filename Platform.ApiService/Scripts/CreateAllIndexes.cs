@@ -32,7 +32,6 @@ public class CreateAllIndexes
         await CreateJoinRequestIndexesAsync();
         await CreateRoleIndexesAsync();
         await CreateMenuIndexesAsync();
-        await CreatePermissionIndexesAsync();
         await CreateNoticeIndexesAsync();
         await CreateActivityLogIndexesAsync();
 
@@ -418,53 +417,6 @@ public class CreateAllIndexes
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建 Menu 索引失败");
-        }
-    }
-
-    /// <summary>
-    /// 创建 Permission 索引
-    /// </summary>
-    private async Task CreatePermissionIndexesAsync()
-    {
-        var collection = _database.GetCollection<Permission>("permissions");
-
-        try
-        {
-            // CompanyId + Code 唯一索引（企业内权限代码唯一）
-            await CreateIndexAsync(collection,
-                Builders<Permission>.IndexKeys
-                    .Ascending(p => p.CompanyId)
-                    .Ascending(p => p.Code),
-                new CreateIndexOptions { Unique = true, Name = "idx_company_code_unique" },
-                "permissions.companyId + code (企业内唯一)");
-
-            // CompanyId + ResourceName 复合索引
-            await CreateIndexAsync(collection,
-                Builders<Permission>.IndexKeys
-                    .Ascending(p => p.CompanyId)
-                    .Ascending(p => p.ResourceName),
-                new CreateIndexOptions { Name = "idx_company_resource" },
-                "permissions.companyId + resourceName");
-
-            // ResourceName + Action 复合索引
-            await CreateIndexAsync(collection,
-                Builders<Permission>.IndexKeys
-                    .Ascending(p => p.ResourceName)
-                    .Ascending(p => p.Action),
-                new CreateIndexOptions { Name = "idx_resourceName_action" },
-                "permissions.resourceName + action");
-
-            // CompanyId + IsDeleted 复合索引
-            await CreateIndexAsync(collection,
-                Builders<Permission>.IndexKeys
-                    .Ascending(p => p.CompanyId)
-                    .Ascending(p => p.IsDeleted),
-                new CreateIndexOptions { Name = "idx_company_isdeleted" },
-                "permissions.companyId + isDeleted");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "创建 Permission 索引失败");
         }
     }
 

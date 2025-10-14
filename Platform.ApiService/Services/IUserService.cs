@@ -30,8 +30,6 @@ public interface IUserService
     Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request);
     Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null);
     Task<bool> CheckUsernameExistsAsync(string username, string? excludeUserId = null);
-    Task<bool> AssignCustomPermissionsAsync(string userId, List<string> permissionIds);
-    Task<List<Permission>> GetUserCustomPermissionsAsync(string userId);
-    Task<UserPermissionsResponse> GetUserAllPermissionsAsync(string userId);
+    Task<object> GetUserPermissionsAsync(string userId);
 }
 

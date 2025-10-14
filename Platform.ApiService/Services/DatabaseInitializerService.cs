@@ -71,12 +71,9 @@ public class DatabaseInitializerService : IDatabaseInitializerService
 
         // 1. 创建所有数据库索引
         await CreateIndexesAsync();
-        
+
         // 2. 创建全局系统菜单
         await CreateSystemMenusAsync();
-        
-        // 3. 修复已有角色的MenuIds（数据迁移）
-        await FixRoleMenuIdsAsync();
 
         _logger.LogInformation("所有初始化操作执行完成");
     }
@@ -166,7 +163,6 @@ public class DatabaseInitializerService : IDatabaseInitializerService
                     ParentId = systemMenu.Id,
                     SortOrder = 1,
                     IsEnabled = true,
-                    Permissions = new List<string> { "user:read" },
                     CreatedAt = now,
                     UpdatedAt = now
                 },
@@ -180,7 +176,6 @@ public class DatabaseInitializerService : IDatabaseInitializerService
                     ParentId = systemMenu.Id,
                     SortOrder = 2,
                     IsEnabled = true,
-                    Permissions = new List<string> { "role:read" },
                     CreatedAt = now,
                     UpdatedAt = now
                 },
@@ -194,7 +189,6 @@ public class DatabaseInitializerService : IDatabaseInitializerService
                     ParentId = systemMenu.Id,
                     SortOrder = 3,
                     IsEnabled = true,
-                    Permissions = new List<string> { "activity-log:read" },
                     CreatedAt = now,
                     UpdatedAt = now
                 },
@@ -208,7 +202,6 @@ public class DatabaseInitializerService : IDatabaseInitializerService
                     ParentId = systemMenu.Id,
                     SortOrder = 4,
                     IsEnabled = true,
-                    Permissions = new List<string> { "company:read" },
                     CreatedAt = now,
                     UpdatedAt = now
                 }
@@ -221,28 +214,6 @@ public class DatabaseInitializerService : IDatabaseInitializerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建全局系统菜单失败");
-            // 不抛出异常，允许应用继续启动
-        }
-    }
-    
-    /// <summary>
-    /// 修复已有角色的MenuIds（数据迁移）
-    /// </summary>
-    private async Task FixRoleMenuIdsAsync()
-    {
-        try
-        {
-            _logger.LogInformation("开始修复角色MenuIds...");
-
-            var fixer = new FixRoleMenuIds(_database, 
-                _loggerFactory.CreateLogger<FixRoleMenuIds>());
-            await fixer.ExecuteAsync();
-
-            _logger.LogInformation("角色MenuIds修复完成");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "修复角色MenuIds失败");
             // 不抛出异常，允许应用继续启动
         }
     }

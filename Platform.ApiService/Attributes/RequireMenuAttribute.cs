@@ -5,18 +5,21 @@ using Platform.ApiService.Services;
 namespace Platform.ApiService.Attributes;
 
 /// <summary>
-/// 权限验证特性 - 用于控制器和方法级别的权限检查
+/// 菜单访问权限验证特性
+/// 用于控制器和方法级别的菜单权限检查
+/// 替代原有的 RequirePermission 特性
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
-public class RequirePermissionAttribute : Attribute, IAsyncAuthorizationFilter
+public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
 {
-    public string Resource { get; }
-    public string Action { get; }
+    /// <summary>
+    /// 所需访问的菜单名称
+    /// </summary>
+    public string MenuName { get; }
 
-    public RequirePermissionAttribute(string resource, string action)
+    public RequireMenuAttribute(string menuName)
     {
-        Resource = resource;
-        Action = action;
+        MenuName = menuName;
     }
 
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
@@ -48,33 +51,25 @@ public class RequirePermissionAttribute : Attribute, IAsyncAuthorizationFilter
             return;
         }
 
-        // 检查是否为超级管理员（super-admin 拥有所有权限）
-        var userRole = context.HttpContext.User.FindFirst("role")?.Value;
-        if (userRole == "super-admin")
-        {
-            return; // 超级管理员拥有所有权限
-        }
+        // 获取菜单访问服务
+        var menuAccessService = context.HttpContext.RequestServices
+            .GetService<IMenuAccessService>();
 
-        // 获取权限检查服务
-        var permissionCheckService = context.HttpContext.RequestServices
-            .GetService<IPermissionCheckService>();
-        
-        if (permissionCheckService == null)
+        if (menuAccessService == null)
         {
             context.Result = new StatusCodeResult(500);
             return;
         }
 
-        // 验证权限
-        var permissionCode = $"{Resource}:{Action}";
-        var hasPermission = await permissionCheckService.HasPermissionAsync(userId, permissionCode);
+        // 验证菜单访问权限
+        var hasAccess = await menuAccessService.HasMenuAccessAsync(userId, MenuName);
 
-        if (!hasPermission)
+        if (!hasAccess)
         {
             context.Result = new ObjectResult(new
             {
                 success = false,
-                error = $"无权执行此操作：{permissionCode}",
+                error = $"无权访问菜单: {MenuName}",
                 errorCode = "FORBIDDEN",
                 showType = 2
             })

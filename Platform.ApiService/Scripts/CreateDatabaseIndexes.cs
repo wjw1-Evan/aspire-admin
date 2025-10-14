@@ -81,13 +81,23 @@ public static class CreateDatabaseIndexes
         Console.WriteLine("创建 roles 集合索引...");
         var roles = database.GetCollection<Role>("roles");
         
-        // 唯一索引：name
-        var nameIndex = Builders<Role>.IndexKeys.Ascending(r => r.Name);
+        // 复合唯一索引：companyId + name（企业内唯一）
+        var companyNameIndex = Builders<Role>.IndexKeys
+            .Ascending(r => r.CompanyId)
+            .Ascending(r => r.Name);
         await roles.Indexes.CreateOneAsync(new CreateIndexModel<Role>(
-            nameIndex,
-            new CreateIndexOptions { Unique = true, Name = "idx_name_unique" }
+            companyNameIndex,
+            new CreateIndexOptions { Unique = true, Name = "idx_companyId_name_unique" }
         ));
-        Console.WriteLine("  - 创建唯一索引: name");
+        Console.WriteLine("  - 创建复合唯一索引: companyId + name（企业内唯一）");
+        
+        // 索引：companyId（用于企业过滤）
+        var companyIdIndex = Builders<Role>.IndexKeys.Ascending(r => r.CompanyId);
+        await roles.Indexes.CreateOneAsync(new CreateIndexModel<Role>(
+            companyIdIndex,
+            new CreateIndexOptions { Name = "idx_companyId" }
+        ));
+        Console.WriteLine("  - 创建索引: companyId");
         
         // 索引：isDeleted
         var isDeletedIndex = Builders<Role>.IndexKeys.Ascending(r => r.IsDeleted);
@@ -155,13 +165,23 @@ public static class CreateDatabaseIndexes
         Console.WriteLine("创建 permissions 集合索引...");
         var permissions = database.GetCollection<Permission>("permissions");
         
-        // 唯一索引：code
-        var codeIndex = Builders<Permission>.IndexKeys.Ascending(p => p.Code);
+        // 复合唯一索引：companyId + code（企业内唯一）
+        var companyCodeIndex = Builders<Permission>.IndexKeys
+            .Ascending(p => p.CompanyId)
+            .Ascending(p => p.Code);
         await permissions.Indexes.CreateOneAsync(new CreateIndexModel<Permission>(
-            codeIndex,
-            new CreateIndexOptions { Unique = true, Name = "idx_code_unique" }
+            companyCodeIndex,
+            new CreateIndexOptions { Unique = true, Name = "idx_companyId_code_unique" }
         ));
-        Console.WriteLine("  - 创建唯一索引: code");
+        Console.WriteLine("  - 创建复合唯一索引: companyId + code（企业内唯一）");
+        
+        // 索引：companyId（用于企业过滤）
+        var companyIdIndex = Builders<Permission>.IndexKeys.Ascending(p => p.CompanyId);
+        await permissions.Indexes.CreateOneAsync(new CreateIndexModel<Permission>(
+            companyIdIndex,
+            new CreateIndexOptions { Name = "idx_companyId" }
+        ));
+        Console.WriteLine("  - 创建索引: companyId");
         
         // 复合索引：resourceName, action（用于查询特定资源的权限）
         var resourceActionIndex = Builders<Permission>.IndexKeys

@@ -49,16 +49,20 @@ export async function getInitialState(): Promise<{
       
       let userInfo = msg.data;
       
+      // 检查用户是否有效（后端返回 IsLogin = false 表示用户不存在或被禁用）
+      if (!userInfo || userInfo.isLogin === false) {
+        console.log('User not found or inactive, clearing tokens');
+        tokenUtils.clearAllTokens();
+        return undefined;
+      }
+      
       // 获取用户菜单
       try {
         const menuResponse = await getUserMenus({
           skipErrorHandler: true,
-        });
+        } as any);
         if (menuResponse.success && menuResponse.data) {
-          userInfo = {
-            ...userInfo,
-            menus: menuResponse.data,
-          };
+          (userInfo as any).menus = menuResponse.data;
         }
       } catch (menuError) {
         console.log('Failed to fetch user menus, using default menus:', menuError);
@@ -66,14 +70,9 @@ export async function getInitialState(): Promise<{
       
       // 获取用户权限
       try {
-        const permissionsResponse = await getMyPermissions({
-          skipErrorHandler: true,
-        });
+        const permissionsResponse = await getMyPermissions();
         if (permissionsResponse.success && permissionsResponse.data) {
-          userInfo = {
-            ...userInfo,
-            permissions: permissionsResponse.data.allPermissionCodes || [],
-          };
+          (userInfo as any).permissions = permissionsResponse.data.allPermissionCodes || [];
         }
       } catch (permissionsError) {
         console.log('Failed to fetch user permissions, using default permissions:', permissionsError);
@@ -92,11 +91,8 @@ export async function getInitialState(): Promise<{
   
   // 如果不是登录页面，执行
   const { location } = history;
-  if (
-    ![loginPath, '/user/register', '/user/register-result'].includes(
-      location.pathname,
-    )
-  ) {
+  const whiteListPages = [loginPath, '/user/register', '/user/register-result'];
+  if (!whiteListPages.includes(location.pathname)) {
     const currentUser = await fetchUserInfo();
     return {
       fetchUserInfo,
@@ -190,9 +186,44 @@ export const layout: RunTimeLayoutConfig = ({
     footerRender: () => <Footer />,
     onPageChange: () => {
       const { location } = history;
-      // 如果没有登录，重定向到 login
-      if (!initialState?.currentUser && location.pathname !== loginPath) {
+      
+      // 白名单：不需要登录的页面
+      const whiteList = [loginPath, '/user/register', '/user/register-result'];
+      if (whiteList.includes(location.pathname)) {
+        return;
+      }
+      
+      // 1. 检查是否有 currentUser
+      if (!initialState?.currentUser) {
+        console.log('No current user, redirecting to login');
         history.push(loginPath);
+        return;
+      }
+      
+      // 2. 检查是否有 token
+      if (!tokenUtils.hasToken()) {
+        console.log('No token found, redirecting to login');
+        tokenUtils.clearAllTokens();
+        history.push(loginPath);
+        return;
+      }
+      
+      // 3. 检查 token 是否过期
+      if (tokenUtils.isTokenExpired()) {
+        console.log('Token expired, attempting to refresh or redirecting to login');
+        const refreshToken = tokenUtils.getRefreshToken();
+        
+        if (!refreshToken) {
+          // 没有刷新token，直接跳转登录
+          console.log('No refresh token, redirecting to login');
+          tokenUtils.clearAllTokens();
+          history.push(loginPath);
+          return;
+        }
+        
+        // 有刷新token，让响应拦截器处理刷新逻辑
+        // 这里不主动刷新，因为下一个API请求会自动触发刷新
+        console.log('Token expired but refresh token exists, will refresh on next request');
       }
     },
     // 动态渲染菜单
@@ -260,6 +291,137 @@ export const layout: RunTimeLayoutConfig = ({
 };
 
 /**
+ * 检查当前用户响应是否有效
+ */
+function handleCurrentUserResponse(response: any): any {
+  const isCurrentUserRequest = response.config.url?.includes('/api/currentUser');
+  if (!isCurrentUserRequest) {
+    return response;
+  }
+  
+  const userData = response.data?.data;
+  
+  // 如果用户不存在或被禁用（IsLogin = false）
+  if (userData?.isLogin === false) {
+    console.log('User not found or inactive, clearing tokens and redirecting to login');
+    tokenUtils.clearAllTokens();
+    history.push('/user/login');
+  }
+  
+  return response;
+}
+
+/**
+ * 处理404错误 - 用户不存在
+ */
+function handle404Error(error: any): Promise<never> | null {
+  const is404Error = error.response?.status === 404;
+  if (!is404Error) {
+    return null;
+  }
+  
+  const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
+  const isNotFoundError = error.response?.data?.errorCode === 'NOT_FOUND';
+  
+  if (isCurrentUserRequest && isNotFoundError) {
+    console.log('User not found (404), clearing tokens and redirecting to login');
+    tokenUtils.clearAllTokens();
+    history.push('/user/login');
+    return Promise.reject(new Error('User not found'));
+  }
+  
+  return null;
+}
+
+/**
+ * 保存刷新后的token
+ */
+function saveRefreshedTokens(refreshResult: any) {
+  const expiresAt = refreshResult.expiresAt 
+    ? new Date(refreshResult.expiresAt).getTime() 
+    : undefined;
+  tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
+}
+
+/**
+ * 重试原始请求
+ */
+function retryOriginalRequest(originalRequest: any, newToken: string) {
+  originalRequest._retry = true;
+  originalRequest.headers.Authorization = `Bearer ${newToken}`;
+  return requestClient(originalRequest);
+}
+
+/**
+ * 尝试刷新token
+ */
+async function attemptTokenRefresh(refreshToken: string, originalRequest: any) {
+  try {
+    const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
+    const refreshResponse = await refreshTokenAPI({ refreshToken });
+
+    if (!refreshResponse.success || !refreshResponse.data) {
+      return null;
+    }
+
+    const refreshResult = refreshResponse.data;
+    const hasValidTokens = refreshResult.status === 'ok' 
+      && refreshResult.token 
+      && refreshResult.refreshToken;
+
+    if (hasValidTokens) {
+      console.log('Token refreshed successfully');
+      saveRefreshedTokens(refreshResult);
+      return retryOriginalRequest(originalRequest, refreshResult.token!);
+    }
+
+    return null;
+  } catch (refreshError) {
+    console.log('Token refresh failed:', refreshError);
+    return null;
+  }
+}
+
+/**
+ * 处理401错误 - Token过期或无效
+ */
+async function handle401Error(error: any): Promise<any> {
+  const is401Error = error.response?.status === 401;
+  if (!is401Error) {
+    return null;
+  }
+  
+  const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
+  const isRetryRequest = error.config?._retry;
+  const shouldNotRetry = isRefreshTokenRequest || isRetryRequest;
+  
+  // 避免刷新token递归和重试循环
+  if (shouldNotRetry) {
+    console.log('Refresh token failed or already retried, redirecting to login');
+    tokenUtils.clearAllTokens();
+    history.push('/user/login');
+    return Promise.reject(new Error('Authentication failed'));
+  }
+  
+  console.log('401 Unauthorized - attempting to refresh token');
+  
+  // 尝试刷新token
+  const refreshToken = tokenUtils.getRefreshToken();
+  if (refreshToken) {
+    const result = await attemptTokenRefresh(refreshToken, error.config);
+    if (result) {
+      return result;
+    }
+  }
+  
+  // 刷新失败，清除token并跳转登录
+  console.log('Clearing tokens and redirecting to login');
+  tokenUtils.clearAllTokens();
+  history.push('/user/login');
+  return Promise.reject(new Error('Authentication failed'));
+}
+
+/**
  * @name request 配置，可以配置错误处理
  * 它基于 axios 和 ahooks 的 useRequest 提供了一套统一的网络请求和错误处理方案。
  * @doc https://umijs.org/docs/max/request#配置
@@ -285,65 +447,25 @@ export const request: RequestConfig = {
     },
   ],
 
-  // 响应拦截器，处理 token 过期
+  // 响应拦截器，处理 token 过期和用户不存在
   responseInterceptors: [
     (response) => {
       console.log('Response received:', response.config.url, response.status);
-      return response;
+      return handleCurrentUserResponse(response);
     },
     async (error: any) => {
       console.log('Response error:', error.config?.url, error.response?.status, error.message);
       
-      if (error.response?.status === 401) {
-        // 检查是否已经是刷新token请求，避免递归
-        const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
-        
-        // 检查是否已经重试过，避免无限循环
-        const isRetryRequest = error.config?._retry;
-        
-        if (isRefreshTokenRequest || isRetryRequest) {
-          // 如果是刷新token请求失败或已经重试过，直接登出
-          console.log('Refresh token failed or already retried, redirecting to login');
-          tokenUtils.clearAllTokens();
-          history.push('/user/login');
-          return Promise.reject(error);
-        }
-        
-        console.log('401 Unauthorized - attempting to refresh token');
-        
-        // 尝试刷新token
-        const refreshToken = tokenUtils.getRefreshToken();
-        if (refreshToken) {
-          try {
-            const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
-            const refreshResponse = await refreshTokenAPI({ refreshToken });
-
-            // 处理统一的 API 响应格式
-            if (refreshResponse.success && refreshResponse.data) {
-              const refreshResult = refreshResponse.data;
-
-              if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
-                console.log('Token refreshed successfully');
-                // 保存新的token
-                const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
-                tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
-
-                // 重试原始请求，标记为已重试
-                const originalRequest = error.config;
-                originalRequest._retry = true;
-                originalRequest.headers.Authorization = `Bearer ${refreshResult.token}`;
-                return requestClient(originalRequest);
-              }
-            }
-          } catch (refreshError) {
-            console.log('Token refresh failed:', refreshError);
-          }
-        }
-        
-        // 刷新失败或没有刷新token，清除本地存储并跳转到登录页
-        console.log('Clearing tokens and redirecting to login');
-        tokenUtils.clearAllTokens();
-        history.push('/user/login');
+      // 处理404错误（用户不存在）
+      const notFoundResult = handle404Error(error);
+      if (notFoundResult !== null) {
+        return notFoundResult;
+      }
+      
+      // 处理401错误（Token过期或无效）
+      const unauthorizedResult = await handle401Error(error);
+      if (unauthorizedResult !== null) {
+        return unauthorizedResult;
       }
       
       return Promise.reject(new Error(error.message || 'Request failed'));

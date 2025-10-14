@@ -100,11 +100,8 @@ export const errorConfig: RequestConfig = {
   responseInterceptors: [
     (response) => {
       // 拦截响应数据，进行个性化处理
-      const { data } = response as unknown as ResponseStructure;
-
-      if (data?.success === false) {
-        message.error('请求失败！');
-      }
+      // 注意：不在这里显示通用错误消息，避免与 errorHandler 重复
+      // errorHandler 会根据 showType 智能显示错误消息
       return response;
     },
   ],

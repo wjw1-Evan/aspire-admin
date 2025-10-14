@@ -1,0 +1,180 @@
+---
+description: 用户注册流程和企业自动创建规范
+---
+
+# 用户注册流程和企业自动创建
+
+## 🎯 核心原则
+
+**所有用户必须通过注册流程创建账户，系统会自动为每个用户创建个人企业并设置为管理员。**
+
+## ✅ 用户注册时自动创建的内容
+
+用户注册时，系统会在 MongoDB 事务中自动创建以下内容：
+
+### 1. 个人企业
+```csharp
+var company = new Company
+{
+    Name = $"{user.Username} 的企业",
+    Code = $"personal-{user.Id}",
+    Description = "个人企业",
+    IsActive = true,
+    MaxUsers = 50
+};
+```
+
+### 2. 默认权限（28个 - 7资源 × 4操作）
+```csharp
+// 为企业创建权限，必须设置 CompanyId
+var permission = new Permission
+{
+    ResourceName = perm.ResourceName,
+    ResourceTitle = perm.ResourceTitle,
+    Action = perm.Action,
+    Code = $"{perm.ResourceName}:{perm.Action}",
+    CompanyId = company.Id!,  // ✅ 必须设置企业ID
+    // ...
+};
+```
+
+权限列表：
+- user:create, user:read, user:update, user:delete
+- role:create, role:read, role:update, role:delete
+- menu:create, menu:read, menu:update, menu:delete
+- notice:create, notice:read, notice:update, notice:delete
+- tag:create, tag:read, tag:update, tag:delete
+- permission:create, permission:read, permission:update, permission:delete
+- activity-log:create, activity-log:read, activity-log:update, activity-log:delete
+
+### 3. 管理员角色
+```csharp
+var adminRole = new Role
+{
+    Name = "管理员",
+    Description = "企业管理员，拥有所有权限",
+    CompanyId = company.Id!,  // ✅ 必须设置企业ID
+    PermissionIds = permissionList.Select(p => p.Id!).ToList(),
+    MenuIds = defaultMenus.Select(m => m.Id!).ToList()
+};
+```
+
+### 4. 默认菜单（3个）
+```csharp
+// 菜单必须设置 CompanyId
+var menus = new List<Menu>
+{
+    new Menu { Name = "dashboard", Title = "仪表板", CompanyId = companyId },
+    new Menu { Name = "user-management", Title = "用户管理", CompanyId = companyId },
+    new Menu { Name = "system-settings", Title = "系统设置", CompanyId = companyId }
+};
+```
+
+### 5. 用户-企业关联
+```csharp
+var userCompany = new UserCompany
+{
+    UserId = user.Id!,
+    CompanyId = company.Id!,
+    RoleIds = new List<string> { adminRole.Id! },
+    IsAdmin = true,  // ✅ 注册用户自动成为管理员
+    Status = "active"
+};
+```
+
+## 🚫 禁止的做法
+
+### ❌ 错误 1: 在系统启动时创建默认用户
+```csharp
+// ❌ 禁止：不要在 Program.cs 中自动创建用户
+var createAdminUser = new CreateAdminUser(database);
+await createAdminUser.CreateDefaultAdminAsync();
+```
+
+### ❌ 错误 2: 创建全局数据（没有 CompanyId）
+```csharp
+// ❌ 禁止：所有数据必须有 CompanyId
+var menu = new Menu
+{
+    Name = "dashboard",
+    // ❌ 缺少 CompanyId，会成为孤儿数据
+};
+
+// ✅ 正确：设置 CompanyId
+var menu = new Menu
+{
+    Name = "dashboard",
+    CompanyId = company.Id!  // ✅ 必须设置
+};
+```
+
+### ❌ 错误 3: 手动创建企业数据
+```csharp
+// ❌ 禁止：不要手动创建企业初始化数据
+// 应该使用注册流程中的自动创建逻辑
+```
+
+## ✅ 正确的实现位置
+
+**参考实现**: [AuthService.cs](mdc:Platform.ApiService/Services/AuthService.cs)
+
+- `RegisterAsync()` - 用户注册入口
+- `CreatePersonalCompanyAsync()` - 企业和数据自动创建（使用事务）
+
+## 🔧 事务保护
+
+所有数据创建必须在 MongoDB 事务中执行：
+
+```csharp
+using var session = await _database.Client.StartSessionAsync();
+session.StartTransaction();
+
+try
+{
+    // 1. 创建企业
+    await companies.InsertOneAsync(session, company);
+    
+    // 2. 创建权限
+    await permissions.InsertManyAsync(session, permissionList);
+    
+    // 3. 创建角色
+    await roles.InsertOneAsync(session, adminRole);
+    
+    // 4. 创建菜单
+    await menus.InsertManyAsync(session, defaultMenus);
+    
+    // 5. 创建用户-企业关联
+    await userCompanies.InsertOneAsync(session, userCompany);
+    
+    // 提交事务
+    await session.CommitTransactionAsync();
+}
+catch
+{
+    // 回滚事务
+    await session.AbortTransactionAsync();
+    throw;
+}
+```
+
+## 📝 新增用户注册时的检查清单
+
+当实现或修改用户注册逻辑时，确保：
+
+- [ ] 创建个人企业（名称："{username} 的企业"）
+- [ ] 创建28个默认权限（设置 CompanyId）
+- [ ] 创建管理员角色（设置 CompanyId）
+- [ ] 创建3个默认菜单（设置 CompanyId）
+- [ ] 创建用户-企业关联（IsAdmin = true）
+- [ ] 使用 MongoDB 事务保护数据一致性
+- [ ] 所有数据都设置了正确的 CompanyId
+
+## 🎯 核心原则重申
+
+1. **用户自主注册** - 不自动创建任何默认用户
+2. **企业自动创建** - 每个用户注册时自动创建个人企业
+3. **自动成为管理员** - 注册用户自动成为其企业的管理员
+4. **数据完全隔离** - 所有数据都有明确的 CompanyId
+5. **事务保护** - 确保数据创建的原子性
+
+遵循这些规范，确保多租户系统的数据隔离和一致性！

@@ -324,7 +324,7 @@ public class AuthService : IAuthService
     
     /// <summary>
     /// v3.1: 创建个人企业（用户注册时自动调用）
-    /// P0修复: 添加事务保护确保数据一致性
+    /// 注意：MongoDB单机模式不支持事务，使用错误回滚机制
     /// </summary>
     private async Task<Company> CreatePersonalCompanyAsync(AppUser user)
     {
@@ -334,14 +334,15 @@ public class AuthService : IAuthService
         var permissions = _database.GetCollection<Permission>("permissions");
         var userCompanies = _database.GetCollection<UserCompany>("user_companies");
         
-        // P0修复: 使用MongoDB事务确保数据一致性
-        using var session = await _database.Client.StartSessionAsync();
-        session.StartTransaction();
+        Company? company = null;
+        List<Permission>? permissionList = null;
+        Role? adminRole = null;
+        List<Menu>? defaultMenus = null;
         
         try
         {
             // 1. 创建个人企业
-            var company = new Company
+            company = new Company
             {
                 Name = $"{user.Username} 的企业",
                 Code = $"personal-{user.Id}",  // 使用用户ID保证唯一
@@ -352,12 +353,12 @@ public class AuthService : IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await companies.InsertOneAsync(session, company, new InsertOneOptions());
+            await companies.InsertOneAsync(company);
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
             
             // 2. 创建默认权限
             var defaultPermissions = _permissionService.GetDefaultPermissions();
-            var permissionList = new List<Permission>();
+            permissionList = new List<Permission>();
             
             foreach (var perm in defaultPermissions)
             {
@@ -376,11 +377,11 @@ public class AuthService : IAuthService
                 permissionList.Add(permission);
             }
             
-            await permissions.InsertManyAsync(session, permissionList, new InsertManyOptions());
+            await permissions.InsertManyAsync(permissionList);
             _logger.LogInformation("创建 {Count} 个默认权限", permissionList.Count);
             
             // 3. 创建管理员角色
-            var adminRole = new Role
+            adminRole = new Role
             {
                 Name = "管理员",
                 Description = "企业管理员，拥有所有权限",
@@ -392,15 +393,15 @@ public class AuthService : IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await roles.InsertOneAsync(session, adminRole, new InsertOneOptions());
+            await roles.InsertOneAsync(adminRole);
             
             // 4. 创建默认菜单
-            var defaultMenus = CreateDefaultMenus(company.Id!);
-            await menus.InsertManyAsync(session, defaultMenus, new InsertManyOptions());
+            defaultMenus = CreateDefaultMenus(company.Id!);
+            await menus.InsertManyAsync(defaultMenus);
             
             // 5. 更新角色的菜单权限
             var updateRole = Builders<Role>.Update.Set(r => r.MenuIds, defaultMenus.Select(m => m.Id!).ToList());
-            await roles.UpdateOneAsync(session, r => r.Id == adminRole.Id, updateRole);
+            await roles.UpdateOneAsync(r => r.Id == adminRole.Id, updateRole);
             
             _logger.LogInformation("创建 {Count} 个默认菜单", defaultMenus.Count);
             
@@ -419,20 +420,52 @@ public class AuthService : IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await userCompanies.InsertOneAsync(session, userCompany, new InsertOneOptions());
+            await userCompanies.InsertOneAsync(userCompany);
             
-            // P0修复: 提交事务
-            await session.CommitTransactionAsync();
-            _logger.LogInformation("个人企业创建事务提交成功");
+            _logger.LogInformation("个人企业创建完成");
             
             return company;
         }
         catch (Exception ex)
         {
-            // P0修复: 事务回滚
-            _logger.LogError(ex, "创建个人企业失败，回滚事务");
-            await session.AbortTransactionAsync();
-            throw;
+            // 错误回滚：清理已创建的数据
+            _logger.LogError(ex, "创建个人企业失败，开始清理数据");
+            
+            try
+            {
+                // 按创建的逆序删除
+                if (adminRole?.Id != null)
+                {
+                    await roles.DeleteOneAsync(r => r.Id == adminRole.Id);
+                    _logger.LogInformation("已清理角色: {RoleId}", adminRole.Id);
+                }
+                
+                if (defaultMenus != null && defaultMenus.Count > 0)
+                {
+                    var menuIds = defaultMenus.Select(m => m.Id!).ToList();
+                    await menus.DeleteManyAsync(m => menuIds.Contains(m.Id!));
+                    _logger.LogInformation("已清理菜单: {Count}个", defaultMenus.Count);
+                }
+                
+                if (permissionList != null && permissionList.Count > 0)
+                {
+                    var permissionIds = permissionList.Select(p => p.Id!).ToList();
+                    await permissions.DeleteManyAsync(p => permissionIds.Contains(p.Id!));
+                    _logger.LogInformation("已清理权限: {Count}个", permissionList.Count);
+                }
+                
+                if (company?.Id != null)
+                {
+                    await companies.DeleteOneAsync(c => c.Id == company.Id);
+                    _logger.LogInformation("已清理企业: {CompanyId}", company.Id);
+                }
+            }
+            catch (Exception cleanupEx)
+            {
+                _logger.LogError(cleanupEx, "清理数据失败，可能需要手动清理");
+            }
+            
+            throw new InvalidOperationException($"注册失败: {ex.Message}", ex);
         }
     }
     

@@ -10,19 +10,16 @@ public class InitialMenuData
 {
     private readonly IMongoCollection<Menu> _menus;
     private readonly IMongoCollection<Role> _roles;
-    private readonly IMongoCollection<AppUser> _users;
 
     // 常量定义
     private const string MENU_NAME_SYSTEM = "system";
     private const string MENU_NAME_WELCOME = "welcome";
     private const string ROLE_NAME_SUPER_ADMIN = "super-admin";
-    private const string USERNAME_ADMIN = "admin";
 
     public InitialMenuData(IMongoDatabase database)
     {
         _menus = database.GetCollection<Menu>("menus");
         _roles = database.GetCollection<Role>("roles");
-        _users = database.GetCollection<AppUser>("users");
     }
 
     public async Task InitializeAsync()
@@ -32,9 +29,6 @@ public class InitialMenuData
         
         // 2. 检查并补全角色
         await EnsureRolesIntegrityAsync(menuIds);
-        
-        // 3. 检查并修复管理员用户角色
-        await ValidateAndFixAdminUserRolesAsync();
     }
 
     /// <summary>
@@ -398,38 +392,6 @@ public class InitialMenuData
         }
 
         return roles;
-    }
-
-    /// <summary>
-    /// 验证并修复管理员用户的角色分配
-    /// </summary>
-    private async Task ValidateAndFixAdminUserRolesAsync()
-    {
-        // 查询 admin 用户
-        var adminUser = await _users.Find(u => u.Username == USERNAME_ADMIN).FirstOrDefaultAsync();
-        if (adminUser == null)
-        {
-            return;
-        }
-
-        // 查询 super-admin 角色
-        var superAdminRole = await _roles.Find(r => r.Name == ROLE_NAME_SUPER_ADMIN).FirstOrDefaultAsync();
-        if (superAdminRole == null)
-        {
-            return;
-        }
-
-        // 检查 admin 用户是否有 super-admin 角色
-        var currentRoleIds = adminUser.RoleIds ?? new List<string>();
-        
-        if (!currentRoleIds.Contains(superAdminRole.Id!))
-        {
-            var updateDefinition = Builders<AppUser>.Update
-                .Set(u => u.RoleIds, new List<string> { superAdminRole.Id! })
-                .Set(u => u.UpdatedAt, DateTime.UtcNow);
-
-            await _users.UpdateOneAsync(u => u.Id == adminUser.Id, updateDefinition);
-        }
     }
 }
 

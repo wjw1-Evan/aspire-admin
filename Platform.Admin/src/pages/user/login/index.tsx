@@ -431,8 +431,6 @@ const Login: React.FC = () => {
                   defaultMessage="没有账号？立即注册"
                 />
               </Link>
-              <span style={{ margin: '0 8px', color: '#00000040' }}>|</span>
-              <Link to="/company/register">企业注册</Link>
             </div>
           </div>
         </LoginForm>

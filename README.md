@@ -151,19 +151,12 @@ Platform/
 
 ## 🏢 多租户功能
 
-### 企业注册和登录
-1. **企业自助注册** - 访问注册页面创建新企业
-2. **首个用户自动成为管理员** - 注册企业的第一个用户自动获得管理员权限
-3. **企业切换** - 用户可以在多个企业间自由切换
-4. **数据完全隔离** - 每个企业的数据完全独立，确保安全性
-
-### 默认账户
-系统启动时会自动创建默认企业和管理员账户：
-- **企业名称**: `默认企业`
-- **企业代码**: `DEFAULT`
-- **用户名**: `admin`
-- **密码**: `admin123`
-- **角色**: `admin`
+### 用户注册和登录
+1. **用户自主注册** - 访问注册页面创建新账户
+2. **自动创建企业** - 注册时系统自动为用户创建个人企业
+3. **自动成为管理员** - 注册用户自动成为其企业的管理员
+4. **企业切换** - 用户可以在多个企业间自由切换
+5. **数据完全隔离** - 每个企业的数据完全独立，确保安全性
 
 ## 📡 API 接口
 
@@ -171,19 +164,23 @@ Platform/
 
 所有 API 通过网关访问：`http://localhost:15000/apiservice/`
 
-#### 企业注册
+#### 用户注册（推荐）
 ```http
-POST /apiservice/api/company/register
+POST /apiservice/api/register
 Content-Type: application/json
 
 {
-  "companyName": "新企业",
-  "companyCode": "NEWCOMPANY",
-  "username": "admin",
-  "password": "admin123",
-  "email": "admin@newcompany.com"
+  "username": "yourname",
+  "password": "YourPassword123",
+  "email": "your@email.com"
 }
 ```
+
+**说明**：
+- 系统会自动为您创建个人企业
+- 您将自动成为该企业的管理员
+- 企业名称："{username} 的企业"
+- 自动创建28个默认权限、1个管理员角色、3个默认菜单
 
 #### 用户登录
 ```http
@@ -208,18 +205,6 @@ Authorization: Bearer {token}
 ```http
 POST /apiservice/api/login/outLogin
 Authorization: Bearer {token}
-```
-
-#### 用户注册
-```http
-POST /apiservice/api/register
-Content-Type: application/json
-
-{
-  "username": "newuser",
-  "password": "password123",
-  "email": "user@example.com"
-}
 ```
 
 ### 用户管理 API
@@ -588,21 +573,15 @@ npm start
 - [Expo 文档](https://docs.expo.dev/)
 - [Expo Router 文档](https://expo.github.io/router/)
 
-## 🔐 默认账户
-
-系统启动时会自动创建默认管理员账户：
-- **用户名**: `admin`
-- **密码**: `admin123`
-- **角色**: `admin`
-
 ## 📱 功能特性
 
 ### 多租户功能 ⭐ **v3.1 新增**
-- ✅ **企业自助注册** - 企业可独立注册和管理
+- ✅ **用户自主注册** - 用户注册时自动创建个人企业
+- ✅ **自动成为管理员** - 注册用户自动成为其企业的管理员
 - ✅ **数据完全隔离** - 基于 CompanyId 的企业数据隔离
 - ✅ **企业切换** - 用户可在多个企业间自由切换
 - ✅ **企业配额管理** - 支持企业用户数量限制
-- ✅ **企业过期控制** - 支持企业过期时间设置
+- ✅ **零配置启动** - 无需预配置，用户注册即可使用
 
 ### 管理后台功能
 - ✅ **用户认证** - 登录、注册、登出、企业切换
@@ -640,7 +619,13 @@ npm start
 
 ## 🎯 版本历史
 
-### v5.0 - 后端架构优化（最新）
+### v3.1.1 - 数据隔离优化（最新）
+- ✅ **移除全局数据初始化** - 修复多租户数据隔离漏洞
+- ✅ **禁止孤儿数据** - 所有数据必须归属于特定企业
+- ✅ **用户注册优化** - 自动创建完整的企业环境
+- ✅ **零配置启动** - 不再需要预配置默认用户
+
+### v5.0 - 后端架构优化
 - ✅ **代码重构** - 减少 50% 重复代码，提高代码复用性
 - ✅ **统一错误处理** - 50+ 个错误消息统一管理
 - ✅ **基础组件** - BaseService、BaseRepository、ValidationExtensions
@@ -648,10 +633,10 @@ npm start
 - ✅ **时间戳管理** - ITimestamped 接口统一时间管理
 
 ### v3.1 - 多企业隶属架构
-- ✅ **多租户系统** - 企业自助注册，数据完全隔离
+- ✅ **多租户系统** - 用户自主注册，数据完全隔离
 - ✅ **企业切换** - 用户可在多个企业间自由切换
 - ✅ **权限系统** - 企业级独立权限管理
-- ✅ **数据迁移** - 现有数据无缝迁移到默认企业
+- ✅ **自动企业创建** - 注册时自动创建个人企业
 
 ### v2.0 - 功能完善
 - ✅ **通知系统** - 企业级通知管理
@@ -666,6 +651,7 @@ npm start
 - [多租户系统说明](docs/features/MULTI-TENANT-SYSTEM.md) - 完整的多租户架构文档
 
 ### 开发指南
+- [移除全局数据初始化](docs/reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - v3.1.1 数据隔离优化 ⭐ **最新**
 - [v5.0 优化完成报告](docs/reports/V5-OPTIMIZATION-COMPLETE.md) - 后端架构优化详情
 - [权限系统快速开始](docs/permissions/CRUD-PERMISSION-QUICK-START.md) - 权限管理指南
 - [帮助系统功能](docs/features/HELP-MODULE-FEATURE.md) - 内置帮助模块说明
@@ -673,6 +659,11 @@ npm start
 ### 技术文档
 - [文档总索引](docs/INDEX.md) - 完整的项目文档导航
 - [API 端点汇总](docs/features/API-ENDPOINTS-SUMMARY.md) - 所有 API 接口列表
+
+### Cursor Rules
+- [Cursor Rules 使用指南](.cursor/rules/README.md) - AI 编程规范
+- [多租户开发规范](.cursor/rules/multi-tenant-data-isolation.mdc) - 数据隔离最佳实践
+- [用户注册流程规范](.cursor/rules/user-registration-flow.mdc) - 注册流程开发指南
 
 ---
 

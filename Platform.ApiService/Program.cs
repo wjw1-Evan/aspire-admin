@@ -172,23 +172,10 @@ using (var scope = app.Services.CreateScope())
         scope.ServiceProvider.GetRequiredService<ILogger<MigrateToMultiTenant>>());
     await migrateToMultiTenant.MigrateAsync();
     
-    // 初始化管理员用户
-    var createAdminUser = new CreateAdminUser(database);
-    await createAdminUser.CreateDefaultAdminAsync();
-    
-    // 初始化菜单和角色
-    var initialMenuData = new InitialMenuData(database);
-    await initialMenuData.InitializeAsync();
-    
     // 迁移菜单标题（为旧菜单添加中文标题）
     var migrateMenuTitles = new MigrateMenuTitles(database,
         scope.ServiceProvider.GetRequiredService<ILogger<MigrateMenuTitles>>());
     await migrateMenuTitles.MigrateAsync();
-    
-    // 初始化权限系统
-    var initializePermissions = new InitializePermissions(database, 
-        scope.ServiceProvider.GetRequiredService<ILogger<InitializePermissions>>());
-    await initializePermissions.InitializeAsync();
     
     // 数据迁移：将 Role 字段迁移到 RoleIds
     await MigrateRoleToRoleIds.ExecuteAsync(database);

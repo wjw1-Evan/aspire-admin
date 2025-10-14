@@ -48,7 +48,7 @@
       "react-dom": "^19.1.0"
     },
     "devDependencies": {
-      "@ant-design/pro-cli": "^3.3.0",
+      "@ant-design/pro-cli": "^3.1.0",
       "@biomejs/biome": "^2.0.6",
       "@commitlint/cli": "^20.1.0",
       "@commitlint/config-conventional": "^20.0.0",
@@ -57,18 +57,18 @@
       "@types/express": "^5.0.3",
       "@types/jest": "^30.0.0",
       "@types/lodash": "^4.17.10",
-      "@types/node": "^24.0.10",
-      "@types/react": "^19.1.5",
-      "@types/react-dom": "^19.1.5",
+      "@types/node": "^24.7.2",
+      "@types/react": "^19.2.2",
+      "@types/react-dom": "^19.2.1",
       "@types/react-helmet": "^6.1.11",
-      "@umijs/max": "^4.3.24",
+      "@umijs/max": "^4.0.7",
       "cross-env": "^10.1.0",
       "express": "^5.1.0",
       "gh-pages": "^6.1.1",
       "husky": "^9.1.7",
       "jest": "^30.0.4",
       "jest-environment-jsdom": "^30.2.0",
-      "lint-staged": "^16.1.2",
+      "lint-staged": "^16.2.4",
       "mockjs": "^1.1.0",
       "ts-node": "^10.9.2",
       "typescript": "^5.6.3",
@@ -85,7 +85,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "preset",
@@ -98,7 +98,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 10
+        "register": 12
       },
       "enableBy": "register",
       "type": "preset",
@@ -111,7 +111,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 3
       },
       "enableBy": "register",
       "type": "preset",
@@ -128,7 +128,7 @@
             0
           ]
         },
-        "register": 3
+        "register": 5
       },
       "enableBy": "register",
       "type": "preset",
@@ -145,7 +145,7 @@
             0
           ]
         },
-        "register": 9
+        "register": 4
       },
       "enableBy": "register",
       "type": "plugin",
@@ -192,7 +192,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -206,7 +206,7 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            24
+            23
           ]
         },
         "register": 16
@@ -222,7 +222,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -289,7 +289,7 @@
             0
           ]
         },
-        "register": 6
+        "register": 8
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1141,7 +1141,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1171,7 +1171,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1197,7 +1197,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 29
+        "register": 30
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1214,7 +1214,7 @@
             0
           ]
         },
-        "register": 10
+        "register": 12
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1270,7 +1270,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 23
+        "register": 24
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/mock/mock.js",
@@ -1282,7 +1282,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1341,7 +1341,7 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            0
+            1
           ]
         },
         "register": 1
@@ -1485,7 +1485,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1511,7 +1511,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1524,7 +1524,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 4
+        "register": 3
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/apiRoute/apiRoute.js",
@@ -1536,7 +1536,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 15
+        "register": 14
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1599,7 +1599,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/webpack/webpack.js",
@@ -1615,7 +1615,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1696,7 +1696,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1709,7 +1709,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1748,7 +1748,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 25
+        "register": 27
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/dev/dev.js",
@@ -1812,7 +1812,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1825,7 +1825,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1838,7 +1838,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1851,7 +1851,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1877,7 +1877,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1890,7 +1890,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1916,7 +1916,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1929,7 +1929,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1955,7 +1955,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1968,7 +1968,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1994,7 +1994,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 17
+        "register": 13
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2067,7 +2067,7 @@
             0
           ]
         },
-        "register": 4
+        "register": 5
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/antd.js",
@@ -2079,7 +2079,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 4
+        "register": 6
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2092,7 +2092,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2111,13 +2111,13 @@
             0
           ],
           "addLayouts": [
-            1
+            0
           ],
           "modifyAppData": [
-            0
+            1
           ]
         },
-        "register": 3
+        "register": 4
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2130,7 +2130,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2143,7 +2143,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 7
+        "register": 5
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2249,7 +2249,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2262,7 +2262,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2275,7 +2275,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2292,7 +2292,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2309,7 +2309,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2356,7 +2356,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2373,7 +2373,7 @@
             0
           ]
         },
-        "register": 176
+        "register": 187
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2386,7 +2386,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 94
+        "register": 89
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2430,7 +2430,7 @@
             0
           ]
         },
-        "register": 39
+        "register": 41
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/request-record/dist/cjs/index.js",
@@ -2442,7 +2442,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2522,10 +2522,10 @@
             "component": "./user-log"
           },
           {
-            "name": "permission-management",
-            "icon": "safety",
-            "path": "/system/permission-management",
-            "component": "./permission-management"
+            "name": "company-settings",
+            "icon": "bank",
+            "path": "/system/company-settings",
+            "component": "./company/settings"
           }
         ]
       },
@@ -2539,6 +2539,24 @@
         "name": "account.center",
         "path": "/account/center",
         "component": "./account/center",
+        "hideInMenu": true
+      },
+      {
+        "name": "company-search",
+        "path": "/company/search",
+        "component": "./company/search",
+        "hideInMenu": true
+      },
+      {
+        "name": "my-join-requests",
+        "path": "/join-requests/my",
+        "component": "./join-requests/my",
+        "hideInMenu": true
+      },
+      {
+        "name": "pending-join-requests",
+        "path": "/join-requests/pending",
+        "component": "./join-requests/pending",
         "hideInMenu": true
       },
       {
@@ -2735,10 +2753,10 @@
             "component": "./user-log"
           },
           {
-            "name": "permission-management",
-            "icon": "safety",
-            "path": "/system/permission-management",
-            "component": "./permission-management"
+            "name": "company-settings",
+            "icon": "bank",
+            "path": "/system/company-settings",
+            "component": "./company/settings"
           }
         ]
       },
@@ -2752,6 +2770,24 @@
         "name": "account.center",
         "path": "/account/center",
         "component": "./account/center",
+        "hideInMenu": true
+      },
+      {
+        "name": "company-search",
+        "path": "/company/search",
+        "component": "./company/search",
+        "hideInMenu": true
+      },
+      {
+        "name": "my-join-requests",
+        "path": "/join-requests/my",
+        "component": "./join-requests/my",
+        "hideInMenu": true
+      },
+      {
+        "name": "pending-join-requests",
+        "path": "/join-requests/pending",
+        "component": "./join-requests/pending",
         "hideInMenu": true
       },
       {
@@ -3787,7 +3823,7 @@
       "parentId": "1",
       "id": "2",
       "absPath": "/user/login",
-      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MobileOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormCaptcha,\n  ProFormCheckbox,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  Link,\n  SelectLang,\n  useIntl,\n  useModel,\n  history,\n} from '@umijs/max';\nimport { Alert, App, Button, Tabs } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { flushSync } from 'react-dom';\nimport { Footer } from '@/components';\nimport { login } from '@/services/ant-design-pro/api';\nimport { getFakeCaptcha } from '@/services/ant-design-pro/login';\nimport { tokenUtils } from '@/utils/token';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst LoginMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Login: React.FC = () => {\n  const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});\n  const [type, setType] = useState<string>('account');\n  const { initialState, setInitialState } = useModel('@@initialState');\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const fetchUserInfo = async () => {\n    const userInfo = await initialState?.fetchUserInfo?.();\n    if (userInfo) {\n      flushSync(() => {\n        setInitialState((s) => ({\n          ...s,\n          currentUser: userInfo,\n        }));\n      });\n    }\n  };\n\n  const handleSubmit = async (values: API.LoginParams) => {\n    try {\n      // 登录\n      const response = await login({ ...values, type });\n\n      // 处理统一的 API 响应格式\n      if (response.success && response.data) {\n        const msg = response.data;\n\n        // 保存 token 和刷新token到本地存储\n        if (msg.token && msg.refreshToken) {\n          const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;\n          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);\n        } else if (msg.token) {\n          // 兼容旧版本，只保存token\n          tokenUtils.setToken(msg.token);\n        }\n\n        const defaultLoginSuccessMessage = intl.formatMessage({\n          id: 'pages.login.success',\n          defaultMessage: '登录成功！',\n        });\n        message.success(defaultLoginSuccessMessage);\n        await fetchUserInfo();\n        \n        // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性\n        const urlParams = new URL(window.location.href).searchParams;\n        const redirect = urlParams.get('redirect');\n        history.push(redirect || '/');\n        return;\n      }\n\n      // 如果失败，处理错误信息\n      const errorMsg = response.errorMessage || '登录失败，请重试！';\n      setUserLoginState({ status: 'error', errorMessage: errorMsg });\n    } catch (error) {\n      const defaultLoginFailureMessage = intl.formatMessage({\n        id: 'pages.login.failure',\n        defaultMessage: '登录失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultLoginFailureMessage);\n    }\n  };\n  const { status, type: loginType } = userLoginState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.login',\n            defaultMessage: '登录页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          initialValues={{\n            autoLogin: true,\n          }}\n          actions={[\n            <FormattedMessage\n              key=\"loginWith\"\n              id=\"pages.login.loginWith\"\n              defaultMessage=\"其他登录方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.LoginParams);\n          }}\n        >\n          <Tabs\n            activeKey={type}\n            onChange={setType}\n            centered\n            items={[\n              {\n                key: 'account',\n                label: intl.formatMessage({\n                  id: 'pages.login.accountLogin.tab',\n                  defaultMessage: '账户密码登录',\n                }),\n              },\n              {\n                key: 'mobile',\n                label: intl.formatMessage({\n                  id: 'pages.login.phoneLogin.tab',\n                  defaultMessage: '手机号登录',\n                }),\n              },\n            ]}\n          />\n\n          {status === 'error' && loginType === 'account' && (\n            <LoginMessage\n              content={intl.formatMessage({\n                id: 'pages.login.accountLogin.errorMessage',\n                defaultMessage: '账户或密码错误',\n              })}\n            />\n          )}\n          {type === 'account' && (\n            <>\n              <ProFormText\n                name=\"username\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <UserOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.username.placeholder',\n                  defaultMessage: '用户名: admin or user',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.username.required\"\n                        defaultMessage=\"请输入用户名!\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText.Password\n                name=\"password\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.password.placeholder',\n                  defaultMessage: '密码: ant.design',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.password.required\"\n                        defaultMessage=\"请输入密码！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n            </>\n          )}\n\n          {status === 'error' && loginType === 'mobile' && (\n            <LoginMessage content=\"验证码错误\" />\n          )}\n          {type === 'mobile' && (\n            <>\n              <ProFormText\n                fieldProps={{\n                  size: 'large',\n                  prefix: <MobileOutlined />,\n                }}\n                name=\"mobile\"\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.phoneNumber.placeholder',\n                  defaultMessage: '手机号',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.required\"\n                        defaultMessage=\"请输入手机号！\"\n                      />\n                    ),\n                  },\n                  {\n                    pattern: /^1\\d{10}$/,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.invalid\"\n                        defaultMessage=\"手机号格式错误！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormCaptcha\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                captchaProps={{\n                  size: 'large',\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.captcha.placeholder',\n                  defaultMessage: '请输入验证码',\n                })}\n                captchaTextRender={(timing, count) => {\n                  if (timing) {\n                    return `${count} ${intl.formatMessage({\n                      id: 'pages.getCaptchaSecondText',\n                      defaultMessage: '获取验证码',\n                    })}`;\n                  }\n                  return intl.formatMessage({\n                    id: 'pages.login.phoneLogin.getVerificationCode',\n                    defaultMessage: '获取验证码',\n                  });\n                }}\n                name=\"captcha\"\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.captcha.required\"\n                        defaultMessage=\"请输入验证码！\"\n                      />\n                    ),\n                  },\n                ]}\n                onGetCaptcha={async (phone) => {\n                  try {\n                    const result = await getFakeCaptcha({ phone });\n                    \n                    if (result.success && result.data) {\n                      // 开发环境显示验证码（生产环境应该发送短信）\n                      message.success(\n                        `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,\n                        5\n                      );\n                      console.log(`验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`);\n                    } else {\n                      message.error('获取验证码失败');\n                    }\n                  } catch (error) {\n                    message.error('获取验证码失败，请稍后重试');\n                    console.error('获取验证码错误:', error);\n                  }\n                }}\n              />\n            </>\n          )}\n          <div\n            style={{\n              marginBottom: 24,\n            }}\n          >\n            <ProFormCheckbox noStyle name=\"autoLogin\">\n              <FormattedMessage\n                id=\"pages.login.rememberMe\"\n                defaultMessage=\"自动登录\"\n              />\n            </ProFormCheckbox>\n            <Button\n              type=\"link\"\n              style={{\n                float: 'right',\n                padding: 0,\n                height: 'auto',\n              }}\n              disabled\n              onClick={() => {\n                // 忘记密码功能待实现\n                message.info('忘记密码功能开发中');\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.login.forgotPassword\"\n                defaultMessage=\"忘记密码\"\n              />\n            </Button>\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/register\">\n                <FormattedMessage\n                  id=\"pages.login.register\"\n                  defaultMessage=\"没有账号？立即注册\"\n                />\n              </Link>\n            </div>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Login;\n",
+      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MobileOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormCaptcha,\n  ProFormCheckbox,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  Link,\n  SelectLang,\n  useIntl,\n  useModel,\n  history,\n} from '@umijs/max';\nimport { Alert, App, Button, Tabs } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { flushSync } from 'react-dom';\nimport { Footer } from '@/components';\nimport { login } from '@/services/ant-design-pro/api';\nimport { getFakeCaptcha } from '@/services/ant-design-pro/login';\nimport { tokenUtils } from '@/utils/token';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst LoginMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Login: React.FC = () => {\n  const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});\n  const [type, setType] = useState<string>('account');\n  const { initialState, setInitialState } = useModel('@@initialState');\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const fetchUserInfo = async () => {\n    const userInfo = await initialState?.fetchUserInfo?.();\n    if (userInfo) {\n      flushSync(() => {\n        setInitialState((s) => ({\n          ...s,\n          currentUser: userInfo,\n        }));\n      });\n    }\n  };\n\n  const handleSubmit = async (values: API.LoginParams) => {\n    try {\n      // 登录\n      const response = await login({ ...values, type });\n\n      // 处理统一的 API 响应格式\n      if (response.success && response.data) {\n        const msg = response.data;\n\n        // 保存 token 和刷新token到本地存储\n        if (msg.token && msg.refreshToken) {\n          const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;\n          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);\n        } else if (msg.token) {\n          // 兼容旧版本，只保存token\n          tokenUtils.setToken(msg.token);\n        }\n\n        const defaultLoginSuccessMessage = intl.formatMessage({\n          id: 'pages.login.success',\n          defaultMessage: '登录成功！',\n        });\n        message.success(defaultLoginSuccessMessage);\n        await fetchUserInfo();\n        \n        // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性\n        const urlParams = new URL(window.location.href).searchParams;\n        const redirect = urlParams.get('redirect');\n        history.push(redirect || '/');\n        return;\n      }\n\n      // 如果失败，处理错误信息\n      const errorMsg = response.errorMessage || '登录失败，请重试！';\n      setUserLoginState({ status: 'error', errorMessage: errorMsg });\n    } catch (error) {\n      const defaultLoginFailureMessage = intl.formatMessage({\n        id: 'pages.login.failure',\n        defaultMessage: '登录失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultLoginFailureMessage);\n    }\n  };\n  const { status, type: loginType } = userLoginState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.login',\n            defaultMessage: '登录页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          initialValues={{\n            autoLogin: true,\n          }}\n          actions={[\n            <FormattedMessage\n              key=\"loginWith\"\n              id=\"pages.login.loginWith\"\n              defaultMessage=\"其他登录方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.LoginParams);\n          }}\n        >\n          <Tabs\n            activeKey={type}\n            onChange={setType}\n            centered\n            items={[\n              {\n                key: 'account',\n                label: intl.formatMessage({\n                  id: 'pages.login.accountLogin.tab',\n                  defaultMessage: '账户密码登录',\n                }),\n              },\n              {\n                key: 'mobile',\n                label: intl.formatMessage({\n                  id: 'pages.login.phoneLogin.tab',\n                  defaultMessage: '手机号登录',\n                }),\n              },\n            ]}\n          />\n\n          {status === 'error' && loginType === 'account' && (\n            <LoginMessage\n              content={intl.formatMessage({\n                id: 'pages.login.accountLogin.errorMessage',\n                defaultMessage: '账户或密码错误',\n              })}\n            />\n          )}\n          {type === 'account' && (\n            <>\n              <ProFormText\n                name=\"username\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <UserOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.username.placeholder',\n                  defaultMessage: '用户名',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.username.required\"\n                        defaultMessage=\"请输入用户名!\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText.Password\n                name=\"password\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.password.placeholder',\n                  defaultMessage: '密码: ant.design',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.password.required\"\n                        defaultMessage=\"请输入密码！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n            </>\n          )}\n\n          {status === 'error' && loginType === 'mobile' && (\n            <LoginMessage content=\"验证码错误\" />\n          )}\n          {type === 'mobile' && (\n            <>\n              <ProFormText\n                fieldProps={{\n                  size: 'large',\n                  prefix: <MobileOutlined />,\n                }}\n                name=\"mobile\"\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.phoneNumber.placeholder',\n                  defaultMessage: '手机号',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.required\"\n                        defaultMessage=\"请输入手机号！\"\n                      />\n                    ),\n                  },\n                  {\n                    pattern: /^1\\d{10}$/,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.invalid\"\n                        defaultMessage=\"手机号格式错误！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormCaptcha\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                captchaProps={{\n                  size: 'large',\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.captcha.placeholder',\n                  defaultMessage: '请输入验证码',\n                })}\n                captchaTextRender={(timing, count) => {\n                  if (timing) {\n                    return `${count} ${intl.formatMessage({\n                      id: 'pages.getCaptchaSecondText',\n                      defaultMessage: '获取验证码',\n                    })}`;\n                  }\n                  return intl.formatMessage({\n                    id: 'pages.login.phoneLogin.getVerificationCode',\n                    defaultMessage: '获取验证码',\n                  });\n                }}\n                name=\"captcha\"\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.captcha.required\"\n                        defaultMessage=\"请输入验证码！\"\n                      />\n                    ),\n                  },\n                ]}\n                onGetCaptcha={async (phone) => {\n                  try {\n                    const result = await getFakeCaptcha({ phone });\n                    \n                    if (result.success && result.data) {\n                      // 开发环境显示验证码（生产环境应该发送短信）\n                      message.success(\n                        `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,\n                        5\n                      );\n                      console.log(`验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`);\n                    } else {\n                      message.error('获取验证码失败');\n                    }\n                  } catch (error) {\n                    message.error('获取验证码失败，请稍后重试');\n                    console.error('获取验证码错误:', error);\n                  }\n                }}\n              />\n            </>\n          )}\n          <div\n            style={{\n              marginBottom: 24,\n            }}\n          >\n            <ProFormCheckbox noStyle name=\"autoLogin\">\n              <FormattedMessage\n                id=\"pages.login.rememberMe\"\n                defaultMessage=\"自动登录\"\n              />\n            </ProFormCheckbox>\n            <Button\n              type=\"link\"\n              style={{\n                float: 'right',\n                padding: 0,\n                height: 'auto',\n              }}\n              disabled\n              onClick={() => {\n                // 忘记密码功能待实现\n                message.info('忘记密码功能开发中');\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.login.forgotPassword\"\n                defaultMessage=\"忘记密码\"\n              />\n            </Button>\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/register\">\n                <FormattedMessage\n                  id=\"pages.login.register\"\n                  defaultMessage=\"没有账号？立即注册\"\n                />\n              </Link>\n            </div>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Login;\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/login/index.tsx"
     },
@@ -3798,7 +3834,7 @@
       "parentId": "1",
       "id": "3",
       "absPath": "/user/register",
-      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MailOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  SelectLang,\n  useIntl,\n  history,\n  Link,\n} from '@umijs/max';\nimport { Alert, App } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { Footer } from '@/components';\nimport { register } from '@/services/ant-design-pro/api';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst RegisterMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Register: React.FC = () => {\n  const [registerState, setRegisterState] = useState<API.RegisterResult>({});\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const handleSubmit = async (values: API.RegisterParams) => {\n    try {\n      // 注册\n      const result = await register(values);\n      if (result.success) {\n        const defaultRegisterSuccessMessage = intl.formatMessage({\n          id: 'pages.register.success',\n          defaultMessage: '注册成功！',\n        });\n        message.success(defaultRegisterSuccessMessage);\n        \n        // 注册成功后跳转到注册结果页面\n        history.push('/user/register-result');\n        return;\n      }\n      \n      // 如果失败去设置用户错误信息\n      setRegisterState(result);\n    } catch (error) {\n      const defaultRegisterFailureMessage = intl.formatMessage({\n        id: 'pages.register.failure',\n        defaultMessage: '注册失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultRegisterFailureMessage);\n    }\n  };\n\n  const { errorCode, errorMessage } = registerState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.register',\n            defaultMessage: '注册页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          actions={[\n            <FormattedMessage\n              key=\"registerWith\"\n              id=\"pages.register.registerWith\"\n              defaultMessage=\"其他注册方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.RegisterParams);\n          }}\n          submitter={{\n            searchConfig: {\n              submitText: intl.formatMessage({\n                id: 'pages.register.submit',\n                defaultMessage: '注册',\n              }),\n            },\n          }}\n        >\n          {errorCode && (\n            <RegisterMessage content={errorMessage || '注册失败'} />\n          )}\n\n          <ProFormText\n            name=\"username\"\n            fieldProps={{\n              size: 'large',\n              prefix: <UserOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.register.username.placeholder',\n              defaultMessage: '用户名',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.username.required\"\n                    defaultMessage=\"请输入用户名!\"\n                  />\n                ),\n              },\n              {\n                min: 3,\n                max: 20,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.username.length\"\n                    defaultMessage=\"用户名长度必须在3-20个字符之间\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText.Password\n            name=\"password\"\n            fieldProps={{\n              size: 'large',\n              prefix: <LockOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.register.password.placeholder',\n              defaultMessage: '密码',\n            })}\n            rules={[\n              {\n                required: true,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.password.required\"\n                    defaultMessage=\"请输入密码！\"\n                  />\n                ),\n              },\n              {\n                min: 6,\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.password.length\"\n                    defaultMessage=\"密码长度至少6个字符\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <ProFormText\n            name=\"email\"\n            fieldProps={{\n              size: 'large',\n              prefix: <MailOutlined />,\n            }}\n            placeholder={intl.formatMessage({\n              id: 'pages.register.email.placeholder',\n              defaultMessage: '邮箱（可选）',\n            })}\n            rules={[\n              {\n                type: 'email',\n                message: (\n                  <FormattedMessage\n                    id=\"pages.register.email.invalid\"\n                    defaultMessage=\"邮箱格式不正确！\"\n                  />\n                ),\n              },\n            ]}\n          />\n\n          <div\n            style={{\n              marginBottom: 24,\n              textAlign: 'center',\n            }}\n          >\n            <Link to=\"/user/login\">\n              <FormattedMessage\n                id=\"pages.register.backToLogin\"\n                defaultMessage=\"已有账号？立即登录\"\n              />\n            </Link>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Register;\n",
+      "__content": "import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport { history, Link } from '@umijs/max';\nimport { Alert, App } from 'antd';\nimport React, { useState } from 'react';\nimport { Footer } from '@/components';\nimport { register } from '@/services/ant-design-pro/api';\nimport { tokenUtils } from '@/utils/token';\n\nexport default function Register() {\n  const { message } = App.useApp();\n  const [registerError, setRegisterError] = useState<string>('');\n\n  const handleSubmit = async (values: API.RegisterParams) => {\n    try {\n      setRegisterError('');\n      \n      const response = await register(values);\n\n      if (response.success && response.data) {\n        message.success('注册成功！已为您自动创建个人企业，正在跳转...');\n        \n        // 自动登录（注册成功后）\n        setTimeout(() => {\n          history.push('/user/login');\n        }, 1500);\n        \n        return;\n      }\n\n      // 注册失败\n      setRegisterError(response.errorMessage || '注册失败');\n    } catch (error: any) {\n      setRegisterError(error.message || '注册失败，请重试');\n    }\n  };\n\n  return (\n    <div\n      style={{\n        display: 'flex',\n        flexDirection: 'column',\n        height: '100vh',\n        overflow: 'auto',\n        backgroundImage:\n          \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n        backgroundSize: '100% 100%',\n      }}\n    >\n      <div\n        style={{\n          flex: 1,\n          display: 'flex',\n          alignItems: 'center',\n          justifyContent: 'center',\n          padding: '32px',\n        }}\n      >\n        <div style={{ width: '100%', maxWidth: '400px' }}>\n          <LoginForm\n            logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n            title=\"用户注册\"\n            subTitle=\"注册即自动创建您的个人企业\"\n            onFinish={async (values) => {\n              await handleSubmit(values as API.RegisterParams);\n            }}\n            submitter={{\n              searchConfig: {\n                submitText: '立即注册',\n              },\n            }}\n          >\n            {registerError && (\n              <Alert\n                style={{ marginBottom: 24 }}\n                message={registerError}\n                type=\"error\"\n                showIcon\n                closable\n                onClose={() => setRegisterError('')}\n              />\n            )}\n\n            <ProFormText\n              name=\"username\"\n              fieldProps={{\n                size: 'large',\n                prefix: <UserOutlined />,\n              }}\n              placeholder=\"用户名（全局唯一）\"\n              rules={[\n                {\n                  required: true,\n                  message: '请输入用户名！',\n                },\n                {\n                  min: 3,\n                  message: '用户名至少3个字符',\n                },\n              ]}\n            />\n\n            <ProFormText\n              name=\"email\"\n              fieldProps={{\n                size: 'large',\n                prefix: <MailOutlined />,\n              }}\n              placeholder=\"邮箱地址（可选）\"\n              rules={[\n                {\n                  type: 'email',\n                  message: '邮箱格式不正确',\n                },\n              ]}\n            />\n\n            <ProFormText.Password\n              name=\"password\"\n              fieldProps={{\n                size: 'large',\n                prefix: <LockOutlined />,\n              }}\n              placeholder=\"密码（至少6个字符）\"\n              rules={[\n                {\n                  required: true,\n                  message: '请输入密码！',\n                },\n                {\n                  min: 6,\n                  message: '密码至少6个字符',\n                },\n              ]}\n            />\n\n            <div\n              style={{\n                marginTop: 16,\n                textAlign: 'center',\n                background: '#f0f2f5',\n                padding: '12px',\n                borderRadius: '4px',\n                fontSize: '12px',\n                color: '#666',\n              }}\n            >\n              <div style={{ marginBottom: 8 }}>\n                💡 注册成功后系统将为您：\n              </div>\n              <div>✅ 自动创建个人企业（您是管理员）</div>\n              <div>✅ 配置默认权限和菜单</div>\n              <div>✅ 您可以邀请成员或申请加入其他企业</div>\n            </div>\n\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/login\">已有账号？立即登录</Link>\n            </div>\n          </LoginForm>\n        </div>\n      </div>\n      <Footer />\n    </div>\n  );\n}\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/register/index.tsx"
     },
@@ -3889,16 +3925,16 @@
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user-log/index.tsx"
     },
     "12": {
-      "name": "permission-management",
-      "icon": "safety",
-      "path": "/system/permission-management",
-      "file": "@/pages/permission-management/index.tsx",
+      "name": "company-settings",
+      "icon": "bank",
+      "path": "/system/company-settings",
+      "file": "@/pages/company/settings.tsx",
       "parentId": "6",
       "id": "12",
-      "absPath": "/system/permission-management",
-      "__content": "import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';\nimport { PageContainer, ProCard } from '@ant-design/pro-components';\nimport { Button, Collapse, message, Space, Table, Tag } from 'antd';\nimport type { ColumnsType } from 'antd/es/table';\nimport React, { useEffect, useState } from 'react';\nimport { getPermissionsGrouped, initializePermissions } from '@/services/permission';\nimport type { Permission, PermissionGroup } from '@/services/permission/types';\n\nconst { Panel } = Collapse;\n\nconst PermissionManagement: React.FC = () => {\n  const [loading, setLoading] = useState(false);\n  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);\n\n  /**\n   * 加载权限数据\n   */\n  const loadPermissions = async () => {\n    setLoading(true);\n    try {\n      const response = await getPermissionsGrouped();\n      if (response.success && response.data) {\n        setPermissionGroups(response.data);\n      }\n    } catch (error) {\n      console.error('Failed to load permissions:', error);\n      message.error('加载权限失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  /**\n   * 初始化默认权限\n   */\n  const handleInitialize = async () => {\n    setLoading(true);\n    try {\n      const response = await initializePermissions();\n      if (response.success) {\n        message.success('权限初始化成功');\n        await loadPermissions();\n      }\n    } catch (error) {\n      console.error('Failed to initialize permissions:', error);\n      message.error('权限初始化失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    loadPermissions();\n  }, []);\n\n  const columns: ColumnsType<Permission> = [\n    {\n      title: '权限代码',\n      dataIndex: 'code',\n      key: 'code',\n      render: (text: string) => <Tag color=\"blue\">{text}</Tag>,\n    },\n    {\n      title: '操作',\n      dataIndex: 'actionTitle',\n      key: 'actionTitle',\n      render: (text: string, record: Permission) => {\n        const colors: Record<string, string> = {\n          create: 'green',\n          read: 'blue',\n          update: 'orange',\n          delete: 'red',\n        };\n        return <Tag color={colors[record.action] || 'default'}>{text}</Tag>;\n      },\n    },\n    {\n      title: '描述',\n      dataIndex: 'description',\n      key: 'description',\n    },\n  ];\n\n  return (\n    <PageContainer\n      header={{\n        title: '权限管理',\n        subTitle: '系统权限配置和管理',\n      }}\n    >\n      <ProCard>\n        <Space style={{ marginBottom: 16 }}>\n          <Button\n            type=\"primary\"\n            icon={<ReloadOutlined />}\n            onClick={loadPermissions}\n            loading={loading}\n          >\n            刷新\n          </Button>\n          <Button icon={<PlusOutlined />} onClick={handleInitialize} loading={loading}>\n            初始化默认权限\n          </Button>\n        </Space>\n\n        <Collapse defaultActiveKey={permissionGroups.map((g) => g.resourceName)}>\n          {permissionGroups.map((group) => (\n            <Panel\n              header={\n                <Space>\n                  <strong>{group.resourceTitle}</strong>\n                  <Tag>{group.permissions.length} 个权限</Tag>\n                </Space>\n              }\n              key={group.resourceName}\n            >\n              <Table\n                columns={columns}\n                dataSource={group.permissions}\n                rowKey=\"id\"\n                pagination={false}\n                size=\"small\"\n              />\n            </Panel>\n          ))}\n        </Collapse>\n\n        {permissionGroups.length === 0 && !loading && (\n          <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>\n            <p>暂无权限数据</p>\n            <Button type=\"primary\" onClick={handleInitialize}>\n              初始化默认权限\n            </Button>\n          </div>\n        )}\n      </ProCard>\n    </PageContainer>\n  );\n};\n\nexport default PermissionManagement;\n\n",
+      "absPath": "/system/company-settings",
+      "__content": "import { useEffect, useState } from 'react';\nimport { PageContainer, ProCard, ProDescriptions } from '@ant-design/pro-components';\nimport { Card, message, Spin, Row, Col, Statistic, Progress, Tag } from 'antd';\nimport {\n  UserOutlined,\n  TeamOutlined,\n  MenuOutlined,\n  SafetyOutlined,\n  ClockCircleOutlined,\n} from '@ant-design/icons';\nimport { getCurrentCompany, getCompanyStatistics } from '@/services/company';\nimport EditCompanyModal from './components/EditCompanyModal';\n\nexport default function CompanySettings() {\n  const [company, setCompany] = useState<API.Company | null>(null);\n  const [statistics, setStatistics] = useState<API.CompanyStatistics | null>(null);\n  const [loading, setLoading] = useState(true);\n  const [editModalVisible, setEditModalVisible] = useState(false);\n\n  useEffect(() => {\n    fetchData();\n  }, []);\n\n  const fetchData = async () => {\n    setLoading(true);\n    try {\n      const [companyRes, statsRes] = await Promise.all([\n        getCurrentCompany(),\n        getCompanyStatistics(),\n      ]);\n\n      if (companyRes.success && companyRes.data) {\n        setCompany(companyRes.data);\n      }\n\n      if (statsRes.success && statsRes.data) {\n        setStatistics(statsRes.data);\n      }\n    } catch (error: any) {\n      message.error(error.message || '加载企业信息失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const handleEditSuccess = () => {\n    setEditModalVisible(false);\n    fetchData();\n    message.success('企业信息更新成功');\n  };\n\n  if (loading) {\n    return (\n      <PageContainer>\n        <div style={{ textAlign: 'center', padding: 100 }}>\n          <Spin size=\"large\" tip=\"加载中...\" />\n        </div>\n      </PageContainer>\n    );\n  }\n\n  if (!company) {\n    return (\n      <PageContainer>\n        <Card>\n          <div style={{ textAlign: 'center', padding: 50 }}>\n            <p>未找到企业信息</p>\n          </div>\n        </Card>\n      </PageContainer>\n    );\n  }\n\n  const userUsagePercent = statistics\n    ? Math.round((statistics.totalUsers / statistics.maxUsers) * 100)\n    : 0;\n\n  return (\n    <PageContainer\n      title=\"企业设置\"\n      extra={[\n        <a key=\"edit\" onClick={() => setEditModalVisible(true)}>\n          编辑企业信息\n        </a>,\n      ]}\n    >\n      {/* 企业统计 */}\n      {statistics && (\n        <ProCard\n          title=\"企业数据统计\"\n          bordered\n          headerBordered\n          style={{ marginBottom: 24 }}\n        >\n          <Row gutter={16}>\n            <Col span={8}>\n              <Card bordered={false}>\n                <Statistic\n                  title=\"用户总数\"\n                  value={statistics.totalUsers}\n                  suffix={`/ ${statistics.maxUsers}`}\n                  prefix={<UserOutlined />}\n                  valueStyle={{ color: '#3f8600' }}\n                />\n                <Progress\n                  percent={userUsagePercent}\n                  status={userUsagePercent >= 90 ? 'exception' : 'active'}\n                  style={{ marginTop: 8 }}\n                />\n              </Card>\n            </Col>\n            <Col span={8}>\n              <Card bordered={false}>\n                <Statistic\n                  title=\"活跃用户\"\n                  value={statistics.activeUsers}\n                  prefix={<UserOutlined />}\n                />\n              </Card>\n            </Col>\n            <Col span={8}>\n              <Card bordered={false}>\n                <Statistic title=\"角色数量\" value={statistics.totalRoles} prefix={<TeamOutlined />} />\n              </Card>\n            </Col>\n          </Row>\n          <Row gutter={16} style={{ marginTop: 16 }}>\n            <Col span={8}>\n              <Card bordered={false}>\n                <Statistic title=\"菜单数量\" value={statistics.totalMenus} prefix={<MenuOutlined />} />\n              </Card>\n            </Col>\n            <Col span={8}>\n              <Card bordered={false}>\n                <Statistic\n                  title=\"权限数量\"\n                  value={statistics.totalPermissions}\n                  prefix={<SafetyOutlined />}\n                />\n              </Card>\n            </Col>\n            <Col span={8}>\n              <Card bordered={false}>\n                <div style={{ marginBottom: 8 }}>\n                  <span style={{ color: '#00000073' }}>企业状态</span>\n                </div>\n                <div>\n                  {statistics.isExpired ? (\n                    <Tag color=\"red\">已过期</Tag>\n                  ) : company.isActive ? (\n                    <Tag color=\"green\">正常</Tag>\n                  ) : (\n                    <Tag color=\"orange\">已停用</Tag>\n                  )}\n                  {statistics.expiresAt && (\n                    <div style={{ marginTop: 8, fontSize: 12, color: '#00000073' }}>\n                      <ClockCircleOutlined /> 过期时间：\n                      {new Date(statistics.expiresAt).toLocaleDateString()}\n                    </div>\n                  )}\n                </div>\n              </Card>\n            </Col>\n          </Row>\n        </ProCard>\n      )}\n\n      {/* 企业详细信息 */}\n      <ProCard title=\"企业详细信息\" bordered headerBordered>\n        <ProDescriptions\n          column={2}\n          dataSource={company}\n          columns={[\n            {\n              title: '企业名称',\n              dataIndex: 'name',\n              copyable: true,\n            },\n            {\n              title: '企业代码',\n              dataIndex: 'code',\n              copyable: true,\n              render: (_, record) => <Tag color=\"blue\">{record.code}</Tag>,\n            },\n            {\n              title: '所属行业',\n              dataIndex: 'industry',\n              render: (text) => text || '-',\n            },\n            {\n              title: '联系人',\n              dataIndex: 'contactName',\n              render: (text) => text || '-',\n            },\n            {\n              title: '联系邮箱',\n              dataIndex: 'contactEmail',\n              copyable: true,\n              render: (text) => text || '-',\n            },\n            {\n              title: '联系电话',\n              dataIndex: 'contactPhone',\n              copyable: true,\n              render: (text) => text || '-',\n            },\n            {\n              title: '企业描述',\n              dataIndex: 'description',\n              span: 2,\n              render: (text) => text || '-',\n            },\n            {\n              title: '创建时间',\n              dataIndex: 'createdAt',\n              valueType: 'dateTime',\n            },\n            {\n              title: '更新时间',\n              dataIndex: 'updatedAt',\n              valueType: 'dateTime',\n            },\n          ]}\n        />\n      </ProCard>\n\n      {/* 编辑企业信息弹窗 */}\n      <EditCompanyModal\n        visible={editModalVisible}\n        company={company}\n        onCancel={() => setEditModalVisible(false)}\n        onSuccess={handleEditSuccess}\n      />\n    </PageContainer>\n  );\n}\n\n",
       "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/permission-management/index.tsx"
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/company/settings.tsx"
     },
     "13": {
       "name": "change-password",
@@ -3925,17 +3961,53 @@
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/account/center/index.tsx"
     },
     "15": {
+      "name": "company-search",
+      "path": "/company/search",
+      "hideInMenu": true,
+      "file": "@/pages/company/search/index.tsx",
+      "parentId": "ant-design-pro-layout",
+      "id": "15",
+      "absPath": "/company/search",
+      "__content": "import { SearchOutlined, BankOutlined, TeamOutlined, CheckCircleOutlined } from '@ant-design/icons';\nimport { ProCard } from '@ant-design/pro-components';\nimport { PageContainer } from '@ant-design/pro-layout';\nimport { Input, Card, List, Button, Tag, Space, Empty, Spin, App, Modal } from 'antd';\nimport React, { useState } from 'react';\nimport { searchCompanies, applyToJoinCompany } from '@/services/company';\nimport type { FormInstance } from 'antd';\n\nconst { TextArea } = Input;\n\n/**\n * v3.1: 企业搜索页面\n * 用户可以搜索企业并申请加入\n */\nconst CompanySearch: React.FC = () => {\n  const { message, modal } = App.useApp();\n  const [keyword, setKeyword] = useState('');\n  const [loading, setLoading] = useState(false);\n  const [searchResults, setSearchResults] = useState<API.CompanySearchResult[]>([]);\n  const [applyingId, setApplyingId] = useState<string>('');\n\n  // 搜索企业\n  const handleSearch = async () => {\n    if (!keyword.trim()) {\n      message.warning('请输入搜索关键词');\n      return;\n    }\n\n    setLoading(true);\n    try {\n      const response = await searchCompanies(keyword.trim());\n\n      if (response.success && response.data) {\n        setSearchResults(response.data);\n        if (response.data.length === 0) {\n          message.info('未找到匹配的企业');\n        }\n      } else {\n        message.error(response.errorMessage || '搜索失败');\n      }\n    } catch (error: any) {\n      message.error(error.message || '搜索失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  // 申请加入企业\n  const handleApply = (company: API.Company) => {\n    let reason = '';\n\n    modal.confirm({\n      title: `申请加入：${company.name}`,\n      content: (\n        <div style={{ marginTop: 16 }}>\n          <div style={{ marginBottom: 8 }}>请说明您的申请理由（可选）：</div>\n          <TextArea\n            rows={4}\n            placeholder=\"例如：我想加入贵公司的开发团队...\"\n            onChange={(e) => {\n              reason = e.target.value;\n            }}\n          />\n        </div>\n      ),\n      okText: '提交申请',\n      cancelText: '取消',\n      onOk: async () => {\n        setApplyingId(company.id || '');\n        try {\n          const response = await applyToJoinCompany({\n            companyId: company.id || '',\n            reason: reason || undefined,\n          });\n\n          if (response.success) {\n            message.success('申请已提交，请等待企业管理员审核');\n            // 刷新搜索结果\n            await handleSearch();\n          } else {\n            message.error(response.errorMessage || '申请失败');\n          }\n        } catch (error: any) {\n          message.error(error.message || '申请失败');\n        } finally {\n          setApplyingId('');\n        }\n      },\n    });\n  };\n\n  return (\n    <PageContainer\n      header={{\n        title: '搜索企业',\n        subTitle: '搜索并申请加入其他企业',\n      }}\n    >\n      <ProCard>\n        {/* 搜索框 */}\n        <Space.Compact style={{ width: '100%', marginBottom: 24 }}>\n          <Input\n            size=\"large\"\n            placeholder=\"输入企业名称或代码搜索...\"\n            prefix={<SearchOutlined />}\n            value={keyword}\n            onChange={(e) => setKeyword(e.target.value)}\n            onPressEnter={handleSearch}\n          />\n          <Button type=\"primary\" size=\"large\" onClick={handleSearch} loading={loading}>\n            搜索\n          </Button>\n        </Space.Compact>\n\n        {/* 搜索结果 */}\n        {loading ? (\n          <div style={{ textAlign: 'center', padding: 60 }}>\n            <Spin size=\"large\" tip=\"搜索中...\" />\n          </div>\n        ) : searchResults.length > 0 ? (\n          <List\n            grid={{\n              gutter: 16,\n              xs: 1,\n              sm: 1,\n              md: 2,\n              lg: 2,\n              xl: 3,\n              xxl: 3,\n            }}\n            dataSource={searchResults}\n            renderItem={(item) => (\n              <List.Item>\n                <Card\n                  hoverable\n                  actions={[\n                    item.isMember ? (\n                      <Button type=\"text\" disabled>\n                        <CheckCircleOutlined /> 已加入\n                      </Button>\n                    ) : item.hasPendingRequest ? (\n                      <Button type=\"text\" disabled>\n                        审核中...\n                      </Button>\n                    ) : (\n                      <Button\n                        type=\"primary\"\n                        onClick={() => handleApply(item.company)}\n                        loading={applyingId === item.company.id}\n                      >\n                        申请加入\n                      </Button>\n                    ),\n                  ]}\n                >\n                  <Card.Meta\n                    avatar={<BankOutlined style={{ fontSize: 32, color: '#1890ff' }} />}\n                    title={\n                      <Space>\n                        {item.company.name}\n                        {item.isMember && (\n                          <Tag color=\"success\">\n                            {item.memberStatus === 'active' ? '已加入' : '待激活'}\n                          </Tag>\n                        )}\n                        {item.hasPendingRequest && (\n                          <Tag color=\"processing\">审核中</Tag>\n                        )}\n                      </Space>\n                    }\n                    description={\n                      <div>\n                        <div style={{ marginBottom: 8 }}>\n                          <span style={{ color: '#666' }}>企业代码：</span>\n                          <span style={{ fontWeight: 500 }}>{item.company.code}</span>\n                        </div>\n                        {item.company.description && (\n                          <div style={{ marginBottom: 8, color: '#666' }}>\n                            {item.company.description}\n                          </div>\n                        )}\n                        <div style={{ marginTop: 12 }}>\n                          <Space>\n                            <TeamOutlined />\n                            <span>{item.memberCount} 名成员</span>\n                          </Space>\n                        </div>\n                      </div>\n                    }\n                  />\n                </Card>\n              </List.Item>\n            )}\n          />\n        ) : keyword ? (\n          <Empty\n            description=\"未找到匹配的企业\"\n            style={{ padding: 60 }}\n          />\n        ) : (\n          <Empty\n            description=\"请输入企业名称或代码进行搜索\"\n            style={{ padding: 60 }}\n          />\n        )}\n      </ProCard>\n    </PageContainer>\n  );\n};\n\nexport default CompanySearch;\n\n",
+      "__isJSFile": true,
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/company/search/index.tsx"
+    },
+    "16": {
+      "name": "my-join-requests",
+      "path": "/join-requests/my",
+      "hideInMenu": true,
+      "file": "@/pages/join-requests/my/index.tsx",
+      "parentId": "ant-design-pro-layout",
+      "id": "16",
+      "absPath": "/join-requests/my",
+      "__content": "import { ProTable } from '@ant-design/pro-components';\nimport { PageContainer } from '@ant-design/pro-layout';\nimport { Tag, Button, Space, App, Popconfirm } from 'antd';\nimport React, { useRef, useState } from 'react';\nimport { getMyRequests, cancelRequest } from '@/services/company';\nimport type { ActionType, ProColumns } from '@ant-design/pro-components';\nimport { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';\n\n/**\n * v3.1: 我的加入申请列表\n */\nconst MyJoinRequests: React.FC = () => {\n  const { message } = App.useApp();\n  const actionRef = useRef<ActionType>();\n  const [loading, setLoading] = useState(false);\n\n  // 撤回申请\n  const handleCancel = async (id: string) => {\n    setLoading(true);\n    try {\n      const response = await cancelRequest(id);\n\n      if (response.success) {\n        message.success('申请已撤回');\n        actionRef.current?.reload();\n      } else {\n        message.error(response.errorMessage || '撤回失败');\n      }\n    } catch (error: any) {\n      message.error(error.message || '撤回失败');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const columns: ProColumns<API.JoinRequestDetail>[] = [\n    {\n      title: '企业名称',\n      dataIndex: 'companyName',\n      width: 200,\n      render: (_, record) => <strong>{record.companyName}</strong>,\n    },\n    {\n      title: '申请理由',\n      dataIndex: 'reason',\n      ellipsis: true,\n      search: false,\n      render: (text) => text || <span style={{ color: '#999' }}>无</span>,\n    },\n    {\n      title: '申请时间',\n      dataIndex: 'createdAt',\n      width: 180,\n      valueType: 'dateTime',\n      sorter: true,\n      search: false,\n    },\n    {\n      title: '状态',\n      dataIndex: 'status',\n      width: 120,\n      valueEnum: {\n        pending: {\n          text: '待审核',\n          status: 'Processing',\n        },\n        approved: {\n          text: '已通过',\n          status: 'Success',\n        },\n        rejected: {\n          text: '已拒绝',\n          status: 'Error',\n        },\n        cancelled: {\n          text: '已撤回',\n          status: 'Default',\n        },\n      },\n      render: (_, record) => {\n        const statusConfig: Record<string, { icon: React.ReactNode; color: string }> = {\n          pending: { icon: <ClockCircleOutlined />, color: 'processing' },\n          approved: { icon: <CheckCircleOutlined />, color: 'success' },\n          rejected: { icon: <CloseCircleOutlined />, color: 'error' },\n          cancelled: { icon: null, color: 'default' },\n        };\n        const config = statusConfig[record.status] || statusConfig.pending;\n        \n        return (\n          <Tag icon={config.icon} color={config.color}>\n            {record.status === 'pending' && '待审核'}\n            {record.status === 'approved' && '已通过'}\n            {record.status === 'rejected' && '已拒绝'}\n            {record.status === 'cancelled' && '已撤回'}\n          </Tag>\n        );\n      },\n    },\n    {\n      title: '审核结果',\n      dataIndex: 'rejectReason',\n      ellipsis: true,\n      search: false,\n      render: (_, record) => {\n        if (record.status === 'approved') {\n          return (\n            <span style={{ color: '#52c41a' }}>\n              ✓ 通过 {record.reviewedByName && `（审核人：${record.reviewedByName}）`}\n            </span>\n          );\n        }\n        if (record.status === 'rejected') {\n          return (\n            <span style={{ color: '#ff4d4f' }}>\n              ✗ 拒绝理由：{record.rejectReason || '无'}\n            </span>\n          );\n        }\n        return <span style={{ color: '#999' }}>-</span>;\n      },\n    },\n    {\n      title: '操作',\n      valueType: 'option',\n      width: 120,\n      render: (_, record) => {\n        if (record.status === 'pending') {\n          return (\n            <Popconfirm\n              title=\"确定撤回申请吗？\"\n              onConfirm={() => handleCancel(record.id)}\n              okText=\"确定\"\n              cancelText=\"取消\"\n            >\n              <Button type=\"link\" danger loading={loading}>\n                撤回\n              </Button>\n            </Popconfirm>\n          );\n        }\n        return null;\n      },\n    },\n  ];\n\n  return (\n    <PageContainer\n      header={{\n        title: '我的申请',\n        subTitle: '查看我提交的加入企业申请',\n      }}\n    >\n      <ProTable<API.JoinRequestDetail>\n        columns={columns}\n        actionRef={actionRef}\n        request={async (params, sort) => {\n          try {\n            const response = await getMyRequests();\n\n            if (response.success && response.data) {\n              return {\n                data: response.data,\n                success: true,\n                total: response.data.length,\n              };\n            }\n\n            return {\n              data: [],\n              success: false,\n            };\n          } catch (error) {\n            return {\n              data: [],\n              success: false,\n            };\n          }\n        }}\n        rowKey=\"id\"\n        search={false}\n        pagination={{\n          defaultPageSize: 10,\n          showSizeChanger: true,\n        }}\n        dateFormatter=\"string\"\n        toolBarRender={() => [\n          <Button\n            key=\"search\"\n            type=\"primary\"\n            onClick={() => {\n              window.location.href = '/company/search';\n            }}\n          >\n            搜索企业\n          </Button>,\n        ]}\n      />\n    </PageContainer>\n  );\n};\n\nexport default MyJoinRequests;\n\n",
+      "__isJSFile": true,
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/join-requests/my/index.tsx"
+    },
+    "17": {
+      "name": "pending-join-requests",
+      "path": "/join-requests/pending",
+      "hideInMenu": true,
+      "file": "@/pages/join-requests/pending/index.tsx",
+      "parentId": "ant-design-pro-layout",
+      "id": "17",
+      "absPath": "/join-requests/pending",
+      "__content": "import { ProTable } from '@ant-design/pro-components';\nimport { PageContainer } from '@ant-design/pro-layout';\nimport { Tag, Button, Space, App, Modal, Input } from 'antd';\nimport React, { useRef, useState } from 'react';\nimport { getPendingRequests, approveRequest, rejectRequest } from '@/services/company';\nimport type { ActionType, ProColumns } from '@ant-design/pro-components';\nimport { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';\n\nconst { TextArea } = Input;\n\n/**\n * v3.1: 待审核的加入申请列表（管理员）\n */\nconst PendingJoinRequests: React.FC = () => {\n  const { message, modal } = App.useApp();\n  const actionRef = useRef<ActionType>();\n  const [loading, setLoading] = useState(false);\n\n  // 审核通过\n  const handleApprove = async (record: API.JoinRequestDetail) => {\n    Modal.confirm({\n      title: `确定通过 ${record.username} 的申请吗？`,\n      content: (\n        <div>\n          <p>申请理由：{record.reason || '无'}</p>\n          <p>通过后，该用户将成为企业成员。</p>\n        </div>\n      ),\n      okText: '通过',\n      cancelText: '取消',\n      onOk: async () => {\n        setLoading(true);\n        try {\n          const response = await approveRequest(record.id);\n\n          if (response.success) {\n            message.success('申请已通过');\n            actionRef.current?.reload();\n          } else {\n            message.error(response.errorMessage || '操作失败');\n          }\n        } catch (error: any) {\n          message.error(error.message || '操作失败');\n        } finally {\n          setLoading(false);\n        }\n      },\n    });\n  };\n\n  // 拒绝申请\n  const handleReject = (record: API.JoinRequestDetail) => {\n    let rejectReason = '';\n\n    modal.confirm({\n      title: `拒绝 ${record.username} 的申请`,\n      content: (\n        <div style={{ marginTop: 16 }}>\n          <div style={{ marginBottom: 8 }}>请说明拒绝理由：</div>\n          <TextArea\n            rows={4}\n            placeholder=\"请输入拒绝理由...\"\n            onChange={(e) => {\n              rejectReason = e.target.value;\n            }}\n          />\n        </div>\n      ),\n      okText: '确定拒绝',\n      okButtonProps: { danger: true },\n      cancelText: '取消',\n      onOk: async () => {\n        if (!rejectReason.trim()) {\n          message.warning('请输入拒绝理由');\n          return Promise.reject();\n        }\n\n        setLoading(true);\n        try {\n          const response = await rejectRequest(record.id, {\n            rejectReason: rejectReason.trim(),\n          });\n\n          if (response.success) {\n            message.success('申请已拒绝');\n            actionRef.current?.reload();\n          } else {\n            message.error(response.errorMessage || '操作失败');\n          }\n        } catch (error: any) {\n          message.error(error.message || '操作失败');\n        } finally {\n          setLoading(false);\n        }\n      },\n    });\n  };\n\n  const columns: ProColumns<API.JoinRequestDetail>[] = [\n    {\n      title: '申请人',\n      dataIndex: 'username',\n      width: 150,\n      render: (_, record) => (\n        <div>\n          <div><strong>{record.username}</strong></div>\n          {record.userEmail && (\n            <div style={{ fontSize: 12, color: '#999' }}>{record.userEmail}</div>\n          )}\n        </div>\n      ),\n    },\n    {\n      title: '申请理由',\n      dataIndex: 'reason',\n      ellipsis: true,\n      search: false,\n      render: (text) => text || <span style={{ color: '#999' }}>无</span>,\n    },\n    {\n      title: '申请时间',\n      dataIndex: 'createdAt',\n      width: 180,\n      valueType: 'dateTime',\n      sorter: true,\n      search: false,\n    },\n    {\n      title: '状态',\n      dataIndex: 'status',\n      width: 100,\n      hideInTable: true,\n      valueEnum: {\n        pending: {\n          text: '待审核',\n          status: 'Processing',\n        },\n      },\n    },\n    {\n      title: '操作',\n      valueType: 'option',\n      width: 180,\n      render: (_, record) => (\n        <Space>\n          <Button\n            type=\"primary\"\n            size=\"small\"\n            onClick={() => handleApprove(record)}\n            loading={loading}\n            icon={<CheckCircleOutlined />}\n          >\n            通过\n          </Button>\n          <Button\n            danger\n            size=\"small\"\n            onClick={() => handleReject(record)}\n            loading={loading}\n            icon={<CloseCircleOutlined />}\n          >\n            拒绝\n          </Button>\n        </Space>\n      ),\n    },\n  ];\n\n  return (\n    <PageContainer\n      header={{\n        title: '待审核申请',\n        subTitle: '审核企业加入申请',\n      }}\n    >\n      <ProTable<API.JoinRequestDetail>\n        columns={columns}\n        actionRef={actionRef}\n        request={async (params, sort) => {\n          try {\n            const response = await getPendingRequests();\n\n            if (response.success && response.data) {\n              return {\n                data: response.data,\n                success: true,\n                total: response.data.length,\n              };\n            }\n\n            return {\n              data: [],\n              success: false,\n            };\n          } catch (error) {\n            return {\n              data: [],\n              success: false,\n            };\n          }\n        }}\n        rowKey=\"id\"\n        search={false}\n        pagination={{\n          defaultPageSize: 10,\n          showSizeChanger: true,\n        }}\n        dateFormatter=\"string\"\n      />\n    </PageContainer>\n  );\n};\n\nexport default PendingJoinRequests;\n\n",
+      "__isJSFile": true,
+      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/join-requests/pending/index.tsx"
+    },
+    "18": {
       "path": "/",
       "redirect": "/welcome",
       "parentId": "ant-design-pro-layout",
-      "id": "15",
+      "id": "18",
       "absPath": "/"
     },
-    "16": {
+    "19": {
       "path": "*",
       "layout": false,
       "file": "@/pages/404.tsx",
-      "id": "16",
+      "id": "19",
       "absPath": "/*",
       "__content": "import { history, useIntl } from '@umijs/max';\nimport { Button, Card, Result } from 'antd';\nimport React from 'react';\n\nconst NoFoundPage: React.FC = () => (\n  <Card variant=\"borderless\">\n    <Result\n      status=\"404\"\n      title=\"404\"\n      subTitle={useIntl().formatMessage({ id: 'pages.404.subTitle' })}\n      extra={\n        <Button type=\"primary\" onClick={() => history.push('/')}>\n          {useIntl().formatMessage({ id: 'pages.404.buttonText' })}\n        </Button>\n      }\n    />\n  </Card>\n);\n\nexport default NoFoundPage;\n",
       "__isJSFile": true,

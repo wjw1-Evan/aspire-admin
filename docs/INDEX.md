@@ -23,7 +23,8 @@ docs/
 
 ### 新手入门
 - [**v5.0 优化完成**](reports/V5-OPTIMIZATION-COMPLETE.md) - v5.0 后端架构优化完成
-- [**业务逻辑检查与修复**](reports/BUSINESS-LOGIC-REVIEW-AND-FIXES.md) - v3.0 业务流程优化报告 ⭐ **最新**
+- [**移除全局数据初始化**](reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - 修复多租户数据隔离漏洞 ⭐ **最新**
+- [**业务逻辑检查与修复**](reports/BUSINESS-LOGIC-REVIEW-AND-FIXES.md) - v3.0 业务流程优化报告
 - [**用户加入流程实施**](reports/USER-JOIN-FLOW-IMPLEMENTATION.md) - 用户注册流程修复
 - [**v3.0 多租户实施完成**](reports/MULTI-TENANT-IMPLEMENTATION-COMPLETE.md) - 多企业多用户管理系统实施报告
 - [业务逻辑修复总结](reports/BUSINESS-LOGIC-FIXES-SUMMARY.md) - v3.0 业务逻辑修复清单
@@ -72,6 +73,15 @@ docs/
 - [帮助模块调试](bugfixes/HELP-MODAL-DEBUG.md) - 问题排查指南
 - [**v5.0 帮助系统更新**](features/V5-HELP-SYSTEM-UPDATE.md) - v5.0 架构升级内容同步 ⭐ **新增**
 
+#### 路由和认证
+- [**路由守卫增强**](features/ROUTE-GUARD-ENHANCEMENT.md) - Token有效性验证和自动跳转 ⭐ **最新**
+- [**登录错误消息重复修复**](bugfixes/LOGIN-ERROR-MESSAGE-DUPLICATION-FIX.md) - 修复错误提示重复显示问题
+
+#### 用户注册
+- [**MongoDB索引多租户修复**](bugfixes/MONGODB-INDEX-MULTI-TENANT-FIX.md) - 修复索引不支持多租户问题 ⭐ **最新**
+- [**MongoDB事务错误修复**](bugfixes/MONGODB-TRANSACTION-FIX.md) - 修复单机模式不支持事务问题
+- [**删除企业注册页面**](reports/REMOVE-COMPANY-REGISTRATION-PAGE.md) - 简化注册流程，统一使用用户注册
+
 #### 权限系统
 - [权限系统概述](permissions/PERMISSIONS-INDEX.md) - 权限系统索引
 - [CRUD 权限快速开始](permissions/CRUD-PERMISSION-QUICK-START.md) - 快速上手
@@ -81,9 +91,6 @@ docs/
 - [权限 API 示例](permissions/PERMISSION-API-EXAMPLES.md) - API 使用示例
 - [权限快速参考](permissions/PERMISSION-QUICK-REFERENCE.md) - 快速查询
 - [权限系统说明](permissions/PERMISSION-SYSTEM-README.md) - 系统说明文档
-
-#### 系统初始化
-- [**管理员初始化 v3.1**](features/ADMIN-INITIALIZATION-V3.1.md) - 管理员、企业、角色初始化说明 ⭐ **v3.1 新增**
 
 #### 用户管理
 - [用户日志实现](features/USER-LOG-IMPLEMENTATION.md) - 活动日志

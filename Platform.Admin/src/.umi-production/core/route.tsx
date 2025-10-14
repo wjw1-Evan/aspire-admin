@@ -4,7 +4,7 @@
 import React from 'react';
 
 export async function getRoutes() {
-  const routes = {"1":{"path":"/user","layout":false,"id":"1"},"2":{"name":"login","path":"/user/login","parentId":"1","id":"2"},"3":{"name":"register","path":"/user/register","parentId":"1","id":"3"},"4":{"name":"register-result","path":"/user/register-result","parentId":"1","id":"4"},"5":{"path":"/welcome","name":"welcome","icon":"smile","parentId":"ant-design-pro-layout","id":"5"},"6":{"name":"system","icon":"setting","path":"/system","parentId":"ant-design-pro-layout","id":"6"},"7":{"path":"/system","redirect":"/system/user-management","parentId":"6","id":"7"},"8":{"name":"user-management","icon":"user","path":"/system/user-management","parentId":"6","id":"8"},"9":{"name":"role-management","icon":"team","path":"/system/role-management","parentId":"6","id":"9"},"10":{"name":"menu-management","icon":"menu","path":"/system/menu-management","parentId":"6","id":"10"},"11":{"name":"user-log","icon":"file-text","path":"/system/user-log","parentId":"6","id":"11"},"12":{"name":"permission-management","icon":"safety","path":"/system/permission-management","parentId":"6","id":"12"},"13":{"name":"change-password","path":"/user/change-password","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"13"},"14":{"name":"account.center","path":"/account/center","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"14"},"15":{"path":"/","redirect":"/welcome","parentId":"ant-design-pro-layout","id":"15"},"16":{"path":"*","layout":false,"id":"16"},"ant-design-pro-layout":{"id":"ant-design-pro-layout","path":"/","isLayout":true}} as const;
+  const routes = {"1":{"path":"/user","layout":false,"id":"1"},"2":{"name":"login","path":"/user/login","parentId":"1","id":"2"},"3":{"name":"register","path":"/user/register","parentId":"1","id":"3"},"4":{"name":"register-result","path":"/user/register-result","parentId":"1","id":"4"},"5":{"path":"/welcome","name":"welcome","icon":"smile","parentId":"ant-design-pro-layout","id":"5"},"6":{"name":"system","icon":"setting","path":"/system","parentId":"ant-design-pro-layout","id":"6"},"7":{"path":"/system","redirect":"/system/user-management","parentId":"6","id":"7"},"8":{"name":"user-management","icon":"user","path":"/system/user-management","parentId":"6","id":"8"},"9":{"name":"role-management","icon":"team","path":"/system/role-management","parentId":"6","id":"9"},"10":{"name":"menu-management","icon":"menu","path":"/system/menu-management","parentId":"6","id":"10"},"11":{"name":"user-log","icon":"file-text","path":"/system/user-log","parentId":"6","id":"11"},"12":{"name":"company-settings","icon":"bank","path":"/system/company-settings","parentId":"6","id":"12"},"13":{"name":"change-password","path":"/user/change-password","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"13"},"14":{"name":"account.center","path":"/account/center","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"14"},"15":{"name":"company-search","path":"/company/search","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"15"},"16":{"name":"my-join-requests","path":"/join-requests/my","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"16"},"17":{"name":"pending-join-requests","path":"/join-requests/pending","hideInMenu":true,"parentId":"ant-design-pro-layout","id":"17"},"18":{"path":"/","redirect":"/welcome","parentId":"ant-design-pro-layout","id":"18"},"19":{"path":"*","layout":false,"id":"19"},"ant-design-pro-layout":{"id":"ant-design-pro-layout","path":"/","isLayout":true}} as const;
   return {
     routes,
     routeComponents: {
@@ -19,11 +19,14 @@ export async function getRoutes() {
 '9': React.lazy(() => import(/* webpackChunkName: "p__role-management__index" */'@/pages/role-management/index.tsx')),
 '10': React.lazy(() => import(/* webpackChunkName: "p__menu-management__index" */'@/pages/menu-management/index.tsx')),
 '11': React.lazy(() => import(/* webpackChunkName: "p__user-log__index" */'@/pages/user-log/index.tsx')),
-'12': React.lazy(() => import(/* webpackChunkName: "p__permission-management__index" */'@/pages/permission-management/index.tsx')),
+'12': React.lazy(() => import(/* webpackChunkName: "p__company__settings" */'@/pages/company/settings.tsx')),
 '13': React.lazy(() => import(/* webpackChunkName: "p__user__change-password__index" */'@/pages/user/change-password/index.tsx')),
 '14': React.lazy(() => import(/* webpackChunkName: "p__account__center__index" */'@/pages/account/center/index.tsx')),
-'15': React.lazy(() => import('./EmptyRoute')),
-'16': React.lazy(() => import(/* webpackChunkName: "p__404" */'@/pages/404.tsx')),
+'15': React.lazy(() => import(/* webpackChunkName: "p__company__search__index" */'@/pages/company/search/index.tsx')),
+'16': React.lazy(() => import(/* webpackChunkName: "p__join-requests__my__index" */'@/pages/join-requests/my/index.tsx')),
+'17': React.lazy(() => import(/* webpackChunkName: "p__join-requests__pending__index" */'@/pages/join-requests/pending/index.tsx')),
+'18': React.lazy(() => import('./EmptyRoute')),
+'19': React.lazy(() => import(/* webpackChunkName: "p__404" */'@/pages/404.tsx')),
 'ant-design-pro-layout': React.lazy(() => import(/* webpackChunkName: "t__plugin-layout__Layout" */'/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/.umi-production/plugin-layout/Layout.tsx')),
 },
   };

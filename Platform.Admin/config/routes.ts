@@ -33,17 +33,6 @@ export default [
     ],
   },
   {
-    path: '/company',
-    layout: false,
-    routes: [
-      {
-        name: 'company-register',
-        path: '/company/register',
-        component: './company/register',
-      },
-    ],
-  },
-  {
     path: '/welcome',
     name: 'welcome',
     icon: 'smile',

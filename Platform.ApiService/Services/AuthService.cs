@@ -102,7 +102,7 @@ public class AuthService : BaseService, IAuthService
         var roleNames = new List<string>();
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            var userCompanies = _database.GetCollection<UserCompany>("userCompanies");
+            var userCompanies = _database.GetCollection<UserCompany>("user_companies");
             var roles = _database.GetCollection<Role>("roles");
             
             var userCompanyFilter = Builders<UserCompany>.Filter.And(

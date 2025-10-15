@@ -23,8 +23,11 @@ docs/
 ## 🎯 快速导航
 
 ### 新手入门
+- [**如何查看 API 文档**](features/HOW-TO-VIEW-API-DOCS.md) - 快速访问 Scalar API 文档指南 ⭐ **新手必读**
+- [**用户注册全权限初始化验证**](features/USER-FULL-PERMISSIONS-INITIALIZATION.md) - 验证用户注册时权限初始化的完整性 ⭐ **权限验证**
+- [**API权限验证修复**](bugfixes/API-PERMISSION-VERIFICATION-FIX.md) - 修复MongoDB集合名称不一致导致的权限验证失败 ⭐ **重要修复**
 - [**v5.0 优化完成**](reports/V5-OPTIMIZATION-COMPLETE.md) - v5.0 后端架构优化完成
-- [**移除全局数据初始化**](reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - 修复多租户数据隔离漏洞 ⭐ **最新**
+- [**移除全局数据初始化**](reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - 修复多租户数据隔离漏洞
 - [**业务逻辑检查与修复**](reports/BUSINESS-LOGIC-REVIEW-AND-FIXES.md) - v3.0 业务流程优化报告
 - [**用户加入流程实施**](reports/USER-JOIN-FLOW-IMPLEMENTATION.md) - 用户注册流程修复
 - [**v3.0 多租户实施完成**](reports/MULTI-TENANT-IMPLEMENTATION-COMPLETE.md) - 多企业多用户管理系统实施报告
@@ -80,6 +83,8 @@ docs/
 - [**登录错误消息重复修复**](bugfixes/LOGIN-ERROR-MESSAGE-DUPLICATION-FIX.md) - 修复错误提示重复显示问题
 
 #### 用户注册
+- [**用户全权限初始化**](features/USER-FULL-PERMISSIONS-INITIALIZATION.md) - 确保用户拥有企业全部权限的完整方案 ⭐ **最新**
+- [**用户注册数据完整性检查指南**](bugfixes/USER-REGISTRATION-INTEGRITY-CHECK-GUIDE.md) - 用户注册问题排查和修复指南 ⭐ **新增**
 - [**MongoDB索引多租户修复**](bugfixes/MONGODB-INDEX-MULTI-TENANT-FIX.md) - 修复索引不支持多租户问题 ⭐ **最新**
 - [**MongoDB事务错误修复**](bugfixes/MONGODB-TRANSACTION-FIX.md) - 修复单机模式不支持事务问题
 - [**删除企业注册页面**](reports/REMOVE-COMPANY-REGISTRATION-PAGE.md) - 简化注册流程，统一使用用户注册

@@ -181,8 +181,19 @@ catch (OperationCanceledException ex)
 
 ## 📊 访问地址
 
+### 方式 1: 通过 Aspire Dashboard（推荐）
+
+1. 打开 **Aspire Dashboard**: <http://localhost:15003>
+2. 在顶部导航栏找到 **"Resources"** 标签
+3. 在资源列表中找到 **Scalar API Reference** 资源
+4. 点击资源右侧的 **端点链接** 即可打开 Scalar 文档
+
+> 📝 **注意**: Scalar 是 Aspire 的内置功能，会自动发现所有服务的 OpenAPI 文档并在 Dashboard 中展示。
+
+### 方式 2: 直接查看 OpenAPI JSON
+
 - **OpenAPI JSON**: <http://localhost:15000/apiservice/openapi/v1.json>
-- **Scalar 文档**: <http://localhost:15000/scalar/v1>（通过 Aspire Dashboard）
+- 可以复制此链接到任何 OpenAPI 查看器（如 Swagger Editor、Postman 等）
 
 ## 🔧 核心改进
 
@@ -303,28 +314,58 @@ app.UseSwaggerGen();
 
 ## 🔍 验证方法
 
-### 1. 检查 OpenAPI 文档
+### 1. 启动应用
 
-访问 <http://localhost:15000/apiservice/openapi/v1.json>，确认：
+```bash
+cd /Volumes/thinkplus/Projects/aspire-admin
+dotnet run --project Platform.AppHost
+```
+
+### 2. 访问 Aspire Dashboard
+
+打开浏览器访问: <http://localhost:15003>
+
+### 3. 查看 Scalar API 文档
+
+在 Aspire Dashboard 中：
+- [ ] 点击顶部的 **"Resources"** 标签
+- [ ] 在资源列表中找到 **Scalar API Reference** 
+- [ ] 点击该资源右侧的端点链接
+- [ ] 确认 Scalar 文档正确打开
+- [ ] 确认没有 INVALID_REFERENCE 错误
+- [ ] 所有请求模型（LoginRequest, RegisterRequest 等）可以展开查看
+- [ ] Schema 定义完整
+
+### 4. 测试 OpenAPI JSON 端点
+
+```bash
+# 运行测试脚本
+./test-openapi.sh
+
+# 或手动测试
+curl http://localhost:15000/apiservice/openapi/v1.json | jq '.info'
+```
+
+确认：
 - [ ] JSON 格式正确
 - [ ] 所有 API 端点都存在
 - [ ] 请求/响应 schema 完整
-- [ ] 安全方案已配置
+- [ ] JWT Bearer 安全方案已配置
 
-### 2. 检查 Scalar 文档
+### 5. 检查日志
 
-访问 Aspire Dashboard 的 Scalar 页面（<http://localhost:15000/scalar/v1>），确认：
-- [ ] 没有 INVALID_REFERENCE 错误
-- [ ] 所有请求模型可展开查看
-- [ ] schema 定义完整
-- [ ] 可以测试 API 调用
-
-### 3. 检查日志
-
-重启应用后，确认：
+在应用日志中确认：
 - [ ] 健康检查不再产生错误日志
 - [ ] 没有 `TaskCanceledException` 错误
 - [ ] OpenAPI 端点正常响应
+
+### 6. 在 Scalar 中测试 API
+
+在 Scalar 文档界面：
+- [ ] 点击右上角的认证按钮
+- [ ] 输入 Bearer token
+- [ ] 尝试调用需要认证的 API
+- [ ] 验证请求/响应格式
 
 ## 📋 相关文档
 

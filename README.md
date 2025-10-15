@@ -145,9 +145,24 @@ Platform/
    - **管理后台**: http://localhost:15001
    - **移动应用**: http://localhost:15002
    - **API 网关**: http://localhost:15000
-   - **API 文档**: http://localhost:15000/scalar/v1
+   - **Aspire Dashboard**: http://localhost:15003 （包含 Scalar API 文档）
    - **Mongo Express**: http://localhost:15000/mongo-express
-   - **Aspire Dashboard**: http://localhost:15003
+
+## 📖 API 文档
+
+### 查看 API 文档
+
+详细的 API 文档通过 Scalar 提供，集成在 Aspire Dashboard 中：
+
+**快速访问指南**: 查看 [HOW-TO-VIEW-API-DOCS.md](HOW-TO-VIEW-API-DOCS.md)
+
+简要步骤：
+1. 访问 Aspire Dashboard: http://localhost:15003
+2. 点击顶部 "Resources" 标签
+3. 找到 "Scalar API Reference" 资源
+4. 点击端点链接打开 API 文档
+
+或直接查看 OpenAPI JSON: http://localhost:15000/apiservice/openapi/v1.json
 
 ## 🏢 多租户功能
 

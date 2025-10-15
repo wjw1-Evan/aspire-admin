@@ -26,7 +26,7 @@ public class MenuAccessService : BaseService, IMenuAccessService
         _users = database.GetCollection<AppUser>("users");
         _roles = database.GetCollection<Role>("roles");
         _menus = database.GetCollection<Menu>("menus");
-        _userCompanies = database.GetCollection<UserCompany>("userCompanies");
+        _userCompanies = database.GetCollection<UserCompany>("user_companies");
         _logger = logger;
     }
 

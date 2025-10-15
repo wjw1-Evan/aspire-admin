@@ -190,7 +190,7 @@ public class CompanyService : BaseService, ICompanyService
         }
 
         // v3.1: 使用 UserCompany 表统计用户数量
-        var userCompanies = _database.GetCollection<UserCompany>("userCompanies");
+        var userCompanies = _database.GetCollection<UserCompany>("user_companies");
         
         var ucFilter = Builders<UserCompany>.Filter.And(
             Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),

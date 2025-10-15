@@ -17,6 +17,7 @@ public interface IUserService
     Task<bool> DeleteUserAsync(string id, string? reason = null);
     Task<List<AppUser>> SearchUsersByNameAsync(string name);
     Task<UserListResponse> GetUsersWithPaginationAsync(UserListRequest request);
+    Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request);
     Task<UserStatisticsResponse> GetUserStatisticsAsync();
     Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null);
     Task<bool> UpdateUserRoleAsync(string id, string role);

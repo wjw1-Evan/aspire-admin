@@ -343,6 +343,154 @@ public class UserService : BaseService, IUserService
     }
 
     /// <summary>
+    /// 获取用户列表（分页、搜索、过滤）- 包含角色信息
+    /// v6.0: 新增方法，解决前端需要roleIds字段的问题
+    /// </summary>
+    public async Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request)
+    {
+        // ✅ 获取当前企业ID进行多租户过滤
+        var currentCompanyId = GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(currentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
+        // 基础过滤：只查询当前企业的活跃用户
+        var filter = Builders<AppUser>.Filter.And(
+            Builders<AppUser>.Filter.Eq(u => u.CurrentCompanyId, currentCompanyId), // ✅ 修复：使用CurrentCompanyId
+            MongoFilterExtensions.NotDeleted<AppUser>()
+        );
+
+        // 搜索过滤
+        if (!string.IsNullOrEmpty(request.Search))
+        {
+            var searchFilter = Builders<AppUser>.Filter.Or(
+                Builders<AppUser>.Filter.Regex(user => user.Username, new MongoDB.Bson.BsonRegularExpression(request.Search, "i")),
+                Builders<AppUser>.Filter.Regex(user => user.Email, new MongoDB.Bson.BsonRegularExpression(request.Search, "i"))
+            );
+            filter = Builders<AppUser>.Filter.And(filter, searchFilter);
+        }
+
+        // v3.1: 角色过滤基于 UserCompany.RoleIds（限制在当前企业内）
+        if (request.RoleIds != null && request.RoleIds.Count > 0)
+        {
+            // 从 UserCompany 表获取当前企业内拥有指定角色的用户ID列表
+            var userCompanyFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, request.RoleIds),
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId), // ✅ 企业隔离
+                Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+            );
+            var userCompaniesWithRoles = await _userCompanies.Find(userCompanyFilter).ToListAsync();
+            var userIdsWithRoles = userCompaniesWithRoles.Select(uc => uc.UserId).Distinct().ToList();
+            
+            if (userIdsWithRoles.Count > 0)
+            {
+                filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.In(user => user.Id, userIdsWithRoles));
+            }
+            else
+            {
+                // 如果没有用户拥有指定角色，返回空结果
+                filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Eq(user => user.Id, "nonexistent"));
+            }
+        }
+        
+        // 日期范围过滤
+        if (request.StartDate.HasValue)
+        {
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Gte(user => user.CreatedAt, request.StartDate.Value));
+        }
+        if (request.EndDate.HasValue)
+        {
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Lte(user => user.CreatedAt, request.EndDate.Value));
+        }
+
+        // 状态过滤
+        if (request.IsActive.HasValue)
+        {
+            filter = Builders<AppUser>.Filter.And(filter, Builders<AppUser>.Filter.Eq(user => user.IsActive, request.IsActive.Value));
+        }
+
+        // 排序
+        var sortDefinition = request.SortOrder?.ToLower() == "asc" 
+            ? Builders<AppUser>.Sort.Ascending(request.SortBy)
+            : Builders<AppUser>.Sort.Descending(request.SortBy);
+
+        // ✅ 分页查询：仍然使用集合但已添加企业过滤
+        var skip = (request.Page - 1) * request.PageSize;
+        var users = await _users.Find(filter)
+            .Sort(sortDefinition)
+            .Skip(skip)
+            .Limit(request.PageSize)
+            .ToListAsync();
+
+        var total = await _users.CountDocumentsAsync(filter);
+
+        // ✅ v6.0: 批量查询用户企业关联信息和角色信息
+        var userIds = users.Select(u => u.Id!).ToList();
+        
+        // 查询用户在当前企业的角色信息
+        var userCompanyFilter2 = Builders<UserCompany>.Filter.And(
+            Builders<UserCompany>.Filter.In(uc => uc.UserId, userIds),
+            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId),
+            Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+        );
+        var userCompanies = await _userCompanies.Find(userCompanyFilter2).ToListAsync();
+        
+        // 获取所有涉及的角色ID
+        var allRoleIds = userCompanies.SelectMany(uc => uc.RoleIds).Distinct().ToList();
+        
+        // 批量查询角色信息
+        var roleFilter = Builders<Role>.Filter.And(
+            Builders<Role>.Filter.In(r => r.Id, allRoleIds),
+            Builders<Role>.Filter.Eq(r => r.CompanyId, currentCompanyId),
+            Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
+        );
+        var roles = await _roles.Find(roleFilter).ToListAsync();
+        
+        // 构建角色ID到角色名称的映射
+        var roleIdToNameMap = roles.ToDictionary(r => r.Id!, r => r.Name);
+        
+        // 构建用户ID到用户企业关联的映射
+        var userIdToCompanyMap = userCompanies.ToDictionary(uc => uc.UserId, uc => uc);
+
+        // ✅ 合并用户信息和角色信息
+        var usersWithRoles = users.Select(user =>
+        {
+            var userCompany = userIdToCompanyMap.GetValueOrDefault(user.Id!);
+            var roleIds = userCompany?.RoleIds ?? new List<string>();
+            var roleNames = roleIds.Where(roleId => roleIdToNameMap.ContainsKey(roleId))
+                                   .Select(roleId => roleIdToNameMap[roleId])
+                                   .ToList();
+
+            return new UserWithRolesResponse
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Name = user.Name,
+                Email = user.Email,
+                Age = user.Age,
+                IsActive = user.IsActive,
+                LastLoginAt = user.LastLoginAt,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                RoleIds = roleIds,
+                RoleNames = roleNames,
+                IsAdmin = userCompany?.IsAdmin ?? false
+            };
+        }).ToList();
+
+        return new UserListWithRolesResponse
+        {
+            Users = usersWithRoles,
+            Total = (int)total,
+            Page = request.Page,
+            PageSize = request.PageSize
+        };
+    }
+
+    /// <summary>
     /// 获取用户统计信息
     /// 修复：确保多租户数据隔离，只统计当前企业用户
     /// </summary>

@@ -99,12 +99,13 @@ public class UserController : BaseApiController
 
     /// <summary>
     /// 获取用户列表（分页、搜索、过滤）
+    /// v6.0: 修复返回数据包含roleIds字段
     /// </summary>
     /// <param name="request">查询请求参数</param>
     [HttpPost("list")]
     public async Task<IActionResult> GetUsersList([FromBody] UserListRequest request)
     {
-        var result = await _userService.GetUsersWithPaginationAsync(request);
+        var result = await _userService.GetUsersWithRolesAsync(request);
         return Success(result);
     }
 

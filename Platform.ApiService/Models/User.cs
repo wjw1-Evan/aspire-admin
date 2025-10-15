@@ -104,9 +104,54 @@ public class UserListRequest
     public DateTime? EndDate { get; set; }
 }
 
+/// <summary>
+/// 包含角色信息的用户响应DTO
+/// v6.0: 添加角色信息支持，解决前端缺少roleIds字段的问题
+/// </summary>
+public class UserWithRolesResponse
+{
+    public string? Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string? Name { get; set; }
+    public string? Email { get; set; }
+    public int? Age { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    
+    /// <summary>
+    /// 用户在当前企业的角色ID列表
+    /// </summary>
+    public List<string> RoleIds { get; set; } = new();
+    
+    /// <summary>
+    /// 用户在当前企业的角色名称列表
+    /// </summary>
+    public List<string> RoleNames { get; set; } = new();
+    
+    /// <summary>
+    /// 是否为当前企业的管理员
+    /// </summary>
+    public bool IsAdmin { get; set; }
+}
+
 public class UserListResponse
 {
     public List<AppUser> Users { get; set; } = new();
+    public int Total { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => (int)Math.Ceiling((double)Total / PageSize);
+}
+
+/// <summary>
+/// 包含角色信息的用户列表响应
+/// v6.0: 新增用户列表响应格式，包含角色信息
+/// </summary>
+public class UserListWithRolesResponse
+{
+    public List<UserWithRolesResponse> Users { get; set; } = new();
     public int Total { get; set; }
     public int Page { get; set; }
     public int PageSize { get; set; }

@@ -309,6 +309,7 @@ public class AuthService : BaseService, IAuthService
             var update = Builders<AppUser>.Update
                 .Set(u => u.CurrentCompanyId, personalCompany.Id)
                 .Set(u => u.PersonalCompanyId, personalCompany.Id)
+                .Set(u => u.CompanyId, personalCompany.Id) // ✅ 修复：同时设置CompanyId保持一致性
                 .Set(u => u.UpdatedAt, DateTime.UtcNow);
             
             await _users.UpdateOneAsync(u => u.Id == user.Id, update);
@@ -316,6 +317,7 @@ public class AuthService : BaseService, IAuthService
             // 6. 更新用户对象
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
+            user.CompanyId = personalCompany.Id; // ✅ 修复：同时设置CompanyId
             
             // 清除密码哈希
             user.PasswordHash = string.Empty;

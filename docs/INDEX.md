@@ -26,6 +26,7 @@ docs/
 - [**如何查看 API 文档**](features/HOW-TO-VIEW-API-DOCS.md) - 快速访问 Scalar API 文档指南 ⭐ **新手必读**
 - [**用户注册全权限初始化验证**](features/USER-FULL-PERMISSIONS-INITIALIZATION.md) - 验证用户注册时权限初始化的完整性 ⭐ **权限验证**
 - [**API权限验证修复**](bugfixes/API-PERMISSION-VERIFICATION-FIX.md) - 修复MongoDB集合名称不一致导致的权限验证失败 ⭐ **重要修复**
+- [**用户列表API空数据修复**](bugfixes/USER-LIST-API-EMPTY-DATA-FIX.md) - 修复用户查询字段错误导致的空数据问题 ⭐ **数据查询修复**
 - [**v5.0 优化完成**](reports/V5-OPTIMIZATION-COMPLETE.md) - v5.0 后端架构优化完成
 - [**移除全局数据初始化**](reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - 修复多租户数据隔离漏洞
 - [**业务逻辑检查与修复**](reports/BUSINESS-LOGIC-REVIEW-AND-FIXES.md) - v3.0 业务流程优化报告

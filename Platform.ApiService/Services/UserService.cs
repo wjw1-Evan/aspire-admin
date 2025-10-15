@@ -264,7 +264,7 @@ public class UserService : BaseService, IUserService
 
         // 基础过滤：只查询当前企业的活跃用户
         var filter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(u => u.CompanyId, currentCompanyId), // ✅ 企业隔离
+            Builders<AppUser>.Filter.Eq(u => u.CurrentCompanyId, currentCompanyId), // ✅ 修复：使用CurrentCompanyId
             MongoFilterExtensions.NotDeleted<AppUser>()
         );
 
@@ -357,7 +357,7 @@ public class UserService : BaseService, IUserService
 
         // ✅ 基础过滤：只统计当前企业的未删除用户
         var baseFilter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(u => u.CompanyId, currentCompanyId), // 企业隔离
+            Builders<AppUser>.Filter.Eq(u => u.CurrentCompanyId, currentCompanyId), // ✅ 修复：使用CurrentCompanyId
             SoftDeleteExtensions.NotDeleted<AppUser>()
         );
         
@@ -451,7 +451,7 @@ public class UserService : BaseService, IUserService
         // ✅ 过滤器：只能操作当前企业的未删除用户
         var filter = Builders<AppUser>.Filter.And(
             Builders<AppUser>.Filter.In(user => user.Id, request.UserIds),
-            Builders<AppUser>.Filter.Eq(user => user.CompanyId, currentCompanyId), // ✅ 企业隔离
+            Builders<AppUser>.Filter.Eq(user => user.CurrentCompanyId, currentCompanyId), // ✅ 修复：使用CurrentCompanyId
             SoftDeleteExtensions.NotDeleted<AppUser>()
         );
         

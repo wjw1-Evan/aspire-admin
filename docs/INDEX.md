@@ -142,6 +142,7 @@ docs/
 
 #### API 修复
 - [API 504 错误修复](reports/API-504-ERROR-FIX.md) - 网关超时问题
+- [**Scalar API 文档修复**](bugfixes/SCALAR-API-REFERENCE-FIX.md) - 修复 API 文档无法显示问题 ⭐ **最新**
 
 ### 重构文档
 - [后端重构完成](refactoring/BACKEND-REFACTORING-COMPLETE.md) - 后端重构总结

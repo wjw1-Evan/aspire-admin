@@ -29,6 +29,13 @@ public class ResponseFormattingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // 跳过健康检查端点和特殊端点
+        if (ShouldSkip(context))
+        {
+            await _next(context);
+            return;
+        }
+
         // 保存原始响应流
         var originalBodyStream = context.Response.Body;
 
@@ -75,6 +82,24 @@ public class ResponseFormattingMiddleware
                 responseBody.Seek(0, SeekOrigin.Begin);
                 await responseBody.CopyToAsync(originalBodyStream);
             }
+            catch (TaskCanceledException ex)
+            {
+                // 任务取消是正常的操作（如健康检查超时），不记录为错误
+                _logger.LogDebug(ex, "Request was canceled");
+                
+                // 恢复原始流
+                responseBody.Seek(0, SeekOrigin.Begin);
+                await responseBody.CopyToAsync(originalBodyStream);
+            }
+            catch (OperationCanceledException ex)
+            {
+                // 操作取消也是正常的操作，不记录为错误
+                _logger.LogDebug(ex, "Operation was canceled");
+                
+                // 恢复原始流
+                responseBody.Seek(0, SeekOrigin.Begin);
+                await responseBody.CopyToAsync(originalBodyStream);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in response formatting middleware");
@@ -84,6 +109,34 @@ public class ResponseFormattingMiddleware
                 await responseBody.CopyToAsync(originalBodyStream);
             }
         }
+    }
+
+    /// <summary>
+    /// 检查是否应该跳过响应格式化
+    /// </summary>
+    private static bool ShouldSkip(HttpContext context)
+    {
+        var path = context.Request.Path.Value?.ToLower() ?? string.Empty;
+        
+        // 跳过健康检查端点
+        if (path.StartsWith("/health") || path.StartsWith("/healthz"))
+        {
+            return true;
+        }
+        
+        // 跳过 Scalar API 文档端点
+        if (path.StartsWith("/scalar"))
+        {
+            return true;
+        }
+        
+        // 跳过 OpenAPI 文档端点（.NET 9 原生）
+        if (path.StartsWith("/openapi"))
+        {
+            return true;
+        }
+        
+        return false;
     }
 
     /// <summary>

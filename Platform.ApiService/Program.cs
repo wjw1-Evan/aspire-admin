@@ -50,7 +50,57 @@ builder.Services.AddCors(options =>
 
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        // 设置 API 文档信息
+        document.Info = new()
+        {
+            Title = "Platform API",
+            Version = "v1",
+            Description = "Aspire Admin Platform API - 企业级管理平台后端服务"
+        };
+        
+        // 添加 JWT 认证配置
+        document.Components ??= new();
+        document.Components.SecuritySchemes ??= new Dictionary<string, Microsoft.OpenApi.Models.OpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new()
+        {
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "JWT Authorization header using the Bearer scheme."
+        };
+        
+        return Task.CompletedTask;
+    });
+    
+    options.AddOperationTransformer((operation, context, cancellationToken) =>
+    {
+        // 为需要认证的端点添加安全要求
+        var authorizeAttributes = context.Description.ActionDescriptor.EndpointMetadata
+            .OfType<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>();
+        
+        if (authorizeAttributes.Any())
+        {
+            operation.Security ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
+            operation.Security.Add(new()
+            {
+                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new()
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                }] = Array.Empty<string>()
+            });
+        }
+        
+        return Task.CompletedTask;
+    });
+});
 
 // Register MongoDB services 
 // 添加MongoDB服务  
@@ -154,10 +204,8 @@ app.UseMiddleware<Platform.ApiService.Middleware.ResponseFormattingMiddleware>()
 // Configure controllers
 app.MapControllers();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+// Map OpenAPI endpoint
+app.MapOpenApi();
 
 // Map default endpoints (includes health checks)
 app.MapDefaultEndpoints();

@@ -54,6 +54,9 @@ builder.AddNpmApp("admin", "../Platform.Admin")
     .PublishAsDockerFile();
  
 
+// 配置 Scalar API 文档
+// 使用 .NET 9 原生 OpenAPI 支持
+// 默认端点是 /openapi/v1.json
 var scalar = builder.AddScalarApiReference();
 foreach (var service in services.Values)
 {

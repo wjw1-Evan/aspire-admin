@@ -7,6 +7,9 @@ import type {
   RoleListResponse,
 } from './types';
 
+// 重新导出类型
+export type { Role, CreateRoleRequest, UpdateRoleRequest, AssignMenusToRoleRequest, RoleListResponse };
+
 /**
  * 获取所有角色
  */

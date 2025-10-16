@@ -61,26 +61,44 @@ public class UserCompanyService : BaseService, IUserCompanyService
         var memberships = await _userCompanies.Find(filter).ToListAsync();
         var result = new List<UserCompanyItem>();
         
+        if (!memberships.Any())
+            return result;
+        
         // 获取用户的当前企业和个人企业
         var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
         
+        // 批量查询优化：避免N+1查询问题
+        var companyIds = memberships.Select(m => m.CompanyId).Distinct().ToList();
+        var allRoleIds = memberships.SelectMany(m => m.RoleIds).Distinct().ToList();
+        
+        // 批量查询企业信息
+        var companyFilter = Builders<Company>.Filter.And(
+            Builders<Company>.Filter.In(c => c.Id, companyIds),
+            Builders<Company>.Filter.Eq(c => c.IsDeleted, false)
+        );
+        var companies = await _companies.Find(companyFilter).ToListAsync();
+        var companyDict = companies.ToDictionary(c => c.Id!, c => c);
+        
+        // 批量查询角色信息
+        var roleDict = new Dictionary<string, Role>();
+        if (allRoleIds.Any())
+        {
+            var roleFilter = Builders<Role>.Filter.In(r => r.Id, allRoleIds);
+            var roles = await _roles.Find(roleFilter).ToListAsync();
+            roleDict = roles.ToDictionary(r => r.Id!, r => r);
+        }
+        
+        // 构建结果
         foreach (var membership in memberships)
         {
-            var company = await _companies.Find(c => 
-                c.Id == membership.CompanyId &&
-                c.IsDeleted == false
-            ).FirstOrDefaultAsync();
-            
+            var company = companyDict.GetValueOrDefault(membership.CompanyId);
             if (company == null) continue;
             
             // 获取角色名称
-            var roleNames = new List<string>();
-            if (membership.RoleIds.Count > 0)
-            {
-                var roleFilter = Builders<Role>.Filter.In(r => r.Id, membership.RoleIds);
-                var roles = await _roles.Find(roleFilter).ToListAsync();
-                roleNames = roles.Select(r => r.Name).ToList();
-            }
+            var roleNames = membership.RoleIds
+                .Where(roleId => roleDict.ContainsKey(roleId))
+                .Select(roleId => roleDict[roleId].Name)
+                .ToList();
             
             result.Add(new UserCompanyItem
             {
@@ -195,19 +213,38 @@ public class UserCompanyService : BaseService, IUserCompanyService
         var memberships = await _userCompanies.Find(filter).ToListAsync();
         var result = new List<CompanyMemberItem>();
         
+        if (!memberships.Any())
+            return result;
+        
+        // 批量查询优化：避免N+1查询问题
+        var userIds = memberships.Select(m => m.UserId).Distinct().ToList();
+        var allRoleIds = memberships.SelectMany(m => m.RoleIds).Distinct().ToList();
+        
+        // 批量查询用户信息
+        var userFilter = Builders<AppUser>.Filter.In(u => u.Id, userIds);
+        var users = await _users.Find(userFilter).ToListAsync();
+        var userDict = users.ToDictionary(u => u.Id!, u => u);
+        
+        // 批量查询角色信息
+        var roleDict = new Dictionary<string, Role>();
+        if (allRoleIds.Any())
+        {
+            var roleFilter = Builders<Role>.Filter.In(r => r.Id, allRoleIds);
+            var roles = await _roles.Find(roleFilter).ToListAsync();
+            roleDict = roles.ToDictionary(r => r.Id!, r => r);
+        }
+        
+        // 构建结果
         foreach (var membership in memberships)
         {
-            var user = await _users.Find(u => u.Id == membership.UserId).FirstOrDefaultAsync();
+            var user = userDict.GetValueOrDefault(membership.UserId);
             if (user == null) continue;
             
             // 获取角色名称
-            var roleNames = new List<string>();
-            if (membership.RoleIds.Count > 0)
-            {
-                var roleFilter = Builders<Role>.Filter.In(r => r.Id, membership.RoleIds);
-                var roles = await _roles.Find(roleFilter).ToListAsync();
-                roleNames = roles.Select(r => r.Name).ToList();
-            }
+            var roleNames = membership.RoleIds
+                .Where(roleId => roleDict.ContainsKey(roleId))
+                .Select(roleId => roleDict[roleId].Name)
+                .ToList();
             
             result.Add(new CompanyMemberItem
             {

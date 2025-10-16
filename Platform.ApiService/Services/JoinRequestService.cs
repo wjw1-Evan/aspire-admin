@@ -319,15 +319,46 @@ public class JoinRequestService : BaseService, IJoinRequestService
     {
         var result = new List<JoinRequestDetail>();
         
+        if (!requests.Any())
+            return result;
+        
+        // 批量查询优化：避免N+1查询问题
+        var userIds = requests.Select(r => r.UserId).Distinct().ToList();
+        var companyIds = requests.Select(r => r.CompanyId).Distinct().ToList();
+        var reviewerIds = requests.Where(r => !string.IsNullOrEmpty(r.ReviewedBy))
+                                 .Select(r => r.ReviewedBy!)
+                                 .Distinct()
+                                 .ToList();
+        
+        // 批量查询用户信息
+        var userFilter = Builders<AppUser>.Filter.In(u => u.Id, userIds);
+        var users = await _users.Find(userFilter).ToListAsync();
+        var userDict = users.ToDictionary(u => u.Id!, u => u);
+        
+        // 批量查询企业信息
+        var companyFilter = Builders<Company>.Filter.In(c => c.Id, companyIds);
+        var companies = await _companies.Find(companyFilter).ToListAsync();
+        var companyDict = companies.ToDictionary(c => c.Id!, c => c);
+        
+        // 批量查询审核人信息
+        var reviewerDict = new Dictionary<string, AppUser>();
+        if (reviewerIds.Any())
+        {
+            var reviewerFilter = Builders<AppUser>.Filter.In(u => u.Id, reviewerIds);
+            var reviewers = await _users.Find(reviewerFilter).ToListAsync();
+            reviewerDict = reviewers.ToDictionary(r => r.Id!, r => r);
+        }
+        
+        // 构建结果
         foreach (var request in requests)
         {
-            var user = await _users.Find(u => u.Id == request.UserId).FirstOrDefaultAsync();
-            var company = await _companies.Find(c => c.Id == request.CompanyId).FirstOrDefaultAsync();
+            var user = userDict.GetValueOrDefault(request.UserId);
+            var company = companyDict.GetValueOrDefault(request.CompanyId);
             
             string? reviewedByName = null;
             if (!string.IsNullOrEmpty(request.ReviewedBy))
             {
-                var reviewer = await _users.Find(u => u.Id == request.ReviewedBy).FirstOrDefaultAsync();
+                var reviewer = reviewerDict.GetValueOrDefault(request.ReviewedBy);
                 reviewedByName = reviewer?.Username;
             }
             

@@ -63,7 +63,7 @@ public class AuthController : BaseApiController
             throw new UnauthorizedAccessException("用户未认证");
 
         var user = await _authService.GetCurrentUserAsync();
-        return Ok(ApiResponse<CurrentUser>.SuccessResult(user.EnsureFound("用户")));
+        return Success(user.EnsureFound("用户"));
     }
 
     /// <summary>
@@ -137,7 +137,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Logout()
     {
         await _authService.LogoutAsync();
-        return Ok(ApiResponse.SuccessResult("登出成功"));
+        return Success("登出成功");
     }
 
     /// <summary>

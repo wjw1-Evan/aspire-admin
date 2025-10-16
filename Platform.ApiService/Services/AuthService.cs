@@ -414,12 +414,21 @@ public class AuthService : BaseService, IAuthService
             try
             {
                 // 按创建的逆序删除
+                // 1. 删除用户-企业关联
+                if (user?.Id != null && company?.Id != null)
+                {
+                    await userCompanies.DeleteOneAsync(uc => uc.UserId == user.Id && uc.CompanyId == company.Id);
+                    _logger.LogInformation("已清理用户-企业关联: UserId={UserId}, CompanyId={CompanyId}", user.Id, company.Id);
+                }
+                
+                // 2. 删除角色
                 if (adminRole?.Id != null)
                 {
                     await roles.DeleteOneAsync(r => r.Id == adminRole.Id);
                     _logger.LogInformation("已清理角色: {RoleId}", adminRole.Id);
                 }
                 
+                // 3. 删除企业
                 if (company?.Id != null)
                 {
                     await companies.DeleteOneAsync(c => c.Id == company.Id);

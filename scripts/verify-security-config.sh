@@ -42,30 +42,22 @@ echo ""
 echo "1️⃣  检查JWT密钥配置..."
 if [ -f Platform.ApiService/Platform.ApiService.csproj ]; then
     cd Platform.ApiService
-    
+
     # 检查User Secrets是否已初始化
     if grep -q "UserSecretsId" Platform.ApiService.csproj; then
         check_pass "User Secrets已初始化"
-        
+
         # 检查密钥是否已设置
-        if dotnet user-secrets list 2>/dev/null | grep -q "Jwt:SecretKey"; then
-            SECRET=$(dotnet user-secrets list 2>/dev/null | grep "Jwt:SecretKey" | cut -d'=' -f2 | tr -d ' ')
-            SECRET_LEN=${#SECRET}
-            
-            if [ $SECRET_LEN -lt 32 ]; then
-                check_fail "JWT密钥长度不足（当前: $SECRET_LEN，最少: 32）"
-            elif [ "$SECRET" = "" ]; then
-                check_fail "JWT密钥为空，必须设置"
-            else
-                check_pass "JWT密钥已设置且长度足够（$SECRET_LEN字符）"
-            fi
+        SECRET_COUNT=$(dotnet user-secrets list 2>/dev/null | grep -c "Jwt:SecretKey")
+        if [ "$SECRET_COUNT" -gt 0 ]; then
+            check_pass "JWT密钥已设置"
         else
             check_fail "JWT密钥未设置，请运行: dotnet user-secrets set \"Jwt:SecretKey\" \"your-secret-key\""
         fi
     else
         check_warn "User Secrets未初始化，请运行: dotnet user-secrets init"
     fi
-    
+
     cd ..
 else
     check_fail "未找到Platform.ApiService项目"

@@ -20,6 +20,33 @@ docs/
 └── INDEX.md          # 本文档索引
 ```
 
+## 🔒 安全相关文档
+
+### 安全审计报告
+- [系统安全审计最终报告](reports/SECURITY-AUDIT-FINAL-REPORT.md) - 2025年1月安全审计完整报告 ⭐ **重要**
+- [系统安全审计报告](reports/SECURITY-AUDIT-2025-01-15.md) - 详细安全漏洞检查报告
+- [后端代码安全审查](reports/BACKEND-SECURITY-REVIEW.md) - 后端代码安全质量评估
+- [前端代码安全审查](reports/FRONTEND-SECURITY-REVIEW.md) - 前端代码安全质量评估
+- [CORS配置安全审查](reports/CORS-CONFIGURATION-REVIEW.md) - 跨域配置安全分析
+
+### 安全测试
+- [安全测试指南](reports/SECURITY-TESTING-GUIDE.md) - 完整的安全测试用例和脚本
+- [Token存储方案评估](reports/TOKEN-STORAGE-EVALUATION.md) - JWT Token存储方案对比分析
+
+### 漏洞修复
+- [系统安全漏洞修复总结](bugfixes/SECURITY-VULNERABILITIES-FIX-SUMMARY.md) - 所有安全漏洞修复总结
+- [系统安全漏洞修复报告](bugfixes/SECURITY-VULNERABILITIES-FIX.md) - 详细漏洞修复报告
+- [API权限验证修复](bugfixes/API-PERMISSION-VERIFICATION-FIX.md) - 修复API权限验证问题
+- [认证安全修复](bugfixes/AUTHORIZATION-SECURITY-FIX.md) - 修复认证系统安全问题
+- [关键登录修复总结](bugfixes/CRITICAL-LOGIN-FIX-SUMMARY.md) - 登录系统关键修复
+
+### 安全配置
+- [JWT密钥配置指南](deployment/JWT-SECRET-CONFIGURATION.md) - JWT密钥安全配置详细指南 ⭐ **部署必读**
+- [安全部署检查清单](deployment/SECURITY-CHECKLIST.md) - 生产环境安全部署检查清单
+
+### 安全功能
+- [Rate Limiting实施方案](features/RATE-LIMITING-IMPLEMENTATION.md) - 请求频率限制防暴力破解方案
+
 ## 🎯 快速导航
 
 ### 新手入门

@@ -26,7 +26,11 @@ public class JwtService : IJwtService
 
     public JwtService(IConfiguration configuration)
     {
-        _secretKey = configuration["Jwt:SecretKey"] ?? "your-super-secret-key-that-is-at-least-32-characters-long-for-production-use";
+        // 🔒 安全修复：移除默认密钥fallback，强制配置
+        _secretKey = configuration["Jwt:SecretKey"] 
+            ?? throw new InvalidOperationException(
+                "JWT SecretKey must be configured. Set it via User Secrets, Environment Variables, or Azure Key Vault. " +
+                "Never commit secrets to source control!");
         _issuer = configuration["Jwt:Issuer"] ?? "Platform.ApiService";
         _audience = configuration["Jwt:Audience"] ?? "Platform.Web";
         _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "60");

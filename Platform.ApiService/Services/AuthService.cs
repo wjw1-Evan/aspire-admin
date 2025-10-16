@@ -41,18 +41,8 @@ public class AuthService : BaseService, IAuthService
         _passwordHasher = passwordHasher;
     }
 
-    private static string HashPassword(string password)
-    {
-        return BCrypt.Net.BCrypt.HashPassword(password);
-    }
-
-    private static bool VerifyPassword(string? password, string hashedPassword)
-    {
-        if (string.IsNullOrEmpty(password))
-            return false;
-            
-        return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
-    }
+    // 🔒 安全修复：移除静态密码哈希方法，统一使用注入的 IPasswordHasher
+    // 这样可以集中管理密码哈希逻辑，便于测试和更换哈希算法
 
     public async Task<CurrentUser?> GetCurrentUserAsync()
     {
@@ -180,7 +170,7 @@ public class AuthService : BaseService, IAuthService
         }
 
         // 验证密码
-        if (!VerifyPassword(request.Password, user.PasswordHash))
+        if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
             return ApiResponse<LoginData>.ErrorResult(
                 "LOGIN_FAILED", 
@@ -503,13 +493,13 @@ public class AuthService : BaseService, IAuthService
             }
 
             // 验证当前密码是否正确
-            if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
             {
                 return ApiResponse<bool>.ErrorResult("INVALID_CURRENT_PASSWORD", "当前密码不正确");
             }
 
             // 更新密码
-            var newPasswordHash = HashPassword(request.NewPassword);
+            var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
             var update = Builders<AppUser>.Update
                 .Set(u => u.PasswordHash, newPasswordHash)
                 .Set(u => u.UpdatedAt, DateTime.UtcNow);

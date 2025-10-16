@@ -433,8 +433,11 @@ async function handle401Error(error: any): Promise<any> {
  * @doc https://umijs.org/docs/max/request#配置
  */
 export const request: RequestConfig = {
-  // 开发环境使用代理，生产环境需要配置实际的API地址
-  baseURL: process.env.NODE_ENV === 'development' ? '' : 'https://proapi.azurewebsites.net',
+  // 🔒 安全修复：使用环境变量配置生产环境API地址
+  // 开发环境使用代理，生产环境从环境变量读取
+  baseURL: process.env.NODE_ENV === 'development' 
+    ? '' 
+    : (process.env.REACT_APP_API_BASE_URL || ''),
   
   // 请求拦截器，自动添加 Authorization 头
   requestInterceptors: [
@@ -445,8 +448,11 @@ export const request: RequestConfig = {
           ...config.headers,
           Authorization: `Bearer ${token}`,
         };
-        console.log('Request with token:', config.url, token.substring(0, 20) + '...');
-      } else {
+        // 🔒 安全修复：仅在开发环境输出调试信息，避免生产环境token泄露
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Request with token:', config.url);
+        }
+      } else if (process.env.NODE_ENV === 'development') {
         console.log('Request without token:', config.url);
       }
       return config;
@@ -456,11 +462,17 @@ export const request: RequestConfig = {
   // 响应拦截器，处理 token 过期和用户不存在
   responseInterceptors: [
     (response) => {
-      console.log('Response received:', response.config.url, response.status);
+      // 🔒 安全修复：仅在开发环境输出调试信息
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Response received:', response.config.url, response.status);
+      }
       return handleCurrentUserResponse(response);
     },
     async (error: any) => {
-      console.log('Response error:', error.config?.url, error.response?.status, error.message);
+      // 🔒 安全修复：仅在开发环境输出错误详情
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Response error:', error.config?.url, error.response?.status, error.message);
+      }
       
       // 处理404错误（用户不存在）
       const notFoundResult = handle404Error(error);

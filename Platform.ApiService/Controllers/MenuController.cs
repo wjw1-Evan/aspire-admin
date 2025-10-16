@@ -26,6 +26,44 @@ public class MenuController : BaseApiController
     /// <summary>
     /// 获取用户可见的菜单树（根据权限过滤）
     /// </summary>
+    /// <remarks>
+    /// 获取当前用户在当前企业中有权限访问的菜单树结构。
+    /// 菜单根据用户的角色权限进行过滤，只返回用户有权限访问的菜单项。
+    /// 
+    /// 示例请求：
+    /// ```
+    /// GET /api/menu/user
+    /// Authorization: Bearer {token}
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": [
+    ///     {
+    ///       "id": "menu1",
+    ///       "name": "dashboard",
+    ///       "title": "仪表板",
+    ///       "path": "/dashboard",
+    ///       "icon": "dashboard",
+    ///       "children": []
+    ///     },
+    ///     {
+    ///       "id": "menu2",
+    ///       "name": "user-management",
+    ///       "title": "用户管理",
+    ///       "path": "/user-management",
+    ///       "icon": "user",
+    ///       "children": []
+    ///     }
+    ///   ]
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>用户可见的菜单树</returns>
+    /// <response code="200">成功返回菜单树</response>
+    /// <response code="401">未授权，需要登录</response>
     [HttpGet("user")]
     public async Task<IActionResult> GetUserMenus()
     {

@@ -21,9 +21,41 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
-    /// 根据ID获取用户（需要权限）
+    /// 根据ID获取用户信息
     /// </summary>
     /// <param name="id">用户ID</param>
+    /// <remarks>
+    /// 获取指定用户的详细信息。用户只能查看自己的信息，管理员可以查看所有用户信息。
+    /// 
+    /// 权限要求：
+    /// - 普通用户：只能查看自己的信息
+    /// - 管理员：需要 user-management 菜单权限
+    /// 
+    /// 示例请求：
+    /// ```
+    /// GET /api/user/{id}
+    /// Authorization: Bearer {token}
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "id": "user123",
+    ///     "username": "admin",
+    ///     "email": "admin@example.com",
+    ///     "isActive": true,
+    ///     "createdAt": "2024-01-01T00:00:00Z"
+    ///   }
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>用户信息</returns>
+    /// <response code="200">成功返回用户信息</response>
+    /// <response code="401">未授权，需要登录</response>
+    /// <response code="403">权限不足，无法查看该用户信息</response>
+    /// <response code="404">用户不存在</response>
     [HttpGet("{id}")]
     [Authorize]
     public async Task<IActionResult> GetUserById(string id)
@@ -40,9 +72,49 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
-    /// 创建新用户（用户管理）
+    /// 创建新用户（管理员功能）
     /// </summary>
     /// <param name="request">创建用户请求</param>
+    /// <remarks>
+    /// 管理员创建新用户账户，可以指定用户名、密码、邮箱和角色。
+    /// 
+    /// 权限要求：需要 user-management 菜单权限
+    /// 
+    /// 示例请求：
+    /// ```json
+    /// POST /api/user/management
+    /// Authorization: Bearer {token}
+    /// Content-Type: application/json
+    /// 
+    /// {
+    ///   "username": "newuser",
+    ///   "password": "password123",
+    ///   "email": "newuser@example.com",
+    ///   "roleIds": ["role123"],
+    ///   "isActive": true
+    /// }
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "id": "user123",
+    ///     "username": "newuser",
+    ///     "email": "newuser@example.com",
+    ///     "isActive": true,
+    ///     "createdAt": "2024-01-01T00:00:00Z"
+    ///   },
+    ///   "message": "创建成功"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>创建的用户信息</returns>
+    /// <response code="200">用户创建成功</response>
+    /// <response code="400">参数验证失败或用户名/邮箱已存在</response>
+    /// <response code="401">未授权，需要登录</response>
+    /// <response code="403">权限不足，需要用户管理权限</response>
     [HttpPost("management")]
     [RequireMenu("user-management")]
     public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
@@ -56,10 +128,52 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
-    /// 更新用户信息（用户管理）
+    /// 更新用户信息（管理员功能）
     /// </summary>
     /// <param name="id">用户ID</param>
     /// <param name="request">更新用户请求</param>
+    /// <remarks>
+    /// 管理员更新用户的基本信息，包括用户名、邮箱、激活状态等。
+    /// 
+    /// 权限要求：需要 user-management 菜单权限
+    /// 
+    /// 注意：角色管理已移至企业成员管理API，此处只处理用户基本信息。
+    /// 如需修改用户角色，请使用 PUT /api/company/{companyId}/members/{userId}/roles
+    /// 
+    /// 示例请求：
+    /// ```json
+    /// PUT /api/user/{id}
+    /// Authorization: Bearer {token}
+    /// Content-Type: application/json
+    /// 
+    /// {
+    ///   "username": "updateduser",
+    ///   "email": "updated@example.com",
+    ///   "isActive": true
+    /// }
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "id": "user123",
+    ///     "username": "updateduser",
+    ///     "email": "updated@example.com",
+    ///     "isActive": true,
+    ///     "updatedAt": "2024-01-01T12:00:00Z"
+    ///   },
+    ///   "message": "更新成功"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>更新后的用户信息</returns>
+    /// <response code="200">用户更新成功</response>
+    /// <response code="400">参数验证失败或用户名/邮箱已存在</response>
+    /// <response code="401">未授权，需要登录</response>
+    /// <response code="403">权限不足，需要用户管理权限</response>
+    /// <response code="404">用户不存在</response>
     [HttpPut("{id}")]
     [RequireMenu("user-management")]
     public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
@@ -75,10 +189,34 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
-    /// 软删除用户
+    /// 软删除用户（管理员功能）
     /// </summary>
     /// <param name="id">用户ID</param>
     /// <param name="reason">删除原因（可选，最大长度200字符）</param>
+    /// <remarks>
+    /// 管理员软删除用户账户，用户数据将被标记为已删除但不会物理删除。
+    /// 
+    /// 权限要求：需要 user-management 菜单权限
+    /// 
+    /// 限制：不能删除自己的账户
+    /// 
+    /// 示例请求：
+    /// ```
+    /// DELETE /api/user/{id}?reason=违反公司规定
+    /// Authorization: Bearer {token}
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```
+    /// HTTP 204 No Content
+    /// ```
+    /// </remarks>
+    /// <returns>删除结果</returns>
+    /// <response code="204">用户删除成功</response>
+    /// <response code="400">不能删除自己的账户</response>
+    /// <response code="401">未授权，需要登录</response>
+    /// <response code="403">权限不足，需要用户管理权限</response>
+    /// <response code="404">用户不存在</response>
     [HttpDelete("{id}")]
     [RequireMenu("user-management")]
     public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)

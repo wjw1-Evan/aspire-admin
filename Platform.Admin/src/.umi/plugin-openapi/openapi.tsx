@@ -30,7 +30,7 @@
               onChange={(e) => setValue(e.target.value)}
             >
               <option value="openapi">openapi</option>
-<option value="swagger">swagger</option>
+<option value="ant-design-pro">ant-design-pro</option>
             </select>
             <div id="swagger-ui" />
           </div>

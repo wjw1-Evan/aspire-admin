@@ -97,6 +97,11 @@ docs/
 - [欢迎通知功能](features/WELCOME-NOTICE-FEATURE.md) - v2.0 欢迎通知
 - [标记未读功能](features/NOTICE-MARK-UNREAD-FEATURE.md) - 单条通知标记
 - [通知详情模态框](features/NOTICE-DETAIL-MODAL-FEATURE.md) - 详情查看功能
+
+#### API 文档系统 ⭐ **新增**
+- [API EndpointSummary 功能](features/API-ENDPOINT-SUMMARY-FEATURE.md) - API 接口文档和 Scalar 集成 ⭐ **新增**
+- [OpenAPI + Scalar 规范](.cursor/rules/openapi-scalar-standard.mdc) - 移除 Swagger，使用 .NET 9 原生 OpenAPI 和 Scalar ⭐ **强制规范**
+- [Scalar API 文档修复](bugfixes/SCALAR-API-REFERENCE-FIX.md) - 修复 API 文档无法显示问题 ⭐ **最新**
 - [通知类型修复](bugfixes/NOTICE-TYPE-MISMATCH-FIX.md) - 类型序列化问题
 - [软删除过滤修复](bugfixes/NOTICE-SOFT-DELETE-FIX.md) - 查询过滤问题
 - [通知调试指南](bugfixes/NOTICE-DEBUG-GUIDE.md) - 常见问题排查

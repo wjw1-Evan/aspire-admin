@@ -52,8 +52,7 @@ builder.Services.AddCors(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(options =>
 {
-
- 
+    // 启用 XML 文档注释
     options.AddDocumentTransformer((document, context, cancellationToken) =>
     {
         // 设置 API 文档信息
@@ -61,7 +60,12 @@ builder.Services.AddOpenApi(options =>
         {
             Title = "Platform API",
             Version = "v1",
-            Description = "Aspire Admin Platform API - 企业级管理平台后端服务"
+            Description = "Aspire Admin Platform API - 企业级管理平台后端服务",
+            Contact = new()
+            {
+                Name = "Platform Team",
+                Email = "support@platform.com"
+            }
         };
         
         // 添加 JWT 认证配置
@@ -74,6 +78,13 @@ builder.Services.AddOpenApi(options =>
             BearerFormat = "JWT",
             Description = "JWT Authorization header using the Bearer scheme."
         };
+        
+        // 添加全局安全要求
+        document.SecurityRequirements ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
+        document.SecurityRequirements.Add(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            [document.Components.SecuritySchemes["Bearer"]] = new string[0]
+        });
         
         return Task.CompletedTask;
     });

@@ -162,8 +162,8 @@ export default defineConfig({
       requestLibPath: "import { request } from '@umijs/max'",
       schemaPath:
         'https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json',
-      projectName: 'swagger',
-      mock: false, // 禁用swagger的mock
+      projectName: 'ant-design-pro',
+      mock: false, // 禁用mock功能
     },
   ],
   mock: false, // 完全禁用mock功能

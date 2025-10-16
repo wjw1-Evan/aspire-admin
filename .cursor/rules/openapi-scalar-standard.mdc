@@ -1,0 +1,394 @@
+---
+alwaysApply: true
+description: OpenAPI + Scalar API 文档规范 - 移除全部 Swagger，使用 .NET 9 原生 OpenAPI 和 Scalar
+---
+
+# OpenAPI + Scalar API 文档规范
+
+## 🚫 禁止使用 Swagger
+
+**项目已完全移除 Swagger/Swashbuckle，统一使用 .NET 9 原生 OpenAPI + Scalar**
+
+## ❌ 禁止的做法
+
+### 1. 不要添加 Swagger/Swashbuckle 包
+
+```xml
+<!-- ❌ 禁止：在 .csproj 中添加 Swagger 包 -->
+<ItemGroup>
+  <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
+</ItemGroup>
+```
+
+### 2. 不要在 Program.cs 中配置 Swagger
+
+```csharp
+// ❌ 禁止：使用 Swagger 配置
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+    options.RoutePrefix = string.Empty;
+});
+```
+
+### 3. 不要使用 Swagger 中间件
+
+```csharp
+// ❌ 禁止：使用 SwaggerGen 中间件
+app.UseSwaggerGen();
+```
+
+### 4. 不要在文档中引用 Swagger
+
+```markdown
+<!-- ❌ 禁止：在文档中推荐 Swagger -->
+请使用 Swagger Editor 查看 API 文档：https://editor.swagger.io/
+```
+
+## ✅ 正确的做法
+
+### 1. 在项目文件中启用 XML 文档
+
+```xml
+<!-- ✅ 正确：在 .csproj 中启用 XML 文档 -->
+<PropertyGroup>
+  <TargetFramework>net9.0</TargetFramework>
+  <ImplicitUsings>enable</ImplicitUsings>
+  <Nullable>enable</Nullable>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  <NoWarn>$(NoWarn);1591</NoWarn>
+</PropertyGroup>
+```
+
+### 2. 在 Program.cs 中配置 .NET 9 原生 OpenAPI
+
+```csharp
+// ✅ 正确：使用 .NET 9 原生 OpenAPI
+builder.Services.AddOpenApi(options =>
+{
+    // 文档转换器 - 配置 API 信息和安全方案
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info = new()
+        {
+            Title = "Platform API",
+            Version = "v1",
+            Description = "Aspire Admin Platform API - 企业级管理平台后端服务",
+            Contact = new()
+            {
+                Name = "Platform Team",
+                Email = "support@platform.com"
+            }
+        };
+
+        // 添加 JWT 认证配置
+        document.Components ??= new();
+        document.Components.SecuritySchemes ??= new Dictionary<string, Microsoft.OpenApi.Models.OpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new()
+        {
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "JWT Authorization header using the Bearer scheme."
+        };
+
+        // 添加全局安全要求
+        document.SecurityRequirements ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
+        document.SecurityRequirements.Add(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            [document.Components.SecuritySchemes["Bearer"]] = new string[0]
+        });
+
+        return Task.CompletedTask;
+    });
+
+    // 操作转换器 - 为需要认证的端点添加安全要求
+    options.AddOperationTransformer((operation, context, cancellationToken) =>
+    {
+        var authorizeAttributes = context.Description.ActionDescriptor.EndpointMetadata
+            .OfType<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>();
+
+        if (authorizeAttributes.Any())
+        {
+            operation.Security ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
+            operation.Security.Add(new()
+            {
+                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new()
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                }] = Array.Empty<string>()
+            });
+        }
+
+        return Task.CompletedTask;
+    });
+});
+
+// 在管道中映射 OpenAPI 端点
+app.MapControllers();
+app.MapOpenApi();  // ✅ 使用 .NET 9 原生 OpenAPI
+app.MapDefaultEndpoints();
+```
+
+### 3. 为所有控制器和方法添加 XML 注释
+
+```csharp
+/// <summary>
+/// 获取用户信息
+/// </summary>
+/// <param name="id">用户ID</param>
+/// <returns>用户详细信息</returns>
+/// <remarks>
+/// 示例请求：
+/// GET /api/user/123
+///
+/// 示例响应：
+/// ```json
+/// {
+///   "id": "123",
+///   "username": "admin",
+///   "email": "admin@example.com"
+/// }
+/// ```
+/// </remarks>
+[HttpGet("{id}")]
+public async Task<IActionResult> GetUser(string id)
+{
+    var user = await _userService.GetUserByIdAsync(id);
+    if (user == null)
+        throw new KeyNotFoundException($"用户 {id} 不存在");
+
+    return Success(user);
+}
+```
+
+### 4. 为 DTO 类添加 XML 注释
+
+```csharp
+/// <summary>
+/// 用户注册请求参数
+/// </summary>
+public class RegisterRequest
+{
+    /// <summary>
+    /// 用户名（3-50个字符，支持字母、数字、下划线）
+    /// </summary>
+    /// <example>admin</example>
+    [Required]
+    [StringLength(50, MinimumLength = 3)]
+    public string Username { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 邮箱地址（必须是有效的邮箱格式）
+    /// </summary>
+    /// <example>admin@example.com</example>
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 密码（至少8位，必须包含字母和数字）
+    /// </summary>
+    /// <example>password123</example>
+    [Required]
+    [MinLength(8)]
+    [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$",
+        ErrorMessage = "密码至少8位，必须包含字母和数字")]
+    public string Password { get; set; } = string.Empty;
+}
+```
+
+## 🔧 访问和使用 Scalar API 文档
+
+### 1. 启动项目
+
+```bash
+dotnet run --project Platform.AppHost
+```
+
+### 2. 打开 Aspire Dashboard
+
+访问: **http://localhost:15003**
+
+### 3. 查看 Scalar API 文档
+
+1. 在 Aspire Dashboard 点击顶部 **"Resources"** 标签
+2. 在资源列表中找到 **"Scalar API Reference"** 资源
+3. 点击该资源右侧的 **端点链接图标** 🔗
+4. Scalar API 文档会在新标签页中打开
+
+### 4. 使用 JWT 认证测试 API
+
+#### 获取 Token
+```bash
+curl -X POST http://localhost:15000/apiservice/login/account \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "password": "admin123"
+  }'
+```
+
+#### 在 Scalar 中配置认证
+1. 在 Scalar 文档页面，点击右上角的 **"Authorize"** 按钮
+2. 输入 `Bearer <你的token>`
+3. 点击 **"Authorize"** 确认
+4. 现在所有需要认证的 API 调用都会自动带上这个 token
+
+## 📊 Scalar 功能特性
+
+- ✅ 浏览所有 API 端点（按 Controller 分组）
+- ✅ 查看请求/响应的 Schema 定义
+- ✅ 查看参数说明和示例
+- ✅ 直接测试 API 调用（支持参数填写）
+- ✅ 配置 JWT 认证
+- ✅ 显示认证状态和用户信息
+- ✅ 支持多种请求格式（JSON、XML、Form）
+- ✅ 显示响应时间和状态码
+
+## 🔍 验证方法
+
+### 1. 检查 OpenAPI JSON 端点
+
+访问: **http://localhost:15000/apiservice/openapi/v1.json**
+
+确认：
+- [ ] JSON 格式正确
+- [ ] 所有 API 端点都存在
+- [ ] 请求/响应 schema 完整
+- [ ] JWT Bearer 安全方案已配置
+- [ ] XML 注释正确显示
+
+### 2. 在 Scalar 中验证
+
+在 Scalar 文档界面：
+- [ ] 左侧导航栏显示所有 API 端点
+- [ ] 点击任意端点显示详细信息
+- [ ] 请求模型可以展开查看
+- [ ] 响应模型有示例数据
+- [ ] 认证图标正确显示（🔒 表示需要认证）
+
+### 3. 测试认证功能
+
+1. 未认证状态：
+   - 需要认证的端点显示 🔒 图标
+   - 点击 "Try it out" 时提示需要认证
+
+2. 认证后：
+   - 认证按钮显示绿色锁图标
+   - 可以正常调用需要认证的 API
+   - 请求头中自动包含 Authorization: Bearer token
+
+## 🚫 常见错误和解决方案
+
+### ❌ 错误 1: INVALID_REFERENCE 错误
+
+**现象**：
+```
+INVALID_REFERENCE: Can't resolve reference: #/components/schemas/LoginRequest
+```
+
+**原因**：
+- XML 文档生成未启用
+- 缺少 DocumentTransformer 或 OperationTransformer
+
+**解决方案**：
+1. 确保项目文件中启用 XML 文档：
+   ```xml
+   <GenerateDocumentationFile>true</GenerateDocumentationFile>
+   ```
+2. 确保配置了 DocumentTransformer 和 OperationTransformer
+3. 重启应用重新生成文档
+
+### ❌ 错误 2: 无法查看请求模型
+
+**现象**：
+- Scalar 中请求模型显示为空或错误
+
+**原因**：
+- DTO 类缺少 XML 注释
+- 命名空间不匹配
+
+**解决方案**：
+1. 为所有 DTO 类添加完整的 XML 注释
+2. 确保类名和命名空间正确
+3. 重启应用重新生成文档
+
+### ❌ 错误 3: JWT 认证不工作
+
+**现象**：
+- Scalar 中认证按钮显示但无法正常工作
+
+**原因**：
+- JWT 安全方案配置错误
+- Token 格式不正确
+
+**解决方案**：
+1. 检查 DocumentTransformer 中的 JWT 配置
+2. 确保 Token 格式为：`Bearer <token>`（注意空格）
+3. 检查后端 JWT 验证逻辑
+
+## 📋 代码审查清单
+
+添加或修改 API 端点时，检查：
+
+### 后端检查
+- [ ] 在项目文件中启用了 `<GenerateDocumentationFile>true</GenerateDocumentationFile>`
+- [ ] 为新的 Controller 方法添加了完整的 XML 注释
+- [ ] 为新的 DTO 类添加了 XML 注释
+- [ ] 如果需要认证，已添加 `[Authorize]` 特性
+- [ ] Program.cs 中有正确的 OpenAPI 配置
+- [ ] 重启应用后文档能正确显示
+
+### 文档检查
+- [ ] 更新了相关的功能文档
+- [ ] 更新了 API 使用说明
+- [ ] 更新了 Scalar 使用指南
+- [ ] 更新了文档索引
+
+### 测试检查
+- [ ] 在 Scalar 中能正确查看新端点的文档
+- [ ] 如果需要认证，能正确测试认证功能
+- [ ] 请求和响应示例正确显示
+
+## 📚 相关文档
+
+- [如何查看 API 文档](mdc:docs/features/HOW-TO-VIEW-API-DOCS.md)
+- [Scalar API 文档修复](mdc:docs/bugfixes/SCALAR-API-REFERENCE-FIX.md)
+- [.NET 9 OpenAPI 官方文档](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview)
+- [Scalar 官方网站](https://github.com/scalar/scalar)
+
+## 🎯 核心原则
+
+1. **禁止 Swagger** - 永不使用 Swagger/Swashbuckle
+2. **原生 OpenAPI** - 只使用 .NET 9 原生 OpenAPI
+3. **完整注释** - 所有 API 元素都要有 XML 注释
+4. **Scalar 优先** - 主要通过 Aspire Dashboard 访问 Scalar
+5. **及时更新** - 代码和文档同步更新
+6. **完整测试** - 确保 Scalar 中所有功能正常工作
+
+## ⚡ 快速验证命令
+
+```bash
+# 1. 检查 OpenAPI JSON 格式
+curl http://localhost:15000/apiservice/openapi/v1.json | jq '.info'
+
+# 2. 检查端点数量
+curl http://localhost:15000/apiservice/openapi/v1.json | jq '.paths | length'
+
+# 3. 检查 JWT 安全方案
+curl http://localhost:15000/apiservice/openapi/v1.json | jq '.components.securitySchemes'
+
+# 4. 测试认证
+curl -H "Authorization: Bearer <your-token>" http://localhost:15000/apiservice/api/currentUser
+```
+
+## 🎯 记住
+
+**移除 Swagger，拥抱 OpenAPI + Scalar** - 这是一个现代化的、与 .NET Aspire 完美集成的 API 文档解决方案。

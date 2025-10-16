@@ -90,6 +90,36 @@ public class CompanyController : BaseApiController
     /// <summary>
     /// 获取当前用户所在企业信息
     /// </summary>
+    /// <remarks>
+    /// 获取当前登录用户所属企业的详细信息，包括企业基本信息、配置等。
+    /// 
+    /// 示例请求：
+    /// ```
+    /// GET /api/company/current
+    /// Authorization: Bearer {token}
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "id": "company123",
+    ///     "name": "示例公司",
+    ///     "code": "example-company",
+    ///     "description": "一家示例公司",
+    ///     "industry": "互联网",
+    ///     "isActive": true,
+    ///     "maxUsers": 100,
+    ///     "createdAt": "2024-01-01T00:00:00Z"
+    ///   }
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>当前企业信息</returns>
+    /// <response code="200">成功返回企业信息</response>
+    /// <response code="401">未授权，需要登录</response>
+    /// <response code="404">企业不存在</response>
     [HttpGet("current")]
     [Authorize]
     public async Task<IActionResult> GetCurrentCompany()

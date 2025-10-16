@@ -29,9 +29,39 @@ public class NoticeController : BaseApiController
 
     /// <summary>
     /// 获取所有通知
-    /// 权限策略：所有登录用户可访问
     /// </summary>
+    /// <remarks>
+    /// 获取当前用户的所有通知列表，包括已读和未读通知。
+    /// 
+    /// 权限策略：所有登录用户可访问
+    /// 
+    /// 示例请求：
+    /// ```
+    /// GET /api/notices
+    /// Authorization: Bearer {token}
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": [
+    ///     {
+    ///       "id": "notice1",
+    ///       "title": "系统通知",
+    ///       "description": "欢迎使用系统",
+    ///       "read": false,
+    ///       "datetime": "2024-01-01T00:00:00Z",
+    ///       "type": "Notification"
+    ///     }
+    ///   ],
+    ///   "total": 1
+    /// }
+    /// ```
+    /// </remarks>
     /// <returns>通知列表</returns>
+    /// <response code="200">成功返回通知列表</response>
+    /// <response code="401">未授权，需要登录</response>
     [HttpGet("notices")]
     public async Task<IActionResult> GetNotices()
     {

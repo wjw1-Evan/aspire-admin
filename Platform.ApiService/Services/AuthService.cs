@@ -170,7 +170,7 @@ public class AuthService : BaseService, IAuthService
         }
 
         // 验证密码
-        if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        if (!_passwordHasher.VerifyPassword(request.Password ?? string.Empty, user.PasswordHash))
         {
             return ApiResponse<LoginData>.ErrorResult(
                 "LOGIN_FAILED", 
@@ -307,7 +307,7 @@ public class AuthService : BaseService, IAuthService
             // 6. 更新用户对象
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
-            user.CompanyId = personalCompany.Id; // ✅ 修复：同时设置CompanyId
+            user.CompanyId = personalCompany.Id!; // ✅ 修复：同时设置CompanyId
             
             // 清除密码哈希
             user.PasswordHash = string.Empty;

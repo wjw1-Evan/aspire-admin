@@ -13,7 +13,7 @@ var mongo = builder.AddMongoDB("mongo").WithMongoExpress()
 
 var mongodb = mongo.AddDatabase("mongodb");
 
-var services = new Dictionary<string, IResourceBuilder<ProjectResource>>
+var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
     // 核心业务服务（端口不暴露，仅供内部访问）
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
@@ -21,7 +21,6 @@ var services = new Dictionary<string, IResourceBuilder<ProjectResource>>
     .WithHttpEndpoint().WithReplicas(3)
     .WithHttpHealthCheck("/health")
  };
-
 
 
 var yarp = builder.AddYarp("apigateway")
@@ -39,28 +38,28 @@ var yarp = builder.AddYarp("apigateway")
         }
     });
 
-builder.AddNpmApp("admin", "../Platform.Admin")
+services.Add("admin", builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
     .WithHttpEndpoint(env: "PORT",port:15001)
-    .PublishAsDockerFile();
+    .PublishAsDockerFile());
  
- builder.AddNpmApp("app", "../Platform.App")
+ services.Add("app", builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
     .WithHttpEndpoint(env: "PORT",port:15002)
-    .PublishAsDockerFile();
+    .PublishAsDockerFile());
  
 
 // 配置 Scalar API 文档
 // 使用 .NET 9 原生 OpenAPI 支持
 // 默认端点是 /openapi/v1.json
-var scalar = builder.AddScalarApiReference();
+var scalar = builder.AddScalarApiReference( );
 foreach (var service in services.Values)
 {
-    scalar.WithApiReference(service);
+    scalar.WithApiReference(service); 
 }
 
 await builder.Build().RunAsync();

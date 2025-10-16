@@ -52,6 +52,8 @@ builder.Services.AddCors(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(options =>
 {
+
+ 
     options.AddDocumentTransformer((document, context, cancellationToken) =>
     {
         // 设置 API 文档信息
@@ -206,6 +208,7 @@ app.MapControllers();
 
 // Map OpenAPI endpoint
 app.MapOpenApi();
+
 
 // Map default endpoints (includes health checks)
 app.MapDefaultEndpoints();

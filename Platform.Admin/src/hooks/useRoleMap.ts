@@ -30,11 +30,11 @@ export function useRoleMap() {
           
           // 构建 ID -> Name 映射
           const map: Record<string, string> = {};
-          roles.forEach((role) => {
+          for (const role of roles) {
             if (role.id) {
               map[role.id] = role.name;
             }
-          });
+          }
           setRoleMap(map);
         }
       } catch (error) {

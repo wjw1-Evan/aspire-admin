@@ -43,11 +43,29 @@ export const errorConfig: RequestConfig = {
     // 错误接收及处理
     errorHandler: (error: any, opts: any) => {
       if (opts?.skipErrorHandler) throw error;
+
+      // 检查是否是认证相关的错误（401/404），这些已经在 app.tsx 中处理过了
+      const isAuthError = error.response?.status === 401 || error.response?.status === 404;
+      const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
+
+      if (isAuthError && isCurrentUserRequest) {
+        // 认证错误已经在 app.tsx 的响应拦截器中处理过了，这里不重复显示消息
+        console.log('认证错误已在响应拦截器中处理，跳过重复错误显示');
+        return;
+      }
+
       // 我们的 errorThrower 抛出的错误。
       if (error.name === 'BizError') {
         const errorInfo: ResponseStructure | undefined = error.info;
         if (errorInfo) {
           const { errorMessage, errorCode } = errorInfo;
+
+          // 对于认证相关的业务错误，也不显示消息（已在响应拦截器处理）
+          if (errorCode === 'USER_NOT_FOUND' || errorCode === 'UNAUTHORIZED' || errorCode === 'TOKEN_EXPIRED') {
+            console.log('认证相关业务错误已在响应拦截器中处理，跳过重复错误显示');
+            return;
+          }
+
           switch (errorInfo.showType) {
             case ErrorShowType.SILENT:
               // do nothing
@@ -74,15 +92,18 @@ export const errorConfig: RequestConfig = {
       } else if (error.response) {
         // Axios 的错误
         // 请求成功发出且服务器也响应了状态码，但状态代码超出了 2xx 的范围
-        message.error(`Response status:${error.response.status}`);
+        // 但排除认证错误，因为这些已经在响应拦截器中处理过了
+        if (!isAuthError) {
+          message.error(`Response status:${error.response.status}`);
+        } else {
+          console.log('HTTP认证错误已在响应拦截器中处理，跳过重复错误显示');
+        }
       } else if (error.request) {
         // 请求已经成功发起，但没有收到响应
-        // \`error.request\` 在浏览器中是 XMLHttpRequest 的实例，
-        // 而在node.js中是 http.ClientRequest 的实例
-        message.error('None response! Please retry.');
+        message.error('网络连接失败，请检查网络后重试。');
       } else {
         // 发送请求时出了点问题
-        message.error('Request error, please retry.');
+        message.error('请求发送失败，请稍后重试。');
       }
     },
   },

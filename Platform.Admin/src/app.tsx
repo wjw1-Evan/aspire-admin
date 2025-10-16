@@ -39,28 +39,28 @@ export async function getInitialState(): Promise<{
     if (!tokenUtils.hasToken()) {
       return undefined;
     }
-    
+
     // 不在初始化时主动检查 token 是否过期，而是直接尝试获取用户信息
     // 如果 token 过期，会在请求拦截器中自动触发刷新逻辑
     // 这样可以避免不必要的初始化延迟，提升用户体验
     try {
       const msg = await queryCurrentUser({
-        skipErrorHandler: true,
+        skipErrorHandler: true, // 跳过全局错误处理，由这里自己处理
       });
-      
+
       let userInfo = msg.data;
-      
+
       // 检查用户是否有效（后端返回 IsLogin = false 表示用户不存在或被禁用）
       if (!userInfo || userInfo.isLogin === false) {
         console.log('User not found or inactive, clearing tokens');
         tokenUtils.clearAllTokens();
         return undefined;
       }
-      
+
       // 获取用户菜单
       try {
         const menuResponse = await getUserMenus({
-          skipErrorHandler: true,
+          skipErrorHandler: true, // 跳过全局错误处理
         } as any);
         if (menuResponse.success && menuResponse.data) {
           (userInfo as any).menus = menuResponse.data;
@@ -68,7 +68,7 @@ export async function getInitialState(): Promise<{
       } catch (menuError) {
         console.log('Failed to fetch user menus, using default menus:', menuError);
       }
-      
+
       // 获取用户权限
       try {
         const permissionsResponse = await getMyPermissions();
@@ -79,14 +79,14 @@ export async function getInitialState(): Promise<{
       } catch (permissionsError) {
         console.log('Failed to fetch user permissions, using default permissions:', permissionsError);
       }
-      
+
       return userInfo;
     } catch (error) {
       // 如果获取用户信息失败（包括 token 过期），清除 token
       // 响应拦截器已经处理了 token 刷新，如果走到这里说明刷新也失败了
       console.log('Failed to fetch user info:', error);
       tokenUtils.clearAllTokens();
-      history.push(loginPath);
+      // 不在这里跳转，让 onPageChange 处理跳转，避免重复错误处理
       return undefined;
     }
   };
@@ -189,20 +189,25 @@ export const layout: RunTimeLayoutConfig = ({
     footerRender: () => <Footer />,
     onPageChange: () => {
       const { location } = history;
-      
+
       // 白名单：不需要登录的页面
       const whiteList = [loginPath, '/user/register', '/user/register-result'];
       if (whiteList.includes(location.pathname)) {
         return;
       }
-      
+
+      // 检查当前路径是否已经是登录页面，避免循环跳转
+      if (location.pathname === loginPath) {
+        return;
+      }
+
       // 1. 检查是否有 currentUser
       if (!initialState?.currentUser) {
         console.log('No current user, redirecting to login');
         history.push(loginPath);
         return;
       }
-      
+
       // 2. 检查是否有 token
       if (!tokenUtils.hasToken()) {
         console.log('No token found, redirecting to login');
@@ -210,23 +215,12 @@ export const layout: RunTimeLayoutConfig = ({
         history.push(loginPath);
         return;
       }
-      
-      // 3. 检查 token 是否过期
+
+      // 3. 检查 token 是否过期（仅在有token且有用户信息时检查）
       if (tokenUtils.isTokenExpired()) {
-        console.log('Token expired, attempting to refresh or redirecting to login');
-        const refreshToken = tokenUtils.getRefreshToken();
-        
-        if (!refreshToken) {
-          // 没有刷新token，直接跳转登录
-          console.log('No refresh token, redirecting to login');
-          tokenUtils.clearAllTokens();
-          history.push(loginPath);
-          return;
-        }
-        
-        // 有刷新token，让响应拦截器处理刷新逻辑
-        // 这里不主动刷新，因为下一个API请求会自动触发刷新
-        console.log('Token expired but refresh token exists, will refresh on next request');
+        console.log('Token expired, will refresh on next request');
+        // 不在这里跳转，让响应拦截器处理刷新逻辑
+        // 这样可以避免重复的错误处理和跳转
       }
     },
     // 动态渲染菜单（完全从数据库加载）
@@ -303,17 +297,17 @@ function handleCurrentUserResponse(response: any): any {
   if (!isCurrentUserRequest) {
     return response;
   }
-  
+
   const userData = response.data?.data;
-  
+
   // 如果用户不存在或被禁用（IsLogin = false）
   if (userData?.isLogin === false) {
-    console.log('User not found or inactive, clearing tokens and redirecting to login');
+    console.log('User not found or inactive, clearing tokens');
     tokenUtils.clearAllTokens();
-    history.push('/user/login');
+    // 不在这里跳转，让响应拦截器的统一错误处理来处理
     throw new Error('User not found or inactive');
   }
-  
+
   return response;
 }
 
@@ -325,17 +319,17 @@ function handle404Error(error: any): Promise<never> | null {
   if (!is404Error) {
     return null;
   }
-  
+
   const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
   const isNotFoundError = error.response?.data?.errorCode === 'NOT_FOUND';
-  
+
   if (isCurrentUserRequest && isNotFoundError) {
-    console.log('User not found (404), clearing tokens and redirecting to login');
+    console.log('User not found (404), clearing tokens');
     tokenUtils.clearAllTokens();
-    history.push('/user/login');
+    // 不在这里跳转，让响应拦截器的统一错误处理来处理
     return Promise.reject(new Error('User not found'));
   }
-  
+
   return null;
 }
 
@@ -396,21 +390,21 @@ async function handle401Error(error: any): Promise<any> {
   if (!is401Error) {
     return null;
   }
-  
+
   const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
   const isRetryRequest = error.config?._retry;
   const shouldNotRetry = isRefreshTokenRequest || isRetryRequest;
-  
+
   // 避免刷新token递归和重试循环
   if (shouldNotRetry) {
-    console.log('Refresh token failed or already retried, redirecting to login');
+    console.log('Refresh token failed or already retried, clearing tokens');
     tokenUtils.clearAllTokens();
-    history.push('/user/login');
+    // 不在这里跳转，让响应拦截器的统一错误处理来处理
     return Promise.reject(new Error('Authentication failed'));
   }
-  
+
   console.log('401 Unauthorized - attempting to refresh token');
-  
+
   // 尝试刷新token
   const refreshToken = tokenUtils.getRefreshToken();
   if (refreshToken) {
@@ -419,11 +413,10 @@ async function handle401Error(error: any): Promise<any> {
       return result;
     }
   }
-  
-  // 刷新失败，清除token并跳转登录
-  console.log('Clearing tokens and redirecting to login');
+
+  // 刷新失败，清除token
+  console.log('Clearing tokens after refresh failure');
   tokenUtils.clearAllTokens();
-  history.push('/user/login');
   return Promise.reject(new Error('Authentication failed'));
 }
 
@@ -473,19 +466,31 @@ export const request: RequestConfig = {
       if (process.env.NODE_ENV === 'development') {
         console.log('Response error:', error.config?.url, error.response?.status, error.message);
       }
-      
+
       // 处理404错误（用户不存在）
       const notFoundResult = handle404Error(error);
       if (notFoundResult !== null) {
+        // 如果是认证相关的404错误，跳转到登录页面
+        const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
+        if (isCurrentUserRequest) {
+          // 使用 setTimeout 确保错误处理完成后再跳转，避免循环
+          setTimeout(() => {
+            history.push('/user/login');
+          }, 100);
+        }
         return notFoundResult;
       }
-      
+
       // 处理401错误（Token过期或无效）
       const unauthorizedResult = await handle401Error(error);
       if (unauthorizedResult !== null) {
+        // 如果是认证失败，跳转到登录页面
+        setTimeout(() => {
+          history.push('/user/login');
+        }, 100);
         return unauthorizedResult;
       }
-      
+
       return Promise.reject(new Error(error.message || 'Request failed'));
     },
   ],

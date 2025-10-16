@@ -755,17 +755,64 @@ public class UserService : BaseService, IUserService
             .ToListAsync();
 
         // 批量获取用户信息（解决 N+1 问题）
-        var userIds = logs.Select(log => log.UserId).Distinct().ToList();
-        var userFilter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.In(u => u.Id, userIds),
-            SoftDeleteExtensions.NotDeleted<AppUser>()
-        );
-        var users = await _users.Find(userFilter).ToListAsync();
+        // 过滤掉无效的用户ID（比如 "anonymous" 这种非ObjectId格式的ID）
+        var validUserIds = logs
+            .Select(log => log.UserId)
+            .Distinct()
+            .Where(userId => !string.IsNullOrEmpty(userId) && IsValidObjectId(userId))
+            .ToList();
+
+        var users = new List<AppUser>();
+        if (validUserIds.Any())
+        {
+            var userFilter = Builders<AppUser>.Filter.And(
+                Builders<AppUser>.Filter.In(u => u.Id, validUserIds),
+                SoftDeleteExtensions.NotDeleted<AppUser>()
+            );
+            users = await _users.Find(userFilter).ToListAsync();
+        }
         
         // 构建用户 ID 到用户名的映射
         var userMap = users.ToDictionary(u => u.Id!, u => u.Username);
 
+        // 为无效用户ID添加默认映射（比如 "anonymous" 用户）
+        var invalidUserIds = logs
+            .Select(log => log.UserId)
+            .Distinct()
+            .Where(userId => !string.IsNullOrEmpty(userId) && !IsValidObjectId(userId))
+            .ToList();
+
+        foreach (var invalidUserId in invalidUserIds)
+        {
+            if (!userMap.ContainsKey(invalidUserId))
+            {
+                // 根据不同的无效ID提供不同的默认用户名
+                string defaultUsername = invalidUserId switch
+                {
+                    "anonymous" => "匿名用户",
+                    _ => $"用户({invalidUserId})"
+                };
+                userMap[invalidUserId] = defaultUsername;
+            }
+        }
+
         return (logs, total, userMap);
+    }
+
+    /// <summary>
+    /// 验证字符串是否为有效的MongoDB ObjectId格式（24位十六进制字符串）
+    /// </summary>
+    private static bool IsValidObjectId(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        // MongoDB ObjectId 是24位十六进制字符串
+        if (value.Length != 24)
+            return false;
+
+        // 检查是否只包含十六进制字符
+        return value.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
     }
 
     public async Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null)

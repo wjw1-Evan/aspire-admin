@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var mongo = builder.AddMongoDB("mongo").WithMongoExpress()
+var mongo = builder.AddMongoDB("mongo").WithMongoExpress(config=>{ config.WithLifetime(ContainerLifetime.Persistent);})
                    .WithLifetime(ContainerLifetime.Persistent).WithDataVolume()
                    // 不暴露对外端口，只供内部服务访问
                    ;

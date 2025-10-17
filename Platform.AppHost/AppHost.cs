@@ -11,7 +11,7 @@ var mongo = builder.AddMongoDB("mongo").WithMongoExpress(config=>{ config.WithLi
                    // 不暴露对外端口，只供内部服务访问
                    ;
 
-var mongodb = mongo.AddDatabase("aspire-admin-db");
+var mongodb = mongo.AddDatabase("mongodb","aspire-admin-db");
 
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {

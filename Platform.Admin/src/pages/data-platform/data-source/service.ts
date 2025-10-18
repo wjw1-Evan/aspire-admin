@@ -6,6 +6,16 @@ import type {
   TestDataSourceRequest,
 } from './types';
 
+// 本地响应类型定义
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  errorCode?: string;
+  errorMessage?: string;
+  timestamp: string;
+  traceId?: string;
+}
+
 export async function getDataSourceList(
   params: {
     keyword?: string;
@@ -17,7 +27,7 @@ export async function getDataSourceList(
   options?: { [key: string]: any },
 ) {
   return request<
-    API.Response<{
+    ApiResponse<{
       list: DataSource[];
       total: number;
       page: number;
@@ -38,7 +48,7 @@ export async function getDataSourceDetail(
   },
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<DataSource>>(
+  return request<ApiResponse<DataSource>>(
     `/dataplatform/datasource/${params.id}`,
     {
       method: 'GET',
@@ -51,7 +61,7 @@ export async function createDataSource(
   data: CreateDataSourceRequest,
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<DataSource>>('/dataplatform/datasource', {
+  return request<ApiResponse<DataSource>>('/dataplatform/datasource', {
     method: 'POST',
     data,
     ...options,
@@ -65,7 +75,7 @@ export async function updateDataSource(
   data: UpdateDataSourceRequest,
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<any>>(`/dataplatform/datasource/${params.id}`, {
+  return request<ApiResponse<any>>(`/dataplatform/datasource/${params.id}`, {
     method: 'PUT',
     data,
     ...options,
@@ -78,7 +88,7 @@ export async function deleteDataSource(
   },
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<any>>(`/dataplatform/datasource/${params.id}`, {
+  return request<ApiResponse<any>>(`/dataplatform/datasource/${params.id}`, {
     method: 'DELETE',
     ...options,
   });
@@ -90,7 +100,7 @@ export async function testDataSource(
   },
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<any>>(
+  return request<ApiResponse<any>>(
     `/dataplatform/datasource/${params.id}/test`,
     {
       method: 'POST',
@@ -103,7 +113,7 @@ export async function testDataSourceConfig(
   data: TestDataSourceRequest,
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<any>>('/dataplatform/datasource/test', {
+  return request<ApiResponse<any>>('/dataplatform/datasource/test', {
     method: 'POST',
     data,
     ...options,
@@ -116,7 +126,7 @@ export async function getDataSourceSchema(
   },
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<any>>(
+  return request<ApiResponse<any>>(
     `/dataplatform/datasource/${params.id}/schema`,
     {
       method: 'GET',
@@ -131,7 +141,7 @@ export async function getDataSourceStatistics(
   },
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<any>>(
+  return request<ApiResponse<any>>(
     `/dataplatform/datasource/${params.id}/statistics`,
     {
       method: 'GET',
@@ -146,7 +156,7 @@ export async function getTables(
   },
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<string[]>>(
+  return request<ApiResponse<string[]>>(
     `/dataplatform/datasource/${params.id}/tables`,
     {
       method: 'GET',
@@ -162,7 +172,7 @@ export async function getSchema(
   },
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<any[]>>(
+  return request<ApiResponse<any[]>>(
     `/dataplatform/datasource/${params.id}/tables/${params.tableName}/schema`,
     {
       method: 'GET',
@@ -179,7 +189,7 @@ export async function getData(
   },
   options?: { [key: string]: any },
 ) {
-  return request<API.Response<{ data: any[]; count: number }>>(
+  return request<ApiResponse<{ data: any[]; count: number }>>(
     `/dataplatform/datasource/${params.id}/tables/${params.tableName}/data`,
     {
       method: 'GET',

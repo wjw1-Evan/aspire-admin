@@ -7,7 +7,7 @@ import type {
 } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { Button, message, Popconfirm, Space, Tag } from 'antd';
-import { DataSourceType, DataSourceStatus } from './types';
+import { DataSourceType, DataSourceStatus, DataSource } from './types';
 import {
   getDataSourceList,
   testDataSource,
@@ -20,7 +20,7 @@ import DataSourceForm from './components/DataSourceForm';
 const DataSourceList: React.FC = () => {
   const [createModalOpen, handleCreateModalOpen] = useState<boolean>(false);
   const [updateModalOpen, handleUpdateModalOpen] = useState<boolean>(false);
-  const [currentRow, setCurrentRow] = useState<API.DataSource>();
+  const [currentRow, setCurrentRow] = useState<DataSource>();
   const actionRef = useRef<ActionType>(null);
   const formRef = useRef<ProFormInstance>(null);
 
@@ -42,7 +42,7 @@ const DataSourceList: React.FC = () => {
     { label: '测试中', value: DataSourceStatus.Testing, color: 'blue' },
   ];
 
-  const handleTestConnection = async (record: API.DataSource) => {
+  const handleTestConnection = async (record: DataSource) => {
     try {
       const result = await testDataSource(record.id);
       if (result.success) {
@@ -56,7 +56,7 @@ const DataSourceList: React.FC = () => {
     }
   };
 
-  const handleDelete = async (record: API.DataSource) => {
+  const handleDelete = async (record: DataSource) => {
     try {
       const result = await deleteDataSource(record.id);
       if (result.success) {
@@ -70,7 +70,7 @@ const DataSourceList: React.FC = () => {
     }
   };
 
-  const columns: ProColumns<API.DataSource>[] = [
+  const columns: ProColumns<DataSource>[] = [
     {
       title: '名称',
       dataIndex: 'name',
@@ -183,7 +183,7 @@ const DataSourceList: React.FC = () => {
         subTitle: '管理数据中台的数据源连接配置',
       }}
     >
-      <ProTable<API.DataSource, API.PageParams>
+      <ProTable<DataSource, { current?: number; pageSize?: number; keyword?: string }>
         headerTitle="数据源列表"
         actionRef={actionRef}
         rowKey="id"

@@ -24,7 +24,6 @@ docs/
 
 ### 安全审计报告
 - [系统安全审计最终报告](reports/SECURITY-AUDIT-FINAL-REPORT.md) - 2025年1月安全审计完整报告 ⭐ **重要**
-- [系统安全审计报告](reports/SECURITY-AUDIT-2025-01-15.md) - 详细安全漏洞检查报告
 - [后端代码安全审查](reports/BACKEND-SECURITY-REVIEW.md) - 后端代码安全质量评估
 - [前端代码安全审查](reports/FRONTEND-SECURITY-REVIEW.md) - 前端代码安全质量评估
 - [CORS配置安全审查](reports/CORS-CONFIGURATION-REVIEW.md) - 跨域配置安全分析
@@ -52,7 +51,10 @@ docs/
 ### 安全功能
 - [Rate Limiting实施方案](features/RATE-LIMITING-IMPLEMENTATION.md) - 请求频率限制防暴力破解方案
 
-## 🎯 快速导航
+## 🚀 快速导航
+
+### 📋 快速查找
+- [**快速导航指南**](QUICK-NAVIGATION.md) - 按需求、角色、功能快速查找文档 ⭐ **推荐**
 
 ### 新手入门
 - [**如何查看 API 文档**](features/HOW-TO-VIEW-API-DOCS.md) - 快速访问 Scalar API 文档指南 ⭐ **新手必读**
@@ -104,7 +106,7 @@ docs/
 - [通知详情模态框](features/NOTICE-DETAIL-MODAL-FEATURE.md) - 详情查看功能
 
 #### API 文档系统 ⭐ **新增**
-- [API EndpointSummary 功能](features/API-ENDPOINT-SUMMARY-FEATURE.md) - API 接口文档和 Scalar 集成 ⭐ **新增**
+- [API 文档系统](features/API-ENDPOINT-SUMMARY-FEATURE.md) - 完整的 API 接口文档和 Scalar 集成 ⭐ **推荐**
 - [OpenAPI + Scalar 规范](.cursor/rules/openapi-scalar-standard.mdc) - 移除 Swagger，使用 .NET 9 原生 OpenAPI 和 Scalar ⭐ **强制规范**
 - [Scalar API 文档修复](bugfixes/SCALAR-API-REFERENCE-FIX.md) - 修复 API 文档无法显示问题 ⭐ **最新**
 - [通知类型修复](bugfixes/NOTICE-TYPE-MISMATCH-FIX.md) - 类型序列化问题
@@ -139,8 +141,7 @@ docs/
 > 旧的权限文档已归档至 [archived/permissions-v5/](archived/permissions-v5/) 目录。
 
 #### 用户管理
-- [用户日志实现](features/USER-LOG-IMPLEMENTATION.md) - 活动日志
-- [用户日志重设计](features/USER-LOG-REDESIGN.md) - 日志系统优化
+- [用户日志系统](features/USER-LOG-IMPLEMENTATION.md) - 完整的用户活动记录和审计功能 ⭐ **推荐**
 - [用户控制器路由修复](bugfixes/USER-CONTROLLER-ROUTES-FIX.md) - 路由问题
 - [用户软删除修复](bugfixes/USER-ISDELETED-FIX.md) - IsDeleted 字段
 - [用户统计管理员数量修复](bugfixes/USER-STATISTICS-ADMIN-COUNT-FIX.md) - 管理员统计修复

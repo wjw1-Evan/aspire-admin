@@ -1,8 +1,8 @@
-# API EndpointSummary 功能
+# API 文档系统
 
 ## 📋 概述
 
-为 Platform API 添加了详细的 EndpointSummary 功能，让 Scalar API 文档能够显示完整的接口信息，包括详细的描述、示例请求/响应、状态码说明等。
+Platform API 采用 .NET 9 原生 OpenAPI + Scalar 文档系统，提供完整的接口文档和交互式测试功能。所有 API 接口都有详细的描述、示例请求/响应、状态码说明等。
 
 ## ✨ 实现内容
 
@@ -171,6 +171,135 @@
 - 可以直接在文档中测试接口
 - 自动填充示例数据
 - 显示真实的响应结果
+
+## 📋 完整 API 端点列表
+
+### 企业管理 API（v3.0 新增）
+
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| POST | `/api/company/register` | 匿名 | 企业注册 |
+| GET | `/api/company/current` | 登录 | 获取当前企业信息 |
+| PUT | `/api/company/current` | 登录 | 更新企业信息 |
+| GET | `/api/company/statistics` | 登录 | 获取企业统计 |
+| GET | `/api/company/check-code` | 匿名 | 检查代码可用性 |
+
+### 认证授权 API
+
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| POST | `/api/login/account` | 匿名 | 用户登录 |
+| POST | `/api/login/outLogin` | 登录 | 用户登出 |
+| GET | `/api/currentUser` | 登录 | 获取当前用户 |
+| POST | `/api/refresh-token` | 匿名 | 刷新令牌 |
+| POST | `/api/register` | 匿名 | 用户注册 |
+| POST | `/api/change-password` | 登录 | 修改密码 |
+| GET | `/api/login/captcha` | 匿名 | 获取验证码 |
+| POST | `/api/login/verify-captcha` | 匿名 | 验证验证码 |
+
+### 用户管理 API
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| POST | `/api/user/list` | - | 获取用户列表（分页） |
+| GET | `/api/user/{id}` | 条件 | 根据ID获取用户 |
+| POST | `/api/user/management` | user:create | 创建用户 |
+| PUT | `/api/user/{id}` | user:update | 更新用户 |
+| DELETE | `/api/user/{id}` | user:delete | 删除用户 |
+| GET | `/api/user/statistics` | user:read | 获取用户统计 |
+| POST | `/api/user/bulk-action` | 条件 | 批量操作用户 |
+| GET | `/api/user/check-username` | - | 检查用户名存在 |
+| GET | `/api/user/check-email` | - | 检查邮箱存在 |
+| PUT | `/api/user/{id}/activate` | - | 启用用户 |
+| PUT | `/api/user/{id}/deactivate` | - | 禁用用户 |
+| GET | `/api/user/{id}/permissions` | - | 获取用户权限 |
+| POST | `/api/user/{id}/custom-permissions` | - | 分配自定义权限 |
+| GET | `/api/user/my-permissions` | - | 获取当前用户权限 |
+| GET | `/api/user/profile` | - | 获取当前用户信息 |
+| PUT | `/api/user/profile` | - | 更新当前用户信息 |
+| PUT | `/api/user/profile/password` | - | 修改当前用户密码 |
+| GET | `/api/user/profile/activity-logs` | - | 获取当前用户活动日志 |
+| GET | `/api/user/{id}/activity-logs` | - | 获取用户活动日志 |
+| GET | `/api/users/activity-logs` | activity-log:read | 获取所有活动日志 |
+
+### 角色管理 API
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | `/api/role` | role:read | 获取所有角色 |
+| GET | `/api/role/with-stats` | role:read | 获取角色（带统计） |
+| GET | `/api/role/{id}` | role:read | 根据ID获取角色 |
+| POST | `/api/role` | role:create | 创建角色 |
+| PUT | `/api/role/{id}` | role:update | 更新角色 |
+| DELETE | `/api/role/{id}` | role:delete | 删除角色 |
+| POST | `/api/role/{id}/menus` | role:update | 分配菜单到角色 |
+| POST | `/api/role/{id}/permissions` | role:update | 分配权限到角色 |
+
+### 菜单管理 API
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | `/api/menu` | menu:read | 获取所有菜单 |
+| GET | `/api/menu/tree` | menu:read | 获取菜单树 |
+| GET | `/api/menu/current-user` | - | 获取当前用户菜单 |
+| GET | `/api/menu/{id}` | menu:read | 根据ID获取菜单 |
+| POST | `/api/menu` | menu:create | 创建菜单 |
+| PUT | `/api/menu/{id}` | menu:update | 更新菜单 |
+| DELETE | `/api/menu/{id}` | menu:delete | 删除菜单 |
+| POST | `/api/menu/reorder` | menu:update | 菜单排序 |
+
+### 通知管理 API
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | `/api/notices` | - | 获取通知列表 |
+| GET | `/api/notices/{id}` | - | 根据ID获取通知 |
+| POST | `/api/notices` | notice:create | 创建通知 |
+| PUT | `/api/notices/{id}` | notice:update | 更新通知 |
+| DELETE | `/api/notices/{id}` | notice:delete | 删除通知 |
+| PUT | `/api/notices/{id}/read` | - | 标记通知为已读 |
+| PUT | `/api/notices/{id}/unread` | - | 标记通知为未读 |
+| PUT | `/api/notices/read-all` | - | 全部标记为已读 |
+
+### 权限管理 API
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | `/api/permission` | permission:read | 获取所有权限 |
+| GET | `/api/permission/grouped` | permission:read | 获取权限（按资源分组） |
+| GET | `/api/permission/{id}` | permission:read | 根据ID获取权限 |
+| POST | `/api/permission` | permission:create | 创建权限 |
+| PUT | `/api/permission/{id}` | permission:update | 更新权限 |
+| DELETE | `/api/permission/{id}` | permission:delete | 删除权限 |
+| POST | `/api/permission/check` | - | 检查权限 |
+
+### 标签和规则 API
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | `/api/tags` | - | 获取标签列表 |
+| POST | `/api/tags` | - | 创建标签 |
+| PUT | `/api/tags/{id}` | - | 更新标签 |
+| DELETE | `/api/tags/{id}` | - | 删除标签 |
+| GET | `/api/rule` | - | 获取规则列表 |
+| POST | `/api/rule` | - | 创建规则 |
+| PUT | `/api/rule/{id}` | - | 更新规则 |
+| DELETE | `/api/rule/{id}` | - | 删除规则 |
+
+## 🔍 API 分类汇总
+
+| 类别 | 端点数量 | 说明 |
+|------|---------|------|
+| 企业管理 | 5 | v3.0 新增 |
+| 认证授权 | 8 | 登录、注册、token |
+| 用户管理 | 19 | CRUD + 批量操作 |
+| 角色管理 | 8 | CRUD + 菜单分配 |
+| 菜单管理 | 8 | CRUD + 树形结构 |
+| 通知管理 | 8 | CRUD + 已读未读 |
+| 权限管理 | 7 | CRUD + 检查 |
+| 标签管理 | 4 | CRUD |
+| 规则管理 | 4 | CRUD |
+| **总计** | **71+** | 完整的 REST API |
 
 ## 🎯 使用指南
 

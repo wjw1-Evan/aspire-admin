@@ -188,6 +188,7 @@ curl -X PUT http://localhost:15000/api/company/current \
 - [完整系统文档](MULTI-TENANT-SYSTEM.md) - 详细的技术文档
 - [实施完成报告](../reports/MULTI-TENANT-IMPLEMENTATION-COMPLETE.md) - 实施总结
 - [测试指南](MULTI-TENANT-TESTING-GUIDE.md) - 完整的测试文档
+- [变更日志](MULTI-TENANT-CHANGELOG.md) - v3.0 变更记录
 
 ## 💬 获取帮助
 

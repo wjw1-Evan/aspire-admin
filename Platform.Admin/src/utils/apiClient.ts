@@ -15,13 +15,13 @@ const API_CONFIG = {
 };
 
 // 错误处理
-const handleError = (error: any, showMessage = true) => {
+const handleError = (error: unknown, showMessage = true) => {
   console.error('API Error:', error);
 
   if (showMessage) {
-    const errorMessage =
-      error?.response?.data?.errorMessage ||
-      error?.message ||
+    const errorMessage = 
+      (error as any)?.response?.data?.errorMessage ||
+      (error as any)?.message ||
       '请求失败，请稍后重试';
     message.error(errorMessage);
   }
@@ -30,10 +30,10 @@ const handleError = (error: any, showMessage = true) => {
 };
 
 // 重试机制
-const retryRequest = async (
-  fn: () => Promise<any>,
+const retryRequest = async <T>(
+  fn: () => Promise<T>,
   retries = API_CONFIG.retryCount,
-): Promise<any> => {
+): Promise<T> => {
   try {
     return await fn();
   } catch (error) {

@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * 安全地存储数据
  */
-export async function setItem(key: string, value: any): Promise<void> {
+export async function setItem<T>(key: string, value: T): Promise<void> {
   try {
     const jsonValue = JSON.stringify(value);
     await AsyncStorage.setItem(key, jsonValue);
@@ -46,7 +46,7 @@ export async function removeItem(key: string): Promise<void> {
 /**
  * 批量设置数据
  */
-export async function multiSet(items: Array<[string, any]>): Promise<void> {
+export async function multiSet<T>(items: Array<[string, T]>): Promise<void> {
   try {
     const stringifiedItems: Array<[string, string]> = items.map(([key, value]) => [
       key,

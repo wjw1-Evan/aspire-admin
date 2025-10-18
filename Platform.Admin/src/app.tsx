@@ -61,9 +61,9 @@ export async function getInitialState(): Promise<{
       try {
         const menuResponse = await getUserMenus({
           skipErrorHandler: true, // 跳过全局错误处理
-        } as any);
+        });
         if (menuResponse.success && menuResponse.data) {
-          (userInfo as any).menus = menuResponse.data;
+          userInfo.menus = menuResponse.data;
         }
       } catch (menuError) {
         console.log(
@@ -76,8 +76,7 @@ export async function getInitialState(): Promise<{
       try {
         const permissionsResponse = await getMyPermissions();
         if (permissionsResponse.success && permissionsResponse.data) {
-          (userInfo as any).permissions =
-            permissionsResponse.data.allPermissionCodes || [];
+          userInfo.permissions = permissionsResponse.data.allPermissionCodes || [];
           console.log(
             '🔑 用户权限更新:',
             permissionsResponse.data.allPermissionCodes,

@@ -115,7 +115,17 @@ export function useBulkAction(options: UseBulkActionOptions = {}) {
         onSuccess?.();
       } catch (error) {
         console.error('批量操作失败:', error);
-        onError?.(error);
+        
+        // 提供更友好的错误处理
+        if (onError) {
+          onError(error);
+        } else {
+          // 默认错误处理
+          const errorMessage = error instanceof Error 
+            ? error.message 
+            : '批量操作失败，请重试';
+          console.error('批量操作错误:', errorMessage);
+        }
       } finally {
         setState((prev) => ({ ...prev, loading: false }));
       }
@@ -131,6 +141,11 @@ export function useBulkAction(options: UseBulkActionOptions = {}) {
     requireReason,
   };
 }
+
+
+
+
+
 
 
 

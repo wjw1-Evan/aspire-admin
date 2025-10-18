@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Input, Typography, Alert } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { useModalState } from '../hooks/useModalState';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -81,30 +82,19 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
   requireReason = false,
   reasonPlaceholder = '请输入操作原因（选填，最多200字）',
 }) => {
-  const [reason, setReason] = React.useState<string>('');
-  const [loading, setLoading] = React.useState(false);
+  // 使用自定义 Hook 管理状态
+  const modalState = useModalState({
+    visible,
+    requireReason,
+    onConfirm,
+    onCancel,
+  });
 
   const config = ACTION_CONFIG[actionType];
   const title = actionName || config.title;
   const okText = config.okText;
   const isDanger = config.danger;
   const defaultDescription = config.description;
-
-  React.useEffect(() => {
-    if (!visible) {
-      setReason('');
-      setLoading(false);
-    }
-  }, [visible]);
-
-  const handleConfirm = async () => {
-    setLoading(true);
-    try {
-      await onConfirm?.(reason || undefined);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Modal
@@ -117,12 +107,12 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
         </span>
       }
       open={visible}
-      onOk={handleConfirm}
-      onCancel={onCancel}
+      onOk={modalState.handleConfirm}
+      onCancel={modalState.handleCancel}
       okText={okText}
       cancelText="取消"
-      okButtonProps={{ danger: isDanger, loading }}
-      cancelButtonProps={{ disabled: loading }}
+      okButtonProps={{ danger: isDanger, loading: modalState.loading }}
+      cancelButtonProps={{ disabled: modalState.loading }}
     >
       <Alert
         message={`已选中 ${selectedCount} 项`}
@@ -138,12 +128,12 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
       {requireReason && (
         <TextArea
           placeholder={reasonPlaceholder}
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          value={modalState.reason}
+          onChange={(e) => modalState.setReason(e.target.value)}
           maxLength={200}
           showCount
           rows={4}
-          disabled={loading}
+          disabled={modalState.loading}
         />
       )}
     </Modal>
@@ -151,6 +141,11 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
 };
 
 export default BulkActionModal;
+
+
+
+
+
 
 
 

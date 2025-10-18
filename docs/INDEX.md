@@ -116,7 +116,9 @@ docs/
 #### 帮助系统
 - [帮助模块功能](features/HELP-MODULE-FEATURE.md) - 系统内帮助模块
 - [帮助模块调试](bugfixes/HELP-MODAL-DEBUG.md) - 问题排查指南
-- [**v5.0 帮助系统更新**](features/V5-HELP-SYSTEM-UPDATE.md) - v5.0 架构升级内容同步 ⭐ **新增**
+- [**帮助系统版本合并更新**](features/HELP-VERSION-MERGE-UPDATE.md) - 版本信息整合优化 ⭐ **最新**
+- [v6.0 帮助系统更新](features/V6-HELP-SYSTEM-UPDATE.md) - v6.0 权限系统内容同步
+- [v5.0 帮助系统更新](features/V5-HELP-SYSTEM-UPDATE.md) - v5.0 架构升级内容同步
 
 #### 路由和认证
 - [**路由守卫增强**](features/ROUTE-GUARD-ENHANCEMENT.md) - Token有效性验证和自动跳转 ⭐ **最新**

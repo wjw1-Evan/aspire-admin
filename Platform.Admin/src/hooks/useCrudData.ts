@@ -75,10 +75,21 @@ export function useCrudData<T = any>(options: CrudDataOptions<T>): CrudDataResul
   const handleError = useCallback((err: any) => {
     const error = err instanceof Error ? err : new Error(String(err));
     setError(error);
+    
+    // 记录错误到控制台
+    console.error('CRUD 操作失败:', error);
+    
     if (onError) {
       onError(error);
     } else {
-      message.error(error.message);
+      // 提供更友好的错误消息
+      const friendlyMessage = error.message.includes('网络') 
+        ? '网络连接失败，请检查网络后重试'
+        : error.message.includes('权限') 
+        ? '权限不足，请联系管理员'
+        : error.message || '操作失败，请重试';
+      
+      message.error(friendlyMessage);
     }
   }, [onError]);
 
@@ -215,6 +226,11 @@ export function useCrudData<T = any>(options: CrudDataOptions<T>): CrudDataResul
 }
 
 export default useCrudData;
+
+
+
+
+
 
 
 

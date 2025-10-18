@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Input, Typography } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { useModalState } from '../hooks/useModalState';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -54,24 +55,13 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   okText = '确定删除',
   cancelText = '取消',
 }) => {
-  const [reason, setReason] = React.useState<string>('');
-  const [loading, setLoading] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!visible) {
-      setReason('');
-      setLoading(false);
-    }
-  }, [visible]);
-
-  const handleConfirm = async () => {
-    setLoading(true);
-    try {
-      await onConfirm?.(reason || undefined);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 使用自定义 Hook 管理状态
+  const modalState = useModalState({
+    visible,
+    requireReason,
+    onConfirm,
+    onCancel,
+  });
 
   return (
     <Modal
@@ -82,12 +72,12 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
         </span>
       }
       open={visible}
-      onOk={handleConfirm}
-      onCancel={onCancel}
+      onOk={modalState.handleConfirm}
+      onCancel={modalState.handleCancel}
       okText={okText}
       cancelText={cancelText}
-      okButtonProps={{ danger: true, loading }}
-      cancelButtonProps={{ disabled: loading }}
+      okButtonProps={{ danger: true, loading: modalState.loading }}
+      cancelButtonProps={{ disabled: modalState.loading }}
     >
       <div style={{ marginBottom: 16 }}>
         {itemName && (
@@ -105,12 +95,12 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
       {requireReason && (
         <TextArea
           placeholder={reasonPlaceholder}
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          value={modalState.reason}
+          onChange={(e) => modalState.setReason(e.target.value)}
           maxLength={200}
           showCount
           rows={4}
-          disabled={loading}
+          disabled={modalState.loading}
         />
       )}
     </Modal>
@@ -118,6 +108,11 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 };
 
 export default DeleteConfirmModal;
+
+
+
+
+
 
 
 

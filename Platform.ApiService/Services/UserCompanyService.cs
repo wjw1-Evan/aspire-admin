@@ -32,13 +32,15 @@ public class UserCompanyService : BaseService, IUserCompanyService
     private readonly IMongoCollection<Role> _roles;
     private readonly IMongoCollection<Menu> _menus;
     private readonly IMenuService _menuService;
+    private readonly IJwtService _jwtService;
 
     public UserCompanyService(
         IMongoDatabase database,
         IHttpContextAccessor httpContextAccessor,
         ITenantContext tenantContext,
         ILogger<UserCompanyService> logger,
-        IMenuService menuService)
+        IMenuService menuService,
+        IJwtService jwtService)
         : base(database, httpContextAccessor, tenantContext, logger)
     {
         _userCompanies = database.GetCollection<UserCompany>("user_companies");
@@ -47,6 +49,7 @@ public class UserCompanyService : BaseService, IUserCompanyService
         _roles = database.GetCollection<Role>("roles");
         _menus = database.GetCollection<Menu>("menus");
         _menuService = menuService;
+        _jwtService = jwtService;
     }
 
     /// <summary>
@@ -181,8 +184,8 @@ public class UserCompanyService : BaseService, IUserCompanyService
         string? newToken = null;
         if (user != null)
         {
-            // 这里应该注入 IJwtService 来生成新token
-            // 暂时返回null，实际实现需要在构造函数中注入服务
+            // 生成新的 JWT token，包含更新后的企业信息
+            newToken = await _jwtService.GenerateTokenAsync(user);
         }
         
         return new SwitchCompanyResult

@@ -108,7 +108,9 @@ public class JoinRequestService : BaseService, IJoinRequestService
         
         LogInformation("用户 {UserId} 申请加入企业 {CompanyId}", userId, companyId);
         
-        // TODO: 发送通知给企业管理员
+        // 发送通知给企业管理员
+        await NotifyCompanyAdminsAsync(companyId, "新成员申请", 
+            $"用户 {user.Username} 申请加入企业，请及时处理。");
         
         return joinRequest;
     }
@@ -264,7 +266,9 @@ public class JoinRequestService : BaseService, IJoinRequestService
         LogInformation("管理员 {AdminId} 批准用户 {UserId} 加入企业 {CompanyId}", 
             adminUserId, request.UserId, request.CompanyId);
         
-        // TODO: 通知用户申请已通过
+        // 通知用户申请已通过
+        await NotifyUserAsync(request.UserId, "申请通过", 
+            $"您的企业加入申请已通过，现在可以访问企业资源。");
         
         return true;
     }
@@ -307,7 +311,9 @@ public class JoinRequestService : BaseService, IJoinRequestService
         LogInformation("管理员 {AdminId} 拒绝用户 {UserId} 加入企业 {CompanyId}，原因: {Reason}", 
             adminUserId, request.UserId, request.CompanyId, rejectReason);
         
-        // TODO: 通知用户申请被拒绝
+        // 通知用户申请被拒绝
+        await NotifyUserAsync(request.UserId, "申请被拒绝", 
+            $"您的企业加入申请被拒绝，原因：{rejectReason}");
         
         return result.ModifiedCount > 0;
     }
@@ -383,6 +389,84 @@ public class JoinRequestService : BaseService, IJoinRequestService
         }
         
         return result;
+    }
+
+    /// <summary>
+    /// 通知企业管理员
+    /// </summary>
+    private async Task NotifyCompanyAdminsAsync(string companyId, string title, string message)
+    {
+        try
+        {
+            // 获取企业管理员
+            var adminFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true),
+                Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
+            );
+            
+            var admins = await _userCompanies.Find(adminFilter).ToListAsync();
+            
+            // 为每个管理员创建通知
+            var notices = admins.Select(admin => new Notice
+            {
+                Title = title,
+                Content = message,
+                CompanyId = companyId,
+                UserId = admin.UserId,
+                Type = "system",
+                IsRead = false,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }).ToList();
+            
+            if (notices.Any())
+            {
+                var noticesCollection = GetCollection<Notice>("notices");
+                await noticesCollection.InsertManyAsync(notices);
+                LogInformation("已向 {Count} 位企业管理员发送通知", notices.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogError(ex, "发送企业管理员通知失败");
+        }
+    }
+
+    /// <summary>
+    /// 通知用户
+    /// </summary>
+    private async Task NotifyUserAsync(string userId, string title, string message)
+    {
+        try
+        {
+            // 获取用户当前企业ID
+            var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user?.CurrentCompanyId == null) return;
+            
+            var notice = new Notice
+            {
+                Title = title,
+                Content = message,
+                CompanyId = user.CurrentCompanyId,
+                UserId = userId,
+                Type = "system",
+                IsRead = false,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            var noticesCollection = GetCollection<Notice>("notices");
+            await noticesCollection.InsertOneAsync(notice);
+            LogInformation("已向用户 {UserId} 发送通知", userId);
+        }
+        catch (Exception ex)
+        {
+            LogError(ex, "发送用户通知失败");
+        }
     }
 
     #endregion

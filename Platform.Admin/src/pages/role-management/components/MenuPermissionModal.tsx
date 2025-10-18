@@ -49,7 +49,7 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
       if (menuResponse.success && menuResponse.data) {
         const treeData = convertToTreeData(menuResponse.data);
         setMenuTree(treeData);
-        
+
         // 展开所有节点
         const allKeys = getAllKeys(menuResponse.data);
         setExpandedKeys(allKeys);
@@ -72,12 +72,13 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
    * 将菜单树转换为 Tree 组件数据格式
    */
   const convertToTreeData = (menus: MenuTreeNode[]): DataNode[] => {
-    return menus.map(menu => ({
+    return menus.map((menu) => ({
       key: menu.id!,
       title: menu.title || menu.name,
-      children: menu.children && menu.children.length > 0 
-        ? convertToTreeData(menu.children) 
-        : undefined,
+      children:
+        menu.children && menu.children.length > 0
+          ? convertToTreeData(menu.children)
+          : undefined,
     }));
   };
 
@@ -86,7 +87,7 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
    */
   const getAllKeys = (menus: MenuTreeNode[]): string[] => {
     let keys: string[] = [];
-    menus.forEach(menu => {
+    menus.forEach((menu) => {
       if (menu.id) {
         keys.push(menu.id);
       }
@@ -113,10 +114,15 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
         message.success(intl.formatMessage({ id: 'menu.permission.success' }));
         onSuccess();
       } else {
-        message.error(response.errorMessage || intl.formatMessage({ id: 'menu.permission.failed' }));
+        message.error(
+          response.errorMessage ||
+            intl.formatMessage({ id: 'menu.permission.failed' }),
+        );
       }
     } catch (error: any) {
-      message.error(error.message || intl.formatMessage({ id: 'menu.permission.failed' }));
+      message.error(
+        error.message || intl.formatMessage({ id: 'menu.permission.failed' }),
+      );
     } finally {
       setSaving(false);
     }
@@ -144,13 +150,12 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
     >
       <div style={{ marginBottom: 16 }}>
         <Button type="link" onClick={handleSelectAll} style={{ padding: 0 }}>
-          {checkedKeys.length === expandedKeys.length 
+          {checkedKeys.length === expandedKeys.length
             ? intl.formatMessage({ id: 'menu.permission.unselectAll' })
-            : intl.formatMessage({ id: 'menu.permission.selectAll' })
-          }
+            : intl.formatMessage({ id: 'menu.permission.selectAll' })}
         </Button>
       </div>
-      
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <Spin />
@@ -177,4 +182,3 @@ const MenuPermissionModal: React.FC<MenuPermissionModalProps> = ({
 };
 
 export default MenuPermissionModal;
-

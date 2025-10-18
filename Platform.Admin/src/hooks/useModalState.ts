@@ -30,9 +30,9 @@ export interface UseModalStateResult {
 
 /**
  * Modal 状态管理 Hook
- * 
+ *
  * 统一管理 Modal 的 reason 输入、loading 状态和操作处理
- * 
+ *
  * @example
  * ```tsx
  * const modalState = useModalState({
@@ -43,7 +43,7 @@ export interface UseModalStateResult {
  *   },
  *   onCancel: () => setVisible(false)
  * });
- * 
+ *
  * return (
  *   <Modal
  *     open={visible}
@@ -62,13 +62,10 @@ export interface UseModalStateResult {
  * );
  * ```
  */
-export function useModalState(options: UseModalStateOptions = {}): UseModalStateResult {
-  const {
-    visible = false,
-    requireReason = false,
-    onConfirm,
-    onCancel,
-  } = options;
+export function useModalState(
+  options: UseModalStateOptions = {},
+): UseModalStateResult {
+  const { visible = false, onConfirm, onCancel } = options;
 
   const [reason, setReason] = useState<string>('');
   const [loading, setLoading] = useState(false);

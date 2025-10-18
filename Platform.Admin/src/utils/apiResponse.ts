@@ -26,17 +26,17 @@ export function isResponseSuccess<T>(response: ApiResponse<T>): boolean {
  * @returns 数据是否有效
  */
 export function isDataValid<T extends { isLogin?: boolean }>(
-  response: ApiResponse<T>
+  response: ApiResponse<T>,
 ): boolean {
   if (!isResponseSuccess(response)) {
     return false;
   }
-  
+
   // 如果数据中包含 isLogin 字段，确保它不为 false
   if (response.data && 'isLogin' in response.data) {
     return response.data.isLogin !== false;
   }
-  
+
   return true;
 }
 
@@ -48,7 +48,7 @@ export function isDataValid<T extends { isLogin?: boolean }>(
  */
 export function getErrorMessage<T>(
   response: ApiResponse<T>,
-  defaultMessage = '操作失败，请稍后重试'
+  defaultMessage = '操作失败，请稍后重试',
 ): string {
   return response.errorMessage || defaultMessage;
 }
@@ -61,7 +61,7 @@ export function getErrorMessage<T>(
  */
 export function extractData<T>(
   response: ApiResponse<T>,
-  defaultValue: T | null = null
+  defaultValue: T | null = null,
 ): T | null {
   if (isResponseSuccess(response)) {
     return response.data as T;
@@ -75,8 +75,7 @@ export function extractData<T>(
  * @returns 是否认证成功
  */
 export function isAuthResponseValid<T extends { isLogin?: boolean }>(
-  response: ApiResponse<T>
+  response: ApiResponse<T>,
 ): boolean {
   return isResponseSuccess(response) && isDataValid(response);
 }
-

@@ -32,7 +32,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           </Paragraph>
 
           <Paragraph>
-            <Text type="success">🎉 v6.0 版本带来了菜单级权限系统的重大简化！</Text>
+            <Text type="success">
+              🎉 v6.0 版本带来了菜单级权限系统的重大简化！
+            </Text>
           </Paragraph>
 
           <Title level={5}>主要功能</Title>
@@ -79,26 +81,44 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
         <div style={{ padding: '16px 0' }}>
           <Title level={4}>📚 系统版本历史</Title>
           <Paragraph>
-            以下是 Aspire Admin 平台的完整版本历史，记录了每个版本的重要更新和改进。
+            以下是 Aspire Admin
+            平台的完整版本历史，记录了每个版本的重要更新和改进。
           </Paragraph>
 
           {/* v6.0 版本 */}
-          <div style={{ marginBottom: 32, padding: 16, border: '1px solid #f0f0f0', borderRadius: 8 }}>
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+            }}
+          >
             <Title level={5} style={{ color: '#1890ff', marginBottom: 16 }}>
               🎯 v6.0.0 - 菜单级权限系统重构 (2025-10-14)
             </Title>
-            
+
             <Title level={6}>核心特性</Title>
             <ul>
-              <li><strong>菜单即权限</strong> - 能访问菜单，就能使用该功能</li>
-              <li><strong>后端验证</strong> - 使用 [RequireMenu("menu-name")] 特性</li>
-              <li><strong>前端简化</strong> - 所有用户看到相同按钮，权限由后端控制</li>
-              <li><strong>易于理解</strong> - 权限配置更直观，降低学习成本</li>
+              <li>
+                <strong>菜单即权限</strong> - 能访问菜单，就能使用该功能
+              </li>
+              <li>
+                <strong>后端验证</strong> - 使用 [RequireMenu("menu-name")] 特性
+              </li>
+              <li>
+                <strong>前端简化</strong> - 所有用户看到相同按钮，权限由后端控制
+              </li>
+              <li>
+                <strong>易于理解</strong> - 权限配置更直观，降低学习成本
+              </li>
             </ul>
 
             <Title level={6}>优化成果</Title>
             <ul>
-              <li>架构简化：减少 <Text strong>70%</Text> 的权限相关代码</li>
+              <li>
+                架构简化：减少 <Text strong>70%</Text> 的权限相关代码
+              </li>
               <li>易于理解：菜单即权限，用户一目了然</li>
               <li>减少维护：不需要维护复杂的 Permission 映射</li>
               <li>提升性能：减少数据库查询和内存占用</li>
@@ -109,53 +129,96 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             <Paragraph>
               <Text code>用户 → 角色 → 菜单 → API</Text>
               <br />
-              移除了复杂的 Permission 实体和操作级权限管理，统一使用菜单级权限控制。
+              移除了复杂的 Permission
+              实体和操作级权限管理，统一使用菜单级权限控制。
             </Paragraph>
           </div>
 
           {/* v5.0 版本 */}
-          <div style={{ marginBottom: 32, padding: 16, border: '1px solid #f0f0f0', borderRadius: 8 }}>
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+            }}
+          >
             <Title level={5} style={{ color: '#52c41a', marginBottom: 16 }}>
               🚀 v5.0.0 - 后端架构重大升级 (2025-10-13)
             </Title>
-            
+
             <Title level={6}>新增基础组件</Title>
             <ul>
-              <li><strong>BaseService</strong> - 服务基类，统一公共功能</li>
-              <li><strong>BaseRepository&lt;T&gt;</strong> - 泛型仓储，提供 14 个通用 CRUD 方法</li>
-              <li><strong>ValidationExtensions</strong> - 15+ 个参数验证扩展方法</li>
-              <li><strong>ErrorMessages</strong> - 50+ 个统一错误消息常量</li>
+              <li>
+                <strong>BaseService</strong> - 服务基类，统一公共功能
+              </li>
+              <li>
+                <strong>BaseRepository&lt;T&gt;</strong> - 泛型仓储，提供 14
+                个通用 CRUD 方法
+              </li>
+              <li>
+                <strong>ValidationExtensions</strong> - 15+ 个参数验证扩展方法
+              </li>
+              <li>
+                <strong>ErrorMessages</strong> - 50+ 个统一错误消息常量
+              </li>
             </ul>
 
             <Title level={6}>优化成果</Title>
             <ul>
-              <li>代码减少 <Text strong>161 行（8.4%）</Text></li>
-              <li>重复代码消除 <Text strong>90%+</Text></li>
-              <li>开发效率提升 <Text strong>50%+</Text></li>
-              <li>维护成本降低 <Text strong>50%+</Text></li>
-              <li>代码一致性达到 <Text strong>100%</Text></li>
+              <li>
+                代码减少 <Text strong>161 行（8.4%）</Text>
+              </li>
+              <li>
+                重复代码消除 <Text strong>90%+</Text>
+              </li>
+              <li>
+                开发效率提升 <Text strong>50%+</Text>
+              </li>
+              <li>
+                维护成本降低 <Text strong>50%+</Text>
+              </li>
+              <li>
+                代码一致性达到 <Text strong>100%</Text>
+              </li>
             </ul>
 
             <Title level={6}>设计模式应用</Title>
             <ul>
-              <li><strong>仓储模式</strong> - 统一数据访问层</li>
-              <li><strong>模板方法模式</strong> - 公共行为抽象</li>
-              <li><strong>扩展方法模式</strong> - 流畅的验证 API</li>
-              <li><strong>泛型编程</strong> - 类型安全的复用</li>
+              <li>
+                <strong>仓储模式</strong> - 统一数据访问层
+              </li>
+              <li>
+                <strong>模板方法模式</strong> - 公共行为抽象
+              </li>
+              <li>
+                <strong>扩展方法模式</strong> - 流畅的验证 API
+              </li>
+              <li>
+                <strong>泛型编程</strong> - 类型安全的复用
+              </li>
             </ul>
 
             <Title level={6}>SOLID 原则</Title>
             <Paragraph>
-              所有代码遵循 SOLID 五大原则：单一职责、开闭原则、里氏替换、接口隔离、依赖倒置
+              所有代码遵循 SOLID
+              五大原则：单一职责、开闭原则、里氏替换、接口隔离、依赖倒置
             </Paragraph>
           </div>
 
           {/* v4.0 版本 */}
-          <div style={{ marginBottom: 32, padding: 16, border: '1px solid #f0f0f0', borderRadius: 8 }}>
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+            }}
+          >
             <Title level={5} style={{ color: '#eb2f96', marginBottom: 16 }}>
               🔧 v4.0.0 - 系统架构扩展优化 (2025-10-11)
             </Title>
-            
+
             <Title level={6}>架构扩展</Title>
             <ul>
               <li>扩展系统架构，增强可扩展性</li>
@@ -179,17 +242,32 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           </div>
 
           {/* v3.1 版本 */}
-          <div style={{ marginBottom: 32, padding: 16, border: '1px solid #f0f0f0', borderRadius: 8 }}>
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+            }}
+          >
             <Title level={5} style={{ color: '#13c2c2', marginBottom: 16 }}>
               🏢 v3.1.0 - 多企业隶属架构 (2025-01-13)
             </Title>
-            
+
             <Title level={6}>多企业支持</Title>
             <ul>
-              <li><strong>多企业隶属</strong> - 用户可以隶属多个企业</li>
-              <li><strong>企业切换</strong> - 支持用户在不同企业间切换</li>
-              <li><strong>全局用户名</strong> - 用户名全局唯一，简化登录</li>
-              <li><strong>企业申请加入</strong> - 用户可以申请加入其他企业</li>
+              <li>
+                <strong>多企业隶属</strong> - 用户可以隶属多个企业
+              </li>
+              <li>
+                <strong>企业切换</strong> - 支持用户在不同企业间切换
+              </li>
+              <li>
+                <strong>全局用户名</strong> - 用户名全局唯一，简化登录
+              </li>
+              <li>
+                <strong>企业申请加入</strong> - 用户可以申请加入其他企业
+              </li>
             </ul>
 
             <Title level={6}>架构重构</Title>
@@ -217,24 +295,45 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           </div>
 
           {/* v3.0 版本 */}
-          <div style={{ marginBottom: 32, padding: 16, border: '1px solid #f0f0f0', borderRadius: 8 }}>
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+            }}
+          >
             <Title level={5} style={{ color: '#52c41a', marginBottom: 16 }}>
               ⚡ v3.0.0 - 代码质量提升 (2025-10-12)
             </Title>
-            
+
             <Title level={6}>代码质量优化</Title>
             <ul>
-              <li><strong>常量管理</strong> - 消除魔法字符串，使用常量管理</li>
-              <li><strong>扩展方法</strong> - 简化重复代码，提供流畅API</li>
-              <li><strong>响应模型</strong> - 类型安全的响应模型</li>
-              <li><strong>验证器</strong> - 统一验证逻辑</li>
+              <li>
+                <strong>常量管理</strong> - 消除魔法字符串，使用常量管理
+              </li>
+              <li>
+                <strong>扩展方法</strong> - 简化重复代码，提供流畅API
+              </li>
+              <li>
+                <strong>响应模型</strong> - 类型安全的响应模型
+              </li>
+              <li>
+                <strong>验证器</strong> - 统一验证逻辑
+              </li>
             </ul>
 
             <Title level={6}>组件优化</Title>
             <ul>
-              <li><strong>公共组件</strong> - 提高组件复用性</li>
-              <li><strong>自定义 Hooks</strong> - 业务逻辑分离</li>
-              <li><strong>类型定义</strong> - 完整的 TypeScript 类型</li>
+              <li>
+                <strong>公共组件</strong> - 提高组件复用性
+              </li>
+              <li>
+                <strong>自定义 Hooks</strong> - 业务逻辑分离
+              </li>
+              <li>
+                <strong>类型定义</strong> - 完整的 TypeScript 类型
+              </li>
             </ul>
 
             <Title level={6}>后端优化</Title>
@@ -255,11 +354,18 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           </div>
 
           {/* v2.0 版本 */}
-          <div style={{ marginBottom: 32, padding: 16, border: '1px solid #f0f0f0', borderRadius: 8 }}>
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+            }}
+          >
             <Title level={5} style={{ color: '#fa8c16', marginBottom: 16 }}>
               📊 v2.0.0 - 数据模型统一与性能优化 (2025-10-12)
             </Title>
-            
+
             <Title level={6}>数据模型统一</Title>
             <ul>
               <li>移除冗余的 Role 字段，统一使用 RoleIds</li>
@@ -269,7 +375,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
 
             <Title level={6}>性能优化</Title>
             <ul>
-              <li>解决 N+1 查询问题，提升 <Text strong>80%+</Text> 性能</li>
+              <li>
+                解决 N+1 查询问题，提升 <Text strong>80%+</Text> 性能
+              </li>
               <li>添加 18 个数据库索引，加速查询</li>
               <li>优化批量操作逻辑</li>
             </ul>
@@ -290,24 +398,47 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           </div>
 
           {/* API 文档功能 */}
-          <div style={{ marginBottom: 32, padding: 16, border: '1px solid #f0f0f0', borderRadius: 8 }}>
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+            }}
+          >
             <Title level={5} style={{ color: '#722ed1', marginBottom: 16 }}>
               📖 API 文档系统 - Scalar 集成
             </Title>
-            
+
             <Title level={6}>功能特性</Title>
             <ul>
-              <li><strong>浏览所有 API 端点</strong> - 按 Controller 分组展示</li>
-              <li><strong>查看请求/响应 Schema</strong> - 完整的类型定义</li>
-              <li><strong>在线测试 API</strong> - 直接调用接口进行测试</li>
-              <li><strong>JWT 认证支持</strong> - 配置 Token 后自动认证</li>
-              <li><strong>参数说明和示例</strong> - 详细的接口文档</li>
+              <li>
+                <strong>浏览所有 API 端点</strong> - 按 Controller 分组展示
+              </li>
+              <li>
+                <strong>查看请求/响应 Schema</strong> - 完整的类型定义
+              </li>
+              <li>
+                <strong>在线测试 API</strong> - 直接调用接口进行测试
+              </li>
+              <li>
+                <strong>JWT 认证支持</strong> - 配置 Token 后自动认证
+              </li>
+              <li>
+                <strong>参数说明和示例</strong> - 详细的接口文档
+              </li>
             </ul>
 
             <Title level={6}>如何访问</Title>
             <ol>
-              <li>启动应用 - 运行 <Text code>dotnet run --project Platform.AppHost</Text></li>
-              <li>打开 Aspire Dashboard - 访问 <Text code>http://localhost:15003</Text></li>
+              <li>
+                启动应用 - 运行{' '}
+                <Text code>dotnet run --project Platform.AppHost</Text>
+              </li>
+              <li>
+                打开 Aspire Dashboard - 访问{' '}
+                <Text code>http://localhost:15003</Text>
+              </li>
               <li>找到 Scalar API Reference - 在 Resources 标签页中</li>
               <li>点击端点链接 - 在新标签页中打开 Scalar 文档</li>
             </ol>
@@ -315,12 +446,24 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
 
           <Title level={5}>📈 版本演进趋势</Title>
           <ul>
-            <li><strong>v2.0</strong> - 基础功能完善，性能优化</li>
-            <li><strong>v3.0</strong> - 代码质量提升，组件优化</li>
-            <li><strong>v3.1</strong> - 多企业隶属架构，企业协作</li>
-            <li><strong>v4.0</strong> - 系统架构扩展，开发体验优化</li>
-            <li><strong>v5.0</strong> - 后端架构重构，代码质量提升</li>
-            <li><strong>v6.0</strong> - 权限简化，用户体验优化</li>
+            <li>
+              <strong>v2.0</strong> - 基础功能完善，性能优化
+            </li>
+            <li>
+              <strong>v3.0</strong> - 代码质量提升，组件优化
+            </li>
+            <li>
+              <strong>v3.1</strong> - 多企业隶属架构，企业协作
+            </li>
+            <li>
+              <strong>v4.0</strong> - 系统架构扩展，开发体验优化
+            </li>
+            <li>
+              <strong>v5.0</strong> - 后端架构重构，代码质量提升
+            </li>
+            <li>
+              <strong>v6.0</strong> - 权限简化，用户体验优化
+            </li>
           </ul>
 
           <Title level={5}>🔮 未来规划</Title>
@@ -349,12 +492,15 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
 
           <Title level={5}>Q: 没有某个功能的权限？</Title>
           <Paragraph>
-            请联系管理员为您分配相应的角色和菜单权限。在 v6.0 中，权限控制已简化为菜单级权限。
+            请联系管理员为您分配相应的角色和菜单权限。在 v6.0
+            中，权限控制已简化为菜单级权限。
           </Paragraph>
 
           <Title level={5}>Q: 为什么所有用户看到相同的按钮？</Title>
           <Paragraph>
-            这是 v6.0 的设计特性。所有用户看到相同的界面，但点击按钮时，后端会验证菜单权限。无权限时会返回 403 错误。
+            这是 v6.0
+            的设计特性。所有用户看到相同的界面，但点击按钮时，后端会验证菜单权限。无权限时会返回
+            403 错误。
           </Paragraph>
 
           <Title level={5}>Q: 如何修改个人信息？</Title>

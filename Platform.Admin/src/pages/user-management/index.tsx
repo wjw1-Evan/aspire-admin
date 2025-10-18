@@ -1,15 +1,10 @@
 import React, { useRef, useState } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import {
-  PageContainer,
-  ProTable,
-  ProCard,
-} from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProCard } from '@ant-design/pro-components';
 import {
   Button,
   Tag,
   Space,
-  Popconfirm,
   message,
   Modal,
   Select,
@@ -36,7 +31,6 @@ import {
   EyeOutlined,
   ReloadOutlined,
   MoreOutlined,
-  KeyOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
@@ -52,7 +46,9 @@ const UserManagement: React.FC = () => {
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [viewingUser, setViewingUser] = useState<AppUser | null>(null);
-  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);
+  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(
+    null,
+  );
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
   const [searchParams, setSearchParams] = useState<UserListRequest>({
     Page: 1,
@@ -69,7 +65,7 @@ const UserManagement: React.FC = () => {
         if (response.success && response.data) {
           // 创建角色 ID 到名称的映射
           const map: Record<string, string> = {};
-          response.data.roles.forEach(role => {
+          response.data.roles.forEach((role) => {
             if (role.id) {
               map[role.id] = role.name;
             }
@@ -86,7 +82,10 @@ const UserManagement: React.FC = () => {
   // 获取用户统计信息
   const fetchStatistics = async () => {
     try {
-      const response = await request<{ success: boolean; data: UserStatisticsResponse }>('/api/user/statistics', {
+      const response = await request<{
+        success: boolean;
+        data: UserStatisticsResponse;
+      }>('/api/user/statistics', {
         method: 'GET',
       });
       setStatistics(response.data);
@@ -100,7 +99,7 @@ const UserManagement: React.FC = () => {
   const fetchUsers = async (params: any) => {
     console.log('fetchUsers 被调用，参数:', params);
     console.log('当前搜索参数:', searchParams);
-    
+
     const requestData: UserListRequest = {
       Page: params.current || searchParams.Page,
       PageSize: params.pageSize || searchParams.PageSize,
@@ -116,10 +115,13 @@ const UserManagement: React.FC = () => {
     console.log('发送请求数据:', requestData);
 
     try {
-      const response = await request<{ success: boolean; data: any }>('/api/user/list', {
-        method: 'POST',
-        data: requestData,
-      });
+      const response = await request<{ success: boolean; data: any }>(
+        '/api/user/list',
+        {
+          method: 'POST',
+          data: requestData,
+        },
+      );
 
       console.log('API响应:', response);
 
@@ -146,7 +148,11 @@ const UserManagement: React.FC = () => {
       Page: 1,
       PageSize: searchParams.PageSize,
       Search: values.search,
-      RoleIds: values.roleIds ? (Array.isArray(values.roleIds) ? values.roleIds : [values.roleIds]) : undefined,
+      RoleIds: values.roleIds
+        ? Array.isArray(values.roleIds)
+          ? values.roleIds
+          : [values.roleIds]
+        : undefined,
       IsActive: values.isActive,
       SortBy: searchParams.SortBy,
       SortOrder: searchParams.SortOrder,
@@ -181,7 +187,9 @@ const UserManagement: React.FC = () => {
           <Input.TextArea
             rows={3}
             placeholder="请输入删除原因（选填）"
-            onChange={(e) => { deleteReason = e.target.value; }}
+            onChange={(e) => {
+              deleteReason = e.target.value;
+            }}
             maxLength={200}
           />
         </div>
@@ -224,7 +232,9 @@ const UserManagement: React.FC = () => {
             <Input.TextArea
               rows={3}
               placeholder="请输入删除原因（选填）"
-              onChange={(e) => { deleteReason = e.target.value; }}
+              onChange={(e) => {
+                deleteReason = e.target.value;
+              }}
               maxLength={200}
             />
           </div>
@@ -237,7 +247,7 @@ const UserManagement: React.FC = () => {
             await request('/api/user/bulk-action', {
               method: 'POST',
               data: {
-                UserIds: selectedRows.map(user => user.id),
+                UserIds: selectedRows.map((user) => user.id),
                 Action: action,
                 Reason: deleteReason,
               },
@@ -260,15 +270,16 @@ const UserManagement: React.FC = () => {
       await request('/api/user/bulk-action', {
         method: 'POST',
         data: {
-          UserIds: selectedRows.map(user => user.id),
+          UserIds: selectedRows.map((user) => user.id),
           Action: action,
         },
       });
 
-      const actionText = {
-        activate: '启用',
-        deactivate: '禁用',
-      }[action] || '操作';
+      const actionText =
+        {
+          activate: '启用',
+          deactivate: '禁用',
+        }[action] || '操作';
 
       message.success(`批量${actionText}成功`);
       setSelectedRows([]);
@@ -303,7 +314,7 @@ const UserManagement: React.FC = () => {
       title: '用户名',
       dataIndex: 'username',
       key: 'username',
-      render: (text, record) => (
+      render: (text, _record) => (
         <Space>
           <UserOutlined />
           {text}
@@ -326,7 +337,7 @@ const UserManagement: React.FC = () => {
         }
         return (
           <Space wrap>
-            {record.roleIds.map(roleId => (
+            {record.roleIds.map((roleId) => (
               <Tag key={roleId} color="blue">
                 {roleMap[roleId] || roleId}
               </Tag>
@@ -521,10 +532,10 @@ const UserManagement: React.FC = () => {
             <Input placeholder="用户名或邮箱" style={{ width: 200 }} />
           </Form.Item>
           <Form.Item name="roleIds" label="角色">
-            <Select 
+            <Select
               mode="multiple"
-              placeholder="选择角色" 
-              style={{ width: 200 }} 
+              placeholder="选择角色"
+              style={{ width: 200 }}
               allowClear
               loading={Object.keys(roleMap).length === 0}
             >
@@ -549,9 +560,7 @@ const UserManagement: React.FC = () => {
               <Button type="primary" htmlType="submit">
                 查询
               </Button>
-              <Button onClick={handleReset}>
-                重置
-              </Button>
+              <Button onClick={handleReset}>重置</Button>
             </Space>
           </Form.Item>
         </Form>
@@ -635,7 +644,6 @@ const UserManagement: React.FC = () => {
           />
         )}
       </Drawer>
-
     </PageContainer>
   );
 };

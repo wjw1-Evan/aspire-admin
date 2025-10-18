@@ -1,9 +1,34 @@
-import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, MoreOutlined } from '@ant-design/icons';
-import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, message, Popconfirm, Space, Tag, Dropdown, Modal, Input, Badge } from 'antd';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SettingOutlined,
+  MoreOutlined,
+} from '@ant-design/icons';
+import {
+  PageContainer,
+  ProTable,
+  ActionType,
+  ProColumns,
+} from '@ant-design/pro-components';
+import {
+  Button,
+  message,
+  Popconfirm,
+  Space,
+  Tag,
+  Dropdown,
+  Modal,
+  Input,
+  Badge,
+} from 'antd';
 import type { MenuProps } from 'antd';
 import React, { useRef, useState } from 'react';
-import { getAllRoles, getAllRolesWithStats, deleteRole } from '@/services/role/api';
+import {
+  getAllRoles,
+  getAllRolesWithStats,
+  deleteRole,
+} from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
 import MenuPermissionModal from './components/MenuPermissionModal';
@@ -11,7 +36,8 @@ import MenuPermissionModal from './components/MenuPermissionModal';
 const RoleManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [modalVisible, setModalVisible] = useState(false);
-  const [menuPermissionModalVisible, setMenuPermissionModalVisible] = useState(false);
+  const [menuPermissionModalVisible, setMenuPermissionModalVisible] =
+    useState(false);
   const [currentRole, setCurrentRole] = useState<Role | undefined>();
 
   /**
@@ -56,7 +82,9 @@ const RoleManagement: React.FC = () => {
           <Input.TextArea
             rows={3}
             placeholder="请输入删除原因（选填）"
-            onChange={(e) => { deleteReason = e.target.value; }}
+            onChange={(e) => {
+              deleteReason = e.target.value;
+            }}
             maxLength={200}
           />
         </div>
@@ -92,7 +120,11 @@ const RoleManagement: React.FC = () => {
         <Space>
           {text}
           {record.userCount > 0 && (
-            <Badge count={record.userCount} style={{ backgroundColor: '#52c41a' }} title={`${record.userCount} 个用户`} />
+            <Badge
+              count={record.userCount}
+              style={{ backgroundColor: '#52c41a' }}
+              title={`${record.userCount} 个用户`}
+            />
           )}
         </Space>
       ),
@@ -209,7 +241,7 @@ const RoleManagement: React.FC = () => {
         request={loadRoleData}
         columns={columns}
       />
-      
+
       <RoleForm
         visible={modalVisible}
         current={currentRole}
@@ -237,10 +269,8 @@ const RoleManagement: React.FC = () => {
           message.success('菜单权限分配成功');
         }}
       />
-
     </PageContainer>
   );
 };
 
 export default RoleManagement;
-

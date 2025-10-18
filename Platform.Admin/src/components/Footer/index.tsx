@@ -21,7 +21,7 @@ const Footer: React.FC = () => {
           title: <GithubOutlined />,
           href: 'https://github.com/wjw1-Evan/aspire-admin',
           blankTarget: true,
-        }
+        },
       ]}
     />
   );

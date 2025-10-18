@@ -2,9 +2,17 @@ import { ProTable } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
 import { Tag, Button, Space, App, Modal, Input } from 'antd';
 import React, { useRef, useState } from 'react';
-import { getPendingRequests, approveRequest, rejectRequest } from '@/services/company';
+import {
+  getPendingRequests,
+  approveRequest,
+  rejectRequest,
+} from '@/services/company';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import {
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+} from '@ant-design/icons';
 
 const { TextArea } = Input;
 
@@ -103,9 +111,13 @@ const PendingJoinRequests: React.FC = () => {
       width: 150,
       render: (_, record) => (
         <div>
-          <div><strong>{record.username}</strong></div>
+          <div>
+            <strong>{record.username}</strong>
+          </div>
           {record.userEmail && (
-            <div style={{ fontSize: 12, color: '#999' }}>{record.userEmail}</div>
+            <div style={{ fontSize: 12, color: '#999' }}>
+              {record.userEmail}
+            </div>
           )}
         </div>
       ),
@@ -212,4 +224,3 @@ const PendingJoinRequests: React.FC = () => {
 };
 
 export default PendingJoinRequests;
-

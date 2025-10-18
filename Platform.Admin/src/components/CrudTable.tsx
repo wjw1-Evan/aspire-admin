@@ -14,27 +14,28 @@ export interface CrudTableColumn<T = any> {
   [key: string]: any;
 }
 
-export interface CrudTableProps<T = any> extends Omit<TableProps<T>, 'columns'> {
+export interface CrudTableProps<T = any>
+  extends Omit<TableProps<T>, 'columns'> {
   columns: CrudTableColumn<T>[];
   data: T[];
   loading?: boolean;
-  
+
   // CRUD操作配置
   showActions?: boolean;
   showView?: boolean;
   showEdit?: boolean;
   showDelete?: boolean;
-  
+
   // CRUD操作回调
   onView?: (record: T) => void;
   onEdit?: (record: T) => void;
   onDelete?: (record: T) => void;
-  
+
   // 操作权限
   canView?: (record: T) => boolean;
   canEdit?: (record: T) => boolean;
   canDelete?: (record: T) => boolean;
-  
+
   // 删除确认配置
   deleteConfirmTitle?: string;
   deleteConfirmContent?: string;
@@ -58,8 +59,8 @@ function CrudTable<T extends Record<string, any> = any>({
   canView = () => true,
   canEdit = () => true,
   canDelete = () => true,
-  deleteConfirmTitle = "确认删除",
-  deleteConfirmContent = "确定要删除这条记录吗？",
+  deleteConfirmTitle = '确认删除',
+  deleteConfirmContent = '确定要删除这条记录吗？',
   ...tableProps
 }: CrudTableProps<T>) {
   // 构建操作列
@@ -70,7 +71,7 @@ function CrudTable<T extends Record<string, any> = any>({
     fixed: 'right',
     render: (_, record) => {
       const actions = [];
-      
+
       // 查看按钮
       if (showView && onView && canView(record)) {
         actions.push(
@@ -82,10 +83,10 @@ function CrudTable<T extends Record<string, any> = any>({
             onClick={() => onView(record)}
           >
             查看
-          </Button>
+          </Button>,
         );
       }
-      
+
       // 编辑按钮
       if (showEdit && onEdit && canEdit(record)) {
         actions.push(
@@ -97,10 +98,10 @@ function CrudTable<T extends Record<string, any> = any>({
             onClick={() => onEdit(record)}
           >
             编辑
-          </Button>
+          </Button>,
         );
       }
-      
+
       // 删除按钮
       if (showDelete && onDelete && canDelete(record)) {
         actions.push(
@@ -112,31 +113,22 @@ function CrudTable<T extends Record<string, any> = any>({
             okText="确定"
             cancelText="取消"
           >
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-            >
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
-          </Popconfirm>
+          </Popconfirm>,
         );
       }
-      
-      return actions.length > 0 ? (
-        <Space size="small">
-          {actions}
-        </Space>
-      ) : null;
+
+      return actions.length > 0 ? <Space size="small">{actions}</Space> : null;
     },
   };
-  
+
   // 合并列配置
-  const finalColumns: TableColumnsType<T> = showActions 
-    ? [...columns as any, actionColumn as any] 
-    : columns as any;
-  
+  const finalColumns: TableColumnsType<T> = showActions
+    ? [...(columns as any), actionColumn as any]
+    : (columns as any);
+
   return (
     <Table<T>
       columns={finalColumns}
@@ -146,7 +138,8 @@ function CrudTable<T extends Record<string, any> = any>({
       pagination={{
         showSizeChanger: true,
         showQuickJumper: true,
-        showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+        showTotal: (total, range) =>
+          `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
       }}
       {...tableProps}
     />
@@ -154,5 +147,3 @@ function CrudTable<T extends Record<string, any> = any>({
 }
 
 export default CrudTable;
-
-

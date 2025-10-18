@@ -1,11 +1,11 @@
+using Microsoft.AspNetCore.Http;
 using MongoDB.Driver;
-using Platform.ApiService.Extensions;
-using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 
-namespace Platform.ApiService.Services;
+namespace Platform.ServiceDefaults.Services;
 
 /// <summary>
-/// 泛型仓储基类，提供通用的 CRUD 操作
+/// 泛型仓储基类，提供通用的 CRUD 操作 - 所有微服务通用
 /// </summary>
 /// <typeparam name="T">实体类型，必须实现 IEntity、ISoftDeletable 和 ITimestamped 接口</typeparam>
 public class BaseRepository<T> where T : IEntity, ISoftDeletable, ITimestamped
@@ -92,136 +92,133 @@ public class BaseRepository<T> where T : IEntity, ISoftDeletable, ITimestamped
     }
 
     /// <summary>
-    /// 创建实体（自动设置CompanyId）
+    /// 创建实体（自动设置CompanyId和时间戳）
     /// </summary>
     public virtual async Task<T> CreateAsync(T entity)
     {
         entity.CreatedAt = DateTime.UtcNow;
         entity.UpdatedAt = DateTime.UtcNow;
-        entity.IsDeleted = false;
         
-        // 如果实体有 CompanyId 属性，自动设置
-        if (typeof(T).GetProperty("CompanyId") != null)
+        // 自动设置 CompanyId（如果实体支持多租户）
+        if (entity is IMultiTenant multiTenantEntity)
         {
             var companyId = TenantContext.GetCurrentCompanyId();
             if (!string.IsNullOrEmpty(companyId))
             {
-                typeof(T).GetProperty("CompanyId")?.SetValue(entity, companyId);
+                multiTenantEntity.CompanyId = companyId;
             }
         }
-        
+
         await Collection.InsertOneAsync(entity);
         return entity;
     }
 
     /// <summary>
-    /// 更新实体（自动租户过滤）
+    /// 更新实体（自动更新时间戳）
     /// </summary>
-    public virtual async Task<bool> UpdateAsync(string id, UpdateDefinition<T> update)
+    public virtual async Task<bool> UpdateAsync(T entity)
+    {
+        entity.UpdatedAt = DateTime.UtcNow;
+        
+        var builder = Builders<T>.Filter;
+        var idFilter = builder.Eq(e => e.Id, entity.Id);
+        var filter = BuildTenantFilter(idFilter);
+        
+        var result = await Collection.ReplaceOneAsync(filter, entity);
+        return result.ModifiedCount > 0;
+    }
+
+    /// <summary>
+    /// 软删除实体（设置 IsDeleted = true）
+    /// </summary>
+    public virtual async Task<bool> SoftDeleteAsync(string id)
     {
         var builder = Builders<T>.Filter;
         var idFilter = builder.Eq(e => e.Id, id);
         var filter = BuildTenantFilter(idFilter);
         
-        // 自动添加 UpdatedAt 字段
-        update = update.Set(x => x.UpdatedAt, DateTime.UtcNow);
+        var update = Builders<T>.Update
+            .Set(e => e.IsDeleted, true)
+            .Set(e => e.UpdatedAt, DateTime.UtcNow);
         
         var result = await Collection.UpdateOneAsync(filter, update);
         return result.ModifiedCount > 0;
     }
 
     /// <summary>
-    /// 软删除实体（自动租户过滤）
+    /// 硬删除实体（从数据库中完全删除）
     /// </summary>
-    public virtual async Task<bool> SoftDeleteAsync(string id, string? reason = null)
+    public virtual async Task<bool> HardDeleteAsync(string id)
     {
-        var currentUserId = GetCurrentUserId();
         var builder = Builders<T>.Filter;
         var idFilter = builder.Eq(e => e.Id, id);
         var filter = BuildTenantFilter(idFilter);
         
-        return await Collection.SoftDeleteOneAsync(filter, currentUserId, reason);
+        var result = await Collection.DeleteOneAsync(filter);
+        return result.DeletedCount > 0;
     }
 
     /// <summary>
-    /// 检查实体是否存在（排除已删除，自动租户过滤）
+    /// 批量创建实体
     /// </summary>
-    public virtual async Task<bool> ExistsAsync(string id)
+    public virtual async Task<List<T>> CreateManyAsync(IEnumerable<T> entities)
+    {
+        var entityList = entities.ToList();
+        var now = DateTime.UtcNow;
+        
+        foreach (var entity in entityList)
+        {
+            entity.CreatedAt = now;
+            entity.UpdatedAt = now;
+            
+            // 自动设置 CompanyId（如果实体支持多租户）
+            if (entity is IMultiTenant multiTenantEntity)
+            {
+                var companyId = TenantContext.GetCurrentCompanyId();
+                if (!string.IsNullOrEmpty(companyId))
+                {
+                    multiTenantEntity.CompanyId = companyId;
+                }
+            }
+        }
+
+        await Collection.InsertManyAsync(entityList);
+        return entityList;
+    }
+
+    /// <summary>
+    /// 批量软删除实体
+    /// </summary>
+    public virtual async Task<long> SoftDeleteManyAsync(IEnumerable<string> ids)
     {
         var builder = Builders<T>.Filter;
-        var idFilter = builder.Eq(e => e.Id, id);
+        var idFilter = builder.In(e => e.Id, ids);
         var filter = BuildTenantFilter(idFilter);
-        var count = await Collection.CountDocumentsAsync(filter);
-        return count > 0;
+        
+        var update = Builders<T>.Update
+            .Set(e => e.IsDeleted, true)
+            .Set(e => e.UpdatedAt, DateTime.UtcNow);
+        
+        var result = await Collection.UpdateManyAsync(filter, update);
+        return result.ModifiedCount;
     }
 
     /// <summary>
-    /// 根据过滤器检查是否存在（排除已删除，自动租户过滤）
-    /// </summary>
-    public virtual async Task<bool> ExistsAsync(FilterDefinition<T> filter)
-    {
-        var combinedFilter = BuildTenantFilter(filter);
-        var count = await Collection.CountDocumentsAsync(combinedFilter);
-        return count > 0;
-    }
-
-    /// <summary>
-    /// 根据过滤器获取数量（排除已删除，自动租户过滤）
-    /// </summary>
-    public virtual async Task<long> CountAsync(FilterDefinition<T>? filter = null)
-    {
-        var finalFilter = BuildTenantFilter(filter);
-        return await Collection.CountDocumentsAsync(finalFilter);
-    }
-
-    /// <summary>
-    /// 根据过滤器查找实体（排除已删除，自动租户过滤）
-    /// </summary>
-    public virtual async Task<T?> FindOneAsync(FilterDefinition<T> filter)
-    {
-        var combinedFilter = BuildTenantFilter(filter);
-        return await Collection.Find(combinedFilter).FirstOrDefaultAsync();
-    }
-
-    /// <summary>
-    /// 根据过滤器查找多个实体（排除已删除，自动租户过滤）
-    /// </summary>
-    public virtual async Task<List<T>> FindAsync(FilterDefinition<T> filter)
-    {
-        var combinedFilter = BuildTenantFilter(filter);
-        return await Collection.Find(combinedFilter).ToListAsync();
-    }
-
-    /// <summary>
-    /// 根据过滤器查找多个实体（排除已删除，自动租户过滤，带排序）
-    /// </summary>
-    public virtual async Task<List<T>> FindAsync(FilterDefinition<T> filter, SortDefinition<T> sort)
-    {
-        var combinedFilter = BuildTenantFilter(filter);
-        return await Collection.Find(combinedFilter).Sort(sort).ToListAsync();
-    }
-
-    /// <summary>
-    /// 分页查询（自动租户过滤）
+    /// 分页查询
     /// </summary>
     public virtual async Task<(List<T> items, long total)> GetPagedAsync(
-        FilterDefinition<T>? filter, 
-        int page, 
-        int pageSize, 
-        SortDefinition<T>? sort = null)
+        FilterDefinition<T>? filter = null,
+        SortDefinition<T>? sort = null,
+        int page = 1,
+        int pageSize = 10)
     {
-        var finalFilter = BuildTenantFilter(filter);
+        var tenantFilter = BuildTenantFilter(filter);
         
-        var total = await Collection.CountDocumentsAsync(finalFilter);
+        var total = await Collection.CountDocumentsAsync(tenantFilter);
         
-        var query = Collection.Find(finalFilter);
-        
-        if (sort != null)
-        {
-            query = query.Sort(sort);
-        }
-        
-        var items = await query
+        var items = await Collection
+            .Find(tenantFilter)
+            .Sort(sort)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
             .ToListAsync();
@@ -230,28 +227,24 @@ public class BaseRepository<T> where T : IEntity, ISoftDeletable, ITimestamped
     }
 
     /// <summary>
-    /// 批量软删除（自动租户过滤）
+    /// 检查实体是否存在
     /// </summary>
-    public virtual async Task<long> SoftDeleteManyAsync(FilterDefinition<T> filter, string? reason = null)
+    public virtual async Task<bool> ExistsAsync(string id)
     {
-        var currentUserId = GetCurrentUserId();
-        var combinedFilter = BuildTenantFilter(filter);
+        var builder = Builders<T>.Filter;
+        var idFilter = builder.Eq(e => e.Id, id);
+        var filter = BuildTenantFilter(idFilter);
         
-        return await Collection.SoftDeleteManyAsync(combinedFilter, currentUserId, reason);
+        var count = await Collection.CountDocumentsAsync(filter);
+        return count > 0;
     }
 
     /// <summary>
-    /// 批量更新（自动租户过滤）
+    /// 获取实体数量
     /// </summary>
-    public virtual async Task<long> UpdateManyAsync(FilterDefinition<T> filter, UpdateDefinition<T> update)
+    public virtual async Task<long> CountAsync(FilterDefinition<T>? filter = null)
     {
-        var combinedFilter = BuildTenantFilter(filter);
-        
-        // 自动添加 UpdatedAt 字段
-        update = update.Set(x => x.UpdatedAt, DateTime.UtcNow);
-        
-        var result = await Collection.UpdateManyAsync(combinedFilter, update);
-        return result.ModifiedCount;
+        var tenantFilter = BuildTenantFilter(filter);
+        return await Collection.CountDocumentsAsync(tenantFilter);
     }
 }
-

@@ -1,6 +1,8 @@
+using User = Platform.ApiService.Models.AppUser;
 using MongoDB.Driver;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
 
@@ -17,12 +19,12 @@ public interface IUniquenessChecker
 
 public class UniquenessChecker : IUniquenessChecker
 {
-    private readonly IMongoCollection<AppUser> _users;
+    private readonly IMongoCollection<User> _users;
     private readonly ITenantContext _tenantContext;
 
     public UniquenessChecker(IMongoDatabase database, ITenantContext tenantContext)
     {
-        _users = database.GetCollection<AppUser>("users");
+        _users = database.GetCollection<User>("users");
         _tenantContext = tenantContext;
     }
 
@@ -53,8 +55,8 @@ public class UniquenessChecker : IUniquenessChecker
     /// </summary>
     public async Task<bool> IsUsernameUniqueAsync(string username, string? excludeUserId = null)
     {
-        var filterBuilder = Builders<AppUser>.Filter;
-        var filters = new List<FilterDefinition<AppUser>>
+        var filterBuilder = Builders<User>.Filter;
+        var filters = new List<FilterDefinition<User>>
         {
             filterBuilder.Eq(u => u.Username, username)
         };
@@ -80,8 +82,8 @@ public class UniquenessChecker : IUniquenessChecker
         if (string.IsNullOrEmpty(email))
             return true;
             
-        var filterBuilder = Builders<AppUser>.Filter;
-        var filters = new List<FilterDefinition<AppUser>>
+        var filterBuilder = Builders<User>.Filter;
+        var filters = new List<FilterDefinition<User>>
         {
             filterBuilder.Eq(u => u.Email, email)
         };

@@ -130,7 +130,7 @@ builder.Services.AddMemoryCache();
 // 使用接口注册以提高可测试性和解耦
 
 // 多租户上下文（v3.0 新增）
-builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Platform.ServiceDefaults.Services.TenantContext>();
 
 // 核心服务
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
@@ -199,7 +199,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 // 全局异常处理（最外层）
-app.UseMiddleware<Platform.ApiService.Middleware.GlobalExceptionMiddleware>();
+app.UseExceptionHandler();
 
 // Add authentication and authorization middleware
 app.UseAuthentication();

@@ -23,16 +23,16 @@ export default function NoticeList({
   onMarkAllRead,
   emptyText = '暂无数据',
 }: NoticeListProps) {
-  const hasUnread = data.some(item => !item.read);
-  const hasRead = data.some(item => item.read);
+  const hasUnread = data.some((item) => !item.read);
+  const hasRead = data.some((item) => item.read);
 
   return (
     <div className={styles.noticeList}>
       <List
         dataSource={data}
         renderItem={(item) => (
-          <NoticeItem 
-            item={item} 
+          <NoticeItem
+            item={item}
             onClick={() => onClick?.(item)}
             onMarkAsRead={onMarkAsRead}
             onMarkAsUnread={onMarkAsUnread}
@@ -70,4 +70,3 @@ export default function NoticeList({
     </div>
   );
 }
-

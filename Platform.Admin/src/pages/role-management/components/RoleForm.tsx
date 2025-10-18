@@ -1,7 +1,11 @@
 import { Modal, Form, Input, Switch, message } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { createRole, updateRole } from '@/services/role/api';
-import type { Role, CreateRoleRequest, UpdateRoleRequest } from '@/services/role/types';
+import type {
+  Role,
+  CreateRoleRequest,
+  UpdateRoleRequest,
+} from '@/services/role/types';
 
 interface RoleFormProps {
   visible: boolean;
@@ -10,7 +14,12 @@ interface RoleFormProps {
   onSuccess: () => void;
 }
 
-const RoleForm: React.FC<RoleFormProps> = ({ visible, current, onCancel, onSuccess }) => {
+const RoleForm: React.FC<RoleFormProps> = ({
+  visible,
+  current,
+  onCancel,
+  onSuccess,
+}) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
@@ -95,14 +104,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ visible, current, onCancel, onSucce
           <Input placeholder="请输入角色名称" />
         </Form.Item>
 
-        <Form.Item
-          label="角色描述"
-          name="description"
-        >
-          <Input.TextArea 
-            placeholder="请输入角色描述" 
-            rows={4}
-          />
+        <Form.Item label="角色描述" name="description">
+          <Input.TextArea placeholder="请输入角色描述" rows={4} />
         </Form.Item>
 
         <Form.Item
@@ -119,4 +122,3 @@ const RoleForm: React.FC<RoleFormProps> = ({ visible, current, onCancel, onSucce
 };
 
 export default RoleForm;
-

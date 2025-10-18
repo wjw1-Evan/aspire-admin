@@ -14,9 +14,9 @@ export function useNoticePolling() {
     try {
       setLoading(true);
       const response = await getNotices();
-      if (response && response.success && response.data) {
+      if (response?.success && response.data) {
         setNotices(response.data);
-        setUnreadCount(response.data.filter(n => !n.read).length);
+        setUnreadCount(response.data.filter((n) => !n.read).length);
       }
     } catch (error) {
       console.error('获取通知失败:', error);
@@ -28,7 +28,7 @@ export function useNoticePolling() {
   const startPolling = useCallback(() => {
     // 立即执行一次
     fetchNotices();
-    
+
     // 设置定时轮询
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -57,4 +57,3 @@ export function useNoticePolling() {
     stopPolling,
   };
 }
-

@@ -1,10 +1,24 @@
-import { SearchOutlined, BankOutlined, TeamOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  BankOutlined,
+  TeamOutlined,
+  CheckCircleOutlined,
+} from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
-import { Input, Card, List, Button, Tag, Space, Empty, Spin, App, Modal } from 'antd';
+import {
+  Input,
+  Card,
+  List,
+  Button,
+  Tag,
+  Space,
+  Empty,
+  Spin,
+  App,
+} from 'antd';
 import React, { useState } from 'react';
 import { searchCompanies, applyToJoinCompany } from '@/services/company';
-import type { FormInstance } from 'antd';
 
 const { TextArea } = Input;
 
@@ -16,7 +30,9 @@ const CompanySearch: React.FC = () => {
   const { message, modal } = App.useApp();
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<API.CompanySearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<API.CompanySearchResult[]>(
+    [],
+  );
   const [applyingId, setApplyingId] = useState<string>('');
 
   // 搜索企业
@@ -107,7 +123,12 @@ const CompanySearch: React.FC = () => {
             onChange={(e) => setKeyword(e.target.value)}
             onPressEnter={handleSearch}
           />
-          <Button type="primary" size="large" onClick={handleSearch} loading={loading}>
+          <Button
+            type="primary"
+            size="large"
+            onClick={handleSearch}
+            loading={loading}
+          >
             搜索
           </Button>
         </Space.Compact>
@@ -135,15 +156,16 @@ const CompanySearch: React.FC = () => {
                   hoverable
                   actions={[
                     item.isMember ? (
-                      <Button type="text" disabled>
+                      <Button key="joined" type="text" disabled>
                         <CheckCircleOutlined /> 已加入
                       </Button>
                     ) : item.hasPendingRequest ? (
-                      <Button type="text" disabled>
+                      <Button key="pending" type="text" disabled>
                         审核中...
                       </Button>
                     ) : (
                       <Button
+                        key="apply"
                         type="primary"
                         onClick={() => handleApply(item.company)}
                         loading={applyingId === item.company.id}
@@ -154,13 +176,19 @@ const CompanySearch: React.FC = () => {
                   ]}
                 >
                   <Card.Meta
-                    avatar={<BankOutlined style={{ fontSize: 32, color: '#1890ff' }} />}
+                    avatar={
+                      <BankOutlined
+                        style={{ fontSize: 32, color: '#1890ff' }}
+                      />
+                    }
                     title={
                       <Space>
                         {item.company.name}
                         {item.isMember && (
                           <Tag color="success">
-                            {item.memberStatus === 'active' ? '已加入' : '待激活'}
+                            {item.memberStatus === 'active'
+                              ? '已加入'
+                              : '待激活'}
                           </Tag>
                         )}
                         {item.hasPendingRequest && (
@@ -172,7 +200,9 @@ const CompanySearch: React.FC = () => {
                       <div>
                         <div style={{ marginBottom: 8 }}>
                           <span style={{ color: '#666' }}>企业代码：</span>
-                          <span style={{ fontWeight: 500 }}>{item.company.code}</span>
+                          <span style={{ fontWeight: 500 }}>
+                            {item.company.code}
+                          </span>
                         </div>
                         {item.company.description && (
                           <div style={{ marginBottom: 8, color: '#666' }}>
@@ -193,10 +223,7 @@ const CompanySearch: React.FC = () => {
             )}
           />
         ) : keyword ? (
-          <Empty
-            description="未找到匹配的企业"
-            style={{ padding: 60 }}
-          />
+          <Empty description="未找到匹配的企业" style={{ padding: 60 }} />
         ) : (
           <Empty
             description="请输入企业名称或代码进行搜索"
@@ -209,4 +236,3 @@ const CompanySearch: React.FC = () => {
 };
 
 export default CompanySearch;
-

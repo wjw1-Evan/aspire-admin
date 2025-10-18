@@ -23,7 +23,7 @@ export default {
       pathRewrite: { '^/api/': '/apiservice/' },
       // 确保请求头正确传递
       headers: {
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
     },
   },

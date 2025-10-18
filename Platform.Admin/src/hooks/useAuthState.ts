@@ -5,26 +5,35 @@
 
 import { useModel } from '@umijs/max';
 import { useCallback, useMemo } from 'react';
-import { CurrentUser } from '@/types/unified-api';
+import type { CurrentUser } from '@/types/unified-api';
 
 export function useAuthState() {
   const { initialState, setInitialState } = useModel('@@initialState');
   const { currentUser, fetchUserInfo } = initialState || {};
 
   // 简化的权限检查
-  const hasPermission = useCallback((permissionCode: string): boolean => {
-    return currentUser?.permissions?.includes(permissionCode) ?? false;
-  }, [currentUser?.permissions]);
+  const hasPermission = useCallback(
+    (permissionCode: string): boolean => {
+      return currentUser?.permissions?.includes(permissionCode) ?? false;
+    },
+    [currentUser?.permissions],
+  );
 
   // 简化的角色检查
-  const hasRole = useCallback((roleName: string): boolean => {
-    return currentUser?.roles?.includes(roleName) ?? false;
-  }, [currentUser?.roles]);
+  const hasRole = useCallback(
+    (roleName: string): boolean => {
+      return currentUser?.roles?.includes(roleName) ?? false;
+    },
+    [currentUser?.roles],
+  );
 
   // 简化的资源权限检查
-  const can = useCallback((resource: string, action: string): boolean => {
-    return hasPermission(`${resource}:${action}`);
-  }, [hasPermission]);
+  const can = useCallback(
+    (resource: string, action: string): boolean => {
+      return hasPermission(`${resource}:${action}`);
+    },
+    [hasPermission],
+  );
 
   // 检查是否为管理员
   const isAdmin = useCallback((): boolean => {
@@ -32,20 +41,23 @@ export function useAuthState() {
   }, [hasRole]);
 
   // 更新用户信息
-  const updateUser = useCallback((user: Partial<CurrentUser>) => {
-    if (currentUser) {
-      setInitialState({
-        ...initialState,
-        currentUser: { ...currentUser, ...user }
-      });
-    }
-  }, [currentUser, initialState, setInitialState]);
+  const updateUser = useCallback(
+    (user: Partial<CurrentUser>) => {
+      if (currentUser) {
+        setInitialState({
+          ...initialState,
+          currentUser: { ...currentUser, ...user },
+        });
+      }
+    },
+    [currentUser, initialState, setInitialState],
+  );
 
   // 清除用户信息
   const clearUser = useCallback(() => {
     setInitialState({
       ...initialState,
-      currentUser: undefined
+      currentUser: undefined,
     });
   }, [initialState, setInitialState]);
 
@@ -56,7 +68,7 @@ export function useAuthState() {
         const user = await fetchUserInfo();
         setInitialState({
           ...initialState,
-          currentUser: user
+          currentUser: user,
         });
       } catch (error) {
         console.error('Failed to refresh user info:', error);
@@ -72,7 +84,7 @@ export function useAuthState() {
         // 清除缓存的用户信息
         setInitialState({
           ...initialState,
-          currentUser: undefined
+          currentUser: undefined,
         });
 
         // 重新获取用户信息（会重新获取权限）
@@ -80,7 +92,7 @@ export function useAuthState() {
           const user = await fetchUserInfo();
           setInitialState({
             ...initialState,
-            currentUser: user
+            currentUser: user,
           });
           console.log('🔄 权限已刷新');
         }
@@ -91,30 +103,36 @@ export function useAuthState() {
   }, [currentUser, initialState, setInitialState, fetchUserInfo]);
 
   // 权限检查方法
-  const permissionMethods = useMemo(() => ({
-    hasPermission,
-    hasRole,
-    can,
-    isAdmin,
-  }), [hasPermission, hasRole, can, isAdmin]);
+  const permissionMethods = useMemo(
+    () => ({
+      hasPermission,
+      hasRole,
+      can,
+      isAdmin,
+    }),
+    [hasPermission, hasRole, can, isAdmin],
+  );
 
   // 用户管理方法
-  const userMethods = useMemo(() => ({
-    updateUser,
-    clearUser,
-    refreshUser,
-    refreshPermissions,
-  }), [updateUser, clearUser, refreshUser, refreshPermissions]);
+  const userMethods = useMemo(
+    () => ({
+      updateUser,
+      clearUser,
+      refreshUser,
+      refreshPermissions,
+    }),
+    [updateUser, clearUser, refreshUser, refreshPermissions],
+  );
 
   return {
     // 状态
     currentUser,
     isAuthenticated: !!currentUser?.isLogin,
     loading: initialState?.loading ?? false,
-    
+
     // 权限检查
     ...permissionMethods,
-    
+
     // 用户管理
     ...userMethods,
   };

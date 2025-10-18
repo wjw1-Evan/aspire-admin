@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
@@ -8,7 +9,7 @@ namespace Platform.ApiService.Models;
 /// v3.1: 支持用户隶属多个企业
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class UserCompany : BaseEntity
+public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable
 {
     /// <summary>
     /// 用户ID
@@ -63,7 +64,7 @@ public class UserCompany : BaseEntity
 /// 企业加入申请表（简化模型）
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class CompanyJoinRequest : BaseEntity
+public class CompanyJoinRequest : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable
 {
     /// <summary>
     /// 申请人用户ID

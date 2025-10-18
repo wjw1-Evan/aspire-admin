@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Controllers;
 
 namespace Platform.ApiService.Controllers;
 

@@ -33,8 +33,8 @@ export interface LoginData {
 // 用户信息（统一模型）
 export interface CurrentUser {
   id?: string;
-  username?: string;        // 用户名（对应后端 Username）
-  displayName?: string;     // 显示名称（对应后端 Name）
+  username?: string; // 用户名（对应后端 Username）
+  displayName?: string; // 显示名称（对应后端 Name）
   avatar?: string;
   email?: string;
   signature?: string;
@@ -44,8 +44,8 @@ export interface CurrentUser {
   notifyCount?: number;
   unreadCount?: number;
   country?: string;
-  roles?: string[];         // 角色列表（简化权限系统）
-  permissions?: string[];   // 权限列表（简化权限系统）
+  roles?: string[]; // 角色列表（简化权限系统）
+  permissions?: string[]; // 权限列表（简化权限系统）
   geographic?: GeographicInfo;
   address?: string;
   phone?: string;
@@ -284,4 +284,55 @@ export interface TokenValidationResult {
 export interface PermissionCheck {
   access?: string;
   role?: string;
+}
+
+// 数据源相关类型
+export enum DataSourceType {
+  MySql = 1,
+  PostgreSQL = 2,
+  Oracle = 3,
+  MongoDB = 4,
+  RestApi = 5,
+  IoT = 6,
+  LogFile = 7,
+  MessageQueue = 8,
+}
+
+export enum DataSourceStatus {
+  Active = 1,
+  Offline = 2,
+  Error = 3,
+  Testing = 4,
+}
+
+export interface DataSource {
+  id?: string;
+  name: string;
+  title: string;
+  description?: string;
+  dataSourceType: DataSourceType;
+  connectionString?: string;
+  connectionConfig: Record<string, any>;
+  status: DataSourceStatus;
+  lastTestedAt?: string;
+  lastErrorMessage?: string;
+  isEnabled: boolean;
+  tags: string[];
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DataPipeline {
+  id?: string;
+  name: string;
+  title: string;
+  description?: string;
+  dataSourceIds: string[];
+  transformRules: any[];
+  scheduleConfig?: any;
+  status: string;
+  lastExecutionAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

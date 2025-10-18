@@ -77,8 +77,8 @@ export const tokenUtils = {
     if (!expiresAt) {
       return false; // 如果没有过期时间，假设不过期
     }
-    
+
     // 使用统一的缓冲时间
-    return Date.now() >= (expiresAt - TOKEN_EXPIRY_BUFFER);
-  }
+    return Date.now() >= expiresAt - TOKEN_EXPIRY_BUFFER;
+  },
 };

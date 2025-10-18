@@ -144,7 +144,9 @@ const Login: React.FC = () => {
 
         // 保存 token 和刷新token到本地存储
         if (msg.token && msg.refreshToken) {
-          const expiresAt = msg.expiresAt ? new Date(msg.expiresAt).getTime() : undefined;
+          const expiresAt = msg.expiresAt
+            ? new Date(msg.expiresAt).getTime()
+            : undefined;
           tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);
         } else if (msg.token) {
           // 兼容旧版本，只保存token
@@ -157,7 +159,7 @@ const Login: React.FC = () => {
         });
         message.success(defaultLoginSuccessMessage);
         await fetchUserInfo();
-        
+
         // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性
         const urlParams = new URL(window.location.href).searchParams;
         const redirect = urlParams.get('redirect');
@@ -376,14 +378,16 @@ const Login: React.FC = () => {
                 onGetCaptcha={async (phone) => {
                   try {
                     const result = await getFakeCaptcha({ phone });
-                    
+
                     if (result.success && result.data) {
                       // 开发环境显示验证码（生产环境应该发送短信）
                       message.success(
                         `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,
-                        5
+                        5,
                       );
-                      console.log(`验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`);
+                      console.log(
+                        `验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`,
+                      );
                     } else {
                       message.error('获取验证码失败');
                     }

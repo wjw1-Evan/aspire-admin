@@ -1,6 +1,5 @@
 import {
   LogoutOutlined,
-  SettingOutlined,
   UserOutlined,
   LockOutlined,
   ReloadOutlined,

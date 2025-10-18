@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
+using Platform.ServiceDefaults.Models;
 
-namespace Platform.ApiService.Services;
+namespace Platform.ServiceDefaults.Services;
 
 /// <summary>
-/// 服务基类，提供公共功能
+/// 服务基类，提供公共功能 - 所有微服务通用
 /// </summary>
 public abstract class BaseService
 {
@@ -83,11 +86,58 @@ public abstract class BaseService
     }
 
     /// <summary>
-    /// 记录错误日志
+    /// 构建多租户过滤器
     /// </summary>
-    protected void LogError(Exception ex, string message, params object[] args)
+    protected FilterDefinition<T> BuildMultiTenantFilter<T>(FilterDefinition<T>? additionalFilter = null) where T : IMultiTenant
     {
-        Logger.LogError(ex, message, args);
+        var builder = Builders<T>.Filter;
+        var filters = new List<FilterDefinition<T>>();
+
+        var companyId = GetCurrentCompanyId();
+        if (!string.IsNullOrEmpty(companyId))
+        {
+            filters.Add(builder.Eq(e => e.CompanyId, companyId));
+        }
+
+        if (additionalFilter != null)
+        {
+            filters.Add(additionalFilter);
+        }
+
+        return filters.Count > 0 ? builder.And(filters) : builder.Empty;
+    }
+
+    /// <summary>
+    /// 设置实体的多租户信息
+    /// </summary>
+    protected void SetMultiTenantInfo<T>(T entity) where T : IMultiTenant
+    {
+        var companyId = GetRequiredCompanyId();
+        entity.CompanyId = companyId;
+    }
+
+    /// <summary>
+    /// 设置实体的时间戳信息
+    /// </summary>
+    protected static void SetTimestampInfo<T>(T entity, bool isUpdate = false) where T : ITimestamped
+    {
+        if (!isUpdate)
+        {
+            entity.CreatedAt = DateTime.UtcNow;
+        }
+        entity.UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// 记录操作日志
+    /// </summary>
+    protected void LogOperation(string operation, string? entityId = null, object? data = null)
+    {
+        var userId = GetCurrentUserId();
+        var companyId = GetCurrentCompanyId();
+        
+        Logger.LogInformation("操作: {Operation}, 用户: {UserId}, 企业: {CompanyId}, 实体ID: {EntityId}, 数据: {@Data}",
+            operation, userId, companyId, entityId, data);
     }
 
     /// <summary>
@@ -99,11 +149,14 @@ public abstract class BaseService
     }
 
     /// <summary>
-    /// 记录警告日志
+    /// 记录错误日志
     /// </summary>
-    protected void LogWarning(string message, params object[] args)
+    protected void LogError(string operation, Exception exception, string? entityId = null)
     {
-        Logger.LogWarning(message, args);
+        var userId = GetCurrentUserId();
+        var companyId = GetCurrentCompanyId();
+        
+        Logger.LogError(exception, "操作失败: {Operation}, 用户: {UserId}, 企业: {CompanyId}, 实体ID: {EntityId}",
+            operation, userId, companyId, entityId);
     }
 }
-

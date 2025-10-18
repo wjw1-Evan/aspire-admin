@@ -1,7 +1,13 @@
 import React from 'react';
 import { Space, Dropdown, Button } from 'antd';
 import type { MenuProps } from 'antd';
-import { EditOutlined, DeleteOutlined, KeyOutlined, EyeOutlined, MoreOutlined } from '@ant-design/icons';
+import {
+  EditOutlined,
+  DeleteOutlined,
+  KeyOutlined,
+  EyeOutlined,
+  MoreOutlined,
+} from '@ant-design/icons';
 import PermissionControl from '@/components/PermissionControl';
 import type { AppUser } from '../types';
 
@@ -20,7 +26,7 @@ interface UserTableActionsProps {
 
 /**
  * 用户表格操作列组件
- * 
+ *
  * 提供编辑、删除、配置权限、查看详情等操作
  */
 const UserTableActions: React.FC<UserTableActionsProps> = ({
@@ -78,22 +84,3 @@ const UserTableActions: React.FC<UserTableActionsProps> = ({
 };
 
 export default React.memo(UserTableActions);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

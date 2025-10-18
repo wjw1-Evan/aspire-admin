@@ -1,4 +1,9 @@
-import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
+import {
+  PageContainer,
+  ProTable,
+  ActionType,
+  ProColumns,
+} from '@ant-design/pro-components';
 import { Tag, Button } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
 import React, { useRef, useState } from 'react';
@@ -31,7 +36,7 @@ const UserLog: React.FC = () => {
       logout: 'default',
       refresh_token: 'geekblue',
       register: 'blue',
-      
+
       // 用户相关
       view_profile: 'lime',
       update_profile: 'purple',
@@ -47,43 +52,43 @@ const UserLog: React.FC = () => {
       view_user: 'cyan',
       update_user: 'blue',
       delete_user: 'red',
-      
+
       // 角色相关
       view_roles: 'cyan',
       create_role: 'blue',
       update_role: 'orange',
       delete_role: 'red',
-      
+
       // 菜单相关
       view_menus: 'cyan',
       create_menu: 'blue',
       update_menu: 'orange',
       delete_menu: 'red',
-      
+
       // 通知相关
       view_notices: 'cyan',
       create_notice: 'blue',
       update_notice: 'orange',
       delete_notice: 'red',
-      
+
       // 标签相关
       view_tags: 'cyan',
       create_tag: 'blue',
       update_tag: 'orange',
       delete_tag: 'red',
-      
+
       // 规则相关
       view_rules: 'cyan',
       create_rule: 'blue',
       update_rule: 'orange',
       delete_rule: 'red',
-      
+
       // 权限相关
       view_permissions: 'cyan',
       create_permission: 'blue',
       update_permission: 'orange',
       delete_permission: 'red',
-      
+
       // 其他
       view_current_user: 'lime',
     };
@@ -100,7 +105,7 @@ const UserLog: React.FC = () => {
       logout: '登出',
       refresh_token: '刷新Token',
       register: '注册',
-      
+
       // 用户相关
       view_profile: '查看个人信息',
       update_profile: '更新个人信息',
@@ -116,53 +121,53 @@ const UserLog: React.FC = () => {
       view_user: '查看用户',
       update_user: '更新用户',
       delete_user: '删除用户',
-      
+
       // 角色相关
       view_roles: '查看角色',
       create_role: '创建角色',
       update_role: '更新角色',
       delete_role: '删除角色',
       role_operation: '角色操作',
-      
+
       // 菜单相关
       view_menus: '查看菜单',
       create_menu: '创建菜单',
       update_menu: '更新菜单',
       delete_menu: '删除菜单',
       menu_operation: '菜单操作',
-      
+
       // 通知相关
       view_notices: '查看通知',
       create_notice: '创建通知',
       update_notice: '更新通知',
       delete_notice: '删除通知',
       notice_operation: '通知操作',
-      
+
       // 标签相关
       view_tags: '查看标签',
       create_tag: '创建标签',
       update_tag: '更新标签',
       delete_tag: '删除标签',
       tag_operation: '标签操作',
-      
+
       // 规则相关
       view_rules: '查看规则',
       create_rule: '创建规则',
       update_rule: '更新规则',
       delete_rule: '删除规则',
       rule_operation: '规则操作',
-      
+
       // 权限相关
       view_permissions: '查看权限',
       create_permission: '创建权限',
       update_permission: '更新权限',
       delete_permission: '删除权限',
       permission_operation: '权限操作',
-      
+
       // 其他
       view_current_user: '查看当前用户',
       user_operation: '用户操作',
-      
+
       // 默认HTTP操作
       get_request: 'GET请求',
       post_request: 'POST请求',
@@ -196,7 +201,7 @@ const UserLog: React.FC = () => {
         logout: { text: '登出' },
         refresh_token: { text: '刷新Token' },
         register: { text: '注册' },
-        
+
         // 用户相关
         view_profile: { text: '查看个人信息' },
         update_profile: { text: '更新个人信息' },
@@ -212,43 +217,43 @@ const UserLog: React.FC = () => {
         view_user: { text: '查看用户' },
         update_user: { text: '更新用户' },
         delete_user: { text: '删除用户' },
-        
+
         // 角色相关
         view_roles: { text: '查看角色' },
         create_role: { text: '创建角色' },
         update_role: { text: '更新角色' },
         delete_role: { text: '删除角色' },
-        
+
         // 菜单相关
         view_menus: { text: '查看菜单' },
         create_menu: { text: '创建菜单' },
         update_menu: { text: '更新菜单' },
         delete_menu: { text: '删除菜单' },
-        
+
         // 通知相关
         view_notices: { text: '查看通知' },
         create_notice: { text: '创建通知' },
         update_notice: { text: '更新通知' },
         delete_notice: { text: '删除通知' },
-        
+
         // 标签相关
         view_tags: { text: '查看标签' },
         create_tag: { text: '创建标签' },
         update_tag: { text: '更新标签' },
         delete_tag: { text: '删除标签' },
-        
+
         // 规则相关
         view_rules: { text: '查看规则' },
         create_rule: { text: '创建规则' },
         update_rule: { text: '更新规则' },
         delete_rule: { text: '删除规则' },
-        
+
         // 权限相关
         view_permissions: { text: '查看权限' },
         create_permission: { text: '创建权限' },
         update_permission: { text: '更新权限' },
         delete_permission: { text: '删除权限' },
-        
+
         // 其他
         view_current_user: { text: '查看当前用户' },
       },
@@ -320,7 +325,7 @@ const UserLog: React.FC = () => {
         }}
         request={async (params, sort) => {
           const { current = 1, pageSize = 20, action } = params;
-          
+
           try {
             const response = await getUserActivityLogs({
               page: current,
@@ -359,7 +364,7 @@ const UserLog: React.FC = () => {
           showQuickJumper: true,
         }}
       />
-      
+
       <LogDetailDrawer
         open={detailDrawerOpen}
         log={selectedLog}
@@ -370,4 +375,3 @@ const UserLog: React.FC = () => {
 };
 
 export default UserLog;
-

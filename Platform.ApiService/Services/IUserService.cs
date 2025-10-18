@@ -1,3 +1,4 @@
+using User = Platform.ApiService.Models.AppUser;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
@@ -7,15 +8,15 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface IUserService
 {
-    Task<List<AppUser>> GetAllUsersAsync();
-    Task<AppUser?> GetUserByIdAsync(string id);
-    Task<AppUser?> GetUserByIdWithoutTenantFilterAsync(string id);
-    Task<AppUser> CreateUserAsync(CreateUserRequest request);
-    Task<AppUser?> UpdateUserAsync(string id, UpdateUserRequest request);
-    Task<AppUser> CreateUserManagementAsync(CreateUserManagementRequest request);
-    Task<AppUser?> UpdateUserManagementAsync(string id, UpdateUserManagementRequest request);
+    Task<List<User>> GetAllUsersAsync();
+    Task<User?> GetUserByIdAsync(string id);
+    Task<User?> GetUserByIdWithoutTenantFilterAsync(string id);
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<User?> UpdateUserAsync(string id, UpdateUserRequest request);
+    Task<User> CreateUserManagementAsync(CreateUserManagementRequest request);
+    Task<User?> UpdateUserManagementAsync(string id, UpdateUserManagementRequest request);
     Task<bool> DeleteUserAsync(string id, string? reason = null);
-    Task<List<AppUser>> SearchUsersByNameAsync(string name);
+    Task<List<User>> SearchUsersByNameAsync(string name);
     Task<UserListResponse> GetUsersWithPaginationAsync(UserListRequest request);
     Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request);
     Task<UserStatisticsResponse> GetUserStatisticsAsync();
@@ -27,7 +28,7 @@ public interface IUserService
     Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(int page = 1, int pageSize = 20, string? userId = null, string? action = null, DateTime? startDate = null, DateTime? endDate = null);
     Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(int page = 1, int pageSize = 20, string? userId = null, string? action = null, DateTime? startDate = null, DateTime? endDate = null);
     Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null);
-    Task<AppUser?> UpdateUserProfileAsync(string userId, UpdateProfileRequest request);
+    Task<User?> UpdateUserProfileAsync(string userId, UpdateProfileRequest request);
     Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request);
     Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null);
     Task<bool> CheckUsernameExistsAsync(string username, string? excludeUserId = null);

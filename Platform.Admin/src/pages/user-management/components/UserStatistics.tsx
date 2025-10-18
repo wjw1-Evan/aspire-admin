@@ -1,6 +1,11 @@
 import React from 'react';
 import { Card, Statistic, Row, Col } from 'antd';
-import { UserOutlined, TeamOutlined, CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
+import {
+  UserOutlined,
+  TeamOutlined,
+  CheckCircleOutlined,
+  StopOutlined,
+} from '@ant-design/icons';
 import type { UserStatisticsResponse } from '../types';
 
 interface UserStatisticsProps {
@@ -12,10 +17,13 @@ interface UserStatisticsProps {
 
 /**
  * 用户统计卡片组件
- * 
+ *
  * 显示用户总数、活跃用户、管理员等统计信息
  */
-const UserStatistics: React.FC<UserStatisticsProps> = ({ statistics, loading }) => {
+const UserStatistics: React.FC<UserStatisticsProps> = ({
+  statistics,
+  loading,
+}) => {
   return (
     <Card loading={loading} style={{ marginBottom: 16 }}>
       <Row gutter={16}>
@@ -56,22 +64,3 @@ const UserStatistics: React.FC<UserStatisticsProps> = ({ statistics, loading }) 
 };
 
 export default React.memo(UserStatistics);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

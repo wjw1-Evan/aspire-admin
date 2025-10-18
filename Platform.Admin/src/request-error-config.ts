@@ -1,5 +1,4 @@
-﻿import type { RequestOptions } from '@@/plugin-request/request';
-import type { RequestConfig } from '@umijs/max';
+﻿import type { RequestConfig } from '@umijs/max';
 import { message, notification } from 'antd';
 
 // 错误处理方案： 错误类型
@@ -45,8 +44,10 @@ export const errorConfig: RequestConfig = {
       if (opts?.skipErrorHandler) throw error;
 
       // 检查是否是认证相关的错误（401/404），这些已经在 app.tsx 中处理过了
-      const isAuthError = error.response?.status === 401 || error.response?.status === 404;
-      const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
+      const isAuthError =
+        error.response?.status === 401 || error.response?.status === 404;
+      const isCurrentUserRequest =
+        error.config?.url?.includes('/api/currentUser');
 
       if (isAuthError && isCurrentUserRequest) {
         // 认证错误已经在 app.tsx 的响应拦截器中处理过了，这里不重复显示消息
@@ -61,8 +62,14 @@ export const errorConfig: RequestConfig = {
           const { errorMessage, errorCode } = errorInfo;
 
           // 对于认证相关的业务错误，也不显示消息（已在响应拦截器处理）
-          if (errorCode === 'USER_NOT_FOUND' || errorCode === 'UNAUTHORIZED' || errorCode === 'TOKEN_EXPIRED') {
-            console.log('认证相关业务错误已在响应拦截器中处理，跳过重复错误显示');
+          if (
+            errorCode === 'USER_NOT_FOUND' ||
+            errorCode === 'UNAUTHORIZED' ||
+            errorCode === 'TOKEN_EXPIRED'
+          ) {
+            console.log(
+              '认证相关业务错误已在响应拦截器中处理，跳过重复错误显示',
+            );
             return;
           }
 

@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
@@ -8,7 +9,7 @@ namespace Platform.ApiService.Models;
 /// 菜单实体（全局系统资源）
 /// 菜单不属于任何企业，通过权限控制显示，所有企业共享相同菜单
 /// </summary>
-public class Menu : BaseEntity, INamedEntity
+public class Menu : BaseEntity, Platform.ServiceDefaults.Models.INamedEntity, Platform.ServiceDefaults.Models.ISoftDeletable
 {
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;

@@ -1,6 +1,10 @@
 import React from 'react';
 import { Modal, Descriptions, Tag, Space, Button } from 'antd';
-import { ClockCircleOutlined, CheckOutlined, EyeOutlined } from '@ant-design/icons';
+import {
+  ClockCircleOutlined,
+  CheckOutlined,
+  EyeOutlined,
+} from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { NoticeIconItem } from '@/services/notice';
 
@@ -109,12 +113,9 @@ export default function NoticeDetailModal({
         </Descriptions.Item>
 
         {notice.extra && (
-          <Descriptions.Item label="附加信息">
-            {notice.extra}
-          </Descriptions.Item>
+          <Descriptions.Item label="附加信息">{notice.extra}</Descriptions.Item>
         )}
       </Descriptions>
     </Modal>
   );
 }
-

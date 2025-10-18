@@ -24,9 +24,9 @@ export interface DeleteConfirmState {
 
 /**
  * 删除确认 Hook
- * 
+ *
  * 封装删除确认对话框的状态管理和逻辑
- * 
+ *
  * @example
  * ```tsx
  * const { state, showConfirm, handleConfirm, hideConfirm } = useDeleteConfirm({
@@ -36,10 +36,10 @@ export interface DeleteConfirmState {
  *     actionRef.current?.reload();
  *   },
  * });
- * 
+ *
  * // 显示确认对话框
  * showConfirm({ id: user.id, name: user.username });
- * 
+ *
  * // 在对话框中调用
  * <DeleteConfirmModal
  *   visible={state.visible}
@@ -67,13 +67,16 @@ export function useDeleteConfirm(options: UseDeleteConfirmOptions = {}) {
   /**
    * 显示删除确认对话框
    */
-  const showConfirm = useCallback((item: { id?: string; name?: string; description?: string }) => {
-    setState({
-      visible: true,
-      currentItem: item,
-      loading: false,
-    });
-  }, []);
+  const showConfirm = useCallback(
+    (item: { id?: string; name?: string; description?: string }) => {
+      setState({
+        visible: true,
+        currentItem: item,
+        loading: false,
+      });
+    },
+    [],
+  );
 
   /**
    * 隐藏删除确认对话框
@@ -98,15 +101,14 @@ export function useDeleteConfirm(options: UseDeleteConfirmOptions = {}) {
         onSuccess?.();
       } catch (error) {
         console.error('删除失败:', error);
-        
+
         // 提供更友好的错误处理
         if (onError) {
           onError(error);
         } else {
           // 默认错误处理
-          const errorMessage = error instanceof Error 
-            ? error.message 
-            : '删除失败，请重试';
+          const errorMessage =
+            error instanceof Error ? error.message : '删除失败，请重试';
           console.error('删除操作错误:', errorMessage);
         }
       } finally {
@@ -124,22 +126,3 @@ export function useDeleteConfirm(options: UseDeleteConfirmOptions = {}) {
     requireReason,
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

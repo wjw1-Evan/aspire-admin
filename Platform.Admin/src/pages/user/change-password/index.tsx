@@ -20,7 +20,6 @@ const useStyles = createStyles(({ token }) => {
   };
 });
 
-
 const ChangePasswordMessage: React.FC<{
   content: string;
 }> = ({ content }) => {
@@ -37,7 +36,8 @@ const ChangePasswordMessage: React.FC<{
 };
 
 const ChangePassword: React.FC = () => {
-  const [changePasswordState, setChangePasswordState] = useState<API.ChangePasswordResult>({});
+  const [changePasswordState, setChangePasswordState] =
+    useState<API.ChangePasswordResult>({});
   const { styles } = useStyles();
   const { message } = App.useApp();
   const intl = useIntl();
@@ -52,12 +52,12 @@ const ChangePassword: React.FC = () => {
           defaultMessage: '密码修改成功！',
         });
         message.success(defaultChangePasswordSuccessMessage);
-        
+
         // 修改成功后清空表单
         setChangePasswordState({});
         return;
       }
-      
+
       // 如果失败去设置用户错误信息
       setChangePasswordState(result);
     } catch (error) {
@@ -83,8 +83,8 @@ const ChangePassword: React.FC = () => {
           {Settings.title && ` - ${Settings.title}`}
         </title>
       </Helmet>
-      
-      <Card 
+
+      <Card
         title={intl.formatMessage({
           id: 'menu.changePassword',
           defaultMessage: '修改密码',

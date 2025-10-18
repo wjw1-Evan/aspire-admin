@@ -1,4 +1,8 @@
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
+import {
+  ModalForm,
+  ProFormText,
+  ProFormTextArea,
+} from '@ant-design/pro-components';
 import { message } from 'antd';
 import { updateCurrentCompany } from '@/services/company';
 
@@ -107,4 +111,3 @@ export default function EditCompanyModal({
     </ModalForm>
   );
 }
-

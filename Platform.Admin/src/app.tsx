@@ -48,7 +48,7 @@ export async function getInitialState(): Promise<{
         skipErrorHandler: true, // 跳过全局错误处理，由这里自己处理
       });
 
-      let userInfo = msg.data;
+      const userInfo = msg.data;
 
       // 检查用户是否有效（后端返回 IsLogin = false 表示用户不存在或被禁用）
       if (!userInfo || userInfo.isLogin === false) {
@@ -66,18 +66,28 @@ export async function getInitialState(): Promise<{
           (userInfo as any).menus = menuResponse.data;
         }
       } catch (menuError) {
-        console.log('Failed to fetch user menus, using default menus:', menuError);
+        console.log(
+          'Failed to fetch user menus, using default menus:',
+          menuError,
+        );
       }
 
       // 获取用户权限
       try {
         const permissionsResponse = await getMyPermissions();
         if (permissionsResponse.success && permissionsResponse.data) {
-          (userInfo as any).permissions = permissionsResponse.data.allPermissionCodes || [];
-          console.log('🔑 用户权限更新:', permissionsResponse.data.allPermissionCodes);
+          (userInfo as any).permissions =
+            permissionsResponse.data.allPermissionCodes || [];
+          console.log(
+            '🔑 用户权限更新:',
+            permissionsResponse.data.allPermissionCodes,
+          );
         }
       } catch (permissionsError) {
-        console.log('Failed to fetch user permissions, using default permissions:', permissionsError);
+        console.log(
+          'Failed to fetch user permissions, using default permissions:',
+          permissionsError,
+        );
       }
 
       return userInfo;
@@ -90,7 +100,7 @@ export async function getInitialState(): Promise<{
       return undefined;
     }
   };
-  
+
   // 如果不是登录页面，执行
   const { location } = history;
   const whiteListPages = [loginPath, '/user/register', '/user/register-result'];
@@ -113,28 +123,28 @@ export async function getInitialState(): Promise<{
  */
 function getIconComponent(iconName?: string): React.ReactNode {
   if (!iconName) return undefined;
-  
+
   // 将图标名称转换为 PascalCase + 'Outlined' 格式
   // 例如: 'smile' -> 'SmileOutlined', 'user' -> 'UserOutlined'
   const formatIconName = (name: string) => {
     return name
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join('');
   };
-  
+
   // 尝试多种图标后缀
   const suffixes = ['Outlined', 'Filled', 'TwoTone', ''];
-  
+
   for (const suffix of suffixes) {
     const iconComponentName = formatIconName(iconName) + suffix;
     const IconComponent = (Icons as any)[iconComponentName];
-    
+
     if (IconComponent) {
       return React.createElement(IconComponent);
     }
   }
-  
+
   console.warn(`Icon not found: ${iconName}`);
   return undefined;
 }
@@ -144,8 +154,8 @@ function getIconComponent(iconName?: string): React.ReactNode {
  */
 function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
   return menus
-    .filter(menu => !menu.hideInMenu)
-    .map(menu => {
+    .filter((menu) => !menu.hideInMenu)
+    .map((menu) => {
       const menuItem: any = {
         name: menu.name,
         path: menu.path,
@@ -226,12 +236,17 @@ export const layout: RunTimeLayoutConfig = ({
     // 动态渲染菜单（完全从数据库加载）
     menuDataRender: () => {
       // v5.0: 菜单完全从数据库加载，不使用静态路由
-      if (initialState?.currentUser?.menus && initialState.currentUser.menus.length > 0) {
-        const dynamicMenus = convertMenuTreeToProLayout(initialState.currentUser.menus);
+      if (
+        initialState?.currentUser?.menus &&
+        initialState.currentUser.menus.length > 0
+      ) {
+        const dynamicMenus = convertMenuTreeToProLayout(
+          initialState.currentUser.menus,
+        );
         console.log('✅ 使用数据库菜单:', dynamicMenus);
         return dynamicMenus;
       }
-      
+
       // 数据库没有菜单时，返回空数组（不使用 routes.ts 作为后备）
       console.warn('⚠️ 数据库中没有菜单，请检查系统初始化是否完成');
       return [];
@@ -293,7 +308,8 @@ export const layout: RunTimeLayoutConfig = ({
  * 检查当前用户响应是否有效
  */
 function handleCurrentUserResponse(response: any): any {
-  const isCurrentUserRequest = response.config.url?.includes('/api/currentUser');
+  const isCurrentUserRequest =
+    response.config.url?.includes('/api/currentUser');
   if (!isCurrentUserRequest) {
     return response;
   }
@@ -337,10 +353,14 @@ function handle404Error(error: any): Promise<never> | null {
  * 保存刷新后的token
  */
 function saveRefreshedTokens(refreshResult: any) {
-  const expiresAt = refreshResult.expiresAt 
-    ? new Date(refreshResult.expiresAt).getTime() 
+  const expiresAt = refreshResult.expiresAt
+    ? new Date(refreshResult.expiresAt).getTime()
     : undefined;
-  tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
+  tokenUtils.setTokens(
+    refreshResult.token,
+    refreshResult.refreshToken,
+    expiresAt,
+  );
 }
 
 /**
@@ -357,7 +377,9 @@ function retryOriginalRequest(originalRequest: any, newToken: string) {
  */
 async function attemptTokenRefresh(refreshToken: string, originalRequest: any) {
   try {
-    const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
+    const { refreshToken: refreshTokenAPI } = await import(
+      '@/services/ant-design-pro/api'
+    );
     const refreshResponse = await refreshTokenAPI({ refreshToken });
 
     if (!refreshResponse.success || !refreshResponse.data) {
@@ -365,14 +387,15 @@ async function attemptTokenRefresh(refreshToken: string, originalRequest: any) {
     }
 
     const refreshResult = refreshResponse.data;
-    const hasValidTokens = refreshResult.status === 'ok' 
-      && refreshResult.token 
-      && refreshResult.refreshToken;
+    const hasValidTokens =
+      refreshResult.status === 'ok' &&
+      refreshResult.token &&
+      refreshResult.refreshToken;
 
     if (hasValidTokens) {
       console.log('Token refreshed successfully');
       saveRefreshedTokens(refreshResult);
-      return retryOriginalRequest(originalRequest, refreshResult.token!);
+      return retryOriginalRequest(originalRequest, refreshResult.token);
     }
 
     return null;
@@ -428,10 +451,11 @@ async function handle401Error(error: any): Promise<any> {
 export const request: RequestConfig = {
   // 🔒 安全修复：使用环境变量配置生产环境API地址
   // 开发环境使用代理，生产环境从环境变量读取
-  baseURL: process.env.NODE_ENV === 'development' 
-    ? '' 
-    : (process.env.REACT_APP_API_BASE_URL || ''),
-  
+  baseURL:
+    process.env.NODE_ENV === 'development'
+      ? ''
+      : process.env.REACT_APP_API_BASE_URL || '',
+
   // 请求拦截器，自动添加 Authorization 头
   requestInterceptors: [
     (config: any) => {
@@ -464,14 +488,20 @@ export const request: RequestConfig = {
     async (error: any) => {
       // 🔒 安全修复：仅在开发环境输出错误详情
       if (process.env.NODE_ENV === 'development') {
-        console.log('Response error:', error.config?.url, error.response?.status, error.message);
+        console.log(
+          'Response error:',
+          error.config?.url,
+          error.response?.status,
+          error.message,
+        );
       }
 
       // 处理404错误（用户不存在）
       const notFoundResult = handle404Error(error);
       if (notFoundResult !== null) {
         // 如果是认证相关的404错误，跳转到登录页面
-        const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
+        const isCurrentUserRequest =
+          error.config?.url?.includes('/api/currentUser');
         if (isCurrentUserRequest) {
           // 使用 setTimeout 确保错误处理完成后再跳转，避免循环
           setTimeout(() => {
@@ -494,6 +524,6 @@ export const request: RequestConfig = {
       return Promise.reject(new Error(error.message || 'Request failed'));
     },
   ],
-  
+
   ...errorConfig,
 };

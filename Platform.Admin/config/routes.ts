@@ -1,12 +1,12 @@
 ﻿/**
  * @name umi 的路由配置
  * @description v5.0: 最小化静态路由，业务菜单完全从数据库动态加载
- * 
+ *
  * 只保留以下静态路由：
  * - 认证相关（登录、注册）
  * - 隐藏页面（个人中心、修改密码）
  * - 系统页面（404）
- * 
+ *
  * 业务菜单（welcome、system/*）从数据库动态加载，通过 app.tsx 的 menuDataRender 渲染
  */
 export default [
@@ -32,7 +32,7 @@ export default [
       },
     ],
   },
-  
+
   // 隐藏页面（不在菜单中显示，但需要路由）
   {
     name: 'change-password',
@@ -64,12 +64,12 @@ export default [
     component: './join-requests/pending',
     hideInMenu: true,
   },
-  
+
   // 业务页面路由（从数据库菜单生成，这里只定义路由映射）
   {
     path: '/welcome',
     component: './Welcome',
-    hideInMenu: true,  // 隐藏静态路由，使用数据库菜单
+    hideInMenu: true, // 隐藏静态路由，使用数据库菜单
   },
   {
     path: '/system/user-management',
@@ -91,7 +91,39 @@ export default [
     component: './company/settings',
     hideInMenu: true,
   },
-  
+
+  // 数据中台页面路由（从数据库菜单生成，这里只定义路由映射）
+  {
+    path: '/data-platform/data-source',
+    component: './data-platform/data-source',
+    hideInMenu: true,
+  },
+  {
+    path: '/data-platform/pipeline',
+    component: './data-platform/pipeline',
+    hideInMenu: true,
+  },
+  {
+    path: '/data-platform/quality',
+    component: './data-platform/quality',
+    hideInMenu: true,
+  },
+  {
+    path: '/data-platform/query',
+    component: './data-platform/query',
+    hideInMenu: true,
+  },
+  {
+    path: '/data-platform/report',
+    component: './data-platform/report',
+    hideInMenu: true,
+  },
+  {
+    path: '/data-platform/monitor',
+    component: './data-platform/monitor',
+    hideInMenu: true,
+  },
+
   // 默认重定向和404
   {
     path: '/',

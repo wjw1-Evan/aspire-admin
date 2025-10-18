@@ -1,9 +1,10 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-public class RuleListItem : ISoftDeletable
+public class RuleListItem : Platform.ServiceDefaults.Models.ISoftDeletable
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

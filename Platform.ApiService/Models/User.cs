@@ -1,46 +1,10 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
+using User = Platform.ApiService.Models.AppUser;
 
 namespace Platform.ApiService.Models;
-
-public class User : ISoftDeletable, IEntity, ITimestamped
-{
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
-
-    [BsonElement("name")]
-    public string Name { get; set; } = string.Empty;
-
-    [BsonElement("email")]
-    public string Email { get; set; } = string.Empty;
-
-    [BsonElement("age")]
-    public int Age { get; set; }
-
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    // 软删除字段
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
-}
 
 public class CreateUserRequest
 {
@@ -177,11 +141,11 @@ public class UserStatisticsResponse
     public int NewUsersThisMonth { get; set; }
 }
 
-public class UserActivityLog : ISoftDeletable, IEntity
+public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;

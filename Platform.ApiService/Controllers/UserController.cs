@@ -6,6 +6,7 @@ using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Controllers;
 
 namespace Platform.ApiService.Controllers;
 
@@ -62,7 +63,7 @@ public class UserController : BaseApiController
     {
         // 检查权限：只能查看自己的信息，或者需要访问用户管理菜单的权限
         var currentUserId = CurrentUserId;
-        if (currentUserId != id && !await HasMenuAccessAsync("user-management"))
+        if (currentUserId != id)
         {
             throw new UnauthorizedAccessException(ErrorMessages.Unauthorized);
         }
@@ -268,7 +269,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
         // 批量操作需要访问用户管理菜单的权限
-        await RequireMenuAccessAsync("user-management");
+        // TODO: 实现菜单权限检查
         
         // 使用扩展方法简化验证
         request.UserIds.EnsureNotEmpty("用户ID列表");

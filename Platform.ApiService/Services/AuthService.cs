@@ -1,7 +1,10 @@
+using User = Platform.ApiService.Models.AppUser;
 using MongoDB.Driver;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
 using System.Security.Claims;
 
 namespace Platform.ApiService.Services;
@@ -9,7 +12,7 @@ namespace Platform.ApiService.Services;
 public class AuthService : BaseService, IAuthService
 {
     private readonly IMongoDatabase _database;
-    private readonly IMongoCollection<AppUser> _users;
+    private readonly IMongoCollection<User> _users;
     private readonly IJwtService _jwtService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
@@ -31,7 +34,7 @@ public class AuthService : BaseService, IAuthService
         : base(database, httpContextAccessor, tenantContext, logger)
     {
         _database = database;
-        _users = database.GetCollection<AppUser>("users");
+        _users = database.GetCollection<User>("users");
         _jwtService = jwtService;
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
@@ -154,10 +157,10 @@ public class AuthService : BaseService, IAuthService
     public async Task<ApiResponse<LoginData>> LoginAsync(LoginRequest request)
     {
         // v3.1: 用户名全局查找（不需要企业代码）
-        var filter = Builders<AppUser>.Filter.And(
-            Builders<AppUser>.Filter.Eq(u => u.Username, request.Username),
-            Builders<AppUser>.Filter.Eq(u => u.IsActive, true),
-            MongoFilterExtensions.NotDeleted<AppUser>()
+        var filter = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq(u => u.Username, request.Username),
+            Builders<User>.Filter.Eq(u => u.IsActive, true),
+            MongoFilterExtensions.NotDeleted<User>()
         );
         var user = await _users.Find(filter).FirstOrDefaultAsync();
         
@@ -211,7 +214,7 @@ public class AuthService : BaseService, IAuthService
         }
 
         // 更新最后登录时间
-        var update = Builders<AppUser>.Update.Set(u => u.LastLoginAt, DateTime.UtcNow);
+        var update = Builders<User>.Update.Set(u => u.LastLoginAt, DateTime.UtcNow);
         await _users.UpdateOneAsync(u => u.Id == user.Id, update);
 
         // 记录登录活动日志
@@ -261,7 +264,7 @@ public class AuthService : BaseService, IAuthService
     /// <summary>
     /// v3.1: 用户注册（自动创建个人企业）
     /// </summary>
-    public async Task<ApiResponse<AppUser>> RegisterAsync(RegisterRequest request)
+    public async Task<ApiResponse<User>> RegisterAsync(RegisterRequest request)
     {
         try
         {
@@ -278,7 +281,7 @@ public class AuthService : BaseService, IAuthService
             }
             
             // 3. 创建用户
-            var user = new AppUser
+            var user = new User
             {
                 Username = request.Username.Trim(),
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
@@ -296,7 +299,7 @@ public class AuthService : BaseService, IAuthService
             var personalCompany = await CreatePersonalCompanyAsync(user);
             
             // 5. 设置用户的企业信息
-            var update = Builders<AppUser>.Update
+            var update = Builders<User>.Update
                 .Set(u => u.CurrentCompanyId, personalCompany.Id)
                 .Set(u => u.PersonalCompanyId, personalCompany.Id)
                 .Set(u => u.CompanyId, personalCompany.Id) // ✅ 修复：同时设置CompanyId保持一致性
@@ -315,22 +318,22 @@ public class AuthService : BaseService, IAuthService
             _logger.LogInformation("用户 {Username} 注册完成，个人企业: {CompanyName}", 
                 user.Username, personalCompany.Name);
             
-            return ApiResponse<AppUser>.SuccessResult(user, "注册成功！已为您创建个人企业。");
+            return ApiResponse<User>.SuccessResult(user, "注册成功！已为您创建个人企业。");
         }
         catch (ArgumentException ex)
         {
-            return ApiResponse<AppUser>.ValidationErrorResult(ex.Message);
+            return ApiResponse<User>.ValidationErrorResult(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             // 唯一性检查失败
             var errorCode = ex.Message.Contains("用户名") ? "USER_EXISTS" : "EMAIL_EXISTS";
-            return ApiResponse<AppUser>.ErrorResult(errorCode, ex.Message);
+            return ApiResponse<User>.ErrorResult(errorCode, ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "用户注册失败");
-            return ApiResponse<AppUser>.ServerErrorResult($"注册失败: {ex.Message}");
+            return ApiResponse<User>.ErrorResult("SERVER_ERROR", $"注册失败: {ex.Message}");
         }
     }
     
@@ -338,7 +341,7 @@ public class AuthService : BaseService, IAuthService
     /// v3.1: 创建个人企业（用户注册时自动调用）
     /// 注意：MongoDB单机模式不支持事务，使用错误回滚机制
     /// </summary>
-    private async Task<Company> CreatePersonalCompanyAsync(AppUser user)
+    private async Task<Company> CreatePersonalCompanyAsync(User user)
     {
         var companies = _database.GetCollection<Company>("companies");
         var roles = _database.GetCollection<Role>("roles");
@@ -498,7 +501,7 @@ public class AuthService : BaseService, IAuthService
             var user = await _users.Find(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync();
             if (user == null)
             {
-                return ApiResponse<bool>.NotFoundResult("用户不存在或已被禁用");
+                return ApiResponse<bool>.NotFoundResult("用户", userId);
             }
 
             // 验证当前密码是否正确
@@ -509,7 +512,7 @@ public class AuthService : BaseService, IAuthService
 
             // 更新密码
             var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
-            var update = Builders<AppUser>.Update
+            var update = Builders<User>.Update
                 .Set(u => u.PasswordHash, newPasswordHash)
                 .Set(u => u.UpdatedAt, DateTime.UtcNow);
 

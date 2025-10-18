@@ -147,8 +147,20 @@ public class DatabaseInitializerService : IDatabaseInitializerService
                 UpdatedAt = now
             };
             
+            var dataPlatformMenu = new Models.Menu
+            {
+                Name = "data-platform",
+                Title = "数据中台",
+                Path = "/data-platform",
+                Icon = "database",
+                SortOrder = 3,
+                IsEnabled = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+            
             // 先插入顶级菜单以获取ID
-            await menus.InsertManyAsync(new[] { welcomeMenu, systemMenu });
+            await menus.InsertManyAsync(new[] { welcomeMenu, systemMenu, dataPlatformMenu });
             
             // 创建系统管理子菜单
             var childMenus = new[]
@@ -207,9 +219,93 @@ public class DatabaseInitializerService : IDatabaseInitializerService
                 }
             };
             
-            await menus.InsertManyAsync(childMenus);
+            // 创建数据中台子菜单
+            var dataPlatformChildMenus = new[]
+            {
+                new Models.Menu
+                {
+                    Name = "data-source-management",
+                    Title = "数据源管理",
+                    Path = "/data-platform/data-source",
+                    Component = "./data-platform/data-source",
+                    Icon = "link",
+                    ParentId = dataPlatformMenu.Id,
+                    SortOrder = 1,
+                    IsEnabled = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                new Models.Menu
+                {
+                    Name = "data-pipeline",
+                    Title = "数据管道",
+                    Path = "/data-platform/pipeline",
+                    Component = "./data-platform/pipeline",
+                    Icon = "fork",
+                    ParentId = dataPlatformMenu.Id,
+                    SortOrder = 2,
+                    IsEnabled = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                new Models.Menu
+                {
+                    Name = "data-quality",
+                    Title = "数据质量",
+                    Path = "/data-platform/quality",
+                    Component = "./data-platform/quality",
+                    Icon = "safety-certificate",
+                    ParentId = dataPlatformMenu.Id,
+                    SortOrder = 3,
+                    IsEnabled = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                new Models.Menu
+                {
+                    Name = "data-query",
+                    Title = "数据查询",
+                    Path = "/data-platform/query",
+                    Component = "./data-platform/query",
+                    Icon = "search",
+                    ParentId = dataPlatformMenu.Id,
+                    SortOrder = 4,
+                    IsEnabled = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                new Models.Menu
+                {
+                    Name = "data-report",
+                    Title = "数据报表",
+                    Path = "/data-platform/report",
+                    Component = "./data-platform/report",
+                    Icon = "bar-chart",
+                    ParentId = dataPlatformMenu.Id,
+                    SortOrder = 5,
+                    IsEnabled = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                new Models.Menu
+                {
+                    Name = "task-monitor",
+                    Title = "任务监控",
+                    Path = "/data-platform/monitor",
+                    Component = "./data-platform/monitor",
+                    Icon = "monitor",
+                    ParentId = dataPlatformMenu.Id,
+                    SortOrder = 6,
+                    IsEnabled = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                }
+            };
             
-            _logger.LogInformation("全局系统菜单创建完成（{Count} 个）", 2 + childMenus.Length);
+            await menus.InsertManyAsync(childMenus);
+            await menus.InsertManyAsync(dataPlatformChildMenus);
+            
+            _logger.LogInformation("全局系统菜单创建完成（{Count} 个）", 3 + childMenus.Length + dataPlatformChildMenus.Length);
         }
         catch (Exception ex)
         {

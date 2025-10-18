@@ -1,5 +1,7 @@
 using MongoDB.Driver;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
 
@@ -8,7 +10,7 @@ public class NoticeService : BaseService, INoticeService
     private readonly BaseRepository<NoticeIconItem> _noticeRepository;
     
     // 快捷访问器
-    private IMongoCollection<NoticeIconItem> _notices => _noticeRepository.Collection;
+    private IMongoCollection<NoticeIconItem> Notices => _noticeRepository.Collection;
 
     public NoticeService(
         IMongoDatabase database, 
@@ -91,7 +93,9 @@ public class NoticeService : BaseService, INoticeService
         if (updates.Count == 0)
             return null;
 
-        var updated = await _noticeRepository.UpdateAsync(id, updateBuilder.Combine(updates));
+        var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Id, id);
+        var result = await _noticeRepository.Collection.UpdateOneAsync(filter, updateBuilder.Combine(updates));
+        var updated = result.ModifiedCount > 0;
         return updated ? await GetNoticeByIdAsync(id) : null;
     }
 
@@ -103,7 +107,9 @@ public class NoticeService : BaseService, INoticeService
     public async Task<bool> MarkAsReadAsync(string id)
     {
         var update = Builders<NoticeIconItem>.Update.Set(n => n.Read, true);
-        return await _noticeRepository.UpdateAsync(id, update);
+        var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Id, id);
+        var result = await _noticeRepository.Collection.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
     }
 
     public async Task<bool> MarkAllAsReadAsync()
@@ -111,7 +117,8 @@ public class NoticeService : BaseService, INoticeService
         var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Read, false);
         var update = Builders<NoticeIconItem>.Update.Set(n => n.Read, true);
         
-        var count = await _noticeRepository.UpdateManyAsync(filter, update);
+        var result = await Notices.UpdateManyAsync(filter, update);
+        var count = result.ModifiedCount;
         return count > 0;
     }
 }

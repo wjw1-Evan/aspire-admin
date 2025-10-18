@@ -24,9 +24,9 @@ export interface BulkActionState {
 
 /**
  * 批量操作 Hook
- * 
+ *
  * 封装批量操作确认对话框的状态管理和逻辑
- * 
+ *
  * @example
  * ```tsx
  * const { state, showConfirm, handleConfirm, hideConfirm } = useBulkAction({
@@ -37,13 +37,13 @@ export interface BulkActionState {
  *     actionRef.current?.reload();
  *   },
  * });
- * 
+ *
  * // 显示确认对话框
  * showConfirm({
  *   actionType: 'delete',
  *   selectedCount: selectedRows.length,
  * });
- * 
+ *
  * // 在对话框中调用
  * <BulkActionModal
  *   visible={state.visible}
@@ -115,15 +115,14 @@ export function useBulkAction(options: UseBulkActionOptions = {}) {
         onSuccess?.();
       } catch (error) {
         console.error('批量操作失败:', error);
-        
+
         // 提供更友好的错误处理
         if (onError) {
           onError(error);
         } else {
           // 默认错误处理
-          const errorMessage = error instanceof Error 
-            ? error.message 
-            : '批量操作失败，请重试';
+          const errorMessage =
+            error instanceof Error ? error.message : '批量操作失败，请重试';
           console.error('批量操作错误:', errorMessage);
         }
       } finally {
@@ -141,22 +140,3 @@ export function useBulkAction(options: UseBulkActionOptions = {}) {
     requireReason,
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

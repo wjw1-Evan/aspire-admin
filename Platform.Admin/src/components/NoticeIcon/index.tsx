@@ -2,7 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Badge, Tabs, Spin, Popover, message } from 'antd';
 import { BellOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useNoticePolling } from '@/hooks/useNoticePolling';
-import { markNoticeAsRead, markNoticeAsUnread, markAllAsRead, markAllAsUnread, clearReadNotices } from '@/services/notice';
+import {
+  markNoticeAsRead,
+  markNoticeAsUnread,
+  markAllAsRead,
+} from '@/services/notice';
 import type { NoticeIconItem } from '@/services/notice';
 import NoticeList from './NoticeList';
 import NoticeDetailModal from './NoticeDetailModal';
@@ -11,22 +15,26 @@ import styles from './index.less';
 export default function NoticeIcon() {
   const [visible, setVisible] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [selectedNotice, setSelectedNotice] = useState<NoticeIconItem | null>(null);
+  const [selectedNotice, setSelectedNotice] = useState<NoticeIconItem | null>(
+    null,
+  );
   const { notices, loading, unreadCount, refetch } = useNoticePolling();
 
   // 按类型分组（大小写不敏感）
   const { notifications, messages, events } = useMemo(() => {
     return {
-      notifications: notices.filter(n => n.type?.toLowerCase() === 'notification'),
-      messages: notices.filter(n => n.type?.toLowerCase() === 'message'),
-      events: notices.filter(n => n.type?.toLowerCase() === 'event'),
+      notifications: notices.filter(
+        (n) => n.type?.toLowerCase() === 'notification',
+      ),
+      messages: notices.filter((n) => n.type?.toLowerCase() === 'message'),
+      events: notices.filter((n) => n.type?.toLowerCase() === 'event'),
     };
   }, [notices]);
 
   const handleItemClick = (item: NoticeIconItem) => {
     // 先关闭通知列表
     setVisible(false);
-    
+
     // 延迟打开详情模态框，确保 Popover 完全关闭
     setTimeout(() => {
       setSelectedNotice(item);
@@ -43,12 +51,12 @@ export default function NoticeIcon() {
     try {
       await markNoticeAsRead(item.id);
       message.success('已标记为已读');
-      
+
       // 如果是在详情模态框中操作，更新选中的通知状态
       if (selectedNotice?.id === item.id) {
         setSelectedNotice({ ...selectedNotice, read: true });
       }
-      
+
       refetch();
     } catch (error) {
       console.error('标记已读失败:', error);
@@ -60,12 +68,12 @@ export default function NoticeIcon() {
     try {
       await markNoticeAsUnread(item.id);
       message.success('已标记为未读');
-      
+
       // 如果是在详情模态框中操作，更新选中的通知状态
       if (selectedNotice?.id === item.id) {
         setSelectedNotice({ ...selectedNotice, read: false });
       }
-      
+
       refetch();
     } catch (error) {
       console.error('标记未读失败:', error);
@@ -75,8 +83,8 @@ export default function NoticeIcon() {
 
   const handleClearAll = async (type: string) => {
     try {
-      const typeNotices = notices.filter(n => n.type === type);
-      const readIds = typeNotices.filter(n => n.read).map(n => n.id);
+      const typeNotices = notices.filter((n) => n.type === type);
+      const readIds = typeNotices.filter((n) => n.read).map((n) => n.id);
       if (readIds.length > 0) {
         await clearReadNotices();
         refetch();
@@ -88,8 +96,8 @@ export default function NoticeIcon() {
 
   const handleMarkAllRead = async (type: string) => {
     try {
-      const typeNotices = notices.filter(n => n.type?.toLowerCase() === type);
-      const unreadIds = typeNotices.filter(n => !n.read).map(n => n.id);
+      const typeNotices = notices.filter((n) => n.type?.toLowerCase() === type);
+      const unreadIds = typeNotices.filter((n) => !n.read).map((n) => n.id);
       if (unreadIds.length > 0) {
         await markAllAsRead(unreadIds);
         message.success('已全部标记为已读');
@@ -104,7 +112,7 @@ export default function NoticeIcon() {
   const tabs = [
     {
       key: 'notification',
-      label: `通知 (${notifications.filter(n => !n.read).length})`,
+      label: `通知 (${notifications.filter((n) => !n.read).length})`,
       children: (
         <NoticeList
           data={notifications}
@@ -119,7 +127,7 @@ export default function NoticeIcon() {
     },
     {
       key: 'message',
-      label: `消息 (${messages.filter(n => !n.read).length})`,
+      label: `消息 (${messages.filter((n) => !n.read).length})`,
       children: (
         <NoticeList
           data={messages}
@@ -134,7 +142,7 @@ export default function NoticeIcon() {
     },
     {
       key: 'event',
-      label: `待办 (${events.filter(n => !n.read).length})`,
+      label: `待办 (${events.filter((n) => !n.read).length})`,
       children: (
         <NoticeList
           data={events}
@@ -183,4 +191,3 @@ export default function NoticeIcon() {
     </>
   );
 }
-

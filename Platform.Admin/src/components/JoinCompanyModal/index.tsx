@@ -31,7 +31,8 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
   const { message } = AntApp.useApp();
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState<CompanySearchResult[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<CompanySearchResult | null>(null);
+  const [selectedCompany, setSelectedCompany] =
+    useState<CompanySearchResult | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -56,7 +57,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
     setSearching(true);
     try {
       const response = await searchCompanies(keyword);
-      
+
       if (response.success && response.data) {
         setSearchResults(response.data);
         if (response.data.length === 0) {
@@ -145,7 +146,14 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
 
         {/* 搜索结果列表 */}
         {searchResults.length > 0 && (
-          <div style={{ maxHeight: 300, overflow: 'auto', border: '1px solid #f0f0f0', borderRadius: 4 }}>
+          <div
+            style={{
+              maxHeight: 300,
+              overflow: 'auto',
+              border: '1px solid #f0f0f0',
+              borderRadius: 4,
+            }}
+          >
             <List
               dataSource={searchResults}
               renderItem={(item) => (
@@ -153,7 +161,8 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                   onClick={() => handleSelectCompany(item)}
                   style={{
                     cursor: 'pointer',
-                    background: selectedCompany?.id === item.id ? '#e6f7ff' : undefined,
+                    background:
+                      selectedCompany?.id === item.id ? '#e6f7ff' : undefined,
                     padding: '12px 16px',
                   }}
                   extra={
@@ -215,4 +224,3 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
     </Modal>
   );
 };
-

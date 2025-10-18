@@ -29,7 +29,7 @@ export interface DeleteConfirmModalProps {
 
 /**
  * 删除确认对话框组件
- * 
+ *
  * @example
  * ```tsx
  * <DeleteConfirmModal
@@ -67,7 +67,9 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
     <Modal
       title={
         <span>
-          <ExclamationCircleOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
+          <ExclamationCircleOutlined
+            style={{ color: '#ff4d4f', marginRight: 8 }}
+          />
           确认删除
         </span>
       }
@@ -108,22 +110,3 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 };
 
 export default DeleteConfirmModal;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Platform.ApiService.Models;
+namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
-/// 统一的 API 响应格式
+/// 统一的 API 响应格式 - 所有微服务通用
 /// </summary>
 /// <typeparam name="T">数据类型</typeparam>
 public class ApiResponse<T>
@@ -92,75 +92,75 @@ public class ApiResponse<T>
     }
 
     /// <summary>
-    /// 创建未授权响应
+    /// 创建未找到错误响应
     /// </summary>
-    /// <param name="errorMessage">错误消息</param>
+    /// <param name="resource">资源名称</param>
+    /// <param name="id">资源ID</param>
     /// <param name="traceId">追踪ID</param>
-    /// <returns>未授权响应</returns>
-    public static ApiResponse<T> UnauthorizedResult(string errorMessage = "未授权访问", string? traceId = null)
-    {
-        return new ApiResponse<T>
-        {
-            success = false,
-            errorCode = "UNAUTHORIZED",
-            errorMessage = errorMessage,
-            traceId = traceId
-        };
-    }
-
-    /// <summary>
-    /// 创建未找到响应
-    /// </summary>
-    /// <param name="errorMessage">错误消息</param>
-    /// <param name="traceId">追踪ID</param>
-    /// <returns>未找到响应</returns>
-    public static ApiResponse<T> NotFoundResult(string errorMessage = "资源未找到", string? traceId = null)
+    /// <returns>未找到错误响应</returns>
+    public static ApiResponse<T> NotFoundResult(string resource, string id, string? traceId = null)
     {
         return new ApiResponse<T>
         {
             success = false,
             errorCode = "NOT_FOUND",
-            errorMessage = errorMessage,
+            errorMessage = $"{resource} {id} 不存在",
             traceId = traceId
         };
     }
 
     /// <summary>
-    /// 创建服务器错误响应
+    /// 创建未授权错误响应
     /// </summary>
-    /// <param name="errorMessage">错误消息</param>
+    /// <param name="message">错误消息</param>
     /// <param name="traceId">追踪ID</param>
-    /// <returns>服务器错误响应</returns>
-    public static ApiResponse<T> ServerErrorResult(string errorMessage = "服务器内部错误", string? traceId = null)
+    /// <returns>未授权错误响应</returns>
+    public static ApiResponse<T> UnauthorizedResult(string message = "未授权访问", string? traceId = null)
     {
         return new ApiResponse<T>
         {
             success = false,
-            errorCode = "INTERNAL_SERVER_ERROR",
-            errorMessage = errorMessage,
+            errorCode = "UNAUTHORIZED",
+            errorMessage = message,
+            traceId = traceId
+        };
+    }
+
+    /// <summary>
+    /// 创建分页响应
+    /// </summary>
+    /// <param name="data">数据列表</param>
+    /// <param name="total">总数</param>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">页面大小</param>
+    /// <param name="traceId">追踪ID</param>
+    /// <returns>分页响应</returns>
+    public static ApiResponse<PagedResult<T>> PagedResult(IEnumerable<T> data, long total, int page, int pageSize, string? traceId = null)
+    {
+        return new ApiResponse<PagedResult<T>>
+        {
+            success = true,
+            data = new PagedResult<T>
+            {
+                list = data.ToList(),
+                total = total,
+                page = page,
+                pageSize = pageSize
+            },
             traceId = traceId
         };
     }
 }
 
 /// <summary>
-/// 无数据响应的简化版本
+/// 分页结果模型
 /// </summary>
-public class ApiResponse : ApiResponse<object>
+/// <typeparam name="T">数据类型</typeparam>
+public class PagedResult<T>
 {
-    /// <summary>
-    /// 创建成功响应（无数据）
-    /// </summary>
-    /// <param name="message">成功消息</param>
-    /// <param name="traceId">追踪ID</param>
-    /// <returns>成功响应</returns>
-    public static ApiResponse SuccessResult(string message = "操作成功", string? traceId = null)
-    {
-        return new ApiResponse
-        {
-            success = true,
-            data = new { message },
-            traceId = traceId
-        };
-    }
+    public List<T> list { get; set; } = new();
+    public long total { get; set; }
+    public int page { get; set; }
+    public int pageSize { get; set; }
+    public int totalPages => (int)Math.Ceiling((double)total / pageSize);
 }

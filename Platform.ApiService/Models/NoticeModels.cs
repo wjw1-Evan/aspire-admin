@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Models;
 using System.Text.Json.Serialization;
 
 namespace Platform.ApiService.Models;
@@ -8,7 +9,7 @@ public class NoticeIconItem : ISoftDeletable, IEntity, ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [BsonElement("extra")]
     public string? Extra { get; set; }

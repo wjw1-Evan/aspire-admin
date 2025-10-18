@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
@@ -208,7 +209,7 @@ public class PageParams
 /// 修复：继承 MultiTenantEntity 以支持多企业功能
 /// </summary>
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如旧的 role 字段）
-public class AppUser : MultiTenantEntity
+public class AppUser : MultiTenantEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
 {
     [BsonElement("username")]
     public string Username { get; set; } = string.Empty;

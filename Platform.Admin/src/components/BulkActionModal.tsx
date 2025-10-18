@@ -56,7 +56,7 @@ const ACTION_CONFIG = {
 
 /**
  * 批量操作确认对话框组件
- * 
+ *
  * @example
  * ```tsx
  * <BulkActionModal
@@ -141,22 +141,3 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
 };
 
 export default BulkActionModal;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

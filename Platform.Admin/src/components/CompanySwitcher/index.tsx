@@ -31,9 +31,9 @@ export const CompanySwitcher: React.FC = () => {
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
-        }
+        },
       );
 
       if (response.success && response.data) {
@@ -63,13 +63,13 @@ export const CompanySwitcher: React.FC = () => {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json',
           },
           data: {
             targetCompanyId,
           },
-        }
+        },
       );
 
       if (response.success && response.data) {
@@ -125,9 +125,7 @@ export const CompanySwitcher: React.FC = () => {
             {company.roleNames.join('、') || '无角色'}
           </div>
         </div>
-        {company.isCurrent && (
-          <CheckOutlined className={styles.checkIcon} />
-        )}
+        {company.isCurrent && <CheckOutlined className={styles.checkIcon} />}
       </div>
     ),
     onClick: () => handleSwitch(company.companyId),
@@ -192,4 +190,3 @@ export const CompanySwitcher: React.FC = () => {
     </>
   );
 };
-

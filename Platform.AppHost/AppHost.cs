@@ -13,13 +13,33 @@ var mongo = builder.AddMongoDB("mongo").WithMongoExpress(config=>{ config.WithLi
 
 var mongodb = mongo.AddDatabase("mongodb","aspire-admin-db");
 
+// 暂时注释掉 Redis 和 RabbitMQ，因为 Aspire 可能不支持
+// var redis = builder.AddRedis("redis")
+//     .WithLifetime(ContainerLifetime.Persistent);
+
+// var rabbitmq = builder.AddRabbitMQ("rabbitmq")
+//     .WithManagementPlugin()
+//     .WithLifetime(ContainerLifetime.Persistent);
+
+// ClickHouse 已替换为 MongoDB，使用现有的 mongodb 配置
+
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
     // 核心业务服务（端口不暴露，仅供内部访问）
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
-    .WithReference(mongodb)
-    .WithHttpEndpoint().WithReplicas(3)
-    .WithHttpHealthCheck("/health")
+        .WithReference(mongodb)
+        .WithHttpEndpoint().WithReplicas(3)
+        .WithHttpHealthCheck("/health"),
+    
+    // 数据中台服务
+    ["dataplatform"] = builder.AddProject<Projects.Platform_DataPlatform>("dataplatform")
+        .WithReference(mongodb)
+        // .WithReference(redis)
+        // .WithReference(rabbitmq)
+        .WithHttpEndpoint().WithReplicas(2)
+        .WithHttpHealthCheck("/health")
+        // .WaitFor(redis)
+        // .WaitFor(rabbitmq)
  };
 
 

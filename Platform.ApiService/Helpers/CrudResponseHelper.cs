@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Helpers;
 
@@ -27,9 +28,9 @@ public static class CrudResponseHelper
     /// </summary>
     /// <param name="message">自定义消息</param>
     /// <returns>API响应</returns>
-    public static ApiResponse UpdateSuccessResponse(string? message = null)
+    public static ApiResponse<object> UpdateSuccessResponse(string? message = null)
     {
-        return ApiResponse.SuccessResult(message ?? ErrorMessages.UpdateSuccess);
+        return ApiResponse<object>.SuccessResult(message ?? ErrorMessages.UpdateSuccess);
     }
     
     /// <summary>
@@ -37,9 +38,9 @@ public static class CrudResponseHelper
     /// </summary>
     /// <param name="message">自定义消息</param>
     /// <returns>API响应</returns>
-    public static ApiResponse DeleteSuccessResponse(string? message = null)
+    public static ApiResponse<object> DeleteSuccessResponse(string? message = null)
     {
-        return ApiResponse.SuccessResult(message ?? ErrorMessages.DeleteSuccess);
+        return ApiResponse<object>.SuccessResult(message ?? ErrorMessages.DeleteSuccess);
     }
     
     /// <summary>
@@ -77,14 +78,14 @@ public static class CrudResponseHelper
     /// <param name="resourceId">资源ID</param>
     /// <param name="successMessage">成功消息</param>
     /// <returns>API响应</returns>
-    public static ApiResponse BooleanOperationResponse(
+    public static ApiResponse<object> BooleanOperationResponse(
         bool success, 
         string resourceName, 
         string? resourceId = null, 
         string? successMessage = null)
     {
         success.EnsureSuccess(resourceName, resourceId);
-        return ApiResponse.SuccessResult(successMessage ?? ErrorMessages.OperationSuccess);
+        return ApiResponse<object>.SuccessResult(successMessage ?? ErrorMessages.OperationSuccess);
     }
 }
 

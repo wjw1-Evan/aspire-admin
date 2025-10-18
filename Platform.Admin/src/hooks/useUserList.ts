@@ -5,13 +5,13 @@ import type { UserListRequest } from '@/pages/user-management/types';
 
 /**
  * 用户列表管理 Hook
- * 
+ *
  * 封装用户列表的获取和搜索逻辑
- * 
+ *
  * @example
  * ```tsx
  * const { searchParams, fetchUsers, updateSearchParams } = useUserList();
- * 
+ *
  * <ProTable request={fetchUsers} />
  * ```
  */
@@ -41,10 +41,13 @@ export function useUserList() {
       };
 
       try {
-        const response = await request<{ success: boolean; data: any }>('/api/user/list', {
-          method: 'POST',
-          data: requestData,
-        });
+        const response = await request<{ success: boolean; data: any }>(
+          '/api/user/list',
+          {
+            method: 'POST',
+            data: requestData,
+          },
+        );
 
         return {
           data: response.data.users || [],
@@ -90,22 +93,3 @@ export function useUserList() {
     resetSearchParams,
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

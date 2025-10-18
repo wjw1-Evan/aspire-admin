@@ -2,8 +2,7 @@ export default {
   'pages.layouts.userLayout.title':
     'Ant Design is the most influential web design specification in Xihu district',
   'pages.login.accountLogin.tab': 'Account Login',
-  'pages.login.accountLogin.errorMessage':
-    'Incorrect username/password',
+  'pages.login.accountLogin.errorMessage': 'Incorrect username/password',
   'pages.login.failure': 'Login failed, please try again!',
   'pages.login.success': 'Login successful!',
   'pages.login.username.placeholder': 'Username: admin or user',
@@ -29,12 +28,15 @@ export default {
   'pages.changePassword.success': 'Password changed successfully!',
   'pages.changePassword.failure': 'Password change failed, please try again!',
   'pages.changePassword.currentPassword.placeholder': 'Current password',
-  'pages.changePassword.currentPassword.required': 'Please enter current password!',
+  'pages.changePassword.currentPassword.required':
+    'Please enter current password!',
   'pages.changePassword.newPassword.placeholder': 'New password',
   'pages.changePassword.newPassword.required': 'Please enter new password!',
-  'pages.changePassword.newPassword.length': 'Password must be at least 6 characters',
+  'pages.changePassword.newPassword.length':
+    'Password must be at least 6 characters',
   'pages.changePassword.confirmPassword.placeholder': 'Confirm new password',
-  'pages.changePassword.confirmPassword.required': 'Please confirm new password!',
+  'pages.changePassword.confirmPassword.required':
+    'Please confirm new password!',
   'pages.welcome.link': 'Welcome',
   'pages.welcome.alertMessage':
     'Faster and stronger heavy-duty components have been released.',

@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -361,10 +363,7 @@ public class UserCompanyService : BaseService, IUserCompanyService
         );
         
         var update = Builders<UserCompany>.Update
-            .Set(uc => uc.IsDeleted, true)
-            .Set(uc => uc.DeletedBy, currentUserId)
-            .Set(uc => uc.DeletedAt, DateTime.UtcNow)
-            .Set(uc => uc.UpdatedAt, DateTime.UtcNow);
+            .Set(uc => uc.IsDeleted, true);
         
         var result = await _userCompanies.UpdateOneAsync(filter, update);
         return result.ModifiedCount > 0;

@@ -12,13 +12,13 @@ import NoticeIcon from './NoticeIcon';
 import { CompanySwitcher } from './CompanySwitcher';
 import { JoinCompanyModal } from './JoinCompanyModal';
 
-export { 
-  AvatarDropdown, 
-  AvatarName, 
-  Footer, 
+export {
+  AvatarDropdown,
+  AvatarName,
+  Footer,
   JoinCompanyModal,
-  NoticeIcon, 
-  Question, 
+  NoticeIcon,
+  Question,
   SelectLang,
-  CompanySwitcher  // v3.1: 企业切换器
+  CompanySwitcher, // v3.1: 企业切换器
 };

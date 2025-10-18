@@ -1,5 +1,13 @@
 import React from 'react';
-import { Drawer, Descriptions, Tag, Badge, Space, Typography, Divider } from 'antd';
+import {
+  Drawer,
+  Descriptions,
+  Tag,
+  Badge,
+  Space,
+  Typography,
+  Divider,
+} from 'antd';
 import {
   ClockCircleOutlined,
   GlobalOutlined,
@@ -22,13 +30,17 @@ interface LogDetailDrawerProps {
   readonly onClose: () => void;
 }
 
-export default function LogDetailDrawer({ open, log, onClose }: LogDetailDrawerProps) {
+export default function LogDetailDrawer({
+  open,
+  log,
+  onClose,
+}: LogDetailDrawerProps) {
   if (!log) return null;
 
   // 根据状态码获取显示样式
   const getStatusBadge = (statusCode?: number) => {
     if (!statusCode) return null;
-    
+
     if (statusCode >= 200 && statusCode < 300) {
       return <Badge status="success" text={`${statusCode} 成功`} />;
     }
@@ -61,13 +73,7 @@ export default function LogDetailDrawer({ open, log, onClose }: LogDetailDrawerP
   };
 
   return (
-    <Drawer
-      title="日志详情"
-      width={720}
-      open={open}
-      onClose={onClose}
-      
-    >
+    <Drawer title="日志详情" width={720} open={open} onClose={onClose}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {/* 基本信息 */}
         <Descriptions title="基本信息" bordered column={1}>
@@ -98,13 +104,19 @@ export default function LogDetailDrawer({ open, log, onClose }: LogDetailDrawerP
         </Descriptions>
 
         {/* HTTP 请求信息 */}
-        {(log.httpMethod || log.path || log.statusCode || log.duration !== undefined) && (
+        {(log.httpMethod ||
+          log.path ||
+          log.statusCode ||
+          log.duration !== undefined) && (
           <>
             <Divider />
             <Descriptions title="HTTP 请求信息" bordered column={1}>
               {log.httpMethod && (
                 <Descriptions.Item label="请求方法">
-                  <Tag color={getMethodColor(log.httpMethod)} icon={<ApiOutlined />}>
+                  <Tag
+                    color={getMethodColor(log.httpMethod)}
+                    icon={<ApiOutlined />}
+                  >
                     {log.httpMethod}
                   </Tag>
                 </Descriptions.Item>
@@ -141,9 +153,7 @@ export default function LogDetailDrawer({ open, log, onClose }: LogDetailDrawerP
                     {log.duration > 1000 && log.duration <= 3000 && (
                       <Tag color="warning">响应较慢</Tag>
                     )}
-                    {log.duration > 3000 && (
-                      <Tag color="error">响应超时</Tag>
-                    )}
+                    {log.duration > 3000 && <Tag color="error">响应超时</Tag>}
                   </Space>
                 </Descriptions.Item>
               )}
@@ -182,4 +192,3 @@ export default function LogDetailDrawer({ open, log, onClose }: LogDetailDrawerP
     </Drawer>
   );
 }
-

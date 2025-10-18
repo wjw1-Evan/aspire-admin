@@ -18,7 +18,7 @@ interface UserSearchFormProps {
 
 /**
  * 用户搜索表单组件
- * 
+ *
  * 支持按用户名、邮箱、角色、状态、创建时间等条件搜索
  */
 const UserSearchForm: React.FC<UserSearchFormProps> = ({
@@ -75,7 +75,12 @@ const UserSearchForm: React.FC<UserSearchFormProps> = ({
 
         <Form.Item>
           <Space>
-            <Button type="primary" htmlType="submit" icon={<SearchOutlined />} loading={loading}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<SearchOutlined />}
+              loading={loading}
+            >
               搜索
             </Button>
             <Button onClick={handleReset} icon={<ReloadOutlined />}>
@@ -89,22 +94,3 @@ const UserSearchForm: React.FC<UserSearchFormProps> = ({
 };
 
 export default React.memo(UserSearchForm);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -15,11 +15,11 @@ export interface UserListRequest {
   Page: number;
   PageSize: number;
   Search?: string;
-  RoleIds?: string[];  // 按角色ID列表搜索
+  RoleIds?: string[]; // 按角色ID列表搜索
   IsActive?: boolean;
   SortBy?: string;
   SortOrder?: string;
-  StartDate?: string;  // 按创建时间范围搜索
+  StartDate?: string; // 按创建时间范围搜索
   EndDate?: string;
 }
 

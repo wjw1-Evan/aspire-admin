@@ -1,39 +1,45 @@
 import React, { useState } from 'react';
 import { Card, Button, Space, Drawer, Modal } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import CrudTable, { type CrudTableColumn, type CrudTableProps } from './CrudTable';
+import CrudTable, {
+  type CrudTableColumn,
+  type CrudTableProps,
+} from './CrudTable';
 import { useCrudData, type CrudDataOptions } from '../hooks/useCrudData';
 
 export interface CrudPageProps<T = any> {
   // 页面配置
   title?: string;
-  
+
   // 表格配置
   tableColumns: CrudTableColumn<T>[];
   tableProps?: Omit<CrudTableProps<T>, 'columns' | 'data' | 'loading'>;
-  
+
   // 数据操作配置
   dataOptions: CrudDataOptions<T>;
-  
+
   // 表单组件
-  CreateForm?: React.ComponentType<{ onSubmit: (data: any) => void; onCancel: () => void }>;
-  EditForm?: React.ComponentType<{ 
-    data: T; 
-    onSubmit: (data: any) => void; 
-    onCancel: () => void 
+  CreateForm?: React.ComponentType<{
+    onSubmit: (data: any) => void;
+    onCancel: () => void;
+  }>;
+  EditForm?: React.ComponentType<{
+    data: T;
+    onSubmit: (data: any) => void;
+    onCancel: () => void;
   }>;
   ViewForm?: React.ComponentType<{ data: T; onClose: () => void }>;
-  
+
   // 操作权限
   canCreate?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
   canView?: boolean;
-  
+
   // 自定义渲染
   renderHeader?: () => React.ReactNode;
   renderActions?: (refresh: () => void) => React.ReactNode;
-  
+
   // 事件回调
   onItemCreated?: (item: T) => void;
   onItemUpdated?: (item: T) => void;
@@ -93,7 +99,7 @@ function CrudPage<T extends Record<string, any>>({
   // 编辑操作
   const handleEditSubmit = async (formData: any) => {
     if (!currentItem?.id) return;
-    
+
     await handleUpdate(currentItem.id, formData);
     setEditVisible(false);
     setCurrentItem(null);
@@ -143,14 +149,12 @@ function CrudPage<T extends Record<string, any>>({
               新增
             </Button>
           )}
-          
-          <Button onClick={refresh}>
-            刷新
-          </Button>
-          
+
+          <Button onClick={refresh}>刷新</Button>
+
           {renderActions?.(refresh)}
         </Space>
-        
+
         {renderHeader?.()}
       </div>
 
@@ -218,12 +222,15 @@ function CrudPage<T extends Record<string, any>>({
             setCurrentItem(null);
           }}
           footer={[
-            <Button key="close" onClick={() => {
-              setViewVisible(false);
-              setCurrentItem(null);
-            }}>
+            <Button
+              key="close"
+              onClick={() => {
+                setViewVisible(false);
+                setCurrentItem(null);
+              }}
+            >
               关闭
-            </Button>
+            </Button>,
           ]}
           width={800}
         >
@@ -241,5 +248,3 @@ function CrudPage<T extends Record<string, any>>({
 }
 
 export default CrudPage;
-
-

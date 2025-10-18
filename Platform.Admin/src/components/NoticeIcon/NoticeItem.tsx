@@ -1,6 +1,12 @@
 import React from 'react';
 import { List, Avatar, Tag, Typography, Badge, Button, Tooltip } from 'antd';
-import { NotificationOutlined, MessageOutlined, CalendarOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
+import {
+  NotificationOutlined,
+  MessageOutlined,
+  CalendarOutlined,
+  EyeOutlined,
+  CheckOutlined,
+} from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -24,7 +30,12 @@ interface NoticeItemProps {
   readonly onMarkAsUnread?: (item: any) => void;
 }
 
-export default function NoticeItem({ item, onClick, onMarkAsRead, onMarkAsUnread }: NoticeItemProps) {
+export default function NoticeItem({
+  item,
+  onClick,
+  onMarkAsRead,
+  onMarkAsUnread,
+}: NoticeItemProps) {
   const handleClick = (e: React.MouseEvent) => {
     // 如果点击的是按钮，不触发整个 item 的 onClick
     if ((e.target as HTMLElement).closest('.ant-btn')) {
@@ -85,7 +96,9 @@ export default function NoticeItem({ item, onClick, onMarkAsRead, onMarkAsUnread
         }
         description={
           <div className={styles.noticeDescription}>
-            {item.description && <Text type="secondary">{item.description}</Text>}
+            {item.description && (
+              <Text type="secondary">{item.description}</Text>
+            )}
             <Text type="secondary" className={styles.noticeTime}>
               {dayjs(item.datetime).fromNow()}
             </Text>
@@ -101,4 +114,3 @@ export default function NoticeItem({ item, onClick, onMarkAsRead, onMarkAsUnread
     </List.Item>
   );
 }
-

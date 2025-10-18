@@ -36,6 +36,7 @@ docs/
 - [全面代码库深度检查报告](bugfixes/COMPREHENSIVE-CODE-REVIEW-REPORT.md) - **新增** - 全栈深度检查，发现并修复多个关键问题
 - [补充深度检查报告](bugfixes/SUPPLEMENTARY-DEEP-CHECK-REPORT.md) - **新增** - 补充安全审计和代码质量检查
 - [最终全面检查总结报告](bugfixes/FINAL-COMPREHENSIVE-CHECK-SUMMARY.md) - **新增** - 最终检查总结，系统生产就绪
+- [未完成功能检查报告](reports/UNCOMPLETED-FEATURES-ANALYSIS.md) - **新增** - 未完成功能和待实现功能分析 ⭐ **重要**
 
 ### 漏洞修复
 - [系统安全漏洞修复总结](bugfixes/SECURITY-VULNERABILITIES-FIX-SUMMARY.md) - 所有安全漏洞修复总结

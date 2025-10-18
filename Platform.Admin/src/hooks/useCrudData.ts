@@ -5,18 +5,18 @@ export interface CrudDataOptions<T> {
   // 数据获取
   fetchList: () => Promise<T[]>;
   fetchById?: (id: string) => Promise<T>;
-  
+
   // CRUD操作
   create?: (data: any) => Promise<T>;
   update?: (id: string, data: any) => Promise<T>;
   delete?: (id: string) => Promise<boolean>;
-  
+
   // 批量操作
   bulkDelete?: (ids: string[]) => Promise<boolean>;
-  
+
   // 自动加载
   autoLoad?: boolean;
-  
+
   // 错误处理
   onError?: (error: any) => void;
 }
@@ -26,21 +26,21 @@ export interface CrudDataResult<T> {
   data: T[];
   loading: boolean;
   error: Error | null;
-  
+
   // 当前项状态
   currentItem: T | null;
   itemLoading: boolean;
-  
+
   // 数据操作
   refresh: () => Promise<void>;
   loadById: (id: string) => Promise<void>;
-  
+
   // CRUD操作
   handleCreate: (data: any) => Promise<void>;
   handleUpdate: (id: string, data: any) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
   handleBulkDelete: (ids: string[]) => Promise<void>;
-  
+
   // 状态管理
   clearError: () => void;
   setCurrentItem: (item: T | null) => void;
@@ -50,7 +50,9 @@ export interface CrudDataResult<T> {
  * 通用CRUD数据管理Hook
  * 封装常见的数据获取、增删改查操作
  */
-export function useCrudData<T = any>(options: CrudDataOptions<T>): CrudDataResult<T> {
+export function useCrudData<T = any>(
+  options: CrudDataOptions<T>,
+): CrudDataResult<T> {
   const {
     fetchList,
     fetchById,
@@ -66,32 +68,35 @@ export function useCrudData<T = any>(options: CrudDataOptions<T>): CrudDataResul
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  
+
   // 当前项状态
   const [currentItem, setCurrentItem] = useState<T | null>(null);
   const [itemLoading, setItemLoading] = useState(false);
 
   // 错误处理
-  const handleError = useCallback((err: any) => {
-    const error = err instanceof Error ? err : new Error(String(err));
-    setError(error);
-    
-    // 记录错误到控制台
-    console.error('CRUD 操作失败:', error);
-    
-    if (onError) {
-      onError(error);
-    } else {
-      // 提供更友好的错误消息
-      const friendlyMessage = error.message.includes('网络') 
-        ? '网络连接失败，请检查网络后重试'
-        : error.message.includes('权限') 
-        ? '权限不足，请联系管理员'
-        : error.message || '操作失败，请重试';
-      
-      message.error(friendlyMessage);
-    }
-  }, [onError]);
+  const handleError = useCallback(
+    (err: any) => {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+
+      // 记录错误到控制台
+      console.error('CRUD 操作失败:', error);
+
+      if (onError) {
+        onError(error);
+      } else {
+        // 提供更友好的错误消息
+        const friendlyMessage = error.message.includes('网络')
+          ? '网络连接失败，请检查网络后重试'
+          : error.message.includes('权限')
+            ? '权限不足，请联系管理员'
+            : error.message || '操作失败，请重试';
+
+        message.error(friendlyMessage);
+      }
+    },
+    [onError],
+  );
 
   // 刷新数据列表
   const refresh = useCallback(async () => {
@@ -108,84 +113,99 @@ export function useCrudData<T = any>(options: CrudDataOptions<T>): CrudDataResul
   }, [fetchList, handleError]);
 
   // 根据ID加载单个项目
-  const loadById = useCallback(async (id: string) => {
-    if (!fetchById) return;
-    
-    try {
-      setItemLoading(true);
-      const result = await fetchById(id);
-      setCurrentItem(result);
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setItemLoading(false);
-    }
-  }, [fetchById, handleError]);
+  const loadById = useCallback(
+    async (id: string) => {
+      if (!fetchById) return;
+
+      try {
+        setItemLoading(true);
+        const result = await fetchById(id);
+        setCurrentItem(result);
+      } catch (err) {
+        handleError(err);
+      } finally {
+        setItemLoading(false);
+      }
+    },
+    [fetchById, handleError],
+  );
 
   // 创建操作
-  const handleCreate = useCallback(async (data: any) => {
-    if (!create) return;
-    
-    try {
-      setLoading(true);
-      await create(data);
-      message.success('创建成功');
-      await refresh();
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [create, refresh, handleError]);
+  const handleCreate = useCallback(
+    async (data: any) => {
+      if (!create) return;
+
+      try {
+        setLoading(true);
+        await create(data);
+        message.success('创建成功');
+        await refresh();
+      } catch (err) {
+        handleError(err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [create, refresh, handleError],
+  );
 
   // 更新操作
-  const handleUpdate = useCallback(async (id: string, data: any) => {
-    if (!update) return;
-    
-    try {
-      setItemLoading(true);
-      await update(id, data);
-      message.success('更新成功');
-      await refresh();
-      setCurrentItem(null);
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setItemLoading(false);
-    }
-  }, [update, refresh, handleError]);
+  const handleUpdate = useCallback(
+    async (id: string, data: any) => {
+      if (!update) return;
+
+      try {
+        setItemLoading(true);
+        await update(id, data);
+        message.success('更新成功');
+        await refresh();
+        setCurrentItem(null);
+      } catch (err) {
+        handleError(err);
+      } finally {
+        setItemLoading(false);
+      }
+    },
+    [update, refresh, handleError],
+  );
 
   // 删除操作
-  const handleDelete = useCallback(async (id: string) => {
-    if (!deleteFunc) return;
-    
-    try {
-      setLoading(true);
-      await deleteFunc(id);
-      message.success('删除成功');
-      await refresh();
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [deleteFunc, refresh, handleError]);
+  const handleDelete = useCallback(
+    async (id: string) => {
+      if (!deleteFunc) return;
+
+      try {
+        setLoading(true);
+        await deleteFunc(id);
+        message.success('删除成功');
+        await refresh();
+      } catch (err) {
+        handleError(err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [deleteFunc, refresh, handleError],
+  );
 
   // 批量删除操作
-  const handleBulkDelete = useCallback(async (ids: string[]) => {
-    if (!bulkDelete) return;
-    
-    try {
-      setLoading(true);
-      await bulkDelete(ids);
-      message.success(`删除了 ${ids.length} 条记录`);
-      await refresh();
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [bulkDelete, refresh, handleError]);
+  const handleBulkDelete = useCallback(
+    async (ids: string[]) => {
+      if (!bulkDelete) return;
+
+      try {
+        setLoading(true);
+        await bulkDelete(ids);
+        message.success(`删除了 ${ids.length} 条记录`);
+        await refresh();
+      } catch (err) {
+        handleError(err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [bulkDelete, refresh, handleError],
+  );
 
   // 清除错误
   const clearError = useCallback(() => {
@@ -204,21 +224,21 @@ export function useCrudData<T = any>(options: CrudDataOptions<T>): CrudDataResul
     data,
     loading,
     error,
-    
+
     // 当前项状态
     currentItem,
     itemLoading,
-    
+
     // 数据操作
     refresh,
     loadById,
-    
+
     // CRUD操作
     handleCreate,
     handleUpdate,
     handleDelete,
     handleBulkDelete,
-    
+
     // 状态管理
     clearError,
     setCurrentItem,
@@ -226,21 +246,3 @@ export function useCrudData<T = any>(options: CrudDataOptions<T>): CrudDataResul
 }
 
 export default useCrudData;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

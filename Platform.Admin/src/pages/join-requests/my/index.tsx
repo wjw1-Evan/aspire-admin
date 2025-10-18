@@ -4,7 +4,11 @@ import { Tag, Button, Space, App, Popconfirm } from 'antd';
 import React, { useRef, useState } from 'react';
 import { getMyRequests, cancelRequest } from '@/services/company';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import {
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+} from '@ant-design/icons';
 
 /**
  * v3.1: 我的加入申请列表
@@ -78,14 +82,17 @@ const MyJoinRequests: React.FC = () => {
         },
       },
       render: (_, record) => {
-        const statusConfig: Record<string, { icon: React.ReactNode; color: string }> = {
+        const statusConfig: Record<
+          string,
+          { icon: React.ReactNode; color: string }
+        > = {
           pending: { icon: <ClockCircleOutlined />, color: 'processing' },
           approved: { icon: <CheckCircleOutlined />, color: 'success' },
           rejected: { icon: <CloseCircleOutlined />, color: 'error' },
           cancelled: { icon: null, color: 'default' },
         };
         const config = statusConfig[record.status] || statusConfig.pending;
-        
+
         return (
           <Tag icon={config.icon} color={config.color}>
             {record.status === 'pending' && '待审核'}
@@ -105,7 +112,8 @@ const MyJoinRequests: React.FC = () => {
         if (record.status === 'approved') {
           return (
             <span style={{ color: '#52c41a' }}>
-              ✓ 通过 {record.reviewedByName && `（审核人：${record.reviewedByName}）`}
+              ✓ 通过{' '}
+              {record.reviewedByName && `（审核人：${record.reviewedByName}）`}
             </span>
           );
         }
@@ -200,4 +208,3 @@ const MyJoinRequests: React.FC = () => {
 };
 
 export default MyJoinRequests;
-

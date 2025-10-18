@@ -1,8 +1,5 @@
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
-import {
-  LoginForm,
-  ProFormText,
-} from '@ant-design/pro-components';
+import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { history, Link } from '@umijs/max';
 import { Alert, App } from 'antd';
 import React, { useState } from 'react';
@@ -17,17 +14,17 @@ export default function Register() {
   const handleSubmit = async (values: API.RegisterParams) => {
     try {
       setRegisterError('');
-      
+
       const response = await register(values);
 
       if (response.success && response.data) {
         message.success('注册成功！已为您自动创建个人企业，正在跳转...');
-        
+
         // 自动登录（注册成功后）
         setTimeout(() => {
           history.push('/user/login');
         }, 1500);
-        
+
         return;
       }
 
@@ -148,9 +145,7 @@ export default function Register() {
                 color: '#666',
               }}
             >
-              <div style={{ marginBottom: 8 }}>
-                💡 注册成功后系统将为您：
-              </div>
+              <div style={{ marginBottom: 8 }}>💡 注册成功后系统将为您：</div>
               <div>✅ 自动创建个人企业（您是管理员）</div>
               <div>✅ 配置默认权限和菜单</div>
               <div>✅ 您可以邀请成员或申请加入其他企业</div>

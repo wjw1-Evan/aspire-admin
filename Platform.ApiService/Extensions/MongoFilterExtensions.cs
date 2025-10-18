@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Extensions;
 
@@ -13,7 +14,7 @@ public static class MongoFilterExtensions
     /// </summary>
     /// <typeparam name="T">实体类型，必须实现 ISoftDeletable 接口</typeparam>
     /// <returns>未删除记录的过滤器</returns>
-    public static FilterDefinition<T> NotDeleted<T>() where T : ISoftDeletable
+    public static FilterDefinition<T> NotDeleted<T>() where T : Platform.ServiceDefaults.Models.ISoftDeletable
     {
         return Builders<T>.Filter.Eq(x => x.IsDeleted, false);
     }
@@ -24,7 +25,7 @@ public static class MongoFilterExtensions
     /// <typeparam name="T">实体类型，必须实现 ISoftDeletable 和 IEntity 接口</typeparam>
     /// <param name="id">实体ID</param>
     /// <returns>根据ID查找且未删除的过滤器</returns>
-    public static FilterDefinition<T> ByIdAndNotDeleted<T>(string id) where T : ISoftDeletable, IEntity
+    public static FilterDefinition<T> ByIdAndNotDeleted<T>(string id) where T : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity
     {
         var builder = Builders<T>.Filter;
         return builder.And(
@@ -39,7 +40,7 @@ public static class MongoFilterExtensions
     /// <typeparam name="T">实体类型，必须实现 ISoftDeletable 接口</typeparam>
     /// <param name="filter">现有过滤器</param>
     /// <returns>添加了未删除条件的过滤器</returns>
-    public static FilterDefinition<T> AndNotDeleted<T>(this FilterDefinition<T> filter) where T : ISoftDeletable
+    public static FilterDefinition<T> AndNotDeleted<T>(this FilterDefinition<T> filter) where T : Platform.ServiceDefaults.Models.ISoftDeletable
     {
         return Builders<T>.Filter.And(filter, Builders<T>.Filter.Eq(x => x.IsDeleted, false));
     }
@@ -50,7 +51,7 @@ public static class MongoFilterExtensions
     /// <typeparam name="T">实体类型，必须实现 ISoftDeletable 和 IEntity 接口</typeparam>
     /// <param name="ids">实体ID列表</param>
     /// <returns>根据多个ID查找且未删除的过滤器</returns>
-    public static FilterDefinition<T> ByIdsAndNotDeleted<T>(IEnumerable<string> ids) where T : ISoftDeletable, IEntity
+    public static FilterDefinition<T> ByIdsAndNotDeleted<T>(IEnumerable<string> ids) where T : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity
     {
         var builder = Builders<T>.Filter;
         return builder.And(
@@ -110,7 +111,7 @@ public static class MongoFilterExtensions
     /// <typeparam name="T">实体类型，必须实现 ISoftDeletable 接口</typeparam>
     /// <param name="searchText">搜索文本</param>
     /// <returns>文本搜索且未删除的过滤器</returns>
-    public static FilterDefinition<T> TextSearchAndNotDeleted<T>(string searchText) where T : ISoftDeletable
+    public static FilterDefinition<T> TextSearchAndNotDeleted<T>(string searchText) where T : Platform.ServiceDefaults.Models.ISoftDeletable
     {
         var builder = Builders<T>.Filter;
         return builder.And(
@@ -125,7 +126,7 @@ public static class MongoFilterExtensions
     /// <typeparam name="T">实体类型，必须实现 ISoftDeletable 和 INamedEntity 接口</typeparam>
     /// <param name="name">名称关键词</param>
     /// <returns>根据名称模糊查找且未删除的过滤器</returns>
-    public static FilterDefinition<T> ByNameContainsAndNotDeleted<T>(string name) where T : ISoftDeletable, INamedEntity
+    public static FilterDefinition<T> ByNameContainsAndNotDeleted<T>(string name) where T : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.INamedEntity
     {
         var builder = Builders<T>.Filter;
         return builder.And(

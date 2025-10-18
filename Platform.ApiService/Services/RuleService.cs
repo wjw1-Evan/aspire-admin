@@ -1,5 +1,7 @@
 using MongoDB.Driver;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
 using System.Text.Json;
 
 namespace Platform.ApiService.Services;
@@ -7,7 +9,7 @@ namespace Platform.ApiService.Services;
 public class RuleService : BaseService, IRuleService
 {
     private readonly IMongoCollection<RuleListItem> _rules;
-    private readonly ILogger<RuleService> _logger;
+    // 移除未使用的 _logger 字段，使用基类的 Logger
 
     public RuleService(
         IMongoDatabase database,
@@ -17,7 +19,6 @@ public class RuleService : BaseService, IRuleService
         : base(database, httpContextAccessor, tenantContext, logger)
     {
         _rules = database.GetCollection<RuleListItem>("rules");
-        _logger = logger;
     }
  
 

@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -101,7 +103,7 @@ public class RoleService : BaseService, IRoleService
     public async Task<Role?> GetRoleByNameAsync(string name)
     {
         var filter = Builders<Role>.Filter.Eq(r => r.Name, name);
-        return await _roleRepository.FindOneAsync(filter);
+        return await _roleRepository.Collection.Find(filter).FirstOrDefaultAsync();
     }
 
     /// <summary>
@@ -156,7 +158,9 @@ public class RoleService : BaseService, IRoleService
         if (updates.Count == 0)
             return false;
 
-        return await _roleRepository.UpdateAsync(id, updateBuilder.Combine(updates));
+        var filter = Builders<Role>.Filter.Eq(r => r.Id, id);
+        var result = await _roleRepository.Collection.UpdateOneAsync(filter, updateBuilder.Combine(updates));
+        return result.ModifiedCount > 0;
     }
 
     /// <summary>
@@ -223,7 +227,7 @@ public class RoleService : BaseService, IRoleService
         }
 
         // 软删除角色
-        var deleted = await _roleRepository.SoftDeleteAsync(id, reason);
+        var deleted = await _roleRepository.SoftDeleteAsync(id);
         
         if (deleted)
         {
@@ -244,7 +248,9 @@ public class RoleService : BaseService, IRoleService
             .Set(r => r.MenuIds, menuIds)
             .Set(r => r.UpdatedAt, DateTime.UtcNow);
         
-        return await _roleRepository.UpdateAsync(roleId, update);
+        var filter = Builders<Role>.Filter.Eq(r => r.Id, roleId);
+        var result = await _roleRepository.Collection.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
     }
 
     /// <summary>

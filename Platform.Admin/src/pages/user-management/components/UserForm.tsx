@@ -26,7 +26,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
       try {
         const response = await getAllRoles();
         if (response.success && response.data) {
-          setRoles(response.data.roles.filter(r => r.isActive));
+          setRoles(response.data.roles.filter((r) => r.isActive));
         }
       } catch (error) {
         console.error('加载角色列表失败:', error);
@@ -63,10 +63,13 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           isActive: values.isActive,
         };
 
-        const response = await request<{ success: boolean; data: AppUser }>(`/api/user/${user.id}/update`, {
-          method: 'PUT',
-          data: updateData,
-        });
+        const response = await request<{ success: boolean; data: AppUser }>(
+          `/api/user/${user.id}/update`,
+          {
+            method: 'PUT',
+            data: updateData,
+          },
+        );
 
         if (response.success) {
           message.success('用户更新成功');
@@ -83,10 +86,13 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           isActive: values.isActive,
         };
 
-        const response = await request<{ success: boolean; data: AppUser }>('/api/user/management', {
-          method: 'POST',
-          data: createData,
-        });
+        const response = await request<{ success: boolean; data: AppUser }>(
+          '/api/user/management',
+          {
+            method: 'POST',
+            data: createData,
+          },
+        );
 
         if (response.success) {
           message.success('用户创建成功');
@@ -108,13 +114,16 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
     if (!value) return Promise.resolve();
 
     try {
-      const response = await request<{ exists: boolean }>('/api/user/check-username', {
-        method: 'GET',
-        params: {
-          username: value,
-          excludeUserId: user?.id,
+      const response = await request<{ exists: boolean }>(
+        '/api/user/check-username',
+        {
+          method: 'GET',
+          params: {
+            username: value,
+            excludeUserId: user?.id,
+          },
         },
-      });
+      );
 
       if (response.exists) {
         return Promise.reject(new Error('用户名已存在'));
@@ -130,13 +139,16 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
     if (!value) return Promise.resolve();
 
     try {
-      const response = await request<{ exists: boolean }>('/api/user/check-email', {
-        method: 'GET',
-        params: {
-          email: value,
-          excludeUserId: user?.id,
+      const response = await request<{ exists: boolean }>(
+        '/api/user/check-email',
+        {
+          method: 'GET',
+          params: {
+            email: value,
+            excludeUserId: user?.id,
+          },
         },
-      });
+      );
 
       if (response.exists) {
         return Promise.reject(new Error('邮箱已存在'));
@@ -209,18 +221,14 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           filterOption={(input, option) =>
             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
           }
-          options={roles.map(role => ({
+          options={roles.map((role) => ({
             label: role.name,
             value: role.id!,
           }))}
         />
       </Form.Item>
 
-      <Form.Item
-        name="isActive"
-        label="状态"
-        valuePropName="checked"
-      >
+      <Form.Item name="isActive" label="状态" valuePropName="checked">
         <Switch checkedChildren="启用" unCheckedChildren="禁用" />
       </Form.Item>
 
@@ -229,9 +237,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           <Button type="primary" htmlType="submit" loading={loading}>
             {isEdit ? '更新' : '创建'}
           </Button>
-          <Button onClick={onCancel}>
-            取消
-          </Button>
+          <Button onClick={onCancel}>取消</Button>
         </Space>
       </Form.Item>
     </Form>

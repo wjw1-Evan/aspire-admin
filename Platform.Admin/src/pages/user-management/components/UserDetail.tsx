@@ -49,7 +49,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       const response = await getAllRoles();
       if (response.success && response.data) {
         const map: Record<string, string> = {};
-        response.data.roles.forEach(role => {
+        response.data.roles.forEach((role) => {
           if (role.id) {
             map[role.id] = role.name;
           }
@@ -66,7 +66,10 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
 
     setLoading(true);
     try {
-      const response = await request<{ success: boolean; data: UserActivityLog[] }>(`/api/user/${user.id}/activity-logs`, {
+      const response = await request<{
+        success: boolean;
+        data: UserActivityLog[];
+      }>(`/api/user/${user.id}/activity-logs`, {
         method: 'GET',
         params: { limit: 20 },
       });
@@ -136,7 +139,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
           >
             {user.username}
           </Descriptions.Item>
-          
+
           <Descriptions.Item
             label={
               <Space>
@@ -153,7 +156,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
               <Tag color="default">未分配</Tag>
             ) : (
               <Space wrap>
-                {user.roleIds.map(roleId => (
+                {user.roleIds.map((roleId) => (
                   <Tag key={roleId} color="blue">
                     {roleMap[roleId] || roleId}
                   </Tag>
@@ -167,7 +170,11 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
               status={user.isActive ? 'success' : 'error'}
               text={
                 <Space>
-                  {user.isActive ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+                  {user.isActive ? (
+                    <CheckCircleOutlined />
+                  ) : (
+                    <CloseCircleOutlined />
+                  )}
                   {user.isActive ? '启用' : '禁用'}
                 </Space>
               }
@@ -258,7 +265,9 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
               )}
             />
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+            <div
+              style={{ textAlign: 'center', padding: '20px', color: '#999' }}
+            >
               暂无活动记录
             </div>
           )}
@@ -266,9 +275,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       </Card>
 
       <div style={{ marginTop: 16, textAlign: 'right' }}>
-        <Button onClick={onClose}>
-          关闭
-        </Button>
+        <Button onClick={onClose}>关闭</Button>
       </div>
     </div>
   );

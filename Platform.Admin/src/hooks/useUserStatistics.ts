@@ -4,19 +4,21 @@ import type { UserStatisticsResponse } from '@/pages/user-management/types';
 
 /**
  * 用户统计数据 Hook
- * 
+ *
  * 封装用户统计信息的获取逻辑
- * 
+ *
  * @example
  * ```tsx
  * const { statistics, loading, refresh } = useUserStatistics();
- * 
+ *
  * <UserStatistics statistics={statistics} loading={loading} />
  * <Button onClick={refresh}>刷新</Button>
  * ```
  */
 export function useUserStatistics() {
-  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);
+  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
 
   /**
@@ -25,12 +27,12 @@ export function useUserStatistics() {
   const fetchStatistics = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await request<{ success: boolean; data: UserStatisticsResponse }>(
-        '/api/user/statistics',
-        {
-          method: 'GET',
-        },
-      );
+      const response = await request<{
+        success: boolean;
+        data: UserStatisticsResponse;
+      }>('/api/user/statistics', {
+        method: 'GET',
+      });
       setStatistics(response.data);
     } catch (error) {
       console.error('获取统计信息失败:', error);
@@ -51,22 +53,3 @@ export function useUserStatistics() {
     refresh: fetchStatistics,
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

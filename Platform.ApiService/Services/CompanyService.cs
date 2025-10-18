@@ -1,4 +1,6 @@
 using MongoDB.Driver;
+using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -113,7 +115,7 @@ public class CompanyService : BaseService, ICompanyService
         {
             // 如果后续步骤失败，删除已创建的企业
             await _companies.DeleteOneAsync(c => c.Id == company.Id);
-            LogError(ex, "企业注册失败，回滚已创建的企业: {CompanyId}", company.Id!);
+            LogError("企业注册失败", ex, company.Id!);
             throw new InvalidOperationException($"企业注册失败: {ex.Message}", ex);
         }
     }

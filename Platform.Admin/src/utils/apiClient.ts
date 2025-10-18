@@ -17,24 +17,30 @@ const API_CONFIG = {
 // 错误处理
 const handleError = (error: any, showMessage = true) => {
   console.error('API Error:', error);
-  
+
   if (showMessage) {
-    const errorMessage = error?.response?.data?.errorMessage || 
-                        error?.message || 
-                        '请求失败，请稍后重试';
+    const errorMessage =
+      error?.response?.data?.errorMessage ||
+      error?.message ||
+      '请求失败，请稍后重试';
     message.error(errorMessage);
   }
-  
+
   return Promise.reject(error);
 };
 
 // 重试机制
-const retryRequest = async (fn: () => Promise<any>, retries = API_CONFIG.retryCount): Promise<any> => {
+const retryRequest = async (
+  fn: () => Promise<any>,
+  retries = API_CONFIG.retryCount,
+): Promise<any> => {
   try {
     return await fn();
   } catch (error) {
     if (retries > 0 && error?.response?.status >= 500) {
-      await new Promise(resolve => setTimeout(resolve, API_CONFIG.retryDelay));
+      await new Promise((resolve) =>
+        setTimeout(resolve, API_CONFIG.retryDelay),
+      );
       return retryRequest(fn, retries - 1);
     }
     throw error;
@@ -43,16 +49,18 @@ const retryRequest = async (fn: () => Promise<any>, retries = API_CONFIG.retryCo
 
 // 基础 API 客户端
 export class ApiClient {
-  private baseURL: string;
   private timeout: number;
 
-  constructor(baseURL = '', timeout = API_CONFIG.timeout) {
-    this.baseURL = baseURL;
+  constructor(_baseURL = '', timeout = API_CONFIG.timeout) {
     this.timeout = timeout;
   }
 
   // GET 请求
-  async get<T = any>(url: string, params?: any, options?: any): Promise<ApiResponse<T>> {
+  async get<T = any>(
+    url: string,
+    params?: any,
+    options?: any,
+  ): Promise<ApiResponse<T>> {
     return retryRequest(async () => {
       try {
         const response = await request<ApiResponse<T>>(url, {
@@ -69,7 +77,11 @@ export class ApiClient {
   }
 
   // POST 请求
-  async post<T = any>(url: string, data?: any, options?: any): Promise<ApiResponse<T>> {
+  async post<T = any>(
+    url: string,
+    data?: any,
+    options?: any,
+  ): Promise<ApiResponse<T>> {
     return retryRequest(async () => {
       try {
         const response = await request<ApiResponse<T>>(url, {
@@ -86,7 +98,11 @@ export class ApiClient {
   }
 
   // PUT 请求
-  async put<T = any>(url: string, data?: any, options?: any): Promise<ApiResponse<T>> {
+  async put<T = any>(
+    url: string,
+    data?: any,
+    options?: any,
+  ): Promise<ApiResponse<T>> {
     return retryRequest(async () => {
       try {
         const response = await request<ApiResponse<T>>(url, {
@@ -127,15 +143,17 @@ export const api = {
   // 用户相关
   user: {
     getCurrent: () => apiClient.get<CurrentUser>('/api/currentUser'),
-    updateProfile: (data: any) => apiClient.put<CurrentUser>('/api/user/profile', data),
-    changePassword: (data: any) => apiClient.put<boolean>('/api/user/profile/password', data),
+    updateProfile: (data: any) =>
+      apiClient.put<CurrentUser>('/api/user/profile', data),
+    changePassword: (data: any) =>
+      apiClient.put<boolean>('/api/user/profile/password', data),
     getList: (data: any) => apiClient.post('/api/user/list', data),
     create: (data: any) => apiClient.post('/api/user/management', data),
     update: (id: string, data: any) => apiClient.put(`/api/user/${id}`, data),
     delete: (id: string) => apiClient.delete(`/api/user/${id}`),
     bulkAction: (data: any) => apiClient.post('/api/user/bulk-action', data),
   },
-  
+
   // 认证相关
   auth: {
     login: (data: any) => apiClient.post('/api/login/account', data),
@@ -143,14 +161,16 @@ export const api = {
     register: (data: any) => apiClient.post('/api/register', data),
     refreshToken: (data: any) => apiClient.post('/api/refresh-token', data),
   },
-  
+
   // 权限相关
   permission: {
     getMyPermissions: () => apiClient.get('/api/user/my-permissions'),
-    getUserPermissions: (id: string) => apiClient.get(`/api/user/${id}/permissions`),
-    assignPermissions: (id: string, data: any) => apiClient.post(`/api/user/${id}/custom-permissions`, data),
+    getUserPermissions: (id: string) =>
+      apiClient.get(`/api/user/${id}/permissions`),
+    assignPermissions: (id: string, data: any) =>
+      apiClient.post(`/api/user/${id}/custom-permissions`, data),
   },
-  
+
   // 菜单相关
   menu: {
     getUserMenus: () => apiClient.get('/api/menu/user-menus'),

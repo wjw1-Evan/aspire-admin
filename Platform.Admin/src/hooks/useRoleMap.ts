@@ -4,13 +4,13 @@ import type { Role } from '@/services/role/api';
 
 /**
  * 角色映射 Hook
- * 
+ *
  * 获取角色列表并构建 ID 到名称的映射
- * 
+ *
  * @example
  * ```tsx
  * const { roleMap, roleList, loading } = useRoleMap();
- * 
+ *
  * const roleName = roleMap[roleId]; // 根据ID获取名称
  * ```
  */
@@ -27,7 +27,7 @@ export function useRoleMap() {
         if (response.success && response.data) {
           const roles = response.data.roles;
           setRoleList(roles);
-          
+
           // 构建 ID -> Name 映射
           const map: Record<string, string> = {};
           for (const role of roles) {
@@ -53,11 +53,3 @@ export function useRoleMap() {
     loading,
   };
 }
-
-
-
-
-
-
-
-

@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import { PageContainer, ProCard, ProDescriptions } from '@ant-design/pro-components';
+import {
+  PageContainer,
+  ProCard,
+  ProDescriptions,
+} from '@ant-design/pro-components';
 import { Card, message, Spin, Row, Col, Statistic, Progress, Tag } from 'antd';
 import {
   UserOutlined,
@@ -13,7 +17,9 @@ import EditCompanyModal from './components/EditCompanyModal';
 
 export default function CompanySettings() {
   const [company, setCompany] = useState<API.Company | null>(null);
-  const [statistics, setStatistics] = useState<API.CompanyStatistics | null>(null);
+  const [statistics, setStatistics] = useState<API.CompanyStatistics | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
 
@@ -120,14 +126,22 @@ export default function CompanySettings() {
             </Col>
             <Col span={8}>
               <Card bordered={false}>
-                <Statistic title="角色数量" value={statistics.totalRoles} prefix={<TeamOutlined />} />
+                <Statistic
+                  title="角色数量"
+                  value={statistics.totalRoles}
+                  prefix={<TeamOutlined />}
+                />
               </Card>
             </Col>
           </Row>
           <Row gutter={16} style={{ marginTop: 16 }}>
             <Col span={8}>
               <Card bordered={false}>
-                <Statistic title="菜单数量" value={statistics.totalMenus} prefix={<MenuOutlined />} />
+                <Statistic
+                  title="菜单数量"
+                  value={statistics.totalMenus}
+                  prefix={<MenuOutlined />}
+                />
               </Card>
             </Col>
             <Col span={8}>
@@ -153,7 +167,9 @@ export default function CompanySettings() {
                     <Tag color="orange">已停用</Tag>
                   )}
                   {statistics.expiresAt && (
-                    <div style={{ marginTop: 8, fontSize: 12, color: '#00000073' }}>
+                    <div
+                      style={{ marginTop: 8, fontSize: 12, color: '#00000073' }}
+                    >
                       <ClockCircleOutlined /> 过期时间：
                       {new Date(statistics.expiresAt).toLocaleDateString()}
                     </div>
@@ -234,4 +250,3 @@ export default function CompanySettings() {
     </PageContainer>
   );
 }
-

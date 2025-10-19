@@ -339,6 +339,7 @@ docs/
 ### 流程设计审查 ⭐ **新增** 2025-10-19
 - [**流程设计全面审查报告**](reports/PROCESS-DESIGN-REVIEW.md) - **新增** 全面审查所有核心业务流程和系统架构设计 ⭐ **重要**
 - [**紧急修复任务清单**](reports/CRITICAL-FIXES-REQUIRED.md) - **新增** P0和P1优先级问题修复计划 ⭐ **紧急**
+- [**P0修复：UserCompany记录缺失**](bugfixes/P0-USER-COMPANY-RECORDS-FIX.md) - **新增** 企业注册缺少UserCompany记录修复 ✅ **已修复**
 
 ### 设计问题修复
 - [设计问题全面分析报告](reports/DESIGN-ISSUES-ANALYSIS.md) - 项目设计问题全面分析

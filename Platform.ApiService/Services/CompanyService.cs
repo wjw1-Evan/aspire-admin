@@ -91,7 +91,9 @@ public class CompanyService : BaseService, ICompanyService
                 Description = "系统管理员，拥有所有菜单访问权限",
                 CompanyId = company.Id!,
                 MenuIds = allMenuIds,
-                IsActive = true
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
             await _roles.InsertOneAsync(adminRole);
             LogInformation("为企业 {CompanyId} 创建管理员角色: {RoleId}", company.Id!, adminRole.Id!);
@@ -104,10 +106,30 @@ public class CompanyService : BaseService, ICompanyService
                 PasswordHash = _passwordHasher.HashPassword(request.AdminPassword),
                 CurrentCompanyId = company.Id!,  // v3.1: 使用 CurrentCompanyId
                 // v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，而不是 AppUser.RoleIds
-                IsActive = true
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
             await _users.InsertOneAsync(adminUser);
             LogInformation("为企业 {CompanyId} 创建管理员用户: {Username}", company.Id!, adminUser.Username!);
+
+            // 5. ✅ P0修复：创建 UserCompany 关联记录
+            var userCompanies = _database.GetCollection<UserCompany>("user_companies");
+            var userCompany = new UserCompany
+            {
+                UserId = adminUser.Id!,
+                CompanyId = company.Id!,
+                RoleIds = new List<string> { adminRole.Id! },
+                IsAdmin = true,  // 标记为企业管理员
+                Status = "active",
+                JoinedAt = DateTime.UtcNow,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await userCompanies.InsertOneAsync(userCompany);
+            LogInformation("为用户 {UserId} 创建企业关联记录，角色: {RoleIds}", 
+                adminUser.Id!, string.Join(", ", userCompany.RoleIds));
 
             return company;
         }

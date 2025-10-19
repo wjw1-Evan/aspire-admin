@@ -59,6 +59,7 @@ docs/
 
 ### 新手入门
 - [**如何查看 API 文档**](features/HOW-TO-VIEW-API-DOCS.md) - 快速访问 Scalar API 文档指南 ⭐ **新手必读**
+- [**Docker 日志配置快速验证**](features/DOCKER-LOGGING-QUICK-START.md) - Docker 容器日志输出验证指南 ⭐ **调试必读**
 - [**用户注册全权限初始化验证**](features/USER-FULL-PERMISSIONS-INITIALIZATION.md) - 验证用户注册时权限初始化的完整性 ⭐ **权限验证**
 - [**API权限验证修复**](bugfixes/API-PERMISSION-VERIFICATION-FIX.md) - 修复MongoDB集合名称不一致导致的权限验证失败 ⭐ **重要修复**
 - [**用户列表API空数据修复**](bugfixes/USER-LIST-API-EMPTY-DATA-FIX.md) - 修复用户查询字段错误导致的空数据问题 ⭐ **数据查询修复**
@@ -105,6 +106,9 @@ docs/
 - [欢迎通知功能](features/WELCOME-NOTICE-FEATURE.md) - v2.0 欢迎通知
 - [标记未读功能](features/NOTICE-MARK-UNREAD-FEATURE.md) - 单条通知标记
 - [通知详情模态框](features/NOTICE-DETAIL-MODAL-FEATURE.md) - 详情查看功能
+
+#### 数据初始化微服务 ⭐ **新增**
+- [数据初始化微服务](features/DATA-INITIALIZER-MICROSERVICE.md) - 专门负责数据初始化工作的微服务架构 ⭐ **最新**
 
 #### API 文档系统 ⭐ **新增**
 - [API 文档系统](features/API-ENDPOINT-SUMMARY-FEATURE.md) - 完整的 API 接口文档和 Scalar 集成 ⭐ **推荐**
@@ -192,6 +196,10 @@ docs/
 - [**Scalar API 文档修复**](bugfixes/SCALAR-API-REFERENCE-FIX.md) - 修复 API 文档无法显示问题 ⭐ **最新**
 
 ### 重构文档
+- [Cursor Rules 清理总结报告](reports/CURSOR-RULES-CLEANUP-SUMMARY.md) - 清理过时规则，简化架构指导 ⭐ **最新**
+- [Cursor Rules 更新总结报告](reports/CURSOR-RULES-UPDATE-SUMMARY.md) - 更新开发规范与架构同步
+- [分布式锁移除总结报告](reports/DISTRIBUTED-LOCK-REMOVAL-SUMMARY.md) - 简化数据初始化微服务架构
+- [数据初始化微服务实施报告](reports/DATA-INITIALIZER-MICROSERVICE-IMPLEMENTATION.md) - 数据初始化微服务完整实施报告
 - [后端重构完成](refactoring/BACKEND-REFACTORING-COMPLETE.md) - 后端重构总结
 - [后端问题修复进度](refactoring/BACKEND-ISSUES-FIX-PROGRESS.md) - 修复进度
 - [后端问题最终报告](refactoring/BACKEND-ISSUES-FINAL-REPORT.md) - 最终报告
@@ -209,8 +217,10 @@ docs/
 - [**v5.0 优化完成摘要**](optimization/OPTIMIZATION-V5-SUMMARY.md) - v5.0 架构优化总结 ⭐ **最新**
 - [**v5.0 优化前后对比**](optimization/V5-BEFORE-AFTER-COMPARISON.md) - 代码对比展示 ⭐ **推荐**
 - [**后端代码优化报告**](optimization/BACKEND-CODE-OPTIMIZATION-REPORT.md) - 后端架构优化详情 ⭐ **新增**
+- [**DataInitializer 微服务自动停止优化**](optimization/DATA-INITIALIZER-AUTO-STOP.md) - **新增** - DataInitializer 微服务完成初始化后自动停止，避免资源浪费 ⭐ **推荐**
 - [**基础组件使用指南**](optimization/BASE-COMPONENTS-GUIDE.md) - 基础组件开发指南 ⭐ **新增**
 - [**Cursor Rules 使用指南**](optimization/CURSOR-RULES-GUIDE.md) - 代码规则配置说明 ⭐ **新增**
+- [**Docker 日志配置优化**](optimization/DOCKER-LOGGING-CONFIGURATION.md) - Docker 容器日志输出配置 ⭐ **新增**
 
 ### 数据完整性
 - [数据完整性检查](features/DATA-INTEGRITY-CHECK.md) - 数据检查机制
@@ -326,6 +336,10 @@ docs/
 ### 设计问题修复
 - [设计问题全面分析报告](reports/DESIGN-ISSUES-ANALYSIS.md) - 项目设计问题全面分析
 - [P0 优先级设计问题修复完成报告](reports/P0-DESIGN-FIXES-COMPLETE.md) - P0 优先级问题修复完成
+
+### 微服务优化
+- [**DataInitializer 微服务自动停止功能实现报告**](reports/DATA-INITIALIZER-AUTO-STOP-IMPLEMENTATION.md) - **新增** - DataInitializer 微服务自动停止功能实现详情 ⭐ **推荐**
+- [**Cursor Rules 更新总结报告**](reports/CURSOR-RULES-UPDATE-SUMMARY.md) - **新增** - Cursor Rules 更新总结，包含微服务自动停止模式规范 ⭐ **推荐**
 
 ## 🎉 总结
 

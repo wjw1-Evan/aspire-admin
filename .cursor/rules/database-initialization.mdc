@@ -5,30 +5,35 @@ alwaysApply: true
 
 ## 🎯 核心原则
 
-**所有数据库初始化必须支持多实例并发安全启动**
+**数据初始化由专门的 Platform.DataInitializer 微服务负责，单实例运行保证安全**
 
 ## ✅ 正确的初始化方式
 
-### 使用统一的初始化服务
+### 使用专门的数据初始化微服务
+
+数据初始化工作已迁移到独立的 `Platform.DataInitializer` 微服务：
 
 ```csharp
-// ✅ 在 Program.cs 中使用 DatabaseInitializerService
-using (var scope = app.Services.CreateScope())
+// ✅ 在 Platform.DataInitializer 中执行初始化
+public class DataInitializerService : IDataInitializerService
 {
-    var initializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializerService>();
-    await initializer.InitializeAsync();
+    public async Task InitializeAsync()
+    {
+        // 1. 创建数据库索引
+        await CreateIndexesAsync();
+        
+        // 2. 创建全局菜单
+        await CreateSystemMenusAsync();
+    }
 }
 ```
 
-### 使用分布式锁保护
+### 单实例运行保证
 
 ```csharp
-// ✅ 关键操作必须使用分布式锁
-await _lockService.ExecuteWithLockAsync("operation-name", async () =>
-{
-    // 只有一个实例会执行这里的代码
-    await DoInitializationAsync();
-}, timeoutSeconds: 60);
+// ✅ 直接执行初始化，无需分布式锁
+await ExecuteInitializationAsync();
+// 单实例部署确保不会有并发问题
 ```
 
 ### 确保幂等性
@@ -56,9 +61,13 @@ if (!exists)
 
 ## ❌ 禁止的做法
 
-### 不要在 Program.cs 中直接初始化
+### 不要在 ApiService 中进行数据初始化
 
 ```csharp
+// ❌ 禁止：在 Platform.ApiService 中执行数据初始化
+var initializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializerService>();
+await initializer.InitializeAsync();
+
 // ❌ 禁止：直接调用初始化脚本
 var fixAllEntities = new FixAllEntitiesIsDeletedField(database);
 await fixAllEntities.FixAsync();
@@ -121,8 +130,8 @@ catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCateg
 
 在添加新的初始化逻辑时，确保：
 
-- [ ] 使用 `DatabaseInitializerService` 统一管理
-- [ ] 使用分布式锁保护关键操作
+- [ ] 在 `Platform.DataInitializer` 微服务中实现
+- [ ] 单实例运行保证安全
 - [ ] 所有操作都是幂等的
 - [ ] 不创建全局数据（必须有 CompanyId）
 - [ ] 使用 MongoDB 原子操作
@@ -131,6 +140,7 @@ catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCateg
 
 ## 📚 相关文档
 
-- [数据库初始化优化报告](mdc:docs/optimization/DATABASE-INITIALIZATION-OPTIMIZATION.md)
-- [DatabaseInitializerService](mdc:Platform.ApiService/Services/DatabaseInitializerService.cs)
-- [DistributedLockService](mdc:Platform.ApiService/Services/DistributedLockService.cs)
+- [数据初始化微服务架构](mdc:docs/features/DATA-INITIALIZER-MICROSERVICE.md)
+- [分布式锁移除总结报告](mdc:docs/reports/DISTRIBUTED-LOCK-REMOVAL-SUMMARY.md)
+- [DataInitializerService](mdc:Platform.DataInitializer/Services/DataInitializerService.cs)
+- [CreateAllIndexes](mdc:Platform.DataInitializer/Scripts/CreateAllIndexes.cs)

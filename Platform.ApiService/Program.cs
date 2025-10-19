@@ -1,6 +1,5 @@
 using Platform.ApiService.Services;
 using Platform.ApiService.Models;
-using Platform.ApiService.Scripts;
 using MongoDB.Driver;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -160,9 +159,7 @@ builder.Services.AddScoped<IPhoneValidationService, PhoneValidationService>();
 // Captcha service (Singleton - 使用内存缓存)
 builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
 
-// 数据库初始化服务（v5.0 新增）
-builder.Services.AddSingleton<IDistributedLockService, DistributedLockService>();
-builder.Services.AddScoped<IDatabaseInitializerService, DatabaseInitializerService>();
+// 数据库初始化服务已迁移到 Platform.DataInitializer 微服务
 
 // Configure JWT authentication
 // JWT SecretKey 必须配置，不提供默认值以确保安全
@@ -224,11 +221,6 @@ app.MapOpenApi();
 // Map default endpoints (includes health checks)
 app.MapDefaultEndpoints();
 
-// v5.0: 数据库初始化（使用分布式锁保护，多实例安全）
-using (var scope = app.Services.CreateScope())
-{
-    var initializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializerService>();
-    await initializer.InitializeAsync();
-}
+// 数据库初始化已迁移到 Platform.DataInitializer 微服务
 
 await app.RunAsync();

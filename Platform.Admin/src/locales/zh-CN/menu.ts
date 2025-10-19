@@ -15,14 +15,6 @@ export default {
   'menu.pending-join-requests': '待审批申请',
   'menu.account': '个人页',
   'menu.account.center': '个人中心',
-  // 数据中台
-  'menu.data-platform': '数据中台',
-  'menu.data-platform.data-source': '数据源管理',
-  'menu.data-platform.pipeline': '数据管道',
-  'menu.data-platform.quality': '数据质量',
-  'menu.data-platform.query': '数据查询',
-  'menu.data-platform.report': '数据报表',
-  'menu.data-platform.monitor': '任务监控',
   // 企业切换器
   'component.companySwitcher.title': '切换企业',
   'component.companySwitcher.join': '加入新企业',

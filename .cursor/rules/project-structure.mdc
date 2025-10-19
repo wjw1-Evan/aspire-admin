@@ -12,6 +12,7 @@ description: 项目结构和架构指南
 ### 核心组件
 
 - **Platform.AppHost** - Aspire 应用主机，负责服务编排和配置
+- **Platform.DataInitializer** - 数据初始化微服务，负责数据库索引创建和菜单初始化
 - **Platform.ApiService** - API 服务，提供用户管理、认证等 REST API
 - **Platform.Admin** - React + Ant Design Pro 企业级管理后台
 - **Platform.App** - React Native + Expo 跨平台移动应用
@@ -30,11 +31,15 @@ Platform/
 ├── Platform.AppHost/          # 应用编排和配置中心
 │   ├── AppHost.cs            # Aspire 编排配置
 │   └── appsettings.json      # 应用配置
+├── Platform.DataInitializer/  # 数据初始化微服务 (C#)
+│   ├── Models/              # 数据模型
+│   ├── Services/            # 数据初始化服务
+│   ├── Scripts/             # 索引创建脚本
+│   └── Program.cs           # 服务入口
 ├── Platform.ApiService/       # API 服务 (C#)
 │   ├── Controllers/          # API 控制器
 │   ├── Models/              # 数据模型
 │   ├── Services/            # 业务逻辑服务
-│   ├── Scripts/             # 数据库初始化脚本
 │   └── Program.cs           # 服务入口
 ├── Platform.Admin/            # 管理后台 (React + Ant Design Pro)
 │   ├── config/              # UmiJS 配置
@@ -66,6 +71,9 @@ Platform/
 # 完整启动（推荐）
 dotnet run --project Platform.AppHost
 
+# 仅启动数据初始化服务（用于调试）
+dotnet run --project Platform.DataInitializer
+
 # 仅启动后端服务（用于调试）
 dotnet run --project Platform.ApiService
 
@@ -78,8 +86,9 @@ cd Platform.App && npm start
 
 > ⚠️ **重要提示**：
 > - 调试时请务必通过 `Platform.AppHost` 启动项目，否则微服务、API 及前端应用将无法正确编排和联动
-> - AppHost 会自动启动 MongoDB、API 服务、管理后台和移动应用
+> - AppHost 会自动启动 MongoDB、数据初始化服务、API 服务、管理后台和移动应用
 > - AppHost 提供统一的服务发现和配置管理
+> - 数据初始化服务必须在 API 服务之前启动
 
 ### 访问地址
 
@@ -88,6 +97,7 @@ cd Platform.App && npm start
 - **移动应用**: <http://localhost:15002>
 - **API 网关**: <http://localhost:15000>
 - **API 文档**: <http://localhost:15000/scalar/v1>
+- **数据初始化服务**: <http://localhost:15000/datainitializer> (内部服务)
 - **MongoDB Express**: <http://localhost:8081> (数据库管理)
 
 ### 默认账户
@@ -112,12 +122,19 @@ var mongo = builder.AddMongoDB("mongo")
     .WithLifetime(ContainerLifetime.Persistent);
 var mongodb = mongo.AddDatabase("mongodb");
 
-// 2. 添加 API 服务
-var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+// 2. 添加数据初始化微服务
+var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(mongodb)
+    .WithHttpEndpoint()
     .WithHttpHealthCheck("/health");
 
-// 3. 配置 YARP 网关
+// 3. 添加 API 服务（依赖数据初始化服务）
+var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+    .WithReference(mongodb)
+    .WithReference(datainitializer)
+    .WithHttpHealthCheck("/health");
+
+// 4. 配置 YARP 网关
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
     .WithConfiguration(config => {
@@ -126,7 +143,7 @@ var yarp = builder.AddYarp("apigateway")
             .WithTransformPathRouteValues("/api/{**catch-all}");
     });
 
-// 4. 添加前端应用
+// 5. 添加前端应用
 builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
@@ -138,6 +155,14 @@ builder.AddNpmApp("app", "../Platform.App")
     .WithHttpEndpoint(env: "PORT", port: 15002);
 ```
 
+### 服务依赖关系
+
+```
+MongoDB → DataInitializer → ApiService
+                ↓
+            Admin/App (前端应用)
+```
+
 ### 服务发现
 
 - 所有服务通过 Aspire 自动注册和发现
@@ -146,6 +171,7 @@ builder.AddNpmApp("app", "../Platform.App")
 
 ### 健康检查
 
+- DataInitializer 服务提供 `/health` 端点
 - API 服务提供 `/health` 端点
 - Aspire Dashboard 实时监控服务状态
 - 自动重启失败的服务

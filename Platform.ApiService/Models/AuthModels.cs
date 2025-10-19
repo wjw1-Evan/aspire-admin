@@ -252,6 +252,16 @@ public class AppUser : MultiTenantEntity, Platform.ServiceDefaults.Models.IEntit
 
     [BsonElement("lastLoginAt")]
     public DateTime? LastLoginAt { get; set; }
+
+    // 软删除扩展字段
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
 }
 
 public class RegisterRequest

@@ -58,6 +58,16 @@ public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.ISoftDele
     /// </summary>
     [BsonElement("approvedAt")]
     public DateTime? ApprovedAt { get; set; }
+
+    // 软删除扩展字段
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
 }
 
 /// <summary>
@@ -107,6 +117,16 @@ public class CompanyJoinRequest : BaseEntity, Platform.ServiceDefaults.Models.IS
     /// </summary>
     [BsonElement("rejectReason")]
     public string? RejectReason { get; set; }
+
+    // 软删除扩展字段
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
 }
 
 /// <summary>

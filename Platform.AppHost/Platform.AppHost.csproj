@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Platform.ApiService\Platform.ApiService.csproj" />
-    <ProjectReference Include="..\Platform.DataPlatform\Platform.DataPlatform.csproj" />
+    <ProjectReference Include="..\Platform.DataInitializer\Platform.DataInitializer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

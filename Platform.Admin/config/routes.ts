@@ -92,37 +92,6 @@ export default [
     hideInMenu: true,
   },
 
-  // 数据中台页面路由（从数据库菜单生成，这里只定义路由映射）
-  {
-    path: '/data-platform/data-source',
-    component: './data-platform/data-source',
-    hideInMenu: true,
-  },
-  {
-    path: '/data-platform/pipeline',
-    component: './data-platform/pipeline',
-    hideInMenu: true,
-  },
-  {
-    path: '/data-platform/quality',
-    component: './data-platform/quality',
-    hideInMenu: true,
-  },
-  {
-    path: '/data-platform/query',
-    component: './data-platform/query',
-    hideInMenu: true,
-  },
-  {
-    path: '/data-platform/report',
-    component: './data-platform/report',
-    hideInMenu: true,
-  },
-  {
-    path: '/data-platform/monitor',
-    component: './data-platform/monitor',
-    hideInMenu: true,
-  },
 
   // 默认重定向和404
   {

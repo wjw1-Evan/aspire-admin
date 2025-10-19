@@ -10,6 +10,13 @@
   - 包含技术栈、目录结构、.NET Aspire 编排、认证系统架构、部署架构
   - 提供开发指南、常见问题解答
 
+### 🔧 微服务架构
+- **`microservice-auto-stop-pattern.mdc`** - 微服务自动停止模式开发规范
+  - 📁 应用于 `*.cs` 文件
+  - 任务型微服务设计模式、自动停止机制
+  - 状态管理、日志设计、错误处理
+  - 适用于数据初始化、数据迁移等一次性任务服务
+
 ### 💻 前端开发规范
 
 #### TypeScript & React
@@ -120,27 +127,27 @@
 #### 数据库开发规范 🆕
 - **`database-initialization.mdc`** - 数据库初始化规范
   - ⚡ 始终自动应用
-  - 使用 DatabaseInitializerService 统一管理
-  - 分布式锁保护多实例并发
+  - 数据初始化由专门的微服务负责
+  - 单实例运行保证安全
   - 确保幂等性和原子操作
 
-- **`distributed-lock-usage.mdc`** - 分布式锁使用规范和最佳实践
+- **`data-initializer-microservice.mdc`** - 数据初始化微服务开发规范
   - 📋 手动引用
-  - 两阶段锁获取策略
-  - 唯一索引 + TTL 索引保护
-  - 避免常见的锁逻辑错误
+  - 微服务架构设计和实现规范
+  - 单实例运行保证、自动停止机制
+  - API 端点设计和监控调试
+  - 任务型微服务模式实现
+
+- **`data-initializer-microservice-legacy.mdc`** - 数据初始化微服务规范（重构前）
+  - 📋 手动引用（历史参考）
+  - 从分布式锁架构迁移的规范
+  - 单实例运行和幂等性保证
 
 - **`mongodb-atomic-operations.mdc`** - MongoDB 原子操作最佳实践
   - 📋 手动引用
   - 插入或忽略、更新或插入模式
   - 条件更新、原子递增
   - 避免"查询+更新"非原子模式
-
-- **`multi-instance-deployment.mdc`** - 多实例部署注意事项
-  - 📋 手动引用
-  - 无状态设计、分布式锁保护
-  - 定时任务、文件上传处理
-  - Kubernetes 部署最佳实践
 
 - **`global-menu-architecture.mdc`** - 全局菜单架构规范 🆕
   - ⚡ 始终自动应用
@@ -207,7 +214,7 @@
 - **`baseapicontroller-standard.mdc`** - BaseApiController 规范
 - **`no-global-data.mdc`** - 禁止全局数据（含 Menu 例外说明）
 - **`database-initialization.mdc`** - 数据库初始化规范
-- **`global-menu-architecture.mdc`** - 全局菜单架构规范 🆕
+- **`global-menu-architecture.mdc`** - 全局菜单架构规范
 - **`documentation-organization.mdc`** - 文档组织规范
 - **`sync-help-documentation.mdc`** - 文档同步规范
 
@@ -218,7 +225,7 @@
 ```
 请参考 typescript-coding-standards 规则
 请参考 auth-system 规则来实现认证功能
-请参考 distributed-lock-usage 规则来实现分布式锁
+请参考 data-initializer-microservice 规则来实现数据初始化微服务
 ```
 
 ### 规则匹配示例
@@ -236,33 +243,32 @@
 | 后端基础规范 | 2 | C# 和 BaseApiController |
 | 服务层规范 | 1 | BaseService 和 BaseRepository |
 | 多租户规范 ⭐ | 4 | 数据隔离、用户注册、全局数据控制、多企业支持 |
-| 数据库规范 🆕 | 5 | 初始化、分布式锁、原子操作、多实例部署、全局菜单 |
+| 数据库规范 🆕 | 4 | 初始化、微服务、原子操作、全局菜单 |
 | 权限规范 | 1 | 权限控制 |
 | 验证扩展 | 3 | 参数验证、资源检查、错误消息 |
 | 文档管理 | 2 | 文档组织、同步更新 |
 | 系统规范 | 4 | API、认证、主题、错误处理、状态管理 |
 | 工程规范 | 2 | 测试、部署 |
 | 实体开发 | 1 | 新增实体清单 |
-| **总计** | **31** | 涵盖全栈开发各个方面 |
+| **总计** | **30** | 涵盖全栈开发各个方面 |
 
 ## 🆕 v5.0 新增规则
 
-### 数据库初始化和并发安全 (2025-01)
+### 数据初始化微服务架构 (2025-01)
 
-针对多实例部署场景和全局菜单架构新增 5 个重要规则：
+针对数据初始化微服务架构和单实例运行模式新增重要规则：
 
 1. **`database-initialization.mdc`** (⚡ 自动应用)
-   - 统一的数据库初始化规范
-   - 使用 DatabaseInitializerService
-   - 分布式锁保护
+   - 数据初始化由专门的微服务负责
+   - 单实例运行保证安全
    - 幂等性设计
    - 全局菜单初始化
 
-2. **`distributed-lock-usage.mdc`** (📋 手动引用)
-   - 分布式锁使用指南
-   - 两阶段锁获取策略
-   - 唯一索引 + TTL 索引
-   - 避免常见逻辑错误
+2. **`data-initializer-microservice.mdc`** (📋 手动引用)
+   - 数据初始化微服务开发规范
+   - 微服务架构设计和实现规范
+   - API 端点设计和监控调试
+   - 单实例运行保证
 
 3. **`mongodb-atomic-operations.mdc`** (📋 手动引用)
    - MongoDB 原子操作模式
@@ -270,23 +276,17 @@
    - 避免并发竞态条件
    - 批量操作优化
 
-4. **`multi-instance-deployment.mdc`** (📋 手动引用)
-   - 多实例部署注意事项
-   - 无状态设计原则
-   - 定时任务处理
-   - Kubernetes 部署示例
-
-5. **`global-menu-architecture.mdc`** (⚡ 自动应用) 🆕
+4. **`global-menu-architecture.mdc`** (⚡ 自动应用)
    - 全局菜单架构规范
    - 菜单是系统资源（无 CompanyId）
    - 系统初始化创建，用户不可管理
    - 100% 动态加载，无静态后备
 
 **关键改进**：
-- ✅ 确保多实例并发安全
-- ✅ 数据库初始化代码精简 87.5%
+- ✅ 简化架构，移除分布式锁复杂性
+- ✅ 数据初始化代码精简 87.5%
 - ✅ 启动性能提升 58%-93%
-- ✅ 消除并发竞态条件
+- ✅ 单实例运行保证安全
 - ✅ 统一菜单管理，权限精确控制
 
 ## 🔧 规则文件格式
@@ -376,18 +376,17 @@ description: TypeScript 编码规范和最佳实践
 1. `csharp-backend.mdc` - C# 开发规范
 2. `baseapicontroller-standard.mdc` - 控制器标准
 3. `backend-service-pattern.mdc` - 服务层模式
-4. `database-initialization.mdc` - 数据库初始化 🆕
+4. `database-initialization.mdc` - 数据库初始化
 5. `multi-tenant-development.mdc` - 多租户开发
 6. `api-integration.mdc` - API 设计
 7. `auth-system.mdc` - 认证授权
 
 ### 进阶主题
-1. `distributed-lock-usage.mdc` - 分布式锁 🆕
-2. `mongodb-atomic-operations.mdc` - 原子操作 🆕
-3. `multi-instance-deployment.mdc` - 多实例部署 🆕
-4. `error-handling.mdc` - 错误处理
-5. `testing-standards.mdc` - 测试规范
-6. `deployment.mdc` - 部署运维
+1. `data-initializer-microservice.mdc` - 数据初始化微服务
+2. `mongodb-atomic-operations.mdc` - 原子操作
+3. `error-handling.mdc` - 错误处理
+4. `testing-standards.mdc` - 测试规范
+5. `deployment.mdc` - 部署运维
 
 ## 📚 相关资源
 
@@ -396,10 +395,10 @@ description: TypeScript 编码规范和最佳实践
 - [.NET Aspire 文档](https://learn.microsoft.com/aspnet/core/aspire/)
 - [Ant Design Pro 文档](https://pro.ant.design)
 - [数据库初始化优化报告](mdc:docs/optimization/DATABASE-INITIALIZATION-OPTIMIZATION.md)
-- [分布式锁逻辑修复](mdc:docs/bugfixes/DISTRIBUTED-LOCK-LOGIC-FIX.md)
+- [分布式锁移除总结报告](mdc:docs/reports/DISTRIBUTED-LOCK-REMOVAL-SUMMARY.md)
 
 ---
 
 💡 **提示**: 这些规则由项目团队维护，确保 Cursor AI 能够提供准确、一致的代码建议。如有问题或建议，欢迎提出！
 
-**最后更新**: 2025-01-14 (v5.0 - 新增多实例部署和数据库初始化规范)
+**最后更新**: 2025-01-14 (v5.0 - 数据初始化微服务架构和规则清理)

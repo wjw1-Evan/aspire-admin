@@ -1,0 +1,274 @@
+---
+description: 微服务自动停止模式开发规范
+globs: *.cs
+---
+
+# 微服务自动停止模式开发规范
+
+## 🎯 核心原则
+
+**任务型微服务在完成指定任务后应自动停止，避免资源浪费，状态显示为"完成"或"失败"**
+
+## ✅ 适用场景
+
+### 任务型微服务
+- **数据初始化服务** - 完成数据库初始化后停止
+- **数据迁移服务** - 完成数据迁移后停止
+- **批量处理服务** - 完成批量任务后停止
+- **一次性配置服务** - 完成配置后停止
+
+### 不适合的场景
+- **API 服务** - 需要持续运行提供接口
+- **后台任务服务** - 需要定期执行任务
+- **消息队列消费者** - 需要持续监听消息
+
+## 🔧 实现模式
+
+### 基本实现结构
+
+```csharp
+// ✅ Program.cs 中的自动停止实现
+var app = builder.Build();
+
+// 配置中间件和端点
+app.UseExceptionHandler();
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
+// 执行任务并自动停止
+using (var scope = app.Services.CreateScope())
+{
+    var taskService = scope.ServiceProvider.GetRequiredService<ITaskService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        logger.LogInformation("🚀 {ServiceName} 微服务启动，开始执行任务...", "TaskService");
+        await taskService.ExecuteTaskAsync();
+        logger.LogInformation("✅ 任务执行完成，{ServiceName} 微服务将停止运行", "TaskService");
+        
+        // 任务完成后，优雅地停止服务
+        logger.LogInformation("🛑 {ServiceName} 微服务已完成任务，正在停止...", "TaskService");
+        return; // 直接返回，不执行 app.RunAsync()
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "❌ 任务执行失败，{ServiceName} 微服务将停止运行", "TaskService");
+        return; // 即使失败也停止服务
+    }
+}
+
+// 这行代码不会被执行，因为上面已经 return 了
+await app.RunAsync();
+```
+
+### 任务服务实现
+
+```csharp
+// ✅ 任务服务接口
+public interface ITaskService
+{
+    Task ExecuteTaskAsync();
+}
+
+// ✅ 任务服务实现
+public class TaskService : ITaskService
+{
+    private readonly ILogger<TaskService> _logger;
+
+    public async Task ExecuteTaskAsync()
+    {
+        _logger.LogInformation("========== 开始执行任务 ==========");
+        
+        try
+        {
+            await ExecuteTaskStepsAsync();
+            _logger.LogInformation("========== 任务执行完成 ==========");
+            _logger.LogInformation("🎉 所有任务步骤已成功完成");
+            _logger.LogInformation("📊 任务统计：");
+            _logger.LogInformation("   - 处理项目：已处理/验证");
+            _logger.LogInformation("   - 执行状态：成功");
+            _logger.LogInformation("✅ {ServiceName} 任务完成，服务可以安全停止", nameof(TaskService));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ 任务执行失败");
+            _logger.LogError("🛑 {ServiceName} 将停止运行，请检查错误日志", nameof(TaskService));
+            throw; // 重新抛出异常，让 Program.cs 处理停止逻辑
+        }
+    }
+
+    private async Task ExecuteTaskStepsAsync()
+    {
+        // 1. 执行任务步骤 1
+        await Step1Async();
+        
+        // 2. 执行任务步骤 2
+        await Step2Async();
+        
+        // 3. 执行任务步骤 3
+        await Step3Async();
+    }
+}
+```
+
+## 📊 状态管理
+
+### Aspire Dashboard 状态
+
+```bash
+# 服务状态说明
+- "运行中" - 服务正在执行任务
+- "完成" - 任务成功完成，服务已停止
+- "失败" - 任务执行失败，服务已停止
+```
+
+### 日志输出模式
+
+```bash
+# 成功执行日志序列
+[INFO] 🚀 TaskService 微服务启动，开始执行任务...
+[INFO] ========== 开始执行任务 ==========
+[INFO] 执行任务步骤 1...
+[INFO] 执行任务步骤 2...
+[INFO] 执行任务步骤 3...
+[INFO] ========== 任务执行完成 ==========
+[INFO] 🎉 所有任务步骤已成功完成
+[INFO] 📊 任务统计：
+[INFO]    - 处理项目：已处理/验证
+[INFO]    - 执行状态：成功
+[INFO] ✅ TaskService 任务完成，服务可以安全停止
+[INFO] ✅ 任务执行完成，TaskService 微服务将停止运行
+[INFO] 🛑 TaskService 微服务已完成任务，正在停止...
+
+# 失败执行日志序列
+[INFO] 🚀 TaskService 微服务启动，开始执行任务...
+[INFO] ========== 开始执行任务 ==========
+[ERROR] ❌ 任务执行失败
+[ERROR] 🛑 TaskService 将停止运行，请检查错误日志
+[ERROR] ❌ 任务执行失败，TaskService 微服务将停止运行
+```
+
+## 🔍 监控和调试
+
+### 服务状态检查
+
+```bash
+# 检查服务进程状态
+ps aux | grep TaskService
+
+# 在 Aspire Dashboard 中查看服务状态
+# 应该显示为"完成"或"失败"状态
+```
+
+### 日志监控
+
+```bash
+# 在 Aspire Dashboard 中查看服务日志
+# 关注关键日志：
+- 服务启动日志
+- 任务执行进度日志
+- 完成/失败状态日志
+- 服务停止日志
+```
+
+## 🚫 避免的做法
+
+### ❌ 不要持续运行任务型服务
+
+```csharp
+// ❌ 错误：任务型服务持续运行
+await app.RunAsync(); // 任务完成后仍继续运行
+
+// ✅ 正确：任务完成后自动停止
+return; // 任务完成后直接返回
+```
+
+### ❌ 不要忽略异常
+
+```csharp
+// ❌ 错误：忽略异常继续运行
+try
+{
+    await ExecuteTaskAsync();
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "任务失败");
+    // 继续运行，可能导致资源浪费
+}
+
+// ✅ 正确：异常时也停止服务
+try
+{
+    await ExecuteTaskAsync();
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "任务失败");
+    throw; // 重新抛出异常，触发停止逻辑
+}
+```
+
+### ❌ 不要缺少状态日志
+
+```csharp
+// ❌ 错误：缺少状态日志
+await ExecuteTaskAsync();
+return; // 没有日志说明状态
+
+// ✅ 正确：提供详细的状态日志
+await ExecuteTaskAsync();
+_logger.LogInformation("✅ 任务完成，服务将停止");
+return;
+```
+
+## 📋 开发检查清单
+
+在开发自动停止微服务时，确保：
+
+- [ ] 服务设计为任务型（一次性或周期性）
+- [ ] 实现自动停止机制（完成或失败后停止）
+- [ ] 提供详细的状态日志
+- [ ] 异常时也停止服务
+- [ ] 在 Aspire Dashboard 中显示正确状态
+- [ ] 提供健康检查端点（用于监控）
+- [ ] 提供手动执行端点（用于调试）
+- [ ] 所有操作都是幂等的
+- [ ] 有完整的错误处理
+
+## 🎯 最佳实践
+
+### 1. 任务设计
+- **单一职责** - 每个服务只负责一个特定任务
+- **幂等性** - 任务可以安全重复执行
+- **原子性** - 任务要么完全成功，要么完全失败
+
+### 2. 日志设计
+- **启动日志** - 明确标识服务启动
+- **进度日志** - 记录任务执行进度
+- **完成日志** - 明确标识任务完成
+- **停止日志** - 明确标识服务停止
+
+### 3. 错误处理
+- **快速失败** - 遇到错误立即停止
+- **详细日志** - 记录足够的错误信息
+- **状态明确** - 失败时也显示明确状态
+
+### 4. 监控友好
+- **状态清晰** - 在监控面板中状态明确
+- **日志完整** - 提供完整的执行轨迹
+- **易于调试** - 提供手动执行能力
+
+## 📚 相关文档
+
+- [DataInitializer 微服务自动停止优化](mdc:docs/optimization/DATA-INITIALIZER-AUTO-STOP.md)
+- [DataInitializer 微服务自动停止功能实现报告](mdc:docs/reports/DATA-INITIALIZER-AUTO-STOP-IMPLEMENTATION.md)
+- [数据初始化微服务规范](mdc:.cursor/rules/data-initializer-microservice.mdc)
+
+## 🎯 记住
+
+1. **任务型服务** - 只适合执行特定任务的微服务
+2. **自动停止** - 完成任务后立即停止，避免资源浪费
+3. **状态明确** - 在监控面板中显示清晰的状态
+4. **日志完整** - 提供详细的执行过程日志
+5. **错误处理** - 失败时也停止服务，便于问题排查

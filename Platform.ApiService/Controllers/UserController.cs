@@ -265,12 +265,9 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="request">批量操作请求</param>
     [HttpPost("bulk-action")]
-    [Authorize]
+    [RequireMenu("user-management")]
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
-        // 批量操作需要访问用户管理菜单的权限
-        // TODO: 实现菜单权限检查
-        
         // 使用扩展方法简化验证
         request.UserIds.EnsureNotEmpty("用户ID列表");
 

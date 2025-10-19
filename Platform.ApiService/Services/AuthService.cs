@@ -20,6 +20,7 @@ public class AuthService : BaseService, IAuthService
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IPasswordPolicyService _passwordPolicyService;
 
     public AuthService(
         IMongoDatabase database,
@@ -30,7 +31,8 @@ public class AuthService : BaseService, IAuthService
         ILogger<AuthService> logger,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
-        IPasswordHasher passwordHasher)
+        IPasswordHasher passwordHasher,
+        IPasswordPolicyService passwordPolicyService)
         : base(database, httpContextAccessor, tenantContext, logger)
     {
         _database = database;
@@ -42,6 +44,7 @@ public class AuthService : BaseService, IAuthService
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
         _passwordHasher = passwordHasher;
+        _passwordPolicyService = passwordPolicyService;
     }
 
     // 🔒 安全修复：移除静态密码哈希方法，统一使用注入的 IPasswordHasher
@@ -270,7 +273,7 @@ public class AuthService : BaseService, IAuthService
         {
             // 1. 验证输入
             _validationService.ValidateUsername(request.Username);
-            _validationService.ValidatePassword(request.Password);
+            _passwordPolicyService.ValidatePassword(request.Password);  // ✅ 使用强密码策略
             _validationService.ValidateEmail(request.Email);
             
             // 2. 检查用户名全局唯一
@@ -332,8 +335,17 @@ public class AuthService : BaseService, IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "用户注册失败");
-            return ApiResponse<User>.ErrorResult("SERVER_ERROR", $"注册失败: {ex.Message}");
+            _logger.LogError(ex, "用户注册失败: {Username}", request.Username);
+            
+            // ✅ 生产环境隐藏详细错误信息
+            var errorMessage = "注册失败，请稍后重试或联系管理员";
+            
+            // 仅在开发环境显示详细错误
+            #if DEBUG
+            errorMessage = $"注册失败: {ex.Message}";
+            #endif
+            
+            return ApiResponse<User>.ErrorResult("SERVER_ERROR", errorMessage);
         }
     }
     
@@ -485,10 +497,14 @@ public class AuthService : BaseService, IAuthService
                 return ApiResponse<bool>.ValidationErrorResult("新密码和确认密码不一致");
             }
 
-            // 验证新密码强度
-            if (request.NewPassword.Length < 6)
+            // ✅ 使用强密码策略验证新密码
+            try
             {
-                return ApiResponse<bool>.ValidationErrorResult("新密码长度至少6个字符");
+                _passwordPolicyService.ValidatePassword(request.NewPassword);
+            }
+            catch (ArgumentException ex)
+            {
+                return ApiResponse<bool>.ValidationErrorResult(ex.Message);
             }
 
             // 验证新密码不能与当前密码相同

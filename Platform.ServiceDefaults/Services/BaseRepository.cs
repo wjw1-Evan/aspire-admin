@@ -44,14 +44,19 @@ public class BaseRepository<T> where T : IEntity, ISoftDeletable, ITimestamped
             builder.Eq(e => e.IsDeleted, false)
         };
 
-        // 如果实体有 CompanyId 属性，自动添加过滤
+        // ✅ 如果实体有 CompanyId 属性，强制要求 CompanyId
         if (typeof(T).GetProperty("CompanyId") != null)
         {
             var companyId = TenantContext.GetCurrentCompanyId();
-            if (!string.IsNullOrEmpty(companyId))
+            
+            // ✅ CompanyId 为空时抛出异常，防止数据泄露
+            if (string.IsNullOrEmpty(companyId))
             {
-                filters.Add(builder.Eq("companyId", companyId));
+                throw new UnauthorizedAccessException(
+                    "当前用户没有关联的企业，无法访问多租户数据。请确保用户已登录并选择了企业。");
             }
+            
+            filters.Add(builder.Eq("companyId", companyId));
         }
 
         if (additionalFilter != null)

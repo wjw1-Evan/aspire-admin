@@ -61,11 +61,21 @@ public class UserController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetUserById(string id)
     {
-        // 检查权限：只能查看自己的信息，或者需要访问用户管理菜单的权限
+        // ✅ 完整的权限检查：只能查看自己，或者有用户管理权限
         var currentUserId = CurrentUserId;
         if (currentUserId != id)
         {
-            throw new UnauthorizedAccessException(ErrorMessages.Unauthorized);
+            // 检查是否有用户管理菜单权限
+            var menuAccessService = HttpContext.RequestServices
+                .GetRequiredService<IMenuAccessService>();
+            
+            var hasMenuAccess = await menuAccessService
+                .HasMenuAccessAsync(currentUserId!, "user-management");
+            
+            if (!hasMenuAccess)
+            {
+                throw new UnauthorizedAccessException("无权查看其他用户信息");
+            }
         }
         
         var user = await _userService.GetUserByIdAsync(id);
@@ -268,8 +278,16 @@ public class UserController : BaseApiController
     [RequireMenu("user-management")]
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
-        // 使用扩展方法简化验证
+        // ✅ 添加批量操作数量限制
+        const int MaxBatchSize = 100;
+        
         request.UserIds.EnsureNotEmpty("用户ID列表");
+        
+        if (request.UserIds.Count > MaxBatchSize)
+        {
+            throw new ArgumentException(
+                $"批量操作最多支持 {MaxBatchSize} 个用户，当前请求: {request.UserIds.Count} 个");
+        }
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
@@ -311,6 +329,33 @@ public class UserController : BaseApiController
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null)
     {
+        // ✅ 添加输入验证
+        if (page < 1 || page > 10000)
+            throw new ArgumentException("页码必须在 1-10000 之间");
+        
+        if (pageSize < 1 || pageSize > 100)
+            throw new ArgumentException("每页数量必须在 1-100 之间");
+        
+        // 验证userId格式
+        if (!string.IsNullOrEmpty(userId) && 
+            !MongoDB.Bson.ObjectId.TryParse(userId, out _))
+            throw new ArgumentException("用户ID格式不正确");
+        
+        // 验证action参数
+        if (!string.IsNullOrEmpty(action))
+        {
+            var allowedActions = new[] { 
+                "login", "logout", "create", "update", "delete", 
+                "view", "export", "import", "change_password", "refresh_token"
+            };
+            if (!allowedActions.Contains(action.ToLower()))
+                throw new ArgumentException($"不支持的操作类型: {action}");
+        }
+        
+        // 验证日期范围
+        if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+            throw new ArgumentException("开始日期不能晚于结束日期");
+        
         // 优化后的查询：使用批量查询替代 N+1 查询
         var (logs, total, userMap) = await _userService.GetAllActivityLogsWithUsersAsync(
             page, 

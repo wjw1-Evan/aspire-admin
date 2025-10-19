@@ -475,13 +475,8 @@ export const request: RequestConfig = {
           ...config.headers,
           Authorization: `Bearer ${token}`,
         };
-        // 🔒 安全修复：仅在开发环境输出调试信息，避免生产环境token泄露
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Request with token:', config.url);
-        }
-      } else if (process.env.NODE_ENV === 'development') {
-        console.log('Request without token:', config.url);
       }
+      // ✅ 完全移除token相关日志，避免敏感信息泄露
       return config;
     },
   ],
@@ -489,21 +484,13 @@ export const request: RequestConfig = {
   // 响应拦截器，处理 token 过期和用户不存在
   responseInterceptors: [
     (response) => {
-      // 🔒 安全修复：仅在开发环境输出调试信息
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Response received:', response.config.url, response.status);
-      }
+      // ✅ 移除响应日志，避免敏感信息泄露
       return handleCurrentUserResponse(response);
     },
     async (error: any) => {
-      // 🔒 安全修复：仅在开发环境输出错误详情
+      // ✅ 只在开发环境输出错误（不包含敏感信息）
       if (process.env.NODE_ENV === 'development') {
-        console.log(
-          'Response error:',
-          error.config?.url,
-          error.response?.status,
-          error.message,
-        );
+        console.error('Request failed:', error.config?.url, error.response?.status);
       }
 
       // 处理404错误（用户不存在）

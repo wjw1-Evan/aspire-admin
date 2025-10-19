@@ -21,21 +21,25 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.WriteIndented = false;
     });
 
-// 配置 CORS - 根据环境区分安全策略
+// 配置 CORS - 严格的安全策略
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            // 开发环境：允许所有源
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            // ✅ 开发环境：明确列出允许的源
+            policy.WithOrigins(
+                    "http://localhost:15001",  // Admin frontend
+                    "http://localhost:15002"   // Mobile app
+                )
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();  // ✅ 支持凭证
         }
         else
         {
-            // 生产环境：限制允许的源
+            // 生产环境：从配置读取允许的源
             var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
                 ?? throw new InvalidOperationException("AllowedOrigins must be configured in production");
             
@@ -133,6 +137,7 @@ builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Pla
 
 // 核心服务
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+builder.Services.AddScoped<IPasswordPolicyService, PasswordPolicyService>();  // ✅ 密码策略服务
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -189,12 +194,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// ✅ 配置 HSTS (HTTP Strict Transport Security)
+builder.Services.AddHsts(options =>
+{
+    options.Preload = true;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(365);
+});
+
 // 添加健康检查
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+// ✅ HTTPS 强制重定向（生产环境）
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
 // 全局异常处理（最外层）
 app.UseExceptionHandler();
 

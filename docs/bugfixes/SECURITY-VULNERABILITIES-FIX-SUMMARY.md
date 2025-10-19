@@ -167,7 +167,7 @@ baseURL: process.env.NODE_ENV === 'development'
 
 ### 3. 安全配置快速指南 ✅
 
-**文件**: `SECURITY-SETUP.md`（项目根目录）
+**文件**: `docs/deployment/SECURITY-SETUP.md`
 
 **内容**:
 - 快速开始指导
@@ -371,7 +371,7 @@ chmod +x scripts/verify-security-config.sh
 
 ## 📞 获取帮助
 
-- **配置问题**: 查看 `SECURITY-SETUP.md`
+- **配置问题**: 查看 [安全配置指南](../deployment/SECURITY-SETUP.md)
 - **详细文档**: `docs/deployment/` 目录
 - **运行脚本**: `./scripts/verify-security-config.sh`
 - **安全事故**: 联系团队安全负责人

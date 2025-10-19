@@ -50,6 +50,8 @@ docs/
 ### 安全配置
 - [JWT密钥配置指南](deployment/JWT-SECRET-CONFIGURATION.md) - JWT密钥安全配置详细指南 ⭐ **部署必读**
 - [安全部署检查清单](deployment/SECURITY-CHECKLIST.md) - 生产环境安全部署检查清单
+- [安全配置快速指南](deployment/SECURITY-SETUP.md) - 开发和生产环境安全配置快速指南
+- [安全快速开始](deployment/SECURITY-QUICK-START.md) - 30秒快速安全配置指南 ⭐ **快速开始**
 
 ### 安全功能
 - [**API速率限制配置指南**](features/RATE-LIMITING-CONFIGURATION.md) - **新增** 完整的速率限制实施方案 ⭐ **推荐**

@@ -402,7 +402,7 @@ async function attemptTokenRefresh(refreshToken: string, originalRequest: any) {
       refreshResult.token &&
       refreshResult.refreshToken;
 
-    if (hasValidTokens) {
+    if (hasValidTokens && refreshResult.token) {
       console.log('Token refreshed successfully');
       saveRefreshedTokens(refreshResult);
       return retryOriginalRequest(originalRequest, refreshResult.token);

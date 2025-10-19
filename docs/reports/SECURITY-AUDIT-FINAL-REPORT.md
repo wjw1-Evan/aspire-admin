@@ -381,7 +381,7 @@ export REACT_APP_API_BASE_URL="https://api.yourdomain.com"
 **紧急响应**: 按照安全事故响应流程处理
 
 **相关文档**:
-- [安全配置快速指南](../../SECURITY-SETUP.md)
+- [安全配置快速指南](../deployment/SECURITY-SETUP.md)
 - [JWT密钥配置指南](JWT-SECRET-CONFIGURATION.md)
 - [安全部署检查清单](SECURITY-CHECKLIST.md)
 - [安全测试指南](SECURITY-TESTING-GUIDE.md)

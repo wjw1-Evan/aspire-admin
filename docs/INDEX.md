@@ -71,11 +71,8 @@ docs/
 - [业务逻辑修复总结](reports/BUSINESS-LOGIC-FIXES-SUMMARY.md) - v3.0 业务逻辑修复清单
 - [第二轮修复总结](reports/SECOND-ROUND-FIXES-SUMMARY.md) - v3.0 第二轮业务逻辑修复总结
 
-### v2.0 版本更新
-- [v2.0 更新总结](features/v2.0-UPDATES-SUMMARY.md) - 完整的 v2.0 版本更新说明
-- [优化完成报告](optimization/OPTIMIZATION-COMPLETE.md) - 业务逻辑优化总结
-- [优化用户指南](optimization/OPTIMIZATION-USER-GUIDE.md) - 用户使用指南
-- [API 变更清单](optimization/API-CHANGES-CHECKLIST.md) - API 接口变更
+### v2.0 版本更新（已归档）
+- [v2.0 更新总结](archived/versions/v2.0-UPDATES-SUMMARY.md) - 完整的 v2.0 版本更新说明（已归档）
 
 ### v3.0 版本更新（最新）
 - [v3.0 最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - 完整的最终报告
@@ -207,10 +204,6 @@ docs/
 - [重构总结](refactoring/REFACTORING-SUMMARY.md) - 重构总结
 
 ### 优化文档
-- [优化快速参考](optimization/QUICK-REFERENCE.md) - 快速参考
-- [优化完成报告](optimization/OPTIMIZATION-COMPLETE.md) - 完成报告
-- [优化 README](optimization/README.md) - 优化说明
-- [测试指南](optimization/TESTING-GUIDE.md) - 测试方法
 - [业务逻辑优化总结](optimization/BUSINESS-LOGIC-OPTIMIZATION-SUMMARY.md) - 业务优化
 - [v3.0 优化最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - v3.0 完整报告
 - [代码清理报告](optimization/CODE-CLEANUP-REPORT.md) - 代码清理

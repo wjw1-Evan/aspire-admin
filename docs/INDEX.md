@@ -23,7 +23,6 @@ docs/
 ## 🔒 安全相关文档
 
 ### 安全审计报告
-- [**系统安全审查报告**](reports/SECURITY-AUDIT-REPORT.md) - **新增** 2025-10-19 全面安全审查，发现12个漏洞 ⭐ **紧急**
 - [**安全漏洞修复完成总结**](reports/SECURITY-FIXES-COMPLETE-SUMMARY.md) - **新增** 2025-10-19 已修复10个漏洞(83%) ⭐ **最新**
 - [系统安全审计最终报告](reports/SECURITY-AUDIT-FINAL-REPORT.md) - 2025年1月安全审计完整报告 ⭐ **重要**
 - [后端代码安全审查](reports/BACKEND-SECURITY-REVIEW.md) - 后端代码安全质量评估
@@ -39,6 +38,7 @@ docs/
 - [补充深度检查报告](bugfixes/SUPPLEMENTARY-DEEP-CHECK-REPORT.md) - **新增** - 补充安全审计和代码质量检查
 - [最终全面检查总结报告](bugfixes/FINAL-COMPREHENSIVE-CHECK-SUMMARY.md) - **新增** - 最终检查总结，系统生产就绪
 - [未完成功能检查报告](reports/UNCOMPLETED-FEATURES-ANALYSIS.md) - **新增** - 未完成功能和待实现功能分析 ⭐ **重要**
+- [Markdown文件清理报告](reports/MARKDOWN-FILES-CLEANUP-2025-01-16.md) - **新增** - 删除3个重复文档，优化文档结构 ⭐ **最新**
 
 ### 漏洞修复
 - [系统安全漏洞修复总结](bugfixes/SECURITY-VULNERABILITIES-FIX-SUMMARY.md) - 所有安全漏洞修复总结

@@ -168,3 +168,11 @@ export async function removeRule(options?: { [key: string]: any }) {
     },
   });
 }
+
+/** 获取用户统计信息 GET /api/user/statistics */
+export async function getUserStatistics(options?: { [key: string]: any }) {
+  return request<ApiResponse<API.UserStatisticsResponse>>('/api/user/statistics', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}

@@ -117,10 +117,15 @@ docs/
 
 #### 帮助系统
 - [帮助模块功能](features/HELP-MODULE-FEATURE.md) - 系统内帮助模块
+- [**getUserStatistics API 函数缺失修复**](bugfixes/GET-USER-STATISTICS-API-FIX.md) - 修复欢迎页面统计数据加载问题 ⭐ **最新**
 - [帮助模块调试](bugfixes/HELP-MODAL-DEBUG.md) - 问题排查指南
 - [**帮助系统版本合并更新**](features/HELP-VERSION-MERGE-UPDATE.md) - 版本信息整合优化 ⭐ **最新**
 - [v6.0 帮助系统更新](features/V6-HELP-SYSTEM-UPDATE.md) - v6.0 权限系统内容同步
 - [v5.0 帮助系统更新](features/V5-HELP-SYSTEM-UPDATE.md) - v5.0 架构升级内容同步
+
+#### 用户界面优化
+- [**UI 主题升级和日间/夜间模式切换**](features/UI-THEME-UPGRADE.md) - 现代化主题系统和主题切换功能 ⭐ **最新**
+- [**欢迎页面重新设计**](features/WELCOME-PAGE-REDESIGN.md) - 现代化企业级管理平台欢迎页面
 
 #### 路由和认证
 - [**路由守卫增强**](features/ROUTE-GUARD-ENHANCEMENT.md) - Token有效性验证和自动跳转 ⭐ **最新**

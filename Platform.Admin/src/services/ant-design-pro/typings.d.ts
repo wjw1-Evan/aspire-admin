@@ -407,5 +407,17 @@ declare namespace API {
     defaultRoleIds?: string[];
     rejectReason?: string;
   };
+
+  // 用户统计信息响应
+  type UserStatisticsResponse = {
+    totalUsers: number;
+    activeUsers: number;
+    inactiveUsers: number;
+    adminUsers: number;
+    regularUsers: number;
+    newUsersToday: number;
+    newUsersThisWeek: number;
+    newUsersThisMonth: number;
+  };
 }
 

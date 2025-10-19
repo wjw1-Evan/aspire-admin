@@ -34,6 +34,9 @@ export async function getInitialState(): Promise<{
   loading?: boolean;
   fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
 }> {
+  // 从 localStorage 读取主题设置
+  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+  const initialTheme = savedTheme || 'light';
   const fetchUserInfo = async () => {
     // 检查是否有 token
     if (!tokenUtils.hasToken()) {
@@ -104,17 +107,24 @@ export async function getInitialState(): Promise<{
   // 如果不是登录页面，执行
   const { location } = history;
   const whiteListPages = [loginPath, '/user/register', '/user/register-result'];
+  
+  // 合并默认设置和主题设置
+  const settings = {
+    ...defaultSettings,
+    navTheme: initialTheme,
+  } as Partial<LayoutSettings>;
+  
   if (!whiteListPages.includes(location.pathname)) {
     const currentUser = await fetchUserInfo();
     return {
       fetchUserInfo,
       currentUser,
-      settings: defaultSettings as Partial<LayoutSettings>,
+      settings,
     };
   }
   return {
     fetchUserInfo,
-    settings: defaultSettings as Partial<LayoutSettings>,
+    settings,
   };
 }
 

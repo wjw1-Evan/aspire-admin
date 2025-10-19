@@ -17,10 +17,7 @@ builder.AddMongoDBClient(connectionName: "mongodb");
 // Register services
 builder.Services.AddScoped<IDataInitializerService, DataInitializerService>();
 
-// Configure logging
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.SetMinimumLevel(LogLevel.Information);
+
 
 var app = builder.Build();
 

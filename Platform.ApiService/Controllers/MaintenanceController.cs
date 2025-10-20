@@ -68,7 +68,9 @@ public class MaintenanceController : BaseApiController
 
         _logger.LogInformation("管理员 {UserId} 开始执行 UserCompany 记录修复", CurrentUserId);
 
-        var fixer = new FixMissingUserCompanyRecords(_database, _logger);
+        var fixerLogger = _logger as ILogger<FixMissingUserCompanyRecords> ?? 
+            LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<FixMissingUserCompanyRecords>();
+        var fixer = new FixMissingUserCompanyRecords(_database, fixerLogger);
         var result = await fixer.FixAsync();
 
         if (result.Success)
@@ -126,7 +128,9 @@ public class MaintenanceController : BaseApiController
 
         _logger.LogInformation("管理员 {UserId} 开始验证 UserCompany 记录", CurrentUserId);
 
-        var fixer = new FixMissingUserCompanyRecords(_database, _logger);
+        var fixerLogger = _logger as ILogger<FixMissingUserCompanyRecords> ?? 
+            LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<FixMissingUserCompanyRecords>();
+        var fixer = new FixMissingUserCompanyRecords(_database, fixerLogger);
         var result = await fixer.ValidateAsync();
 
         if (result.IsValid)

@@ -16,7 +16,8 @@ docs/
 ├── middleware/       # 中间件文档
 ├── soft-delete/      # 软删除相关文档
 ├── archived/         # 归档文档（已废弃）
-│   └── permissions-v5/  # v5.0 CRUD权限系统文档归档
+│   ├── permissions-v5/  # v5.0 CRUD权限系统文档归档
+│   └── versions/        # 历史版本文档归档
 └── INDEX.md          # 本文档索引
 ```
 
@@ -201,6 +202,9 @@ docs/
 #### API 修复
 - [API 504 错误修复](reports/API-504-ERROR-FIX.md) - 网关超时问题
 - [**Scalar API 文档修复**](bugfixes/SCALAR-API-REFERENCE-FIX.md) - 修复 API 文档无法显示问题 ⭐ **最新**
+
+#### 编译和运行问题
+- [**DataInitializer dotnet watch 模式支持**](bugfixes/DATAINITIALIZER-WATCH-MODE-FIX.md) - **新增** - 修复 dotnet watch 模式下 DataInitializer 无法停止的问题 ⭐ **最新**
 
 ### 重构文档
 - [Cursor Rules 清理总结报告](reports/CURSOR-RULES-CLEANUP-SUMMARY.md) - 清理过时规则，简化架构指导 ⭐ **最新**

@@ -32,8 +32,7 @@ import {
   CiOutlined,
   MonitorOutlined
 } from '@ant-design/icons';
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Line } from '@ant-design/charts';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getCurrentCompany } from '@/services/company';
 import { getSystemStatus, getSystemResources } from '@/services/system/api';
@@ -41,78 +40,6 @@ import type { CurrentUser } from '@/types/unified-api';
 import type { SystemStatus, SystemResources } from '@/services/system/api';
 
 const { Title, Text, Paragraph } = Typography;
-
-// 内存使用率曲线图组件
-const MemoryUsageChart: React.FC<{
-  data: Array<{ time: string; value: number; type: string; memoryMB?: number; totalMB?: number }>;
-  loading?: boolean;
-  totalMemoryMB?: number;
-}> = React.memo(({ data, loading = false, totalMemoryMB = 0 }) => {
-  const config = useMemo(() => ({
-    data,
-    xField: 'time',
-    yField: 'value',
-    seriesField: 'type',
-    smooth: true,
-    animation: {
-      appear: {
-        animation: 'path-in',
-        duration: 500,
-      },
-    },
-    color: ['#1890ff'],
-    point: {
-      size: 3,
-      shape: 'circle',
-    },
-    tooltip: {
-      formatter: (datum: any) => {
-        const memoryMB = datum.memoryMB || 0;
-        const totalMB = datum.totalMB || totalMemoryMB || 1;
-        const percentage = datum.value || 0;
-        
-        return {
-          name: '内存使用情况',
-          value: `${percentage.toFixed(1)}% (${memoryMB.toFixed(0)}MB / ${totalMB.toFixed(0)}MB)`,
-        };
-      },
-    },
-    legend: {
-      position: 'top' as const,
-    },
-    xAxis: {
-      type: 'time' as const,
-      tickCount: 5,
-      label: {
-        formatter: (text: string) => {
-          // 只显示时分，不显示秒
-          return text.split(':').slice(0, 2).join(':');
-        },
-      },
-    },
-    yAxis: {
-      min: 0,
-      max: 100,
-      label: {
-        formatter: (val: string) => `${val}%`,
-      },
-      title: {
-        text: '内存使用率 (%)',
-        style: {
-          fontSize: 12,
-          fontWeight: 'bold',
-        },
-      },
-    },
-    height: 300,
-  }), [data, totalMemoryMB]);
-
-  return (
-    <div style={{ padding: '16px 0' }}>
-      <Line {...config} loading={loading} />
-    </div>
-  );
-});
 
 // 统计卡片组件
 const StatCard: React.FC<{
@@ -281,22 +208,16 @@ const Welcome: React.FC = () => {
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // 内存使用率曲线图数据
-  const [memoryChartData, setMemoryChartData] = useState<Array<{ time: string; value: number; type: string; memoryMB?: number; totalMB?: number }>>([]);
-  const [chartLoading] = useState(false);
-  
   // 定时器引用
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 获取系统资源数据（用于曲线图）
+  // 获取系统资源数据
   const fetchSystemResources = useCallback(async () => {
     try {
       const resourcesRes = await getSystemResources();
       
       if (resourcesRes.success && resourcesRes.data) {
         const resources = resourcesRes.data;
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('zh-CN');
         const memoryUsage = resources.memory?.usagePercent || 0;
         
         // 更新系统资源状态（只在数据变化时更新）
@@ -305,23 +226,6 @@ const Welcome: React.FC = () => {
             return prevResources; // 避免不必要的更新
           }
           return resources;
-        });
-        
-        // 更新曲线图数据
-        setMemoryChartData(prevData => {
-          const newData = [
-            ...prevData,
-            {
-              time: timeStr,
-              value: memoryUsage,
-              type: '内存使用率',
-              memoryMB: resources.memory?.processMemoryMB || 0,
-              totalMB: resources.memory?.totalMemoryMB || 0
-            }
-          ];
-          
-          // 只保留最近60个数据点（1分钟的数据）
-          return newData.slice(-60);
         });
       }
     } catch (error) {
@@ -801,86 +705,34 @@ const Welcome: React.FC = () => {
         </Card>
 
         {/* 系统资源监控 */}
+        {systemResources ? (
           <Card 
             title={
               <Space>
                 <DatabaseOutlined />
                 <span>系统资源监控</span>
-              <Tag color="blue">5秒更新</Tag>
+                <Tag color="blue">5秒更新</Tag>
               </Space>
             }
             style={{ marginTop: '24px', borderRadius: '12px' }}
           >
-          {/* 内存使用率曲线图 */}
-          <div style={{ marginBottom: '24px' }}>
-            <Title level={5} style={{ marginBottom: '16px' }}>
-              <Space>
-                <ThunderboltOutlined />
-                <span>内存使用率趋势</span>
-                {systemResources?.memory && (
-                  <Tag color={getResourceColor(systemResources.memory.usagePercent)}>
-                    当前: {systemResources.memory.usagePercent}%
-                  </Tag>
-                )}
-              </Space>
-            </Title>
-            <MemoryUsageChart 
-              data={memoryChartData} 
-              loading={chartLoading}
-              totalMemoryMB={systemResources?.memory?.totalMemoryMB || 0}
-            />
-            {systemResources?.memory && (
-              <div style={{ 
-                marginTop: '12px', 
-                padding: '16px', 
-                backgroundColor: '#fafafa', 
-                borderRadius: '8px'
-              }}>
-                <Row gutter={[16, 8]} justify="center">
-                  <Col>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
-                        {systemResources.memory.processMemoryMB.toFixed(0)}MB
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>已使用</div>
-                    </div>
-                  </Col>
-                  <Col>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
-                        {(systemResources.memory.totalMemoryMB - systemResources.memory.processMemoryMB).toFixed(0)}MB
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>可用</div>
-                    </div>
-                  </Col>
-                  <Col>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#faad14' }}>
-                        {systemResources.memory.totalMemoryMB.toFixed(0)}MB
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>总内存</div>
-                    </div>
-                  </Col>
-                  <Col>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ 
-                        fontSize: '16px', 
-                        fontWeight: 'bold', 
-                        color: getResourceColor(systemResources.memory.usagePercent)
-                      }}>
-                        {systemResources.memory.usagePercent.toFixed(1)}%
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>使用率</div>
-                    </div>
-                  </Col>
-                </Row>
-              </div>
-            )}
-          </div>
-              
-          {/* 其他资源指标 */}
-          {systemResources ? (
             <Row gutter={[16, 16]}>
+              {/* 内存使用率 */}
+              {systemResources.memory && (
+                <Col xs={24} sm={12} md={8}>
+                  <ResourceCard
+                    title="内存使用率"
+                    value={`${systemResources.memory?.usagePercent || 0}%`}
+                    icon={<ThunderboltOutlined />}
+                    color={getResourceColor(systemResources.memory?.usagePercent || 0)}
+                    loading={loading}
+                    token={token}
+                  />
+                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                    {systemResources.memory?.processMemoryMB || 0}MB / {systemResources.memory?.totalMemoryMB || 0}MB
+                  </div>
+                </Col>
+              )}
               {/* CPU 使用率 */}
               {systemResources.cpu && (
                 <Col xs={24} sm={12} md={8}>
@@ -938,18 +790,9 @@ const Welcome: React.FC = () => {
                 </div>
               </Col>
             </Row>
-          ) : (
-            <Alert
-              message="系统资源数据不可用"
-              description="无法获取系统资源信息，请检查后端服务是否正常运行。"
-              type="warning"
-              showIcon
-              style={{ borderRadius: '8px' }}
-            />
-          )}
             
             {/* 系统详细信息 */}
-          {systemResources?.system && (
+            {systemResources?.system && (
               <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
                 <Row gutter={[16, 8]}>
                   <Col xs={24} sm={12} md={6}>
@@ -972,6 +815,26 @@ const Welcome: React.FC = () => {
               </div>
             )}
           </Card>
+        ) : (
+          <Card 
+            title={
+              <Space>
+                <DatabaseOutlined />
+                <span>系统资源监控</span>
+                <Tag color="blue">5秒更新</Tag>
+              </Space>
+            }
+            style={{ marginTop: '24px', borderRadius: '12px' }}
+          >
+            <Alert
+              message="系统资源数据不可用"
+              description="无法获取系统资源信息，请检查后端服务是否正常运行。"
+              type="warning"
+              showIcon
+              style={{ borderRadius: '8px' }}
+            />
+          </Card>
+        )}
       </div>
     </PageContainer>
   );

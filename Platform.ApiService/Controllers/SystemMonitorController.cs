@@ -141,8 +141,8 @@ public class SystemMonitorController : BaseApiController
         }
         catch
         {
-            // 所有方法失败时，使用默认值
-            return 8L * 1024 * 1024 * 1024; // 默认8GB
+            // 所有方法失败时，返回0
+            return 0;
         }
     }
 
@@ -208,12 +208,12 @@ public class SystemMonitorController : BaseApiController
                 }
             }
             
-            // 如果所有方法都失败，返回默认值
-            return 8L * 1024 * 1024 * 1024; // 默认8GB
+            // 如果所有方法都失败，返回0
+            return 0;
         }
         catch
         {
-            return 8L * 1024 * 1024 * 1024; // 默认8GB
+            return 0;
         }
     }
 
@@ -250,8 +250,8 @@ public class SystemMonitorController : BaseApiController
         }
         catch
         {
-            // 所有方法失败时，使用默认值
-            return 4L * 1024 * 1024 * 1024; // 默认4GB可用
+            // 所有方法失败时，返回0
+            return 0;
         }
     }
 
@@ -358,12 +358,12 @@ public class SystemMonitorController : BaseApiController
                 }
             }
             
-            // 如果所有方法都失败，返回默认值
-            return 4L * 1024 * 1024 * 1024; // 默认4GB可用
+            // 如果所有方法都失败，返回0
+            return 0;
         }
         catch
         {
-            return 4L * 1024 * 1024 * 1024; // 默认4GB可用
+            return 0;
         }
     }
 

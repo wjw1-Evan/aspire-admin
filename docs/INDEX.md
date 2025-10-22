@@ -1,5 +1,34 @@
 # Aspire Admin 项目文档索引
 
+## 🆕 规则优化更新 (2025-01-16)
+
+### 规则合并和清理
+- **移动端开发规范** - 合并 `mobile-development.mdc` 和 `mobile-development-best-practices.mdc`
+- **多租户开发规范** - 合并 `multi-tenant-development.mdc` 和 `multi-tenant-data-isolation.mdc`
+- **后端开发规范** - 合并 `csharp-backend.mdc` 和 `backend-service-pattern.mdc`
+- **错误处理规范** - 合并 `error-handling.mdc` 和 `error-messages-usage.mdc`
+
+### 优化结果
+- **规则总数**: 从 34 个精简至 31 个
+- **重复内容**: 完全消除重复和重叠
+- **结构优化**: 提高规则的可读性和维护性
+- **覆盖范围**: 保持完整的全栈开发规范覆盖
+
+## 🆕 新增规则文档 (2025-01-16)
+
+### 核心开发规范
+- [代码审查和质量保证规范](.cursor/rules/code-review-quality.mdc) - 代码审查流程和质量检查清单
+- [性能优化和监控规范](.cursor/rules/performance-optimization.mdc) - 全栈性能优化最佳实践
+- [安全最佳实践和漏洞防护](.cursor/rules/security-best-practices.mdc) - 安全开发规范和防护措施
+
+### 架构和设计模式
+- [.NET Aspire 微服务架构规范](.cursor/rules/aspire-microservices.mdc) - 微服务架构和编排规范
+- [设计模式和架构原则规范](.cursor/rules/design-patterns-architecture.mdc) - SOLID 原则和设计模式应用
+- [React Native 和 Expo 移动端开发最佳实践](.cursor/rules/mobile-development-best-practices.mdc) - 移动端开发规范
+
+### 工程规范
+- [Git 工作流和版本控制规范](.cursor/rules/git-workflow-version-control.mdc) - Git 工作流和团队协作规范
+
 ## 📚 文档组织结构
 
 本项目的所有说明文档都存放在 `docs` 目录下，按类别分类管理。
@@ -39,13 +68,11 @@ docs/
 - [补充深度检查报告](bugfixes/SUPPLEMENTARY-DEEP-CHECK-REPORT.md) - **新增** - 补充安全审计和代码质量检查
 - [最终全面检查总结报告](bugfixes/FINAL-COMPREHENSIVE-CHECK-SUMMARY.md) - **新增** - 最终检查总结，系统生产就绪
 - [未完成功能检查报告](reports/UNCOMPLETED-FEATURES-ANALYSIS.md) - **新增** - 未完成功能和待实现功能分析 ⭐ **重要**
-- [Markdown文件清理报告](reports/MARKDOWN-FILES-CLEANUP-2025-01-16.md) - **新增** - 删除3个重复文档，优化文档结构 ⭐ **最新**
 
 ### 漏洞修复
 - [系统安全漏洞修复总结](bugfixes/SECURITY-VULNERABILITIES-FIX-SUMMARY.md) - 所有安全漏洞修复总结
 - [系统安全漏洞修复报告](bugfixes/SECURITY-VULNERABILITIES-FIX.md) - 详细漏洞修复报告
 - [API权限验证修复](bugfixes/API-PERMISSION-VERIFICATION-FIX.md) - 修复API权限验证问题
-- [认证安全修复](bugfixes/AUTHORIZATION-SECURITY-FIX.md) - 修复认证系统安全问题
 - [关键登录修复总结](bugfixes/CRITICAL-LOGIN-FIX-SUMMARY.md) - 登录系统关键修复
 
 ### 安全配置
@@ -196,8 +223,6 @@ docs/
 
 #### 登录和安全修复
 - [紧急登录修复](bugfixes/CRITICAL-LOGIN-FIX-SUMMARY.md) - 登录安全漏洞修复报告 ⚠️ **重要**
-- [登录企业代码问题分析](bugfixes/LOGIN-COMPANY-CODE-ISSUE-ANALYSIS.md) - 企业代码登录问题排查
-- [企业代码验证问题](bugfixes/WHY-ANY-COMPANY-CODE-WORKS.md) - 企业代码验证逻辑问题
 
 #### API 修复
 - [API 504 错误修复](reports/API-504-ERROR-FIX.md) - 网关超时问题

@@ -1,5 +1,6 @@
 ---
 description: 多租户系统开发规范和最佳实践
+globs: *.cs,Platform.ApiService/**/*
 ---
 
 # 多租户系统开发规范
@@ -11,6 +12,129 @@ description: 多租户系统开发规范和最佳实践
 - 数据隔离：通过 `companyId` 字段100%隔离
 - 自动过滤：BaseRepository 自动处理租户过滤
 - JWT Token：包含 `companyId` claim
+- **严格禁止创建没有 CompanyId 的全局数据**
+
+## 📋 多租户实体类型
+
+### 1. MultiTenantEntity（推荐）
+```csharp
+// ✅ 推荐：使用 MultiTenantEntity 基类
+public class Menu : MultiTenantEntity, INamedEntity
+{
+    // CompanyId 由基类提供
+    public string Name { get; set; }
+    public string Title { get; set; }
+    // ...
+}
+
+public class Permission : MultiTenantEntity
+{
+    // CompanyId 由基类提供
+    public string ResourceName { get; set; }
+    public string Action { get; set; }
+    // ...
+}
+```
+
+### 2. 手动添加 CompanyId
+```csharp
+// ✅ 可选：手动添加 CompanyId 字段
+public class Role : ISoftDeletable, INamedEntity, ITimestamped
+{
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;  // ✅ 必须有
+    
+    public string Name { get; set; }
+    public string Description { get; set; }
+    // ...
+}
+```
+
+## 🔧 Service 层实现
+
+### BaseService 提供的企业上下文
+
+```csharp
+public class MyService : BaseService
+{
+    public MyService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<MyService> logger)
+        : base(database, httpContextAccessor, logger)
+    {
+    }
+    
+    // ✅ 使用基类方法获取当前企业ID
+    public async Task<Menu> CreateMenuAsync(CreateMenuRequest request)
+    {
+        var companyId = GetCurrentCompanyId();  // 从 JWT token 获取
+        
+        var menu = new Menu
+        {
+            Name = request.Name,
+            Title = request.Title,
+            CompanyId = companyId,  // ✅ 设置当前企业ID
+            // ...
+        };
+        
+        await _repository.CreateAsync(menu);
+        return menu;
+    }
+}
+```
+
+### 查询时过滤企业数据
+
+```csharp
+// ✅ 正确：查询时过滤企业数据
+public async Task<List<Menu>> GetMenusAsync()
+{
+    var companyId = GetCurrentCompanyId();
+    
+    var filter = Builders<Menu>.Filter.And(
+        Builders<Menu>.Filter.Eq(m => m.CompanyId, companyId),
+        SoftDeleteExtensions.NotDeleted<Menu>()
+    );
+    
+    return await _menus.Find(filter).ToListAsync();
+}
+
+// ❌ 错误：不过滤企业，会泄露其他企业数据
+public async Task<List<Menu>> GetMenusAsync()
+{
+    return await _menus.Find(_ => true).ToListAsync();  // ❌ 危险！
+}
+```
+
+### MultiTenantRepository 自动过滤
+
+```csharp
+// ✅ 推荐：使用 MultiTenantRepository
+public class MenuService : BaseService
+{
+    private readonly MultiTenantRepository<Menu> _repository;
+    
+    public MenuService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<MenuService> logger)
+        : base(database, httpContextAccessor, logger)
+    {
+        _repository = new MultiTenantRepository<Menu>(
+            database, 
+            "menus", 
+            httpContextAccessor
+        );
+    }
+    
+    // ✅ Repository 自动过滤企业数据
+    public async Task<List<Menu>> GetMenusAsync()
+    {
+        return await _repository.GetAllAsync();  // 自动过滤 CompanyId
+    }
+}
+```
 
 ## ✅ 正确的开发方式
 

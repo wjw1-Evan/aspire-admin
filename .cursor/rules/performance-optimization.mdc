@@ -1,0 +1,457 @@
+---
+description: 性能优化和监控规范
+globs: *.cs,*.ts,*.tsx,*.js,*.jsx
+---
+
+# 性能优化和监控规范
+
+## 🎯 核心原则
+
+**性能优化应该从设计阶段开始，通过监控和测量来指导优化决策**
+
+## 🚀 后端性能优化
+
+### 数据库查询优化
+```csharp
+// ✅ 正确：使用索引和投影
+var users = await _users.Find(u => u.CompanyId == companyId)
+    .Project(u => new { u.Id, u.Username, u.Email })
+    .ToListAsync();
+
+// ❌ 避免：查询所有字段
+var users = await _users.Find(u => u.CompanyId == companyId).ToListAsync();
+
+// ✅ 正确：使用聚合管道
+var stats = await _users.Aggregate()
+    .Match(u => u.CompanyId == companyId)
+    .Group(u => u.RoleId, g => new { RoleId = g.Key, Count = g.Count() })
+    .ToListAsync();
+```
+
+### 缓存策略
+```csharp
+// ✅ 正确：使用内存缓存
+public async Task<User> GetUserAsync(string id)
+{
+    var cacheKey = $"user:{id}";
+    if (_cache.TryGetValue(cacheKey, out User cachedUser))
+        return cachedUser;
+
+    var user = await _repository.GetByIdAsync(id);
+    _cache.Set(cacheKey, user, TimeSpan.FromMinutes(5));
+    return user;
+}
+
+// ✅ 正确：使用分布式缓存
+public async Task<List<Menu>> GetUserMenusAsync(string userId)
+{
+    var cacheKey = $"user_menus:{userId}";
+    var cachedMenus = await _distributedCache.GetStringAsync(cacheKey);
+    
+    if (cachedMenus != null)
+        return JsonSerializer.Deserialize<List<Menu>>(cachedMenus);
+
+    var menus = await _menuService.GetUserMenusAsync(userId);
+    await _distributedCache.SetStringAsync(cacheKey, 
+        JsonSerializer.Serialize(menus), 
+        new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+        });
+    
+    return menus;
+}
+```
+
+### 异步编程最佳实践
+```csharp
+// ✅ 正确：使用 ConfigureAwait(false)
+public async Task<List<User>> GetUsersAsync()
+{
+    var users = await _repository.GetAllAsync().ConfigureAwait(false);
+    return users.ToList();
+}
+
+// ✅ 正确：并行执行独立任务
+public async Task<UserDashboard> GetUserDashboardAsync(string userId)
+{
+    var userTask = _userService.GetUserAsync(userId);
+    var statsTask = _statsService.GetUserStatsAsync(userId);
+    var activitiesTask = _activityService.GetRecentActivitiesAsync(userId);
+
+    await Task.WhenAll(userTask, statsTask, activitiesTask);
+
+    return new UserDashboard
+    {
+        User = await userTask,
+        Stats = await statsTask,
+        Activities = await activitiesTask
+    };
+}
+```
+
+## 🎨 前端性能优化
+
+### React 组件优化
+```tsx
+// ✅ 正确：使用 React.memo
+const UserCard = React.memo(({ user }: { user: User }) => {
+  return (
+    <Card>
+      <h3>{user.username}</h3>
+      <p>{user.email}</p>
+    </Card>
+  );
+});
+
+// ✅ 正确：使用 useMemo 和 useCallback
+const UserList = ({ users, onUserSelect }: UserListProps) => {
+  const filteredUsers = useMemo(() => 
+    users.filter(user => user.isActive), [users]
+  );
+
+  const handleUserClick = useCallback((userId: string) => {
+    onUserSelect(userId);
+  }, [onUserSelect]);
+
+  return (
+    <div>
+      {filteredUsers.map(user => (
+        <UserCard 
+          key={user.id} 
+          user={user} 
+          onClick={() => handleUserClick(user.id)}
+        />
+      ))}
+    </div>
+  );
+};
+```
+
+### 虚拟滚动和分页
+```tsx
+// ✅ 正确：使用虚拟滚动处理大量数据
+import { FixedSizeList as List } from 'react-window';
+
+const VirtualizedUserList = ({ users }: { users: User[] }) => {
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => (
+    <div style={style}>
+      <UserCard user={users[index]} />
+    </div>
+  );
+
+  return (
+    <List
+      height={600}
+      itemCount={users.length}
+      itemSize={80}
+      width="100%"
+    >
+      {Row}
+    </List>
+  );
+};
+
+// ✅ 正确：使用分页加载
+const usePaginatedData = <T>(fetchFn: (page: number) => Promise<T[]>) => {
+  const [data, setData] = useState<T[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const loadMore = useCallback(async () => {
+    setLoading(true);
+    try {
+      const newData = await fetchFn(page);
+      setData(prev => [...prev, ...newData]);
+      setPage(prev => prev + 1);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchFn, page]);
+
+  return { data, loading, loadMore };
+};
+```
+
+### 图片和资源优化
+```tsx
+// ✅ 正确：使用懒加载
+const LazyImage = ({ src, alt }: { src: string; alt: string }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={imgRef} className="image-container">
+      {isInView && (
+        <img
+          src={src}
+          alt={alt}
+          onLoad={() => setIsLoaded(true)}
+          style={{ opacity: isLoaded ? 1 : 0 }}
+        />
+      )}
+    </div>
+  );
+};
+```
+
+## 📊 性能监控
+
+### 后端监控
+```csharp
+// ✅ 正确：使用性能计数器
+public class PerformanceMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<PerformanceMiddleware> _logger;
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        
+        try
+        {
+            await _next(context);
+        }
+        finally
+        {
+            stopwatch.Stop();
+            var elapsed = stopwatch.ElapsedMilliseconds;
+            
+            if (elapsed > 1000) // 超过1秒的请求
+            {
+                _logger.LogWarning("Slow request: {Method} {Path} took {ElapsedMs}ms",
+                    context.Request.Method,
+                    context.Request.Path,
+                    elapsed);
+            }
+        }
+    }
+}
+
+// ✅ 正确：数据库查询监控
+public class DatabasePerformanceService
+{
+    public async Task<T> ExecuteWithMonitoring<T>(Func<Task<T>> operation, string operationName)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var result = await operation();
+            return result;
+        }
+        finally
+        {
+            stopwatch.Stop();
+            _logger.LogInformation("Database operation {OperationName} took {ElapsedMs}ms",
+                operationName, stopwatch.ElapsedMilliseconds);
+        }
+    }
+}
+```
+
+### 前端监控
+```tsx
+// ✅ 正确：性能监控 Hook
+const usePerformanceMonitor = () => {
+  useEffect(() => {
+    // 监控页面加载时间
+    const navigationStart = performance.timing.navigationStart;
+    const loadComplete = performance.timing.loadEventEnd;
+    const loadTime = loadComplete - navigationStart;
+
+    if (loadTime > 3000) {
+      console.warn(`Page load time: ${loadTime}ms (slow)`);
+    }
+
+    // 监控资源加载
+    const resources = performance.getEntriesByType('resource');
+    const slowResources = resources.filter(resource => resource.duration > 1000);
+    
+    if (slowResources.length > 0) {
+      console.warn('Slow resources detected:', slowResources);
+    }
+  }, []);
+};
+
+// ✅ 正确：API 调用性能监控
+const useApiPerformanceMonitor = () => {
+  const monitorApiCall = useCallback(async <T>(
+    apiCall: () => Promise<T>,
+    endpoint: string
+  ): Promise<T> => {
+    const startTime = performance.now();
+    try {
+      const result = await apiCall();
+      const duration = performance.now() - startTime;
+      
+      if (duration > 1000) {
+        console.warn(`Slow API call: ${endpoint} took ${duration.toFixed(2)}ms`);
+      }
+      
+      return result;
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      console.error(`API call failed: ${endpoint} after ${duration.toFixed(2)}ms`, error);
+      throw error;
+    }
+  }, []);
+
+  return { monitorApiCall };
+};
+```
+
+## 🔧 性能优化工具
+
+### 构建优化
+```json
+// Platform.Admin/package.json
+{
+  "scripts": {
+    "build": "umi build",
+    "build:analyze": "ANALYZE=1 umi build",
+    "build:prod": "cross-env NODE_ENV=production umi build"
+  }
+}
+
+// webpack 配置优化
+module.exports = {
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+        },
+        common: {
+          name: 'common',
+          minChunks: 2,
+          chunks: 'all',
+          enforce: true,
+        },
+      },
+    },
+  },
+};
+```
+
+### 数据库索引优化
+```csharp
+// ✅ 正确：创建复合索引
+public class CreateUserIndexes : IIndexCreationScript
+{
+    public async Task CreateIndexesAsync(IMongoDatabase database)
+    {
+        var users = database.GetCollection<User>("users");
+        
+        // 复合索引：CompanyId + IsDeleted + CreatedAt
+        await users.Indexes.CreateOneAsync(
+            new CreateIndexModel<User>(
+                Builders<User>.IndexKeys
+                    .Ascending(u => u.CompanyId)
+                    .Ascending(u => u.IsDeleted)
+                    .Descending(u => u.CreatedAt),
+                new CreateIndexOptions
+                {
+                    Name = "company_deleted_created",
+                    Background = true
+                }
+            )
+        );
+        
+        // 文本搜索索引
+        await users.Indexes.CreateOneAsync(
+            new CreateIndexModel<User>(
+                Builders<User>.IndexKeys.Text(u => u.Username).Text(u => u.Email),
+                new CreateIndexOptions
+                {
+                    Name = "user_text_search",
+                    Background = true
+                }
+            )
+        );
+    }
+}
+```
+
+## 📈 性能指标和阈值
+
+### 后端性能指标
+- **API 响应时间**: < 200ms (P95)
+- **数据库查询时间**: < 100ms (P95)
+- **内存使用**: < 80% 可用内存
+- **CPU 使用率**: < 70% 平均负载
+- **并发连接数**: < 1000 活跃连接
+
+### 前端性能指标
+- **首屏加载时间**: < 2s
+- **交互响应时间**: < 100ms
+- **资源加载时间**: < 1s
+- **JavaScript 包大小**: < 500KB (gzipped)
+- **图片优化**: WebP 格式，适当压缩
+
+### 移动端性能指标
+- **应用启动时间**: < 3s
+- **页面切换时间**: < 300ms
+- **内存使用**: < 100MB
+- **电池消耗**: 优化后台任务
+
+## 🎯 性能优化检查清单
+
+### 开发阶段
+- [ ] 使用性能分析工具识别瓶颈
+- [ ] 实现适当的缓存策略
+- [ ] 优化数据库查询和索引
+- [ ] 使用异步编程模式
+- [ ] 实现代码分割和懒加载
+
+### 测试阶段
+- [ ] 进行负载测试
+- [ ] 监控内存泄漏
+- [ ] 测试并发性能
+- [ ] 验证缓存有效性
+- [ ] 检查资源加载优化
+
+### 部署阶段
+- [ ] 配置 CDN 加速
+- [ ] 启用 Gzip 压缩
+- [ ] 设置适当的缓存头
+- [ ] 监控生产环境性能
+- [ ] 设置性能告警
+
+## 📚 相关资源
+
+- [.NET 性能最佳实践](https://docs.microsoft.com/en-us/dotnet/fundamentals/performance/)
+- [React 性能优化指南](https://react.dev/learn/render-and-commit)
+- [MongoDB 性能优化](https://docs.mongodb.com/manual/core/performance-optimization/)
+- [Web 性能优化](https://web.dev/performance/)
+
+## 🎯 记住
+
+**性能优化是一个持续的过程**
+
+- 测量 → 分析 → 优化 → 验证
+- 从用户体验角度思考性能
+- 使用工具和数据指导优化决策
+- 建立性能监控和告警机制

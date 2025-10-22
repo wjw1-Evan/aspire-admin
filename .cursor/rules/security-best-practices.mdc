@@ -1,0 +1,495 @@
+---
+description: 安全最佳实践和漏洞防护规范
+globs: *.cs,*.ts,*.tsx,*.js,*.jsx
+---
+
+# 安全最佳实践和漏洞防护规范
+
+## 🎯 核心原则
+
+**安全不是功能，而是基础要求。所有代码都必须考虑安全性**
+
+## 🔐 认证和授权安全
+
+### JWT Token 安全
+```csharp
+// ✅ 正确：安全的 JWT 配置
+public class JwtSettings
+{
+    public string SecretKey { get; set; } = string.Empty;
+    public string Issuer { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+    public int ExpirationMinutes { get; set; } = 60;
+    public int RefreshTokenExpirationDays { get; set; } = 7;
+}
+
+// ✅ 正确：Token 验证
+public class JwtAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
+{
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var token = ExtractTokenFromHeader();
+        if (string.IsNullOrEmpty(token))
+            return AuthenticateResult.Fail("Token not provided");
+
+        try
+        {
+            var principal = ValidateToken(token);
+            var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            return AuthenticateResult.Success(ticket);
+        }
+        catch (SecurityTokenExpiredException)
+        {
+            return AuthenticateResult.Fail("Token expired");
+        }
+        catch (SecurityTokenInvalidSignatureException)
+        {
+            return AuthenticateResult.Fail("Invalid token signature");
+        }
+    }
+}
+```
+
+### 密码安全
+```csharp
+// ✅ 正确：安全的密码哈希
+public class PasswordService
+{
+    private const int SaltSize = 32;
+    private const int HashSize = 32;
+    private const int Iterations = 100000;
+
+    public string HashPassword(string password)
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var salt = new byte[SaltSize];
+        rng.GetBytes(salt);
+
+        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
+        var hash = pbkdf2.GetBytes(HashSize);
+
+        var hashBytes = new byte[SaltSize + HashSize];
+        Array.Copy(salt, 0, hashBytes, 0, SaltSize);
+        Array.Copy(hash, 0, hashBytes, SaltSize, HashSize);
+
+        return Convert.ToBase64String(hashBytes);
+    }
+
+    public bool VerifyPassword(string password, string hashedPassword)
+    {
+        var hashBytes = Convert.FromBase64String(hashedPassword);
+        var salt = new byte[SaltSize];
+        Array.Copy(hashBytes, 0, salt, 0, SaltSize);
+
+        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
+        var hash = pbkdf2.GetBytes(HashSize);
+
+        for (int i = 0; i < HashSize; i++)
+        {
+            if (hashBytes[i + SaltSize] != hash[i])
+                return false;
+        }
+        return true;
+    }
+}
+```
+
+### 权限验证
+```csharp
+// ✅ 正确：细粒度权限检查
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+public class RequirePermissionAttribute : Attribute, IAuthorizationRequirement
+{
+    public string Resource { get; }
+    public string Action { get; }
+
+    public RequirePermissionAttribute(string resource, string action)
+    {
+        Resource = resource;
+        Action = action;
+    }
+}
+
+public class PermissionAuthorizationHandler : AuthorizationHandler<RequirePermissionAttribute>
+{
+    protected override async Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        RequirePermissionAttribute requirement)
+    {
+        var user = context.User;
+        var userId = user.FindFirst("userId")?.Value;
+        
+        if (string.IsNullOrEmpty(userId))
+        {
+            context.Fail();
+            return;
+        }
+
+        var hasPermission = await CheckUserPermissionAsync(userId, requirement.Resource, requirement.Action);
+        
+        if (hasPermission)
+        {
+            context.Succeed(requirement);
+        }
+        else
+        {
+            context.Fail();
+        }
+    }
+}
+```
+
+## 🛡️ 输入验证和防护
+
+### SQL 注入防护
+```csharp
+// ✅ 正确：使用参数化查询
+public async Task<User> GetUserByEmailAsync(string email)
+{
+    var filter = Builders<User>.Filter.Eq(u => u.Email, email);
+    return await _users.Find(filter).FirstOrDefaultAsync();
+}
+
+// ❌ 禁止：字符串拼接查询
+public async Task<User> GetUserByEmailAsync(string email)
+{
+    var query = $"SELECT * FROM users WHERE email = '{email}'"; // 危险！
+    // ...
+}
+```
+
+### XSS 防护
+```csharp
+// ✅ 正确：输入清理
+public class InputSanitizer
+{
+    private static readonly HtmlSanitizer _sanitizer = new();
+
+    public string SanitizeHtml(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+
+        return _sanitizer.Sanitize(input);
+    }
+
+    public string SanitizeText(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+
+        return HttpUtility.HtmlEncode(input);
+    }
+}
+
+// ✅ 正确：在控制器中使用
+[HttpPost]
+public async Task<IActionResult> CreateNotice([FromBody] CreateNoticeRequest request)
+{
+    var sanitizedContent = _inputSanitizer.SanitizeHtml(request.Content);
+    var sanitizedTitle = _inputSanitizer.SanitizeText(request.Title);
+    
+    var notice = new Notice
+    {
+        Title = sanitizedTitle,
+        Content = sanitizedContent,
+        CompanyId = GetRequiredCompanyId()
+    };
+    
+    await _notices.InsertOneAsync(notice);
+    return Success(notice);
+}
+```
+
+### CSRF 防护
+```csharp
+// ✅ 正确：CSRF Token 验证
+public class CsrfMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        if (IsStateChangingMethod(context.Request.Method))
+        {
+            var token = context.Request.Headers["X-CSRF-Token"].FirstOrDefault();
+            if (!ValidateCsrfToken(token, context))
+            {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync("CSRF token validation failed");
+                return;
+            }
+        }
+
+        await _next(context);
+    }
+
+    private bool IsStateChangingMethod(string method)
+    {
+        return method == "POST" || method == "PUT" || method == "DELETE" || method == "PATCH";
+    }
+}
+```
+
+## 🔒 数据安全
+
+### 敏感数据加密
+```csharp
+// ✅ 正确：敏感数据加密
+public class EncryptionService
+{
+    private readonly byte[] _key;
+
+    public EncryptionService(IConfiguration configuration)
+    {
+        var keyString = configuration["Encryption:Key"];
+        _key = Convert.FromBase64String(keyString);
+    }
+
+    public string Encrypt(string plainText)
+    {
+        using var aes = Aes.Create();
+        aes.Key = _key;
+        aes.GenerateIV();
+
+        using var encryptor = aes.CreateEncryptor();
+        using var msEncrypt = new MemoryStream();
+        using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
+        using var swEncrypt = new StreamWriter(csEncrypt);
+
+        swEncrypt.Write(plainText);
+        swEncrypt.Close();
+
+        var encrypted = msEncrypt.ToArray();
+        var result = new byte[aes.IV.Length + encrypted.Length];
+        Array.Copy(aes.IV, 0, result, 0, aes.IV.Length);
+        Array.Copy(encrypted, 0, result, aes.IV.Length, encrypted.Length);
+
+        return Convert.ToBase64String(result);
+    }
+
+    public string Decrypt(string cipherText)
+    {
+        var fullCipher = Convert.FromBase64String(cipherText);
+        var iv = new byte[16];
+        var cipher = new byte[fullCipher.Length - 16];
+
+        Array.Copy(fullCipher, 0, iv, 0, 16);
+        Array.Copy(fullCipher, 16, cipher, 0, cipher.Length);
+
+        using var aes = Aes.Create();
+        aes.Key = _key;
+        aes.IV = iv;
+
+        using var decryptor = aes.CreateDecryptor();
+        using var msDecrypt = new MemoryStream(cipher);
+        using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+        using var srDecrypt = new StreamReader(csDecrypt);
+
+        return srDecrypt.ReadToEnd();
+    }
+}
+```
+
+### 多租户数据隔离
+```csharp
+// ✅ 正确：强制租户隔离
+public class TenantSecurityService
+{
+    public void ValidateTenantAccess(string userId, string companyId)
+    {
+        var userCompany = GetUserCompany(userId);
+        if (userCompany != companyId)
+        {
+            throw new UnauthorizedAccessException("Access denied: User does not belong to this company");
+        }
+    }
+
+    public async Task<T> FilterByTenant<T>(IQueryable<T> query, string userId) where T : MultiTenantEntity
+    {
+        var userCompany = await GetUserCompanyAsync(userId);
+        return query.Where(x => x.CompanyId == userCompany);
+    }
+}
+```
+
+## 🌐 前端安全
+
+### XSS 防护
+```tsx
+// ✅ 正确：使用 dangerouslySetInnerHTML 时清理
+import DOMPurify from 'dompurify';
+
+const SafeHtmlContent = ({ content }: { content: string }) => {
+  const sanitizedContent = DOMPurify.sanitize(content);
+  
+  return (
+    <div 
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+    />
+  );
+};
+
+// ✅ 正确：输入验证
+const validateInput = (input: string): boolean => {
+  // 检查是否包含恶意脚本
+  const scriptPattern = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+  return !scriptPattern.test(input);
+};
+
+// ✅ 正确：使用 CSP
+const ContentSecurityPolicy = () => {
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.httpEquiv = 'Content-Security-Policy';
+    meta.content = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'";
+    document.head.appendChild(meta);
+  }, []);
+
+  return null;
+};
+```
+
+### 敏感信息处理
+```tsx
+// ✅ 正确：不在客户端存储敏感信息
+const useSecureStorage = () => {
+  const storeSecureData = useCallback((key: string, data: any) => {
+    // 只存储非敏感信息
+    const allowedKeys = ['theme', 'language', 'preferences'];
+    if (allowedKeys.includes(key)) {
+      localStorage.setItem(key, JSON.stringify(data));
+    } else {
+      console.warn(`Attempted to store sensitive data: ${key}`);
+    }
+  }, []);
+
+  return { storeSecureData };
+};
+
+// ✅ 正确：API 密钥管理
+const useApiKey = () => {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 从环境变量获取 API 密钥
+    const key = process.env.REACT_APP_API_KEY;
+    if (key) {
+      setApiKey(key);
+    }
+  }, []);
+
+  return apiKey;
+};
+```
+
+## 🔍 安全监控和日志
+
+### 安全事件日志
+```csharp
+// ✅ 正确：安全事件记录
+public class SecurityLogger
+{
+    private readonly ILogger<SecurityLogger> _logger;
+
+    public void LogLoginAttempt(string username, string ipAddress, bool success)
+    {
+        _logger.LogInformation("Login attempt: Username={Username}, IP={IP}, Success={Success}",
+            username, ipAddress, success);
+    }
+
+    public void LogPermissionDenied(string userId, string resource, string action)
+    {
+        _logger.LogWarning("Permission denied: User={UserId}, Resource={Resource}, Action={Action}",
+            userId, resource, action);
+    }
+
+    public void LogSuspiciousActivity(string userId, string activity, string details)
+    {
+        _logger.LogWarning("Suspicious activity: User={UserId}, Activity={Activity}, Details={Details}",
+            userId, activity, details);
+    }
+}
+```
+
+### 异常监控
+```csharp
+// ✅ 正确：安全异常处理
+public class SecurityExceptionMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly SecurityLogger _securityLogger;
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _securityLogger.LogPermissionDenied(
+                context.User.FindFirst("userId")?.Value ?? "anonymous",
+                context.Request.Path,
+                context.Request.Method
+            );
+            
+            context.Response.StatusCode = 403;
+            await context.Response.WriteAsync("Access denied");
+        }
+        catch (SecurityTokenException ex)
+        {
+            _securityLogger.LogSuspiciousActivity(
+                "anonymous",
+                "Invalid token",
+                ex.Message
+            );
+            
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("Invalid token");
+        }
+    }
+}
+```
+
+## 🚨 安全检查清单
+
+### 开发阶段
+- [ ] 所有用户输入都经过验证和清理
+- [ ] 使用参数化查询防止 SQL 注入
+- [ ] 实现适当的认证和授权
+- [ ] 敏感数据加密存储
+- [ ] 实现 CSRF 防护
+- [ ] 配置安全头（CSP、HSTS 等）
+
+### 部署阶段
+- [ ] 使用 HTTPS 加密传输
+- [ ] 配置防火墙和访问控制
+- [ ] 定期更新依赖包
+- [ ] 监控安全日志
+- [ ] 实施备份和恢复策略
+- [ ] 进行安全扫描和渗透测试
+
+### 运维阶段
+- [ ] 定期安全审计
+- [ ] 监控异常访问模式
+- [ ] 及时响应安全事件
+- [ ] 更新安全策略
+- [ ] 培训开发团队安全意识
+
+## 📚 相关资源
+
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [.NET 安全最佳实践](https://docs.microsoft.com/en-us/aspnet/core/security/)
+- [React 安全指南](https://react.dev/learn/security)
+- [MongoDB 安全指南](https://docs.mongodb.com/manual/security/)
+
+## 🎯 记住
+
+**安全是一个持续的过程，不是一次性的任务**
+
+- 从设计阶段就考虑安全性
+- 使用安全工具和库
+- 定期进行安全审计
+- 保持安全意识培训
+- 及时响应安全威胁

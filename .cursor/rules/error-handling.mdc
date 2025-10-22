@@ -1,9 +1,9 @@
 ---
-globs: **/error*.ts,**/error*.tsx,**/utils/*error*.ts,**/services/**/*.ts
-description: 统一错误处理规范
+globs: **/error*.ts,**/error*.tsx,**/utils/*error*.ts,**/services/**/*.ts,Platform.ApiService/Controllers/*.cs,Platform.ApiService/Services/*.cs
+description: 统一错误处理和消息管理规范
 ---
 
-# 统一错误处理规范
+# 统一错误处理和消息管理规范
 
 ## 🎯 错误处理架构
 
@@ -13,6 +13,52 @@ description: 统一错误处理规范
 2. **认证错误** - Token 过期、权限不足
 3. **业务错误** - 业务逻辑错误
 4. **系统错误** - 服务器错误、未知错误
+
+## 🔧 后端错误消息管理
+
+### 核心原则
+使用 `ErrorMessages` 常量类管理所有错误和成功消息，禁止硬编码字符串。
+
+### ✅ 正确的使用方式
+```csharp
+using Platform.ApiService.Constants;
+
+// 成功消息
+return Success(data, ErrorMessages.CreateSuccess);
+return Success(ErrorMessages.UpdateSuccess);
+return Success(ErrorMessages.DeleteSuccess);
+return Success(ErrorMessages.OperationSuccess);
+
+// 格式化消息
+throw new KeyNotFoundException(
+    string.Format(ErrorMessages.ResourceNotFound, "用户")
+);
+
+throw new ArgumentException(
+    string.Format(ErrorMessages.ParameterRequired, "用户名")
+);
+
+throw new InvalidOperationException(
+    string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称")
+);
+
+// 直接使用常量
+throw new UnauthorizedAccessException(ErrorMessages.Unauthorized);
+throw new InvalidOperationException(ErrorMessages.CannotDeleteSelf);
+throw new InvalidOperationException(ErrorMessages.CannotModifyOwnRole);
+```
+
+### ❌ 禁止的做法
+```csharp
+// ❌ 不要硬编码成功消息
+return Success(data, "创建成功");
+return Success("操作成功");
+
+// ❌ 不要硬编码错误消息
+throw new KeyNotFoundException($"用户 {id} 不存在");
+throw new ArgumentException("用户名不能为空");
+throw new InvalidOperationException("不能删除自己");
+```
 
 ## 🏗️ 前端错误处理
 

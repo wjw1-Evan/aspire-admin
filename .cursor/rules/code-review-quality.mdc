@@ -1,0 +1,193 @@
+---
+description: 代码审查和质量保证规范
+globs: *.cs,*.ts,*.tsx,*.js,*.jsx
+---
+
+# 代码审查和质量保证规范
+
+## 🎯 核心原则
+
+**所有代码变更必须经过严格的审查流程，确保代码质量、安全性和一致性**
+
+## ✅ 代码审查检查清单
+
+### 安全性检查
+- [ ] 验证所有用户输入（SQL 注入、XSS 防护）
+- [ ] 检查敏感信息泄露（API 密钥、密码等）
+- [ ] 确认权限验证正确实现
+- [ ] 验证多租户数据隔离
+- [ ] 检查 JWT Token 安全配置
+
+### 多租户数据隔离检查
+- [ ] 所有业务数据都有 CompanyId
+- [ ] 使用 BaseRepository 进行租户过滤
+- [ ] 没有全局数据创建（Menu 除外）
+- [ ] 跨企业操作有适当的安全检查
+- [ ] 用户注册时正确创建企业专属数据
+
+### 代码质量检查
+- [ ] 遵循项目编码规范（TypeScript、C#）
+- [ ] 使用 BaseApiController 继承
+- [ ] 错误处理使用统一中间件
+- [ ] 没有硬编码的配置值
+- [ ] 适当的日志记录和监控
+
+### API 设计检查
+- [ ] RESTful API 设计原则
+- [ ] 统一的响应格式
+- [ ] 完整的 XML 文档注释
+- [ ] 适当的 HTTP 状态码
+- [ ] 输入验证和错误处理
+
+### 前端代码检查
+- [ ] TypeScript 类型定义完整
+- [ ] 组件 Props 接口定义
+- [ ] 错误边界和异常处理
+- [ ] 性能优化（memo、useMemo）
+- [ ] 无障碍访问支持
+
+## 🔍 审查流程
+
+### 1. 自动化检查
+```bash
+# 后端代码检查
+dotnet build
+dotnet test
+dotnet format --verify-no-changes
+
+# 前端代码检查
+npm run lint
+npm run type-check
+npm run test
+```
+
+### 2. 人工审查要点
+
+#### 架构一致性
+- 是否符合项目整体架构
+- 是否正确使用设计模式
+- 是否遵循分层架构原则
+
+#### 业务逻辑正确性
+- 业务规则实现是否正确
+- 边界条件处理是否完整
+- 异常情况处理是否合理
+
+#### 性能考虑
+- 数据库查询是否优化
+- 是否有不必要的重复请求
+- 前端渲染性能是否良好
+
+## 🚫 常见问题检查
+
+### 安全问题
+```csharp
+// ❌ 禁止：直接拼接 SQL
+var query = $"SELECT * FROM users WHERE name = '{userInput}'";
+
+// ✅ 正确：使用参数化查询
+var filter = Builders<User>.Filter.Eq(u => u.Name, userInput);
+```
+
+### 多租户问题
+```csharp
+// ❌ 禁止：创建全局数据
+var notice = new Notice { Title = "系统通知" };
+
+// ✅ 正确：设置 CompanyId
+var notice = new Notice 
+{ 
+    Title = "企业通知", 
+    CompanyId = GetRequiredCompanyId() 
+};
+```
+
+### 错误处理问题
+```csharp
+// ❌ 禁止：手动 try-catch
+try
+{
+    var result = await _service.DoSomething();
+    return Ok(new { success = true, data = result });
+}
+catch (Exception ex)
+{
+    return StatusCode(500, new { success = false, error = ex.Message });
+}
+
+// ✅ 正确：抛出异常，由中间件处理
+var result = await _service.DoSomething();
+return Success(result);
+```
+
+## 📋 审查工具配置
+
+### ESLint 配置检查
+```json
+// Platform.Admin/.eslintrc.js
+{
+  "extends": ["@umijs/fabric/dist/eslint"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/explicit-function-return-type": "warn"
+  }
+}
+```
+
+### Biome 配置检查
+```json
+// Platform.Admin/biome.json
+{
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error"
+      }
+    }
+  }
+}
+```
+
+### .NET 代码分析
+```xml
+<!-- Platform.ApiService/Platform.ApiService.csproj -->
+<PropertyGroup>
+  <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  <AnalysisMode>All</AnalysisMode>
+</PropertyGroup>
+```
+
+## 🎯 质量指标
+
+### 代码覆盖率
+- 单元测试覆盖率 > 80%
+- 关键业务逻辑覆盖率 > 95%
+- API 端点测试覆盖率 > 90%
+
+### 性能指标
+- API 响应时间 < 200ms
+- 数据库查询时间 < 100ms
+- 前端页面加载时间 < 2s
+
+### 安全指标
+- 零安全漏洞
+- 所有输入验证通过
+- 权限检查 100% 覆盖
+
+## 📚 相关资源
+
+- [代码审查最佳实践](https://github.com/microsoft/vscode/wiki/Code-Review-Guidelines)
+- [.NET 代码分析规则](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/)
+- [TypeScript 严格模式](https://www.typescriptlang.org/tsconfig#strict)
+- [React 性能优化指南](https://react.dev/learn/render-and-commit)
+
+## 🎯 记住
+
+**质量不是检查出来的，而是设计出来的**
+
+- 在编写代码时就要考虑质量
+- 使用工具自动化检查
+- 建立代码审查文化
+- 持续改进和优化

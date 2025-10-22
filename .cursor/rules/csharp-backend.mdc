@@ -1,5 +1,5 @@
 ---
-globs: *.cs
+globs: *.cs,Platform.ApiService/**/*
 description: C# 后端开发规范和最佳实践
 ---
 
@@ -22,7 +22,99 @@ Platform.ApiService/
 └── Program.cs           # 应用程序入口
 ```
 
-## 🏗️ 代码规范
+## 🏗️ 服务层开发规范
+
+### 核心原则
+所有服务类必须继承 `BaseService` 并使用 `BaseRepository<T>` 进行数据访问。
+
+### ✅ 正确的服务实现
+```csharp
+public class MyService : BaseService, IMyService
+{
+    private readonly BaseRepository<MyEntity> _repository;
+    
+    // 如需直接访问集合进行复杂查询
+    private IMongoCollection<MyEntity> _entities => _repository.Collection;
+    
+    public MyService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<MyService> logger)
+        : base(database, httpContextAccessor, logger)
+    {
+        _repository = new BaseRepository<MyEntity>(database, "my_entities", httpContextAccessor);
+    }
+    
+    // 使用仓储方法而不是手动实现
+    public async Task<MyEntity?> GetByIdAsync(string id)
+    {
+        return await _repository.GetByIdAsync(id);
+    }
+    
+    public async Task<MyEntity> CreateAsync(CreateRequest request)
+    {
+        var entity = new MyEntity
+        {
+            Name = request.Name
+            // ✅ CreatedAt, UpdatedAt, IsDeleted 会自动设置
+        };
+        
+        return await _repository.CreateAsync(entity);
+    }
+    
+    public async Task<bool> DeleteAsync(string id, string? reason = null)
+    {
+        return await _repository.SoftDeleteAsync(id, reason);
+    }
+}
+```
+
+### ❌ 禁止的做法
+```csharp
+// ❌ 不要直接实现 IService 而不继承 BaseService
+public class MyService : IMyService
+{
+    private readonly IMongoCollection<MyEntity> _entities;
+    
+    // ❌ 不要重复实现 GetCurrentUserId
+    private string? GetCurrentUserId()
+    {
+        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
+    }
+}
+
+// ❌ 不要手动设置时间戳
+var entity = new MyEntity
+{
+    Name = "Test",
+    CreatedAt = DateTime.UtcNow,  // ❌ BaseRepository 会自动设置
+    UpdatedAt = DateTime.UtcNow,  // ❌ BaseRepository 会自动设置
+    IsDeleted = false             // ❌ BaseRepository 会自动设置
+};
+
+// ❌ 不要手动构建简单的 CRUD 查询
+var filter = Builders<MyEntity>.Filter.And(
+    Builders<MyEntity>.Filter.Eq(e => e.Id, id),
+    Builders<MyEntity>.Filter.Eq(e => e.IsDeleted, false)
+);
+var entity = await _entities.Find(filter).FirstOrDefaultAsync();
+
+// ✅ 应该使用
+var entity = await _repository.GetByIdAsync(id);
+```
+
+### 🔧 BaseService 提供的功能
+```csharp
+// 获取当前用户信息
+var userId = GetCurrentUserId();
+var username = GetCurrentUsername();
+
+// 获取 MongoDB 集合
+var collection = GetCollection<MyEntity>("my_entities");
+
+// 日志记录（继承的 Logger 属性）
+Logger.LogInformation("Processing entity {EntityId}", entityId);
+```
 
 ### 命名约定
 - **类**: 使用 PascalCase (如 `UserService`)

@@ -148,17 +148,13 @@ public class SystemMonitorController : BaseApiController
     {
         try
         {
-            // 使用GC获取托管内存信息
-            var gcMemory = GC.GetTotalMemory(false);
+            // 使用进程工作集估算系统总内存
+            var process = Process.GetCurrentProcess();
+            var processMemory = process.WorkingSet64;
             
-            // 如果GC内存太小，使用进程工作集估算
-            if (gcMemory < 100 * 1024 * 1024) // 小于100MB
-            {
-                var process = Process.GetCurrentProcess();
-                return process.WorkingSet64 * 20; // 估算系统总内存
-            }
-            
-            return gcMemory * 10; // 估算系统总内存
+            // 根据进程内存估算系统总内存（通常系统总内存是进程内存的10-50倍）
+            // 这里使用一个合理的估算值
+            return processMemory * 30; // 估算系统总内存
         }
         catch
         {
@@ -173,9 +169,20 @@ public class SystemMonitorController : BaseApiController
     {
         try
         {
-            // 使用GC获取可用内存
-            var gcMemory = GC.GetTotalMemory(false);
-            return gcMemory;
+            // 获取系统总内存
+            var totalMemory = GetSystemTotalMemory();
+            
+            // 获取当前进程内存
+            var process = Process.GetCurrentProcess();
+            var processMemory = process.WorkingSet64;
+            
+            // 估算系统可用内存（总内存 - 进程内存 - 系统开销）
+            // 系统开销通常占总内存的20-30%
+            var systemOverhead = totalMemory * 0.25; // 25%系统开销
+            var availableMemory = totalMemory - processMemory - systemOverhead;
+            
+            // 确保可用内存不为负数
+            return Math.Max(availableMemory, totalMemory * 0.1); // 至少保留10%可用内存
         }
         catch
         {

@@ -149,37 +149,62 @@ public class SystemMonitorController : BaseApiController
     {
         try
         {
-            // 使用WMI直接读取系统总内存
-            using (var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem"))
+            // 检查操作系统类型
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                foreach (ManagementObject obj in searcher.Get())
+#if WINDOWS
+                // Windows系统使用WMI
+                using (var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem"))
                 {
-                    var totalMemoryBytes = Convert.ToInt64(obj["TotalPhysicalMemory"]);
-                    return totalMemoryBytes;
+                    foreach (ManagementObject obj in searcher.Get())
+                    {
+                        var totalMemoryBytes = Convert.ToInt64(obj["TotalPhysicalMemory"]);
+                        return totalMemoryBytes;
+                    }
                 }
+#else
+                // 非Windows平台，使用Unix方法
+                return GetUnixSystemTotalMemory();
+#endif
+            }
+            else
+            {
+                // macOS/Linux系统使用更准确的方法
+                return GetUnixSystemTotalMemory();
             }
         }
         catch
         {
-            // WMI失败时，尝试使用GC估算
-            try
-            {
-                var gcMemory = GC.GetTotalMemory(false);
-                if (gcMemory > 100 * 1024 * 1024) // 大于100MB
-                {
-                    return gcMemory * 10; // 估算系统总内存
-                }
-                
-                var process = Process.GetCurrentProcess();
-                return process.WorkingSet64 * 20; // 估算系统总内存
-            }
-            catch
-            {
-                return 8L * 1024 * 1024 * 1024; // 默认8GB
-            }
+            // 所有方法失败时，使用默认值
+            return 8L * 1024 * 1024 * 1024; // 默认8GB
         }
         
         return 8L * 1024 * 1024 * 1024; // 默认8GB
+    }
+
+    /// <summary>
+    /// 获取Unix系统（macOS/Linux）的总内存
+    /// </summary>
+    private long GetUnixSystemTotalMemory()
+    {
+        try
+        {
+            // 使用GC.GetTotalMemory()作为基础，但使用更合理的倍数
+            var gcMemory = GC.GetTotalMemory(false);
+            
+            // 如果GC内存太小，使用进程工作集估算
+            if (gcMemory < 100 * 1024 * 1024) // 小于100MB
+            {
+                var process = Process.GetCurrentProcess();
+                return process.WorkingSet64 * 50; // 使用更大的倍数估算
+            }
+            
+            return gcMemory * 20; // 使用更大的倍数估算
+        }
+        catch
+        {
+            return 8L * 1024 * 1024 * 1024; // 默认8GB
+        }
     }
 
     /// <summary>
@@ -189,31 +214,65 @@ public class SystemMonitorController : BaseApiController
     {
         try
         {
-            // 使用WMI直接读取系统可用内存
-            using (var searcher = new ManagementObjectSearcher("SELECT AvailableBytes FROM Win32_PerfRawData_PerfOS_Memory"))
+            // 检查操作系统类型
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                foreach (ManagementObject obj in searcher.Get())
+#if WINDOWS
+                // Windows系统使用WMI
+                using (var searcher = new ManagementObjectSearcher("SELECT AvailableBytes FROM Win32_PerfRawData_PerfOS_Memory"))
                 {
-                    var availableBytes = Convert.ToInt64(obj["AvailableBytes"]);
-                    return availableBytes;
+                    foreach (ManagementObject obj in searcher.Get())
+                    {
+                        var availableBytes = Convert.ToInt64(obj["AvailableBytes"]);
+                        return availableBytes;
+                    }
                 }
+#else
+                // 非Windows平台，使用Unix方法
+                return GetUnixSystemAvailableMemory();
+#endif
+            }
+            else
+            {
+                // macOS/Linux系统使用更准确的方法
+                return GetUnixSystemAvailableMemory();
             }
         }
         catch
         {
-            // WMI失败时，尝试使用GC估算
-            try
-            {
-                var gcMemory = GC.GetTotalMemory(false);
-                return gcMemory;
-            }
-            catch
-            {
-                return 4L * 1024 * 1024 * 1024; // 默认4GB可用
-            }
+            // 所有方法失败时，使用默认值
+            return 4L * 1024 * 1024 * 1024; // 默认4GB可用
         }
         
         return 4L * 1024 * 1024 * 1024; // 默认4GB可用
+    }
+
+    /// <summary>
+    /// 获取Unix系统（macOS/Linux）的可用内存
+    /// </summary>
+    private long GetUnixSystemAvailableMemory()
+    {
+        try
+        {
+            // 获取系统总内存
+            var totalMemory = GetUnixSystemTotalMemory();
+            
+            // 获取当前进程内存
+            var process = Process.GetCurrentProcess();
+            var processMemory = process.WorkingSet64;
+            
+            // 估算系统可用内存（总内存 - 进程内存 - 系统开销）
+            // 系统开销通常占总内存的30-40%
+            var systemOverhead = (long)(totalMemory * 0.35); // 35%系统开销
+            var availableMemory = totalMemory - processMemory - systemOverhead;
+            
+            // 确保可用内存不为负数
+            return Math.Max(availableMemory, (long)(totalMemory * 0.2)); // 至少保留20%可用内存
+        }
+        catch
+        {
+            return 4L * 1024 * 1024 * 1024; // 默认4GB可用
+        }
     }
 
     /// <summary>

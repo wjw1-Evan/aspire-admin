@@ -32,7 +32,7 @@ import {
   CiOutlined,
   MonitorOutlined
 } from '@ant-design/icons';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Line } from '@ant-design/charts';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getCurrentCompany } from '@/services/company';
@@ -46,8 +46,8 @@ const { Title, Text, Paragraph } = Typography;
 const MemoryUsageChart: React.FC<{
   data: Array<{ time: string; value: number; type: string }>;
   loading?: boolean;
-}> = ({ data, loading = false }) => {
-  const config = {
+}> = React.memo(({ data, loading = false }) => {
+  const config = useMemo(() => ({
     data,
     xField: 'time',
     yField: 'value',
@@ -56,12 +56,12 @@ const MemoryUsageChart: React.FC<{
     animation: {
       appear: {
         animation: 'path-in',
-        duration: 1000,
+        duration: 500, // 减少动画时间
       },
     },
-    color: ['#1890ff', '#52c41a', '#faad14'],
+    color: ['#1890ff'],
     point: {
-      size: 3,
+      size: 2, // 减小点的大小
       shape: 'circle',
     },
     tooltip: {
@@ -87,14 +87,14 @@ const MemoryUsageChart: React.FC<{
       },
     },
     height: 300,
-  };
+  }), [data]);
 
   return (
     <div style={{ padding: '16px 0' }}>
       <Line {...config} loading={loading} />
     </div>
   );
-};
+});
 
 // 统计卡片组件
 const StatCard: React.FC<{
@@ -273,16 +273,21 @@ const Welcome: React.FC = () => {
   // 获取系统资源数据（用于曲线图）
   const fetchSystemResources = useCallback(async () => {
     try {
-      setChartLoading(true);
       const resourcesRes = await getSystemResources();
       
       if (resourcesRes.success && resourcesRes.data) {
         const resources = resourcesRes.data;
         const now = new Date();
         const timeStr = now.toLocaleTimeString('zh-CN');
+        const memoryUsage = resources.memory?.usagePercent || 0;
         
-        // 更新系统资源状态
-        setSystemResources(resources);
+        // 更新系统资源状态（只在数据变化时更新）
+        setSystemResources(prevResources => {
+          if (prevResources?.memory?.usagePercent === memoryUsage) {
+            return prevResources; // 避免不必要的更新
+          }
+          return resources;
+        });
         
         // 更新曲线图数据
         setMemoryChartData(prevData => {
@@ -290,7 +295,7 @@ const Welcome: React.FC = () => {
             ...prevData,
             {
               time: timeStr,
-              value: resources.memory?.usagePercent || 0,
+              value: memoryUsage,
               type: '内存使用率'
             }
           ];
@@ -301,13 +306,11 @@ const Welcome: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch system resources:', error);
-    } finally {
-      setChartLoading(false);
     }
   }, []);
 
   // 获取统计数据
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     try {
       setLoading(true);
       const [statsRes, companyRes, activitiesRes, statusRes] = await Promise.all([
@@ -353,15 +356,19 @@ const Welcome: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchSystemResources]);
 
+  // 初始数据加载
   useEffect(() => {
     fetchStatistics();
-    
-    // 设置定时器，每秒更新一次系统资源数据
+  }, [fetchStatistics]);
+
+  // 定时器设置
+  useEffect(() => {
+    // 设置定时器，每5秒更新一次系统资源数据（减少抖动）
     intervalRef.current = setInterval(() => {
       fetchSystemResources();
-    }, 1000);
+    }, 5000);
     
     // 清理函数
     return () => {
@@ -370,7 +377,7 @@ const Welcome: React.FC = () => {
         intervalRef.current = null;
       }
     };
-  }, [fetchStatistics, fetchSystemResources]);
+  }, [fetchSystemResources]);
 
   // 获取活动类型对应的颜色
   const getActivityColor = (action?: string): string => {
@@ -774,16 +781,16 @@ const Welcome: React.FC = () => {
         </Card>
 
         {/* 系统资源监控 */}
-        <Card 
-          title={
-            <Space>
-              <DatabaseOutlined />
-              <span>系统资源监控</span>
-              <Tag color="blue">实时更新</Tag>
-            </Space>
-          }
-          style={{ marginTop: '24px', borderRadius: '12px' }}
-        >
+          <Card 
+            title={
+              <Space>
+                <DatabaseOutlined />
+                <span>系统资源监控</span>
+              <Tag color="blue">5秒更新</Tag>
+              </Space>
+            }
+            style={{ marginTop: '24px', borderRadius: '12px' }}
+          >
           {/* 内存使用率曲线图 */}
           <div style={{ marginBottom: '24px' }}>
             <Title level={5} style={{ marginBottom: '16px' }}>
@@ -810,10 +817,10 @@ const Welcome: React.FC = () => {
                   当前内存: {systemResources.memory.processMemoryMB}MB / {systemResources.memory.totalMemoryMB}MB
                   {' '}({systemResources.memory.usagePercent}%)
                 </Text>
-              </div>
-            )}
+                  </div>
+              )}
           </div>
-
+              
           {/* 其他资源指标 */}
           {systemResources ? (
             <Row gutter={[16, 16]}>
@@ -883,31 +890,31 @@ const Welcome: React.FC = () => {
               style={{ borderRadius: '8px' }}
             />
           )}
-          
-          {/* 系统详细信息 */}
+            
+            {/* 系统详细信息 */}
           {systemResources?.system && (
-            <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
-              <Row gutter={[16, 8]}>
-                <Col xs={24} sm={12} md={6}>
-                  <Text type="secondary">机器名: </Text>
-                  <Text strong>{systemResources.system?.machineName || 'Unknown'}</Text>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                  <Text type="secondary">CPU 核心: </Text>
-                  <Text strong>{systemResources.system?.processorCount || 0}</Text>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                  <Text type="secondary">系统架构: </Text>
-                  <Text strong>{systemResources.system?.is64BitOperatingSystem ? '64位' : '32位'}</Text>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                  <Text type="secondary">系统运行时间: </Text>
-                  <Text strong>{Math.round((systemResources.system?.systemUpTime || 0) / 3600)}小时</Text>
-                </Col>
-              </Row>
-            </div>
-          )}
-        </Card>
+              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+                <Row gutter={[16, 8]}>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">机器名: </Text>
+                    <Text strong>{systemResources.system?.machineName || 'Unknown'}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">CPU 核心: </Text>
+                    <Text strong>{systemResources.system?.processorCount || 0}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">系统架构: </Text>
+                    <Text strong>{systemResources.system?.is64BitOperatingSystem ? '64位' : '32位'}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">系统运行时间: </Text>
+                    <Text strong>{Math.round((systemResources.system?.systemUpTime || 0) / 3600)}小时</Text>
+                  </Col>
+                </Row>
+              </div>
+            )}
+          </Card>
       </div>
     </PageContainer>
   );

@@ -163,13 +163,13 @@ public class SystemMonitorController : BaseApiController
                     }
                 }
 #else
-                // 非Windows平台，使用Unix方法
+                // 非Windows平台，使用系统原生方法
                 return GetUnixSystemTotalMemory();
 #endif
             }
             else
             {
-                // macOS/Linux系统使用更准确的方法
+                // macOS/Linux系统使用系统原生方法
                 return GetUnixSystemTotalMemory();
             }
         }
@@ -189,17 +189,63 @@ public class SystemMonitorController : BaseApiController
     {
         try
         {
-            // 使用GC.GetTotalMemory()作为基础，但使用更合理的倍数
-            var gcMemory = GC.GetTotalMemory(false);
-            
-            // 如果GC内存太小，使用进程工作集估算
-            if (gcMemory < 100 * 1024 * 1024) // 小于100MB
+            // 尝试读取 /proc/meminfo (Linux)
+            if (System.IO.File.Exists("/proc/meminfo"))
             {
-                var process = Process.GetCurrentProcess();
-                return process.WorkingSet64 * 50; // 使用更大的倍数估算
+                var meminfo = System.IO.File.ReadAllText("/proc/meminfo");
+                var lines = meminfo.Split('\n');
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("MemTotal:"))
+                    {
+                        var parts = line.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length >= 2)
+                        {
+                            var value = parts[1].Trim().Split(' ')[0];
+                            if (long.TryParse(value, out var kb))
+                            {
+                                return kb * 1024; // 转换为字节
+                            }
+                        }
+                    }
+                }
             }
             
-            return gcMemory * 20; // 使用更大的倍数估算
+            // macOS 使用 sysctl 命令
+            if (Environment.OSVersion.Platform == PlatformID.MacOSX || 
+                Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = "sysctl",
+                        Arguments = "-n hw.memsize",
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    
+                    using var process = Process.Start(startInfo);
+                    if (process != null)
+                    {
+                        var output = process.StandardOutput.ReadToEnd();
+                        process.WaitForExit();
+                        
+                        if (process.ExitCode == 0 && long.TryParse(output.Trim(), out var memsize))
+                        {
+                            return memsize;
+                        }
+                    }
+                }
+                catch
+                {
+                    // sysctl 失败，继续尝试其他方法
+                }
+            }
+            
+            // 如果所有方法都失败，返回默认值
+            return 8L * 1024 * 1024 * 1024; // 默认8GB
         }
         catch
         {
@@ -254,20 +300,104 @@ public class SystemMonitorController : BaseApiController
     {
         try
         {
-            // 获取系统总内存
-            var totalMemory = GetUnixSystemTotalMemory();
+            // 尝试读取 /proc/meminfo (Linux)
+            if (System.IO.File.Exists("/proc/meminfo"))
+            {
+                var meminfo = System.IO.File.ReadAllText("/proc/meminfo");
+                var lines = meminfo.Split('\n');
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("MemAvailable:"))
+                    {
+                        var parts = line.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length >= 2)
+                        {
+                            var value = parts[1].Trim().Split(' ')[0];
+                            if (long.TryParse(value, out var kb))
+                            {
+                                return kb * 1024; // 转换为字节
+                            }
+                        }
+                    }
+                    else if (line.StartsWith("MemFree:"))
+                    {
+                        // 如果没有 MemAvailable，使用 MemFree
+                        var parts = line.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length >= 2)
+                        {
+                            var value = parts[1].Trim().Split(' ')[0];
+                            if (long.TryParse(value, out var kb))
+                            {
+                                return kb * 1024; // 转换为字节
+                            }
+                        }
+                    }
+                }
+            }
             
-            // 获取当前进程内存
-            var process = Process.GetCurrentProcess();
-            var processMemory = process.WorkingSet64;
+            // macOS 使用 vm_stat 命令获取可用内存
+            if (Environment.OSVersion.Platform == PlatformID.MacOSX || 
+                Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = "vm_stat",
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    
+                    using var process = Process.Start(startInfo);
+                    if (process != null)
+                    {
+                        var output = process.StandardOutput.ReadToEnd();
+                        process.WaitForExit();
+                        
+                        if (process.ExitCode == 0)
+                        {
+                            var lines = output.Split('\n');
+                            long freePages = 0;
+                            long inactivePages = 0;
+                            long pageSize = 4096; // 默认页面大小
+                            
+                            foreach (var line in lines)
+                            {
+                                if (line.StartsWith("Pages free:"))
+                                {
+                                    var value = line.Split(':')[1].Trim().TrimEnd('.');
+                                    if (long.TryParse(value, out var pages))
+                                        freePages = pages;
+                                }
+                                else if (line.StartsWith("Pages inactive:"))
+                                {
+                                    var value = line.Split(':')[1].Trim().TrimEnd('.');
+                                    if (long.TryParse(value, out var pages))
+                                        inactivePages = pages;
+                                }
+                                else if (line.StartsWith("page size of"))
+                                {
+                                    var parts = line.Split(' ');
+                                    if (parts.Length >= 4 && long.TryParse(parts[3], out var size))
+                                        pageSize = size;
+                                }
+                            }
+                            
+                            // macOS 可用内存 = 空闲页面 + 非活跃页面
+                            var availablePages = freePages + inactivePages;
+                            return availablePages * pageSize;
+                        }
+                    }
+                }
+                catch
+                {
+                    // vm_stat 失败，继续尝试其他方法
+                }
+            }
             
-            // 估算系统可用内存（总内存 - 进程内存 - 系统开销）
-            // 系统开销通常占总内存的30-40%
-            var systemOverhead = (long)(totalMemory * 0.35); // 35%系统开销
-            var availableMemory = totalMemory - processMemory - systemOverhead;
-            
-            // 确保可用内存不为负数
-            return Math.Max(availableMemory, (long)(totalMemory * 0.2)); // 至少保留20%可用内存
+            // 如果所有方法都失败，返回默认值
+            return 4L * 1024 * 1024 * 1024; // 默认4GB可用
         }
         catch
         {

@@ -1,4 +1,5 @@
-using Microsoft.Extensions.Caching.Memory;
+using MongoDB.Driver;
+using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
@@ -13,14 +14,13 @@ public interface ICaptchaService
 
 public class CaptchaService : ICaptchaService
 {
-    private readonly IMemoryCache _cache;
+    private readonly IMongoCollection<Captcha> _captchas;
     private readonly ILogger<CaptchaService> _logger;
     private const int EXPIRATION_MINUTES = 5;
-    private const string CACHE_KEY_PREFIX = "captcha_";
 
-    public CaptchaService(IMemoryCache cache, ILogger<CaptchaService> logger)
+    public CaptchaService(IMongoDatabase database, ILogger<CaptchaService> logger)
     {
-        _cache = cache;
+        _captchas = database.GetCollection<Captcha>("captchas");
         _logger = logger;
     }
 
@@ -31,24 +31,27 @@ public class CaptchaService : ICaptchaService
     /// <returns>验证码结果</returns>
     public async Task<CaptchaResult> GenerateCaptchaAsync(string phone)
     {
-        await Task.CompletedTask;
-
         // 生成随机6位数字验证码
         var random = new Random();
-        var captcha = random.Next(100000, 999999).ToString();
-
-        // 存储到缓存，5分钟过期
-        var cacheKey = $"{CACHE_KEY_PREFIX}{phone}";
-        var cacheOptions = new MemoryCacheEntryOptions
+        var captcha = new Captcha
         {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(EXPIRATION_MINUTES)
+            Phone = phone,
+            Code = random.Next(100000, 999999).ToString(),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
         };
 
-        _cache.Set(cacheKey, captcha, cacheOptions);
+        // 删除该手机号的旧验证码
+        await _captchas.DeleteManyAsync(c => c.Phone == phone && !c.IsUsed);
+
+        // 插入新验证码
+        await _captchas.InsertOneAsync(captcha);
 
         return new CaptchaResult
         {
-            Code = captcha,
+            Code = captcha.Code,
             ExpiresIn = EXPIRATION_MINUTES * 60 // 秒
         };
     }
@@ -61,38 +64,33 @@ public class CaptchaService : ICaptchaService
     /// <returns>验证是否成功</returns>
     public async Task<bool> ValidateCaptchaAsync(string phone, string code)
     {
-        await Task.CompletedTask;
-
         if (string.IsNullOrWhiteSpace(phone) || string.IsNullOrWhiteSpace(code))
         {
             _logger.LogWarning("[验证码] 验证失败 - 手机号或验证码为空");
             return false;
         }
 
-        var cacheKey = $"{CACHE_KEY_PREFIX}{phone}";
+        // 查找有效的验证码
+        var filter = Builders<Captcha>.Filter.And(
+            Builders<Captcha>.Filter.Eq(c => c.Phone, phone),
+            Builders<Captcha>.Filter.Eq(c => c.Code, code),
+            Builders<Captcha>.Filter.Eq(c => c.IsUsed, false),
+            Builders<Captcha>.Filter.Gt(c => c.ExpiresAt, DateTime.UtcNow)
+        );
 
-        // 从缓存获取验证码
-        if (_cache.TryGetValue(cacheKey, out string? storedCode))
+        var captcha = await _captchas.Find(filter).FirstOrDefaultAsync();
+
+        if (captcha == null)
         {
-            // 验证成功后立即删除，防止重复使用
-            _cache.Remove(cacheKey);
-
-            var isValid = storedCode == code;
-
-            if (!isValid)
-            {
-                _logger.LogWarning(
-                    "[验证码] 验证失败 - 手机号: {Phone}, 期望: {Expected}, 实际: {Actual}", 
-                    phone, 
-                    storedCode, 
-                    code);
-            }
-
-            return isValid;
+            _logger.LogWarning("[验证码] 验证失败 - 验证码不存在或已过期，手机号: {Phone}", phone);
+            return false;
         }
 
-        _logger.LogWarning("[验证码] 验证失败 - 验证码不存在或已过期，手机号: {Phone}", phone);
-        return false;
+        // 标记为已使用
+        var update = Builders<Captcha>.Update.Set(c => c.IsUsed, true);
+        await _captchas.UpdateOneAsync(c => c.Id == captcha.Id, update);
+
+        return true;
     }
 }
 

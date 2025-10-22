@@ -125,9 +125,6 @@ builder.AddMongoDBClient(connectionName: "mongodb");
 // Add HTTP context accessor
 builder.Services.AddHttpContextAccessor();
 
-// Add memory cache for captcha storage
-builder.Services.AddMemoryCache();
-
 // Register services
 // 使用 Scoped 生命周期以支持 MongoDB 操作和请求范围
 // 使用接口注册以提高可测试性和解耦
@@ -161,8 +158,8 @@ builder.Services.AddScoped<IUniquenessChecker, UniquenessChecker>();
 builder.Services.AddScoped<IFieldValidationService, FieldValidationService>();
 builder.Services.AddScoped<IPhoneValidationService, PhoneValidationService>();
 
-// Captcha service (Singleton - 使用内存缓存)
-builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
+// Captcha service (Scoped - 使用 MongoDB 存储)
+builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 
 // 数据库初始化服务已迁移到 Platform.DataInitializer 微服务
 

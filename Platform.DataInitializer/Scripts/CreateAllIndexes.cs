@@ -27,6 +27,7 @@ public class CreateAllIndexes
         _logger.LogInformation("========== 开始创建数据库索引 ==========");
 
         await CreateMenuIndexesAsync();
+        await CreateCaptchaIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
     }
@@ -65,6 +66,44 @@ public class CreateAllIndexes
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建 Menu 索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建 Captcha 索引（验证码是全局资源，无 CompanyId）
+    /// </summary>
+    private async Task CreateCaptchaIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("captchas");
+
+        try
+        {
+            // TTL 索引 - 自动删除过期验证码
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("expiresAt"),
+                new CreateIndexOptions 
+                { 
+                    Name = "captcha_ttl",
+                    ExpireAfter = TimeSpan.Zero,
+                    Background = true
+                },
+                "captchas.expiresAt (TTL)");
+
+            // 手机号索引 - 用于快速查询
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("phone"),
+                new CreateIndexOptions 
+                { 
+                    Name = "captcha_phone",
+                    Background = true
+                },
+                "captchas.phone");
+
+            _logger.LogInformation("✅ Captchas 集合索引创建完成");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建 Captcha 索引失败");
         }
     }
 

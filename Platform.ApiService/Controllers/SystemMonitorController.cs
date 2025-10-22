@@ -22,40 +22,6 @@ public class SystemMonitorController : BaseApiController
     }
 
     /// <summary>
-    /// 获取系统资源使用情况（测试端点，无需认证）
-    /// </summary>
-    /// <returns>系统资源使用情况</returns>
-    /// <response code="200">成功返回系统资源信息</response>
-    [HttpGet("resources-test")]
-    public IActionResult GetSystemResourcesTest()
-    {
-        var process = Process.GetCurrentProcess();
-        
-        // 获取内存使用情况
-        var memoryInfo = GetMemoryInfo(process);
-        
-        // 获取 CPU 使用情况
-        var cpuInfo = GetCpuInfo();
-        
-        // 获取磁盘使用情况
-        var diskInfo = GetDiskInfo();
-        
-        // 获取系统信息
-        var systemInfo = GetSystemInfo();
-
-        var resources = new
-        {
-            Memory = memoryInfo,
-            Cpu = cpuInfo,
-            Disk = diskInfo,
-            System = systemInfo,
-            Timestamp = DateTime.UtcNow
-        };
-
-        return Success(resources);
-    }
-
-    /// <summary>
     /// 获取系统资源使用情况
     /// </summary>
     /// <returns>系统资源使用情况</returns>
@@ -178,8 +144,6 @@ public class SystemMonitorController : BaseApiController
             // 所有方法失败时，使用默认值
             return 8L * 1024 * 1024 * 1024; // 默认8GB
         }
-        
-        return 8L * 1024 * 1024 * 1024; // 默认8GB
     }
 
     /// <summary>
@@ -289,8 +253,6 @@ public class SystemMonitorController : BaseApiController
             // 所有方法失败时，使用默认值
             return 4L * 1024 * 1024 * 1024; // 默认4GB可用
         }
-        
-        return 4L * 1024 * 1024 * 1024; // 默认4GB可用
     }
 
     /// <summary>

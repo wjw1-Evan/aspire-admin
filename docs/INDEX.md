@@ -159,8 +159,10 @@ docs/
 - [**欢迎页面重新设计**](features/WELCOME-PAGE-REDESIGN.md) - 现代化企业级管理平台欢迎页面
 
 #### 系统监控 ⭐ **新增**
-- [**Admin 端系统信息显示功能**](features/ADMIN-SYSTEM-INFO-DISPLAY.md) - 系统资源监控和显示功能 ⭐ **最新**
-- [**内存使用率曲线图功能**](features/MEMORY-USAGE-CHART-FEATURE.md) - 实时内存监控曲线图实现 ⭐ **最新**
+- [**WMI直接读取系统内存信息**](features/WMI-MEMORY-READING-FEATURE.md) - 使用WMI直接读取系统内存，不再依赖估算 ⭐ **最新**
+- [**内存使用率图表显示改进**](features/MEMORY-CHART-DISPLAY-IMPROVEMENT.md) - 增强图表显示内存使用量和百分比信息
+- [**Admin 端系统信息显示功能**](features/ADMIN-SYSTEM-INFO-DISPLAY.md) - 系统资源监控和显示功能
+- [**内存使用率曲线图功能**](features/MEMORY-USAGE-CHART-FEATURE.md) - 实时内存监控曲线图实现
 
 #### 路由和认证
 - [**路由守卫增强**](features/ROUTE-GUARD-ENHANCEMENT.md) - Token有效性验证和自动跳转 ⭐ **最新**
@@ -216,7 +218,13 @@ docs/
 ### 问题修复
 
 #### Bug 修复
-- [Welcome 页面 UsagePercent 错误修复](bugfixes/WELCOME-PAGE-USAGEPERCENT-FIX.md) - 修复系统资源监控 undefined 访问错误 ⭐ **最新**
+- [**macOS原生内存获取修复**](bugfixes/MACOS-NATIVE-MEMORY-FIX.md) - 删除估算代码，使用系统原生方法获取实际内存 ⭐ **最新**
+- [**macOS系统内存读取问题修复**](bugfixes/MACOS-MEMORY-READING-FIX.md) - 修复WMI在macOS上不工作的问题
+- [**内存数值计算错误修复**](bugfixes/MEMORY-VALUES-CALCULATION-FIX.md) - 修复系统内存估算和计算逻辑
+- [**内存使用率计算逻辑修复**](bugfixes/MEMORY-USAGE-CALCULATION-FIX.md) - 修复系统内存和进程内存计算错误
+- [**删除图表恢复到原来的数据显示方式**](bugfixes/REMOVE-CHART-RESTORE-DISPLAY.md) - 删除图表组件恢复ResourceCard显示
+- [**欢迎页面抖动问题修复**](bugfixes/WELCOME-PAGE-JITTER-FIX.md) - 修复useEffect依赖和性能优化问题
+- [Welcome 页面 UsagePercent 错误修复](bugfixes/WELCOME-PAGE-USAGEPERCENT-FIX.md) - 修复系统资源监控 undefined 访问错误
 - [系统资源显示问题排查](bugfixes/SYSTEM-RESOURCES-DISPLAY-DEBUG.md) - 系统资源监控显示问题调试 ⭐ **最新**
 - [菜单国际化修复](bugfixes/BUGFIX-MENU-I18N.md) - 菜单 i18n
 - [菜单权限弹窗国际化修复](bugfixes/MENU-PERMISSION-I18N-FIX.md) - 分配权限弹窗多语言支持

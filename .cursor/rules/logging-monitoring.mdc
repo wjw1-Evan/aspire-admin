@@ -1,0 +1,486 @@
+---
+globs: Platform.ApiService/**/*.cs,Platform.Admin/src/**/*.ts,Platform.App/**/*.ts
+description: 日志记录和监控规范
+---
+
+# 日志记录和监控规范
+
+## 🎯 概述
+
+基于 .NET 内置日志框架和结构化日志，提供统一的日志记录和监控规范。
+
+## 🏗️ 日志架构
+
+### 日志级别使用
+
+```csharp
+// ✅ 正确的日志级别使用
+_logger.LogTrace("详细的调试信息，仅在开发环境使用");
+_logger.LogDebug("调试信息，用于诊断问题");
+_logger.LogInformation("一般信息，记录业务流程");
+_logger.LogWarning("警告信息，可能的问题但不影响功能");
+_logger.LogError("错误信息，功能受影响但系统可继续运行");
+_logger.LogCritical("严重错误，系统可能无法继续运行");
+```
+
+### 结构化日志
+
+```csharp
+// ✅ 结构化日志记录
+_logger.LogInformation(
+    "User {UserId} created {EntityType} {EntityId} at {Timestamp}",
+    userId,
+    entityType,
+    entityId,
+    DateTime.UtcNow);
+
+// ✅ 使用作用域
+using (_logger.BeginScope(new Dictionary<string, object>
+{
+    ["UserId"] = userId,
+    ["RequestId"] = requestId
+}))
+{
+    _logger.LogInformation("Processing user request");
+    // 所有日志都会包含 UserId 和 RequestId
+}
+```
+
+## ✅ 推荐做法
+
+### 1. 控制器日志记录
+
+```csharp
+// ✅ 控制器日志记录
+[ApiController]
+[Route("api/[controller]")]
+public class UserController : BaseApiController
+{
+    private readonly ILogger<UserController> _logger;
+    private readonly IUserService _userService;
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUser(string id)
+    {
+        _logger.LogInformation("Getting user {UserId}", id);
+        
+        try
+        {
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("User {UserId} not found", id);
+                throw new KeyNotFoundException($"用户 {id} 不存在");
+            }
+            
+            _logger.LogInformation("Successfully retrieved user {UserId}", id);
+            return Success(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get user {UserId}", id);
+            throw;
+        }
+    }
+}
+```
+
+### 2. 服务层日志记录
+
+```csharp
+// ✅ 服务层日志记录
+public class UserService : IUserService
+{
+    private readonly ILogger<UserService> _logger;
+    private readonly IUserRepository _userRepository;
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        _logger.LogInformation("Creating user with email {Email}", request.Email);
+        
+        // 验证用户是否已存在
+        var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+        if (existingUser != null)
+        {
+            _logger.LogWarning("User with email {Email} already exists", request.Email);
+            throw new InvalidOperationException("用户已存在");
+        }
+
+        var user = new User
+        {
+            Email = request.Email,
+            Username = request.Username,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _userRepository.CreateAsync(user);
+        
+        _logger.LogInformation("Successfully created user {UserId} with email {Email}", 
+            user.Id, user.Email);
+        
+        return user;
+    }
+}
+```
+
+### 3. 中间件日志记录
+
+```csharp
+// ✅ 中间件日志记录
+public class ActivityLogMiddleware
+{
+    private readonly ILogger<ActivityLogMiddleware> _logger;
+
+    public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var requestId = context.TraceIdentifier;
+        
+        using (_logger.BeginScope(new Dictionary<string, object>
+        {
+            ["RequestId"] = requestId,
+            ["Method"] = context.Request.Method,
+            ["Path"] = context.Request.Path
+        }))
+        {
+            _logger.LogDebug("Processing request {RequestId}", requestId);
+            
+            try
+            {
+                await _next(context);
+                _logger.LogInformation("Request {RequestId} completed in {ElapsedMs}ms", 
+                    requestId, stopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Request {RequestId} failed after {ElapsedMs}ms", 
+                    requestId, stopwatch.ElapsedMilliseconds);
+                throw;
+            }
+        }
+    }
+}
+```
+
+### 4. 前端日志记录
+
+```typescript
+// ✅ 前端日志记录
+class Logger {
+  private static instance: Logger;
+  private logLevel: LogLevel = LogLevel.INFO;
+
+  static getInstance(): Logger {
+    if (!Logger.instance) {
+      Logger.instance = new Logger();
+    }
+    return Logger.instance;
+  }
+
+  debug(message: string, data?: any): void {
+    if (this.logLevel <= LogLevel.DEBUG) {
+      console.debug(`[DEBUG] ${message}`, data);
+    }
+  }
+
+  info(message: string, data?: any): void {
+    if (this.logLevel <= LogLevel.INFO) {
+      console.info(`[INFO] ${message}`, data);
+    }
+  }
+
+  warn(message: string, data?: any): void {
+    if (this.logLevel <= LogLevel.WARN) {
+      console.warn(`[WARN] ${message}`, data);
+    }
+  }
+
+  error(message: string, error?: Error, data?: any): void {
+    console.error(`[ERROR] ${message}`, error, data);
+    
+    // 发送错误到监控服务
+    this.sendToMonitoring('error', message, error, data);
+  }
+
+  private sendToMonitoring(level: string, message: string, error?: Error, data?: any): void {
+    // 发送到监控服务（如 Sentry、LogRocket 等）
+    if (window.gtag) {
+      window.gtag('event', 'exception', {
+        description: message,
+        fatal: level === 'error'
+      });
+    }
+  }
+}
+```
+
+### 5. 性能监控
+
+```csharp
+// ✅ 性能监控
+public class PerformanceMonitoringService
+{
+    private readonly ILogger<PerformanceMonitoringService> _logger;
+    private readonly IMemoryCache _cache;
+
+    public async Task<T> ExecuteWithMonitoring<T>(
+        string operationName,
+        Func<Task<T>> operation)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        
+        try
+        {
+            var result = await operation();
+            
+            _logger.LogInformation(
+                "Operation {OperationName} completed successfully in {ElapsedMs}ms",
+                operationName, stopwatch.ElapsedMilliseconds);
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Operation {OperationName} failed after {ElapsedMs}ms",
+                operationName, stopwatch.ElapsedMilliseconds);
+            throw;
+        }
+    }
+}
+```
+
+## ❌ 避免的做法
+
+### 1. 不要记录敏感信息
+
+```csharp
+// ❌ 错误：记录敏感信息
+_logger.LogInformation("User {UserId} logged in with password {Password}", 
+    userId, password);
+
+// ✅ 正确：不记录敏感信息
+_logger.LogInformation("User {UserId} logged in successfully", userId);
+```
+
+### 2. 不要过度记录
+
+```csharp
+// ❌ 错误：过度记录
+public async Task<User> GetUser(string id)
+{
+    _logger.LogDebug("Starting GetUser method");
+    _logger.LogDebug("Parameter id: {Id}", id);
+    _logger.LogDebug("Calling repository method");
+    var user = await _repository.GetByIdAsync(id);
+    _logger.LogDebug("Repository method completed");
+    _logger.LogDebug("Returning user: {User}", user);
+    return user;
+}
+
+// ✅ 正确：适度记录
+public async Task<User> GetUser(string id)
+{
+    _logger.LogInformation("Getting user {UserId}", id);
+    var user = await _repository.GetByIdAsync(id);
+    return user;
+}
+```
+
+### 3. 不要忽略异常日志
+
+```csharp
+// ❌ 错误：忽略异常
+try
+{
+    await DoSomething();
+}
+catch (Exception ex)
+{
+    // 没有记录异常
+    return null;
+}
+
+// ✅ 正确：记录异常
+try
+{
+    await DoSomething();
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "Failed to execute operation");
+    throw;
+}
+```
+
+### 4. 不要使用字符串拼接
+
+```csharp
+// ❌ 错误：字符串拼接
+_logger.LogInformation("User " + userId + " created at " + DateTime.Now);
+
+// ✅ 正确：结构化日志
+_logger.LogInformation("User {UserId} created at {Timestamp}", 
+    userId, DateTime.UtcNow);
+```
+
+## 🔧 最佳实践
+
+### 1. 日志配置
+
+```csharp
+// ✅ 日志配置
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Logging.AddConsole();
+}
+else
+{
+    // 生产环境使用结构化日志
+    builder.Logging.AddJsonConsole(options =>
+    {
+        options.JsonWriterOptions = new JsonWriterOptions
+        {
+            Indented = false
+        };
+    });
+}
+```
+
+### 2. 日志过滤
+
+```csharp
+// ✅ 日志过滤配置
+builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
+builder.Logging.AddFilter("System", LogLevel.Warning);
+builder.Logging.AddFilter("Platform.ApiService", LogLevel.Information);
+```
+
+### 3. 健康检查日志
+
+```csharp
+// ✅ 健康检查日志
+public class DatabaseHealthCheck : IHealthCheck
+{
+    private readonly ILogger<DatabaseHealthCheck> _logger;
+
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _database.PingAsync(cancellationToken);
+            _logger.LogDebug("Database health check passed");
+            return HealthCheckResult.Healthy("Database is accessible");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Database health check failed");
+            return HealthCheckResult.Unhealthy("Database is not accessible", ex);
+        }
+    }
+}
+```
+
+### 4. 前端错误边界
+
+```tsx
+// ✅ React 错误边界
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ErrorBoundary extends React.Component<
+  React.PropsWithChildren<{}>,
+  ErrorBoundaryState
+> {
+  constructor(props: React.PropsWithChildren<{}>) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    Logger.getInstance().error('React Error Boundary caught an error', error, {
+      componentStack: errorInfo.componentStack
+    });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <ErrorFallback error={this.state.error} />;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+## 📋 日志记录检查清单
+
+记录日志时检查：
+
+- [ ] 使用适当的日志级别
+- [ ] 使用结构化日志格式
+- [ ] 不记录敏感信息
+- [ ] 包含足够的上下文信息
+- [ ] 记录异常和错误
+- [ ] 使用作用域记录相关操作
+- [ ] 考虑性能影响
+- [ ] 配置适当的日志过滤
+- [ ] 确保日志格式一致
+- [ ] 考虑日志存储和检索
+
+## 🧪 日志测试
+
+```csharp
+// ✅ 日志测试
+[Test]
+public void Logging_ShouldRecordCorrectInformation()
+{
+    // Arrange
+    var logger = new Mock<ILogger<UserService>>();
+    var userService = new UserService(logger.Object, _userRepository);
+
+    // Act
+    userService.CreateUserAsync(new CreateUserRequest { Email = "test@example.com" });
+
+    // Assert
+    logger.Verify(
+        x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Creating user")),
+            It.IsAny<Exception>(),
+            It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+        Times.Once);
+}
+```
+
+## 📚 相关资源
+
+- [.NET 日志记录文档](https://docs.microsoft.com/aspnet/core/fundamentals/logging/)
+- [结构化日志记录](https://docs.microsoft.com/aspnet/core/fundamentals/logging/#log-structured-data)
+- [健康检查](https://docs.microsoft.com/aspnet/core/host-and-deploy/health-checks)
+- [活动日志中间件](mdc:Platform.ApiService/Middleware/ActivityLogMiddleware.cs)
+- [前端日志服务](mdc:Platform.Admin/src/services/logger.ts)
+
+## 🎯 核心原则
+
+1. **结构化日志** - 使用参数化日志消息
+2. **适当级别** - 根据重要性选择日志级别
+3. **安全第一** - 不记录敏感信息
+4. **性能考虑** - 避免影响应用性能
+5. **上下文丰富** - 包含足够的上下文信息
+6. **异常记录** - 记录所有异常和错误
+7. **配置灵活** - 支持不同环境的日志配置
+8. **监控集成** - 与监控系统集成

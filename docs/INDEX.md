@@ -59,8 +59,7 @@ docs/
 - [前端代码安全审查](reports/FRONTEND-SECURITY-REVIEW.md) - 前端代码安全质量评估
 - [CORS配置安全审查](reports/CORS-CONFIGURATION-REVIEW.md) - 跨域配置安全分析
 
-### 安全测试
-- [安全测试指南](reports/SECURITY-TESTING-GUIDE.md) - 完整的安全测试用例和脚本
+### 安全相关
 - [Token存储方案评估](reports/TOKEN-STORAGE-EVALUATION.md) - JWT Token存储方案对比分析
 
 ### 全面检查报告
@@ -129,7 +128,6 @@ docs/
 - [用户加入流程设计](features/USER-JOIN-COMPANY-DESIGN.md) - 技术设计方案
 - [API 端点汇总](features/API-ENDPOINTS-SUMMARY.md) - 完整的 API 列表
 - [API 检查报告](features/API-CHECK-REPORT.md) - API 测试状态
-- [多租户测试指南](features/MULTI-TENANT-TESTING-GUIDE.md) - 完整的测试文档
 - [多租户变更日志](features/MULTI-TENANT-CHANGELOG.md) - v3.0 变更记录
 
 #### 通知系统
@@ -159,6 +157,9 @@ docs/
 #### 用户界面优化
 - [**UI 主题升级和日间/夜间模式切换**](features/UI-THEME-UPGRADE.md) - 现代化主题系统和主题切换功能 ⭐ **最新**
 - [**欢迎页面重新设计**](features/WELCOME-PAGE-REDESIGN.md) - 现代化企业级管理平台欢迎页面
+
+#### 系统监控 ⭐ **新增**
+- [**Admin 端系统信息显示功能**](features/ADMIN-SYSTEM-INFO-DISPLAY.md) - 系统资源监控和显示功能 ⭐ **最新**
 
 #### 路由和认证
 - [**路由守卫增强**](features/ROUTE-GUARD-ENHANCEMENT.md) - Token有效性验证和自动跳转 ⭐ **最新**
@@ -214,6 +215,8 @@ docs/
 ### 问题修复
 
 #### Bug 修复
+- [Welcome 页面 UsagePercent 错误修复](bugfixes/WELCOME-PAGE-USAGEPERCENT-FIX.md) - 修复系统资源监控 undefined 访问错误 ⭐ **最新**
+- [系统资源显示问题排查](bugfixes/SYSTEM-RESOURCES-DISPLAY-DEBUG.md) - 系统资源监控显示问题调试 ⭐ **最新**
 - [菜单国际化修复](bugfixes/BUGFIX-MENU-I18N.md) - 菜单 i18n
 - [菜单权限弹窗国际化修复](bugfixes/MENU-PERMISSION-I18N-FIX.md) - 分配权限弹窗多语言支持
 - [菜单标题字段缺失修复](bugfixes/MENU-TITLE-FIELD-FIX.md) - 菜单 Title 字段修复和数据迁移
@@ -373,6 +376,9 @@ docs/
 ### 设计问题修复
 - [设计问题全面分析报告](reports/DESIGN-ISSUES-ANALYSIS.md) - 项目设计问题全面分析
 - [P0 优先级设计问题修复完成报告](reports/P0-DESIGN-FIXES-COMPLETE.md) - P0 优先级问题修复完成
+
+### 项目维护报告
+- [测试代码移除总结报告](reports/TEST-CODE-REMOVAL-SUMMARY.md) - **新增** - 测试代码清理完成报告
 
 ### 微服务优化
 - [**DataInitializer 微服务自动停止功能实现报告**](reports/DATA-INITIALIZER-AUTO-STOP-IMPLEMENTATION.md) - **新增** - DataInitializer 微服务自动停止功能实现详情 ⭐ **推荐**

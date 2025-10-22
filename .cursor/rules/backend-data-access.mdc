@@ -1,0 +1,614 @@
+---
+globs: Platform.ApiService/Services/*.cs,Platform.ApiService/Models/*.cs,Platform.ServiceDefaults/**/*.cs
+description: 后端数据访问层规范
+---
+
+# 后端数据访问层规范
+
+## 🎯 概述
+
+基于 MongoDB 和 Repository 模式，提供统一的数据访问层规范和最佳实践。
+
+## 🏗️ 数据访问架构
+
+### Repository 模式
+
+```csharp
+// ✅ 基础 Repository 接口
+public interface IRepository<T> where T : IEntity
+{
+    Task<T?> GetByIdAsync(string id);
+    Task<IEnumerable<T>> GetAllAsync();
+    Task<IEnumerable<T>> GetByFilterAsync(Expression<Func<T, bool>> filter);
+    Task<T> CreateAsync(T entity);
+    Task<T> UpdateAsync(T entity);
+    Task<bool> DeleteAsync(string id);
+    Task<long> CountAsync(Expression<Func<T, bool>>? filter = null);
+    Task<bool> ExistsAsync(Expression<Func<T, bool>> filter);
+}
+
+// ✅ 基础 Repository 实现
+public class BaseRepository<T> : IRepository<T> where T : IEntity
+{
+    protected readonly IMongoCollection<T> _collection;
+    protected readonly ILogger<BaseRepository<T>> _logger;
+
+    public BaseRepository(IMongoDatabase database, string collectionName, ILogger<BaseRepository<T>> logger)
+    {
+        _collection = database.GetCollection<T>(collectionName);
+        _logger = logger;
+    }
+
+    public virtual async Task<T?> GetByIdAsync(string id)
+    {
+        try
+        {
+            var filter = Builders<T>.Filter.Eq(x => x.Id, id);
+            return await _collection.Find(filter).FirstOrDefaultAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get {EntityType} by id {Id}", typeof(T).Name, id);
+            throw;
+        }
+    }
+
+    public virtual async Task<IEnumerable<T>> GetAllAsync()
+    {
+        try
+        {
+            return await _collection.Find(_ => true).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get all {EntityType}", typeof(T).Name);
+            throw;
+        }
+    }
+
+    public virtual async Task<T> CreateAsync(T entity)
+    {
+        try
+        {
+            entity.Id = ObjectId.GenerateNewId().ToString();
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.UpdatedAt = DateTime.UtcNow;
+            
+            await _collection.InsertOneAsync(entity);
+            return entity;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create {EntityType}", typeof(T).Name);
+            throw;
+        }
+    }
+}
+```
+
+### 多租户 Repository
+
+```csharp
+// ✅ 多租户 Repository
+public interface IMultiTenantRepository<T> : IRepository<T> where T : MultiTenantEntity
+{
+    Task<IEnumerable<T>> GetByCompanyIdAsync(string companyId);
+    Task<T?> GetByIdAndCompanyIdAsync(string id, string companyId);
+    Task<bool> ExistsInCompanyAsync(string id, string companyId);
+}
+
+public class MultiTenantRepository<T> : BaseRepository<T>, IMultiTenantRepository<T> 
+    where T : MultiTenantEntity
+{
+    private readonly ITenantContext _tenantContext;
+
+    public MultiTenantRepository(
+        IMongoDatabase database, 
+        string collectionName, 
+        ILogger<MultiTenantRepository<T>> logger,
+        ITenantContext tenantContext) 
+        : base(database, collectionName, logger)
+    {
+        _tenantContext = tenantContext;
+    }
+
+    public override async Task<T?> GetByIdAsync(string id)
+    {
+        var companyId = _tenantContext.GetCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+            throw new UnauthorizedAccessException("Company context not available");
+
+        var filter = Builders<T>.Filter.And(
+            Builders<T>.Filter.Eq(x => x.Id, id),
+            Builders<T>.Filter.Eq(x => x.CompanyId, companyId)
+        );
+
+        return await _collection.Find(filter).FirstOrDefaultAsync();
+    }
+
+    public async Task<IEnumerable<T>> GetByCompanyIdAsync(string companyId)
+    {
+        var filter = Builders<T>.Filter.Eq(x => x.CompanyId, companyId);
+        return await _collection.Find(filter).ToListAsync();
+    }
+}
+```
+
+## ✅ 推荐做法
+
+### 1. 服务层实现
+
+```csharp
+// ✅ 服务层实现
+public interface IUserService
+{
+    Task<User?> GetUserByIdAsync(string id);
+    Task<IEnumerable<User>> GetUsersAsync(UserListRequest request);
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<User> UpdateUserAsync(string id, UpdateUserRequest request);
+    Task<bool> DeleteUserAsync(string id);
+    Task<bool> ExistsAsync(string id);
+}
+
+public class UserService : BaseService, IUserService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IPasswordHasher _passwordHasher;
+
+    public UserService(
+        IUserRepository userRepository,
+        IPasswordHasher passwordHasher,
+        ILogger<UserService> logger) : base(logger)
+    {
+        _userRepository = userRepository;
+        _passwordHasher = passwordHasher;
+    }
+
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        id.EnsureNotEmpty(nameof(id));
+        
+        _logger.LogInformation("Getting user {UserId}", id);
+        
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("User {UserId} not found", id);
+            }
+            
+            return user;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get user {UserId}", id);
+            throw;
+        }
+    }
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        request.EnsureNotNull(nameof(request));
+        request.Username.EnsureValidUsername();
+        request.Email.EnsureValidEmail();
+        request.Password.EnsureValidPassword();
+
+        _logger.LogInformation("Creating user with email {Email}", request.Email);
+
+        // 检查用户是否已存在
+        var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+        if (existingUser != null)
+        {
+            throw new InvalidOperationException(ErrorMessages.UserAlreadyExists);
+        }
+
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
+            CompanyId = GetRequiredCompanyId(),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _userRepository.CreateAsync(user);
+        
+        _logger.LogInformation("Successfully created user {UserId}", user.Id);
+        return user;
+    }
+}
+```
+
+### 2. 查询优化
+
+```csharp
+// ✅ 查询优化
+public class UserRepository : MultiTenantRepository<User>, IUserRepository
+{
+    public UserRepository(
+        IMongoDatabase database,
+        ILogger<UserRepository> logger,
+        ITenantContext tenantContext) 
+        : base(database, "users", logger, tenantContext)
+    {
+    }
+
+    public async Task<IEnumerable<User>> GetUsersAsync(UserListRequest request)
+    {
+        var companyId = GetRequiredCompanyId();
+        var filter = Builders<User>.Filter.Eq(x => x.CompanyId, companyId);
+
+        // 添加搜索条件
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            var keywordFilter = Builders<User>.Filter.Or(
+                Builders<User>.Filter.Regex(x => x.Username, new BsonRegularExpression(request.Keyword, "i")),
+                Builders<User>.Filter.Regex(x => x.Email, new BsonRegularExpression(request.Keyword, "i"))
+            );
+            filter = Builders<User>.Filter.And(filter, keywordFilter);
+        }
+
+        // 添加角色过滤
+        if (request.RoleIds?.Any() == true)
+        {
+            filter = Builders<User>.Filter.And(filter, 
+                Builders<User>.Filter.AnyIn(x => x.RoleIds, request.RoleIds));
+        }
+
+        // 添加状态过滤
+        if (request.IsActive.HasValue)
+        {
+            filter = Builders<User>.Filter.And(filter, 
+                Builders<User>.Filter.Eq(x => x.IsActive, request.IsActive.Value));
+        }
+
+        var sort = Builders<User>.Sort.Descending(x => x.CreatedAt);
+        
+        return await _collection
+            .Find(filter)
+            .Sort(sort)
+            .Skip((request.Page - 1) * request.PageSize)
+            .Limit(request.PageSize)
+            .ToListAsync();
+    }
+
+    public async Task<long> CountUsersAsync(UserListRequest request)
+    {
+        var companyId = GetRequiredCompanyId();
+        var filter = Builders<User>.Filter.Eq(x => x.CompanyId, companyId);
+
+        // 应用相同的过滤条件
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            var keywordFilter = Builders<User>.Filter.Or(
+                Builders<User>.Filter.Regex(x => x.Username, new BsonRegularExpression(request.Keyword, "i")),
+                Builders<User>.Filter.Regex(x => x.Email, new BsonRegularExpression(request.Keyword, "i"))
+            );
+            filter = Builders<User>.Filter.And(filter, keywordFilter);
+        }
+
+        return await _collection.CountDocumentsAsync(filter);
+    }
+}
+```
+
+### 3. 事务处理
+
+```csharp
+// ✅ 事务处理
+public class UserService : BaseService, IUserService
+{
+    public async Task<User> CreateUserWithRoleAsync(CreateUserRequest request, string roleId)
+    {
+        using var session = await _database.Client.StartSessionAsync();
+        session.StartTransaction();
+
+        try
+        {
+            // 创建用户
+            var user = new User
+            {
+                Username = request.Username,
+                Email = request.Email,
+                PasswordHash = _passwordHasher.HashPassword(request.Password),
+                CompanyId = GetRequiredCompanyId(),
+                RoleIds = new List<string> { roleId }
+            };
+
+            await _userRepository.CreateAsync(user);
+
+            // 更新角色用户列表
+            await _roleRepository.AddUserToRoleAsync(roleId, user.Id);
+
+            await session.CommitTransactionAsync();
+            
+            _logger.LogInformation("Successfully created user {UserId} with role {RoleId}", 
+                user.Id, roleId);
+            
+            return user;
+        }
+        catch (Exception ex)
+        {
+            await session.AbortTransactionAsync();
+            _logger.LogError(ex, "Failed to create user with role");
+            throw;
+        }
+    }
+}
+```
+
+### 4. 缓存策略
+
+```csharp
+// ✅ 缓存策略
+public class CachedUserService : IUserService
+{
+    private readonly IUserService _userService;
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<CachedUserService> _logger;
+
+    public CachedUserService(
+        IUserService userService,
+        IMemoryCache cache,
+        ILogger<CachedUserService> logger)
+    {
+        _userService = userService;
+        _cache = cache;
+        _logger = logger;
+    }
+
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        var cacheKey = $"user_{id}";
+        
+        if (_cache.TryGetValue(cacheKey, out User? cachedUser))
+        {
+            _logger.LogDebug("User {UserId} found in cache", id);
+            return cachedUser;
+        }
+
+        var user = await _userService.GetUserByIdAsync(id);
+        if (user != null)
+        {
+            _cache.Set(cacheKey, user, TimeSpan.FromMinutes(5));
+            _logger.LogDebug("User {UserId} cached for 5 minutes", id);
+        }
+
+        return user;
+    }
+
+    public async Task<User> UpdateUserAsync(string id, UpdateUserRequest request)
+    {
+        var user = await _userService.UpdateUserAsync(id, request);
+        
+        // 更新缓存
+        var cacheKey = $"user_{id}";
+        _cache.Set(cacheKey, user, TimeSpan.FromMinutes(5));
+        
+        return user;
+    }
+}
+```
+
+## ❌ 避免的做法
+
+### 1. 不要直接使用 MongoDB 驱动
+
+```csharp
+// ❌ 错误：直接使用 MongoDB 驱动
+public class UserController : ControllerBase
+{
+    private readonly IMongoCollection<User> _users;
+
+    public async Task<IActionResult> GetUser(string id)
+    {
+        var user = await _users.Find(x => x.Id == id).FirstOrDefaultAsync();
+        return Ok(user);
+    }
+}
+
+// ✅ 正确：使用 Repository 模式
+public class UserController : BaseApiController
+{
+    private readonly IUserService _userService;
+
+    public async Task<IActionResult> GetUser(string id)
+    {
+        var user = await _userService.GetUserByIdAsync(id);
+        return Success(user);
+    }
+}
+```
+
+### 2. 不要忽略多租户隔离
+
+```csharp
+// ❌ 错误：忽略多租户隔离
+public async Task<IEnumerable<User>> GetUsersAsync()
+{
+    return await _collection.Find(_ => true).ToListAsync();
+}
+
+// ✅ 正确：确保多租户隔离
+public async Task<IEnumerable<User>> GetUsersAsync()
+{
+    var companyId = GetRequiredCompanyId();
+    var filter = Builders<User>.Filter.Eq(x => x.CompanyId, companyId);
+    return await _collection.Find(filter).ToListAsync();
+}
+```
+
+### 3. 不要忽略异常处理
+
+```csharp
+// ❌ 错误：忽略异常处理
+public async Task<User> CreateUserAsync(CreateUserRequest request)
+{
+    var user = new User { /* ... */ };
+    await _collection.InsertOneAsync(user);
+    return user;
+}
+
+// ✅ 正确：适当的异常处理
+public async Task<User> CreateUserAsync(CreateUserRequest request)
+{
+    try
+    {
+        var user = new User { /* ... */ };
+        await _collection.InsertOneAsync(user);
+        return user;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Failed to create user");
+        throw;
+    }
+}
+```
+
+### 4. 不要忽略性能优化
+
+```csharp
+// ❌ 错误：忽略性能优化
+public async Task<IEnumerable<User>> GetUsersAsync()
+{
+    return await _collection.Find(_ => true).ToListAsync();
+}
+
+// ✅ 正确：添加分页和排序
+public async Task<IEnumerable<User>> GetUsersAsync(UserListRequest request)
+{
+    return await _collection
+        .Find(_ => true)
+        .Sort(Builders<User>.Sort.Descending(x => x.CreatedAt))
+        .Skip((request.Page - 1) * request.PageSize)
+        .Limit(request.PageSize)
+        .ToListAsync();
+}
+```
+
+## 🔧 最佳实践
+
+### 1. 索引管理
+
+```csharp
+// ✅ 索引管理
+public class UserRepository : MultiTenantRepository<User>, IUserRepository
+{
+    public async Task CreateIndexesAsync()
+    {
+        // 创建复合索引
+        var indexKeys = Builders<User>.IndexKeys
+            .Ascending(x => x.CompanyId)
+            .Ascending(x => x.Email);
+        
+        var indexOptions = new CreateIndexOptions
+        {
+            Unique = true,
+            Name = "company_email_unique"
+        };
+
+        await _collection.Indexes.CreateOneAsync(
+            new CreateIndexModel<User>(indexKeys, indexOptions));
+
+        // 创建搜索索引
+        var searchIndexKeys = Builders<User>.IndexKeys
+            .Ascending(x => x.CompanyId)
+            .Text(x => x.Username)
+            .Text(x => x.Email);
+
+        await _collection.Indexes.CreateOneAsync(
+            new CreateIndexModel<User>(searchIndexKeys));
+    }
+}
+```
+
+### 2. 批量操作
+
+```csharp
+// ✅ 批量操作
+public async Task<IEnumerable<User>> CreateUsersAsync(IEnumerable<CreateUserRequest> requests)
+{
+    var users = requests.Select(request => new User
+    {
+        Username = request.Username,
+        Email = request.Email,
+        PasswordHash = _passwordHasher.HashPassword(request.Password),
+        CompanyId = GetRequiredCompanyId()
+    }).ToList();
+
+    await _collection.InsertManyAsync(users);
+    return users;
+}
+```
+
+### 3. 软删除
+
+```csharp
+// ✅ 软删除实现
+public async Task<bool> SoftDeleteAsync(string id)
+{
+    var filter = Builders<User>.Filter.Eq(x => x.Id, id);
+    var update = Builders<User>.Update
+        .Set(x => x.IsDeleted, true)
+        .Set(x => x.DeletedAt, DateTime.UtcNow);
+
+    var result = await _collection.UpdateOneAsync(filter, update);
+    return result.ModifiedCount > 0;
+}
+```
+
+## 📋 数据访问层检查清单
+
+实现数据访问层时检查：
+
+- [ ] 使用 Repository 模式
+- [ ] 实现多租户隔离
+- [ ] 添加适当的异常处理
+- [ ] 实现查询优化
+- [ ] 添加索引支持
+- [ ] 实现事务处理
+- [ ] 添加缓存策略
+- [ ] 实现软删除
+- [ ] 添加日志记录
+- [ ] 编写单元测试
+
+## 🧪 数据访问层测试
+
+```csharp
+// ✅ 数据访问层测试
+[Test]
+public async Task GetUserByIdAsync_ShouldReturnUser_WhenUserExists()
+{
+    // Arrange
+    var user = new User { Id = "1", Username = "test", Email = "test@example.com" };
+    await _userRepository.CreateAsync(user);
+
+    // Act
+    var result = await _userRepository.GetByIdAsync("1");
+
+    // Assert
+    Assert.That(result, Is.Not.Null);
+    Assert.That(result.Username, Is.EqualTo("test"));
+}
+```
+
+## 📚 相关资源
+
+- [MongoDB C# 驱动文档](https://mongodb.github.io/mongo-csharp-driver/)
+- [Repository 模式](https://docs.microsoft.com/azure/architecture/microservices/microservice-ddd-cqrs-patterns/infrastructure-persistence-layer-design)
+- [多租户数据隔离](mdc:Platform.ApiService/Services/UserService.cs)
+- [BaseRepository 实现](mdc:Platform.ServiceDefaults/Services/BaseRepository.cs)
+
+## 🎯 核心原则
+
+1. **Repository 模式** - 抽象数据访问逻辑
+2. **多租户隔离** - 确保数据安全
+3. **异常处理** - 适当的错误处理
+4. **性能优化** - 查询和索引优化
+5. **事务安全** - 数据一致性
+6. **缓存策略** - 提高性能
+7. **日志记录** - 便于调试
+8. **单元测试** - 保证质量

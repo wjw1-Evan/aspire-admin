@@ -26,12 +26,20 @@ import {
   RocketOutlined,
   ThunderboltOutlined,
   CrownOutlined,
-  GlobalOutlined
+  GlobalOutlined,
+  DatabaseOutlined,
+  HddOutlined,
+  MemoryStickOutlined,
+  CpuOutlined,
+  MonitorOutlined
 } from '@ant-design/icons';
 import React, { useState, useEffect } from 'react';
-import { getUserStatistics } from '@/services/ant-design-pro/api';
+import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getCurrentCompany } from '@/services/company';
+import { getSystemStatus, getSystemResourcesTest } from '@/services/system/api';
 import type { CurrentUser } from '@/types/unified-api';
+import type { UserActivityLog } from '@/services/ant-design-pro/typings';
+import type { SystemStatus, SystemResources } from '@/services/system/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -110,8 +118,48 @@ const QuickAction: React.FC<{
   </Card>
 );
 
+// 系统资源卡片组件
+const ResourceCard: React.FC<{
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  color?: string;
+  loading?: boolean;
+  token?: any;
+}> = ({ title, value, icon, color = '#1890ff', loading = false, token }) => (
+  <Card 
+    size="small" 
+    style={{
+      textAlign: 'center',
+      borderRadius: '12px',
+      boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',
+      border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
+      backgroundColor: token?.colorBgContainer || '#ffffff'
+    }}
+    loading={loading}
+  >
+    <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>
+      {icon}
+    </div>
+    <div style={{ 
+      fontSize: '20px', 
+      fontWeight: 'bold',
+      color: token?.colorText || '#262626', 
+      marginBottom: '4px' 
+    }}>
+      {value}
+    </div>
+    <div style={{ 
+      fontSize: '12px', 
+      color: token?.colorTextSecondary || '#8c8c8c' 
+    }}>
+      {title}
+    </div>
+  </Card>
+);
+
 // 系统状态组件
-const SystemStatus: React.FC<{
+const SystemStatusCard: React.FC<{
   status: 'healthy' | 'warning' | 'error';
   message: string;
   lastUpdate: string;
@@ -157,16 +205,21 @@ const Welcome: React.FC = () => {
   
   const [statistics, setStatistics] = useState<any>(null);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
+  const [recentActivities, setRecentActivities] = useState<UserActivityLog[]>([]);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
-  const [systemStatus] = useState<'healthy' | 'warning' | 'error'>('healthy');
 
   // 获取统计数据
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-      const [statsRes, companyRes] = await Promise.all([
+      const [statsRes, companyRes, activitiesRes, statusRes, resourcesRes] = await Promise.all([
         getUserStatistics(),
-        getCurrentCompany()
+        getCurrentCompany(),
+        getUserActivityLogs({ limit: 5 }),
+        getSystemStatus(),
+        getSystemResourcesTest()
       ]);
       
       if (statsRes.success) {
@@ -176,8 +229,37 @@ const Welcome: React.FC = () => {
       if (companyRes.success) {
         setCompanyInfo(companyRes.data);
       }
+
+      if (activitiesRes.success) {
+        setRecentActivities(activitiesRes.data || []);
+      }
+
+      if (statusRes.success) {
+        setSystemStatus(statusRes.data);
+      }
+
+      if (resourcesRes.success) {
+        console.log('✅ 系统资源获取成功:', resourcesRes.data);
+        setSystemResources(resourcesRes.data);
+      } else {
+        console.warn('❌ 获取系统资源失败:', resourcesRes.message);
+        console.warn('❌ 完整响应:', resourcesRes);
+        setSystemResources(null);
+      }
     } catch (error) {
-      console.error('获取统计数据失败:', error);
+      console.error('❌ 获取统计数据失败:', error);
+      console.error('❌ 错误详情:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      // 如果系统状态获取失败，设置默认状态
+      setSystemStatus({
+        status: 'warning',
+        message: '无法获取系统状态',
+        timestamp: new Date().toISOString()
+      });
+      // 确保系统资源状态被清除
+      setSystemResources(null);
     } finally {
       setLoading(false);
     }
@@ -186,6 +268,33 @@ const Welcome: React.FC = () => {
   useEffect(() => {
     fetchStatistics();
   }, []);
+
+  // 获取活动类型对应的颜色
+  const getActivityColor = (action?: string): string => {
+    if (!action) return 'blue';
+    
+    const colorMap: Record<string, string> = {
+      'login': 'green',
+      'logout': 'red',
+      'create': 'blue',
+      'update': 'orange',
+      'delete': 'red',
+      'view': 'cyan',
+      'export': 'purple',
+      'import': 'purple',
+      'change_password': 'orange',
+      'refresh_token': 'blue'
+    };
+    
+    return colorMap[action.toLowerCase()] || 'blue';
+  };
+
+  // 获取资源使用率对应的颜色
+  const getResourceColor = (usagePercent: number): string => {
+    if (usagePercent > 80) return '#ff4d4f';
+    if (usagePercent > 60) return '#faad14';
+    return '#52c41a';
+  };
 
   // 获取当前时间问候语
   const getGreeting = () => {
@@ -306,10 +415,10 @@ const Welcome: React.FC = () => {
         </Card>
 
         {/* 系统状态 */}
-        <SystemStatus
-          status={systemStatus}
-          message="所有服务运行正常"
-          lastUpdate={new Date().toLocaleTimeString('zh-CN')}
+        <SystemStatusCard
+          status={systemStatus?.status || 'warning'}
+          message={systemStatus?.message || '系统状态未知'}
+          lastUpdate={systemStatus?.timestamp ? new Date(systemStatus.timestamp).toLocaleTimeString('zh-CN') : new Date().toLocaleTimeString('zh-CN')}
         />
 
         <div style={{ margin: '24px 0' }} />
@@ -453,7 +562,21 @@ const Welcome: React.FC = () => {
               style={{ borderRadius: '12px' }}
             >
               <Timeline
-                items={[
+                items={recentActivities.length > 0 ? recentActivities.map(activity => ({
+                  color: getActivityColor(activity.action),
+                  children: (
+                    <div>
+                      <Text strong>{activity.description || activity.action}</Text>
+                      <br />
+                      <Text type="secondary">
+                        {activity.action && activity.action !== activity.description ? activity.action : '系统活动'}
+                      </Text>
+                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                        {activity.createdAt ? new Date(activity.createdAt).toLocaleString('zh-CN') : '未知时间'}
+                      </div>
+                    </div>
+                  ),
+                })) : [
                   {
                     color: 'green',
                     children: (
@@ -491,8 +614,8 @@ const Welcome: React.FC = () => {
                         <Text type="secondary">用户权限数据已同步</Text>
                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
                           {new Date().toLocaleString('zh-CN')}
-          </div>
-        </div>
+                        </div>
+                      </div>
                     ),
                   },
                 ]}
@@ -503,29 +626,34 @@ const Welcome: React.FC = () => {
 
         {/* 系统信息 */}
         <Card 
-          title="系统信息"
+          title={
+            <Space>
+              <MonitorOutlined />
+              <span>系统信息</span>
+            </Space>
+          }
           style={{ marginTop: '24px', borderRadius: '12px' }}
         >
           <Row gutter={[24, 16]}>
             <Col xs={24} sm={12} md={6}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>                                                                        
                   .NET 9
                 </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>后端框架</div>
+                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>后端框架</div>                                                                              
               </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>                                                                        
                   React 19
                 </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>前端框架</div>
+                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>前端框架</div>                                                                              
               </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>                                                                        
                   MongoDB
                 </div>
                 <div style={{ fontSize: '14px', color: '#8c8c8c' }}>数据库</div>
@@ -533,14 +661,105 @@ const Welcome: React.FC = () => {
             </Col>
             <Col xs={24} sm={12} md={6}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#722ed1' }}>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#722ed1' }}>                                                                        
                   Aspire
                 </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>微服务编排</div>
+                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>微服务编排</div>                                                                            
               </div>
             </Col>
           </Row>
-      </Card>
+        </Card>
+
+        {/* 系统资源监控 */}
+        {(() => {
+          console.log('🔍 系统资源状态检查:', {
+            systemResources: systemResources,
+            hasMemory: !!systemResources?.Memory,
+            hasCpu: !!systemResources?.Cpu,
+            hasDisk: !!systemResources?.Disk,
+            hasSystem: !!systemResources?.System
+          });
+          return systemResources?.Memory && systemResources?.Cpu && systemResources?.Disk && systemResources?.System;
+        })() && (
+          <Card 
+            title={
+              <Space>
+                <DatabaseOutlined />
+                <span>系统资源监控</span>
+              </Space>
+            }
+            style={{ marginTop: '24px', borderRadius: '12px' }}
+          >
+            <Row gutter={[16, 16]}>
+              {/* 内存使用率 */}
+              <Col xs={24} sm={12} md={8}>
+                <ResourceCard
+                  title="内存使用率"
+                  value={`${systemResources.Memory?.UsagePercent || 0}%`}
+                  icon={<MemoryStickOutlined />}
+                  color={getResourceColor(systemResources.Memory?.UsagePercent || 0)}
+                  loading={loading}
+                  token={token}
+                />
+                <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                  {systemResources.Memory?.ProcessMemoryMB || 0}MB / {systemResources.Memory?.TotalMemoryMB || 0}MB
+                </div>
+              </Col>
+              
+              {/* CPU 使用率 */}
+              <Col xs={24} sm={12} md={8}>
+                <ResourceCard
+                  title="CPU 使用率"
+                  value={`${systemResources.Cpu?.UsagePercent || 0}%`}
+                  icon={<CpuOutlined />}
+                  color={getResourceColor(systemResources.Cpu?.UsagePercent || 0)}
+                  loading={loading}
+                  token={token}
+                />
+                <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                  运行时间: {Math.round((systemResources.Cpu?.Uptime || 0) / 3600)}h
+                </div>
+              </Col>
+              
+              {/* 磁盘使用率 */}
+              <Col xs={24} sm={12} md={8}>
+                <ResourceCard
+                  title="磁盘使用率"
+                  value={`${systemResources.Disk?.UsagePercent || 0}%`}
+                  icon={<HddOutlined />}
+                  color={getResourceColor(systemResources.Disk?.UsagePercent || 0)}
+                  loading={loading}
+                  token={token}
+                />
+                <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                  {systemResources.Disk?.UsedSizeGB || 0}GB / {systemResources.Disk?.TotalSizeGB || 0}GB
+                </div>
+              </Col>
+            </Row>
+            
+            {/* 系统详细信息 */}
+            <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+              <Row gutter={[16, 8]}>
+                <Col xs={24} sm={12} md={6}>
+                  <Text type="secondary">机器名: </Text>
+                  <Text strong>{systemResources.System?.MachineName || 'Unknown'}</Text>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Text type="secondary">CPU 核心: </Text>
+                  <Text strong>{systemResources.System?.ProcessorCount || 0}</Text>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Text type="secondary">系统架构: </Text>
+                  <Text strong>{systemResources.System?.Is64BitOperatingSystem ? '64位' : '32位'}</Text>
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Text type="secondary">系统运行时间: </Text>
+                  <Text strong>{Math.round((systemResources.System?.SystemUpTime || 0) / 3600)}小时</Text>
+                </Col>
+              </Row>
+            </div>
+          </Card>
+        )}
       </div>
     </PageContainer>
   );

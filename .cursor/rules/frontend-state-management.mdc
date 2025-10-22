@@ -1,0 +1,560 @@
+---
+globs: Platform.Admin/src/contexts/*.ts,Platform.Admin/src/hooks/*.ts,Platform.App/contexts/*.ts,Platform.App/hooks/*.ts
+description: 前端状态管理和数据流规范
+---
+
+# 前端状态管理和数据流规范
+
+## 🎯 概述
+
+基于 React Context + useReducer 模式，提供统一的状态管理和数据流规范。
+
+## 🏗️ 状态管理架构
+
+### Context + useReducer 模式
+
+```typescript
+// ✅ 标准状态管理结构
+interface AppState {
+  user: User | null;
+  theme: Theme;
+  loading: boolean;
+  error: string | null;
+}
+
+type AppAction = 
+  | { type: 'SET_USER'; payload: User }
+  | { type: 'SET_THEME'; payload: Theme }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'LOGOUT' };
+
+const appReducer = (state: AppState, action: AppAction): AppState => {
+  switch (action.type) {
+    case 'SET_USER':
+      return { ...state, user: action.payload, error: null };
+    case 'SET_THEME':
+      return { ...state, theme: action.payload };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload, loading: false };
+    case 'LOGOUT':
+      return { ...state, user: null, error: null };
+    default:
+      return state;
+  }
+};
+```
+
+### Context Provider 实现
+
+```typescript
+// ✅ Context Provider 实现
+interface AppContextType {
+  state: AppState;
+  dispatch: React.Dispatch<AppAction>;
+  // 便捷方法
+  setUser: (user: User) => void;
+  setTheme: (theme: Theme) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  logout: () => void;
+}
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(appReducer, initialState);
+
+  const setUser = useCallback((user: User) => {
+    dispatch({ type: 'SET_USER', payload: user });
+  }, []);
+
+  const setTheme = useCallback((theme: Theme) => {
+    dispatch({ type: 'SET_THEME', payload: theme });
+  }, []);
+
+  const setLoading = useCallback((loading: boolean) => {
+    dispatch({ type: 'SET_LOADING', payload: loading });
+  }, []);
+
+  const setError = useCallback((error: string | null) => {
+    dispatch({ type: 'SET_ERROR', payload: error });
+  }, []);
+
+  const logout = useCallback(() => {
+    dispatch({ type: 'LOGOUT' });
+  }, []);
+
+  const value = useMemo(() => ({
+    state,
+    dispatch,
+    setUser,
+    setTheme,
+    setLoading,
+    setError,
+    logout
+  }), [state, setUser, setTheme, setLoading, setError, logout]);
+
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+```
+
+## ✅ 推荐做法
+
+### 1. 认证状态管理
+
+```typescript
+// ✅ 认证状态管理
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+type AuthAction =
+  | { type: 'LOGIN_START' }
+  | { type: 'LOGIN_SUCCESS'; payload: { user: User; token: string } }
+  | { type: 'LOGIN_FAILURE'; payload: string }
+  | { type: 'LOGOUT' }
+  | { type: 'CLEAR_ERROR' };
+
+const authReducer = (state: AuthState, action: AuthAction): AuthState => {
+  switch (action.type) {
+    case 'LOGIN_START':
+      return { ...state, isLoading: true, error: null };
+    case 'LOGIN_SUCCESS':
+      return {
+        ...state,
+        user: action.payload.user,
+        token: action.payload.token,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null
+      };
+    case 'LOGIN_FAILURE':
+      return {
+        ...state,
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: action.payload
+      };
+    case 'LOGOUT':
+      return {
+        ...state,
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null
+      };
+    case 'CLEAR_ERROR':
+      return { ...state, error: null };
+    default:
+      return state;
+  }
+};
+```
+
+### 2. 自定义 Hooks
+
+```typescript
+// ✅ 自定义 Hooks
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+// 组合多个 Context 的 Hook
+export const useAppState = () => {
+  const auth = useAuth();
+  const theme = useTheme();
+  
+  return {
+    user: auth.state.user,
+    isAuthenticated: auth.state.isAuthenticated,
+    theme: theme.state.theme,
+    setTheme: theme.setTheme
+  };
+};
+```
+
+### 3. 异步状态管理
+
+```typescript
+// ✅ 异步状态管理
+interface AsyncState<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+}
+
+type AsyncAction<T> =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; payload: T }
+  | { type: 'FETCH_FAILURE'; payload: string }
+  | { type: 'RESET' };
+
+const asyncReducer = <T>(state: AsyncState<T>, action: AsyncAction<T>): AsyncState<T> => {
+  switch (action.type) {
+    case 'FETCH_START':
+      return { ...state, loading: true, error: null };
+    case 'FETCH_SUCCESS':
+      return { data: action.payload, loading: false, error: null };
+    case 'FETCH_FAILURE':
+      return { ...state, loading: false, error: action.payload };
+    case 'RESET':
+      return { data: null, loading: false, error: null };
+    default:
+      return state;
+  }
+};
+
+// 使用示例
+export const useAsyncData = <T>(fetchFn: () => Promise<T>) => {
+  const [state, dispatch] = useReducer(asyncReducer<T>, {
+    data: null,
+    loading: false,
+    error: null
+  });
+
+  const fetch = useCallback(async () => {
+    dispatch({ type: 'FETCH_START' });
+    try {
+      const data = await fetchFn();
+      dispatch({ type: 'FETCH_SUCCESS', payload: data });
+    } catch (error) {
+      dispatch({ type: 'FETCH_FAILURE', payload: error.message });
+    }
+  }, [fetchFn]);
+
+  return { ...state, fetch };
+};
+```
+
+### 4. 表单状态管理
+
+```typescript
+// ✅ 表单状态管理
+interface FormState<T> {
+  values: T;
+  errors: Partial<Record<keyof T, string>>;
+  touched: Partial<Record<keyof T, boolean>>;
+  isSubmitting: boolean;
+  isValid: boolean;
+}
+
+type FormAction<T> =
+  | { type: 'SET_VALUE'; payload: { field: keyof T; value: any } }
+  | { type: 'SET_ERRORS'; payload: Partial<Record<keyof T, string>> }
+  | { type: 'SET_TOUCHED'; payload: { field: keyof T; touched: boolean } }
+  | { type: 'SET_SUBMITTING'; payload: boolean }
+  | { type: 'RESET_FORM'; payload: T };
+
+const formReducer = <T>(state: FormState<T>, action: FormAction<T>): FormState<T> => {
+  switch (action.type) {
+    case 'SET_VALUE':
+      return {
+        ...state,
+        values: { ...state.values, [action.payload.field]: action.payload.value },
+        errors: { ...state.errors, [action.payload.field]: undefined }
+      };
+    case 'SET_ERRORS':
+      return { ...state, errors: action.payload };
+    case 'SET_TOUCHED':
+      return {
+        ...state,
+        touched: { ...state.touched, [action.payload.field]: action.payload.touched }
+      };
+    case 'SET_SUBMITTING':
+      return { ...state, isSubmitting: action.payload };
+    case 'RESET_FORM':
+      return {
+        values: action.payload,
+        errors: {},
+        touched: {},
+        isSubmitting: false,
+        isValid: true
+      };
+    default:
+      return state;
+  }
+};
+```
+
+### 5. 缓存状态管理
+
+```typescript
+// ✅ 缓存状态管理
+interface CacheState {
+  cache: Map<string, { data: any; timestamp: number; ttl: number }>;
+}
+
+type CacheAction =
+  | { type: 'SET_CACHE'; payload: { key: string; data: any; ttl: number } }
+  | { type: 'GET_CACHE'; payload: string }
+  | { type: 'CLEAR_CACHE'; payload?: string }
+  | { type: 'CLEAR_EXPIRED' };
+
+const cacheReducer = (state: CacheState, action: CacheAction): CacheState => {
+  switch (action.type) {
+    case 'SET_CACHE':
+      const newCache = new Map(state.cache);
+      newCache.set(action.payload.key, {
+        data: action.payload.data,
+        timestamp: Date.now(),
+        ttl: action.payload.ttl
+      });
+      return { cache: newCache };
+    case 'CLEAR_CACHE':
+      const clearedCache = new Map(state.cache);
+      if (action.payload) {
+        clearedCache.delete(action.payload);
+      } else {
+        clearedCache.clear();
+      }
+      return { cache: clearedCache };
+    case 'CLEAR_EXPIRED':
+      const filteredCache = new Map();
+      const now = Date.now();
+      for (const [key, value] of state.cache) {
+        if (now - value.timestamp < value.ttl) {
+          filteredCache.set(key, value);
+        }
+      }
+      return { cache: filteredCache };
+    default:
+      return state;
+  }
+};
+```
+
+## ❌ 避免的做法
+
+### 1. 不要直接修改状态
+
+```typescript
+// ❌ 错误：直接修改状态
+const [user, setUser] = useState<User | null>(null);
+
+const updateUser = (newData: Partial<User>) => {
+  user.name = newData.name;  // ❌ 直接修改状态
+  setUser(user);
+};
+
+// ✅ 正确：不可变更新
+const updateUser = (newData: Partial<User>) => {
+  setUser(prev => prev ? { ...prev, ...newData } : null);
+};
+```
+
+### 2. 不要过度使用 Context
+
+```typescript
+// ❌ 错误：为每个状态创建 Context
+const UserContext = createContext();
+const ThemeContext = createContext();
+const LoadingContext = createContext();
+const ErrorContext = createContext();
+
+// ✅ 正确：合并相关状态
+const AppContext = createContext();
+```
+
+### 3. 不要忽略错误处理
+
+```typescript
+// ❌ 错误：忽略错误处理
+const fetchUser = async () => {
+  const user = await api.getUser();
+  setUser(user);
+};
+
+// ✅ 正确：处理错误
+const fetchUser = async () => {
+  try {
+    setLoading(true);
+    const user = await api.getUser();
+    setUser(user);
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+### 4. 不要忘记清理副作用
+
+```typescript
+// ❌ 错误：忘记清理副作用
+useEffect(() => {
+  const timer = setInterval(() => {
+    // 定时器逻辑
+  }, 1000);
+  // 没有清理定时器
+}, []);
+
+// ✅ 正确：清理副作用
+useEffect(() => {
+  const timer = setInterval(() => {
+    // 定时器逻辑
+  }, 1000);
+  
+  return () => clearInterval(timer);
+}, []);
+```
+
+## 🔧 最佳实践
+
+### 1. 状态持久化
+
+```typescript
+// ✅ 状态持久化
+export const usePersistedState = <T>(
+  key: string,
+  defaultValue: T
+): [T, (value: T) => void] => {
+  const [state, setState] = useState<T>(() => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  const setPersistedState = useCallback((value: T) => {
+    setState(value);
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key]);
+
+  return [state, setPersistedState];
+};
+```
+
+### 2. 状态选择器
+
+```typescript
+// ✅ 状态选择器
+export const useUserSelector = () => {
+  const { state } = useAuth();
+  return useMemo(() => ({
+    user: state.user,
+    isAuthenticated: state.isAuthenticated,
+    isLoading: state.isLoading
+  }), [state.user, state.isAuthenticated, state.isLoading]);
+};
+```
+
+### 3. 状态调试
+
+```typescript
+// ✅ 状态调试
+export const useDebugState = (state: any, label: string) => {
+  useEffect(() => {
+    console.log(`[${label}] State changed:`, state);
+  }, [state, label]);
+};
+```
+
+### 4. 状态验证
+
+```typescript
+// ✅ 状态验证
+const validateState = (state: AppState): boolean => {
+  if (state.user && !state.user.id) {
+    console.error('Invalid user state: missing id');
+    return false;
+  }
+  if (state.loading && state.error) {
+    console.error('Invalid state: loading and error both true');
+    return false;
+  }
+  return true;
+};
+```
+
+## 📋 状态管理检查清单
+
+实现状态管理时检查：
+
+- [ ] 使用不可变更新模式
+- [ ] 实现适当的错误处理
+- [ ] 添加加载状态管理
+- [ ] 考虑状态持久化需求
+- [ ] 实现状态验证
+- [ ] 添加调试支持
+- [ ] 考虑性能优化
+- [ ] 实现状态清理
+- [ ] 添加类型安全
+- [ ] 编写单元测试
+
+## 🧪 状态管理测试
+
+```typescript
+// ✅ 状态管理测试
+describe('AuthReducer', () => {
+  it('should handle LOGIN_SUCCESS action', () => {
+    const initialState = {
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null
+    };
+
+    const action = {
+      type: 'LOGIN_SUCCESS' as const,
+      payload: { user: mockUser, token: 'mock-token' }
+    };
+
+    const newState = authReducer(initialState, action);
+
+    expect(newState.user).toEqual(mockUser);
+    expect(newState.token).toBe('mock-token');
+    expect(newState.isAuthenticated).toBe(true);
+    expect(newState.isLoading).toBe(false);
+    expect(newState.error).toBeNull();
+  });
+});
+```
+
+## 📚 相关资源
+
+- [React Context 文档](https://react.dev/reference/react/createContext)
+- [useReducer Hook](https://react.dev/reference/react/useReducer)
+- [状态管理最佳实践](https://react.dev/learn/managing-state)
+- [认证 Context](mdc:Platform.Admin/src/contexts/AuthContext.tsx)
+- [主题 Context](mdc:Platform.Admin/src/contexts/ThemeContext.tsx)
+
+## 🎯 核心原则
+
+1. **不可变性** - 使用不可变更新模式
+2. **单一数据源** - 避免状态重复
+3. **可预测性** - 状态变化可预测
+4. **性能优化** - 避免不必要的重渲染
+5. **类型安全** - 使用 TypeScript 类型
+6. **错误处理** - 适当的错误处理
+7. **调试友好** - 便于调试和开发
+8. **测试友好** - 便于单元测试

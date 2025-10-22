@@ -1,0 +1,386 @@
+---
+globs: Platform.ApiService/Program.cs,Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/**/*.cs
+description: 依赖注入和配置管理规范
+---
+
+# 依赖注入和配置管理规范
+
+## 🎯 概述
+
+基于 .NET Core 依赖注入容器，提供统一的依赖注入和配置管理规范。
+
+## 🏗️ 依赖注入架构
+
+### 服务生命周期
+
+```csharp
+// ✅ 正确的服务生命周期选择
+builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();  // 单例：配置服务
+builder.Services.AddScoped<IUserService, UserService>();                      // 作用域：业务服务
+builder.Services.AddTransient<IValidator, RequestValidator>();                // 瞬时：验证器
+```
+
+### 接口优先原则
+
+```csharp
+// ✅ 推荐：面向接口编程
+public interface IUserService
+{
+    Task<User> GetUserByIdAsync(string id);
+    Task<User> CreateUserAsync(CreateUserRequest request);
+}
+
+public class UserService : IUserService
+{
+    // 实现
+}
+
+// 注册服务
+builder.Services.AddScoped<IUserService, UserService>();
+```
+
+## ✅ 推荐做法
+
+### 1. 服务注册模式
+
+```csharp
+// ✅ 标准服务注册
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddPlatformServices(this IServiceCollection services)
+    {
+        // 核心服务
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<IJwtService, JwtService>();
+        
+        // 业务服务
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IRoleService, RoleService>();
+        
+        // 数据访问服务
+        services.AddScoped<IUserRepository, UserRepository>();
+        
+        return services;
+    }
+}
+```
+
+### 2. 配置管理
+
+```csharp
+// ✅ 强类型配置
+public class JwtSettings
+{
+    public string SecretKey { get; set; } = string.Empty;
+    public string Issuer { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+    public int ExpirationMinutes { get; set; } = 60;
+    public int RefreshTokenExpirationDays { get; set; } = 7;
+}
+
+// 注册配置
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+// 使用配置
+public class JwtService : IJwtService
+{
+    private readonly JwtSettings _jwtSettings;
+    
+    public JwtService(IOptions<JwtSettings> jwtSettings)
+    {
+        _jwtSettings = jwtSettings.Value;
+    }
+}
+```
+
+### 3. 选项模式
+
+```csharp
+// ✅ 选项模式实现
+public class DatabaseOptions
+{
+    public string ConnectionString { get; set; } = string.Empty;
+    public string DatabaseName { get; set; } = string.Empty;
+    public int MaxPoolSize { get; set; } = 100;
+    public TimeSpan ConnectionTimeout { get; set; } = TimeSpan.FromSeconds(30);
+}
+
+// 注册选项
+builder.Services.Configure<DatabaseOptions>(
+    builder.Configuration.GetSection("Database"));
+
+// 验证选项
+builder.Services.AddOptions<DatabaseOptions>()
+    .Bind(builder.Configuration.GetSection("Database"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
+### 4. 工厂模式
+
+```csharp
+// ✅ 服务工厂模式
+public interface IHttpClientFactory
+{
+    HttpClient CreateClient(string name);
+}
+
+public class CustomHttpClientFactory : IHttpClientFactory
+{
+    private readonly IHttpClientFactory _httpClientFactory;
+    
+    public CustomHttpClientFactory(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory;
+    }
+    
+    public HttpClient CreateClient(string name)
+    {
+        var client = _httpClientFactory.CreateClient(name);
+        // 配置客户端
+        client.DefaultRequestHeaders.Add("User-Agent", "Platform-Client");
+        return client;
+    }
+}
+
+// 注册工厂
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IHttpClientFactory, CustomHttpClientFactory>();
+```
+
+### 5. 装饰器模式
+
+```csharp
+// ✅ 装饰器模式实现
+public interface IUserService
+{
+    Task<User> GetUserByIdAsync(string id);
+}
+
+public class UserService : IUserService
+{
+    // 基础实现
+}
+
+public class CachedUserService : IUserService
+{
+    private readonly IUserService _userService;
+    private readonly IMemoryCache _cache;
+    
+    public CachedUserService(IUserService userService, IMemoryCache cache)
+    {
+        _userService = userService;
+        _cache = cache;
+    }
+    
+    public async Task<User> GetUserByIdAsync(string id)
+    {
+        var cacheKey = $"user_{id}";
+        if (_cache.TryGetValue(cacheKey, out User? cachedUser))
+            return cachedUser!;
+            
+        var user = await _userService.GetUserByIdAsync(id);
+        _cache.Set(cacheKey, user, TimeSpan.FromMinutes(5));
+        return user;
+    }
+}
+
+// 注册装饰器
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.Decorate<IUserService, CachedUserService>();
+```
+
+## ❌ 避免的做法
+
+### 1. 不要使用服务定位器模式
+
+```csharp
+// ❌ 错误：服务定位器模式
+public class UserController : ControllerBase
+{
+    public async Task<IActionResult> GetUser(string id)
+    {
+        var userService = HttpContext.RequestServices.GetService<IUserService>();
+        // 使用服务
+    }
+}
+
+// ✅ 正确：构造函数注入
+public class UserController : ControllerBase
+{
+    private readonly IUserService _userService;
+    
+    public UserController(IUserService userService)
+    {
+        _userService = userService;
+    }
+}
+```
+
+### 2. 不要注册具体类型
+
+```csharp
+// ❌ 错误：注册具体类型
+builder.Services.AddScoped<UserService>();
+
+// ✅ 正确：注册接口
+builder.Services.AddScoped<IUserService, UserService>();
+```
+
+### 3. 不要过度使用单例
+
+```csharp
+// ❌ 错误：业务服务使用单例
+builder.Services.AddSingleton<IUserService, UserService>();
+
+// ✅ 正确：业务服务使用作用域
+builder.Services.AddScoped<IUserService, UserService>();
+```
+
+### 4. 不要忽略配置验证
+
+```csharp
+// ❌ 错误：不验证配置
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+// ✅ 正确：验证配置
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection("Jwt"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
+## 🔧 最佳实践
+
+### 1. 服务发现和自动注册
+
+```csharp
+// ✅ 自动注册服务
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddServicesFromAssembly(this IServiceCollection services, Assembly assembly)
+    {
+        var serviceTypes = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .Where(t => t.GetInterfaces().Any(i => i.Name == $"I{t.Name}"));
+
+        foreach (var serviceType in serviceTypes)
+        {
+            var interfaceType = serviceType.GetInterfaces()
+                .First(i => i.Name == $"I{serviceType.Name}");
+            
+            services.AddScoped(interfaceType, serviceType);
+        }
+
+        return services;
+    }
+}
+```
+
+### 2. 条件注册
+
+```csharp
+// ✅ 条件注册服务
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddScoped<IDevelopmentService, DevelopmentService>();
+}
+else
+{
+    builder.Services.AddScoped<IProductionService, ProductionService>();
+}
+```
+
+### 3. 配置热重载
+
+```csharp
+// ✅ 配置热重载
+builder.Services.Configure<DatabaseOptions>(options =>
+{
+    builder.Configuration.GetSection("Database").Bind(options);
+    builder.Configuration.GetReloadToken().RegisterChangeCallback(
+        _ => builder.Configuration.GetSection("Database").Bind(options), null);
+});
+```
+
+### 4. 健康检查集成
+
+```csharp
+// ✅ 健康检查服务注册
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database")
+    .AddCheck<ExternalApiHealthCheck>("external-api");
+
+public class DatabaseHealthCheck : IHealthCheck
+{
+    private readonly IMongoDatabase _database;
+    
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _database.RunCommandAsync((Command<object>)"{ping:1}", cancellationToken: cancellationToken);
+            return HealthCheckResult.Healthy("Database is accessible");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("Database is not accessible", ex);
+        }
+    }
+}
+```
+
+## 📋 依赖注入检查清单
+
+注册服务时检查：
+
+- [ ] 使用接口而不是具体类型
+- [ ] 选择正确的生命周期（Singleton/Scoped/Transient）
+- [ ] 验证配置选项
+- [ ] 添加适当的日志记录
+- [ ] 考虑服务的线程安全性
+- [ ] 避免循环依赖
+- [ ] 使用工厂模式处理复杂创建逻辑
+- [ ] 添加健康检查（如适用）
+- [ ] 考虑服务的可测试性
+- [ ] 文档化服务依赖关系
+
+## 🧪 测试依赖注入
+
+```csharp
+// ✅ 依赖注入测试
+[Test]
+public void ServiceCollection_ShouldRegisterAllServices()
+{
+    // Arrange
+    var services = new ServiceCollection();
+    services.AddPlatformServices();
+
+    // Act & Assert
+    var provider = services.BuildServiceProvider();
+    
+    Assert.DoesNotThrow(() => provider.GetRequiredService<IUserService>());
+    Assert.DoesNotThrow(() => provider.GetRequiredService<IAuthService>());
+    Assert.DoesNotThrow(() => provider.GetRequiredService<IRoleService>());
+}
+```
+
+## 📚 相关资源
+
+- [.NET 依赖注入文档](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection)
+- [配置选项模式](https://docs.microsoft.com/aspnet/core/fundamentals/configuration/options)
+- [服务生命周期](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection#service-lifetimes)
+- [Program.cs 配置](mdc:Platform.ApiService/Program.cs)
+- [ServiceDefaults 扩展](mdc:Platform.ServiceDefaults/Extensions.cs)
+
+## 🎯 核心原则
+
+1. **接口优先** - 面向接口编程
+2. **生命周期正确** - 根据使用场景选择生命周期
+3. **配置验证** - 启动时验证配置
+4. **避免循环依赖** - 设计清晰的依赖关系
+5. **可测试性** - 便于单元测试
+6. **性能考虑** - 避免不必要的对象创建
+7. **文档化** - 明确服务职责和依赖
+8. **错误处理** - 适当的异常处理

@@ -1,0 +1,633 @@
+---
+globs: Platform.App/**/*.ts,Platform.App/**/*.tsx
+description: 移动端开发模式和最佳实践
+---
+
+# 移动端开发模式和最佳实践
+
+## 🎯 概述
+
+基于 React Native + Expo 技术栈，提供统一的移动端开发模式和最佳实践。
+
+## 🏗️ 移动端架构
+
+### Expo Router 路由系统
+
+```typescript
+// ✅ Expo Router 路由结构
+// app/
+//   ├── (auth)/
+//   │   ├── login.tsx
+//   │   └── register.tsx
+//   ├── (tabs)/
+//   │   ├── index.tsx
+//   │   ├── profile.tsx
+//   │   └── settings.tsx
+//   ├── _layout.tsx
+//   └── +not-found.tsx
+
+// ✅ 路由布局配置
+export default function RootLayout() {
+  return (
+    <Stack>
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
+```
+
+### 导航守卫模式
+
+```typescript
+// ✅ 导航守卫实现
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/(auth)/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+// 使用示例
+export default function TabLayout() {
+  return (
+    <AuthGuard>
+      <Tabs>
+        <Tabs.Screen name="index" options={{ title: '首页' }} />
+        <Tabs.Screen name="profile" options={{ title: '个人中心' }} />
+      </Tabs>
+    </AuthGuard>
+  );
+}
+```
+
+## ✅ 推荐做法
+
+### 1. 主题化组件
+
+```typescript
+// ✅ 主题化组件
+interface ThemedComponentProps {
+  children: React.ReactNode;
+  style?: ViewStyle;
+}
+
+export const ThemedView: React.FC<ThemedComponentProps> = ({ children, style }) => {
+  const { theme } = useTheme();
+  
+  return (
+    <View style={[styles.container, { backgroundColor: theme.colors.background }, style]}>
+      {children}
+    </View>
+  );
+};
+
+export const ThemedText: React.FC<ThemedComponentProps & { variant?: 'title' | 'body' | 'caption' }> = ({ 
+  children, 
+  style, 
+  variant = 'body' 
+}) => {
+  const { theme } = useTheme();
+  
+  const textStyle = variant === 'title' ? styles.title : 
+                   variant === 'caption' ? styles.caption : 
+                   styles.body;
+  
+  return (
+    <Text style={[textStyle, { color: theme.colors.text }, style]}>
+      {children}
+    </Text>
+  );
+};
+```
+
+### 2. 平台适配
+
+```typescript
+// ✅ 平台适配
+import { Platform, StatusBar } from 'react-native';
+
+export const PlatformAdapter = {
+  // 状态栏高度
+  getStatusBarHeight: () => {
+    return Platform.OS === 'ios' ? 44 : StatusBar.currentHeight || 0;
+  },
+
+  // 安全区域
+  getSafeAreaInsets: () => {
+    return Platform.OS === 'ios' ? 
+      { top: 44, bottom: 34, left: 0, right: 0 } :
+      { top: 0, bottom: 0, left: 0, right: 0 };
+  },
+
+  // 平台特定样式
+  getPlatformStyle: (iosStyle: any, androidStyle: any) => {
+    return Platform.OS === 'ios' ? iosStyle : androidStyle;
+  }
+};
+
+// 使用示例
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: PlatformAdapter.getStatusBarHeight(),
+    ...PlatformAdapter.getPlatformStyle(
+      { shadowColor: '#000', shadowOffset: { width: 0, height: 2 } },
+      { elevation: 4 }
+    )
+  }
+});
+```
+
+### 3. 手势处理
+
+```typescript
+// ✅ 手势处理
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
+
+export const SwipeableCard: React.FC<{
+  children: React.ReactNode;
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+}> = ({ children, onSwipeLeft, onSwipeRight }) => {
+  const translateX = useRef(new Animated.Value(0)).current;
+
+  const onGestureEvent = Animated.event(
+    [{ nativeEvent: { translationX: translateX } }],
+    { useNativeDriver: true }
+  );
+
+  const onHandlerStateChange = (event: any) => {
+    if (event.nativeEvent.state === State.END) {
+      const { translationX, velocityX } = event.nativeEvent;
+      
+      if (translationX > 100 || velocityX > 500) {
+        onSwipeRight?.();
+      } else if (translationX < -100 || velocityX < -500) {
+        onSwipeLeft?.();
+      }
+      
+      Animated.spring(translateX, {
+        toValue: 0,
+        useNativeDriver: true
+      }).start();
+    }
+  };
+
+  return (
+    <PanGestureHandler
+      onGestureEvent={onGestureEvent}
+      onHandlerStateChange={onHandlerStateChange}
+    >
+      <Animated.View style={{ transform: [{ translateX }] }}>
+        {children}
+      </Animated.View>
+    </PanGestureHandler>
+  );
+};
+```
+
+### 4. 离线支持
+
+```typescript
+// ✅ 离线支持
+export const useOfflineSupport = () => {
+  const [isOnline, setIsOnline] = useState(true);
+  const [offlineData, setOfflineData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOnline(state.isConnected ?? false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const syncOfflineData = useCallback(async () => {
+    if (!isOnline || offlineData.length === 0) return;
+
+    try {
+      for (const data of offlineData) {
+        await apiService.syncData(data);
+      }
+      setOfflineData([]);
+    } catch (error) {
+      console.error('Failed to sync offline data:', error);
+    }
+  }, [isOnline, offlineData]);
+
+  const addOfflineData = useCallback((data: any) => {
+    setOfflineData(prev => [...prev, { ...data, timestamp: Date.now() }]);
+  }, []);
+
+  return {
+    isOnline,
+    offlineData,
+    syncOfflineData,
+    addOfflineData
+  };
+};
+```
+
+### 5. 性能优化
+
+```typescript
+// ✅ 性能优化
+export const OptimizedList: React.FC<{
+  data: any[];
+  renderItem: ({ item }: { item: any }) => React.ReactElement;
+}> = ({ data, renderItem }) => {
+  const keyExtractor = useCallback((item: any) => item.id, []);
+  
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: 80,
+    offset: 80 * index,
+    index
+  }), []);
+
+  return (
+    <FlatList
+      data={data}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      getItemLayout={getItemLayout}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={10}
+      windowSize={10}
+      initialNumToRender={10}
+      updateCellsBatchingPeriod={50}
+    />
+  );
+};
+
+// 图片优化
+export const OptimizedImage: React.FC<{
+  source: { uri: string };
+  style?: ImageStyle;
+}> = ({ source, style }) => {
+  return (
+    <Image
+      source={source}
+      style={style}
+      resizeMode="cover"
+      loadingIndicatorSource={require('../assets/placeholder.png')}
+      onError={() => console.log('Image load error')}
+    />
+  );
+};
+```
+
+### 6. 状态管理
+
+```typescript
+// ✅ 移动端状态管理
+interface AppState {
+  user: User | null;
+  theme: 'light' | 'dark';
+  notifications: Notification[];
+  isOnline: boolean;
+}
+
+type AppAction =
+  | { type: 'SET_USER'; payload: User | null }
+  | { type: 'SET_THEME'; payload: 'light' | 'dark' }
+  | { type: 'ADD_NOTIFICATION'; payload: Notification }
+  | { type: 'SET_ONLINE'; payload: boolean };
+
+const appReducer = (state: AppState, action: AppAction): AppState => {
+  switch (action.type) {
+    case 'SET_USER':
+      return { ...state, user: action.payload };
+    case 'SET_THEME':
+      return { ...state, theme: action.payload };
+    case 'ADD_NOTIFICATION':
+      return { ...state, notifications: [...state.notifications, action.payload] };
+    case 'SET_ONLINE':
+      return { ...state, isOnline: action.payload };
+    default:
+      return state;
+  }
+};
+
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(appReducer, initialState);
+
+  const value = useMemo(() => ({
+    state,
+    dispatch,
+    setUser: (user: User | null) => dispatch({ type: 'SET_USER', payload: user }),
+    setTheme: (theme: 'light' | 'dark') => dispatch({ type: 'SET_THEME', payload: theme }),
+    addNotification: (notification: Notification) => 
+      dispatch({ type: 'ADD_NOTIFICATION', payload: notification }),
+    setOnline: (isOnline: boolean) => dispatch({ type: 'SET_ONLINE', payload: isOnline })
+  }), [state]);
+
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+```
+
+## ❌ 避免的做法
+
+### 1. 不要忽略平台差异
+
+```typescript
+// ❌ 错误：忽略平台差异
+const styles = StyleSheet.create({
+  container: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5  // Android 和 iOS 都使用
+  }
+});
+
+// ✅ 正确：平台适配
+const styles = StyleSheet.create({
+  container: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  }
+});
+```
+
+### 2. 不要忽略性能优化
+
+```typescript
+// ❌ 错误：忽略性能优化
+export const UserList: React.FC<{ users: User[] }> = ({ users }) => {
+  return (
+    <ScrollView>
+      {users.map(user => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </ScrollView>
+  );
+};
+
+// ✅ 正确：使用 FlatList
+export const UserList: React.FC<{ users: User[] }> = ({ users }) => {
+  const renderItem = useCallback(({ item }: { item: User }) => (
+    <UserCard user={item} />
+  ), []);
+
+  return (
+    <FlatList
+      data={users}
+      renderItem={renderItem}
+      keyExtractor={(item) => item.id}
+    />
+  );
+};
+```
+
+### 3. 不要忽略内存管理
+
+```typescript
+// ❌ 错误：忽略内存管理
+export const ImageGallery: React.FC<{ images: string[] }> = ({ images }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % images.length);
+    }, 3000);
+
+    // 忘记清理定时器
+  }, [images.length]);
+
+  return <Image source={{ uri: images[currentIndex] }} />;
+};
+
+// ✅ 正确：清理副作用
+export const ImageGallery: React.FC<{ images: string[] }> = ({ images }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % images.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [images.length]);
+
+  return <Image source={{ uri: images[currentIndex] }} />;
+};
+```
+
+### 4. 不要忽略错误处理
+
+```typescript
+// ❌ 错误：忽略错误处理
+export const UserProfile: React.FC<{ userId: string }> = ({ userId }) => {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    fetchUser(userId).then(setUser);
+  }, [userId]);
+
+  return <UserCard user={user} />;
+};
+
+// ✅ 正确：添加错误处理
+export const UserProfile: React.FC<{ userId: string }> = ({ userId }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const userData = await fetchUser(userId);
+        setUser(userData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+  }, [userId]);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage message={error} />;
+  if (!user) return <NotFound />;
+
+  return <UserCard user={user} />;
+};
+```
+
+## 🔧 最佳实践
+
+### 1. 响应式设计
+
+```typescript
+// ✅ 响应式设计
+import { Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
+export const useResponsive = () => {
+  const isTablet = width >= 768;
+  const isLandscape = width > height;
+
+  return {
+    width,
+    height,
+    isTablet,
+    isLandscape,
+    screenWidth: width,
+    screenHeight: height
+  };
+};
+
+// 使用示例
+export const ResponsiveLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isTablet } = useResponsive();
+
+  return (
+    <View style={[
+      styles.container,
+      isTablet ? styles.tabletContainer : styles.phoneContainer
+    ]}>
+      {children}
+    </View>
+  );
+};
+```
+
+### 2. 深链接处理
+
+```typescript
+// ✅ 深链接处理
+export const useDeepLinking = () => {
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleDeepLink = (url: string) => {
+      const { pathname, queryParams } = Linking.parse(url);
+      
+      if (pathname === '/user') {
+        router.push(`/user/${queryParams?.id}`);
+      } else if (pathname === '/profile') {
+        router.push('/profile');
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleDeepLink(url);
+    });
+
+    return () => subscription?.remove();
+  }, [router]);
+};
+```
+
+### 3. 推送通知
+
+```typescript
+// ✅ 推送通知
+export const usePushNotifications = () => {
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => {
+      setExpoPushToken(token);
+    });
+  }, []);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  return { expoPushToken };
+};
+```
+
+## 📋 移动端开发检查清单
+
+开发移动端功能时检查：
+
+- [ ] 平台适配（iOS/Android）
+- [ ] 响应式设计
+- [ ] 性能优化
+- [ ] 内存管理
+- [ ] 错误处理
+- [ ] 离线支持
+- [ ] 深链接处理
+- [ ] 推送通知
+- [ ] 手势处理
+- [ ] 主题化支持
+
+## 🧪 移动端测试
+
+```typescript
+// ✅ 移动端测试
+describe('UserProfile', () => {
+  it('should render user information correctly', () => {
+    const user = { id: '1', name: 'John Doe', email: 'john@example.com' };
+    render(<UserProfile user={user} />);
+    
+    expect(screen.getByText('John Doe')).toBeOnTheScreen();
+    expect(screen.getByText('john@example.com')).toBeOnTheScreen();
+  });
+
+  it('should handle loading state', () => {
+    render(<UserProfile userId="1" />);
+    expect(screen.getByTestId('loading-spinner')).toBeOnTheScreen();
+  });
+});
+```
+
+## 📚 相关资源
+
+- [React Native 文档](https://reactnative.dev/)
+- [Expo 文档](https://docs.expo.dev/)
+- [Expo Router 文档](https://expo.github.io/router/)
+- [React Native 性能优化](https://reactnative.dev/docs/performance)
+- [移动端组件库](mdc:Platform.App/components/)
+
+## 🎯 核心原则
+
+1. **平台适配** - 考虑 iOS 和 Android 差异
+2. **性能优化** - 使用 FlatList、图片优化等
+3. **响应式设计** - 适配不同屏幕尺寸
+4. **内存管理** - 清理副作用和定时器
+5. **错误处理** - 适当的错误边界和重试
+6. **离线支持** - 网络状态检测和数据同步
+7. **用户体验** - 流畅的动画和交互
+8. **可访问性** - 支持屏幕阅读器等辅助功能

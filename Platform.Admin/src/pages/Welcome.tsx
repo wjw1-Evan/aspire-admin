@@ -729,10 +729,10 @@ const Welcome: React.FC = () => {
                     token={token}
                   />
                   <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                    系统: {(systemResources.memory?.totalMemoryMB || 0) - (systemResources.memory?.availableMemoryMB || 0)}MB / {systemResources.memory?.totalMemoryMB || 0}MB
+                    系统: {((systemResources.memory?.totalMemoryMB || 0) - (systemResources.memory?.availableMemoryMB || 0)).toFixed(2)}MB / {(systemResources.memory?.totalMemoryMB || 0).toFixed(2)}MB
                   </div>
                   <div style={{ fontSize: '12px', color: '#1890ff', textAlign: 'center', marginTop: '4px' }}>
-                    程序: {systemResources.memory?.processMemoryMB || 0}MB ({systemResources.memory?.processUsagePercent || 0}%)
+                    程序: {(systemResources.memory?.processMemoryMB || 0).toFixed(2)}MB ({(systemResources.memory?.processUsagePercent || 0).toFixed(2)}%)
                   </div>
                 </Col>
               )}

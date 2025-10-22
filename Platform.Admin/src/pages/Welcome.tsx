@@ -717,11 +717,11 @@ const Welcome: React.FC = () => {
             style={{ marginTop: '24px', borderRadius: '12px' }}
           >
             <Row gutter={[16, 16]}>
-              {/* 内存使用率 */}
+              {/* 系统内存使用率 */}
               {systemResources.memory && (
                 <Col xs={24} sm={12} md={8}>
                   <ResourceCard
-                    title="内存使用率"
+                    title="系统内存使用率"
                     value={`${systemResources.memory?.usagePercent || 0}%`}
                     icon={<ThunderboltOutlined />}
                     color={getResourceColor(systemResources.memory?.usagePercent || 0)}
@@ -729,7 +729,10 @@ const Welcome: React.FC = () => {
                     token={token}
                   />
                   <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                    {systemResources.memory?.processMemoryMB || 0}MB / {systemResources.memory?.totalMemoryMB || 0}MB
+                    系统: {(systemResources.memory?.totalMemoryMB || 0) - (systemResources.memory?.availableMemoryMB || 0)}MB / {systemResources.memory?.totalMemoryMB || 0}MB
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#1890ff', textAlign: 'center', marginTop: '4px' }}>
+                    程序: {systemResources.memory?.processMemoryMB || 0}MB ({systemResources.memory?.processUsagePercent || 0}%)
                   </div>
                 </Col>
               )}

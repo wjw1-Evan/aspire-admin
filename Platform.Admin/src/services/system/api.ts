@@ -20,6 +20,7 @@ export interface SystemResources {
     totalMemoryMB: number;
     availableMemoryMB: number;
     usagePercent: number;
+    processUsagePercent?: number;
     unit: string;
   };
   cpu: {

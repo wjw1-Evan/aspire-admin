@@ -29,16 +29,14 @@ import {
   GlobalOutlined,
   DatabaseOutlined,
   HddOutlined,
-  MemoryStickOutlined,
-  CpuOutlined,
+  CiOutlined,
   MonitorOutlined
 } from '@ant-design/icons';
 import React, { useState, useEffect } from 'react';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getCurrentCompany } from '@/services/company';
-import { getSystemStatus, getSystemResourcesTest } from '@/services/system/api';
+import { getSystemStatus, getSystemResources } from '@/services/system/api';
 import type { CurrentUser } from '@/types/unified-api';
-import type { UserActivityLog } from '@/services/ant-design-pro/typings';
 import type { SystemStatus, SystemResources } from '@/services/system/api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -205,7 +203,7 @@ const Welcome: React.FC = () => {
   
   const [statistics, setStatistics] = useState<any>(null);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
-  const [recentActivities, setRecentActivities] = useState<UserActivityLog[]>([]);
+  const [recentActivities, setRecentActivities] = useState<API.UserActivityLog[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
@@ -219,8 +217,16 @@ const Welcome: React.FC = () => {
         getCurrentCompany(),
         getUserActivityLogs({ limit: 5 }),
         getSystemStatus(),
-        getSystemResourcesTest()
+        getSystemResources()
       ]);
+      
+      console.log('API 响应结果:', {
+        stats: statsRes,
+        company: companyRes,
+        activities: activitiesRes,
+        status: statusRes,
+        resources: resourcesRes
+      });
       
       if (statsRes.success) {
         setStatistics(statsRes.data);
@@ -235,23 +241,18 @@ const Welcome: React.FC = () => {
       }
 
       if (statusRes.success) {
-        setSystemStatus(statusRes.data);
+        setSystemStatus(statusRes.data || null);
       }
 
       if (resourcesRes.success) {
-        console.log('✅ 系统资源获取成功:', resourcesRes.data);
-        setSystemResources(resourcesRes.data);
+        console.log('系统资源数据:', resourcesRes.data);
+        setSystemResources(resourcesRes.data || null);
       } else {
-        console.warn('❌ 获取系统资源失败:', resourcesRes.message);
-        console.warn('❌ 完整响应:', resourcesRes);
+        console.warn('系统资源获取失败:', resourcesRes);
         setSystemResources(null);
       }
     } catch (error) {
-      console.error('❌ 获取统计数据失败:', error);
-      console.error('❌ 错误详情:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
+      console.error('Failed to fetch statistics:', error);
       // 如果系统状态获取失败，设置默认状态
       setSystemStatus({
         status: 'warning',
@@ -671,16 +672,7 @@ const Welcome: React.FC = () => {
         </Card>
 
         {/* 系统资源监控 */}
-        {(() => {
-          console.log('🔍 系统资源状态检查:', {
-            systemResources: systemResources,
-            hasMemory: !!systemResources?.Memory,
-            hasCpu: !!systemResources?.Cpu,
-            hasDisk: !!systemResources?.Disk,
-            hasSystem: !!systemResources?.System
-          });
-          return systemResources?.Memory && systemResources?.Cpu && systemResources?.Disk && systemResources?.System;
-        })() && (
+        {systemResources ? (
           <Card 
             title={
               <Space>
@@ -692,71 +684,102 @@ const Welcome: React.FC = () => {
           >
             <Row gutter={[16, 16]}>
               {/* 内存使用率 */}
-              <Col xs={24} sm={12} md={8}>
-                <ResourceCard
-                  title="内存使用率"
-                  value={`${systemResources.Memory?.UsagePercent || 0}%`}
-                  icon={<MemoryStickOutlined />}
-                  color={getResourceColor(systemResources.Memory?.UsagePercent || 0)}
-                  loading={loading}
-                  token={token}
-                />
-                <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                  {systemResources.Memory?.ProcessMemoryMB || 0}MB / {systemResources.Memory?.TotalMemoryMB || 0}MB
-                </div>
-              </Col>
+              {systemResources.memory && (
+                <Col xs={24} sm={12} md={8}>
+                  <ResourceCard
+                    title="内存使用率"
+                    value={`${systemResources.memory?.usagePercent || 0}%`}
+                    icon={<ThunderboltOutlined />}
+                    color={getResourceColor(systemResources.memory?.usagePercent || 0)}
+                    loading={loading}
+                    token={token}
+                  />
+                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                    {systemResources.memory?.processMemoryMB || 0}MB / {systemResources.memory?.totalMemoryMB || 0}MB
+                  </div>
+                </Col>
+              )}
               
               {/* CPU 使用率 */}
-              <Col xs={24} sm={12} md={8}>
-                <ResourceCard
-                  title="CPU 使用率"
-                  value={`${systemResources.Cpu?.UsagePercent || 0}%`}
-                  icon={<CpuOutlined />}
-                  color={getResourceColor(systemResources.Cpu?.UsagePercent || 0)}
-                  loading={loading}
-                  token={token}
-                />
-                <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                  运行时间: {Math.round((systemResources.Cpu?.Uptime || 0) / 3600)}h
-                </div>
-              </Col>
+              {systemResources.cpu && (
+                <Col xs={24} sm={12} md={8}>
+                  <ResourceCard
+                    title="CPU 使用率"
+                    value={`${systemResources.cpu?.usagePercent || 0}%`}
+                    icon={<CiOutlined />}
+                    color={getResourceColor(systemResources.cpu?.usagePercent || 0)}
+                    loading={loading}
+                    token={token}
+                  />
+                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                    运行时间: {Math.round((systemResources.cpu?.uptime || 0) / 3600)}h
+                  </div>
+                </Col>
+              )}
               
               {/* 磁盘使用率 */}
-              <Col xs={24} sm={12} md={8}>
-                <ResourceCard
-                  title="磁盘使用率"
-                  value={`${systemResources.Disk?.UsagePercent || 0}%`}
-                  icon={<HddOutlined />}
-                  color={getResourceColor(systemResources.Disk?.UsagePercent || 0)}
-                  loading={loading}
-                  token={token}
-                />
-                <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                  {systemResources.Disk?.UsedSizeGB || 0}GB / {systemResources.Disk?.TotalSizeGB || 0}GB
-                </div>
-              </Col>
+              {systemResources.disk && (
+                <Col xs={24} sm={12} md={8}>
+                  <ResourceCard
+                    title="磁盘使用率"
+                    value={`${systemResources.disk?.usagePercent || 0}%`}
+                    icon={<HddOutlined />}
+                    color={getResourceColor(systemResources.disk?.usagePercent || 0)}
+                    loading={loading}
+                    token={token}
+                  />
+                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                    {systemResources.disk?.usedSizeGB || 0}GB / {systemResources.disk?.totalSizeGB || 0}GB
+                  </div>
+                </Col>
+              )}
             </Row>
             
             {/* 系统详细信息 */}
+            {systemResources.system && (
+              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+                <Row gutter={[16, 8]}>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">机器名: </Text>
+                    <Text strong>{systemResources.system?.machineName || 'Unknown'}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">CPU 核心: </Text>
+                    <Text strong>{systemResources.system?.processorCount || 0}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">系统架构: </Text>
+                    <Text strong>{systemResources.system?.is64BitOperatingSystem ? '64位' : '32位'}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">系统运行时间: </Text>
+                    <Text strong>{Math.round((systemResources.system?.systemUpTime || 0) / 3600)}小时</Text>
+                  </Col>
+                </Row>
+              </div>
+            )}
+          </Card>
+        ) : (
+          <Card 
+            title={
+              <Space>
+                <DatabaseOutlined />
+                <span>系统资源监控</span>
+              </Space>
+            }
+            style={{ marginTop: '24px', borderRadius: '12px' }}
+          >
+            <Alert
+              message="系统资源数据不可用"
+              description="无法获取系统资源信息，请检查后端服务是否正常运行。"
+              type="warning"
+              showIcon
+              style={{ borderRadius: '8px' }}
+            />
             <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
-              <Row gutter={[16, 8]}>
-                <Col xs={24} sm={12} md={6}>
-                  <Text type="secondary">机器名: </Text>
-                  <Text strong>{systemResources.System?.MachineName || 'Unknown'}</Text>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                  <Text type="secondary">CPU 核心: </Text>
-                  <Text strong>{systemResources.System?.ProcessorCount || 0}</Text>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                  <Text type="secondary">系统架构: </Text>
-                  <Text strong>{systemResources.System?.Is64BitOperatingSystem ? '64位' : '32位'}</Text>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                  <Text type="secondary">系统运行时间: </Text>
-                  <Text strong>{Math.round((systemResources.System?.SystemUpTime || 0) / 3600)}小时</Text>
-                </Col>
-              </Row>
+              <Text type="secondary">
+                调试信息：请打开浏览器控制台查看详细的 API 响应信息。
+              </Text>
             </div>
           </Card>
         )}

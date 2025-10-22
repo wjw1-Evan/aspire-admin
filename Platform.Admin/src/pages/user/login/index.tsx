@@ -184,7 +184,6 @@ const Login: React.FC = () => {
         id: 'pages.login.failure',
         defaultMessage: '登录失败，请重试！',
       });
-      console.log(error);
       message.error(defaultLoginFailureMessage);
     }
   };
@@ -405,15 +404,11 @@ const Login: React.FC = () => {
                         `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,
                         5,
                       );
-                      console.log(
-                        `验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`,
-                      );
                     } else {
                       message.error('获取验证码失败');
                     }
                   } catch (error) {
                     message.error('获取验证码失败，请稍后重试');
-                    console.error('获取验证码错误:', error);
                   }
                 }}
               />

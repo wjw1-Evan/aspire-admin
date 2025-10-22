@@ -379,6 +379,7 @@ docs/
 
 ### 项目维护报告
 - [测试代码移除总结报告](reports/TEST-CODE-REMOVAL-SUMMARY.md) - **新增** - 测试代码清理完成报告
+- [无用代码清理报告](reports/UNUSED-CODE-CLEANUP-SUMMARY.md) - **新增** - 无用代码清理完成报告
 
 ### 微服务优化
 - [**DataInitializer 微服务自动停止功能实现报告**](reports/DATA-INITIALIZER-AUTO-STOP-IMPLEMENTATION.md) - **新增** - DataInitializer 微服务自动停止功能实现详情 ⭐ **推荐**

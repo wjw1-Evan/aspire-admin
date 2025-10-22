@@ -97,9 +97,6 @@ const UserManagement: React.FC = () => {
 
   // 获取用户列表
   const fetchUsers = async (params: any) => {
-    console.log('fetchUsers 被调用，参数:', params);
-    console.log('当前搜索参数:', searchParams);
-
     const requestData: UserListRequest = {
       Page: params.current || searchParams.Page,
       PageSize: params.pageSize || searchParams.PageSize,
@@ -112,8 +109,6 @@ const UserManagement: React.FC = () => {
       EndDate: searchParams.EndDate,
     };
 
-    console.log('发送请求数据:', requestData);
-
     try {
       const response = await request<{ success: boolean; data: any }>(
         '/api/user/list',
@@ -122,8 +117,6 @@ const UserManagement: React.FC = () => {
           data: requestData,
         },
       );
-
-      console.log('API响应:', response);
 
       return {
         data: response.data.users || [],
@@ -143,7 +136,6 @@ const UserManagement: React.FC = () => {
 
   // 处理搜索
   const handleSearch = (values: any) => {
-    console.log('搜索表单提交:', values);
     const newSearchParams: UserListRequest = {
       Page: 1,
       PageSize: searchParams.PageSize,

@@ -44,9 +44,10 @@ const { Title, Text, Paragraph } = Typography;
 
 // 内存使用率曲线图组件
 const MemoryUsageChart: React.FC<{
-  data: Array<{ time: string; value: number; type: string }>;
+  data: Array<{ time: string; value: number; type: string; memoryMB?: number; totalMB?: number }>;
   loading?: boolean;
-}> = React.memo(({ data, loading = false }) => {
+  totalMemoryMB?: number;
+}> = React.memo(({ data, loading = false, totalMemoryMB = 0 }) => {
   const config = useMemo(() => ({
     data,
     xField: 'time',
@@ -56,19 +57,23 @@ const MemoryUsageChart: React.FC<{
     animation: {
       appear: {
         animation: 'path-in',
-        duration: 500, // 减少动画时间
+        duration: 500,
       },
     },
     color: ['#1890ff'],
     point: {
-      size: 2, // 减小点的大小
+      size: 3,
       shape: 'circle',
     },
     tooltip: {
       formatter: (datum: any) => {
+        const memoryMB = datum.memoryMB || 0;
+        const totalMB = datum.totalMB || totalMemoryMB || 1;
+        const percentage = datum.value || 0;
+        
         return {
-          name: datum.type,
-          value: `${datum.value}%`,
+          name: '内存使用情况',
+          value: `${percentage.toFixed(1)}% (${memoryMB.toFixed(0)}MB / ${totalMB.toFixed(0)}MB)`,
         };
       },
     },
@@ -78,6 +83,12 @@ const MemoryUsageChart: React.FC<{
     xAxis: {
       type: 'time' as const,
       tickCount: 5,
+      label: {
+        formatter: (text: string) => {
+          // 只显示时分，不显示秒
+          return text.split(':').slice(0, 2).join(':');
+        },
+      },
     },
     yAxis: {
       min: 0,
@@ -85,9 +96,16 @@ const MemoryUsageChart: React.FC<{
       label: {
         formatter: (val: string) => `${val}%`,
       },
+      title: {
+        text: '内存使用率 (%)',
+        style: {
+          fontSize: 12,
+          fontWeight: 'bold',
+        },
+      },
     },
     height: 300,
-  }), [data]);
+  }), [data, totalMemoryMB]);
 
   return (
     <div style={{ padding: '16px 0' }}>
@@ -264,8 +282,8 @@ const Welcome: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
   // 内存使用率曲线图数据
-  const [memoryChartData, setMemoryChartData] = useState<Array<{ time: string; value: number; type: string }>>([]);
-  const [chartLoading, setChartLoading] = useState(false);
+  const [memoryChartData, setMemoryChartData] = useState<Array<{ time: string; value: number; type: string; memoryMB?: number; totalMB?: number }>>([]);
+  const [chartLoading] = useState(false);
   
   // 定时器引用
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -296,7 +314,9 @@ const Welcome: React.FC = () => {
             {
               time: timeStr,
               value: memoryUsage,
-              type: '内存使用率'
+              type: '内存使用率',
+              memoryMB: resources.memory?.processMemoryMB || 0,
+              totalMB: resources.memory?.totalMemoryMB || 0
             }
           ];
           
@@ -804,21 +824,58 @@ const Welcome: React.FC = () => {
                 )}
               </Space>
             </Title>
-            <MemoryUsageChart data={memoryChartData} loading={chartLoading} />
+            <MemoryUsageChart 
+              data={memoryChartData} 
+              loading={chartLoading}
+              totalMemoryMB={systemResources?.memory?.totalMemoryMB || 0}
+            />
             {systemResources?.memory && (
               <div style={{ 
                 marginTop: '12px', 
-                padding: '12px', 
+                padding: '16px', 
                 backgroundColor: '#fafafa', 
-                borderRadius: '8px',
-                textAlign: 'center'
+                borderRadius: '8px'
               }}>
-                <Text type="secondary">
-                  当前内存: {systemResources.memory.processMemoryMB}MB / {systemResources.memory.totalMemoryMB}MB
-                  {' '}({systemResources.memory.usagePercent}%)
-                </Text>
-                  </div>
-              )}
+                <Row gutter={[16, 8]} justify="center">
+                  <Col>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1890ff' }}>
+                        {systemResources.memory.processMemoryMB.toFixed(0)}MB
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>已使用</div>
+                    </div>
+                  </Col>
+                  <Col>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
+                        {(systemResources.memory.totalMemoryMB - systemResources.memory.processMemoryMB).toFixed(0)}MB
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>可用</div>
+                    </div>
+                  </Col>
+                  <Col>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#faad14' }}>
+                        {systemResources.memory.totalMemoryMB.toFixed(0)}MB
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>总内存</div>
+                    </div>
+                  </Col>
+                  <Col>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ 
+                        fontSize: '16px', 
+                        fontWeight: 'bold', 
+                        color: getResourceColor(systemResources.memory.usagePercent)
+                      }}>
+                        {systemResources.memory.usagePercent.toFixed(1)}%
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>使用率</div>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+            )}
           </div>
               
           {/* 其他资源指标 */}

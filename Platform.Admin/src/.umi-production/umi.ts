@@ -80,6 +80,6 @@ render();
 
     if (typeof window !== 'undefined') {
       window.g_umi = {
-        version: '4.5.2',
+        version: '4.5.3',
       };
     }

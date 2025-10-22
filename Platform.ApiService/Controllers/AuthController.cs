@@ -13,15 +13,18 @@ public class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;
     private readonly ICaptchaService _captchaService;
+    private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IPhoneValidationService _phoneValidationService;
 
     public AuthController(
         IAuthService authService, 
         ICaptchaService captchaService,
+        IImageCaptchaService imageCaptchaService,
         IPhoneValidationService phoneValidationService)
     {
         _authService = authService;
         _captchaService = captchaService;
+        _imageCaptchaService = imageCaptchaService;
         _phoneValidationService = phoneValidationService;
     }
 
@@ -178,6 +181,95 @@ public class AuthController : BaseApiController
             captcha = result.Code,
             expiresIn = result.ExpiresIn
         });
+    }
+
+    /// <summary>
+    /// 获取图形验证码
+    /// </summary>
+    /// <param name="type">验证码类型（login, register）</param>
+    /// <remarks>
+    /// 生成图形验证码，用于登录和注册时的安全验证。
+    /// 
+    /// 示例请求：
+    /// ```
+    /// GET /api/captcha/image?type=login
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "captchaId": "abc123def456",
+    ///     "imageData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+    ///     "expiresIn": 300
+    ///   }
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>图形验证码信息</returns>
+    /// <response code="200">验证码生成成功</response>
+    /// <response code="400">验证码类型不正确</response>
+    [HttpGet("captcha/image")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetImageCaptcha([FromQuery] string type = "login")
+    {
+        if (type != "login" && type != "register")
+        {
+            throw new ArgumentException("验证码类型只能是 login 或 register");
+        }
+
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var result = await _imageCaptchaService.GenerateCaptchaAsync(type, clientIp);
+        
+        return Success(result);
+    }
+
+    /// <summary>
+    /// 验证图形验证码
+    /// </summary>
+    /// <param name="request">图形验证码验证请求</param>
+    /// <remarks>
+    /// 验证图形验证码是否正确，主要用于测试环境。
+    /// 
+    /// 示例请求：
+    /// ```json
+    /// POST /api/captcha/verify-image
+    /// Content-Type: application/json
+    /// 
+    /// {
+    ///   "captchaId": "abc123def456",
+    ///   "answer": "ABC123",
+    ///   "type": "login"
+    /// }
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "valid": true
+    ///   }
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>验证结果</returns>
+    /// <response code="200">验证完成</response>
+    /// <response code="400">验证码ID或答案格式不正确</response>
+    [HttpPost("captcha/verify-image")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyImageCaptcha([FromBody] VerifyCaptchaImageRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.CaptchaId))
+            throw new ArgumentException("验证码ID不能为空");
+        
+        if (string.IsNullOrWhiteSpace(request.Answer))
+            throw new ArgumentException("验证码答案不能为空");
+
+        var isValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.Answer, request.Type);
+        
+        return Success(new { valid = isValid });
     }
 
     /// <summary>

@@ -40,7 +40,7 @@
       "@ant-design/icons": "^6.1.0",
       "@ant-design/pro-components": "^2.7.19",
       "@ant-design/v5-patch-for-react-19": "^1.0.3",
-      "antd": "^5.27.5",
+      "antd": "^5.27.6",
       "antd-style": "^3.7.0",
       "classnames": "^2.5.1",
       "dayjs": "^1.11.13",
@@ -57,18 +57,18 @@
       "@types/express": "^5.0.3",
       "@types/jest": "^30.0.0",
       "@types/lodash": "^4.17.10",
-      "@types/node": "^24.8.0",
+      "@types/node": "^24.9.1",
       "@types/react": "^19.2.2",
       "@types/react-dom": "^19.2.2",
       "@types/react-helmet": "^6.1.11",
-      "@umijs/max": "^4.5.2",
+      "@umijs/max": "^4.5.3",
       "cross-env": "^10.1.0",
       "express": "^5.1.0",
       "gh-pages": "^6.1.1",
       "husky": "^9.1.7",
       "jest": "^30.0.4",
       "jest-environment-jsdom": "^30.2.0",
-      "lint-staged": "^16.2.4",
+      "lint-staged": "^16.2.5",
       "mockjs": "^1.1.0",
       "ts-node": "^10.9.2",
       "typescript": "^5.6.3",
@@ -111,7 +111,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 1
       },
       "enableBy": "register",
       "type": "preset",
@@ -128,7 +128,7 @@
             0
           ]
         },
-        "register": 2
+        "register": 4
       },
       "enableBy": "register",
       "type": "preset",
@@ -162,7 +162,7 @@
             1
           ]
         },
-        "register": 2
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -179,7 +179,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -192,7 +192,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -206,10 +206,10 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            20
+            21
           ]
         },
-        "register": 13
+        "register": 15
       },
       "enableBy": "register",
       "type": "plugin",
@@ -256,10 +256,10 @@
       "time": {
         "hooks": {
           "onCheck": [
-            1
+            0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -272,7 +272,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -289,7 +289,7 @@
             0
           ]
         },
-        "register": 6
+        "register": 7
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1141,7 +1141,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1158,7 +1158,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1184,7 +1184,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 52
+        "register": 49
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1197,7 +1197,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 29
+        "register": 27
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1214,7 +1214,7 @@
             0
           ]
         },
-        "register": 10
+        "register": 11
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1231,7 +1231,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1395,7 +1395,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1408,7 +1408,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1524,7 +1524,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 4
+        "register": 3
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/apiRoute/apiRoute.js",
@@ -1536,7 +1536,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 14
+        "register": 15
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1549,7 +1549,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/test/test.js",
@@ -1672,7 +1672,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/hmrGuardian/hmrGuardian.js",
@@ -1684,7 +1684,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 20
+        "register": 19
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad.js",
@@ -1696,7 +1696,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1735,7 +1735,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 22
+        "register": 20
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1748,7 +1748,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 26
+        "register": 25
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/dev/dev.js",
@@ -1760,7 +1760,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1773,7 +1773,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1799,7 +1799,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1812,7 +1812,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1825,7 +1825,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1851,7 +1851,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1877,7 +1877,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1890,7 +1890,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1916,7 +1916,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1929,7 +1929,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1955,7 +1955,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1994,7 +1994,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 17
+        "register": 13
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2048,7 +2048,7 @@
       },
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/analytics.js",
@@ -2067,7 +2067,7 @@
             0
           ]
         },
-        "register": 3
+        "register": 6
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/antd.js",
@@ -2079,7 +2079,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 6
+        "register": 5
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2117,7 +2117,7 @@
             0
           ]
         },
-        "register": 5
+        "register": 3
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2130,7 +2130,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2143,7 +2143,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2186,7 +2186,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2326,7 +2326,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2343,7 +2343,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2356,7 +2356,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2373,7 +2373,7 @@
             0
           ]
         },
-        "register": 171
+        "register": 177
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2386,7 +2386,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 88
+        "register": 84
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2430,7 +2430,7 @@
             0
           ]
         },
-        "register": 39
+        "register": 36
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/request-record/dist/cjs/index.js",
@@ -2442,7 +2442,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2538,36 +2538,6 @@
         "hideInMenu": true
       },
       {
-        "path": "/data-platform/data-source",
-        "component": "./data-platform/data-source",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/pipeline",
-        "component": "./data-platform/pipeline",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/quality",
-        "component": "./data-platform/quality",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/query",
-        "component": "./data-platform/query",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/report",
-        "component": "./data-platform/report",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/monitor",
-        "component": "./data-platform/monitor",
-        "hideInMenu": true
-      },
-      {
         "path": "/",
         "redirect": "/welcome"
       },
@@ -2597,17 +2567,55 @@
     "layout": {
       "locale": true,
       "navTheme": "light",
-      "colorPrimary": "#1890ff",
+      "colorPrimary": "#1677ff",
       "layout": "mix",
       "contentWidth": "Fluid",
-      "fixedHeader": false,
+      "fixedHeader": true,
       "fixSiderbar": true,
       "colorWeak": false,
-      "title": "Ant Design Pro",
+      "title": "Aspire Admin Platform",
       "pwa": true,
       "logo": "https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg",
       "iconfontUrl": "",
-      "token": {}
+      "token": {
+        "colorPrimary": "#1677ff",
+        "colorSuccess": "#52c41a",
+        "colorWarning": "#faad14",
+        "colorError": "#ff4d4f",
+        "colorInfo": "#1677ff",
+        "fontFamily": "AlibabaSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "fontSize": 14,
+        "fontSizeHeading1": 38,
+        "fontSizeHeading2": 30,
+        "fontSizeHeading3": 24,
+        "fontSizeHeading4": 20,
+        "fontSizeHeading5": 16,
+        "borderRadius": 8,
+        "borderRadiusLG": 12,
+        "borderRadiusSM": 6,
+        "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.06)",
+        "boxShadowSecondary": "0 1px 4px rgba(0, 0, 0, 0.08)",
+        "padding": 16,
+        "paddingLG": 24,
+        "paddingSM": 12,
+        "paddingXS": 8,
+        "controlHeight": 32,
+        "controlHeightLG": 40,
+        "controlHeightSM": 24,
+        "motionDurationSlow": "0.3s",
+        "motionDurationMid": "0.2s",
+        "motionDurationFast": "0.1s",
+        "colorBgContainer": "#ffffff",
+        "colorBgElevated": "#ffffff",
+        "colorBgLayout": "#f5f5f5",
+        "colorBgMask": "rgba(0, 0, 0, 0.45)",
+        "colorText": "rgba(0, 0, 0, 0.88)",
+        "colorTextSecondary": "rgba(0, 0, 0, 0.65)",
+        "colorTextTertiary": "rgba(0, 0, 0, 0.45)",
+        "colorTextQuaternary": "rgba(0, 0, 0, 0.25)",
+        "colorBorder": "#d9d9d9",
+        "colorBorderSecondary": "#f0f0f0"
+      }
     },
     "moment2dayjs": {
       "preset": "antd",
@@ -2777,36 +2785,6 @@
         "hideInMenu": true
       },
       {
-        "path": "/data-platform/data-source",
-        "component": "./data-platform/data-source",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/pipeline",
-        "component": "./data-platform/pipeline",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/quality",
-        "component": "./data-platform/quality",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/query",
-        "component": "./data-platform/query",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/report",
-        "component": "./data-platform/report",
-        "hideInMenu": true
-      },
-      {
-        "path": "/data-platform/monitor",
-        "component": "./data-platform/monitor",
-        "hideInMenu": true
-      },
-      {
         "path": "/",
         "redirect": "/welcome"
       },
@@ -2835,17 +2813,55 @@
     "layout": {
       "locale": true,
       "navTheme": "light",
-      "colorPrimary": "#1890ff",
+      "colorPrimary": "#1677ff",
       "layout": "mix",
       "contentWidth": "Fluid",
-      "fixedHeader": false,
+      "fixedHeader": true,
       "fixSiderbar": true,
       "colorWeak": false,
-      "title": "Ant Design Pro",
+      "title": "Aspire Admin Platform",
       "pwa": true,
       "logo": "https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg",
       "iconfontUrl": "",
-      "token": {}
+      "token": {
+        "colorPrimary": "#1677ff",
+        "colorSuccess": "#52c41a",
+        "colorWarning": "#faad14",
+        "colorError": "#ff4d4f",
+        "colorInfo": "#1677ff",
+        "fontFamily": "AlibabaSans, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "fontSize": 14,
+        "fontSizeHeading1": 38,
+        "fontSizeHeading2": 30,
+        "fontSizeHeading3": 24,
+        "fontSizeHeading4": 20,
+        "fontSizeHeading5": 16,
+        "borderRadius": 8,
+        "borderRadiusLG": 12,
+        "borderRadiusSM": 6,
+        "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.06)",
+        "boxShadowSecondary": "0 1px 4px rgba(0, 0, 0, 0.08)",
+        "padding": 16,
+        "paddingLG": 24,
+        "paddingSM": 12,
+        "paddingXS": 8,
+        "controlHeight": 32,
+        "controlHeightLG": 40,
+        "controlHeightSM": 24,
+        "motionDurationSlow": "0.3s",
+        "motionDurationMid": "0.2s",
+        "motionDurationFast": "0.1s",
+        "colorBgContainer": "#ffffff",
+        "colorBgElevated": "#ffffff",
+        "colorBgLayout": "#f5f5f5",
+        "colorBgMask": "rgba(0, 0, 0, 0.45)",
+        "colorText": "rgba(0, 0, 0, 0.88)",
+        "colorTextSecondary": "rgba(0, 0, 0, 0.65)",
+        "colorTextTertiary": "rgba(0, 0, 0, 0.45)",
+        "colorTextQuaternary": "rgba(0, 0, 0, 0.25)",
+        "colorBorder": "#d9d9d9",
+        "colorBorderSecondary": "#f0f0f0"
+      }
     },
     "moment2dayjs": {
       "preset": "antd",
@@ -3839,7 +3855,7 @@
       "parentId": "1",
       "id": "2",
       "absPath": "/user/login",
-      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MobileOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormCaptcha,\n  ProFormCheckbox,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  Link,\n  SelectLang,\n  useIntl,\n  useModel,\n  history,\n} from '@umijs/max';\nimport { Alert, App, Button, Tabs } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { flushSync } from 'react-dom';\nimport { Footer } from '@/components';\nimport { login } from '@/services/ant-design-pro/api';\nimport { getFakeCaptcha } from '@/services/ant-design-pro/login';\nimport { tokenUtils } from '@/utils/token';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst LoginMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Login: React.FC = () => {\n  const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});\n  const [type, setType] = useState<string>('account');\n  const { initialState, setInitialState } = useModel('@@initialState');\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const fetchUserInfo = async () => {\n    const userInfo = await initialState?.fetchUserInfo?.();\n    if (userInfo) {\n      flushSync(() => {\n        setInitialState((s) => ({\n          ...s,\n          currentUser: userInfo,\n        }));\n      });\n    }\n  };\n\n  const handleSubmit = async (values: API.LoginParams) => {\n    try {\n      // 登录\n      const response = await login({ ...values, type });\n\n      // 处理统一的 API 响应格式\n      if (response.success && response.data) {\n        const msg = response.data;\n\n        // 保存 token 和刷新token到本地存储\n        if (msg.token && msg.refreshToken) {\n          const expiresAt = msg.expiresAt\n            ? new Date(msg.expiresAt).getTime()\n            : undefined;\n          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);\n        } else if (msg.token) {\n          // 兼容旧版本，只保存token\n          tokenUtils.setToken(msg.token);\n        }\n\n        const defaultLoginSuccessMessage = intl.formatMessage({\n          id: 'pages.login.success',\n          defaultMessage: '登录成功！',\n        });\n        message.success(defaultLoginSuccessMessage);\n        await fetchUserInfo();\n\n        // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性\n        const urlParams = new URL(window.location.href).searchParams;\n        const redirect = urlParams.get('redirect');\n        history.push(redirect || '/');\n        return;\n      }\n\n      // 如果失败，处理错误信息\n      const errorMsg = response.errorMessage || '登录失败，请重试！';\n      setUserLoginState({ status: 'error', errorMessage: errorMsg });\n    } catch (error) {\n      const defaultLoginFailureMessage = intl.formatMessage({\n        id: 'pages.login.failure',\n        defaultMessage: '登录失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultLoginFailureMessage);\n    }\n  };\n  const { status, type: loginType } = userLoginState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.login',\n            defaultMessage: '登录页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          initialValues={{\n            autoLogin: true,\n          }}\n          actions={[\n            <FormattedMessage\n              key=\"loginWith\"\n              id=\"pages.login.loginWith\"\n              defaultMessage=\"其他登录方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.LoginParams);\n          }}\n        >\n          <Tabs\n            activeKey={type}\n            onChange={setType}\n            centered\n            items={[\n              {\n                key: 'account',\n                label: intl.formatMessage({\n                  id: 'pages.login.accountLogin.tab',\n                  defaultMessage: '账户密码登录',\n                }),\n              },\n              {\n                key: 'mobile',\n                label: intl.formatMessage({\n                  id: 'pages.login.phoneLogin.tab',\n                  defaultMessage: '手机号登录',\n                }),\n              },\n            ]}\n          />\n\n          {status === 'error' && loginType === 'account' && (\n            <LoginMessage\n              content={intl.formatMessage({\n                id: 'pages.login.accountLogin.errorMessage',\n                defaultMessage: '账户或密码错误',\n              })}\n            />\n          )}\n          {type === 'account' && (\n            <>\n              <ProFormText\n                name=\"username\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <UserOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.username.placeholder',\n                  defaultMessage: '用户名',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.username.required\"\n                        defaultMessage=\"请输入用户名!\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText.Password\n                name=\"password\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.password.placeholder',\n                  defaultMessage: '密码: ant.design',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.password.required\"\n                        defaultMessage=\"请输入密码！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n            </>\n          )}\n\n          {status === 'error' && loginType === 'mobile' && (\n            <LoginMessage content=\"验证码错误\" />\n          )}\n          {type === 'mobile' && (\n            <>\n              <ProFormText\n                fieldProps={{\n                  size: 'large',\n                  prefix: <MobileOutlined />,\n                }}\n                name=\"mobile\"\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.phoneNumber.placeholder',\n                  defaultMessage: '手机号',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.required\"\n                        defaultMessage=\"请输入手机号！\"\n                      />\n                    ),\n                  },\n                  {\n                    pattern: /^1\\d{10}$/,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.invalid\"\n                        defaultMessage=\"手机号格式错误！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormCaptcha\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                captchaProps={{\n                  size: 'large',\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.captcha.placeholder',\n                  defaultMessage: '请输入验证码',\n                })}\n                captchaTextRender={(timing, count) => {\n                  if (timing) {\n                    return `${count} ${intl.formatMessage({\n                      id: 'pages.getCaptchaSecondText',\n                      defaultMessage: '获取验证码',\n                    })}`;\n                  }\n                  return intl.formatMessage({\n                    id: 'pages.login.phoneLogin.getVerificationCode',\n                    defaultMessage: '获取验证码',\n                  });\n                }}\n                name=\"captcha\"\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.captcha.required\"\n                        defaultMessage=\"请输入验证码！\"\n                      />\n                    ),\n                  },\n                ]}\n                onGetCaptcha={async (phone) => {\n                  try {\n                    const result = await getFakeCaptcha({ phone });\n\n                    if (result.success && result.data) {\n                      // 开发环境显示验证码（生产环境应该发送短信）\n                      message.success(\n                        `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,\n                        5,\n                      );\n                      console.log(\n                        `验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`,\n                      );\n                    } else {\n                      message.error('获取验证码失败');\n                    }\n                  } catch (error) {\n                    message.error('获取验证码失败，请稍后重试');\n                    console.error('获取验证码错误:', error);\n                  }\n                }}\n              />\n            </>\n          )}\n          <div\n            style={{\n              marginBottom: 24,\n            }}\n          >\n            <ProFormCheckbox noStyle name=\"autoLogin\">\n              <FormattedMessage\n                id=\"pages.login.rememberMe\"\n                defaultMessage=\"自动登录\"\n              />\n            </ProFormCheckbox>\n            <Button\n              type=\"link\"\n              style={{\n                float: 'right',\n                padding: 0,\n                height: 'auto',\n              }}\n              disabled\n              onClick={() => {\n                // 忘记密码功能待实现\n                message.info('忘记密码功能开发中');\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.login.forgotPassword\"\n                defaultMessage=\"忘记密码\"\n              />\n            </Button>\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/register\">\n                <FormattedMessage\n                  id=\"pages.login.register\"\n                  defaultMessage=\"没有账号？立即注册\"\n                />\n              </Link>\n            </div>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Login;\n",
+      "__content": "import {\n  AlipayCircleOutlined,\n  LockOutlined,\n  MobileOutlined,\n  TaobaoCircleOutlined,\n  UserOutlined,\n  WeiboCircleOutlined,\n} from '@ant-design/icons';\nimport {\n  LoginForm,\n  ProFormCaptcha,\n  ProFormCheckbox,\n  ProFormText,\n} from '@ant-design/pro-components';\nimport {\n  FormattedMessage,\n  Helmet,\n  Link,\n  SelectLang,\n  useIntl,\n  useModel,\n  history,\n} from '@umijs/max';\nimport { Alert, App, Button, Tabs } from 'antd';\nimport { createStyles } from 'antd-style';\nimport React, { useState } from 'react';\nimport { flushSync } from 'react-dom';\nimport { Footer } from '@/components';\nimport ImageCaptcha from '@/components/ImageCaptcha';\nimport { login } from '@/services/ant-design-pro/api';\nimport { getFakeCaptcha } from '@/services/ant-design-pro/login';\nimport { tokenUtils } from '@/utils/token';\nimport Settings from '../../../../config/defaultSettings';\n\nconst useStyles = createStyles(({ token }) => {\n  return {\n    action: {\n      marginLeft: '8px',\n      color: 'rgba(0, 0, 0, 0.2)',\n      fontSize: '24px',\n      verticalAlign: 'middle',\n      cursor: 'pointer',\n      transition: 'color 0.3s',\n      '&:hover': {\n        color: token.colorPrimaryActive,\n      },\n    },\n    lang: {\n      width: 42,\n      height: 42,\n      lineHeight: '42px',\n      position: 'fixed',\n      right: 16,\n      borderRadius: token.borderRadius,\n      ':hover': {\n        backgroundColor: token.colorBgTextHover,\n      },\n    },\n    container: {\n      display: 'flex',\n      flexDirection: 'column',\n      height: '100vh',\n      overflow: 'auto',\n      backgroundImage:\n        \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n      backgroundSize: '100% 100%',\n    },\n  };\n});\n\nconst ActionIcons = () => {\n  const { styles } = useStyles();\n\n  return (\n    <>\n      <AlipayCircleOutlined\n        key=\"AlipayCircleOutlined\"\n        className={styles.action}\n      />\n      <TaobaoCircleOutlined\n        key=\"TaobaoCircleOutlined\"\n        className={styles.action}\n      />\n      <WeiboCircleOutlined\n        key=\"WeiboCircleOutlined\"\n        className={styles.action}\n      />\n    </>\n  );\n};\n\nconst Lang = () => {\n  const { styles } = useStyles();\n\n  return (\n    <div className={styles.lang} data-lang>\n      {SelectLang && <SelectLang />}\n    </div>\n  );\n};\n\nconst LoginMessage: React.FC<{\n  content: string;\n}> = ({ content }) => {\n  return (\n    <Alert\n      style={{\n        marginBottom: 24,\n      }}\n      message={content}\n      type=\"error\"\n      showIcon\n    />\n  );\n};\n\nconst Login: React.FC = () => {\n  const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});\n  const [type, setType] = useState<string>('account');\n  const [captchaId, setCaptchaId] = useState<string>('');\n  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');\n  const { initialState, setInitialState } = useModel('@@initialState');\n  const { styles } = useStyles();\n  const { message } = App.useApp();\n  const intl = useIntl();\n\n  const fetchUserInfo = async () => {\n    const userInfo = await initialState?.fetchUserInfo?.();\n    if (userInfo) {\n      flushSync(() => {\n        setInitialState((s) => ({\n          ...s,\n          currentUser: userInfo,\n        }));\n      });\n    }\n  };\n\n  const handleSubmit = async (values: API.LoginParams) => {\n    try {\n      // 登录\n      const loginData = { \n        ...values, \n        type,\n        captchaId: captchaId || undefined,\n        captchaAnswer: captchaAnswer || undefined,\n      };\n      const response = await login(loginData);\n\n      // 处理统一的 API 响应格式\n      if (response.success && response.data) {\n        const msg = response.data;\n\n        // 保存 token 和刷新token到本地存储\n        if (msg.token && msg.refreshToken) {\n          const expiresAt = msg.expiresAt\n            ? new Date(msg.expiresAt).getTime()\n            : undefined;\n          tokenUtils.setTokens(msg.token, msg.refreshToken, expiresAt);\n        } else if (msg.token) {\n          // 兼容旧版本，只保存token\n          tokenUtils.setToken(msg.token);\n        }\n\n        const defaultLoginSuccessMessage = intl.formatMessage({\n          id: 'pages.login.success',\n          defaultMessage: '登录成功！',\n        });\n        message.success(defaultLoginSuccessMessage);\n        await fetchUserInfo();\n\n        // 使用 UmiJS history 进行客户端路由跳转，保持 SPA 特性\n        const urlParams = new URL(window.location.href).searchParams;\n        const redirect = urlParams.get('redirect');\n        history.push(redirect || '/');\n        return;\n      }\n\n      // 如果失败，处理错误信息\n      const errorMsg = response.errorMessage || '登录失败，请重试！';\n      setUserLoginState({ status: 'error', errorMessage: errorMsg });\n    } catch (error) {\n      const defaultLoginFailureMessage = intl.formatMessage({\n        id: 'pages.login.failure',\n        defaultMessage: '登录失败，请重试！',\n      });\n      console.log(error);\n      message.error(defaultLoginFailureMessage);\n    }\n  };\n  const { status, type: loginType } = userLoginState;\n\n  return (\n    <div className={styles.container}>\n      <Helmet>\n        <title>\n          {intl.formatMessage({\n            id: 'menu.login',\n            defaultMessage: '登录页',\n          })}\n          {Settings.title && ` - ${Settings.title}`}\n        </title>\n      </Helmet>\n      <Lang />\n      <div\n        style={{\n          flex: '1',\n          padding: '32px 0',\n        }}\n      >\n        <LoginForm\n          contentStyle={{\n            minWidth: 280,\n            maxWidth: '75vw',\n          }}\n          logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n          title=\"Ant Design\"\n          subTitle={intl.formatMessage({\n            id: 'pages.layouts.userLayout.title',\n          })}\n          initialValues={{\n            autoLogin: true,\n          }}\n          actions={[\n            <FormattedMessage\n              key=\"loginWith\"\n              id=\"pages.login.loginWith\"\n              defaultMessage=\"其他登录方式\"\n            />,\n            <ActionIcons key=\"icons\" />,\n          ]}\n          onFinish={async (values) => {\n            await handleSubmit(values as API.LoginParams);\n          }}\n        >\n          <Tabs\n            activeKey={type}\n            onChange={setType}\n            centered\n            items={[\n              {\n                key: 'account',\n                label: intl.formatMessage({\n                  id: 'pages.login.accountLogin.tab',\n                  defaultMessage: '账户密码登录',\n                }),\n              },\n              {\n                key: 'mobile',\n                label: intl.formatMessage({\n                  id: 'pages.login.phoneLogin.tab',\n                  defaultMessage: '手机号登录',\n                }),\n              },\n            ]}\n          />\n\n          {status === 'error' && loginType === 'account' && (\n            <LoginMessage\n              content={intl.formatMessage({\n                id: 'pages.login.accountLogin.errorMessage',\n                defaultMessage: '账户或密码错误',\n              })}\n            />\n          )}\n          {type === 'account' && (\n            <>\n              <ProFormText\n                name=\"username\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <UserOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.username.placeholder',\n                  defaultMessage: '用户名',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.username.required\"\n                        defaultMessage=\"请输入用户名!\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText.Password\n                name=\"password\"\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.password.placeholder',\n                  defaultMessage: '密码: ant.design',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.password.required\"\n                        defaultMessage=\"请输入密码！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormText\n                name=\"captchaAnswer\"\n                fieldProps={{\n                  size: 'large',\n                }}\n                rules={[\n                  {\n                    required: true,\n                    message: '请输入图形验证码！',\n                  },\n                ]}\n                render={() => (\n                  <ImageCaptcha\n                    value={captchaAnswer}\n                    onChange={setCaptchaAnswer}\n                    onCaptchaIdChange={setCaptchaId}\n                    type=\"login\"\n                    placeholder={intl.formatMessage({\n                      id: 'pages.login.imageCaptcha.placeholder',\n                      defaultMessage: '请输入图形验证码',\n                    })}\n                    size=\"large\"\n                  />\n                )}\n              />\n            </>\n          )}\n\n          {status === 'error' && loginType === 'mobile' && (\n            <LoginMessage content=\"验证码错误\" />\n          )}\n          {type === 'mobile' && (\n            <>\n              <ProFormText\n                fieldProps={{\n                  size: 'large',\n                  prefix: <MobileOutlined />,\n                }}\n                name=\"mobile\"\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.phoneNumber.placeholder',\n                  defaultMessage: '手机号',\n                })}\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.required\"\n                        defaultMessage=\"请输入手机号！\"\n                      />\n                    ),\n                  },\n                  {\n                    pattern: /^1\\d{10}$/,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.phoneNumber.invalid\"\n                        defaultMessage=\"手机号格式错误！\"\n                      />\n                    ),\n                  },\n                ]}\n              />\n              <ProFormCaptcha\n                fieldProps={{\n                  size: 'large',\n                  prefix: <LockOutlined />,\n                }}\n                captchaProps={{\n                  size: 'large',\n                }}\n                placeholder={intl.formatMessage({\n                  id: 'pages.login.captcha.placeholder',\n                  defaultMessage: '请输入验证码',\n                })}\n                captchaTextRender={(timing, count) => {\n                  if (timing) {\n                    return `${count} ${intl.formatMessage({\n                      id: 'pages.getCaptchaSecondText',\n                      defaultMessage: '获取验证码',\n                    })}`;\n                  }\n                  return intl.formatMessage({\n                    id: 'pages.login.phoneLogin.getVerificationCode',\n                    defaultMessage: '获取验证码',\n                  });\n                }}\n                name=\"captcha\"\n                rules={[\n                  {\n                    required: true,\n                    message: (\n                      <FormattedMessage\n                        id=\"pages.login.captcha.required\"\n                        defaultMessage=\"请输入验证码！\"\n                      />\n                    ),\n                  },\n                ]}\n                onGetCaptcha={async (phone) => {\n                  try {\n                    const result = await getFakeCaptcha({ phone });\n\n                    if (result.success && result.data) {\n                      // 开发环境显示验证码（生产环境应该发送短信）\n                      message.success(\n                        `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,\n                        5,\n                      );\n                      console.log(\n                        `验证码: ${result.data.captcha}, 有效期: ${result.data.expiresIn}秒`,\n                      );\n                    } else {\n                      message.error('获取验证码失败');\n                    }\n                  } catch (error) {\n                    message.error('获取验证码失败，请稍后重试');\n                    console.error('获取验证码错误:', error);\n                  }\n                }}\n              />\n            </>\n          )}\n          <div\n            style={{\n              marginBottom: 24,\n            }}\n          >\n            <ProFormCheckbox noStyle name=\"autoLogin\">\n              <FormattedMessage\n                id=\"pages.login.rememberMe\"\n                defaultMessage=\"自动登录\"\n              />\n            </ProFormCheckbox>\n            <Button\n              type=\"link\"\n              style={{\n                float: 'right',\n                padding: 0,\n                height: 'auto',\n              }}\n              disabled\n              onClick={() => {\n                // 忘记密码功能待实现\n                message.info('忘记密码功能开发中');\n              }}\n            >\n              <FormattedMessage\n                id=\"pages.login.forgotPassword\"\n                defaultMessage=\"忘记密码\"\n              />\n            </Button>\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/register\">\n                <FormattedMessage\n                  id=\"pages.login.register\"\n                  defaultMessage=\"没有账号？立即注册\"\n                />\n              </Link>\n            </div>\n          </div>\n        </LoginForm>\n      </div>\n      <Footer />\n    </div>\n  );\n};\n\nexport default Login;\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/login/index.tsx"
     },
@@ -3850,7 +3866,7 @@
       "parentId": "1",
       "id": "3",
       "absPath": "/user/register",
-      "__content": "import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';\nimport { LoginForm, ProFormText } from '@ant-design/pro-components';\nimport { history, Link } from '@umijs/max';\nimport { Alert, App } from 'antd';\nimport React, { useState } from 'react';\nimport { Footer } from '@/components';\nimport { register } from '@/services/ant-design-pro/api';\nimport { tokenUtils } from '@/utils/token';\n\nexport default function Register() {\n  const { message } = App.useApp();\n  const [registerError, setRegisterError] = useState<string>('');\n\n  const handleSubmit = async (values: API.RegisterParams) => {\n    try {\n      setRegisterError('');\n\n      const response = await register(values);\n\n      if (response.success && response.data) {\n        message.success('注册成功！已为您自动创建个人企业，正在跳转...');\n\n        // 自动登录（注册成功后）\n        setTimeout(() => {\n          history.push('/user/login');\n        }, 1500);\n\n        return;\n      }\n\n      // 注册失败\n      setRegisterError(response.errorMessage || '注册失败');\n    } catch (error: any) {\n      setRegisterError(error.message || '注册失败，请重试');\n    }\n  };\n\n  return (\n    <div\n      style={{\n        display: 'flex',\n        flexDirection: 'column',\n        height: '100vh',\n        overflow: 'auto',\n        backgroundImage:\n          \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n        backgroundSize: '100% 100%',\n      }}\n    >\n      <div\n        style={{\n          flex: 1,\n          display: 'flex',\n          alignItems: 'center',\n          justifyContent: 'center',\n          padding: '32px',\n        }}\n      >\n        <div style={{ width: '100%', maxWidth: '400px' }}>\n          <LoginForm\n            logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n            title=\"用户注册\"\n            subTitle=\"注册即自动创建您的个人企业\"\n            onFinish={async (values) => {\n              await handleSubmit(values as API.RegisterParams);\n            }}\n            submitter={{\n              searchConfig: {\n                submitText: '立即注册',\n              },\n            }}\n          >\n            {registerError && (\n              <Alert\n                style={{ marginBottom: 24 }}\n                message={registerError}\n                type=\"error\"\n                showIcon\n                closable\n                onClose={() => setRegisterError('')}\n              />\n            )}\n\n            <ProFormText\n              name=\"username\"\n              fieldProps={{\n                size: 'large',\n                prefix: <UserOutlined />,\n              }}\n              placeholder=\"用户名（全局唯一）\"\n              rules={[\n                {\n                  required: true,\n                  message: '请输入用户名！',\n                },\n                {\n                  min: 3,\n                  message: '用户名至少3个字符',\n                },\n              ]}\n            />\n\n            <ProFormText\n              name=\"email\"\n              fieldProps={{\n                size: 'large',\n                prefix: <MailOutlined />,\n              }}\n              placeholder=\"邮箱地址（可选）\"\n              rules={[\n                {\n                  type: 'email',\n                  message: '邮箱格式不正确',\n                },\n              ]}\n            />\n\n            <ProFormText.Password\n              name=\"password\"\n              fieldProps={{\n                size: 'large',\n                prefix: <LockOutlined />,\n              }}\n              placeholder=\"密码（至少6个字符）\"\n              rules={[\n                {\n                  required: true,\n                  message: '请输入密码！',\n                },\n                {\n                  min: 6,\n                  message: '密码至少6个字符',\n                },\n              ]}\n            />\n\n            <div\n              style={{\n                marginTop: 16,\n                textAlign: 'center',\n                background: '#f0f2f5',\n                padding: '12px',\n                borderRadius: '4px',\n                fontSize: '12px',\n                color: '#666',\n              }}\n            >\n              <div style={{ marginBottom: 8 }}>💡 注册成功后系统将为您：</div>\n              <div>✅ 自动创建个人企业（您是管理员）</div>\n              <div>✅ 配置默认权限和菜单</div>\n              <div>✅ 您可以邀请成员或申请加入其他企业</div>\n            </div>\n\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/login\">已有账号？立即登录</Link>\n            </div>\n          </LoginForm>\n        </div>\n      </div>\n      <Footer />\n    </div>\n  );\n}\n",
+      "__content": "import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';\nimport { LoginForm, ProFormText } from '@ant-design/pro-components';\nimport { history, Link } from '@umijs/max';\nimport { Alert, App } from 'antd';\nimport React, { useState } from 'react';\nimport { Footer } from '@/components';\nimport { register } from '@/services/ant-design-pro/api';\nimport ImageCaptcha from '@/components/ImageCaptcha';\n\nexport default function Register() {\n  const { message } = App.useApp();\n  const [registerError, setRegisterError] = useState<string>('');\n  const [captchaId, setCaptchaId] = useState<string>('');\n  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');\n\n  const handleSubmit = async (values: API.RegisterParams) => {\n    try {\n      setRegisterError('');\n\n      const response = await register({\n        ...values,\n        captchaId: captchaId || undefined,\n        captchaAnswer: captchaAnswer || undefined,\n      });\n\n      if (response.success && response.data) {\n        message.success('注册成功！已为您自动创建个人企业，正在跳转...');\n\n        // 自动登录（注册成功后）\n        setTimeout(() => {\n          history.push('/user/login');\n        }, 1500);\n\n        return;\n      }\n\n      // 注册失败\n      setRegisterError(response.errorMessage || '注册失败');\n    } catch (error: any) {\n      setRegisterError(error.message || '注册失败，请重试');\n    }\n  };\n\n  return (\n    <div\n      style={{\n        display: 'flex',\n        flexDirection: 'column',\n        height: '100vh',\n        overflow: 'auto',\n        backgroundImage:\n          \"url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')\",\n        backgroundSize: '100% 100%',\n      }}\n    >\n      <div\n        style={{\n          flex: 1,\n          display: 'flex',\n          alignItems: 'center',\n          justifyContent: 'center',\n          padding: '32px',\n        }}\n      >\n        <div style={{ width: '100%', maxWidth: '400px' }}>\n          <LoginForm\n            logo={<img alt=\"logo\" src=\"/logo.svg\" />}\n            title=\"用户注册\"\n            subTitle=\"注册即自动创建您的个人企业\"\n            onFinish={async (values) => {\n              await handleSubmit(values as API.RegisterParams);\n            }}\n            submitter={{\n              searchConfig: {\n                submitText: '立即注册',\n              },\n            }}\n          >\n            {registerError && (\n              <Alert\n                style={{ marginBottom: 24 }}\n                message={registerError}\n                type=\"error\"\n                showIcon\n                closable\n                onClose={() => setRegisterError('')}\n              />\n            )}\n\n            <ProFormText\n              name=\"username\"\n              fieldProps={{\n                size: 'large',\n                prefix: <UserOutlined />,\n              }}\n              placeholder=\"用户名（全局唯一）\"\n              rules={[\n                {\n                  required: true,\n                  message: '请输入用户名！',\n                },\n                {\n                  min: 3,\n                  message: '用户名至少3个字符',\n                },\n              ]}\n            />\n\n            <ProFormText\n              name=\"email\"\n              fieldProps={{\n                size: 'large',\n                prefix: <MailOutlined />,\n              }}\n              placeholder=\"邮箱地址（可选）\"\n              rules={[\n                {\n                  type: 'email',\n                  message: '邮箱格式不正确',\n                },\n              ]}\n            />\n\n            <ProFormText.Password\n              name=\"password\"\n              fieldProps={{\n                size: 'large',\n                prefix: <LockOutlined />,\n              }}\n              placeholder=\"密码（至少6个字符）\"\n              rules={[\n                {\n                  required: true,\n                  message: '请输入密码！',\n                },\n                {\n                  min: 6,\n                  message: '密码至少6个字符',\n                },\n              ]}\n            />\n\n            <ProFormText\n              name=\"captchaAnswer\"\n              fieldProps={{\n                size: 'large',\n              }}\n              rules={[\n                {\n                  required: true,\n                  message: '请输入图形验证码！',\n                },\n              ]}\n              render={() => (\n                <ImageCaptcha\n                  value={captchaAnswer}\n                  onChange={setCaptchaAnswer}\n                  onCaptchaIdChange={setCaptchaId}\n                  type=\"register\"\n                  placeholder=\"请输入图形验证码\"\n                  size=\"large\"\n                />\n              )}\n            />\n\n            <div\n              style={{\n                marginTop: 16,\n                textAlign: 'center',\n                background: '#f0f2f5',\n                padding: '12px',\n                borderRadius: '4px',\n                fontSize: '12px',\n                color: '#666',\n              }}\n            >\n              <div style={{ marginBottom: 8 }}>💡 注册成功后系统将为您：</div>\n              <div>✅ 自动创建个人企业（您是管理员）</div>\n              <div>✅ 配置默认权限和菜单</div>\n              <div>✅ 您可以邀请成员或申请加入其他企业</div>\n            </div>\n\n            <div style={{ textAlign: 'center', marginTop: 16 }}>\n              <Link to=\"/user/login\">已有账号？立即登录</Link>\n            </div>\n          </LoginForm>\n        </div>\n      </div>\n      <Footer />\n    </div>\n  );\n}\n",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/user/register/index.tsx"
     },
@@ -3932,7 +3948,7 @@
       "parentId": "ant-design-pro-layout",
       "id": "10",
       "absPath": "/welcome",
-      "__content": "import { PageContainer } from '@ant-design/pro-components';\nimport { useModel } from '@umijs/max';\nimport { Card, theme } from 'antd';\nimport React from 'react';\n\n/**\n * 每个单独的卡片，为了复用样式抽成了组件\n * @param param0\n * @returns\n */\nconst InfoCard: React.FC<{\n  title: string;\n  index: number;\n  desc: string;\n  href: string;\n}> = ({ title, href, index, desc }) => {\n  const { useToken } = theme;\n\n  const { token } = useToken();\n\n  return (\n    <div\n      style={{\n        backgroundColor: token.colorBgContainer,\n        boxShadow: token.boxShadow,\n        borderRadius: '8px',\n        fontSize: '14px',\n        color: token.colorTextSecondary,\n        lineHeight: '22px',\n        padding: '16px 19px',\n        minWidth: '220px',\n        flex: 1,\n      }}\n    >\n      <div\n        style={{\n          display: 'flex',\n          gap: '4px',\n          alignItems: 'center',\n        }}\n      >\n        <div\n          style={{\n            width: 48,\n            height: 48,\n            lineHeight: '22px',\n            backgroundSize: '100%',\n            textAlign: 'center',\n            padding: '8px 16px 16px 12px',\n            color: '#FFF',\n            fontWeight: 'bold',\n            backgroundImage:\n              \"url('https://gw.alipayobjects.com/zos/bmw-prod/daaf8d50-8e6d-4251-905d-676a24ddfa12.svg')\",\n          }}\n        >\n          {index}\n        </div>\n        <div\n          style={{\n            fontSize: '16px',\n            color: token.colorText,\n            paddingBottom: 8,\n          }}\n        >\n          {title}\n        </div>\n      </div>\n      <div\n        style={{\n          fontSize: '14px',\n          color: token.colorTextSecondary,\n          textAlign: 'justify',\n          lineHeight: '22px',\n          marginBottom: 8,\n        }}\n      >\n        {desc}\n      </div>\n      <a href={href} target=\"_blank\" rel=\"noreferrer\">\n        了解更多 {'>'}\n      </a>\n    </div>\n  );\n};\n\nconst Welcome: React.FC = () => {\n  const { token } = theme.useToken();\n  const { initialState } = useModel('@@initialState');\n  return (\n    <PageContainer>\n      <Card\n        style={{\n          borderRadius: 8,\n        }}\n        styles={{\n          body: {\n            backgroundImage:\n              initialState?.settings?.navTheme === 'realDark'\n                ? 'background-image: linear-gradient(75deg, #1A1B1F 0%, #191C1F 100%)'\n                : 'background-image: linear-gradient(75deg, #FBFDFF 0%, #F5F7FF 100%)',\n          },\n        }}\n      >\n        <div\n          style={{\n            backgroundPosition: '100% -30%',\n            backgroundRepeat: 'no-repeat',\n            backgroundSize: '274px auto',\n            backgroundImage:\n              \"url('https://gw.alipayobjects.com/mdn/rms_a9745b/afts/img/A*BuFmQqsB2iAAAAAAAAAAAAAAARQnAQ')\",\n          }}\n        >\n          <div\n            style={{\n              fontSize: '20px',\n              color: token.colorTextHeading,\n            }}\n          >\n            欢迎使用 Ant Design Pro\n          </div>\n          <p\n            style={{\n              fontSize: '14px',\n              color: token.colorTextSecondary,\n              lineHeight: '22px',\n              marginTop: 16,\n              marginBottom: 32,\n              width: '65%',\n            }}\n          >\n            Ant Design Pro 是一个整合了 umi，Ant Design 和 ProComponents\n            的脚手架方案。致力于在设计规范和基础组件的基础上，继续向上构建，提炼出典型模板/业务组件/配套设计资源，进一步提升企业级中后台产品设计研发过程中的『用户』和『设计者』的体验。\n          </p>\n          <div\n            style={{\n              display: 'flex',\n              flexWrap: 'wrap',\n              gap: 16,\n            }}\n          >\n            <InfoCard\n              index={1}\n              href=\"https://umijs.org/docs/introduce/introduce\"\n              title=\"了解 umi\"\n              desc=\"umi 是一个可扩展的企业级前端应用框架,umi 以路由为基础的，同时支持配置式路由和约定式路由，保证路由的功能完备，并以此进行功能扩展。\"\n            />\n            <InfoCard\n              index={2}\n              title=\"了解 ant design\"\n              href=\"https://ant.design\"\n              desc=\"antd 是基于 Ant Design 设计体系的 React UI 组件库，主要用于研发企业级中后台产品。\"\n            />\n            <InfoCard\n              index={3}\n              title=\"了解 Pro Components\"\n              href=\"https://procomponents.ant.design\"\n              desc=\"ProComponents 是一个基于 Ant Design 做了更高抽象的模板组件，以 一个组件就是一个页面为开发理念，为中后台开发带来更好的体验。\"\n            />\n          </div>\n        </div>\n      </Card>\n    </PageContainer>\n  );\n};\n\nexport default Welcome;\n",
+      "__content": "import { PageContainer } from '@ant-design/pro-components';\nimport { useModel, history } from '@umijs/max';\nimport { \n  Card, \n  Row, \n  Col, \n  Avatar, \n  Typography, \n  Space, \n  Tag,\n  Alert,\n  Timeline,\n  theme\n} from 'antd';\nimport {\n  UserOutlined,\n  TeamOutlined,\n  SafetyOutlined,\n  MenuOutlined,\n  PlusOutlined,\n  SettingOutlined,\n  BarChartOutlined,\n  ClockCircleOutlined,\n  CheckCircleOutlined,\n  ExclamationCircleOutlined,\n  RocketOutlined,\n  ThunderboltOutlined,\n  CrownOutlined,\n  GlobalOutlined\n} from '@ant-design/icons';\nimport React, { useState, useEffect } from 'react';\nimport { getUserStatistics } from '@/services/ant-design-pro/api';\nimport { getCurrentCompany } from '@/services/company';\nimport type { CurrentUser } from '@/types/unified-api';\n\nconst { Title, Text, Paragraph } = Typography;\n\n// 统计卡片组件\nconst StatCard: React.FC<{\n  title: string;\n  value: number | string;\n  icon: React.ReactNode;\n  color?: string;\n  suffix?: string;\n  loading?: boolean;\n  token?: any;\n}> = ({ title, value, icon, color = '#1890ff', suffix = '', loading = false, token }) => (\n  <Card \n    size=\"small\" \n      style={{\n      textAlign: 'center',\n      borderRadius: '12px',\n      boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',\n      border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,\n      backgroundColor: token?.colorBgContainer || '#ffffff'\n    }}\n    loading={loading}\n  >\n    <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>\n      {icon}\n    </div>\n    <div style={{ \n      fontSize: '28px', \n            fontWeight: 'bold',\n      color: token?.colorText || '#262626', \n      marginBottom: '4px' \n    }}>\n      {value}{suffix}\n        </div>\n    <div style={{ \n      fontSize: '14px', \n      color: token?.colorTextSecondary || '#8c8c8c' \n    }}>\n          {title}\n        </div>\n  </Card>\n);\n\n// 快速操作按钮组件\nconst QuickAction: React.FC<{\n  title: string;\n  description: string;\n  icon: React.ReactNode;\n  onClick: () => void;\n  color?: string;\n  disabled?: boolean;\n}> = ({ title, description, icon, onClick, color = '#1890ff', disabled = false }) => (\n  <Card\n    hoverable={!disabled}\n    size=\"small\"\n        style={{\n      textAlign: 'center',\n      borderRadius: '12px',\n      cursor: disabled ? 'not-allowed' : 'pointer',\n      opacity: disabled ? 0.6 : 1,\n      border: `2px solid ${disabled ? '#f0f0f0' : color}`,\n      background: disabled ? '#fafafa' : '#fff'\n    }}\n    onClick={disabled ? undefined : onClick}\n  >\n    <div style={{ color, fontSize: '32px', marginBottom: '12px' }}>\n      {icon}\n    </div>\n    <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>\n      {title}\n      </div>\n    <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n      {description}\n    </div>\n  </Card>\n);\n\n// 系统状态组件\nconst SystemStatus: React.FC<{\n  status: 'healthy' | 'warning' | 'error';\n  message: string;\n  lastUpdate: string;\n}> = ({ status, message, lastUpdate }) => {\n  const statusConfig = {\n    healthy: { color: '#52c41a', icon: <CheckCircleOutlined />, text: '系统正常' },\n    warning: { color: '#faad14', icon: <ExclamationCircleOutlined />, text: '系统警告' },\n    error: { color: '#ff4d4f', icon: <ExclamationCircleOutlined />, text: '系统异常' }\n  };\n\n  const config = statusConfig[status];\n  \n  let alertType: 'success' | 'warning' | 'error';\n  if (status === 'healthy') {\n    alertType = 'success';\n  } else if (status === 'warning') {\n    alertType = 'warning';\n  } else {\n    alertType = 'error';\n  }\n\n  return (\n    <Alert\n      message={\n        <Space>\n          {config.icon}\n          <span>{config.text}</span>\n          <Text type=\"secondary\">- {message}</Text>\n        </Space>\n      }\n      description={`最后更新: ${lastUpdate}`}\n      type={alertType}\n      showIcon\n      style={{ borderRadius: '8px' }}\n    />\n  );\n};\n\nconst Welcome: React.FC = () => {\n  const { token } = theme.useToken();\n  const { initialState } = useModel('@@initialState');\n  const currentUser = initialState?.currentUser as CurrentUser;\n  \n  const [statistics, setStatistics] = useState<any>(null);\n  const [companyInfo, setCompanyInfo] = useState<any>(null);\n  const [loading, setLoading] = useState(true);\n  const [systemStatus] = useState<'healthy' | 'warning' | 'error'>('healthy');\n\n  // 获取统计数据\n  const fetchStatistics = async () => {\n    try {\n      setLoading(true);\n      const [statsRes, companyRes] = await Promise.all([\n        getUserStatistics(),\n        getCurrentCompany()\n      ]);\n      \n      if (statsRes.success) {\n        setStatistics(statsRes.data);\n      }\n      \n      if (companyRes.success) {\n        setCompanyInfo(companyRes.data);\n      }\n    } catch (error) {\n      console.error('获取统计数据失败:', error);\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    fetchStatistics();\n  }, []);\n\n  // 获取当前时间问候语\n  const getGreeting = () => {\n    const hour = new Date().getHours();\n    if (hour < 6) return '夜深了';\n    if (hour < 12) return '早上好';\n    if (hour < 14) return '中午好';\n    if (hour < 18) return '下午好';\n    if (hour < 22) return '晚上好';\n    return '夜深了';\n  };\n\n  // 获取用户角色标签\n  const getUserRoleTags = () => {\n    if (!currentUser?.roles) return [];\n    \n    return currentUser.roles.map(role => {\n      const isAdmin = role === 'admin' || role === '管理员';\n      const tagColor = isAdmin ? 'red' : 'blue';\n      const tagIcon = isAdmin ? <CrownOutlined /> : <UserOutlined />;\n      \n      return (\n        <Tag \n          key={role} \n          color={tagColor} \n          icon={tagIcon}\n        >\n          {role}\n        </Tag>\n      );\n    });\n  };\n\n  // 快速操作处理\n  const handleQuickAction = (action: string) => {\n    switch (action) {\n      case 'user-management':\n        history.push('/system/user-management');\n        break;\n      case 'role-management':\n        history.push('/system/role-management');\n        break;\n      case 'company-settings':\n        history.push('/system/company-settings');\n        break;\n      case 'account-center':\n        history.push('/account/center');\n        break;\n      default:\n        break;\n    }\n  };\n\n  return (\n    <PageContainer\n      title={false}\n      style={{ background: 'transparent' }}\n    >\n      <div style={{ padding: '0 24px' }}>\n        {/* 个性化欢迎区域 */}\n      <Card\n        style={{\n            marginBottom: '24px',\n            borderRadius: '16px',\n            background: token.colorBgContainer === '#ffffff' \n              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'\n              : 'linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%)',\n            border: 'none',\n            color: 'white',\n            boxShadow: token.boxShadow\n          }}\n          styles={{ body: { padding: '32px' } }}\n        >\n          <Row align=\"middle\" gutter={24}>\n            <Col>\n              <Avatar \n                size={80} \n                icon={<UserOutlined />} \n                src={currentUser?.avatar}\n            style={{\n                  backgroundColor: 'rgba(255,255,255,0.2)',\n                  border: '3px solid rgba(255,255,255,0.3)'\n                }}\n              />\n            </Col>\n            <Col flex={1}>\n              <Title level={2} style={{ color: 'white', margin: 0 }}>\n                {getGreeting()}，{currentUser?.displayName || currentUser?.username || '用户'}！\n              </Title>\n              <Paragraph style={{ color: 'rgba(255,255,255,0.8)', margin: '8px 0 16px 0' }}>\n                欢迎回到 Aspire Admin Platform 企业级管理平台\n                {companyInfo?.name && ` - ${companyInfo.name}`}\n              </Paragraph>\n              <Space wrap>\n                {getUserRoleTags()}\n                <Tag color=\"green\" icon={<GlobalOutlined />}>\n                  在线\n                </Tag>\n              </Space>\n            </Col>\n            <Col>\n              <Space direction=\"vertical\" size=\"large\">\n                <div style={{ textAlign: 'center' }}>\n                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>\n                    {new Date().toLocaleDateString('zh-CN', { \n                      year: 'numeric', \n                      month: 'long', \n                      day: 'numeric' \n                    })}\n                  </div>\n                  <div style={{ fontSize: '14px', opacity: 0.8 }}>\n                    {new Date().toLocaleDateString('zh-CN', { weekday: 'long' })}\n                  </div>\n          </div>\n              </Space>\n            </Col>\n          </Row>\n        </Card>\n\n        {/* 系统状态 */}\n        <SystemStatus\n          status={systemStatus}\n          message=\"所有服务运行正常\"\n          lastUpdate={new Date().toLocaleTimeString('zh-CN')}\n        />\n\n        <div style={{ margin: '24px 0' }} />\n\n        {/* 统计概览 */}\n        <Card \n          title={\n            <Space>\n              <BarChartOutlined />\n              <span>系统概览</span>\n            </Space>\n          }\n          style={{ marginBottom: '24px', borderRadius: '12px' }}\n        >\n          <Row gutter={[16, 16]}>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"总用户数\"\n                value={statistics?.totalUsers || 0}\n                icon={<TeamOutlined />}\n                color={token.colorPrimary}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"活跃用户\"\n                value={statistics?.activeUsers || 0}\n                icon={<ThunderboltOutlined />}\n                color={token.colorSuccess}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"管理员\"\n                value={statistics?.adminUsers || 0}\n                icon={<CrownOutlined />}\n                color={token.colorWarning}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"今日新增\"\n                value={statistics?.newUsersToday || 0}\n                icon={<RocketOutlined />}\n                color={token.colorError}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n          </Row>\n        </Card>\n\n        <Row gutter={[24, 24]}>\n          {/* 快速操作 */}\n          <Col xs={24} lg={12}>\n            <Card \n              title={\n                <Space>\n                  <RocketOutlined />\n                  <span>快速操作</span>\n                </Space>\n              }\n              style={{ borderRadius: '12px' }}\n            >\n              <Row gutter={[16, 16]}>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"用户管理\"\n                    description=\"管理系统用户\"\n                    icon={<TeamOutlined />}\n                    onClick={() => handleQuickAction('user-management')}\n                    color=\"#1890ff\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"角色管理\"\n                    description=\"配置用户角色\"\n                    icon={<SafetyOutlined />}\n                    onClick={() => handleQuickAction('role-management')}\n                    color=\"#52c41a\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"企业设置\"\n                    description=\"配置企业信息\"\n                    icon={<SettingOutlined />}\n                    onClick={() => handleQuickAction('company-settings')}\n                    color=\"#faad14\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"个人中心\"\n                    description=\"管理个人信息\"\n                    icon={<UserOutlined />}\n                    onClick={() => handleQuickAction('account-center')}\n                    color=\"#722ed1\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"系统菜单\"\n                    description=\"配置系统菜单\"\n                    icon={<MenuOutlined />}\n                    onClick={() => handleQuickAction('menu-management')}\n                    color=\"#13c2c2\"\n                    disabled={!currentUser?.roles?.includes('admin')}\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"添加用户\"\n                    description=\"创建新用户\"\n                    icon={<PlusOutlined />}\n                    onClick={() => handleQuickAction('add-user')}\n                    color=\"#eb2f96\"\n                    disabled={!currentUser?.roles?.includes('admin')}\n                  />\n                </Col>\n              </Row>\n            </Card>\n          </Col>\n\n          {/* 最近活动 */}\n          <Col xs={24} lg={12}>\n            <Card \n              title={\n                <Space>\n                  <ClockCircleOutlined />\n                  <span>最近活动</span>\n                </Space>\n              }\n              style={{ borderRadius: '12px' }}\n            >\n              <Timeline\n                items={[\n                  {\n                    color: 'green',\n                    children: (\n                      <div>\n                        <Text strong>系统启动</Text>\n                        <br />\n                        <Text type=\"secondary\">系统已成功启动并运行</Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n                        </div>\n                      </div>\n                    ),\n                  },\n                  {\n                    color: 'blue',\n                    children: (\n                      <div>\n                        <Text strong>用户登录</Text>\n                        <br />\n                        <Text type=\"secondary\">\n                          {currentUser?.displayName || currentUser?.username} 已登录系统\n                        </Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n                        </div>\n                      </div>\n                    ),\n                  },\n                  {\n                    color: 'orange',\n                    children: (\n                      <div>\n                        <Text strong>数据同步</Text>\n                        <br />\n                        <Text type=\"secondary\">用户权限数据已同步</Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n          </div>\n        </div>\n                    ),\n                  },\n                ]}\n              />\n            </Card>\n          </Col>\n        </Row>\n\n        {/* 系统信息 */}\n        <Card \n          title=\"系统信息\"\n          style={{ marginTop: '24px', borderRadius: '12px' }}\n        >\n          <Row gutter={[24, 16]}>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>\n                  .NET 9\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>后端框架</div>\n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>\n                  React 19\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>前端框架</div>\n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>\n                  MongoDB\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>数据库</div>\n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#722ed1' }}>\n                  Aspire\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>微服务编排</div>\n              </div>\n            </Col>\n          </Row>\n      </Card>\n      </div>\n    </PageContainer>\n  );\n};\n\nexport default Welcome;",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/Welcome.tsx"
     },
@@ -3981,83 +3997,17 @@
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/company/settings.tsx"
     },
     "15": {
-      "path": "/data-platform/data-source",
-      "hideInMenu": true,
-      "file": "@/pages/data-platform/data-source/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "15",
-      "absPath": "/data-platform/data-source",
-      "__content": "import React, { useRef, useState } from 'react';\nimport { PlusOutlined } from '@ant-design/icons';\nimport type {\n  ActionType,\n  ProColumns,\n  ProFormInstance,\n} from '@ant-design/pro-components';\nimport { PageContainer, ProTable } from '@ant-design/pro-components';\nimport { Button, message, Popconfirm, Space } from 'antd';\nimport { DataSourceType, DataSourceStatus } from './types';\nimport {\n  getDataSourceList,\n  testDataSource,\n  deleteDataSource,\n  createDataSource,\n  updateDataSource,\n} from './service';\nimport DataSourceForm from './components/DataSourceForm';\n\nconst DataSourceList: React.FC = () => {\n  const [createModalOpen, handleCreateModalOpen] = useState<boolean>(false);\n  const [updateModalOpen, handleUpdateModalOpen] = useState<boolean>(false);\n  const [currentRow, setCurrentRow] = useState<API.DataSource>();\n  const actionRef = useRef<ActionType>();\n  const formRef = useRef<ProFormInstance>();\n\n  const dataSourceTypeOptions = [\n    { label: 'MySQL', value: DataSourceType.MySql },\n    { label: 'PostgreSQL', value: DataSourceType.PostgreSQL },\n    { label: 'Oracle', value: DataSourceType.Oracle },\n    { label: 'MongoDB', value: DataSourceType.MongoDB },\n    { label: 'REST API', value: DataSourceType.RestApi },\n    { label: 'IoT设备', value: DataSourceType.IoT },\n    { label: '日志文件', value: DataSourceType.LogFile },\n    { label: '消息队列', value: DataSourceType.MessageQueue },\n  ];\n\n  const statusOptions = [\n    { label: '活跃', value: DataSourceStatus.Active, color: 'green' },\n    { label: '离线', value: DataSourceStatus.Offline, color: 'red' },\n    { label: '错误', value: DataSourceStatus.Error, color: 'red' },\n    { label: '测试中', value: DataSourceStatus.Testing, color: 'blue' },\n  ];\n\n  const handleTestConnection = async (record: API.DataSource) => {\n    try {\n      const result = await testDataSource(record.id);\n      if (result.success) {\n        message.success('连接测试成功');\n        actionRef.current?.reload();\n      } else {\n        message.error(`连接测试失败: ${result.error}`);\n      }\n    } catch (_error) {\n      message.error('连接测试失败');\n    }\n  };\n\n  const handleDelete = async (record: API.DataSource) => {\n    try {\n      const result = await deleteDataSource(record.id);\n      if (result.success) {\n        message.success('删除成功');\n        actionRef.current?.reload();\n      } else {\n        message.error(`删除失败: ${result.error}`);\n      }\n    } catch (_error) {\n      message.error('删除失败');\n    }\n  };\n\n  const columns: ProColumns<API.DataSource>[] = [\n    {\n      title: '名称',\n      dataIndex: 'name',\n      tip: '数据源名称',\n      formItemProps: {\n        rules: [\n          {\n            required: true,\n            message: '数据源名称为必填项',\n          },\n        ],\n      },\n    },\n    {\n      title: '标题',\n      dataIndex: 'title',\n      valueType: 'text',\n    },\n    {\n      title: '类型',\n      dataIndex: 'dataSourceType',\n      valueType: 'select',\n      valueEnum: Object.fromEntries(\n        dataSourceTypeOptions.map((item) => [item.value, { text: item.label }]),\n      ),\n      render: (_, record) => {\n        const option = dataSourceTypeOptions.find(\n          (opt) => opt.value === record.dataSourceType,\n        );\n        return option ? (\n          <Tag color=\"blue\">{option.label}</Tag>\n        ) : (\n          record.dataSourceType\n        );\n      },\n    },\n    {\n      title: '状态',\n      dataIndex: 'status',\n      valueType: 'select',\n      valueEnum: Object.fromEntries(\n        statusOptions.map((item) => [item.value, { text: item.label }]),\n      ),\n      render: (_, record) => {\n        const option = statusOptions.find((opt) => opt.value === record.status);\n        return option ? (\n          <Tag color={option.color}>{option.label}</Tag>\n        ) : (\n          record.status\n        );\n      },\n    },\n    {\n      title: '最后测试时间',\n      dataIndex: 'lastTestedAt',\n      valueType: 'dateTime',\n      search: false,\n    },\n    {\n      title: '创建时间',\n      dataIndex: 'createdAt',\n      valueType: 'dateTime',\n      search: false,\n    },\n    {\n      title: '操作',\n      dataIndex: 'option',\n      valueType: 'option',\n      render: (_, record) => [\n        <Button\n          key=\"test\"\n          type=\"link\"\n          size=\"small\"\n          onClick={() => handleTestConnection(record)}\n          loading={record.status === DataSourceStatus.Testing}\n        >\n          测试连接\n        </Button>,\n        <Button\n          key=\"edit\"\n          type=\"link\"\n          size=\"small\"\n          onClick={() => {\n            setCurrentRow(record);\n            handleUpdateModalOpen(true);\n          }}\n        >\n          编辑\n        </Button>,\n        <Popconfirm\n          key=\"delete\"\n          title=\"确定要删除这个数据源吗？\"\n          description=\"删除后数据源将无法恢复\"\n          onConfirm={() => handleDelete(record)}\n          okText=\"确定\"\n          cancelText=\"取消\"\n        >\n          <Button type=\"link\" size=\"small\" danger>\n            删除\n          </Button>\n        </Popconfirm>,\n      ],\n    },\n  ];\n\n  return (\n    <PageContainer\n      header={{\n        title: '数据源管理',\n        subTitle: '管理数据中台的数据源连接配置',\n      }}\n    >\n      <ProTable<API.DataSource, API.PageParams>\n        headerTitle=\"数据源列表\"\n        actionRef={actionRef}\n        rowKey=\"id\"\n        search={{\n          labelWidth: 120,\n        }}\n        toolBarRender={() => [\n          <Button\n            type=\"primary\"\n            key=\"primary\"\n            onClick={() => {\n              handleCreateModalOpen(true);\n            }}\n          >\n            <PlusOutlined /> 新建数据源\n          </Button>,\n        ]}\n        request={async (params, _sort, _filter) => {\n          const response = await getDataSourceList({\n            ...params,\n            keyword: params.name,\n            dataSourceType: params.dataSourceType,\n            status: params.status,\n          });\n          return {\n            data: response.data.list,\n            success: response.success,\n            total: response.data.total,\n          };\n        }}\n        columns={columns}\n      />\n\n      <DataSourceForm\n        formRef={formRef}\n        open={createModalOpen}\n        onOpenChange={handleCreateModalOpen}\n        onSubmit={async (value) => {\n          try {\n            await createDataSource(value);\n            message.success('创建成功');\n            handleCreateModalOpen(false);\n            actionRef.current?.reload();\n          } catch (_error) {\n            message.error('创建失败');\n          }\n        }}\n      />\n\n      <DataSourceForm\n        formRef={formRef}\n        open={updateModalOpen}\n        onOpenChange={handleUpdateModalOpen}\n        onSubmit={async (value) => {\n          try {\n            if (currentRow?.id) {\n              await updateDataSource({ id: currentRow.id }, value);\n              message.success('更新成功');\n            }\n            handleUpdateModalOpen(false);\n            setCurrentRow(undefined);\n            actionRef.current?.reload();\n          } catch (_error) {\n            message.error('更新失败');\n          }\n        }}\n        current={currentRow}\n      />\n    </PageContainer>\n  );\n};\n\nexport default DataSourceList;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/data-platform/data-source/index.tsx"
-    },
-    "16": {
-      "path": "/data-platform/pipeline",
-      "hideInMenu": true,
-      "file": "@/pages/data-platform/pipeline/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "16",
-      "absPath": "/data-platform/pipeline",
-      "__content": "import React, { useRef, useState } from 'react';\nimport {\n  PlusOutlined,\n  PlayCircleOutlined,\n  PauseCircleOutlined,\n} from '@ant-design/icons';\nimport type { ActionType, ProColumns } from '@ant-design/pro-components';\nimport { PageContainer, ProTable } from '@ant-design/pro-components';\nimport { Button, message, Popconfirm, Space, Tag, Tooltip } from 'antd';\nimport { history } from '@umijs/max';\nimport {\n  getPipelineList,\n  executePipeline,\n  pausePipeline,\n  resumePipeline,\n} from './service';\n\nconst DataPipelineList: React.FC = () => {\n  const [createModalOpen, handleCreateModalOpen] = useState<boolean>(false);\n  const [updateModalOpen, handleUpdateModalOpen] = useState<boolean>(false);\n  const [currentRow, setCurrentRow] = useState<API.DataPipeline>();\n  const actionRef = useRef<ActionType>();\n\n  const handleExecute = async (record: API.DataPipeline) => {\n    try {\n      await executePipeline({ id: record.id! });\n      message.success('管道执行成功');\n      actionRef.current?.reload();\n    } catch (error) {\n      message.error('管道执行失败');\n    }\n  };\n\n  const handlePause = async (record: API.DataPipeline) => {\n    try {\n      await pausePipeline({ id: record.id! });\n      message.success('管道已暂停');\n      actionRef.current?.reload();\n    } catch (error) {\n      message.error('暂停失败');\n    }\n  };\n\n  const handleResume = async (record: API.DataPipeline) => {\n    try {\n      await resumePipeline({ id: record.id! });\n      message.success('管道已恢复');\n      actionRef.current?.reload();\n    } catch (error) {\n      message.error('恢复失败');\n    }\n  };\n\n  const columns: ProColumns<API.DataPipeline>[] = [\n    {\n      title: '名称',\n      dataIndex: 'name',\n      tip: '数据管道名称',\n    },\n    {\n      title: '标题',\n      dataIndex: 'title',\n      valueType: 'text',\n    },\n    {\n      title: '调度策略',\n      dataIndex: 'scheduleStrategy',\n      valueType: 'select',\n      valueEnum: {\n        1: { text: '手动触发', status: 'Default' },\n        2: { text: '定时调度', status: 'Processing' },\n        3: { text: '事件触发', status: 'Success' },\n        4: { text: '实时流处理', status: 'Error' },\n      },\n    },\n    {\n      title: '状态',\n      dataIndex: 'status',\n      valueType: 'select',\n      valueEnum: {\n        1: { text: '草稿', status: 'Default' },\n        2: { text: '活跃', status: 'Processing' },\n        3: { text: '暂停', status: 'Warning' },\n        4: { text: '错误', status: 'Error' },\n        5: { text: '运行中', status: 'Success' },\n      },\n    },\n    {\n      title: '执行次数',\n      dataIndex: 'executionCount',\n      search: false,\n    },\n    {\n      title: '最后执行时间',\n      dataIndex: 'lastExecutedAt',\n      valueType: 'dateTime',\n      search: false,\n    },\n    {\n      title: '操作',\n      dataIndex: 'option',\n      valueType: 'option',\n      render: (_, record) => [\n        <Button\n          key=\"execute\"\n          type=\"link\"\n          size=\"small\"\n          icon={<PlayCircleOutlined />}\n          onClick={() => handleExecute(record)}\n        >\n          执行\n        </Button>,\n        <Button\n          key=\"pause\"\n          type=\"link\"\n          size=\"small\"\n          icon={<PauseCircleOutlined />}\n          onClick={() => handlePause(record)}\n        >\n          暂停\n        </Button>,\n        <Button\n          key=\"resume\"\n          type=\"link\"\n          size=\"small\"\n          onClick={() => handleResume(record)}\n        >\n          恢复\n        </Button>,\n        <Button\n          key=\"edit\"\n          type=\"link\"\n          size=\"small\"\n          onClick={() => {\n            setCurrentRow(record);\n            handleUpdateModalOpen(true);\n          }}\n        >\n          编辑\n        </Button>,\n      ],\n    },\n  ];\n\n  return (\n    <PageContainer\n      header={{\n        title: '数据管道',\n        subTitle: '管理和监控数据管道执行',\n      }}\n    >\n      <ProTable<API.DataPipeline, API.PageParams>\n        headerTitle=\"数据管道列表\"\n        actionRef={actionRef}\n        rowKey=\"id\"\n        search={{\n          labelWidth: 120,\n        }}\n        toolBarRender={() => [\n          <Button\n            type=\"primary\"\n            key=\"primary\"\n            onClick={() => {\n              handleCreateModalOpen(true);\n            }}\n          >\n            <PlusOutlined /> 新建管道\n          </Button>,\n        ]}\n        request={async (params, sort, filter) => {\n          const response = await getPipelineList({\n            ...params,\n            keyword: params.name,\n            status: params.status,\n          });\n          return {\n            data: response.data.list,\n            success: response.success,\n            total: response.data.total,\n          };\n        }}\n        columns={columns}\n      />\n    </PageContainer>\n  );\n};\n\nexport default DataPipelineList;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/data-platform/pipeline/index.tsx"
-    },
-    "17": {
-      "path": "/data-platform/quality",
-      "hideInMenu": true,
-      "file": "@/pages/data-platform/quality/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "17",
-      "absPath": "/data-platform/quality",
-      "__content": "import React, { useState, useEffect } from 'react';\nimport { PageContainer } from '@ant-design/pro-components';\nimport { Card, Row, Col, Statistic, Progress, Button, Space, Tag } from 'antd';\nimport { ReloadOutlined } from '@ant-design/icons';\nimport { getOverallQualityOverview } from './service';\n\nconst DataQualityPage: React.FC = () => {\n  const [overview, setOverview] = useState<any>({});\n  const [loading, setLoading] = useState(false);\n\n  const loadData = async () => {\n    setLoading(true);\n    try {\n      const response = await getOverallQualityOverview();\n      if (response.success) {\n        setOverview(response.data);\n      }\n    } catch (error) {\n      console.error('加载质量概览失败:', error);\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    loadData();\n  }, []);\n\n  return (\n    <PageContainer\n      header={{\n        title: '数据质量',\n        subTitle: '监控和管理数据质量',\n        extra: [\n          <Button\n            key=\"refresh\"\n            icon={<ReloadOutlined />}\n            onClick={loadData}\n            loading={loading}\n          >\n            刷新\n          </Button>,\n        ],\n      }}\n    >\n      <Row gutter={16}>\n        <Col span={6}>\n          <Card>\n            <Statistic\n              title=\"质量规则总数\"\n              value={overview.totalRules || 0}\n              loading={loading}\n            />\n          </Card>\n        </Col>\n        <Col span={6}>\n          <Card>\n            <Statistic\n              title=\"启用规则\"\n              value={overview.enabledRules || 0}\n              loading={loading}\n            />\n          </Card>\n        </Col>\n        <Col span={6}>\n          <Card>\n            <Statistic\n              title=\"总检查次数\"\n              value={overview.totalChecks || 0}\n              loading={loading}\n            />\n          </Card>\n        </Col>\n        <Col span={6}>\n          <Card>\n            <Statistic\n              title=\"整体通过率\"\n              value={overview.overallPassRate || 0}\n              suffix=\"%\"\n              precision={2}\n              loading={loading}\n            />\n          </Card>\n        </Col>\n      </Row>\n\n      <Row gutter={16} style={{ marginTop: 16 }}>\n        <Col span={12}>\n          <Card title=\"检查结果统计\">\n            <Space direction=\"vertical\" style={{ width: '100%' }}>\n              <div>\n                <Tag color=\"green\">通过检查: {overview.passedChecks || 0}</Tag>\n                <Tag color=\"red\">失败检查: {overview.failedChecks || 0}</Tag>\n              </div>\n              <Progress\n                percent={overview.overallPassRate || 0}\n                status={\n                  overview.overallPassRate >= 90\n                    ? 'success'\n                    : overview.overallPassRate >= 70\n                      ? 'normal'\n                      : 'exception'\n                }\n                strokeColor={{\n                  '0%': '#108ee9',\n                  '100%': '#87d068',\n                }}\n              />\n            </Space>\n          </Card>\n        </Col>\n        <Col span={12}>\n          <Card title=\"数据质量趋势\">\n            <div style={{ padding: 24, textAlign: 'center', color: '#666' }}>\n              <p>质量趋势图表功能开发中...</p>\n              <p>\n                当前整体质量:{' '}\n                <Tag color=\"blue\">{overview.overallPassRate || 0}%</Tag>\n              </p>\n            </div>\n          </Card>\n        </Col>\n      </Row>\n    </PageContainer>\n  );\n};\n\nexport default DataQualityPage;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/data-platform/quality/index.tsx"
-    },
-    "18": {
-      "path": "/data-platform/query",
-      "hideInMenu": true,
-      "file": "@/pages/data-platform/query/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "18",
-      "absPath": "/data-platform/query",
-      "__content": "import React from 'react';\nimport { PageContainer } from '@ant-design/pro-components';\nimport { Card, Button, Space } from 'antd';\n\nconst DataQueryPage: React.FC = () => {\n  return (\n    <PageContainer\n      header={{\n        title: '数据查询',\n        subTitle: '查询和分析数据',\n      }}\n    >\n      <Card title=\"数据查询工具\">\n        <Space>\n          <Button type=\"primary\">新建查询</Button>\n          <Button>保存查询</Button>\n          <Button>导出结果</Button>\n        </Space>\n        <div\n          style={{\n            marginTop: 16,\n            padding: 24,\n            background: '#f5f5f5',\n            borderRadius: 6,\n          }}\n        >\n          <p>数据中台查询功能开发中，敬请期待...</p>\n        </div>\n      </Card>\n    </PageContainer>\n  );\n};\n\nexport default DataQueryPage;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/data-platform/query/index.tsx"
-    },
-    "19": {
-      "path": "/data-platform/report",
-      "hideInMenu": true,
-      "file": "@/pages/data-platform/report/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "19",
-      "absPath": "/data-platform/report",
-      "__content": "import React from 'react';\nimport { PageContainer } from '@ant-design/pro-components';\nimport { Card, Button, Space } from 'antd';\n\nconst DataReportPage: React.FC = () => {\n  return (\n    <PageContainer\n      header={{\n        title: '数据报表',\n        subTitle: '创建和管理数据报表',\n      }}\n    >\n      <Card title=\"报表管理\">\n        <Space>\n          <Button type=\"primary\">新建报表</Button>\n          <Button>报表模板</Button>\n          <Button>导出报表</Button>\n        </Space>\n        <div\n          style={{\n            marginTop: 16,\n            padding: 24,\n            background: '#f5f5f5',\n            borderRadius: 6,\n          }}\n        >\n          <p>数据中台报表功能开发中，敬请期待...</p>\n        </div>\n      </Card>\n    </PageContainer>\n  );\n};\n\nexport default DataReportPage;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/data-platform/report/index.tsx"
-    },
-    "20": {
-      "path": "/data-platform/monitor",
-      "hideInMenu": true,
-      "file": "@/pages/data-platform/monitor/index.tsx",
-      "parentId": "ant-design-pro-layout",
-      "id": "20",
-      "absPath": "/data-platform/monitor",
-      "__content": "import React, { useState, useEffect } from 'react';\nimport { PageContainer } from '@ant-design/pro-components';\nimport { Card, Row, Col, Statistic, Button, Space, Table, Tag } from 'antd';\nimport { ReloadOutlined, ExclamationCircleOutlined } from '@ant-design/icons';\nimport {\n  getTaskStatistics,\n  getActiveAlerts,\n  getSystemMetrics,\n} from './service';\n\nconst TaskMonitorPage: React.FC = () => {\n  const [statistics, setStatistics] = useState<any>({});\n  const [alerts, setAlerts] = useState<any[]>([]);\n  const [metrics, setMetrics] = useState<any>({});\n  const [loading, setLoading] = useState(false);\n\n  const loadData = async () => {\n    setLoading(true);\n    try {\n      const [statsRes, alertsRes, metricsRes] = await Promise.all([\n        getTaskStatistics(),\n        getActiveAlerts(),\n        getSystemMetrics(),\n      ]);\n\n      if (statsRes.success) setStatistics(statsRes.data);\n      if (alertsRes.success) setAlerts(alertsRes.data);\n      if (metricsRes.success) setMetrics(metricsRes.data);\n    } catch (error) {\n      console.error('加载监控数据失败:', error);\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    loadData();\n    // 每30秒刷新一次数据\n    const interval = setInterval(loadData, 30000);\n    return () => clearInterval(interval);\n  }, []);\n\n  const alertColumns = [\n    {\n      title: '告警规则',\n      dataIndex: 'ruleName',\n      key: 'ruleName',\n    },\n    {\n      title: '严重程度',\n      dataIndex: 'severity',\n      key: 'severity',\n      render: (severity: number) => {\n        const severityMap = {\n          1: { text: '信息', color: 'blue' },\n          2: { text: '警告', color: 'orange' },\n          3: { text: '错误', color: 'red' },\n          4: { text: '严重', color: 'purple' },\n        };\n        const config = severityMap[severity as keyof typeof severityMap] || {\n          text: '未知',\n          color: 'default',\n        };\n        return <Tag color={config.color}>{config.text}</Tag>;\n      },\n    },\n    {\n      title: '消息',\n      dataIndex: 'message',\n      key: 'message',\n    },\n    {\n      title: '触发时间',\n      dataIndex: 'triggeredAt',\n      key: 'triggeredAt',\n      render: (time: string) => new Date(time).toLocaleString(),\n    },\n  ];\n\n  return (\n    <PageContainer\n      header={{\n        title: '任务监控',\n        subTitle: '监控数据管道和任务执行状态',\n        extra: [\n          <Button\n            key=\"refresh\"\n            icon={<ReloadOutlined />}\n            onClick={loadData}\n            loading={loading}\n          >\n            刷新\n          </Button>,\n        ],\n      }}\n    >\n      <Row gutter={16}>\n        <Col span={6}>\n          <Card>\n            <Statistic\n              title=\"运行中任务\"\n              value={statistics.runningTasks || 0}\n              loading={loading}\n            />\n          </Card>\n        </Col>\n        <Col span={6}>\n          <Card>\n            <Statistic\n              title=\"已完成任务\"\n              value={statistics.completedTasks || 0}\n              loading={loading}\n            />\n          </Card>\n        </Col>\n        <Col span={6}>\n          <Card>\n            <Statistic\n              title=\"失败任务\"\n              value={statistics.failedTasks || 0}\n              loading={loading}\n            />\n          </Card>\n        </Col>\n        <Col span={6}>\n          <Card>\n            <Statistic\n              title=\"成功率\"\n              value={statistics.successRate || 0}\n              suffix=\"%\"\n              precision={2}\n              loading={loading}\n            />\n          </Card>\n        </Col>\n      </Row>\n\n      <Row gutter={16} style={{ marginTop: 16 }}>\n        <Col span={8}>\n          <Card title=\"系统指标\">\n            <Space direction=\"vertical\" style={{ width: '100%' }}>\n              <div>CPU使用率: {metrics.cpuUsage?.toFixed(2) || 0}%</div>\n              <div>内存使用率: {metrics.memoryUsage?.toFixed(2) || 0}%</div>\n              <div>磁盘使用率: {metrics.diskUsage?.toFixed(2) || 0}%</div>\n              <div>活跃连接: {metrics.activeConnections || 0}</div>\n            </Space>\n          </Card>\n        </Col>\n        <Col span={16}>\n          <Card\n            title={\n              <Space>\n                <ExclamationCircleOutlined />\n                活跃告警\n                <Tag color=\"red\">{alerts.length}</Tag>\n              </Space>\n            }\n          >\n            <Table\n              dataSource={alerts}\n              columns={alertColumns}\n              rowKey=\"id\"\n              pagination={false}\n              size=\"small\"\n              locale={{ emptyText: '暂无活跃告警' }}\n            />\n          </Card>\n        </Col>\n      </Row>\n    </PageContainer>\n  );\n};\n\nexport default TaskMonitorPage;\n",
-      "__isJSFile": true,
-      "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/data-platform/monitor/index.tsx"
-    },
-    "21": {
       "path": "/",
       "redirect": "/welcome",
       "parentId": "ant-design-pro-layout",
-      "id": "21",
+      "id": "15",
       "absPath": "/"
     },
-    "22": {
+    "16": {
       "path": "*",
       "layout": false,
       "file": "@/pages/404.tsx",
-      "id": "22",
+      "id": "16",
       "absPath": "/*",
       "__content": "import { history, useIntl } from '@umijs/max';\nimport { Button, Card, Result } from 'antd';\nimport React from 'react';\n\nconst NoFoundPage: React.FC = () => (\n  <Card variant=\"borderless\">\n    <Result\n      status=\"404\"\n      title=\"404\"\n      subTitle={useIntl().formatMessage({ id: 'pages.404.subTitle' })}\n      extra={\n        <Button type=\"primary\" onClick={() => history.push('/')}>\n          {useIntl().formatMessage({ id: 'pages.404.buttonText' })}\n        </Button>\n      }\n    />\n  </Card>\n);\n\nexport default NoFoundPage;\n",
       "__isJSFile": true,
@@ -4076,7 +4026,7 @@
   "hasSrcDir": true,
   "npmClient": "cnpm",
   "umi": {
-    "version": "4.5.2",
+    "version": "4.5.3",
     "name": "Umi Max",
     "importSource": "@umijs/max",
     "cliName": "max"
@@ -4121,7 +4071,7 @@
   "faviconFiles": [],
   "antd": {
     "pkgPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/antd",
-    "version": "5.27.5"
+    "version": "5.27.6"
   },
   "pluginLayout": {
     "pkgPath": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@ant-design/pro-components",

@@ -130,18 +130,47 @@ declare namespace API {
     message?: string;
   };
 
+  // 图形验证码结果
+  type ImageCaptchaResult = {
+    captchaId: string;
+    imageData: string;
+    expiresIn: number;
+  };
+
+  // 验证图形验证码请求
+  type VerifyImageCaptchaRequest = {
+    captchaId: string;
+    answer: string;
+    type: 'login' | 'register';
+  };
+
+  // 验证图形验证码响应
+  type VerifyImageCaptchaResponse = {
+    success: boolean;
+    data: {
+      valid: boolean;
+    };
+    message?: string;
+  };
+
   type LoginParams = {
     // v3.1: 移除 companyCode，用户名全局唯一
     username?: string;
     password?: string;
     autoLogin?: boolean;
     type?: string;
+    // 图形验证码字段
+    captchaId?: string;
+    captchaAnswer?: string;
   };
 
   type RegisterParams = {
     username?: string;
     password?: string;
     email?: string;
+    // 图形验证码字段
+    captchaId?: string;
+    captchaAnswer?: string;
   };
 
   type RegisterResult = {

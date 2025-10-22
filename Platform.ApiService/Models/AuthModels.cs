@@ -173,6 +173,16 @@ public class LoginRequest
     
     public bool AutoLogin { get; set; }
     public string? Type { get; set; }
+
+    /// <summary>
+    /// 图形验证码ID
+    /// </summary>
+    public string? CaptchaId { get; set; }
+
+    /// <summary>
+    /// 图形验证码答案
+    /// </summary>
+    public string? CaptchaAnswer { get; set; }
 }
 
 public class LoginResult
@@ -276,6 +286,16 @@ public class RegisterRequest
     
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
     public string? Email { get; set; }
+
+    /// <summary>
+    /// 图形验证码ID
+    /// </summary>
+    public string? CaptchaId { get; set; }
+
+    /// <summary>
+    /// 图形验证码答案
+    /// </summary>
+    public string? CaptchaAnswer { get; set; }
 }
 
 public class ChangePasswordRequest

@@ -5,17 +5,23 @@ import { Alert, App } from 'antd';
 import React, { useState } from 'react';
 import { Footer } from '@/components';
 import { register } from '@/services/ant-design-pro/api';
-import { tokenUtils } from '@/utils/token';
+import ImageCaptcha from '@/components/ImageCaptcha';
 
 export default function Register() {
   const { message } = App.useApp();
   const [registerError, setRegisterError] = useState<string>('');
+  const [captchaId, setCaptchaId] = useState<string>('');
+  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
 
   const handleSubmit = async (values: API.RegisterParams) => {
     try {
       setRegisterError('');
 
-      const response = await register(values);
+      const response = await register({
+        ...values,
+        captchaId: captchaId || undefined,
+        captchaAnswer: captchaAnswer || undefined,
+      });
 
       if (response.success && response.data) {
         message.success('注册成功！已为您自动创建个人企业，正在跳转...');
@@ -132,6 +138,15 @@ export default function Register() {
                   message: '密码至少6个字符',
                 },
               ]}
+            />
+
+            <ImageCaptcha
+              value={captchaAnswer}
+              onChange={setCaptchaAnswer}
+              onCaptchaIdChange={setCaptchaId}
+              type="register"
+              placeholder="请输入图形验证码"
+              size="large"
             />
 
             <div

@@ -26,6 +26,7 @@ import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
+import ImageCaptcha from '@/components/ImageCaptcha';
 import { login } from '@/services/ant-design-pro/api';
 import { getFakeCaptcha } from '@/services/ant-design-pro/login';
 import { tokenUtils } from '@/utils/token';
@@ -116,6 +117,8 @@ const LoginMessage: React.FC<{
 const Login: React.FC = () => {
   const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
   const [type, setType] = useState<string>('account');
+  const [captchaId, setCaptchaId] = useState<string>('');
+  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
   const { initialState, setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
   const { message } = App.useApp();
@@ -136,7 +139,13 @@ const Login: React.FC = () => {
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
-      const response = await login({ ...values, type });
+      const loginData = { 
+        ...values, 
+        type,
+        captchaId: captchaId || undefined,
+        captchaAnswer: captchaAnswer || undefined,
+      };
+      const response = await login(loginData);
 
       // 处理统一的 API 响应格式
       if (response.success && response.data) {
@@ -299,6 +308,17 @@ const Login: React.FC = () => {
                     ),
                   },
                 ]}
+              />
+              <ImageCaptcha
+                value={captchaAnswer}
+                onChange={setCaptchaAnswer}
+                onCaptchaIdChange={setCaptchaId}
+                type="login"
+                placeholder={intl.formatMessage({
+                  id: 'pages.login.imageCaptcha.placeholder',
+                  defaultMessage: '请输入图形验证码',
+                })}
+                size="large"
               />
             </>
           )}

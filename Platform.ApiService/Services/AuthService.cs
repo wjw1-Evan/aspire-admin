@@ -20,6 +20,7 @@ public class AuthService : BaseService, IAuthService
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IImageCaptchaService _imageCaptchaService;
 
     public AuthService(
         IMongoDatabase database,
@@ -30,7 +31,8 @@ public class AuthService : BaseService, IAuthService
         ILogger<AuthService> logger,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
-        IPasswordHasher passwordHasher)
+        IPasswordHasher passwordHasher,
+        IImageCaptchaService imageCaptchaService)
         : base(database, httpContextAccessor, tenantContext, logger)
     {
         _database = database;
@@ -42,6 +44,7 @@ public class AuthService : BaseService, IAuthService
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
         _passwordHasher = passwordHasher;
+        _imageCaptchaService = imageCaptchaService;
     }
 
     // 🔒 安全修复：移除静态密码哈希方法，统一使用注入的 IPasswordHasher
@@ -156,6 +159,24 @@ public class AuthService : BaseService, IAuthService
 
     public async Task<ApiResponse<LoginData>> LoginAsync(LoginRequest request)
     {
+        // 验证图形验证码 - 必填项
+        if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
+        {
+            return ApiResponse<LoginData>.ErrorResult(
+                "CAPTCHA_REQUIRED",
+                "图形验证码是必填项，请先获取验证码"
+            );
+        }
+
+        var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
+        if (!captchaValid)
+        {
+            return ApiResponse<LoginData>.ErrorResult(
+                "CAPTCHA_INVALID",
+                "图形验证码错误，请重新输入"
+            );
+        }
+
         // v3.1: 用户名全局查找（不需要企业代码）
         var filter = Builders<User>.Filter.And(
             Builders<User>.Filter.Eq(u => u.Username, request.Username),
@@ -268,6 +289,24 @@ public class AuthService : BaseService, IAuthService
     {
         try
         {
+            // 验证图形验证码 - 必填项
+            if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
+            {
+                return ApiResponse<User>.ErrorResult(
+                    "CAPTCHA_REQUIRED",
+                    "图形验证码是必填项，请先获取验证码"
+                );
+            }
+
+            var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
+            if (!captchaValid)
+            {
+                return ApiResponse<User>.ErrorResult(
+                    "CAPTCHA_INVALID",
+                    "图形验证码错误，请重新输入"
+                );
+            }
+
             // 1. 验证输入
             _validationService.ValidateUsername(request.Username);
             _validationService.ValidatePassword(request.Password);

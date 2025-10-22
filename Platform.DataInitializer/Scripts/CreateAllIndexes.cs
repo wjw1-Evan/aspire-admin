@@ -28,6 +28,7 @@ public class CreateAllIndexes
 
         await CreateMenuIndexesAsync();
         await CreateCaptchaIndexesAsync();
+        await CreateCaptchaImageIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
     }
@@ -108,8 +109,54 @@ public class CreateAllIndexes
     }
 
     /// <summary>
-    /// 通用索引创建方法（处理异常）
+    /// 创建 CaptchaImage 索引（图形验证码是全局资源，无 CompanyId）
     /// </summary>
+    private async Task CreateCaptchaImageIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("captcha_images");
+
+        try
+        {
+            // TTL 索引 - 自动删除过期验证码
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("expiresAt"),
+                new CreateIndexOptions 
+                { 
+                    Name = "captcha_image_ttl",
+                    ExpireAfter = TimeSpan.Zero,
+                    Background = true
+                },
+                "captcha_images.expiresAt (TTL)");
+
+            // 验证码ID索引 - 用于快速查询
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("captchaId"),
+                new CreateIndexOptions 
+                { 
+                    Name = "captcha_image_id",
+                    Background = true
+                },
+                "captcha_images.captchaId");
+
+            // 客户端IP + 类型索引 - 用于防刷
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("clientIp")
+                    .Ascending("type"),
+                new CreateIndexOptions 
+                { 
+                    Name = "captcha_image_ip_type",
+                    Background = true
+                },
+                "captcha_images.clientIp + type");
+
+            _logger.LogInformation("✅ CaptchaImages 集合索引创建完成");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建 CaptchaImage 索引失败");
+        }
+    }
     private async Task CreateIndexAsync<T>(
         IMongoCollection<T> collection,
         IndexKeysDefinition<T> keys,

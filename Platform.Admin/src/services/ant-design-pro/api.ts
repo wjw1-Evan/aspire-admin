@@ -176,3 +176,23 @@ export async function getUserStatistics(options?: { [key: string]: any }) {
     ...(options || {}),
   });
 }
+
+/** 获取图形验证码 GET /api/captcha/image */
+export async function getImageCaptcha(type: 'login' | 'register' = 'login', options?: { [key: string]: any }) {
+  return request<ApiResponse<API.ImageCaptchaResult>>(`/api/captcha/image?type=${type}`, {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/** 验证图形验证码 POST /api/captcha/verify-image */
+export async function verifyImageCaptcha(body: API.VerifyImageCaptchaRequest, options?: { [key: string]: any }) {
+  return request<ApiResponse<API.VerifyImageCaptchaResponse>>('/api/captcha/verify-image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}

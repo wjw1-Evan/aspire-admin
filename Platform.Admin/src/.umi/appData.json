@@ -32,6 +32,7 @@
       "defaults"
     ],
     "dependencies": {
+      "@ant-design/charts": "^2.6.6",
       "@ant-design/icons": "^6.1.0",
       "@ant-design/pro-components": "^2.7.19",
       "@ant-design/v5-patch-for-react-19": "^1.0.3",
@@ -88,7 +89,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 14
       },
       "enableBy": "register",
       "type": "preset",
@@ -101,7 +102,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 3
       },
       "enableBy": "register",
       "type": "preset",
@@ -115,10 +116,10 @@
       "time": {
         "hooks": {
           "onStart": [
-            0
+            1
           ]
         },
-        "register": 1
+        "register": 3
       },
       "enableBy": "register",
       "type": "preset",
@@ -135,7 +136,7 @@
             0
           ]
         },
-        "register": 2
+        "register": 4
       },
       "enableBy": "register",
       "type": "plugin",
@@ -149,10 +150,10 @@
       "time": {
         "hooks": {
           "onStart": [
-            1
+            2
           ]
         },
-        "register": 1
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -182,7 +183,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -196,10 +197,10 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            17
+            47
           ]
         },
-        "register": 14
+        "register": 16
       },
       "enableBy": "register",
       "type": "plugin",
@@ -212,7 +213,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -232,7 +233,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -249,7 +250,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -262,7 +263,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -279,7 +280,7 @@
             0
           ]
         },
-        "register": 4
+        "register": 5
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1145,10 +1146,10 @@
       "time": {
         "hooks": {
           "onStart": [
-            0
+            1
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1161,7 +1162,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1174,7 +1175,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 50
+        "register": 52
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1187,7 +1188,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 25
+        "register": 26
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1204,7 +1205,7 @@
             0
           ]
         },
-        "register": 13
+        "register": 26
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1218,10 +1219,10 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            0
+            1
           ]
         },
-        "register": 0
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1234,7 +1235,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1260,7 +1261,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 22
+        "register": 30
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/mock/mock.js",
@@ -1331,7 +1332,7 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            2
           ]
         },
         "register": 1
@@ -1346,7 +1347,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1372,7 +1373,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1398,7 +1399,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1411,7 +1412,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 4
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1475,7 +1476,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1488,7 +1489,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 4
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1514,7 +1515,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 4
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/apiRoute/apiRoute.js",
@@ -1526,7 +1527,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 12
+        "register": 23
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1539,7 +1540,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/test/test.js",
@@ -1551,7 +1552,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1564,7 +1565,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1577,7 +1578,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1590,7 +1591,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/webpack/webpack.js",
@@ -1638,7 +1639,7 @@
             1
           ]
         },
-        "register": 1
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -1651,7 +1652,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 2
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/utoopack/utoopack.js",
@@ -1663,7 +1664,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 4
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/hmrGuardian/hmrGuardian.js",
@@ -1675,7 +1676,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 16
+        "register": 30
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/features/routePreloadOnLoad/routePreloadOnLoad.js",
@@ -1700,7 +1701,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1713,7 +1714,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 12
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1726,7 +1727,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 21
+        "register": 56
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1740,10 +1741,10 @@
       "time": {
         "hooks": {
           "modifyAppData": [
-            8
+            12
           ]
         },
-        "register": 20
+        "register": 25
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/preset-umi/dist/commands/dev/dev.js",
@@ -1755,7 +1756,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1768,7 +1769,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1781,7 +1782,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1807,7 +1808,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1820,7 +1821,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 3
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1846,7 +1847,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1859,7 +1860,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1872,7 +1873,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1898,7 +1899,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1911,7 +1912,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -1989,7 +1990,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 13
+        "register": 15
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2043,7 +2044,7 @@
       },
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/analytics.js",
@@ -2056,13 +2057,13 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            3
           ],
           "modifyAppData": [
             0
           ]
         },
-        "register": 3
+        "register": 5
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/dist/antd.js",
@@ -2074,7 +2075,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 3
+        "register": 7
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2087,7 +2088,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2106,13 +2107,13 @@
             0
           ],
           "addLayouts": [
-            0
+            1
           ],
           "modifyAppData": [
             1
           ]
         },
-        "register": 2
+        "register": 4
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2125,7 +2126,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 2
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2138,7 +2139,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 1
+        "register": 3
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2165,7 +2166,7 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            0
+            2
           ]
         },
         "register": 0
@@ -2181,7 +2182,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2231,7 +2232,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 2
+        "register": 1
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2287,7 +2288,7 @@
             0
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2304,7 +2305,7 @@
             0
           ]
         },
-        "register": 1
+        "register": 0
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2318,10 +2319,10 @@
       "time": {
         "hooks": {
           "onCheckPkgJSON": [
-            0
+            1
           ]
         },
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2351,7 +2352,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 0
+        "register": 1
       },
       "enableBy": "register",
       "type": "plugin",
@@ -2365,13 +2366,13 @@
       "time": {
         "hooks": {
           "modifyRoutes": [
-            0
+            1
           ],
           "onStart": [
             0
           ]
         },
-        "register": 124
+        "register": 271
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2384,7 +2385,7 @@
       "config": {},
       "time": {
         "hooks": {},
-        "register": 77
+        "register": 227
       },
       "enableBy": "config",
       "type": "plugin",
@@ -2422,13 +2423,13 @@
       "time": {
         "hooks": {
           "modifyConfig": [
-            1
+            0
           ],
           "modifyAppData": [
             0
           ]
         },
-        "register": 35
+        "register": 402
       },
       "type": "plugin",
       "path": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/request-record/dist/cjs/index.js",
@@ -3946,7 +3947,7 @@
       "parentId": "ant-design-pro-layout",
       "id": "10",
       "absPath": "/welcome",
-      "__content": "import { PageContainer } from '@ant-design/pro-components';\nimport { useModel, history } from '@umijs/max';\nimport { \n  Card, \n  Row, \n  Col, \n  Avatar, \n  Typography, \n  Space, \n  Tag,\n  Alert,\n  Timeline,\n  theme\n} from 'antd';\nimport {\n  UserOutlined,\n  TeamOutlined,\n  SafetyOutlined,\n  MenuOutlined,\n  PlusOutlined,\n  SettingOutlined,\n  BarChartOutlined,\n  ClockCircleOutlined,\n  CheckCircleOutlined,\n  ExclamationCircleOutlined,\n  RocketOutlined,\n  ThunderboltOutlined,\n  CrownOutlined,\n  GlobalOutlined,\n  DatabaseOutlined,\n  HddOutlined,\n  CiOutlined,\n  MonitorOutlined\n} from '@ant-design/icons';\nimport React, { useState, useEffect } from 'react';\nimport { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';\nimport { getCurrentCompany } from '@/services/company';\nimport { getSystemStatus, getSystemResources } from '@/services/system/api';\nimport type { CurrentUser } from '@/types/unified-api';\nimport type { SystemStatus, SystemResources } from '@/services/system/api';\n\nconst { Title, Text, Paragraph } = Typography;\n\n// 统计卡片组件\nconst StatCard: React.FC<{\n  title: string;\n  value: number | string;\n  icon: React.ReactNode;\n  color?: string;\n  suffix?: string;\n  loading?: boolean;\n  token?: any;\n}> = ({ title, value, icon, color = '#1890ff', suffix = '', loading = false, token }) => (\n  <Card \n    size=\"small\" \n      style={{\n      textAlign: 'center',\n      borderRadius: '12px',\n      boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',\n      border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,\n      backgroundColor: token?.colorBgContainer || '#ffffff'\n    }}\n    loading={loading}\n  >\n    <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>\n      {icon}\n    </div>\n    <div style={{ \n      fontSize: '28px', \n            fontWeight: 'bold',\n      color: token?.colorText || '#262626', \n      marginBottom: '4px' \n    }}>\n      {value}{suffix}\n        </div>\n    <div style={{ \n      fontSize: '14px', \n      color: token?.colorTextSecondary || '#8c8c8c' \n    }}>\n          {title}\n        </div>\n  </Card>\n);\n\n// 快速操作按钮组件\nconst QuickAction: React.FC<{\n  title: string;\n  description: string;\n  icon: React.ReactNode;\n  onClick: () => void;\n  color?: string;\n  disabled?: boolean;\n}> = ({ title, description, icon, onClick, color = '#1890ff', disabled = false }) => (\n  <Card\n    hoverable={!disabled}\n    size=\"small\"\n        style={{\n      textAlign: 'center',\n      borderRadius: '12px',\n      cursor: disabled ? 'not-allowed' : 'pointer',\n      opacity: disabled ? 0.6 : 1,\n      border: `2px solid ${disabled ? '#f0f0f0' : color}`,\n      background: disabled ? '#fafafa' : '#fff'\n    }}\n    onClick={disabled ? undefined : onClick}\n  >\n    <div style={{ color, fontSize: '32px', marginBottom: '12px' }}>\n      {icon}\n    </div>\n    <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>\n      {title}\n      </div>\n    <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n      {description}\n    </div>\n  </Card>\n);\n\n// 系统资源卡片组件\nconst ResourceCard: React.FC<{\n  title: string;\n  value: string;\n  icon: React.ReactNode;\n  color?: string;\n  loading?: boolean;\n  token?: any;\n}> = ({ title, value, icon, color = '#1890ff', loading = false, token }) => (\n  <Card \n    size=\"small\" \n    style={{\n      textAlign: 'center',\n      borderRadius: '12px',\n      boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',\n      border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,\n      backgroundColor: token?.colorBgContainer || '#ffffff'\n    }}\n    loading={loading}\n  >\n    <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>\n      {icon}\n    </div>\n    <div style={{ \n      fontSize: '20px', \n      fontWeight: 'bold',\n      color: token?.colorText || '#262626', \n      marginBottom: '4px' \n    }}>\n      {value}\n    </div>\n    <div style={{ \n      fontSize: '12px', \n      color: token?.colorTextSecondary || '#8c8c8c' \n    }}>\n      {title}\n    </div>\n  </Card>\n);\n\n// 系统状态组件\nconst SystemStatusCard: React.FC<{\n  status: 'healthy' | 'warning' | 'error';\n  message: string;\n  lastUpdate: string;\n}> = ({ status, message, lastUpdate }) => {\n  const statusConfig = {\n    healthy: { color: '#52c41a', icon: <CheckCircleOutlined />, text: '系统正常' },\n    warning: { color: '#faad14', icon: <ExclamationCircleOutlined />, text: '系统警告' },\n    error: { color: '#ff4d4f', icon: <ExclamationCircleOutlined />, text: '系统异常' }\n  };\n\n  const config = statusConfig[status];\n  \n  let alertType: 'success' | 'warning' | 'error';\n  if (status === 'healthy') {\n    alertType = 'success';\n  } else if (status === 'warning') {\n    alertType = 'warning';\n  } else {\n    alertType = 'error';\n  }\n\n  return (\n    <Alert\n      message={\n        <Space>\n          {config.icon}\n          <span>{config.text}</span>\n          <Text type=\"secondary\">- {message}</Text>\n        </Space>\n      }\n      description={`最后更新: ${lastUpdate}`}\n      type={alertType}\n      showIcon\n      style={{ borderRadius: '8px' }}\n    />\n  );\n};\n\nconst Welcome: React.FC = () => {\n  const { token } = theme.useToken();\n  const { initialState } = useModel('@@initialState');\n  const currentUser = initialState?.currentUser as CurrentUser;\n  \n  const [statistics, setStatistics] = useState<any>(null);\n  const [companyInfo, setCompanyInfo] = useState<any>(null);\n  const [recentActivities, setRecentActivities] = useState<API.UserActivityLog[]>([]);\n  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);\n  const [systemResources, setSystemResources] = useState<SystemResources | null>(null);\n  const [loading, setLoading] = useState(true);\n\n  // 获取统计数据\n  const fetchStatistics = async () => {\n    try {\n      setLoading(true);\n      const [statsRes, companyRes, activitiesRes, statusRes, resourcesRes] = await Promise.all([\n        getUserStatistics(),\n        getCurrentCompany(),\n        getUserActivityLogs({ limit: 5 }),\n        getSystemStatus(),\n        getSystemResources()\n      ]);\n      \n      console.log('API 响应结果:', {\n        stats: statsRes,\n        company: companyRes,\n        activities: activitiesRes,\n        status: statusRes,\n        resources: resourcesRes\n      });\n      \n      if (statsRes.success) {\n        setStatistics(statsRes.data);\n      }\n      \n      if (companyRes.success) {\n        setCompanyInfo(companyRes.data);\n      }\n\n      if (activitiesRes.success) {\n        setRecentActivities(activitiesRes.data || []);\n      }\n\n      if (statusRes.success) {\n        setSystemStatus(statusRes.data || null);\n      }\n\n      if (resourcesRes.success) {\n        console.log('系统资源数据:', resourcesRes.data);\n        setSystemResources(resourcesRes.data || null);\n      } else {\n        console.warn('系统资源获取失败:', resourcesRes);\n        setSystemResources(null);\n      }\n    } catch (error) {\n      console.error('Failed to fetch statistics:', error);\n      // 如果系统状态获取失败，设置默认状态\n      setSystemStatus({\n        status: 'warning',\n        message: '无法获取系统状态',\n        timestamp: new Date().toISOString()\n      });\n      // 确保系统资源状态被清除\n      setSystemResources(null);\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    fetchStatistics();\n  }, []);\n\n  // 获取活动类型对应的颜色\n  const getActivityColor = (action?: string): string => {\n    if (!action) return 'blue';\n    \n    const colorMap: Record<string, string> = {\n      'login': 'green',\n      'logout': 'red',\n      'create': 'blue',\n      'update': 'orange',\n      'delete': 'red',\n      'view': 'cyan',\n      'export': 'purple',\n      'import': 'purple',\n      'change_password': 'orange',\n      'refresh_token': 'blue'\n    };\n    \n    return colorMap[action.toLowerCase()] || 'blue';\n  };\n\n  // 获取资源使用率对应的颜色\n  const getResourceColor = (usagePercent: number): string => {\n    if (usagePercent > 80) return '#ff4d4f';\n    if (usagePercent > 60) return '#faad14';\n    return '#52c41a';\n  };\n\n  // 获取当前时间问候语\n  const getGreeting = () => {\n    const hour = new Date().getHours();\n    if (hour < 6) return '夜深了';\n    if (hour < 12) return '早上好';\n    if (hour < 14) return '中午好';\n    if (hour < 18) return '下午好';\n    if (hour < 22) return '晚上好';\n    return '夜深了';\n  };\n\n  // 获取用户角色标签\n  const getUserRoleTags = () => {\n    if (!currentUser?.roles) return [];\n    \n    return currentUser.roles.map(role => {\n      const isAdmin = role === 'admin' || role === '管理员';\n      const tagColor = isAdmin ? 'red' : 'blue';\n      const tagIcon = isAdmin ? <CrownOutlined /> : <UserOutlined />;\n      \n      return (\n        <Tag \n          key={role} \n          color={tagColor} \n          icon={tagIcon}\n        >\n          {role}\n        </Tag>\n      );\n    });\n  };\n\n  // 快速操作处理\n  const handleQuickAction = (action: string) => {\n    switch (action) {\n      case 'user-management':\n        history.push('/system/user-management');\n        break;\n      case 'role-management':\n        history.push('/system/role-management');\n        break;\n      case 'company-settings':\n        history.push('/system/company-settings');\n        break;\n      case 'account-center':\n        history.push('/account/center');\n        break;\n      default:\n        break;\n    }\n  };\n\n  return (\n    <PageContainer\n      title={false}\n      style={{ background: 'transparent' }}\n    >\n      <div style={{ padding: '0 24px' }}>\n        {/* 个性化欢迎区域 */}\n      <Card\n        style={{\n            marginBottom: '24px',\n            borderRadius: '16px',\n            background: token.colorBgContainer === '#ffffff' \n              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'\n              : 'linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%)',\n            border: 'none',\n            color: 'white',\n            boxShadow: token.boxShadow\n          }}\n          styles={{ body: { padding: '32px' } }}\n        >\n          <Row align=\"middle\" gutter={24}>\n            <Col>\n              <Avatar \n                size={80} \n                icon={<UserOutlined />} \n                src={currentUser?.avatar}\n            style={{\n                  backgroundColor: 'rgba(255,255,255,0.2)',\n                  border: '3px solid rgba(255,255,255,0.3)'\n                }}\n              />\n            </Col>\n            <Col flex={1}>\n              <Title level={2} style={{ color: 'white', margin: 0 }}>\n                {getGreeting()}，{currentUser?.displayName || currentUser?.username || '用户'}！\n              </Title>\n              <Paragraph style={{ color: 'rgba(255,255,255,0.8)', margin: '8px 0 16px 0' }}>\n                欢迎回到 Aspire Admin Platform 企业级管理平台\n                {companyInfo?.name && ` - ${companyInfo.name}`}\n              </Paragraph>\n              <Space wrap>\n                {getUserRoleTags()}\n                <Tag color=\"green\" icon={<GlobalOutlined />}>\n                  在线\n                </Tag>\n              </Space>\n            </Col>\n            <Col>\n              <Space direction=\"vertical\" size=\"large\">\n                <div style={{ textAlign: 'center' }}>\n                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>\n                    {new Date().toLocaleDateString('zh-CN', { \n                      year: 'numeric', \n                      month: 'long', \n                      day: 'numeric' \n                    })}\n                  </div>\n                  <div style={{ fontSize: '14px', opacity: 0.8 }}>\n                    {new Date().toLocaleDateString('zh-CN', { weekday: 'long' })}\n                  </div>\n          </div>\n              </Space>\n            </Col>\n          </Row>\n        </Card>\n\n        {/* 系统状态 */}\n        <SystemStatusCard\n          status={systemStatus?.status || 'warning'}\n          message={systemStatus?.message || '系统状态未知'}\n          lastUpdate={systemStatus?.timestamp ? new Date(systemStatus.timestamp).toLocaleTimeString('zh-CN') : new Date().toLocaleTimeString('zh-CN')}\n        />\n\n        <div style={{ margin: '24px 0' }} />\n\n        {/* 统计概览 */}\n        <Card \n          title={\n            <Space>\n              <BarChartOutlined />\n              <span>系统概览</span>\n            </Space>\n          }\n          style={{ marginBottom: '24px', borderRadius: '12px' }}\n        >\n          <Row gutter={[16, 16]}>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"总用户数\"\n                value={statistics?.totalUsers || 0}\n                icon={<TeamOutlined />}\n                color={token.colorPrimary}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"活跃用户\"\n                value={statistics?.activeUsers || 0}\n                icon={<ThunderboltOutlined />}\n                color={token.colorSuccess}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"管理员\"\n                value={statistics?.adminUsers || 0}\n                icon={<CrownOutlined />}\n                color={token.colorWarning}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"今日新增\"\n                value={statistics?.newUsersToday || 0}\n                icon={<RocketOutlined />}\n                color={token.colorError}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n          </Row>\n        </Card>\n\n        <Row gutter={[24, 24]}>\n          {/* 快速操作 */}\n          <Col xs={24} lg={12}>\n            <Card \n              title={\n                <Space>\n                  <RocketOutlined />\n                  <span>快速操作</span>\n                </Space>\n              }\n              style={{ borderRadius: '12px' }}\n            >\n              <Row gutter={[16, 16]}>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"用户管理\"\n                    description=\"管理系统用户\"\n                    icon={<TeamOutlined />}\n                    onClick={() => handleQuickAction('user-management')}\n                    color=\"#1890ff\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"角色管理\"\n                    description=\"配置用户角色\"\n                    icon={<SafetyOutlined />}\n                    onClick={() => handleQuickAction('role-management')}\n                    color=\"#52c41a\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"企业设置\"\n                    description=\"配置企业信息\"\n                    icon={<SettingOutlined />}\n                    onClick={() => handleQuickAction('company-settings')}\n                    color=\"#faad14\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"个人中心\"\n                    description=\"管理个人信息\"\n                    icon={<UserOutlined />}\n                    onClick={() => handleQuickAction('account-center')}\n                    color=\"#722ed1\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"系统菜单\"\n                    description=\"配置系统菜单\"\n                    icon={<MenuOutlined />}\n                    onClick={() => handleQuickAction('menu-management')}\n                    color=\"#13c2c2\"\n                    disabled={!currentUser?.roles?.includes('admin')}\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"添加用户\"\n                    description=\"创建新用户\"\n                    icon={<PlusOutlined />}\n                    onClick={() => handleQuickAction('add-user')}\n                    color=\"#eb2f96\"\n                    disabled={!currentUser?.roles?.includes('admin')}\n                  />\n                </Col>\n              </Row>\n            </Card>\n          </Col>\n\n          {/* 最近活动 */}\n          <Col xs={24} lg={12}>\n            <Card \n              title={\n                <Space>\n                  <ClockCircleOutlined />\n                  <span>最近活动</span>\n                </Space>\n              }\n              style={{ borderRadius: '12px' }}\n            >\n              <Timeline\n                items={recentActivities.length > 0 ? recentActivities.map(activity => ({\n                  color: getActivityColor(activity.action),\n                  children: (\n                    <div>\n                      <Text strong>{activity.description || activity.action}</Text>\n                      <br />\n                      <Text type=\"secondary\">\n                        {activity.action && activity.action !== activity.description ? activity.action : '系统活动'}\n                      </Text>\n                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                        {activity.createdAt ? new Date(activity.createdAt).toLocaleString('zh-CN') : '未知时间'}\n                      </div>\n                    </div>\n                  ),\n                })) : [\n                  {\n                    color: 'green',\n                    children: (\n                      <div>\n                        <Text strong>系统启动</Text>\n                        <br />\n                        <Text type=\"secondary\">系统已成功启动并运行</Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n                        </div>\n                      </div>\n                    ),\n                  },\n                  {\n                    color: 'blue',\n                    children: (\n                      <div>\n                        <Text strong>用户登录</Text>\n                        <br />\n                        <Text type=\"secondary\">\n                          {currentUser?.displayName || currentUser?.username} 已登录系统\n                        </Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n                        </div>\n                      </div>\n                    ),\n                  },\n                  {\n                    color: 'orange',\n                    children: (\n                      <div>\n                        <Text strong>数据同步</Text>\n                        <br />\n                        <Text type=\"secondary\">用户权限数据已同步</Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n                        </div>\n                      </div>\n                    ),\n                  },\n                ]}\n              />\n            </Card>\n          </Col>\n        </Row>\n\n        {/* 系统信息 */}\n        <Card \n          title={\n            <Space>\n              <MonitorOutlined />\n              <span>系统信息</span>\n            </Space>\n          }\n          style={{ marginTop: '24px', borderRadius: '12px' }}\n        >\n          <Row gutter={[24, 16]}>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>                                                                        \n                  .NET 9\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>后端框架</div>                                                                              \n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>                                                                        \n                  React 19\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>前端框架</div>                                                                              \n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>                                                                        \n                  MongoDB\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>数据库</div>\n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#722ed1' }}>                                                                        \n                  Aspire\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>微服务编排</div>                                                                            \n              </div>\n            </Col>\n          </Row>\n        </Card>\n\n        {/* 系统资源监控 */}\n        {systemResources ? (\n          <Card \n            title={\n              <Space>\n                <DatabaseOutlined />\n                <span>系统资源监控</span>\n              </Space>\n            }\n            style={{ marginTop: '24px', borderRadius: '12px' }}\n          >\n            <Row gutter={[16, 16]}>\n              {/* 内存使用率 */}\n              {systemResources.memory && (\n                <Col xs={24} sm={12} md={8}>\n                  <ResourceCard\n                    title=\"内存使用率\"\n                    value={`${systemResources.memory?.usagePercent || 0}%`}\n                    icon={<ThunderboltOutlined />}\n                    color={getResourceColor(systemResources.memory?.usagePercent || 0)}\n                    loading={loading}\n                    token={token}\n                  />\n                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>\n                    {systemResources.memory?.processMemoryMB || 0}MB / {systemResources.memory?.totalMemoryMB || 0}MB\n                  </div>\n                </Col>\n              )}\n              \n              {/* CPU 使用率 */}\n              {systemResources.cpu && (\n                <Col xs={24} sm={12} md={8}>\n                  <ResourceCard\n                    title=\"CPU 使用率\"\n                    value={`${systemResources.cpu?.usagePercent || 0}%`}\n                    icon={<CiOutlined />}\n                    color={getResourceColor(systemResources.cpu?.usagePercent || 0)}\n                    loading={loading}\n                    token={token}\n                  />\n                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>\n                    运行时间: {Math.round((systemResources.cpu?.uptime || 0) / 3600)}h\n                  </div>\n                </Col>\n              )}\n              \n              {/* 磁盘使用率 */}\n              {systemResources.disk && (\n                <Col xs={24} sm={12} md={8}>\n                  <ResourceCard\n                    title=\"磁盘使用率\"\n                    value={`${systemResources.disk?.usagePercent || 0}%`}\n                    icon={<HddOutlined />}\n                    color={getResourceColor(systemResources.disk?.usagePercent || 0)}\n                    loading={loading}\n                    token={token}\n                  />\n                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>\n                    {systemResources.disk?.usedSizeGB || 0}GB / {systemResources.disk?.totalSizeGB || 0}GB\n                  </div>\n                </Col>\n              )}\n            </Row>\n            \n            {/* 系统详细信息 */}\n            {systemResources.system && (\n              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>\n                <Row gutter={[16, 8]}>\n                  <Col xs={24} sm={12} md={6}>\n                    <Text type=\"secondary\">机器名: </Text>\n                    <Text strong>{systemResources.system?.machineName || 'Unknown'}</Text>\n                  </Col>\n                  <Col xs={24} sm={12} md={6}>\n                    <Text type=\"secondary\">CPU 核心: </Text>\n                    <Text strong>{systemResources.system?.processorCount || 0}</Text>\n                  </Col>\n                  <Col xs={24} sm={12} md={6}>\n                    <Text type=\"secondary\">系统架构: </Text>\n                    <Text strong>{systemResources.system?.is64BitOperatingSystem ? '64位' : '32位'}</Text>\n                  </Col>\n                  <Col xs={24} sm={12} md={6}>\n                    <Text type=\"secondary\">系统运行时间: </Text>\n                    <Text strong>{Math.round((systemResources.system?.systemUpTime || 0) / 3600)}小时</Text>\n                  </Col>\n                </Row>\n              </div>\n            )}\n          </Card>\n        ) : (\n          <Card \n            title={\n              <Space>\n                <DatabaseOutlined />\n                <span>系统资源监控</span>\n              </Space>\n            }\n            style={{ marginTop: '24px', borderRadius: '12px' }}\n          >\n            <Alert\n              message=\"系统资源数据不可用\"\n              description=\"无法获取系统资源信息，请检查后端服务是否正常运行。\"\n              type=\"warning\"\n              showIcon\n              style={{ borderRadius: '8px' }}\n            />\n            <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>\n              <Text type=\"secondary\">\n                调试信息：请打开浏览器控制台查看详细的 API 响应信息。\n              </Text>\n            </div>\n          </Card>\n        )}\n      </div>\n    </PageContainer>\n  );\n};\n\nexport default Welcome;",
+      "__content": "import { PageContainer } from '@ant-design/pro-components';\nimport { useModel, history } from '@umijs/max';\nimport { \n  Card, \n  Row, \n  Col, \n  Avatar, \n  Typography, \n  Space, \n  Tag,\n  Alert,\n  Timeline,\n  theme\n} from 'antd';\nimport {\n  UserOutlined,\n  TeamOutlined,\n  SafetyOutlined,\n  MenuOutlined,\n  PlusOutlined,\n  SettingOutlined,\n  BarChartOutlined,\n  ClockCircleOutlined,\n  CheckCircleOutlined,\n  ExclamationCircleOutlined,\n  RocketOutlined,\n  ThunderboltOutlined,\n  CrownOutlined,\n  GlobalOutlined,\n  DatabaseOutlined,\n  HddOutlined,\n  CiOutlined,\n  MonitorOutlined\n} from '@ant-design/icons';\nimport React, { useState, useEffect, useRef, useCallback } from 'react';\nimport { Line } from '@ant-design/charts';\nimport { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';\nimport { getCurrentCompany } from '@/services/company';\nimport { getSystemStatus, getSystemResources } from '@/services/system/api';\nimport type { CurrentUser } from '@/types/unified-api';\nimport type { SystemStatus, SystemResources } from '@/services/system/api';\n\nconst { Title, Text, Paragraph } = Typography;\n\n// 内存使用率曲线图组件\nconst MemoryUsageChart: React.FC<{\n  data: Array<{ time: string; value: number; type: string }>;\n  loading?: boolean;\n}> = ({ data, loading = false }) => {\n  const config = {\n    data,\n    xField: 'time',\n    yField: 'value',\n    seriesField: 'type',\n    smooth: true,\n    animation: {\n      appear: {\n        animation: 'path-in',\n        duration: 1000,\n      },\n    },\n    color: ['#1890ff', '#52c41a', '#faad14'],\n    point: {\n      size: 3,\n      shape: 'circle',\n    },\n    tooltip: {\n      formatter: (datum: any) => {\n        return {\n          name: datum.type,\n          value: `${datum.value}%`,\n        };\n      },\n    },\n    legend: {\n      position: 'top' as const,\n    },\n    xAxis: {\n      type: 'time' as const,\n      tickCount: 5,\n    },\n    yAxis: {\n      min: 0,\n      max: 100,\n      label: {\n        formatter: (val: string) => `${val}%`,\n      },\n    },\n    height: 300,\n  };\n\n  return (\n    <div style={{ padding: '16px 0' }}>\n      <Line {...config} loading={loading} />\n    </div>\n  );\n};\n\n// 统计卡片组件\nconst StatCard: React.FC<{\n  title: string;\n  value: number | string;\n  icon: React.ReactNode;\n  color?: string;\n  suffix?: string;\n  loading?: boolean;\n  token?: any;\n}> = ({ title, value, icon, color = '#1890ff', suffix = '', loading = false, token }) => (\n  <Card \n    size=\"small\" \n      style={{\n      textAlign: 'center',\n      borderRadius: '12px',\n      boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',\n      border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,\n      backgroundColor: token?.colorBgContainer || '#ffffff'\n    }}\n    loading={loading}\n  >\n    <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>\n      {icon}\n    </div>\n    <div style={{ \n      fontSize: '28px', \n            fontWeight: 'bold',\n      color: token?.colorText || '#262626', \n      marginBottom: '4px' \n    }}>\n      {value}{suffix}\n        </div>\n    <div style={{ \n      fontSize: '14px', \n      color: token?.colorTextSecondary || '#8c8c8c' \n    }}>\n          {title}\n        </div>\n  </Card>\n);\n\n// 快速操作按钮组件\nconst QuickAction: React.FC<{\n  title: string;\n  description: string;\n  icon: React.ReactNode;\n  onClick: () => void;\n  color?: string;\n  disabled?: boolean;\n}> = ({ title, description, icon, onClick, color = '#1890ff', disabled = false }) => (\n  <Card\n    hoverable={!disabled}\n    size=\"small\"\n        style={{\n      textAlign: 'center',\n      borderRadius: '12px',\n      cursor: disabled ? 'not-allowed' : 'pointer',\n      opacity: disabled ? 0.6 : 1,\n      border: `2px solid ${disabled ? '#f0f0f0' : color}`,\n      background: disabled ? '#fafafa' : '#fff'\n    }}\n    onClick={disabled ? undefined : onClick}\n  >\n    <div style={{ color, fontSize: '32px', marginBottom: '12px' }}>\n      {icon}\n    </div>\n    <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>\n      {title}\n      </div>\n    <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n      {description}\n    </div>\n  </Card>\n);\n\n// 系统资源卡片组件\nconst ResourceCard: React.FC<{\n  title: string;\n  value: string;\n  icon: React.ReactNode;\n  color?: string;\n  loading?: boolean;\n  token?: any;\n}> = ({ title, value, icon, color = '#1890ff', loading = false, token }) => (\n  <Card \n    size=\"small\" \n    style={{\n      textAlign: 'center',\n      borderRadius: '12px',\n      boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',\n      border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,\n      backgroundColor: token?.colorBgContainer || '#ffffff'\n    }}\n    loading={loading}\n  >\n    <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>\n      {icon}\n    </div>\n    <div style={{ \n      fontSize: '20px', \n      fontWeight: 'bold',\n      color: token?.colorText || '#262626', \n      marginBottom: '4px' \n    }}>\n      {value}\n    </div>\n    <div style={{ \n      fontSize: '12px', \n      color: token?.colorTextSecondary || '#8c8c8c' \n    }}>\n      {title}\n    </div>\n  </Card>\n);\n\n// 系统状态组件\nconst SystemStatusCard: React.FC<{\n  status: 'healthy' | 'warning' | 'error';\n  message: string;\n  lastUpdate: string;\n}> = ({ status, message, lastUpdate }) => {\n  const statusConfig = {\n    healthy: { color: '#52c41a', icon: <CheckCircleOutlined />, text: '系统正常' },\n    warning: { color: '#faad14', icon: <ExclamationCircleOutlined />, text: '系统警告' },\n    error: { color: '#ff4d4f', icon: <ExclamationCircleOutlined />, text: '系统异常' }\n  };\n\n  const config = statusConfig[status];\n  \n  let alertType: 'success' | 'warning' | 'error';\n  if (status === 'healthy') {\n    alertType = 'success';\n  } else if (status === 'warning') {\n    alertType = 'warning';\n  } else {\n    alertType = 'error';\n  }\n\n  return (\n    <Alert\n      message={\n        <Space>\n          {config.icon}\n          <span>{config.text}</span>\n          <Text type=\"secondary\">- {message}</Text>\n        </Space>\n      }\n      description={`最后更新: ${lastUpdate}`}\n      type={alertType}\n      showIcon\n      style={{ borderRadius: '8px' }}\n    />\n  );\n};\n\nconst Welcome: React.FC = () => {\n  const { token } = theme.useToken();\n  const { initialState } = useModel('@@initialState');\n  const currentUser = initialState?.currentUser as CurrentUser;\n  \n  const [statistics, setStatistics] = useState<any>(null);\n  const [companyInfo, setCompanyInfo] = useState<any>(null);\n  const [recentActivities, setRecentActivities] = useState<API.UserActivityLog[]>([]);\n  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);\n  const [systemResources, setSystemResources] = useState<SystemResources | null>(null);\n  const [loading, setLoading] = useState(true);\n  \n  // 内存使用率曲线图数据\n  const [memoryChartData, setMemoryChartData] = useState<Array<{ time: string; value: number; type: string }>>([]);\n  const [chartLoading, setChartLoading] = useState(false);\n  \n  // 定时器引用\n  const intervalRef = useRef<NodeJS.Timeout | null>(null);\n\n  // 获取系统资源数据（用于曲线图）\n  const fetchSystemResources = useCallback(async () => {\n    try {\n      setChartLoading(true);\n      const resourcesRes = await getSystemResources();\n      \n      if (resourcesRes.success && resourcesRes.data) {\n        const resources = resourcesRes.data;\n        const now = new Date();\n        const timeStr = now.toLocaleTimeString('zh-CN');\n        \n        // 更新系统资源状态\n        setSystemResources(resources);\n        \n        // 更新曲线图数据\n        setMemoryChartData(prevData => {\n          const newData = [\n            ...prevData,\n            {\n              time: timeStr,\n              value: resources.memory?.usagePercent || 0,\n              type: '内存使用率'\n            }\n          ];\n          \n          // 只保留最近60个数据点（1分钟的数据）\n          return newData.slice(-60);\n        });\n      }\n    } catch (error) {\n      console.error('Failed to fetch system resources:', error);\n    } finally {\n      setChartLoading(false);\n    }\n  }, []);\n\n  // 获取统计数据\n  const fetchStatistics = async () => {\n    try {\n      setLoading(true);\n      const [statsRes, companyRes, activitiesRes, statusRes] = await Promise.all([\n        getUserStatistics(),\n        getCurrentCompany(),\n        getUserActivityLogs({ limit: 5 }),\n        getSystemStatus()\n      ]);\n      \n      console.log('API 响应结果:', {\n        stats: statsRes,\n        company: companyRes,\n        activities: activitiesRes,\n        status: statusRes\n      });\n      \n      if (statsRes.success) {\n        setStatistics(statsRes.data);\n      }\n      \n      if (companyRes.success) {\n        setCompanyInfo(companyRes.data);\n      }\n\n      if (activitiesRes.success) {\n        setRecentActivities(activitiesRes.data || []);\n      }\n\n      if (statusRes.success) {\n        setSystemStatus(statusRes.data || null);\n      }\n\n      // 获取初始系统资源数据\n      await fetchSystemResources();\n    } catch (error) {\n      console.error('Failed to fetch statistics:', error);\n      // 如果系统状态获取失败，设置默认状态\n      setSystemStatus({\n        status: 'warning',\n        message: '无法获取系统状态',\n        timestamp: new Date().toISOString()\n      });\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    fetchStatistics();\n    \n    // 设置定时器，每秒更新一次系统资源数据\n    intervalRef.current = setInterval(() => {\n      fetchSystemResources();\n    }, 1000);\n    \n    // 清理函数\n    return () => {\n      if (intervalRef.current) {\n        clearInterval(intervalRef.current);\n        intervalRef.current = null;\n      }\n    };\n  }, [fetchStatistics, fetchSystemResources]);\n\n  // 获取活动类型对应的颜色\n  const getActivityColor = (action?: string): string => {\n    if (!action) return 'blue';\n    \n    const colorMap: Record<string, string> = {\n      'login': 'green',\n      'logout': 'red',\n      'create': 'blue',\n      'update': 'orange',\n      'delete': 'red',\n      'view': 'cyan',\n      'export': 'purple',\n      'import': 'purple',\n      'change_password': 'orange',\n      'refresh_token': 'blue'\n    };\n    \n    return colorMap[action.toLowerCase()] || 'blue';\n  };\n\n  // 获取资源使用率对应的颜色\n  const getResourceColor = (usagePercent: number): string => {\n    if (usagePercent > 80) return '#ff4d4f';\n    if (usagePercent > 60) return '#faad14';\n    return '#52c41a';\n  };\n\n  // 获取当前时间问候语\n  const getGreeting = () => {\n    const hour = new Date().getHours();\n    if (hour < 6) return '夜深了';\n    if (hour < 12) return '早上好';\n    if (hour < 14) return '中午好';\n    if (hour < 18) return '下午好';\n    if (hour < 22) return '晚上好';\n    return '夜深了';\n  };\n\n  // 获取用户角色标签\n  const getUserRoleTags = () => {\n    if (!currentUser?.roles) return [];\n    \n    return currentUser.roles.map(role => {\n      const isAdmin = role === 'admin' || role === '管理员';\n      const tagColor = isAdmin ? 'red' : 'blue';\n      const tagIcon = isAdmin ? <CrownOutlined /> : <UserOutlined />;\n      \n      return (\n        <Tag \n          key={role} \n          color={tagColor} \n          icon={tagIcon}\n        >\n          {role}\n        </Tag>\n      );\n    });\n  };\n\n  // 快速操作处理\n  const handleQuickAction = (action: string) => {\n    switch (action) {\n      case 'user-management':\n        history.push('/system/user-management');\n        break;\n      case 'role-management':\n        history.push('/system/role-management');\n        break;\n      case 'company-settings':\n        history.push('/system/company-settings');\n        break;\n      case 'account-center':\n        history.push('/account/center');\n        break;\n      default:\n        break;\n    }\n  };\n\n  return (\n    <PageContainer\n      title={false}\n      style={{ background: 'transparent' }}\n    >\n      <div style={{ padding: '0 24px' }}>\n        {/* 个性化欢迎区域 */}\n      <Card\n        style={{\n            marginBottom: '24px',\n            borderRadius: '16px',\n            background: token.colorBgContainer === '#ffffff' \n              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'\n              : 'linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%)',\n            border: 'none',\n            color: 'white',\n            boxShadow: token.boxShadow\n          }}\n          styles={{ body: { padding: '32px' } }}\n        >\n          <Row align=\"middle\" gutter={24}>\n            <Col>\n              <Avatar \n                size={80} \n                icon={<UserOutlined />} \n                src={currentUser?.avatar}\n            style={{\n                  backgroundColor: 'rgba(255,255,255,0.2)',\n                  border: '3px solid rgba(255,255,255,0.3)'\n                }}\n              />\n            </Col>\n            <Col flex={1}>\n              <Title level={2} style={{ color: 'white', margin: 0 }}>\n                {getGreeting()}，{currentUser?.displayName || currentUser?.username || '用户'}！\n              </Title>\n              <Paragraph style={{ color: 'rgba(255,255,255,0.8)', margin: '8px 0 16px 0' }}>\n                欢迎回到 Aspire Admin Platform 企业级管理平台\n                {companyInfo?.name && ` - ${companyInfo.name}`}\n              </Paragraph>\n              <Space wrap>\n                {getUserRoleTags()}\n                <Tag color=\"green\" icon={<GlobalOutlined />}>\n                  在线\n                </Tag>\n              </Space>\n            </Col>\n            <Col>\n              <Space direction=\"vertical\" size=\"large\">\n                <div style={{ textAlign: 'center' }}>\n                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>\n                    {new Date().toLocaleDateString('zh-CN', { \n                      year: 'numeric', \n                      month: 'long', \n                      day: 'numeric' \n                    })}\n                  </div>\n                  <div style={{ fontSize: '14px', opacity: 0.8 }}>\n                    {new Date().toLocaleDateString('zh-CN', { weekday: 'long' })}\n                  </div>\n          </div>\n              </Space>\n            </Col>\n          </Row>\n        </Card>\n\n        {/* 系统状态 */}\n        <SystemStatusCard\n          status={systemStatus?.status || 'warning'}\n          message={systemStatus?.message || '系统状态未知'}\n          lastUpdate={systemStatus?.timestamp ? new Date(systemStatus.timestamp).toLocaleTimeString('zh-CN') : new Date().toLocaleTimeString('zh-CN')}\n        />\n\n        <div style={{ margin: '24px 0' }} />\n\n        {/* 统计概览 */}\n        <Card \n          title={\n            <Space>\n              <BarChartOutlined />\n              <span>系统概览</span>\n            </Space>\n          }\n          style={{ marginBottom: '24px', borderRadius: '12px' }}\n        >\n          <Row gutter={[16, 16]}>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"总用户数\"\n                value={statistics?.totalUsers || 0}\n                icon={<TeamOutlined />}\n                color={token.colorPrimary}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"活跃用户\"\n                value={statistics?.activeUsers || 0}\n                icon={<ThunderboltOutlined />}\n                color={token.colorSuccess}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"管理员\"\n                value={statistics?.adminUsers || 0}\n                icon={<CrownOutlined />}\n                color={token.colorWarning}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <StatCard\n                title=\"今日新增\"\n                value={statistics?.newUsersToday || 0}\n                icon={<RocketOutlined />}\n                color={token.colorError}\n                loading={loading}\n                token={token}\n              />\n            </Col>\n          </Row>\n        </Card>\n\n        <Row gutter={[24, 24]}>\n          {/* 快速操作 */}\n          <Col xs={24} lg={12}>\n            <Card \n              title={\n                <Space>\n                  <RocketOutlined />\n                  <span>快速操作</span>\n                </Space>\n              }\n              style={{ borderRadius: '12px' }}\n            >\n              <Row gutter={[16, 16]}>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"用户管理\"\n                    description=\"管理系统用户\"\n                    icon={<TeamOutlined />}\n                    onClick={() => handleQuickAction('user-management')}\n                    color=\"#1890ff\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"角色管理\"\n                    description=\"配置用户角色\"\n                    icon={<SafetyOutlined />}\n                    onClick={() => handleQuickAction('role-management')}\n                    color=\"#52c41a\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"企业设置\"\n                    description=\"配置企业信息\"\n                    icon={<SettingOutlined />}\n                    onClick={() => handleQuickAction('company-settings')}\n                    color=\"#faad14\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"个人中心\"\n                    description=\"管理个人信息\"\n                    icon={<UserOutlined />}\n                    onClick={() => handleQuickAction('account-center')}\n                    color=\"#722ed1\"\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"系统菜单\"\n                    description=\"配置系统菜单\"\n                    icon={<MenuOutlined />}\n                    onClick={() => handleQuickAction('menu-management')}\n                    color=\"#13c2c2\"\n                    disabled={!currentUser?.roles?.includes('admin')}\n                  />\n                </Col>\n                <Col xs={12} sm={8}>\n                  <QuickAction\n                    title=\"添加用户\"\n                    description=\"创建新用户\"\n                    icon={<PlusOutlined />}\n                    onClick={() => handleQuickAction('add-user')}\n                    color=\"#eb2f96\"\n                    disabled={!currentUser?.roles?.includes('admin')}\n                  />\n                </Col>\n              </Row>\n            </Card>\n          </Col>\n\n          {/* 最近活动 */}\n          <Col xs={24} lg={12}>\n            <Card \n              title={\n                <Space>\n                  <ClockCircleOutlined />\n                  <span>最近活动</span>\n                </Space>\n              }\n              style={{ borderRadius: '12px' }}\n            >\n              <Timeline\n                items={recentActivities.length > 0 ? recentActivities.map(activity => ({\n                  color: getActivityColor(activity.action),\n                  children: (\n                    <div>\n                      <Text strong>{activity.description || activity.action}</Text>\n                      <br />\n                      <Text type=\"secondary\">\n                        {activity.action && activity.action !== activity.description ? activity.action : '系统活动'}\n                      </Text>\n                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                        {activity.createdAt ? new Date(activity.createdAt).toLocaleString('zh-CN') : '未知时间'}\n                      </div>\n                    </div>\n                  ),\n                })) : [\n                  {\n                    color: 'green',\n                    children: (\n                      <div>\n                        <Text strong>系统启动</Text>\n                        <br />\n                        <Text type=\"secondary\">系统已成功启动并运行</Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n                        </div>\n                      </div>\n                    ),\n                  },\n                  {\n                    color: 'blue',\n                    children: (\n                      <div>\n                        <Text strong>用户登录</Text>\n                        <br />\n                        <Text type=\"secondary\">\n                          {currentUser?.displayName || currentUser?.username} 已登录系统\n                        </Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n                        </div>\n                      </div>\n                    ),\n                  },\n                  {\n                    color: 'orange',\n                    children: (\n                      <div>\n                        <Text strong>数据同步</Text>\n                        <br />\n                        <Text type=\"secondary\">用户权限数据已同步</Text>\n                        <div style={{ fontSize: '12px', color: '#8c8c8c' }}>\n                          {new Date().toLocaleString('zh-CN')}\n                        </div>\n                      </div>\n                    ),\n                  },\n                ]}\n              />\n            </Card>\n          </Col>\n        </Row>\n\n        {/* 系统信息 */}\n        <Card \n          title={\n            <Space>\n              <MonitorOutlined />\n              <span>系统信息</span>\n            </Space>\n          }\n          style={{ marginTop: '24px', borderRadius: '12px' }}\n        >\n          <Row gutter={[24, 16]}>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>                                                                        \n                  .NET 9\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>后端框架</div>                                                                              \n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>                                                                        \n                  React 19\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>前端框架</div>                                                                              \n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>                                                                        \n                  MongoDB\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>数据库</div>\n              </div>\n            </Col>\n            <Col xs={24} sm={12} md={6}>\n              <div style={{ textAlign: 'center' }}>\n                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#722ed1' }}>                                                                        \n                  Aspire\n                </div>\n                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>微服务编排</div>                                                                            \n              </div>\n            </Col>\n          </Row>\n        </Card>\n\n        {/* 系统资源监控 */}\n        <Card \n          title={\n            <Space>\n              <DatabaseOutlined />\n              <span>系统资源监控</span>\n              <Tag color=\"blue\">实时更新</Tag>\n            </Space>\n          }\n          style={{ marginTop: '24px', borderRadius: '12px' }}\n        >\n          {/* 内存使用率曲线图 */}\n          <div style={{ marginBottom: '24px' }}>\n            <Title level={5} style={{ marginBottom: '16px' }}>\n              <Space>\n                <ThunderboltOutlined />\n                <span>内存使用率趋势</span>\n                {systemResources?.memory && (\n                  <Tag color={getResourceColor(systemResources.memory.usagePercent)}>\n                    当前: {systemResources.memory.usagePercent}%\n                  </Tag>\n                )}\n              </Space>\n            </Title>\n            <MemoryUsageChart data={memoryChartData} loading={chartLoading} />\n            {systemResources?.memory && (\n              <div style={{ \n                marginTop: '12px', \n                padding: '12px', \n                backgroundColor: '#fafafa', \n                borderRadius: '8px',\n                textAlign: 'center'\n              }}>\n                <Text type=\"secondary\">\n                  当前内存: {systemResources.memory.processMemoryMB}MB / {systemResources.memory.totalMemoryMB}MB\n                  {' '}({systemResources.memory.usagePercent}%)\n                </Text>\n              </div>\n            )}\n          </div>\n\n          {/* 其他资源指标 */}\n          {systemResources ? (\n            <Row gutter={[16, 16]}>\n              {/* CPU 使用率 */}\n              {systemResources.cpu && (\n                <Col xs={24} sm={12} md={8}>\n                  <ResourceCard\n                    title=\"CPU 使用率\"\n                    value={`${systemResources.cpu?.usagePercent || 0}%`}\n                    icon={<CiOutlined />}\n                    color={getResourceColor(systemResources.cpu?.usagePercent || 0)}\n                    loading={loading}\n                    token={token}\n                  />\n                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>\n                    运行时间: {Math.round((systemResources.cpu?.uptime || 0) / 3600)}h\n                  </div>\n                </Col>\n              )}\n              \n              {/* 磁盘使用率 */}\n              {systemResources.disk && (\n                <Col xs={24} sm={12} md={8}>\n                  <ResourceCard\n                    title=\"磁盘使用率\"\n                    value={`${systemResources.disk?.usagePercent || 0}%`}\n                    icon={<HddOutlined />}\n                    color={getResourceColor(systemResources.disk?.usagePercent || 0)}\n                    loading={loading}\n                    token={token}\n                  />\n                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>\n                    {systemResources.disk?.usedSizeGB || 0}GB / {systemResources.disk?.totalSizeGB || 0}GB\n                  </div>\n                </Col>\n              )}\n\n              {/* 系统状态 */}\n              <Col xs={24} sm={12} md={8}>\n                <ResourceCard\n                  title=\"系统状态\"\n                  value={(() => {\n                    if (systemStatus?.status === 'healthy') return '正常';\n                    if (systemStatus?.status === 'warning') return '警告';\n                    return '异常';\n                  })()}\n                  icon={<MonitorOutlined />}\n                  color={(() => {\n                    if (systemStatus?.status === 'healthy') return '#52c41a';\n                    if (systemStatus?.status === 'warning') return '#faad14';\n                    return '#ff4d4f';\n                  })()}\n                  loading={loading}\n                  token={token}\n                />\n                <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>\n                  {systemStatus?.message || '状态未知'}\n                </div>\n              </Col>\n            </Row>\n          ) : (\n            <Alert\n              message=\"系统资源数据不可用\"\n              description=\"无法获取系统资源信息，请检查后端服务是否正常运行。\"\n              type=\"warning\"\n              showIcon\n              style={{ borderRadius: '8px' }}\n            />\n          )}\n          \n          {/* 系统详细信息 */}\n          {systemResources?.system && (\n            <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>\n              <Row gutter={[16, 8]}>\n                <Col xs={24} sm={12} md={6}>\n                  <Text type=\"secondary\">机器名: </Text>\n                  <Text strong>{systemResources.system?.machineName || 'Unknown'}</Text>\n                </Col>\n                <Col xs={24} sm={12} md={6}>\n                  <Text type=\"secondary\">CPU 核心: </Text>\n                  <Text strong>{systemResources.system?.processorCount || 0}</Text>\n                </Col>\n                <Col xs={24} sm={12} md={6}>\n                  <Text type=\"secondary\">系统架构: </Text>\n                  <Text strong>{systemResources.system?.is64BitOperatingSystem ? '64位' : '32位'}</Text>\n                </Col>\n                <Col xs={24} sm={12} md={6}>\n                  <Text type=\"secondary\">系统运行时间: </Text>\n                  <Text strong>{Math.round((systemResources.system?.systemUpTime || 0) / 3600)}小时</Text>\n                </Col>\n              </Row>\n            </div>\n          )}\n        </Card>\n      </div>\n    </PageContainer>\n  );\n};\n\nexport default Welcome;",
       "__isJSFile": true,
       "__absFile": "/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/pages/Welcome.tsx"
     },
@@ -4073,7 +4074,7 @@
     "tslibVersion": "2.8.1"
   },
   "faviconFiles": [],
-  "port": 61038,
+  "port": 61435,
   "host": "0.0.0.0",
   "ip": "192.168.0.151",
   "antd": {

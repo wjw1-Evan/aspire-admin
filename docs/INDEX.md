@@ -160,6 +160,7 @@ docs/
 
 #### 系统监控 ⭐ **新增**
 - [**Admin 端系统信息显示功能**](features/ADMIN-SYSTEM-INFO-DISPLAY.md) - 系统资源监控和显示功能 ⭐ **最新**
+- [**内存使用率曲线图功能**](features/MEMORY-USAGE-CHART-FEATURE.md) - 实时内存监控曲线图实现 ⭐ **最新**
 
 #### 路由和认证
 - [**路由守卫增强**](features/ROUTE-GUARD-ENHANCEMENT.md) - Token有效性验证和自动跳转 ⭐ **最新**

@@ -30,6 +30,7 @@
     "defaults"
   ],
   "dependencies": {
+    "@ant-design/charts": "^2.6.6",
     "@ant-design/icons": "^6.1.0",
     "@ant-design/pro-components": "^2.7.19",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",

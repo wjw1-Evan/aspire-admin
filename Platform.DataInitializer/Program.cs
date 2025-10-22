@@ -18,7 +18,6 @@ builder.AddMongoDBClient(connectionName: "mongodb");
 builder.Services.AddScoped<IDataInitializerService, DataInitializerService>();
 
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -67,5 +66,4 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// 这行代码不会被执行，因为上面已经 return 了
-await app.RunAsync();
+

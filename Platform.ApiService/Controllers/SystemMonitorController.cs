@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Management;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Controllers;
@@ -148,18 +149,37 @@ public class SystemMonitorController : BaseApiController
     {
         try
         {
-            // 使用进程工作集估算系统总内存
-            var process = Process.GetCurrentProcess();
-            var processMemory = process.WorkingSet64;
-            
-            // 根据进程内存估算系统总内存（通常系统总内存是进程内存的10-50倍）
-            // 这里使用一个合理的估算值
-            return processMemory * 30; // 估算系统总内存
+            // 使用WMI直接读取系统总内存
+            using (var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem"))
+            {
+                foreach (ManagementObject obj in searcher.Get())
+                {
+                    var totalMemoryBytes = Convert.ToInt64(obj["TotalPhysicalMemory"]);
+                    return totalMemoryBytes;
+                }
+            }
         }
         catch
         {
-            return 8L * 1024 * 1024 * 1024; // 默认8GB
+            // WMI失败时，尝试使用GC估算
+            try
+            {
+                var gcMemory = GC.GetTotalMemory(false);
+                if (gcMemory > 100 * 1024 * 1024) // 大于100MB
+                {
+                    return gcMemory * 10; // 估算系统总内存
+                }
+                
+                var process = Process.GetCurrentProcess();
+                return process.WorkingSet64 * 20; // 估算系统总内存
+            }
+            catch
+            {
+                return 8L * 1024 * 1024 * 1024; // 默认8GB
+            }
         }
+        
+        return 8L * 1024 * 1024 * 1024; // 默认8GB
     }
 
     /// <summary>
@@ -169,25 +189,31 @@ public class SystemMonitorController : BaseApiController
     {
         try
         {
-            // 获取系统总内存
-            var totalMemory = GetSystemTotalMemory();
-            
-            // 获取当前进程内存
-            var process = Process.GetCurrentProcess();
-            var processMemory = process.WorkingSet64;
-            
-            // 估算系统可用内存（总内存 - 进程内存 - 系统开销）
-            // 系统开销通常占总内存的20-30%
-            var systemOverhead = totalMemory * 0.25; // 25%系统开销
-            var availableMemory = totalMemory - processMemory - systemOverhead;
-            
-            // 确保可用内存不为负数
-            return Math.Max(availableMemory, totalMemory * 0.1); // 至少保留10%可用内存
+            // 使用WMI直接读取系统可用内存
+            using (var searcher = new ManagementObjectSearcher("SELECT AvailableBytes FROM Win32_PerfRawData_PerfOS_Memory"))
+            {
+                foreach (ManagementObject obj in searcher.Get())
+                {
+                    var availableBytes = Convert.ToInt64(obj["AvailableBytes"]);
+                    return availableBytes;
+                }
+            }
         }
         catch
         {
-            return 4L * 1024 * 1024 * 1024; // 默认4GB可用
+            // WMI失败时，尝试使用GC估算
+            try
+            {
+                var gcMemory = GC.GetTotalMemory(false);
+                return gcMemory;
+            }
+            catch
+            {
+                return 4L * 1024 * 1024 * 1024; // 默认4GB可用
+            }
         }
+        
+        return 4L * 1024 * 1024 * 1024; // 默认4GB可用
     }
 
     /// <summary>

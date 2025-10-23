@@ -24,8 +24,8 @@ export async function getRoutes() {
 '14': React.lazy(() => import(/* webpackChunkName: "p__company__settings" */'@/pages/company/settings.tsx')),
 '15': React.lazy(() => import('./EmptyRoute')),
 '16': React.lazy(() => import(/* webpackChunkName: "p__404" */'@/pages/404.tsx')),
-'ant-design-pro-layout': React.lazy(() => import(/* webpackChunkName: "umi__plugin-layout__Layout" */'/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/.umi/plugin-layout/Layout.tsx')),
-'umi/plugin/openapi': React.lazy(() => import(/* webpackChunkName: "umi__plugin-openapi__openapi" */'/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/src/.umi/plugin-openapi/openapi.tsx')),
+'ant-design-pro-layout': React.lazy(() => import(/* webpackChunkName: "umi__plugin-layout__Layout" */'/Users/fanshuyi/Projects/aspire-admin/Platform.Admin/src/.umi/plugin-layout/Layout.tsx')),
+'umi/plugin/openapi': React.lazy(() => import(/* webpackChunkName: "umi__plugin-openapi__openapi" */'/Users/fanshuyi/Projects/aspire-admin/Platform.Admin/src/.umi/plugin-openapi/openapi.tsx')),
 },
   };
 }

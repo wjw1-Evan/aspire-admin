@@ -6,8 +6,8 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
   type AxiosError,
-} from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/axios';
-import useUmiRequest, { UseRequestProvider } from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ahooksjs/use-request';
+} from '/Users/fanshuyi/Projects/aspire-admin/Platform.Admin/node_modules/axios';
+import useUmiRequest, { UseRequestProvider } from '/Users/fanshuyi/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ahooksjs/use-request';
 import { ApplyPluginsType } from 'umi';
 import { getPluginManager } from '../core/plugin';
 
@@ -26,7 +26,7 @@ import {
   PaginatedOptionsWithFormat,
   PaginatedParams,
   PaginatedResult,
-} from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ahooksjs/use-request/es/types';
+} from '/Users/fanshuyi/Projects/aspire-admin/Platform.Admin/node_modules/@umijs/plugins/node_modules/@ahooksjs/use-request/es/types';
 
 type ResultWithData< T = any > = { data?: T; [key: string]: any };
 

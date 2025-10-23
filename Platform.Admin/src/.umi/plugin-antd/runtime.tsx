@@ -9,7 +9,7 @@ import {
 import { ApplyPluginsType } from 'umi';
 import { getPluginManager } from '../core/plugin';
 import { AntdConfigContext, AntdConfigContextSetter } from './context';
-import merge from '/Volumes/thinkplus/Projects/aspire-admin/Platform.Admin/node_modules/lodash/merge'
+import merge from '/Users/fanshuyi/Projects/aspire-admin/Platform.Admin/node_modules/lodash/merge'
 
 let cacheAntdConfig = null;
 

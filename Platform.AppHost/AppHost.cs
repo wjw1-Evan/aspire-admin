@@ -45,6 +45,7 @@ builder.AddNpmApp("admin", "../Platform.Admin")
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
     .WithHttpEndpoint(env: "PORT",port:15001)
+    .WithNpmPackageInstallation()
     .PublishAsDockerFile();
  
 builder.AddNpmApp("app", "../Platform.App")
@@ -52,6 +53,7 @@ builder.AddNpmApp("app", "../Platform.App")
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
     .WithHttpEndpoint(env: "PORT",port:15002)
+    .WithNpmPackageInstallation()
     .PublishAsDockerFile();
  
 // 配置 Scalar API 文档

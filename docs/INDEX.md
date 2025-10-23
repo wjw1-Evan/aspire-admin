@@ -173,6 +173,7 @@ docs/
 - [**用户注册数据完整性检查指南**](bugfixes/USER-REGISTRATION-INTEGRITY-CHECK-GUIDE.md) - 用户注册问题排查和修复指南 ⭐ **新增**
 - [**MongoDB索引多租户修复**](bugfixes/MONGODB-INDEX-MULTI-TENANT-FIX.md) - 修复索引不支持多租户问题 ⭐ **最新**
 - [**MongoDB事务错误修复**](bugfixes/MONGODB-TRANSACTION-FIX.md) - 修复单机模式不支持事务问题
+- [**MongoDB事务移除总结**](bugfixes/MONGODB-TRANSACTION-REMOVAL-SUMMARY.md) - 完全移除MongoDB事务支持，改用错误回滚机制 ⭐ **最新**
 - [**删除企业注册页面**](reports/REMOVE-COMPANY-REGISTRATION-PAGE.md) - 简化注册流程，统一使用用户注册
 
 #### 权限系统 (v6.0)

@@ -381,6 +381,8 @@ docs/
 - [**流程设计全面审查报告**](reports/PROCESS-DESIGN-REVIEW.md) - **新增** 全面审查所有核心业务流程和系统架构设计 ⭐ **重要**
 - [**紧急修复任务清单**](reports/CRITICAL-FIXES-REQUIRED.md) - **新增** P0和P1优先级问题修复计划 ⭐ **紧急**
 - [**P0修复：UserCompany记录缺失**](bugfixes/P0-USER-COMPANY-RECORDS-FIX.md) - **新增** 企业注册缺少UserCompany记录修复 ✅ **已修复**
+- [**新注册用户菜单为空修复**](bugfixes/EMPTY-MENUIDS-FIX.md) - **新增** 修复新注册用户角色 MenuIds 为空导致无法看到菜单的问题 ⭐ **最新**
+- [**用户注册错误回滚支持**](features/USER-REGISTRATION-TRANSACTION-SUPPORT.md) - **新增** 为用户注册流程添加完整的错误回滚机制，确保数据一致性 ⭐ **最新**
 
 ### 设计问题修复
 - [设计问题全面分析报告](reports/DESIGN-ISSUES-ANALYSIS.md) - 项目设计问题全面分析

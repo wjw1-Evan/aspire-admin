@@ -283,44 +283,50 @@ public class AuthService : BaseService, IAuthService
 
 
     /// <summary>
-    /// v3.1: 用户注册（自动创建个人企业）
+    /// v3.1: 用户注册（自动创建个人企业，支持事务回滚）
     /// </summary>
     public async Task<ApiResponse<User>> RegisterAsync(RegisterRequest request)
     {
+        // 验证图形验证码 - 必填项
+        if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
+        {
+            return ApiResponse<User>.ErrorResult(
+                "CAPTCHA_REQUIRED",
+                "图形验证码是必填项，请先获取验证码"
+            );
+        }
+
+        var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
+        if (!captchaValid)
+        {
+            return ApiResponse<User>.ErrorResult(
+                "CAPTCHA_INVALID",
+                "图形验证码错误，请重新输入"
+            );
+        }
+
+        // 1. 验证输入
+        _validationService.ValidateUsername(request.Username);
+        _validationService.ValidatePassword(request.Password);
+        _validationService.ValidateEmail(request.Email);
+        
+        // 2. 检查用户名全局唯一
+        await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username);
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
+        }
+
+        // 3. 执行注册流程（使用错误回滚机制，因为单机MongoDB不支持事务）
+        User? user = null;
+        Company? personalCompany = null;
+        Role? adminRole = null;
+        UserCompany? userCompany = null;
+
         try
         {
-            // 验证图形验证码 - 必填项
-            if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
-            {
-                return ApiResponse<User>.ErrorResult(
-                    "CAPTCHA_REQUIRED",
-                    "图形验证码是必填项，请先获取验证码"
-                );
-            }
-
-            var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
-            if (!captchaValid)
-            {
-                return ApiResponse<User>.ErrorResult(
-                    "CAPTCHA_INVALID",
-                    "图形验证码错误，请重新输入"
-                );
-            }
-
-            // 1. 验证输入
-            _validationService.ValidateUsername(request.Username);
-            _validationService.ValidatePassword(request.Password);
-            _validationService.ValidateEmail(request.Email);
-            
-            // 2. 检查用户名全局唯一
-            await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username);
-            if (!string.IsNullOrEmpty(request.Email))
-            {
-                await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
-            }
-            
-            // 3. 创建用户
-            var user = new User
+            // 创建用户
+            user = new User
             {
                 Username = request.Username.Trim(),
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
@@ -334,22 +340,25 @@ public class AuthService : BaseService, IAuthService
             await _users.InsertOneAsync(user);
             _logger.LogInformation("用户注册成功: {Username} ({UserId})", user.Username, user.Id);
             
-            // 4. 创建个人企业
-            var personalCompany = await CreatePersonalCompanyAsync(user);
+            // 创建个人企业
+            var companyResult = await CreatePersonalCompanyWithDetailsAsync(user);
+            personalCompany = companyResult.Company;
+            adminRole = companyResult.Role;
+            userCompany = companyResult.UserCompany;
             
-            // 5. 设置用户的企业信息
+            // 设置用户的企业信息
             var update = Builders<User>.Update
                 .Set(u => u.CurrentCompanyId, personalCompany.Id)
                 .Set(u => u.PersonalCompanyId, personalCompany.Id)
-                .Set(u => u.CompanyId, personalCompany.Id) // ✅ 修复：同时设置CompanyId保持一致性
+                .Set(u => u.CompanyId, personalCompany.Id)
                 .Set(u => u.UpdatedAt, DateTime.UtcNow);
             
             await _users.UpdateOneAsync(u => u.Id == user.Id, update);
             
-            // 6. 更新用户对象
+            // 更新用户对象
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
-            user.CompanyId = personalCompany.Id!; // ✅ 修复：同时设置CompanyId
+            user.CompanyId = personalCompany.Id!;
             
             // 清除密码哈希
             user.PasswordHash = string.Empty;
@@ -361,21 +370,250 @@ public class AuthService : BaseService, IAuthService
         }
         catch (ArgumentException ex)
         {
+            await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             return ApiResponse<User>.ValidationErrorResult(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
+            await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             // 唯一性检查失败
             var errorCode = ex.Message.Contains("用户名") ? "USER_EXISTS" : "EMAIL_EXISTS";
             return ApiResponse<User>.ErrorResult(errorCode, ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "用户注册失败");
+            await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
+            _logger.LogError(ex, "用户注册失败，已执行回滚操作");
             return ApiResponse<User>.ErrorResult("SERVER_ERROR", $"注册失败: {ex.Message}");
         }
     }
     
+    /// <summary>
+    /// 回滚用户注册操作（清理已创建的数据）
+    /// </summary>
+    private async Task RollbackUserRegistrationAsync(User? user, Company? company, Role? role, UserCompany? userCompany)
+    {
+        try
+        {
+            var companies = _database.GetCollection<Company>("companies");
+            var roles = _database.GetCollection<Role>("roles");
+            var userCompanies = _database.GetCollection<UserCompany>("user_companies");
+
+            // 按相反顺序删除（避免外键约束问题）
+            if (userCompany != null)
+            {
+                await userCompanies.DeleteOneAsync(uc => uc.Id == userCompany.Id);
+                _logger.LogInformation("回滚：删除用户-企业关联 {UserCompanyId}", userCompany.Id);
+            }
+
+            if (role != null)
+            {
+                await roles.DeleteOneAsync(r => r.Id == role.Id);
+                _logger.LogInformation("回滚：删除角色 {RoleId}", role.Id);
+            }
+
+            if (company != null)
+            {
+                await companies.DeleteOneAsync(c => c.Id == company.Id);
+                _logger.LogInformation("回滚：删除企业 {CompanyId}", company.Id);
+            }
+
+            if (user != null)
+            {
+                await _users.DeleteOneAsync(u => u.Id == user.Id);
+                _logger.LogInformation("回滚：删除用户 {UserId}", user.Id);
+            }
+
+            _logger.LogInformation("用户注册回滚完成");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "回滚操作失败，可能需要手动清理数据");
+        }
+    }
+
+    /// <summary>
+    /// 企业创建结果（用于回滚）
+    /// </summary>
+    private class CompanyCreationResult
+    {
+        public Company Company { get; set; } = null!;
+        public Role Role { get; set; } = null!;
+        public UserCompany UserCompany { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// v3.1: 创建个人企业（返回详细信息用于回滚）
+    /// </summary>
+    private async Task<CompanyCreationResult> CreatePersonalCompanyWithDetailsAsync(User user)
+    {
+        var companies = _database.GetCollection<Company>("companies");
+        var roles = _database.GetCollection<Role>("roles");
+        var menus = _database.GetCollection<Menu>("menus");
+        var userCompanies = _database.GetCollection<UserCompany>("user_companies");
+        
+        Company? company = null;
+        Role? adminRole = null;
+        UserCompany? userCompany = null;
+        
+        try
+        {
+            // 1. 创建个人企业
+            company = new Company
+            {
+                Name = $"{user.Username} 的企业",
+                Code = $"personal-{user.Id}",  // 使用用户ID保证唯一
+                Description = "个人企业",
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            await companies.InsertOneAsync(company);
+            _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
+            
+            // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
+            // 注意：ApiService 的 Menu 模型使用 DeletedAt 字段而不是 IsDeleted
+            var allMenus = await menus.Find(m => m.IsEnabled && m.DeletedAt == null).ToListAsync();
+            var allMenuIds = allMenus.Select(m => m.Id!).ToList();
+            _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
+            
+            // 验证菜单数据完整性
+            if (allMenuIds.Count == 0)
+            {
+                _logger.LogError("❌ 系统菜单未初始化！请确保 DataInitializer 服务已成功运行");
+                throw new InvalidOperationException("系统菜单未初始化，请先运行 DataInitializer 服务");
+            }
+            
+            // 3. 创建管理员角色（分配所有菜单）
+            adminRole = new Role
+            {
+                Name = "管理员",
+                Description = "企业管理员，拥有所有菜单访问权限",
+                CompanyId = company.Id!,
+                MenuIds = allMenuIds,  // 分配所有全局菜单
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            await roles.InsertOneAsync(adminRole);
+            _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
+            
+            // 4. 创建用户-企业关联（用户是管理员）
+            userCompany = new UserCompany
+            {
+                UserId = user.Id!,
+                CompanyId = company.Id!,
+                RoleIds = new List<string> { adminRole.Id! },
+                Status = "active",
+                IsAdmin = true,
+                JoinedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            await userCompanies.InsertOneAsync(userCompany);
+            _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}", user.Id, company.Id);
+            
+            return new CompanyCreationResult
+            {
+                Company = company,
+                Role = adminRole,
+                UserCompany = userCompany
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建个人企业失败: {CompanyName}", company?.Name);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// v3.1: 创建个人企业（在事务中执行）
+    /// </summary>
+    private async Task<Company> CreatePersonalCompanyInTransactionAsync(IClientSessionHandle session, User user)
+    {
+        var companies = _database.GetCollection<Company>("companies");
+        var roles = _database.GetCollection<Role>("roles");
+        var menus = _database.GetCollection<Menu>("menus");
+        var userCompanies = _database.GetCollection<UserCompany>("user_companies");
+        
+        Company? company = null;
+        Role? adminRole = null;
+        
+        try
+        {
+            // 1. 创建个人企业
+            company = new Company
+            {
+                Name = $"{user.Username} 的企业",
+                Code = $"personal-{user.Id}",  // 使用用户ID保证唯一
+                Description = "个人企业",
+                IsActive = true,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            await companies.InsertOneAsync(session, company);
+            _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
+            
+            // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
+            // 注意：ApiService 的 Menu 模型使用 DeletedAt 字段而不是 IsDeleted
+            var allMenus = await menus.Find(m => m.IsEnabled && m.DeletedAt == null).ToListAsync();
+            var allMenuIds = allMenus.Select(m => m.Id!).ToList();
+            _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
+            
+            // 验证菜单数据完整性
+            if (allMenuIds.Count == 0)
+            {
+                _logger.LogError("❌ 系统菜单未初始化！请确保 DataInitializer 服务已成功运行");
+                throw new InvalidOperationException("系统菜单未初始化，请先运行 DataInitializer 服务");
+            }
+            
+            // 3. 创建管理员角色（分配所有菜单）
+            adminRole = new Role
+            {
+                Name = "管理员",
+                Description = "企业管理员，拥有所有菜单访问权限",
+                CompanyId = company.Id!,
+                MenuIds = allMenuIds,  // 分配所有全局菜单
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            await roles.InsertOneAsync(session, adminRole);
+            _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
+            
+            // 4. 创建用户-企业关联（用户是管理员）
+            var userCompany = new UserCompany
+            {
+                UserId = user.Id!,
+                CompanyId = company.Id!,
+                RoleIds = new List<string> { adminRole.Id! },
+                Status = "active",
+                IsAdmin = true,
+                JoinedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            await userCompanies.InsertOneAsync(session, userCompany);
+            _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}", user.Id, company.Id);
+            
+            return company;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建个人企业失败: {CompanyName}", company?.Name);
+            throw;
+        }
+    }
+
     /// <summary>
     /// v3.1: 创建个人企业（用户注册时自动调用）
     /// 注意：MongoDB单机模式不支持事务，使用错误回滚机制
@@ -408,9 +646,17 @@ public class AuthService : BaseService, IAuthService
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
             
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
-            var allMenus = await menus.Find(m => m.IsEnabled && !m.IsDeleted).ToListAsync();
+            // 注意：ApiService 的 Menu 模型使用 DeletedAt 字段而不是 IsDeleted
+            var allMenus = await menus.Find(m => m.IsEnabled && m.DeletedAt == null).ToListAsync();
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
+            
+            // 验证菜单数据完整性
+            if (allMenuIds.Count == 0)
+            {
+                _logger.LogError("❌ 系统菜单未初始化！请确保 DataInitializer 服务已成功运行");
+                throw new InvalidOperationException("系统菜单未初始化，请先运行 DataInitializer 服务");
+            }
             
             // 3. 创建管理员角色（分配所有菜单）
             adminRole = new Role

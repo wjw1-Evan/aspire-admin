@@ -127,6 +127,7 @@ public class DataInitializerService : IDataInitializerService
                 Icon = "smile",
                 SortOrder = 1,
                 IsEnabled = true,
+                IsDeleted = false,  // 明确设置未删除
                 CreatedAt = now,
                 UpdatedAt = now
             };
@@ -139,6 +140,7 @@ public class DataInitializerService : IDataInitializerService
                 Icon = "setting",
                 SortOrder = 2,
                 IsEnabled = true,
+                IsDeleted = false,  // 明确设置未删除
                 CreatedAt = now,
                 UpdatedAt = now
             };
@@ -159,6 +161,7 @@ public class DataInitializerService : IDataInitializerService
                     ParentId = systemMenu.Id!,
                     SortOrder = 1,
                     IsEnabled = true,
+                    IsDeleted = false,  // 明确设置未删除
                     Permissions = new List<string> { "user:read" },
                     CreatedAt = now,
                     UpdatedAt = now
@@ -173,6 +176,7 @@ public class DataInitializerService : IDataInitializerService
                     ParentId = systemMenu.Id!,
                     SortOrder = 2,
                     IsEnabled = true,
+                    IsDeleted = false,  // 明确设置未删除
                     Permissions = new List<string> { "role:read" },
                     CreatedAt = now,
                     UpdatedAt = now
@@ -187,6 +191,7 @@ public class DataInitializerService : IDataInitializerService
                     ParentId = systemMenu.Id!,
                     SortOrder = 3,
                     IsEnabled = true,
+                    IsDeleted = false,  // 明确设置未删除
                     Permissions = new List<string> { "company:read" },
                     CreatedAt = now,
                     UpdatedAt = now
@@ -201,6 +206,7 @@ public class DataInitializerService : IDataInitializerService
                     ParentId = systemMenu.Id!,
                     SortOrder = 4,
                     IsEnabled = true,
+                    IsDeleted = false,  // 明确设置未删除
                     Permissions = new List<string> { "notice:read" },
                     CreatedAt = now,
                     UpdatedAt = now
@@ -215,6 +221,7 @@ public class DataInitializerService : IDataInitializerService
                     ParentId = systemMenu.Id!,
                     SortOrder = 5,
                     IsEnabled = true,
+                    IsDeleted = false,  // 明确设置未删除
                     Permissions = new List<string> { "tag:read" },
                     CreatedAt = now,
                     UpdatedAt = now

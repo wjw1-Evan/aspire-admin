@@ -58,34 +58,37 @@ public class MenuAccessService : BaseService, IMenuAccessService
 
             var menuIds = new List<string>();
 
-            // 获取用户在当前企业的角色
-            var companyId = GetCurrentCompanyId();
-            if (!string.IsNullOrEmpty(companyId))
+            // 获取用户的企业ID（优先从用户信息获取，其次从当前上下文获取）
+            var companyId = user.CurrentCompanyId ?? GetCurrentCompanyId();
+            if (string.IsNullOrEmpty(companyId))
             {
-                var userCompanyFilter = Builders<UserCompany>.Filter.And(
-                    Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-                    Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-                    MongoFilterExtensions.NotDeleted<UserCompany>()
+                _logger.LogWarning("用户 {UserId} 没有关联的企业ID", userId);
+                return new List<string>();
+            }
+
+            var userCompanyFilter = Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
+                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
+                MongoFilterExtensions.NotDeleted<UserCompany>()
+            );
+
+            var userCompany = await _userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
+            
+            if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
+            {
+                // 获取用户的所有角色
+                var roleFilter = Builders<Role>.Filter.And(
+                    Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
+                    SoftDeleteExtensions.NotDeleted<Role>()
                 );
+                var roles = await _roles.Find(roleFilter).ToListAsync();
 
-                var userCompany = await _userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
-                
-                if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
+                // 收集所有角色的菜单ID
+                foreach (var role in roles)
                 {
-                    // 获取用户的所有角色
-                    var roleFilter = Builders<Role>.Filter.And(
-                        Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
-                        SoftDeleteExtensions.NotDeleted<Role>()
-                    );
-                    var roles = await _roles.Find(roleFilter).ToListAsync();
-
-                    // 收集所有角色的菜单ID
-                    foreach (var role in roles)
+                    if (role.MenuIds != null)
                     {
-                        if (role.MenuIds != null)
-                        {
-                            menuIds.AddRange(role.MenuIds);
-                        }
+                        menuIds.AddRange(role.MenuIds);
                     }
                 }
             }

@@ -549,3 +549,5 @@ Thumbs.db
 .umi
 .umi/
 .umi-production/
+Platform.Admin/src/.umi
+Platform.Admin/src/.umi-production

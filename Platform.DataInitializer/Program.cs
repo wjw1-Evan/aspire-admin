@@ -53,16 +53,16 @@ using (var scope = app.Services.CreateScope())
     {
         logger.LogInformation("🚀 DataInitializer 微服务启动，开始执行数据初始化...");
         await initializer.InitializeAsync();
-        logger.LogInformation("✅ 数据初始化完成，DataInitializer 微服务将停止运行");
+        logger.LogInformation("✅ 数据初始化完成");
+        logger.LogInformation("🛑 DataInitializer 微服务已完成任务，正在退出...");
         
-        // 初始化完成后，优雅地停止服务
-        logger.LogInformation("🛑 DataInitializer 微服务已完成任务，正在停止...");
-        return; // 直接返回，不执行 app.RunAsync()
+        // 初始化完成后，直接退出程序
+        Environment.Exit(0);
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "❌ 数据初始化失败，DataInitializer 微服务将停止运行");
-        return; // 即使失败也停止服务
+        logger.LogError(ex, "❌ 数据初始化失败");
+        Environment.Exit(1); // 失败时以错误代码退出
     }
 }
 

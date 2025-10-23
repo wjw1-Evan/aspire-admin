@@ -10,11 +10,10 @@ var mongo = builder.AddMongoDB("mongo").WithMongoExpress(config=>{
 
 var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
-// 数据初始化服务（端口不暴露，仅供内部访问）
+// 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(mongodb)
-    .WithHttpEndpoint()
-    .WithHttpHealthCheck("/health");
+    .WithHttpEndpoint();
 
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {

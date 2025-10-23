@@ -206,19 +206,23 @@ public class ImageCaptchaService : IImageCaptchaService
         }
 
         // 绘制验证码文字
+        using var textFont = new SKFont
+        {
+            Size = FONT_SIZE,
+            Typeface = SKTypeface.Default
+        };
+        
         using var textPaint = new SKPaint
         {
             Color = SKColors.Black,
-            TextSize = FONT_SIZE,
-            IsAntialias = true,
-            Typeface = SKTypeface.Default
+            IsAntialias = true
         };
 
         for (int i = 0; i < answer.Length; i++)
         {
             var x = 10 + i * 20 + random.Next(-3, 3);
             var y = 25 + random.Next(-3, 3);
-            canvas.DrawText(answer[i].ToString(), x, y, textPaint);
+            canvas.DrawText(answer[i].ToString(), x, y, SKTextAlign.Left, textFont, textPaint);
         }
 
         // 转换为Base64

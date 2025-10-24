@@ -147,6 +147,7 @@ docs/
 - [通知调试指南](bugfixes/NOTICE-DEBUG-GUIDE.md) - 常见问题排查
 
 #### 帮助系统
+- [**统一错误拦截器**](features/UNIFIED-ERROR-INTERCEPTOR.md) - 集中式错误处理系统 ⭐ **最新**
 - [帮助模块功能](features/HELP-MODULE-FEATURE.md) - 系统内帮助模块
 - [**getUserStatistics API 函数缺失修复**](bugfixes/GET-USER-STATISTICS-API-FIX.md) - 修复欢迎页面统计数据加载问题 ⭐ **最新**
 - [帮助模块调试](bugfixes/HELP-MODAL-DEBUG.md) - 问题排查指南
@@ -235,6 +236,8 @@ docs/
 - [表格操作列修复](bugfixes/TABLE-ACTION-COLUMN-FIX.md) - 表格组件
 
 #### 登录和安全修复
+- [**移除重复错误提示修复**](bugfixes/REMOVE-DUPLICATE-ERROR-MESSAGES.md) - 修复 admin 端重复显示错误提示的问题 ⭐ **最新**
+- [**Admin 端 401 错误提示修复**](bugfixes/ADMIN-401-ERROR-DISPLAY-FIX.md) - 修复 admin 端显示 401 错误提示的问题 ⭐ **最新**
 - [紧急登录修复](bugfixes/CRITICAL-LOGIN-FIX-SUMMARY.md) - 登录安全漏洞修复报告 ⚠️ **重要**
 
 #### API 修复

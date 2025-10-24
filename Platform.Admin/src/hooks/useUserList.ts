@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { message } from 'antd';
 import { request } from '@umijs/max';
 import type { UserListRequest } from '@/pages/user-management/types';
 
@@ -56,7 +55,8 @@ export function useUserList() {
         };
       } catch (error) {
         console.error('获取用户列表失败:', error);
-        message.error('获取用户列表失败');
+        // 不在这里显示错误消息，让全局错误处理器统一处理
+        // 这样可以避免重复显示错误提示
         return {
           data: [],
           success: false,
@@ -93,6 +93,7 @@ export function useUserList() {
     resetSearchParams,
   };
 }
+
 
 
 

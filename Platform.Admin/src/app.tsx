@@ -334,7 +334,7 @@ function handle404Error(error: any): Promise<never> | null {
   if (isCurrentUserRequest && isNotFoundError) {
     tokenUtils.clearAllTokens();
     // 不在这里跳转，让响应拦截器的统一错误处理来处理
-    return Promise.reject(new Error('User not found'));
+    throw new Error('User not found');
   }
 
   return null;
@@ -410,8 +410,8 @@ async function handle401Error(error: any): Promise<any> {
   // 避免刷新token递归和重试循环
   if (shouldNotRetry) {
     tokenUtils.clearAllTokens();
-    // 不在这里跳转，让响应拦截器的统一错误处理来处理
-    return Promise.reject(new Error('Authentication failed'));
+    // 返回特殊值表示认证失败，不抛出错误
+    return { __authFailed: true };
   }
 
   // 尝试刷新token
@@ -425,7 +425,8 @@ async function handle401Error(error: any): Promise<any> {
 
   // 刷新失败，清除token
   tokenUtils.clearAllTokens();
-  return Promise.reject(new Error('Authentication failed'));
+  // 返回特殊值表示认证失败，不抛出错误
+  return { __authFailed: true };
 }
 
 /**
@@ -486,14 +487,34 @@ export const request: RequestConfig = {
       // 处理401错误（Token过期或无效）
       const unauthorizedResult = await handle401Error(error);
       if (unauthorizedResult !== null) {
-        // 如果是认证失败，跳转到登录页面
-        setTimeout(() => {
-          history.push('/user/login');
-        }, 100);
+        // 检查是否是认证失败的特殊标记
+        if (unauthorizedResult.__authFailed) {
+          // 认证失败，跳转到登录页面，不抛出错误
+          setTimeout(() => {
+            history.push('/user/login');
+          }, 100);
+          // 返回一个静默的错误，不显示给用户
+          throw new Error('Authentication handled silently');
+        }
+        // 如果是token刷新成功的结果，直接返回
         return unauthorizedResult;
       }
 
-      return Promise.reject(new Error(error.message || 'Request failed'));
+      // 检查是否是认证相关的错误，如果是则不抛出错误（避免显示401提示）
+      const isAuthError = error.response?.status === 401 || error.response?.status === 404;
+      if (isAuthError) {
+        // 认证错误已经在上面处理过了，不抛出错误避免显示401提示
+        throw new Error('Authentication handled');
+      }
+
+      // 对于其他错误，检查错误消息是否包含敏感信息
+      const errorMessage = error.message || 'Request failed';
+      if (errorMessage.includes('status code 401') || errorMessage.includes('status code 404')) {
+        // 如果是包含状态码的错误消息，使用通用消息
+        throw new Error('Request failed');
+      }
+
+      throw new Error(errorMessage);
     },
   ],
 

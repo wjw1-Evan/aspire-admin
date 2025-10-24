@@ -4,8 +4,8 @@
  */
 
 import { request } from '@umijs/max';
-import { message } from 'antd';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, CurrentUser } from '@/types/unified-api';
+import { errorInterceptor } from './errorInterceptor';
 
 // API 配置
 const API_CONFIG = {
@@ -14,19 +14,10 @@ const API_CONFIG = {
   retryDelay: 1000,
 };
 
-// 错误处理
-const handleError = (error: any, showMessage = true) => {
-  console.error('API Error:', error);
-
-  if (showMessage) {
-    const errorMessage =
-      error?.response?.data?.errorMessage ||
-      error?.message ||
-      '请求失败，请稍后重试';
-    message.error(errorMessage);
-  }
-
-  return Promise.reject(error);
+// 统一错误处理
+const handleError = (error: any, context?: any) => {
+  // 使用统一错误拦截器处理错误
+  return errorInterceptor.handleError(error, context);
 };
 
 // 重试机制
@@ -37,7 +28,7 @@ const retryRequest = async (
   try {
     return await fn();
   } catch (error) {
-    if (retries > 0 && error?.response?.status >= 500) {
+    if (retries > 0 && (error as any)?.response?.status >= 500) {
       await new Promise((resolve) =>
         setTimeout(resolve, API_CONFIG.retryDelay),
       );
@@ -49,7 +40,7 @@ const retryRequest = async (
 
 // 基础 API 客户端
 export class ApiClient {
-  private timeout: number;
+  private readonly timeout: number;
 
   constructor(_baseURL = '', timeout = API_CONFIG.timeout) {
     this.timeout = timeout;
@@ -71,7 +62,7 @@ export class ApiClient {
         });
         return response;
       } catch (error) {
-        return handleError(error);
+        return handleError(error, { url, method: 'GET' });
       }
     });
   }
@@ -92,7 +83,7 @@ export class ApiClient {
         });
         return response;
       } catch (error) {
-        return handleError(error);
+        return handleError(error, { url, method: 'POST' });
       }
     });
   }
@@ -113,7 +104,7 @@ export class ApiClient {
         });
         return response;
       } catch (error) {
-        return handleError(error);
+        return handleError(error, { url, method: 'PUT' });
       }
     });
   }
@@ -129,7 +120,7 @@ export class ApiClient {
         });
         return response;
       } catch (error) {
-        return handleError(error);
+        return handleError(error, { url, method: 'DELETE' });
       }
     });
   }
@@ -182,4 +173,3 @@ export const api = {
 };
 
 // 类型定义
-import type { CurrentUser } from '@/types/unified-api';

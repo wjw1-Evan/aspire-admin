@@ -92,7 +92,9 @@ export function useCrudData<T = any>(
             ? '权限不足，请联系管理员'
             : error.message || '操作失败，请重试';
 
-        message.error(friendlyMessage);
+        // 不在这里显示错误消息，让全局错误处理器统一处理
+        // 这样可以避免重复显示错误提示
+        console.error('CRUD操作失败:', friendlyMessage);
       }
     },
     [onError],

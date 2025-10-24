@@ -91,7 +91,8 @@ const UserManagement: React.FC = () => {
       setStatistics(response.data);
     } catch (error) {
       console.error('获取统计信息失败:', error);
-      message.error('获取统计信息失败');
+      // 不在这里显示错误消息，让全局错误处理器统一处理
+      // 这样可以避免重复显示错误提示
     }
   };
 
@@ -125,7 +126,8 @@ const UserManagement: React.FC = () => {
       };
     } catch (error) {
       console.error('获取用户列表失败:', error);
-      message.error('获取用户列表失败');
+      // 不在这里显示错误消息，让全局错误处理器统一处理
+      // 这样可以避免重复显示错误提示
       return {
         data: [],
         success: false,
@@ -200,7 +202,8 @@ const UserManagement: React.FC = () => {
           fetchStatistics();
         } catch (error) {
           console.error('删除用户失败:', error);
-          message.error('删除失败');
+          // 不在这里显示错误消息，让全局错误处理器统一处理
+          // 这样可以避免重复显示错误提示
         }
       },
     });
@@ -251,7 +254,8 @@ const UserManagement: React.FC = () => {
             fetchStatistics();
           } catch (error) {
             console.error('批量删除失败:', error);
-            message.error('批量删除失败');
+            // 不在这里显示错误消息，让全局错误处理器统一处理
+            // 这样可以避免重复显示错误提示
           }
         },
       });
@@ -279,7 +283,8 @@ const UserManagement: React.FC = () => {
       fetchStatistics();
     } catch (error) {
       console.error('批量操作失败:', error);
-      message.error('批量操作失败');
+      // 不在这里显示错误消息，让全局错误处理器统一处理
+      // 这样可以避免重复显示错误提示
     }
   };
 
@@ -296,7 +301,8 @@ const UserManagement: React.FC = () => {
       fetchStatistics();
     } catch (error) {
       console.error('切换用户状态失败:', error);
-      message.error('操作失败');
+      // 不在这里显示错误消息，让全局错误处理器统一处理
+      // 这样可以避免重复显示错误提示
     }
   };
 

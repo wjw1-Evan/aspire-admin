@@ -63,6 +63,7 @@ docs/
 - [Token存储方案评估](reports/TOKEN-STORAGE-EVALUATION.md) - JWT Token存储方案对比分析
 
 ### 全面检查报告
+- [Service BaseService 继承检查报告](reports/SERVICE-BASESERVICE-INHERITANCE-CHECK.md) - **新增** - 服务类继承BaseService规范化检查 ⭐ **架构优化**
 - [全面代码库深度检查报告](bugfixes/COMPREHENSIVE-CODE-REVIEW-REPORT.md) - **新增** - 全栈深度检查，发现并修复多个关键问题
 - [补充深度检查报告](bugfixes/SUPPLEMENTARY-DEEP-CHECK-REPORT.md) - **新增** - 补充安全审计和代码质量检查
 - [最终全面检查总结报告](bugfixes/FINAL-COMPREHENSIVE-CHECK-SUMMARY.md) - **新增** - 最终检查总结，系统生产就绪

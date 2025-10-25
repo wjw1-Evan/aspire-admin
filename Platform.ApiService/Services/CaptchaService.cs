@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
 
@@ -12,16 +13,19 @@ public interface ICaptchaService
     Task<bool> ValidateCaptchaAsync(string phone, string code);
 }
 
-public class CaptchaService : ICaptchaService
+public class CaptchaService : BaseService, ICaptchaService
 {
     private readonly IMongoCollection<Captcha> _captchas;
-    private readonly ILogger<CaptchaService> _logger;
     private const int EXPIRATION_MINUTES = 5;
 
-    public CaptchaService(IMongoDatabase database, ILogger<CaptchaService> logger)
+    public CaptchaService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
+        ILogger<CaptchaService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _captchas = database.GetCollection<Captcha>("captchas");
-        _logger = logger;
+        _captchas = Database.GetCollection<Captcha>("captchas");
     }
 
     /// <summary>
@@ -66,7 +70,7 @@ public class CaptchaService : ICaptchaService
     {
         if (string.IsNullOrWhiteSpace(phone) || string.IsNullOrWhiteSpace(code))
         {
-            _logger.LogWarning("[验证码] 验证失败 - 手机号或验证码为空");
+            Logger.LogWarning("[验证码] 验证失败 - 手机号或验证码为空");
             return false;
         }
 
@@ -82,7 +86,7 @@ public class CaptchaService : ICaptchaService
 
         if (captcha == null)
         {
-            _logger.LogWarning("[验证码] 验证失败 - 验证码不存在或已过期，手机号: {Phone}", phone);
+            Logger.LogWarning("[验证码] 验证失败 - 验证码不存在或已过期，手机号: {Phone}", phone);
             return false;
         }
 

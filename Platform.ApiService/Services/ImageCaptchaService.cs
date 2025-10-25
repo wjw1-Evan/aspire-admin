@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 using SkiaSharp;
 using System.Security.Cryptography;
 using System.Text;
@@ -32,10 +33,9 @@ public interface IImageCaptchaService
 /// <summary>
 /// 图形验证码服务实现
 /// </summary>
-public class ImageCaptchaService : IImageCaptchaService
+public class ImageCaptchaService : BaseService, IImageCaptchaService
 {
     private readonly IMongoCollection<CaptchaImage> _captchas;
-    private readonly ILogger<ImageCaptchaService> _logger;
     private const int EXPIRATION_MINUTES = 5;
     private const int IMAGE_WIDTH = 120;
     private const int IMAGE_HEIGHT = 40;
@@ -44,10 +44,14 @@ public class ImageCaptchaService : IImageCaptchaService
     // 验证码字符集（排除容易混淆的字符）
     private static readonly string[] CHARACTERS = { "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "2", "3", "4", "5", "6", "7", "8", "9" };
 
-    public ImageCaptchaService(IMongoDatabase database, ILogger<ImageCaptchaService> logger)
+    public ImageCaptchaService(
+        IMongoDatabase database,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
+        ILogger<ImageCaptchaService> logger)
+        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _captchas = database.GetCollection<CaptchaImage>("captcha_images");
-        _logger = logger;
+        _captchas = Database.GetCollection<CaptchaImage>("captcha_images");
     }
 
     /// <summary>
@@ -87,7 +91,7 @@ public class ImageCaptchaService : IImageCaptchaService
         // 插入新验证码
         await _captchas.InsertOneAsync(captcha);
 
-        _logger.LogInformation("[图形验证码] 生成成功: {CaptchaId}, 类型: {Type}, IP: {ClientIp}", 
+        Logger.LogInformation("[图形验证码] 生成成功: {CaptchaId}, 类型: {Type}, IP: {ClientIp}", 
             captchaId, type, clientIp);
 
         return new CaptchaImageResult
@@ -105,7 +109,7 @@ public class ImageCaptchaService : IImageCaptchaService
     {
         if (string.IsNullOrWhiteSpace(captchaId) || string.IsNullOrWhiteSpace(answer))
         {
-            _logger.LogWarning("[图形验证码] 验证失败 - 验证码ID或答案为空");
+            Logger.LogWarning("[图形验证码] 验证失败 - 验证码ID或答案为空");
             return false;
         }
 
@@ -121,7 +125,7 @@ public class ImageCaptchaService : IImageCaptchaService
 
         if (captcha == null)
         {
-            _logger.LogWarning("[图形验证码] 验证失败 - 验证码不存在或已过期，ID: {CaptchaId}", captchaId);
+            Logger.LogWarning("[图形验证码] 验证失败 - 验证码不存在或已过期，ID: {CaptchaId}", captchaId);
             return false;
         }
 
@@ -135,11 +139,11 @@ public class ImageCaptchaService : IImageCaptchaService
             var update = Builders<CaptchaImage>.Update.Set(c => c.IsUsed, true);
             await _captchas.UpdateOneAsync(c => c.Id == captcha.Id, update);
             
-            _logger.LogInformation("[图形验证码] 验证成功: {CaptchaId}", captchaId);
+            Logger.LogInformation("[图形验证码] 验证成功: {CaptchaId}", captchaId);
         }
         else
         {
-            _logger.LogWarning("[图形验证码] 验证失败 - 答案错误，ID: {CaptchaId}, 期望: {Expected}, 实际: {Actual}", 
+            Logger.LogWarning("[图形验证码] 验证失败 - 答案错误，ID: {CaptchaId}, 期望: {Expected}, 实际: {Actual}", 
                 captchaId, decryptedAnswer, answer);
         }
 

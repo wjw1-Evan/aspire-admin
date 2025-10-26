@@ -1,0 +1,600 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: 前端开发规范和最佳实践
+---
+
+# 前端开发规范
+
+## 🎯 核心原则
+
+**遵循 React 19 + TypeScript + Ant Design Pro 最佳实践，确保代码质量、性能和用户体验**
+
+## 📁 项目结构规范
+
+### 目录组织
+
+```
+Platform.Admin/src/
+├── components/          # 可复用组件
+│   ├── common/         # 通用组件
+│   ├── business/       # 业务组件
+│   └── layout/         # 布局组件
+├── pages/              # 页面组件
+│   ├── user-management/
+│   ├── company-management/
+│   └── system-settings/
+├── services/           # API 服务
+├── hooks/              # 自定义 Hooks
+├── utils/              # 工具函数
+├── types/              # TypeScript 类型定义
+├── constants/          # 常量定义
+└── styles/             # 样式文件
+```
+
+### 命名规范
+
+```typescript
+// ✅ 组件命名 - PascalCase
+export const UserManagement: React.FC = () => { };
+export const UserTable: React.FC = () => { };
+
+// ✅ 文件名命名 - kebab-case
+// user-management.tsx
+// user-table.tsx
+// api-service.ts
+
+// ✅ 变量和函数命名 - camelCase
+const userName = 'john';
+const getUserData = async () => { };
+
+// ✅ 常量命名 - UPPER_SNAKE_CASE
+const API_BASE_URL = 'https://api.example.com';
+const USER_ROLES = {
+  ADMIN: 'admin',
+  USER: 'user'
+} as const;
+
+// ✅ 类型命名 - PascalCase
+interface UserInfo {
+  id: string;
+  name: string;
+  email: string;
+}
+
+type UserStatus = 'active' | 'inactive' | 'pending';
+```
+
+## 🔧 组件开发规范
+
+### 1. 函数组件规范
+
+```typescript
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, Table, Button, message } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+
+interface UserTableProps {
+  users: User[];
+  loading?: boolean;
+  onEdit?: (user: User) => void;
+  onDelete?: (userId: string) => void;
+}
+
+/**
+ * 用户表格组件
+ * @param props - 组件属性
+ */
+export const UserTable: React.FC<UserTableProps> = ({
+  users,
+  loading = false,
+  onEdit,
+  onDelete
+}) => {
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+
+  const handleEdit = useCallback((user: User) => {
+    onEdit?.(user);
+  }, [onEdit]);
+
+  const handleDelete = useCallback((userId: string) => {
+    onDelete?.(userId);
+  }, [onDelete]);
+
+  const columns: ColumnsType<User> = [
+    {
+      title: '用户名',
+      dataIndex: 'username',
+      key: 'username',
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+      key: 'email',
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_, record) => (
+        <div>
+          <Button type="link" onClick={() => handleEdit(record)}>
+            编辑
+          </Button>
+          <Button 
+            type="link" 
+            danger 
+            onClick={() => handleDelete(record.id)}
+          >
+            删除
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <Card title="用户列表">
+      <Table
+        columns={columns}
+        dataSource={users}
+        loading={loading}
+        rowKey="id"
+        rowSelection={{
+          selectedRowKeys,
+          onChange: setSelectedRowKeys,
+        }}
+      />
+    </Card>
+  );
+};
+```
+
+### 2. 自定义 Hook 规范
+
+```typescript
+import { useState, useEffect, useCallback } from 'react';
+import { message } from 'antd';
+import { userService } from '@/services/userService';
+
+interface UseUserListOptions {
+  pageSize?: number;
+  autoLoad?: boolean;
+}
+
+interface UseUserListReturn {
+  users: User[];
+  loading: boolean;
+  pagination: PaginationConfig;
+  refresh: () => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
+}
+
+/**
+ * 用户列表管理 Hook
+ */
+export const useUserList = (options: UseUserListOptions = {}): UseUserListReturn => {
+  const { pageSize = 10, autoLoad = true } = options;
+  
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState<PaginationConfig>({
+    current: 1,
+    pageSize,
+    total: 0,
+  });
+
+  const loadUsers = useCallback(async (page = 1) => {
+    try {
+      setLoading(true);
+      const response = await userService.getUsers({
+        current: page,
+        pageSize,
+      });
+      
+      setUsers(response.data);
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: response.total,
+      }));
+    } catch (error) {
+      message.error('加载用户列表失败');
+      console.error('Load users error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [pageSize]);
+
+  const refresh = useCallback(async () => {
+    await loadUsers(pagination.current);
+  }, [loadUsers, pagination.current]);
+
+  const deleteUser = useCallback(async (userId: string) => {
+    try {
+      await userService.deleteUser(userId);
+      message.success('删除用户成功');
+      await refresh();
+    } catch (error) {
+      message.error('删除用户失败');
+      console.error('Delete user error:', error);
+    }
+  }, [refresh]);
+
+  useEffect(() => {
+    if (autoLoad) {
+      loadUsers();
+    }
+  }, [loadUsers, autoLoad]);
+
+  return {
+    users,
+    loading,
+    pagination,
+    refresh,
+    deleteUser,
+  };
+};
+```
+
+### 3. API 服务规范
+
+```typescript
+import { request } from '@umijs/max';
+import type { 
+  User, 
+  UserListRequest, 
+  UserListResponse,
+  CreateUserRequest,
+  UpdateUserRequest 
+} from '@/types/user';
+
+/**
+ * 用户服务 API
+ */
+export const userService = {
+  /**
+   * 获取用户列表
+   */
+  async getUsers(params: UserListRequest): Promise<UserListResponse> {
+    return request('/api/user', {
+      method: 'GET',
+      params,
+    });
+  },
+
+  /**
+   * 根据ID获取用户
+   */
+  async getUserById(id: string): Promise<User> {
+    return request(`/api/user/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * 创建用户
+   */
+  async createUser(data: CreateUserRequest): Promise<User> {
+    return request('/api/user', {
+      method: 'POST',
+      data,
+    });
+  },
+
+  /**
+   * 更新用户
+   */
+  async updateUser(id: string, data: UpdateUserRequest): Promise<User> {
+    return request(`/api/user/${id}`, {
+      method: 'PUT',
+      data,
+    });
+  },
+
+  /**
+   * 删除用户
+   */
+  async deleteUser(id: string): Promise<void> {
+    return request(`/api/user/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+```
+
+## 🎨 样式规范
+
+### 1. CSS-in-JS 使用
+
+```typescript
+import { styled } from '@emotion/styled';
+import { Card, Button } from 'antd';
+
+// ✅ 使用 styled 组件
+const StyledCard = styled(Card)`
+  margin-bottom: 16px;
+  
+  .ant-card-head {
+    background: #f5f5f5;
+  }
+  
+  .ant-card-body {
+    padding: 24px;
+  }
+`;
+
+const ActionButton = styled(Button)`
+  margin-right: 8px;
+  
+  &:last-child {
+    margin-right: 0;
+  }
+`;
+
+// ✅ 使用内联样式对象
+const containerStyle: React.CSSProperties = {
+  padding: '24px',
+  backgroundColor: '#fff',
+  borderRadius: '8px',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+};
+```
+
+### 2. 响应式设计
+
+```typescript
+import { useBreakpoint } from 'antd';
+
+const UserManagement: React.FC = () => {
+  const breakpoint = useBreakpoint();
+  
+  const isMobile = !breakpoint.md;
+  const isTablet = breakpoint.md && !breakpoint.lg;
+  
+  return (
+    <div style={{
+      padding: isMobile ? '16px' : '24px',
+      maxWidth: isMobile ? '100%' : '1200px',
+    }}>
+      {/* 组件内容 */}
+    </div>
+  );
+};
+```
+
+## 🔍 状态管理规范
+
+### 1. 本地状态管理
+
+```typescript
+import { useState, useReducer } from 'react';
+
+// ✅ 简单状态使用 useState
+const [loading, setLoading] = useState(false);
+const [users, setUsers] = useState<User[]>([]);
+
+// ✅ 复杂状态使用 useReducer
+interface UserState {
+  users: User[];
+  loading: boolean;
+  error: string | null;
+  selectedUser: User | null;
+}
+
+type UserAction = 
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_USERS'; payload: User[] }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SELECT_USER'; payload: User | null };
+
+const userReducer = (state: UserState, action: UserAction): UserState => {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_USERS':
+      return { ...state, users: action.payload, error: null };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    case 'SELECT_USER':
+      return { ...state, selectedUser: action.payload };
+    default:
+      return state;
+  }
+};
+
+const useUserManagement = () => {
+  const [state, dispatch] = useReducer(userReducer, {
+    users: [],
+    loading: false,
+    error: null,
+    selectedUser: null,
+  });
+
+  return { state, dispatch };
+};
+```
+
+### 2. 全局状态管理
+
+```typescript
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+
+interface UserStore {
+  currentUser: User | null;
+  isAuthenticated: boolean;
+  setCurrentUser: (user: User | null) => void;
+  logout: () => void;
+}
+
+export const useUserStore = create<UserStore>()(
+  devtools(
+    (set) => ({
+      currentUser: null,
+      isAuthenticated: false,
+      
+      setCurrentUser: (user) => set(
+        { 
+          currentUser: user, 
+          isAuthenticated: !!user 
+        },
+        false,
+        'setCurrentUser'
+      ),
+      
+      logout: () => set(
+        { 
+          currentUser: null, 
+          isAuthenticated: false 
+        },
+        false,
+        'logout'
+      ),
+    }),
+    {
+      name: 'user-store',
+    }
+  )
+);
+```
+
+## 🚫 禁止的做法
+
+### 1. 不要直接修改 props
+
+```typescript
+// ❌ 禁止：直接修改 props
+const UserCard: React.FC<{ user: User }> = ({ user }) => {
+  user.name = 'New Name';  // ❌ 禁止
+  return <div>{user.name}</div>;
+};
+
+// ✅ 正确：使用状态管理
+const UserCard: React.FC<{ user: User }> = ({ user }) => {
+  const [localUser, setLocalUser] = useState(user);
+  
+  const handleNameChange = (newName: string) => {
+    setLocalUser(prev => ({ ...prev, name: newName }));
+  };
+  
+  return <div>{localUser.name}</div>;
+};
+```
+
+### 2. 不要使用 any 类型
+
+```typescript
+// ❌ 禁止：使用 any 类型
+const handleData = (data: any) => {  // ❌ 禁止
+  return data.someProperty;
+};
+
+// ✅ 正确：定义具体类型
+interface ApiResponse {
+  data: User[];
+  total: number;
+  success: boolean;
+}
+
+const handleData = (data: ApiResponse) => {
+  return data.data;
+};
+```
+
+### 3. 不要忽略错误处理
+
+```typescript
+// ❌ 禁止：忽略错误
+const loadUsers = async () => {
+  const users = await userService.getUsers();  // ❌ 可能抛出异常
+  setUsers(users);
+};
+
+// ✅ 正确：处理错误
+const loadUsers = async () => {
+  try {
+    const users = await userService.getUsers();
+    setUsers(users);
+  } catch (error) {
+    message.error('加载用户失败');
+    console.error('Load users error:', error);
+  }
+};
+```
+
+## 🔐 安全规范
+
+### 1. 输入验证
+
+```typescript
+import { z } from 'zod';
+
+// ✅ 使用 Zod 进行运行时验证
+const UserSchema = z.object({
+  username: z.string().min(3).max(50),
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+const validateUser = (data: unknown) => {
+  try {
+    return UserSchema.parse(data);
+  } catch (error) {
+    throw new Error('用户数据验证失败');
+  }
+};
+```
+
+### 2. XSS 防护
+
+```typescript
+import DOMPurify from 'dompurify';
+
+// ✅ 清理用户输入
+const sanitizeInput = (input: string): string => {
+  return DOMPurify.sanitize(input);
+};
+
+// ✅ 安全渲染
+const SafeContent: React.FC<{ content: string }> = ({ content }) => {
+  const sanitizedContent = sanitizeInput(content);
+  
+  return (
+    <div 
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+    />
+  );
+};
+```
+
+## 📋 代码审查清单
+
+在提交代码前，检查：
+
+- [ ] 组件使用了 TypeScript 类型定义
+- [ ] 遵循了命名规范和项目结构
+- [ ] 使用了适当的 React Hooks
+- [ ] 错误处理完整且用户友好
+- [ ] 样式使用了 CSS-in-JS 或 Ant Design 主题
+- [ ] 状态管理合理且高效
+- [ ] 没有使用 any 类型
+- [ ] 输入验证和 XSS 防护到位
+- [ ] 组件有适当的文档注释
+- [ ] 遵循了无障碍访问规范
+
+## 📚 相关文档
+
+- [Ant Design Pro 官方文档](https://pro.ant.design/)
+- [React 19 官方文档](https://react.dev/)
+- [TypeScript 官方文档](https://www.typescriptlang.org/)
+- [UmiJS 官方文档](https://umijs.org/)
+
+## 🎯 记住
+
+1. **类型安全** - 始终使用 TypeScript 类型定义
+2. **组件复用** - 创建可复用的组件和 Hooks
+3. **性能优化** - 使用 useCallback、useMemo 等优化性能
+4. **用户体验** - 提供加载状态和错误处理
+5. **代码质量** - 保持代码简洁、可读和可维护
+6. **安全第一** - 验证输入和防护 XSS 攻击
+
+遵循这些规范，确保前端代码的质量、性能和用户体验！

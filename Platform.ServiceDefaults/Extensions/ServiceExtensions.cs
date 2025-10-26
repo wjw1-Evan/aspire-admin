@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using Platform.ServiceDefaults.Middleware;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Reflection;
 using System.Text;
@@ -133,11 +134,41 @@ public static class ServiceExtensions
     }
 
     /// <summary>
-    /// 添加性能监控服务
+    /// 添加数据库操作工厂服务
     /// </summary>
-    public static IServiceCollection AddPerformanceMonitoring(this IServiceCollection services)
+    public static IServiceCollection AddDatabaseOperationFactory<T>(this IServiceCollection services) where T : class, IEntity, ISoftDeletable, ITimestamped
     {
-        services.AddScoped<PerformanceMonitoringMiddleware>();
+        // 注册审计服务
+        services.AddScoped<IAuditService, AuditService>();
+        
+        // 注册数据库操作工厂
+        services.AddScoped<IDatabaseOperationFactory<T>, DatabaseOperationFactory<T>>();
+        
+        return services;
+    }
+
+    /// <summary>
+    /// 添加数据库操作工厂服务（泛型版本）
+    /// </summary>
+    public static IServiceCollection AddDatabaseOperationFactories(this IServiceCollection services)
+    {
+        // 注册审计服务
+        services.AddScoped<IAuditService, AuditService>();
+        
+        return services;
+    }
+
+    /// <summary>
+    /// 添加数据库操作工厂服务（简化版本）
+    /// </summary>
+    public static IServiceCollection AddDatabaseFactory(this IServiceCollection services)
+    {
+        // 注册审计服务
+        services.AddScoped<IAuditService, AuditService>();
+        
+        // 注册数据库操作工厂（使用工厂模式创建 IMongoCollection<T>）
+        services.AddScoped(typeof(IDatabaseOperationFactory<>), typeof(DatabaseOperationFactory<>));
+        
         return services;
     }
 }

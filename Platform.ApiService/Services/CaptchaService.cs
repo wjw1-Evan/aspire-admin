@@ -1,6 +1,6 @@
-using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -13,23 +13,22 @@ public interface ICaptchaService
     Task<bool> ValidateCaptchaAsync(string phone, string code);
 }
 
-public class CaptchaService : BaseService, ICaptchaService
+public class CaptchaService : ICaptchaService
 {
-    private readonly IMongoCollection<Captcha> _captchas;
+    private readonly IDatabaseOperationFactory<Captcha> _captchaFactory;
+    private readonly ILogger<CaptchaService> _logger;
     private const int EXPIRATION_MINUTES = 5;
 
     public CaptchaService(
-        IMongoDatabase database,
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
+        IDatabaseOperationFactory<Captcha> captchaFactory,
         ILogger<CaptchaService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _captchas = Database.GetCollection<Captcha>("captchas");
+        _captchaFactory = captchaFactory;
+        _logger = logger;
     }
 
     /// <summary>
-    /// 生成验证码
+    /// 生成验证码（使用原子操作）
     /// </summary>
     /// <param name="phone">手机号（作为标识）</param>
     /// <returns>验证码结果</returns>
@@ -47,11 +46,22 @@ public class CaptchaService : BaseService, ICaptchaService
             IsDeleted = false
         };
 
-        // 删除该手机号的旧验证码
-        await _captchas.DeleteManyAsync(c => c.Phone == phone && !c.IsUsed);
+        // 使用原子操作：查找并替换（如果不存在则插入）
+        var filter = _captchaFactory.CreateFilterBuilder()
+            .Equal(c => c.Phone, phone)
+            .Equal(c => c.IsUsed, false)
+            .Build();
 
-        // 插入新验证码
-        await _captchas.InsertOneAsync(captcha);
+        var options = new FindOneAndReplaceOptions<Captcha>
+        {
+            IsUpsert = true,  // 如果不存在则插入
+            ReturnDocument = ReturnDocument.After
+        };
+
+        // 执行原子替换操作（不带租户过滤，因为验证码是全局资源）
+        var result = await _captchaFactory.FindOneAndReplaceWithoutTenantFilterAsync(filter, captcha, options);
+
+        _logger.LogInformation("[验证码] 生成成功: {Phone} -> {Code}", phone, captcha.Code);
 
         return new CaptchaResult
         {
@@ -61,7 +71,7 @@ public class CaptchaService : BaseService, ICaptchaService
     }
 
     /// <summary>
-    /// 验证验证码
+    /// 验证验证码（使用原子操作）
     /// </summary>
     /// <param name="phone">手机号</param>
     /// <param name="code">用户输入的验证码</param>
@@ -70,30 +80,38 @@ public class CaptchaService : BaseService, ICaptchaService
     {
         if (string.IsNullOrWhiteSpace(phone) || string.IsNullOrWhiteSpace(code))
         {
-            Logger.LogWarning("[验证码] 验证失败 - 手机号或验证码为空");
+            _logger.LogInformation("[验证码] 验证失败 - 手机号或验证码为空");
             return false;
         }
 
-        // 查找有效的验证码
-        var filter = Builders<Captcha>.Filter.And(
-            Builders<Captcha>.Filter.Eq(c => c.Phone, phone),
-            Builders<Captcha>.Filter.Eq(c => c.Code, code),
-            Builders<Captcha>.Filter.Eq(c => c.IsUsed, false),
-            Builders<Captcha>.Filter.Gt(c => c.ExpiresAt, DateTime.UtcNow)
-        );
+        // 使用原子操作：查找并更新（标记为已使用）
+        var filter = _captchaFactory.CreateFilterBuilder()
+            .Equal(c => c.Phone, phone)
+            .Equal(c => c.Code, code)
+            .Equal(c => c.IsUsed, false)
+            .GreaterThan(c => c.ExpiresAt, DateTime.UtcNow)
+            .Build();
 
-        var captcha = await _captchas.Find(filter).FirstOrDefaultAsync();
+        var update = _captchaFactory.CreateUpdateBuilder()
+            .Set(c => c.IsUsed, true)
+            .SetCurrentTimestamp()
+            .Build();
 
-        if (captcha == null)
+        var options = new FindOneAndUpdateOptions<Captcha>
         {
-            Logger.LogWarning("[验证码] 验证失败 - 验证码不存在或已过期，手机号: {Phone}", phone);
+            ReturnDocument = ReturnDocument.Before  // 返回更新前的文档
+        };
+
+        // 执行原子更新操作（不带租户过滤，因为验证码是全局资源）
+        var result = await _captchaFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update, options);
+
+        if (result == null)
+        {
+            _logger.LogInformation("[验证码] 验证失败 - 验证码不存在或已过期，手机号: {Phone}", phone);
             return false;
         }
 
-        // 标记为已使用
-        var update = Builders<Captcha>.Update.Set(c => c.IsUsed, true);
-        await _captchas.UpdateOneAsync(c => c.Id == captcha.Id, update);
-
+        _logger.LogInformation("[验证码] 验证成功: {Phone} -> {Code}", phone, code);
         return true;
     }
 }

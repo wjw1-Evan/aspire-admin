@@ -1,466 +1,69 @@
 ---
-globs: **/error*.ts,**/error*.tsx,**/utils/*error*.ts,**/services/**/*.ts,Platform.ApiService/Controllers/*.cs,Platform.ApiService/Services/*.cs
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
 description: 统一错误处理和消息管理规范
 ---
-
 # 统一错误处理和消息管理规范
 
-## 🎯 错误处理架构
+## 🎯 核心原则
 
-### 错误分类
+### 使用统一的错误处理机制和消息管理，确保错误信息的一致性和用户体验
 
-1. **网络错误** - 请求超时、连接失败
-2. **认证错误** - Token 过期、权限不足
-3. **业务错误** - 业务逻辑错误
-4. **系统错误** - 服务器错误、未知错误
+## ✅ 错误处理架构
 
-## 🔧 后端错误消息管理
-
-### 核心原则
-使用 `ErrorMessages` 常量类管理所有错误和成功消息，禁止硬编码字符串。
-
-### ✅ 正确的使用方式
-```csharp
-using Platform.ApiService.Constants;
-
-// 成功消息
-return Success(data, ErrorMessages.CreateSuccess);
-return Success(ErrorMessages.UpdateSuccess);
-return Success(ErrorMessages.DeleteSuccess);
-return Success(ErrorMessages.OperationSuccess);
-
-// 格式化消息
-throw new KeyNotFoundException(
-    string.Format(ErrorMessages.ResourceNotFound, "用户")
-);
-
-throw new ArgumentException(
-    string.Format(ErrorMessages.ParameterRequired, "用户名")
-);
-
-throw new InvalidOperationException(
-    string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称")
-);
-
-// 直接使用常量
-throw new UnauthorizedAccessException(ErrorMessages.Unauthorized);
-throw new InvalidOperationException(ErrorMessages.CannotDeleteSelf);
-throw new InvalidOperationException(ErrorMessages.CannotModifyOwnRole);
-```
-
-### ❌ 禁止的做法
-```csharp
-// ❌ 不要硬编码成功消息
-return Success(data, "创建成功");
-return Success("操作成功");
-
-// ❌ 不要硬编码错误消息
-throw new KeyNotFoundException($"用户 {id} 不存在");
-throw new ArgumentException("用户名不能为空");
-throw new InvalidOperationException("不能删除自己");
-```
-
-## 🏗️ 前端错误处理
-
-### 管理后台 (Ant Design Pro)
-
-#### 错误类型定义
-
-```typescript
-// ✅ 推荐：错误类型定义
-export enum ErrorShowType {
-  SILENT = 0,           // 不显示错误
-  WARN_MESSAGE = 1,     // 警告消息
-  ERROR_MESSAGE = 2,    // 错误消息
-  NOTIFICATION = 3,     // 通知提醒
-  REDIRECT = 9,         // 页面跳转
-}
-
-export interface ResponseStructure<T = any> {
-  success: boolean;
-  data?: T;
-  errorCode?: string;
-  errorMessage?: string;
-  showType?: ErrorShowType;
-  traceId?: string;
-}
-
-export interface ApiError extends Error {
-  info?: ResponseStructure;
-  response?: {
-    status: number;
-    statusText: string;
-    data: any;
-  };
-}
-```
-
-#### 统一错误配置
-
-```typescript
-// ✅ 推荐：request-error-config.ts
-import { message, notification } from 'antd';
-import type { RequestConfig } from '@umijs/max';
-
-export const errorConfig: RequestConfig = {
-  errorConfig: {
-    // 错误抛出
-    errorThrower: (res) => {
-      const { success, data, errorCode, errorMessage, showType } = 
-        res as unknown as ResponseStructure;
-      
-      if (!success) {
-        const error: any = new Error(errorMessage);
-        error.name = 'BizError';
-        error.info = { errorCode, errorMessage, showType, data };
-        throw error;
-      }
-    },
-    
-    // 错误接收及处理
-    errorHandler: (error: any, opts: any) => {
-      // 跳过错误处理
-      if (opts?.skipErrorHandler) throw error;
-      
-      // 业务错误
-      if (error.name === 'BizError') {
-        const errorInfo: ResponseStructure | undefined = error.info;
-        if (errorInfo) {
-          const { errorMessage, errorCode } = errorInfo;
-          
-          switch (errorInfo.showType) {
-            case ErrorShowType.SILENT:
-              // 不显示错误
-              break;
-            case ErrorShowType.WARN_MESSAGE:
-              message.warning(errorMessage);
-              break;
-            case ErrorShowType.ERROR_MESSAGE:
-              message.error(errorMessage);
-              break;
-            case ErrorShowType.NOTIFICATION:
-              notification.open({
-                description: errorMessage,
-                message: errorCode,
-              });
-              break;
-            case ErrorShowType.REDIRECT:
-              // 页面跳转逻辑
-              break;
-            default:
-              message.error(errorMessage);
-          }
-        }
-      } 
-      // HTTP 错误
-      else if (error.response) {
-        message.error(`Response status: ${error.response.status}`);
-      } 
-      // 请求错误
-      else if (error.request) {
-        message.error('None response! Please retry.');
-      } 
-      // 其他错误
-      else {
-        message.error('Request error, please retry.');
-      }
-    },
-  },
-  
-  responseInterceptors: [
-    (response) => {
-      // 拦截响应数据，进行个性化处理
-      const { data } = response as unknown as ResponseStructure;
-      
-      if (data?.success === false) {
-        // 可以在这里添加全局错误处理逻辑
-        console.error('Request failed:', data.errorMessage);
-      }
-      
-      return response;
-    },
-  ],
-};
-```
-
-### 移动端 (React Native + Expo)
-
-#### 错误类型定义
-
-```typescript
-// ✅ 推荐：types/unified-api.ts
-export enum AuthErrorType {
-  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
-  TOKEN_INVALID = 'TOKEN_INVALID',
-  PERMISSION_DENIED = 'PERMISSION_DENIED',
-  NOT_AUTHENTICATED = 'NOT_AUTHENTICATED',
-}
-
-export interface ApiError extends Error {
-  code?: string;
-  type?: AuthErrorType;
-  statusCode?: number;
-  canRetry?: boolean;
-  response?: {
-    status: number;
-    statusText: string;
-    data: any;
-  };
-}
-```
-
-#### 错误处理服务
-
-```typescript
-// ✅ 推荐：services/errorHandler.ts
-import { AuthErrorType } from '@/types/unified-api';
-
-export function createAuthError(
-  type: AuthErrorType,
-  message: string,
-  canRetry: boolean = false
-): ApiError {
-  const error = new Error(message) as ApiError;
-  error.type = type;
-  error.canRetry = canRetry;
-  return error;
-}
-
-export function handleError(error: unknown): ApiError {
-  // 已经是 ApiError
-  if (error instanceof Error && 'type' in error) {
-    return error as ApiError;
-  }
-  
-  // HTTP 错误
-  if (error instanceof Error && 'response' in error) {
-    const httpError = error as any;
-    const status = httpError.response?.status;
-    
-    switch (status) {
-      case 401:
-        return createAuthError(
-          AuthErrorType.TOKEN_EXPIRED,
-          '登录已过期，请重新登录',
-          false
-        );
-      case 403:
-        return createAuthError(
-          AuthErrorType.PERMISSION_DENIED,
-          '权限不足',
-          false
-        );
-      default:
-        const apiError = new Error(
-          httpError.message || '请求失败'
-        ) as ApiError;
-        apiError.statusCode = status;
-        apiError.response = httpError.response;
-        apiError.canRetry = shouldRetryError(error);
-        return apiError;
-    }
-  }
-  
-  // 网络错误
-  if (error instanceof TypeError) {
-    const networkError = new Error('网络连接失败') as ApiError;
-    networkError.code = 'NETWORK_ERROR';
-    networkError.canRetry = true;
-    return networkError;
-  }
-  
-  // 超时错误
-  if (error instanceof Error && error.name === 'AbortError') {
-    const timeoutError = new Error('请求超时') as ApiError;
-    timeoutError.code = 'TIMEOUT';
-    timeoutError.canRetry = true;
-    return timeoutError;
-  }
-  
-  // 未知错误
-  const unknownError = new Error('未知错误') as ApiError;
-  unknownError.code = 'UNKNOWN_ERROR';
-  return unknownError;
-}
-
-export function shouldRetryError(error: unknown): boolean {
-  if (error instanceof Error && 'code' in error) {
-    const apiError = error as ApiError;
-    // 网络错误和超时错误可以重试
-    return apiError.code === 'NETWORK_ERROR' || apiError.code === 'TIMEOUT';
-  }
-  
-  if (error instanceof Error && 'response' in error) {
-    const httpError = error as any;
-    const status = httpError.response?.status;
-    // 5xx 错误可以重试
-    return status >= 500 && status < 600;
-  }
-  
-  return false;
-}
-```
-
-#### API 服务错误处理
-
-```typescript
-// ✅ 推荐：services/api.ts
-export class ApiService {
-  private async requestWithRetry<T>(
-    endpoint: string,
-    options: RequestInit = {},
-    config: RequestConfig = {}
-  ): Promise<T> {
-    const { timeout, retries } = { ...DEFAULT_REQUEST_CONFIG, ...config };
-    
-    let lastError: any;
-    
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        return await this.request<T>(endpoint, options, timeout);
-      } catch (error) {
-        lastError = error;
-        
-        // 认证错误不重试
-        const apiError = handleError(error);
-        if (apiError.type === AuthErrorType.TOKEN_EXPIRED || 
-            apiError.type === AuthErrorType.PERMISSION_DENIED) {
-          throw apiError;
-        }
-        
-        // 如果不是最后一次尝试且可以重试，等待后重试
-        if (attempt < retries && shouldRetryError(error)) {
-          const delay = calculateRetryDelay(attempt);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        } else if (attempt >= retries) {
-          break;
-        }
-      }
-    }
-    
-    throw handleError(lastError);
-  }
-}
-```
-
-#### 重试策略
-
-```typescript
-// ✅ 推荐：重试配置
-export const DEFAULT_REQUEST_CONFIG = {
-  timeout: 30000,      // 30秒超时
-  retries: 2,          // 重试2次
-};
-
-export function calculateRetryDelay(attempt: number): number {
-  // 指数退避：第1次 1秒，第2次 2秒，第3次 4秒
-  return Math.min(1000 * Math.pow(2, attempt), 10000);
-}
-
-export function shouldRetryError(error: unknown): boolean {
-  const apiError = handleError(error);
-  
-  // 网络错误可以重试
-  if (apiError.code === 'NETWORK_ERROR' || apiError.code === 'TIMEOUT') {
-    return true;
-  }
-  
-  // 5xx 错误可以重试
-  if (apiError.statusCode && apiError.statusCode >= 500) {
-    return true;
-  }
-  
-  // 认证错误不重试
-  if (apiError.type === AuthErrorType.TOKEN_EXPIRED || 
-      apiError.type === AuthErrorType.PERMISSION_DENIED) {
-    return false;
-  }
-  
-  return false;
-}
-```
-
-## 🔧 后端错误处理 (C#)
-
-### 统一响应格式
+### 全局异常处理中间件
 
 ```csharp
-// ✅ 推荐：统一响应模型
-public class ApiResponse<T>
+// Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs
+public class GlobalExceptionMiddleware
 {
-    public bool Success { get; set; }
-    public T? Data { get; set; }
-    public string? ErrorCode { get; set; }
-    public string? ErrorMessage { get; set; }
-    public int? ShowType { get; set; }
-    public string? TraceId { get; set; }
-}
-```
+    private readonly RequestDelegate _next;
+    private readonly ILogger<GlobalExceptionMiddleware> _logger;
 
-### 全局异常处理
-
-```csharp
-// ✅ 推荐：全局异常处理中间件
-public class GlobalExceptionHandler : IExceptionHandler
-{
-    private readonly ILogger<GlobalExceptionHandler> _logger;
-
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
     {
+        _next = next;
         _logger = logger;
     }
 
-    public async ValueTask<bool> TryHandleAsync(
-        HttpContext httpContext,
-        Exception exception,
-        CancellationToken cancellationToken)
+    public async Task InvokeAsync(HttpContext context)
     {
-        var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+        try
+        {
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            await HandleExceptionAsync(context, ex);
+        }
+    }
+
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
         
         _logger.LogError(exception, 
-            "Error occurred. TraceId: {TraceId}, Path: {Path}", 
+            "Unhandled exception occurred. TraceId: {TraceId}, Path: {Path}", 
             traceId, 
-            httpContext.Request.Path);
+            context.Request.Path);
 
         var response = exception switch
         {
-            UnauthorizedAccessException => CreateResponse(
-                false, 
-                "未授权访问", 
-                "UNAUTHORIZED", 
-                StatusCodes.Status401Unauthorized,
-                traceId),
-                
-            ArgumentException => CreateResponse(
-                false, 
-                exception.Message, 
-                "BAD_REQUEST", 
-                StatusCodes.Status400BadRequest,
-                traceId),
-                
-            KeyNotFoundException => CreateResponse(
-                false, 
-                "资源不存在", 
-                "NOT_FOUND", 
-                StatusCodes.Status404NotFound,
-                traceId),
-                
-            _ => CreateResponse(
-                false, 
-                "服务器内部错误", 
-                "INTERNAL_ERROR", 
-                StatusCodes.Status500InternalServerError,
-                traceId)
+            ArgumentException => CreateErrorResponse("参数错误", "BAD_REQUEST", StatusCodes.Status400BadRequest, traceId),
+            ArgumentNullException => CreateErrorResponse("参数不能为空", "BAD_REQUEST", StatusCodes.Status400BadRequest, traceId),
+            KeyNotFoundException => CreateErrorResponse("资源不存在", "NOT_FOUND", StatusCodes.Status404NotFound, traceId),
+            UnauthorizedAccessException => CreateErrorResponse("未授权访问", "UNAUTHORIZED", StatusCodes.Status401Unauthorized, traceId),
+            InvalidOperationException => CreateErrorResponse("操作失败", "INVALID_OPERATION", StatusCodes.Status400BadRequest, traceId),
+            TimeoutException => CreateErrorResponse("请求超时", "TIMEOUT", StatusCodes.Status408RequestTimeout, traceId),
+            _ => CreateErrorResponse("服务器内部错误", "INTERNAL_ERROR", StatusCodes.Status500InternalServerError, traceId)
         };
 
-        httpContext.Response.StatusCode = response.StatusCode;
-        await httpContext.Response.WriteAsJsonAsync(response.Body, cancellationToken);
-
-        return true;
+        context.Response.StatusCode = response.StatusCode;
+        context.Response.ContentType = "application/json";
+        
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response.Body));
     }
 
-    private (int StatusCode, object Body) CreateResponse(
-        bool success, 
+    private (int StatusCode, object Body) CreateErrorResponse(
         string message, 
         string errorCode, 
         int statusCode,
@@ -468,161 +71,762 @@ public class GlobalExceptionHandler : IExceptionHandler
     {
         return (statusCode, new
         {
-            success,
+            success = false,
             errorMessage = message,
             errorCode,
             showType = 2, // ERROR_MESSAGE
-            traceId
+            traceId,
+            timestamp = DateTime.UtcNow
         });
     }
 }
 ```
 
-### 控制器错误处理
+### 错误消息管理
 
 ```csharp
-// ✅ 推荐：控制器中的错误处理
-[ApiController]
-[Route("api/[controller]")]
-public class UsersController : ControllerBase
+// Platform.ServiceDefaults/Services/ErrorMessageService.cs
+public interface IErrorMessageService
 {
-    private readonly IUserService _userService;
-    private readonly ILogger<UsersController> _logger;
+    string GetErrorMessage(string errorCode);
+    string GetErrorMessage(string errorCode, params object[] args);
+    string GetValidationErrorMessage(string fieldName, string validationType);
+}
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ApiResponse<User>>> GetUser(string id)
+public class ErrorMessageService : IErrorMessageService
+{
+    private readonly ILogger<ErrorMessageService> _logger;
+    private readonly Dictionary<string, string> _errorMessages;
+
+    public ErrorMessageService(ILogger<ErrorMessageService> logger)
     {
+        _logger = logger;
+        _errorMessages = InitializeErrorMessages();
+    }
+
+    public string GetErrorMessage(string errorCode)
+    {
+        if (_errorMessages.TryGetValue(errorCode, out var message))
+        {
+            return message;
+        }
+
+        _logger.LogWarning("未找到错误代码: {ErrorCode}", errorCode);
+        return "未知错误";
+    }
+
+    public string GetErrorMessage(string errorCode, params object[] args)
+    {
+        var message = GetErrorMessage(errorCode);
         try
         {
-            var user = await _userService.GetUserByIdAsync(id);
-            
-            if (user == null)
-            {
-                return NotFound(new ApiResponse<User>
-                {
-                    Success = false,
-                    ErrorCode = "USER_NOT_FOUND",
-                    ErrorMessage = "用户不存在",
-                    ShowType = 2
-                });
-            }
-
-            return Ok(new ApiResponse<User>
-            {
-                Success = true,
-                Data = user
-            });
+            return string.Format(message, args);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user {UserId}", id);
+            _logger.LogError(ex, "格式化错误消息失败: {ErrorCode}, Args: {Args}", errorCode, args);
+            return message;
+        }
+    }
+
+    public string GetValidationErrorMessage(string fieldName, string validationType)
+    {
+        var errorCode = $"VALIDATION_{validationType.ToUpperInvariant()}";
+        return GetErrorMessage(errorCode, fieldName);
+    }
+
+    private Dictionary<string, string> InitializeErrorMessages()
+    {
+        return new Dictionary<string, string>
+        {
+            // 通用错误
+            ["INTERNAL_ERROR"] = "服务器内部错误",
+            ["BAD_REQUEST"] = "请求参数错误",
+            ["UNAUTHORIZED"] = "未授权访问",
+            ["FORBIDDEN"] = "禁止访问",
+            ["NOT_FOUND"] = "资源不存在",
+            ["TIMEOUT"] = "请求超时",
+            ["CONFLICT"] = "资源冲突",
+
+            // 用户相关错误
+            ["USER_NOT_FOUND"] = "用户不存在",
+            ["USER_ALREADY_EXISTS"] = "用户已存在",
+            ["USER_INACTIVE"] = "用户已停用",
+            ["USER_DELETED"] = "用户已删除",
+            ["USER_CREATE_FAILED"] = "用户创建失败",
+            ["USER_UPDATE_FAILED"] = "用户更新失败",
+            ["USER_DELETE_FAILED"] = "用户删除失败",
+
+            // 角色相关错误
+            ["ROLE_NOT_FOUND"] = "角色不存在",
+            ["ROLE_ALREADY_EXISTS"] = "角色已存在",
+            ["ROLE_CREATE_FAILED"] = "角色创建失败",
+            ["ROLE_UPDATE_FAILED"] = "角色更新失败",
+            ["ROLE_DELETE_FAILED"] = "角色删除失败",
+            ["ROLE_ASSIGN_FAILED"] = "角色分配失败",
+
+            // 企业相关错误
+            ["COMPANY_NOT_FOUND"] = "企业不存在",
+            ["COMPANY_ALREADY_EXISTS"] = "企业已存在",
+            ["COMPANY_CREATE_FAILED"] = "企业创建失败",
+            ["COMPANY_UPDATE_FAILED"] = "企业更新失败",
+            ["COMPANY_DELETE_FAILED"] = "企业删除失败",
+
+            // 权限相关错误
+            ["PERMISSION_DENIED"] = "权限不足",
+            ["ADMIN_REQUIRED"] = "需要管理员权限",
+            ["INVALID_PERMISSION"] = "无效权限",
+            ["PERMISSION_ASSIGN_FAILED"] = "权限分配失败",
+
+            // 验证相关错误
+            ["VALIDATION_REQUIRED"] = "{0} 不能为空",
+            ["VALIDATION_LENGTH"] = "{0} 长度必须在 {1} 到 {2} 个字符之间",
+            ["VALIDATION_FORMAT"] = "{0} 格式不正确",
+            ["VALIDATION_RANGE"] = "{0} 必须在 {1} 到 {2} 之间",
+            ["VALIDATION_UNIQUE"] = "{0} 已存在",
+            ["VALIDATION_INVALID"] = "{0} 无效",
+
+            // 数据库相关错误
+            ["DATABASE_CONNECTION_FAILED"] = "数据库连接失败",
+            ["DATABASE_OPERATION_FAILED"] = "数据库操作失败",
+            ["DATABASE_TIMEOUT"] = "数据库操作超时",
+            ["DATABASE_CONSTRAINT_VIOLATION"] = "数据库约束违反",
+
+            // 文件相关错误
+            ["FILE_NOT_FOUND"] = "文件不存在",
+            ["FILE_UPLOAD_FAILED"] = "文件上传失败",
+            ["FILE_DOWNLOAD_FAILED"] = "文件下载失败",
+            ["FILE_SIZE_EXCEEDED"] = "文件大小超出限制",
+            ["FILE_TYPE_NOT_SUPPORTED"] = "文件类型不支持",
+
+            // 网络相关错误
+            ["NETWORK_ERROR"] = "网络错误",
+            ["NETWORK_TIMEOUT"] = "网络超时",
+            ["NETWORK_CONNECTION_FAILED"] = "网络连接失败"
+        };
+    }
+}
+```
+
+## 🎯 服务层错误处理
+
+### 用户服务错误处理
+
+```csharp
+// ✅ 正确 - 统一的错误处理
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IErrorMessageService _errorMessageService;
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IErrorMessageService errorMessageService,
+        ILogger<UserService> logger)
+    {
+        _userFactory = userFactory;
+        _errorMessageService = errorMessageService;
+        _logger = logger;
+    }
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        try
+        {
+            // 1. 参数验证
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            // 2. 业务验证
+            await ValidateCreateUserRequestAsync(request);
             
-            return StatusCode(500, new ApiResponse<User>
+            // 3. 检查唯一性
+            await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Username, request.Username);
+            await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Email, request.Email);
+            
+            // 4. 创建用户实体
+            var user = new User
             {
-                Success = false,
-                ErrorCode = "INTERNAL_ERROR",
-                ErrorMessage = "获取用户信息失败",
-                ShowType = 2
+                Username = request.Username.Trim(),
+                Email = request.Email.Trim().ToLowerInvariant(),
+                CompanyId = _userFactory.GetRequiredCompanyId(),
+                CreatedBy = _userFactory.GetCurrentUserId(),
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            var createdUser = await _userFactory.CreateAsync(user);
+            
+            _logger.LogInformation("用户创建成功: {UserId}, 用户名: {Username}", 
+                createdUser.Id, createdUser.Username);
+            
+            return createdUser;
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "用户创建参数错误: {Username}", request?.Username);
+            throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "用户创建业务错误: {Username}", request?.Username);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "用户创建失败: {Username}", request?.Username);
+            throw new InvalidOperationException(_errorMessageService.GetErrorMessage("USER_CREATE_FAILED"), ex);
+        }
+    }
+
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(id))
+                throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_REQUIRED", "用户ID"), nameof(id));
+
+            var user = await _userFactory.GetByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("用户不存在: {UserId}", id);
+                throw new KeyNotFoundException(_errorMessageService.GetErrorMessage("USER_NOT_FOUND"));
+            }
+
+            return user;
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取用户失败: {UserId}", id);
+            throw new InvalidOperationException(_errorMessageService.GetErrorMessage("INTERNAL_ERROR"), ex);
+        }
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
+    {
+        try
+        {
+            // 1. 参数验证
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (string.IsNullOrEmpty(request.Id))
+                throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_REQUIRED", "用户ID"), nameof(request.Id));
+
+            // 2. 获取现有用户
+            var existingUser = await _userFactory.GetByIdAsync(request.Id);
+            if (existingUser == null)
+            {
+                _logger.LogWarning("用户不存在: {UserId}", request.Id);
+                throw new KeyNotFoundException(_errorMessageService.GetErrorMessage("USER_NOT_FOUND"));
+            }
+
+            // 3. 业务验证
+            await ValidateUpdateUserRequestAsync(request, existingUser);
+            
+            // 4. 检查唯一性（如果需要）
+            if (!string.IsNullOrEmpty(request.Username) && request.Username != existingUser.Username)
+            {
+                await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Username, request.Username);
+            }
+            
+            if (!string.IsNullOrEmpty(request.Email) && request.Email != existingUser.Email)
+            {
+                await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Email, request.Email);
+            }
+
+            // 5. 构建更新操作
+            var update = _userFactory.CreateUpdateBuilder()
+                .SetCurrentTimestamp()
+                .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+                .Build();
+
+            if (!string.IsNullOrEmpty(request.Username))
+            {
+                update = _userFactory.CreateUpdateBuilder()
+                    .Set(u => u.Username, request.Username)
+                    .SetCurrentTimestamp()
+                    .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+                    .Build();
+            }
+
+            if (!string.IsNullOrEmpty(request.Email))
+            {
+                update = _userFactory.CreateUpdateBuilder()
+                    .Set(u => u.Email, request.Email)
+                    .SetCurrentTimestamp()
+                    .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+                    .Build();
+            }
+
+            // 6. 执行更新
+            var result = await _userFactory.UpdateAsync(existingUser, new OperationContext
+            {
+                UserId = _userFactory.GetCurrentUserId(),
+                Username = _userFactory.GetCurrentUsername(),
+                CompanyId = _userFactory.GetCurrentCompanyId(),
+                OperationType = OperationType.Update,
+                Description = "更新用户信息"
             });
+
+            if (result)
+            {
+                _logger.LogInformation("用户更新成功: {UserId}", request.Id);
+            }
+            else
+            {
+                _logger.LogWarning("用户更新失败: {UserId}", request.Id);
+            }
+
+            return result;
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "用户更新失败: {UserId}", request?.Id);
+            throw new InvalidOperationException(_errorMessageService.GetErrorMessage("USER_UPDATE_FAILED"), ex);
+        }
+    }
+
+    public async Task<bool> DeleteUserAsync(string id)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(id))
+                throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_REQUIRED", "用户ID"), nameof(id));
+
+            // 1. 检查用户是否存在
+            var user = await _userFactory.GetByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("用户不存在: {UserId}", id);
+                throw new KeyNotFoundException(_errorMessageService.GetErrorMessage("USER_NOT_FOUND"));
+            }
+
+            // 2. 业务规则检查
+            await ValidateUserDeletionAsync(user);
+
+            // 3. 执行软删除
+            var result = await _userFactory.SoftDeleteAsync(id, new OperationContext
+            {
+                UserId = _userFactory.GetCurrentUserId(),
+                Username = _userFactory.GetCurrentUsername(),
+                CompanyId = _userFactory.GetCurrentCompanyId(),
+                OperationType = OperationType.Delete,
+                Description = "删除用户"
+            });
+
+            if (result)
+            {
+                _logger.LogInformation("用户删除成功: {UserId}, 用户名: {Username}", id, user.Username);
+            }
+            else
+            {
+                _logger.LogWarning("用户删除失败: {UserId}", id);
+            }
+
+            return result;
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "用户删除失败: {UserId}", id);
+            throw new InvalidOperationException(_errorMessageService.GetErrorMessage("USER_DELETE_FAILED"), ex);
+        }
+    }
+
+    private async Task ValidateCreateUserRequestAsync(CreateUserRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_REQUIRED", "用户名"), nameof(request.Username));
+
+        if (request.Username.Length < 3 || request.Username.Length > 50)
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_LENGTH", "用户名", 3, 50), nameof(request.Username));
+
+        if (!IsValidUsername(request.Username))
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_FORMAT", "用户名"), nameof(request.Username));
+
+        if (string.IsNullOrEmpty(request.Email))
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_REQUIRED", "邮箱"), nameof(request.Email));
+
+        if (!IsValidEmail(request.Email))
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_FORMAT", "邮箱"), nameof(request.Email));
+
+        if (string.IsNullOrEmpty(request.Password))
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_REQUIRED", "密码"), nameof(request.Password));
+
+        if (!IsStrongPassword(request.Password))
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_FORMAT", "密码"), nameof(request.Password));
+    }
+
+    private async Task ValidateUpdateUserRequestAsync(UpdateUserRequest request, User existingUser)
+    {
+        if (string.IsNullOrEmpty(request.Username) && string.IsNullOrEmpty(request.Email))
+            throw new ArgumentException("至少需要更新一个字段");
+
+        if (!string.IsNullOrEmpty(request.Username))
+        {
+            if (request.Username.Length < 3 || request.Username.Length > 50)
+                throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_LENGTH", "用户名", 3, 50));
+
+            if (!IsValidUsername(request.Username))
+                throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_FORMAT", "用户名"));
+        }
+
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            if (!IsValidEmail(request.Email))
+                throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_FORMAT", "邮箱"));
+        }
+    }
+
+    private async Task ValidateUserDeletionAsync(User user)
+    {
+        // 检查用户是否有关联数据
+        var hasActivityLogs = await _activityLogs.CountDocumentsAsync(
+            Builders<UserActivityLog>.Filter.Eq(al => al.UserId, user.Id)
+        ) > 0;
+
+        if (hasActivityLogs)
+        {
+            throw new InvalidOperationException("用户有活动记录，无法删除");
+        }
+
+        // 检查用户是否是企业管理员
+        var isAdmin = await _userCompanies.CountDocumentsAsync(
+            Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, user.Id),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true)
+            )
+        ) > 0;
+
+        if (isAdmin)
+        {
+            throw new InvalidOperationException("企业管理员无法删除");
+        }
+    }
+
+    private bool IsValidUsername(string username)
+    {
+        return username.All(c => char.IsLetterOrDigit(c) || c == '_');
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool IsStrongPassword(string password)
+    {
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
+            return false;
+
+        var hasLetter = password.Any(char.IsLetter);
+        var hasDigit = password.Any(char.IsDigit);
+        var hasSpecialChar = password.Any(c => !char.IsLetterOrDigit(c));
+
+        return hasLetter && hasDigit && hasSpecialChar;
+    }
+}
+
+// ❌ 错误 - 没有统一的错误处理
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 没有错误处理
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+}
+```
+
+## 🎯 错误响应格式
+
+### 统一错误响应
+
+```csharp
+// Platform.ServiceDefaults/Models/ErrorResponse.cs
+public class ErrorResponse
+{
+    public bool Success { get; set; } = false;
+    public string ErrorMessage { get; set; } = string.Empty;
+    public string ErrorCode { get; set; } = string.Empty;
+    public int ShowType { get; set; } = 2; // ERROR_MESSAGE
+    public string TraceId { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public object? Data { get; set; }
+}
+
+// Platform.ServiceDefaults/Models/ValidationErrorResponse.cs
+public class ValidationErrorResponse : ErrorResponse
+{
+    public List<ValidationError> ValidationErrors { get; set; } = new List<ValidationError>();
+}
+
+public class ValidationError
+{
+    public string Field { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string ErrorCode { get; set; } = string.Empty;
+}
+```
+
+### 错误响应构建器
+
+```csharp
+// Platform.ServiceDefaults/Services/ErrorResponseBuilder.cs
+public interface IErrorResponseBuilder
+{
+    ErrorResponse BuildErrorResponse(string errorCode, string message, string traceId);
+    ErrorResponse BuildErrorResponse(string errorCode, string message, string traceId, object data);
+    ValidationErrorResponse BuildValidationErrorResponse(List<ValidationError> validationErrors, string traceId);
+}
+
+public class ErrorResponseBuilder : IErrorResponseBuilder
+{
+    private readonly IErrorMessageService _errorMessageService;
+
+    public ErrorResponseBuilder(IErrorMessageService errorMessageService)
+    {
+        _errorMessageService = errorMessageService;
+    }
+
+    public ErrorResponse BuildErrorResponse(string errorCode, string message, string traceId)
+    {
+        return new ErrorResponse
+        {
+            Success = false,
+            ErrorMessage = message,
+            ErrorCode = errorCode,
+            ShowType = 2, // ERROR_MESSAGE
+            TraceId = traceId,
+            Timestamp = DateTime.UtcNow
+        };
+    }
+
+    public ErrorResponse BuildErrorResponse(string errorCode, string message, string traceId, object data)
+    {
+        return new ErrorResponse
+        {
+            Success = false,
+            ErrorMessage = message,
+            ErrorCode = errorCode,
+            ShowType = 2, // ERROR_MESSAGE
+            TraceId = traceId,
+            Timestamp = DateTime.UtcNow,
+            Data = data
+        };
+    }
+
+    public ValidationErrorResponse BuildValidationErrorResponse(List<ValidationError> validationErrors, string traceId)
+    {
+        return new ValidationErrorResponse
+        {
+            Success = false,
+            ErrorMessage = "参数验证失败",
+            ErrorCode = "VALIDATION_FAILED",
+            ShowType = 2, // ERROR_MESSAGE
+            TraceId = traceId,
+            Timestamp = DateTime.UtcNow,
+            ValidationErrors = validationErrors
+        };
+    }
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要忽略错误处理
+
+```csharp
+// ❌ 错误 - 忽略错误处理
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 没有错误处理
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+}
+
+// ✅ 正确 - 完整的错误处理
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        try
+        {
+            // 业务逻辑
+            var user = new User
+            {
+                Username = request.Username,
+                Email = request.Email
+            };
+            
+            return await _userFactory.CreateAsync(user);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "用户创建参数错误: {Username}", request?.Username);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "用户创建失败: {Username}", request?.Username);
+            throw new InvalidOperationException(_errorMessageService.GetErrorMessage("USER_CREATE_FAILED"), ex);
         }
     }
 }
 ```
 
-## 📱 组件级错误处理
+### 不要硬编码错误消息
 
-### 错误边界
-
-```typescript
-// ✅ 推荐：React 错误边界
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; error: Error | null }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ padding: 20, textAlign: 'center' }}>
-          <h1>出错了</h1>
-          <p>{this.state.error?.message}</p>
-          <button onClick={() => window.location.reload()}>
-            刷新页面
-          </button>
-        </div>
-      );
+```csharp
+// ❌ 错误 - 硬编码错误消息
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException("用户名不能为空"); // 硬编码
+        
+        if (string.IsNullOrEmpty(request.Email))
+            throw new ArgumentException("邮箱不能为空"); // 硬编码
     }
+}
 
-    return this.props.children;
-  }
+// ✅ 正确 - 使用错误消息服务
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_REQUIRED", "用户名"));
+        
+        if (string.IsNullOrEmpty(request.Email))
+            throw new ArgumentException(_errorMessageService.GetErrorMessage("VALIDATION_REQUIRED", "邮箱"));
+    }
 }
 ```
 
-### 移动端错误显示
+### 不要忽略日志记录
 
-```typescript
-// ✅ 推荐：移动端错误组件
-import { Alert } from 'react-native';
-
-export function showError(error: ApiError) {
-  const message = error.message || '操作失败';
-  const canRetry = error.canRetry || false;
-  
-  if (canRetry) {
-    Alert.alert(
-      '操作失败',
-      message,
-      [
-        { text: '取消', style: 'cancel' },
-        { text: '重试', onPress: () => handleRetry() },
-      ]
-    );
-  } else {
-    Alert.alert('错误', message, [{ text: '确定' }]);
-  }
+```csharp
+// ❌ 错误 - 没有日志记录
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        try
+        {
+            // 业务逻辑
+            return await _userFactory.CreateAsync(user);
+        }
+        catch (Exception ex)
+        {
+            // 没有日志记录
+            throw;
+        }
+    }
 }
 
-export function AuthErrorHandler({ children }: { children: React.ReactNode }) {
-  const { error, clearError } = useAuth();
-  
-  useEffect(() => {
-    if (error) {
-      showError(error);
-      clearError();
+// ✅ 正确 - 完整的日志记录
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        try
+        {
+            // 业务逻辑
+            var result = await _userFactory.CreateAsync(user);
+            
+            _logger.LogInformation("用户创建成功: {UserId}, 用户名: {Username}", 
+                result.Id, result.Username);
+            
+            return result;
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "用户创建参数错误: {Username}", request?.Username);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "用户创建失败: {Username}", request?.Username);
+            throw new InvalidOperationException(_errorMessageService.GetErrorMessage("USER_CREATE_FAILED"), ex);
+        }
     }
-  }, [error, clearError]);
-  
-  return <>{children}</>;
 }
 ```
 
-## 🚫 避免的做法
+## 📋 错误处理检查清单
 
-- 不要忽略错误，至少要记录日志
-- 不要向用户暴露敏感的错误信息
-- 不要在多个地方重复错误处理逻辑
-- 不要忘记清理错误状态
-- 不要无限重试失败的请求
+创建或修改服务时检查：
 
-## 🔧 最佳实践
+- [ ] 使用全局异常处理中间件
+- [ ] 使用错误消息服务
+- [ ] 适当的异常类型
+- [ ] 完整的日志记录
+- [ ] 统一的错误响应格式
+- [ ] 参数验证错误处理
+- [ ] 业务规则错误处理
+- [ ] 数据库操作错误处理
+- [ ] 网络请求错误处理
+- [ ] 错误信息国际化支持
 
-1. **统一错误格式** - 前后端使用统一的错误响应格式
-2. **错误分类** - 明确区分不同类型的错误
-3. **用户友好** - 向用户显示友好的错误信息
-4. **日志记录** - 记录详细的错误日志用于调试
-5. **智能重试** - 对可重试的错误自动重试
-6. **错误边界** - 使用错误边界防止应用崩溃
-7. **TraceId** - 使用 TraceId 追踪错误
-8. **监控告警** - 对关键错误设置监控告警
+## 📚 相关文档
+
+- [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
+- [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
+- [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)
+- [全局异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)

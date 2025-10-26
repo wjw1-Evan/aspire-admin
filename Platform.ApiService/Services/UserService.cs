@@ -8,34 +8,32 @@ using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
 
-public class UserService : BaseService, IUserService
+public class UserService : IUserService
 {
     private const string ACTIVE_STATUS = "active";
     
-    private readonly BaseRepository<User> _userRepository;
-    private readonly IMongoCollection<UserActivityLog> _activityLogs;
-    private readonly IMongoCollection<Role> _roles;
-    private readonly IMongoCollection<UserCompany> _userCompanies;
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly IDatabaseOperationFactory<Company> _companyFactory;
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
-    
-    // 快捷访问器，用于需要直接访问集合的场景
-    private IMongoCollection<User> _users => _userRepository.Collection;
 
     public UserService(
-        IMongoDatabase database, 
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
-        ILogger<UserService> logger,
+        IDatabaseOperationFactory<User> userFactory,
+        IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        IDatabaseOperationFactory<Company> companyFactory,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService)
-        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        // 确保参数顺序与 BaseRepository 构造函数一致
-        _userRepository = new BaseRepository<User>(database, "users", httpContextAccessor, tenantContext);
-        _activityLogs = GetCollection<UserActivityLog>("user_activity_logs");
-        _roles = GetCollection<Role>("roles");
-        _userCompanies = GetCollection<UserCompany>("user_companies");
+        _userFactory = userFactory;
+        _activityLogFactory = activityLogFactory;
+        _roleFactory = roleFactory;
+        _userCompanyFactory = userCompanyFactory;
+        _companyFactory = companyFactory;
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
     }
@@ -45,7 +43,7 @@ public class UserService : BaseService, IUserService
     /// </summary>
     public async Task<List<User>> GetAllUsersAsync()
     {
-        return await _userRepository.GetAllAsync();
+        return await _userFactory.FindAsync();
     }
 
     /// <summary>
@@ -55,7 +53,7 @@ public class UserService : BaseService, IUserService
     /// <returns>用户对象，不存在或已删除则返回 null</returns>
     public async Task<User?> GetUserByIdAsync(string id)
     {
-        return await _userRepository.GetByIdAsync(id);
+        return await _userFactory.GetByIdAsync(id);
     }
 
     /// <summary>
@@ -66,12 +64,7 @@ public class UserService : BaseService, IUserService
     /// <returns>用户对象，不存在或已删除则返回 null</returns>
     public async Task<User?> GetUserByIdWithoutTenantFilterAsync(string id)
     {
-        var users = GetCollection<User>("users");
-        var filter = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq(u => u.Id, id),
-            Builders<User>.Filter.Eq(u => u.IsDeleted, false)
-        );
-        return await users.Find(filter).FirstOrDefaultAsync();
+        return await _userFactory.GetByIdWithoutTenantFilterAsync(id);
     }
 
     public async Task<User> CreateUserAsync(CreateUserRequest request)
@@ -87,8 +80,7 @@ public class UserService : BaseService, IUserService
             UpdatedAt = DateTime.UtcNow
         };
 
-        await _users.InsertOneAsync(user);
-        return user;
+        return await _userFactory.CreateAsync(user);
     }
 
     /// <summary>
@@ -112,21 +104,19 @@ public class UserService : BaseService, IUserService
         }
 
         // v3.0 多租户：检查企业用户配额
-        var companyId = GetCurrentCompanyId();
+        var companyId = _userFactory.GetCurrentCompanyId();
         if (!string.IsNullOrEmpty(companyId))
         {
-            var companies = Database.GetCollection<Company>("companies");
-            var company = await companies.Find(c => c.Id == companyId && !c.IsDeleted)
-                .FirstOrDefaultAsync();
+            var companies = await _companyFactory.FindAsync(_companyFactory.CreateFilterBuilder().Equal(c => c.Id, companyId).Build());
+            var company = companies.FirstOrDefault();
             
             if (company != null)
             {
                 // 统计当前企业的用户数（不包括已删除）
-                var currentUserCount = await _users.CountDocumentsAsync(
-                    Builders<User>.Filter.And(
-                        Builders<User>.Filter.Eq(u => u.CurrentCompanyId, companyId),
-                        Builders<User>.Filter.Eq(u => u.IsDeleted, false)
-                    )
+                var currentUserCount = await _userFactory.CountAsync(
+                    _userFactory.CreateFilterBuilder()
+                        .Equal(u => u.CurrentCompanyId, companyId)
+                        .Build()
                 );
 
                 if (currentUserCount >= company.MaxUsers)
@@ -158,34 +148,39 @@ public class UserService : BaseService, IUserService
             UpdatedAt = DateTime.UtcNow
         };
 
-        await _users.InsertOneAsync(user);
-        return user;
-    }
-
-    public async Task<User?> UpdateUserAsync(string id, UpdateUserRequest request)
-    {
-        var filter = Builders<User>.Filter.Eq(user => user.Id, id);
-        var update = Builders<User>.Update
-            .Set(user => user.UpdatedAt, DateTime.UtcNow);
-
-        if (!string.IsNullOrEmpty(request.Name))
-            update = update.Set(user => user.Username, request.Name);
-        
-        if (!string.IsNullOrEmpty(request.Email))
-            update = update.Set(user => user.Email, request.Email);
-
-        var result = await _users.UpdateOneAsync(filter, update);
-        
-        if (result.ModifiedCount > 0)
-        {
-            return await GetUserByIdAsync(id);
-        }
-        
-        return null;
+        return await _userFactory.CreateAsync(user);
     }
 
     /// <summary>
-    /// 更新用户（用户管理）
+    /// 更新用户（使用原子操作）
+    /// </summary>
+    public async Task<User?> UpdateUserAsync(string id, UpdateUserRequest request)
+    {
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Id, id)
+            .Build();
+
+        var updateBuilder = _userFactory.CreateUpdateBuilder();
+        
+        if (!string.IsNullOrEmpty(request.Name))
+            updateBuilder.Set(u => u.Username, request.Name);
+        if (!string.IsNullOrEmpty(request.Email))
+            updateBuilder.Set(u => u.Email, request.Email);
+        
+        updateBuilder.SetCurrentTimestamp();
+        var update = updateBuilder.Build();
+
+        var options = new FindOneAndUpdateOptions<User>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        return await _userFactory.FindOneAndUpdateAsync(filter, update, options);
+    }
+
+    /// <summary>
+    /// 更新用户（用户管理，使用原子操作）
     /// </summary>
     /// <param name="id">用户ID</param>
     /// <param name="request">更新用户请求</param>
@@ -193,39 +188,41 @@ public class UserService : BaseService, IUserService
     /// <exception cref="InvalidOperationException">用户名或邮箱已存在时抛出</exception>
     public async Task<User?> UpdateUserManagementAsync(string id, UpdateUserManagementRequest request)
     {
-        var filter = Builders<User>.Filter.Eq(user => user.Id, id);
-        var update = Builders<User>.Update
-            .Set(user => user.UpdatedAt, DateTime.UtcNow);
-
+        // 验证唯一性（如果提供了新值）
         if (!string.IsNullOrEmpty(request.Username))
         {
-            // 使用唯一性检查服务
             await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username, excludeUserId: id);
-            update = update.Set(user => user.Username, request.Username);
         }
 
         if (!string.IsNullOrEmpty(request.Email))
         {
-            // 使用唯一性检查服务
             _validationService.ValidateEmail(request.Email);
             await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email, excludeUserId: id);
-            update = update.Set(user => user.Email, request.Email);
         }
 
-        // v3.1: 角色管理已移至 UserCompany 表，通过 UserCompanyService 处理
-        // 如果需要更新用户角色，请使用 UserCompanyService.UpdateMemberRolesAsync
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Id, id)
+            .Build();
 
+        var updateBuilder = _userFactory.CreateUpdateBuilder();
+        
+        if (!string.IsNullOrEmpty(request.Username))
+            updateBuilder.Set(u => u.Username, request.Username);
+        if (!string.IsNullOrEmpty(request.Email))
+            updateBuilder.Set(u => u.Email, request.Email);
         if (request.IsActive.HasValue)
-            update = update.Set(user => user.IsActive, request.IsActive.Value);
+            updateBuilder.Set(u => u.IsActive, request.IsActive.Value);
+        
+        updateBuilder.SetCurrentTimestamp();
+        var update = updateBuilder.Build();
 
-        var result = await _users.UpdateOneAsync(filter, update);
-        
-        if (result.ModifiedCount > 0)
+        var options = new FindOneAndUpdateOptions<User>
         {
-            return await GetUserByIdAsync(id);
-        }
-        
-        return null;
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        return await _userFactory.FindOneAndUpdateAsync(filter, update, options);
     }
 
     /// <summary>
@@ -233,29 +230,66 @@ public class UserService : BaseService, IUserService
     /// </summary>
     public async Task<bool> DeleteUserAsync(string id, string? reason = null)
     {
-        return await _userRepository.SoftDeleteAsync(id);
+        var filter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, id).Build();
+        var result = await _userFactory.FindOneAndSoftDeleteAsync(filter);
+        return result != null;
     }
 
     public async Task<List<User>> SearchUsersByNameAsync(string name)
     {
-        var filter = Builders<User>.Filter.Regex(user => user.Username, new MongoDB.Bson.BsonRegularExpression(name, "i"));
-        return await _userRepository.Collection.Find(filter).ToListAsync();
+        var filter = _userFactory.CreateFilterBuilder()
+            .Regex(u => u.Username, name)
+            .Build();
+        
+        return await _userFactory.FindAsync(filter);
     }
 
+    /// <summary>
+    /// 停用用户（使用原子操作）
+    /// </summary>
     public async Task<bool> DeactivateUserAsync(string id)
     {
-        var update = Builders<User>.Update.Set(user => user.IsActive, false);
-        var filter = Builders<User>.Filter.Eq(u => u.Id, id);
-        var result = await _userRepository.Collection.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Id, id)
+            .Build();
+
+        var update = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.IsActive, false)
+            .SetCurrentTimestamp()
+            .Build();
+
+        var options = new FindOneAndUpdateOptions<User>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedUser = await _userFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedUser != null;
     }
 
+    /// <summary>
+    /// 激活用户（使用原子操作）
+    /// </summary>
     public async Task<bool> ActivateUserAsync(string id)
     {
-        var update = Builders<User>.Update.Set(user => user.IsActive, true);
-        var filter = Builders<User>.Filter.Eq(u => u.Id, id);
-        var result = await _userRepository.Collection.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Id, id)
+            .Build();
+
+        var update = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.IsActive, true)
+            .SetCurrentTimestamp()
+            .Build();
+
+        var options = new FindOneAndUpdateOptions<User>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedUser = await _userFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedUser != null;
     }
 
     /// <summary>
@@ -298,25 +332,24 @@ public class UserService : BaseService, IUserService
     public async Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request)
     {
         // 验证当前企业
-        var currentCompanyId = GetRequiredCompanyId();
+        var currentCompanyId = _userFactory.GetRequiredCompanyId();
 
         // 构建查询过滤器
         var filter = await BuildUserListFilterAsync(request, currentCompanyId);
         
         // 构建排序
-        var sortDefinition = request.SortOrder?.ToLower() == "asc" 
-            ? Builders<User>.Sort.Ascending(request.SortBy)
-            : Builders<User>.Sort.Descending(request.SortBy);
+        var sortBuilder = _userFactory.CreateSortBuilder();
+        if (request.SortOrder?.ToLower() == "asc")
+        {
+            sortBuilder.Ascending(u => u.Username); // 默认按用户名排序
+        }
+        else
+        {
+            sortBuilder.Descending(u => u.Username); // 默认按用户名排序
+        }
 
         // 分页查询用户
-        var skip = (request.Page - 1) * request.PageSize;
-        var users = await _users.Find(filter)
-            .Sort(sortDefinition)
-            .Skip(skip)
-            .Limit(request.PageSize)
-            .ToListAsync();
-
-        var total = await _users.CountDocumentsAsync(filter);
+        var (users, total) = await _userFactory.FindPagedAsync(filter, sortBuilder.Build(), request.Page, request.PageSize);
 
         // 批量加载用户角色信息
         var usersWithRoles = await EnrichUsersWithRolesAsync(users, currentCompanyId);
@@ -335,48 +368,48 @@ public class UserService : BaseService, IUserService
     /// </summary>
     private async Task<FilterDefinition<User>> BuildUserListFilterAsync(UserListRequest request, string currentCompanyId)
     {
-        var builder = Builders<User>.Filter;
-        var filter = builder.And(
-            builder.Eq(u => u.CurrentCompanyId, currentCompanyId),
-            MongoFilterExtensions.NotDeleted<User>()
-        );
+        var filterBuilder = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.CurrentCompanyId, currentCompanyId);
 
         // 搜索过滤
         if (!string.IsNullOrEmpty(request.Search))
         {
-            var searchFilter = builder.Or(
-                builder.Regex(u => u.Username, new MongoDB.Bson.BsonRegularExpression(request.Search, "i")),
-                builder.Regex(u => u.Email, new MongoDB.Bson.BsonRegularExpression(request.Search, "i"))
-            );
-            filter = builder.And(filter, searchFilter);
+            filterBuilder.Regex(u => u.Username, request.Search, "i");
+            filterBuilder.Regex(u => u.Email, request.Search, "i");
         }
 
         // 角色过滤
         if (request.RoleIds != null && request.RoleIds.Count > 0)
         {
             var userIdsWithRoles = await GetUserIdsByRolesAsync(request.RoleIds, currentCompanyId);
-            filter = userIdsWithRoles.Count > 0
-                ? builder.And(filter, builder.In(u => u.Id, userIdsWithRoles))
-                : builder.And(filter, builder.Eq(u => u.Id, "nonexistent")); // 无匹配用户
+            if (userIdsWithRoles.Count > 0)
+            {
+                filterBuilder.In(u => u.Id, userIdsWithRoles);
+            }
+            else
+            {
+                // 如果没有匹配的角色，返回空结果
+                filterBuilder.Equal(u => u.Id, "nonexistent");
+            }
         }
         
         // 日期范围过滤
         if (request.StartDate.HasValue)
         {
-            filter = builder.And(filter, builder.Gte(u => u.CreatedAt, request.StartDate.Value));
+            filterBuilder.GreaterThanOrEqual(u => u.CreatedAt, request.StartDate.Value);
         }
         if (request.EndDate.HasValue)
         {
-            filter = builder.And(filter, builder.Lte(u => u.CreatedAt, request.EndDate.Value));
+            filterBuilder.LessThanOrEqual(u => u.CreatedAt, request.EndDate.Value);
         }
 
         // 状态过滤
         if (request.IsActive.HasValue)
         {
-            filter = builder.And(filter, builder.Eq(u => u.IsActive, request.IsActive.Value));
+            filterBuilder.Equal(u => u.IsActive, request.IsActive.Value);
         }
 
-        return filter;
+        return filterBuilder.Build();
     }
 
     /// <summary>
@@ -384,14 +417,16 @@ public class UserService : BaseService, IUserService
     /// </summary>
     private async Task<List<string>> GetUserIdsByRolesAsync(List<string> roleIds, string companyId)
     {
-        var filter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, roleIds),
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.Status, ACTIVE_STATUS),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
+        var filter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.CompanyId, companyId)
+            .Equal(uc => uc.Status, ACTIVE_STATUS)
+            .Build();
         
-        var userCompanies = await _userCompanies.Find(filter).ToListAsync();
+        // 使用 MongoDB 的 AnyIn 操作符
+        var anyInFilter = Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, roleIds);
+        var combinedFilter = Builders<UserCompany>.Filter.And(filter, anyInFilter);
+        
+        var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter);
         return userCompanies.Select(uc => uc.UserId).Distinct().ToList();
     }
 
@@ -405,13 +440,13 @@ public class UserService : BaseService, IUserService
         var userIds = users.Select(u => u.Id!).ToList();
         
         // 批量查询用户企业关联
-        var userCompanyFilter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.In(uc => uc.UserId, userIds),
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.Status, ACTIVE_STATUS),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
-        var userCompanies = await _userCompanies.Find(userCompanyFilter).ToListAsync();
+        var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+            .In(uc => uc.UserId, userIds)
+            .Equal(uc => uc.CompanyId, companyId)
+            .Equal(uc => uc.Status, ACTIVE_STATUS)
+            .Build();
+        
+        var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
         
         // 批量查询角色信息
         var allRoleIds = userCompanies.SelectMany(uc => uc.RoleIds).Distinct().ToList();
@@ -455,13 +490,12 @@ public class UserService : BaseService, IUserService
     {
         if (!roleIds.Any()) return new Dictionary<string, string>();
 
-        var roleFilter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.In(r => r.Id, roleIds),
-            Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),
-            Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
-        );
+        var roleFilter = _roleFactory.CreateFilterBuilder()
+            .In(r => r.Id, roleIds)
+            .Equal(r => r.CompanyId, companyId)
+            .Build();
         
-        var roles = await _roles.Find(roleFilter).ToListAsync();
+        var roles = await _roleFactory.FindAsync(roleFilter);
         return roles.ToDictionary(r => r.Id!, r => r.Name);
     }
 
@@ -472,56 +506,58 @@ public class UserService : BaseService, IUserService
     public async Task<UserStatisticsResponse> GetUserStatisticsAsync()
     {
         // ✅ 获取当前企业ID进行多租户过滤
-        var currentCompanyId = GetCurrentCompanyId();
+        var currentCompanyId = _userFactory.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
         {
             throw new UnauthorizedAccessException("未找到当前企业信息");
         }
 
         // ✅ 基础过滤：只统计当前企业的未删除用户
-        var baseFilter = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq(u => u.CurrentCompanyId, currentCompanyId), // ✅ 修复：使用CurrentCompanyId
-            SoftDeleteExtensions.NotDeleted<User>()
-        );
+        var baseFilter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.CurrentCompanyId, currentCompanyId) // ✅ 修复：使用CurrentCompanyId
+            .Build();
         
-        var totalUsers = await _users.CountDocumentsAsync(baseFilter);
+        var totalUsers = await _userFactory.CountAsync(baseFilter);
         
-        var activeFilter = Builders<User>.Filter.And(baseFilter, 
-            Builders<User>.Filter.Eq(user => user.IsActive, true));
-        var activeUsers = await _users.CountDocumentsAsync(activeFilter);
+        var activeFilter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.CurrentCompanyId, currentCompanyId)
+            .Equal(u => u.IsActive, true)
+            .Build();
+        var activeUsers = await _userFactory.CountAsync(activeFilter);
         var inactiveUsers = totalUsers - activeUsers;
         
         // ✅ 查询当前企业的管理员角色（添加企业过滤）
         var adminRoleNames = new[] { "admin", "super-admin" };
-        var adminRoleFilter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.In(r => r.Name, adminRoleNames),
-            Builders<Role>.Filter.Eq(r => r.CompanyId, currentCompanyId), // ✅ 企业隔离
-            SoftDeleteExtensions.NotDeleted<Role>()
-        );
-        var adminRoles = await _roles.Find(adminRoleFilter).ToListAsync();
+        var adminRoleFilter = _roleFactory.CreateFilterBuilder()
+            .In(r => r.Name, adminRoleNames)
+            .Equal(r => r.CompanyId, currentCompanyId) // ✅ 企业隔离
+            .Build();
+        var adminRoles = await _roleFactory.FindAsync(adminRoleFilter);
         var adminRoleIds = adminRoles.Select(r => r.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
         
         // v3.1: 从 UserCompany 表统计当前企业内拥有管理员角色的用户数量
         var adminUsers = 0L;
         if (adminRoleIds.Any())
         {
-            var adminUserCompanyFilter = Builders<UserCompany>.Filter.And(
-                Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, adminRoleIds),
-                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId), // ✅ 企业隔离
-                Builders<UserCompany>.Filter.Eq(uc => uc.Status, ACTIVE_STATUS),
-                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-            );
-            adminUsers = await _userCompanies.CountDocumentsAsync(adminUserCompanyFilter);
+            var adminUserCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.CompanyId, currentCompanyId)
+                .Equal(uc => uc.Status, ACTIVE_STATUS)
+                .Build();
+            
+            // 使用 MongoDB 的 AnyIn 操作符
+            var anyInFilter = Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, adminRoleIds);
+            var combinedFilter = Builders<UserCompany>.Filter.And(adminUserCompanyFilter, anyInFilter);
+            
+            adminUsers = await _userCompanyFactory.CountAsync(combinedFilter);
         }
         
         // 另外，直接统计当前企业内标记为管理员的用户
-        var directAdminFilter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true),
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId), // ✅ 企业隔离
-            Builders<UserCompany>.Filter.Eq(uc => uc.Status, ACTIVE_STATUS),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
-        var directAdminUsers = await _userCompanies.CountDocumentsAsync(directAdminFilter);
+        var directAdminFilter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.IsAdmin, true)
+            .Equal(uc => uc.CompanyId, currentCompanyId)
+            .Equal(uc => uc.Status, ACTIVE_STATUS)
+            .Build();
+        var directAdminUsers = await _userCompanyFactory.CountAsync(directAdminFilter);
         
         // 取最大值（可能存在既有管理员角色又标记为管理员的情况）
         adminUsers = Math.Max(adminUsers, directAdminUsers);
@@ -533,17 +569,23 @@ public class UserService : BaseService, IUserService
         var thisMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // ✅ 新增用户统计：添加企业过滤
-        var todayFilter = Builders<User>.Filter.And(baseFilter,
-            Builders<User>.Filter.Gte(user => user.CreatedAt, today));
-        var newUsersToday = await _users.CountDocumentsAsync(todayFilter);
+        var todayFilter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.CurrentCompanyId, currentCompanyId)
+            .GreaterThanOrEqual(user => user.CreatedAt, today)
+            .Build();
+        var newUsersToday = await _userFactory.CountAsync(todayFilter);
         
-        var weekFilter = Builders<User>.Filter.And(baseFilter,
-            Builders<User>.Filter.Gte(user => user.CreatedAt, thisWeek));
-        var newUsersThisWeek = await _users.CountDocumentsAsync(weekFilter);
+        var weekFilter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.CurrentCompanyId, currentCompanyId)
+            .GreaterThanOrEqual(user => user.CreatedAt, thisWeek)
+            .Build();
+        var newUsersThisWeek = await _userFactory.CountAsync(weekFilter);
         
-        var monthFilter = Builders<User>.Filter.And(baseFilter,
-            Builders<User>.Filter.Gte(user => user.CreatedAt, thisMonth));
-        var newUsersThisMonth = await _users.CountDocumentsAsync(monthFilter);
+        var monthFilter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.CurrentCompanyId, currentCompanyId)
+            .GreaterThanOrEqual(user => user.CreatedAt, thisMonth)
+            .Build();
+        var newUsersThisMonth = await _userFactory.CountAsync(monthFilter);
 
         return new UserStatisticsResponse
         {
@@ -565,18 +607,17 @@ public class UserService : BaseService, IUserService
     public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null)
     {
         // ✅ 获取当前企业ID进行多租户过滤
-        var currentCompanyId = GetCurrentCompanyId();
+        var currentCompanyId = _userFactory.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
         {
             throw new UnauthorizedAccessException("未找到当前企业信息");
         }
 
         // ✅ 过滤器：只能操作当前企业的未删除用户
-        var filter = Builders<User>.Filter.And(
-            Builders<User>.Filter.In(user => user.Id, request.UserIds),
-            Builders<User>.Filter.Eq(user => user.CurrentCompanyId, currentCompanyId), // ✅ 修复：使用CurrentCompanyId
-            SoftDeleteExtensions.NotDeleted<User>()
-        );
+        var filter = _userFactory.CreateFilterBuilder()
+            .In(user => user.Id, request.UserIds)
+            .Equal(user => user.CurrentCompanyId, currentCompanyId)
+            .Build();
         
         var update = Builders<User>.Update.Set(user => user.UpdatedAt, DateTime.UtcNow);
 
@@ -589,15 +630,15 @@ public class UserService : BaseService, IUserService
                 update = update.Set(user => user.IsActive, false);
                 break;
             case "delete":
-                var currentUserId = GetCurrentUserId();
-                var deleteCount = await _users.SoftDeleteManyAsync(filter, currentUserId, reason);
+                var currentUserId = _userFactory.GetCurrentUserId();
+                var deleteCount = await _userFactory.SoftDeleteManyAsync(request.UserIds);
                 return deleteCount > 0;
             default:
                 return false;
         }
 
-        var result = await _users.UpdateManyAsync(filter, update);
-        return result.ModifiedCount > 0;
+        await _userFactory.UpdateManyAsync(filter, update);
+        return true;
     }
 
     public Task<bool> UpdateUserRoleAsync(string id, string role)
@@ -619,16 +660,20 @@ public class UserService : BaseService, IUserService
             CreatedAt = DateTime.UtcNow
         };
 
-        await _activityLogs.InsertOneAsync(log);
+        await _activityLogFactory.CreateAsync(log);
     }
 
     public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
     {
-        return await _activityLogs
-            .Find(log => log.UserId == userId)
-            .Sort(Builders<UserActivityLog>.Sort.Descending(log => log.CreatedAt))
-            .Limit(limit)
-            .ToListAsync();
+        var filter = _activityLogFactory.CreateFilterBuilder()
+            .Equal(log => log.UserId, userId)
+            .Build();
+        
+        var sort = _activityLogFactory.CreateSortBuilder()
+            .Descending(log => log.CreatedAt)
+            .Build();
+        
+        return await _activityLogFactory.FindAsync(filter, sort: sort, limit: limit);
     }
 
     /// <summary>
@@ -658,41 +703,41 @@ public class UserService : BaseService, IUserService
         DateTime? startDate = null,
         DateTime? endDate = null)
     {
-        var filterBuilder = Builders<UserActivityLog>.Filter;
-        var filter = filterBuilder.Empty;
+        var filterBuilder = _activityLogFactory.CreateFilterBuilder();
 
         // 按用户ID过滤
         if (!string.IsNullOrEmpty(userId))
         {
-            filter &= filterBuilder.Eq(log => log.UserId, userId);
+            filterBuilder.Equal(log => log.UserId, userId);
         }
 
         // 按操作类型过滤
         if (!string.IsNullOrEmpty(action))
         {
-            filter &= filterBuilder.Eq(log => log.Action, action);
+            filterBuilder.Equal(log => log.Action, action);
         }
 
         // 按日期范围过滤
         if (startDate.HasValue)
         {
-            filter &= filterBuilder.Gte(log => log.CreatedAt, startDate.Value);
+            filterBuilder.GreaterThanOrEqual(log => log.CreatedAt, startDate.Value);
         }
         if (endDate.HasValue)
         {
-            filter &= filterBuilder.Lte(log => log.CreatedAt, endDate.Value);
+            filterBuilder.LessThanOrEqual(log => log.CreatedAt, endDate.Value);
         }
 
+        var filter = filterBuilder.Build();
+
         // 获取总数
-        var total = await _activityLogs.CountDocumentsAsync(filter);
+        var total = await _activityLogFactory.CountAsync(filter);
 
         // 获取分页数据
-        var logs = await _activityLogs
-            .Find(filter)
-            .Sort(Builders<UserActivityLog>.Sort.Descending(log => log.CreatedAt))
-            .Skip((page - 1) * pageSize)
-            .Limit(pageSize)
-            .ToListAsync();
+        var sort = _activityLogFactory.CreateSortBuilder()
+            .Descending(log => log.CreatedAt)
+            .Build();
+        
+        var logs = await _activityLogFactory.FindAsync(filter, sort, limit: pageSize);
 
         // 批量获取用户信息（解决 N+1 问题）
         // 过滤掉无效的用户ID（比如 "anonymous" 这种非ObjectId格式的ID）
@@ -705,11 +750,10 @@ public class UserService : BaseService, IUserService
         var users = new List<User>();
         if (validUserIds.Any())
         {
-            var userFilter = Builders<User>.Filter.And(
-                Builders<User>.Filter.In(u => u.Id, validUserIds),
-                SoftDeleteExtensions.NotDeleted<User>()
-            );
-            users = await _users.Find(userFilter).ToListAsync();
+            var userFilter = _userFactory.CreateFilterBuilder()
+                .In(u => u.Id, validUserIds)
+                .Build();
+            users = await _userFactory.FindAsync(userFilter);
         }
         
         // 构建用户 ID 到用户名的映射
@@ -755,66 +799,81 @@ public class UserService : BaseService, IUserService
 
     public async Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null)
     {
-        var filter = Builders<User>.Filter.Eq(user => user.Email, email);
+        var filterBuilder = _userFactory.CreateFilterBuilder()
+            .Equal(user => user.Email, email);
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filter = Builders<User>.Filter.And(filter, Builders<User>.Filter.Ne(user => user.Id, excludeUserId));
+            filterBuilder.NotEqual(user => user.Id, excludeUserId);
         }
 
-        return await _userRepository.Collection.Find(filter).AnyAsync();
+        var filter = filterBuilder.Build();
+
+        return await _userFactory.CountAsync(filter) > 0;
     }
 
     public async Task<bool> CheckUsernameExistsAsync(string username, string? excludeUserId = null)
     {
-        var filter = Builders<User>.Filter.Eq(user => user.Username, username);
+        var filterBuilder = _userFactory.CreateFilterBuilder()
+            .Equal(user => user.Username, username);
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filter = Builders<User>.Filter.And(filter, Builders<User>.Filter.Ne(user => user.Id, excludeUserId));
+            filterBuilder.NotEqual(user => user.Id, excludeUserId);
         }
 
-        return await _userRepository.Collection.Find(filter).AnyAsync();
+        var filter = filterBuilder.Build();
+
+        return await _userFactory.CountAsync(filter) > 0;
     }
 
-    // 个人中心相关方法
+    /// <summary>
+    /// 更新用户个人资料（使用原子操作）
+    /// </summary>
     public async Task<User?> UpdateUserProfileAsync(string userId, UpdateProfileRequest request)
     {
-        // v3.1: 使用不带多租户过滤的方式更新，因为用户可能属于多个企业
-        var users = GetCollection<User>("users");
-        var filter = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq(user => user.Id, userId),
-            Builders<User>.Filter.Eq(user => user.IsDeleted, false)
-        );
-        
-        var update = Builders<User>.Update
-            .Set(user => user.UpdatedAt, DateTime.UtcNow);
-
         // 注意：用户名（Username）字段禁止修改，已在控制器层过滤
 
+        // 验证唯一性（如果提供了新邮箱）
         if (!string.IsNullOrEmpty(request.Email))
         {
-            // v3.0 多租户：使用统一的唯一性检查服务（企业内唯一）
             _validationService.ValidateEmail(request.Email);
             await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email, excludeUserId: userId);
-            update = update.Set(user => user.Email, request.Email);
         }
 
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Id, userId)
+            .Build();
+
+        var updateBuilder = _userFactory.CreateUpdateBuilder();
+        
+        if (!string.IsNullOrEmpty(request.Email))
+            updateBuilder.Set(u => u.Email, request.Email);
+        
         if (!string.IsNullOrEmpty(request.Name))
-            update = update.Set(user => user.Name, request.Name);
-
+            updateBuilder.Set(u => u.Name, request.Name);
+        
         if (request.Age.HasValue)
-            update = update.Set(user => user.Age, request.Age.Value);
+            updateBuilder.Set(u => u.Age, request.Age.Value);
+        
+        updateBuilder.SetCurrentTimestamp();
+        var update = updateBuilder.Build();
 
-        var result = await users.UpdateOneAsync(filter, update);
-
-        if (result.ModifiedCount > 0)
+        var options = new FindOneAndUpdateOptions<User>
         {
-            // v3.1: 使用不带多租户过滤的方式获取更新后的用户
-            return await GetUserByIdWithoutTenantFilterAsync(userId);
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedUser = await _userFactory.FindOneAndUpdateAsync(filter, update, options);
+        
+        if (updatedUser == null)
+        {
+            throw new KeyNotFoundException($"用户 {userId} 不存在");
         }
 
-        return null;
+        // v3.1: 使用不带多租户过滤的方式获取更新后的用户
+        return await GetUserByIdWithoutTenantFilterAsync(userId);
     }
 
     public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
@@ -830,13 +889,15 @@ public class UserService : BaseService, IUserService
 
         // 更新密码
         var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-        var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
-        var update = Builders<User>.Update
+        
+        var filter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
+        var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.PasswordHash, newPasswordHash)
-            .Set(u => u.UpdatedAt, DateTime.UtcNow);
-
-        var result = await _users.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+            .Set(u => u.UpdatedAt, DateTime.UtcNow)
+            .Build();
+        
+        var result = await _userFactory.FindOneAndUpdateAsync(filter, update);
+        return result != null;
     }
 
     #region 私有辅助方法
@@ -854,7 +915,7 @@ public class UserService : BaseService, IUserService
             return new List<string>();
         }
 
-        var companyId = GetCurrentCompanyId();
+        var companyId = _userFactory.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(companyId))
         {
             // 如果没有企业上下文（如企业注册时创建管理员），直接返回
@@ -862,12 +923,11 @@ public class UserService : BaseService, IUserService
         }
 
         // 查询属于当前企业的角色
-        var roleFilter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.In(r => r.Id, roleIds),
-            Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),
-            Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
-        );
-        var validRoles = await _roles.Find(roleFilter).ToListAsync();
+        var roleFilter = _roleFactory.CreateFilterBuilder()
+            .In(r => r.Id, roleIds)
+            .Equal(r => r.CompanyId, companyId)
+            .Build();
+        var validRoles = await _roleFactory.FindAsync(roleFilter);
 
         // 验证所有请求的角色都存在且属于当前企业
         if (validRoles.Count != roleIds.Count)
@@ -891,14 +951,14 @@ public class UserService : BaseService, IUserService
     public async Task<object> GetUserPermissionsAsync(string userId)
     {
         // 获取用户信息
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _userFactory.GetByIdAsync(userId);
         if (user == null)
         {
             throw new KeyNotFoundException($"用户 {userId} 不存在");
         }
 
         // 获取用户在当前企业的角色
-        var companyId = GetCurrentCompanyId();
+        var companyId = _userFactory.GetCurrentCompanyId();
         if (string.IsNullOrEmpty(companyId))
         {
             // 没有企业上下文，返回空权限
@@ -910,13 +970,13 @@ public class UserService : BaseService, IUserService
             };
         }
 
-        var userCompanyFilter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
+        var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, userId)
+            .Equal(uc => uc.CompanyId, companyId)
+            .Build();
 
-        var userCompany = await _userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
+        var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
+        var userCompany = userCompanies.FirstOrDefault();
         
         var allPermissionCodes = new List<string>();
         var rolePermissions = new List<string>();
@@ -924,14 +984,13 @@ public class UserService : BaseService, IUserService
         if (userCompany?.RoleIds != null && userCompany.RoleIds.Count > 0)
         {
             // 获取用户角色对应的菜单权限
-            var roleFilter = Builders<Role>.Filter.And(
-                Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
-                Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),
-                Builders<Role>.Filter.Eq(r => r.IsDeleted, false),
-                Builders<Role>.Filter.Eq(r => r.IsActive, true)
-            );
+            var roleFilter = _roleFactory.CreateFilterBuilder()
+                .In(r => r.Id, userCompany.RoleIds)
+                .Equal(r => r.CompanyId, companyId)
+                .Equal(r => r.IsActive, true)
+                .Build();
 
-            var roles = await _roles.Find(roleFilter).ToListAsync();
+            var roles = await _roleFactory.FindAsync(roleFilter);
             
             // 收集所有角色的菜单权限
             var menuIds = roles.SelectMany(r => r.MenuIds).Distinct().ToList();

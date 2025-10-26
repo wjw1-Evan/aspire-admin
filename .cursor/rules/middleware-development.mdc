@@ -1,73 +1,29 @@
 ---
-globs: Platform.ApiService/Middleware/*.cs
+globs: Platform.ApiService/Middleware/*.cs,Platform.ServiceDefaults/Middleware/*.cs
 description: 中间件开发规范和最佳实践
 ---
-
 # 中间件开发规范
 
-## 🎯 概述
+## 🎯 核心原则
 
-基于 .NET Core 中间件管道模式，提供统一的中间件开发规范和最佳实践。
+### 中间件负责横切关注点，提供统一的请求处理、异常处理、日志记录和响应格式化
 
-## 🏗️ 中间件架构模式
+## ✅ 中间件实现规范
 
-### 标准中间件结构
-
-```csharp
-// ✅ 标准中间件实现
-public class CustomMiddleware
-{
-    private readonly RequestDelegate _next;
-    private readonly ILogger<CustomMiddleware> _logger;
-    private readonly IConfiguration _configuration;
-
-    public CustomMiddleware(
-        RequestDelegate next,
-        ILogger<CustomMiddleware> logger,
-        IConfiguration configuration)
-    {
-        _next = next;
-        _logger = logger;
-        _configuration = configuration;
-    }
-
-    public async Task InvokeAsync(HttpContext context, IService service)
-    {
-        // 1. 前置处理
-        await PreProcessAsync(context);
-        
-        // 2. 执行下一个中间件
-        await _next(context);
-        
-        // 3. 后置处理
-        await PostProcessAsync(context);
-    }
-}
-```
-
-### 中间件注册顺序
+### 全局异常处理中间件
 
 ```csharp
-// ✅ 正确的中间件注册顺序
-app.UseExceptionHandler();           // 1. 异常处理（最外层）
-app.UseAuthentication();            // 2. 认证
-app.UseAuthorization();             // 3. 授权
-app.UseMiddleware<ActivityLogMiddleware>();  // 4. 活动日志
-app.UseCors();                      // 5. CORS
-app.UseMiddleware<ResponseFormattingMiddleware>();  // 6. 响应格式化
-app.MapControllers();               // 7. 控制器路由
-```
-
-## ✅ 推荐做法
-
-### 1. 异常处理中间件
-
-```csharp
-// ✅ 全局异常处理中间件
+// Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs
 public class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<GlobalExceptionMiddleware> _logger;
+
+    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -77,73 +33,152 @@ public class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred");
             await HandleExceptionAsync(context, ex);
         }
     }
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        context.Response.ContentType = "application/json";
+        var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
         
+        _logger.LogError(exception, 
+            "Unhandled exception occurred. TraceId: {TraceId}, Path: {Path}", 
+            traceId, 
+            context.Request.Path);
+
         var response = exception switch
         {
-            KeyNotFoundException => new { success = false, error = "资源不存在", errorCode = "NOT_FOUND" },
-            UnauthorizedAccessException => new { success = false, error = "未授权访问", errorCode = "UNAUTHORIZED" },
-            ArgumentException => new { success = false, error = "参数错误", errorCode = "INVALID_ARGUMENT" },
-            _ => new { success = false, error = "服务器内部错误", errorCode = "INTERNAL_ERROR" }
+            ArgumentException => CreateErrorResponse("参数错误", "BAD_REQUEST", StatusCodes.Status400BadRequest, traceId),
+            ArgumentNullException => CreateErrorResponse("参数不能为空", "BAD_REQUEST", StatusCodes.Status400BadRequest, traceId),
+            KeyNotFoundException => CreateErrorResponse("资源不存在", "NOT_FOUND", StatusCodes.Status404NotFound, traceId),
+            UnauthorizedAccessException => CreateErrorResponse("未授权访问", "UNAUTHORIZED", StatusCodes.Status401Unauthorized, traceId),
+            InvalidOperationException => CreateErrorResponse("操作失败", "INVALID_OPERATION", StatusCodes.Status400BadRequest, traceId),
+            TimeoutException => CreateErrorResponse("请求超时", "TIMEOUT", StatusCodes.Status408RequestTimeout, traceId),
+            _ => CreateErrorResponse("服务器内部错误", "INTERNAL_ERROR", StatusCodes.Status500InternalServerError, traceId)
         };
 
-        context.Response.StatusCode = GetStatusCode(exception);
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        context.Response.StatusCode = response.StatusCode;
+        context.Response.ContentType = "application/json";
+        
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response.Body));
     }
-}
-```
 
-### 2. 活动日志中间件
-
-```csharp
-// ✅ 活动日志中间件实现
-public class ActivityLogMiddleware
-{
-    private static readonly string[] ExcludedPaths = { "/health", "/api/openapi", "/scalar/" };
-
-    public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
+    private (int StatusCode, object Body) CreateErrorResponse(
+        string message, 
+        string errorCode, 
+        int statusCode,
+        string traceId)
     {
-        // 检查是否启用日志记录
-        var enabled = _configuration.GetValue<bool>("ActivityLog:Enabled", true);
-        if (!enabled || ShouldExclude(context.Request.Path))
+        return (statusCode, new
         {
-            await _next(context);
-            return;
-        }
-
-        var stopwatch = Stopwatch.StartNew();
-        await _next(context);
-        stopwatch.Stop();
-
-        // 异步记录日志（不阻塞响应）
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await LogRequestAsync(context, logService, stopwatch.ElapsedMilliseconds);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to log activity for {Path}", context.Request.Path);
-            }
+            success = false,
+            errorMessage = message,
+            errorCode,
+            showType = 2, // ERROR_MESSAGE
+            traceId,
+            timestamp = DateTime.UtcNow
         });
     }
 }
 ```
 
-### 3. 响应格式化中间件
+### 活动日志中间件
 
 ```csharp
-// ✅ 统一响应格式化中间件
+// Platform.ApiService/Middleware/ActivityLogMiddleware.cs
+public class ActivityLogMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ActivityLogMiddleware> _logger;
+
+    public ActivityLogMiddleware(RequestDelegate next, ILogger<ActivityLogMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var requestId = context.TraceIdentifier;
+        
+        using (_logger.BeginScope(new Dictionary<string, object>
+        {
+            ["RequestId"] = requestId,
+            ["Method"] = context.Request.Method,
+            ["Path"] = context.Request.Path
+        }))
+        {
+            _logger.LogDebug("Processing request {RequestId}", requestId);
+            
+            try
+            {
+                await _next(context);
+                
+                var elapsed = stopwatch.ElapsedMilliseconds;
+                _logger.LogInformation("Request {RequestId} completed in {ElapsedMs}ms with status {StatusCode}",
+                    requestId, elapsed, context.Response.StatusCode);
+                
+                // 异步记录活动日志
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await logService.LogActivityAsync(new ActivityLogRequest
+                        {
+                            RequestId = requestId,
+                            Method = context.Request.Method,
+                            Path = context.Request.Path.Value ?? "",
+                            StatusCode = context.Response.StatusCode,
+                            ElapsedMs = elapsed,
+                            UserId = GetUserId(context),
+                            UserAgent = context.Request.Headers.UserAgent.ToString(),
+                            ClientIp = GetClientIp(context)
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to log activity for request {RequestId}", requestId);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                var elapsed = stopwatch.ElapsedMilliseconds;
+                _logger.LogError(ex, "Request {RequestId} failed after {ElapsedMs}ms",
+                    requestId, elapsed);
+                throw;
+            }
+        }
+    }
+
+    private string? GetUserId(HttpContext context)
+    {
+        return context.User?.FindFirst("userId")?.Value;
+    }
+
+    private string GetClientIp(HttpContext context)
+    {
+        return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+}
+```
+
+### 响应格式化中间件
+
+```csharp
+// Platform.ApiService/Middleware/ResponseFormattingMiddleware.cs
 public class ResponseFormattingMiddleware
 {
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ResponseFormattingMiddleware> _logger;
+
+    public ResponseFormattingMiddleware(RequestDelegate next, ILogger<ResponseFormattingMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
     public async Task InvokeAsync(HttpContext context)
     {
         var originalBodyStream = context.Response.Body;
@@ -151,87 +186,249 @@ public class ResponseFormattingMiddleware
         using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
-        await _next(context);
-
-        // 格式化响应
-        if (ShouldFormatResponse(context))
+        try
         {
-            await FormatResponseAsync(context);
+            await _next(context);
+            
+            // 只处理成功的响应
+            if (context.Response.StatusCode >= 200 && context.Response.StatusCode < 300)
+            {
+                await FormatSuccessResponse(context);
+            }
+        }
+        finally
+        {
+            responseBody.Seek(0, SeekOrigin.Begin);
+            await responseBody.CopyToAsync(originalBodyStream);
+        }
+    }
+
+    private async Task FormatSuccessResponse(HttpContext context)
+    {
+        var responseBody = await ReadResponseBody(context.Response.Body);
+        
+        if (!string.IsNullOrEmpty(responseBody))
+        {
+            try
+            {
+                // 检查是否已经是标准格式
+                var existingResponse = JsonSerializer.Deserialize<ApiResponse>(responseBody);
+                if (existingResponse != null && existingResponse.Success.HasValue)
+                {
+                    return; // 已经是标准格式，不需要重新包装
+                }
+            }
+            catch
+            {
+                // 不是 JSON 格式，继续包装
+            }
         }
 
-        await responseBody.CopyToAsync(originalBodyStream);
+        // 包装为标准响应格式
+        var formattedResponse = new ApiResponse<object>
+        {
+            Success = true,
+            Data = string.IsNullOrEmpty(responseBody) ? null : JsonSerializer.Deserialize<object>(responseBody),
+            Timestamp = DateTime.UtcNow
+        };
+
+        var jsonResponse = JsonSerializer.Serialize(formattedResponse);
+        var bytes = Encoding.UTF8.GetBytes(jsonResponse);
+        
+        context.Response.ContentType = "application/json";
+        context.Response.ContentLength = bytes.Length;
+        
+        await context.Response.Body.WriteAsync(bytes);
+    }
+
+    private async Task<string> ReadResponseBody(Stream body)
+    {
+        body.Seek(0, SeekOrigin.Begin);
+        using var reader = new StreamReader(body, Encoding.UTF8, leaveOpen: true);
+        return await reader.ReadToEndAsync();
     }
 }
 ```
 
-### 4. 权限验证特性
+### 请求限流中间件
 
 ```csharp
-// ✅ 菜单权限验证特性
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
-public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
+// Platform.ApiService/Middleware/RateLimitingMiddleware.cs
+public class RateLimitingMiddleware
 {
-    public string MenuName { get; }
+    private readonly RequestDelegate _next;
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<RateLimitingMiddleware> _logger;
 
-    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
+    public RateLimitingMiddleware(RequestDelegate next, IMemoryCache cache, ILogger<RateLimitingMiddleware> logger)
     {
-        if (!context.HttpContext.User.Identity?.IsAuthenticated ?? true)
+        _next = next;
+        _cache = cache;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var clientIp = GetClientIp(context);
+        var endpoint = $"{context.Request.Method}:{context.Request.Path}";
+        var key = $"rate_limit:{clientIp}:{endpoint}";
+        
+        var requestCount = _cache.GetOrCreate(key, entry =>
         {
-            context.Result = new UnauthorizedObjectResult(new
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
+            return 0;
+        });
+
+        if (requestCount >= 100) // 每分钟最多100个请求
+        {
+            _logger.LogWarning("Rate limit exceeded for IP {ClientIp} on endpoint {Endpoint}", 
+                clientIp, endpoint);
+            
+            context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.Response.ContentType = "application/json";
+            
+            var response = new
             {
                 success = false,
-                error = "未授权访问",
-                errorCode = "UNAUTHORIZED"
-            });
+                errorMessage = "请求过于频繁，请稍后再试",
+                errorCode = "RATE_LIMIT_EXCEEDED",
+                showType = 2,
+                timestamp = DateTime.UtcNow
+            };
+            
+            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
             return;
         }
 
-        var menuAccessService = context.HttpContext.RequestServices
-            .GetService<IMenuAccessService>();
+        _cache.Set(key, requestCount + 1, TimeSpan.FromMinutes(1));
         
-        var hasAccess = await menuAccessService.HasMenuAccessAsync(userId, MenuName);
-        if (!hasAccess)
+        await _next(context);
+    }
+
+    private string GetClientIp(HttpContext context)
+    {
+        return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+}
+```
+
+## 🎯 中间件注册和配置
+
+### 中间件管道配置
+
+```csharp
+// Platform.ApiService/Program.cs
+public static void ConfigureMiddlewarePipeline(WebApplication app)
+{
+    // 1. 异常处理（最外层）
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+    
+    // 2. 请求限流
+    app.UseMiddleware<RateLimitingMiddleware>();
+    
+    // 3. 认证和授权
+    app.UseAuthentication();
+    app.UseAuthorization();
+    
+    // 4. 活动日志记录
+    app.UseMiddleware<ActivityLogMiddleware>();
+    
+    // 5. CORS
+    app.UseCors();
+    
+    // 6. 响应格式化
+    app.UseMiddleware<ResponseFormattingMiddleware>();
+    
+    // 7. 控制器
+    app.MapControllers();
+}
+```
+
+### 中间件依赖注入
+
+```csharp
+// Platform.ApiService/Program.cs
+public static void ConfigureServices(IServiceCollection services)
+{
+    // 注册中间件依赖的服务
+    services.AddScoped<IUserActivityLogService, UserActivityLogService>();
+    services.AddMemoryCache();
+    
+    // 注册中间件
+    services.AddScoped<GlobalExceptionMiddleware>();
+    services.AddScoped<ActivityLogMiddleware>();
+    services.AddScoped<ResponseFormattingMiddleware>();
+    services.AddScoped<RateLimitingMiddleware>();
+}
+```
+
+## 🎯 自定义中间件特性
+
+### 中间件特性
+
+```csharp
+// Platform.ApiService/Attributes/SkipMiddlewareAttribute.cs
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+public class SkipMiddlewareAttribute : Attribute
+{
+    public Type[] MiddlewareTypes { get; }
+
+    public SkipMiddlewareAttribute(params Type[] middlewareTypes)
+    {
+        MiddlewareTypes = middlewareTypes;
+    }
+}
+
+// 使用示例
+[SkipMiddleware(typeof(ActivityLogMiddleware))]
+public async Task<IActionResult> HealthCheck()
+{
+    return Success("OK");
+}
+```
+
+### 中间件条件执行
+
+```csharp
+// Platform.ApiService/Middleware/ConditionalMiddleware.cs
+public class ConditionalMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly Func<HttpContext, bool> _condition;
+
+    public ConditionalMiddleware(RequestDelegate next, Func<HttpContext, bool> condition)
+    {
+        _next = next;
+        _condition = condition;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        if (_condition(context))
         {
-            context.Result = new ForbidResult();
+            await _next(context);
+        }
+        else
+        {
+            // 跳过中间件处理
+            await _next(context);
         }
     }
 }
 ```
 
-## ❌ 避免的做法
+## 🚫 禁止的做法
 
-### 1. 不要在中间件中阻塞主线程
-
-```csharp
-// ❌ 错误：同步等待数据库操作
-public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
-{
-    await _next(context);
-    
-    // ❌ 阻塞响应
-    await logService.LogAsync(context);
-}
-
-// ✅ 正确：异步记录日志
-public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
-{
-    await _next(context);
-    
-    // ✅ 异步记录，不阻塞响应
-    _ = Task.Run(async () => await logService.LogAsync(context));
-}
-```
-
-### 2. 不要忽略异常处理
+### 不要忽略异常处理
 
 ```csharp
-// ❌ 错误：忽略异常
+// ❌ 错误 - 没有异常处理
 public async Task InvokeAsync(HttpContext context)
 {
-    await _next(context);  // ❌ 没有异常处理
+    await _next(context); // 异常会直接抛出
 }
 
-// ✅ 正确：适当的异常处理
+// ✅ 正确 - 适当的异常处理
 public async Task InvokeAsync(HttpContext context)
 {
     try
@@ -240,138 +437,72 @@ public async Task InvokeAsync(HttpContext context)
     }
     catch (Exception ex)
     {
-        _logger.LogError(ex, "Middleware error");
-        // 根据中间件职责决定是否重新抛出
-        throw;
+        await HandleExceptionAsync(context, ex);
     }
 }
 ```
 
-### 3. 不要硬编码配置
+### 不要阻塞请求管道
 
 ```csharp
-// ❌ 错误：硬编码配置
-private static readonly string[] ExcludedPaths = { "/health", "/api/openapi" };
-
-// ✅ 正确：从配置读取
-private readonly string[] _excludedPaths;
-
-public CustomMiddleware(IConfiguration configuration)
-{
-    _excludedPaths = configuration.GetSection("Middleware:ExcludedPaths")
-        .Get<string[]>() ?? Array.Empty<string>();
-}
-```
-
-## 🔧 最佳实践
-
-### 1. 中间件生命周期管理
-
-```csharp
-// ✅ 使用 Scoped 服务
-public async Task InvokeAsync(HttpContext context, IScopedService service)
-{
-    // 中间件可以安全使用 Scoped 服务
-    await service.DoSomething();
-    await _next(context);
-}
-```
-
-### 2. 性能优化
-
-```csharp
-// ✅ 条件执行中间件
+// ❌ 错误 - 同步操作阻塞管道
 public async Task InvokeAsync(HttpContext context)
 {
-    if (!ShouldProcess(context))
-    {
-        await _next(context);
-        return;
-    }
+    var result = _service.DoSomethingSync(); // 同步操作
+    await _next(context);
+}
 
-    // 执行中间件逻辑
-    await ProcessRequest(context);
+// ✅ 正确 - 异步操作
+public async Task InvokeAsync(HttpContext context)
+{
+    var result = await _service.DoSomethingAsync(); // 异步操作
     await _next(context);
 }
 ```
 
-### 3. 日志记录规范
+### 不要忽略性能影响
 
 ```csharp
-// ✅ 结构化日志记录
-_logger.LogInformation(
-    "Processing request {Method} {Path} for user {UserId}",
-    context.Request.Method,
-    context.Request.Path,
-    userId);
-```
-
-### 4. 配置管理
-
-```csharp
-// ✅ 配置选项模式
-public class MiddlewareOptions
+// ❌ 错误 - 每次请求都执行重操作
+public async Task InvokeAsync(HttpContext context)
 {
-    public bool Enabled { get; set; } = true;
-    public string[] ExcludedPaths { get; set; } = Array.Empty<string>();
-    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
+    var data = await _database.GetAllDataAsync(); // 每次都查询数据库
+    await _next(context);
 }
 
-// 注册配置
-builder.Services.Configure<MiddlewareOptions>(
-    builder.Configuration.GetSection("Middleware"));
+// ✅ 正确 - 使用缓存或条件执行
+public async Task InvokeAsync(HttpContext context)
+{
+    if (ShouldExecute(context))
+    {
+        var data = await _cache.GetOrCreateAsync("key", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+            return await _database.GetAllDataAsync();
+        });
+    }
+    await _next(context);
+}
 ```
 
 ## 📋 中间件开发检查清单
 
-创建新中间件时检查：
+创建或修改中间件时检查：
 
-- [ ] 继承正确的基类或实现正确的接口
-- [ ] 使用依赖注入获取服务
-- [ ] 实现适当的异常处理
-- [ ] 考虑性能影响（异步操作）
-- [ ] 添加配置选项支持
-- [ ] 编写单元测试
-- [ ] 添加结构化日志记录
-- [ ] 考虑中间件执行顺序
-- [ ] 处理边界情况（如路径排除）
-- [ ] 确保线程安全
+- [ ] 实现正确的中间件接口
+- [ ] 添加适当的异常处理
+- [ ] 使用异步操作避免阻塞
+- [ ] 添加日志记录
+- [ ] 考虑性能影响
+- [ ] 添加单元测试
+- [ ] 配置正确的执行顺序
+- [ ] 处理边界情况
+- [ ] 添加配置选项
+- [ ] 文档化中间件功能
 
-## 🧪 测试中间件
+## 📚 相关文档
 
-```csharp
-// ✅ 中间件单元测试
-[Test]
-public async Task InvokeAsync_ShouldProcessRequest_WhenEnabled()
-{
-    // Arrange
-    var context = new DefaultHttpContext();
-    var next = new RequestDelegate(_ => Task.CompletedTask);
-    var middleware = new CustomMiddleware(next, _logger, _configuration);
-
-    // Act
-    await middleware.InvokeAsync(context, _service);
-
-    // Assert
-    Assert.That(context.Response.StatusCode, Is.EqualTo(200));
-}
-```
-
-## 📚 相关资源
-
-- [ASP.NET Core 中间件文档](https://docs.microsoft.com/aspnet/core/fundamentals/middleware/)
-- [自定义中间件指南](https://docs.microsoft.com/aspnet/core/fundamentals/middleware/write)
-- [异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
+- [全局异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
 - [活动日志中间件](mdc:Platform.ApiService/Middleware/ActivityLogMiddleware.cs)
 - [响应格式化中间件](mdc:Platform.ApiService/Middleware/ResponseFormattingMiddleware.cs)
-
-## 🎯 核心原则
-
-1. **单一职责** - 每个中间件只负责一个功能
-2. **异常安全** - 适当的异常处理和日志记录
-3. **性能优先** - 避免阻塞主线程
-4. **配置驱动** - 支持配置选项和开关
-5. **可测试性** - 设计便于单元测试
-6. **顺序重要** - 考虑中间件执行顺序
-7. **资源管理** - 正确释放资源
-8. **日志记录** - 使用结构化日志
+- [ASP.NET Core 中间件文档](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/middleware/)

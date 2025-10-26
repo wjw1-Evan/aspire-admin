@@ -351,3 +351,4 @@ mongo aspire-admin --eval "db.menus.find({}, {name: 1, permissions: 1}).pretty()
 4. **权限控制** - 通过 Role.MenuIds 和 Menu.Permissions 控制显示
 5. **单一数据源** - 100% 从数据库加载，routes.ts 只是路由映射
 6. **明确失败** - 菜单缺失时返回空，不使用静态路由后备
+

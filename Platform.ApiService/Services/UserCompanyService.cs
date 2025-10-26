@@ -1,9 +1,9 @@
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -24,29 +24,32 @@ public interface IUserCompanyService
     Task<bool> RemoveMemberAsync(string companyId, string userId);
 }
 
-public class UserCompanyService : BaseService, IUserCompanyService
+public class UserCompanyService : IUserCompanyService
 {
-    private readonly IMongoCollection<UserCompany> _userCompanies;
-    private readonly IMongoCollection<AppUser> _users;
-    private readonly IMongoCollection<Company> _companies;
-    private readonly IMongoCollection<Role> _roles;
-    private readonly IMongoCollection<Menu> _menus;
+    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDatabaseOperationFactory<Company> _companyFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<Menu> _menuFactory;
     private readonly IMenuService _menuService;
+    private readonly ITenantContext _tenantContext;
 
     public UserCompanyService(
-        IMongoDatabase database,
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
-        ILogger<UserCompanyService> logger,
-        IMenuService menuService)
-        : base(database, httpContextAccessor, tenantContext, logger)
+        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        IDatabaseOperationFactory<AppUser> userFactory,
+        IDatabaseOperationFactory<Company> companyFactory,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<Menu> menuFactory,
+        IMenuService menuService,
+        ITenantContext tenantContext)
     {
-        _userCompanies = database.GetCollection<UserCompany>("user_companies");
-        _users = database.GetCollection<AppUser>("users");
-        _companies = database.GetCollection<Company>("companies");
-        _roles = database.GetCollection<Role>("roles");
-        _menus = database.GetCollection<Menu>("menus");
+        _userCompanyFactory = userCompanyFactory;
+        _userFactory = userFactory;
+        _companyFactory = companyFactory;
+        _roleFactory = roleFactory;
+        _menuFactory = menuFactory;
         _menuService = menuService;
+        _tenantContext = tenantContext;
     }
 
     /// <summary>
@@ -54,39 +57,39 @@ public class UserCompanyService : BaseService, IUserCompanyService
     /// </summary>
     public async Task<List<UserCompanyItem>> GetUserCompaniesAsync(string userId)
     {
-        var filter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
+        var filter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, userId)
+            .Equal(uc => uc.Status, "active")
+            .Build();
         
-        var memberships = await _userCompanies.Find(filter).ToListAsync();
+        var memberships = await _userCompanyFactory.FindAsync(filter);
         var result = new List<UserCompanyItem>();
         
         if (!memberships.Any())
             return result;
         
         // 获取用户的当前企业和个人企业
-        var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        var user = await _userFactory.GetByIdAsync(userId);
         
         // 批量查询优化：避免N+1查询问题
         var companyIds = memberships.Select(m => m.CompanyId).Distinct().ToList();
         var allRoleIds = memberships.SelectMany(m => m.RoleIds).Distinct().ToList();
         
         // 批量查询企业信息
-        var companyFilter = Builders<Company>.Filter.And(
-            Builders<Company>.Filter.In(c => c.Id, companyIds),
-            Builders<Company>.Filter.Eq(c => c.IsDeleted, false)
-        );
-        var companies = await _companies.Find(companyFilter).ToListAsync();
+        var companyFilter = _companyFactory.CreateFilterBuilder()
+            .In(c => c.Id, companyIds)
+            .Build();
+        var companies = await _companyFactory.FindAsync(companyFilter);
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
         
         // 批量查询角色信息
         var roleDict = new Dictionary<string, Role>();
         if (allRoleIds.Any())
         {
-            var roleFilter = Builders<Role>.Filter.In(r => r.Id, allRoleIds);
-            var roles = await _roles.Find(roleFilter).ToListAsync();
+            var roleFilter = _roleFactory.CreateFilterBuilder()
+                .In(r => r.Id, allRoleIds)
+                .Build();
+            var roles = await _roleFactory.FindAsync(roleFilter);
             roleDict = roles.ToDictionary(r => r.Id!, r => r);
         }
         
@@ -126,13 +129,13 @@ public class UserCompanyService : BaseService, IUserCompanyService
     /// </summary>
     public async Task<UserCompany?> GetUserCompanyAsync(string userId, string companyId)
     {
-        var filter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
+        var filter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, userId)
+            .Equal(uc => uc.CompanyId, companyId)
+            .Build();
         
-        return await _userCompanies.Find(filter).FirstOrDefaultAsync();
+        var userCompanies = await _userCompanyFactory.FindAsync(filter);
+        return userCompanies.FirstOrDefault();
     }
 
     /// <summary>
@@ -149,7 +152,7 @@ public class UserCompanyService : BaseService, IUserCompanyService
     /// </summary>
     public async Task<SwitchCompanyResult> SwitchCompanyAsync(string targetCompanyId)
     {
-        var userId = GetRequiredUserId();
+        var userId = _userCompanyFactory.GetRequiredUserId();
         
         // 1. 验证用户是该企业的成员
         var membership = await GetUserCompanyAsync(userId, targetCompanyId);
@@ -159,27 +162,40 @@ public class UserCompanyService : BaseService, IUserCompanyService
         }
         
         // 2. 获取企业信息
-        var company = await _companies.Find(c => c.Id == targetCompanyId && c.IsDeleted == false)
-            .FirstOrDefaultAsync();
+        var company = await _companyFactory.GetByIdAsync(targetCompanyId);
         if (company == null)
         {
             throw new KeyNotFoundException("企业不存在");
         }
         
-        // 3. 更新用户当前企业
-        var update = Builders<AppUser>.Update
+        // 3. 更新用户当前企业（使用原子操作）
+        var userFilter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Id, userId)
+            .Build();
+
+        var userUpdate = _userFactory.CreateUpdateBuilder()
             .Set(u => u.CurrentCompanyId, targetCompanyId)
-            .Set(u => u.UpdatedAt, DateTime.UtcNow);
-        
-        await _users.UpdateOneAsync(u => u.Id == userId, update);
+            .SetCurrentTimestamp()
+            .Build();
+
+        var userOptions = new FindOneAndUpdateOptions<AppUser>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedUser = await _userFactory.FindOneAndUpdateAsync(userFilter, userUpdate, userOptions);
+        if (updatedUser == null)
+        {
+            throw new KeyNotFoundException($"用户 {userId} 不存在");
+        }
         
         // 4. 获取用户在该企业的菜单
         var menus = await _menuService.GetUserMenusAsync(membership.RoleIds);
         
         // 5. 生成新的JWT Token（包含新的企业信息）
-        var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
         string? newToken = null;
-        if (user != null)
+        if (updatedUser != null)
         {
             // 这里应该注入 IJwtService 来生成新token
             // 暂时返回null，实际实现需要在构造函数中注入服务
@@ -200,19 +216,18 @@ public class UserCompanyService : BaseService, IUserCompanyService
     public async Task<List<CompanyMemberItem>> GetCompanyMembersAsync(string companyId)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = GetRequiredUserId();
+        var currentUserId = _userCompanyFactory.GetRequiredUserId();
         if (!await IsUserAdminInCompanyAsync(currentUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以查看成员列表");
         }
         
-        var filter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
+        var filter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.CompanyId, companyId)
+            .Equal(uc => uc.Status, "active")
+            .Build();
         
-        var memberships = await _userCompanies.Find(filter).ToListAsync();
+        var memberships = await _userCompanyFactory.FindAsync(filter);
         var result = new List<CompanyMemberItem>();
         
         if (!memberships.Any())
@@ -223,16 +238,20 @@ public class UserCompanyService : BaseService, IUserCompanyService
         var allRoleIds = memberships.SelectMany(m => m.RoleIds).Distinct().ToList();
         
         // 批量查询用户信息
-        var userFilter = Builders<AppUser>.Filter.In(u => u.Id, userIds);
-        var users = await _users.Find(userFilter).ToListAsync();
+        var userFilter = _userFactory.CreateFilterBuilder()
+            .In(u => u.Id, userIds)
+            .Build();
+        var users = await _userFactory.FindAsync(userFilter);
         var userDict = users.ToDictionary(u => u.Id!, u => u);
         
         // 批量查询角色信息
         var roleDict = new Dictionary<string, Role>();
         if (allRoleIds.Any())
         {
-            var roleFilter = Builders<Role>.Filter.In(r => r.Id, allRoleIds);
-            var roles = await _roles.Find(roleFilter).ToListAsync();
+            var roleFilter = _roleFactory.CreateFilterBuilder()
+                .In(r => r.Id, allRoleIds)
+                .Build();
+            var roles = await _roleFactory.FindAsync(roleFilter);
             roleDict = roles.ToDictionary(r => r.Id!, r => r);
         }
         
@@ -265,12 +284,12 @@ public class UserCompanyService : BaseService, IUserCompanyService
     }
 
     /// <summary>
-    /// 更新成员角色
+    /// 更新成员角色（使用原子操作）
     /// </summary>
     public async Task<bool> UpdateMemberRolesAsync(string companyId, string userId, List<string> roleIds)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = GetRequiredUserId();
+        var currentUserId = _userCompanyFactory.GetRequiredUserId();
         if (!await IsUserAdminInCompanyAsync(currentUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以分配角色");
@@ -279,12 +298,11 @@ public class UserCompanyService : BaseService, IUserCompanyService
         // 验证所有角色都属于该企业
         if (roleIds.Count > 0)
         {
-            var roleFilter = Builders<Role>.Filter.And(
-                Builders<Role>.Filter.In(r => r.Id, roleIds),
-                Builders<Role>.Filter.Eq(r => r.CompanyId, companyId),
-                Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
-            );
-            var validRoles = await _roles.Find(roleFilter).ToListAsync();
+            var roleFilter = _roleFactory.CreateFilterBuilder()
+                .In(r => r.Id, roleIds)
+                .Equal(r => r.CompanyId, companyId)
+                .Build();
+            var validRoles = await _roleFactory.FindAsync(roleFilter);
             
             if (validRoles.Count != roleIds.Count)
             {
@@ -292,27 +310,33 @@ public class UserCompanyService : BaseService, IUserCompanyService
             }
         }
         
-        var filter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
+        var filter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, userId)
+            .Equal(uc => uc.CompanyId, companyId)
+            .Build();
         
-        var update = Builders<UserCompany>.Update
+        var update = _userCompanyFactory.CreateUpdateBuilder()
             .Set(uc => uc.RoleIds, roleIds)
-            .Set(uc => uc.UpdatedAt, DateTime.UtcNow);
-        
-        var result = await _userCompanies.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+            .SetCurrentTimestamp()
+            .Build();
+
+        var options = new FindOneAndUpdateOptions<UserCompany>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedUserCompany = await _userCompanyFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedUserCompany != null;
     }
 
     /// <summary>
-    /// 设置/取消成员管理员权限
+    /// 设置/取消成员管理员权限（使用原子操作）
     /// </summary>
     public async Task<bool> SetMemberAsAdminAsync(string companyId, string userId, bool isAdmin)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = GetRequiredUserId();
+        var currentUserId = _userCompanyFactory.GetRequiredUserId();
         if (!await IsUserAdminInCompanyAsync(currentUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以设置管理员");
@@ -324,18 +348,24 @@ public class UserCompanyService : BaseService, IUserCompanyService
             throw new InvalidOperationException("不能修改自己的管理员权限");
         }
         
-        var filter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
+        var filter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, userId)
+            .Equal(uc => uc.CompanyId, companyId)
+            .Build();
         
-        var update = Builders<UserCompany>.Update
+        var update = _userCompanyFactory.CreateUpdateBuilder()
             .Set(uc => uc.IsAdmin, isAdmin)
-            .Set(uc => uc.UpdatedAt, DateTime.UtcNow);
-        
-        var result = await _userCompanies.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+            .SetCurrentTimestamp()
+            .Build();
+
+        var options = new FindOneAndUpdateOptions<UserCompany>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedUserCompany = await _userCompanyFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedUserCompany != null;
     }
 
     /// <summary>
@@ -344,7 +374,7 @@ public class UserCompanyService : BaseService, IUserCompanyService
     public async Task<bool> RemoveMemberAsync(string companyId, string userId)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = GetRequiredUserId();
+        var currentUserId = _userCompanyFactory.GetRequiredUserId();
         if (!await IsUserAdminInCompanyAsync(currentUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以移除成员");
@@ -356,17 +386,13 @@ public class UserCompanyService : BaseService, IUserCompanyService
             throw new InvalidOperationException("不能移除自己，请转让管理员权限后再操作");
         }
         
-        var filter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
+        var filter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, userId)
+            .Equal(uc => uc.CompanyId, companyId)
+            .Build();
         
-        var update = Builders<UserCompany>.Update
-            .Set(uc => uc.IsDeleted, true);
-        
-        var result = await _userCompanies.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var result = await _userCompanyFactory.FindOneAndSoftDeleteAsync(filter);
+        return result != null;
     }
 
     #region 私有辅助方法

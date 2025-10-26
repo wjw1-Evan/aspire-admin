@@ -1,457 +1,801 @@
 ---
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
 description: 性能优化和监控规范
-globs: *.cs,*.ts,*.tsx,*.js,*.jsx
 ---
-
 # 性能优化和监控规范
 
 ## 🎯 核心原则
 
-**性能优化应该从设计阶段开始，通过监控和测量来指导优化决策**
+### 通过性能优化和监控确保系统高效运行，提供良好的用户体验
 
-## 🚀 后端性能优化
+## ✅ 数据库性能优化
 
-### 数据库查询优化
+### 查询优化
+
 ```csharp
-// ✅ 正确：使用索引和投影
-var users = await _users.Find(u => u.CompanyId == companyId)
-    .Project(u => new { u.Id, u.Username, u.Email })
-    .ToListAsync();
-
-// ❌ 避免：查询所有字段
-var users = await _users.Find(u => u.CompanyId == companyId).ToListAsync();
-
-// ✅ 正确：使用聚合管道
-var stats = await _users.Aggregate()
-    .Match(u => u.CompanyId == companyId)
-    .Group(u => u.RoleId, g => new { RoleId = g.Key, Count = g.Count() })
-    .ToListAsync();
-```
-
-### 缓存策略
-```csharp
-// ✅ 正确：使用内存缓存
-public async Task<User> GetUserAsync(string id)
+// ✅ 正确 - 优化的数据库查询
+public class UserService : IUserService
 {
-    var cacheKey = $"user:{id}";
-    if (_cache.TryGetValue(cacheKey, out User cachedUser))
-        return cachedUser;
+    private readonly IDatabaseOperationFactory<User> _userFactory;
 
-    var user = await _repository.GetByIdAsync(id);
-    _cache.Set(cacheKey, user, TimeSpan.FromMinutes(5));
-    return user;
-}
-
-// ✅ 正确：使用分布式缓存
-public async Task<List<Menu>> GetUserMenusAsync(string userId)
-{
-    var cacheKey = $"user_menus:{userId}";
-    var cachedMenus = await _distributedCache.GetStringAsync(cacheKey);
-    
-    if (cachedMenus != null)
-        return JsonSerializer.Deserialize<List<Menu>>(cachedMenus);
-
-    var menus = await _menuService.GetUserMenusAsync(userId);
-    await _distributedCache.SetStringAsync(cacheKey, 
-        JsonSerializer.Serialize(menus), 
-        new DistributedCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-        });
-    
-    return menus;
-}
-```
-
-### 异步编程最佳实践
-```csharp
-// ✅ 正确：使用 ConfigureAwait(false)
-public async Task<List<User>> GetUsersAsync()
-{
-    var users = await _repository.GetAllAsync().ConfigureAwait(false);
-    return users.ToList();
-}
-
-// ✅ 正确：并行执行独立任务
-public async Task<UserDashboard> GetUserDashboardAsync(string userId)
-{
-    var userTask = _userService.GetUserAsync(userId);
-    var statsTask = _statsService.GetUserStatsAsync(userId);
-    var activitiesTask = _activityService.GetRecentActivitiesAsync(userId);
-
-    await Task.WhenAll(userTask, statsTask, activitiesTask);
-
-    return new UserDashboard
+    public UserService(IDatabaseOperationFactory<User> userFactory)
     {
-        User = await userTask,
-        Stats = await statsTask,
-        Activities = await activitiesTask
-    };
+        _userFactory = userFactory;
+    }
+
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 1. 构建高效的查询条件
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        // 2. 添加索引友好的搜索条件
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            var searchFilter = _userFactory.CreateFilterBuilder()
+                .Regex(u => u.Username, request.Keyword)
+                .Or()
+                .Regex(u => u.Email, request.Keyword)
+                .Build();
+            
+            filter = _userFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(searchFilter)
+                .Build();
+        }
+
+        // 3. 使用索引友好的排序
+        var sort = _userFactory.CreateSortBuilder()
+            .Descending(u => u.CreatedAt)
+            .Build();
+
+        // 4. 限制结果数量
+        var limit = Math.Min(request.Limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+
+        // 5. 执行查询
+        return await _userFactory.FindAsync(filter, sort, limit);
+    }
+
+    public async Task<(List<User> items, long total)> GetUsersPagedAsync(UserListRequest request)
+    {
+        // 1. 构建查询条件
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        // 2. 添加搜索条件
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            var searchFilter = _userFactory.CreateFilterBuilder()
+                .Regex(u => u.Username, request.Keyword)
+                .Or()
+                .Regex(u => u.Email, request.Keyword)
+                .Build();
+            
+            filter = _userFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(searchFilter)
+                .Build();
+        }
+
+        // 3. 构建排序
+        var sort = _userFactory.CreateSortBuilder()
+            .Descending(u => u.CreatedAt)
+            .Build();
+
+        // 4. 执行分页查询
+        var page = Math.Max(1, request.Page ?? 1);
+        var pageSize = Math.Min(request.PageSize ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+
+        return await _userFactory.FindPagedAsync(filter, sort, page, pageSize);
+    }
+
+    public async Task<UserStatistics> GetUserStatisticsAsync()
+    {
+        var companyId = _userFactory.GetRequiredCompanyId();
+        
+        // 使用聚合查询而不是加载所有数据
+        var totalUsers = await _userFactory.CountAsync();
+        var activeUsers = await _userFactory.CountAsync(
+            _userFactory.CreateFilterBuilder()
+                .Equal(u => u.IsActive, true)
+                .Build()
+        );
+        var inactiveUsers = totalUsers - activeUsers;
+
+        return new UserStatistics
+        {
+            TotalUsers = totalUsers,
+            ActiveUsers = activeUsers,
+            InactiveUsers = inactiveUsers,
+            CompanyId = companyId,
+            GeneratedAt = DateTime.UtcNow
+        };
+    }
+}
+
+// ❌ 错误 - 低效的数据库查询
+public class UserService : IUserService
+{
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 获取所有用户然后过滤（低效）
+        var allUsers = await _userFactory.FindAsync();
+        
+        return allUsers
+            .Where(u => string.IsNullOrEmpty(request.Keyword) || 
+                       u.Username.Contains(request.Keyword) ||
+                       u.Email.Contains(request.Keyword))
+            .Take(request.Limit ?? DEFAULT_PAGE_SIZE)
+            .ToList();
+    }
 }
 ```
 
-## 🎨 前端性能优化
+### 索引优化
 
-### React 组件优化
-```tsx
-// ✅ 正确：使用 React.memo
-const UserCard = React.memo(({ user }: { user: User }) => {
-  return (
-    <Card>
-      <h3>{user.username}</h3>
-      <p>{user.email}</p>
-    </Card>
-  );
-});
-
-// ✅ 正确：使用 useMemo 和 useCallback
-const UserList = ({ users, onUserSelect }: UserListProps) => {
-  const filteredUsers = useMemo(() => 
-    users.filter(user => user.isActive), [users]
-  );
-
-  const handleUserClick = useCallback((userId: string) => {
-    onUserSelect(userId);
-  }, [onUserSelect]);
-
-  return (
-    <div>
-      {filteredUsers.map(user => (
-        <UserCard 
-          key={user.id} 
-          user={user} 
-          onClick={() => handleUserClick(user.id)}
-        />
-      ))}
-    </div>
-  );
-};
-```
-
-### 虚拟滚动和分页
-```tsx
-// ✅ 正确：使用虚拟滚动处理大量数据
-import { FixedSizeList as List } from 'react-window';
-
-const VirtualizedUserList = ({ users }: { users: User[] }) => {
-  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => (
-    <div style={style}>
-      <UserCard user={users[index]} />
-    </div>
-  );
-
-  return (
-    <List
-      height={600}
-      itemCount={users.length}
-      itemSize={80}
-      width="100%"
-    >
-      {Row}
-    </List>
-  );
-};
-
-// ✅ 正确：使用分页加载
-const usePaginatedData = <T>(fetchFn: (page: number) => Promise<T[]>) => {
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-
-  const loadMore = useCallback(async () => {
-    setLoading(true);
-    try {
-      const newData = await fetchFn(page);
-      setData(prev => [...prev, ...newData]);
-      setPage(prev => prev + 1);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchFn, page]);
-
-  return { data, loading, loadMore };
-};
-```
-
-### 图片和资源优化
-```tsx
-// ✅ 正确：使用懒加载
-const LazyImage = ({ src, alt }: { src: string; alt: string }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={imgRef} className="image-container">
-      {isInView && (
-        <img
-          src={src}
-          alt={alt}
-          onLoad={() => setIsLoaded(true)}
-          style={{ opacity: isLoaded ? 1 : 0 }}
-        />
-      )}
-    </div>
-  );
-};
-```
-
-## 📊 性能监控
-
-### 后端监控
 ```csharp
-// ✅ 正确：使用性能计数器
-public class PerformanceMiddleware
+// ✅ 正确 - 索引优化
+public class UserService : IUserService
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<PerformanceMiddleware> _logger;
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 使用复合索引优化查询
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
 
-    public async Task InvokeAsync(HttpContext context)
+        // 添加状态过滤（使用索引）
+        if (request.IsActive.HasValue)
+        {
+            var statusFilter = _userFactory.CreateFilterBuilder()
+                .Equal(u => u.IsActive, request.IsActive.Value)
+                .Build();
+            
+            filter = _userFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(statusFilter)
+                .Build();
+        }
+
+        // 添加时间范围过滤（使用索引）
+        if (request.CreatedAfter.HasValue)
+        {
+            var timeFilter = _userFactory.CreateFilterBuilder()
+                .GreaterThanOrEqual(u => u.CreatedAt, request.CreatedAfter.Value)
+                .Build();
+            
+            filter = _userFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(timeFilter)
+                .Build();
+        }
+
+        // 使用索引友好的排序
+        var sort = _userFactory.CreateSortBuilder()
+            .Descending(u => u.CreatedAt)
+            .Build();
+
+        return await _userFactory.FindAsync(filter, sort, request.Limit);
+    }
+}
+
+// ❌ 错误 - 没有使用索引
+public class UserService : IUserService
+{
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 没有使用索引的查询
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        // 没有使用索引的排序
+        var sort = _userFactory.CreateSortBuilder()
+            .Ascending(u => u.Username) // 没有索引的字段
+            .Build();
+
+        return await _userFactory.FindAsync(filter, sort, request.Limit);
+    }
+}
+```
+
+### 批量操作优化
+
+```csharp
+// ✅ 正确 - 批量操作优化
+public class UserService : IUserService
+{
+    public async Task<List<User>> CreateManyUsersAsync(List<CreateUserRequest> requests)
+    {
+        // 1. 批量验证
+        await ValidateManyUsersAsync(requests);
+
+        // 2. 批量创建
+        var users = requests.Select(request => new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        }).ToList();
+
+        return await _userFactory.CreateManyAsync(users);
+    }
+
+    public async Task<long> UpdateManyUsersAsync(List<UpdateUserRequest> requests)
+    {
+        // 1. 批量验证
+        await ValidateManyUpdatesAsync(requests);
+
+        // 2. 批量更新
+        var userIds = requests.Select(r => r.Id).ToList();
+        var filter = _userFactory.CreateFilterBuilder()
+            .In(u => u.Id, userIds)
+            .Build();
+
+        var update = _userFactory.CreateUpdateBuilder()
+            .SetCurrentTimestamp()
+            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+            .Build();
+
+        return await _userFactory.UpdateManyAsync(filter, update);
+    }
+
+    public async Task<long> DeleteManyUsersAsync(List<string> userIds)
+    {
+        // 1. 批量验证
+        await ValidateManyDeletionsAsync(userIds);
+
+        // 2. 批量删除
+        return await _userFactory.SoftDeleteManyAsync(userIds);
+    }
+
+    private async Task ValidateManyUsersAsync(List<CreateUserRequest> requests)
+    {
+        foreach (var request in requests)
+        {
+            if (string.IsNullOrEmpty(request.Username))
+                throw new ArgumentException("用户名不能为空");
+        }
+    }
+
+    private async Task ValidateManyUpdatesAsync(List<UpdateUserRequest> requests)
+    {
+        foreach (var request in requests)
+        {
+            if (string.IsNullOrEmpty(request.Id))
+                throw new ArgumentException("用户ID不能为空");
+        }
+    }
+
+    private async Task ValidateManyDeletionsAsync(List<string> userIds)
+    {
+        foreach (var userId in userIds)
+        {
+            if (string.IsNullOrEmpty(userId))
+                throw new ArgumentException("用户ID不能为空");
+        }
+    }
+}
+
+// ❌ 错误 - 逐个操作
+public class UserService : IUserService
+{
+    public async Task<List<User>> CreateManyUsersAsync(List<CreateUserRequest> requests)
+    {
+        var users = new List<User>();
+        
+        // 逐个创建（低效）
+        foreach (var request in requests)
+        {
+            var user = await CreateUserAsync(request);
+            users.Add(user);
+        }
+        
+        return users;
+    }
+}
+```
+
+## 🎯 内存使用优化
+
+### 流式处理
+
+```csharp
+// ✅ 正确 - 流式处理
+public class UserService : IUserService
+{
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 1. 使用流式处理
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        var sort = _userFactory.CreateSortBuilder()
+            .Descending(u => u.CreatedAt)
+            .Build();
+
+        var limit = Math.Min(request.Limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+
+        // 2. 限制结果数量
+        return await _userFactory.FindAsync(filter, sort, limit);
+    }
+
+    public async Task<UserStatistics> GetUserStatisticsAsync()
+    {
+        var companyId = _userFactory.GetRequiredCompanyId();
+        
+        // 3. 使用聚合查询而不是加载所有数据
+        var totalUsers = await _userFactory.CountAsync();
+        var activeUsers = await _userFactory.CountAsync(
+            _userFactory.CreateFilterBuilder()
+                .Equal(u => u.IsActive, true)
+                .Build()
+        );
+        var inactiveUsers = totalUsers - activeUsers;
+
+        return new UserStatistics
+        {
+            TotalUsers = totalUsers,
+            ActiveUsers = activeUsers,
+            InactiveUsers = inactiveUsers,
+            CompanyId = companyId,
+            GeneratedAt = DateTime.UtcNow
+        };
+    }
+}
+
+// ❌ 错误 - 内存使用不当
+public class UserService : IUserService
+{
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 加载所有用户到内存（内存浪费）
+        var allUsers = await _userFactory.FindAsync();
+        
+        return allUsers
+            .Where(u => string.IsNullOrEmpty(request.Keyword) || 
+                       u.Username.Contains(request.Keyword))
+            .Take(request.Limit ?? DEFAULT_PAGE_SIZE)
+            .ToList();
+    }
+}
+```
+
+### 缓存优化
+
+```csharp
+// ✅ 正确 - 缓存优化
+public class UserService : IUserService
+{
+    private readonly IMemoryCache _cache;
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IMemoryCache cache)
+    {
+        _userFactory = userFactory;
+        _cache = cache;
+    }
+
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        // 1. 尝试从缓存获取
+        var cacheKey = $"user:{id}";
+        if (_cache.TryGetValue(cacheKey, out User? cachedUser))
+        {
+            return cachedUser;
+        }
+
+        // 2. 从数据库获取
+        var user = await _userFactory.GetByIdAsync(id);
+        if (user != null)
+        {
+            // 3. 缓存结果
+            _cache.Set(cacheKey, user, TimeSpan.FromMinutes(5));
+        }
+
+        return user;
+    }
+
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 1. 构建缓存键
+        var cacheKey = $"users:{request.Keyword}:{request.IsActive}:{request.Limit}";
+        
+        // 2. 尝试从缓存获取
+        if (_cache.TryGetValue(cacheKey, out List<User>? cachedUsers))
+        {
+            return cachedUsers;
+        }
+
+        // 3. 从数据库获取
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            var searchFilter = _userFactory.CreateFilterBuilder()
+                .Regex(u => u.Username, request.Keyword)
+                .Or()
+                .Regex(u => u.Email, request.Keyword)
+                .Build();
+            
+            filter = _userFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(searchFilter)
+                .Build();
+        }
+
+        var sort = _userFactory.CreateSortBuilder()
+            .Descending(u => u.CreatedAt)
+            .Build();
+
+        var limit = Math.Min(request.Limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+        var users = await _userFactory.FindAsync(filter, sort, limit);
+
+        // 4. 缓存结果
+        _cache.Set(cacheKey, users, TimeSpan.FromMinutes(2));
+
+        return users;
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
+    {
+        var result = await _userFactory.UpdateAsync(existingUser, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Update,
+            Description = "更新用户信息"
+        });
+
+        if (result)
+        {
+            // 5. 清除相关缓存
+            _cache.Remove($"user:{request.Id}");
+            _cache.Remove($"users:{request.Keyword}:{request.IsActive}:{request.Limit}");
+        }
+
+        return result;
+    }
+}
+
+// ❌ 错误 - 没有缓存
+public class UserService : IUserService
+{
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        // 每次都从数据库获取（低效）
+        return await _userFactory.GetByIdAsync(id);
+    }
+}
+```
+
+## 🎯 性能监控
+
+### 性能指标监控
+
+```csharp
+// ✅ 正确 - 性能指标监控
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ILogger<UserService> _logger;
+    private readonly IMetrics _metrics;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserService> logger,
+        IMetrics metrics)
+    {
+        _userFactory = userFactory;
+        _logger = logger;
+        _metrics = metrics;
+    }
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
         var stopwatch = Stopwatch.StartNew();
         
         try
         {
-            await _next(context);
+            // 1. 记录开始时间
+            _logger.LogInformation("开始创建用户: {Username}", request.Username);
+            
+            // 2. 业务逻辑处理
+            var user = new User
+            {
+                Username = request.Username,
+                Email = request.Email,
+                CompanyId = _userFactory.GetRequiredCompanyId(),
+                CreatedBy = _userFactory.GetCurrentUserId(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var createdUser = await _userFactory.CreateAsync(user);
+            
+            // 3. 记录成功指标
+            _metrics.Counter("user.created").Increment();
+            _metrics.Timer("user.create.duration").Record(stopwatch.ElapsedMilliseconds);
+            
+            _logger.LogInformation("用户创建成功: {UserId}, 耗时: {ElapsedMs}ms", 
+                createdUser.Id, stopwatch.ElapsedMilliseconds);
+            
+            return createdUser;
         }
-        finally
+        catch (Exception ex)
         {
-            stopwatch.Stop();
+            // 4. 记录错误指标
+            _metrics.Counter("user.create.errors").Increment();
+            _metrics.Timer("user.create.duration").Record(stopwatch.ElapsedMilliseconds);
+            
+            _logger.LogError(ex, "用户创建失败: {Username}, 耗时: {ElapsedMs}ms", 
+                request.Username, stopwatch.ElapsedMilliseconds);
+            
+            throw;
+        }
+    }
+
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        
+        try
+        {
+            // 1. 记录开始时间
+            _logger.LogInformation("开始获取用户列表: {Keyword}", request.Keyword);
+            
+            // 2. 构建查询条件
+            var filter = _userFactory.CreateFilterBuilder()
+                .ExcludeDeleted()
+                .WithTenant()
+                .Build();
+
+            if (!string.IsNullOrEmpty(request.Keyword))
+            {
+                var searchFilter = _userFactory.CreateFilterBuilder()
+                    .Regex(u => u.Username, request.Keyword)
+                    .Or()
+                    .Regex(u => u.Email, request.Keyword)
+                    .Build();
+                
+                filter = _userFactory.CreateFilterBuilder()
+                    .And(filter)
+                    .And(searchFilter)
+                    .Build();
+            }
+
+            var sort = _userFactory.CreateSortBuilder()
+                .Descending(u => u.CreatedAt)
+                .Build();
+
+            var limit = Math.Min(request.Limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+            var users = await _userFactory.FindAsync(filter, sort, limit);
+            
+            // 3. 记录成功指标
+            _metrics.Counter("user.list.requests").Increment();
+            _metrics.Timer("user.list.duration").Record(stopwatch.ElapsedMilliseconds);
+            _metrics.Gauge("user.list.count").SetValue(users.Count);
+            
+            _logger.LogInformation("用户列表获取成功: {Count}条记录, 耗时: {ElapsedMs}ms", 
+                users.Count, stopwatch.ElapsedMilliseconds);
+            
+            return users;
+        }
+        catch (Exception ex)
+        {
+            // 4. 记录错误指标
+            _metrics.Counter("user.list.errors").Increment();
+            _metrics.Timer("user.list.duration").Record(stopwatch.ElapsedMilliseconds);
+            
+            _logger.LogError(ex, "用户列表获取失败: {Keyword}, 耗时: {ElapsedMs}ms", 
+                request.Keyword, stopwatch.ElapsedMilliseconds);
+            
+            throw;
+        }
+    }
+}
+
+// ❌ 错误 - 没有性能监控
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 没有性能监控
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+
+        return await _userFactory.CreateAsync(user);
+    }
+}
+```
+
+### 健康检查
+
+```csharp
+// ✅ 正确 - 健康检查
+public class UserServiceHealthCheck : IHealthCheck
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ILogger<UserServiceHealthCheck> _logger;
+
+    public UserServiceHealthCheck(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserServiceHealthCheck> logger)
+    {
+        _userFactory = userFactory;
+        _logger = logger;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // 1. 检查数据库连接
+            var userCount = await _userFactory.CountAsync();
+            
+            // 2. 检查性能指标
+            var stopwatch = Stopwatch.StartNew();
+            await _userFactory.FindAsync(null, null, 1);
             var elapsed = stopwatch.ElapsedMilliseconds;
             
-            if (elapsed > 1000) // 超过1秒的请求
+            // 3. 评估健康状态
+            if (elapsed > 1000) // 超过1秒认为不健康
             {
-                _logger.LogWarning("Slow request: {Method} {Path} took {ElapsedMs}ms",
-                    context.Request.Method,
-                    context.Request.Path,
-                    elapsed);
+                return HealthCheckResult.Unhealthy($"用户服务响应缓慢: {elapsed}ms");
             }
+            
+            if (userCount < 0)
+            {
+                return HealthCheckResult.Unhealthy("用户数量异常");
+            }
+            
+            return HealthCheckResult.Healthy($"用户服务正常: {userCount}个用户, 响应时间: {elapsed}ms");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "用户服务健康检查失败");
+            return HealthCheckResult.Unhealthy("用户服务健康检查失败", ex);
         }
     }
 }
 
-// ✅ 正确：数据库查询监控
-public class DatabasePerformanceService
+// ❌ 错误 - 没有健康检查
+public class UserService : IUserService
 {
-    public async Task<T> ExecuteWithMonitoring<T>(Func<Task<T>> operation, string operationName)
+    // 没有健康检查实现
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要忽略性能影响
+
+```csharp
+// ❌ 错误 - 忽略性能影响
+public class UserService : IUserService
+{
+    public async Task<List<User>> GetUsersAsync()
+    {
+        // 获取所有用户（性能问题）
+        return await _userFactory.FindAsync();
+    }
+}
+
+// ✅ 正确 - 考虑性能影响
+public class UserService : IUserService
+{
+    public async Task<List<User>> GetUsersAsync(int? limit = null)
+    {
+        var actualLimit = limit ?? DEFAULT_PAGE_SIZE;
+        if (actualLimit > MAX_PAGE_SIZE)
+            actualLimit = MAX_PAGE_SIZE;
+
+        return await _userFactory.FindAsync(null, null, actualLimit);
+    }
+}
+```
+
+### 不要忽略内存使用
+
+```csharp
+// ❌ 错误 - 内存使用不当
+public class UserService : IUserService
+{
+    public async Task<List<User>> GetUsersAsync()
+    {
+        // 加载所有用户到内存（内存浪费）
+        var allUsers = await _userFactory.FindAsync();
+        return allUsers.ToList();
+    }
+}
+
+// ✅ 正确 - 合理使用内存
+public class UserService : IUserService
+{
+    public async Task<List<User>> GetUsersAsync(int? limit = null)
+    {
+        var actualLimit = limit ?? DEFAULT_PAGE_SIZE;
+        return await _userFactory.FindAsync(null, null, actualLimit);
+    }
+}
+```
+
+### 不要忽略监控
+
+```csharp
+// ❌ 错误 - 没有监控
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 没有性能监控
+        var user = new User { Username = request.Username };
+        return await _userFactory.CreateAsync(user);
+    }
+}
+
+// ✅ 正确 - 完整的监控
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
         var stopwatch = Stopwatch.StartNew();
+        
         try
         {
-            var result = await operation();
+            var user = new User { Username = request.Username };
+            var result = await _userFactory.CreateAsync(user);
+            
+            _metrics.Counter("user.created").Increment();
+            _metrics.Timer("user.create.duration").Record(stopwatch.ElapsedMilliseconds);
+            
             return result;
         }
-        finally
+        catch (Exception ex)
         {
-            stopwatch.Stop();
-            _logger.LogInformation("Database operation {OperationName} took {ElapsedMs}ms",
-                operationName, stopwatch.ElapsedMilliseconds);
+            _metrics.Counter("user.create.errors").Increment();
+            throw;
         }
     }
 }
 ```
 
-### 前端监控
-```tsx
-// ✅ 正确：性能监控 Hook
-const usePerformanceMonitor = () => {
-  useEffect(() => {
-    // 监控页面加载时间
-    const navigationStart = performance.timing.navigationStart;
-    const loadComplete = performance.timing.loadEventEnd;
-    const loadTime = loadComplete - navigationStart;
+## 📋 性能优化检查清单
 
-    if (loadTime > 3000) {
-      console.warn(`Page load time: ${loadTime}ms (slow)`);
-    }
+创建或修改代码时检查：
 
-    // 监控资源加载
-    const resources = performance.getEntriesByType('resource');
-    const slowResources = resources.filter(resource => resource.duration > 1000);
-    
-    if (slowResources.length > 0) {
-      console.warn('Slow resources detected:', slowResources);
-    }
-  }, []);
-};
+- [ ] 数据库查询优化
+- [ ] 索引使用正确
+- [ ] 批量操作实现
+- [ ] 内存使用合理
+- [ ] 缓存策略适当
+- [ ] 性能监控完整
+- [ ] 健康检查实现
+- [ ] 错误处理完善
+- [ ] 日志记录详细
+- [ ] 性能测试通过
 
-// ✅ 正确：API 调用性能监控
-const useApiPerformanceMonitor = () => {
-  const monitorApiCall = useCallback(async <T>(
-    apiCall: () => Promise<T>,
-    endpoint: string
-  ): Promise<T> => {
-    const startTime = performance.now();
-    try {
-      const result = await apiCall();
-      const duration = performance.now() - startTime;
-      
-      if (duration > 1000) {
-        console.warn(`Slow API call: ${endpoint} took ${duration.toFixed(2)}ms`);
-      }
-      
-      return result;
-    } catch (error) {
-      const duration = performance.now() - startTime;
-      console.error(`API call failed: ${endpoint} after ${duration.toFixed(2)}ms`, error);
-      throw error;
-    }
-  }, []);
+## 📚 相关文档
 
-  return { monitorApiCall };
-};
-```
-
-## 🔧 性能优化工具
-
-### 构建优化
-```json
-// Platform.Admin/package.json
-{
-  "scripts": {
-    "build": "umi build",
-    "build:analyze": "ANALYZE=1 umi build",
-    "build:prod": "cross-env NODE_ENV=production umi build"
-  }
-}
-
-// webpack 配置优化
-module.exports = {
-  optimization: {
-    splitChunks: {
-      chunks: 'all',
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-        },
-        common: {
-          name: 'common',
-          minChunks: 2,
-          chunks: 'all',
-          enforce: true,
-        },
-      },
-    },
-  },
-};
-```
-
-### 数据库索引优化
-```csharp
-// ✅ 正确：创建复合索引
-public class CreateUserIndexes : IIndexCreationScript
-{
-    public async Task CreateIndexesAsync(IMongoDatabase database)
-    {
-        var users = database.GetCollection<User>("users");
-        
-        // 复合索引：CompanyId + IsDeleted + CreatedAt
-        await users.Indexes.CreateOneAsync(
-            new CreateIndexModel<User>(
-                Builders<User>.IndexKeys
-                    .Ascending(u => u.CompanyId)
-                    .Ascending(u => u.IsDeleted)
-                    .Descending(u => u.CreatedAt),
-                new CreateIndexOptions
-                {
-                    Name = "company_deleted_created",
-                    Background = true
-                }
-            )
-        );
-        
-        // 文本搜索索引
-        await users.Indexes.CreateOneAsync(
-            new CreateIndexModel<User>(
-                Builders<User>.IndexKeys.Text(u => u.Username).Text(u => u.Email),
-                new CreateIndexOptions
-                {
-                    Name = "user_text_search",
-                    Background = true
-                }
-            )
-        );
-    }
-}
-```
-
-## 📈 性能指标和阈值
-
-### 后端性能指标
-- **API 响应时间**: < 200ms (P95)
-- **数据库查询时间**: < 100ms (P95)
-- **内存使用**: < 80% 可用内存
-- **CPU 使用率**: < 70% 平均负载
-- **并发连接数**: < 1000 活跃连接
-
-### 前端性能指标
-- **首屏加载时间**: < 2s
-- **交互响应时间**: < 100ms
-- **资源加载时间**: < 1s
-- **JavaScript 包大小**: < 500KB (gzipped)
-- **图片优化**: WebP 格式，适当压缩
-
-### 移动端性能指标
-- **应用启动时间**: < 3s
-- **页面切换时间**: < 300ms
-- **内存使用**: < 100MB
-- **电池消耗**: 优化后台任务
-
-## 🎯 性能优化检查清单
-
-### 开发阶段
-- [ ] 使用性能分析工具识别瓶颈
-- [ ] 实现适当的缓存策略
-- [ ] 优化数据库查询和索引
-- [ ] 使用异步编程模式
-- [ ] 实现代码分割和懒加载
-
-### 测试阶段
-- [ ] 进行负载测试
-- [ ] 监控内存泄漏
-- [ ] 测试并发性能
-- [ ] 验证缓存有效性
-- [ ] 检查资源加载优化
-
-### 部署阶段
-- [ ] 配置 CDN 加速
-- [ ] 启用 Gzip 压缩
-- [ ] 设置适当的缓存头
-- [ ] 监控生产环境性能
-- [ ] 设置性能告警
-
-## 📚 相关资源
-
-- [.NET 性能最佳实践](https://docs.microsoft.com/en-us/dotnet/fundamentals/performance/)
-- [React 性能优化指南](https://react.dev/learn/render-and-commit)
-- [MongoDB 性能优化](https://docs.mongodb.com/manual/core/performance-optimization/)
-- [Web 性能优化](https://web.dev/performance/)
-
-## 🎯 记住
-
-**性能优化是一个持续的过程**
-
-- 测量 → 分析 → 优化 → 验证
-- 从用户体验角度思考性能
-- 使用工具和数据指导优化决策
-- 建立性能监控和告警机制
+- [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
+- [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
+- [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)
+- [性能优化指南](https://docs.microsoft.com/en-us/aspnet/core/performance/)

@@ -1,83 +1,49 @@
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
-public class TagService : BaseService, ITagService
+public class TagService : ITagService
 {
-    private readonly IMongoCollection<TagItem> _tags;
+    private readonly IDatabaseOperationFactory<TagItem> _tagFactory;
     private readonly ILogger<TagService> _logger;
 
     public TagService(
-        IMongoDatabase database,
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
+        IDatabaseOperationFactory<TagItem> tagFactory,
         ILogger<TagService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _tags = database.GetCollection<TagItem>("tags");
+        _tagFactory = tagFactory;
         _logger = logger;
     }
 
     public async Task<TagListResponse> GetTagsAsync()
     {
-        // 获取当前企业ID进行多租户过滤
-        var companyId = GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-
-        // 只查询当前企业的标签数据
-        var filter = Builders<TagItem>.Filter.And(
-            Builders<TagItem>.Filter.Eq(t => t.CompanyId, companyId),
-            Builders<TagItem>.Filter.Eq(t => t.IsDeleted, false)
-        );
-
-        var tagList = await _tags.Find(filter)
-            .SortBy(t => t.Name)
-            .ToListAsync();
+        // 使用工厂自动进行多租户过滤
+        var sort = _tagFactory.CreateSortBuilder()
+            .Ascending(t => t.Name)
+            .Build();
+        
+        var tags = await _tagFactory.FindAsync(sort: sort);
 
         return new TagListResponse
         {
-            List = tagList,
-            Total = tagList.Count,
+            List = tags,
+            Total = tags.Count,
             Success = true
         };
     }
 
     public async Task<TagItem?> GetTagByIdAsync(string id)
     {
-        // 获取当前企业ID进行多租户过滤
-        var companyId = GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-
-        // 只查询当前企业的标签数据
-        var filter = Builders<TagItem>.Filter.And(
-            Builders<TagItem>.Filter.Eq(t => t.Id, id),
-            Builders<TagItem>.Filter.Eq(t => t.CompanyId, companyId),
-            Builders<TagItem>.Filter.Eq(t => t.IsDeleted, false)
-        );
-
-        return await _tags.Find(filter).FirstOrDefaultAsync();
+        return await _tagFactory.GetByIdAsync(id);
     }
 
     public async Task<TagItem> CreateTagAsync(CreateTagRequest request)
     {
-        var companyId = GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-
         var tag = new TagItem
         {
-            CompanyId = companyId,
             Name = request.Name,
             Value = request.Value,
             Type = request.Type,
@@ -86,79 +52,60 @@ public class TagService : BaseService, ITagService
             UpdatedAt = DateTime.UtcNow
         };
 
-        await _tags.InsertOneAsync(tag);
-        return tag;
+        return await _tagFactory.CreateAsync(tag);
     }
 
+    /// <summary>
+    /// 更新标签（使用原子操作）
+    /// </summary>
     public async Task<TagItem?> UpdateTagAsync(string id, UpdateTagRequest request)
     {
-        var companyId = GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
+        var filter = _tagFactory.CreateFilterBuilder()
+            .Equal(t => t.Id, id)
+            .Build();
 
-        var filter = Builders<TagItem>.Filter.And(
-            Builders<TagItem>.Filter.Eq(t => t.Id, id),
-            Builders<TagItem>.Filter.Eq(t => t.CompanyId, companyId),
-            Builders<TagItem>.Filter.Eq(t => t.IsDeleted, false)
-        );
-        var update = Builders<TagItem>.Update.Set(t => t.UpdatedAt, DateTime.UtcNow);
-
+        var updateBuilder = _tagFactory.CreateUpdateBuilder();
+        
         if (!string.IsNullOrEmpty(request.Name))
-            update = update.Set(t => t.Name, request.Name);
+            updateBuilder.Set(t => t.Name, request.Name);
         
         if (request.Value.HasValue)
-            update = update.Set(t => t.Value, request.Value.Value);
+            updateBuilder.Set(t => t.Value, request.Value.Value);
         
         if (request.Type.HasValue)
-            update = update.Set(t => t.Type, request.Type.Value);
+            updateBuilder.Set(t => t.Type, request.Type.Value);
+        
+        updateBuilder.SetCurrentTimestamp();
+        var update = updateBuilder.Build();
 
-        var result = await _tags.UpdateOneAsync(filter, update);
-        
-        if (result.ModifiedCount > 0)
+        var options = new FindOneAndUpdateOptions<TagItem>
         {
-            return await GetTagByIdAsync(id);
-        }
-        
-        return null;
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedTag = await _tagFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedTag;
     }
 
     public async Task<bool> DeleteTagAsync(string id)
     {
-        var companyId = GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-
-        var filter = Builders<TagItem>.Filter.And(
-            Builders<TagItem>.Filter.Eq(t => t.Id, id),
-            Builders<TagItem>.Filter.Eq(t => t.CompanyId, companyId),
-            Builders<TagItem>.Filter.Eq(t => t.IsDeleted, false)
-        );
-
-        var result = await _tags.DeleteOneAsync(filter);
-        return result.DeletedCount > 0;
+        var filter = _tagFactory.CreateFilterBuilder().Equal(t => t.Id, id).Build();
+        var result = await _tagFactory.FindOneAndSoftDeleteAsync(filter);
+        return result != null;
     }
 
     public async Task<List<TagItem>> GetTagsByTypeAsync(int type)
     {
-        var companyId = GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-
-        var filter = Builders<TagItem>.Filter.And(
-            Builders<TagItem>.Filter.Eq(t => t.Type, type),
-            Builders<TagItem>.Filter.Eq(t => t.CompanyId, companyId),
-            Builders<TagItem>.Filter.Eq(t => t.IsDeleted, false)
-        );
-
-        return await _tags.Find(filter)
-            .SortBy(t => t.Name)
-            .ToListAsync();
+        var filter = _tagFactory.CreateFilterBuilder()
+            .Equal(t => t.Type, type)
+            .Build();
+        
+        var sort = _tagFactory.CreateSortBuilder()
+            .Ascending(t => t.Name)
+            .Build();
+        
+        return await _tagFactory.FindAsync(filter, sort);
     }
 
 }

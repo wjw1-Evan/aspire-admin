@@ -1,0 +1,329 @@
+---
+alwaysApply: true
+description: 数据库操作工厂使用规范 - 统一数据访问层架构
+---
+
+# 数据库操作工厂使用规范
+
+## 🎯 核心原则
+
+**所有服务必须使用 `IDatabaseOperationFactory<T>` 进行数据访问，禁止直接使用 `IMongoCollection<T>` 或 `BaseRepository<T>`**
+
+## ✅ 正确的数据访问方式
+
+### 1. 服务构造函数注入
+
+```csharp
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<UserCompany> userCompanyFactory)
+    {
+        _userFactory = userFactory;
+        _roleFactory = roleFactory;
+        _userCompanyFactory = userCompanyFactory;
+    }
+}
+```
+
+### 2. 基本 CRUD 操作
+
+```csharp
+// ✅ 创建实体
+var user = new User { Name = "John", Email = "john@example.com" };
+await _userFactory.CreateAsync(user);
+
+// ✅ 批量创建
+var users = new List<User> { user1, user2 };
+await _userFactory.CreateManyAsync(users);
+
+// ✅ 更新实体
+user.Name = "Updated Name";
+user.UpdatedAt = DateTime.UtcNow;
+await _userFactory.UpdateAsync(user);
+
+// ✅ 软删除
+await _userFactory.SoftDeleteAsync(userId);
+
+// ✅ 批量软删除
+await _userFactory.SoftDeleteManyAsync(userIds);
+
+// ✅ 硬删除（谨慎使用）
+await _userFactory.HardDeleteAsync(userId);
+```
+
+### 3. 查询操作
+
+```csharp
+// ✅ 根据ID获取
+var user = await _userFactory.GetByIdAsync(userId);
+
+// ✅ 条件查询
+var filter = _userFactory.CreateFilterBuilder()
+    .Equal(u => u.IsActive, true)
+    .Regex(u => u.Name, "John", "i")
+    .Build();
+var users = await _userFactory.FindAsync(filter);
+
+// ✅ 分页查询
+var users = await _userFactory.FindPagedAsync(filter, skip: 0, limit: 10);
+
+// ✅ 计数查询
+var count = await _userFactory.CountAsync(filter);
+
+// ✅ 存在性检查
+var exists = await _userFactory.ExistsAsync(filter);
+```
+
+### 4. 复杂查询构建
+
+```csharp
+// ✅ 使用 FilterBuilder
+var filter = _userFactory.CreateFilterBuilder()
+    .Equal(u => u.CompanyId, companyId)
+    .Equal(u => u.IsActive, true)
+    .In(u => u.RoleIds, roleIds)
+    .Regex(u => u.Name, searchTerm, "i")
+    .Build();
+
+// ✅ 使用 SortBuilder
+var sort = _userFactory.CreateSortBuilder()
+    .Ascending(u => u.CreatedAt)
+    .Descending(u => u.Name)
+    .Build();
+
+// ✅ 组合查询
+var users = await _userFactory.FindAsync(filter, sort: sort);
+```
+
+### 5. 数组查询处理
+
+```csharp
+// ✅ 处理数组包含查询
+var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+    .Equal(uc => uc.CompanyId, companyId)
+    .Equal(uc => uc.Status, "active")
+    .Build();
+
+// 使用 MongoDB 的 AnyIn 操作符
+var anyInFilter = Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, roleIds);
+var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, anyInFilter);
+var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter);
+```
+
+## ❌ 禁止的做法
+
+### 1. 不要直接使用 IMongoCollection
+
+```csharp
+// ❌ 禁止：直接使用 IMongoCollection
+private readonly IMongoCollection<User> _users;
+
+public UserService(IMongoDatabase database)
+{
+    _users = database.GetCollection<User>("users");  // ❌ 禁止
+}
+
+// ❌ 禁止：直接调用 MongoDB 方法
+await _users.InsertOneAsync(user);
+await _users.FindAsync(filter);
+await _users.UpdateOneAsync(filter, update);
+```
+
+### 2. 不要使用 BaseRepository
+
+```csharp
+// ❌ 禁止：使用 BaseRepository
+private readonly BaseRepository<User> _userRepository;
+
+public UserService(BaseRepository<User> userRepository)
+{
+    _userRepository = userRepository;  // ❌ 禁止
+}
+```
+
+### 3. 不要手动处理多租户过滤
+
+```csharp
+// ❌ 禁止：手动添加 CompanyId 过滤
+var filter = Builders<User>.Filter.And(
+    Builders<User>.Filter.Eq(u => u.CompanyId, companyId),  // ❌ 工厂自动处理
+    Builders<User>.Filter.Eq(u => u.IsActive, true)
+);
+```
+
+### 4. 不要手动处理软删除
+
+```csharp
+// ❌ 禁止：手动添加 IsDeleted 过滤
+var filter = Builders<User>.Filter.And(
+    Builders<User>.Filter.Eq(u => u.IsDeleted, false),  // ❌ 工厂自动处理
+    Builders<User>.Filter.Eq(u => u.IsActive, true)
+);
+```
+
+## 🔧 模型要求
+
+### 实体必须实现的接口
+
+所有与 `IDatabaseOperationFactory` 一起使用的模型必须实现：
+
+```csharp
+public class User : BaseEntity, 
+    Platform.ServiceDefaults.Models.IEntity,
+    Platform.ServiceDefaults.Models.ISoftDeletable,
+    Platform.ServiceDefaults.Models.ITimestamped
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = string.Empty;
+
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+
+    // 其他业务字段...
+}
+```
+
+### 必需字段
+
+- `Id` - 主键标识符
+- `CreatedAt` - 创建时间
+- `UpdatedAt` - 更新时间  
+- `IsDeleted` - 软删除标记
+
+## 🎯 工厂提供的便利方法
+
+### 用户上下文方法
+
+```csharp
+// ✅ 获取当前用户ID
+var userId = _userFactory.GetCurrentUserId();
+
+// ✅ 获取当前用户名
+var username = _userFactory.GetCurrentUsername();
+
+// ✅ 获取当前企业ID
+var companyId = _userFactory.GetCurrentCompanyId();
+
+// ✅ 获取必需的用户ID（为空则抛异常）
+var userId = _userFactory.GetRequiredUserId();
+
+// ✅ 获取必需的企业ID（为空则抛异常）
+var companyId = _userFactory.GetRequiredCompanyId();
+```
+
+### 日志记录方法
+
+```csharp
+// ✅ 记录操作日志
+_userFactory.LogOperation("CREATE", "User", userId, "创建用户");
+
+// ✅ 记录信息日志
+_userFactory.LogInformation("用户 {UserId} 登录成功", userId);
+
+// ✅ 记录错误日志
+_userFactory.LogError("用户 {UserId} 登录失败", userId);
+```
+
+## 🔍 特殊查询场景
+
+### 1. 跨租户查询
+
+```csharp
+// ✅ 查询时不应用多租户过滤
+var users = await _userFactory.FindWithoutTenantFilterAsync(filter);
+
+// ✅ 根据ID查询时不应用多租户过滤
+var user = await _userFactory.GetByIdWithoutTenantFilterAsync(userId);
+```
+
+### 2. 复杂排序
+
+```csharp
+// ✅ 动态排序
+var sortBuilder = _userFactory.CreateSortBuilder();
+if (request.SortBy == "name")
+    sortBuilder.Ascending(u => u.Name);
+else if (request.SortBy == "createdAt")
+    sortBuilder.Descending(u => u.CreatedAt);
+else
+    sortBuilder.Ascending(u => u.Name);  // 默认排序
+
+var sort = sortBuilder.Build();
+var users = await _userFactory.FindAsync(filter, sort: sort);
+```
+
+### 3. 正则表达式查询
+
+```csharp
+// ✅ 大小写不敏感搜索
+var filter = _userFactory.CreateFilterBuilder()
+    .Regex(u => u.Name, searchTerm, "i")  // "i" 表示忽略大小写
+    .Build();
+```
+
+## 📋 代码审查清单
+
+在创建或修改服务时，检查：
+
+- [ ] 服务构造函数注入了 `IDatabaseOperationFactory<T>` 而不是 `IMongoCollection<T>`
+- [ ] 所有数据库操作都使用工厂方法
+- [ ] 模型类实现了 `IEntity`, `ISoftDeletable`, `ITimestamped` 接口
+- [ ] 没有手动添加 `CompanyId` 或 `IsDeleted` 过滤条件
+- [ ] 使用了正确的查询构建器方法
+- [ ] 复杂查询正确使用了 MongoDB 的 `Builders<T>` 类
+- [ ] 添加了必要的 `using MongoDB.Driver;` 语句
+
+## 🚫 常见错误和解决方案
+
+### 错误 1: 模型接口缺失
+
+```
+错误: 类型"User"不能用作泛型类型或方法"IDatabaseOperationFactory<T>"中的类型参数"T"
+解决: 让 User 类实现 IEntity, ISoftDeletable, ITimestamped 接口
+```
+
+### 错误 2: 方法不存在
+
+```
+错误: 'IDatabaseOperationFactory<User>' does not contain a definition for 'FindFirstAsync'
+解决: 使用 FindAsync(filter).FirstOrDefault() 替代
+```
+
+### 错误 3: 参数类型不匹配
+
+```
+错误: Argument 1: cannot convert from 'string' to 'User'
+解决: UpdateAsync 需要实体对象，不是ID
+```
+
+## 📚 相关文档
+
+- [IDatabaseOperationFactory 接口定义](mdc:Platform.ServiceDefaults/Services/IDatabaseOperationFactory.cs)
+- [FilterBuilder 实现](mdc:Platform.ServiceDefaults/Services/FilterBuilder.cs)
+- [UpdateBuilder 实现](mdc:Platform.ServiceDefaults/Services/UpdateBuilder.cs)
+- [SortBuilder 实现](mdc:Platform.ServiceDefaults/Services/SortBuilder.cs)
+- [数据库操作工厂迁移总结](mdc:docs/features/DATABASE-FACTORY-MIGRATION.md)
+
+## 🎯 记住
+
+1. **统一使用工厂** - 所有数据访问都通过 `IDatabaseOperationFactory`
+2. **自动处理** - 多租户过滤和软删除由工厂自动处理
+3. **类型安全** - 使用强类型的查询构建器
+4. **操作审计** - 工厂自动记录所有数据库操作
+5. **简化代码** - 减少重复的过滤和更新逻辑
+
+遵循这些规范，确保代码的一致性、可维护性和可扩展性！

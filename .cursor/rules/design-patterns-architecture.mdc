@@ -1,63 +1,90 @@
 ---
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
 description: 设计模式和架构原则规范
-globs: *.cs,*.ts,*.tsx,*.js,*.jsx
 ---
-
 # 设计模式和架构原则规范
 
 ## 🎯 核心原则
 
-**遵循 SOLID 原则和常见设计模式，构建可维护、可扩展的代码架构**
+### 遵循 SOLID 原则和常用设计模式，构建可维护、可扩展的软件架构
 
-## 🏗️ SOLID 原则应用
+## ✅ SOLID 原则应用
 
 ### 单一职责原则 (SRP)
-```csharp
-// ✅ 正确：单一职责
-public class UserService
-{
-    private readonly IUserRepository _userRepository;
-    private readonly IEmailService _emailService;
-    private readonly IPasswordService _passwordService;
 
+```csharp
+// ✅ 正确 - 单一职责
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserService> logger)
+    {
+        _userFactory = userFactory;
+        _logger = logger;
+    }
+
+    // 只负责用户相关的业务逻辑
     public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
-        // 只负责用户创建的业务逻辑
+        await ValidateCreateUserRequestAsync(request);
+        
         var user = new User
         {
             Username = request.Username,
             Email = request.Email,
-            CompanyId = request.CompanyId
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
         };
+        
+        return await _userFactory.CreateAsync(user);
+    }
 
-        user.PasswordHash = _passwordService.HashPassword(request.Password);
-        await _userRepository.CreateAsync(user);
-        
-        await _emailService.SendWelcomeEmailAsync(user.Email);
-        
-        return user;
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+            throw new ArgumentException("用户ID不能为空", nameof(id));
+
+        return await _userFactory.GetByIdAsync(id);
+    }
+
+    private async Task ValidateCreateUserRequestAsync(CreateUserRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException("用户名不能为空", nameof(request.Username));
     }
 }
 
-// ❌ 错误：违反单一职责
-public class UserService
+// ❌ 错误 - 违反单一职责
+public class UserService : IUserService
 {
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<Company> _companyFactory;
+    private readonly IEmailService _emailService;
+    private readonly IFileService _fileService;
+
+    // 负责太多职责：用户管理、角色管理、企业管理、邮件发送、文件处理
     public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
-        // 混合了用户创建、邮件发送、日志记录等多种职责
-        var user = new User { /* ... */ };
+        // 用户创建逻辑
+        var user = await _userFactory.CreateAsync(new User());
         
-        // 密码哈希
-        user.PasswordHash = BCrypt.HashPassword(request.Password);
+        // 角色分配逻辑
+        await _roleFactory.CreateAsync(new Role());
         
-        // 数据库操作
-        await _database.Users.InsertOneAsync(user);
+        // 企业关联逻辑
+        await _companyFactory.CreateAsync(new Company());
         
-        // 邮件发送
-        await SendEmail(user.Email, "Welcome!");
+        // 邮件发送逻辑
+        await _emailService.SendWelcomeEmailAsync(user.Email);
         
-        // 日志记录
-        _logger.LogInformation("User created: {UserId}", user.Id);
+        // 文件处理逻辑
+        await _fileService.CreateUserFolderAsync(user.Id);
         
         return user;
     }
@@ -65,524 +92,594 @@ public class UserService
 ```
 
 ### 开闭原则 (OCP)
+
 ```csharp
-// ✅ 正确：对扩展开放，对修改关闭
-public abstract class NotificationService
+// ✅ 正确 - 对扩展开放，对修改封闭
+public interface IUserValidator
 {
-    public abstract Task SendAsync(string message, string recipient);
+    Task<bool> ValidateAsync(User user);
 }
 
-public class EmailNotificationService : NotificationService
+public class BasicUserValidator : IUserValidator
 {
-    public override async Task SendAsync(string message, string recipient)
+    public async Task<bool> ValidateAsync(User user)
     {
-        // 邮件发送实现
+        return !string.IsNullOrEmpty(user.Username) && 
+               !string.IsNullOrEmpty(user.Email);
     }
 }
 
-public class SmsNotificationService : NotificationService
+public class AdvancedUserValidator : IUserValidator
 {
-    public override async Task SendAsync(string message, string recipient)
+    private readonly IUserValidator _basicValidator;
+    private readonly IEmailService _emailService;
+
+    public AdvancedUserValidator(IUserValidator basicValidator, IEmailService emailService)
     {
-        // 短信发送实现
+        _basicValidator = basicValidator;
+        _emailService = emailService;
+    }
+
+    public async Task<bool> ValidateAsync(User user)
+    {
+        // 基础验证
+        if (!await _basicValidator.ValidateAsync(user))
+            return false;
+
+        // 高级验证
+        return await _emailService.ValidateEmailAsync(user.Email);
     }
 }
 
-public class NotificationManager
+public class UserService : IUserService
 {
-    private readonly List<NotificationService> _services;
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IUserValidator _userValidator;
 
-    public NotificationManager(IEnumerable<NotificationService> services)
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IUserValidator userValidator)
     {
-        _services = services.ToList();
+        _userFactory = userFactory;
+        _userValidator = userValidator;
     }
 
-    public async Task NotifyAllAsync(string message, string recipient)
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
-        var tasks = _services.Select(service => service.SendAsync(message, recipient));
-        await Task.WhenAll(tasks);
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+
+        // 使用可扩展的验证器
+        if (!await _userValidator.ValidateAsync(user))
+            throw new ArgumentException("用户验证失败");
+
+        return await _userFactory.CreateAsync(user);
+    }
+}
+
+// ❌ 错误 - 违反开闭原则
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+
+        // 硬编码验证逻辑，难以扩展
+        if (string.IsNullOrEmpty(user.Username))
+            throw new ArgumentException("用户名不能为空");
+
+        if (string.IsNullOrEmpty(user.Email))
+            throw new ArgumentException("邮箱不能为空");
+
+        // 如果需要添加新的验证规则，必须修改这个方法
+        return await _userFactory.CreateAsync(user);
     }
 }
 ```
 
 ### 里氏替换原则 (LSP)
+
 ```csharp
-// ✅ 正确：子类可以替换父类
-public abstract class Repository<T>
+// ✅ 正确 - 子类可以替换父类
+public abstract class BaseService
 {
-    public abstract Task<T> GetByIdAsync(string id);
-    public abstract Task<List<T>> GetAllAsync();
-    public abstract Task CreateAsync(T entity);
+    protected readonly ILogger Logger;
+
+    protected BaseService(ILogger logger)
+    {
+        Logger = logger;
+    }
+
+    public abstract Task<bool> ValidateAsync();
 }
 
-public class UserRepository : Repository<User>
+public class UserService : BaseService
 {
-    public override async Task<User> GetByIdAsync(string id)
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserService> logger)
+        : base(logger)
     {
-        // 用户特定的查询逻辑
-        return await _users.Find(u => u.Id == id).FirstOrDefaultAsync();
+        _userFactory = userFactory;
     }
 
-    public override async Task<List<User>> GetAllAsync()
+    public override async Task<bool> ValidateAsync()
     {
-        return await _users.Find(_ => true).ToListAsync();
-    }
-
-    public override async Task CreateAsync(User user)
-    {
-        await _users.InsertOneAsync(user);
+        // 用户服务特定的验证逻辑
+        var userCount = await _userFactory.CountAsync();
+        return userCount >= 0;
     }
 }
 
-// 客户端代码可以安全地使用基类
-public class UserService
+public class RoleService : BaseService
 {
-    private readonly Repository<User> _userRepository;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
 
-    public UserService(Repository<User> userRepository)
+    public RoleService(
+        IDatabaseOperationFactory<Role> roleFactory,
+        ILogger<RoleService> logger)
+        : base(logger)
     {
-        _userRepository = userRepository; // 可以接受任何 Repository<User> 实现
+        _roleFactory = roleFactory;
+    }
+
+    public override async Task<bool> ValidateAsync()
+    {
+        // 角色服务特定的验证逻辑
+        var roleCount = await _roleFactory.CountAsync();
+        return roleCount >= 0;
+    }
+}
+
+// 使用基类引用，子类可以正确替换
+public class ServiceValidator
+{
+    private readonly BaseService _service;
+
+    public ServiceValidator(BaseService service)
+    {
+        _service = service;
+    }
+
+    public async Task<bool> ValidateService()
+    {
+        return await _service.ValidateAsync();
+    }
+}
+
+// ❌ 错误 - 违反里氏替换原则
+public abstract class BaseService
+{
+    public abstract Task<bool> ValidateAsync();
+}
+
+public class UserService : BaseService
+{
+    public override async Task<bool> ValidateAsync()
+    {
+        // 抛出异常，违反了LSP
+        throw new NotImplementedException("用户服务验证未实现");
     }
 }
 ```
 
 ### 接口隔离原则 (ISP)
+
 ```csharp
-// ✅ 正确：接口隔离
+// ✅ 正确 - 接口隔离
 public interface IUserReader
 {
-    Task<User> GetByIdAsync(string id);
-    Task<List<User>> GetAllAsync();
+    Task<User?> GetUserByIdAsync(string id);
+    Task<List<User>> GetUsersAsync(UserListRequest request);
 }
 
 public interface IUserWriter
 {
-    Task CreateAsync(User user);
-    Task UpdateAsync(User user);
-    Task DeleteAsync(string id);
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<bool> UpdateUserAsync(UpdateUserRequest request);
+    Task<bool> DeleteUserAsync(string id);
 }
 
-public interface IUserRepository : IUserReader, IUserWriter
+public interface IUserValidator
 {
-    // 组合多个小接口
+    Task<bool> ValidateUserAsync(User user);
 }
 
-// ❌ 错误：接口过于庞大
+public class UserService : IUserReader, IUserWriter, IUserValidator
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+
+    public UserService(IDatabaseOperationFactory<User> userFactory)
+    {
+        _userFactory = userFactory;
+    }
+
+    // IUserReader 实现
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        return await _userFactory.GetByIdAsync(id);
+    }
+
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        return await _userFactory.FindAsync(filter);
+    }
+
+    // IUserWriter 实现
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        return await _userFactory.CreateAsync(user);
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
+    {
+        var user = await _userFactory.GetByIdAsync(request.Id);
+        if (user == null)
+            return false;
+
+        var update = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.Username, request.Username)
+            .SetCurrentTimestamp()
+            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+            .Build();
+
+        return await _userFactory.UpdateAsync(user, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Update,
+            Description = "更新用户信息"
+        });
+    }
+
+    public async Task<bool> DeleteUserAsync(string id)
+    {
+        return await _userFactory.SoftDeleteAsync(id, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Delete,
+            Description = "删除用户"
+        });
+    }
+
+    // IUserValidator 实现
+    public async Task<bool> ValidateUserAsync(User user)
+    {
+        return !string.IsNullOrEmpty(user.Username) && 
+               !string.IsNullOrEmpty(user.Email);
+    }
+}
+
+// ❌ 错误 - 违反接口隔离原则
 public interface IUserService
 {
-    // 读取操作
-    Task<User> GetByIdAsync(string id);
-    Task<List<User>> GetAllAsync();
-    
-    // 写入操作
-    Task CreateAsync(User user);
-    Task UpdateAsync(User user);
-    Task DeleteAsync(string id);
-    
-    // 邮件操作
-    Task SendEmailAsync(string email, string subject, string body);
-    
-    // 日志操作
-    Task LogActivityAsync(string userId, string activity);
-    
-    // 权限操作
-    Task<bool> HasPermissionAsync(string userId, string permission);
+    // 接口过于庞大，包含了太多不相关的方法
+    Task<User?> GetUserByIdAsync(string id);
+    Task<List<User>> GetUsersAsync(UserListRequest request);
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<bool> UpdateUserAsync(UpdateUserRequest request);
+    Task<bool> DeleteUserAsync(string id);
+    Task<bool> ValidateUserAsync(User user);
+    Task<bool> SendEmailAsync(string email);
+    Task<bool> UploadFileAsync(string fileName, byte[] content);
+    Task<bool> ProcessPaymentAsync(decimal amount);
 }
 ```
 
 ### 依赖倒置原则 (DIP)
+
 ```csharp
-// ✅ 正确：依赖抽象而不是具体实现
+// ✅ 正确 - 依赖倒置
 public interface IUserRepository
 {
-    Task<User> GetByIdAsync(string id);
-    Task CreateAsync(User user);
+    Task<User?> GetByIdAsync(string id);
+    Task<List<User>> FindAsync(FilterDefinition<User> filter);
+    Task<User> CreateAsync(User user);
+    Task<bool> UpdateAsync(User user);
+    Task<bool> DeleteAsync(string id);
 }
 
-public class UserService
+public interface IUserValidator
+{
+    Task<bool> ValidateAsync(User user);
+}
+
+public interface IUserLogger
+{
+    Task LogUserOperationAsync(string operation, string userId, object data);
+}
+
+public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
-    private readonly ILogger<UserService> _logger;
+    private readonly IUserValidator _userValidator;
+    private readonly IUserLogger _userLogger;
 
-    public UserService(IUserRepository userRepository, ILogger<UserService> logger)
+    // 依赖抽象而不是具体实现
+    public UserService(
+        IUserRepository userRepository,
+        IUserValidator userValidator,
+        IUserLogger userLogger)
     {
         _userRepository = userRepository;
-        _logger = logger;
+        _userValidator = userValidator;
+        _userLogger = userLogger;
     }
 
-    public async Task<User> GetUserAsync(string id)
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
-        _logger.LogInformation("Getting user {UserId}", id);
-        return await _userRepository.GetByIdAsync(id);
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+
+        // 使用抽象接口
+        if (!await _userValidator.ValidateAsync(user))
+            throw new ArgumentException("用户验证失败");
+
+        var createdUser = await _userRepository.CreateAsync(user);
+        
+        await _userLogger.LogUserOperationAsync("创建用户", createdUser.Id, new { Username = request.Username });
+        
+        return createdUser;
     }
 }
 
-// 依赖注入配置
-public static class ServiceConfiguration
+// ❌ 错误 - 违反依赖倒置原则
+public class UserService : IUserService
 {
-    public static void ConfigureServices(IServiceCollection services)
+    private readonly MongoDbUserRepository _userRepository;
+    private readonly EmailUserValidator _userValidator;
+    private readonly FileUserLogger _userLogger;
+
+    // 依赖具体实现
+    public UserService(
+        MongoDbUserRepository userRepository,
+        EmailUserValidator userValidator,
+        FileUserLogger userLogger)
     {
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<UserService>();
+        _userRepository = userRepository;
+        _userValidator = userValidator;
+        _userLogger = userLogger;
     }
 }
 ```
 
-## 🎨 常见设计模式
+## 🎯 常用设计模式
 
 ### 工厂模式
+
 ```csharp
-// ✅ 正确：工厂模式
-public interface INotificationServiceFactory
+// ✅ 正确 - 工厂模式
+public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
 {
-    INotificationService Create(NotificationType type);
+    FilterBuilder<T> CreateFilterBuilder();
+    SortBuilder<T> CreateSortBuilder();
+    UpdateBuilder<T> CreateUpdateBuilder();
+    OperationContextBuilder CreateOperationContext();
+    
+    Task<T> CreateAsync(T entity, OperationContext? context = null);
+    Task<List<T>> CreateManyAsync(IEnumerable<T> entities, OperationContext? context = null);
+    Task<bool> UpdateAsync(T entity, OperationContext? context = null);
+    Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null);
 }
 
-public class NotificationServiceFactory : INotificationServiceFactory
+public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IMongoCollection<T> _collection;
+    private readonly IAuditService _auditService;
+    private readonly ITenantContext _tenantContext;
 
-    public NotificationServiceFactory(IServiceProvider serviceProvider)
+    public DatabaseOperationFactory(
+        IMongoCollection<T> collection,
+        IAuditService auditService,
+        ITenantContext tenantContext)
     {
-        _serviceProvider = serviceProvider;
+        _collection = collection;
+        _auditService = auditService;
+        _tenantContext = tenantContext;
     }
 
-    public INotificationService Create(NotificationType type)
+    public FilterBuilder<T> CreateFilterBuilder()
     {
-        return type switch
+        return new FilterBuilder<T>();
+    }
+
+    public SortBuilder<T> CreateSortBuilder()
+    {
+        return new SortBuilder<T>();
+    }
+
+    public UpdateBuilder<T> CreateUpdateBuilder()
+    {
+        return new UpdateBuilder<T>();
+    }
+
+    public OperationContextBuilder CreateOperationContext()
+    {
+        return new OperationContextBuilder()
+            .WithUser(_tenantContext.GetCurrentUserId(), _tenantContext.GetCurrentUsername())
+            .WithCompany(_tenantContext.GetCurrentCompanyId());
+    }
+
+    public async Task<T> CreateAsync(T entity, OperationContext? context = null)
+    {
+        // 设置操作跟踪信息
+        if (entity is IOperationTrackable trackable)
         {
-            NotificationType.Email => _serviceProvider.GetRequiredService<EmailNotificationService>(),
-            NotificationType.Sms => _serviceProvider.GetRequiredService<SmsNotificationService>(),
-            NotificationType.Push => _serviceProvider.GetRequiredService<PushNotificationService>(),
-            _ => throw new ArgumentException($"Unsupported notification type: {type}")
-        };
-    }
-}
+            trackable.CreatedBy = context?.UserId ?? _tenantContext.GetCurrentUserId();
+            trackable.CreatedByUsername = context?.Username ?? _tenantContext.GetCurrentUsername();
+            trackable.LastOperationType = OperationType.Create.ToString();
+            trackable.LastOperationAt = DateTime.UtcNow;
+        }
 
-// 使用工厂
-public class NotificationManager
-{
-    private readonly INotificationServiceFactory _factory;
+        // 设置时间戳
+        if (entity is ITimestamped timestamped)
+        {
+            timestamped.CreatedAt = DateTime.UtcNow;
+            timestamped.UpdatedAt = DateTime.UtcNow;
+        }
 
-    public async Task SendNotificationAsync(NotificationType type, string message, string recipient)
-    {
-        var service = _factory.Create(type);
-        await service.SendAsync(message, recipient);
+        // 设置多租户信息
+        if (entity is IMultiTenant multiTenant)
+        {
+            multiTenant.CompanyId = context?.CompanyId ?? _tenantContext.GetCurrentCompanyId();
+        }
+
+        await _collection.InsertOneAsync(entity);
+
+        // 记录审计日志
+        if (context != null)
+        {
+            await _auditService.RecordOperationAsync<T>(entity, OperationType.Create, context);
+        }
+
+        return entity;
     }
+
+    // 其他方法实现...
 }
 ```
 
 ### 策略模式
+
 ```csharp
-// ✅ 正确：策略模式
-public interface IPricingStrategy
+// ✅ 正确 - 策略模式
+public interface IUserValidationStrategy
 {
-    decimal CalculatePrice(decimal basePrice, int quantity);
+    Task<bool> ValidateAsync(User user);
+    string GetValidationType();
 }
 
-public class RegularPricingStrategy : IPricingStrategy
+public class BasicUserValidationStrategy : IUserValidationStrategy
 {
-    public decimal CalculatePrice(decimal basePrice, int quantity)
+    public async Task<bool> ValidateAsync(User user)
     {
-        return basePrice * quantity;
+        return !string.IsNullOrEmpty(user.Username) && 
+               !string.IsNullOrEmpty(user.Email);
+    }
+
+    public string GetValidationType()
+    {
+        return "Basic";
     }
 }
 
-public class BulkPricingStrategy : IPricingStrategy
+public class AdvancedUserValidationStrategy : IUserValidationStrategy
 {
-    public decimal CalculatePrice(decimal basePrice, int quantity)
+    private readonly IEmailService _emailService;
+
+    public AdvancedUserValidationStrategy(IEmailService emailService)
     {
-        if (quantity >= 10)
-            return basePrice * quantity * 0.9m; // 10% 折扣
-        return basePrice * quantity;
+        _emailService = emailService;
+    }
+
+    public async Task<bool> ValidateAsync(User user)
+    {
+        if (string.IsNullOrEmpty(user.Username) || string.IsNullOrEmpty(user.Email))
+            return false;
+
+        return await _emailService.ValidateEmailAsync(user.Email);
+    }
+
+    public string GetValidationType()
+    {
+        return "Advanced";
     }
 }
 
-public class PricingContext
+public class UserValidationContext
 {
-    private IPricingStrategy _strategy;
+    private readonly IUserValidationStrategy _strategy;
 
-    public void SetStrategy(IPricingStrategy strategy)
+    public UserValidationContext(IUserValidationStrategy strategy)
     {
         _strategy = strategy;
     }
 
-    public decimal CalculatePrice(decimal basePrice, int quantity)
+    public async Task<bool> ValidateUserAsync(User user)
     {
-        return _strategy.CalculatePrice(basePrice, quantity);
+        return await _strategy.ValidateAsync(user);
+    }
+
+    public string GetValidationType()
+    {
+        return _strategy.GetValidationType();
+    }
+}
+
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly UserValidationContext _validationContext;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        UserValidationContext validationContext)
+    {
+        _userFactory = userFactory;
+        _validationContext = validationContext;
+    }
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+
+        if (!await _validationContext.ValidateUserAsync(user))
+            throw new ArgumentException("用户验证失败");
+
+        return await _userFactory.CreateAsync(user);
     }
 }
 ```
 
 ### 观察者模式
+
 ```csharp
-// ✅ 正确：观察者模式
-public interface IUserEventObserver
+// ✅ 正确 - 观察者模式
+public interface IUserEvent
 {
-    Task OnUserCreatedAsync(User user);
-    Task OnUserUpdatedAsync(User user);
-    Task OnUserDeletedAsync(string userId);
+    string EventType { get; }
+    string UserId { get; }
+    DateTime Timestamp { get; }
 }
 
-public class UserEventPublisher
+public class UserCreatedEvent : IUserEvent
 {
-    private readonly List<IUserEventObserver> _observers = new();
-
-    public void Subscribe(IUserEventObserver observer)
-    {
-        _observers.Add(observer);
-    }
-
-    public void Unsubscribe(IUserEventObserver observer)
-    {
-        _observers.Remove(observer);
-    }
-
-    public async Task NotifyUserCreatedAsync(User user)
-    {
-        var tasks = _observers.Select(observer => observer.OnUserCreatedAsync(user));
-        await Task.WhenAll(tasks);
-    }
-
-    public async Task NotifyUserUpdatedAsync(User user)
-    {
-        var tasks = _observers.Select(observer => observer.OnUserUpdatedAsync(user));
-        await Task.WhenAll(tasks);
-    }
-}
-
-// 具体观察者
-public class EmailNotificationObserver : IUserEventObserver
-{
-    public async Task OnUserCreatedAsync(User user)
-    {
-        await SendWelcomeEmailAsync(user.Email);
-    }
-
-    public async Task OnUserUpdatedAsync(User user)
-    {
-        // 用户更新时的邮件通知
-    }
-
-    public async Task OnUserDeletedAsync(string userId)
-    {
-        // 用户删除时的邮件通知
-    }
-}
-```
-
-### 装饰器模式
-```csharp
-// ✅ 正确：装饰器模式
-public interface IUserService
-{
-    Task<User> GetUserAsync(string id);
-    Task CreateUserAsync(User user);
-}
-
-public class UserService : IUserService
-{
-    public async Task<User> GetUserAsync(string id)
-    {
-        // 基础用户服务实现
-        return await _userRepository.GetByIdAsync(id);
-    }
-
-    public async Task CreateUserAsync(User user)
-    {
-        await _userRepository.CreateAsync(user);
-    }
-}
-
-public class LoggingUserServiceDecorator : IUserService
-{
-    private readonly IUserService _userService;
-    private readonly ILogger<LoggingUserServiceDecorator> _logger;
-
-    public LoggingUserServiceDecorator(IUserService userService, ILogger<LoggingUserServiceDecorator> logger)
-    {
-        _userService = userService;
-        _logger = logger;
-    }
-
-    public async Task<User> GetUserAsync(string id)
-    {
-        _logger.LogInformation("Getting user {UserId}", id);
-        try
-        {
-            var user = await _userService.GetUserAsync(id);
-            _logger.LogInformation("Successfully retrieved user {UserId}", id);
-            return user;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get user {UserId}", id);
-            throw;
-        }
-    }
-
-    public async Task CreateUserAsync(User user)
-    {
-        _logger.LogInformation("Creating user {Username}", user.Username);
-        await _userService.CreateUserAsync(user);
-        _logger.LogInformation("Successfully created user {Username}", user.Username);
-    }
-}
-```
-
-## 🏛️ 架构模式
-
-### 分层架构
-```csharp
-// ✅ 正确：分层架构
-// 1. 表示层 (Controllers)
-[ApiController]
-[Route("api/[controller]")]
-public class UserController : BaseApiController
-{
-    private readonly IUserService _userService;
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetUser(string id)
-    {
-        var user = await _userService.GetUserAsync(id);
-        return Success(user);
-    }
-}
-
-// 2. 业务逻辑层 (Services)
-public class UserService : IUserService
-{
-    private readonly IUserRepository _userRepository;
-    private readonly IEmailService _emailService;
-
-    public async Task<User> GetUserAsync(string id)
-    {
-        var user = await _userRepository.GetByIdAsync(id);
-        if (user == null)
-            throw new KeyNotFoundException($"User {id} not found");
-        
-        return user;
-    }
-}
-
-// 3. 数据访问层 (Repositories)
-public class UserRepository : IUserRepository
-{
-    private readonly IMongoCollection<User> _users;
-
-    public async Task<User> GetByIdAsync(string id)
-    {
-        return await _users.Find(u => u.Id == id).FirstOrDefaultAsync();
-    }
-}
-```
-
-### CQRS 模式
-```csharp
-// ✅ 正确：CQRS 分离
-// 命令 (Command)
-public class CreateUserCommand
-{
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string CompanyId { get; set; } = string.Empty;
-}
-
-public class CreateUserCommandHandler
-{
-    private readonly IUserRepository _userRepository;
-    private readonly IPasswordService _passwordService;
-
-    public async Task<string> HandleAsync(CreateUserCommand command)
-    {
-        var user = new User
-        {
-            Username = command.Username,
-            Email = command.Email,
-            CompanyId = command.CompanyId,
-            PasswordHash = _passwordService.HashPassword(command.Password)
-        };
-
-        await _userRepository.CreateAsync(user);
-        return user.Id;
-    }
-}
-
-// 查询 (Query)
-public class GetUserQuery
-{
-    public string Id { get; set; } = string.Empty;
-}
-
-public class GetUserQueryHandler
-{
-    private readonly IUserReadRepository _userReadRepository;
-
-    public async Task<UserDto> HandleAsync(GetUserQuery query)
-    {
-        var user = await _userReadRepository.GetByIdAsync(query.Id);
-        return new UserDto
-        {
-            Id = user.Id,
-            Username = user.Username,
-            Email = user.Email
-        };
-    }
-}
-```
-
-### 领域驱动设计 (DDD)
-```csharp
-// ✅ 正确：领域模型
-public class User : AggregateRoot
-{
-    public string Username { get; private set; }
-    public string Email { get; private set; }
-    public string CompanyId { get; private set; }
-    public UserStatus Status { get; private set; }
-
-    private User() { } // EF Core 需要
-
-    public User(string username, string email, string companyId)
-    {
-        Username = username;
-        Email = email;
-        CompanyId = companyId;
-        Status = UserStatus.Active;
-        
-        AddDomainEvent(new UserCreatedEvent(Id, Username, Email));
-    }
-
-    public void UpdateEmail(string newEmail)
-    {
-        if (string.IsNullOrEmpty(newEmail))
-            throw new ArgumentException("Email cannot be empty");
-
-        Email = newEmail;
-        AddDomainEvent(new UserEmailUpdatedEvent(Id, newEmail));
-    }
-
-    public void Deactivate()
-    {
-        if (Status == UserStatus.Inactive)
-            throw new InvalidOperationException("User is already inactive");
-
-        Status = UserStatus.Inactive;
-        AddDomainEvent(new UserDeactivatedEvent(Id));
-    }
-}
-
-// 领域事件
-public abstract class DomainEvent
-{
-    public DateTime OccurredOn { get; } = DateTime.UtcNow;
-}
-
-public class UserCreatedEvent : DomainEvent
-{
+    public string EventType => "UserCreated";
     public string UserId { get; }
+    public DateTime Timestamp { get; }
     public string Username { get; }
     public string Email { get; }
 
@@ -591,188 +688,258 @@ public class UserCreatedEvent : DomainEvent
         UserId = userId;
         Username = username;
         Email = email;
+        Timestamp = DateTime.UtcNow;
+    }
+}
+
+public interface IUserEventHandler
+{
+    Task HandleAsync(IUserEvent userEvent);
+}
+
+public class EmailNotificationHandler : IUserEventHandler
+{
+    private readonly IEmailService _emailService;
+
+    public EmailNotificationHandler(IEmailService emailService)
+    {
+        _emailService = emailService;
+    }
+
+    public async Task HandleAsync(IUserEvent userEvent)
+    {
+        if (userEvent is UserCreatedEvent createdEvent)
+        {
+            await _emailService.SendWelcomeEmailAsync(createdEvent.Email);
+        }
+    }
+}
+
+public class AuditLogHandler : IUserEventHandler
+{
+    private readonly IAuditService _auditService;
+
+    public AuditLogHandler(IAuditService auditService)
+    {
+        _auditService = auditService;
+    }
+
+    public async Task HandleAsync(IUserEvent userEvent)
+    {
+        await _auditService.RecordEventAsync(userEvent);
+    }
+}
+
+public class UserEventPublisher
+{
+    private readonly List<IUserEventHandler> _handlers;
+
+    public UserEventPublisher()
+    {
+        _handlers = new List<IUserEventHandler>();
+    }
+
+    public void Subscribe(IUserEventHandler handler)
+    {
+        _handlers.Add(handler);
+    }
+
+    public async Task PublishAsync(IUserEvent userEvent)
+    {
+        foreach (var handler in _handlers)
+        {
+            try
+            {
+                await handler.HandleAsync(userEvent);
+            }
+            catch (Exception ex)
+            {
+                // 记录错误但不影响其他处理器
+                Console.WriteLine($"Error handling event {userEvent.EventType}: {ex.Message}");
+            }
+        }
+    }
+}
+
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly UserEventPublisher _eventPublisher;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        UserEventPublisher eventPublisher)
+    {
+        _userFactory = userFactory;
+        _eventPublisher = eventPublisher;
+    }
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var createdUser = await _userFactory.CreateAsync(user);
+
+        // 发布事件
+        var userEvent = new UserCreatedEvent(createdUser.Id, createdUser.Username, createdUser.Email);
+        await _eventPublisher.PublishAsync(userEvent);
+
+        return createdUser;
     }
 }
 ```
 
-## 🔧 前端设计模式
+## 🚫 禁止的做法
 
-### 组件组合模式
-```tsx
-// ✅ 正确：组件组合
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
+### 不要违反单一职责原则
+
+```csharp
+// ❌ 错误 - 违反单一职责
+public class UserService : IUserService
+{
+    // 负责太多职责
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 用户创建
+        var user = await _userFactory.CreateAsync(new User());
+        
+        // 角色分配
+        await _roleFactory.CreateAsync(new Role());
+        
+        // 邮件发送
+        await _emailService.SendEmailAsync(user.Email);
+        
+        // 文件处理
+        await _fileService.CreateFolderAsync(user.Id);
+        
+        return user;
+    }
 }
 
-export function Card({ children, className }: CardProps) {
-  return (
-    <div className={`card ${className || ''}`}>
-      {children}
-    </div>
-  );
-}
-
-export function CardHeader({ children }: { children: React.ReactNode }) {
-  return <div className="card-header">{children}</div>;
-}
-
-export function CardBody({ children }: { children: React.ReactNode }) {
-  return <div className="card-body">{children}</div>;
-}
-
-export function CardFooter({ children }: { children: React.ReactNode }) {
-  return <div className="card-footer">{children}</div>;
-}
-
-// 使用组合
-export function UserCard({ user }: { user: User }) {
-  return (
-    <Card>
-      <CardHeader>
-        <h3>{user.username}</h3>
-      </CardHeader>
-      <CardBody>
-        <p>{user.email}</p>
-        <p>{user.role}</p>
-      </CardBody>
-      <CardFooter>
-        <Button>编辑</Button>
-        <Button variant="danger">删除</Button>
-      </CardFooter>
-    </Card>
-  );
+// ✅ 正确 - 单一职责
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 只负责用户创建
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
 }
 ```
 
-### 渲染属性模式
-```tsx
-// ✅ 正确：渲染属性模式
-interface DataFetcherProps<T> {
-  url: string;
-  children: (data: T | null, loading: boolean, error: string | null) => React.ReactNode;
+### 不要硬编码依赖
+
+```csharp
+// ❌ 错误 - 硬编码依赖
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 硬编码依赖具体实现
+        var mongoDb = new MongoDbUserRepository();
+        var emailValidator = new EmailUserValidator();
+        var fileLogger = new FileUserLogger();
+        
+        var user = new User { Username = request.Username };
+        return await mongoDb.CreateAsync(user);
+    }
 }
 
-export function DataFetcher<T>({ url, children }: DataFetcherProps<T>) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// ✅ 正确 - 依赖注入
+public class UserService : IUserService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IUserValidator _userValidator;
+    private readonly IUserLogger _userLogger;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(url);
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [url]);
-
-  return <>{children(data, loading, error)}</>;
-}
-
-// 使用渲染属性
-export function UserList() {
-  return (
-    <DataFetcher<User[]> url="/api/users">
-      {(users, loading, error) => {
-        if (loading) return <LoadingSpinner />;
-        if (error) return <ErrorMessage message={error} />;
-        if (!users) return <EmptyState />;
-
-        return (
-          <div>
-            {users.map(user => (
-              <UserCard key={user.id} user={user} />
-            ))}
-          </div>
-        );
-      }}
-    </DataFetcher>
-  );
-}
-```
-
-### 高阶组件模式
-```tsx
-// ✅ 正确：高阶组件
-interface WithLoadingProps {
-  loading: boolean;
-}
-
-export function withLoading<P extends object>(
-  Component: React.ComponentType<P>
-) {
-  return function WithLoadingComponent(props: P & WithLoadingProps) {
-    const { loading, ...restProps } = props;
-
-    if (loading) {
-      return <LoadingSpinner />;
+    public UserService(
+        IUserRepository userRepository,
+        IUserValidator userValidator,
+        IUserLogger userLogger)
+    {
+        _userRepository = userRepository;
+        _userValidator = userValidator;
+        _userLogger = userLogger;
     }
 
-    return <Component {...(restProps as P)} />;
-  };
-}
-
-// 使用高阶组件
-const UserListWithLoading = withLoading(UserList);
-
-export function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchUsers().then(data => {
-      setUsers(data);
-      setLoading(false);
-    });
-  }, []);
-
-  return <UserListWithLoading users={users} loading={loading} />;
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User { Username = request.Username };
+        return await _userRepository.CreateAsync(user);
+    }
 }
 ```
 
-## 📋 设计模式选择指南
+### 不要忽略接口隔离
 
-### 何时使用工厂模式
-- 需要根据运行时条件创建不同类型的对象
-- 创建过程复杂，需要封装
-- 需要统一的对象创建接口
+```csharp
+// ❌ 错误 - 接口过于庞大
+public interface IUserService
+{
+    // 包含了太多不相关的方法
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<bool> UpdateUserAsync(UpdateUserRequest request);
+    Task<bool> DeleteUserAsync(string id);
+    Task<bool> SendEmailAsync(string email);
+    Task<bool> UploadFileAsync(string fileName, byte[] content);
+    Task<bool> ProcessPaymentAsync(decimal amount);
+}
 
-### 何时使用策略模式
-- 有多种算法或行为需要动态选择
-- 算法可能在运行时改变
-- 需要避免使用大量的 if-else 语句
+// ✅ 正确 - 接口隔离
+public interface IUserService
+{
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<bool> UpdateUserAsync(UpdateUserRequest request);
+    Task<bool> DeleteUserAsync(string id);
+}
 
-### 何时使用观察者模式
-- 一个对象的状态变化需要通知多个其他对象
-- 对象之间需要松耦合
-- 需要实现事件驱动架构
+public interface IEmailService
+{
+    Task<bool> SendEmailAsync(string email);
+}
 
-### 何时使用装饰器模式
-- 需要在不修改原有类的情况下添加功能
-- 功能可以动态添加或移除
-- 需要避免使用继承来扩展功能
+public interface IFileService
+{
+    Task<bool> UploadFileAsync(string fileName, byte[] content);
+}
 
-## 📚 相关资源
+public interface IPaymentService
+{
+    Task<bool> ProcessPaymentAsync(decimal amount);
+}
+```
 
-- [设计模式：可复用面向对象软件的基础](https://en.wikipedia.org/wiki/Design_Patterns)
-- [SOLID 原则](https://en.wikipedia.org/wiki/SOLID)
-- [领域驱动设计](https://martinfowler.com/bliki/DomainDrivenDesign.html)
-- [React 设计模式](https://reactpatterns.com/)
+## 📋 设计模式开发检查清单
 
-## 🎯 记住
+创建或修改代码时检查：
 
-**设计模式是工具，不是目标**
+- [ ] 遵循 SOLID 原则
+- [ ] 使用适当的设计模式
+- [ ] 保持单一职责
+- [ ] 依赖抽象而不是具体实现
+- [ ] 接口设计合理
+- [ ] 代码可扩展性
+- [ ] 代码可维护性
+- [ ] 代码可测试性
+- [ ] 避免过度设计
+- [ ] 文档化设计决策
 
-- 优先考虑代码的可读性和可维护性
-- 不要过度设计，保持简单
-- 根据实际需求选择合适的模式
-- 持续重构和改进代码结构
+## 📚 相关文档
+
+- [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
+- [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
+- [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)
+- [设计模式参考](https://refactoring.guru/design-patterns)

@@ -1,977 +1,441 @@
 ---
-globs: *.cs,Platform.ApiService/**/*
+globs: *.cs
 description: C# 后端开发规范和最佳实践
 ---
 
 # C# 后端开发规范
 
-## 🎯 项目结构
+## 🎯 核心原则
 
-### 服务架构
-- **Platform.ApiService** - 主要的 API 服务
-- **Platform.ServiceDefaults** - 共享服务配置
-- **Platform.AppHost** - 应用编排和配置
+**遵循 .NET 9 和 C# 12 最佳实践，确保代码质量、性能和可维护性**
 
-### 目录结构
+## 📁 项目结构规范
+
+### 服务层架构
+
 ```
 Platform.ApiService/
 ├── Controllers/          # API 控制器
-├── Models/              # 数据模型
 ├── Services/            # 业务逻辑服务
-├── Scripts/             # 数据库脚本
-└── Program.cs           # 应用程序入口
+├── Models/              # 数据模型和 DTO
+├── Validators/          # 参数验证器
+├── Extensions/          # 扩展方法
+├── Constants/           # 常量定义
+├── Scripts/             # 数据脚本
+└── Program.cs           # 应用入口
 ```
 
-## 🏗️ 服务层开发规范
+### 命名规范
 
-### 核心原则
-所有服务类必须继承 `BaseService` 并使用 `BaseRepository<T>` 进行数据访问。
-
-### ✅ 正确的服务实现
 ```csharp
-public class MyService : BaseService, IMyService
+// ✅ 接口命名
+public interface IUserService { }
+
+// ✅ 服务实现命名
+public class UserService : IUserService { }
+
+// ✅ 控制器命名
+public class UserController : BaseApiController { }
+
+// ✅ 模型命名
+public class User : BaseEntity { }
+public class CreateUserRequest { }
+public class UserResponse { }
+
+// ✅ 常量命名
+public static class UserConstants
 {
-    private readonly BaseRepository<MyEntity> _repository;
-    
-    // 如需直接访问集合进行复杂查询
-    private IMongoCollection<MyEntity> _entities => _repository.Collection;
-    
-    public MyService(
-        IMongoDatabase database,
-        IHttpContextAccessor httpContextAccessor,
-        ILogger<MyService> logger)
-        : base(database, httpContextAccessor, logger)
-    {
-        _repository = new BaseRepository<MyEntity>(database, "my_entities", httpContextAccessor);
-    }
-    
-    // 使用仓储方法而不是手动实现
-    public async Task<MyEntity?> GetByIdAsync(string id)
-    {
-        return await _repository.GetByIdAsync(id);
-    }
-    
-    public async Task<MyEntity> CreateAsync(CreateRequest request)
-    {
-        var entity = new MyEntity
-        {
-            Name = request.Name
-            // ✅ CreatedAt, UpdatedAt, IsDeleted 会自动设置
-        };
-        
-        return await _repository.CreateAsync(entity);
-    }
-    
-    public async Task<bool> DeleteAsync(string id, string? reason = null)
-    {
-        return await _repository.SoftDeleteAsync(id, reason);
-    }
+    public const string ACTIVE_STATUS = "active";
+    public const string PENDING_STATUS = "pending";
 }
 ```
 
-### ❌ 禁止的做法
-```csharp
-// ❌ 不要直接实现 IService 而不继承 BaseService
-public class MyService : IMyService
-{
-    private readonly IMongoCollection<MyEntity> _entities;
-    
-    // ❌ 不要重复实现 GetCurrentUserId
-    private string? GetCurrentUserId()
-    {
-        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
-    }
-}
+## 🔧 代码规范
 
-// ❌ 不要手动设置时间戳
-var entity = new MyEntity
-{
-    Name = "Test",
-    CreatedAt = DateTime.UtcNow,  // ❌ BaseRepository 会自动设置
-    UpdatedAt = DateTime.UtcNow,  // ❌ BaseRepository 会自动设置
-    IsDeleted = false             // ❌ BaseRepository 会自动设置
-};
-
-// ❌ 不要手动构建简单的 CRUD 查询
-var filter = Builders<MyEntity>.Filter.And(
-    Builders<MyEntity>.Filter.Eq(e => e.Id, id),
-    Builders<MyEntity>.Filter.Eq(e => e.IsDeleted, false)
-);
-var entity = await _entities.Find(filter).FirstOrDefaultAsync();
-
-// ✅ 应该使用
-var entity = await _repository.GetByIdAsync(id);
-```
-
-### 🔧 BaseService 提供的功能
-```csharp
-// 获取当前用户信息
-var userId = GetCurrentUserId();
-var username = GetCurrentUsername();
-
-// 获取 MongoDB 集合
-var collection = GetCollection<MyEntity>("my_entities");
-
-// 日志记录（继承的 Logger 属性）
-Logger.LogInformation("Processing entity {EntityId}", entityId);
-```
-
-### 命名约定
-- **类**: 使用 PascalCase (如 `UserService`)
-- **方法**: 使用 PascalCase (如 `GetUserById`)
-- **属性**: 使用 PascalCase (如 `UserName`)
-- **字段**: 使用 camelCase 或 _camelCase (如 `_userRepository`)
-- **常量**: 使用 UPPER_SNAKE_CASE (如 `MAX_RETRY_COUNT`)
-
-### 控制器设计
-
-**⚠️ 重要：所有控制器必须继承 `BaseApiController`**
+### 1. 控制器规范
 
 ```csharp
-// ✅ 推荐：继承 BaseApiController
+/// <summary>
+/// 用户管理控制器
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController : BaseApiController  // ✅ 必须继承 BaseApiController
+[Authorize]
+public class UserController : BaseApiController
 {
     private readonly IUserService _userService;
-    
-    public UsersController(IUserService userService)
+
+    public UserController(IUserService userService)
     {
         _userService = userService;
     }
-    
-    [HttpGet]
-    public async Task<IActionResult> GetUsers()
-    {
-        var users = await _userService.GetAllUsersAsync();
-        return Success(users);  // ✅ 使用基类方法
-    }
-    
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetUser(string id)
-    {
-        var user = await _userService.GetUserByIdAsync(id);
-        if (user == null)
-            throw new KeyNotFoundException($"用户 {id} 不存在");  // ✅ 抛出异常
-        
-        return Success(user);
-    }
-    
-    [HttpPost]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
-    {
-        if (string.IsNullOrEmpty(request.Name))
-            throw new ArgumentException("用户名不能为空");  // ✅ 参数验证
-        
-        var userId = GetRequiredUserId();  // ✅ 使用基类方法获取用户ID
-        var user = await _userService.CreateUserAsync(request, userId);
-        
-        return Success(user, "创建成功");
-    }
-}
 
-// ❌ 禁止：直接继承 ControllerBase
-[ApiController]
-[Route("api/[controller]")]
-public class UsersController : ControllerBase  // ❌ 禁止
-{
-    // ...
+    /// <summary>
+    /// 获取用户列表
+    /// </summary>
+    /// <param name="request">查询参数</param>
+    /// <returns>用户列表</returns>
+    [HttpGet]
+    public async Task<IActionResult> GetUsers([FromQuery] UserListRequest request)
+    {
+        var users = await _userService.GetUsersAsync(request);
+        return Success(users);
+    }
 }
 ```
 
-### 服务层设计
+### 2. 服务层规范
+
 ```csharp
-// ✅ 推荐：服务接口和实现
+/// <summary>
+/// 用户服务接口
+/// </summary>
 public interface IUserService
 {
-    Task<IEnumerable<User>> GetAllUsersAsync();
+    Task<List<User>> GetUsersAsync(UserListRequest request);
     Task<User?> GetUserByIdAsync(string id);
     Task<User> CreateUserAsync(CreateUserRequest request);
     Task<bool> UpdateUserAsync(string id, UpdateUserRequest request);
     Task<bool> DeleteUserAsync(string id);
 }
 
+/// <summary>
+/// 用户服务实现
+/// </summary>
 public class UserService : IUserService
 {
-    private readonly IUserRepository _userRepository;
+    private readonly IDatabaseOperationFactory<User> _userFactory;
     private readonly ILogger<UserService> _logger;
-    
-    public UserService(IUserRepository userRepository, ILogger<UserService> logger)
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserService> logger)
     {
-        _userRepository = userRepository;
+        _userFactory = userFactory;
         _logger = logger;
     }
-    
-    public async Task<IEnumerable<User>> GetAllUsersAsync()
+
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
     {
         try
         {
-            return await _userRepository.GetAllAsync();
+            var filter = _userFactory.CreateFilterBuilder()
+                .Equal(u => u.IsActive, true)
+                .Build();
+            
+            var users = await _userFactory.FindAsync(filter);
+            return users.ToList();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving users");
+            _logger.LogError(ex, "获取用户列表失败");
             throw;
         }
     }
 }
 ```
 
-## 🗄️ 数据访问
+### 3. 模型定义规范
 
-### MongoDB 集成
 ```csharp
-// ✅ 推荐：MongoDB 数据模型
-public class User
+/// <summary>
+/// 用户实体
+/// </summary>
+public class User : BaseEntity, 
+    Platform.ServiceDefaults.Models.IEntity,
+    Platform.ServiceDefaults.Models.ISoftDeletable,
+    Platform.ServiceDefaults.Models.ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
-    
+
     [BsonElement("username")]
+    [Required]
+    [StringLength(50, MinimumLength = 3)]
     public string Username { get; set; } = string.Empty;
-    
+
     [BsonElement("email")]
+    [Required]
+    [EmailAddress]
     public string Email { get; set; } = string.Empty;
-    
-    [BsonElement("role")]
-    public string Role { get; set; } = "user";
-    
+
+    [BsonElement("isActive")]
+    public bool IsActive { get; set; } = true;
+
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+}
+
+/// <summary>
+/// 创建用户请求
+/// </summary>
+public class CreateUserRequest
+{
+    [Required]
+    [StringLength(50, MinimumLength = 3)]
+    public string Username { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(6)]
+    public string Password { get; set; } = string.Empty;
 }
 ```
 
-### 仓储模式
+## 🚫 禁止的做法
+
+### 1. 不要直接使用 IMongoCollection
+
 ```csharp
-// ✅ 推荐：仓储接口和实现
-public interface IUserRepository
+// ❌ 禁止：直接使用 IMongoCollection
+private readonly IMongoCollection<User> _users;
+
+// ✅ 正确：使用 IDatabaseOperationFactory
+private readonly IDatabaseOperationFactory<User> _userFactory;
+```
+
+### 2. 不要手动处理异常
+
+```csharp
+// ❌ 禁止：手动 try-catch
+try
 {
-    Task<IEnumerable<User>> GetAllAsync();
-    Task<User?> GetByIdAsync(string id);
-    Task<User> CreateAsync(User user);
-    Task<bool> UpdateAsync(string id, User user);
-    Task<bool> DeleteAsync(string id);
+    var result = await _service.DoSomething();
+    return Ok(new { success = true, data = result });
+}
+catch (Exception ex)
+{
+    return StatusCode(500, new { success = false, error = ex.Message });
 }
 
-public class UserRepository : IUserRepository
+// ✅ 正确：抛出异常，由 GlobalExceptionMiddleware 处理
+var result = await _service.DoSomething();
+return Success(result);
+```
+
+### 3. 不要手动构建响应格式
+
+```csharp
+// ❌ 禁止：手动构建响应
+return Ok(new { success = true, data = result });
+
+// ✅ 正确：使用基类方法
+return Success(result);
+```
+
+### 4. 不要手动提取用户信息
+
+```csharp
+// ❌ 禁止：手动提取用户信息
+var userId = User.FindFirst("userId")?.Value;
+if (string.IsNullOrEmpty(userId))
+    return Unauthorized();
+
+// ✅ 正确：使用基类方法
+var userId = GetRequiredUserId();
+```
+
+## 🔍 异常处理规范
+
+### 1. 使用标准异常类型
+
+```csharp
+// ✅ 用户不存在
+throw new KeyNotFoundException($"用户 {userId} 不存在");
+
+// ✅ 参数错误
+throw new ArgumentException("用户名不能为空");
+
+// ✅ 权限不足
+throw new UnauthorizedAccessException("需要管理员权限");
+
+// ✅ 业务逻辑错误
+throw new InvalidOperationException("用户已存在");
+```
+
+### 2. 异常消息规范
+
+```csharp
+// ✅ 包含上下文信息
+throw new KeyNotFoundException($"用户 {userId} 不存在");
+
+// ✅ 使用常量定义错误消息
+throw new ArgumentException(UserErrorMessages.UsernameRequired);
+
+// ✅ 提供解决建议
+throw new InvalidOperationException("用户已存在，请使用其他用户名");
+```
+
+## 📝 日志记录规范
+
+### 1. 结构化日志
+
+```csharp
+// ✅ 使用结构化日志
+_logger.LogInformation("用户 {UserId} 登录成功，IP: {IpAddress}", userId, ipAddress);
+
+// ✅ 记录操作日志
+_logger.LogInformation("创建用户: {Username}, 邮箱: {Email}", username, email);
+
+// ✅ 记录错误日志
+_logger.LogError(ex, "用户 {UserId} 登录失败", userId);
+```
+
+### 2. 日志级别使用
+
+```csharp
+// ✅ Trace - 详细的调试信息
+_logger.LogTrace("开始处理用户请求: {RequestId}", requestId);
+
+// ✅ Debug - 调试信息
+_logger.LogDebug("查询用户: {UserId}", userId);
+
+// ✅ Information - 一般信息
+_logger.LogInformation("用户 {UserId} 登录成功", userId);
+
+// ✅ Warning - 警告信息
+_logger.LogWarning("用户 {UserId} 多次登录失败", userId);
+
+// ✅ Error - 错误信息
+_logger.LogError(ex, "处理用户请求失败: {RequestId}", requestId);
+
+// ✅ Critical - 严重错误
+_logger.LogCritical(ex, "系统关键错误");
+```
+
+## 🔐 安全规范
+
+### 1. 输入验证
+
+```csharp
+// ✅ 使用数据注解验证
+public class CreateUserRequest
 {
-    private readonly IMongoCollection<User> _users;
+    [Required(ErrorMessage = "用户名不能为空")]
+    [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "用户名只能包含字母、数字和下划线")]
+    public string Username { get; set; } = string.Empty;
+}
+
+// ✅ 使用 FluentValidation
+public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
+{
+    public CreateUserRequestValidator()
+    {
+        RuleFor(x => x.Username)
+            .NotEmpty().WithMessage("用户名不能为空")
+            .Length(3, 50).WithMessage("用户名长度必须在3-50个字符之间")
+            .Matches(@"^[a-zA-Z0-9_]+$").WithMessage("用户名只能包含字母、数字和下划线");
+    }
+}
+```
+
+### 2. 权限检查
+
+```csharp
+// ✅ 使用 Authorize 特性
+[Authorize(Roles = "admin")]
+[HttpDelete("{id}")]
+public async Task<IActionResult> DeleteUser(string id)
+{
+    // 实现删除逻辑
+}
+
+// ✅ 在服务层检查权限
+public async Task<bool> DeleteUserAsync(string id)
+{
+    if (!IsAdmin())
+        throw new UnauthorizedAccessException("需要管理员权限");
     
-    public UserRepository(IMongoDatabase database)
-    {
-        _users = database.GetCollection<User>("users");
-    }
+    // 实现删除逻辑
+}
+```
+
+## 🎯 性能优化规范
+
+### 1. 异步操作
+
+```csharp
+// ✅ 使用 async/await
+public async Task<User> GetUserAsync(string id)
+{
+    return await _userFactory.GetByIdAsync(id);
+}
+
+// ✅ 并行执行独立操作
+public async Task<UserProfile> GetUserProfileAsync(string userId)
+{
+    var userTask = _userFactory.GetByIdAsync(userId);
+    var rolesTask = _roleFactory.FindAsync(roleFilter);
     
-    public async Task<IEnumerable<User>> GetAllAsync()
+    await Task.WhenAll(userTask, rolesTask);
+    
+    return new UserProfile
     {
-        return await _users.Find(_ => true).ToListAsync();
-    }
+        User = await userTask,
+        Roles = await rolesTask
+    };
 }
 ```
 
-## 🔐 认证和授权
-
-### JWT 服务实现
+### 2. 查询优化
 
 ```csharp
-// ✅ 推荐：JWT 服务接口和实现
-public interface IJwtService
-{
-    string GenerateToken(AppUser user);
-    string GenerateRefreshToken(AppUser user);
-    ClaimsPrincipal? ValidateToken(string token);
-    ClaimsPrincipal? ValidateRefreshToken(string refreshToken);
-    string? GetUserIdFromToken(string token);
-    string? GetUserIdFromRefreshToken(string refreshToken);
-}
+// ✅ 使用分页查询
+var users = await _userFactory.FindPagedAsync(filter, skip: 0, limit: 20);
 
-public class JwtService : IJwtService
-{
-    private readonly string _secretKey;
-    private readonly string _issuer;
-    private readonly string _audience;
-    private readonly int _expirationMinutes;
-    private readonly int _refreshTokenExpirationDays;
+// ✅ 只查询需要的字段
+var projection = Builders<User>.Projection
+    .Include(u => u.Id)
+    .Include(u => u.Username)
+    .Include(u => u.Email);
 
-    public JwtService(IConfiguration configuration)
-    {
-        _secretKey = configuration["Jwt:SecretKey"] 
-            ?? throw new ArgumentNullException("Jwt:SecretKey");
-        _issuer = configuration["Jwt:Issuer"] ?? "Platform.ApiService";
-        _audience = configuration["Jwt:Audience"] ?? "Platform.Web";
-        _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "60");
-        _refreshTokenExpirationDays = int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
-    }
-
-    public string GenerateToken(AppUser user)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_secretKey);
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.Role, user.Role),
-            new("userId", user.Id ?? string.Empty),
-            new("username", user.Username),
-            new("role", user.Role)
-        };
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(_expirationMinutes),
-            Issuer = _issuer,
-            Audience = _audience,
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key), 
-                SecurityAlgorithms.HmacSha256Signature)
-        };
-
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    }
-
-    public string GenerateRefreshToken(AppUser user)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_secretKey);
-
-        var claims = new List<Claim>
-        {
-            new("type", "refresh"),
-            new("userId", user.Id ?? string.Empty),
-            new("username", user.Username),
-            new("role", user.Role),
-            new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), 
-                ClaimValueTypes.Integer64)
-        };
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays),
-            Issuer = _issuer,
-            Audience = _audience,
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key), 
-                SecurityAlgorithms.HmacSha256Signature)
-        };
-
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    }
-
-    public ClaimsPrincipal? ValidateToken(string token)
-    {
-        try
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_secretKey);
-
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = _issuer,
-                ValidateAudience = true,
-                ValidAudience = _audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-
-            var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
-            return principal;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    public ClaimsPrincipal? ValidateRefreshToken(string refreshToken)
-    {
-        try
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_secretKey);
-
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = _issuer,
-                ValidateAudience = true,
-                ValidAudience = _audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-
-            var principal = tokenHandler.ValidateToken(refreshToken, validationParameters, out _);
-            
-            // 验证是否为刷新token
-            var tokenType = principal.FindFirst("type")?.Value;
-            if (tokenType != "refresh")
-            {
-                return null;
-            }
-
-            return principal;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    public string? GetUserIdFromToken(string token)
-    {
-        var principal = ValidateToken(token);
-        return principal?.FindFirst("userId")?.Value;
-    }
-
-    public string? GetUserIdFromRefreshToken(string refreshToken)
-    {
-        var principal = ValidateRefreshToken(refreshToken);
-        return principal?.FindFirst("userId")?.Value;
-    }
-}
+// ✅ 使用索引优化查询
+var filter = _userFactory.CreateFilterBuilder()
+    .Equal(u => u.IsActive, true)  // 确保有索引
+    .Equal(u => u.CompanyId, companyId)  // 确保有复合索引
+    .Build();
 ```
 
-### 认证控制器
-
-```csharp
-// ✅ 推荐：认证控制器实现
-[ApiController]
-[Route("api")]
-public class AuthController : ControllerBase
-{
-    private readonly AuthService _authService;
-
-    public AuthController(AuthService authService)
-    {
-        _authService = authService;
-    }
-
-    /// <summary>
-    /// 获取当前用户信息
-    /// </summary>
-    [HttpGet("currentUser")]
-    [Authorize]
-    public async Task<IActionResult> GetCurrentUser()
-    {
-        try
-        {
-            // 检查用户是否已认证
-            if (!User.Identity?.IsAuthenticated ?? true)
-            {
-                return Ok(ApiResponse<CurrentUser>.UnauthorizedResult("用户未认证"));
-            }
-
-            var user = await _authService.GetCurrentUserAsync();
-            if (user == null || !user.IsLogin)
-            {
-                return Ok(ApiResponse<CurrentUser>.UnauthorizedResult("请先登录！"));
-            }
-            
-            return Ok(ApiResponse<CurrentUser>.SuccessResult(user));
-        }
-        catch (Exception ex)
-        {
-            return Ok(ApiResponse<CurrentUser>.ServerErrorResult(
-                $"获取用户信息失败: {ex.Message}"));
-        }
-    }
-
-    /// <summary>
-    /// 用户登录
-    /// </summary>
-    [HttpPost("login/account")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
-    {
-        var result = await _authService.LoginAsync(request);
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// 刷新访问token
-    /// </summary>
-    [HttpPost("refresh-token")]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
-    {
-        var result = await _authService.RefreshTokenAsync(request);
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// 用户登出
-    /// </summary>
-    [HttpPost("login/outLogin")]
-    [Authorize]
-    public async Task<IActionResult> Logout()
-    {
-        await _authService.LogoutAsync();
-        return Ok(ApiResponse.SuccessResult("登出成功"));
-    }
-
-    /// <summary>
-    /// 用户注册
-    /// </summary>
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
-    {
-        var result = await _authService.RegisterAsync(request);
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// 修改密码
-    /// </summary>
-    [HttpPost("change-password")]
-    [Authorize]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
-    {
-        var result = await _authService.ChangePasswordAsync(request);
-        return Ok(result);
-    }
-}
-```
-
-### JWT 配置
-
-```csharp
-// ✅ 推荐：Program.cs 中的 JWT 配置
-var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] 
-    ?? throw new InvalidOperationException("JWT Secret Key not configured");
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Platform.Web";
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.ASCII.GetBytes(jwtSecretKey)),
-            ValidateIssuer = true,
-            ValidIssuer = jwtIssuer,
-            ValidateAudience = true,
-            ValidAudience = jwtAudience,
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
-            RequireExpirationTime = true,
-            RequireSignedTokens = true
-        };
-    });
-
-builder.Services.AddAuthorization();
-```
-
-## 📊 统一响应模型
-
-### API 响应封装
-
-```csharp
-// ✅ 推荐：统一响应模型
-public class ApiResponse
-{
-    public bool Success { get; set; }
-    public string? ErrorMessage { get; set; }
-    public string? ErrorCode { get; set; }
-    public int? ShowType { get; set; }
-
-    public static ApiResponse SuccessResult(string message = "操作成功")
-    {
-        return new ApiResponse
-        {
-            Success = true,
-            ErrorMessage = message,
-            ShowType = 1
-        };
-    }
-
-    public static ApiResponse ErrorResult(string message, string? errorCode = null)
-    {
-        return new ApiResponse
-        {
-            Success = false,
-            ErrorMessage = message,
-            ErrorCode = errorCode,
-            ShowType = 2
-        };
-    }
-}
-
-public class ApiResponse<T> : ApiResponse
-{
-    public T? Data { get; set; }
-
-    public static ApiResponse<T> SuccessResult(T data, string message = "操作成功")
-    {
-        return new ApiResponse<T>
-        {
-            Success = true,
-            Data = data,
-            ErrorMessage = message,
-            ShowType = 1
-        };
-    }
-
-    public static ApiResponse<T> UnauthorizedResult(string message = "未授权")
-    {
-        return new ApiResponse<T>
-        {
-            Success = false,
-            ErrorMessage = message,
-            ErrorCode = "UNAUTHORIZED",
-            ShowType = 2
-        };
-    }
-
-    public static ApiResponse<T> ServerErrorResult(string message = "服务器错误")
-    {
-        return new ApiResponse<T>
-        {
-            Success = false,
-            ErrorMessage = message,
-            ErrorCode = "SERVER_ERROR",
-            ShowType = 2
-        };
-    }
-}
-```
-
-## 🗄️ MongoDB 高级用法
-
-### 复杂查询
-
-```csharp
-// ✅ 推荐：MongoDB 查询示例
-public class UserService
-{
-    private readonly IMongoCollection<AppUser> _users;
-
-    public UserService(IMongoDatabase database)
-    {
-        _users = database.GetCollection<AppUser>("users");
-    }
-
-    // 分页查询
-    public async Task<(List<AppUser> users, long total)> GetUsersPaginatedAsync(
-        int page, 
-        int pageSize, 
-        string? keyword = null)
-    {
-        var filterBuilder = Builders<AppUser>.Filter;
-        var filter = filterBuilder.Empty;
-
-        // 关键词搜索
-        if (!string.IsNullOrEmpty(keyword))
-        {
-            var keywordFilter = filterBuilder.Or(
-                filterBuilder.Regex(u => u.Username, new BsonRegularExpression(keyword, "i")),
-                filterBuilder.Regex(u => u.Email, new BsonRegularExpression(keyword, "i"))
-            );
-            filter &= keywordFilter;
-        }
-
-        // 只查询活跃用户
-        filter &= filterBuilder.Eq(u => u.IsActive, true);
-
-        var total = await _users.CountDocumentsAsync(filter);
-        var users = await _users.Find(filter)
-            .Sort(Builders<AppUser>.Sort.Descending(u => u.CreatedAt))
-            .Skip((page - 1) * pageSize)
-            .Limit(pageSize)
-            .ToListAsync();
-
-        return (users, total);
-    }
-
-    // 批量更新
-    public async Task<long> BulkUpdateUsersAsync(List<string> userIds, UpdateDefinition<AppUser> update)
-    {
-        var filter = Builders<AppUser>.Filter.In(u => u.Id, userIds);
-        var result = await _users.UpdateManyAsync(filter, update);
-        return result.ModifiedCount;
-    }
-
-    // 聚合查询
-    public async Task<Dictionary<string, int>> GetUserStatsByRoleAsync()
-    {
-        var pipeline = new[]
-        {
-            new BsonDocument("$group", new BsonDocument
-            {
-                { "_id", "$access" },
-                { "count", new BsonDocument("$sum", 1) }
-            })
-        };
-
-        var results = await _users.Aggregate<BsonDocument>(pipeline).ToListAsync();
-        return results.ToDictionary(
-            r => r["_id"].AsString,
-            r => r["count"].AsInt32
-        );
-    }
-}
-```
-
-### 索引管理
-
-```csharp
-// ✅ 推荐：创建索引
-public static async Task CreateIndexesAsync(IMongoDatabase database)
-{
-    var users = database.GetCollection<AppUser>("users");
-
-    // 创建唯一索引
-    var usernameIndex = Builders<AppUser>.IndexKeys.Ascending(u => u.Username);
-    await users.Indexes.CreateOneAsync(new CreateIndexModel<AppUser>(
-        usernameIndex,
-        new CreateIndexOptions { Unique = true }
-    ));
-
-    // 创建复合索引
-    var emailAccessIndex = Builders<AppUser>.IndexKeys
-        .Ascending(u => u.Email)
-        .Ascending(u => u.Access);
-    await users.Indexes.CreateOneAsync(new CreateIndexModel<AppUser>(emailAccessIndex));
-
-    // 创建文本索引（用于全文搜索）
-    var textIndex = Builders<AppUser>.IndexKeys.Text(u => u.Username).Text(u => u.Email);
-    await users.Indexes.CreateOneAsync(new CreateIndexModel<AppUser>(textIndex));
-}
-```
-
-## 🎯 BaseApiController 统一标准
-
-**所有控制器必须继承 `BaseApiController`，禁止直接继承 `ControllerBase`**
-
-基类提供的核心功能：
-- **用户信息获取** - `CurrentUserId`, `GetRequiredUserId()` 等
-- **统一响应格式** - `Success()`, `Error()` 等方法
-- **异常处理** - 直接抛异常，由中间件处理
-- **企业上下文** - `CurrentCompanyId`, `GetRequiredCompanyId()` 等
-
-详细规范请参考：[BaseApiController 统一标准](mdc:.cursor/rules/baseapicontroller-standard.mdc)
-
-## 🔧 中间件架构
-
-项目使用以下中间件处理通用功能：
-
-### GlobalExceptionMiddleware
-- 自动捕获所有未处理的异常
-- 转换为统一的错误响应格式
-- 自动添加 traceId 用于追踪
-- 根据异常类型返回合适的 HTTP 状态码
-
-### ActivityLogMiddleware
-- 自动记录所有 API 请求
-- 记录用户信息、请求路径、状态码、耗时等
-- 智能生成操作类型和中文描述
-- 异步记录，不阻塞响应
-
-### ResponseFormattingMiddleware
-- 自动包装所有成功响应
-- 确保响应格式统一
-- 自动添加 timestamp
-
-### 中间件顺序
-```csharp
-app.UseMiddleware<GlobalExceptionMiddleware>();       // 1. 异常处理（最外层）
-app.UseAuthentication();                              // 2. 认证
-app.UseAuthorization();                               // 3. 授权
-app.UseMiddleware<ActivityLogMiddleware>();           // 4. 日志记录
-app.UseCors();                                        // 5. 跨域
-app.UseMiddleware<ResponseFormattingMiddleware>();    // 6. 响应格式化
-app.MapControllers();                                 // 7. 控制器
-```
-
-## 🚫 避免的做法
-
-### 控制器相关
-- ❌ 不要直接继承 `ControllerBase`（必须继承 `BaseApiController`）
-- ❌ 不要手动提取用户信息（使用 `GetRequiredUserId()`）
-- ❌ 不要手动构建响应格式（使用 `Success()` 方法）
-- ❌ 不要使用 try-catch 包裹业务逻辑（由中间件处理）
-- ❌ 不要手动记录日志（由 ActivityLogMiddleware 处理）
-- ❌ 不要在控制器中编写业务逻辑
-
-### 通用规范
-- ❌ 不要使用 `async void`（除了事件处理程序）
-- ❌ 不要忽略异常（使用适当的异常处理）
-- ❌ 不要使用 `string` 代替强类型
-- ❌ 不要忘记配置依赖注入
-- ❌ 不要在生产环境中暴露敏感信息
-- ❌ 不要忘记验证输入参数
-- ❌ 不要硬编码配置值
-- ❌ 不要忘记添加 XML 文档注释
-
-## 🔧 配置管理
-
-### 应用配置
-
-```csharp
-// ✅ 推荐：使用 IConfiguration 和 Options 模式
-public class JwtSettings
-{
-    public string SecretKey { get; set; } = string.Empty;
-    public string RefreshTokenSecret { get; set; } = string.Empty;
-    public string Issuer { get; set; } = string.Empty;
-    public string Audience { get; set; } = string.Empty;
-    public int ExpirationMinutes { get; set; } = 60;
-    public int RefreshTokenExpirationDays { get; set; } = 7;
-}
-
-// 在 Program.cs 中配置
-builder.Services.Configure<JwtSettings>(
-    builder.Configuration.GetSection("Jwt"));
-
-// 在服务中使用
-public class AuthService
-{
-    private readonly JwtSettings _jwtSettings;
-
-    public AuthService(IOptions<JwtSettings> jwtSettings)
-    {
-        _jwtSettings = jwtSettings.Value;
-    }
-}
-```
-
-### 环境配置
-
-```csharp
-// ✅ 推荐：环境特定配置
-if (builder.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/error");
-    app.UseHsts();
-}
-
-// 配置 CORS
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        if (builder.Environment.IsDevelopment())
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        }
-        else
-        {
-            policy.WithOrigins(builder.Configuration["AllowedOrigins"]!)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
-        }
-    });
-});
-```
-
-## 🔧 依赖注入
-
-### 服务注册
-
-```csharp
-// ✅ 推荐：Program.cs 中的服务注册
-// MongoDB
-builder.AddMongoDBClient(connectionName: "mongodb");
-
-// 业务服务
-builder.Services.AddSingleton<IJwtService, JwtService>();
-builder.Services.AddSingleton<UserService>();
-builder.Services.AddSingleton<AuthService>();
-builder.Services.AddSingleton<RoleService>();
-builder.Services.AddSingleton<MenuService>();
-
-// HTTP 上下文访问器
-builder.Services.AddHttpContextAccessor();
-
-// 健康检查
-builder.Services.AddHealthChecks()
-    .AddMongoDb(
-        builder.Configuration.GetConnectionString("mongodb")!,
-        name: "mongodb",
-        timeout: TimeSpan.FromSeconds(3));
-```
-
-## 🎯 最佳实践
-
-### 控制器开发
-1. **继承 BaseApiController** - 所有控制器必须继承 BaseApiController
-2. **抛出异常** - 不要使用 try-catch，直接抛出异常由中间件处理
-3. **使用基类方法** - 使用 `GetRequiredUserId()` 和 `Success()` 等方法
-4. **参数验证** - 使用 `ArgumentException` 进行参数验证
-5. **统一响应** - 使用基类提供的响应方法
-
-### 通用开发
-6. **使用异步编程** - 所有 I/O 操作都应该是异步的
-7. **依赖注入** - 使用依赖注入管理服务生命周期
-8. **配置管理** - 使用 Options 模式管理配置
-9. **日志记录** - 使用 ILogger 记录日志（不要手动记录活动日志）
-10. **错误处理** - 依赖 GlobalExceptionMiddleware 统一处理
-11. **API 文档** - 使用 XML 注释和 Swagger/OpenAPI
-12. **验证** - 使用数据注解或 FluentValidation 验证输入
-13. **分离关注点** - 控制器只负责 HTTP 相关逻辑
-14. **使用强类型** - 避免使用 `string` 或 `object`
-15. **安全性** - 使用 JWT 认证和授权
-
-### 完整示例
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-[Authorize]
-public class ProductController : BaseApiController  // ✅ 继承基类
-{
-    private readonly IProductService _productService;
-
-    public ProductController(IProductService productService)
-    {
-        _productService = productService;
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var products = await _productService.GetAllAsync();
-        return Success(products);  // ✅ 使用基类方法
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(string id)
-    {
-        var product = await _productService.GetByIdAsync(id);
-        if (product == null)
-            throw new KeyNotFoundException($"产品 {id} 不存在");  // ✅ 抛出异常
-        
-        return Success(product);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateProductRequest request)
-    {
-        if (string.IsNullOrEmpty(request.Name))
-            throw new ArgumentException("产品名称不能为空");  // ✅ 参数验证
-        
-        var userId = GetRequiredUserId();  // ✅ 使用基类方法
-        var product = await _productService.CreateAsync(request, userId);
-        
-        return Success(product, "创建成功");
-    }
-}
-```
+## 📋 代码审查清单
+
+在提交代码前，检查：
+
+- [ ] 所有服务都使用 `IDatabaseOperationFactory` 而不是 `IMongoCollection`
+- [ ] 控制器继承 `BaseApiController` 并使用其方法
+- [ ] 异常处理使用标准异常类型和结构化消息
+- [ ] 日志记录使用结构化格式
+- [ ] 输入验证使用数据注解或 FluentValidation
+- [ ] 权限检查在控制器和服务层都有
+- [ ] 异步操作正确使用 async/await
+- [ ] 查询使用了适当的索引和分页
+- [ ] 代码有适当的 XML 文档注释
+- [ ] 遵循了命名规范和项目结构
+
+## 📚 相关文档
+
+- [BaseApiController 使用规范](mdc:.cursor/rules/api-controller-standards.mdc)
+- [数据库操作工厂规范](mdc:.cursor/rules/database-operation-factory.mdc)
+- [异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
+- [服务扩展方法](mdc:Platform.ServiceDefaults/Extensions/ServiceExtensions.cs)
+
+## 🎯 记住
+
+1. **统一架构** - 遵循项目既定的架构模式
+2. **安全第一** - 始终验证输入和检查权限
+3. **性能优化** - 使用异步操作和查询优化
+4. **错误处理** - 使用统一的异常处理机制
+5. **日志记录** - 记录关键操作和错误信息
+6. **代码质量** - 保持代码简洁、可读和可维护
+
+遵循这些规范，确保代码的一致性、安全性和可维护性！

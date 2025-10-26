@@ -385,3 +385,4 @@ var all = await _repository.GetAllAsync();
 3. ✅ 必须使用 `BaseRepository` 进行数据访问
 
 遵循清单，确保多租户架构的完整性！
+

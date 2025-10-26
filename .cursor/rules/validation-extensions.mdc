@@ -1,132 +1,855 @@
 ---
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
 description: 参数验证规范 - 使用 ValidationExtensions 扩展方法
-globs: Platform.ApiService/Controllers/*.cs,Platform.ApiService/Services/*.cs
 ---
-
-# 参数验证规范
+# 参数验证规范 - 使用 ValidationExtensions 扩展方法
 
 ## 🎯 核心原则
 
-使用 `ValidationExtensions` 扩展方法进行参数验证，避免冗长的 if-else 判断。
+### 使用统一的 ValidationExtensions 扩展方法进行参数验证，确保数据完整性和安全性
 
-## ✅ 推荐的验证方式
+## ✅ 验证扩展方法
 
-```csharp
-// 字符串验证
-request.Username.EnsureNotEmpty("用户名");
-request.Email.EnsureValidEmail();
-request.Password.EnsureValidPassword();
-
-// 对象验证
-request.EnsureNotNull("请求对象");
-
-// 集合验证
-request.UserIds.EnsureNotEmpty("用户ID列表");
-
-// 长度验证
-request.Name.EnsureLength("姓名", 2, 50);
-
-// 范围验证
-request.Age.EnsureInRange("年龄", 18, 120);
-
-// 可选验证（返回布尔值）
-if (email.IsValidEmail())
-{
-    // 处理有效的邮箱
-}
-```
-
-## ❌ 禁止的做法
+### 基础验证扩展
 
 ```csharp
-// ❌ 不要使用冗长的 if 判断
-if (string.IsNullOrEmpty(request.Username))
-    throw new ArgumentException(string.Format(ErrorMessages.ParameterRequired, "用户名"));
-
-// ❌ 不要重复编写验证逻辑
-if (string.IsNullOrWhiteSpace(email))
+// Platform.ServiceDefaults/Extensions/ValidationExtensions.cs
+public static class ValidationExtensions
 {
-    throw new ArgumentException("邮箱不能为空");
-}
-try
-{
-    var addr = new System.Net.Mail.MailAddress(email);
-    if (addr.Address != email)
+    /// <summary>
+    /// 验证字符串不为空
+    /// </summary>
+    public static string ValidateNotEmpty(this string value, string parameterName)
     {
-        throw new ArgumentException("邮箱格式不正确");
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+        return value;
+    }
+
+    /// <summary>
+    /// 验证字符串长度
+    /// </summary>
+    public static string ValidateLength(this string value, int minLength, int maxLength, string parameterName)
+    {
+        if (string.IsNullOrEmpty(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (value.Length < minLength)
+            throw new ArgumentException($"{parameterName} 长度不能少于 {minLength} 个字符", parameterName);
+
+        if (value.Length > maxLength)
+            throw new ArgumentException($"{parameterName} 长度不能超过 {maxLength} 个字符", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证邮箱格式
+    /// </summary>
+    public static string ValidateEmail(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(value);
+            if (addr.Address != value)
+                throw new ArgumentException($"{parameterName} 格式不正确", parameterName);
+        }
+        catch
+        {
+            throw new ArgumentException($"{parameterName} 格式不正确", parameterName);
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证用户名格式
+    /// </summary>
+    public static string ValidateUsername(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (value.Length < 3 || value.Length > 50)
+            throw new ArgumentException($"{parameterName} 长度必须在3-50个字符之间", parameterName);
+
+        if (!value.All(c => char.IsLetterOrDigit(c) || c == '_'))
+            throw new ArgumentException($"{parameterName} 只能包含字母、数字和下划线", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证密码强度
+    /// </summary>
+    public static string ValidatePassword(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (value.Length < 8)
+            throw new ArgumentException($"{parameterName} 长度不能少于8个字符", parameterName);
+
+        var hasLetter = value.Any(char.IsLetter);
+        var hasDigit = value.Any(char.IsDigit);
+        var hasSpecialChar = value.Any(c => !char.IsLetterOrDigit(c));
+
+        if (!hasLetter)
+            throw new ArgumentException($"{parameterName} 必须包含字母", parameterName);
+
+        if (!hasDigit)
+            throw new ArgumentException($"{parameterName} 必须包含数字", parameterName);
+
+        if (!hasSpecialChar)
+            throw new ArgumentException($"{parameterName} 必须包含特殊字符", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证对象ID格式
+    /// </summary>
+    public static string ValidateObjectId(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (!ObjectId.TryParse(value, out _))
+            throw new ArgumentException($"{parameterName} 格式不正确", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证数值范围
+    /// </summary>
+    public static T ValidateRange<T>(this T value, T minValue, T maxValue, string parameterName) where T : IComparable<T>
+    {
+        if (value.CompareTo(minValue) < 0)
+            throw new ArgumentException($"{parameterName} 不能小于 {minValue}", parameterName);
+
+        if (value.CompareTo(maxValue) > 0)
+            throw new ArgumentException($"{parameterName} 不能大于 {maxValue}", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证集合不为空
+    /// </summary>
+    public static IEnumerable<T> ValidateNotEmpty<T>(this IEnumerable<T> value, string parameterName)
+    {
+        if (value == null || !value.Any())
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证集合数量
+    /// </summary>
+    public static IEnumerable<T> ValidateCount<T>(this IEnumerable<T> value, int minCount, int maxCount, string parameterName)
+    {
+        if (value == null)
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        var count = value.Count();
+        if (count < minCount)
+            throw new ArgumentException($"{parameterName} 数量不能少于 {minCount}", parameterName);
+
+        if (count > maxCount)
+            throw new ArgumentException($"{parameterName} 数量不能超过 {maxCount}", parameterName);
+
+        return value;
     }
 }
-catch
-{
-    throw new ArgumentException("邮箱格式不正确");
-}
-
-// ❌ 不要硬编码错误消息
-throw new ArgumentException("用户名不能为空");
-
-// ✅ 应该使用
-request.Username.EnsureNotEmpty("用户名");
 ```
 
-## 📋 可用的验证方法
+### 业务验证扩展
 
-### 字符串验证
-- `EnsureNotEmpty(paramName)` - 确保不为空
-- `EnsureLength(paramName, min, max)` - 验证长度范围
-- `EnsureValidEmail(paramName)` - 验证邮箱格式
-- `EnsureValidUsername(paramName)` - 验证用户名格式（3-20字符，字母数字下划线）
-- `EnsureValidPassword(paramName)` - 验证密码强度（6-50字符）
-
-### 对象验证
-- `EnsureNotNull(paramName)` - 确保对象不为null
-
-### 集合验证
-- `EnsureNotEmpty(paramName)` - 确保集合不为空且有元素
-
-### 数值验证
-- `EnsureInRange(paramName, min, max)` - 验证值在范围内
-
-### 判断方法（不抛异常）
-- `IsValidEmail()` - 判断邮箱是否有效
-- `IsValidUsername()` - 判断用户名是否有效
-- `IsValidPassword()` - 判断密码是否有效
-
-### 实用方法
-- `NullIfEmpty()` - 空字符串转 null（用于可选参数）
-- `Truncate(maxLength)` - 截断字符串到指定长度
-
-## 🎯 使用场景
-
-### 控制器层
 ```csharp
-[HttpPost]
-public async Task<IActionResult> Create([FromBody] CreateRequest request)
+// Platform.ApiService/Extensions/BusinessValidationExtensions.cs
+public static class BusinessValidationExtensions
 {
-    // ✅ 使用扩展方法验证
-    request.Name.EnsureNotEmpty("名称");
-    request.Email.EnsureValidEmail();
-    request.UserIds.EnsureNotEmpty("用户列表");
-    
-    var result = await _service.CreateAsync(request);
-    return Success(result, ErrorMessages.CreateSuccess);
+    /// <summary>
+    /// 验证用户创建请求
+    /// </summary>
+    public static CreateUserRequest ValidateCreateUserRequest(this CreateUserRequest request)
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        request.Username.ValidateUsername(nameof(request.Username));
+        request.Email.ValidateEmail(nameof(request.Email));
+        request.Password.ValidatePassword(nameof(request.Password));
+
+        return request;
+    }
+
+    /// <summary>
+    /// 验证用户更新请求
+    /// </summary>
+    public static UpdateUserRequest ValidateUpdateUserRequest(this UpdateUserRequest request)
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        request.Id.ValidateObjectId(nameof(request.Id));
+
+        if (!string.IsNullOrEmpty(request.Username))
+            request.Username.ValidateUsername(nameof(request.Username));
+
+        if (!string.IsNullOrEmpty(request.Email))
+            request.Email.ValidateEmail(nameof(request.Email));
+
+        return request;
+    }
+
+    /// <summary>
+    /// 验证角色创建请求
+    /// </summary>
+    public static CreateRoleRequest ValidateCreateRoleRequest(this CreateRoleRequest request)
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        request.Name.ValidateNotEmpty(nameof(request.Name))
+            .ValidateLength(2, 50, nameof(request.Name));
+
+        if (!string.IsNullOrEmpty(request.Description))
+            request.Description.ValidateLength(0, 200, nameof(request.Description));
+
+        return request;
+    }
+
+    /// <summary>
+    /// 验证企业创建请求
+    /// </summary>
+    public static CreateCompanyRequest ValidateCreateCompanyRequest(this CreateCompanyRequest request)
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        request.Name.ValidateNotEmpty(nameof(request.Name))
+            .ValidateLength(2, 100, nameof(request.Name));
+
+        if (!string.IsNullOrEmpty(request.Code))
+            request.Code.ValidateLength(2, 20, nameof(request.Code));
+
+        if (!string.IsNullOrEmpty(request.Description))
+            request.Description.ValidateLength(0, 500, nameof(request.Description));
+
+        return request;
+    }
+
+    /// <summary>
+    /// 验证分页请求
+    /// </summary>
+    public static T ValidatePagination<T>(this T request) where T : IPaginationRequest
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        if (request.Page.HasValue)
+            request.Page.Value.ValidateRange(1, int.MaxValue, nameof(request.Page));
+
+        if (request.PageSize.HasValue)
+            request.PageSize.Value.ValidateRange(1, 1000, nameof(request.PageSize));
+
+        return request;
+    }
 }
 ```
 
-### 服务层
+## 🎯 服务中使用验证扩展
+
+### 用户服务验证
+
 ```csharp
-public async Task<User> CreateUserAsync(CreateUserRequest request)
+// ✅ 正确 - 使用验证扩展
+public class UserService : IUserService
 {
-    // ✅ 在服务层也可以使用
-    request.Username.EnsureValidUsername();
-    request.Password.EnsureValidPassword();
-    request.Email.EnsureValidEmail();
-    
-    // 业务逻辑...
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IUniquenessChecker _uniquenessChecker;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IUniquenessChecker uniquenessChecker)
+    {
+        _userFactory = userFactory;
+        _uniquenessChecker = uniquenessChecker;
+    }
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 1. 使用验证扩展进行参数验证
+        request.ValidateCreateUserRequest();
+        
+        // 2. 检查唯一性
+        await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Username, request.Username);
+        await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Email, request.Email);
+        
+        // 3. 创建用户实体
+        var user = new User
+        {
+            Username = request.Username.Trim(),
+            Email = request.Email.Trim().ToLowerInvariant(),
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        // 使用验证扩展验证ID
+        id.ValidateObjectId(nameof(id));
+        
+        return await _userFactory.GetByIdAsync(id);
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
+    {
+        // 1. 使用验证扩展进行参数验证
+        request.ValidateUpdateUserRequest();
+        
+        // 2. 获取现有用户
+        var existingUser = await _userFactory.GetByIdAsync(request.Id);
+        if (existingUser == null)
+        {
+            throw new KeyNotFoundException($"用户 {request.Id} 不存在");
+        }
+
+        // 3. 检查唯一性（如果需要）
+        if (!string.IsNullOrEmpty(request.Username) && request.Username != existingUser.Username)
+        {
+            await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Username, request.Username);
+        }
+        
+        if (!string.IsNullOrEmpty(request.Email) && request.Email != existingUser.Email)
+        {
+            await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Email, request.Email);
+        }
+
+        // 4. 构建更新操作
+        var update = _userFactory.CreateUpdateBuilder()
+            .SetCurrentTimestamp()
+            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+            .Build();
+
+        if (!string.IsNullOrEmpty(request.Username))
+        {
+            update = _userFactory.CreateUpdateBuilder()
+                .Set(u => u.Username, request.Username)
+                .SetCurrentTimestamp()
+                .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+                .Build();
+        }
+
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            update = _userFactory.CreateUpdateBuilder()
+                .Set(u => u.Email, request.Email)
+                .SetCurrentTimestamp()
+                .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+                .Build();
+        }
+
+        // 5. 执行更新
+        return await _userFactory.UpdateAsync(existingUser, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Update,
+            Description = "更新用户信息"
+        });
+    }
+
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 使用验证扩展验证分页参数
+        request.ValidatePagination();
+        
+        // 构建查询条件
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        // 添加搜索条件
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            var searchFilter = _userFactory.CreateFilterBuilder()
+                .Regex(u => u.Username, request.Keyword)
+                .Or()
+                .Regex(u => u.Email, request.Keyword)
+                .Build();
+            
+            filter = _userFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(searchFilter)
+                .Build();
+        }
+
+        // 构建排序
+        var sort = _userFactory.CreateSortBuilder()
+            .Descending(u => u.CreatedAt)
+            .Build();
+
+        // 执行查询
+        var limit = Math.Min(request.Limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+        return await _userFactory.FindAsync(filter, sort, limit);
+    }
+}
+
+// ❌ 错误 - 没有使用验证扩展
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 手动验证（容易遗漏）
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException("用户名不能为空");
+        
+        if (string.IsNullOrEmpty(request.Email))
+            throw new ArgumentException("邮箱不能为空");
+        
+        // 没有使用统一的验证扩展
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
 }
 ```
 
-## 📚 参考文档
+### 角色服务验证
 
-- [ValidationExtensions.cs](mdc:Platform.ApiService/Extensions/ValidationExtensions.cs)
-- [ErrorMessages 常量](mdc:Platform.ApiService/Constants/UserConstants.cs)
-- [基础组件使用指南](mdc:docs/optimization/BASE-COMPONENTS-GUIDE.md)
+```csharp
+// ✅ 正确 - 使用验证扩展
+public class RoleService : IRoleService
+{
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+
+    public RoleService(IDatabaseOperationFactory<Role> roleFactory)
+    {
+        _roleFactory = roleFactory;
+    }
+
+    public async Task<Role> CreateRoleAsync(CreateRoleRequest request)
+    {
+        // 1. 使用验证扩展进行参数验证
+        request.ValidateCreateRoleRequest();
+        
+        // 2. 检查权限
+        var currentUserId = _roleFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || !currentUser.IsAdmin)
+        {
+            throw new UnauthorizedAccessException("需要管理员权限");
+        }
+
+        // 3. 创建角色实体
+        var role = new Role
+        {
+            Name = request.Name.Trim(),
+            Description = request.Description?.Trim(),
+            CompanyId = _roleFactory.GetRequiredCompanyId(),
+            CreatedBy = currentUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        return await _roleFactory.CreateAsync(role);
+    }
+
+    public async Task<Role?> GetRoleByIdAsync(string id)
+    {
+        // 使用验证扩展验证ID
+        id.ValidateObjectId(nameof(id));
+        
+        return await _roleFactory.GetByIdAsync(id);
+    }
+
+    public async Task<bool> UpdateRoleAsync(UpdateRoleRequest request)
+    {
+        // 1. 使用验证扩展进行参数验证
+        request.Id.ValidateObjectId(nameof(request.Id));
+        
+        if (!string.IsNullOrEmpty(request.Name))
+            request.Name.ValidateLength(2, 50, nameof(request.Name));
+
+        if (!string.IsNullOrEmpty(request.Description))
+            request.Description.ValidateLength(0, 200, nameof(request.Description));
+
+        // 2. 获取现有角色
+        var existingRole = await _roleFactory.GetByIdAsync(request.Id);
+        if (existingRole == null)
+        {
+            throw new KeyNotFoundException($"角色 {request.Id} 不存在");
+        }
+
+        // 3. 检查权限
+        var currentUserId = _roleFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || !currentUser.IsAdmin)
+        {
+            throw new UnauthorizedAccessException("需要管理员权限");
+        }
+
+        // 4. 构建更新操作
+        var update = _roleFactory.CreateUpdateBuilder()
+            .SetCurrentTimestamp()
+            .SetOperationTracking(currentUserId, currentUser.Username)
+            .Build();
+
+        if (!string.IsNullOrEmpty(request.Name))
+        {
+            update = _roleFactory.CreateUpdateBuilder()
+                .Set(r => r.Name, request.Name)
+                .SetCurrentTimestamp()
+                .SetOperationTracking(currentUserId, currentUser.Username)
+                .Build();
+        }
+
+        if (!string.IsNullOrEmpty(request.Description))
+        {
+            update = _roleFactory.CreateUpdateBuilder()
+                .Set(r => r.Description, request.Description)
+                .SetCurrentTimestamp()
+                .SetOperationTracking(currentUserId, currentUser.Username)
+                .Build();
+        }
+
+        // 5. 执行更新
+        return await _roleFactory.UpdateAsync(existingRole, new OperationContext
+        {
+            UserId = currentUserId,
+            Username = currentUser.Username,
+            CompanyId = currentUser.CompanyId,
+            OperationType = OperationType.Update,
+            Description = "更新角色信息"
+        });
+    }
+}
+```
+
+### 企业服务验证
+
+```csharp
+// ✅ 正确 - 使用验证扩展
+public class CompanyService : ICompanyService
+{
+    private readonly IDatabaseOperationFactory<Company> _companyFactory;
+
+    public CompanyService(IDatabaseOperationFactory<Company> companyFactory)
+    {
+        _companyFactory = companyFactory;
+    }
+
+    public async Task<Company> CreateCompanyAsync(CreateCompanyRequest request)
+    {
+        // 1. 使用验证扩展进行参数验证
+        request.ValidateCreateCompanyRequest();
+        
+        // 2. 检查权限
+        var currentUserId = _companyFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || !currentUser.IsAdmin)
+        {
+            throw new UnauthorizedAccessException("需要管理员权限");
+        }
+
+        // 3. 创建企业实体
+        var company = new Company
+        {
+            Name = request.Name.Trim(),
+            Code = request.Code?.Trim(),
+            Description = request.Description?.Trim(),
+            CreatedBy = currentUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        return await _companyFactory.CreateAsync(company);
+    }
+
+    public async Task<Company?> GetCompanyByIdAsync(string id)
+    {
+        // 使用验证扩展验证ID
+        id.ValidateObjectId(nameof(id));
+        
+        return await _companyFactory.GetByIdAsync(id);
+    }
+
+    public async Task<List<Company>> GetCompaniesAsync(CompanyListRequest request)
+    {
+        // 使用验证扩展验证分页参数
+        request.ValidatePagination();
+        
+        // 构建查询条件
+        var filter = _companyFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        // 添加搜索条件
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            var searchFilter = _companyFactory.CreateFilterBuilder()
+                .Regex(c => c.Name, request.Keyword)
+                .Or()
+                .Regex(c => c.Code, request.Keyword)
+                .Build();
+            
+            filter = _companyFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(searchFilter)
+                .Build();
+        }
+
+        // 构建排序
+        var sort = _companyFactory.CreateSortBuilder()
+            .Descending(c => c.CreatedAt)
+            .Build();
+
+        // 执行查询
+        var limit = Math.Min(request.Limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+        return await _companyFactory.FindAsync(filter, sort, limit);
+    }
+}
+```
+
+## 🎯 自定义验证扩展
+
+### 业务特定验证
+
+```csharp
+// Platform.ApiService/Extensions/CustomValidationExtensions.cs
+public static class CustomValidationExtensions
+{
+    /// <summary>
+    /// 验证用户状态
+    /// </summary>
+    public static string ValidateUserStatus(this string status, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        var validStatuses = new[] { "active", "inactive", "pending", "suspended" };
+        if (!validStatuses.Contains(status.ToLowerInvariant()))
+            throw new ArgumentException($"{parameterName} 必须是以下值之一: {string.Join(", ", validStatuses)}", parameterName);
+
+        return status;
+    }
+
+    /// <summary>
+    /// 验证角色权限
+    /// </summary>
+    public static List<string> ValidateRolePermissions(this List<string> permissions, string parameterName)
+    {
+        if (permissions == null)
+            throw new ArgumentNullException(parameterName);
+
+        var validPermissions = new[] { "read", "write", "delete", "admin" };
+        var invalidPermissions = permissions.Where(p => !validPermissions.Contains(p.ToLowerInvariant())).ToList();
+        
+        if (invalidPermissions.Any())
+            throw new ArgumentException($"{parameterName} 包含无效权限: {string.Join(", ", invalidPermissions)}", parameterName);
+
+        return permissions;
+    }
+
+    /// <summary>
+    /// 验证企业代码格式
+    /// </summary>
+    public static string ValidateCompanyCode(this string code, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (code.Length < 2 || code.Length > 20)
+            throw new ArgumentException($"{parameterName} 长度必须在2-20个字符之间", parameterName);
+
+        if (!code.All(c => char.IsLetterOrDigit(c) || c == '-' || c == '_'))
+            throw new ArgumentException($"{parameterName} 只能包含字母、数字、连字符和下划线", parameterName);
+
+        return code;
+    }
+
+    /// <summary>
+    /// 验证文件扩展名
+    /// </summary>
+    public static string ValidateFileExtension(this string fileName, string[] allowedExtensions, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+            throw new ArgumentException($"{parameterName} 文件类型不支持，支持的格式: {string.Join(", ", allowedExtensions)}", parameterName);
+
+        return fileName;
+    }
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要手动验证
+
+```csharp
+// ❌ 错误 - 手动验证
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 手动验证（容易遗漏和重复）
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+        
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException("用户名不能为空");
+        
+        if (request.Username.Length < 3 || request.Username.Length > 50)
+            throw new ArgumentException("用户名长度必须在3-50个字符之间");
+        
+        if (!request.Username.All(c => char.IsLetterOrDigit(c) || c == '_'))
+            throw new ArgumentException("用户名只能包含字母、数字和下划线");
+        
+        // 重复的验证逻辑...
+    }
+}
+
+// ✅ 正确 - 使用验证扩展
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 使用统一的验证扩展
+        request.ValidateCreateUserRequest();
+        
+        var user = new User
+        {
+            Username = request.Username.Trim(),
+            Email = request.Email.Trim().ToLowerInvariant()
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+}
+```
+
+### 不要忽略验证
+
+```csharp
+// ❌ 错误 - 忽略验证
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 没有验证直接使用
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+}
+
+// ✅ 正确 - 完整验证
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 完整的参数验证
+        request.ValidateCreateUserRequest();
+        
+        var user = new User
+        {
+            Username = request.Username.Trim(),
+            Email = request.Email.Trim().ToLowerInvariant()
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+}
+```
+
+### 不要重复验证逻辑
+
+```csharp
+// ❌ 错误 - 重复验证逻辑
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 重复的验证逻辑
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException("用户名不能为空");
+        
+        if (request.Username.Length < 3 || request.Username.Length > 50)
+            throw new ArgumentException("用户名长度必须在3-50个字符之间");
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
+    {
+        // 重复的验证逻辑
+        if (!string.IsNullOrEmpty(request.Username))
+        {
+            if (string.IsNullOrEmpty(request.Username))
+                throw new ArgumentException("用户名不能为空");
+            
+            if (request.Username.Length < 3 || request.Username.Length > 50)
+                throw new ArgumentException("用户名长度必须在3-50个字符之间");
+        }
+    }
+}
+
+// ✅ 正确 - 使用验证扩展避免重复
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 使用统一的验证扩展
+        request.ValidateCreateUserRequest();
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
+    {
+        // 使用统一的验证扩展
+        request.ValidateUpdateUserRequest();
+    }
+}
+```
+
+## 📋 参数验证检查清单
+
+创建或修改服务时检查：
+
+- [ ] 使用 ValidationExtensions 扩展方法
+- [ ] 验证所有输入参数
+- [ ] 使用业务验证扩展
+- [ ] 避免重复验证逻辑
+- [ ] 验证参数格式和范围
+- [ ] 验证业务规则
+- [ ] 提供清晰的错误消息
+- [ ] 测试验证逻辑
+- [ ] 文档化验证规则
+- [ ] 保持验证一致性
+
+## 📚 相关文档
+
+- [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
+- [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
+- [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)
+- [验证扩展方法](mdc:Platform.ServiceDefaults/Extensions/ValidationExtensions.cs)

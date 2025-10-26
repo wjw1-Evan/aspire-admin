@@ -4,14 +4,14 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-public class TagItem : ISoftDeletable
+public class TagItem : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
+    public string? CompanyId { get; set; }
 
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;

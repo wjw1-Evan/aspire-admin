@@ -1,0 +1,221 @@
+---
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
+description: 数据库操作工厂重构总结和架构变更
+---
+# 数据库操作工厂重构总结
+
+## 🎯 重构概述
+
+本次重构彻底改变了后端数据访问架构，从传统的 `BaseRepository` 模式迁移到现代化的 `DatabaseOperationFactory` 模式，实现了更统一、更安全、更易维护的数据访问层。
+
+## ✨ 主要变更
+
+### 1. 架构模式变更
+
+**旧架构（已移除）：**
+```csharp
+// ❌ 已移除：BaseRepository 模式
+public class UserService : BaseService
+{
+    private readonly BaseRepository<User> _userRepository;
+    
+    public UserService(BaseRepository<User> userRepository)
+    {
+        _userRepository = userRepository;
+    }
+}
+```
+
+**新架构（当前）：**
+```csharp
+// ✅ 当前：DatabaseOperationFactory 模式
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    
+    public UserService(IDatabaseOperationFactory<User> userFactory)
+    {
+        _userFactory = userFactory;
+    }
+}
+```
+
+### 2. 核心组件变更
+
+| 组件 | 状态 | 说明 |
+|------|------|------|
+| `BaseRepository<T>` | ❌ 已删除 | 传统的数据访问层 |
+| `BaseService` | ❌ 已删除 | 通用服务基类 |
+| `IDatabaseOperationFactory<T>` | ✅ 新增 | 统一的数据操作工厂接口 |
+| `DatabaseOperationFactory<T>` | ✅ 新增 | 数据操作工厂实现 |
+| `FilterBuilder<T>` | ✅ 新增 | 链式过滤器构建器 |
+| `SortBuilder<T>` | ✅ 新增 | 链式排序构建器 |
+| `UpdateBuilder<T>` | ✅ 新增 | 链式更新构建器 |
+| `IAuditService` | ✅ 新增 | 操作审计服务 |
+
+### 3. 服务层重构
+
+**所有 14 个服务已重构：**
+
+- `UserService` - 用户管理服务
+- `RoleService` - 角色管理服务
+- `NoticeService` - 通知管理服务
+- `TagService` - 标签管理服务
+- `ImageCaptchaService` - 图片验证码服务
+- `CaptchaService` - 验证码服务
+- `CompanyService` - 企业管理服务
+- `UserCompanyService` - 用户企业关联服务
+- `UserActivityLogService` - 用户活动日志服务
+- `RuleService` - 规则管理服务
+- `MenuAccessService` - 菜单访问服务
+- `JoinRequestService` - 加入请求服务
+- `AuthService` - 认证服务
+- `MenuService` - 菜单管理服务
+
+## 🚀 新架构优势
+
+### 1. 统一数据访问
+- **单一入口**：所有数据库操作通过 `IDatabaseOperationFactory<T>` 进行
+- **自动过滤**：多租户和软删除过滤自动应用
+- **操作审计**：所有 CRUD 操作自动记录审计日志
+
+### 2. 类型安全
+- **强类型构建器**：`FilterBuilder<T>`、`SortBuilder<T>`、`UpdateBuilder<T>`
+- **编译时检查**：避免运行时错误
+- **智能提示**：IDE 提供完整的代码补全
+
+### 3. 简化服务层
+- **移除基类依赖**：服务不再需要继承 `BaseService`
+- **直接依赖注入**：只注入实际需要的依赖
+- **清晰职责**：每个服务专注于业务逻辑
+
+### 4. 增强功能
+- **跨租户查询**：支持特殊场景的跨租户数据访问
+- **批量操作**：高效的批量创建、更新、删除
+- **操作追踪**：完整的操作历史和审计轨迹
+
+## 📋 使用模式
+
+### 基础 CRUD 操作
+```csharp
+// 创建
+var user = await _userFactory.CreateAsync(newUser);
+
+// 查询
+var users = await _userFactory.FindAsync();
+
+// 更新
+var success = await _userFactory.UpdateAsync(user);
+
+// 软删除
+var success = await _userFactory.SoftDeleteAsync(userId);
+```
+
+### 复杂查询
+```csharp
+// 使用构建器进行复杂查询
+var filter = _userFactory.CreateFilterBuilder()
+    .Equal(u => u.IsActive, true)
+    .Regex(u => u.Username, keyword)
+    .ExcludeDeleted()
+    .WithTenant()
+    .Build();
+
+var sort = _userFactory.CreateSortBuilder()
+    .Descending(u => u.CreatedAt)
+    .Build();
+
+var users = await _userFactory.FindAsync(filter, sort);
+```
+
+### 批量操作
+```csharp
+// 批量创建
+var users = await _userFactory.CreateManyAsync(userList);
+
+// 批量更新
+var filter = _userFactory.CreateFilterBuilder()
+    .In(u => u.Id, userIds)
+    .Build();
+
+var update = _userFactory.CreateUpdateBuilder()
+    .Set(u => u.IsActive, false)
+    .SetOperationTracking()
+    .Build();
+
+var count = await _userFactory.UpdateManyAsync(filter, update);
+```
+
+## 🔧 服务注册
+
+### 依赖注入配置
+```csharp
+// Program.cs
+builder.Services.AddDatabaseFactory(); // 注册所有工厂服务
+
+// 或者单独注册
+builder.Services.AddDatabaseOperationFactory<User>();
+builder.Services.AddDatabaseOperationFactory<Role>();
+```
+
+### 服务构造函数
+```csharp
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IMongoCollection<UserActivityLog> _activityLogs;
+    private readonly IUniquenessChecker _uniquenessChecker;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IMongoCollection<UserActivityLog> activityLogs,
+        IUniquenessChecker uniquenessChecker)
+    {
+        _userFactory = userFactory;
+        _activityLogs = activityLogs;
+        _uniquenessChecker = uniquenessChecker;
+    }
+}
+```
+
+## ⚠️ 重要注意事项
+
+### 1. 强制使用工厂
+- **禁止直接使用** `IMongoCollection<T>` 进行 CRUD 操作
+- **禁止使用** `BaseRepository<T>`（已移除）
+- **必须使用** `IDatabaseOperationFactory<T>` 进行所有数据库操作
+
+### 2. 多租户数据隔离
+- 所有查询自动应用 `CompanyId` 过滤
+- 特殊场景使用 `FindWithoutTenantFilterAsync()` 方法
+- 确保数据安全和隔离
+
+### 3. 软删除优先
+- 优先使用 `SoftDeleteAsync()` 而不是 `HardDeleteAsync()`
+- 软删除的数据不会在查询中返回
+- 保留数据完整性和审计轨迹
+
+### 4. 操作审计
+- 所有操作自动记录审计日志
+- 包含用户信息、时间戳、操作类型
+- 支持数据变更前后对比
+
+## 📚 相关文档
+
+- [数据库操作工厂使用指南](mdc:docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md)
+- [数据库操作工厂迁移指南](mdc:docs/features/DATABASE-FACTORY-MIGRATION.md)
+- [BaseService 完全删除报告](mdc:docs/optimization/BASESERVICE-COMPLETE-REMOVAL.md)
+- [后端数据访问层规范](mdc:.cursor/rules/backend-data-access.mdc)
+- [数据库操作工厂使用规范](mdc:.cursor/rules/database-operation-factory.mdc)
+
+## 🎯 总结
+
+这次重构实现了：
+
+1. **架构现代化**：从传统 Repository 模式升级到 Factory 模式
+2. **代码简化**：移除了不必要的抽象层和基类
+3. **功能增强**：提供了更强大的查询、审计和批量操作能力
+4. **类型安全**：通过强类型构建器确保编译时安全
+5. **统一标准**：所有服务遵循相同的数据访问模式
+
+新的架构更加简洁、安全、高效，为未来的开发和维护奠定了坚实的基础。

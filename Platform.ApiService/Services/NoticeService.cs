@@ -1,32 +1,28 @@
-using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
-public class NoticeService : BaseService, INoticeService
+public class NoticeService : INoticeService
 {
-    private readonly BaseRepository<NoticeIconItem> _noticeRepository;
-    
-    // 快捷访问器
-    private IMongoCollection<NoticeIconItem> Notices => _noticeRepository.Collection;
+    private readonly IDatabaseOperationFactory<NoticeIconItem> _noticeFactory;
 
     public NoticeService(
-        IMongoDatabase database, 
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
-        ILogger<NoticeService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
+        IDatabaseOperationFactory<NoticeIconItem> noticeFactory)
     {
-        _noticeRepository = new BaseRepository<NoticeIconItem>(database, "notices", httpContextAccessor, tenantContext);
+        _noticeFactory = noticeFactory;
     }
 
     public async Task<NoticeIconListResponse> GetNoticesAsync()
     {
         // 从数据库获取通知数据，只获取未删除的记录，按时间倒序排列
-        var sort = Builders<NoticeIconItem>.Sort.Descending(n => n.Datetime);
-        var notices = await _noticeRepository.GetAllAsync(sort);
+        var sort = _noticeFactory.CreateSortBuilder()
+            .Descending(n => n.Datetime)
+            .Build();
+        
+        var notices = await _noticeFactory.FindAsync(sort: sort);
 
         return new NoticeIconListResponse
         {
@@ -38,7 +34,7 @@ public class NoticeService : BaseService, INoticeService
 
     public async Task<NoticeIconItem?> GetNoticeByIdAsync(string id)
     {
-        return await _noticeRepository.GetByIdAsync(id);
+        return await _noticeFactory.GetByIdAsync(id);
     }
 
     public async Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request)
@@ -55,70 +51,103 @@ public class NoticeService : BaseService, INoticeService
             Datetime = request.Datetime ?? DateTime.UtcNow
         };
 
-        return await _noticeRepository.CreateAsync(notice);
+        return await _noticeFactory.CreateAsync(notice);
     }
 
+    /// <summary>
+    /// 更新通知（使用原子操作）
+    /// </summary>
     public async Task<NoticeIconItem?> UpdateNoticeAsync(string id, UpdateNoticeRequest request)
     {
-        var updateBuilder = Builders<NoticeIconItem>.Update;
-        var updates = new List<UpdateDefinition<NoticeIconItem>>();
+        var filter = _noticeFactory.CreateFilterBuilder()
+            .Equal(n => n.Id, id)
+            .Build();
 
+        var updateBuilder = _noticeFactory.CreateUpdateBuilder();
+        
         if (!string.IsNullOrEmpty(request.Title))
-            updates.Add(updateBuilder.Set(n => n.Title, request.Title));
+            updateBuilder.Set(n => n.Title, request.Title);
         
         if (!string.IsNullOrEmpty(request.Description))
-            updates.Add(updateBuilder.Set(n => n.Description, request.Description));
+            updateBuilder.Set(n => n.Description, request.Description);
         
         if (!string.IsNullOrEmpty(request.Avatar))
-            updates.Add(updateBuilder.Set(n => n.Avatar, request.Avatar));
+            updateBuilder.Set(n => n.Avatar, request.Avatar);
         
         if (!string.IsNullOrEmpty(request.Status))
-            updates.Add(updateBuilder.Set(n => n.Status, request.Status));
+            updateBuilder.Set(n => n.Status, request.Status);
         
         if (!string.IsNullOrEmpty(request.Extra))
-            updates.Add(updateBuilder.Set(n => n.Extra, request.Extra));
+            updateBuilder.Set(n => n.Extra, request.Extra);
         
         if (request.Type.HasValue)
-            updates.Add(updateBuilder.Set(n => n.Type, request.Type.Value));
+            updateBuilder.Set(n => n.Type, request.Type.Value);
         
         if (request.ClickClose.HasValue)
-            updates.Add(updateBuilder.Set(n => n.ClickClose, request.ClickClose.Value));
+            updateBuilder.Set(n => n.ClickClose, request.ClickClose.Value);
         
         if (request.Read.HasValue)
-            updates.Add(updateBuilder.Set(n => n.Read, request.Read.Value));
+            updateBuilder.Set(n => n.Read, request.Read.Value);
         
         if (request.Datetime.HasValue)
-            updates.Add(updateBuilder.Set(n => n.Datetime, request.Datetime.Value));
+            updateBuilder.Set(n => n.Datetime, request.Datetime.Value);
+        
+        updateBuilder.SetCurrentTimestamp();
+        var update = updateBuilder.Build();
 
-        if (updates.Count == 0)
-            return null;
+        var options = new FindOneAndUpdateOptions<NoticeIconItem>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
 
-        var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Id, id);
-        var result = await _noticeRepository.Collection.UpdateOneAsync(filter, updateBuilder.Combine(updates));
-        var updated = result.ModifiedCount > 0;
-        return updated ? await GetNoticeByIdAsync(id) : null;
+        var updatedNotice = await _noticeFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedNotice;
     }
 
     public async Task<bool> DeleteNoticeAsync(string id)
     {
-        return await _noticeRepository.SoftDeleteAsync(id);
+        var filter = _noticeFactory.CreateFilterBuilder().Equal(n => n.Id, id).Build();
+        var result = await _noticeFactory.FindOneAndSoftDeleteAsync(filter);
+        return result != null;
     }
 
+    /// <summary>
+    /// 标记为已读（使用原子操作）
+    /// </summary>
     public async Task<bool> MarkAsReadAsync(string id)
     {
-        var update = Builders<NoticeIconItem>.Update.Set(n => n.Read, true);
-        var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Id, id);
-        var result = await _noticeRepository.Collection.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var filter = _noticeFactory.CreateFilterBuilder()
+            .Equal(n => n.Id, id)
+            .Build();
+
+        var update = _noticeFactory.CreateUpdateBuilder()
+            .Set(n => n.Read, true)
+            .SetCurrentTimestamp()
+            .Build();
+
+        var options = new FindOneAndUpdateOptions<NoticeIconItem>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedNotice = await _noticeFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedNotice != null;
     }
 
     public async Task<bool> MarkAllAsReadAsync()
     {
-        var filter = Builders<NoticeIconItem>.Filter.Eq(n => n.Read, false);
-        var update = Builders<NoticeIconItem>.Update.Set(n => n.Read, true);
+        var filter = _noticeFactory.CreateFilterBuilder()
+            .Equal(n => n.Read, false)
+            .Build();
         
-        var result = await Notices.UpdateManyAsync(filter, update);
-        var count = result.ModifiedCount;
-        return count > 0;
+        var update = _noticeFactory.CreateUpdateBuilder()
+            .Set(n => n.Read, true)
+            .SetCurrentTimestamp()
+            .Build();
+        
+        var result = await _noticeFactory.UpdateManyAsync(filter, update);
+        return result > 0;
     }
 }

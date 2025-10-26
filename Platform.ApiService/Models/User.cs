@@ -141,7 +141,7 @@ public class UserStatisticsResponse
     public int NewUsersThisMonth { get; set; }
 }
 
-public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity
+public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -185,6 +185,9 @@ public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, P
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // 软删除字段
     [BsonElement("isDeleted")]

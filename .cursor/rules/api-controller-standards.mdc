@@ -1,0 +1,169 @@
+---
+globs: Platform.ApiService/Controllers/*.cs
+description: API控制器开发规范
+---
+# API控制器开发规范
+
+## 🎯 核心原则
+
+**所有控制器必须继承 `BaseApiController`，禁止直接继承 `ControllerBase`**
+
+## ✅ 正确的控制器实现
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class UserController : BaseApiController  // ✅ 必须继承 BaseApiController
+{
+    private readonly IUserService _userService;
+
+    public UserController(IUserService userService)
+    {
+        _userService = userService;
+    }
+
+    /// <summary>
+    /// 获取所有用户
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var users = await _userService.GetAllUsersAsync();
+        return Success(users);  // ✅ 使用基类方法
+    }
+
+    /// <summary>
+    /// 根据ID获取用户
+    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var user = await _userService.GetUserByIdAsync(id);
+        if (user == null)
+            throw new KeyNotFoundException($"用户 {id} 不存在");  // ✅ 抛出异常
+        
+        return Success(user);
+    }
+
+    /// <summary>
+    /// 创建用户
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Name))
+            throw new ArgumentException("用户名不能为空");  // ✅ 参数验证
+        
+        var userId = GetRequiredUserId();  // ✅ 使用基类方法
+        var user = await _userService.CreateUserAsync(request, userId);
+        
+        return Success(user, "创建成功");
+    }
+}
+```
+
+## 🔧 BaseApiController 提供的功能
+
+### 用户信息属性
+- `CurrentUserId` - 当前用户ID（可空）
+- `CurrentUsername` - 当前用户名（可空）
+- `CurrentUserRole` - 当前用户角色（可空）
+- `IsAdmin` - 是否为管理员
+- `IsAuthenticated` - 是否已认证
+
+### 安全获取用户信息
+```csharp
+// 获取必需的用户ID（为空则自动抛出 UnauthorizedAccessException）
+var userId = GetRequiredUserId();
+```
+
+### 统一响应方法
+
+#### 成功响应
+```csharp
+// 返回数据
+return Success(data);
+
+// 返回数据和消息
+return Success(data, "获取成功");
+
+// 返回消息
+return Success("操作成功");
+
+// ApiResponse 格式
+return SuccessResponse(data);
+```
+
+#### 错误响应
+```csharp
+// 通用错误（建议：直接抛异常，由 GlobalExceptionMiddleware 处理）
+throw new InvalidOperationException("操作失败");
+
+// 特定错误
+throw new KeyNotFoundException("资源不存在");
+throw new ArgumentException("参数错误");
+throw new UnauthorizedAccessException("未授权");
+
+// 手动返回错误（不推荐）
+return Error("错误消息");
+return NotFoundError("资源不存在");
+return UnauthorizedError("未授权访问");
+```
+
+## ❌ 禁止的做法
+
+### 不要直接继承 ControllerBase
+```csharp
+// ❌ 禁止
+[ApiController]
+[Route("api/[controller]")]
+public class UserController : ControllerBase  // ❌ 禁止直接继承 ControllerBase
+{
+    // ...
+}
+```
+
+### 不要手动提取用户信息
+```csharp
+// ❌ 不要这样做
+var userId = User.FindFirst("userId")?.Value;
+if (string.IsNullOrEmpty(userId))
+    return Unauthorized(new { success = false, error = "未找到用户信息" });
+
+// ✅ 应该这样做
+var userId = GetRequiredUserId();
+```
+
+### 不要手动构建响应格式
+```csharp
+// ❌ 不要这样做
+return Ok(new { success = true, data = result });
+
+// ✅ 应该这样做
+return Success(result);
+```
+
+### 不要手动 try-catch
+```csharp
+// ❌ 不要这样做
+try
+{
+    var result = await _service.DoSomething();
+    return Ok(new { success = true, data = result });
+}
+catch (Exception ex)
+{
+    return StatusCode(500, new { success = false, error = ex.Message });
+}
+
+// ✅ 应该这样做（GlobalExceptionMiddleware 会自动处理）
+var result = await _service.DoSomething();
+return Success(result);
+```
+
+## 📚 相关文档
+
+- [BaseApiController 实现](mdc:Platform.ApiService/Controllers/BaseApiController.cs)
+- [全局异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
+- [统一标准报告](mdc:BASEAPICONTROLLER-STANDARDIZATION.md)

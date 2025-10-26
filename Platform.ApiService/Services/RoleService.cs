@@ -1,31 +1,29 @@
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
-public class RoleService : BaseService, IRoleService
+public class RoleService : IRoleService
 {
-    private readonly BaseRepository<Role> _roleRepository;
-    private readonly IMongoCollection<AppUser> _users;
-    private readonly IMongoCollection<UserCompany> _userCompanies;
-    
-    // 快捷访问器
-    private IMongoCollection<Role> _roles => _roleRepository.Collection;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly ILogger<RoleService> _logger;
 
     public RoleService(
-        IMongoDatabase database, 
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<AppUser> userFactory,
+        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
         ILogger<RoleService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _roleRepository = new BaseRepository<Role>(database, "roles", httpContextAccessor, tenantContext);
-        _users = GetCollection<AppUser>("users");
-        _userCompanies = GetCollection<UserCompany>("user_companies");
+        _roleFactory = roleFactory;
+        _userFactory = userFactory;
+        _userCompanyFactory = userCompanyFactory;
+        _logger = logger;
     }
 
     /// <summary>
@@ -33,8 +31,11 @@ public class RoleService : BaseService, IRoleService
     /// </summary>
     public async Task<RoleListResponse> GetAllRolesAsync()
     {
-        var sort = Builders<Role>.Sort.Ascending(r => r.CreatedAt);
-        var roles = await _roleRepository.GetAllAsync(sort);
+        var sort = _roleFactory.CreateSortBuilder()
+            .Ascending(r => r.CreatedAt)
+            .Build();
+        
+        var roles = await _roleFactory.FindAsync(sort: sort);
 
         return new RoleListResponse
         {
@@ -45,28 +46,30 @@ public class RoleService : BaseService, IRoleService
     
     /// <summary>
     /// 获取所有角色（带统计信息）
-    /// 修复：使用BaseRepository确保多租户数据隔离
+    /// 修复：使用工厂确保多租户数据隔离
     /// </summary>
     public async Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync()
     {
-        // ✅ 使用 BaseRepository 自动过滤当前企业的角色
-        var sort = Builders<Role>.Sort.Ascending(r => r.CreatedAt);
-        var roles = await _roleRepository.GetAllAsync(sort);
+        // ✅ 使用工厂自动过滤当前企业的角色
+        var sort = _roleFactory.CreateSortBuilder()
+            .Ascending(r => r.CreatedAt)
+            .Build();
         
-        // 获取当前企业ID用于统计过滤
-        var currentCompanyId = GetCurrentCompanyId();
+        var roles = await _roleFactory.FindAsync(sort: sort);
+        
         var rolesWithStats = new List<RoleWithStats>();
         
         foreach (var role in roles)
         {
-            // v3.1: 从 UserCompany 表统计使用此角色的用户数量（限制在当前企业内）
-            var userCompanyFilter = Builders<UserCompany>.Filter.And(
-                Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, new[] { role.Id! }),
-                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, currentCompanyId), // ✅ 添加企业过滤
-                Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
-                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-            );
-            var userCount = await _userCompanies.CountDocumentsAsync(userCompanyFilter);
+            // v3.1: 从 UserCompany 表统计使用此角色的用户数量（工厂自动过滤当前企业）
+            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.Status, "active")
+                .Build();
+            
+            // 使用原生 MongoDB 查询处理数组包含
+            var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, role.Id!);
+            var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
+            var userCount = await _userCompanyFactory.CountAsync(combinedFilter);
             
             rolesWithStats.Add(new RoleWithStats
             {
@@ -94,7 +97,7 @@ public class RoleService : BaseService, IRoleService
     /// </summary>
     public async Task<Role?> GetRoleByIdAsync(string id)
     {
-        return await _roleRepository.GetByIdAsync(id);
+        return await _roleFactory.GetByIdAsync(id);
     }
 
     /// <summary>
@@ -102,8 +105,12 @@ public class RoleService : BaseService, IRoleService
     /// </summary>
     public async Task<Role?> GetRoleByNameAsync(string name)
     {
-        var filter = Builders<Role>.Filter.Eq(r => r.Name, name);
-        return await _roleRepository.Collection.Find(filter).FirstOrDefaultAsync();
+        var filter = _roleFactory.CreateFilterBuilder()
+            .Equal(r => r.Name, name)
+            .Build();
+        
+        var roles = await _roleFactory.FindAsync(filter);
+        return roles.FirstOrDefault();
     }
 
     /// <summary>
@@ -126,41 +133,50 @@ public class RoleService : BaseService, IRoleService
             IsActive = request.IsActive
         };
 
-        return await _roleRepository.CreateAsync(role);
+        return await _roleFactory.CreateAsync(role);
     }
 
     /// <summary>
-    /// 更新角色
+    /// 更新角色（使用原子操作）
     /// </summary>
     public async Task<bool> UpdateRoleAsync(string id, UpdateRoleRequest request)
     {
-        var updateBuilder = Builders<Role>.Update;
-        var updates = new List<UpdateDefinition<Role>>();
-
+        // 检查角色名称是否已存在（如果提供了新名称）
         if (request.Name != null)
         {
-            // 检查新名称是否已被其他角色使用
             var existingRole = await GetRoleByNameAsync(request.Name);
             if (existingRole != null && existingRole.Id != id)
             {
                 throw new InvalidOperationException(string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称"));
             }
-            updates.Add(updateBuilder.Set(r => r.Name, request.Name));
         }
 
+        var filter = _roleFactory.CreateFilterBuilder()
+            .Equal(r => r.Id, id)
+            .Build();
+
+        var updateBuilder = _roleFactory.CreateUpdateBuilder();
+        
+        if (request.Name != null)
+            updateBuilder.Set(r => r.Name, request.Name);
         if (request.Description != null)
-            updates.Add(updateBuilder.Set(r => r.Description, request.Description));
+            updateBuilder.Set(r => r.Description, request.Description);
         if (request.MenuIds != null)
-            updates.Add(updateBuilder.Set(r => r.MenuIds, request.MenuIds));
+            updateBuilder.Set(r => r.MenuIds, request.MenuIds);
         if (request.IsActive.HasValue)
-            updates.Add(updateBuilder.Set(r => r.IsActive, request.IsActive.Value));
+            updateBuilder.Set(r => r.IsActive, request.IsActive.Value);
+        
+        updateBuilder.SetCurrentTimestamp();
+        var update = updateBuilder.Build();
 
-        if (updates.Count == 0)
-            return false;
+        var options = new FindOneAndUpdateOptions<Role>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
 
-        var filter = Builders<Role>.Filter.Eq(r => r.Id, id);
-        var result = await _roleRepository.Collection.UpdateOneAsync(filter, updateBuilder.Combine(updates));
-        return result.ModifiedCount > 0;
+        var updatedRole = await _roleFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedRole != null;
     }
 
     /// <summary>
@@ -181,15 +197,17 @@ public class RoleService : BaseService, IRoleService
             throw new InvalidOperationException("不能删除系统管理员角色");
         }
         
-        // v3.1: 从 UserCompany 表查找使用此角色的记录
-        var userCompanyFilter = Builders<UserCompany>.Filter.And(
-            Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, new[] { id }),
-            Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
-            Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-        );
-        var userCompaniesWithRole = await _userCompanies.Find(userCompanyFilter).ToListAsync();
+        // v3.1: 从 UserCompany 表查找使用此角色的记录（工厂自动过滤当前企业）
+        var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.Status, "active")
+            .Build();
         
-        // 自动从所有 UserCompany 记录的 RoleIds 中移除此角色
+        // 使用原生 MongoDB 查询处理数组包含
+        var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, id);
+        var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
+        var userCompaniesWithRole = await _userCompanyFactory.FindAsync(combinedFilter);
+        
+        // 自动从所有 UserCompany 记录的 RoleIds 中移除此角色（使用原子操作）
         if (userCompaniesWithRole.Count > 0)
         {
             foreach (var userCompany in userCompaniesWithRole)
@@ -199,15 +217,13 @@ public class RoleService : BaseService, IRoleService
                 // 检查是否是最后一个管理员角色，如果用户是管理员且没有其他角色
                 if (userCompany.IsAdmin && newRoleIds.Count == 0)
                 {
-                    // 检查该企业是否还有其他管理员
-                    var otherAdminFilter = Builders<UserCompany>.Filter.And(
-                        Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, userCompany.CompanyId),
-                        Builders<UserCompany>.Filter.Ne(uc => uc.Id, userCompany.Id),
-                        Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true),
-                        Builders<UserCompany>.Filter.Eq(uc => uc.Status, "active"),
-                        Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-                    );
-                    var hasOtherAdmin = await _userCompanies.Find(otherAdminFilter).AnyAsync();
+                // 检查该企业是否还有其他管理员（工厂自动过滤当前企业）
+                var otherAdminFilter = _userCompanyFactory.CreateFilterBuilder()
+                    .NotEqual(uc => uc.Id, userCompany.Id)
+                    .Equal(uc => uc.IsAdmin, true)
+                    .Equal(uc => uc.Status, "active")
+                    .Build();
+                var hasOtherAdmin = await _userCompanyFactory.CountAsync(otherAdminFilter) > 0;
                     
                     if (!hasOtherAdmin)
                     {
@@ -215,26 +231,39 @@ public class RoleService : BaseService, IRoleService
                     }
                 }
                 
-                var update = Builders<UserCompany>.Update
-                    .Set(uc => uc.RoleIds, newRoleIds)
-                    .Set(uc => uc.UpdatedAt, DateTime.UtcNow);
+                // 使用原子操作：查找并更新
+                var filter = _userCompanyFactory.CreateFilterBuilder()
+                    .Equal(uc => uc.Id, userCompany.Id)
+                    .Build();
                     
-                await _userCompanies.UpdateOneAsync(uc => uc.Id == userCompany.Id, update);
+                var update = _userCompanyFactory.CreateUpdateBuilder()
+                    .Set(uc => uc.RoleIds, newRoleIds)
+                    .SetCurrentTimestamp()
+                    .Build();
+
+                var options = new FindOneAndUpdateOptions<UserCompany>
+                {
+                    ReturnDocument = ReturnDocument.After,
+                    IsUpsert = false
+                };
+                    
+                await _userCompanyFactory.FindOneAndUpdateAsync(filter, update, options);
             }
             
-            LogInformation("删除角色 {RoleName} 时，自动从 {UserCompanyCount} 个 UserCompany 记录中移除", 
+            _logger.LogInformation("删除角色 {RoleName} 时，自动从 {UserCompanyCount} 个 UserCompany 记录中移除", 
                 role.Name!, userCompaniesWithRole.Count);
         }
 
         // 软删除角色
-        var deleted = await _roleRepository.SoftDeleteAsync(id);
+        var roleFilter = _roleFactory.CreateFilterBuilder().Equal(r => r.Id, id).Build();
+        var result = await _roleFactory.FindOneAndSoftDeleteAsync(roleFilter);
         
-        if (deleted)
+        if (result != null)
         {
-            LogInformation("已删除角色: {RoleName} ({RoleId}), 原因: {Reason}", role.Name!, id, reason ?? "未提供");
+            _logger.LogInformation("已删除角色: {RoleName} ({RoleId}), 原因: {Reason}", role.Name!, id, reason ?? "未提供");
         }
         
-        return deleted;
+        return result != null;
     }
 
     /// <summary>
@@ -243,14 +272,16 @@ public class RoleService : BaseService, IRoleService
     /// </summary>
     public async Task<bool> AssignMenusToRoleAsync(string roleId, List<string> menuIds)
     {
-        // ✅ 使用 BaseRepository 确保只能修改当前企业的角色
-        var update = Builders<Role>.Update
-            .Set(r => r.MenuIds, menuIds)
-            .Set(r => r.UpdatedAt, DateTime.UtcNow);
+        var filter = _roleFactory.CreateFilterBuilder()
+            .Equal(r => r.Id, roleId)
+            .Build();
         
-        var filter = Builders<Role>.Filter.Eq(r => r.Id, roleId);
-        var result = await _roleRepository.Collection.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var update = _roleFactory.CreateUpdateBuilder()
+            .Set(r => r.MenuIds, menuIds)
+            .SetCurrentTimestamp()
+            .Build();
+        
+        return await _roleFactory.UpdateManyAsync(filter, update) > 0;
     }
 
     /// <summary>

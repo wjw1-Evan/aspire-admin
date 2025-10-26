@@ -1,0 +1,542 @@
+---
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
+description: 依赖注入和配置管理规范
+---
+# 依赖注入和配置管理规范
+
+## 🎯 核心原则
+
+### 使用依赖注入实现松耦合，通过配置管理实现环境适配
+
+## ✅ 服务注册规范
+
+### 基础服务注册
+
+```csharp
+// Platform.ServiceDefaults/Extensions/ServiceExtensions.cs
+public static class ServiceExtensions
+{
+    /// <summary>
+    /// 添加数据库操作工厂服务
+    /// </summary>
+    public static IServiceCollection AddDatabaseFactory(this IServiceCollection services)
+    {
+        services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped(typeof(IDatabaseOperationFactory<>), typeof(DatabaseOperationFactory<>));
+        return services;
+    }
+
+    /// <summary>
+    /// 添加业务服务
+    /// </summary>
+    public static IServiceCollection AddBusinessServices(this IServiceCollection services)
+    {
+        // 用户相关服务
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserCompanyService, UserCompanyService>();
+        services.AddScoped<IUserActivityLogService, UserActivityLogService>();
+        
+        // 企业相关服务
+        services.AddScoped<ICompanyService, CompanyService>();
+        services.AddScoped<IJoinRequestService, JoinRequestService>();
+        
+        // 权限相关服务
+        services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<IMenuAccessService, MenuAccessService>();
+        
+        // 工具服务
+        services.AddScoped<IUniquenessChecker, UniquenessChecker>();
+        services.AddScoped<IFieldValidationService, FieldValidationService>();
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IJwtService, JwtService>();
+        
+        // 验证码服务
+        services.AddScoped<ICaptchaService, CaptchaService>();
+        services.AddScoped<IImageCaptchaService, ImageCaptchaService>();
+        
+        // 其他服务
+        services.AddScoped<INoticeService, NoticeService>();
+        services.AddScoped<ITagService, TagService>();
+        services.AddScoped<IRuleService, RuleService>();
+        
+        return services;
+    }
+}
+```
+
+### MongoDB 集合注册
+
+```csharp
+// Platform.ApiService/Extensions/MongoDbExtensions.cs
+public static class MongoDbExtensions
+{
+    /// <summary>
+    /// 注册 MongoDB 集合
+    /// </summary>
+    public static IServiceCollection AddMongoCollections(this IServiceCollection services)
+    {
+        services.AddSingleton<IMongoCollection<AppUser>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<AppUser>("users");
+        });
+
+        services.AddSingleton<IMongoCollection<Company>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<Company>("companies");
+        });
+
+        services.AddSingleton<IMongoCollection<Role>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<Role>("roles");
+        });
+
+        services.AddSingleton<IMongoCollection<Menu>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<Menu>("menus");
+        });
+
+        services.AddSingleton<IMongoCollection<UserCompany>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<UserCompany>("userCompanies");
+        });
+
+        services.AddSingleton<IMongoCollection<UserActivityLog>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<UserActivityLog>("userActivityLogs");
+        });
+
+        services.AddSingleton<IMongoCollection<CompanyJoinRequest>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<CompanyJoinRequest>("joinRequests");
+        });
+
+        services.AddSingleton<IMongoCollection<NoticeIconItem>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<NoticeIconItem>("notices");
+        });
+
+        services.AddSingleton<IMongoCollection<TagItem>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<TagItem>("tags");
+        });
+
+        services.AddSingleton<IMongoCollection<RuleListItem>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<RuleListItem>("rules");
+        });
+
+        services.AddSingleton<IMongoCollection<Captcha>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<Captcha>("captchas");
+        });
+
+        services.AddSingleton<IMongoCollection<CaptchaImage>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<CaptchaImage>("captchaImages");
+        });
+
+        return services;
+    }
+}
+```
+
+### 配置服务注册
+
+```csharp
+// Platform.ApiService/Extensions/ConfigurationExtensions.cs
+public static class ConfigurationExtensions
+{
+    /// <summary>
+    /// 添加配置服务
+    /// </summary>
+    public static IServiceCollection AddConfigurationServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        // 绑定配置类
+        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+        services.Configure<MongoDbSettings>(configuration.GetSection("MongoDbSettings"));
+        services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
+        
+        // 注册配置服务
+        services.AddSingleton<IConfigurationService, ConfigurationService>();
+        
+        return services;
+    }
+}
+```
+
+## 🎯 服务生命周期管理
+
+### 生命周期选择指南
+
+```csharp
+// ✅ 正确 - 根据使用场景选择生命周期
+public static class ServiceLifetimeExamples
+{
+    // Singleton - 无状态、线程安全、昂贵创建
+    services.AddSingleton<IConfigurationService, ConfigurationService>();
+    services.AddSingleton<IPasswordHasher, PasswordHasher>();
+    services.AddSingleton<IJwtService, JwtService>();
+    
+    // Scoped - 有状态、请求级别、数据库操作
+    services.AddScoped<IUserService, UserService>();
+    services.AddScoped<IAuthService, AuthService>();
+    services.AddScoped<IDatabaseOperationFactory<User>, DatabaseOperationFactory<User>>();
+    
+    // Transient - 轻量级、每次创建新实例
+    services.AddTransient<IValidator<User>, UserValidator>();
+    services.AddTransient<IMapper<User, UserDto>, UserMapper>();
+}
+```
+
+### 服务工厂模式
+
+```csharp
+// Platform.ApiService/Services/ServiceFactory.cs
+public interface IServiceFactory<T>
+{
+    T CreateService();
+}
+
+public class ServiceFactory<T> : IServiceFactory<T>
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly Func<IServiceProvider, T> _factory;
+
+    public ServiceFactory(IServiceProvider serviceProvider, Func<IServiceProvider, T> factory)
+    {
+        _serviceProvider = serviceProvider;
+        _factory = factory;
+    }
+
+    public T CreateService()
+    {
+        return _factory(_serviceProvider);
+    }
+}
+
+// 注册服务工厂
+services.AddScoped<IServiceFactory<IUserService>>(provider =>
+    new ServiceFactory<IUserService>(provider, sp => sp.GetRequiredService<IUserService>()));
+```
+
+## 🎯 配置管理规范
+
+### 配置类定义
+
+```csharp
+// Platform.ApiService/Configuration/JwtSettings.cs
+public class JwtSettings
+{
+    public string SecretKey { get; set; } = string.Empty;
+    public string Issuer { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+    public int ExpirationMinutes { get; set; } = 60;
+    public int RefreshTokenExpirationDays { get; set; } = 7;
+}
+
+// Platform.ApiService/Configuration/MongoDbSettings.cs
+public class MongoDbSettings
+{
+    public string ConnectionString { get; set; } = string.Empty;
+    public string DatabaseName { get; set; } = string.Empty;
+    public int ConnectionTimeoutSeconds { get; set; } = 30;
+    public int MaxPoolSize { get; set; } = 100;
+}
+
+// Platform.ApiService/Configuration/AppSettings.cs
+public class AppSettings
+{
+    public bool EnableSwagger { get; set; } = true;
+    public bool EnableCors { get; set; } = true;
+    public string[] AllowedOrigins { get; set; } = Array.Empty<string>();
+    public int MaxRequestSizeBytes { get; set; } = 10485760; // 10MB
+}
+```
+
+### 配置验证
+
+```csharp
+// Platform.ApiService/Configuration/ConfigurationValidator.cs
+public static class ConfigurationValidator
+{
+    public static void ValidateConfiguration(IServiceCollection services, IConfiguration configuration)
+    {
+        var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
+        if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.SecretKey))
+        {
+            throw new InvalidOperationException("JWT settings are not configured properly");
+        }
+
+        var mongoSettings = configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>();
+        if (mongoSettings == null || string.IsNullOrEmpty(mongoSettings.ConnectionString))
+        {
+            throw new InvalidOperationException("MongoDB settings are not configured properly");
+        }
+
+        // 验证其他关键配置
+        ValidateRequiredSettings(configuration);
+    }
+
+    private static void ValidateRequiredSettings(IConfiguration configuration)
+    {
+        var requiredSettings = new[]
+        {
+            "JwtSettings:SecretKey",
+            "JwtSettings:Issuer",
+            "JwtSettings:Audience",
+            "MongoDbSettings:ConnectionString",
+            "MongoDbSettings:DatabaseName"
+        };
+
+        foreach (var setting in requiredSettings)
+        {
+            if (string.IsNullOrEmpty(configuration[setting]))
+            {
+                throw new InvalidOperationException($"Required setting '{setting}' is not configured");
+            }
+        }
+    }
+}
+```
+
+### 环境特定配置
+
+```csharp
+// Platform.ApiService/Configuration/EnvironmentConfiguration.cs
+public static class EnvironmentConfiguration
+{
+    public static void ConfigureEnvironment(WebApplicationBuilder builder)
+    {
+        var environment = builder.Environment.EnvironmentName;
+        
+        // 根据环境加载不同的配置文件
+        builder.Configuration
+            .SetBasePath(builder.Environment.ContentRootPath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables();
+
+        // 开发环境特定配置
+        if (environment == "Development")
+        {
+            builder.Configuration.AddUserSecrets<Program>();
+        }
+
+        // 生产环境特定配置
+        if (environment == "Production")
+        {
+            builder.Configuration.AddAzureKeyVault();
+        }
+    }
+}
+```
+
+## 🎯 服务解析和注入
+
+### 构造函数注入
+
+```csharp
+// ✅ 正确 - 构造函数注入
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserService> logger)
+    {
+        _userFactory = userFactory;
+        _logger = logger;
+    }
+}
+```
+
+### 方法注入
+
+```csharp
+// ✅ 正确 - 方法注入（用于中间件）
+public class ActivityLogMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ActivityLogMiddleware> _logger;
+
+    public ActivityLogMiddleware(RequestDelegate next, ILogger<ActivityLogMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
+    {
+        // 使用注入的服务
+        await logService.LogActivityAsync(activityData);
+        await _next(context);
+    }
+}
+```
+
+### 服务定位器模式（谨慎使用）
+
+```csharp
+// ⚠️ 谨慎使用 - 服务定位器模式
+public class ServiceLocator
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public ServiceLocator(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public T GetService<T>() where T : class
+    {
+        return _serviceProvider.GetRequiredService<T>();
+    }
+
+    public T? GetOptionalService<T>() where T : class
+    {
+        return _serviceProvider.GetService<T>();
+    }
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要使用服务定位器模式
+
+```csharp
+// ❌ 错误 - 过度使用服务定位器
+public class UserService
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public UserService(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public async Task<User> GetUserAsync(string id)
+    {
+        var userFactory = _serviceProvider.GetRequiredService<IDatabaseOperationFactory<User>>();
+        var logger = _serviceProvider.GetRequiredService<ILogger<UserService>>();
+        // 每次都要解析服务，降低性能
+    }
+}
+
+// ✅ 正确 - 直接注入依赖
+public class UserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserService> logger)
+    {
+        _userFactory = userFactory;
+        _logger = logger;
+    }
+}
+```
+
+### 不要忽略生命周期
+
+```csharp
+// ❌ 错误 - 生命周期不匹配
+public class UserService
+{
+    private readonly ILogger<UserService> _logger; // Scoped
+    private readonly IConfiguration _configuration; // Singleton
+    // 混合生命周期可能导致问题
+}
+
+// ✅ 正确 - 统一生命周期
+public class UserService
+{
+    private readonly ILogger<UserService> _logger; // Scoped
+    private readonly IOptions<AppSettings> _appSettings; // Scoped
+    // 统一使用 Scoped 生命周期
+}
+```
+
+### 不要循环依赖
+
+```csharp
+// ❌ 错误 - 循环依赖
+public class UserService
+{
+    private readonly IRoleService _roleService;
+    // UserService 依赖 RoleService
+}
+
+public class RoleService
+{
+    private readonly IUserService _userService;
+    // RoleService 依赖 UserService - 循环依赖！
+}
+
+// ✅ 正确 - 使用接口或事件解耦
+public class UserService
+{
+    private readonly IEventBus _eventBus;
+    
+    public async Task CreateUserAsync(User user)
+    {
+        // 创建用户后发布事件
+        await _eventBus.PublishAsync(new UserCreatedEvent(user));
+    }
+}
+
+public class RoleService
+{
+    private readonly IEventBus _eventBus;
+    
+    public RoleService(IEventBus eventBus)
+    {
+        _eventBus = eventBus;
+        _eventBus.Subscribe<UserCreatedEvent>(OnUserCreated);
+    }
+    
+    private async Task OnUserCreated(UserCreatedEvent @event)
+    {
+        // 处理用户创建事件
+    }
+}
+```
+
+## 📋 依赖注入检查清单
+
+创建或修改服务时检查：
+
+- [ ] 选择正确的生命周期
+- [ ] 避免循环依赖
+- [ ] 使用构造函数注入
+- [ ] 注册所有依赖服务
+- [ ] 验证配置完整性
+- [ ] 添加配置验证
+- [ ] 考虑性能影响
+- [ ] 添加单元测试
+- [ ] 文档化依赖关系
+- [ ] 使用接口抽象
+
+## 📚 相关文档
+
+- [服务注册扩展](mdc:Platform.ServiceDefaults/Extensions/ServiceExtensions.cs)
+- [MongoDB 集合注册](mdc:Platform.ApiService/Extensions/MongoDbExtensions.cs)
+- [配置管理服务](mdc:Platform.ApiService/Configuration/)
+- [ASP.NET Core 依赖注入文档](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection)

@@ -1,47 +1,49 @@
 ---
+globs: Platform.AppHost/*.cs,Platform.ApiService/Program.cs,Platform.DataInitializer/Program.cs
 description: .NET Aspire 微服务架构和编排规范
-globs: *.cs,*.json
 ---
-
 # .NET Aspire 微服务架构和编排规范
 
 ## 🎯 核心原则
 
-**使用 .NET Aspire 实现现代化的微服务架构，通过服务编排实现松耦合、高可用的系统**
+### 使用 .NET Aspire 实现微服务编排，提供统一的服务发现、配置管理和监控
 
-## 🏗️ Aspire 应用主机架构
+## ✅ Aspire 应用主机配置
 
-### AppHost 配置规范
+### 应用主机配置
+
 ```csharp
-// ✅ 正确：AppHost.cs 标准配置
+// Platform.AppHost/AppHost.cs
 var builder = DistributedApplication.CreateBuilder(args);
 
-// 1. 基础设施服务
+// 1. 添加 MongoDB 数据库
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
     .WithLifetime(ContainerLifetime.Persistent);
 var mongodb = mongo.AddDatabase("mongodb");
 
-// 2. 微服务定义
+// 2. 添加数据初始化微服务
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(mongodb)
     .WithHttpEndpoint()
     .WithHttpHealthCheck("/health");
 
+// 3. 添加 API 服务（依赖数据初始化服务）
 var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(mongodb)
     .WithReference(datainitializer)
     .WithHttpHealthCheck("/health");
 
-// 3. API 网关配置
+// 4. 配置 YARP 网关
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
     .WithConfiguration(config => {
+        // 自动路由配置
         config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
             .WithTransformPathRouteValues("/api/{**catch-all}");
     });
 
-// 4. 前端应用
+// 5. 添加前端应用
 builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
@@ -52,459 +54,533 @@ builder.AddNpmApp("app", "../Platform.App")
     .WaitFor(yarp)
     .WithHttpEndpoint(env: "PORT", port: 15002);
 
+// 6. 构建应用
 var app = builder.Build();
-await app.RunAsync();
+app.Run();
 ```
 
-### 服务依赖管理
+### 服务依赖关系
+
 ```csharp
-// ✅ 正确：服务依赖顺序
-// MongoDB → DataInitializer → ApiService → Frontend Apps
-
-// ✅ 正确：健康检查配置
-.WithHttpHealthCheck("/health", healthCheck =>
+// Platform.AppHost/AppHost.cs
+public static void ConfigureServiceDependencies(DistributedApplicationBuilder builder)
 {
-    healthCheck.UsePath("/health");
-    healthCheck.UseMethod(HttpMethod.Get);
-})
+    // 数据库服务
+    var mongo = builder.AddMongoDB("mongo")
+        .WithMongoExpress()
+        .WithLifetime(ContainerLifetime.Persistent);
+    var mongodb = mongo.AddDatabase("mongodb");
 
-// ✅ 正确：服务发现配置
-.WithReference(service, reference =>
-{
-    reference.WithHttpEndpoint();
-    reference.WithEnvironment("SERVICE_URL", service.GetEndpoint("http"));
-})
-```
+    // 微服务依赖链
+    var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
+        .WithReference(mongodb)
+        .WithHttpEndpoint()
+        .WithHttpHealthCheck("/health");
 
-## 🔧 微服务设计模式
+    var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+        .WithReference(mongodb)
+        .WithReference(datainitializer)
+        .WithHttpHealthCheck("/health");
 
-### 任务型微服务模式
-```csharp
-// ✅ 正确：数据初始化微服务实现
-public class DataInitializerService : IDataInitializerService
-{
-    private readonly IMongoDatabase _database;
-    private readonly ILogger<DataInitializerService> _logger;
-
-    public async Task InitializeAsync()
-    {
-        try
-        {
-            _logger.LogInformation("开始数据初始化...");
-            
-            // 1. 创建数据库索引
-            await CreateIndexesAsync();
-            
-            // 2. 创建系统菜单
-            await CreateSystemMenusAsync();
-            
-            _logger.LogInformation("数据初始化完成");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "数据初始化失败");
-            throw;
-        }
-    }
-
-    public async Task<bool> IsInitializedAsync()
-    {
-        var menus = _database.GetCollection<Menu>("menus");
-        var count = await menus.CountDocumentsAsync(FilterDefinition<Menu>.Empty);
-        return count > 0;
-    }
-}
-```
-
-### 服务间通信
-```csharp
-// ✅ 正确：服务间 HTTP 调用
-public class ApiServiceHealthCheck : IHealthCheck
-{
-    private readonly HttpClient _httpClient;
-
-    public async Task<HealthCheckResult> CheckHealthAsync(
-        HealthCheckContext context, 
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var response = await _httpClient.GetAsync("/health", cancellationToken);
-            return response.IsSuccessStatusCode 
-                ? HealthCheckResult.Healthy("API service is healthy")
-                : HealthCheckResult.Unhealthy("API service is unhealthy");
-        }
-        catch (Exception ex)
-        {
-            return HealthCheckResult.Unhealthy("API service check failed", ex);
-        }
-    }
-}
-
-// ✅ 正确：服务发现和配置
-public class ServiceConfiguration
-{
-    public static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        // 服务发现
-        services.AddHttpClient<IDataInitializerClient, DataInitializerClient>(client =>
-        {
-            var serviceUrl = configuration["Services:DataInitializer:Url"];
-            client.BaseAddress = new Uri(serviceUrl);
+    // 网关配置
+    var yarp = builder.AddYarp("apigateway")
+        .WithHostPort(15000)
+        .WithConfiguration(config => {
+            config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
+                .WithTransformPathRouteValues("/api/{**catch-all}");
         });
 
-        // 健康检查
+    // 前端应用
+    builder.AddNpmApp("admin", "../Platform.Admin")
+        .WithReference(yarp)
+        .WaitFor(yarp)
+        .WithHttpEndpoint(env: "PORT", port: 15001);
+
+    builder.AddNpmApp("app", "../Platform.App")
+        .WithReference(yarp)
+        .WaitFor(yarp)
+        .WithHttpEndpoint(env: "PORT", port: 15002);
+}
+```
+
+## 🎯 微服务配置
+
+### API 服务配置
+
+```csharp
+// Platform.ApiService/Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. 添加 Aspire 服务
+builder.AddServiceDefaults();
+
+// 2. 添加数据库服务
+builder.Services.AddMongoDb(builder.Configuration);
+
+// 3. 添加业务服务
+builder.Services.AddBusinessServices();
+
+// 4. 添加认证服务
+builder.Services.AddJwtAuthentication(builder.Configuration);
+
+// 5. 添加中间件
+builder.Services.AddMiddlewareServices();
+
+// 6. 构建应用
+var app = builder.Build();
+
+// 7. 配置中间件管道
+app.ConfigureMiddlewarePipeline();
+
+// 8. 运行应用
+app.Run();
+```
+
+### 数据初始化服务配置
+
+```csharp
+// Platform.DataInitializer/Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. 添加 Aspire 服务
+builder.AddServiceDefaults();
+
+// 2. 添加数据库服务
+builder.Services.AddMongoDb(builder.Configuration);
+
+// 3. 添加数据初始化服务
+builder.Services.AddScoped<IDataInitializerService, DataInitializerService>();
+
+// 4. 构建应用
+var app = builder.Build();
+
+// 5. 配置数据初始化
+app.ConfigureDataInitialization();
+
+// 6. 运行应用
+app.Run();
+```
+
+## 🎯 服务发现和配置
+
+### 服务发现配置
+
+```csharp
+// Platform.ServiceDefaults/Extensions/ServiceDiscoveryExtensions.cs
+public static class ServiceDiscoveryExtensions
+{
+    /// <summary>
+    /// 添加服务发现配置
+    /// </summary>
+    public static IServiceCollection AddServiceDiscovery(this IServiceCollection services)
+    {
+        services.AddServiceDiscovery();
+        services.ConfigureHttpClientDefaults(httpClientBuilder =>
+        {
+            httpClientBuilder.AddStandardResilienceHandler();
+            httpClientBuilder.AddServiceDiscovery();
+        });
+        
+        return services;
+    }
+
+    /// <summary>
+    /// 添加健康检查
+    /// </summary>
+    public static IServiceCollection AddHealthChecks(this IServiceCollection services)
+    {
         services.AddHealthChecks()
-            .AddCheck<ApiServiceHealthCheck>("api-service")
-            .AddMongoDb(configuration.GetConnectionString("mongodb"));
+            .AddCheck<MongoDbHealthCheck>("mongodb")
+            .AddCheck<ApiServiceHealthCheck>("apiservice")
+            .AddCheck<DataInitializerHealthCheck>("datainitializer");
+        
+        return services;
     }
 }
 ```
 
-## 📊 监控和可观测性
+### 配置管理
 
-### 分布式追踪
 ```csharp
-// ✅ 正确：OpenTelemetry 配置
-public static class TelemetryConfiguration
+// Platform.ServiceDefaults/Extensions/ConfigurationExtensions.cs
+public static class ConfigurationExtensions
 {
-    public static void ConfigureTelemetry(IServiceCollection services)
+    /// <summary>
+    /// 添加配置管理
+    /// </summary>
+    public static IServiceCollection AddConfigurationManagement(this IServiceCollection services, IConfiguration configuration)
+    {
+        // 绑定配置类
+        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+        services.Configure<MongoDbSettings>(configuration.GetSection("MongoDbSettings"));
+        services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
+        
+        // 注册配置服务
+        services.AddSingleton<IConfigurationService, ConfigurationService>();
+        
+        return services;
+    }
+
+    /// <summary>
+    /// 添加环境特定配置
+    /// </summary>
+    public static void ConfigureEnvironment(WebApplicationBuilder builder)
+    {
+        var environment = builder.Environment.EnvironmentName;
+        
+        builder.Configuration
+            .SetBasePath(builder.Environment.ContentRootPath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables();
+
+        // 开发环境特定配置
+        if (environment == "Development")
+        {
+            builder.Configuration.AddUserSecrets<Program>();
+        }
+
+        // 生产环境特定配置
+        if (environment == "Production")
+        {
+            builder.Configuration.AddAzureKeyVault();
+        }
+    }
+}
+```
+
+## 🎯 健康检查和监控
+
+### 健康检查实现
+
+```csharp
+// Platform.ApiService/HealthChecks/MongoDbHealthCheck.cs
+public class MongoDbHealthCheck : IHealthCheck
+{
+    private readonly IMongoDatabase _database;
+
+    public MongoDbHealthCheck(IMongoDatabase database)
+    {
+        _database = database;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _database.RunCommandAsync((Command<object>)"{ping:1}", cancellationToken: cancellationToken);
+            return HealthCheckResult.Healthy("MongoDB is healthy");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("MongoDB is unhealthy", ex);
+        }
+    }
+}
+
+// Platform.ApiService/HealthChecks/ApiServiceHealthCheck.cs
+public class ApiServiceHealthCheck : IHealthCheck
+{
+    private readonly ILogger<ApiServiceHealthCheck> _logger;
+
+    public ApiServiceHealthCheck(ILogger<ApiServiceHealthCheck> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // 检查关键服务是否可用
+            var services = context.Registration.GetServices<IHealthCheck>();
+            var results = await Task.WhenAll(services.Select(s => s.CheckHealthAsync(context, cancellationToken)));
+            
+            var unhealthyResults = results.Where(r => r.Status != HealthStatus.Healthy).ToList();
+            
+            if (unhealthyResults.Any())
+            {
+                return HealthCheckResult.Unhealthy("Some services are unhealthy", 
+                    unhealthyResults.Select(r => r.Exception).Where(e => e != null));
+            }
+            
+            return HealthCheckResult.Healthy("All services are healthy");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Health check failed");
+            return HealthCheckResult.Unhealthy("Health check failed", ex);
+        }
+    }
+}
+```
+
+### 监控配置
+
+```csharp
+// Platform.ServiceDefaults/Extensions/MonitoringExtensions.cs
+public static class MonitoringExtensions
+{
+    /// <summary>
+    /// 添加监控服务
+    /// </summary>
+    public static IServiceCollection AddMonitoring(this IServiceCollection services)
     {
         services.AddOpenTelemetry()
             .WithTracing(tracing =>
             {
-                tracing
-                    .AddAspNetCoreInstrumentation()
+                tracing.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddMongoDBInstrumentation()
-                    .AddJaegerExporter();
+                    .AddSource("Platform.ApiService");
             })
             .WithMetrics(metrics =>
             {
-                metrics
-                    .AddAspNetCoreInstrumentation()
+                metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddPrometheusExporter();
+                    .AddMongoDBInstrumentation();
             });
+
+        return services;
     }
-}
 
-// ✅ 正确：自定义活动追踪
-public class UserService
-{
-    private static readonly ActivitySource ActivitySource = new("Platform.UserService");
-
-    public async Task<User> CreateUserAsync(CreateUserRequest request)
-    {
-        using var activity = ActivitySource.StartActivity("CreateUser");
-        activity?.SetTag("user.email", request.Email);
-        activity?.SetTag("user.company", request.CompanyId);
-
-        try
-        {
-            var user = await ProcessUserCreationAsync(request);
-            activity?.SetStatus(ActivityStatusCode.Ok);
-            return user;
-        }
-        catch (Exception ex)
-        {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            throw;
-        }
-    }
-}
-```
-
-### 日志聚合
-```csharp
-// ✅ 正确：结构化日志配置
-public static class LoggingConfiguration
-{
-    public static void ConfigureLogging(IServiceCollection services, IConfiguration configuration)
+    /// <summary>
+    /// 添加日志记录
+    /// </summary>
+    public static IServiceCollection AddLogging(this IServiceCollection services)
     {
         services.AddLogging(builder =>
         {
-            builder.AddConsole(options =>
-            {
-                options.FormatterName = "json";
-            });
-            
-            builder.AddSeq(configuration.GetConnectionString("seq"));
-            
-            builder.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
-            builder.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
-        });
-    }
-}
-
-// ✅ 正确：结构化日志使用
-public class OrderService
-{
-    private readonly ILogger<OrderService> _logger;
-
-    public async Task<Order> ProcessOrderAsync(OrderRequest request)
-    {
-        using var scope = _logger.BeginScope(new Dictionary<string, object>
-        {
-            ["OrderId"] = request.OrderId,
-            ["UserId"] = request.UserId,
-            ["CompanyId"] = request.CompanyId
+            builder.AddConsole();
+            builder.AddDebug();
+            builder.AddEventSourceLogger();
         });
 
-        _logger.LogInformation("开始处理订单 {OrderId}", request.OrderId);
-
-        try
-        {
-            var order = await CreateOrderAsync(request);
-            _logger.LogInformation("订单处理成功 {OrderId}", order.Id);
-            return order;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "订单处理失败 {OrderId}", request.OrderId);
-            throw;
-        }
+        return services;
     }
 }
 ```
 
-## 🔄 服务编排和生命周期
+## 🎯 服务编排和部署
 
-### 服务启动顺序
+### 服务编排配置
+
 ```csharp
-// ✅ 正确：服务依赖和启动顺序
-public class ServiceOrchestration
+// Platform.AppHost/AppHost.cs
+public static void ConfigureServiceOrchestration(DistributedApplicationBuilder builder)
 {
-    public static void ConfigureServiceDependencies(IServiceCollection services)
-    {
-        // 1. 基础设施服务（MongoDB）
-        services.AddSingleton<IMongoDatabase>(provider =>
-        {
-            var connectionString = provider.GetRequiredService<IConfiguration>()
-                .GetConnectionString("mongodb");
-            var client = new MongoClient(connectionString);
-            return client.GetDatabase("aspire-admin");
+    // 1. 数据库服务（持久化）
+    var mongo = builder.AddMongoDB("mongo")
+        .WithMongoExpress()
+        .WithLifetime(ContainerLifetime.Persistent);
+    var mongodb = mongo.AddDatabase("mongodb");
+
+    // 2. 数据初始化服务（单实例）
+    var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
+        .WithReference(mongodb)
+        .WithHttpEndpoint()
+        .WithHttpHealthCheck("/health")
+        .WithReplicas(1); // 单实例运行
+
+    // 3. API 服务（可扩展）
+    var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+        .WithReference(mongodb)
+        .WithReference(datainitializer)
+        .WithHttpHealthCheck("/health")
+        .WithReplicas(2); // 2个实例
+
+    // 4. 网关服务
+    var yarp = builder.AddYarp("apigateway")
+        .WithHostPort(15000)
+        .WithConfiguration(config => {
+            config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
+                .WithTransformPathRouteValues("/api/{**catch-all}");
         });
 
-        // 2. 数据初始化服务
-        services.AddScoped<IDataInitializerService, DataInitializerService>();
+    // 5. 前端应用
+    builder.AddNpmApp("admin", "../Platform.Admin")
+        .WithReference(yarp)
+        .WaitFor(yarp)
+        .WithHttpEndpoint(env: "PORT", port: 15001);
 
-        // 3. 业务服务（依赖数据初始化）
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IMenuService, MenuService>();
-        services.AddScoped<IRoleService, RoleService>();
-    }
+    builder.AddNpmApp("app", "../Platform.App")
+        .WithReference(yarp)
+        .WaitFor(yarp)
+        .WithHttpEndpoint(env: "PORT", port: 15002);
 }
 ```
 
-### 优雅关闭
+### 部署配置
+
 ```csharp
-// ✅ 正确：优雅关闭处理
-public class GracefulShutdownService : IHostedService
+// Platform.AppHost/AppHost.cs
+public static void ConfigureDeployment(DistributedApplicationBuilder builder)
 {
-    private readonly ILogger<GracefulShutdownService> _logger;
-    private readonly IHostApplicationLifetime _lifetime;
-
-    public async Task StartAsync(CancellationToken cancellationToken)
+    // 1. 开发环境配置
+    if (builder.Environment.IsDevelopment())
     {
-        _lifetime.ApplicationStopping.Register(OnStopping);
-        _lifetime.ApplicationStopped.Register(OnStopped);
+        ConfigureDevelopmentEnvironment(builder);
     }
-
-    private void OnStopping()
-    {
-        _logger.LogInformation("服务正在停止...");
-        
-        // 停止接收新请求
-        // 等待现有请求完成
-        // 清理资源
-    }
-
-    private void OnStopped()
-    {
-        _logger.LogInformation("服务已停止");
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
-    }
-}
-```
-
-## 🌐 配置管理
-
-### 环境配置
-```json
-// ✅ 正确：appsettings.json 配置
-{
-  "ConnectionStrings": {
-    "mongodb": "mongodb://localhost:27017"
-  },
-  "Services": {
-    "DataInitializer": {
-      "Url": "http://localhost:15000/datainitializer",
-      "Timeout": "00:01:00"
-    },
-    "ApiService": {
-      "Url": "http://localhost:15000/apiservice",
-      "Timeout": "00:00:30"
-    }
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "Platform": "Debug"
-    }
-  },
-  "HealthChecks": {
-    "Enabled": true,
-    "Interval": "00:00:30"
-  }
-}
-```
-
-### 配置注入
-```csharp
-// ✅ 正确：配置选项模式
-public class ServiceOptions
-{
-    public const string SectionName = "Services";
     
-    public string DataInitializerUrl { get; set; } = string.Empty;
-    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
-    public int RetryCount { get; set; } = 3;
+    // 2. 生产环境配置
+    if (builder.Environment.IsProduction())
+    {
+        ConfigureProductionEnvironment(builder);
+    }
 }
 
-public static class ServiceConfiguration
+private static void ConfigureDevelopmentEnvironment(DistributedApplicationBuilder builder)
 {
-    public static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        services.Configure<ServiceOptions>(
-            configuration.GetSection(ServiceOptions.SectionName));
-            
-        services.AddHttpClient<IDataInitializerClient, DataInitializerClient>((serviceProvider, client) =>
-        {
-            var options = serviceProvider.GetRequiredService<IOptions<ServiceOptions>>().Value;
-            client.BaseAddress = new Uri(options.DataInitializerUrl);
-            client.Timeout = options.Timeout;
+    // 开发环境使用本地服务
+    var mongo = builder.AddMongoDB("mongo")
+        .WithMongoExpress()
+        .WithLifetime(ContainerLifetime.Persistent);
+    var mongodb = mongo.AddDatabase("mongodb");
+
+    var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
+        .WithReference(mongodb)
+        .WithHttpEndpoint()
+        .WithHttpHealthCheck("/health");
+
+    var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+        .WithReference(mongodb)
+        .WithReference(datainitializer)
+        .WithHttpHealthCheck("/health");
+
+    var yarp = builder.AddYarp("apigateway")
+        .WithHostPort(15000)
+        .WithConfiguration(config => {
+            config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
+                .WithTransformPathRouteValues("/api/{**catch-all}");
         });
+
+    builder.AddNpmApp("admin", "../Platform.Admin")
+        .WithReference(yarp)
+        .WaitFor(yarp)
+        .WithHttpEndpoint(env: "PORT", port: 15001);
+
+    builder.AddNpmApp("app", "../Platform.App")
+        .WithReference(yarp)
+        .WaitFor(yarp)
+        .WithHttpEndpoint(env: "PORT", port: 15002);
+}
+
+private static void ConfigureProductionEnvironment(DistributedApplicationBuilder builder)
+{
+    // 生产环境使用云服务
+    var mongo = builder.AddMongoDB("mongo")
+        .WithMongoExpress()
+        .WithLifetime(ContainerLifetime.Persistent);
+    var mongodb = mongo.AddDatabase("mongodb");
+
+    var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
+        .WithReference(mongodb)
+        .WithHttpEndpoint()
+        .WithHttpHealthCheck("/health")
+        .WithReplicas(1);
+
+    var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+        .WithReference(mongodb)
+        .WithReference(datainitializer)
+        .WithHttpHealthCheck("/health")
+        .WithReplicas(3); // 生产环境更多实例
+
+    var yarp = builder.AddYarp("apigateway")
+        .WithHostPort(15000)
+        .WithConfiguration(config => {
+            config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
+                .WithTransformPathRouteValues("/api/{**catch-all}");
+        });
+
+    builder.AddNpmApp("admin", "../Platform.Admin")
+        .WithReference(yarp)
+        .WaitFor(yarp)
+        .WithHttpEndpoint(env: "PORT", port: 15001);
+
+    builder.AddNpmApp("app", "../Platform.App")
+        .WithReference(yarp)
+        .WaitFor(yarp)
+        .WithHttpEndpoint(env: "PORT", port: 15002);
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要硬编码服务地址
+
+```csharp
+// ❌ 错误 - 硬编码服务地址
+public class ApiClient
+{
+    private readonly HttpClient _httpClient;
+    
+    public ApiClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+        _httpClient.BaseAddress = new Uri("http://localhost:15000"); // 硬编码
+    }
+}
+
+// ✅ 正确 - 使用服务发现
+public class ApiClient
+{
+    private readonly HttpClient _httpClient;
+    
+    public ApiClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+        // 服务地址由 Aspire 自动配置
     }
 }
 ```
 
-## 🚀 部署和扩展
+### 不要忽略服务依赖
 
-### Docker 配置
-```dockerfile
-# ✅ 正确：多阶段构建
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-WORKDIR /app
-EXPOSE 8080
+```csharp
+// ❌ 错误 - 忽略服务依赖
+var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+    .WithReference(mongodb)
+    .WithHttpHealthCheck("/health");
+// 没有等待数据初始化服务
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
-COPY ["Platform.ApiService/Platform.ApiService.csproj", "Platform.ApiService/"]
-RUN dotnet restore "Platform.ApiService/Platform.ApiService.csproj"
-COPY . .
-WORKDIR "/src/Platform.ApiService"
-RUN dotnet build "Platform.ApiService.csproj" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "Platform.ApiService.csproj" -c Release -o /app/publish
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Platform.ApiService.dll"]
+// ✅ 正确 - 正确的服务依赖
+var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+    .WithReference(mongodb)
+    .WithReference(datainitializer) // 等待数据初始化服务
+    .WithHttpHealthCheck("/health");
 ```
 
-### Kubernetes 部署
-```yaml
-# ✅ 正确：Kubernetes 部署配置
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: platform-apiservice
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: platform-apiservice
-  template:
-    metadata:
-      labels:
-        app: platform-apiservice
-    spec:
-      containers:
-      - name: apiservice
-        image: platform/apiservice:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: ConnectionStrings__mongodb
-          valueFrom:
-            secretKeyRef:
-              name: mongodb-secret
-              key: connection-string
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
+### 不要忽略健康检查
+
+```csharp
+// ❌ 错误 - 没有健康检查
+var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+    .WithReference(mongodb);
+
+// ✅ 正确 - 添加健康检查
+var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+    .WithReference(mongodb)
+    .WithHttpHealthCheck("/health");
 ```
 
-## 📋 微服务开发检查清单
+## 📋 Aspire 微服务开发检查清单
 
-### 服务设计
-- [ ] 单一职责原则
-- [ ] 松耦合设计
-- [ ] 无状态服务
-- [ ] 幂等性操作
-- [ ] 优雅降级
+创建或修改微服务时检查：
 
-### 通信协议
-- [ ] HTTP/REST API
-- [ ] 异步消息传递
-- [ ] 服务发现
-- [ ] 负载均衡
-- [ ] 熔断器模式
+- [ ] 正确配置服务依赖
+- [ ] 添加健康检查端点
+- [ ] 配置服务发现
+- [ ] 添加监控和日志
+- [ ] 配置环境特定设置
+- [ ] 添加错误处理
+- [ ] 配置服务编排
+- [ ] 添加单元测试
+- [ ] 文档化服务架构
+- [ ] 验证服务启动顺序
 
-### 数据管理
-- [ ] 数据库分离
-- [ ] 事务边界
-- [ ] 数据一致性
-- [ ] 缓存策略
-- [ ] 数据迁移
+## 📚 相关文档
 
-### 监控运维
-- [ ] 健康检查
-- [ ] 指标收集
-- [ ] 日志聚合
-- [ ] 分布式追踪
-- [ ] 告警机制
-
-## 📚 相关资源
-
-- [.NET Aspire 官方文档](https://learn.microsoft.com/aspnet/core/aspire/)
-- [微服务架构模式](https://microservices.io/)
-- [OpenTelemetry 文档](https://opentelemetry.io/docs/)
-- [Kubernetes 最佳实践](https://kubernetes.io/docs/concepts/)
-
-## 🎯 记住
-
-**微服务架构的核心是服务编排和可观测性**
-
-- 使用 Aspire 简化微服务开发
-- 重视服务间的依赖关系
-- 实现完整的监控和日志
-- 设计可扩展的服务架构
-- 保持服务的独立性和可测试性
+- [应用主机配置](mdc:Platform.AppHost/AppHost.cs)
+- [API 服务配置](mdc:Platform.ApiService/Program.cs)
+- [数据初始化服务配置](mdc:Platform.DataInitializer/Program.cs)
+- [.NET Aspire 官方文档](https://learn.microsoft.com/en-us/dotnet/aspire/)

@@ -9,7 +9,7 @@ namespace Platform.ApiService.Models;
 /// 企业实体（简化模型）
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class Company : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable
+public class Company : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
 {
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;

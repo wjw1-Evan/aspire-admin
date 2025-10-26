@@ -1,9 +1,9 @@
-using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using SkiaSharp;
 using System.Security.Cryptography;
 using System.Text;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -33,9 +33,10 @@ public interface IImageCaptchaService
 /// <summary>
 /// 图形验证码服务实现
 /// </summary>
-public class ImageCaptchaService : BaseService, IImageCaptchaService
+public class ImageCaptchaService : IImageCaptchaService
 {
-    private readonly IMongoCollection<CaptchaImage> _captchas;
+    private readonly IDatabaseOperationFactory<CaptchaImage> _captchaFactory;
+    private readonly ILogger<ImageCaptchaService> _logger;
     private const int EXPIRATION_MINUTES = 5;
     private const int IMAGE_WIDTH = 120;
     private const int IMAGE_HEIGHT = 40;
@@ -45,17 +46,15 @@ public class ImageCaptchaService : BaseService, IImageCaptchaService
     private static readonly string[] CHARACTERS = { "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "2", "3", "4", "5", "6", "7", "8", "9" };
 
     public ImageCaptchaService(
-        IMongoDatabase database,
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
+        IDatabaseOperationFactory<CaptchaImage> captchaFactory,
         ILogger<ImageCaptchaService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _captchas = Database.GetCollection<CaptchaImage>("captcha_images");
+        _captchaFactory = captchaFactory;
+        _logger = logger;
     }
 
     /// <summary>
-    /// 生成图形验证码
+    /// 生成图形验证码（使用原子操作）
     /// </summary>
     public async Task<CaptchaImageResult> GenerateCaptchaAsync(string type = "login", string? clientIp = null)
     {
@@ -82,69 +81,88 @@ public class ImageCaptchaService : BaseService, IImageCaptchaService
             IsDeleted = false
         };
 
-        // 删除该IP的旧验证码（防刷）
+        // 使用原子操作：查找并替换（如果不存在则插入）
+        var filter = _captchaFactory.CreateFilterBuilder()
+            .Equal(c => c.IsUsed, false)
+            .Equal(c => c.Type, type);
+
+        // 如果有IP限制，添加到过滤条件
         if (!string.IsNullOrEmpty(clientIp))
         {
-            await _captchas.DeleteManyAsync(c => c.ClientIp == clientIp && c.Type == type && !c.IsUsed);
+            filter = filter.Equal(c => c.ClientIp, clientIp);
         }
 
-        // 插入新验证码
-        await _captchas.InsertOneAsync(captcha);
+        var finalFilter = filter.Build();
 
-        Logger.LogInformation("[图形验证码] 生成成功: {CaptchaId}, 类型: {Type}, IP: {ClientIp}", 
-            captchaId, type, clientIp);
+        var options = new FindOneAndReplaceOptions<CaptchaImage>
+        {
+            IsUpsert = true,  // 如果不存在则插入
+            ReturnDocument = ReturnDocument.After
+        };
+
+        // 执行原子替换操作（不带租户过滤，因为验证码是全局资源）
+        var result = await _captchaFactory.FindOneAndReplaceWithoutTenantFilterAsync(finalFilter, captcha, options);
+
+        _logger.LogInformation("[图形验证码] 生成成功: {CaptchaId}, 类型: {Type}, IP: {ClientIp}", 
+            captcha.CaptchaId, type ?? "unknown", clientIp ?? "unknown");
 
         return new CaptchaImageResult
         {
-            CaptchaId = captchaId,
+            CaptchaId = captcha.CaptchaId,  // 使用自定义的16位ID，而不是数据库ID
             ImageData = imageData,
             ExpiresIn = EXPIRATION_MINUTES * 60
         };
     }
 
     /// <summary>
-    /// 验证图形验证码
+    /// 验证图形验证码（使用原子操作）
     /// </summary>
     public async Task<bool> ValidateCaptchaAsync(string captchaId, string answer, string type = "login")
     {
         if (string.IsNullOrWhiteSpace(captchaId) || string.IsNullOrWhiteSpace(answer))
         {
-            Logger.LogWarning("[图形验证码] 验证失败 - 验证码ID或答案为空");
+            _logger.LogInformation("[图形验证码] 验证失败 - 验证码ID或答案为空");
             return false;
         }
 
-        // 查找有效的验证码
-        var filter = Builders<CaptchaImage>.Filter.And(
-            Builders<CaptchaImage>.Filter.Eq(c => c.CaptchaId, captchaId),
-            Builders<CaptchaImage>.Filter.Eq(c => c.Type, type),
-            Builders<CaptchaImage>.Filter.Eq(c => c.IsUsed, false),
-            Builders<CaptchaImage>.Filter.Gt(c => c.ExpiresAt, DateTime.UtcNow)
-        );
+        // 使用原子操作：查找并更新（标记为已使用）
+        var filter = _captchaFactory.CreateFilterBuilder()
+            .Equal(c => c.CaptchaId, captchaId)
+            .Equal(c => c.Type, type)
+            .Equal(c => c.IsUsed, false)
+            .GreaterThan(c => c.ExpiresAt, DateTime.UtcNow)
+            .Build();
 
-        var captcha = await _captchas.Find(filter).FirstOrDefaultAsync();
+        var update = _captchaFactory.CreateUpdateBuilder()
+            .Set(c => c.IsUsed, true)
+            .SetCurrentTimestamp()
+            .Build();
 
-        if (captcha == null)
+        var options = new FindOneAndUpdateOptions<CaptchaImage>
         {
-            Logger.LogWarning("[图形验证码] 验证失败 - 验证码不存在或已过期，ID: {CaptchaId}", captchaId);
+            ReturnDocument = ReturnDocument.Before  // 返回更新前的文档
+        };
+
+        // 执行原子更新操作（不带租户过滤，因为验证码是全局资源）
+        var result = await _captchaFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update, options);
+
+        if (result == null)
+        {
+            _logger.LogInformation("[图形验证码] 验证失败 - 验证码不存在或已过期，ID: {CaptchaId}", captchaId);
             return false;
         }
 
         // 验证答案
-        var decryptedAnswer = DecryptAnswer(captcha.Answer);
+        var decryptedAnswer = DecryptAnswer(result.Answer);
         var isValid = string.Equals(decryptedAnswer, answer.Trim(), StringComparison.OrdinalIgnoreCase);
 
         if (isValid)
         {
-            // 标记为已使用
-            var update = Builders<CaptchaImage>.Update.Set(c => c.IsUsed, true);
-            await _captchas.UpdateOneAsync(c => c.Id == captcha.Id, update);
-            
-            Logger.LogInformation("[图形验证码] 验证成功: {CaptchaId}", captchaId);
+            _logger.LogInformation("[图形验证码] 验证成功: {CaptchaId}", captchaId);
         }
         else
         {
-            Logger.LogWarning("[图形验证码] 验证失败 - 答案错误，ID: {CaptchaId}, 期望: {Expected}, 实际: {Actual}", 
-                captchaId, decryptedAnswer, answer);
+            _logger.LogInformation("[图形验证码] 验证失败 - 答案错误，ID: {CaptchaId}", captchaId);
         }
 
         return isValid;

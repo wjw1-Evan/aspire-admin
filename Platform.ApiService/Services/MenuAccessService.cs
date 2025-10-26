@@ -1,4 +1,3 @@
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
@@ -10,26 +9,29 @@ namespace Platform.ApiService.Services;
 /// <summary>
 /// 菜单访问权限服务实现
 /// </summary>
-public class MenuAccessService : BaseService, IMenuAccessService
+public class MenuAccessService : IMenuAccessService
 {
-    private readonly IMongoCollection<AppUser> _users;
-    private readonly IMongoCollection<Role> _roles;
-    private readonly IMongoCollection<Menu> _menus;
-    private readonly IMongoCollection<UserCompany> _userCompanies;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<Menu> _menuFactory;
+    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
     private readonly ILogger<MenuAccessService> _logger;
+    private readonly ITenantContext _tenantContext;
 
     public MenuAccessService(
-        IMongoDatabase database,
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
-        ILogger<MenuAccessService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
+        IDatabaseOperationFactory<AppUser> userFactory,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<Menu> menuFactory,
+        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        ILogger<MenuAccessService> logger,
+        ITenantContext tenantContext)
     {
-        _users = database.GetCollection<AppUser>("users");
-        _roles = database.GetCollection<Role>("roles");
-        _menus = database.GetCollection<Menu>("menus");
-        _userCompanies = database.GetCollection<UserCompany>("user_companies");
+        _userFactory = userFactory;
+        _roleFactory = roleFactory;
+        _menuFactory = menuFactory;
+        _userCompanyFactory = userCompanyFactory;
         _logger = logger;
+        _tenantContext = tenantContext;
     }
 
     public async Task<bool> HasMenuAccessAsync(string userId, string menuName)
@@ -50,7 +52,7 @@ public class MenuAccessService : BaseService, IMenuAccessService
         try
         {
             // 获取用户信息
-            var user = await _users.Find(u => u.Id == userId && !u.IsDeleted).FirstOrDefaultAsync();
+            var user = await _userFactory.GetByIdAsync(userId);
             if (user == null || !user.IsActive)
             {
                 return new List<string>();
@@ -59,29 +61,28 @@ public class MenuAccessService : BaseService, IMenuAccessService
             var menuIds = new List<string>();
 
             // 获取用户的企业ID（优先从用户信息获取，其次从当前上下文获取）
-            var companyId = user.CurrentCompanyId ?? GetCurrentCompanyId();
+            var companyId = user.CurrentCompanyId ?? _tenantContext.GetCurrentCompanyId();
             if (string.IsNullOrEmpty(companyId))
             {
                 _logger.LogWarning("用户 {UserId} 没有关联的企业ID", userId);
                 return new List<string>();
             }
 
-            var userCompanyFilter = Builders<UserCompany>.Filter.And(
-                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, userId),
-                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, companyId),
-                MongoFilterExtensions.NotDeleted<UserCompany>()
-            );
+            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.UserId, userId)
+                .Equal(uc => uc.CompanyId, companyId)
+                .Build();
 
-            var userCompany = await _userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
+            var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
+            var userCompany = userCompanies.FirstOrDefault();
             
             if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
             {
                 // 获取用户的所有角色
-                var roleFilter = Builders<Role>.Filter.And(
-                    Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
-                    SoftDeleteExtensions.NotDeleted<Role>()
-                );
-                var roles = await _roles.Find(roleFilter).ToListAsync();
+                var roleFilter = _roleFactory.CreateFilterBuilder()
+                    .In(r => r.Id, userCompany.RoleIds)
+                    .Build();
+                var roles = await _roleFactory.FindAsync(roleFilter);
 
                 // 收集所有角色的菜单ID
                 foreach (var role in roles)
@@ -101,12 +102,11 @@ public class MenuAccessService : BaseService, IMenuAccessService
             }
 
             // 获取菜单详情
-            var menuFilter = Builders<Menu>.Filter.And(
-                Builders<Menu>.Filter.In(m => m.Id, uniqueMenuIds),
-                Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
-                MongoFilterExtensions.NotDeleted<Menu>()
-            );
-            var menus = await _menus.Find(menuFilter).ToListAsync();
+            var menuFilter = _menuFactory.CreateFilterBuilder()
+                .In(m => m.Id, uniqueMenuIds)
+                .Equal(m => m.IsEnabled, true)
+                .Build();
+            var menus = await _menuFactory.FindAsync(menuFilter);
 
             // 返回菜单名称列表（小写）
             return menus.Select(m => m.Name.ToLower()).Distinct().ToList();

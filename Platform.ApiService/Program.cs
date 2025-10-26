@@ -132,6 +132,9 @@ builder.Services.AddHttpContextAccessor();
 // 多租户上下文（v3.0 新增）
 builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Platform.ServiceDefaults.Services.TenantContext>();
 
+// ✅ 注册数据库操作工厂（必须在业务服务之前注册）
+builder.Services.AddDatabaseFactory();
+
 // 核心服务
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IPasswordPolicyService, PasswordPolicyService>();  // ✅ 密码策略服务

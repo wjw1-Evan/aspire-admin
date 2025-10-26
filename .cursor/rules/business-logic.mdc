@@ -1,0 +1,787 @@
+---
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
+description: 业务逻辑和服务层开发规范
+---
+# 业务逻辑和服务层开发规范
+
+## 🎯 核心原则
+
+### 服务层负责业务逻辑实现，保持单一职责，确保业务规则的一致性和可维护性
+
+## ✅ 服务层架构规范
+
+### 服务接口定义
+
+```csharp
+// Platform.ApiService/Services/IUserService.cs
+public interface IUserService
+{
+    // 用户管理
+    Task<User> CreateUserAsync(CreateUserRequest request);
+    Task<User?> GetUserByIdAsync(string id);
+    Task<List<User>> GetUsersAsync(UserListRequest request);
+    Task<bool> UpdateUserAsync(UpdateUserRequest request);
+    Task<bool> DeleteUserAsync(string id);
+    
+    // 用户状态管理
+    Task<bool> ActivateUserAsync(string id);
+    Task<bool> DeactivateUserAsync(string id);
+    Task<bool> ResetPasswordAsync(string id, string newPassword);
+    
+    // 用户验证
+    Task<bool> ValidateUserAsync(string id);
+    Task<bool> CheckUserExistsAsync(string username);
+    
+    // 用户统计
+    Task<UserStatistics> GetUserStatisticsAsync();
+    Task<long> GetUserCountAsync();
+}
+```
+
+### 服务实现规范
+
+```csharp
+// Platform.ApiService/Services/UserService.cs
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IMongoCollection<UserActivityLog> _activityLogs;
+    private readonly IMongoCollection<Role> _roles;
+    private readonly IMongoCollection<UserCompany> _userCompanies;
+    private readonly IUniquenessChecker _uniquenessChecker;
+    private readonly IFieldValidationService _validationService;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IMongoCollection<UserActivityLog> activityLogs,
+        IMongoCollection<Role> roles,
+        IMongoCollection<UserCompany> userCompanies,
+        IUniquenessChecker uniquenessChecker,
+        IFieldValidationService validationService)
+    {
+        _userFactory = userFactory;
+        _activityLogs = activityLogs;
+        _roles = roles;
+        _userCompanies = userCompanies;
+        _uniquenessChecker = uniquenessChecker;
+        _validationService = validationService;
+    }
+
+    /// <summary>
+    /// 创建用户
+    /// </summary>
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 1. 业务验证
+        await ValidateCreateUserRequestAsync(request);
+        
+        // 2. 检查唯一性
+        await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Username, request.Username);
+        await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Email, request.Email);
+        
+        // 3. 创建用户实体
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
+            IsActive = true,
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        // 4. 保存到数据库
+        var createdUser = await _userFactory.CreateAsync(user);
+        
+        // 5. 记录操作日志
+        _userFactory.LogOperation("创建用户", createdUser.Id, new { Username = request.Username });
+        
+        return createdUser;
+    }
+
+    /// <summary>
+    /// 获取用户列表
+    /// </summary>
+    public async Task<List<User>> GetUsersAsync(UserListRequest request)
+    {
+        // 1. 构建查询条件
+        var filter = _userFactory.CreateFilterBuilder()
+            .ExcludeDeleted()
+            .WithTenant()
+            .Build();
+
+        // 2. 添加搜索条件
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            var searchFilter = _userFactory.CreateFilterBuilder()
+                .Regex(u => u.Username, request.Keyword)
+                .Or()
+                .Regex(u => u.Email, request.Keyword)
+                .Build();
+            
+            filter = _userFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(searchFilter)
+                .Build();
+        }
+
+        // 3. 添加状态过滤
+        if (request.IsActive.HasValue)
+        {
+            var statusFilter = _userFactory.CreateFilterBuilder()
+                .Equal(u => u.IsActive, request.IsActive.Value)
+                .Build();
+            
+            filter = _userFactory.CreateFilterBuilder()
+                .And(filter)
+                .And(statusFilter)
+                .Build();
+        }
+
+        // 4. 构建排序
+        var sort = _userFactory.CreateSortBuilder()
+            .Descending(u => u.CreatedAt)
+            .Build();
+
+        // 5. 执行查询
+        return await _userFactory.FindAsync(filter, sort, request.Limit);
+    }
+
+    /// <summary>
+    /// 更新用户
+    /// </summary>
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
+    {
+        // 1. 获取现有用户
+        var existingUser = await _userFactory.GetByIdAsync(request.Id);
+        if (existingUser == null)
+        {
+            throw new KeyNotFoundException($"用户 {request.Id} 不存在");
+        }
+
+        // 2. 业务验证
+        await ValidateUpdateUserRequestAsync(request, existingUser);
+        
+        // 3. 检查唯一性（如果需要）
+        if (!string.IsNullOrEmpty(request.Username) && request.Username != existingUser.Username)
+        {
+            await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Username, request.Username);
+        }
+        
+        if (!string.IsNullOrEmpty(request.Email) && request.Email != existingUser.Email)
+        {
+            await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Email, request.Email);
+        }
+
+        // 4. 更新用户信息
+        var update = _userFactory.CreateUpdateBuilder()
+            .SetCurrentTimestamp()
+            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+            .Build();
+
+        if (!string.IsNullOrEmpty(request.Username))
+        {
+            update = _userFactory.CreateUpdateBuilder()
+                .Set(u => u.Username, request.Username)
+                .SetCurrentTimestamp()
+                .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+                .Build();
+        }
+
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            update = _userFactory.CreateUpdateBuilder()
+                .Set(u => u.Email, request.Email)
+                .SetCurrentTimestamp()
+                .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+                .Build();
+        }
+
+        // 5. 执行更新
+        var result = await _userFactory.UpdateAsync(existingUser, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Update,
+            Description = "更新用户信息"
+        });
+
+        // 6. 记录操作日志
+        if (result)
+        {
+            _userFactory.LogOperation("更新用户", request.Id, new { 
+                Username = request.Username,
+                Email = request.Email 
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 删除用户（软删除）
+    /// </summary>
+    public async Task<bool> DeleteUserAsync(string id)
+    {
+        // 1. 检查用户是否存在
+        var user = await _userFactory.GetByIdAsync(id);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"用户 {id} 不存在");
+        }
+
+        // 2. 业务规则检查
+        await ValidateUserDeletionAsync(user);
+
+        // 3. 执行软删除
+        var result = await _userFactory.SoftDeleteAsync(id, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Delete,
+            Description = "删除用户"
+        });
+
+        // 4. 记录操作日志
+        if (result)
+        {
+            _userFactory.LogOperation("删除用户", id, new { Username = user.Username });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 激活用户
+    /// </summary>
+    public async Task<bool> ActivateUserAsync(string id)
+    {
+        var user = await _userFactory.GetByIdAsync(id);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"用户 {id} 不存在");
+        }
+
+        if (user.IsActive)
+        {
+            throw new InvalidOperationException("用户已经是激活状态");
+        }
+
+        var update = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.IsActive, true)
+            .SetCurrentTimestamp()
+            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+            .Build();
+
+        var result = await _userFactory.UpdateAsync(user, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Update,
+            Description = "激活用户"
+        });
+
+        if (result)
+        {
+            _userFactory.LogOperation("激活用户", id, new { Username = user.Username });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 停用用户
+    /// </summary>
+    public async Task<bool> DeactivateUserAsync(string id)
+    {
+        var user = await _userFactory.GetByIdAsync(id);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"用户 {id} 不存在");
+        }
+
+        if (!user.IsActive)
+        {
+            throw new InvalidOperationException("用户已经是停用状态");
+        }
+
+        var update = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.IsActive, false)
+            .SetCurrentTimestamp()
+            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+            .Build();
+
+        var result = await _userFactory.UpdateAsync(user, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Update,
+            Description = "停用用户"
+        });
+
+        if (result)
+        {
+            _userFactory.LogOperation("停用用户", id, new { Username = user.Username });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 重置密码
+    /// </summary>
+    public async Task<bool> ResetPasswordAsync(string id, string newPassword)
+    {
+        var user = await _userFactory.GetByIdAsync(id);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"用户 {id} 不存在");
+        }
+
+        // 验证新密码
+        _validationService.ValidatePassword(newPassword);
+
+        var update = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.PasswordHash, _passwordHasher.HashPassword(newPassword))
+            .SetCurrentTimestamp()
+            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
+            .Build();
+
+        var result = await _userFactory.UpdateAsync(user, new OperationContext
+        {
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            OperationType = OperationType.Update,
+            Description = "重置密码"
+        });
+
+        if (result)
+        {
+            _userFactory.LogOperation("重置密码", id, new { Username = user.Username });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 获取用户统计信息
+    /// </summary>
+    public async Task<UserStatistics> GetUserStatisticsAsync()
+    {
+        var companyId = _userFactory.GetRequiredCompanyId();
+        
+        var totalUsers = await _userFactory.CountAsync();
+        var activeUsers = await _userFactory.CountAsync(
+            _userFactory.CreateFilterBuilder()
+                .Equal(u => u.IsActive, true)
+                .Build()
+        );
+        var inactiveUsers = totalUsers - activeUsers;
+
+        return new UserStatistics
+        {
+            TotalUsers = totalUsers,
+            ActiveUsers = activeUsers,
+            InactiveUsers = inactiveUsers,
+            CompanyId = companyId,
+            GeneratedAt = DateTime.UtcNow
+        };
+    }
+
+    // 私有验证方法
+    private async Task ValidateCreateUserRequestAsync(CreateUserRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException("用户名不能为空");
+
+        if (string.IsNullOrEmpty(request.Email))
+            throw new ArgumentException("邮箱不能为空");
+
+        if (string.IsNullOrEmpty(request.Password))
+            throw new ArgumentException("密码不能为空");
+
+        _validationService.ValidateUsername(request.Username);
+        _validationService.ValidateEmail(request.Email);
+        _validationService.ValidatePassword(request.Password);
+    }
+
+    private async Task ValidateUpdateUserRequestAsync(UpdateUserRequest request, User existingUser)
+    {
+        if (string.IsNullOrEmpty(request.Username) && string.IsNullOrEmpty(request.Email))
+            throw new ArgumentException("至少需要更新一个字段");
+
+        if (!string.IsNullOrEmpty(request.Username))
+        {
+            _validationService.ValidateUsername(request.Username);
+        }
+
+        if (!string.IsNullOrEmpty(request.Email))
+        {
+            _validationService.ValidateEmail(request.Email);
+        }
+    }
+
+    private async Task ValidateUserDeletionAsync(User user)
+    {
+        // 检查用户是否有关联数据
+        var hasActivityLogs = await _activityLogs.CountDocumentsAsync(
+            Builders<UserActivityLog>.Filter.Eq(al => al.UserId, user.Id)
+        ) > 0;
+
+        if (hasActivityLogs)
+        {
+            throw new InvalidOperationException("用户有活动记录，无法删除");
+        }
+
+        // 检查用户是否是企业管理员
+        var isAdmin = await _userCompanies.CountDocumentsAsync(
+            Builders<UserCompany>.Filter.And(
+                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, user.Id),
+                Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true)
+            )
+        ) > 0;
+
+        if (isAdmin)
+        {
+            throw new InvalidOperationException("企业管理员无法删除");
+        }
+    }
+}
+```
+
+## 🎯 业务规则管理
+
+### 业务规则服务
+
+```csharp
+// Platform.ApiService/Services/BusinessRuleService.cs
+public interface IBusinessRuleService
+{
+    Task<bool> ValidateUserCreationAsync(CreateUserRequest request);
+    Task<bool> ValidateUserUpdateAsync(UpdateUserRequest request, User existingUser);
+    Task<bool> ValidateUserDeletionAsync(User user);
+    Task<bool> ValidateRoleAssignmentAsync(string userId, string roleId);
+    Task<bool> ValidateCompanyJoinRequestAsync(CompanyJoinRequest request);
+}
+
+public class BusinessRuleService : IBusinessRuleService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<Company> _companyFactory;
+
+    public BusinessRuleService(
+        IDatabaseOperationFactory<User> userFactory,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<Company> companyFactory)
+    {
+        _userFactory = userFactory;
+        _roleFactory = roleFactory;
+        _companyFactory = companyFactory;
+    }
+
+    public async Task<bool> ValidateUserCreationAsync(CreateUserRequest request)
+    {
+        // 业务规则1：用户名长度限制
+        if (request.Username.Length < 3 || request.Username.Length > 50)
+        {
+            throw new ArgumentException("用户名长度必须在3-50个字符之间");
+        }
+
+        // 业务规则2：邮箱格式验证
+        if (!IsValidEmail(request.Email))
+        {
+            throw new ArgumentException("邮箱格式不正确");
+        }
+
+        // 业务规则3：密码强度要求
+        if (!IsStrongPassword(request.Password))
+        {
+            throw new ArgumentException("密码必须包含字母、数字和特殊字符，长度至少8位");
+        }
+
+        // 业务规则4：企业用户数量限制
+        var userCount = await _userFactory.CountAsync();
+        if (userCount >= 1000) // 假设企业最多1000个用户
+        {
+            throw new InvalidOperationException("企业用户数量已达上限");
+        }
+
+        return true;
+    }
+
+    public async Task<bool> ValidateUserUpdateAsync(UpdateUserRequest request, User existingUser)
+    {
+        // 业务规则1：不能修改已删除用户
+        if (existingUser.IsDeleted)
+        {
+            throw new InvalidOperationException("无法修改已删除的用户");
+        }
+
+        // 业务规则2：不能修改已停用用户（除非是激活操作）
+        if (!existingUser.IsActive && !string.IsNullOrEmpty(request.Username))
+        {
+            throw new InvalidOperationException("无法修改已停用用户的基本信息");
+        }
+
+        return true;
+    }
+
+    public async Task<bool> ValidateUserDeletionAsync(User user)
+    {
+        // 业务规则1：不能删除企业管理员
+        if (user.IsAdmin)
+        {
+            throw new InvalidOperationException("无法删除企业管理员");
+        }
+
+        // 业务规则2：不能删除有活跃会话的用户
+        if (user.LastLoginAt.HasValue && user.LastLoginAt.Value > DateTime.UtcNow.AddHours(-1))
+        {
+            throw new InvalidOperationException("无法删除有活跃会话的用户");
+        }
+
+        return true;
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool IsStrongPassword(string password)
+    {
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
+            return false;
+
+        var hasLetter = password.Any(char.IsLetter);
+        var hasDigit = password.Any(char.IsDigit);
+        var hasSpecialChar = password.Any(c => !char.IsLetterOrDigit(c));
+
+        return hasLetter && hasDigit && hasSpecialChar;
+    }
+}
+```
+
+## 🎯 服务组合和编排
+
+### 服务编排器
+
+```csharp
+// Platform.ApiService/Services/ServiceOrchestrator.cs
+public interface IServiceOrchestrator
+{
+    Task<User> CreateUserWithRoleAsync(CreateUserWithRoleRequest request);
+    Task<bool> TransferUserToCompanyAsync(string userId, string targetCompanyId);
+    Task<bool> BulkUpdateUsersAsync(BulkUpdateUsersRequest request);
+}
+
+public class ServiceOrchestrator : IServiceOrchestrator
+{
+    private readonly IUserService _userService;
+    private readonly IRoleService _roleService;
+    private readonly IUserCompanyService _userCompanyService;
+    private readonly ICompanyService _companyService;
+
+    public ServiceOrchestrator(
+        IUserService userService,
+        IRoleService roleService,
+        IUserCompanyService userCompanyService,
+        ICompanyService companyService)
+    {
+        _userService = userService;
+        _roleService = roleService;
+        _userCompanyService = userCompanyService;
+        _companyService = companyService;
+    }
+
+    public async Task<User> CreateUserWithRoleAsync(CreateUserWithRoleRequest request)
+    {
+        // 1. 创建用户
+        var user = await _userService.CreateUserAsync(request.UserRequest);
+        
+        // 2. 分配角色
+        if (!string.IsNullOrEmpty(request.RoleId))
+        {
+            await _userCompanyService.AssignRoleAsync(user.Id, request.RoleId);
+        }
+        
+        // 3. 设置企业关联
+        if (!string.IsNullOrEmpty(request.CompanyId))
+        {
+            await _userCompanyService.AddUserToCompanyAsync(user.Id, request.CompanyId);
+        }
+        
+        return user;
+    }
+
+    public async Task<bool> TransferUserToCompanyAsync(string userId, string targetCompanyId)
+    {
+        // 1. 验证目标企业存在
+        var targetCompany = await _companyService.GetCompanyByIdAsync(targetCompanyId);
+        if (targetCompany == null)
+        {
+            throw new KeyNotFoundException($"目标企业 {targetCompanyId} 不存在");
+        }
+
+        // 2. 获取用户当前企业
+        var userCompany = await _userCompanyService.GetUserCompanyAsync(userId);
+        if (userCompany == null)
+        {
+            throw new KeyNotFoundException($"用户 {userId} 的企业关联不存在");
+        }
+
+        // 3. 移除用户从当前企业
+        await _userCompanyService.RemoveUserFromCompanyAsync(userId, userCompany.CompanyId);
+        
+        // 4. 添加用户到目标企业
+        await _userCompanyService.AddUserToCompanyAsync(userId, targetCompanyId);
+        
+        // 5. 更新用户的企业ID
+        var user = await _userService.GetUserByIdAsync(userId);
+        if (user != null)
+        {
+            user.CompanyId = targetCompanyId;
+            await _userService.UpdateUserAsync(new UpdateUserRequest { Id = userId });
+        }
+
+        return true;
+    }
+
+    public async Task<bool> BulkUpdateUsersAsync(BulkUpdateUsersRequest request)
+    {
+        var results = new List<bool>();
+        
+        foreach (var userId in request.UserIds)
+        {
+            try
+            {
+                var updateRequest = new UpdateUserRequest
+                {
+                    Id = userId,
+                    Username = request.Username,
+                    Email = request.Email
+                };
+                
+                var result = await _userService.UpdateUserAsync(updateRequest);
+                results.Add(result);
+            }
+            catch (Exception ex)
+            {
+                // 记录错误但继续处理其他用户
+                _logger.LogError(ex, "批量更新用户 {UserId} 失败", userId);
+                results.Add(false);
+            }
+        }
+
+        return results.All(r => r);
+    }
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要在服务中直接操作数据库
+
+```csharp
+// ❌ 错误 - 直接操作数据库
+public class UserService
+{
+    private readonly IMongoCollection<User> _users;
+    
+    public async Task<User> CreateUserAsync(User user)
+    {
+        await _users.InsertOneAsync(user); // 直接操作数据库
+        return user;
+    }
+}
+
+// ✅ 正确 - 使用数据库操作工厂
+public class UserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    
+    public async Task<User> CreateUserAsync(User user)
+    {
+        return await _userFactory.CreateAsync(user); // 使用工厂
+    }
+}
+```
+
+### 不要忽略业务规则验证
+
+```csharp
+// ❌ 错误 - 没有业务规则验证
+public async Task<User> CreateUserAsync(CreateUserRequest request)
+{
+    var user = new User { Username = request.Username };
+    return await _userFactory.CreateAsync(user); // 没有验证
+}
+
+// ✅ 正确 - 完整的业务规则验证
+public async Task<User> CreateUserAsync(CreateUserRequest request)
+{
+    await ValidateCreateUserRequestAsync(request); // 业务规则验证
+    await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Username, request.Username);
+    
+    var user = new User { Username = request.Username };
+    return await _userFactory.CreateAsync(user);
+}
+```
+
+### 不要忽略异常处理
+
+```csharp
+// ❌ 错误 - 没有异常处理
+public async Task<User> GetUserByIdAsync(string id)
+{
+    return await _userFactory.GetByIdAsync(id); // 可能返回null
+}
+
+// ✅ 正确 - 适当的异常处理
+public async Task<User> GetUserByIdAsync(string id)
+{
+    var user = await _userFactory.GetByIdAsync(id);
+    if (user == null)
+    {
+        throw new KeyNotFoundException($"用户 {id} 不存在");
+    }
+    return user;
+}
+```
+
+## 📋 服务层开发检查清单
+
+创建或修改服务时检查：
+
+- [ ] 定义清晰的接口
+- [ ] 实现单一职责原则
+- [ ] 添加业务规则验证
+- [ ] 使用数据库操作工厂
+- [ ] 添加适当的异常处理
+- [ ] 记录操作日志
+- [ ] 添加单元测试
+- [ ] 文档化业务规则
+- [ ] 考虑性能影响
+- [ ] 验证输入参数
+
+## 📚 相关文档
+
+- [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
+- [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
+- [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)
+- [数据库操作工厂使用指南](mdc:docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md)

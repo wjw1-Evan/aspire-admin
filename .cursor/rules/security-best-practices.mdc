@@ -1,495 +1,872 @@
 ---
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
 description: 安全最佳实践和漏洞防护规范
-globs: *.cs,*.ts,*.tsx,*.js,*.jsx
 ---
-
 # 安全最佳实践和漏洞防护规范
 
 ## 🎯 核心原则
 
-**安全不是功能，而是基础要求。所有代码都必须考虑安全性**
+### 通过安全编程实践和漏洞防护确保系统安全，保护用户数据和系统资源
 
-## 🔐 认证和授权安全
+## ✅ 输入验证和过滤
 
-### JWT Token 安全
+### 参数验证
+
 ```csharp
-// ✅ 正确：安全的 JWT 配置
-public class JwtSettings
+// ✅ 正确 - 完整的参数验证
+public class UserService : IUserService
 {
-    public string SecretKey { get; set; } = string.Empty;
-    public string Issuer { get; set; } = string.Empty;
-    public string Audience { get; set; } = string.Empty;
-    public int ExpirationMinutes { get; set; } = 60;
-    public int RefreshTokenExpirationDays { get; set; } = 7;
-}
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IFieldValidationService _validationService;
 
-// ✅ 正确：Token 验证
-public class JwtAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
-{
-    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IFieldValidationService validationService)
     {
-        var token = ExtractTokenFromHeader();
-        if (string.IsNullOrEmpty(token))
-            return AuthenticateResult.Fail("Token not provided");
+        _userFactory = userFactory;
+        _validationService = validationService;
+    }
 
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 1. 参数验证
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        // 2. 业务验证
+        await ValidateCreateUserRequestAsync(request);
+        
+        // 3. 创建用户实体
+        var user = new User
+        {
+            Username = request.Username.Trim(), // 去除空格
+            Email = request.Email.Trim().ToLowerInvariant(), // 标准化邮箱
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+
+    private async Task ValidateCreateUserRequestAsync(CreateUserRequest request)
+    {
+        // 1. 用户名验证
+        if (string.IsNullOrWhiteSpace(request.Username))
+            throw new ArgumentException("用户名不能为空", nameof(request.Username));
+
+        if (request.Username.Length < 3 || request.Username.Length > 50)
+            throw new ArgumentException("用户名长度必须在3-50个字符之间", nameof(request.Username));
+
+        if (!IsValidUsername(request.Username))
+            throw new ArgumentException("用户名只能包含字母、数字和下划线", nameof(request.Username));
+
+        // 2. 邮箱验证
+        if (string.IsNullOrWhiteSpace(request.Email))
+            throw new ArgumentException("邮箱不能为空", nameof(request.Email));
+
+        if (!IsValidEmail(request.Email))
+            throw new ArgumentException("邮箱格式不正确", nameof(request.Email));
+
+        // 3. 密码验证
+        if (string.IsNullOrWhiteSpace(request.Password))
+            throw new ArgumentException("密码不能为空", nameof(request.Password));
+
+        if (!IsStrongPassword(request.Password))
+            throw new ArgumentException("密码必须包含字母、数字和特殊字符，长度至少8位", nameof(request.Password));
+
+        // 4. 使用验证服务
+        await _validationService.ValidateUserAsync(request);
+    }
+
+    private bool IsValidUsername(string username)
+    {
+        // 只允许字母、数字和下划线
+        return username.All(c => char.IsLetterOrDigit(c) || c == '_');
+    }
+
+    private bool IsValidEmail(string email)
+    {
         try
         {
-            var principal = ValidateToken(token);
-            var ticket = new AuthenticationTicket(principal, Scheme.Name);
-            return AuthenticateResult.Success(ticket);
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
         }
-        catch (SecurityTokenExpiredException)
+        catch
         {
-            return AuthenticateResult.Fail("Token expired");
+            return false;
         }
-        catch (SecurityTokenInvalidSignatureException)
+    }
+
+    private bool IsStrongPassword(string password)
+    {
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
+            return false;
+
+        var hasLetter = password.Any(char.IsLetter);
+        var hasDigit = password.Any(char.IsDigit);
+        var hasSpecialChar = password.Any(c => !char.IsLetterOrDigit(c));
+
+        return hasLetter && hasDigit && hasSpecialChar;
+    }
+}
+
+// ❌ 错误 - 没有输入验证
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 没有验证直接使用输入
+        var user = new User
         {
-            return AuthenticateResult.Fail("Invalid token signature");
-        }
+            Username = request.Username,
+            Email = request.Email,
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        return await _userFactory.CreateAsync(user);
     }
 }
 ```
 
-### 密码安全
+### SQL注入防护
+
 ```csharp
-// ✅ 正确：安全的密码哈希
-public class PasswordService
+// ✅ 正确 - 使用参数化查询
+public class UserService : IUserService
 {
-    private const int SaltSize = 32;
-    private const int HashSize = 32;
-    private const int Iterations = 100000;
+    public async Task<List<User>> SearchUsersAsync(string keyword)
+    {
+        // 使用参数化查询防止SQL注入
+        var filter = _userFactory.CreateFilterBuilder()
+            .Regex(u => u.Username, keyword)
+            .Or()
+            .Regex(u => u.Email, keyword)
+            .Build();
+
+        return await _userFactory.FindAsync(filter);
+    }
+
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        // 验证ID格式
+        if (string.IsNullOrEmpty(id) || !IsValidObjectId(id))
+            throw new ArgumentException("无效的用户ID", nameof(id));
+
+        return await _userFactory.GetByIdAsync(id);
+    }
+
+    private bool IsValidObjectId(string id)
+    {
+        return ObjectId.TryParse(id, out _);
+    }
+}
+
+// ❌ 错误 - 容易受到SQL注入攻击
+public class UserService : IUserService
+{
+    public async Task<List<User>> SearchUsersAsync(string keyword)
+    {
+        // 直接拼接字符串（危险）
+        var filter = $"{{ \"username\": {{ \"$regex\": \"{keyword}\" }} }}";
+        return await _userFactory.FindAsync(filter);
+    }
+}
+```
+
+## 🎯 身份认证和授权
+
+### JWT Token 安全
+
+```csharp
+// ✅ 正确 - JWT Token 安全
+public class JwtService : IJwtService
+{
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<JwtService> _logger;
+
+    public JwtService(IConfiguration configuration, ILogger<JwtService> logger)
+    {
+        _configuration = configuration;
+        _logger = logger;
+    }
+
+    public string GenerateToken(User user)
+    {
+        var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>();
+        var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("userId", user.Id),
+                new Claim("username", user.Username),
+                new Claim("email", user.Email),
+                new Claim("companyId", user.CompanyId),
+                new Claim("isAdmin", user.IsAdmin.ToString()),
+                new Claim("access", user.IsAdmin ? "admin" : "user")
+            }),
+            Expires = DateTime.UtcNow.AddMinutes(jwtSettings.ExpirationMinutes),
+            Issuer = jwtSettings.Issuer,
+            Audience = jwtSettings.Audience,
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    public ClaimsPrincipal? ValidateToken(string token)
+    {
+        try
+        {
+            var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>();
+            var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = jwtSettings.Issuer,
+                ValidateAudience = true,
+                ValidAudience = jwtSettings.Audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            return principal;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "JWT Token 验证失败: {Token}", token);
+            return null;
+        }
+    }
+}
+
+// ❌ 错误 - JWT Token 不安全
+public class JwtService : IJwtService
+{
+    public string GenerateToken(User user)
+    {
+        // 使用弱密钥
+        var key = Encoding.ASCII.GetBytes("weakkey");
+        
+        // 没有设置过期时间
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("userId", user.Id)
+            }),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+}
+```
+
+### 权限控制
+
+```csharp
+// ✅ 正确 - 权限控制
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ITenantContext _tenantContext;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ITenantContext tenantContext)
+    {
+        _userFactory = userFactory;
+        _tenantContext = tenantContext;
+    }
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 1. 检查用户权限
+        var currentUserId = _tenantContext.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || !currentUser.IsActive)
+        {
+            throw new UnauthorizedAccessException("用户未认证或已停用");
+        }
+
+        // 2. 检查企业权限
+        var companyId = _tenantContext.GetRequiredCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到企业信息");
+        }
+
+        // 3. 检查管理员权限
+        if (!currentUser.IsAdmin)
+        {
+            throw new UnauthorizedAccessException("需要管理员权限");
+        }
+
+        // 4. 业务逻辑处理
+        await ValidateCreateUserRequestAsync(request);
+        
+        var user = new User
+        {
+            Username = request.Username.Trim(),
+            Email = request.Email.Trim().ToLowerInvariant(),
+            CompanyId = companyId,
+            CreatedBy = currentUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+
+    public async Task<bool> DeleteUserAsync(string id)
+    {
+        // 1. 检查用户权限
+        var currentUserId = _tenantContext.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || !currentUser.IsActive)
+        {
+            throw new UnauthorizedAccessException("用户未认证或已停用");
+        }
+
+        // 2. 检查目标用户
+        var targetUser = await _userFactory.GetByIdAsync(id);
+        if (targetUser == null)
+        {
+            throw new KeyNotFoundException($"用户 {id} 不存在");
+        }
+
+        // 3. 检查删除权限
+        if (!currentUser.IsAdmin && currentUserId != id)
+        {
+            throw new UnauthorizedAccessException("只能删除自己的账户或需要管理员权限");
+        }
+
+        // 4. 检查业务规则
+        if (targetUser.IsAdmin)
+        {
+            throw new InvalidOperationException("无法删除企业管理员");
+        }
+
+        // 5. 执行删除
+        return await _userFactory.SoftDeleteAsync(id, new OperationContext
+        {
+            UserId = currentUserId,
+            Username = currentUser.Username,
+            CompanyId = currentUser.CompanyId,
+            OperationType = OperationType.Delete,
+            Description = "删除用户"
+        });
+    }
+}
+
+// ❌ 错误 - 没有权限控制
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 没有权限检查
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+}
+```
+
+## 🎯 数据加密和安全
+
+### 密码安全
+
+```csharp
+// ✅ 正确 - 密码安全
+public class PasswordHasher : IPasswordHasher
+{
+    private readonly ILogger<PasswordHasher> _logger;
+
+    public PasswordHasher(ILogger<PasswordHasher> logger)
+    {
+        _logger = logger;
+    }
 
     public string HashPassword(string password)
     {
-        using var rng = RandomNumberGenerator.Create();
-        var salt = new byte[SaltSize];
-        rng.GetBytes(salt);
+        if (string.IsNullOrEmpty(password))
+            throw new ArgumentException("密码不能为空", nameof(password));
 
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
-        var hash = pbkdf2.GetBytes(HashSize);
-
-        var hashBytes = new byte[SaltSize + HashSize];
-        Array.Copy(salt, 0, hashBytes, 0, SaltSize);
-        Array.Copy(hash, 0, hashBytes, SaltSize, HashSize);
-
-        return Convert.ToBase64String(hashBytes);
+        // 使用 BCrypt 进行密码哈希
+        return BCrypt.Net.BCrypt.HashPassword(password, BCrypt.Net.BCrypt.GenerateSalt(12));
     }
 
     public bool VerifyPassword(string password, string hashedPassword)
     {
-        var hashBytes = Convert.FromBase64String(hashedPassword);
-        var salt = new byte[SaltSize];
-        Array.Copy(hashBytes, 0, salt, 0, SaltSize);
+        if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hashedPassword))
+            return false;
 
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
-        var hash = pbkdf2.GetBytes(HashSize);
-
-        for (int i = 0; i < HashSize; i++)
+        try
         {
-            if (hashBytes[i + SaltSize] != hash[i])
-                return false;
+            return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
         }
-        return true;
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "密码验证失败");
+            return false;
+        }
+    }
+
+    public bool IsPasswordStrong(string password)
+    {
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
+            return false;
+
+        var hasLetter = password.Any(char.IsLetter);
+        var hasDigit = password.Any(char.IsDigit);
+        var hasSpecialChar = password.Any(c => !char.IsLetterOrDigit(c));
+
+        return hasLetter && hasDigit && hasSpecialChar;
+    }
+}
+
+// ❌ 错误 - 密码不安全
+public class PasswordHasher : IPasswordHasher
+{
+    public string HashPassword(string password)
+    {
+        // 使用弱哈希算法
+        using var sha256 = SHA256.Create();
+        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        return Convert.ToBase64String(hashedBytes);
+    }
+
+    public bool VerifyPassword(string password, string hashedPassword)
+    {
+        var hashed = HashPassword(password);
+        return hashed == hashedPassword;
     }
 }
 ```
-
-### 权限验证
-```csharp
-// ✅ 正确：细粒度权限检查
-[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
-public class RequirePermissionAttribute : Attribute, IAuthorizationRequirement
-{
-    public string Resource { get; }
-    public string Action { get; }
-
-    public RequirePermissionAttribute(string resource, string action)
-    {
-        Resource = resource;
-        Action = action;
-    }
-}
-
-public class PermissionAuthorizationHandler : AuthorizationHandler<RequirePermissionAttribute>
-{
-    protected override async Task HandleRequirementAsync(
-        AuthorizationHandlerContext context,
-        RequirePermissionAttribute requirement)
-    {
-        var user = context.User;
-        var userId = user.FindFirst("userId")?.Value;
-        
-        if (string.IsNullOrEmpty(userId))
-        {
-            context.Fail();
-            return;
-        }
-
-        var hasPermission = await CheckUserPermissionAsync(userId, requirement.Resource, requirement.Action);
-        
-        if (hasPermission)
-        {
-            context.Succeed(requirement);
-        }
-        else
-        {
-            context.Fail();
-        }
-    }
-}
-```
-
-## 🛡️ 输入验证和防护
-
-### SQL 注入防护
-```csharp
-// ✅ 正确：使用参数化查询
-public async Task<User> GetUserByEmailAsync(string email)
-{
-    var filter = Builders<User>.Filter.Eq(u => u.Email, email);
-    return await _users.Find(filter).FirstOrDefaultAsync();
-}
-
-// ❌ 禁止：字符串拼接查询
-public async Task<User> GetUserByEmailAsync(string email)
-{
-    var query = $"SELECT * FROM users WHERE email = '{email}'"; // 危险！
-    // ...
-}
-```
-
-### XSS 防护
-```csharp
-// ✅ 正确：输入清理
-public class InputSanitizer
-{
-    private static readonly HtmlSanitizer _sanitizer = new();
-
-    public string SanitizeHtml(string input)
-    {
-        if (string.IsNullOrEmpty(input))
-            return string.Empty;
-
-        return _sanitizer.Sanitize(input);
-    }
-
-    public string SanitizeText(string input)
-    {
-        if (string.IsNullOrEmpty(input))
-            return string.Empty;
-
-        return HttpUtility.HtmlEncode(input);
-    }
-}
-
-// ✅ 正确：在控制器中使用
-[HttpPost]
-public async Task<IActionResult> CreateNotice([FromBody] CreateNoticeRequest request)
-{
-    var sanitizedContent = _inputSanitizer.SanitizeHtml(request.Content);
-    var sanitizedTitle = _inputSanitizer.SanitizeText(request.Title);
-    
-    var notice = new Notice
-    {
-        Title = sanitizedTitle,
-        Content = sanitizedContent,
-        CompanyId = GetRequiredCompanyId()
-    };
-    
-    await _notices.InsertOneAsync(notice);
-    return Success(notice);
-}
-```
-
-### CSRF 防护
-```csharp
-// ✅ 正确：CSRF Token 验证
-public class CsrfMiddleware
-{
-    private readonly RequestDelegate _next;
-
-    public async Task InvokeAsync(HttpContext context)
-    {
-        if (IsStateChangingMethod(context.Request.Method))
-        {
-            var token = context.Request.Headers["X-CSRF-Token"].FirstOrDefault();
-            if (!ValidateCsrfToken(token, context))
-            {
-                context.Response.StatusCode = 403;
-                await context.Response.WriteAsync("CSRF token validation failed");
-                return;
-            }
-        }
-
-        await _next(context);
-    }
-
-    private bool IsStateChangingMethod(string method)
-    {
-        return method == "POST" || method == "PUT" || method == "DELETE" || method == "PATCH";
-    }
-}
-```
-
-## 🔒 数据安全
 
 ### 敏感数据加密
-```csharp
-// ✅ 正确：敏感数据加密
-public class EncryptionService
-{
-    private readonly byte[] _key;
 
-    public EncryptionService(IConfiguration configuration)
+```csharp
+// ✅ 正确 - 敏感数据加密
+public class EncryptionService : IEncryptionService
+{
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<EncryptionService> _logger;
+
+    public EncryptionService(IConfiguration configuration, ILogger<EncryptionService> logger)
     {
-        var keyString = configuration["Encryption:Key"];
-        _key = Convert.FromBase64String(keyString);
+        _configuration = configuration;
+        _logger = logger;
     }
 
     public string Encrypt(string plainText)
     {
-        using var aes = Aes.Create();
-        aes.Key = _key;
-        aes.GenerateIV();
+        if (string.IsNullOrEmpty(plainText))
+            return string.Empty;
 
-        using var encryptor = aes.CreateEncryptor();
-        using var msEncrypt = new MemoryStream();
-        using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
-        using var swEncrypt = new StreamWriter(csEncrypt);
+        try
+        {
+            var key = _configuration["Encryption:Key"];
+            var iv = _configuration["Encryption:IV"];
 
-        swEncrypt.Write(plainText);
-        swEncrypt.Close();
+            using var aes = Aes.Create();
+            aes.Key = Convert.FromBase64String(key);
+            aes.IV = Convert.FromBase64String(iv);
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
 
-        var encrypted = msEncrypt.ToArray();
-        var result = new byte[aes.IV.Length + encrypted.Length];
-        Array.Copy(aes.IV, 0, result, 0, aes.IV.Length);
-        Array.Copy(encrypted, 0, result, aes.IV.Length, encrypted.Length);
+            using var encryptor = aes.CreateEncryptor();
+            using var msEncrypt = new MemoryStream();
+            using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
+            using var swEncrypt = new StreamWriter(csEncrypt);
 
-        return Convert.ToBase64String(result);
+            swEncrypt.Write(plainText);
+            swEncrypt.Close();
+
+            return Convert.ToBase64String(msEncrypt.ToArray());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "数据加密失败");
+            throw new InvalidOperationException("数据加密失败", ex);
+        }
     }
 
     public string Decrypt(string cipherText)
     {
-        var fullCipher = Convert.FromBase64String(cipherText);
-        var iv = new byte[16];
-        var cipher = new byte[fullCipher.Length - 16];
+        if (string.IsNullOrEmpty(cipherText))
+            return string.Empty;
 
-        Array.Copy(fullCipher, 0, iv, 0, 16);
-        Array.Copy(fullCipher, 16, cipher, 0, cipher.Length);
-
-        using var aes = Aes.Create();
-        aes.Key = _key;
-        aes.IV = iv;
-
-        using var decryptor = aes.CreateDecryptor();
-        using var msDecrypt = new MemoryStream(cipher);
-        using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
-        using var srDecrypt = new StreamReader(csDecrypt);
-
-        return srDecrypt.ReadToEnd();
-    }
-}
-```
-
-### 多租户数据隔离
-```csharp
-// ✅ 正确：强制租户隔离
-public class TenantSecurityService
-{
-    public void ValidateTenantAccess(string userId, string companyId)
-    {
-        var userCompany = GetUserCompany(userId);
-        if (userCompany != companyId)
-        {
-            throw new UnauthorizedAccessException("Access denied: User does not belong to this company");
-        }
-    }
-
-    public async Task<T> FilterByTenant<T>(IQueryable<T> query, string userId) where T : MultiTenantEntity
-    {
-        var userCompany = await GetUserCompanyAsync(userId);
-        return query.Where(x => x.CompanyId == userCompany);
-    }
-}
-```
-
-## 🌐 前端安全
-
-### XSS 防护
-```tsx
-// ✅ 正确：使用 dangerouslySetInnerHTML 时清理
-import DOMPurify from 'dompurify';
-
-const SafeHtmlContent = ({ content }: { content: string }) => {
-  const sanitizedContent = DOMPurify.sanitize(content);
-  
-  return (
-    <div 
-      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-    />
-  );
-};
-
-// ✅ 正确：输入验证
-const validateInput = (input: string): boolean => {
-  // 检查是否包含恶意脚本
-  const scriptPattern = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
-  return !scriptPattern.test(input);
-};
-
-// ✅ 正确：使用 CSP
-const ContentSecurityPolicy = () => {
-  useEffect(() => {
-    const meta = document.createElement('meta');
-    meta.httpEquiv = 'Content-Security-Policy';
-    meta.content = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'";
-    document.head.appendChild(meta);
-  }, []);
-
-  return null;
-};
-```
-
-### 敏感信息处理
-```tsx
-// ✅ 正确：不在客户端存储敏感信息
-const useSecureStorage = () => {
-  const storeSecureData = useCallback((key: string, data: any) => {
-    // 只存储非敏感信息
-    const allowedKeys = ['theme', 'language', 'preferences'];
-    if (allowedKeys.includes(key)) {
-      localStorage.setItem(key, JSON.stringify(data));
-    } else {
-      console.warn(`Attempted to store sensitive data: ${key}`);
-    }
-  }, []);
-
-  return { storeSecureData };
-};
-
-// ✅ 正确：API 密钥管理
-const useApiKey = () => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-
-  useEffect(() => {
-    // 从环境变量获取 API 密钥
-    const key = process.env.REACT_APP_API_KEY;
-    if (key) {
-      setApiKey(key);
-    }
-  }, []);
-
-  return apiKey;
-};
-```
-
-## 🔍 安全监控和日志
-
-### 安全事件日志
-```csharp
-// ✅ 正确：安全事件记录
-public class SecurityLogger
-{
-    private readonly ILogger<SecurityLogger> _logger;
-
-    public void LogLoginAttempt(string username, string ipAddress, bool success)
-    {
-        _logger.LogInformation("Login attempt: Username={Username}, IP={IP}, Success={Success}",
-            username, ipAddress, success);
-    }
-
-    public void LogPermissionDenied(string userId, string resource, string action)
-    {
-        _logger.LogWarning("Permission denied: User={UserId}, Resource={Resource}, Action={Action}",
-            userId, resource, action);
-    }
-
-    public void LogSuspiciousActivity(string userId, string activity, string details)
-    {
-        _logger.LogWarning("Suspicious activity: User={UserId}, Activity={Activity}, Details={Details}",
-            userId, activity, details);
-    }
-}
-```
-
-### 异常监控
-```csharp
-// ✅ 正确：安全异常处理
-public class SecurityExceptionMiddleware
-{
-    private readonly RequestDelegate _next;
-    private readonly SecurityLogger _securityLogger;
-
-    public async Task InvokeAsync(HttpContext context)
-    {
         try
         {
-            await _next(context);
+            var key = _configuration["Encryption:Key"];
+            var iv = _configuration["Encryption:IV"];
+
+            using var aes = Aes.Create();
+            aes.Key = Convert.FromBase64String(key);
+            aes.IV = Convert.FromBase64String(iv);
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            using var decryptor = aes.CreateDecryptor();
+            using var msDecrypt = new MemoryStream(Convert.FromBase64String(cipherText));
+            using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+            using var srDecrypt = new StreamReader(csDecrypt);
+
+            return srDecrypt.ReadToEnd();
         }
-        catch (UnauthorizedAccessException ex)
+        catch (Exception ex)
         {
-            _securityLogger.LogPermissionDenied(
-                context.User.FindFirst("userId")?.Value ?? "anonymous",
-                context.Request.Path,
-                context.Request.Method
-            );
-            
-            context.Response.StatusCode = 403;
-            await context.Response.WriteAsync("Access denied");
+            _logger.LogError(ex, "数据解密失败");
+            throw new InvalidOperationException("数据解密失败", ex);
         }
-        catch (SecurityTokenException ex)
+    }
+}
+
+// ❌ 错误 - 敏感数据未加密
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User
         {
-            _securityLogger.LogSuspiciousActivity(
-                "anonymous",
-                "Invalid token",
-                ex.Message
-            );
-            
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Invalid token");
-        }
+            Username = request.Username,
+            Email = request.Email,
+            // 密码未加密
+            Password = request.Password,
+            // 手机号未加密
+            PhoneNumber = request.PhoneNumber
+        };
+
+        return await _userFactory.CreateAsync(user);
     }
 }
 ```
 
-## 🚨 安全检查清单
+## 🎯 安全日志和监控
 
-### 开发阶段
-- [ ] 所有用户输入都经过验证和清理
-- [ ] 使用参数化查询防止 SQL 注入
-- [ ] 实现适当的认证和授权
-- [ ] 敏感数据加密存储
-- [ ] 实现 CSRF 防护
-- [ ] 配置安全头（CSP、HSTS 等）
+### 安全事件记录
 
-### 部署阶段
-- [ ] 使用 HTTPS 加密传输
-- [ ] 配置防火墙和访问控制
-- [ ] 定期更新依赖包
-- [ ] 监控安全日志
-- [ ] 实施备份和恢复策略
-- [ ] 进行安全扫描和渗透测试
+```csharp
+// ✅ 正确 - 安全事件记录
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IAuditService _auditService;
+    private readonly ILogger<UserService> _logger;
 
-### 运维阶段
-- [ ] 定期安全审计
-- [ ] 监控异常访问模式
-- [ ] 及时响应安全事件
-- [ ] 更新安全策略
-- [ ] 培训开发团队安全意识
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        IAuditService auditService,
+        ILogger<UserService> logger)
+    {
+        _userFactory = userFactory;
+        _auditService = auditService;
+        _logger = logger;
+    }
 
-## 📚 相关资源
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            CreatedBy = _userFactory.GetCurrentUserId(),
+            CreatedAt = DateTime.UtcNow
+        };
 
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [.NET 安全最佳实践](https://docs.microsoft.com/en-us/aspnet/core/security/)
-- [React 安全指南](https://react.dev/learn/security)
-- [MongoDB 安全指南](https://docs.mongodb.com/manual/security/)
+        var createdUser = await _userFactory.CreateAsync(user);
 
-## 🎯 记住
+        // 记录安全事件
+        await _auditService.RecordSecurityEventAsync(new SecurityEvent
+        {
+            EventType = "UserCreated",
+            UserId = _userFactory.GetCurrentUserId(),
+            Username = _userFactory.GetCurrentUsername(),
+            CompanyId = _userFactory.GetCurrentCompanyId(),
+            Description = "创建用户",
+            Data = new { Username = request.Username, Email = request.Email },
+            Timestamp = DateTime.UtcNow
+        });
 
-**安全是一个持续的过程，不是一次性的任务**
+        _logger.LogInformation("用户创建成功: {UserId}, 操作者: {OperatorId}", 
+            createdUser.Id, _userFactory.GetCurrentUserId());
 
-- 从设计阶段就考虑安全性
-- 使用安全工具和库
-- 定期进行安全审计
-- 保持安全意识培训
-- 及时响应安全威胁
+        return createdUser;
+    }
+
+    public async Task<bool> DeleteUserAsync(string id)
+    {
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || !currentUser.IsActive)
+        {
+            // 记录安全事件
+            await _auditService.RecordSecurityEventAsync(new SecurityEvent
+            {
+                EventType = "UnauthorizedAccess",
+                UserId = currentUserId,
+                Username = currentUser?.Username,
+                CompanyId = currentUser?.CompanyId,
+                Description = "未授权访问尝试",
+                Data = new { TargetUserId = id },
+                Timestamp = DateTime.UtcNow
+            });
+
+            throw new UnauthorizedAccessException("用户未认证或已停用");
+        }
+
+        var targetUser = await _userFactory.GetByIdAsync(id);
+        if (targetUser == null)
+        {
+            throw new KeyNotFoundException($"用户 {id} 不存在");
+        }
+
+        if (!currentUser.IsAdmin && currentUserId != id)
+        {
+            // 记录安全事件
+            await _auditService.RecordSecurityEventAsync(new SecurityEvent
+            {
+                EventType = "UnauthorizedAccess",
+                UserId = currentUserId,
+                Username = currentUser.Username,
+                CompanyId = currentUser.CompanyId,
+                Description = "未授权删除尝试",
+                Data = new { TargetUserId = id },
+                Timestamp = DateTime.UtcNow
+            });
+
+            throw new UnauthorizedAccessException("只能删除自己的账户或需要管理员权限");
+        }
+
+        var result = await _userFactory.SoftDeleteAsync(id, new OperationContext
+        {
+            UserId = currentUserId,
+            Username = currentUser.Username,
+            CompanyId = currentUser.CompanyId,
+            OperationType = OperationType.Delete,
+            Description = "删除用户"
+        });
+
+        if (result)
+        {
+            // 记录安全事件
+            await _auditService.RecordSecurityEventAsync(new SecurityEvent
+            {
+                EventType = "UserDeleted",
+                UserId = currentUserId,
+                Username = currentUser.Username,
+                CompanyId = currentUser.CompanyId,
+                Description = "删除用户",
+                Data = new { TargetUserId = id, TargetUsername = targetUser.Username },
+                Timestamp = DateTime.UtcNow
+            });
+
+            _logger.LogInformation("用户删除成功: {TargetUserId}, 操作者: {OperatorId}", 
+                id, currentUserId);
+        }
+
+        return result;
+    }
+}
+
+// ❌ 错误 - 没有安全事件记录
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email
+        };
+
+        // 没有记录安全事件
+        return await _userFactory.CreateAsync(user);
+    }
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要忽略输入验证
+
+```csharp
+// ❌ 错误 - 忽略输入验证
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 没有验证直接使用输入
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            Password = request.Password
+        };
+
+        return await _userFactory.CreateAsync(user);
+    }
+}
+
+// ✅ 正确 - 完整的输入验证
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 完整的输入验证
+        await ValidateCreateUserRequestAsync(request);
+        
+        var user = new User
+        {
+            Username = request.Username.Trim(),
+            Email = request.Email.Trim().ToLowerInvariant(),
+            PasswordHash = _passwordHasher.HashPassword(request.Password)
+        };
+
+        return await _userFactory.CreateAsync(user);
+    }
+}
+```
+
+### 不要硬编码敏感信息
+
+```csharp
+// ❌ 错误 - 硬编码敏感信息
+public class JwtService : IJwtService
+{
+    public string GenerateToken(User user)
+    {
+        // 硬编码密钥
+        var key = Encoding.ASCII.GetBytes("hardcoded-secret-key");
+        
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("userId", user.Id)
+            }),
+            Expires = DateTime.UtcNow.AddMinutes(60),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+}
+
+// ✅ 正确 - 使用配置管理敏感信息
+public class JwtService : IJwtService
+{
+    private readonly IConfiguration _configuration;
+
+    public JwtService(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
+    public string GenerateToken(User user)
+    {
+        // 从配置获取密钥
+        var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>();
+        var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+        
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("userId", user.Id)
+            }),
+            Expires = DateTime.UtcNow.AddMinutes(jwtSettings.ExpirationMinutes),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+}
+```
+
+### 不要忽略权限检查
+
+```csharp
+// ❌ 错误 - 忽略权限检查
+public class UserService : IUserService
+{
+    public async Task<bool> DeleteUserAsync(string id)
+    {
+        // 没有权限检查，任何人都可以删除用户
+        return await _userFactory.SoftDeleteAsync(id);
+    }
+}
+
+// ✅ 正确 - 完整的权限检查
+public class UserService : IUserService
+{
+    public async Task<bool> DeleteUserAsync(string id)
+    {
+        // 检查用户权限
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || !currentUser.IsAdmin)
+        {
+            throw new UnauthorizedAccessException("需要管理员权限");
+        }
+
+        return await _userFactory.SoftDeleteAsync(id);
+    }
+}
+```
+
+## 📋 安全开发检查清单
+
+创建或修改代码时检查：
+
+- [ ] 输入验证完整
+- [ ] 参数过滤正确
+- [ ] SQL注入防护
+- [ ] 身份认证安全
+- [ ] 权限控制正确
+- [ ] 密码安全存储
+- [ ] 敏感数据加密
+- [ ] 安全事件记录
+- [ ] 错误处理完善
+- [ ] 安全测试通过
+
+## 📚 相关文档
+
+- [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
+- [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
+- [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)
+- [安全最佳实践](https://owasp.org/www-project-top-ten/)

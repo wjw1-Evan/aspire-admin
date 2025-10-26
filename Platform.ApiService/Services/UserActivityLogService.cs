@@ -1,26 +1,26 @@
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class UserActivityLogService : BaseService, IUserActivityLogService
+public class UserActivityLogService : IUserActivityLogService
 {
-    private readonly IMongoCollection<UserActivityLog> _activityLogs;
+    private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<UserActivityLogService> _logger;
+    private readonly ITenantContext _tenantContext;
 
     public UserActivityLogService(
-        IMongoDatabase database,
+        IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
         IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
-        ILogger<UserActivityLogService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
+        ILogger<UserActivityLogService> logger,
+        ITenantContext tenantContext)
     {
-        _activityLogs = database.GetCollection<UserActivityLog>("user_activity_logs");
+        _activityLogFactory = activityLogFactory;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
+        _tenantContext = tenantContext;
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public class UserActivityLogService : BaseService, IUserActivityLogService
         string? companyId = null;
         try
         {
-            companyId = GetCurrentCompanyId();
+            companyId = _tenantContext.GetCurrentCompanyId();
         }
         catch (UnauthorizedAccessException)
         {
@@ -52,10 +52,11 @@ public class UserActivityLogService : BaseService, IUserActivityLogService
             UserAgent = httpContext?.Request.Headers["User-Agent"].ToString(),
             CompanyId = companyId ?? string.Empty,
             IsDeleted = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
-        await _activityLogs.InsertOneAsync(log);
+        await _activityLogFactory.CreateAsync(log);
     }
 
     /// <summary>
@@ -63,17 +64,16 @@ public class UserActivityLogService : BaseService, IUserActivityLogService
     /// </summary>
     public async Task<UserActivityLogPagedResponse> GetActivityLogsAsync(GetUserActivityLogsRequest request)
     {
-        var filterBuilder = Builders<UserActivityLog>.Filter;
-        var filter = filterBuilder.Eq(log => log.IsDeleted, false);
+        var filterBuilder = _activityLogFactory.CreateFilterBuilder();
 
         // 获取当前企业ID进行多租户过滤
         string? companyId = null;
         try
         {
-            companyId = GetCurrentCompanyId();
+            companyId = _tenantContext.GetCurrentCompanyId();
             if (!string.IsNullOrEmpty(companyId))
             {
-                filter &= filterBuilder.Eq(log => log.CompanyId, companyId);
+                filterBuilder.Equal(log => log.CompanyId, companyId);
             }
         }
         catch (UnauthorizedAccessException)
@@ -92,35 +92,37 @@ public class UserActivityLogService : BaseService, IUserActivityLogService
         // 按用户ID筛选
         if (!string.IsNullOrEmpty(request.UserId))
         {
-            filter &= filterBuilder.Eq(log => log.UserId, request.UserId);
+            filterBuilder.Equal(log => log.UserId, request.UserId);
         }
 
         // 按操作类型筛选
         if (!string.IsNullOrEmpty(request.Action))
         {
-            filter &= filterBuilder.Eq(log => log.Action, request.Action);
+            filterBuilder.Equal(log => log.Action, request.Action);
         }
 
         // 按日期范围筛选
         if (request.StartDate.HasValue)
         {
-            filter &= filterBuilder.Gte(log => log.CreatedAt, request.StartDate.Value);
+            filterBuilder.GreaterThanOrEqual(log => log.CreatedAt, request.StartDate.Value);
         }
 
         if (request.EndDate.HasValue)
         {
-            filter &= filterBuilder.Lte(log => log.CreatedAt, request.EndDate.Value);
+            filterBuilder.LessThanOrEqual(log => log.CreatedAt, request.EndDate.Value);
         }
 
+        var filter = filterBuilder.Build();
+
         // 计算总数
-        var total = await _activityLogs.CountDocumentsAsync(filter);
+        var total = await _activityLogFactory.CountAsync(filter);
 
         // 分页查询
-        var logs = await _activityLogs.Find(filter)
-            .Sort(Builders<UserActivityLog>.Sort.Descending(log => log.CreatedAt))
-            .Skip((request.Page - 1) * request.PageSize)
-            .Limit(request.PageSize)
-            .ToListAsync();
+        var sortBuilder = _activityLogFactory.CreateSortBuilder()
+            .Descending(log => log.CreatedAt);
+        
+        var skip = (request.Page - 1) * request.PageSize;
+        var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, sortBuilder.Build(), skip, request.PageSize);
 
         var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
 
@@ -139,19 +141,16 @@ public class UserActivityLogService : BaseService, IUserActivityLogService
     /// </summary>
     public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
     {
-        var filterBuilder = Builders<UserActivityLog>.Filter;
-        var filter = filterBuilder.And(
-            filterBuilder.Eq(log => log.UserId, userId),
-            filterBuilder.Eq(log => log.IsDeleted, false)
-        );
+        var filterBuilder = _activityLogFactory.CreateFilterBuilder()
+            .Equal(log => log.UserId, userId);
 
         // 获取当前企业ID进行多租户过滤
         try
         {
-            var companyId = GetCurrentCompanyId();
+            var companyId = _tenantContext.GetCurrentCompanyId();
             if (!string.IsNullOrEmpty(companyId))
             {
-                filter &= filterBuilder.Eq(log => log.CompanyId, companyId);
+                filterBuilder.Equal(log => log.CompanyId, companyId);
             }
         }
         catch (UnauthorizedAccessException)
@@ -160,10 +159,13 @@ public class UserActivityLogService : BaseService, IUserActivityLogService
             return new List<UserActivityLog>();
         }
 
-        return await _activityLogs.Find(filter)
-            .Sort(Builders<UserActivityLog>.Sort.Descending(log => log.CreatedAt))
-            .Limit(limit)
-            .ToListAsync();
+        var filter = filterBuilder.Build();
+        var sortBuilder = _activityLogFactory.CreateSortBuilder()
+            .Descending(log => log.CreatedAt);
+
+        return await _activityLogFactory.FindAsync(filter, 
+            limit: limit, 
+            sort: sortBuilder.Build());
     }
 
     /// <summary>
@@ -171,17 +173,19 @@ public class UserActivityLogService : BaseService, IUserActivityLogService
     /// </summary>
     public async Task<long> DeleteOldLogsAsync(DateTime olderThan)
     {
-        var filter = Builders<UserActivityLog>.Filter.And(
-            Builders<UserActivityLog>.Filter.Lt(log => log.CreatedAt, olderThan),
-            Builders<UserActivityLog>.Filter.Eq(log => log.IsDeleted, false)
-        );
+        var filter = _activityLogFactory.CreateFilterBuilder()
+            .LessThan(log => log.CreatedAt, olderThan)
+            .Build();
 
-        var update = Builders<UserActivityLog>.Update
-            .Set(log => log.IsDeleted, true)
-            .Set(log => log.DeletedAt, DateTime.UtcNow);
-
-        var result = await _activityLogs.UpdateManyAsync(filter, update);
-        return result.ModifiedCount;
+        var logs = await _activityLogFactory.FindAsync(filter);
+        var logIds = logs.Select(log => log.Id!).ToList();
+        
+        if (logIds.Any())
+        {
+            await _activityLogFactory.SoftDeleteManyAsync(logIds);
+        }
+        
+        return logIds.Count;
     }
 
     /// <summary>
@@ -215,10 +219,11 @@ public class UserActivityLogService : BaseService, IUserActivityLogService
             IpAddress = ipAddress,
             UserAgent = userAgent,
             IsDeleted = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
-        await _activityLogs.InsertOneAsync(log);
+        await _activityLogFactory.CreateAsync(log);
     }
 
     /// <summary>

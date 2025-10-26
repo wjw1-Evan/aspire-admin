@@ -4,11 +4,11 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
-public class RuleListItem : Platform.ServiceDefaults.Models.ISoftDeletable
+public class RuleListItem : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [BsonElement("companyId")]
     public string CompanyId { get; set; } = string.Empty;

@@ -1,5 +1,4 @@
 using User = Platform.ApiService.Models.AppUser;
-using MongoDB.Driver;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -9,10 +8,13 @@ using System.Security.Claims;
 
 namespace Platform.ApiService.Services;
 
-public class AuthService : BaseService, IAuthService
+public class AuthService : IAuthService
 {
-    private readonly IMongoDatabase _database;
-    private readonly IMongoCollection<User> _users;
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<Company> _companyFactory;
+    private readonly IDatabaseOperationFactory<Menu> _menuFactory;
     private readonly IJwtService _jwtService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
@@ -23,20 +25,25 @@ public class AuthService : BaseService, IAuthService
     private readonly IImageCaptchaService _imageCaptchaService;
 
     public AuthService(
-        IMongoDatabase database,
+        IDatabaseOperationFactory<User> userFactory,
+        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<Company> companyFactory,
+        IDatabaseOperationFactory<Menu> menuFactory,
         IJwtService jwtService,
         IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
         IUserService userService,
         ILogger<AuthService> logger,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
         IPasswordHasher passwordHasher,
         IImageCaptchaService imageCaptchaService)
-        : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _database = database;
-        _users = database.GetCollection<User>("users");
+        _userFactory = userFactory;
+        _userCompanyFactory = userCompanyFactory;
+        _roleFactory = roleFactory;
+        _companyFactory = companyFactory;
+        _menuFactory = menuFactory;
         _jwtService = jwtService;
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
@@ -75,7 +82,8 @@ public class AuthService : BaseService, IAuthService
         }
 
         // 从数据库获取用户信息
-        var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        var users = await _userFactory.FindAsync(_userFactory.CreateFilterBuilder().Equal(u => u.Id, userId).Build());
+        var user = users.FirstOrDefault();
         if (user == null)
         {
             // 用户不存在：可能已被删除
@@ -98,23 +106,21 @@ public class AuthService : BaseService, IAuthService
         var roleNames = new List<string>();
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            var userCompanies = _database.GetCollection<UserCompany>("user_companies");
-            var roles = _database.GetCollection<Role>("roles");
+            // 使用工厂查询 UserCompany 记录
+            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.UserId, user.Id)
+                .Equal(uc => uc.CompanyId, user.CurrentCompanyId)
+                .Build();
             
-            var userCompanyFilter = Builders<UserCompany>.Filter.And(
-                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, user.Id),
-                Builders<UserCompany>.Filter.Eq(uc => uc.CompanyId, user.CurrentCompanyId),
-                Builders<UserCompany>.Filter.Eq(uc => uc.IsDeleted, false)
-            );
-            
-            var userCompany = await userCompanies.Find(userCompanyFilter).FirstOrDefaultAsync();
-            if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
+            var userCompany = await _userCompanyFactory.FindAsync(userCompanyFilter);
+            var firstUserCompany = userCompany.FirstOrDefault();
+            if (firstUserCompany?.RoleIds != null && firstUserCompany.RoleIds.Any())
             {
-                var roleFilter = Builders<Role>.Filter.And(
-                    Builders<Role>.Filter.In(r => r.Id, userCompany.RoleIds),
-                    Builders<Role>.Filter.Eq(r => r.IsDeleted, false)
-                );
-                var userRoles = await roles.Find(roleFilter).ToListAsync();
+                // 使用工厂查询角色信息
+                var roleFilter = _roleFactory.CreateFilterBuilder()
+                    .In(r => r.Id, firstUserCompany.RoleIds)
+                    .Build();
+                var userRoles = await _roleFactory.FindAsync(roleFilter);
                 roleNames = userRoles.Select(r => r.Name).ToList();
             }
         }
@@ -178,12 +184,12 @@ public class AuthService : BaseService, IAuthService
         }
 
         // v3.1: 用户名全局查找（不需要企业代码）
-        var filter = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq(u => u.Username, request.Username),
-            Builders<User>.Filter.Eq(u => u.IsActive, true),
-            MongoFilterExtensions.NotDeleted<User>()
-        );
-        var user = await _users.Find(filter).FirstOrDefaultAsync();
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Username, request.Username)
+            .Equal(u => u.IsActive, true)
+            .Build();
+        var users = await _userFactory.FindAsync(filter);
+        var user = users.FirstOrDefault();
         
         if (user == null)
         {
@@ -205,9 +211,8 @@ public class AuthService : BaseService, IAuthService
         // v3.1: 检查当前企业状态（如果有）
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            var companies = _database.GetCollection<Company>("companies");
-            var company = await companies.Find(c => c.Id == user.CurrentCompanyId && c.IsDeleted == false)
-                .FirstOrDefaultAsync();
+            var companies = await _companyFactory.FindAsync(_companyFactory.CreateFilterBuilder().Equal(c => c.Id, user.CurrentCompanyId).Build());
+            var company = companies.FirstOrDefault();
             
             if (company == null)
             {
@@ -235,8 +240,12 @@ public class AuthService : BaseService, IAuthService
         }
 
         // 更新最后登录时间
-        var update = Builders<User>.Update.Set(u => u.LastLoginAt, DateTime.UtcNow);
-        await _users.UpdateOneAsync(u => u.Id == user.Id, update);
+        var loginFilter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
+        var loginUpdate = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.LastLoginAt, DateTime.UtcNow)
+            .Build();
+        
+        await _userFactory.FindOneAndUpdateAsync(loginFilter, loginUpdate);
 
         // 记录登录活动日志
         var httpContext = _httpContextAccessor.HttpContext;
@@ -337,7 +346,7 @@ public class AuthService : BaseService, IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await _users.InsertOneAsync(user);
+            await _userFactory.CreateAsync(user);
             _logger.LogInformation("用户注册成功: {Username} ({UserId})", user.Username, user.Id);
             
             // 创建个人企业
@@ -347,18 +356,23 @@ public class AuthService : BaseService, IAuthService
             userCompany = companyResult.UserCompany;
             
             // 设置用户的企业信息
-            var update = Builders<User>.Update
+            var update = _userFactory.CreateUpdateBuilder()
                 .Set(u => u.CurrentCompanyId, personalCompany.Id)
                 .Set(u => u.PersonalCompanyId, personalCompany.Id)
                 .Set(u => u.CompanyId, personalCompany.Id)
-                .Set(u => u.UpdatedAt, DateTime.UtcNow);
-            
-            await _users.UpdateOneAsync(u => u.Id == user.Id, update);
+                .SetCurrentTimestamp()
+                .Build();
             
             // 更新用户对象
             user.CurrentCompanyId = personalCompany.Id;
-            user.PersonalCompanyId = personalCompany.Id;
-            user.CompanyId = personalCompany.Id!;
+            // 更新用户的个人企业信息
+            var userFilter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
+            var userUpdate = _userFactory.CreateUpdateBuilder()
+                .Set(u => u.PersonalCompanyId, personalCompany.Id)
+                .Set(u => u.CompanyId, personalCompany.Id!)
+                .Build();
+            
+            await _userFactory.FindOneAndUpdateAsync(userFilter, userUpdate);
             
             // 清除密码哈希
             user.PasswordHash = string.Empty;
@@ -395,32 +409,32 @@ public class AuthService : BaseService, IAuthService
     {
         try
         {
-            var companies = _database.GetCollection<Company>("companies");
-            var roles = _database.GetCollection<Role>("roles");
-            var userCompanies = _database.GetCollection<UserCompany>("user_companies");
-
             // 按相反顺序删除（避免外键约束问题）
             if (userCompany != null)
             {
-                await userCompanies.DeleteOneAsync(uc => uc.Id == userCompany.Id);
+                var filter = _userCompanyFactory.CreateFilterBuilder().Equal(uc => uc.Id, userCompany.Id).Build();
+                await _userCompanyFactory.FindOneAndSoftDeleteAsync(filter);
                 _logger.LogInformation("回滚：删除用户-企业关联 {UserCompanyId}", userCompany.Id);
             }
 
             if (role != null)
             {
-                await roles.DeleteOneAsync(r => r.Id == role.Id);
+                var filter = _roleFactory.CreateFilterBuilder().Equal(r => r.Id, role.Id).Build();
+                await _roleFactory.FindOneAndSoftDeleteAsync(filter);
                 _logger.LogInformation("回滚：删除角色 {RoleId}", role.Id);
             }
 
             if (company != null)
             {
-                await companies.DeleteOneAsync(c => c.Id == company.Id);
+                var filter = _companyFactory.CreateFilterBuilder().Equal(c => c.Id, company.Id).Build();
+                await _companyFactory.FindOneAndSoftDeleteAsync(filter);
                 _logger.LogInformation("回滚：删除企业 {CompanyId}", company.Id);
             }
 
             if (user != null)
             {
-                await _users.DeleteOneAsync(u => u.Id == user.Id);
+                var filter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
+                await _userFactory.FindOneAndSoftDeleteAsync(filter);
                 _logger.LogInformation("回滚：删除用户 {UserId}", user.Id);
             }
 
@@ -447,11 +461,6 @@ public class AuthService : BaseService, IAuthService
     /// </summary>
     private async Task<CompanyCreationResult> CreatePersonalCompanyWithDetailsAsync(User user)
     {
-        var companies = _database.GetCollection<Company>("companies");
-        var roles = _database.GetCollection<Role>("roles");
-        var menus = _database.GetCollection<Menu>("menus");
-        var userCompanies = _database.GetCollection<UserCompany>("user_companies");
-        
         Company? company = null;
         Role? adminRole = null;
         UserCompany? userCompany = null;
@@ -470,12 +479,15 @@ public class AuthService : BaseService, IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await companies.InsertOneAsync(company);
+            await _companyFactory.CreateAsync(company);
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
             
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
-            // 注意：ApiService 的 Menu 模型使用 DeletedAt 字段而不是 IsDeleted
-            var allMenus = await menus.Find(m => m.IsEnabled && m.DeletedAt == null).ToListAsync();
+            // DatabaseOperationFactory 会自动应用 IsDeleted = false 的软删除过滤
+            var menuFilter = _menuFactory.CreateFilterBuilder()
+                .Equal(m => m.IsEnabled, true)
+                .Build();
+            var allMenus = await _menuFactory.FindAsync(menuFilter);
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
             
@@ -498,7 +510,7 @@ public class AuthService : BaseService, IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await roles.InsertOneAsync(adminRole);
+            await _roleFactory.CreateAsync(adminRole);
             _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
             
             // 4. 创建用户-企业关联（用户是管理员）
@@ -514,7 +526,7 @@ public class AuthService : BaseService, IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await userCompanies.InsertOneAsync(userCompany);
+            await _userCompanyFactory.CreateAsync(userCompany);
             _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}", user.Id, company.Id);
             
             return new CompanyCreationResult
@@ -538,11 +550,6 @@ public class AuthService : BaseService, IAuthService
     /// </summary>
     private async Task<Company> CreatePersonalCompanyAsync(User user)
     {
-        var companies = _database.GetCollection<Company>("companies");
-        var roles = _database.GetCollection<Role>("roles");
-        var menus = _database.GetCollection<Menu>("menus");
-        var userCompanies = _database.GetCollection<UserCompany>("user_companies");
-        
         Company? company = null;
         Role? adminRole = null;
         
@@ -560,12 +567,15 @@ public class AuthService : BaseService, IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await companies.InsertOneAsync(company);
+            await _companyFactory.CreateAsync(company);
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
             
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
-            // 注意：ApiService 的 Menu 模型使用 DeletedAt 字段而不是 IsDeleted
-            var allMenus = await menus.Find(m => m.IsEnabled && m.DeletedAt == null).ToListAsync();
+            // DatabaseOperationFactory 会自动应用 IsDeleted = false 的软删除过滤
+            var menuFilter = _menuFactory.CreateFilterBuilder()
+                .Equal(m => m.IsEnabled, true)
+                .Build();
+            var allMenus = await _menuFactory.FindAsync(menuFilter);
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
             
@@ -588,7 +598,7 @@ public class AuthService : BaseService, IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await roles.InsertOneAsync(adminRole);
+            await _roleFactory.CreateAsync(adminRole);
             _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
             
             // 4. 创建用户-企业关联（用户是管理员）
@@ -606,7 +616,7 @@ public class AuthService : BaseService, IAuthService
                 UpdatedAt = DateTime.UtcNow
             };
             
-            await userCompanies.InsertOneAsync(userCompany);
+            await _userCompanyFactory.CreateAsync(userCompany);
             
             _logger.LogInformation("个人企业创建完成");
             
@@ -623,21 +633,35 @@ public class AuthService : BaseService, IAuthService
                 // 1. 删除用户-企业关联
                 if (user?.Id != null && company?.Id != null)
                 {
-                    await userCompanies.DeleteOneAsync(uc => uc.UserId == user.Id && uc.CompanyId == company.Id);
-                    _logger.LogInformation("已清理用户-企业关联: UserId={UserId}, CompanyId={CompanyId}", user.Id, company.Id);
+                    // 查找并删除用户-企业关联
+                    var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+                        .Equal(uc => uc.UserId, user.Id)
+                        .Equal(uc => uc.CompanyId, company.Id)
+                        .Build();
+                    var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
+                    var userCompanyToDelete = userCompanies.FirstOrDefault();
+                    
+                    if (userCompanyToDelete != null)
+                    {
+                        var filter = _userCompanyFactory.CreateFilterBuilder().Equal(uc => uc.Id, userCompanyToDelete.Id!).Build();
+                        await _userCompanyFactory.FindOneAndSoftDeleteAsync(filter);
+                        _logger.LogInformation("已清理用户-企业关联: UserId={UserId}, CompanyId={CompanyId}", user.Id, company.Id);
+                    }
                 }
                 
                 // 2. 删除角色
                 if (adminRole?.Id != null)
                 {
-                    await roles.DeleteOneAsync(r => r.Id == adminRole.Id);
+                    var filter = _roleFactory.CreateFilterBuilder().Equal(r => r.Id, adminRole.Id!).Build();
+                    await _roleFactory.FindOneAndSoftDeleteAsync(filter);
                     _logger.LogInformation("已清理角色: {RoleId}", adminRole.Id);
                 }
                 
                 // 3. 删除企业
                 if (company?.Id != null)
                 {
-                    await companies.DeleteOneAsync(c => c.Id == company.Id);
+                    var filter = _companyFactory.CreateFilterBuilder().Equal(c => c.Id, company.Id).Build();
+                    await _companyFactory.FindOneAndSoftDeleteAsync(filter);
                     _logger.LogInformation("已清理企业: {CompanyId}", company.Id);
                 }
             }
@@ -652,25 +676,27 @@ public class AuthService : BaseService, IAuthService
 
     public async Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordRequest request)
     {
-        // 从 HTTP 上下文获取当前用户信息
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated != true)
+        try
         {
-            return ApiResponse<bool>.UnauthorizedResult("用户未认证");
-        }
+            // 从 HTTP 上下文获取当前用户信息
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext?.User?.Identity?.IsAuthenticated != true)
+            {
+                return ApiResponse<bool>.UnauthorizedResult("用户未认证");
+            }
 
-        // 从 Claims 获取用户 ID
-        var userId = httpContext.User.FindFirst("userId")?.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            return ApiResponse<bool>.UnauthorizedResult("用户ID不存在");
-        }
+            // 从 Claims 获取用户 ID
+            var userId = httpContext.User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return ApiResponse<bool>.UnauthorizedResult("用户ID不存在");
+            }
 
-        // 验证输入参数
-        if (string.IsNullOrWhiteSpace(request.CurrentPassword))
-        {
-            return ApiResponse<bool>.ValidationErrorResult("当前密码不能为空");
-        }
+            // 验证输入参数
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+            {
+                return ApiResponse<bool>.ValidationErrorResult("当前密码不能为空");
+            }
 
             if (string.IsNullOrWhiteSpace(request.NewPassword))
             {
@@ -701,7 +727,8 @@ public class AuthService : BaseService, IAuthService
             }
 
             // 从数据库获取用户信息
-            var user = await _users.Find(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync();
+            var users = await _userFactory.FindAsync(_userFactory.CreateFilterBuilder().Equal(u => u.Id, userId).Equal(u => u.IsActive, true).Build());
+            var user = users.FirstOrDefault();
             if (user == null)
             {
                 return ApiResponse<bool>.NotFoundResult("用户", userId);
@@ -715,26 +742,28 @@ public class AuthService : BaseService, IAuthService
 
             // 更新密码
             var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
-            var update = Builders<User>.Update
+            
+            var filter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
+            var update = _userFactory.CreateUpdateBuilder()
                 .Set(u => u.PasswordHash, newPasswordHash)
-                .Set(u => u.UpdatedAt, DateTime.UtcNow);
+                .Set(u => u.UpdatedAt, DateTime.UtcNow)
+                .Build();
+            
+            await _userFactory.FindOneAndUpdateAsync(filter, update);
+            
+            // 记录修改密码活动日志
+            var currentHttpContext = _httpContextAccessor.HttpContext;
+            var ipAddress = currentHttpContext?.Connection?.RemoteIpAddress?.ToString();
+            var userAgent = currentHttpContext?.Request?.Headers["User-Agent"].ToString();
+            await _userService.LogUserActivityAsync(user.Id!, "change_password", "修改密码", ipAddress, userAgent);
 
-            var result = await _users.UpdateOneAsync(u => u.Id == userId, update);
-
-            if (result.ModifiedCount > 0)
-            {
-                // 记录修改密码活动日志
-                var currentHttpContext = _httpContextAccessor.HttpContext;
-                var ipAddress = currentHttpContext?.Connection?.RemoteIpAddress?.ToString();
-                var userAgent = currentHttpContext?.Request?.Headers["User-Agent"].ToString();
-                await _userService.LogUserActivityAsync(userId, "change_password", "修改密码", ipAddress, userAgent);
-
-                return ApiResponse<bool>.SuccessResult(true);
-            }
-            else
-            {
-                return ApiResponse<bool>.ErrorResult("UPDATE_FAILED", "密码更新失败");
-            }
+            return ApiResponse<bool>.SuccessResult(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "修改密码失败");
+            return ApiResponse<bool>.ErrorResult("INTERNAL_ERROR", "修改密码失败");
+        }
     }
 
     public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
@@ -772,7 +801,8 @@ public class AuthService : BaseService, IAuthService
             }
 
             // 从数据库获取用户信息
-            var user = await _users.Find(u => u.Id == userId && u.IsActive).FirstOrDefaultAsync();
+            var users = await _userFactory.FindAsync(_userFactory.CreateFilterBuilder().Equal(u => u.Id, userId).Equal(u => u.IsActive, true).Build());
+            var user = users.FirstOrDefault();
             if (user == null)
             {
                 return new RefreshTokenResult

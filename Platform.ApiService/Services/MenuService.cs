@@ -1,4 +1,3 @@
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
@@ -7,21 +6,18 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
-public class MenuService : BaseService, IMenuService
+public class MenuService : IMenuService
 {
-    private readonly IMongoCollection<Menu> _menus;
-    private readonly IMongoCollection<Role> _roles;
+    private readonly IDatabaseOperationFactory<Menu> _menuFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
 
     public MenuService(
-        IMongoDatabase database, 
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
-        ILogger<MenuService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
+        IDatabaseOperationFactory<Menu> menuFactory,
+        IDatabaseOperationFactory<Role> roleFactory)
     {
         // 菜单是全局资源，不使用 BaseRepository（避免 CompanyId 过滤）
-        _menus = database.GetCollection<Menu>("menus");
-        _roles = GetCollection<Role>("roles");
+        _menuFactory = menuFactory;
+        _roleFactory = roleFactory;
     }
 
     /// <summary>
@@ -29,10 +25,9 @@ public class MenuService : BaseService, IMenuService
     /// </summary>
     public async Task<List<Menu>> GetAllMenusAsync()
     {
-        var filter = Builders<Menu>.Filter.Eq(m => m.IsDeleted, false);
-        return await _menus.Find(filter)
-            .SortBy(m => m.SortOrder)
-            .ToListAsync();
+        var sortBuilder = _menuFactory.CreateSortBuilder()
+            .Ascending(m => m.SortOrder);
+        return await _menuFactory.FindAsync(sort: sortBuilder.Build());
     }
 
     /// <summary>
@@ -50,12 +45,10 @@ public class MenuService : BaseService, IMenuService
     public async Task<List<MenuTreeNode>> GetUserMenusAsync(List<string> roleIds)
     {
         // 获取用户的所有未删除角色
-        var rolesFilter = Builders<Role>.Filter.And(
-            Builders<Role>.Filter.In(r => r.Id, roleIds),
-            SoftDeleteExtensions.NotDeleted<Role>()
-        );
-        var userRoles = await _roles.Find(rolesFilter)
-            .ToListAsync();
+        var rolesFilter = _roleFactory.CreateFilterBuilder()
+            .In(r => r.Id, roleIds)
+            .Build();
+        var userRoles = await _roleFactory.FindAsync(rolesFilter);
 
         // 收集所有角色可访问的菜单ID
         var accessibleMenuIds = userRoles
@@ -64,15 +57,11 @@ public class MenuService : BaseService, IMenuService
             .ToList();
 
         // 获取这些菜单（未删除且已启用）
-        var menusFilter = Builders<Menu>.Filter.And(
-            Builders<Menu>.Filter.In(m => m.Id, accessibleMenuIds),
-            Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
-            MongoFilterExtensions.NotDeleted<Menu>()
-        );
-        var accessibleMenus = await _menus
-            .Find(menusFilter)
-            .SortBy(m => m.SortOrder)
-            .ToListAsync();
+        var menusFilter = _menuFactory.CreateFilterBuilder()
+            .In(m => m.Id, accessibleMenuIds)
+            .Equal(m => m.IsEnabled, true)
+            .Build();
+        var accessibleMenus = await _menuFactory.FindAsync(menusFilter, sort: _menuFactory.CreateSortBuilder().Ascending(m => m.SortOrder).Build());
 
         // 构建菜单树（需要包含父菜单，即使父菜单不在权限列表中）
         var allMenuIds = new HashSet<string>(accessibleMenuIds);
@@ -81,15 +70,11 @@ public class MenuService : BaseService, IMenuService
             await AddParentMenuIds(menu.ParentId!, allMenuIds);
         }
 
-        var allMenusFilter = Builders<Menu>.Filter.And(
-            Builders<Menu>.Filter.In(m => m.Id, allMenuIds.ToList()),
-            Builders<Menu>.Filter.Eq(m => m.IsEnabled, true),
-            MongoFilterExtensions.NotDeleted<Menu>()
-        );
-        var allAccessibleMenus = await _menus
-            .Find(allMenusFilter)
-            .SortBy(m => m.SortOrder)
-            .ToListAsync();
+        var allMenusFilter = _menuFactory.CreateFilterBuilder()
+            .In(m => m.Id, allMenuIds.ToList())
+            .Equal(m => m.IsEnabled, true)
+            .Build();
+        var allAccessibleMenus = await _menuFactory.FindAsync(allMenusFilter, sort: _menuFactory.CreateSortBuilder().Ascending(m => m.SortOrder).Build());
 
         return BuildMenuTree(allAccessibleMenus, null);
     }
@@ -102,11 +87,11 @@ public class MenuService : BaseService, IMenuService
         if (menuIds.Contains(parentId))
             return;
 
-        var filter = Builders<Menu>.Filter.And(
-            Builders<Menu>.Filter.Eq(m => m.Id, parentId),
-            MongoFilterExtensions.NotDeleted<Menu>()
-        );
-        var parentMenu = await _menus.Find(filter).FirstOrDefaultAsync();
+        var filter = _menuFactory.CreateFilterBuilder()
+            .Equal(m => m.Id, parentId)
+            .Build();
+        var parentMenus = await _menuFactory.FindAsync(filter);
+        var parentMenu = parentMenus.FirstOrDefault();
         if (parentMenu != null)
         {
             menuIds.Add(parentId);
@@ -122,11 +107,7 @@ public class MenuService : BaseService, IMenuService
     /// </summary>
     public async Task<Menu?> GetMenuByIdAsync(string id)
     {
-        var filter = Builders<Menu>.Filter.And(
-            Builders<Menu>.Filter.Eq(m => m.Id, id),
-            Builders<Menu>.Filter.Eq(m => m.IsDeleted, false)
-        );
-        return await _menus.Find(filter).FirstOrDefaultAsync();
+        return await _menuFactory.GetByIdAsync(id);
     }
 
     /// <summary>

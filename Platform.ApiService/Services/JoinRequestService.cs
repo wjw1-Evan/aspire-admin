@@ -1,4 +1,3 @@
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
@@ -20,29 +19,35 @@ public interface IJoinRequestService
     Task<bool> RejectRequestAsync(string requestId, string rejectReason);
 }
 
-public class JoinRequestService : BaseService, IJoinRequestService
+public class JoinRequestService : IJoinRequestService
 {
-    private readonly IMongoCollection<CompanyJoinRequest> _joinRequests;
-    private readonly IMongoCollection<UserCompany> _userCompanies;
-    private readonly IMongoCollection<AppUser> _users;
-    private readonly IMongoCollection<Company> _companies;
-    private readonly IMongoCollection<Role> _roles;
+    private readonly IDatabaseOperationFactory<CompanyJoinRequest> _joinRequestFactory;
+    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDatabaseOperationFactory<Company> _companyFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
     private readonly IUserCompanyService _userCompanyService;
+    private readonly ITenantContext _tenantContext;
+    private readonly ILogger<JoinRequestService> _logger;
 
     public JoinRequestService(
-        IMongoDatabase database,
-        IHttpContextAccessor httpContextAccessor,
+        IDatabaseOperationFactory<CompanyJoinRequest> joinRequestFactory,
+        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        IDatabaseOperationFactory<AppUser> userFactory,
+        IDatabaseOperationFactory<Company> companyFactory,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IUserCompanyService userCompanyService,
         ITenantContext tenantContext,
-        ILogger<JoinRequestService> logger,
-        IUserCompanyService userCompanyService)
-        : base(database, httpContextAccessor, tenantContext, logger)
+        ILogger<JoinRequestService> logger)
     {
-        _joinRequests = database.GetCollection<CompanyJoinRequest>("company_join_requests");
-        _userCompanies = database.GetCollection<UserCompany>("user_companies");
-        _users = database.GetCollection<AppUser>("users");
-        _companies = database.GetCollection<Company>("companies");
-        _roles = database.GetCollection<Role>("roles");
+        _joinRequestFactory = joinRequestFactory;
+        _userCompanyFactory = userCompanyFactory;
+        _userFactory = userFactory;
+        _companyFactory = companyFactory;
+        _roleFactory = roleFactory;
         _userCompanyService = userCompanyService;
+        _tenantContext = tenantContext;
+        _logger = logger;
     }
 
     /// <summary>
@@ -50,45 +55,43 @@ public class JoinRequestService : BaseService, IJoinRequestService
     /// </summary>
     public async Task<CompanyJoinRequest> ApplyToJoinCompanyAsync(ApplyToJoinCompanyRequest request)
     {
-        var userId = GetRequiredUserId();
+        var userId = _joinRequestFactory.GetRequiredUserId();
         var companyId = request.CompanyId;
         
         // 1. 验证企业存在且活跃
-        var company = await _companies.Find(c => 
-            c.Id == companyId && 
-            c.IsActive == true &&
-            c.IsDeleted == false
-        ).FirstOrDefaultAsync();
+        var company = await _companyFactory.GetByIdAsync(companyId);
         
-        if (company == null)
+        if (company == null || !company.IsActive)
         {
             throw new KeyNotFoundException("企业不存在或已停用");
         }
         
         // 2. 检查是否已是成员
-        var existingMembership = await _userCompanies.Find(uc =>
-            uc.UserId == userId &&
-            uc.CompanyId == companyId &&
-            uc.IsDeleted == false
-        ).FirstOrDefaultAsync();
+        var existingMembershipFilter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, userId)
+            .Equal(uc => uc.CompanyId, companyId)
+            .Build();
+        var existingMembership = await _userCompanyFactory.FindAsync(existingMembershipFilter);
+        var membership = existingMembership.FirstOrDefault();
         
-        if (existingMembership != null)
+        if (membership != null)
         {
-            if (existingMembership.Status == "active")
+            if (membership.Status == "active")
                 throw new InvalidOperationException("您已是该企业的成员");
-            if (existingMembership.Status == "pending")
+            if (membership.Status == "pending")
                 throw new InvalidOperationException("您的加入申请正在审核中");
         }
         
         // 3. 检查是否有待审核的申请
-        var existingRequest = await _joinRequests.Find(jr =>
-            jr.UserId == userId &&
-            jr.CompanyId == companyId &&
-            jr.Status == "pending" &&
-            jr.IsDeleted == false
-        ).FirstOrDefaultAsync();
+        var existingRequestFilter = _joinRequestFactory.CreateFilterBuilder()
+            .Equal(jr => jr.UserId, userId)
+            .Equal(jr => jr.CompanyId, companyId)
+            .Equal(jr => jr.Status, "pending")
+            .Build();
+        var existingRequest = await _joinRequestFactory.FindAsync(existingRequestFilter);
+        var existingRequestRecord = existingRequest.FirstOrDefault();
         
-        if (existingRequest != null)
+        if (existingRequestRecord != null)
         {
             throw new InvalidOperationException("您已提交过申请，请等待审核");
         }
@@ -104,9 +107,9 @@ public class JoinRequestService : BaseService, IJoinRequestService
             UpdatedAt = DateTime.UtcNow
         };
         
-        await _joinRequests.InsertOneAsync(joinRequest);
+        await _joinRequestFactory.CreateAsync(joinRequest);
         
-        LogInformation("用户 {UserId} 申请加入企业 {CompanyId}", userId, companyId);
+        _logger.LogInformation("用户 {UserId} 申请加入企业 {CompanyId}", userId, companyId);
         
         // TODO: 发送通知给企业管理员
         
@@ -118,16 +121,15 @@ public class JoinRequestService : BaseService, IJoinRequestService
     /// </summary>
     public async Task<List<JoinRequestDetail>> GetMyRequestsAsync()
     {
-        var userId = GetRequiredUserId();
+        var userId = _joinRequestFactory.GetRequiredUserId();
         
-        var filter = Builders<CompanyJoinRequest>.Filter.And(
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.UserId, userId),
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.IsDeleted, false)
-        );
+        var filter = _joinRequestFactory.CreateFilterBuilder()
+            .Equal(jr => jr.UserId, userId)
+            .Build();
         
-        var requests = await _joinRequests.Find(filter)
-            .SortByDescending(jr => jr.CreatedAt)
-            .ToListAsync();
+        var sortBuilder = _joinRequestFactory.CreateSortBuilder()
+            .Descending(jr => jr.CreatedAt);
+        var requests = await _joinRequestFactory.FindAsync(filter, sort: sortBuilder.Build());
         
         return await BuildJoinRequestDetailsAsync(requests);
     }
@@ -137,21 +139,30 @@ public class JoinRequestService : BaseService, IJoinRequestService
     /// </summary>
     public async Task<bool> CancelRequestAsync(string requestId)
     {
-        var userId = GetRequiredUserId();
+        var userId = _joinRequestFactory.GetRequiredUserId();
         
-        var filter = Builders<CompanyJoinRequest>.Filter.And(
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.Id, requestId),
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.UserId, userId),
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.Status, "pending"),
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.IsDeleted, false)
-        );
+        var filter = _joinRequestFactory.CreateFilterBuilder()
+            .Equal(jr => jr.Id, requestId)
+            .Equal(jr => jr.UserId, userId)
+            .Equal(jr => jr.Status, "pending")
+            .Build();
         
-        var update = Builders<CompanyJoinRequest>.Update
+        var requests = await _joinRequestFactory.FindAsync(filter);
+        var request = requests.FirstOrDefault();
+        
+        if (request == null)
+        {
+            throw new KeyNotFoundException("申请不存在或已处理");
+        }
+        
+        var cancelFilter = _joinRequestFactory.CreateFilterBuilder().Equal(jr => jr.Id, request.Id).Build();
+        var cancelUpdate = _joinRequestFactory.CreateUpdateBuilder()
             .Set(jr => jr.Status, "cancelled")
-            .Set(jr => jr.UpdatedAt, DateTime.UtcNow);
+            .Set(jr => jr.UpdatedAt, DateTime.UtcNow)
+            .Build();
         
-        var result = await _joinRequests.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        var result = await _joinRequestFactory.FindOneAndUpdateAsync(cancelFilter, cancelUpdate);
+        return result != null;
     }
 
     /// <summary>
@@ -160,21 +171,20 @@ public class JoinRequestService : BaseService, IJoinRequestService
     public async Task<List<JoinRequestDetail>> GetPendingRequestsAsync(string companyId)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = GetRequiredUserId();
+        var currentUserId = _joinRequestFactory.GetRequiredUserId();
         if (!await _userCompanyService.IsUserAdminInCompanyAsync(currentUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以查看待审核申请");
         }
         
-        var filter = Builders<CompanyJoinRequest>.Filter.And(
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.CompanyId, companyId),
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.Status, "pending"),
-            Builders<CompanyJoinRequest>.Filter.Eq(jr => jr.IsDeleted, false)
-        );
+        var filter = _joinRequestFactory.CreateFilterBuilder()
+            .Equal(jr => jr.CompanyId, companyId)
+            .Equal(jr => jr.Status, "pending")
+            .Build();
         
-        var requests = await _joinRequests.Find(filter)
-            .SortBy(jr => jr.CreatedAt)
-            .ToListAsync();
+        var sortBuilder = _joinRequestFactory.CreateSortBuilder()
+            .Ascending(jr => jr.CreatedAt);
+        var requests = await _joinRequestFactory.FindAsync(filter, sort: sortBuilder.Build());
         
         return await BuildJoinRequestDetailsAsync(requests);
     }
@@ -184,16 +194,12 @@ public class JoinRequestService : BaseService, IJoinRequestService
     /// </summary>
     public async Task<bool> ApproveRequestAsync(string requestId, ReviewJoinRequestRequest? reviewRequest = null)
     {
-        var adminUserId = GetRequiredUserId();
+        var adminUserId = _joinRequestFactory.GetRequiredUserId();
         
         // 1. 获取申请记录
-        var request = await _joinRequests.Find(jr => 
-            jr.Id == requestId &&
-            jr.Status == "pending" &&
-            jr.IsDeleted == false
-        ).FirstOrDefaultAsync();
+        var request = await _joinRequestFactory.GetByIdAsync(requestId);
         
-        if (request == null)
+        if (request == null || request.Status != "pending")
         {
             throw new KeyNotFoundException("申请不存在或已处理");
         }
@@ -205,14 +211,13 @@ public class JoinRequestService : BaseService, IJoinRequestService
         }
         
         // 3. 检查企业用户配额
-        var currentMemberCount = await _userCompanies.CountDocumentsAsync(uc =>
-            uc.CompanyId == request.CompanyId &&
-            uc.Status == "active" &&
-            uc.IsDeleted == false
-        );
+        var currentMemberCountFilter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.CompanyId, request.CompanyId)
+            .Equal(uc => uc.Status, "active")
+            .Build();
+        var currentMemberCount = await _userCompanyFactory.CountAsync(currentMemberCountFilter);
         
-        var company = await _companies.Find(c => c.Id == request.CompanyId)
-            .FirstOrDefaultAsync();
+        var company = await _companyFactory.GetByIdAsync(request.CompanyId);
         
         if (company != null && currentMemberCount >= company.MaxUsers)
         {
@@ -224,15 +229,16 @@ public class JoinRequestService : BaseService, IJoinRequestService
         if (roleIds.Count == 0)
         {
             // 如果没有指定角色，分配默认的"员工"角色
-            var defaultRole = await _roles.Find(r =>
-                r.CompanyId == request.CompanyId &&
-                r.Name == "员工" &&
-                r.IsDeleted == false
-            ).FirstOrDefaultAsync();
+            var defaultRoleFilter = _roleFactory.CreateFilterBuilder()
+                .Equal(r => r.CompanyId, request.CompanyId)
+                .Equal(r => r.Name, "员工")
+                .Build();
+            var defaultRole = await _roleFactory.FindAsync(defaultRoleFilter);
+            var role = defaultRole.FirstOrDefault();
             
-            if (defaultRole != null)
+            if (role != null)
             {
-                roleIds.Add(defaultRole.Id!);
+                roleIds.Add(role.Id!);
             }
         }
         
@@ -250,23 +256,26 @@ public class JoinRequestService : BaseService, IJoinRequestService
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
-        await _userCompanies.InsertOneAsync(userCompany);
+        await _userCompanyFactory.CreateAsync(userCompany);
         
         // 6. 更新申请状态
-        var update = Builders<CompanyJoinRequest>.Update
+        var filter = _joinRequestFactory.CreateFilterBuilder().Equal(jr => jr.Id, request.Id).Build();
+        var update = _joinRequestFactory.CreateUpdateBuilder()
             .Set(jr => jr.Status, "approved")
             .Set(jr => jr.ReviewedBy, adminUserId)
             .Set(jr => jr.ReviewedAt, DateTime.UtcNow)
-            .Set(jr => jr.UpdatedAt, DateTime.UtcNow);
+            .Set(jr => jr.UpdatedAt, DateTime.UtcNow)
+            .Build();
         
-        await _joinRequests.UpdateOneAsync(jr => jr.Id == requestId, update);
+        var result = await _joinRequestFactory.FindOneAndUpdateAsync(filter, update);
         
-        LogInformation("管理员 {AdminId} 批准用户 {UserId} 加入企业 {CompanyId}", 
-            adminUserId, request.UserId, request.CompanyId);
+        if (result != null)
+        {
+            _logger.LogInformation("管理员 {AdminId} 批准用户 {UserId} 加入企业 {CompanyId}", 
+                adminUserId, request.UserId, request.CompanyId);
+        }
         
-        // TODO: 通知用户申请已通过
-        
-        return true;
+        return result != null;
     }
 
     /// <summary>
@@ -274,16 +283,12 @@ public class JoinRequestService : BaseService, IJoinRequestService
     /// </summary>
     public async Task<bool> RejectRequestAsync(string requestId, string rejectReason)
     {
-        var adminUserId = GetRequiredUserId();
+        var adminUserId = _joinRequestFactory.GetRequiredUserId();
         
         // 1. 获取申请记录
-        var request = await _joinRequests.Find(jr => 
-            jr.Id == requestId &&
-            jr.Status == "pending" &&
-            jr.IsDeleted == false
-        ).FirstOrDefaultAsync();
+        var request = await _joinRequestFactory.GetByIdAsync(requestId);
         
-        if (request == null)
+        if (request == null || request.Status != "pending")
         {
             throw new KeyNotFoundException("申请不存在或已处理");
         }
@@ -295,21 +300,24 @@ public class JoinRequestService : BaseService, IJoinRequestService
         }
         
         // 3. 更新申请状态
-        var update = Builders<CompanyJoinRequest>.Update
+        var filter = _joinRequestFactory.CreateFilterBuilder().Equal(jr => jr.Id, request.Id).Build();
+        var update = _joinRequestFactory.CreateUpdateBuilder()
             .Set(jr => jr.Status, "rejected")
             .Set(jr => jr.ReviewedBy, adminUserId)
             .Set(jr => jr.ReviewedAt, DateTime.UtcNow)
             .Set(jr => jr.RejectReason, rejectReason)
-            .Set(jr => jr.UpdatedAt, DateTime.UtcNow);
+            .Set(jr => jr.UpdatedAt, DateTime.UtcNow)
+            .Build();
         
-        var result = await _joinRequests.UpdateOneAsync(jr => jr.Id == requestId, update);
+        var result = await _joinRequestFactory.FindOneAndUpdateAsync(filter, update);
         
-        LogInformation("管理员 {AdminId} 拒绝用户 {UserId} 加入企业 {CompanyId}，原因: {Reason}", 
-            adminUserId, request.UserId, request.CompanyId, rejectReason);
+        if (result != null)
+        {
+            _logger.LogInformation("管理员 {AdminId} 拒绝用户 {UserId} 加入企业 {CompanyId}，原因: {Reason}", 
+                adminUserId, request.UserId, request.CompanyId, rejectReason);
+        }
         
-        // TODO: 通知用户申请被拒绝
-        
-        return result.ModifiedCount > 0;
+        return result != null;
     }
 
     #region 私有辅助方法
@@ -333,21 +341,27 @@ public class JoinRequestService : BaseService, IJoinRequestService
                                  .ToList();
         
         // 批量查询用户信息
-        var userFilter = Builders<AppUser>.Filter.In(u => u.Id, userIds);
-        var users = await _users.Find(userFilter).ToListAsync();
+        var userFilter = _userFactory.CreateFilterBuilder()
+            .In(u => u.Id, userIds)
+            .Build();
+        var users = await _userFactory.FindAsync(userFilter);
         var userDict = users.ToDictionary(u => u.Id!, u => u);
         
         // 批量查询企业信息
-        var companyFilter = Builders<Company>.Filter.In(c => c.Id, companyIds);
-        var companies = await _companies.Find(companyFilter).ToListAsync();
+        var companyFilter = _companyFactory.CreateFilterBuilder()
+            .In(c => c.Id, companyIds)
+            .Build();
+        var companies = await _companyFactory.FindAsync(companyFilter);
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
         
         // 批量查询审核人信息
         var reviewerDict = new Dictionary<string, AppUser>();
         if (reviewerIds.Any())
         {
-            var reviewerFilter = Builders<AppUser>.Filter.In(u => u.Id, reviewerIds);
-            var reviewers = await _users.Find(reviewerFilter).ToListAsync();
+            var reviewerFilter = _userFactory.CreateFilterBuilder()
+                .In(u => u.Id, reviewerIds)
+                .Build();
+            var reviewers = await _userFactory.FindAsync(reviewerFilter);
             reviewerDict = reviewers.ToDictionary(r => r.Id!, r => r);
         }
         

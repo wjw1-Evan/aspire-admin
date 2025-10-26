@@ -563,3 +563,4 @@ const responseInterceptors = [
 - [认证系统架构说明](mdc:Platform.App/AUTH-ARCHITECTURE.md)
 - [认证系统统一总结](mdc:Platform.App/AUTH-SYNC-SUMMARY.md)
 - [认证系统使用指南](mdc:Platform.App/README-AUTH.md)
+

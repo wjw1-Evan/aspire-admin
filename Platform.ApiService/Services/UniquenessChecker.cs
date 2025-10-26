@@ -1,5 +1,4 @@
 using User = Platform.ApiService.Models.AppUser;
-using MongoDB.Driver;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
@@ -19,12 +18,14 @@ public interface IUniquenessChecker
 
 public class UniquenessChecker : IUniquenessChecker
 {
-    private readonly IMongoCollection<User> _users;
+    private readonly IDatabaseOperationFactory<User> _userFactory;
     private readonly ITenantContext _tenantContext;
 
-    public UniquenessChecker(IMongoDatabase database, ITenantContext tenantContext)
+    public UniquenessChecker(
+        IDatabaseOperationFactory<User> userFactory,
+        ITenantContext tenantContext)
     {
-        _users = database.GetCollection<User>("users");
+        _userFactory = userFactory;
         _tenantContext = tenantContext;
     }
 
@@ -55,22 +56,20 @@ public class UniquenessChecker : IUniquenessChecker
     /// </summary>
     public async Task<bool> IsUsernameUniqueAsync(string username, string? excludeUserId = null)
     {
-        var filterBuilder = Builders<User>.Filter;
-        var filters = new List<FilterDefinition<User>>
-        {
-            filterBuilder.Eq(u => u.Username, username)
-        };
+        var filterBuilder = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Username, username);
         
         // v3.1: 用户名全局唯一，不再按企业过滤
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filters.Add(filterBuilder.Ne(u => u.Id, excludeUserId));
+            filterBuilder.NotEqual(u => u.Id, excludeUserId);
         }
         
-        var filter = filterBuilder.And(filters).AndNotDeleted();
+        var filter = filterBuilder.Build();
         
-        var existing = await _users.Find(filter).FirstOrDefaultAsync();
+        var users = await _userFactory.FindAsync(filter);
+        var existing = users.FirstOrDefault();
         return existing == null;
     }
 
@@ -82,22 +81,20 @@ public class UniquenessChecker : IUniquenessChecker
         if (string.IsNullOrEmpty(email))
             return true;
             
-        var filterBuilder = Builders<User>.Filter;
-        var filters = new List<FilterDefinition<User>>
-        {
-            filterBuilder.Eq(u => u.Email, email)
-        };
+        var filterBuilder = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Email, email);
         
         // v3.1: 邮箱全局唯一，不再按企业过滤
         
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filters.Add(filterBuilder.Ne(u => u.Id, excludeUserId));
+            filterBuilder.NotEqual(u => u.Id, excludeUserId);
         }
         
-        var filter = filterBuilder.And(filters).AndNotDeleted();
+        var filter = filterBuilder.Build();
         
-        var existing = await _users.Find(filter).FirstOrDefaultAsync();
+        var users = await _userFactory.FindAsync(filter);
+        var existing = users.FirstOrDefault();
         return existing == null;
     }
 }

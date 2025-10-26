@@ -9,7 +9,7 @@ namespace Platform.ApiService.Models;
 /// v3.1: 支持用户隶属多个企业
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable
+public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
 {
     /// <summary>
     /// 用户ID
@@ -74,7 +74,7 @@ public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.ISoftDele
 /// 企业加入申请表（简化模型）
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class CompanyJoinRequest : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable
+public class CompanyJoinRequest : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
 {
     /// <summary>
     /// 申请人用户ID

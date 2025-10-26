@@ -366,3 +366,4 @@ public async Task<IActionResult> GetAnonymousData()
 5. **粗粒度控制** - 合理的菜单划分，避免过度细分
 
 遵循这些规范，实现简洁、安全、易维护的权限系统！
+

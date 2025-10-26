@@ -68,6 +68,13 @@ docs/
 - [补充深度检查报告](bugfixes/SUPPLEMENTARY-DEEP-CHECK-REPORT.md) - **新增** - 补充安全审计和代码质量检查
 - [最终全面检查总结报告](bugfixes/FINAL-COMPREHENSIVE-CHECK-SUMMARY.md) - **新增** - 最终检查总结，系统生产就绪
 - [未完成功能检查报告](reports/UNCOMPLETED-FEATURES-ANALYSIS.md) - **新增** - 未完成功能和待实现功能分析 ⭐ **重要**
+- [验证码系统检查验证报告](reports/CAPTCHA-SYSTEM-VERIFICATION-REPORT.md) - **新增** - 验证码生成和验证逻辑检查报告 ⭐ **系统检查**
+- [验证码数据库操作检查报告](reports/CAPTCHA-DATABASE-OPERATIONS-VERIFICATION-REPORT.md) - **新增** - 验证码数据库操作逻辑深度检查 ⭐ **数据库检查**
+- [数据库操作工厂原子操作优化](features/DATABASE-ATOMIC-OPERATIONS-OPTIMIZATION.md) - **新增** - 数据库操作工厂原子操作优化实现 ⭐ **性能优化**
+- [**数据库操作工厂完全原子化优化完成报告**](reports/DATABASE-FACTORY-FULL-ATOMIC-OPTIMIZATION-COMPLETE.md) - 数据工厂完全原子化优化完成报告 ⭐ **新增**
+- [数据库操作工厂原子操作全面实施报告](reports/DATABASE-ATOMIC-OPERATIONS-COMPLETE-IMPLEMENTATION.md) - **新增** - 原子操作全面实施完成报告 ⭐ **实施完成**
+- [**数据工厂日志功能实施完成报告**](reports/DATABASE-FACTORY-LOGGING-IMPLEMENTATION-COMPLETE.md) - **新增** - 数据工厂日志功能实施完成报告 ⭐ **最新**
+- [**数据工厂查询语句日志功能完成报告**](reports/DATABASE-FACTORY-QUERY-LOGGING-COMPLETE.md) - **新增** - 查询语句日志功能实现总结 ⭐ **查询日志**
 
 ### 漏洞修复
 - [系统安全漏洞修复总结](bugfixes/SECURITY-VULNERABILITIES-FIX-SUMMARY.md) - 所有安全漏洞修复总结
@@ -138,6 +145,9 @@ docs/
 
 #### 数据初始化微服务 ⭐ **新增**
 - [数据初始化微服务](features/DATA-INITIALIZER-MICROSERVICE.md) - 专门负责数据初始化工作的微服务架构 ⭐ **最新**
+- [数据库操作工厂使用指南](features/DATABASE-OPERATION-FACTORY-GUIDE.md) - 数据库操作工厂使用指南 ⭐ **新增**
+- [数据库操作工厂迁移指南](features/DATABASE-FACTORY-MIGRATION.md) - 从 BaseRepository 迁移到工厂的详细指南 ⭐ **新增**
+- [**数据工厂日志功能**](features/DATABASE-FACTORY-LOGGING-FEATURE.md) - **新增** - 数据工厂详细日志输出功能，实时监控数据操作 ⭐ **最新**
 
 #### API 文档系统 ⭐ **新增**
 - [API 文档系统](features/API-ENDPOINT-SUMMARY-FEATURE.md) - 完整的 API 接口文档和 Scalar 集成 ⭐ **推荐**
@@ -221,6 +231,7 @@ docs/
 ### 问题修复
 
 #### Bug 修复
+- [**Menu 软删除不一致性修复**](bugfixes/MENU-SOFT-DELETE-INCONSISTENCY-FIX.md) - **新增** - 修复用户注册时菜单查询返回0结果的问题 ⭐ **最新**
 - [**macOS原生内存获取修复**](bugfixes/MACOS-NATIVE-MEMORY-FIX.md) - 删除估算代码，使用系统原生方法获取实际内存 ⭐ **最新**
 - [**macOS系统内存读取问题修复**](bugfixes/MACOS-MEMORY-READING-FIX.md) - 修复WMI在macOS上不工作的问题
 - [**内存数值计算错误修复**](bugfixes/MEMORY-VALUES-CALCULATION-FIX.md) - 修复系统内存估算和计算逻辑
@@ -263,6 +274,8 @@ docs/
 - [业务逻辑优化总结](optimization/BUSINESS-LOGIC-OPTIMIZATION-SUMMARY.md) - 业务优化
 - [v3.0 优化最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - v3.0 完整报告
 - [代码清理报告](optimization/CODE-CLEANUP-REPORT.md) - 代码清理
+- [**BaseService 简化重构报告**](optimization/BASESERVICE-SIMPLIFICATION.md) - BaseService 简化重构详细报告 ⭐ **最新**
+- [**BaseService 完全删除报告**](optimization/BASESERVICE-COMPLETE-REMOVAL.md) - BaseService 完全删除和功能迁移总结 ⭐ **最新**
 - [**v5.0 优化完成摘要**](optimization/OPTIMIZATION-V5-SUMMARY.md) - v5.0 架构优化总结 ⭐ **最新**
 - [**v5.0 优化前后对比**](optimization/V5-BEFORE-AFTER-COMPARISON.md) - 代码对比展示 ⭐ **推荐**
 - [**后端代码优化报告**](optimization/BACKEND-CODE-OPTIMIZATION-REPORT.md) - 后端架构优化详情 ⭐ **新增**

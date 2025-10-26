@@ -1,0 +1,510 @@
+---
+globs: Platform.ApiService/Models/*.cs,Platform.ServiceDefaults/Models/*.cs
+description: 数据模型设计和验证规范
+---
+# 数据模型设计和验证规范
+
+## 🎯 核心原则
+
+### 数据模型必须实现必要的接口，支持多租户、软删除、时间戳和操作追踪
+
+## ✅ 实体模型规范
+
+### 基础实体接口
+
+```csharp
+// Platform.ServiceDefaults/Models/BaseEntity.cs
+public interface IEntity
+{
+    string? Id { get; set; }
+}
+
+public interface ISoftDeletable
+{
+    bool IsDeleted { get; set; }
+    DateTime? DeletedAt { get; set; }
+    string? DeletedBy { get; set; }
+    string? DeletedReason { get; set; }
+}
+
+public interface ITimestamped
+{
+    DateTime CreatedAt { get; set; }
+    DateTime UpdatedAt { get; set; }
+}
+
+public interface IMultiTenant
+{
+    string CompanyId { get; set; }
+}
+
+public interface IOperationTrackable
+{
+    string? CreatedBy { get; set; }
+    string? CreatedByUsername { get; set; }
+    string? UpdatedBy { get; set; }
+    string? UpdatedByUsername { get; set; }
+    string? LastOperationType { get; set; }
+    DateTime? LastOperationAt { get; set; }
+}
+```
+
+### 实体基类
+
+```csharp
+// Platform.ServiceDefaults/Models/BaseEntity.cs
+public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? Id { get; set; }
+
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
+
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
+{
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+}
+
+public abstract class TrackableEntity : MultiTenantEntity, IOperationTrackable
+{
+    [BsonElement("createdBy")]
+    public string? CreatedBy { get; set; }
+
+    [BsonElement("createdByUsername")]
+    public string? CreatedByUsername { get; set; }
+
+    [BsonElement("updatedBy")]
+    public string? UpdatedBy { get; set; }
+
+    [BsonElement("updatedByUsername")]
+    public string? UpdatedByUsername { get; set; }
+
+    [BsonElement("lastOperationType")]
+    public string? LastOperationType { get; set; }
+
+    [BsonElement("lastOperationAt")]
+    public DateTime? LastOperationAt { get; set; }
+}
+```
+
+### 业务实体实现
+
+```csharp
+// Platform.ApiService/Models/UserModels.cs
+public class User : TrackableEntity, INamedEntity
+{
+    [BsonElement("username")]
+    public string Username { get; set; } = string.Empty;
+
+    [BsonElement("email")]
+    public string Email { get; set; } = string.Empty;
+
+    [BsonElement("passwordHash")]
+    public string PasswordHash { get; set; } = string.Empty;
+
+    [BsonElement("role")]
+    public string Role { get; set; } = "user";
+
+    [BsonElement("isActive")]
+    public bool IsActive { get; set; } = true;
+
+    [BsonElement("lastLoginAt")]
+    public DateTime? LastLoginAt { get; set; }
+
+    [BsonElement("profile")]
+    public UserProfile? Profile { get; set; }
+}
+
+public class Role : MultiTenantEntity, INamedEntity
+{
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [BsonElement("description")]
+    public string Description { get; set; } = string.Empty;
+
+    [BsonElement("permissions")]
+    public List<string> Permissions { get; set; } = new();
+
+    [BsonElement("isSystemRole")]
+    public bool IsSystemRole { get; set; } = false;
+}
+
+public class Notice : TrackableEntity
+{
+    [BsonElement("title")]
+    public string Title { get; set; } = string.Empty;
+
+    [BsonElement("content")]
+    public string Content { get; set; } = string.Empty;
+
+    [BsonElement("type")]
+    public NoticeType Type { get; set; } = NoticeType.Info;
+
+    [BsonElement("isRead")]
+    public bool IsRead { get; set; } = false;
+
+    [BsonElement("readAt")]
+    public DateTime? ReadAt { get; set; }
+}
+```
+
+## 🎯 请求/响应模型规范
+
+### 请求模型
+
+```csharp
+// Platform.ApiService/Models/UserModels.cs
+public class CreateUserRequest
+{
+    [Required(ErrorMessage = "用户名不能为空")]
+    [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "用户名只能包含字母、数字和下划线")]
+    public string Username { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "邮箱不能为空")]
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    public string Email { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "密码不能为空")]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度必须在6-100个字符之间")]
+    [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$", 
+        ErrorMessage = "密码至少6位，必须包含字母和数字")]
+    public string Password { get; set; } = string.Empty;
+
+    [StringLength(20, ErrorMessage = "角色长度不能超过20个字符")]
+    public string Role { get; set; } = "user";
+
+    public UserProfileRequest? Profile { get; set; }
+}
+
+public class UpdateUserRequest
+{
+    [Required(ErrorMessage = "用户ID不能为空")]
+    public string Id { get; set; } = string.Empty;
+
+    [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "用户名只能包含字母、数字和下划线")]
+    public string? Username { get; set; }
+
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    public string? Email { get; set; }
+
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度必须在6-100个字符之间")]
+    [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$", 
+        ErrorMessage = "密码至少6位，必须包含字母和数字")]
+    public string? Password { get; set; }
+
+    [StringLength(20, ErrorMessage = "角色长度不能超过20个字符")]
+    public string? Role { get; set; }
+
+    public bool? IsActive { get; set; }
+
+    public UserProfileRequest? Profile { get; set; }
+}
+```
+
+### 响应模型
+
+```csharp
+// Platform.ApiService/Models/UserModels.cs
+public class UserResponse
+{
+    public string Id { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public UserProfileResponse? Profile { get; set; }
+}
+
+public class UserListResponse
+{
+    public List<UserResponse> Users { get; set; } = new();
+    public long Total { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+}
+
+public class UserProfileResponse
+{
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? Phone { get; set; }
+    public string? Avatar { get; set; }
+    public string? Bio { get; set; }
+}
+```
+
+## 🎯 验证规范
+
+### 数据注解验证
+
+```csharp
+// Platform.ApiService/Models/UserModels.cs
+public class CreateUserRequest
+{
+    [Required(ErrorMessage = "用户名不能为空")]
+    [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "用户名只能包含字母、数字和下划线")]
+    public string Username { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "邮箱不能为空")]
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    public string Email { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "密码不能为空")]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度必须在6-100个字符之间")]
+    [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$", 
+        ErrorMessage = "密码至少6位，必须包含字母和数字")]
+    public string Password { get; set; } = string.Empty;
+}
+```
+
+### 自定义验证特性
+
+```csharp
+// Platform.ApiService/Validators/CustomValidationAttributes.cs
+public class UniqueUsernameAttribute : ValidationAttribute
+{
+    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    {
+        if (value is string username && !string.IsNullOrEmpty(username))
+        {
+            var userService = validationContext.GetService<IUserService>();
+            if (userService != null)
+            {
+                var existingUser = userService.GetUserByUsernameAsync(username).Result;
+                if (existingUser != null)
+                {
+                    return new ValidationResult($"用户名 '{username}' 已存在");
+                }
+            }
+        }
+        return ValidationResult.Success;
+    }
+}
+
+public class ValidCompanyIdAttribute : ValidationAttribute
+{
+    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    {
+        if (value is string companyId && !string.IsNullOrEmpty(companyId))
+        {
+            var companyService = validationContext.GetService<ICompanyService>();
+            if (companyService != null)
+            {
+                var company = companyService.GetCompanyByIdAsync(companyId).Result;
+                if (company == null)
+                {
+                    return new ValidationResult($"企业ID '{companyId}' 不存在");
+                }
+            }
+        }
+        return ValidationResult.Success;
+    }
+}
+```
+
+## 🎯 MongoDB 映射规范
+
+### BSON 元素映射
+
+```csharp
+// Platform.ApiService/Models/UserModels.cs
+public class User : TrackableEntity
+{
+    [BsonElement("username")]
+    public string Username { get; set; } = string.Empty;
+
+    [BsonElement("email")]
+    public string Email { get; set; } = string.Empty;
+
+    [BsonElement("passwordHash")]
+    [BsonIgnore] // 不在响应中返回密码哈希
+    public string PasswordHash { get; set; } = string.Empty;
+
+    [BsonElement("role")]
+    public string Role { get; set; } = "user";
+
+    [BsonElement("isActive")]
+    public bool IsActive { get; set; } = true;
+
+    [BsonElement("lastLoginAt")]
+    public DateTime? LastLoginAt { get; set; }
+
+    [BsonElement("profile")]
+    public UserProfile? Profile { get; set; }
+
+    [BsonElement("settings")]
+    public UserSettings? Settings { get; set; }
+}
+```
+
+### 索引配置
+
+```csharp
+// Platform.ApiService/Scripts/CreateUserIndexes.cs
+public class CreateUserIndexes : IIndexCreationScript
+{
+    public async Task CreateIndexesAsync(IMongoDatabase database)
+    {
+        var users = database.GetCollection<User>("users");
+        
+        // 用户名唯一索引（企业内唯一）
+        await users.Indexes.CreateOneAsync(
+            new CreateIndexModel<User>(
+                Builders<User>.IndexKeys
+                    .Ascending(u => u.CompanyId)
+                    .Ascending(u => u.Username),
+                new CreateIndexOptions
+                {
+                    Unique = true,
+                    Name = "company_username_unique"
+                }
+            )
+        );
+
+        // 邮箱唯一索引（企业内唯一）
+        await users.Indexes.CreateOneAsync(
+            new CreateIndexModel<User>(
+                Builders<User>.IndexKeys
+                    .Ascending(u => u.CompanyId)
+                    .Ascending(u => u.Email),
+                new CreateIndexOptions
+                {
+                    Unique = true,
+                    Name = "company_email_unique"
+                }
+            )
+        );
+
+        // 复合查询索引
+        await users.Indexes.CreateOneAsync(
+            new CreateIndexModel<User>(
+                Builders<User>.IndexKeys
+                    .Ascending(u => u.CompanyId)
+                    .Ascending(u => u.IsDeleted)
+                    .Ascending(u => u.IsActive)
+                    .Descending(u => u.CreatedAt),
+                new CreateIndexOptions
+                {
+                    Name = "company_deleted_active_created"
+                }
+            )
+        );
+    }
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要忽略接口实现
+
+```csharp
+// ❌ 错误 - 没有实现必要的接口
+public class User
+{
+    public string Id { get; set; }
+    public string Username { get; set; }
+    // 缺少 ISoftDeletable, ITimestamped, IMultiTenant 等接口
+}
+
+// ✅ 正确 - 实现必要的接口
+public class User : TrackableEntity, INamedEntity
+{
+    public string Username { get; set; } = string.Empty;
+    // 自动继承所有必要的接口和字段
+}
+```
+
+### 不要硬编码字段名
+
+```csharp
+// ❌ 错误 - 硬编码字段名
+public class User
+{
+    [BsonElement("user_name")] // 不一致的命名
+    public string Username { get; set; }
+}
+
+// ✅ 正确 - 使用一致的命名约定
+public class User
+{
+    [BsonElement("username")] // 使用 camelCase
+    public string Username { get; set; }
+}
+```
+
+### 不要忽略验证
+
+```csharp
+// ❌ 错误 - 没有验证
+public class CreateUserRequest
+{
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
+// ✅ 正确 - 完整的验证
+public class CreateUserRequest
+{
+    [Required(ErrorMessage = "用户名不能为空")]
+    [StringLength(50, MinimumLength = 3)]
+    [RegularExpression(@"^[a-zA-Z0-9_]+$")]
+    public string Username { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "邮箱不能为空")]
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    public string Email { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "密码不能为空")]
+    [StringLength(100, MinimumLength = 6)]
+    [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$")]
+    public string Password { get; set; } = string.Empty;
+}
+```
+
+## 📋 数据模型开发检查清单
+
+创建或修改数据模型时检查：
+
+- [ ] 实现必要的接口（IEntity, ISoftDeletable, ITimestamped, IMultiTenant）
+- [ ] 使用正确的基类（BaseEntity, MultiTenantEntity, TrackableEntity）
+- [ ] 添加适当的 BSON 元素映射
+- [ ] 实现数据验证注解
+- [ ] 创建相应的索引
+- [ ] 定义请求/响应模型
+- [ ] 添加 XML 文档注释
+- [ ] 考虑数据迁移需求
+- [ ] 编写单元测试
+- [ ] 更新 API 文档
+
+## 📚 相关文档
+
+- [数据库操作工厂使用指南](mdc:docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md)
+- [多租户系统开发规范](mdc:.cursor/rules/multi-tenant-development.mdc)
+- [后端数据访问层规范](mdc:.cursor/rules/backend-data-access.mdc)

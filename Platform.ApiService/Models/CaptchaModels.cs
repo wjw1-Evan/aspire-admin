@@ -8,7 +8,7 @@ namespace Platform.ApiService.Models;
 /// 验证码实体（全局资源，不属于任何企业）
 /// 使用 MongoDB TTL 索引自动清理过期验证码
 /// </summary>
-public class Captcha : BaseEntity, ISoftDeletable
+public class Captcha : BaseEntity, ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
 {
     /// <summary>
     /// 手机号（用作唯一标识）

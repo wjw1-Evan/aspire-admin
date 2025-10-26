@@ -241,3 +241,4 @@ public async Task<Company> CreatePersonalCompanyAsync(AppUser user)
 5. **严格验证** - 创建前必须验证 CompanyId
 
 遵循这些规范，确保多租户系统的数据安全和隔离！
+

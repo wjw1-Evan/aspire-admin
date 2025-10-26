@@ -69,30 +69,20 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var entityType = typeof(T).Name;
         var entityId = entity.Id ?? "new";
         
-        try
-        {
-            _logger.LogDebug("开始创建 {EntityType} 实体: {EntityId}", entityType, entityId);
-            
-            // 设置时间戳
-            entity.CreatedAt = DateTime.UtcNow;
-            entity.UpdatedAt = DateTime.UtcNow;
-            entity.IsDeleted = false;
+        _logger.LogDebug("开始创建 {EntityType} 实体: {EntityId}", entityType, entityId);
+        
+        // 设置时间戳
+        entity.CreatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        entity.IsDeleted = false;
 
-            await _collection.InsertOneAsync(entity);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("✅ 成功创建 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
-                entityType, entity.Id, elapsed);
-            
-            return entity;
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogError(ex, "❌ 创建 {EntityType} 实体失败: {EntityId}, 耗时: {ElapsedMs}ms", 
-                entityType, entityId, elapsed);
-            throw;
-        }
+        await _collection.InsertOneAsync(entity);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("✅ 成功创建 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
+            entityType, entity.Id, elapsed);
+        
+        return entity;
     }
 
     /// <summary>
@@ -105,34 +95,24 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var entityList = entities.ToList();
         var count = entityList.Count;
         
-        try
+        _logger.LogDebug("开始批量创建 {EntityType} 实体: {Count} 个", entityType, count);
+        
+        var now = DateTime.UtcNow;
+        
+        foreach (var entity in entityList)
         {
-            _logger.LogDebug("开始批量创建 {EntityType} 实体: {Count} 个", entityType, count);
-            
-            var now = DateTime.UtcNow;
-            
-            foreach (var entity in entityList)
-            {
-                entity.CreatedAt = now;
-                entity.UpdatedAt = now;
-                entity.IsDeleted = false;
-            }
+            entity.CreatedAt = now;
+            entity.UpdatedAt = now;
+            entity.IsDeleted = false;
+        }
 
-            await _collection.InsertManyAsync(entityList);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("✅ 成功批量创建 {EntityType} 实体: {Count} 个, 耗时: {ElapsedMs}ms", 
-                entityType, count, elapsed);
-            
-            return entityList;
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogError(ex, "❌ 批量创建 {EntityType} 实体失败: {Count} 个, 耗时: {ElapsedMs}ms", 
-                entityType, count, elapsed);
-            throw;
-        }
+        await _collection.InsertManyAsync(entityList);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("✅ 成功批量创建 {EntityType} 实体: {Count} 个, 耗时: {ElapsedMs}ms", 
+            entityType, count, elapsed);
+        
+        return entityList;
     }
 
     /// <summary>
@@ -144,39 +124,29 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var entityType = typeof(T).Name;
         var replacementId = replacement.Id ?? "unknown";
         
-        try
-        {
-            _logger.LogDebug("开始查找并替换 {EntityType} 实体: {ReplacementId}", entityType, replacementId);
-            
-            // 应用多租户过滤
-            var tenantFilter = ApplyTenantFilter(filter);
-            
-            // 设置时间戳
-            replacement.UpdatedAt = DateTime.UtcNow;
+        _logger.LogDebug("开始查找并替换 {EntityType} 实体: {ReplacementId}", entityType, replacementId);
+        
+        // 应用多租户过滤
+        var tenantFilter = ApplyTenantFilter(filter);
+        
+        // 设置时间戳
+        replacement.UpdatedAt = DateTime.UtcNow;
 
-            var result = await _collection.FindOneAndReplaceAsync(tenantFilter, replacement, options);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            if (result != null)
-            {
-                _logger.LogInformation("✅ 成功查找并替换 {EntityType} 实体: {ReplacementId}, 耗时: {ElapsedMs}ms", 
-                    entityType, replacementId, elapsed);
-            }
-            else
-            {
-                _logger.LogWarning("⚠️ 查找并替换 {EntityType} 实体未找到匹配记录: {ReplacementId}, 耗时: {ElapsedMs}ms", 
-                    entityType, replacementId, elapsed);
-            }
-            
-            return result;
-        }
-        catch (Exception ex)
+        var result = await _collection.FindOneAndReplaceAsync(tenantFilter, replacement, options);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        if (result != null)
         {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogError(ex, "❌ 查找并替换 {EntityType} 实体失败: {ReplacementId}, 耗时: {ElapsedMs}ms", 
+            _logger.LogInformation("✅ 成功查找并替换 {EntityType} 实体: {ReplacementId}, 耗时: {ElapsedMs}ms", 
                 entityType, replacementId, elapsed);
-            throw;
         }
+        else
+        {
+            _logger.LogWarning("⚠️ 查找并替换 {EntityType} 实体未找到匹配记录: {ReplacementId}, 耗时: {ElapsedMs}ms", 
+                entityType, replacementId, elapsed);
+        }
+        
+        return result;
     }
 
     /// <summary>
@@ -187,42 +157,32 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
-        {
-            _logger.LogDebug("开始查找并更新 {EntityType} 实体", entityType);
-            
-            // 应用多租户过滤
-            var tenantFilter = ApplyTenantFilter(filter);
-            
-            // 确保更新时间戳
-            var updateWithTimestamp = Builders<T>.Update.Combine(
-                update,
-                Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow)
-            );
+        _logger.LogDebug("开始查找并更新 {EntityType} 实体", entityType);
+        
+        // 应用多租户过滤
+        var tenantFilter = ApplyTenantFilter(filter);
+        
+        // 确保更新时间戳
+        var updateWithTimestamp = Builders<T>.Update.Combine(
+            update,
+            Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow)
+        );
 
-            var result = await _collection.FindOneAndUpdateAsync(tenantFilter, updateWithTimestamp, options);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            if (result != null)
-            {
-                _logger.LogInformation("✅ 成功查找并更新 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
-                    entityType, result.Id, elapsed);
-            }
-            else
-            {
-                _logger.LogWarning("⚠️ 查找并更新 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
-                    entityType, elapsed);
-            }
-            
-            return result;
-        }
-        catch (Exception ex)
+        var result = await _collection.FindOneAndUpdateAsync(tenantFilter, updateWithTimestamp, options);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        if (result != null)
         {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogError(ex, "❌ 查找并更新 {EntityType} 实体失败, 耗时: {ElapsedMs}ms", 
-                entityType, elapsed);
-            throw;
+            _logger.LogInformation("✅ 成功查找并更新 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
+                entityType, result.Id, elapsed);
         }
+        else
+        {
+            _logger.LogWarning("⚠️ 查找并更新 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
+                entityType, elapsed);
+        }
+        
+        return result;
     }
 
     /// <summary>
@@ -233,40 +193,30 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
-        {
-            _logger.LogDebug("开始查找并软删除 {EntityType} 实体", entityType);
-            
-            // 应用多租户过滤
-            var tenantFilter = ApplyTenantFilter(filter);
-            
-            var update = Builders<T>.Update
-                .Set(x => x.IsDeleted, true)
-                .Set(x => x.UpdatedAt, DateTime.UtcNow);
+        _logger.LogDebug("开始查找并软删除 {EntityType} 实体", entityType);
+        
+        // 应用多租户过滤
+        var tenantFilter = ApplyTenantFilter(filter);
+        
+        var update = Builders<T>.Update
+            .Set(x => x.IsDeleted, true)
+            .Set(x => x.UpdatedAt, DateTime.UtcNow);
 
-            var result = await _collection.FindOneAndUpdateAsync(tenantFilter, update, options);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            if (result != null)
-            {
-                _logger.LogInformation("✅ 成功查找并软删除 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
-                    entityType, result.Id, elapsed);
-            }
-            else
-            {
-                _logger.LogWarning("⚠️ 查找并软删除 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
-                    entityType, elapsed);
-            }
-            
-            return result;
-        }
-        catch (Exception ex)
+        var result = await _collection.FindOneAndUpdateAsync(tenantFilter, update, options);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        if (result != null)
         {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogError(ex, "❌ 查找并软删除 {EntityType} 实体失败, 耗时: {ElapsedMs}ms", 
-                entityType, elapsed);
-            throw;
+            _logger.LogInformation("✅ 成功查找并软删除 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
+                entityType, result.Id, elapsed);
         }
+        else
+        {
+            _logger.LogWarning("⚠️ 查找并软删除 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
+                entityType, elapsed);
+        }
+        
+        return result;
     }
 
     /// <summary>
@@ -277,36 +227,26 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
+        _logger.LogDebug("开始查找并硬删除 {EntityType} 实体", entityType);
+        
+        // 应用多租户过滤
+        var tenantFilter = ApplyTenantFilter(filter);
+        
+        var result = await _collection.FindOneAndDeleteAsync(tenantFilter, options);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        if (result != null)
         {
-            _logger.LogDebug("开始查找并硬删除 {EntityType} 实体", entityType);
-            
-            // 应用多租户过滤
-            var tenantFilter = ApplyTenantFilter(filter);
-            
-            var result = await _collection.FindOneAndDeleteAsync(tenantFilter, options);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            if (result != null)
-            {
-                _logger.LogInformation("✅ 成功查找并硬删除 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
-                    entityType, result.Id, elapsed);
-            }
-            else
-            {
-                _logger.LogWarning("⚠️ 查找并硬删除 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
-                    entityType, elapsed);
-            }
-            
-            return result;
+            _logger.LogInformation("✅ 成功查找并硬删除 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
+                entityType, result.Id, elapsed);
         }
-        catch (Exception ex)
+        else
         {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogError(ex, "❌ 查找并硬删除 {EntityType} 实体失败, 耗时: {ElapsedMs}ms", 
+            _logger.LogWarning("⚠️ 查找并硬删除 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
                 entityType, elapsed);
-            throw;
         }
+        
+        return result;
     }
 
     /// <summary>
@@ -317,34 +257,24 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
-        {
-            _logger.LogDebug("开始批量更新 {EntityType} 实体", entityType);
-            
-            // 应用多租户过滤
-            var tenantFilter = ApplyTenantFilter(filter);
-            
-            // 确保更新时间戳
-            var updateWithTimestamp = Builders<T>.Update.Combine(
-                update,
-                Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow)
-            );
+        _logger.LogDebug("开始批量更新 {EntityType} 实体", entityType);
+        
+        // 应用多租户过滤
+        var tenantFilter = ApplyTenantFilter(filter);
+        
+        // 确保更新时间戳
+        var updateWithTimestamp = Builders<T>.Update.Combine(
+            update,
+            Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow)
+        );
 
-            var result = await _collection.UpdateManyAsync(tenantFilter, updateWithTimestamp);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("✅ 成功批量更新 {EntityType} 实体: {ModifiedCount} 个, 耗时: {ElapsedMs}ms", 
-                entityType, result.ModifiedCount, elapsed);
-            
-            return result.ModifiedCount;
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogError(ex, "❌ 批量更新 {EntityType} 实体失败, 耗时: {ElapsedMs}ms", 
-                entityType, elapsed);
-            throw;
-        }
+        var result = await _collection.UpdateManyAsync(tenantFilter, updateWithTimestamp);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("✅ 成功批量更新 {EntityType} 实体: {ModifiedCount} 个, 耗时: {ElapsedMs}ms", 
+            entityType, result.ModifiedCount, elapsed);
+        
+        return result.ModifiedCount;
     }
 
     /// <summary>
@@ -357,30 +287,20 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var idList = ids.ToList();
         var count = idList.Count;
         
-        try
-        {
-            _logger.LogDebug("开始批量软删除 {EntityType} 实体: {Count} 个", entityType, count);
-            
-            var filter = Builders<T>.Filter.In(x => x.Id, idList);
-            var update = Builders<T>.Update
-                .Set(x => x.IsDeleted, true)
-                .Set(x => x.UpdatedAt, DateTime.UtcNow);
+        _logger.LogDebug("开始批量软删除 {EntityType} 实体: {Count} 个", entityType, count);
+        
+        var filter = Builders<T>.Filter.In(x => x.Id, idList);
+        var update = Builders<T>.Update
+            .Set(x => x.IsDeleted, true)
+            .Set(x => x.UpdatedAt, DateTime.UtcNow);
 
-            var result = await _collection.UpdateManyAsync(filter, update);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("✅ 成功批量软删除 {EntityType} 实体: {ModifiedCount} 个, 耗时: {ElapsedMs}ms", 
-                entityType, result.ModifiedCount, elapsed);
-            
-            return result.ModifiedCount;
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogError(ex, "❌ 批量软删除 {EntityType} 实体失败: {Count} 个, 耗时: {ElapsedMs}ms", 
-                entityType, count, elapsed);
-            throw;
-        }
+        var result = await _collection.UpdateManyAsync(filter, update);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("✅ 成功批量软删除 {EntityType} 实体: {ModifiedCount} 个, 耗时: {ElapsedMs}ms", 
+            entityType, result.ModifiedCount, elapsed);
+        
+        return result.ModifiedCount;
     }
 
     // ========== 查询操作 ==========
@@ -393,37 +313,26 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
+        // 应用多租户过滤和软删除过滤
+        var finalFilter = ApplyDefaultFilters(filter);
+        
+        // 记录查询语句
+        var queryInfo = BuildQueryInfo(finalFilter, sort, limit);
+        _logger.LogDebug("开始查询 {EntityType} 实体, 查询语句: {QueryInfo}", entityType, queryInfo);
+        
+        var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
         {
-            // 应用多租户过滤和软删除过滤
-            var finalFilter = ApplyDefaultFilters(filter);
-            
-            // 记录查询语句
-            var queryInfo = BuildQueryInfo(finalFilter, sort, limit);
-            _logger.LogDebug("开始查询 {EntityType} 实体, 查询语句: {QueryInfo}", entityType, queryInfo);
-            
-            var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
-            {
-                Sort = sort,
-                Limit = limit
-            });
-            
-            var results = await cursor.ToListAsync();
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("✅ 成功查询 {EntityType} 实体: {Count} 个, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, results.Count, elapsed, queryInfo);
-            
-            return results;
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            var queryInfo = BuildQueryInfo(ApplyDefaultFilters(filter), sort, limit);
-            _logger.LogError(ex, "❌ 查询 {EntityType} 实体失败, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, elapsed, queryInfo);
-            throw;
-        }
+            Sort = sort,
+            Limit = limit
+        });
+        
+        var results = await cursor.ToListAsync();
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("✅ 成功查询 {EntityType} 实体: {Count} 个, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
+            entityType, results.Count, elapsed, queryInfo);
+        
+        return results;
     }
 
     /// <summary>
@@ -434,41 +343,30 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
+        // 应用多租户过滤和软删除过滤
+        var finalFilter = ApplyDefaultFilters(filter);
+        
+        // 记录查询语句
+        var queryInfo = BuildQueryInfo(finalFilter, sort, pageSize);
+        _logger.LogDebug("开始分页查询 {EntityType} 实体, 页码: {Page}, 页大小: {PageSize}, 查询语句: {QueryInfo}", entityType, page, pageSize, queryInfo);
+        
+        var skip = (page - 1) * pageSize;
+        
+        var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
         {
-            // 应用多租户过滤和软删除过滤
-            var finalFilter = ApplyDefaultFilters(filter);
-            
-            // 记录查询语句
-            var queryInfo = BuildQueryInfo(finalFilter, sort, pageSize);
-            _logger.LogDebug("开始分页查询 {EntityType} 实体, 页码: {Page}, 页大小: {PageSize}, 查询语句: {QueryInfo}", entityType, page, pageSize, queryInfo);
-            
-            var skip = (page - 1) * pageSize;
-            
-            var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
-            {
-                Sort = sort,
-                Skip = skip,
-                Limit = pageSize
-            });
-            
-            var items = await cursor.ToListAsync();
-            var total = await _collection.CountDocumentsAsync(finalFilter);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("✅ 成功分页查询 {EntityType} 实体: {Count} 个/共 {Total} 个, 页码: {Page}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, items.Count, total, page, elapsed, queryInfo);
+            Sort = sort,
+            Skip = skip,
+            Limit = pageSize
+        });
+        
+        var items = await cursor.ToListAsync();
+        var total = await _collection.CountDocumentsAsync(finalFilter);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("✅ 成功分页查询 {EntityType} 实体: {Count} 个/共 {Total} 个, 页码: {Page}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
+            entityType, items.Count, total, page, elapsed, queryInfo);
 
         return (items, total);
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            var queryInfo = BuildQueryInfo(ApplyDefaultFilters(filter), sort, pageSize);
-            _logger.LogError(ex, "❌ 分页查询 {EntityType} 实体失败, 页码: {Page}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, page, elapsed, queryInfo);
-            throw;
-        }
     }
 
     /// <summary>
@@ -479,44 +377,33 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
+        var filter = Builders<T>.Filter.And(
+            Builders<T>.Filter.Eq(x => x.Id, id),
+            Builders<T>.Filter.Eq(x => x.IsDeleted, false)
+        );
+        
+        // 应用多租户过滤
+        var tenantFilter = ApplyTenantFilter(filter);
+        
+        // 记录查询语句
+        var queryInfo = BuildQueryInfo(tenantFilter);
+        _logger.LogDebug("开始根据ID获取 {EntityType} 实体: {Id}, 查询语句: {QueryInfo}", entityType, id, queryInfo);
+        
+        var result = await _collection.Find(tenantFilter).FirstOrDefaultAsync();
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        if (result != null)
         {
-            var filter = Builders<T>.Filter.And(
-                Builders<T>.Filter.Eq(x => x.Id, id),
-                Builders<T>.Filter.Eq(x => x.IsDeleted, false)
-            );
-            
-            // 应用多租户过滤
-            var tenantFilter = ApplyTenantFilter(filter);
-            
-            // 记录查询语句
-            var queryInfo = BuildQueryInfo(tenantFilter);
-            _logger.LogDebug("开始根据ID获取 {EntityType} 实体: {Id}, 查询语句: {QueryInfo}", entityType, id, queryInfo);
-            
-            var result = await _collection.Find(tenantFilter).FirstOrDefaultAsync();
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            if (result != null)
-            {
-                _logger.LogInformation("✅ 成功根据ID获取 {EntityType} 实体: {Id}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                    entityType, id, elapsed, queryInfo);
-            }
-            else
-            {
-                _logger.LogWarning("⚠️ 根据ID获取 {EntityType} 实体未找到: {Id}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                    entityType, id, elapsed, queryInfo);
-            }
-            
-            return result;
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            var queryInfo = BuildQueryInfo(ApplyTenantFilter(Builders<T>.Filter.Eq(x => x.Id, id)));
-            _logger.LogError(ex, "❌ 根据ID获取 {EntityType} 实体失败: {Id}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
+            _logger.LogInformation("✅ 成功根据ID获取 {EntityType} 实体: {Id}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
                 entityType, id, elapsed, queryInfo);
-            throw;
         }
+        else
+        {
+            _logger.LogWarning("⚠️ 根据ID获取 {EntityType} 实体未找到: {Id}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
+                entityType, id, elapsed, queryInfo);
+        }
+        
+        return result;
     }
 
     /// <summary>
@@ -527,37 +414,26 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
-        {
-            var filter = Builders<T>.Filter.And(
-                Builders<T>.Filter.Eq(x => x.Id, id),
-                Builders<T>.Filter.Eq(x => x.IsDeleted, false)
-            );
-            
-            // 应用多租户过滤
-            var tenantFilter = ApplyTenantFilter(filter);
-            
-            // 记录查询语句
-            var queryInfo = BuildQueryInfo(tenantFilter);
-            _logger.LogDebug("开始检查 {EntityType} 实体是否存在: {Id}, 查询语句: {QueryInfo}", entityType, id, queryInfo);
-            
-            var count = await _collection.CountDocumentsAsync(tenantFilter, new CountOptions { Limit = 1 });
-            var exists = count > 0;
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("✅ 检查 {EntityType} 实体是否存在: {Id} = {Exists}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, id, exists, elapsed, queryInfo);
-            
-            return exists;
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            var queryInfo = BuildQueryInfo(ApplyTenantFilter(Builders<T>.Filter.Eq(x => x.Id, id)));
-            _logger.LogError(ex, "❌ 检查 {EntityType} 实体是否存在失败: {Id}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, id, elapsed, queryInfo);
-            throw;
-        }
+        var filter = Builders<T>.Filter.And(
+            Builders<T>.Filter.Eq(x => x.Id, id),
+            Builders<T>.Filter.Eq(x => x.IsDeleted, false)
+        );
+        
+        // 应用多租户过滤
+        var tenantFilter = ApplyTenantFilter(filter);
+        
+        // 记录查询语句
+        var queryInfo = BuildQueryInfo(tenantFilter);
+        _logger.LogDebug("开始检查 {EntityType} 实体是否存在: {Id}, 查询语句: {QueryInfo}", entityType, id, queryInfo);
+        
+        var count = await _collection.CountDocumentsAsync(tenantFilter, new CountOptions { Limit = 1 });
+        var exists = count > 0;
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("✅ 检查 {EntityType} 实体是否存在: {Id} = {Exists}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
+            entityType, id, exists, elapsed, queryInfo);
+        
+        return exists;
     }
 
     /// <summary>
@@ -568,31 +444,20 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var entityType = typeof(T).Name;
         
-        try
-        {
-            // 应用多租户过滤和软删除过滤
-            var finalFilter = ApplyDefaultFilters(filter);
-            
-            // 记录查询语句
-            var queryInfo = BuildQueryInfo(finalFilter);
-            _logger.LogDebug("开始获取 {EntityType} 实体数量, 查询语句: {QueryInfo}", entityType, queryInfo);
-            
-            var count = await _collection.CountDocumentsAsync(finalFilter);
-            
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("✅ 成功获取 {EntityType} 实体数量: {Count}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, count, elapsed, queryInfo);
-            
-            return count;
-        }
-        catch (Exception ex)
-        {
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            var queryInfo = BuildQueryInfo(ApplyDefaultFilters(filter));
-            _logger.LogError(ex, "❌ 获取 {EntityType} 实体数量失败, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, elapsed, queryInfo);
-            throw;
-        }
+        // 应用多租户过滤和软删除过滤
+        var finalFilter = ApplyDefaultFilters(filter);
+        
+        // 记录查询语句
+        var queryInfo = BuildQueryInfo(finalFilter);
+        _logger.LogDebug("开始获取 {EntityType} 实体数量, 查询语句: {QueryInfo}", entityType, queryInfo);
+        
+        var count = await _collection.CountDocumentsAsync(finalFilter);
+        
+        var elapsed = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("✅ 成功获取 {EntityType} 实体数量: {Count}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
+            entityType, count, elapsed, queryInfo);
+        
+        return count;
     }
 
     // ========== 不带租户过滤的操作 ==========
@@ -635,10 +500,27 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
         
+        // 保存原始 Id
+        var originalId = replacement.Id;
+        
+        // 创建副本用于替换，移除 Id 字段以避免修改 MongoDB 的 _id 字段
+        // 当使用 FindOneAndReplace 时，如果 replacement 有 Id，MongoDB 会尝试修改 _id 导致错误
+        replacement.Id = null!;
+        
         // 设置时间戳
         replacement.UpdatedAt = DateTime.UtcNow;
 
         var result = await _collection.FindOneAndReplaceAsync(finalFilter, replacement, options);
+        
+        // 恢复原始对象的 Id
+        replacement.Id = originalId;
+        
+        // 如果结果是新插入的文档且原来有 Id，恢复 Id 到结果
+        if (result != null && string.IsNullOrEmpty(result.Id) && !string.IsNullOrEmpty(originalId))
+        {
+            result.Id = originalId;
+        }
+        
         return result;
     }
 

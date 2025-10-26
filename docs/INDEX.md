@@ -214,6 +214,7 @@ docs/
 - [验证码解决方案](features/CAPTCHA-SOLUTION.md) - 验证码功能
 - [本地验证码实现](features/LOCAL-CAPTCHA-IMPLEMENTATION.md) - 本地验证码
 - [前端验证码更新](features/FRONTEND-CAPTCHA-UPDATE.md) - 前端集成
+- [**验证码 ID 字段修复**](bugfixes/IMAGE-CAPTCHA-ID-FIX.md) - **新增** - 修复 FindOneAndReplace 操作中 _id 不可修改错误 ⭐ **最新**
 
 #### 软删除机制
 - [软删除快速开始](soft-delete/SOFT-DELETE-QUICK-START.md) - 快速入门

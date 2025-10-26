@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
@@ -8,7 +9,9 @@ namespace Platform.ApiService.Models;
 /// 用户-企业关联表（多对多关系）
 /// v3.1: 支持用户隶属多个企业
 /// 修复：使用基础实体类，简化软删除实现
+/// v6.1: 使用自定义集合名称修复命名规范问题
 /// </summary>
+[BsonCollectionName("user_companies")]
 public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
 {
     /// <summary>

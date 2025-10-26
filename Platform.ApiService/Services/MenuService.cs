@@ -132,6 +132,7 @@ public class MenuService : IMenuService
                 OpenInNewTab = m.OpenInNewTab,
                 HideInMenu = m.HideInMenu,
                 ParentId = m.ParentId,
+                Permissions = m.Permissions,
                 CreatedAt = m.CreatedAt,
                 UpdatedAt = m.UpdatedAt,
                 Children = BuildMenuTree(menus, m.Id)

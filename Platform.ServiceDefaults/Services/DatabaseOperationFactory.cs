@@ -1,6 +1,8 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
+using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ServiceDefaults.Services;
@@ -22,8 +24,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         IHttpContextAccessor httpContextAccessor,
         ILogger<DatabaseOperationFactory<T>> logger)
     {
-        // 使用默认的集合命名约定：类型名转小写复数形式
-        var collectionName = typeof(T).Name.ToLowerInvariant() + "s";
+        // 支持自定义集合名称，优先使用 BsonCollectionName 特性
+        var collectionNameAttribute = typeof(T).GetCustomAttribute<BsonCollectionNameAttribute>();
+        var collectionName = collectionNameAttribute?.Name ?? typeof(T).Name.ToLowerInvariant() + "s";
+        
         _collection = database.GetCollection<T>(collectionName);
         _tenantContext = tenantContext;
         _httpContextAccessor = httpContextAccessor;

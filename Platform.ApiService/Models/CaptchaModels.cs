@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
@@ -7,7 +8,9 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 验证码实体（全局资源，不属于任何企业）
 /// 使用 MongoDB TTL 索引自动清理过期验证码
+/// v6.1: 使用自定义集合名称确保命名一致性
 /// </summary>
+[BsonCollectionName("captchas")]
 public class Captcha : BaseEntity, ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
 {
     /// <summary>

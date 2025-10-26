@@ -42,7 +42,14 @@ public class Menu : BaseEntity, Platform.ServiceDefaults.Models.INamedEntity, Pl
     public bool HideInMenu { get; set; } = false;
 
     [BsonElement("parentId")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? ParentId { get; set; }
+
+    /// <summary>
+    /// 权限列表
+    /// </summary>
+    [BsonElement("permissions")]
+    public List<string> Permissions { get; set; } = new();
 
     // 软删除扩展字段
     [BsonElement("deletedAt")]
@@ -131,6 +138,7 @@ public class MenuTreeNode
     public bool OpenInNewTab { get; set; }
     public bool HideInMenu { get; set; }
     public string? ParentId { get; set; }
+    public List<string> Permissions { get; set; } = new();
     public List<MenuTreeNode> Children { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

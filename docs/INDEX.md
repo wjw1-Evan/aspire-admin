@@ -75,6 +75,10 @@ docs/
 - [数据库操作工厂原子操作全面实施报告](reports/DATABASE-ATOMIC-OPERATIONS-COMPLETE-IMPLEMENTATION.md) - **新增** - 原子操作全面实施完成报告 ⭐ **实施完成**
 - [**数据工厂日志功能实施完成报告**](reports/DATABASE-FACTORY-LOGGING-IMPLEMENTATION-COMPLETE.md) - **新增** - 数据工厂日志功能实施完成报告 ⭐ **最新**
 - [**数据工厂查询语句日志功能完成报告**](reports/DATABASE-FACTORY-QUERY-LOGGING-COMPLETE.md) - **新增** - 查询语句日志功能实现总结 ⭐ **查询日志**
+- [**集合名称修复完成报告**](reports/COLLECTION-NAME-FIX-COMPLETE.md) - **新增** - 集合名称规范化和自定义集合名称支持 ⭐ **数据库优化**
+- [**重复集合名称修复报告**](reports/DUPLICATE-COLLECTION-NAMES-FIX.md) - **新增** - 修复 captchaimages 和 captcha_images 重复问题 ⭐ **最新**
+- [**菜单初始化问题修复报告**](reports/MENU-INITIALIZATION-FIX.md) - **新增** - 修复 Menu 模型字段映射不一致导致的初始化失败 ⭐ **最新**
+- [**Menu 模型序列化问题修复完成报告**](reports/MENU-MODEL-SERIALIZATION-FIX-COMPLETE.md) - **新增** - 完整的 Menu 模型序列化问题修复总结 ⭐ **最新**
 
 ### 漏洞修复
 - [系统安全漏洞修复总结](bugfixes/SECURITY-VULNERABILITIES-FIX-SUMMARY.md) - 所有安全漏洞修复总结
@@ -148,6 +152,7 @@ docs/
 - [数据库操作工厂使用指南](features/DATABASE-OPERATION-FACTORY-GUIDE.md) - 数据库操作工厂使用指南 ⭐ **新增**
 - [数据库操作工厂迁移指南](features/DATABASE-FACTORY-MIGRATION.md) - 从 BaseRepository 迁移到工厂的详细指南 ⭐ **新增**
 - [**数据工厂日志功能**](features/DATABASE-FACTORY-LOGGING-FEATURE.md) - **新增** - 数据工厂详细日志输出功能，实时监控数据操作 ⭐ **最新**
+- [自定义集合名称支持功能](features/CUSTOM-COLLECTION-NAME-SUPPORT.md) - **新增** - 支持自定义 MongoDB 集合名称的规范命名 ⭐ **数据库优化**
 
 #### API 文档系统 ⭐ **新增**
 - [API 文档系统](features/API-ENDPOINT-SUMMARY-FEATURE.md) - 完整的 API 接口文档和 Scalar 集成 ⭐ **推荐**

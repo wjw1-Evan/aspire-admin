@@ -356,23 +356,20 @@ public class AuthService : IAuthService
             userCompany = companyResult.UserCompany;
             
             // 设置用户的企业信息
-            var update = _userFactory.CreateUpdateBuilder()
-                .Set(u => u.CurrentCompanyId, personalCompany.Id)
-                .Set(u => u.PersonalCompanyId, personalCompany.Id)
-                .Set(u => u.CompanyId, personalCompany.Id)
+            var userFilter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
+            var userUpdate = _userFactory.CreateUpdateBuilder()
+                .Set(u => u.CurrentCompanyId, personalCompany.Id!)
+                .Set(u => u.PersonalCompanyId, personalCompany.Id!)
+                .Set(u => u.CompanyId, personalCompany.Id!)
                 .SetCurrentTimestamp()
                 .Build();
             
-            // 更新用户对象
-            user.CurrentCompanyId = personalCompany.Id;
-            // 更新用户的个人企业信息
-            var userFilter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
-            var userUpdate = _userFactory.CreateUpdateBuilder()
-                .Set(u => u.PersonalCompanyId, personalCompany.Id)
-                .Set(u => u.CompanyId, personalCompany.Id!)
-                .Build();
-            
             await _userFactory.FindOneAndUpdateAsync(userFilter, userUpdate);
+            
+            // 更新用户对象（用于后续返回）
+            user.CurrentCompanyId = personalCompany.Id;
+            user.PersonalCompanyId = personalCompany.Id;
+            user.CompanyId = personalCompany.Id;
             
             // 清除密码哈希
             user.PasswordHash = string.Empty;

@@ -33,6 +33,7 @@ public class UserCompanyService : IUserCompanyService
     private readonly IDatabaseOperationFactory<Menu> _menuFactory;
     private readonly IMenuService _menuService;
     private readonly ITenantContext _tenantContext;
+    private readonly IJwtService _jwtService;
 
     public UserCompanyService(
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
@@ -41,7 +42,8 @@ public class UserCompanyService : IUserCompanyService
         IDatabaseOperationFactory<Role> roleFactory,
         IDatabaseOperationFactory<Menu> menuFactory,
         IMenuService menuService,
-        ITenantContext tenantContext)
+        ITenantContext tenantContext,
+        IJwtService jwtService)
     {
         _userCompanyFactory = userCompanyFactory;
         _userFactory = userFactory;
@@ -50,6 +52,7 @@ public class UserCompanyService : IUserCompanyService
         _menuFactory = menuFactory;
         _menuService = menuService;
         _tenantContext = tenantContext;
+        _jwtService = jwtService;
     }
 
     /// <summary>
@@ -194,12 +197,7 @@ public class UserCompanyService : IUserCompanyService
         var menus = await _menuService.GetUserMenusAsync(membership.RoleIds);
         
         // 5. 生成新的JWT Token（包含新的企业信息）
-        string? newToken = null;
-        if (updatedUser != null)
-        {
-            // 这里应该注入 IJwtService 来生成新token
-            // 暂时返回null，实际实现需要在构造函数中注入服务
-        }
+        var newToken = _jwtService.GenerateToken(updatedUser);
         
         return new SwitchCompanyResult
         {

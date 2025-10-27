@@ -237,7 +237,12 @@ docs/
 ### 问题修复
 
 #### Bug 修复
-- [**Menu 软删除不一致性修复**](bugfixes/MENU-SOFT-DELETE-INCONSISTENCY-FIX.md) - **新增** - 修复用户注册时菜单查询返回0结果的问题 ⭐ **最新**
+- [**企业切换JWT Token未更新修复**](bugfixes/COMPANY-SWITCH-TOKEN-FIX.md) - **新增** - 修复企业切换后JWT Token未重新生成的问题 ⭐ **最新**
+- [**新注册用户菜单获取403错误修复**](bugfixes/NEW-USER-MENU-403-FIX.md) - **新增** - 修复新用户注册后无法获取菜单的403错误
+- [**Menu 软删除不一致性修复**](bugfixes/MENU-SOFT-DELETE-INCONSISTENCY-FIX.md) - **新增** - 修复用户注册时菜单查询返回0结果的问题
+
+#### 逻辑审查
+- [**多企业关联逻辑审查报告**](reports/MULTI-COMPANY-ASSOCIATION-LOGIC-REVIEW.md) - **新增** - 用户与多企业关联逻辑的全面审查
 - [**macOS原生内存获取修复**](bugfixes/MACOS-NATIVE-MEMORY-FIX.md) - 删除估算代码，使用系统原生方法获取实际内存 ⭐ **最新**
 - [**macOS系统内存读取问题修复**](bugfixes/MACOS-MEMORY-READING-FIX.md) - 修复WMI在macOS上不工作的问题
 - [**内存数值计算错误修复**](bugfixes/MEMORY-VALUES-CALCULATION-FIX.md) - 修复系统内存估算和计算逻辑

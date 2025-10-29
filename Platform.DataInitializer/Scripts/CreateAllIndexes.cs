@@ -1,6 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Platform.DataInitializer.Models;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.DataInitializer.Scripts;
 

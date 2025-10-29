@@ -143,7 +143,6 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<INoticeService, NoticeService>();
-builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<IRuleService, RuleService>();
 builder.Services.AddScoped<IUserActivityLogService, UserActivityLogService>();

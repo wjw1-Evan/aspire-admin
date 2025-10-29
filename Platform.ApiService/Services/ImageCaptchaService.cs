@@ -94,14 +94,26 @@ public class ImageCaptchaService : IImageCaptchaService
 
         var finalFilter = filter.Build();
 
-        var options = new FindOneAndReplaceOptions<CaptchaImage>
+        // 使用原子更新 + upsert，避免替换操作对 _id 产生影响
+        var update = _captchaFactory.CreateUpdateBuilder()
+            .Set(c => c.CaptchaId, captchaId)
+            .Set(c => c.Answer, encryptedAnswer)
+            .Set(c => c.ExpiresAt, captcha.ExpiresAt)
+            .Set(c => c.Type, type)
+            .Set(c => c.ClientIp, clientIp!)
+            .Set(c => c.IsUsed, false)
+            .Set(c => c.CreatedAt, captcha.CreatedAt)
+            .SetCurrentTimestamp()
+            .Build();
+
+        var options = new FindOneAndUpdateOptions<CaptchaImage>
         {
-            IsUpsert = true,  // 如果不存在则插入
+            IsUpsert = true,
             ReturnDocument = ReturnDocument.After
         };
 
-        // 执行原子替换操作（不带租户过滤，因为验证码是全局资源）
-        var result = await _captchaFactory.FindOneAndReplaceWithoutTenantFilterAsync(finalFilter, captcha, options);
+        // 执行原子更新操作（不带租户过滤，因为验证码是全局资源）
+        var result = await _captchaFactory.FindOneAndUpdateWithoutTenantFilterAsync(finalFilter, update, options);
 
         _logger.LogInformation("[图形验证码] 生成成功: {CaptchaId}, 类型: {Type}, IP: {ClientIp}", 
             captcha.CaptchaId, type ?? "unknown", clientIp ?? "unknown");

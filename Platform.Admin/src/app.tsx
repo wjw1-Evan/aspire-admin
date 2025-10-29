@@ -149,15 +149,41 @@ function getIconComponent(iconName?: string): React.ReactNode {
 
 /**
  * 将菜单树转换为 ProLayout 菜单格式
+ * 生成正确的 locale 键用于多语言支持
  */
 function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
   return menus
     .filter((menu) => !menu.hideInMenu)
     .map((menu) => {
+      // 生成 locale 键：根据菜单路径和名称生成，例如：
+      // /system/user-management -> menu.system.user-management
+      // /welcome -> menu.welcome
+      let localeKey = '';
+      if (menu.path.startsWith('/system/')) {
+        // 系统管理子菜单
+        localeKey = `menu.system.${menu.name}`;
+      } else if (menu.path === '/welcome') {
+        localeKey = 'menu.welcome';
+      } else if (menu.path.startsWith('/company/')) {
+        // 企业相关菜单
+        localeKey = `menu.${menu.name}`;
+      } else if (menu.path.startsWith('/join-requests/')) {
+        // 加入申请相关菜单
+        localeKey = `menu.${menu.name}`;
+      } else if (menu.path.startsWith('/account/')) {
+        // 账户相关菜单
+        localeKey = `menu.${menu.path.replace(/^\//, '').replaceAll('/', '.')}`;
+      } else {
+        // 默认：使用 menu.{name}
+        localeKey = `menu.${menu.name}`;
+      }
+
       const menuItem: any = {
         name: menu.name,
         path: menu.path,
         icon: getIconComponent(menu.icon),
+        // 使用 locale 键进行多语言翻译
+        locale: localeKey,
       };
 
       if (menu.isExternal) {

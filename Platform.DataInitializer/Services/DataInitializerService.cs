@@ -1,5 +1,5 @@
 using MongoDB.Driver;
-using Platform.DataInitializer.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.DataInitializer.Scripts;
 
 namespace Platform.DataInitializer.Services;
@@ -208,21 +208,6 @@ public class DataInitializerService : IDataInitializerService
                     IsEnabled = true,
                     IsDeleted = false,  // 明确设置未删除
                     Permissions = new List<string> { "notice:read" },
-                    CreatedAt = now,
-                    UpdatedAt = now
-                },
-                new Menu
-                {
-                    Name = "tag-management",
-                    Title = "标签管理",
-                    Path = "/system/tag-management",
-                    Component = "./System/TagManagement",
-                    Icon = "tags",
-                    ParentId = systemMenu.Id!,
-                    SortOrder = 5,
-                    IsEnabled = true,
-                    IsDeleted = false,  // 明确设置未删除
-                    Permissions = new List<string> { "tag:read" },
                     CreatedAt = now,
                     UpdatedAt = now
                 }

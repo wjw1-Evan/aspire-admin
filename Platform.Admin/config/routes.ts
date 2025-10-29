@@ -91,6 +91,16 @@ export default [
     component: './company/settings',
     hideInMenu: true,
   },
+  {
+    path: '/system/company-management',
+    component: './company/settings',
+    hideInMenu: true,
+  },
+  {
+    path: '/system/notice-management',
+    component: './notice-management',
+    hideInMenu: true,
+  },
 
 
   // 默认重定向和404

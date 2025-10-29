@@ -15,6 +15,7 @@ declare namespace API {
   type MenuTreeNode = {
     id?: string;
     name: string;
+    title: string;  // 菜单显示标题（中文）
     path: string;
     component?: string;
     icon?: string;

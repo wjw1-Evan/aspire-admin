@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services;
 

@@ -1,7 +1,7 @@
 using Platform.DataInitializer.Services;
-using Platform.DataInitializer.Models;
 using Platform.DataInitializer.Scripts;
 using MongoDB.Driver;
+using Platform.ServiceDefaults.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

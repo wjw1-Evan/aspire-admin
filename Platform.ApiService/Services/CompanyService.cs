@@ -10,6 +10,7 @@ namespace Platform.ApiService.Services;
 public interface ICompanyService
 {
     Task<Company> RegisterCompanyAsync(RegisterCompanyRequest request);
+    Task<Company> CreateCompanyAsync(CreateCompanyRequest request, string userId);  // v3.1: 已登录用户创建企业
     Task<Company?> GetCompanyByIdAsync(string id);
     Task<Company?> GetCompanyByCodeAsync(string code);
     Task<bool> UpdateCompanyAsync(string id, UpdateCompanyRequest request);
@@ -148,6 +149,190 @@ public class CompanyService : ICompanyService
             await _companyFactory.FindOneAndSoftDeleteAsync(filter);
             _logger.LogError(ex, "企业注册失败: {CompanyId}", company.Id!);
             throw new InvalidOperationException($"企业注册失败: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// v3.1: 已登录用户创建企业（当前用户自动成为管理员并拥有全部权限）
+    /// </summary>
+    public async Task<Company> CreateCompanyAsync(CreateCompanyRequest request, string userId)
+    {
+        // 获取当前用户信息
+        var currentUser = await _userFactory.GetByIdAsync(userId);
+        if (currentUser == null)
+        {
+            throw new KeyNotFoundException("当前用户不存在");
+        }
+
+        // 自动生成企业代码（基于用户名和时间戳，保证唯一性）
+        string companyCode;
+        
+        // 如果请求中提供了代码，使用用户提供的（向后兼容）
+        if (!string.IsNullOrWhiteSpace(request.Code))
+        {
+            request.Code.EnsureValidUsername(nameof(request.Code));
+            var existingCompany = await GetCompanyByCodeAsync(request.Code);
+            if (existingCompany != null)
+            {
+                throw new InvalidOperationException(CompanyErrorMessages.CompanyCodeExists);
+            }
+            companyCode = request.Code.ToLower();
+        }
+        else
+        {
+            // 自动生成企业代码（参考个人企业生成规则：personal-{user.Id}）
+            // 格式：company-{用户ID的最后12位}（ObjectId 24位十六进制，取后12位确保唯一性）
+            int attempts = 0;
+            const int maxAttempts = 10;
+            
+            do
+            {
+                // 使用用户ID生成唯一代码（参考 personal-{user.Id} 的规则）
+                // 取用户ID的后12位（ObjectId是24位，取后12位足够唯一）
+                var userIdSuffix = currentUser.Id!.Length > 12 
+                    ? currentUser.Id.Substring(currentUser.Id.Length - 12) 
+                    : currentUser.Id;
+                
+                companyCode = $"company-{userIdSuffix}";
+                
+                // 如果同一个用户在极短时间内创建多个企业，添加随机后缀
+                if (attempts > 0)
+                {
+                    var randomSuffix = Random.Shared.Next(1000, 9999);
+                    companyCode = $"company-{userIdSuffix}-{randomSuffix}";
+                }
+                
+                // 检查是否已存在
+                var existingCompany = await GetCompanyByCodeAsync(companyCode);
+                if (existingCompany == null)
+                {
+                    break; // 代码可用
+                }
+                
+                attempts++;
+                if (attempts >= maxAttempts)
+                {
+                    throw new InvalidOperationException("无法生成唯一的企业代码，请稍后重试");
+                }
+            } while (true);
+        }
+
+        Company? company = null;
+        Role? adminRole = null;
+        UserCompany? userCompany = null;
+
+        try
+        {
+            // 1. 创建企业（使用自动生成的企业代码）
+            company = new Company
+            {
+                Name = request.Name,
+                Code = companyCode,  // 使用自动生成的代码
+                Description = request.Description,
+                Industry = request.Industry,
+                ContactName = request.ContactName,
+                ContactEmail = request.ContactEmail,
+                ContactPhone = request.ContactPhone,
+                IsActive = true,
+                MaxUsers = request.MaxUsers > 0 ? request.MaxUsers : CompanyConstants.DefaultMaxUsers,
+                IsDeleted = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _companyFactory.CreateAsync(company);
+            _logger.LogInformation("创建企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
+
+            // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
+            var menuFilter = _menuFactory.CreateFilterBuilder()
+                .Equal(m => m.IsEnabled, true)
+                .Build();
+            var allMenus = await _menuFactory.FindAsync(menuFilter);
+            var allMenuIds = allMenus.Select(m => m.Id!).ToList();
+            _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
+
+            // 验证菜单数据完整性
+            if (allMenuIds.Count == 0)
+            {
+                _logger.LogError("❌ 系统菜单未初始化！请确保 DataInitializer 服务已成功运行");
+                throw new InvalidOperationException("系统菜单未初始化，请先运行 DataInitializer 服务");
+            }
+
+            // 3. 创建管理员角色（分配所有菜单）
+            adminRole = new Role
+            {
+                Name = "管理员",
+                Description = "企业管理员，拥有所有菜单访问权限",
+                CompanyId = company.Id!,
+                MenuIds = allMenuIds,  // 分配所有全局菜单
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _roleFactory.CreateAsync(adminRole);
+            _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
+
+            // 4. 创建用户-企业关联（用户是管理员）
+            userCompany = new UserCompany
+            {
+                UserId = currentUser.Id!,
+                CompanyId = company.Id!,
+                RoleIds = new List<string> { adminRole.Id! },
+                Status = "active",
+                IsAdmin = true,
+                JoinedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _userCompanyFactory.CreateAsync(userCompany);
+            _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}，角色: {RoleId}", 
+                currentUser.Id, company.Id, adminRole.Id);
+
+            return company;
+        }
+        catch (Exception ex)
+        {
+            // 错误回滚：清理已创建的数据
+            if (userCompany != null)
+            {
+                try
+                {
+                    var ucFilter = _userCompanyFactory.CreateFilterBuilder()
+                        .Equal(uc => uc.Id, userCompany.Id!)
+                        .Build();
+                    await _userCompanyFactory.FindOneAndSoftDeleteAsync(ucFilter);
+                }
+                catch { }
+            }
+
+            if (adminRole != null)
+            {
+                try
+                {
+                    var roleFilter = _roleFactory.CreateFilterBuilder()
+                        .Equal(r => r.Id, adminRole.Id!)
+                        .Build();
+                    await _roleFactory.FindOneAndSoftDeleteAsync(roleFilter);
+                }
+                catch { }
+            }
+
+            if (company != null)
+            {
+                try
+                {
+                    var companyFilter = _companyFactory.CreateFilterBuilder()
+                        .Equal(c => c.Id, company.Id!)
+                        .Build();
+                    await _companyFactory.FindOneAndSoftDeleteAsync(companyFilter);
+                }
+                catch { }
+            }
+
+            _logger.LogError(ex, "创建企业失败: {CompanyName}", company?.Name);
+            throw;
         }
     }
 

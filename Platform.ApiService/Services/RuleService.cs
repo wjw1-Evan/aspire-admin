@@ -9,25 +9,36 @@ namespace Platform.ApiService.Services;
 public class RuleService : IRuleService
 {
     private readonly IDatabaseOperationFactory<RuleListItem> _ruleFactory;
-    private readonly ITenantContext _tenantContext;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
 
     public RuleService(
         IDatabaseOperationFactory<RuleListItem> ruleFactory,
-        ITenantContext tenantContext)
+        IDatabaseOperationFactory<AppUser> userFactory)
     {
         _ruleFactory = ruleFactory;
-        _tenantContext = tenantContext;
+        _userFactory = userFactory;
+    }
+    
+    /// <summary>
+    /// 获取当前用户的企业ID（从数据库获取，不使用 JWT token）
+    /// </summary>
+    private async Task<string> GetCurrentCompanyIdAsync()
+    {
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+        return currentUser.CurrentCompanyId;
     }
  
 
     public async Task<RuleListResponse> GetRulesAsync(RuleQueryParams queryParams)
     {
-        // 获取当前企业ID进行多租户过滤
-        var companyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await GetCurrentCompanyIdAsync();
 
         var filterBuilder = _ruleFactory.CreateFilterBuilder()
             .Equal(r => r.CompanyId, companyId);
@@ -72,22 +83,16 @@ public class RuleService : IRuleService
 
     public async Task<RuleListItem?> GetRuleByIdAsync(string id)
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await GetCurrentCompanyIdAsync();
+        
         return await _ruleFactory.GetByIdAsync(id);
     }
 
     public async Task<RuleListItem> CreateRuleAsync(CreateRuleRequest request)
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await GetCurrentCompanyIdAsync();
 
         var rule = new RuleListItem
         {
@@ -116,11 +121,8 @@ public class RuleService : IRuleService
     /// </summary>
     public async Task<RuleListItem?> UpdateRuleAsync(string id, UpdateRuleRequest request)
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await GetCurrentCompanyIdAsync();
 
         var filter = _ruleFactory.CreateFilterBuilder()
             .Equal(r => r.Id, id)
@@ -177,11 +179,8 @@ public class RuleService : IRuleService
 
     public async Task<bool> DeleteRuleAsync(string id)
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await GetCurrentCompanyIdAsync();
 
         var filter = _ruleFactory.CreateFilterBuilder().Equal(r => r.Id, id).Build();
         var result = await _ruleFactory.FindOneAndSoftDeleteAsync(filter);
@@ -190,11 +189,8 @@ public class RuleService : IRuleService
 
     public async Task<bool> DeleteRulesAsync(List<int> keys)
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await GetCurrentCompanyIdAsync();
 
         var filter = _ruleFactory.CreateFilterBuilder()
             .In(r => r.Key, keys)
@@ -214,11 +210,8 @@ public class RuleService : IRuleService
 
     private async Task<int> GetNextKeyAsync()
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await GetCurrentCompanyIdAsync();
 
         var filter = _ruleFactory.CreateFilterBuilder()
             .Equal(r => r.CompanyId, companyId)

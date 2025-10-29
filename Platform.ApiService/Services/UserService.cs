@@ -104,7 +104,10 @@ public class UserService : IUserService
         }
 
         // v3.0 多租户：检查企业用户配额
-        var companyId = _userFactory.GetCurrentCompanyId();
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        var companyId = currentUser?.CurrentCompanyId;
         if (!string.IsNullOrEmpty(companyId))
         {
             var companies = await _companyFactory.FindAsync(_companyFactory.CreateFilterBuilder().Equal(c => c.Id, companyId).Build());
@@ -331,8 +334,15 @@ public class UserService : IUserService
     /// </summary>
     public async Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request)
     {
-        // 验证当前企业
-        var currentCompanyId = _userFactory.GetRequiredCompanyId();
+        // 验证当前企业（从数据库获取，不使用 JWT token）
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+        var currentCompanyId = currentUser.CurrentCompanyId;
 
         // 构建查询过滤器
         var filter = await BuildUserListFilterAsync(request, currentCompanyId);
@@ -505,12 +515,15 @@ public class UserService : IUserService
     /// </summary>
     public async Task<UserStatisticsResponse> GetUserStatisticsAsync()
     {
-        // ✅ 获取当前企业ID进行多租户过滤
-        var currentCompanyId = _userFactory.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(currentCompanyId))
+        // ✅ 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
         {
             throw new UnauthorizedAccessException("未找到当前企业信息");
         }
+        var currentCompanyId = currentUser.CurrentCompanyId;
 
         // ✅ 基础过滤：只统计当前企业的未删除用户
         var baseFilter = _userFactory.CreateFilterBuilder()
@@ -606,12 +619,15 @@ public class UserService : IUserService
     /// </summary>
     public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null)
     {
-        // ✅ 获取当前企业ID进行多租户过滤
-        var currentCompanyId = _userFactory.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(currentCompanyId))
+        // ✅ 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
         {
             throw new UnauthorizedAccessException("未找到当前企业信息");
         }
+        var currentCompanyId = currentUser.CurrentCompanyId;
 
         // ✅ 过滤器：只能操作当前企业的未删除用户
         var filter = _userFactory.CreateFilterBuilder()
@@ -630,7 +646,7 @@ public class UserService : IUserService
                 update = update.Set(user => user.IsActive, false);
                 break;
             case "delete":
-                var currentUserId = _userFactory.GetCurrentUserId();
+                // 使用已获取的 currentUserId（已在方法开始处获取）
                 var deleteCount = await _userFactory.SoftDeleteManyAsync(request.UserIds);
                 return deleteCount > 0;
             default:
@@ -915,7 +931,10 @@ public class UserService : IUserService
             return new List<string>();
         }
 
-        var companyId = _userFactory.GetCurrentCompanyId();
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        var companyId = currentUser?.CurrentCompanyId;
         if (string.IsNullOrEmpty(companyId))
         {
             // 如果没有企业上下文（如企业注册时创建管理员），直接返回
@@ -957,8 +976,9 @@ public class UserService : IUserService
             throw new KeyNotFoundException($"用户 {userId} 不存在");
         }
 
-        // 获取用户在当前企业的角色
-        var companyId = _userFactory.GetCurrentCompanyId();
+        // 获取用户在当前企业的角色（从数据库获取，不使用 JWT token）
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，统一从数据库获取
+        var companyId = user.CurrentCompanyId;
         if (string.IsNullOrEmpty(companyId))
         {
             // 没有企业上下文，返回空权限
@@ -984,13 +1004,15 @@ public class UserService : IUserService
         if (userCompany?.RoleIds != null && userCompany.RoleIds.Count > 0)
         {
             // 获取用户角色对应的菜单权限
+            // ⚠️ 关键修复：使用 FindWithoutTenantFilterAsync 因为我们已手动添加了 CompanyId 过滤
+            // 避免 DatabaseOperationFactory 使用 JWT token 中的旧企业ID自动过滤
             var roleFilter = _roleFactory.CreateFilterBuilder()
                 .In(r => r.Id, userCompany.RoleIds)
-                .Equal(r => r.CompanyId, companyId)
+                .Equal(r => r.CompanyId, companyId)  // ✅ 使用数据库中的 CurrentCompanyId
                 .Equal(r => r.IsActive, true)
                 .Build();
 
-            var roles = await _roleFactory.FindAsync(roleFilter);
+            var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
             
             // 收集所有角色的菜单权限
             var menuIds = roles.SelectMany(r => r.MenuIds).Distinct().ToList();

@@ -298,6 +298,17 @@ declare namespace API {
     contactPhone?: string;
   };
 
+  type CreateCompanyRequest = {
+    name: string;
+    code?: string;  // 可选，如果为空则由系统自动生成
+    description?: string;
+    industry?: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    maxUsers?: number;
+  };
+
   type RegisterCompanyResult = {
     company?: Company;
     token?: string;

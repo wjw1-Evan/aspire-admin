@@ -8,7 +8,7 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 角色实体
 /// </summary>
-public class Role : Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.INamedEntity, Platform.ServiceDefaults.Models.ITimestamped
+public class Role : Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.INamedEntity, Platform.ServiceDefaults.Models.ITimestamped, Platform.ServiceDefaults.Models.IMultiTenant
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

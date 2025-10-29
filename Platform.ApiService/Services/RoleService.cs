@@ -118,19 +118,30 @@ public class RoleService : IRoleService
     /// </summary>
     public async Task<Role> CreateRoleAsync(CreateRoleRequest request)
     {
-        // 检查角色名称是否已存在
+        // 检查角色名称是否已存在（工厂自动过滤当前企业）
         var existingRole = await GetRoleByNameAsync(request.Name);
         if (existingRole != null)
         {
             throw new InvalidOperationException(string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称"));
         }
 
+        // 获取当前企业ID（从数据库获取，不使用 JWT token）
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+        var currentUserId = _roleFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+        var companyId = currentUser.CurrentCompanyId;
+
         var role = new Role
         {
             Name = request.Name,
             Description = request.Description,
             MenuIds = request.MenuIds,
-            IsActive = request.IsActive
+            IsActive = request.IsActive,
+            CompanyId = companyId  // 设置企业ID，确保多租户隔离
         };
 
         return await _roleFactory.CreateAsync(role);

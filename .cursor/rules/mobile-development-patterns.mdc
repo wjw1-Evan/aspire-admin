@@ -1,6 +1,6 @@
 ---
-globs: Platform.App/**/*.ts,Platform.App/**/*.tsx
-description: 移动端开发模式和最佳实践
+globs: **/Platform.App/**,**/app/**,**/components/**,**/hooks/**,**/services/**,Platform.App/**/*.tsx,Platform.App/**/*.ts,*.tsx,*.ts,*.js,*.jsx,app.json,expo-env.d.ts
+description: React Native 和 Expo 移动端开发规范和最佳实践 - 组件开发、路由、状态管理、性能优化
 ---
 
 # 移动端开发模式和最佳实践
@@ -9,31 +9,72 @@ description: 移动端开发模式和最佳实践
 
 基于 React Native + Expo 技术栈，提供统一的移动端开发模式和最佳实践。
 
+## 🎯 核心原则
+
+**使用 React Native + Expo 构建跨平台移动应用，遵循移动端最佳实践，考虑性能、用户体验和跨平台兼容性**
+
 ## 🏗️ 移动端架构
 
 ### Expo Router 路由系统
 
 ```typescript
-// ✅ Expo Router 路由结构
+// ✅ Expo Router 文件系统路由结构
 // app/
 //   ├── (auth)/
 //   │   ├── login.tsx
 //   │   └── register.tsx
 //   ├── (tabs)/
-//   │   ├── index.tsx
-//   │   ├── profile.tsx
-//   │   └── settings.tsx
-//   ├── _layout.tsx
-//   └── +not-found.tsx
+//   │   ├── index.tsx       // 主页面
+//   │   ├── profile.tsx     // 个人资料页面
+//   │   └── settings.tsx    // 设置页面
+//   ├── _layout.tsx         // 根布局
+//   └── +not-found.tsx      // 404 页面
 
-// ✅ 路由布局配置
+// ✅ 根布局配置
+// app/_layout.tsx
+import { Stack } from 'expo-router';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { StatusBar } from 'expo-status-bar';
+
 export default function RootLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" />
-    </Stack>
+    <ThemeProvider>
+      <AuthProvider>
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ title: '登录' }} />
+          <Stack.Screen name="register" options={{ title: '注册' }} />
+        </Stack>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
+
+// ✅ 标签页布局
+// app/(tabs)/_layout.tsx
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+
+export default function TabLayout() {
+  return (
+    <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs.Screen 
+        name="index" 
+        options={{ 
+          title: '首页',
+          tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />
+        }} 
+      />
+      <Tabs.Screen 
+        name="profile" 
+        options={{ 
+          title: '个人',
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />
+        }} 
+      />
+    </Tabs>
   );
 }
 ```
@@ -74,6 +115,141 @@ export default function TabLayout() {
     </AuthGuard>
   );
 }
+```
+
+## 🎨 组件开发规范
+
+### 基础组件示例
+
+```tsx
+// ✅ 推荐：移动端组件结构
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+interface UserCardProps {
+  user: User;
+  onPress?: (user: User) => void;
+  onEdit?: (user: User) => void;
+}
+
+const UserCard: React.FC<UserCardProps> = ({ user, onPress, onEdit }) => {
+  const handlePress = () => {
+    onPress?.(user);
+  };
+
+  const handleEdit = () => {
+    onEdit?.(user);
+  };
+
+  return (
+    <TouchableOpacity style={styles.container} onPress={handlePress}>
+      <View style={styles.content}>
+        <Text style={styles.name}>{user.username}</Text>
+        <Text style={styles.email}>{user.email}</Text>
+        <Text style={styles.role}>{user.role}</Text>
+      </View>
+      <TouchableOpacity onPress={handleEdit} style={styles.editButton}>
+        <Ionicons name="pencil" size={20} color="#007AFF" />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 16,
+    marginVertical: 4,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  content: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+  },
+  email: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  role: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  editButton: {
+    padding: 8,
+  },
+});
+
+export default UserCard;
+```
+
+### 自定义 Hooks
+
+```tsx
+// ✅ 推荐：移动端自定义 Hook
+import { useState, useEffect, useCallback } from 'react';
+import { Alert } from 'react-native';
+
+const useUserList = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchUsers = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    
+    try {
+      const response = await getUserList();
+      setUsers(response.data);
+    } catch (error) {
+      Alert.alert('错误', '获取用户列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refreshUsers = useCallback(async () => {
+    setRefreshing(true);
+    await fetchUsers(false);
+    setRefreshing(false);
+  }, [fetchUsers]);
+
+  const deleteUser = useCallback(async (userId: string) => {
+    try {
+      await deleteUserById(userId);
+      setUsers(prev => prev.filter(user => user.id !== userId));
+      Alert.alert('成功', '用户删除成功');
+    } catch (error) {
+      Alert.alert('错误', '删除用户失败');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  return {
+    users,
+    loading,
+    refreshing,
+    fetchUsers,
+    refreshUsers,
+    deleteUser,
+  };
+};
 ```
 
 ## ✅ 推荐做法
@@ -620,6 +796,61 @@ describe('UserProfile', () => {
 - [Expo Router 文档](https://expo.github.io/router/)
 - [React Native 性能优化](https://reactnative.dev/docs/performance)
 - [移动端组件库](mdc:Platform.App/components/)
+
+### 路由守卫和认证
+
+```tsx
+// ✅ 正确：路由守卫实现
+// app/_layout.tsx 中使用
+import { useEffect } from 'react';
+import { useRouter, useSegments } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(tabs)';
+
+    if (!user && inAuthGroup) {
+      router.replace('/login');
+    } else if (user && !inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [user, isLoading, segments, router]);
+
+  return <>{children}</>;
+}
+
+// ✅ 正确：页面中路由跳转
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+
+export default function ProfileScreen() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.username}>{user?.username}</Text>
+      <Text style={styles.email}>{user?.email}</Text>
+      
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>退出登录</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+```
 
 ## 🎯 核心原则
 

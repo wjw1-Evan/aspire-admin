@@ -1,0 +1,426 @@
+---
+description: JWT Token 中移除 CurrentCompanyId 的架构变更 - 统一从数据库获取企业ID
+globs: Platform.ApiService/**/*.cs,Platform.ServiceDefaults/**/*.cs
+---
+
+# JWT Token 中移除 CurrentCompanyId - 架构变更规范
+
+## 🎯 核心原则
+
+**JWT token 中已移除 `CurrentCompanyId` 和 `companyId` claim。所有企业ID相关的逻辑必须从数据库的 `user.CurrentCompanyId` 获取，而不是从 JWT token 获取。**
+
+## ✅ 正确的企业ID获取方式
+
+### 从数据库获取企业ID（推荐方式）
+
+```csharp
+// ✅ 正确：从数据库获取当前用户的企业ID
+var userId = _userFactory.GetRequiredUserId();
+var user = await _userFactory.GetByIdAsync(userId);
+if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
+{
+    throw new UnauthorizedAccessException("未找到当前企业信息");
+}
+var companyId = user.CurrentCompanyId;
+```
+
+### 在服务中添加辅助方法
+
+```csharp
+/// <summary>
+/// 获取当前用户的企业ID（从数据库获取，不使用 JWT token）
+/// </summary>
+private async Task<string> GetCurrentCompanyIdAsync()
+{
+    // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+    var currentUserId = _userFactory.GetRequiredUserId();
+    var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+    if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+    {
+        throw new UnauthorizedAccessException("未找到当前企业信息");
+    }
+    return currentUser.CurrentCompanyId;
+}
+
+// 在方法中使用
+var companyId = await GetCurrentCompanyIdAsync();
+```
+
+### 在 Controller 中获取企业ID
+
+```csharp
+// ✅ 正确：在 Controller 中从数据库获取
+[HttpGet("current")]
+[Authorize]
+public async Task<IActionResult> GetCurrentCompany()
+{
+    // 从数据库获取当前用户的企业ID
+    var userId = GetRequiredUserId();
+    var userService = HttpContext.RequestServices.GetRequiredService<IDatabaseOperationFactory<AppUser>>();
+    var user = await userService.GetByIdAsync(userId);
+    if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
+    {
+        throw new UnauthorizedAccessException("未找到企业信息");
+    }
+    var companyId = user.CurrentCompanyId;
+    
+    var company = await _companyService.GetCompanyByIdAsync(companyId);
+    return Success(company);
+}
+```
+
+### 可选的辅助方法（用于非强制场景）
+
+```csharp
+/// <summary>
+/// 尝试获取当前用户的企业ID（从数据库获取，不使用 JWT token）
+/// 如果没有用户上下文或用户未登录，返回 null
+/// </summary>
+private async Task<string?> TryGetCurrentCompanyIdAsync()
+{
+    try
+    {
+        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+        var currentUserId = _userFactory.GetCurrentUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            return null;
+        }
+        
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        return currentUser?.CurrentCompanyId;
+    }
+    catch
+    {
+        // 如果无法获取（如用户未登录），返回 null
+        return null;
+    }
+}
+```
+
+## ❌ 禁止的做法
+
+### ❌ 错误 1: 从 JWT Token 获取企业ID
+
+```csharp
+// ❌ 错误：TenantContext.GetCurrentCompanyId() 现在返回 null
+var companyId = _tenantContext.GetCurrentCompanyId();
+
+// ❌ 错误：BaseApiController.GetRequiredCompanyId() 已废弃
+var companyId = GetRequiredCompanyId();
+
+// ❌ 错误：DatabaseOperationFactory.GetRequiredCompanyId() 使用 TenantContext
+var companyId = _roleFactory.GetRequiredCompanyId();
+
+// ✅ 正确：从数据库获取
+var userId = _userFactory.GetRequiredUserId();
+var user = await _userFactory.GetByIdAsync(userId);
+var companyId = user?.CurrentCompanyId;
+```
+
+### ❌ 错误 2: 依赖自动租户过滤
+
+```csharp
+// ❌ 错误：DatabaseOperationFactory.ApplyTenantFilter 不再工作
+// 因为 TenantContext.GetCurrentCompanyId() 返回 null
+var roles = await _roleFactory.FindAsync();  // ❌ 不会自动过滤 CompanyId
+
+// ✅ 正确：手动添加 CompanyId 过滤
+var companyId = await GetCurrentCompanyIdAsync();
+var filter = _roleFactory.CreateFilterBuilder()
+    .Equal(r => r.CompanyId, companyId)  // ✅ 手动添加
+    .Equal(r => r.IsActive, true)
+    .Build();
+
+var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);  // ✅ 跳过自动过滤
+```
+
+### ❌ 错误 3: 在 JWT Token 中添加 CurrentCompanyId
+
+```csharp
+// ❌ 错误：不要重新添加 CurrentCompanyId 到 JWT token
+claims.Add(new("currentCompanyId", user.CurrentCompanyId));
+claims.Add(new("companyId", user.CurrentCompanyId));
+
+// ✅ 正确：JWT token 中不包含企业ID
+var claims = new List<Claim>
+{
+    new("userId", user.Id ?? string.Empty),
+    new("username", user.Username)
+};
+// ⚠️ 已移除：不再在 JWT token 中包含 CurrentCompanyId
+```
+
+## 🔧 多租户查询处理
+
+### IMultiTenant 实体查询
+
+由于 `DatabaseOperationFactory.ApplyTenantFilter` 不再自动添加 `CompanyId` 过滤（因为 `TenantContext.GetCurrentCompanyId()` 返回 null），所有查询 `IMultiTenant` 实体的代码必须手动添加 `CompanyId` 过滤：
+
+```csharp
+// ✅ 正确：手动添加 CompanyId 过滤
+public async Task<List<Role>> GetRolesAsync()
+{
+    // 1. 从数据库获取企业ID
+    var companyId = await GetCurrentCompanyIdAsync();
+    
+    // 2. 手动添加 CompanyId 过滤
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.CompanyId, companyId)  // ✅ 手动添加
+        .Equal(r => r.IsActive, true)
+        .Build();
+    
+    // 3. 使用 FindWithoutTenantFilterAsync（因为已手动添加了 CompanyId 过滤）
+    var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);
+    
+    return roles;
+}
+```
+
+### AppUser 查询
+
+`AppUser` 不实现 `IMultiTenant`，因此不受自动租户过滤影响，但仍需要手动添加 `CurrentCompanyId` 过滤：
+
+```csharp
+// ✅ 正确：手动添加 CurrentCompanyId 过滤
+public async Task<List<AppUser>> GetUsersAsync()
+{
+    // 1. 从数据库获取企业ID
+    var companyId = await GetCurrentCompanyIdAsync();
+    
+    // 2. 手动添加 CurrentCompanyId 过滤
+    var filter = _userFactory.CreateFilterBuilder()
+        .Equal(u => u.CurrentCompanyId, companyId)  // ✅ 手动添加
+        .Equal(u => u.IsActive, true)
+        .Build();
+    
+    // 3. 使用 FindAsync（AppUser 不实现 IMultiTenant，不受自动过滤影响）
+    var users = await _userFactory.FindAsync(filter);
+    
+    return users;
+}
+```
+
+## 🎯 关键变更点
+
+### 1. JWT Token 生成
+
+```csharp
+// Platform.ApiService/Services/JwtService.cs
+// ⚠️ 已移除：不再在 JWT token 中包含 CurrentCompanyId
+var claims = new List<Claim>
+{
+    new("userId", user.Id ?? string.Empty),
+    new("username", user.Username)
+};
+// 不再添加 currentCompanyId 和 companyId claim
+```
+
+### 2. TenantContext.GetCurrentCompanyId()
+
+```csharp
+// Platform.ServiceDefaults/Services/TenantContext.cs
+// ⚠️ 注意：此方法现在始终返回 null（因为 JWT token 中没有 companyId claim）
+public string? GetCurrentCompanyId()
+{
+    return _httpContextAccessor.HttpContext?.User?.FindFirst("companyId")?.Value;
+    // 现在返回 null，因为 JWT token 中已移除
+}
+```
+
+### 3. DatabaseOperationFactory 自动租户过滤
+
+```csharp
+// Platform.ServiceDefaults/Services/DatabaseOperationFactory.cs
+// ⚠️ 注意：此方法不再自动添加 CompanyId 过滤（因为 GetCurrentCompanyId() 返回 null）
+private FilterDefinition<T> ApplyTenantFilter(FilterDefinition<T> filter)
+{
+    if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+    {
+        var companyId = _tenantContext.GetCurrentCompanyId();  // 返回 null
+        if (!string.IsNullOrEmpty(companyId))
+        {
+            // 这个分支永远不会执行
+            var companyFilter = Builders<T>.Filter.Eq("CompanyId", companyId);
+            return Builders<T>.Filter.And(filter, companyFilter);
+        }
+    }
+    return filter;  // 直接返回原 filter，不添加租户过滤
+}
+```
+
+### 4. BaseApiController.GetRequiredCompanyId()
+
+```csharp
+// Platform.ServiceDefaults/Controllers/BaseApiController.cs
+// ⚠️ 已废弃：同步版本不再工作
+[Obsolete("已移除 JWT token 中的 CurrentCompanyId，请使用 GetRequiredCompanyIdAsync() 替代")]
+protected string GetRequiredCompanyId()
+{
+    throw new InvalidOperationException("JWT token 中不再包含 CurrentCompanyId，请使用 GetRequiredCompanyIdAsync() 替代");
+}
+
+// ✅ 新方法：异步版本，从数据库获取
+protected async Task<string> GetRequiredCompanyIdAsync()
+{
+    var userId = GetRequiredUserId();
+    var userService = HttpContext.RequestServices.GetRequiredService<IDatabaseOperationFactory<AppUser>>();
+    var user = await userService.GetByIdAsync(userId);
+    if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
+    {
+        throw new UnauthorizedAccessException("未找到企业信息");
+    }
+    return user.CurrentCompanyId;
+}
+```
+
+## 📋 代码审查检查清单
+
+创建或修改代码时检查：
+
+- [ ] **不从 JWT token 获取企业ID** - 不使用 `TenantContext.GetCurrentCompanyId()` 或 `GetRequiredCompanyId()`
+- [ ] **从数据库获取企业ID** - 使用 `user.CurrentCompanyId` 从数据库获取
+- [ ] **手动添加 CompanyId 过滤** - 查询 `IMultiTenant` 实体时手动添加 `CompanyId` 过滤
+- [ ] **使用 FindWithoutTenantFilterAsync** - 当已手动添加 `CompanyId` 过滤时，使用 `FindWithoutTenantFilterAsync` 跳过自动过滤
+- [ ] **Controller 使用异步方法** - Controller 中使用 `GetRequiredCompanyIdAsync()` 而不是 `GetRequiredCompanyId()`
+- [ ] **JWT Token 不包含企业ID** - 确认 JWT token 生成时不添加 `currentCompanyId` 或 `companyId` claim
+
+## 🎯 查询模式
+
+### 模式 1: 标准查询（IMultiTenant 实体）
+
+```csharp
+// ✅ 正确模式
+public async Task<List<Role>> GetRolesAsync()
+{
+    // 1. 从数据库获取企业ID
+    var userId = _roleFactory.GetRequiredUserId();
+    var user = await _userFactory.GetByIdAsync(userId);
+    var companyId = user?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
+    
+    // 2. 构建过滤器（手动添加 CompanyId）
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.CompanyId, companyId)  // ✅ 手动添加
+        .Equal(r => r.IsActive, true)
+        .Build();
+    
+    // 3. 使用 FindWithoutTenantFilterAsync（跳过自动过滤）
+    var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);
+    
+    return roles;
+}
+```
+
+### 模式 2: 跨企业查询（特殊场景）
+
+```csharp
+// ✅ 正确模式：跨企业查询时明确指定多个企业ID
+public async Task<List<Role>> GetRolesForCompaniesAsync(List<string> companyIds)
+{
+    // 1. 手动构建过滤器（不依赖自动过滤）
+    var filter = _roleFactory.CreateFilterBuilder()
+        .In(r => r.CompanyId, companyIds)  // ✅ 手动指定多个企业
+        .Equal(r => r.IsActive, true)
+        .Build();
+    
+    // 2. 使用 FindWithoutTenantFilterAsync
+    var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);
+    
+    return roles;
+}
+```
+
+### 模式 3: AppUser 查询
+
+```csharp
+// ✅ 正确模式：AppUser 不实现 IMultiTenant
+public async Task<List<AppUser>> GetUsersAsync()
+{
+    // 1. 从数据库获取企业ID
+    var userId = _userFactory.GetRequiredUserId();
+    var currentUser = await _userFactory.GetByIdAsync(userId);
+    var companyId = currentUser?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
+    
+    // 2. 手动添加 CurrentCompanyId 过滤（AppUser 不使用 CompanyId）
+    var filter = _userFactory.CreateFilterBuilder()
+        .Equal(u => u.CurrentCompanyId, companyId)  // ✅ 使用 CurrentCompanyId
+        .Equal(u => u.IsActive, true)
+        .Build();
+    
+    // 3. 使用 FindAsync（AppUser 不实现 IMultiTenant，不受自动过滤影响）
+    var users = await _userFactory.FindAsync(filter);
+    
+    return users;
+}
+```
+
+## ⚠️ 重要注意事项
+
+### 1. 自动租户过滤已失效
+
+`DatabaseOperationFactory.ApplyTenantFilter` 不再自动添加 `CompanyId` 过滤，因为 `TenantContext.GetCurrentCompanyId()` 返回 null。
+
+**影响**：
+- 所有查询 `IMultiTenant` 实体的代码必须手动添加 `CompanyId` 过滤
+- 必须确保多租户数据隔离，避免跨企业数据泄露
+
+### 2. 性能考虑
+
+从数据库获取企业ID会增加一次数据库查询。考虑：
+
+```csharp
+// ✅ 在方法开始时获取一次，重复使用
+public async Task<List<Role>> GetRolesAsync()
+{
+    var companyId = await GetCurrentCompanyIdAsync();  // 只查询一次
+    
+    // 在同一个方法中重复使用 companyId
+    var roles = await GetRolesByCompanyAsync(companyId);
+    var stats = await GetRoleStatsAsync(companyId);
+    
+    return roles;
+}
+```
+
+### 3. 缓存策略（可选）
+
+如果频繁访问，可以考虑缓存：
+
+```csharp
+// ✅ 可选：缓存当前用户的企业ID（作用域内）
+private string? _cachedCompanyId;
+
+private async Task<string> GetCurrentCompanyIdAsync()
+{
+    if (!string.IsNullOrEmpty(_cachedCompanyId))
+        return _cachedCompanyId;
+    
+    var userId = _userFactory.GetRequiredUserId();
+    var user = await _userFactory.GetByIdAsync(userId);
+    if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
+    {
+        throw new UnauthorizedAccessException("未找到当前企业信息");
+    }
+    
+    _cachedCompanyId = user.CurrentCompanyId;
+    return _cachedCompanyId;
+}
+```
+
+## 📚 相关文档
+
+- [JWT CurrentCompanyId 移除修复](mdc:docs/bugfixes/JWT-CURRENT-COMPANY-ID-REMOVAL.md)
+- [企业切换权限修复](mdc:docs/bugfixes/COMPANY-SWITCH-PERMISSION-FIX.md)
+- [多租户实体完整设计规范](mdc:.cursor/rules/multi-tenant-entity-design-complete.mdc)
+- [BaseApiController](mdc:Platform.ServiceDefaults/Controllers/BaseApiController.cs)
+- [JwtService](mdc:Platform.ApiService/Services/JwtService.cs)
+
+## 🎯 记住
+
+1. **JWT token 不包含企业ID** - 已完全移除 `currentCompanyId` 和 `companyId` claim
+2. **统一从数据库获取** - 所有企业ID从 `user.CurrentCompanyId` 获取
+3. **手动添加过滤** - 查询 `IMultiTenant` 实体时必须手动添加 `CompanyId` 过滤
+4. **使用 FindWithoutTenantFilterAsync** - 当已手动添加过滤时，跳过自动过滤
+5. **实时性更好** - 从数据库获取确保切换企业后立即生效，不受 JWT token 延迟影响
+
+遵循这些规范，确保多租户数据隔离的正确性和一致性！

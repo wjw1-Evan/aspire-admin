@@ -1,9 +1,26 @@
 ---
-globs: *.tsx,*.jsx
-description: React 组件开发规范和最佳实践
+globs: *.tsx,*.jsx,Platform.Admin/src/components/*.tsx,Platform.App/components/*.tsx
+description: React 组件开发规范和设计模式 - 组件设计、Props、样式、状态管理最佳实践
 ---
 
 # React 组件开发规范
+
+## 🎯 核心原则
+
+**遵循 React 组件设计原则，使用类型安全的 Props，遵循单一职责和可复用性**
+
+## 🏗️ 组件架构模式
+
+### 组件分层架构
+
+```typescript
+// ✅ 组件分层架构
+// 1. 页面组件 (Pages) - 业务逻辑和状态管理
+// 2. 容器组件 (Containers) - 数据获取和状态管理
+// 3. 展示组件 (Presentational) - 纯展示逻辑
+// 4. 基础组件 (Base) - 可复用的基础组件
+// 5. 布局组件 (Layout) - 页面布局结构
+```
 
 ## 🎯 组件设计原则
 
@@ -34,6 +51,7 @@ export default function UserCard({ user, onEdit }: UserCardProps) {
 ```
 
 ### Props 设计
+
 ```typescript
 // ✅ 推荐：明确的 Props 接口
 interface UserCardProps {
@@ -42,6 +60,97 @@ interface UserCardProps {
   readonly onDelete?: (userId: string) => void;
   readonly loading?: boolean;
   readonly className?: string;
+}
+
+// ✅ 单一职责原则
+interface UserCardProps {
+  user: User;
+  onEdit: (user: User) => void;
+  onDelete: (userId: string) => void;
+}
+
+// 只负责用户信息的展示和基本操作
+export const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <Avatar src={user.avatar} />
+        <Typography>{user.name}</Typography>
+      </CardHeader>
+      <CardActions>
+        <Button onClick={() => onEdit(user)}>编辑</Button>
+        <Button onClick={() => onDelete(user.id)}>删除</Button>
+      </CardActions>
+    </Card>
+  );
+};
+```
+
+## 🎯 组件设计模式
+
+### 1. 高阶组件 (HOC) 模式
+
+```typescript
+// ✅ 高阶组件模式
+interface WithLoadingProps {
+  loading: boolean;
+}
+
+export function withLoading<P extends object>(
+  Component: React.ComponentType<P>
+): React.ComponentType<P & WithLoadingProps> {
+  return function WithLoadingComponent(props: P & WithLoadingProps) {
+    const { loading, ...restProps } = props;
+    
+    if (loading) {
+      return <LoadingSpinner />;
+    }
+    
+    return <Component {...(restProps as P)} />;
+  };
+}
+
+// 使用示例
+const UserListWithLoading = withLoading(UserList);
+```
+
+### 2. 渲染属性 (Render Props) 模式
+
+```typescript
+// ✅ 渲染属性模式
+interface DataFetcherProps<T> {
+  url: string;
+  children: (data: {
+    data: T | null;
+    loading: boolean;
+    error: string | null;
+    refetch: () => void;
+  }) => React.ReactNode;
+}
+
+export function DataFetcher<T>({ url, children }: DataFetcherProps<T>) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetch(url).then(r => r.json());
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '获取数据失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [url]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return <>{children({ data, loading, error, refetch: fetch })}</>;
 }
 ```
 

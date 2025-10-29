@@ -39,7 +39,7 @@
   - 路由配置和动态菜单
 
 #### 移动端开发
-- **`mobile-development.mdc`** - React Native 和 Expo 开发规范
+- **`mobile-development-patterns.mdc`** - React Native 和 Expo 移动端开发规范和最佳实践
   - 📁 应用于移动端相关文件
   - Expo Router 路由系统、主题化组件
   - 平台适配、性能优化
@@ -107,23 +107,28 @@
   - 禁止在系统启动时创建全局数据
   - 数据孤儿检查和验证
 
-- **`multi-tenant-development.mdc`** - 多租户系统开发规范
-  - 📋 手动引用
-  - BaseRepository 自动租户过滤
-  - ITenantContext 使用
-  - 跨企业操作安全规范
+- **`multi-tenant-entity-design-complete.mdc`** - 多租户实体完整设计规范
+  - 📁 应用于所有 `*.cs` 文件
+  - 单一企业实体 vs 多企业实体设计对比
+  - CompanyId vs CurrentCompanyId 使用指南
+  - IMultiTenant 接口实现决策树
+  - 自动过滤 vs 手动过滤模式
+  - 完整的设计决策检查清单
 
-- **`multi-tenant-data-isolation.mdc`** - 多租户数据隔离开发规范
-  - 📁 应用于 `*.cs` 文件和 `Platform.ApiService` 相关文件
-  - MultiTenantEntity 和 MultiTenantRepository 使用
-  - 企业数据过滤和验证
-  - 跨企业操作安全规范
+- **`multi-tenant-development.mdc`** - 多租户系统开发规范和最佳实践
+  - 📁 应用于 `Platform.ApiService/Services/*.cs` 和 `Platform.ServiceDefaults/Services/*.cs`
+  - DatabaseOperationFactory 自动租户过滤
+  - ITenantContext 使用
+  - 权限控制和数据安全
+  - 审计日志和加密存储
+  - ⚠️ 已更新：修正了 AppUser 使用 CurrentCompanyId 的示例
 
 - **`user-registration-flow.mdc`** - 用户注册流程和企业自动创建规范
   - 📋 手动引用
   - 用户注册时自动创建企业
   - 默认权限、角色、菜单创建
   - MongoDB 事务保护
+
 
 #### 数据库开发规范 🆕
 - **`database-initialization.mdc`** - 数据库初始化规范
@@ -240,17 +245,17 @@
 |------|------|------|
 | 项目架构 | 1 | 始终应用 |
 | 前端规范 | 5 | TypeScript、React、Ant Design Pro、移动端、主题系统 |
-| 后端规范 | 2 | C# 开发规范（含服务层）、BaseApiController |
-| 多租户规范 ⭐ | 3 | 多租户开发、用户注册、全局数据控制 |
-| 数据库规范 🆕 | 3 | 初始化、微服务、原子操作、全局菜单 |
+| 后端规范 | 4 | C# 开发规范、API控制器、业务逻辑服务层、依赖注入配置 |
+| 多租户规范 ⭐ | 3 | 多租户开发、实体设计（完整版）、用户注册、全局数据控制 |
+| 数据库规范 🆕 | 4 | 数据访问（操作工厂）、初始化、微服务、原子操作、全局菜单 |
 | 权限规范 | 1 | 权限控制 |
 | 验证扩展 | 2 | 参数验证、资源检查 |
 | 文档管理 | 2 | 文档组织、同步更新 |
-| 系统规范 | 4 | API、认证、错误处理、状态管理 |
+| 系统规范 | 3 | 认证、错误处理、状态管理（已合并到统一的规范文件） |
 | 工程规范 | 3 | 测试、部署、Git工作流 |
 | 实体开发 | 1 | 新增实体清单 |
 | **核心开发规范** 🆕 | **6** | 代码审查、性能优化、安全实践、微服务架构、设计模式、移动端最佳实践 |
-| **总计** | **31** | 涵盖全栈开发各个方面（已合并重复规则） |
+| **总计** | **25** | 涵盖全栈开发各个方面（已合并所有重复规则，规则结构完全优化） |
 
 ## 🆕 v5.0 新增规则
 
@@ -321,7 +326,7 @@
    - 配置管理和部署
    - 微服务开发检查清单
 
-9. **`mobile-development-best-practices.mdc`** (📁 应用于移动端文件)
+9. **`mobile-development-patterns.mdc`** (📁 应用于移动端文件) - React Native 和 Expo 移动端开发规范和最佳实践
    - React Native 和 Expo 最佳实践
    - Expo Router 路由系统
    - 主题化和样式管理
@@ -428,7 +433,7 @@ description: TypeScript 编码规范和最佳实践
 
 ### 前端开发
 1. `antd-pro-umi.mdc` - 管理后台开发
-2. `mobile-development.mdc` - 移动端开发
+2. `mobile-development-patterns.mdc` - 移动端开发
 3. `theme-system.mdc` - 主题定制
 4. `state-management.mdc` - 状态管理
 
@@ -461,4 +466,4 @@ description: TypeScript 编码规范和最佳实践
 
 💡 **提示**: 这些规则由项目团队维护，确保 Cursor AI 能够提供准确、一致的代码建议。如有问题或建议，欢迎提出！
 
-**最后更新**: 2025-01-16 (v5.2 - 合并清理重复规则，优化规则结构，规则总数精简至 31 个)
+**最后更新**: 2025-01-16 (v5.7 - 完成所有规则合并和清理：API控制器、依赖注入、数据访问、服务层、状态管理、组件规则、移动端开发，规则总数优化至 25 个)

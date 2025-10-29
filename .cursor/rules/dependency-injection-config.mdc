@@ -1,5 +1,5 @@
 ---
-globs: Platform.ApiService/Program.cs,Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/**/*.cs
+globs: Platform.ApiService/Program.cs,Platform.ApiService/Services/*.cs,Platform.ApiService/Extensions/*.cs,Platform.ServiceDefaults/**/*.cs
 description: 依赖注入和配置管理规范
 ---
 
@@ -47,19 +47,98 @@ builder.Services.AddScoped<IUserService, UserService>();
 // ✅ 标准服务注册
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddPlatformServices(this IServiceCollection services)
+    /// <summary>
+    /// 添加数据库操作工厂服务
+    /// </summary>
+    public static IServiceCollection AddDatabaseFactory(this IServiceCollection services)
     {
-        // 核心服务
-        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
-        services.AddScoped<IJwtService, JwtService>();
-        
-        // 业务服务
+        services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped(typeof(IDatabaseOperationFactory<>), typeof(DatabaseOperationFactory<>));
+        return services;
+    }
+
+    /// <summary>
+    /// 添加业务服务
+    /// </summary>
+    public static IServiceCollection AddBusinessServices(this IServiceCollection services)
+    {
+        // 用户相关服务
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IUserCompanyService, UserCompanyService>();
+        services.AddScoped<IUserActivityLogService, UserActivityLogService>();
         
-        // 数据访问服务
-        services.AddScoped<IUserRepository, UserRepository>();
+        // 企业相关服务
+        services.AddScoped<ICompanyService, CompanyService>();
+        services.AddScoped<IJoinRequestService, JoinRequestService>();
+        
+        // 权限相关服务
+        services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<IMenuAccessService, MenuAccessService>();
+        
+        // 工具服务
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IJwtService, JwtService>();
+        
+        return services;
+    }
+}
+```
+
+### MongoDB 集合注册
+
+```csharp
+// Platform.ApiService/Extensions/MongoDbExtensions.cs
+public static class MongoDbExtensions
+{
+    /// <summary>
+    /// 注册 MongoDB 集合
+    /// </summary>
+    public static IServiceCollection AddMongoCollections(this IServiceCollection services)
+    {
+        services.AddSingleton<IMongoCollection<AppUser>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<AppUser>("users");
+        });
+
+        services.AddSingleton<IMongoCollection<Company>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<Company>("companies");
+        });
+
+        services.AddSingleton<IMongoCollection<Role>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<Role>("roles");
+        });
+
+        // ... 其他集合注册
+        return services;
+    }
+}
+```
+
+### 配置服务注册
+
+```csharp
+// Platform.ApiService/Extensions/ConfigurationExtensions.cs
+public static class ConfigurationExtensions
+{
+    /// <summary>
+    /// 添加配置服务
+    /// </summary>
+    public static IServiceCollection AddConfigurationServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        // 绑定配置类
+        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+        services.Configure<MongoDbSettings>(configuration.GetSection("MongoDbSettings"));
+        services.Configure<AppSettings>(configuration.GetSection("AppSettings"));
+        
+        // 注册配置服务
+        services.AddSingleton<IConfigurationService, ConfigurationService>();
         
         return services;
     }
@@ -366,13 +445,15 @@ public void ServiceCollection_ShouldRegisterAllServices()
 }
 ```
 
-## 📚 相关资源
+## 📚 相关文档
 
-- [.NET 依赖注入文档](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection)
-- [配置选项模式](https://docs.microsoft.com/aspnet/core/fundamentals/configuration/options)
-- [服务生命周期](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection#service-lifetimes)
+- [服务注册扩展](mdc:Platform.ServiceDefaults/Extensions/ServiceExtensions.cs)
+- [MongoDB 集合注册](mdc:Platform.ApiService/Extensions/MongoDbExtensions.cs)
+- [配置管理服务](mdc:Platform.ApiService/Configuration/)
 - [Program.cs 配置](mdc:Platform.ApiService/Program.cs)
 - [ServiceDefaults 扩展](mdc:Platform.ServiceDefaults/Extensions.cs)
+- [.NET 依赖注入文档](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection)
+- [配置选项模式](https://docs.microsoft.com/aspnet/core/fundamentals/configuration/options)
 
 ## 🎯 核心原则
 

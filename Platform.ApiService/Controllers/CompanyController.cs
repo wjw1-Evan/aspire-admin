@@ -89,6 +89,38 @@ public class CompanyController : BaseApiController
     }
 
     /// <summary>
+    /// v3.1: 创建企业（当前用户自动成为管理员并拥有全部权限）
+    /// </summary>
+    /// <param name="request">创建企业请求</param>
+    /// <remarks>
+    /// 已登录用户创建新企业，当前用户自动成为该企业的管理员并拥有所有菜单访问权限。
+    /// 创建后不会自动切换企业，用户可通过企业切换器切换到新企业。
+    /// 
+    /// 示例请求：
+    /// ```json
+    /// {
+    ///   "name": "新公司",
+    ///   "code": "new-company",
+    ///   "description": "一家新公司",
+    ///   "industry": "互联网"
+    /// }
+    /// ```
+    /// </remarks>
+    [HttpPost("create")]
+    [Authorize]
+    public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyRequest request)
+    {
+        // 验证必需参数
+        request.Name.EnsureNotEmpty("企业名称");
+        // 注意：Code 字段不再需要，系统会自动生成
+
+        var userId = GetRequiredUserId();
+        var company = await _companyService.CreateCompanyAsync(request, userId);
+
+        return Success(company, "企业创建成功！您已成为该企业的管理员。");
+    }
+
+    /// <summary>
     /// 获取当前用户所在企业信息
     /// </summary>
     /// <remarks>
@@ -125,7 +157,7 @@ public class CompanyController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetCurrentCompany()
     {
-        var companyId = GetRequiredCompanyId();
+        var companyId = await GetRequiredCompanyIdAsync();
         var company = await _companyService.GetCompanyByIdAsync(companyId);
         return Success(company.EnsureFound("企业"));
     }
@@ -138,7 +170,16 @@ public class CompanyController : BaseApiController
     [Authorize]
     public async Task<IActionResult> UpdateCurrentCompany([FromBody] UpdateCompanyRequest request)
     {
-        var companyId = GetRequiredCompanyId();
+        // 从数据库获取当前用户的企业ID
+        var userId = GetRequiredUserId();
+        var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+        var user = await userService.GetByIdAsync(userId);
+        if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到企业信息");
+        }
+        var companyId = user.CurrentCompanyId;
+        
         var success = await _companyService.UpdateCompanyAsync(companyId, request);
         success.EnsureSuccess("企业", companyId);
 
@@ -152,7 +193,16 @@ public class CompanyController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetStatistics()
     {
-        var companyId = GetRequiredCompanyId();
+        // 从数据库获取当前用户的企业ID
+        var userId = GetRequiredUserId();
+        var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+        var user = await userService.GetByIdAsync(userId);
+        if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到企业信息");
+        }
+        var companyId = user.CurrentCompanyId;
+        
         var statistics = await _companyService.GetCompanyStatisticsAsync(companyId);
         return Success(statistics);
     }

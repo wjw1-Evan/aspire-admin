@@ -1,6 +1,6 @@
 ---
-globs: **/contexts/**/*.tsx,**/contexts/**/*.ts,**/hooks/use-*.ts,**/hooks/use-*.tsx
-description: 状态管理规范和最佳实践
+globs: **/contexts/**/*.tsx,**/contexts/**/*.ts,**/hooks/use-*.ts,**/hooks/use-*.tsx,Platform.Admin/src/contexts/*.ts,Platform.Admin/src/hooks/*.ts,Platform.App/contexts/*.ts,Platform.App/hooks/*.ts
+description: 前端状态管理和数据流规范 - React Context + useReducer 模式
 ---
 
 # 状态管理规范

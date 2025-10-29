@@ -51,12 +51,9 @@ public class JwtService : IJwtService
             new("username", user.Username)
         };
         
-        // v3.1: 添加当前企业ID到token
-        if (!string.IsNullOrEmpty(user.CurrentCompanyId))
-        {
-            claims.Add(new("currentCompanyId", user.CurrentCompanyId));
-            claims.Add(new("companyId", user.CurrentCompanyId));  // 兼容性
-        }
+        // ⚠️ 已移除：不再在 JWT token 中包含 CurrentCompanyId
+        // 所有企业ID相关的逻辑应从数据库的 user.CurrentCompanyId 获取，而非 JWT token
+        // 这样可以避免切换企业后 JWT token 延迟更新的问题
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -109,7 +106,8 @@ public class JwtService : IJwtService
             new("type", "refresh"),
             new("userId", user.Id ?? string.Empty),
             new("username", user.Username),
-            new("companyId", user.CurrentCompanyId ?? string.Empty),  // v3.1: 使用 CurrentCompanyId
+            // ⚠️ 已移除：不再在 RefreshToken 中包含 companyId
+            // 企业ID应从数据库获取，而非 JWT token
             new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 

@@ -329,8 +329,8 @@ npm audit fix
 
 - [C# 后端开发规范](mdc:.cursor/rules/csharp-backend.mdc)
 - [前端开发规范](mdc:.cursor/rules/frontend-development.mdc)
-- [数据库操作工厂规范](mdc:.cursor/rules/database-operation-factory.mdc)
-- [API 控制器规范](mdc:.cursor/rules/api-controller-standards.mdc)
+- [后端数据访问层规范](mdc:.cursor/rules/backend-data-access.mdc)
+- [API控制器开发规范](mdc:.cursor/rules/api-controllers.mdc)
 
 ## 🎯 记住
 

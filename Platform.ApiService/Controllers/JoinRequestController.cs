@@ -64,10 +64,17 @@ public class JoinRequestController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetPendingRequests([FromQuery] string? companyId = null)
     {
-        // 如果没有指定企业ID，使用当前企业
+        // 如果没有指定企业ID，使用当前企业（从数据库获取）
         if (string.IsNullOrEmpty(companyId))
         {
-            companyId = GetRequiredCompanyId();
+            var userId = GetRequiredUserId();
+            var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+            var user = await userService.GetByIdAsync(userId);
+            if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
+            {
+                throw new UnauthorizedAccessException("未找到企业信息");
+            }
+            companyId = user.CurrentCompanyId;
         }
         
         var requests = await _joinRequestService.GetPendingRequestsAsync(companyId);

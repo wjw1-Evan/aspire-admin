@@ -355,12 +355,12 @@ public class AuthService : IAuthService
             adminRole = companyResult.Role;
             userCompany = companyResult.UserCompany;
             
-            // 设置用户的企业信息
+            // 设置用户的企业信息（v3.1: 使用 CurrentCompanyId 和 PersonalCompanyId，不再使用 CompanyId）
             var userFilter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
             var userUpdate = _userFactory.CreateUpdateBuilder()
                 .Set(u => u.CurrentCompanyId, personalCompany.Id!)
                 .Set(u => u.PersonalCompanyId, personalCompany.Id!)
-                .Set(u => u.CompanyId, personalCompany.Id!)
+                // 注意：AppUser 不再有 CompanyId 字段（多企业模型，通过 UserCompany 关联表管理）
                 .SetCurrentTimestamp()
                 .Build();
             
@@ -369,7 +369,7 @@ public class AuthService : IAuthService
             // 更新用户对象（用于后续返回）
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
-            user.CompanyId = personalCompany.Id;
+            // 注意：AppUser 不再有 CompanyId 字段（多企业模型）
             
             // 清除密码哈希
             user.PasswordHash = string.Empty;

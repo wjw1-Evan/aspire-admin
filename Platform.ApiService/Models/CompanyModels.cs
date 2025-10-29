@@ -64,10 +64,12 @@ public class CreateCompanyRequest
     [StringLength(100, MinimumLength = 2, ErrorMessage = "企业名称长度必须在2-100个字符之间")]
     public string Name { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "企业代码不能为空")]
+    /// <summary>
+    /// 企业代码（可选，如果为空则由系统自动生成）
+    /// </summary>
     [StringLength(20, MinimumLength = 3, ErrorMessage = "企业代码长度必须在3-20个字符之间")]
     [RegularExpression("^[a-zA-Z0-9_-]+$", ErrorMessage = "企业代码只能包含字母、数字、下划线和横线")]
-    public string Code { get; set; } = string.Empty;
+    public string? Code { get; set; }
 
     [StringLength(500, ErrorMessage = "描述长度不能超过500个字符")]
     public string? Description { get; set; }

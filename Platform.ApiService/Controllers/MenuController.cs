@@ -69,7 +69,16 @@ public class MenuController : BaseApiController
     public async Task<IActionResult> GetUserMenus()
     {
         var userId = GetRequiredUserId();
-        var currentCompanyId = GetRequiredCompanyId();
+        
+        // 从数据库获取当前用户的企业ID
+        var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+        var user = await userService.GetByIdAsync(userId);
+        if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
+        {
+            _logger.LogWarning("用户 {UserId} 没有关联的企业ID", userId);
+            return Success(new List<MenuTreeNode>());
+        }
+        var currentCompanyId = user.CurrentCompanyId;
         
         // 获取用户在当前企业的角色
         var userCompanyService = HttpContext.RequestServices.GetRequiredService<IUserCompanyService>();

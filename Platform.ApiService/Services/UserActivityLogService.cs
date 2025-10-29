@@ -7,20 +7,45 @@ namespace Platform.ApiService.Services;
 public class UserActivityLogService : IUserActivityLogService
 {
     private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<UserActivityLogService> _logger;
-    private readonly ITenantContext _tenantContext;
 
     public UserActivityLogService(
         IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
+        IDatabaseOperationFactory<AppUser> userFactory,
         IHttpContextAccessor httpContextAccessor,
-        ILogger<UserActivityLogService> logger,
-        ITenantContext tenantContext)
+        ILogger<UserActivityLogService> logger)
     {
         _activityLogFactory = activityLogFactory;
+        _userFactory = userFactory;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
-        _tenantContext = tenantContext;
+    }
+    
+    /// <summary>
+    /// 尝试获取当前用户的企业ID（从数据库获取，不使用 JWT token）
+    /// 如果没有用户上下文或用户未登录，返回 null
+    /// </summary>
+    private async Task<string?> TryGetCurrentCompanyIdAsync()
+    {
+        try
+        {
+            // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
+            var currentUserId = _userFactory.GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return null;
+            }
+            
+            var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+            return currentUser?.CurrentCompanyId;
+        }
+        catch
+        {
+            // 如果无法获取（如用户未登录），返回 null
+            return null;
+        }
     }
 
     /// <summary>
@@ -30,17 +55,8 @@ public class UserActivityLogService : IUserActivityLogService
     {
         var httpContext = _httpContextAccessor.HttpContext;
 
-        // 获取当前企业上下文（如果有的话）
-        string? companyId = null;
-        try
-        {
-            companyId = _tenantContext.GetCurrentCompanyId();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // 如果无法获取企业上下文（如用户未登录），companyId 保持 null
-            companyId = null;
-        }
+        // 获取当前企业上下文（如果有的话，从数据库获取，不使用 JWT token）
+        var companyId = await TryGetCurrentCompanyIdAsync();
 
         var log = new UserActivityLog
         {
@@ -66,17 +82,13 @@ public class UserActivityLogService : IUserActivityLogService
     {
         var filterBuilder = _activityLogFactory.CreateFilterBuilder();
 
-        // 获取当前企业ID进行多租户过滤
-        string? companyId = null;
-        try
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await TryGetCurrentCompanyIdAsync();
+        if (!string.IsNullOrEmpty(companyId))
         {
-            companyId = _tenantContext.GetCurrentCompanyId();
-            if (!string.IsNullOrEmpty(companyId))
-            {
-                filterBuilder.Equal(log => log.CompanyId, companyId);
-            }
+            filterBuilder.Equal(log => log.CompanyId, companyId);
         }
-        catch (UnauthorizedAccessException)
+        else
         {
             // 如果无法获取企业上下文，返回空结果
             return new UserActivityLogPagedResponse
@@ -144,19 +156,11 @@ public class UserActivityLogService : IUserActivityLogService
         var filterBuilder = _activityLogFactory.CreateFilterBuilder()
             .Equal(log => log.UserId, userId);
 
-        // 获取当前企业ID进行多租户过滤
-        try
+        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var companyId = await TryGetCurrentCompanyIdAsync();
+        if (!string.IsNullOrEmpty(companyId))
         {
-            var companyId = _tenantContext.GetCurrentCompanyId();
-            if (!string.IsNullOrEmpty(companyId))
-            {
-                filterBuilder.Equal(log => log.CompanyId, companyId);
-            }
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // 如果无法获取企业上下文，返回空结果
-            return new List<UserActivityLog>();
+            filterBuilder.Equal(log => log.CompanyId, companyId);
         }
 
         var filter = filterBuilder.Build();

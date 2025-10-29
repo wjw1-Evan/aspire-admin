@@ -577,6 +577,67 @@ public class BusinessRuleService : IBusinessRuleService
 }
 ```
 
+## 🎯 事务处理
+
+### MongoDB 事务支持
+
+```csharp
+// Platform.ApiService/Services/UserService.cs
+public async Task<User> CreateUserWithRoleAsync(CreateUserWithRoleRequest request)
+{
+    if (request == null)
+        throw new ArgumentNullException(nameof(request));
+
+    using var session = await _mongoDatabase.Client.StartSessionAsync();
+    
+    try
+    {
+        session.StartTransaction();
+
+        // 1. 创建用户
+        var user = new User
+        {
+            Username = request.Username,
+            Email = request.Email,
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
+            CompanyId = _userFactory.GetRequiredCompanyId(),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var createdUser = await _userFactory.CreateAsync(user);
+
+        // 2. 分配角色
+        if (!string.IsNullOrEmpty(request.RoleId))
+        {
+            var role = await _roleFactory.GetByIdAsync(request.RoleId);
+            if (role == null)
+                throw new KeyNotFoundException($"角色 {request.RoleId} 不存在");
+
+            var userUpdate = _userFactory.CreateUpdateBuilder()
+                .Set(u => u.RoleId, request.RoleId)
+                .SetCurrentTimestamp()
+                .Build();
+
+            await _userFactory.UpdateAsync(createdUser);
+            createdUser.RoleId = request.RoleId;
+        }
+
+        await session.CommitTransactionAsync();
+        
+        _logger.LogInformation("创建用户并分配角色成功: {UserId}", createdUser.Id);
+        return createdUser;
+    }
+    catch (Exception ex)
+    {
+        await session.AbortTransactionAsync();
+        _logger.LogError(ex, "创建用户并分配角色失败, 用户名: {Username}", request.Username);
+        throw;
+    }
+}
+```
+
 ## 🎯 服务组合和编排
 
 ### 服务编排器
@@ -768,16 +829,44 @@ public async Task<User> GetUserByIdAsync(string id)
 
 创建或修改服务时检查：
 
-- [ ] 定义清晰的接口
-- [ ] 实现单一职责原则
-- [ ] 添加业务规则验证
-- [ ] 使用数据库操作工厂
-- [ ] 添加适当的异常处理
-- [ ] 记录操作日志
-- [ ] 添加单元测试
-- [ ] 文档化业务规则
-- [ ] 考虑性能影响
-- [ ] 验证输入参数
+- [ ] **定义清晰的接口** - 实现对应的服务接口（IUserService 等）
+- [ ] **实现单一职责原则** - 每个服务只负责一个业务领域
+- [ ] **添加业务规则验证** - 使用验证服务和唯一性检查器
+- [ ] **使用数据库操作工厂** - 使用 IDatabaseOperationFactory，禁止直接使用 IMongoCollection
+- [ ] **添加适当的异常处理** - 使用标准异常类型，记录错误日志
+- [ ] **记录操作日志** - 使用工厂的日志方法记录关键操作
+- [ ] **使用事务处理** - 复杂操作使用 MongoDB 事务保证数据一致性
+- [ ] **添加单元测试** - 确保业务逻辑正确性
+- [ ] **文档化业务规则** - 在代码中注释业务规则
+- [ ] **考虑性能影响** - 使用批量操作和查询优化
+- [ ] **验证输入参数** - 使用验证扩展方法确保参数有效性
+
+## 🚫 禁止的做法
+
+### ❌ 不要使用已废弃的 BaseService
+
+```csharp
+// ❌ 错误：BaseService 已移除
+public class UserService : BaseService, IUserService
+{
+    // BaseService 已不再存在
+}
+
+// ✅ 正确：直接实现接口，注入依赖
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ILogger<UserService> _logger;
+    
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserService> logger)
+    {
+        _userFactory = userFactory;
+        _logger = logger;
+    }
+}
+```
 
 ## 📚 相关文档
 

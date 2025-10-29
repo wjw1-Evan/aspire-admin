@@ -85,15 +85,50 @@ public class UserCompanyService : IUserCompanyService
         var companies = await _companyFactory.FindAsync(companyFilter);
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
         
-        // 批量查询角色信息
+        // 批量查询角色信息（跨企业查询，需要按企业分组）
+        // 注意：由于 Role 实现了 IMultiTenant，会自动过滤当前企业，但这里需要查询多个企业的角色
+        // 解决方案：使用 FindWithoutTenantFilterAsync 并手动按企业分组查询
         var roleDict = new Dictionary<string, Role>();
         if (allRoleIds.Any())
         {
-            var roleFilter = _roleFactory.CreateFilterBuilder()
-                .In(r => r.Id, allRoleIds)
-                .Build();
-            var roles = await _roleFactory.FindAsync(roleFilter);
-            roleDict = roles.ToDictionary(r => r.Id!, r => r);
+            // 按企业分组角色ID，避免跨企业查询时的自动过滤问题
+            var companyRoleMap = new Dictionary<string, List<string>>();
+            foreach (var membership in memberships)
+            {
+                if (!companyRoleMap.ContainsKey(membership.CompanyId))
+                {
+                    companyRoleMap[membership.CompanyId] = new List<string>();
+                }
+                foreach (var roleId in membership.RoleIds)
+                {
+                    if (!companyRoleMap[membership.CompanyId].Contains(roleId))
+                    {
+                        companyRoleMap[membership.CompanyId].Add(roleId);
+                    }
+                }
+            }
+            
+            // 为每个企业查询角色（明确指定企业ID）
+            foreach (var (companyId, roleIds) in companyRoleMap)
+            {
+                if (roleIds.Any())
+                {
+                    var roleFilter = _roleFactory.CreateFilterBuilder()
+                        .In(r => r.Id, roleIds)
+                        .Equal(r => r.CompanyId, companyId)  // ✅ 明确过滤企业，确保多租户隔离
+                        .Equal(r => r.IsActive, true)
+                        .Build();
+                    // 使用 FindWithoutTenantFilterAsync 因为我们已手动添加了 CompanyId 过滤
+                    var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
+                    foreach (var role in roles)
+                    {
+                        if (role.Id != null && !roleDict.ContainsKey(role.Id))
+                        {
+                            roleDict[role.Id] = role;
+                        }
+                    }
+                }
+            }
         }
         
         // 构建结果

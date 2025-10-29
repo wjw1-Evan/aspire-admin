@@ -25,10 +25,10 @@ public abstract class BaseEntity
 /// <summary>
 /// 多租户实体基类 - 包含企业隔离
 /// </summary>
-public abstract class MultiTenantEntity : BaseEntity
+public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
 {
     [BsonElement("companyId")]
-    public string? CompanyId { get; set; }
+    public string CompanyId { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -70,5 +70,5 @@ public interface ITimestamped
 /// </summary>
 public interface IMultiTenant
 {
-    string? CompanyId { get; set; }
+    string CompanyId { get; set; }
 }

@@ -424,8 +424,8 @@ var filter = _userFactory.CreateFilterBuilder()
 
 ## 📚 相关文档
 
-- [BaseApiController 使用规范](mdc:.cursor/rules/api-controller-standards.mdc)
-- [数据库操作工厂规范](mdc:.cursor/rules/database-operation-factory.mdc)
+- [API控制器开发规范](mdc:.cursor/rules/api-controllers.mdc)
+- [后端数据访问层规范](mdc:.cursor/rules/backend-data-access.mdc)
 - [异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
 - [服务扩展方法](mdc:Platform.ServiceDefaults/Extensions/ServiceExtensions.cs)
 

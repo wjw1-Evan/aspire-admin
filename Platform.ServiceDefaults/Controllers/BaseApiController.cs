@@ -29,11 +29,6 @@ public abstract class BaseApiController : ControllerBase
     protected string? CurrentUserRole => User.FindFirst("role")?.Value;
 
     /// <summary>
-    /// 当前企业ID
-    /// </summary>
-    protected string? CurrentCompanyId => User.FindFirst("companyId")?.Value;
-
-    /// <summary>
     /// 是否为管理员
     /// </summary>
     protected bool IsAdmin => CurrentUserRole == "admin";
@@ -54,13 +49,15 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
-    /// 获取必需的企业ID
+    /// 获取必需的企业ID（从数据库获取，不使用 JWT token）
+    /// ⚠️ 已移除 JWT token 中的 CurrentCompanyId，此方法需要从数据库获取
+    /// 注意：需要在子类中实现获取企业ID的逻辑，或直接从数据库获取 user.CurrentCompanyId
     /// </summary>
-    protected string GetRequiredCompanyId()
+    protected virtual Task<string> GetRequiredCompanyIdAsync()
     {
-        if (string.IsNullOrEmpty(CurrentCompanyId))
-            throw new UnauthorizedAccessException("未找到企业信息");
-        return CurrentCompanyId;
+        // 默认实现：由于 JWT token 中已移除 CurrentCompanyId，无法从此方法获取
+        // 子类应该覆盖此方法或使用服务层方法从数据库获取 user.CurrentCompanyId
+        throw new InvalidOperationException("请覆盖此方法或使用服务层方法从数据库获取 user.CurrentCompanyId");
     }
 
     /// <summary>
@@ -243,8 +240,8 @@ public abstract class BaseApiController : ControllerBase
     protected void LogOperation(string operation, string? entityId = null, object? data = null)
     {
         var logger = HttpContext.RequestServices.GetRequiredService<ILogger<BaseApiController>>();
-        logger.LogInformation("API操作: {Operation}, 用户: {UserId}, 企业: {CompanyId}, 实体ID: {EntityId}, 客户端IP: {ClientIp}, 数据: {@Data}",
-            operation, CurrentUserId, CurrentCompanyId, entityId, GetClientIpAddress(), data);
+        logger.LogInformation("API操作: {Operation}, 用户: {UserId}, 实体ID: {EntityId}, 客户端IP: {ClientIp}, 数据: {@Data}",
+            operation, CurrentUserId, entityId, GetClientIpAddress(), data);
     }
 
     /// <summary>
@@ -253,7 +250,7 @@ public abstract class BaseApiController : ControllerBase
     protected void LogError(string operation, Exception exception, string? entityId = null)
     {
         var logger = HttpContext.RequestServices.GetRequiredService<ILogger<BaseApiController>>();
-        logger.LogError(exception, "API操作失败: {Operation}, 用户: {UserId}, 企业: {CompanyId}, 实体ID: {EntityId}, 客户端IP: {ClientIp}",
-            operation, CurrentUserId, CurrentCompanyId, entityId, GetClientIpAddress());
+        logger.LogError(exception, "API操作失败: {Operation}, 用户: {UserId}, 实体ID: {EntityId}, 客户端IP: {ClientIp}",
+            operation, CurrentUserId, entityId, GetClientIpAddress());
     }
 }

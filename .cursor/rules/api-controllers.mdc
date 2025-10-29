@@ -223,6 +223,13 @@ public class UserController : BaseApiController
 
 ## 🔧 BaseApiController 功能
 
+### 用户信息属性
+- `CurrentUserId` - 当前用户ID（可空）
+- `CurrentUsername` - 当前用户名（可空）
+- `CurrentUserRole` - 当前用户角色（可空）
+- `IsAdmin` - 是否为管理员
+- `IsAuthenticated` - 是否已认证
+
 ### 用户信息获取
 
 ```csharp
@@ -230,11 +237,12 @@ public class UserController : BaseApiController
 var userId = CurrentUserId;
 var username = CurrentUsername;
 var userRole = CurrentUserRole;
-var companyId = CurrentCompanyId;
 
-// 获取必需的用户信息（为空则抛异常）
+// 获取必需的用户信息（为空则自动抛出 UnauthorizedAccessException）
 var userId = GetRequiredUserId();
-var companyId = GetRequiredCompanyId();
+
+// ⚠️ 注意：GetRequiredCompanyId() 已废弃（JWT token 中不再包含企业ID）
+// 请从数据库获取：var userId = GetRequiredUserId(); var user = await _userFactory.GetByIdAsync(userId);
 ```
 
 ### 统一响应方法
@@ -387,4 +395,4 @@ return Success(result);
 
 - [BaseApiController 实现](mdc:Platform.ApiService/Controllers/BaseApiController.cs)
 - [全局异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
-- [服务层开发规范](mdc:.cursor/rules/service-layer.mdc)
+- [业务逻辑和服务层开发规范](mdc:.cursor/rules/business-logic.mdc)

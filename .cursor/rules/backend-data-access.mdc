@@ -1,13 +1,18 @@
 ---
+alwaysApply: true
+description: 后端数据访问层规范 - 数据库操作工厂使用规范
 globs: Platform.ApiService/Services/*.cs,Platform.ApiService/Models/*.cs,Platform.ServiceDefaults/**/*.cs
-description: 后端数据访问层规范
 ---
 
 # 后端数据访问层规范
 
-## 🎯 概述
+## 🎯 核心原则
 
-基于 MongoDB 和数据库操作工厂模式，提供统一的数据访问层规范和最佳实践。**所有数据库操作必须使用 `IDatabaseOperationFactory<T>`，禁止直接使用 `IMongoCollection<T>` 或 `BaseRepository<T>`。**
+**所有服务必须使用 `IDatabaseOperationFactory<T>` 进行数据访问，禁止直接使用 `IMongoCollection<T>` 或 `BaseRepository<T>`**
+
+## 📋 概述
+
+基于 MongoDB 和数据库操作工厂模式，提供统一的数据访问层规范和最佳实践。所有数据库操作必须使用 `IDatabaseOperationFactory<T>`，禁止直接使用 `IMongoCollection<T>` 或已移除的 `BaseRepository<T>`。
 
 ## 🏗️ 数据访问架构
 

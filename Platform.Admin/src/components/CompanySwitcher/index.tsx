@@ -4,6 +4,7 @@ import type { MenuProps } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { request, useModel } from '@umijs/max';
 import { JoinCompanyModal } from '../JoinCompanyModal';
+import { CreateCompanyModal } from '../CreateCompanyModal';
 import styles from './index.less';
 
 /**
@@ -17,6 +18,7 @@ export const CompanySwitcher: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
+  const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
 
   // 加载用户的企业列表
   useEffect(() => {
@@ -107,45 +109,56 @@ export const CompanySwitcher: React.FC = () => {
   };
 
   // 构建下拉菜单项
-  const menuItems: MenuProps['items'] = companies.map((company) => ({
-    key: company.companyId,
-    label: (
-      <div className={styles.companyItem}>
-        <div className={styles.companyInfo}>
-          <div className={styles.companyName}>
-            {company.companyName}
-            {company.isPersonal && (
-              <span className={styles.personalBadge}>个人</span>
-            )}
-            {company.isAdmin && (
-              <span className={styles.adminBadge}>管理员</span>
-            )}
+  const menuItems: MenuProps['items'] = [
+    ...companies.map((company) => ({
+      key: company.companyId,
+      label: (
+        <div className={styles.companyItem}>
+          <div className={styles.companyInfo}>
+            <div className={styles.companyName}>
+              {company.companyName}
+              {company.isPersonal && (
+                <span className={styles.personalBadge}>个人</span>
+              )}
+              {company.isAdmin && (
+                <span className={styles.adminBadge}>管理员</span>
+              )}
+            </div>
+            <div className={styles.companyRoles}>
+              {company.roleNames.join('、') || '无角色'}
+            </div>
           </div>
-          <div className={styles.companyRoles}>
-            {company.roleNames.join('、') || '无角色'}
-          </div>
+          {company.isCurrent && <CheckOutlined className={styles.checkIcon} />}
         </div>
-        {company.isCurrent && <CheckOutlined className={styles.checkIcon} />}
-      </div>
-    ),
-    onClick: () => handleSwitch(company.companyId),
-  }));
-
-  // 添加加入新企业选项
-  menuItems.push({
-    type: 'divider',
-  });
-  menuItems.push({
-    key: 'join-company',
-    label: (
-      <div className={styles.joinCompany}>
-        <PlusOutlined /> 加入新企业
-      </div>
-    ),
-    onClick: () => {
-      setJoinModalOpen(true);
+      ),
+      onClick: () => handleSwitch(company.companyId),
+    })),
+    {
+      type: 'divider',
     },
-  });
+    {
+      key: 'create-company',
+      label: (
+        <div className={styles.joinCompany}>
+          <PlusOutlined /> 新建企业
+        </div>
+      ),
+      onClick: () => {
+        setCreateCompanyModalOpen(true);
+      },
+    },
+    {
+      key: 'join-company',
+      label: (
+        <div className={styles.joinCompany}>
+          <PlusOutlined /> 加入新企业
+        </div>
+      ),
+      onClick: () => {
+        setJoinModalOpen(true);
+      },
+    },
+  ];
 
   // 当前企业信息
   const currentCompany = companies.find((c) => c.isCurrent);
@@ -184,6 +197,15 @@ export const CompanySwitcher: React.FC = () => {
         onClose={() => setJoinModalOpen(false)}
         onSuccess={() => {
           // 申请成功后刷新企业列表
+          loadCompanies();
+        }}
+      />
+
+      <CreateCompanyModal
+        open={createCompanyModalOpen}
+        onClose={() => setCreateCompanyModalOpen(false)}
+        onSuccess={() => {
+          // 创建成功后刷新企业列表
           loadCompanies();
         }}
       />

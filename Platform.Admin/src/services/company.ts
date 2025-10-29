@@ -11,6 +11,17 @@ export async function registerCompany(body: API.RegisterCompanyRequest) {
   });
 }
 
+/** v3.1: 创建企业（已登录用户）POST /api/company/create */
+export async function createCompany(body: API.CreateCompanyRequest) {
+  return request<API.ApiResponse<API.Company>>('/api/company/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+  });
+}
+
 /** 获取当前企业信息 GET /api/company/current */
 export async function getCurrentCompany(options?: { [key: string]: any }) {
   return request<API.ApiResponse<API.Company>>('/api/company/current', {

@@ -157,7 +157,38 @@ public class CompanyController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetCurrentCompany()
     {
-        var companyId = await GetRequiredCompanyIdAsync();
+        // 尝试从数据库获取当前用户的企业ID（JWT 已移除 companyId）
+        var userId = GetRequiredUserId();
+        var userFactory = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+        var user = await userFactory.GetByIdAsync(userId);
+
+        string? companyId = user?.CurrentCompanyId;
+
+        // 回退策略：如果用户未设置 CurrentCompanyId，则从其企业列表中选择一个企业
+        if (string.IsNullOrEmpty(companyId))
+        {
+            var myCompanies = await _userCompanyService.GetUserCompaniesAsync(userId);
+            var candidate = myCompanies.FirstOrDefault(c => c.IsCurrent)
+                           ?? myCompanies.FirstOrDefault();
+
+            if (candidate != null)
+            {
+                // 尝试将其设置为当前企业（忽略设置失败，不阻塞读取）
+                try
+                {
+                    await _userCompanyService.SwitchCompanyAsync(candidate.CompanyId);
+                }
+                catch { }
+
+                companyId = candidate.CompanyId;
+            }
+        }
+
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
         var company = await _companyService.GetCompanyByIdAsync(companyId);
         return Success(company.EnsureFound("企业"));
     }

@@ -31,25 +31,12 @@ public class RoleService : IRoleService
     /// </summary>
     public async Task<RoleListResponse> GetAllRolesAsync()
     {
-        // 从数据库获取当前企业ID并手动添加 CompanyId 过滤（JWT 中无 companyId）
-        var currentUserId = _roleFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-        var currentCompanyId = currentUser.CurrentCompanyId;
-
         var sort = _roleFactory.CreateSortBuilder()
             .Ascending(r => r.CreatedAt)
             .Build();
 
-        var filter = _roleFactory.CreateFilterBuilder()
-            .Equal(r => r.CompanyId, currentCompanyId)
-            .Build();
-        
-        // 跳过自动租户过滤，使用手动 CompanyId 过滤
-        var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter, sort);
+        // 依赖工厂自动租户过滤
+        var roles = await _roleFactory.FindAsync(sort: sort);
 
         return new RoleListResponse
         {
@@ -64,32 +51,19 @@ public class RoleService : IRoleService
     /// </summary>
     public async Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync()
     {
-        // 从数据库获取当前企业ID并手动添加 CompanyId 过滤（JWT 中无 companyId）
-        var currentUserId = _roleFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-        var currentCompanyId = currentUser.CurrentCompanyId;
-
         var sort = _roleFactory.CreateSortBuilder()
             .Ascending(r => r.CreatedAt)
             .Build();
 
-        var roleFilter = _roleFactory.CreateFilterBuilder()
-            .Equal(r => r.CompanyId, currentCompanyId)
-            .Build();
-        
-        var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter, sort);
+        // 依赖工厂自动租户过滤
+        var roles = await _roleFactory.FindAsync(sort: sort);
         
         var rolesWithStats = new List<RoleWithStats>();
         
         foreach (var role in roles)
         {
-            // v3.1: 从 UserCompany 表统计使用此角色的用户数量（手动按企业过滤）
+            // v3.1: 从 UserCompany 表统计使用此角色的用户数量（工厂自动租户过滤）
             var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
-                .Equal(uc => uc.CompanyId, currentCompanyId)
                 .Equal(uc => uc.Status, "active")
                 .Build();
             

@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
+using MongoDB.Bson;
 using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
 
@@ -32,6 +33,70 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         _tenantContext = tenantContext;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
+        _database = database;
+    }
+
+    private readonly IMongoDatabase _database;
+
+    // ========== 公共辅助 ==========
+
+    private (string? userId, string? username) GetActor()
+    {
+        return (_tenantContext.GetCurrentUserId(), _tenantContext.GetCurrentUsername());
+    }
+
+    private void TrySetProperty(object target, string propertyName, object? value)
+    {
+        try
+        {
+            var prop = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (prop != null && prop.CanWrite)
+            {
+                prop.SetValue(target, value);
+            }
+        }
+        catch
+        {
+            // 忽略反射赋值失败，保持容错
+        }
+    }
+
+    private UpdateDefinition<T> WithUpdateAudit(UpdateDefinition<T> update)
+    {
+        var (userId, username) = GetActor();
+        var builder = Builders<T>.Update;
+        var audit = new List<UpdateDefinition<T>>
+        {
+            builder.Set("updatedAt", DateTime.UtcNow)
+        };
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            audit.Add(builder.Set("updatedBy", userId));
+        }
+        if (!string.IsNullOrEmpty(username))
+        {
+            audit.Add(builder.Set("updatedByUsername", username));
+        }
+
+        return builder.Combine(update, builder.Combine(audit));
+    }
+
+    private UpdateDefinition<T> WithSoftDeleteAudit(UpdateDefinition<T> update)
+    {
+        var (userId, _) = GetActor();
+        var builder = Builders<T>.Update;
+        var audit = new List<UpdateDefinition<T>>
+        {
+            builder.Set("isDeleted", true),
+            builder.Set("deletedAt", DateTime.UtcNow),
+            builder.Set("updatedAt", DateTime.UtcNow)
+        };
+        if (!string.IsNullOrEmpty(userId))
+        {
+            audit.Add(builder.Set("deletedBy", userId));
+        }
+        return builder.Combine(update, builder.Combine(audit));
     }
 
     /// <summary>
@@ -76,6 +141,17 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         entity.UpdatedAt = DateTime.UtcNow;
         entity.IsDeleted = false;
 
+        // 设置创建人
+        var (userId, username) = GetActor();
+        if (!string.IsNullOrEmpty(userId))
+        {
+            TrySetProperty(entity, "CreatedBy", userId);
+        }
+        if (!string.IsNullOrEmpty(username))
+        {
+            TrySetProperty(entity, "CreatedByUsername", username);
+        }
+
         await _collection.InsertOneAsync(entity);
         
         var elapsed = stopwatch.ElapsedMilliseconds;
@@ -104,6 +180,15 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             entity.CreatedAt = now;
             entity.UpdatedAt = now;
             entity.IsDeleted = false;
+            var (uid, uname) = GetActor();
+            if (!string.IsNullOrEmpty(uid))
+            {
+                TrySetProperty(entity, "CreatedBy", uid);
+            }
+            if (!string.IsNullOrEmpty(uname))
+            {
+                TrySetProperty(entity, "CreatedByUsername", uname);
+            }
         }
 
         await _collection.InsertManyAsync(entityList);
@@ -129,8 +214,17 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
-        // 设置时间戳
+        // 设置时间戳与更新人
         replacement.UpdatedAt = DateTime.UtcNow;
+        var (userId, username) = GetActor();
+        if (!string.IsNullOrEmpty(userId))
+        {
+            TrySetProperty(replacement, "UpdatedBy", userId);
+        }
+        if (!string.IsNullOrEmpty(username))
+        {
+            TrySetProperty(replacement, "UpdatedByUsername", username);
+        }
 
         var result = await _collection.FindOneAndReplaceAsync(tenantFilter, replacement, options);
         
@@ -162,11 +256,8 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
-        // 确保更新时间戳
-        var updateWithTimestamp = Builders<T>.Update.Combine(
-            update,
-            Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow)
-        );
+        // 确保更新时间戳与更新人
+        var updateWithTimestamp = WithUpdateAudit(update);
 
         var result = await _collection.FindOneAndUpdateAsync(tenantFilter, updateWithTimestamp, options);
         
@@ -198,9 +289,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
-        var update = Builders<T>.Update
-            .Set(x => x.IsDeleted, true)
-            .Set(x => x.UpdatedAt, DateTime.UtcNow);
+        var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
         var result = await _collection.FindOneAndUpdateAsync(tenantFilter, update, options);
         
@@ -262,11 +351,8 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
-        // 确保更新时间戳
-        var updateWithTimestamp = Builders<T>.Update.Combine(
-            update,
-            Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow)
-        );
+        // 确保更新时间戳与更新人
+        var updateWithTimestamp = WithUpdateAudit(update);
 
         var result = await _collection.UpdateManyAsync(tenantFilter, updateWithTimestamp);
         
@@ -290,9 +376,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         _logger.LogDebug("开始批量软删除 {EntityType} 实体: {Count} 个", entityType, count);
         
         var filter = Builders<T>.Filter.In(x => x.Id, idList);
-        var update = Builders<T>.Update
-            .Set(x => x.IsDeleted, true)
-            .Set(x => x.UpdatedAt, DateTime.UtcNow);
+        var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
         var result = await _collection.UpdateManyAsync(filter, update);
         
@@ -507,8 +591,17 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 当使用 FindOneAndReplace 时，如果 replacement 有 Id，MongoDB 会尝试修改 _id 导致错误
         replacement.Id = null!;
         
-        // 设置时间戳
+        // 设置时间戳与更新人
         replacement.UpdatedAt = DateTime.UtcNow;
+        var (userId, username) = GetActor();
+        if (!string.IsNullOrEmpty(userId))
+        {
+            TrySetProperty(replacement, "UpdatedBy", userId);
+        }
+        if (!string.IsNullOrEmpty(username))
+        {
+            TrySetProperty(replacement, "UpdatedByUsername", username);
+        }
 
         var result = await _collection.FindOneAndReplaceAsync(finalFilter, replacement, options);
         
@@ -532,11 +625,8 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
         
-        // 确保更新时间戳
-        var updateWithTimestamp = Builders<T>.Update.Combine(
-            update,
-            Builders<T>.Update.Set(x => x.UpdatedAt, DateTime.UtcNow)
-        );
+        // 确保更新时间戳与更新人
+        var updateWithTimestamp = WithUpdateAudit(update);
 
         var result = await _collection.FindOneAndUpdateAsync(finalFilter, updateWithTimestamp, options);
         return result;
@@ -550,9 +640,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
         
-        var update = Builders<T>.Update
-            .Set(x => x.IsDeleted, true)
-            .Set(x => x.UpdatedAt, DateTime.UtcNow);
+        var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
         var result = await _collection.FindOneAndUpdateAsync(finalFilter, update, options);
         return result;
@@ -589,11 +677,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     }
 
     /// <summary>
-    /// 获取当前企业ID
+    /// 获取当前企业ID（统一从数据库读取）
     /// </summary>
     public string? GetCurrentCompanyId()
     {
-        return _tenantContext.GetCurrentCompanyId();
+        return ResolveCurrentCompanyId();
     }
 
     /// <summary>
@@ -608,11 +696,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     }
 
     /// <summary>
-    /// 获取必需的企业ID（为空则抛异常）
+    /// 获取必需的企业ID（统一从数据库读取，为空则抛异常）
     /// </summary>
     public string GetRequiredCompanyId()
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
+        var companyId = ResolveCurrentCompanyId();
         if (string.IsNullOrEmpty(companyId))
             throw new UnauthorizedAccessException("未找到当前企业信息");
         return companyId;
@@ -630,7 +718,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 检查实体是否实现多租户接口
         if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
         {
-            var companyId = _tenantContext.GetCurrentCompanyId();
+            var companyId = ResolveCurrentCompanyId();
             if (!string.IsNullOrEmpty(companyId))
             {
                 // 使用反射获取 CompanyId 属性
@@ -644,6 +732,49 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         }
         
         return filter;
+    }
+
+    /// <summary>
+    /// 统一解析当前企业ID：统一从数据库 users 集合读取当前用户的 CurrentCompanyId
+    /// </summary>
+    private string? ResolveCurrentCompanyId()
+    {
+        try
+        {
+            // 从数据库读取当前用户的 CurrentCompanyId
+            var userId = _tenantContext.GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return null;
+            }
+
+            // users 集合（弱类型），仅读取需要的字段
+            var users = _database.GetCollection<BsonDocument>("users");
+            FilterDefinition<BsonDocument> idFilter;
+            try
+            {
+                idFilter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(userId));
+            }
+            catch
+            {
+                // userId 不是 ObjectId 格式时，按字符串 Id 字段兜底
+                idFilter = Builders<BsonDocument>.Filter.Eq("id", userId);
+            }
+
+            var projection = Builders<BsonDocument>.Projection.Include("currentCompanyId");
+            var doc = users.Find(idFilter).Project(projection).FirstOrDefault();
+            var currentCompanyId = doc?.GetValue("currentCompanyId", BsonNull.Value);
+            if (currentCompanyId != null && !currentCompanyId.IsBsonNull && currentCompanyId.IsString)
+            {
+                return currentCompanyId.AsString;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "ResolveCurrentCompanyId 回退读取失败");
+        }
+
+        return null;
     }
 
     /// <summary>

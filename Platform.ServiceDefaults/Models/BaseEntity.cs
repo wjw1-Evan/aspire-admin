@@ -20,6 +20,27 @@ public abstract class BaseEntity
 
     [BsonElement("isDeleted")]
     public bool IsDeleted { get; set; } = false;
+
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
+
+    [BsonElement("createdBy")]
+    public string? CreatedBy { get; set; }
+
+    [BsonElement("createdByUsername")]
+    public string? CreatedByUsername { get; set; }
+
+    [BsonElement("updatedBy")]
+    public string? UpdatedBy { get; set; }
+
+    [BsonElement("updatedByUsername")]
+    public string? UpdatedByUsername { get; set; }
 }
 
 /// <summary>
@@ -54,6 +75,9 @@ public interface IEntity
 public interface ISoftDeletable
 {
     bool IsDeleted { get; set; }
+    DateTime? DeletedAt { get; set; }
+    string? DeletedBy { get; set; }
+    string? DeletedReason { get; set; }
 }
 
 /// <summary>
@@ -63,6 +87,7 @@ public interface ITimestamped
 {
     DateTime CreatedAt { get; set; }
     DateTime UpdatedAt { get; set; }
+    DateTime? DeletedAt { get; set; }
 }
 
 /// <summary>

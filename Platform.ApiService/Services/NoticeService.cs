@@ -17,11 +17,10 @@ public class NoticeService : INoticeService
 
     public async Task<NoticeIconListResponse> GetNoticesAsync()
     {
-        // 从数据库获取通知数据，只获取未删除的记录，按时间倒序排列
+        // 仅返回当前企业的未删除通知，按时间倒序（工厂自动叠加租户与软删除过滤）
         var sort = _noticeFactory.CreateSortBuilder()
             .Descending(n => n.Datetime)
             .Build();
-        
         var notices = await _noticeFactory.FindAsync(sort: sort);
 
         return new NoticeIconListResponse
@@ -48,7 +47,8 @@ public class NoticeService : INoticeService
             Extra = request.Extra,
             Type = request.Type,
             ClickClose = request.ClickClose,
-            Datetime = request.Datetime ?? DateTime.UtcNow
+            Datetime = request.Datetime ?? DateTime.UtcNow,
+            CompanyId = _noticeFactory.GetRequiredCompanyId()
         };
 
         return await _noticeFactory.CreateAsync(notice);
@@ -59,6 +59,7 @@ public class NoticeService : INoticeService
     /// </summary>
     public async Task<NoticeIconItem?> UpdateNoticeAsync(string id, UpdateNoticeRequest request)
     {
+        // 仅允许更新当前企业的通知（工厂自动叠加租户过滤）
         var filter = _noticeFactory.CreateFilterBuilder()
             .Equal(n => n.Id, id)
             .Build();
@@ -92,7 +93,6 @@ public class NoticeService : INoticeService
         if (request.Datetime.HasValue)
             updateBuilder.Set(n => n.Datetime, request.Datetime.Value);
         
-        updateBuilder.SetCurrentTimestamp();
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<NoticeIconItem>
@@ -107,6 +107,7 @@ public class NoticeService : INoticeService
 
     public async Task<bool> DeleteNoticeAsync(string id)
     {
+        // 仅允许删除当前企业的通知（工厂自动叠加租户过滤）
         var filter = _noticeFactory.CreateFilterBuilder().Equal(n => n.Id, id).Build();
         var result = await _noticeFactory.FindOneAndSoftDeleteAsync(filter);
         return result != null;
@@ -117,13 +118,14 @@ public class NoticeService : INoticeService
     /// </summary>
     public async Task<bool> MarkAsReadAsync(string id)
     {
-        var filter = _noticeFactory.CreateFilterBuilder()
+        // 仅允许标记当前企业的通知（工厂自动叠加租户过滤）
+        var idFilter = _noticeFactory.CreateFilterBuilder()
             .Equal(n => n.Id, id)
             .Build();
+        var filter = idFilter;
 
         var update = _noticeFactory.CreateUpdateBuilder()
             .Set(n => n.Read, true)
-            .SetCurrentTimestamp()
             .Build();
 
         var options = new FindOneAndUpdateOptions<NoticeIconItem>
@@ -138,13 +140,13 @@ public class NoticeService : INoticeService
 
     public async Task<bool> MarkAllAsReadAsync()
     {
+        // 仅作用于当前企业的未读通知（工厂自动叠加租户过滤）
         var filter = _noticeFactory.CreateFilterBuilder()
             .Equal(n => n.Read, false)
             .Build();
         
         var update = _noticeFactory.CreateUpdateBuilder()
             .Set(n => n.Read, true)
-            .SetCurrentTimestamp()
             .Build();
         
         var result = await _noticeFactory.UpdateManyAsync(filter, update);

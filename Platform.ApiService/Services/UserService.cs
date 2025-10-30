@@ -170,7 +170,6 @@ public class UserService : IUserService
         if (!string.IsNullOrEmpty(request.Email))
             updateBuilder.Set(u => u.Email, request.Email);
         
-        updateBuilder.SetCurrentTimestamp();
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<User>
@@ -216,7 +215,6 @@ public class UserService : IUserService
         if (request.IsActive.HasValue)
             updateBuilder.Set(u => u.IsActive, request.IsActive.Value);
         
-        updateBuilder.SetCurrentTimestamp();
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<User>
@@ -258,7 +256,6 @@ public class UserService : IUserService
 
         var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.IsActive, false)
-            .SetCurrentTimestamp()
             .Build();
 
         var options = new FindOneAndUpdateOptions<User>
@@ -282,7 +279,6 @@ public class UserService : IUserService
 
         var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.IsActive, true)
-            .SetCurrentTimestamp()
             .Build();
 
         var options = new FindOneAndUpdateOptions<User>
@@ -872,7 +868,6 @@ public class UserService : IUserService
         if (request.Age.HasValue)
             updateBuilder.Set(u => u.Age, request.Age.Value);
         
-        updateBuilder.SetCurrentTimestamp();
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<User>
@@ -909,7 +904,6 @@ public class UserService : IUserService
         var filter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
         var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.PasswordHash, newPasswordHash)
-            .Set(u => u.UpdatedAt, DateTime.UtcNow)
             .Build();
         
         var result = await _userFactory.FindOneAndUpdateAsync(filter, update);

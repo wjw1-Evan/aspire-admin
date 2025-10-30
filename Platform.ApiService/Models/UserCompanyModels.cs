@@ -12,7 +12,7 @@ namespace Platform.ApiService.Models;
 /// v6.1: 使用自定义集合名称修复命名规范问题
 /// </summary>
 [BsonCollectionName("user_companies")]
-public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
+public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped, Platform.ServiceDefaults.Models.IMultiTenant
 {
     /// <summary>
     /// 用户ID

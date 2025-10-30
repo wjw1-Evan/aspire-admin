@@ -811,18 +811,20 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             // 添加过滤条件
             if (filter != null)
             {
-                var filterJson = filter.Render(
-                    MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry.GetSerializer<T>(),
-                    MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry);
+                var registry = MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry;
+                var serializer = registry.GetSerializer<T>();
+                var args = new MongoDB.Driver.RenderArgs<T>(serializer, registry);
+                var filterJson = filter.Render(args);
                 queryInfo.Add($"Filter: {filterJson}");
             }
             
             // 添加排序条件
             if (sort != null)
             {
-                var sortJson = sort.Render(
-                    MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry.GetSerializer<T>(),
-                    MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry);
+                var registry = MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry;
+                var serializer = registry.GetSerializer<T>();
+                var args = new MongoDB.Driver.RenderArgs<T>(serializer, registry);
+                var sortJson = sort.Render(args);
                 queryInfo.Add($"Sort: {sortJson}");
             }
             

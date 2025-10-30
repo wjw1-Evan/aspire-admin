@@ -44,15 +44,6 @@ public class Company : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletabl
     [BsonElement("expiresAt")]
     public DateTime? ExpiresAt { get; set; }
 
-    // 软删除扩展字段
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 }
 
 /// <summary>

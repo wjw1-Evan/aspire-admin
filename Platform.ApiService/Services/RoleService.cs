@@ -26,6 +26,17 @@ public class RoleService : IRoleService
         _logger = logger;
     }
 
+    private async Task<string> GetCurrentCompanyIdAsync()
+    {
+        var currentUserId = _roleFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+        return currentUser.CurrentCompanyId;
+    }
+
     /// <summary>
     /// 获取所有角色
     /// </summary>
@@ -35,8 +46,13 @@ public class RoleService : IRoleService
             .Ascending(r => r.CreatedAt)
             .Build();
 
-        // 依赖工厂自动租户过滤
-        var roles = await _roleFactory.FindAsync(sort: sort);
+        // 显式公司过滤，避免任何租户上下文异常导致越权
+        var companyId = await GetCurrentCompanyIdAsync();
+        var filter = _roleFactory.CreateFilterBuilder()
+            .Equal(r => r.CompanyId, companyId)
+            .Build();
+
+        var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter, sort: sort);
 
         return new RoleListResponse
         {
@@ -55,8 +71,13 @@ public class RoleService : IRoleService
             .Ascending(r => r.CreatedAt)
             .Build();
 
-        // 依赖工厂自动租户过滤
-        var roles = await _roleFactory.FindAsync(sort: sort);
+        // 显式公司过滤，避免任何租户上下文异常导致越权
+        var companyId = await GetCurrentCompanyIdAsync();
+        var roleFilter = _roleFactory.CreateFilterBuilder()
+            .Equal(r => r.CompanyId, companyId)
+            .Build();
+
+        var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter, sort: sort);
         
         var rolesWithStats = new List<RoleWithStats>();
         
@@ -179,7 +200,6 @@ public class RoleService : IRoleService
         if (request.IsActive.HasValue)
             updateBuilder.Set(r => r.IsActive, request.IsActive.Value);
         
-        updateBuilder.SetCurrentTimestamp();
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<Role>
@@ -291,7 +311,6 @@ public class RoleService : IRoleService
         
         var update = _roleFactory.CreateUpdateBuilder()
             .Set(r => r.MenuIds, menuIds)
-            .SetCurrentTimestamp()
             .Build();
         
         return await _roleFactory.UpdateManyAsync(filter, update) > 0;

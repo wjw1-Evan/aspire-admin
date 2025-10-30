@@ -157,7 +157,6 @@ public class RuleService : IRuleService
         if (request.Disabled.HasValue)
             updateBuilder.Set(r => r.Disabled, request.Disabled.Value);
         
-        updateBuilder.SetCurrentTimestamp();
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<RuleListItem>

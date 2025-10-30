@@ -85,23 +85,5 @@ public class Menu : BaseEntity, INamedEntity, ISoftDeletable, IEntity, ITimestam
     [BsonElement("permissions")]
     public List<string> Permissions { get; set; } = new();
 
-    // 软删除扩展字段
-    /// <summary>
-    /// 删除时间
-    /// </summary>
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    /// <summary>
-    /// 删除人
-    /// </summary>
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    /// <summary>
-    /// 删除原因
-    /// </summary>
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 }
 

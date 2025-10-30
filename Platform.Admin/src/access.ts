@@ -5,6 +5,7 @@ export default function access(
   initialState: { currentUser?: API.CurrentUser } | undefined,
 ) {
   const { currentUser } = initialState ?? {};
+  const accessValue = (currentUser as any)?.access as 'admin' | 'user' | 'guest' | undefined;
 
   /**
    * 检查用户是否可以访问指定菜单
@@ -69,6 +70,12 @@ export default function access(
   };
 
   return {
+    // 统一的简化守卫（推荐在页面中使用）
+    adminAccess: accessValue === 'admin',
+    userAccess: accessValue === 'admin' || accessValue === 'user',
+    guestAccess: !currentUser,
+
+    // 兼容保留（如旧代码使用 canAdmin）
     canAdmin: hasRole('admin') || hasRole('管理员'),
     canAccessMenu,
     canAccessPath,

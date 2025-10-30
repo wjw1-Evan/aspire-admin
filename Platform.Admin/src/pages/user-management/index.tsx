@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable, ProCard } from '@ant-design/pro-components';
 import {
@@ -34,6 +34,8 @@ import {
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
+import { getUserStatistics } from '@/services/ant-design-pro/api';
+import type { ApiResponse } from '@/types/unified-api';
 import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
 import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
@@ -82,13 +84,10 @@ const UserManagement: React.FC = () => {
   // 获取用户统计信息
   const fetchStatistics = async () => {
     try {
-      const response = await request<{
-        success: boolean;
-        data: UserStatisticsResponse;
-      }>('/api/user/statistics', {
-        method: 'GET',
-      });
-      setStatistics(response.data);
+      const response = await getUserStatistics();
+      if (response.success && response.data) {
+        setStatistics(response.data);
+      }
     } catch (error) {
       console.error('获取统计信息失败:', error);
       // 不在这里显示错误消息，让全局错误处理器统一处理
@@ -97,7 +96,14 @@ const UserManagement: React.FC = () => {
   };
 
   // 获取用户列表
-  const fetchUsers = async (params: any) => {
+  type TableRequestParams = {
+    current?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortOrder?: string;
+  } & Record<string, unknown>;
+
+  const fetchUsers = async (params: TableRequestParams) => {
     const requestData: UserListRequest = {
       Page: params.current || searchParams.Page,
       PageSize: params.pageSize || searchParams.PageSize,
@@ -111,18 +117,18 @@ const UserManagement: React.FC = () => {
     };
 
     try {
-      const response = await request<{ success: boolean; data: any }>(
-        '/api/user/list',
-        {
-          method: 'POST',
-          data: requestData,
-        },
-      );
+      const response = await request<ApiResponse<{
+        users: AppUser[];
+        total: number;
+      }>>('/api/user/list', {
+        method: 'POST',
+        data: requestData,
+      });
 
       return {
-        data: response.data.users || [],
-        success: true,
-        total: response.data.total || 0,
+        data: response.data?.users || [],
+        success: response.success,
+        total: response.data?.total || 0,
       };
     } catch (error) {
       console.error('获取用户列表失败:', error);
@@ -306,8 +312,8 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  // 表格列定义
-  const columns: ProColumns<AppUser>[] = [
+  // 表格列定义（记忆化，避免不必要渲染）
+  const columns: ProColumns<AppUser>[] = useMemo(() => [
     {
       title: '用户名',
       dataIndex: 'username',
@@ -423,6 +429,7 @@ const UserManagement: React.FC = () => {
                 setViewingUser(record);
                 setDetailVisible(true);
               }}
+              aria-label="查看详情"
             >
               查看
             </Button>
@@ -434,10 +441,11 @@ const UserManagement: React.FC = () => {
                 setEditingUser(record);
                 setFormVisible(true);
               }}
+              aria-label="编辑用户"
             >
               编辑
             </Button>
-            <Dropdown menu={{ items: items.slice(2) }} trigger={['click']}>
+            <Dropdown menu={{ items: items.slice(2) }} trigger={["click"]}>
               <Button type="link" size="small" icon={<MoreOutlined />}>
                 更多
               </Button>
@@ -446,7 +454,7 @@ const UserManagement: React.FC = () => {
         );
       },
     },
-  ];
+  ], [roleMap]);
 
   React.useEffect(() => {
     fetchStatistics();
@@ -459,6 +467,7 @@ const UserManagement: React.FC = () => {
         <Button
           key="refresh"
           icon={<ReloadOutlined />}
+          aria-label="刷新列表"
           onClick={() => {
             actionRef.current?.reload();
             fetchStatistics();
@@ -470,6 +479,7 @@ const UserManagement: React.FC = () => {
           key="add"
           type="primary"
           icon={<PlusOutlined />}
+          aria-label="新增用户"
           onClick={() => {
             setEditingUser(null);
             setFormVisible(true);
@@ -527,7 +537,7 @@ const UserManagement: React.FC = () => {
           style={{ marginBottom: 16 }}
         >
           <Form.Item name="search" label="搜索">
-            <Input placeholder="用户名或邮箱" style={{ width: 200 }} />
+            <Input placeholder="用户名或邮箱" style={{ width: 200 }} aria-label="搜索关键词" />
           </Form.Item>
           <Form.Item name="roleIds" label="角色">
             <Select
@@ -536,6 +546,7 @@ const UserManagement: React.FC = () => {
               style={{ width: 200 }}
               allowClear
               loading={Object.keys(roleMap).length === 0}
+              aria-label="角色筛选"
             >
               {Object.entries(roleMap).map(([id, name]) => (
                 <Select.Option key={id} value={id}>
@@ -545,20 +556,20 @@ const UserManagement: React.FC = () => {
             </Select>
           </Form.Item>
           <Form.Item name="isActive" label="状态">
-            <Select placeholder="选择状态" style={{ width: 120 }} allowClear>
+            <Select placeholder="选择状态" style={{ width: 120 }} allowClear aria-label="状态筛选">
               <Select.Option value={true}>启用</Select.Option>
               <Select.Option value={false}>禁用</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item name="dateRange" label="创建时间">
-            <DatePicker.RangePicker style={{ width: 240 }} />
+            <DatePicker.RangePicker style={{ width: 240 }} aria-label="创建时间范围" />
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" aria-label="提交查询">
                 查询
               </Button>
-              <Button onClick={handleReset}>重置</Button>
+              <Button onClick={handleReset} aria-label="重置查询">重置</Button>
             </Space>
           </Form.Item>
         </Form>
@@ -574,6 +585,7 @@ const UserManagement: React.FC = () => {
             key="activate"
             onClick={() => handleBulkAction('activate')}
             disabled={selectedRows.length === 0}
+            aria-label="批量启用"
           >
             批量启用
           </Button>,
@@ -581,6 +593,7 @@ const UserManagement: React.FC = () => {
             key="deactivate"
             onClick={() => handleBulkAction('deactivate')}
             disabled={selectedRows.length === 0}
+            aria-label="批量禁用"
           >
             批量禁用
           </Button>,
@@ -589,6 +602,7 @@ const UserManagement: React.FC = () => {
             danger
             onClick={() => handleBulkAction('delete')}
             disabled={selectedRows.length === 0}
+            aria-label="批量删除"
           >
             批量删除
           </Button>,

@@ -28,6 +28,7 @@ const getAccess = () => {
 };
 
 // 代码中会兼容本地 service mock 以及部署站点的静态数据
+// 提示：Mock 接口可能与真实后端冲突。需要使用时再启用。
 export default {
   // 支持值为 Object 和 Array
   'GET /api/currentUser': (_req: Request, res: Response) => {
@@ -119,6 +120,7 @@ export default {
       address: 'Sidney No. 1 Lake Park',
     },
   ],
+  // 登录相关接口容易与真实后端冲突，默认仅在纯离线开发场景下使用
   'POST /api/login/account': async (req: Request, res: Response) => {
     const { password, username, type } = req.body;
     await waitTime(2000);

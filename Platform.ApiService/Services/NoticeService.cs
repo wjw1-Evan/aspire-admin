@@ -8,11 +8,14 @@ namespace Platform.ApiService.Services;
 public class NoticeService : INoticeService
 {
     private readonly IDatabaseOperationFactory<NoticeIconItem> _noticeFactory;
+    private readonly Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser> _userFactory;
 
     public NoticeService(
-        IDatabaseOperationFactory<NoticeIconItem> noticeFactory)
+        IDatabaseOperationFactory<NoticeIconItem> noticeFactory,
+        Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser> userFactory)
     {
         _noticeFactory = noticeFactory;
+        _userFactory = userFactory;
     }
 
     public async Task<NoticeIconListResponse> GetNoticesAsync()
@@ -38,6 +41,13 @@ public class NoticeService : INoticeService
 
     public async Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request)
     {
+        // 按规范：从数据库获取当前用户的企业ID（JWT 中不包含 companyId）
+        var currentUserId = _noticeFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId)
+            ?? throw new UnauthorizedAccessException("未找到当前用户信息");
+        if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+
         var notice = new NoticeIconItem
         {
             Title = request.Title ?? string.Empty,
@@ -48,7 +58,7 @@ public class NoticeService : INoticeService
             Type = request.Type,
             ClickClose = request.ClickClose,
             Datetime = request.Datetime ?? DateTime.UtcNow,
-            CompanyId = _noticeFactory.GetRequiredCompanyId()
+            CompanyId = currentUser.CurrentCompanyId
         };
 
         return await _noticeFactory.CreateAsync(notice);

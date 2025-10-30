@@ -1,4 +1,5 @@
 import { request } from '@umijs/max';
+import type { ApiResponse } from '@/types/unified-api';
 
 export interface NoticeIconItem {
   id: string;
@@ -13,22 +14,18 @@ export interface NoticeIconItem {
   clickClose: boolean;
 }
 
-export interface NoticeResponse {
-  data: NoticeIconItem[];
-  total: number;
-  success: boolean;
-}
+// 统一响应格式改造：使用 ApiResponse<NoticeIconItem[]>
 
 /** 获取所有通知 */
 export async function getNotices() {
-  return request<NoticeResponse>('/api/notices', {
+  return request<ApiResponse<NoticeIconItem[]>>('/api/notices', {
     method: 'GET',
   });
 }
 
 /** 标记为已读 */
 export async function markNoticeAsRead(id: string) {
-  return request(`/api/notices/${id}`, {
+  return request<ApiResponse<boolean>>(`/api/notices/${id}`, {
     method: 'PUT',
     data: { read: true },
   });
@@ -36,7 +33,7 @@ export async function markNoticeAsRead(id: string) {
 
 /** 标记为未读 */
 export async function markNoticeAsUnread(id: string) {
-  return request(`/api/notices/${id}`, {
+  return request<ApiResponse<boolean>>(`/api/notices/${id}`, {
     method: 'PUT',
     data: { read: false },
   });
@@ -54,7 +51,7 @@ export async function markAllAsUnread(ids: string[]) {
 
 /** 删除通知 */
 export async function deleteNotice(id: string) {
-  return request(`/api/notices/${id}`, {
+  return request<ApiResponse<boolean>>(`/api/notices/${id}`, {
     method: 'DELETE',
   });
 }
@@ -67,7 +64,8 @@ export async function batchDeleteNotices(ids: string[]) {
 /** 清空已读消息 */
 export async function clearReadNotices() {
   const response = await getNotices();
-  const readIds = response?.data?.filter(n => n.read).map(n => n.id) || [];
+  const notices = response?.data || [];
+  const readIds = notices.filter(n => n.read).map(n => n.id);
   return batchDeleteNotices(readIds);
 }
 

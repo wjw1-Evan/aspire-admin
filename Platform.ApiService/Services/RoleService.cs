@@ -241,14 +241,14 @@ public class RoleService : IRoleService
         var userCompaniesWithRole = await _userCompanyFactory.FindAsync(combinedFilter);
         
         // 自动从所有 UserCompany 记录的 RoleIds 中移除此角色（使用原子操作）
-        if (userCompaniesWithRole.Count > 0)
+        if (userCompaniesWithRole.Any())
         {
             foreach (var userCompany in userCompaniesWithRole)
             {
                 var newRoleIds = userCompany.RoleIds.Where(rid => rid != id).ToList();
                 
                 // 检查是否是最后一个管理员角色，如果用户是管理员且没有其他角色
-                if (userCompany.IsAdmin && newRoleIds.Count == 0)
+                if (userCompany.IsAdmin && !newRoleIds.Any())
                 {
                 // 检查该企业是否还有其他管理员（工厂自动过滤当前企业）
                 var otherAdminFilter = _userCompanyFactory.CreateFilterBuilder()

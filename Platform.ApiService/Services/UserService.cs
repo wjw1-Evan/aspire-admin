@@ -133,7 +133,7 @@ public class UserService : IUserService
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         // v3.0 多租户：验证角色归属
-        if (request.RoleIds != null && request.RoleIds.Count > 0)
+        if (request.RoleIds != null && request.RoleIds.Any())
         {
             await ValidateRoleOwnershipAsync(request.RoleIds);
         }
@@ -385,10 +385,10 @@ public class UserService : IUserService
         }
 
         // 角色过滤
-        if (request.RoleIds != null && request.RoleIds.Count > 0)
+        if (request.RoleIds != null && request.RoleIds.Any())
         {
             var userIdsWithRoles = await GetUserIdsByRolesAsync(request.RoleIds, currentCompanyId);
-            if (userIdsWithRoles.Count > 0)
+            if (userIdsWithRoles.Any())
             {
                 filterBuilder.In(u => u.Id, userIdsWithRoles);
             }
@@ -920,7 +920,7 @@ public class UserService : IUserService
     /// <exception cref="InvalidOperationException">部分角色不存在或不属于当前企业</exception>
     private async Task<List<string>> ValidateRoleOwnershipAsync(List<string> roleIds)
     {
-        if (roleIds == null || roleIds.Count == 0)
+        if (roleIds == null || !roleIds.Any())
         {
             return new List<string>();
         }
@@ -995,7 +995,7 @@ public class UserService : IUserService
         var allPermissionCodes = new List<string>();
         var rolePermissions = new List<string>();
 
-        if (userCompany?.RoleIds != null && userCompany.RoleIds.Count > 0)
+        if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
         {
             // 获取用户角色对应的菜单权限
             // ⚠️ 关键修复：使用 FindWithoutTenantFilterAsync 因为我们已手动添加了 CompanyId 过滤

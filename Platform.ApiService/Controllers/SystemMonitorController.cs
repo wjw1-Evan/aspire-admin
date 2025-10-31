@@ -338,11 +338,29 @@ public class SystemMonitorController : BaseApiController
                                     if (long.TryParse(value, out var pages))
                                         inactivePages = pages;
                                 }
-                                else if (line.StartsWith("page size of"))
+                                else if (line.Contains("page size of"))
                                 {
+                                    // 匹配格式："Mach Virtual Memory Statistics: (page size of 16384 bytes)"
                                     var parts = line.Split(' ');
-                                    if (parts.Length >= 4 && long.TryParse(parts[3], out var size))
-                                        pageSize = size;
+                                    for (int i = 0; i < parts.Length; i++)
+                                    {
+                                        if (parts[i].Contains("bytes"))
+                                        {
+                                            // 尝试从包含bytes的token中提取数字（如"16384"或"bytes)"）
+                                            var token = parts[i].Replace("bytes)", "").Replace("bytes", "");
+                                            if (long.TryParse(token, out var size))
+                                            {
+                                                pageSize = size;
+                                                break;
+                                            }
+                                            // 如果当前token是"bytes)"，尝试前一个token
+                                            if (i > 0 && long.TryParse(parts[i - 1], out var size2))
+                                            {
+                                                pageSize = size2;
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             

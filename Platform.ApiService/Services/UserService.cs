@@ -40,10 +40,25 @@ public class UserService : IUserService
 
     /// <summary>
     /// 获取所有未删除的用户
+    /// ⚠️ 修复：添加多租户过滤，只返回当前企业的用户
     /// </summary>
     public async Task<List<User>> GetAllUsersAsync()
     {
-        return await _userFactory.FindAsync();
+        // ✅ 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+        var currentCompanyId = currentUser.CurrentCompanyId;
+
+        // ✅ 只返回当前企业的未删除用户
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.CurrentCompanyId, currentCompanyId)
+            .Build();
+        
+        return await _userFactory.FindAsync(filter);
     }
 
     /// <summary>
@@ -642,8 +657,13 @@ public class UserService : IUserService
                 update = update.Set(user => user.IsActive, false);
                 break;
             case "delete":
-                // 使用已获取的 currentUserId（已在方法开始处获取）
-                var deleteCount = await _userFactory.SoftDeleteManyAsync(request.UserIds);
+                // ✅ 修复：使用包含企业过滤的过滤器进行软删除，确保只能删除当前企业的用户
+                // 不能直接使用 SoftDeleteManyAsync(request.UserIds)，因为它没有多租户过滤
+                var softDeleteUpdate = _userFactory.CreateUpdateBuilder()
+                    .Set(u => u.IsDeleted, true)
+                    .SetCurrentTimestamp()
+                    .Build();
+                var deleteCount = await _userFactory.UpdateManyAsync(filter, softDeleteUpdate);
                 return deleteCount > 0;
             default:
                 return false;

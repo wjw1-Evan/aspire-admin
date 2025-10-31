@@ -322,7 +322,7 @@ public class SystemMonitorController : BaseApiController
                             var lines = output.Split('\n');
                             long freePages = 0;
                             long inactivePages = 0;
-                            long pageSize = 4096; // 默认页面大小
+                            long pageSize = 0; // 必须从系统中获取，不允许估算
                             
                             foreach (var line in lines)
                             {
@@ -362,6 +362,13 @@ public class SystemMonitorController : BaseApiController
                                         }
                                     }
                                 }
+                            }
+                            
+                            // 必须成功获取页面大小才能计算
+                            if (pageSize <= 0)
+                            {
+                                _logger.LogWarning("Failed to parse page size from vm_stat output");
+                                return 0;
                             }
                             
                             // macOS 可用内存 = 空闲页面 + 非活跃页面

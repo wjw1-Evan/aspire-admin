@@ -146,26 +146,7 @@ export default defineConfig({
   ],
   //================ pro 插件配置 =================
   presets: ['umi-presets-pro'],
-  /**
-   * @name openAPI 插件的配置
-   * @description 基于 openapi 的规范生成serve 和mock，能减少很多样板代码
-   * @doc https://pro.ant.design/zh-cn/docs/openapi/
-   */
-  openAPI: [
-    {
-      requestLibPath: "import { request } from '@umijs/max'",
-      // 使用本地OpenAPI配置
-      schemaPath: join(__dirname, 'oneapi.json'),
-      mock: false, // 禁用mock，使用真实API
-    },
-    {
-      requestLibPath: "import { request } from '@umijs/max'",
-      schemaPath:
-        'https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json',
-      projectName: 'ant-design-pro',
-      mock: false, // 禁用mock功能
-    },
-  ],
+  
   mock: false, // 完全禁用mock功能
   /**
    * @name 是否开启 mako

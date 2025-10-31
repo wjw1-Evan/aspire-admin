@@ -12,17 +12,20 @@ public class RoleService : IRoleService
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
     private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly IDatabaseOperationFactory<Menu> _menuFactory;
     private readonly ILogger<RoleService> _logger;
 
     public RoleService(
         IDatabaseOperationFactory<Role> roleFactory,
         IDatabaseOperationFactory<AppUser> userFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        IDatabaseOperationFactory<Menu> menuFactory,
         ILogger<RoleService> logger)
     {
         _roleFactory = roleFactory;
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
+        _menuFactory = menuFactory;
         _logger = logger;
     }
 
@@ -198,7 +201,11 @@ public class RoleService : IRoleService
         if (request.Description != null)
             updateBuilder.Set(r => r.Description, request.Description);
         if (request.MenuIds != null)
-            updateBuilder.Set(r => r.MenuIds, request.MenuIds);
+        {
+            // 验证菜单ID有效性
+            var validMenuIds = await ValidateAndNormalizeMenuIdsAsync(request.MenuIds, id);
+            updateBuilder.Set(r => r.MenuIds, validMenuIds);
+        }
         if (request.IsActive.HasValue)
             updateBuilder.Set(r => r.IsActive, request.IsActive.Value);
         
@@ -302,20 +309,115 @@ public class RoleService : IRoleService
     }
 
     /// <summary>
+    /// 验证并规范化菜单ID列表
+    /// 1. 过滤掉无效的菜单ID（不存在、已删除或已禁用）
+    /// 2. 如果所有菜单ID都无效，至少保留欢迎页面菜单
+    /// </summary>
+    private async Task<List<string>> ValidateAndNormalizeMenuIdsAsync(List<string> menuIds, string roleId)
+    {
+        var validMenuIds = new List<string>();
+        
+        if (menuIds != null && menuIds.Any())
+        {
+            // 首先查询所有提交的菜单ID（不进行状态过滤，用于诊断）
+            var allMenusFilter = _menuFactory.CreateFilterBuilder()
+                .In(m => m.Id, menuIds)
+                .Build();
+            var allMenus = await _menuFactory.FindAsync(allMenusFilter);
+            
+            _logger.LogInformation("角色 {RoleId} 菜单权限验证：提交 {SubmittedCount} 个菜单ID，数据库中找到 {FoundCount} 个", 
+                roleId, menuIds.Count, allMenus.Count);
+            
+            // 找出无效的菜单ID并记录
+            var invalidMenuIds = menuIds.Except(allMenus.Select(m => m.Id!).Where(id => !string.IsNullOrEmpty(id))).ToList();
+            if (invalidMenuIds.Any())
+            {
+                _logger.LogWarning("角色 {RoleId} 菜单权限验证：发现 {InvalidCount} 个不存在的菜单ID: {InvalidIds}", 
+                    roleId, invalidMenuIds.Count, string.Join(", ", invalidMenuIds));
+            }
+            
+            // 查询所有有效的菜单（未删除且已启用）
+            var menuFilter = _menuFactory.CreateFilterBuilder()
+                .In(m => m.Id, menuIds)
+                .Equal(m => m.IsEnabled, true)
+                .Equal(m => m.IsDeleted, false)
+                .Build();
+            
+            var validMenus = await _menuFactory.FindAsync(menuFilter);
+            validMenuIds = validMenus.Select(m => m.Id!).Where(id => !string.IsNullOrEmpty(id)).ToList();
+            
+            // 找出已删除或已禁用的菜单ID并记录
+            var disabledOrDeletedMenuIds = allMenus
+                .Where(m => !validMenuIds.Contains(m.Id!) || m.IsDeleted || !m.IsEnabled)
+                .Select(m => new { Id = m.Id, Name = m.Name, IsDeleted = m.IsDeleted, IsEnabled = m.IsEnabled })
+                .ToList();
+            
+            if (disabledOrDeletedMenuIds.Any())
+            {
+                _logger.LogWarning("角色 {RoleId} 菜单权限验证：发现 {DisabledCount} 个已删除或已禁用的菜单: {DisabledMenus}", 
+                    roleId, disabledOrDeletedMenuIds.Count, 
+                    string.Join(", ", disabledOrDeletedMenuIds.Select(m => $"{m.Name}(Id:{m.Id}, IsDeleted:{m.IsDeleted}, IsEnabled:{m.IsEnabled})")));
+            }
+            
+            _logger.LogInformation("角色 {RoleId} 菜单权限验证：提交 {SubmittedCount} 个菜单ID，验证后有效 {ValidCount} 个", 
+                roleId, menuIds.Count, validMenuIds.Count);
+        }
+        
+        // 如果所有菜单ID都无效，至少保留欢迎页面菜单
+        if (!validMenuIds.Any())
+        {
+            // 查找欢迎页面菜单
+            var welcomeMenuFilter = _menuFactory.CreateFilterBuilder()
+                .Equal(m => m.Name, "welcome")
+                .Equal(m => m.IsEnabled, true)
+                .Equal(m => m.IsDeleted, false)
+                .Build();
+            
+            var welcomeMenu = await _menuFactory.FindAsync(welcomeMenuFilter);
+            var welcomeMenuId = welcomeMenu.FirstOrDefault()?.Id;
+            
+            if (!string.IsNullOrEmpty(welcomeMenuId))
+            {
+                validMenuIds.Add(welcomeMenuId);
+                _logger.LogWarning("角色 {RoleId} 菜单权限为空或全部无效，已自动添加欢迎页面菜单以确保基本访问", roleId);
+            }
+            else
+            {
+                _logger.LogError("角色 {RoleId} 菜单权限为空，且无法找到欢迎页面菜单，可能导致用户无法访问任何模块", roleId);
+                throw new InvalidOperationException("无法分配菜单权限：所有菜单ID无效，且系统未找到欢迎页面菜单。请联系系统管理员检查菜单初始化。");
+            }
+        }
+        
+        return validMenuIds;
+    }
+
+    /// <summary>
     /// 为角色分配菜单权限
-    /// 修复：使用BaseRepository确保只能修改当前企业的角色
+    /// 修复：
+    /// 1. 验证菜单ID的有效性（只保留存在于数据库中的菜单ID）
+    /// 2. 如果所有菜单ID都无效，至少保留欢迎页面菜单，避免用户无法访问任何模块
     /// </summary>
     public async Task<bool> AssignMenusToRoleAsync(string roleId, List<string> menuIds)
     {
+        // 验证并规范化菜单ID
+        var validMenuIds = await ValidateAndNormalizeMenuIdsAsync(menuIds ?? new List<string>(), roleId);
+        
         var filter = _roleFactory.CreateFilterBuilder()
             .Equal(r => r.Id, roleId)
             .Build();
         
         var update = _roleFactory.CreateUpdateBuilder()
-            .Set(r => r.MenuIds, menuIds)
+            .Set(r => r.MenuIds, validMenuIds)
             .Build();
         
-        return await _roleFactory.UpdateManyAsync(filter, update) > 0;
+        var result = await _roleFactory.UpdateManyAsync(filter, update) > 0;
+        
+        if (result)
+        {
+            _logger.LogInformation("成功为角色 {RoleId} 分配 {MenuCount} 个菜单权限", roleId, validMenuIds.Count);
+        }
+        
+        return result;
     }
 
     /// <summary>

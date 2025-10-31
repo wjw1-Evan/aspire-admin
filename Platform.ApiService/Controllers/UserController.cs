@@ -516,6 +516,77 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
+    /// 获取当前用户的活动日志（分页）
+    /// </summary>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="action">操作类型（可选）</param>
+    /// <param name="startDate">开始日期（可选）</param>
+    /// <param name="endDate">结束日期（可选）</param>
+    /// <remarks>
+    /// 获取当前登录用户的活动日志，支持分页、操作类型筛选和日期范围筛选。
+    /// 
+    /// 权限要求：用户必须已登录
+    /// 
+    /// 示例请求：
+    /// ```
+    /// GET /api/user/my-activity-logs-paged?page=1&pageSize=20&action=login
+    /// Authorization: Bearer {token}
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "data": [...],
+    ///     "total": 100,
+    ///     "page": 1,
+    ///     "pageSize": 20
+    ///   }
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>当前用户的活动日志（分页）</returns>
+    /// <response code="200">成功返回活动日志</response>
+    /// <response code="401">未授权，需要登录</response>
+    [HttpGet("my-activity-logs-paged")]
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUserActivityLogsPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? action = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
+    {
+        // ✅ 添加输入验证
+        if (page < 1 || page > 10000)
+            throw new ArgumentException("页码必须在 1-10000 之间");
+        
+        if (pageSize < 1 || pageSize > 100)
+            throw new ArgumentException("每页数量必须在 1-100 之间");
+        
+        // 验证日期范围
+        if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+            throw new ArgumentException("开始日期不能晚于结束日期");
+        
+        var (logs, total) = await _userService.GetCurrentUserActivityLogsAsync(
+            page, 
+            pageSize, 
+            action, 
+            startDate, 
+            endDate);
+        
+        return Success(new
+        {
+            data = logs,
+            total = total,
+            page = page,
+            pageSize = pageSize
+        });
+    }
+
+    /// <summary>
     /// 获取当前用户的所有权限
     /// </summary>
     [HttpGet("my-permissions")]

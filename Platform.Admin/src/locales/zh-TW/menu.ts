@@ -11,6 +11,7 @@ export default {
   'menu.system.user-log': '用戶日誌',
   'menu.system.company-settings': '企業設置',
   'menu.system.company-management': '企業管理',
+  'menu.system.my-activity': '我的活動',
   'menu.company-search': '企業搜索',
   'menu.my-join-requests': '我的加入申請',
   'menu.pending-join-requests': '待審批申請',

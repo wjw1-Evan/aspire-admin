@@ -750,6 +750,55 @@ public class UserService : IUserService
     }
 
     /// <summary>
+    /// 获取当前用户的活动日志（分页）
+    /// </summary>
+    public async Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(
+        int page = 1,
+        int pageSize = 20,
+        string? action = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null)
+    {
+        // 获取当前用户ID
+        var currentUserId = _userFactory.GetRequiredUserId();
+        
+        var filterBuilder = _activityLogFactory.CreateFilterBuilder();
+        
+        // 固定过滤当前用户
+        filterBuilder.Equal(log => log.UserId, currentUserId);
+        
+        // 按操作类型过滤
+        if (!string.IsNullOrEmpty(action))
+        {
+            filterBuilder.Equal(log => log.Action, action);
+        }
+        
+        // 按日期范围过滤
+        if (startDate.HasValue)
+        {
+            filterBuilder.GreaterThanOrEqual(log => log.CreatedAt, startDate.Value);
+        }
+        if (endDate.HasValue)
+        {
+            filterBuilder.LessThanOrEqual(log => log.CreatedAt, endDate.Value);
+        }
+        
+        var filter = filterBuilder.Build();
+        
+        // 获取总数
+        var total = await _activityLogFactory.CountAsync(filter);
+        
+        // 获取分页数据
+        var sort = _activityLogFactory.CreateSortBuilder()
+            .Descending(log => log.CreatedAt)
+            .Build();
+        
+        var (logs, totalFromPaged) = await _activityLogFactory.FindPagedAsync(filter, sort, page, pageSize);
+        
+        return (logs, total);
+    }
+
+    /// <summary>
     /// 获取所有用户的活动日志（分页）- 兼容性方法
     /// v6.1: 委托给优化版本的方法
     /// </summary>

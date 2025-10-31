@@ -96,6 +96,11 @@ export default [
     component: './company/settings',
     hideInMenu: true,
   },
+  {
+    path: '/system/my-activity',
+    component: './my-activity',
+    hideInMenu: true,
+  },
 
 
   // 默认重定向和404

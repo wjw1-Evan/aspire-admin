@@ -98,114 +98,218 @@ public class DataInitializerService : IDataInitializerService
     
     /// <summary>
     /// 创建全局系统菜单（所有企业共享）
+    /// 支持增量同步：检查每个菜单是否存在，不存在则创建
     /// </summary>
     private async Task CreateSystemMenusAsync()
     {
         try
         {
-            _logger.LogInformation("开始创建全局系统菜单...");
+            _logger.LogInformation("开始同步全局系统菜单...");
 
             var menus = _database.GetCollection<Menu>("menus");
-            
-            // 检查是否已经初始化过
-            var existingCount = await menus.CountDocumentsAsync(Builders<Menu>.Filter.Empty);
-            if (existingCount > 0)
-            {
-                _logger.LogInformation("全局菜单已存在（{Count} 个），跳过创建", existingCount);
-                return;
-            }
-
             var now = DateTime.UtcNow;
             
-            // 创建顶级菜单
-            var welcomeMenu = new Menu
-            {
-                Name = "welcome",
-                Title = "欢迎",
-                Path = "/welcome",
-                Component = "./Welcome",
-                Icon = "smile",
-                SortOrder = 1,
-                IsEnabled = true,
-                IsDeleted = false,  // 明确设置未删除
-                CreatedAt = now,
-                UpdatedAt = now
-            };
+            // 定义所有预期的菜单（按依赖关系排序：先顶级菜单，再子菜单）
+            var expectedMenus = GetExpectedMenus(now);
             
-            var systemMenu = new Menu
-            {
-                Name = "system",
-                Title = "系统管理",
-                Path = "/system",
-                Icon = "setting",
-                SortOrder = 2,
-                IsEnabled = true,
-                IsDeleted = false,  // 明确设置未删除
-                CreatedAt = now,
-                UpdatedAt = now
-            };
+            int createdCount = 0;
+            int skippedCount = 0;
             
-            // 先插入顶级菜单以获取ID
-            await menus.InsertManyAsync(new[] { welcomeMenu, systemMenu });
+            // 先处理顶级菜单（无 ParentId）
+            var topLevelMenus = expectedMenus.Where(m => string.IsNullOrEmpty(m.ParentId)).ToList();
+            var parentMenuIdMap = new Dictionary<string, string>();  // name -> id
             
-            // 创建系统管理子菜单
-            var childMenus = new[]
+            foreach (var menu in topLevelMenus)
             {
-                new Menu
+                var existingMenu = await menus.Find(m => m.Name == menu.Name && !m.IsDeleted)
+                    .FirstOrDefaultAsync();
+                
+                if (existingMenu == null)
                 {
-                    Name = "user-management",
-                    Title = "用户管理",
-                    Path = "/system/user-management",
-                    Component = "./System/UserManagement",
-                    Icon = "user",
-                    ParentId = systemMenu.Id!,
-                    SortOrder = 1,
-                    IsEnabled = true,
-                    IsDeleted = false,  // 明确设置未删除
-                    Permissions = new List<string> { "user:read" },
-                    CreatedAt = now,
-                    UpdatedAt = now
-                },
-                new Menu
-                {
-                    Name = "role-management",
-                    Title = "角色管理",
-                    Path = "/system/role-management",
-                    Component = "./System/RoleManagement",
-                    Icon = "team",
-                    ParentId = systemMenu.Id!,
-                    SortOrder = 2,
-                    IsEnabled = true,
-                    IsDeleted = false,  // 明确设置未删除
-                    Permissions = new List<string> { "role:read" },
-                    CreatedAt = now,
-                    UpdatedAt = now
-                },
-                new Menu
-                {
-                    Name = "company-management",
-                    Title = "企业管理",
-                    Path = "/system/company-management",
-                    Component = "./System/CompanyManagement",
-                    Icon = "bank",
-                    ParentId = systemMenu.Id!,
-                    SortOrder = 3,
-                    IsEnabled = true,
-                    IsDeleted = false,  // 明确设置未删除
-                    Permissions = new List<string> { "company:read" },
-                    CreatedAt = now,
-                    UpdatedAt = now
+                    await menus.InsertOneAsync(menu);
+                    _logger.LogInformation("✅ 创建菜单: {Name} ({Title})", menu.Name, menu.Title);
+                    createdCount++;
+                    if (!string.IsNullOrEmpty(menu.Id))
+                    {
+                        parentMenuIdMap[menu.Name] = menu.Id;
+                    }
                 }
-            };
+                else
+                {
+                    _logger.LogDebug("⏭️  菜单已存在: {Name} ({Title})", menu.Name, menu.Title);
+                    skippedCount++;
+                    if (!string.IsNullOrEmpty(existingMenu.Id))
+                    {
+                        parentMenuIdMap[menu.Name] = existingMenu.Id;
+                    }
+                }
+            }
             
-            await menus.InsertManyAsync(childMenus);
+            // 再处理子菜单（需要父菜单的 ID）
+            var childMenus = expectedMenus.Where(m => !string.IsNullOrEmpty(m.ParentId)).ToList();
             
-            _logger.LogInformation("全局系统菜单创建完成，共创建 {Count} 个菜单", childMenus.Length + 2);
+            foreach (var menu in childMenus)
+            {
+                // 根据 ParentId 的名称查找父菜单的实际 ID
+                var parentMenuName = GetParentMenuNameByChildName(menu.Name);
+                if (!string.IsNullOrEmpty(parentMenuName) && parentMenuIdMap.TryGetValue(parentMenuName, out var parentId))
+                {
+                    menu.ParentId = parentId;
+                }
+                else if (!string.IsNullOrEmpty(parentMenuName))
+                {
+                    _logger.LogWarning("⚠️  未找到父菜单: {ParentName}，跳过子菜单: {Name}", parentMenuName, menu.Name);
+                    skippedCount++;
+                    continue;
+                }
+                
+                var existingMenu = await menus.Find(m => m.Name == menu.Name && !m.IsDeleted)
+                    .FirstOrDefaultAsync();
+                
+                if (existingMenu == null)
+                {
+                    await menus.InsertOneAsync(menu);
+                    _logger.LogInformation("✅ 创建菜单: {Name} ({Title})", menu.Name, menu.Title);
+                    createdCount++;
+                }
+                else
+                {
+                    _logger.LogDebug("⏭️  菜单已存在: {Name} ({Title})", menu.Name, menu.Title);
+                    skippedCount++;
+                }
+            }
+            
+            _logger.LogInformation("全局系统菜单同步完成 - 新建: {Created} 个，已存在: {Skipped} 个，总计: {Total} 个", 
+                createdCount, skippedCount, expectedMenus.Count);
+
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建全局系统菜单失败");
             throw;
         }
+    }
+    
+    /// <summary>
+    /// 获取所有预期的菜单定义
+    /// 在此方法中添加新的菜单，系统会自动同步到数据库
+    /// </summary>
+    private List<Menu> GetExpectedMenus(DateTime now)
+    {
+        var menus = new List<Menu>();
+        
+        // 顶级菜单
+        menus.Add(new Menu
+        {
+            Name = "welcome",
+            Title = "欢迎",
+            Path = "/welcome",
+            Component = "./Welcome",
+            Icon = "smile",
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        menus.Add(new Menu
+        {
+            Name = "system",
+            Title = "系统管理",
+            Path = "/system",
+            Icon = "setting",
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        // 系统管理子菜单（注意：ParentId 需要在处理时动态设置）
+        menus.Add(new Menu
+        {
+            Name = "user-management",
+            Title = "用户管理",
+            Path = "/system/user-management",
+            Component = "./System/UserManagement",
+            Icon = "user",
+            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "user:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        menus.Add(new Menu
+        {
+            Name = "role-management",
+            Title = "角色管理",
+            Path = "/system/role-management",
+            Component = "./System/RoleManagement",
+            Icon = "team",
+            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "role:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        menus.Add(new Menu
+        {
+            Name = "company-management",
+            Title = "企业管理",
+            Path = "/system/company-management",
+            Component = "./System/CompanyManagement",
+            Icon = "bank",
+            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 3,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "company:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        menus.Add(new Menu
+        {
+            Name = "my-activity",
+            Title = "我的活动",
+            Path = "/system/my-activity",
+            Component = "./System/MyActivity",
+            Icon = "history",
+            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 4,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string>(),  // 无需权限，所有登录用户都可以查看自己的活动
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        // ⭐ 在此处添加新菜单，系统会自动同步到数据库
+        
+        return menus;
+    }
+    
+    /// <summary>
+    /// 根据子菜单名称获取父菜单名称
+    /// </summary>
+    private string? GetParentMenuNameByChildName(string childMenuName)
+    {
+        // 根据子菜单名称返回父菜单名称
+        // 当前所有子菜单都属于 "system"
+        return childMenuName switch
+        {
+            "user-management" => "system",
+            "role-management" => "system",
+            "company-management" => "system",
+            "my-activity" => "system",
+            _ => null
+        };
     }
 }

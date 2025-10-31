@@ -15,3 +15,28 @@ export async function getUserActivityLogs(
   });
 }
 
+/**
+ * 获取当前用户的活动日志（分页）
+ */
+export async function getCurrentUserActivityLogs(
+  params?: {
+    page?: number;
+    pageSize?: number;
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+  },
+  options?: Record<string, any>,
+) {
+  return request<API.ApiResponse<{
+    data: UserActivityLog[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }>>('/api/user/my-activity-logs-paged', {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+

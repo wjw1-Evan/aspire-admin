@@ -44,13 +44,15 @@ public class MenuService : IMenuService
     /// </summary>
     public async Task<List<MenuTreeNode>> GetUserMenusAsync(List<string> roleIds)
     {
-        // 获取用户的所有未删除角色
+        // 获取用户的所有未删除且活跃的角色
         // ⚠️ 注意：这里传入的 roleIds 已经是特定企业的角色ID（从 UserCompany.RoleIds 获取）
         // 但由于 Role 实现了 IMultiTenant，自动过滤会使用 JWT token 中的企业ID
         // 为了保持一致性和避免切换企业后的问题，我们使用 FindWithoutTenantFilterAsync
         // 前提是：调用方必须确保 roleIds 都属于同一企业
         var rolesFilter = _roleFactory.CreateFilterBuilder()
             .In(r => r.Id, roleIds)
+            .Equal(r => r.IsDeleted, false)
+            .Equal(r => r.IsActive, true)
             .Build();
         var userRoles = await _roleFactory.FindWithoutTenantFilterAsync(rolesFilter);
 
@@ -64,6 +66,7 @@ public class MenuService : IMenuService
         var menusFilter = _menuFactory.CreateFilterBuilder()
             .In(m => m.Id, accessibleMenuIds)
             .Equal(m => m.IsEnabled, true)
+            .Equal(m => m.IsDeleted, false)
             .Build();
         var accessibleMenus = await _menuFactory.FindAsync(menusFilter, sort: _menuFactory.CreateSortBuilder().Ascending(m => m.SortOrder).Build());
 
@@ -77,6 +80,7 @@ public class MenuService : IMenuService
         var allMenusFilter = _menuFactory.CreateFilterBuilder()
             .In(m => m.Id, allMenuIds.ToList())
             .Equal(m => m.IsEnabled, true)
+            .Equal(m => m.IsDeleted, false)
             .Build();
         var allAccessibleMenus = await _menuFactory.FindAsync(allMenusFilter, sort: _menuFactory.CreateSortBuilder().Ascending(m => m.SortOrder).Build());
 

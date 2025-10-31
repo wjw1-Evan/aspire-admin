@@ -58,7 +58,7 @@ Platform.ApiService/
 ### 前端架构
 
 ```
-Platform.Web/src/pages/user-management/
+Platform.Admin/src/pages/user-management/
 ├── index.tsx                      # 主页面组件
 ├── types.ts                       # TypeScript类型定义
 ├── components/
@@ -73,20 +73,16 @@ Platform.Web/src/pages/user-management/
 
 | 方法 | 路径 | 描述 |
 |------|------|------|
-| GET | `/api/user` | 获取所有用户 |
-| GET | `/api/user/{id}` | 根据ID获取用户 |
-| POST | `/api/user` | 创建新用户 |
-| PUT | `/api/user/{id}` | 更新用户信息 |
-| DELETE | `/api/user/{id}` | 删除用户 |
-| POST | `/api/user/list` | 分页获取用户列表 |
-| GET | `/api/user/statistics` | 获取用户统计信息 |
-| POST | `/api/user/bulk-action` | 批量操作用户 |
-| PUT | `/api/user/{id}/role` | 更新用户角色 |
-| PUT | `/api/user/{id}/activate` | 启用用户 |
-| PUT | `/api/user/{id}/deactivate` | 禁用用户 |
-| GET | `/api/user/{id}/activity-logs` | 获取用户活动日志 |
-| GET | `/api/user/check-email` | 检查邮箱是否存在 |
-| GET | `/api/user/check-username` | 检查用户名是否存在 |
+| POST | `/api/users/list` | 分页获取用户列表 |
+| GET | `/api/users/{id}` | 根据ID获取用户 |
+| POST | `/api/users/management` | 创建新用户 |
+| PUT | `/api/users/{id}/update` | 更新用户信息 |
+| DELETE | `/api/users/{id}` | 删除用户 |
+| GET | `/api/users/statistics` | 获取用户统计信息 |
+| POST | `/api/users/bulk-action` | 批量操作用户 |
+| GET | `/api/users/{id}/activity-logs` | 获取用户活动日志 |
+
+> **注意**: 所有API通过网关访问，格式为 `http://localhost:15000/apiservice/api/...`
 
 ### 数据模型
 
@@ -153,9 +149,10 @@ interface UserStatisticsResponse {
 
 ## 权限控制
 
-- 用户管理页面需要管理员权限 (`access: 'canAdmin'`)
-- 只有管理员可以创建、编辑、删除用户
-- 普通用户只能查看自己的信息
+- 用户管理页面需要菜单级权限（v6.0权限系统）
+- 通过角色的 `MenuIds` 控制用户可见菜单
+- 通过菜单的 `Permissions` 控制菜单内功能权限
+- 具体权限配置请参考 [菜单级权限使用指南](../../../../docs/features/MENU-LEVEL-PERMISSION-GUIDE.md)
 
 ## 数据库设计
 
@@ -190,9 +187,11 @@ interface UserStatisticsResponse {
 ## 部署说明
 
 1. 确保MongoDB数据库已启动
-2. 后端API服务已启动 (Platform.ApiService)
-3. 前端应用已构建并启动 (Platform.Web)
+2. 通过 `dotnet run --project Platform.AppHost` 启动整个应用
+3. 管理后台会自动启动，访问 http://localhost:15001
 4. 访问 `/user-management` 路径进入用户管理页面
+
+> **注意**: 本项目使用 .NET Aspire 进行服务编排，所有服务通过 AppHost 统一管理
 
 ## 扩展功能建议
 

@@ -252,7 +252,7 @@ public class CompanyService : ICompanyService
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
 
             // 验证菜单数据完整性
-            if (allMenuIds.Count == 0)
+            if (!allMenuIds.Any())
             {
                 _logger.LogError("❌ 系统菜单未初始化！请确保 DataInitializer 服务已成功运行");
                 throw new InvalidOperationException("系统菜单未初始化，请先运行 DataInitializer 服务");

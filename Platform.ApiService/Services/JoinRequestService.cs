@@ -226,7 +226,7 @@ public class JoinRequestService : IJoinRequestService
         
         // 4. 获取默认角色
         var roleIds = reviewRequest?.DefaultRoleIds ?? new List<string>();
-        if (roleIds.Count == 0)
+        if (!roleIds.Any())
         {
             // 如果没有指定角色，分配默认的"员工"角色
             var defaultRoleFilter = _roleFactory.CreateFilterBuilder()
@@ -239,6 +239,16 @@ public class JoinRequestService : IJoinRequestService
             if (role != null)
             {
                 roleIds.Add(role.Id!);
+            }
+            else
+            {
+                // ⚠️ 逻辑修复：如果默认角色不存在，记录警告但不阻塞流程
+                // 允许用户加入企业但没有角色（可能需要后续手动分配角色）
+                _logger.LogWarning(
+                    "企业 {CompanyId} 不存在默认的'员工'角色，用户 {UserId} 将加入企业但没有角色",
+                    request.CompanyId,
+                    request.UserId
+                );
             }
         }
         

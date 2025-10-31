@@ -202,9 +202,10 @@ public class RuleService : IRuleService
         if (ruleIds.Any())
         {
             await _ruleFactory.SoftDeleteManyAsync(ruleIds);
+            return true;
         }
         
-        return ruleIds.Count > 0;
+        return false;
     }
 
     private async Task<int> GetNextKeyAsync()

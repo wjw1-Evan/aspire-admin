@@ -329,7 +329,7 @@ public class UserCompanyService : IUserCompanyService
         }
         
         // 验证所有角色都属于该企业
-        if (roleIds.Count > 0)
+        if (roleIds.Any())
         {
             var roleFilter = _roleFactory.CreateFilterBuilder()
                 .In(r => r.Id, roleIds)

@@ -343,15 +343,56 @@ public class UserService : IUserService
         // 构建查询过滤器
         var filter = await BuildUserListFilterAsync(request, currentCompanyId);
         
-        // 构建排序
+        // 构建排序（支持多字段，默认按创建时间倒序）
         var sortBuilder = _userFactory.CreateSortBuilder();
-        if (request.SortOrder?.ToLower() == "asc")
+        var sortBy = request.SortBy?.Trim();
+        var isAscending = string.Equals(request.SortOrder, "asc", StringComparison.OrdinalIgnoreCase);
+
+        switch (sortBy?.ToLowerInvariant())
         {
-            sortBuilder.Ascending(u => u.Username); // 默认按用户名排序
-        }
-        else
-        {
-            sortBuilder.Descending(u => u.Username); // 默认按用户名排序
+            case "username":
+                if (isAscending)
+                    sortBuilder.Ascending(u => u.Username);
+                else
+                    sortBuilder.Descending(u => u.Username);
+                break;
+            case "email":
+                if (isAscending)
+                    sortBuilder.Ascending(u => u.Email);
+                else
+                    sortBuilder.Descending(u => u.Email);
+                break;
+            case "lastloginat":
+                if (isAscending)
+                    sortBuilder.Ascending(u => u.LastLoginAt);
+                else
+                    sortBuilder.Descending(u => u.LastLoginAt);
+                break;
+            case "updatedat":
+                if (isAscending)
+                    sortBuilder.Ascending(u => u.UpdatedAt);
+                else
+                    sortBuilder.Descending(u => u.UpdatedAt);
+                break;
+            case "name":
+                if (isAscending)
+                    sortBuilder.Ascending(u => u.Name);
+                else
+                    sortBuilder.Descending(u => u.Name);
+                break;
+            case "isactive":
+                if (isAscending)
+                    sortBuilder.Ascending(u => u.IsActive);
+                else
+                    sortBuilder.Descending(u => u.IsActive);
+                break;
+            case "createdat":
+            default:
+                if (isAscending)
+                    sortBuilder.Ascending(u => u.CreatedAt);
+                else
+                    sortBuilder.Descending(u => u.CreatedAt);
+                break;
         }
 
         // 分页查询用户

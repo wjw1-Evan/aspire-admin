@@ -83,15 +83,17 @@ public class RoleService : IRoleService
         
         foreach (var role in roles)
         {
-            // v3.1: 从 UserCompany 表统计使用此角色的用户数量（工厂自动租户过滤）
+            // ✅ 修复：添加企业过滤，只统计当前企业的用户数量
+            // v3.1: 从 UserCompany 表统计使用此角色的用户数量（添加企业过滤）
             var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.CompanyId, companyId)  // ✅ 添加企业过滤
                 .Equal(uc => uc.Status, "active")
                 .Build();
             
             // 使用原生 MongoDB 查询处理数组包含
             var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, role.Id!);
             var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
-            // 跳过自动租户过滤，使用手动 CompanyId 过滤
+            // 跳过自动租户过滤，使用手动 CompanyId 过滤（已在上面手动添加）
             var userCount = await _userCompanyFactory.CountAsync(combinedFilter);
             
             rolesWithStats.Add(new RoleWithStats

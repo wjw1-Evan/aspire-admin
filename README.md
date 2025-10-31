@@ -154,7 +154,7 @@ Platform/
 
 详细的 API 文档通过 Scalar 提供，集成在 Aspire Dashboard 中：
 
-**快速访问指南**: 查看 [HOW-TO-VIEW-API-DOCS.md](HOW-TO-VIEW-API-DOCS.md)
+**快速访问指南**: 查看 [HOW-TO-VIEW-API-DOCS.md](docs/features/HOW-TO-VIEW-API-DOCS.md)
 
 简要步骤：
 1. 访问 Aspire Dashboard: http://localhost:15003
@@ -668,7 +668,7 @@ npm start
 ### 开发指南
 - [移除全局数据初始化](docs/reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - v3.1.1 数据隔离优化 ⭐ **最新**
 - [v5.0 优化完成报告](docs/reports/V5-OPTIMIZATION-COMPLETE.md) - 后端架构优化详情
-- [权限系统快速开始](docs/permissions/CRUD-PERMISSION-QUICK-START.md) - 权限管理指南
+- [菜单级权限使用指南](docs/features/MENU-LEVEL-PERMISSION-GUIDE.md) - v6.0 菜单级权限系统使用指南
 - [帮助系统功能](docs/features/HELP-MODULE-FEATURE.md) - 内置帮助模块说明
 
 ### 技术文档

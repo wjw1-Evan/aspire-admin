@@ -21,8 +21,6 @@ import {
   SettingOutlined,
   BarChartOutlined,
   ClockCircleOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
   RocketOutlined,
   ThunderboltOutlined,
   CrownOutlined,
@@ -35,9 +33,9 @@ import {
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getCurrentCompany } from '@/services/company';
-import { getSystemStatus, getSystemResources } from '@/services/system/api';
+import { getSystemResources } from '@/services/system/api';
 import type { CurrentUser } from '@/types/unified-api';
-import type { SystemStatus, SystemResources } from '@/services/system/api';
+import type { SystemResources } from '@/services/system/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -156,46 +154,6 @@ const ResourceCard: React.FC<{
   </Card>
 );
 
-// 系统状态组件
-const SystemStatusCard: React.FC<{
-  status: 'healthy' | 'warning' | 'error';
-  message: string;
-  lastUpdate: string;
-}> = ({ status, message, lastUpdate }) => {
-  const statusConfig = {
-    healthy: { color: '#52c41a', icon: <CheckCircleOutlined />, text: '系统正常' },
-    warning: { color: '#faad14', icon: <ExclamationCircleOutlined />, text: '系统警告' },
-    error: { color: '#ff4d4f', icon: <ExclamationCircleOutlined />, text: '系统异常' }
-  };
-
-  const config = statusConfig[status];
-  
-  let alertType: 'success' | 'warning' | 'error';
-  if (status === 'healthy') {
-    alertType = 'success';
-  } else if (status === 'warning') {
-    alertType = 'warning';
-  } else {
-    alertType = 'error';
-  }
-
-  return (
-    <Alert
-      message={
-        <Space>
-          {config.icon}
-          <span>{config.text}</span>
-          <Text type="secondary">- {message}</Text>
-        </Space>
-      }
-      description={`最后更新: ${lastUpdate}`}
-      type={alertType}
-      showIcon
-      style={{ borderRadius: '8px' }}
-    />
-  );
-};
-
 const Welcome: React.FC = () => {
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
@@ -204,7 +162,6 @@ const Welcome: React.FC = () => {
   const [statistics, setStatistics] = useState<any>(null);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   const [recentActivities, setRecentActivities] = useState<API.UserActivityLog[]>([]);
-  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -237,18 +194,16 @@ const Welcome: React.FC = () => {
   const fetchStatistics = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, companyRes, activitiesRes, statusRes] = await Promise.all([
+      const [statsRes, companyRes, activitiesRes] = await Promise.all([
         getUserStatistics(),
         getCurrentCompany(),
-        getUserActivityLogs({ limit: 5 }),
-        getSystemStatus()
+        getUserActivityLogs({ limit: 5 })
       ]);
       
       console.log('API 响应结果:', {
         stats: statsRes,
         company: companyRes,
-        activities: activitiesRes,
-        status: statusRes
+        activities: activitiesRes
       });
       
       if (statsRes.success) {
@@ -263,20 +218,10 @@ const Welcome: React.FC = () => {
         setRecentActivities(activitiesRes.data || []);
       }
 
-      if (statusRes.success) {
-        setSystemStatus(statusRes.data || null);
-      }
-
       // 获取初始系统资源数据
       await fetchSystemResources();
     } catch (error) {
       console.error('Failed to fetch statistics:', error);
-      // 如果系统状态获取失败，设置默认状态
-      setSystemStatus({
-        status: 'warning',
-        message: '无法获取系统状态',
-        timestamp: new Date().toISOString()
-      });
     } finally {
       setLoading(false);
     }
@@ -447,13 +392,6 @@ const Welcome: React.FC = () => {
             </Col>
           </Row>
         </Card>
-
-        {/* 系统状态 */}
-        <SystemStatusCard
-          status={systemStatus?.status || 'warning'}
-          message={systemStatus?.message || '系统状态未知'}
-          lastUpdate={systemStatus?.timestamp ? new Date(systemStatus.timestamp).toLocaleTimeString('zh-CN') : new Date().toLocaleTimeString('zh-CN')}
-        />
 
         <div style={{ margin: '24px 0' }} />
 
@@ -769,29 +707,6 @@ const Welcome: React.FC = () => {
                   </div>
                 </Col>
               )}
-
-              {/* 系统状态 */}
-              <Col xs={24} sm={12} md={8}>
-                <ResourceCard
-                  title="系统状态"
-                  value={(() => {
-                    if (systemStatus?.status === 'healthy') return '正常';
-                    if (systemStatus?.status === 'warning') return '警告';
-                    return '异常';
-                  })()}
-                  icon={<MonitorOutlined />}
-                  color={(() => {
-                    if (systemStatus?.status === 'healthy') return '#52c41a';
-                    if (systemStatus?.status === 'warning') return '#faad14';
-                    return '#ff4d4f';
-                  })()}
-                  loading={loading}
-                  token={token}
-                />
-                <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                  {systemStatus?.message || '状态未知'}
-                </div>
-              </Col>
             </Row>
             
             {/* 系统详细信息 */}

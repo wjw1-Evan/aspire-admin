@@ -10,7 +10,6 @@ export default {
   'menu.system.user-log': 'User Log',
   'menu.system.company-settings': 'Company Settings',
   'menu.system.company-management': 'Company Management',
-  'menu.system.notice-management': 'Notice Management',
   'menu.company-search': 'Company Search',
   'menu.my-join-requests': 'My Join Requests',
   'menu.pending-join-requests': 'Pending Join Requests',

@@ -195,21 +195,6 @@ public class DataInitializerService : IDataInitializerService
                     Permissions = new List<string> { "company:read" },
                     CreatedAt = now,
                     UpdatedAt = now
-                },
-                new Menu
-                {
-                    Name = "notice-management",
-                    Title = "通知管理",
-                    Path = "/system/notice-management",
-                    Component = "./System/NoticeManagement",
-                    Icon = "bell",
-                    ParentId = systemMenu.Id!,
-                    SortOrder = 4,
-                    IsEnabled = true,
-                    IsDeleted = false,  // 明确设置未删除
-                    Permissions = new List<string> { "notice:read" },
-                    CreatedAt = now,
-                    UpdatedAt = now
                 }
             };
             

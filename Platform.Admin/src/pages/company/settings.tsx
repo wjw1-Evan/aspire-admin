@@ -52,7 +52,7 @@ export default function CompanySettings() {
   const handleEditSuccess = () => {
     setEditModalVisible(false);
     fetchData();
-    message.success('企业信息更新成功');
+    // 消息提示已在 EditCompanyModal 中显示，这里不再重复显示
   };
 
   if (loading) {

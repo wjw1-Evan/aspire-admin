@@ -225,6 +225,8 @@ docs/
 
 #### 后端开发
 - [BaseApiController 标准化](features/BASEAPICONTROLLER-STANDARDIZATION.md) - 控制器规范
+- [**ActivityLogMiddleware 设计评估**](middleware/ACTIVITY-LOG-MIDDLEWARE-REVIEW.md) - **新增** - 活动日志中间件架构评估和改进建议 ⭐ **最新**
+- [**UserActivityLogService 设计说明**](middleware/ACTIVITY-LOG-SERVICE-DESIGN.md) - **新增** - 活动日志服务设计决策说明 ⭐ **最新**
 - [中间件重构分析](refactoring/MIDDLEWARE-REFACTORING-ANALYSIS.md) - 中间件设计
 - [中间件重构完成](refactoring/MIDDLEWARE-REFACTORING-COMPLETE.md) - 重构总结
 - [自动活动日志中间件](middleware/AUTO-ACTIVITY-LOG-MIDDLEWARE.md) - 日志中间件
@@ -236,9 +238,10 @@ docs/
 ### 问题修复
 
 #### Bug 修复
-- [**多租户过滤失效修复**](bugfixes/MULTI-TENANT-FILTER-BUG-FIX.md) - **新增** - 修复角色管理显示所有企业角色的 Bug ⭐ **最新**
-- [**表格排序功能修复**](bugfixes/TABLE-SORT-FUNCTION-FIX.md) - **新增** - 修复用户管理页面排序功能无法正常使用 ⭐ **最新**
-- [**我的活动页面多租户过滤修复**](bugfixes/MY-ACTIVITY-MULTI-TENANT-FILTER-FIX.md) - **新增** - 修复我的活动页面未按当前企业过滤的问题
+- [**我的活动数据记录不完整修复**](bugfixes/ACTIVITY-LOG-INCOMPLETE-FIX.md) - **新增** - 修复"我的活动"页面缺少很多操作记录的 Bug ⭐ **最新**
+- [**多租户过滤失效修复**](bugfixes/MULTI-TENANT-FILTER-BUG-FIX.md) - 修复角色管理显示所有企业角色的 Bug
+- [**表格排序功能修复**](bugfixes/TABLE-SORT-FUNCTION-FIX.md) - 修复用户管理页面排序功能无法正常使用
+- [**我的活动页面多租户过滤修复**](bugfixes/MY-ACTIVITY-MULTI-TENANT-FILTER-FIX.md) - 修复我的活动页面未按当前企业过滤的问题
 - [**角色分配全部菜单权限后用户无法访问模块的修复**](bugfixes/ROLE-ALL-MENUS-PERMISSION-FIX.md) - **新增** - 修复分配全部菜单权限后用户无法访问模块的问题
 - [**角色菜单权限更新导致用户无法访问模块的修复**](bugfixes/ROLE-MENU-PERMISSION-FIX.md) - **新增** - 修复修改角色菜单权限后用户无法访问任何模块的问题
 - [**企业切换JWT Token未更新修复**](bugfixes/COMPANY-SWITCH-TOKEN-FIX.md) - **新增** - 修复企业切换后JWT Token未重新生成的问题

@@ -8,31 +8,35 @@ namespace Platform.ApiService.Services;
 public class UserActivityLogService : IUserActivityLogService
 {
     private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
-    private readonly ITenantContext _tenantContext;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
     private readonly ILogger<UserActivityLogService> _logger;
 
     public UserActivityLogService(
         IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
-        ITenantContext tenantContext,
-        IHttpContextAccessor httpContextAccessor,
+        IDatabaseOperationFactory<AppUser> userFactory,
         ILogger<UserActivityLogService> logger)
     {
         _activityLogFactory = activityLogFactory;
-        _tenantContext = tenantContext;
-        _httpContextAccessor = httpContextAccessor;
+        _userFactory = userFactory;
         _logger = logger;
     }
     
     /// <summary>
-    /// 尝试获取当前用户的企业ID（从数据库获取，不使用 JWT token）
+    /// 尝试获取用户的企业ID（从数据库获取，不使用 JWT token）
     /// 如果没有用户上下文或用户未登录，返回 null
+    /// ⚠️ 重要：后台线程无法访问 HttpContext，因此直接查询数据库
     /// </summary>
-    private async Task<string?> TryGetCurrentCompanyIdAsync()
+    private async Task<string?> TryGetUserCompanyIdAsync(string? userId)
     {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
         try
         {
-            return await _tenantContext.GetCurrentCompanyIdAsync();
+            var user = await _userFactory.GetByIdAsync(userId);
+            return user?.CurrentCompanyId;
         }
         catch
         {
@@ -45,10 +49,8 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task LogActivityAsync(string userId, string username, string action, string description)
     {
-        var httpContext = _httpContextAccessor.HttpContext;
-
         // 获取当前企业上下文（如果有的话，从数据库获取，不使用 JWT token）
-        var companyId = await TryGetCurrentCompanyIdAsync();
+        var companyId = await TryGetUserCompanyIdAsync(userId);
 
         var log = new UserActivityLog
         {
@@ -56,8 +58,8 @@ public class UserActivityLogService : IUserActivityLogService
             Username = username,
             Action = action,
             Description = description,
-            IpAddress = httpContext?.Connection.RemoteIpAddress?.ToString(),
-            UserAgent = httpContext?.Request.Headers["User-Agent"].ToString(),
+            IpAddress = null,  // 此方法未提供 IP 信息
+            UserAgent = null,  // 此方法未提供 UserAgent
             CompanyId = companyId ?? string.Empty,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
@@ -179,7 +181,7 @@ public class UserActivityLogService : IUserActivityLogService
         var description = GenerateDescription(httpMethod, path, statusCode, username, ipAddress, queryString);
 
         // 获取当前企业上下文（如果有的话，从数据库获取，不使用 JWT token）
-        var companyId = await TryGetCurrentCompanyIdAsync();
+        var companyId = await TryGetUserCompanyIdAsync(userId);
 
         var log = new UserActivityLog
         {

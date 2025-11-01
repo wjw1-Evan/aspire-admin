@@ -33,7 +33,7 @@ public class ActivityLogMiddleware
         _configuration = configuration;
     }
 
-    public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
+    public async Task InvokeAsync(HttpContext context)
     {
         // 检查是否启用日志记录
         var enabled = _configuration.GetValue<bool>("ActivityLog:Enabled", true);
@@ -59,18 +59,33 @@ public class ActivityLogMiddleware
         // 停止计时
         stopwatch.Stop();
 
-        // 异步记录日志（不等待完成，避免阻塞响应）
-        _ = Task.Run(async () =>
+        // ⚠️ 关键修复：在请求线程中提取所有数据，避免在后台线程访问 HttpContext
+        var logData = ExtractLogData(context, stopwatch.ElapsedMilliseconds);
+        
+        if (logData.HasValue)
         {
-            try
+            // 异步记录日志（不等待完成，避免阻塞响应）
+            // ⚠️ P0 修复：在后台线程中创建新的服务 Scope，避免服务生命周期问题
+            _ = Task.Run(async () =>
             {
-                await LogRequestAsync(context, logService, stopwatch.ElapsedMilliseconds);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to log activity for {Path}", context.Request.Path);
-            }
-        });
+                try
+                {
+                    // 创建新的 Scope，确保 Scoped 服务正常工作
+                    using var scope = context.RequestServices.CreateScope();
+                    var scopedLogService = scope.ServiceProvider.GetRequiredService<IUserActivityLogService>();
+                    
+                    await LogRequestAsync(logData.Value, scopedLogService);
+                }
+                catch (OperationCanceledException)
+                {
+                    // 正常取消，不记录日志
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to log activity for {Path}", logData.Value.path);
+                }
+            }, context.RequestAborted);
+        }
     }
 
     /// <summary>
@@ -106,12 +121,9 @@ public class ActivityLogMiddleware
     }
 
     /// <summary>
-    /// 记录请求信息
+    /// 在请求线程中提取日志数据（避免后台线程访问 HttpContext）
     /// </summary>
-    private async Task LogRequestAsync(
-        HttpContext context,
-        IUserActivityLogService logService,
-        long durationMs)
+    private (string? userId, string? username, string httpMethod, string path, string? queryString, int statusCode, long durationMs, string? ipAddress, string? userAgent)? ExtractLogData(HttpContext context, long durationMs)
     {
         // 提取用户信息
         string? userId = null;
@@ -129,7 +141,7 @@ public class ActivityLogMiddleware
         var includeAnonymous = _configuration.GetValue<bool>("ActivityLog:IncludeAnonymous", false);
         if (string.IsNullOrEmpty(userId) && !includeAnonymous)
         {
-            return; // 不记录匿名请求
+            return null; // 不记录匿名请求
         }
 
         // 提取请求信息
@@ -160,6 +172,18 @@ public class ActivityLogMiddleware
         // 响应状态码
         var statusCode = context.Response.StatusCode;
 
+        return (userId, username, httpMethod, path, queryString, statusCode, durationMs, ipAddress, userAgent);
+    }
+
+    /// <summary>
+    /// 记录请求信息（使用已提取的数据，不访问 HttpContext）
+    /// </summary>
+    private async Task LogRequestAsync(
+        (string? userId, string? username, string httpMethod, string path, string? queryString, int statusCode, long durationMs, string? ipAddress, string? userAgent) logData,
+        IUserActivityLogService logService)
+    {
+        var (userId, username, httpMethod, path, queryString, statusCode, durationMs, ipAddress, userAgent) = logData;
+
         // 调用日志服务记录
         await logService.LogHttpRequestAsync(
             userId,
@@ -174,4 +198,3 @@ public class ActivityLogMiddleware
         );
     }
 }
-

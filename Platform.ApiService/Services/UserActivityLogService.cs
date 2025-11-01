@@ -60,10 +60,8 @@ public class UserActivityLogService : IUserActivityLogService
             Description = description,
             IpAddress = null,  // 此方法未提供 IP 信息
             UserAgent = null,  // 此方法未提供 UserAgent
-            CompanyId = companyId ?? string.Empty,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CompanyId = companyId ?? string.Empty
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         await _activityLogFactory.CreateAsync(log);
@@ -196,10 +194,8 @@ public class UserActivityLogService : IUserActivityLogService
             Duration = durationMs,
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            CompanyId = companyId ?? string.Empty,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CompanyId = companyId ?? string.Empty
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         await _activityLogFactory.CreateAsync(log);

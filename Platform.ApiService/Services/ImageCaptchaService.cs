@@ -75,10 +75,8 @@ public class ImageCaptchaService : IImageCaptchaService
             Answer = encryptedAnswer,
             ExpiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES),
             Type = type,
-            ClientIp = clientIp,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            IsDeleted = false
+            ClientIp = clientIp
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         // 使用原子操作：查找并替换（如果不存在则插入）

@@ -79,9 +79,8 @@ public class CompanyService : ICompanyService
             ContactEmail = request.AdminEmail,
             ContactPhone = request.ContactPhone,
             IsActive = true,
-            MaxUsers = CompanyConstants.DefaultMaxUsers,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            MaxUsers = CompanyConstants.DefaultMaxUsers
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         await _companyFactory.CreateAsync(company);
@@ -101,9 +100,8 @@ public class CompanyService : ICompanyService
                 Description = "系统管理员，拥有所有菜单访问权限",
                 CompanyId = company.Id!,
                 MenuIds = allMenuIds,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsActive = true
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
             await _roleFactory.CreateAsync(adminRole);
             _logger.LogInformation("为企业 {CompanyId} 创建管理员角色: {RoleId}", company.Id!, adminRole.Id!);
@@ -116,9 +114,8 @@ public class CompanyService : ICompanyService
                 PasswordHash = _passwordHasher.HashPassword(request.AdminPassword),
                 CurrentCompanyId = company.Id!,  // v3.1: 使用 CurrentCompanyId
                 // v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，而不是 AppUser.RoleIds
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsActive = true
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
             await _userFactory.CreateAsync(adminUser);
             _logger.LogInformation("为企业 {CompanyId} 创建管理员用户: {Username}", company.Id!, adminUser.Username!);
@@ -131,10 +128,8 @@ public class CompanyService : ICompanyService
                 RoleIds = new List<string> { adminRole.Id! },
                 IsAdmin = true,  // 标记为企业管理员
                 Status = "active",
-                JoinedAt = DateTime.UtcNow,
-                IsDeleted = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                JoinedAt = DateTime.UtcNow  // 业务字段，需要手动设置
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
             await _userCompanyFactory.CreateAsync(userCompany);
             _logger.LogInformation("为用户 {UserId} 创建企业关联记录，角色: {RoleIds}", 
@@ -234,10 +229,8 @@ public class CompanyService : ICompanyService
                 ContactEmail = request.ContactEmail,
                 ContactPhone = request.ContactPhone,
                 IsActive = true,
-                MaxUsers = request.MaxUsers > 0 ? request.MaxUsers : CompanyConstants.DefaultMaxUsers,
-                IsDeleted = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                MaxUsers = request.MaxUsers > 0 ? request.MaxUsers : CompanyConstants.DefaultMaxUsers
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
 
             await _companyFactory.CreateAsync(company);
@@ -265,9 +258,8 @@ public class CompanyService : ICompanyService
                 Description = "企业管理员，拥有所有菜单访问权限",
                 CompanyId = company.Id!,
                 MenuIds = allMenuIds,  // 分配所有全局菜单
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsActive = true
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
 
             await _roleFactory.CreateAsync(adminRole);
@@ -281,9 +273,8 @@ public class CompanyService : ICompanyService
                 RoleIds = new List<string> { adminRole.Id! },
                 Status = "active",
                 IsAdmin = true,
-                JoinedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                JoinedAt = DateTime.UtcNow  // 业务字段，需要手动设置
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
 
             await _userCompanyFactory.CreateAsync(userCompany);

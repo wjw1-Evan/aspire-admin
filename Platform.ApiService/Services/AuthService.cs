@@ -340,10 +340,8 @@ public class AuthService : IAuthService
                 Username = request.Username.Trim(),
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
                 Email = string.IsNullOrEmpty(request.Email) ? null : request.Email.Trim(),
-                IsActive = true,
-                IsDeleted = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsActive = true
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
             
             await _userFactory.CreateAsync(user);
@@ -470,10 +468,8 @@ public class AuthService : IAuthService
                 Name = $"{user.Username} 的企业",
                 Code = $"personal-{user.Id}",  // 使用用户ID保证唯一
                 Description = "个人企业",
-                IsActive = true,
-                IsDeleted = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsActive = true
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
             
             await _companyFactory.CreateAsync(company);
@@ -518,9 +514,8 @@ public class AuthService : IAuthService
                 RoleIds = new List<string> { adminRole.Id! },
                 Status = "active",
                 IsAdmin = true,
-                JoinedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                JoinedAt = DateTime.UtcNow  // 业务字段，需要手动设置
+                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
             
             await _userCompanyFactory.CreateAsync(userCompany);

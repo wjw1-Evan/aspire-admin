@@ -1,3 +1,4 @@
+using System.Reflection;
 using MongoDB.Driver;
 using Platform.ServiceDefaults.Models;
 
@@ -331,7 +332,8 @@ public class SortBuilder<T> where T : class, IEntity, ISoftDeletable, ITimestamp
     /// </summary>
     public SortBuilder<T> Ascending<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
     {
-        var fieldName = GetFieldName(field);
+        // ✅ 获取正确的 BSON 字段名（优先使用 BsonElement 特性）
+        var fieldName = GetBsonFieldName(field);
         _sorts.Add(_builder.Ascending(fieldName));
         return this;
     }
@@ -341,7 +343,8 @@ public class SortBuilder<T> where T : class, IEntity, ISoftDeletable, ITimestamp
     /// </summary>
     public SortBuilder<T> Descending<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
     {
-        var fieldName = GetFieldName(field);
+        // ✅ 获取正确的 BSON 字段名（优先使用 BsonElement 特性）
+        var fieldName = GetBsonFieldName(field);
         _sorts.Add(_builder.Descending(fieldName));
         return this;
     }
@@ -373,13 +376,29 @@ public class SortBuilder<T> where T : class, IEntity, ISoftDeletable, ITimestamp
     }
 
     /// <summary>
-    /// 获取字段名称
+    /// 获取 BSON 字段名（优先使用 BsonElement 特性，否则使用属性名的 camelCase）
     /// </summary>
-    private static string GetFieldName<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
+    private static string GetBsonFieldName<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
     {
         if (field.Body is System.Linq.Expressions.MemberExpression memberExpression)
         {
-            return memberExpression.Member.Name.ToLowerInvariant();
+            var property = memberExpression.Member as System.Reflection.PropertyInfo;
+            if (property != null)
+            {
+                // ✅ 优先使用 BsonElement 特性的 ElementName
+                var bsonElementAttr = property.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
+                if (bsonElementAttr != null && !string.IsNullOrEmpty(bsonElementAttr.ElementName))
+                {
+                    return bsonElementAttr.ElementName;
+                }
+                
+                // ✅ 如果没有 BsonElement 特性，使用属性名的 camelCase
+                var propertyName = property.Name;
+                if (propertyName.Length > 0)
+                {
+                    return char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
+                }
+            }
         }
         throw new ArgumentException("Invalid field expression");
     }

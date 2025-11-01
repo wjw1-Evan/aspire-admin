@@ -89,10 +89,8 @@ public class UserService : IUserService
             Username = request.Name,
             Email = request.Email,
             // v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，而不是 User.RoleIds
-            IsActive = true,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsActive = true
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         return await _userFactory.CreateAsync(user);
@@ -176,10 +174,8 @@ public class UserService : IUserService
             Email = request.Email,
             PasswordHash = passwordHash,
             CurrentCompanyId = companyId,  // 设置当前企业ID
-            IsActive = request.IsActive,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsActive = request.IsActive
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         var createdUser = await _userFactory.CreateAsync(user);
@@ -192,10 +188,8 @@ public class UserService : IUserService
             RoleIds = roleIds,
             IsAdmin = false,  // 新创建的用户默认不是管理员
             Status = ACTIVE_STATUS,
-            JoinedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            IsDeleted = false
+            JoinedAt = DateTime.UtcNow  // 业务字段，需要手动设置
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         await _userCompanyFactory.CreateAsync(userCompany);
@@ -818,21 +812,8 @@ public class UserService : IUserService
 
     public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
     {
-        // 获取当前企业ID（从数据库获取，不使用 JWT token）
-        string? companyId = null;
-        try
-        {
-            var currentUserId = _userFactory.GetCurrentUserId();
-            if (!string.IsNullOrEmpty(currentUserId))
-            {
-                var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-                companyId = currentUser?.CurrentCompanyId;
-            }
-        }
-        catch
-        {
-            // 如果无法获取（如用户未登录），使用空字符串
-        }
+        // 获取用户的企业ID（从数据库获取，不使用 JWT token）
+        var companyId = await TryGetUserCompanyIdAsync(userId);
 
         var log = new UserActivityLog
         {
@@ -841,12 +822,32 @@ public class UserService : IUserService
             Description = description,
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            CompanyId = companyId ?? string.Empty,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow
+            CompanyId = companyId ?? string.Empty
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         await _activityLogFactory.CreateAsync(log);
+    }
+
+    /// <summary>
+    /// 尝试获取用户的企业ID（统一方法，避免重复代码）
+    /// </summary>
+    private async Task<string?> TryGetUserCompanyIdAsync(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var user = await _userFactory.GetByIdAsync(userId);
+            return user?.CurrentCompanyId;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>

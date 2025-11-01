@@ -40,10 +40,8 @@ public class CaptchaService : ICaptchaService
         {
             Phone = phone,
             Code = random.Next(100000, 999999).ToString(),
-            ExpiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            IsDeleted = false
+            ExpiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES)
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         // 使用原子操作：查找并替换（如果不存在则插入）

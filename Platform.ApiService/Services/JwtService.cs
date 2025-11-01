@@ -38,7 +38,7 @@ public class JwtService : IJwtService
         _secretKey = secretKey;
         _issuer = configuration["Jwt:Issuer"] ?? "Platform.ApiService";
         _audience = configuration["Jwt:Audience"] ?? "Platform.Web";
-        _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "60");
+        _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "1440");
         _refreshTokenExpirationDays = int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
     }
 
@@ -78,19 +78,7 @@ public class JwtService : IJwtService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_secretKey);
-
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = _issuer,
-                ValidateAudience = true,
-                ValidAudience = _audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
+            var validationParameters = CreateTokenValidationParameters();
 
             var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
             return principal;
@@ -134,19 +122,7 @@ public class JwtService : IJwtService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_secretKey);
-
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = _issuer,
-                ValidateAudience = true,
-                ValidAudience = _audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
+            var validationParameters = CreateTokenValidationParameters();
 
             var principal = tokenHandler.ValidateToken(refreshToken, validationParameters, out _);
             
@@ -175,5 +151,24 @@ public class JwtService : IJwtService
     {
         var principal = ValidateRefreshToken(refreshToken);
         return principal?.FindFirst("userId")?.Value;
+    }
+
+    /// <summary>
+    /// 创建 Token 验证参数（统一配置，避免重复代码）
+    /// </summary>
+    private TokenValidationParameters CreateTokenValidationParameters()
+    {
+        var key = Encoding.ASCII.GetBytes(_secretKey);
+        return new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = true,
+            ValidIssuer = _issuer,
+            ValidateAudience = true,
+            ValidAudience = _audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
     }
 }

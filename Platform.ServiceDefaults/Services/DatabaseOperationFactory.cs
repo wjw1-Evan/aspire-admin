@@ -1,8 +1,6 @@
 using System.Reflection;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
-using MongoDB.Bson;
 using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
 
@@ -16,14 +14,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 {
     private readonly IMongoCollection<T> _collection;
     private readonly ITenantContext _tenantContext;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<DatabaseOperationFactory<T>> _logger;
-    private readonly IMongoDatabase _database;
 
     public DatabaseOperationFactory(
         IMongoDatabase database,
         ITenantContext tenantContext,
-        IHttpContextAccessor httpContextAccessor,
         ILogger<DatabaseOperationFactory<T>> logger)
     {
         // 支持自定义集合名称，优先使用 BsonCollectionName 特性
@@ -32,9 +27,8 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         
         _collection = database.GetCollection<T>(collectionName);
         _tenantContext = tenantContext;
-        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
-        _database = database;
+        
     }
 
     // ========== 公共辅助 ==========
@@ -385,7 +379,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         
         _logger.LogDebug("开始批量软删除 {EntityType} 实体: {Count} 个", entityType, count);
         
-        var filter = Builders<T>.Filter.In(x => x.Id, idList);
+        // ✅ 使用表达式构建过滤器
+        var filter = CreateFilterBuilder()
+            .In(e => e.Id, idList)
+            .Build();
         var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
         var result = await _collection.UpdateManyAsync(filter, update);
@@ -407,9 +404,14 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤和软删除过滤
         var finalFilter = ApplyDefaultFilters(filter);
         
+        // ✅ 默认按创建时间倒序排序（最新优先）- 使用表达式方式
+        var finalSort = sort ?? CreateSortBuilder()
+            .Descending(e => e.CreatedAt)
+            .Build();
+        
         var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
         {
-            Sort = sort,
+            Sort = finalSort,
             Limit = limit
         });
         
@@ -432,12 +434,17 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤和软删除过滤
         var finalFilter = ApplyDefaultFilters(filter);
         
+        // ✅ 默认按创建时间倒序排序（最新优先）- 使用表达式方式
+        var finalSort = sort ?? CreateSortBuilder()
+            .Descending(e => e.CreatedAt)
+            .Build();
+        
         var skip = (page - 1) * pageSize;
         
         // 并行执行查询和计数（优化性能）
         var findTask = _collection.FindAsync(finalFilter, new FindOptions<T>
         {
-            Sort = sort,
+            Sort = finalSort,
             Skip = skip,
             Limit = pageSize
         });
@@ -464,10 +471,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<T?> GetByIdAsync(string id)
     {
-        var filter = Builders<T>.Filter.And(
-            Builders<T>.Filter.Eq(x => x.Id, id),
-            Builders<T>.Filter.Eq(x => x.IsDeleted, false)
-        );
+        // ✅ 使用表达式构建过滤器
+        var filter = CreateFilterBuilder()
+            .Equal(e => e.Id, id)
+            .Equal(e => e.IsDeleted, false)
+            .Build();
         
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
@@ -488,10 +496,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<bool> ExistsAsync(string id)
     {
-        var filter = Builders<T>.Filter.And(
-            Builders<T>.Filter.Eq(x => x.Id, id),
-            Builders<T>.Filter.Eq(x => x.IsDeleted, false)
-        );
+        // ✅ 使用表达式构建过滤器
+        var filter = CreateFilterBuilder()
+            .Equal(e => e.Id, id)
+            .Equal(e => e.IsDeleted, false)
+            .Build();
         
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
@@ -530,9 +539,14 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
         
+        // ✅ 默认按创建时间倒序排序（最新优先）- 使用表达式方式
+        var finalSort = sort ?? CreateSortBuilder()
+            .Descending(e => e.CreatedAt)
+            .Build();
+        
         var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
         {
-            Sort = sort,
+            Sort = finalSort,
             Limit = limit
         });
         
@@ -544,10 +558,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<T?> GetByIdWithoutTenantFilterAsync(string id)
     {
-        var filter = Builders<T>.Filter.And(
-            Builders<T>.Filter.Eq(x => x.Id, id),
-            Builders<T>.Filter.Eq(x => x.IsDeleted, false)
-        );
+        // ✅ 使用表达式构建过滤器
+        var filter = CreateFilterBuilder()
+            .Equal(e => e.Id, id)
+            .Equal(e => e.IsDeleted, false)
+            .Build();
         
         return await _collection.Find(filter).FirstOrDefaultAsync();
     }
@@ -758,7 +773,9 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             return filter;
         }
 
-        // ✅ 使用缓存的 MongoDB 字段名构建过滤器
+        // ✅ 使用表达式构建企业ID过滤器
+        // 注意：由于需要支持动态字段名（可能不是 CompanyId），这里仍需要使用字符串字段名
+        // 但尽量保持表达式风格，使用 Builders 的表达式方法
         var companyFilter = Builders<T>.Filter.Eq(fieldName, companyId);
         return Builders<T>.Filter.And(filter, companyFilter);
     }
@@ -782,11 +799,15 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     private FilterDefinition<T> ApplySoftDeleteFilter(FilterDefinition<T>? filter)
     {
-        var softDeleteFilter = Builders<T>.Filter.Eq(x => x.IsDeleted, false);
+        // ✅ 使用表达式构建软删除过滤器
+        var softDeleteFilter = CreateFilterBuilder()
+            .Equal(e => e.IsDeleted, false)
+            .Build();
         
         if (filter == null)
             return softDeleteFilter;
             
+        // 合并过滤器
         return Builders<T>.Filter.And(filter, softDeleteFilter);
     }
 
@@ -795,7 +816,9 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     private FilterDefinition<T> ApplyDefaultFilters(FilterDefinition<T>? filter)
     {
-        var tenantFilter = ApplyTenantFilter(filter ?? Builders<T>.Filter.Empty);
+        // 如果 filter 为 null，创建一个空的过滤器（使用表达式方式）
+        var baseFilter = filter ?? CreateFilterBuilder().Build();
+        var tenantFilter = ApplyTenantFilter(baseFilter);
         return ApplySoftDeleteFilter(tenantFilter);
     }
 

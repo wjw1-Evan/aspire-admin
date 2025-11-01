@@ -110,10 +110,8 @@ public class RuleService : IRuleService
             CallNo = request.CallNo,
             Status = request.Status,
             Progress = request.Progress,
-            Disabled = request.Disabled,
-            IsDeleted = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            Disabled = request.Disabled
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         await _ruleFactory.CreateAsync(rule);

@@ -102,9 +102,8 @@ public class JoinRequestService : IJoinRequestService
             UserId = userId,
             CompanyId = companyId,
             Reason = request.Reason,
-            Status = "pending",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            Status = "pending"
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
         
         await _joinRequestFactory.CreateAsync(joinRequest);
@@ -260,11 +259,10 @@ public class JoinRequestService : IJoinRequestService
             RoleIds = roleIds,
             IsAdmin = false,
             Status = "active",
-            JoinedAt = DateTime.UtcNow,
+            JoinedAt = DateTime.UtcNow,  // 业务字段，需要手动设置
             ApprovedBy = adminUserId,
-            ApprovedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            ApprovedAt = DateTime.UtcNow  // 业务字段，需要手动设置
+            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
         await _userCompanyFactory.CreateAsync(userCompany);
         

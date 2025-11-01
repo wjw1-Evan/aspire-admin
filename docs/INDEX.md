@@ -236,7 +236,8 @@ docs/
 ### 问题修复
 
 #### Bug 修复
-- [**我的活动页面多租户过滤修复**](bugfixes/MY-ACTIVITY-MULTI-TENANT-FILTER-FIX.md) - **新增** - 修复我的活动页面未按当前企业过滤的问题 ⭐ **最新**
+- [**表格排序功能修复**](bugfixes/TABLE-SORT-FUNCTION-FIX.md) - **新增** - 修复用户管理页面排序功能无法正常使用 ⭐ **最新**
+- [**我的活动页面多租户过滤修复**](bugfixes/MY-ACTIVITY-MULTI-TENANT-FILTER-FIX.md) - **新增** - 修复我的活动页面未按当前企业过滤的问题
 - [**角色分配全部菜单权限后用户无法访问模块的修复**](bugfixes/ROLE-ALL-MENUS-PERMISSION-FIX.md) - **新增** - 修复分配全部菜单权限后用户无法访问模块的问题
 - [**角色菜单权限更新导致用户无法访问模块的修复**](bugfixes/ROLE-MENU-PERMISSION-FIX.md) - **新增** - 修复修改角色菜单权限后用户无法访问任何模块的问题
 - [**企业切换JWT Token未更新修复**](bugfixes/COMPANY-SWITCH-TOKEN-FIX.md) - **新增** - 修复企业切换后JWT Token未重新生成的问题

@@ -422,8 +422,10 @@ docs/
 - [P0 优先级设计问题修复完成报告](reports/P0-DESIGN-FIXES-COMPLETE.md) - P0 优先级问题修复完成
 
 ### 项目维护报告
+- [**合并说明文档清理报告**](reports/DOCUMENTATION-CLEANUP-2025-01-16.md) - **新增** - 归档过渡性帮助系统更新文档 ⭐ **最新**
 - [测试代码移除总结报告](reports/TEST-CODE-REMOVAL-SUMMARY.md) - **新增** - 测试代码清理完成报告
 - [无用代码清理报告](reports/UNUSED-CODE-CLEANUP-SUMMARY.md) - **新增** - 无用代码清理完成报告
+- [文档清理报告 2025-10-20](reports/DOCUMENTATION-CLEANUP-2025-10-20.md) - 历史版本文档归档
 
 ### 微服务优化
 - [**DataInitializer 微服务自动停止功能实现报告**](reports/DATA-INITIALIZER-AUTO-STOP-IMPLEMENTATION.md) - **新增** - DataInitializer 微服务自动停止功能实现详情 ⭐ **推荐**

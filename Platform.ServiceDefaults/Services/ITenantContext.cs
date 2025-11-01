@@ -8,6 +8,7 @@ namespace Platform.ServiceDefaults.Services;
 /// <summary>
 /// 租户上下文接口 - 提供多租户支持
 /// ⚠️ 重要变更：只有 userId 从 JWT token 读取，其他信息（角色、企业等）从数据库读取
+/// ⚠️ v6.1 异步改造：所有方法改为异步，避免死锁风险，提高性能
 /// </summary>
 public interface ITenantContext
 {
@@ -19,32 +20,32 @@ public interface ITenantContext
     /// <summary>
     /// 获取当前用户名（从数据库读取）
     /// </summary>
-    string? GetCurrentUsername();
+    Task<string?> GetCurrentUsernameAsync();
 
     /// <summary>
     /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId）
     /// </summary>
-    string? GetCurrentCompanyId();
+    Task<string?> GetCurrentCompanyIdAsync();
 
     /// <summary>
     /// 获取当前企业名称（从数据库读取）
     /// </summary>
-    string? GetCurrentCompanyName();
+    Task<string?> GetCurrentCompanyNameAsync();
 
     /// <summary>
     /// 是否为管理员（从数据库读取）
     /// </summary>
-    bool IsAdmin();
+    Task<bool> IsAdminAsync();
 
     /// <summary>
     /// 检查权限（从数据库读取）
     /// </summary>
-    bool HasPermission(string permission);
+    Task<bool> HasPermissionAsync(string permission);
 
     /// <summary>
     /// 获取用户权限列表（从数据库读取）
     /// </summary>
-    IEnumerable<string> GetUserPermissions();
+    Task<IEnumerable<string>> GetUserPermissionsAsync();
 }
 
 /// <summary>
@@ -77,46 +78,46 @@ public class TenantContext : ITenantContext
     /// <summary>
     /// 获取当前用户名（从数据库读取）
     /// </summary>
-    public string? GetCurrentUsername()
+    public async Task<string?> GetCurrentUsernameAsync()
     {
-        var userInfo = LoadUserInfo();
+        var userInfo = await LoadUserInfoAsync();
         return userInfo?.Username;
     }
 
     /// <summary>
     /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId）
     /// </summary>
-    public string? GetCurrentCompanyId()
+    public async Task<string?> GetCurrentCompanyIdAsync()
     {
-        var userInfo = LoadUserInfo();
+        var userInfo = await LoadUserInfoAsync();
         return userInfo?.CompanyId;
     }
 
     /// <summary>
     /// 获取当前企业名称（从数据库读取）
     /// </summary>
-    public string? GetCurrentCompanyName()
+    public async Task<string?> GetCurrentCompanyNameAsync()
     {
-        var userInfo = LoadUserInfo();
+        var userInfo = await LoadUserInfoAsync();
         return userInfo?.CompanyName;
     }
 
     /// <summary>
     /// 是否为管理员（从数据库读取）
     /// </summary>
-    public bool IsAdmin()
+    public async Task<bool> IsAdminAsync()
     {
-        var userInfo = LoadUserInfo();
+        var userInfo = await LoadUserInfoAsync();
         return userInfo?.IsAdmin ?? false;
     }
 
     /// <summary>
     /// 检查权限（从数据库读取）
     /// </summary>
-    public bool HasPermission(string permission)
+    public async Task<bool> HasPermissionAsync(string permission)
     {
         // 获取用户信息（避免重复查询）
-        var userInfo = LoadUserInfo();
+        var userInfo = await LoadUserInfoAsync();
         if (userInfo == null)
             return false;
         
@@ -130,16 +131,16 @@ public class TenantContext : ITenantContext
     /// <summary>
     /// 获取用户权限列表（从数据库读取）
     /// </summary>
-    public IEnumerable<string> GetUserPermissions()
+    public async Task<IEnumerable<string>> GetUserPermissionsAsync()
     {
-        var userInfo = LoadUserInfo();
+        var userInfo = await LoadUserInfoAsync();
         return userInfo?.Permissions ?? Enumerable.Empty<string>();
     }
 
     /// <summary>
     /// 加载用户信息（每次调用都从数据库读取，无缓存）
     /// </summary>
-    private UserInfo? LoadUserInfo()
+    private async Task<UserInfo?> LoadUserInfoAsync()
     {
         // 获取用户ID
         var userId = GetCurrentUserId();
@@ -148,10 +149,9 @@ public class TenantContext : ITenantContext
             return null;
         }
 
-        // 同步加载用户信息
         try
         {
-            return LoadUserInfoAsync(userId).GetAwaiter().GetResult();
+            return await LoadUserInfoInternalAsync(userId);
         }
         catch (Exception ex)
         {
@@ -163,7 +163,7 @@ public class TenantContext : ITenantContext
     /// <summary>
     /// 异步加载用户信息（使用 BsonDocument 避免跨项目依赖）
     /// </summary>
-    private async Task<UserInfo?> LoadUserInfoAsync(string userId)
+    private async Task<UserInfo?> LoadUserInfoInternalAsync(string userId)
     {
         try
         {

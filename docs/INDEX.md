@@ -295,6 +295,8 @@ docs/
 - [**v5.0 优化完成摘要**](optimization/OPTIMIZATION-V5-SUMMARY.md) - v5.0 架构优化总结 ⭐ **最新**
 - [**v5.0 优化前后对比**](optimization/V5-BEFORE-AFTER-COMPARISON.md) - 代码对比展示 ⭐ **推荐**
 - [**后端代码优化报告**](optimization/BACKEND-CODE-OPTIMIZATION-REPORT.md) - 后端架构优化详情 ⭐ **新增**
+- [**后端代码冗余优化**](optimization/BACKEND-CODE-REFACTORING.md) - **新增** - ITenantContext 异步改造和代码优化总结 ⭐ **最新**
+- [**ITenantContext 异步改造**](optimization/TENANT-CONTEXT-ASYNC-REFACTORING.md) - **新增** - ITenantContext 完全异步化改造，消除死锁风险 ⭐ **最新**
 - [**DataInitializer 微服务自动停止优化**](optimization/DATA-INITIALIZER-AUTO-STOP.md) - **新增** - DataInitializer 微服务完成初始化后自动停止，避免资源浪费 ⭐ **推荐**
 - [**基础组件使用指南**](optimization/BASE-COMPONENTS-GUIDE.md) - 基础组件开发指南 ⭐ **新增**
 - [**Cursor Rules 使用指南**](optimization/CURSOR-RULES-GUIDE.md) - 代码规则配置说明 ⭐ **新增**

@@ -1,3 +1,4 @@
+using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -9,14 +10,14 @@ namespace Platform.ApiService.Services;
 public class RuleService : IRuleService
 {
     private readonly IDatabaseOperationFactory<RuleListItem> _ruleFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly ITenantContext _tenantContext;
 
     public RuleService(
         IDatabaseOperationFactory<RuleListItem> ruleFactory,
-        IDatabaseOperationFactory<AppUser> userFactory)
+        ITenantContext tenantContext)
     {
         _ruleFactory = ruleFactory;
-        _userFactory = userFactory;
+        _tenantContext = tenantContext;
     }
     
     /// <summary>
@@ -24,14 +25,12 @@ public class RuleService : IRuleService
     /// </summary>
     private async Task<string> GetCurrentCompanyIdAsync()
     {
-        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
-        var currentUserId = _userFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(companyId))
         {
             throw new UnauthorizedAccessException("未找到当前企业信息");
         }
-        return currentUser.CurrentCompanyId;
+        return companyId;
     }
  
 

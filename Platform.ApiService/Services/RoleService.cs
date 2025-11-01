@@ -1,7 +1,6 @@
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
-using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using MongoDB.Driver;
 
@@ -20,25 +19,17 @@ public class RoleService : IRoleService
         IDatabaseOperationFactory<AppUser> userFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
         IDatabaseOperationFactory<Menu> menuFactory,
+       
         ILogger<RoleService> logger)
     {
         _roleFactory = roleFactory;
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
         _menuFactory = menuFactory;
+     
         _logger = logger;
     }
 
-    private async Task<string> GetCurrentCompanyIdAsync()
-    {
-        var currentUserId = _roleFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-        return currentUser.CurrentCompanyId;
-    }
 
     /// <summary>
     /// 获取所有角色

@@ -1,3 +1,4 @@
+using Platform.ApiService.Extensions;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
@@ -7,18 +8,18 @@ namespace Platform.ApiService.Services;
 public class UserActivityLogService : IUserActivityLogService
 {
     private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly ITenantContext _tenantContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<UserActivityLogService> _logger;
 
     public UserActivityLogService(
         IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
+        ITenantContext tenantContext,
         IHttpContextAccessor httpContextAccessor,
         ILogger<UserActivityLogService> logger)
     {
         _activityLogFactory = activityLogFactory;
-        _userFactory = userFactory;
+        _tenantContext = tenantContext;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
@@ -31,19 +32,10 @@ public class UserActivityLogService : IUserActivityLogService
     {
         try
         {
-            // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，从当前用户获取
-            var currentUserId = _userFactory.GetCurrentUserId();
-            if (string.IsNullOrEmpty(currentUserId))
-            {
-                return null;
-            }
-            
-            var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-            return currentUser?.CurrentCompanyId;
+            return await _tenantContext.GetCurrentCompanyIdAsync();
         }
         catch
         {
-            // 如果无法获取（如用户未登录），返回 null
             return null;
         }
     }

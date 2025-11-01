@@ -254,10 +254,7 @@ public class UserCompanyService : IUserCompanyService
     {
         // 验证当前用户是否是该企业的管理员
         var currentUserId = _userCompanyFactory.GetRequiredUserId();
-        if (!await IsUserAdminInCompanyAsync(currentUserId, companyId))
-        {
-            throw new UnauthorizedAccessException("只有企业管理员可以查看成员列表");
-        }
+        await this.RequireAdminAsync(currentUserId, companyId, "只有企业管理员可以查看成员列表");
         
         var filter = _userCompanyFactory.CreateFilterBuilder()
             .Equal(uc => uc.CompanyId, companyId)
@@ -327,10 +324,7 @@ public class UserCompanyService : IUserCompanyService
     {
         // 验证当前用户是否是该企业的管理员
         var currentUserId = _userCompanyFactory.GetRequiredUserId();
-        if (!await IsUserAdminInCompanyAsync(currentUserId, companyId))
-        {
-            throw new UnauthorizedAccessException("只有企业管理员可以分配角色");
-        }
+        await this.RequireAdminAsync(currentUserId, companyId, "只有企业管理员可以分配角色");
         
         // 验证所有角色都属于该企业
         if (roleIds.Any())
@@ -374,10 +368,7 @@ public class UserCompanyService : IUserCompanyService
     {
         // 验证当前用户是否是该企业的管理员
         var currentUserId = _userCompanyFactory.GetRequiredUserId();
-        if (!await IsUserAdminInCompanyAsync(currentUserId, companyId))
-        {
-            throw new UnauthorizedAccessException("只有企业管理员可以设置管理员");
-        }
+        await this.RequireAdminAsync(currentUserId, companyId, "只有企业管理员可以设置管理员");
         
         // 不能修改自己的管理员权限
         if (currentUserId == userId)
@@ -412,10 +403,7 @@ public class UserCompanyService : IUserCompanyService
     {
         // 验证当前用户是否是该企业的管理员
         var currentUserId = _userCompanyFactory.GetRequiredUserId();
-        if (!await IsUserAdminInCompanyAsync(currentUserId, companyId))
-        {
-            throw new UnauthorizedAccessException("只有企业管理员可以移除成员");
-        }
+        await this.RequireAdminAsync(currentUserId, companyId, "只有企业管理员可以移除成员");
         
         // 不能移除自己
         if (currentUserId == userId)

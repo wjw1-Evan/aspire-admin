@@ -41,7 +41,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 
     private (string? userId, string? username) GetActor()
     {
-        return (_tenantContext.GetCurrentUserId(), _tenantContext.GetCurrentUsername());
+        // 临时方案：审计字段使用同步等待（审计字段不影响业务逻辑）
+        // TODO: 考虑将审计字段获取改为可选或延迟异步加载
+        var usernameTask = _tenantContext.GetCurrentUsernameAsync();
+        var username = usernameTask.IsCompletedSuccessfully ? usernameTask.Result : null;
+        return (_tenantContext.GetCurrentUserId(), username);
     }
 
     private void TrySetProperty(object target, string propertyName, object? value)
@@ -645,7 +649,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public string? GetCurrentUsername()
     {
-        return _tenantContext.GetCurrentUsername();
+        // ⚠️ 警告：同步方法调用异步接口，不推荐使用
+        // 建议使用 TenantExtensions.GetCurrentUserAsync 或注入 ITenantContext 并调用异步方法
+        var task = _tenantContext.GetCurrentUsernameAsync();
+        return task.IsCompletedSuccessfully ? task.Result : null;
     }
 
     /// <summary>
@@ -653,7 +660,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public string? GetCurrentCompanyId()
     {
-        return ResolveCurrentCompanyId();
+        // ⚠️ 警告：同步方法调用异步接口，不推荐使用
+        // 建议使用 TenantExtensions.GetCurrentCompanyIdAsync 或注入 ITenantContext 并调用异步方法
+        var task = _tenantContext.GetCurrentCompanyIdAsync();
+        return task.IsCompletedSuccessfully ? task.Result : null;
     }
 
     /// <summary>
@@ -756,12 +766,13 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// <summary>
     /// 统一解析当前企业ID：从 ITenantContext 获取（ITenantContext 已从数据库读取）
     /// ⚠️ 变更：不再重复查询数据库，直接使用 ITenantContext 提供的数据
+    /// ⚠️ 警告：同步方法调用异步接口，不推荐使用
     /// </summary>
     private string? ResolveCurrentCompanyId()
     {
         // ✅ 直接使用 ITenantContext 从数据库读取的企业ID
-        // ITenantContext.GetCurrentCompanyId() 已经从数据库读取了 user.CurrentCompanyId
-        return _tenantContext.GetCurrentCompanyId();
+        var task = _tenantContext.GetCurrentCompanyIdAsync();
+        return task.IsCompletedSuccessfully ? task.Result : null;
     }
 
     /// <summary>

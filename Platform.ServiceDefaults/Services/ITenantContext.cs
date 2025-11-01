@@ -22,11 +22,6 @@ public interface ITenantContext
     string? GetCurrentUsername();
 
     /// <summary>
-    /// 获取当前用户角色（从数据库读取）
-    /// </summary>
-    string? GetCurrentUserRole();
-
-    /// <summary>
     /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId）
     /// </summary>
     string? GetCurrentCompanyId();
@@ -86,19 +81,6 @@ public class TenantContext : ITenantContext
     {
         var userInfo = LoadUserInfo();
         return userInfo?.Username;
-    }
-
-    /// <summary>
-    /// 获取当前用户角色（从数据库读取，返回第一个角色名称，如果是管理员则返回 "admin"）
-    /// </summary>
-    public string? GetCurrentUserRole()
-    {
-        var userInfo = LoadUserInfo();
-        if (userInfo?.IsAdmin == true)
-        {
-            return "admin";
-        }
-        return userInfo?.RoleNames?.FirstOrDefault();
     }
 
     /// <summary>

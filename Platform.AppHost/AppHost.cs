@@ -5,11 +5,12 @@ using Scalar.Aspire;
 var builder = DistributedApplication.CreateBuilder(args);
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
-var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Platform.Web";
-var jwtExpirationMinutes = builder.Configuration["Jwt:ExpirationMinutes"] ?? "60";
-var jwtRefreshTokenExpirationDays = builder.Configuration["Jwt:RefreshTokenExpirationDays"] ?? "7";
+var jwtConfig = builder.Configuration.GetSection("Jwt");
+var jwtSecretKey = jwtConfig["SecretKey"];
+var jwtIssuer = jwtConfig["Issuer"] ?? "Platform.ApiService";
+var jwtAudience = jwtConfig["Audience"] ?? "Platform.Web";
+var jwtExpirationMinutes = jwtConfig["ExpirationMinutes"] ?? "60";
+var jwtRefreshTokenExpirationDays = jwtConfig["RefreshTokenExpirationDays"] ?? "7";
 
 // 验证 JWT SecretKey 是否已配置
 if (string.IsNullOrWhiteSpace(jwtSecretKey))

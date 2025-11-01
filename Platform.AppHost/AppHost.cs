@@ -5,23 +5,7 @@ using Scalar.Aspire;
 var builder = DistributedApplication.CreateBuilder(args);
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
-var jwtConfig = builder.Configuration.GetSection("Jwt");
-var jwtSecretKey = jwtConfig["SecretKey"];
-var jwtIssuer = jwtConfig["Issuer"] ?? "Platform.ApiService";
-var jwtAudience = jwtConfig["Audience"] ?? "Platform.Web";
-var jwtExpirationMinutes = jwtConfig["ExpirationMinutes"] ?? "60";
-var jwtRefreshTokenExpirationDays = jwtConfig["RefreshTokenExpirationDays"] ?? "7";
-
-// 验证 JWT SecretKey 是否已配置
-if (string.IsNullOrWhiteSpace(jwtSecretKey))
-{
-    throw new InvalidOperationException(
-        "JWT SecretKey must be configured in AppHost. Set it via:\n" +
-        "  - User Secrets: dotnet user-secrets set 'Jwt:SecretKey' 'your-secret-key' (in Platform.AppHost directory)\n" +
-        "  - Environment Variables: Jwt__SecretKey='your-secret-key'\n" +
-        "  - Azure Key Vault or other configuration providers\n" +
-        "Never commit real secrets to source control!");
-}
+var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey");
 
 var mongo = builder.AddMongoDB("mongo").WithMongoExpress(config=>{ 
     config.WithLifetime(ContainerLifetime.Persistent);
@@ -43,11 +27,8 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WaitForCompletion(datainitializer)
         .WithHttpEndpoint().WithReplicas(3)
         .WithHttpHealthCheck("/health")
-        .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
-        .WithEnvironment("Jwt__Issuer", jwtIssuer)
-        .WithEnvironment("Jwt__Audience", jwtAudience)
-        .WithEnvironment("Jwt__ExpirationMinutes", jwtExpirationMinutes)
-        .WithEnvironment("Jwt__RefreshTokenExpirationDays", jwtRefreshTokenExpirationDays),
+        .WithEnvironment("Jwt__SecretKey", jwtSecretKey.Value)
+        
  };
 
 var yarp = builder.AddYarp("apigateway")

@@ -189,6 +189,7 @@ const MyActivity: React.FC = () => {
         </Tag>
       ),
       valueType: 'select',
+      sorter: true,
       valueEnum: {
         // 认证相关
         login: { text: '登录' },
@@ -320,11 +321,27 @@ const MyActivity: React.FC = () => {
         request={async (params, sort) => {
           const { current = 1, pageSize = 20, action } = params;
 
+          // 处理排序参数
+          let sortBy = 'createdAt'; // 默认按创建时间排序
+          let sortOrder: 'asc' | 'desc' = 'desc'; // 默认降序
+
+          if (sort && Object.keys(sort).length > 0) {
+            // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
+            const sortKey = Object.keys(sort)[0];
+            const sortValue = sort[sortKey];
+            
+            // 将驼峰命名转换为后端字段名（如果需要）
+            sortBy = sortKey === 'createdAt' ? 'createdAt' : sortKey;
+            sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
+          }
+
           try {
             const response = await getCurrentUserActivityLogs({
               page: current,
               pageSize,
               action,
+              sortBy,
+              sortOrder,
             });
 
             if (response.success && response.data) {

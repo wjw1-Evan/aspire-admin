@@ -27,5 +27,7 @@ export interface GetUserActivityLogsParams {
   action?: string;
   startDate?: string;
   endDate?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 

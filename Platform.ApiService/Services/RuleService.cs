@@ -45,7 +45,9 @@ public class RuleService : IRuleService
         // 按名称筛选
         if (!string.IsNullOrEmpty(queryParams.Name))
         {
-            filterBuilder.Regex(r => r.Name, queryParams.Name, "i");
+#pragma warning disable CS8603 // FilterBuilder.Regex 总是返回 this，不会返回 null
+            filterBuilder = filterBuilder.Regex(r => r.Name, queryParams.Name, "i");
+#pragma warning restore CS8603
         }
 
         var filter = filterBuilder.Build();

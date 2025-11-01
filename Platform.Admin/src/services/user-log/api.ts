@@ -25,6 +25,8 @@ export async function getCurrentUserActivityLogs(
     action?: string;
     startDate?: string;
     endDate?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   },
   options?: Record<string, any>,
 ) {

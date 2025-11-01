@@ -528,8 +528,12 @@ public class UserService : IUserService
         // 搜索过滤
         if (!string.IsNullOrEmpty(request.Search))
         {
-            filterBuilder.Regex(u => u.Username, request.Search, "i");
-            filterBuilder.Regex(u => u.Email, request.Search, "i");
+#pragma warning disable CS8603 // FilterBuilder.Regex 总是返回 this，不会返回 null
+            filterBuilder
+                .Regex(u => u.Username, request.Search, "i");
+            filterBuilder
+                .Regex(u => u.Email, request.Search, "i");
+#pragma warning restore CS8603
         }
 
         // 角色过滤
@@ -872,7 +876,9 @@ public class UserService : IUserService
         int pageSize = 20,
         string? action = null,
         DateTime? startDate = null,
-        DateTime? endDate = null)
+        DateTime? endDate = null,
+        string? sortBy = null,
+        string? sortOrder = null)
     {
         // 获取当前用户ID
         var currentUserId = _userFactory.GetRequiredUserId();
@@ -904,11 +910,43 @@ public class UserService : IUserService
         // 获取总数
         var total = await _activityLogFactory.CountAsync(filter);
         
-        // 获取分页数据
-        var sort = _activityLogFactory.CreateSortBuilder()
-            .Descending(log => log.CreatedAt)
-            .Build();
+        // 构建排序
+        var sortBuilder = _activityLogFactory.CreateSortBuilder();
         
+        // 默认按创建时间降序
+        if (string.IsNullOrEmpty(sortBy) || sortBy.Equals("createdAt", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase))
+            {
+                sortBuilder.Descending(log => log.CreatedAt);
+            }
+            else
+            {
+                sortBuilder.Ascending(log => log.CreatedAt);
+            }
+        }
+        else if (sortBy.Equals("action", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase))
+            {
+                sortBuilder.Descending(log => log.Action);
+            }
+            else
+            {
+                sortBuilder.Ascending(log => log.Action);
+            }
+            // 操作类型排序后，再按创建时间降序作为次要排序
+            sortBuilder.Descending(log => log.CreatedAt);
+        }
+        else
+        {
+            // 未知排序字段，使用默认排序（按创建时间降序）
+            sortBuilder.Descending(log => log.CreatedAt);
+        }
+        
+        var sort = sortBuilder.Build();
+        
+        // 获取分页数据
         var (logs, totalFromPaged) = await _activityLogFactory.FindPagedAsync(filter, sort, page, pageSize);
         
         return (logs, total);

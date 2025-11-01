@@ -133,7 +133,7 @@ public class FilterBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
             var fieldName = GetFieldName(field);
             _filters.Add(_builder.Regex(fieldName, new MongoDB.Bson.BsonRegularExpression(pattern, options)));
         }
-        return this;
+        return this!;
     }
 
     /// <summary>

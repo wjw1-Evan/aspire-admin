@@ -533,14 +533,20 @@ public class UserController : BaseApiController
     /// <param name="action">操作类型（可选）</param>
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
+    /// <param name="sortBy">排序字段（可选，默认：createdAt，支持：createdAt、action）</param>
+    /// <param name="sortOrder">排序方向（可选，默认：desc，支持：asc、desc）</param>
     /// <remarks>
-    /// 获取当前登录用户的活动日志，支持分页、操作类型筛选和日期范围筛选。
+    /// 获取当前登录用户的活动日志，支持分页、操作类型筛选、日期范围筛选和排序。
     /// 
     /// 权限要求：用户必须已登录
     /// 
+    /// 支持的排序字段：
+    /// - createdAt：创建时间（默认）
+    /// - action：操作类型
+    /// 
     /// 示例请求：
     /// ```
-    /// GET /api/user/my-activity-logs-paged?page=1&pageSize=20&action=login
+    /// GET /api/user/my-activity-logs-paged?page=1&amp;pageSize=20&amp;action=login&amp;sortBy=createdAt&amp;sortOrder=desc
     /// Authorization: Bearer {token}
     /// ```
     /// 
@@ -567,7 +573,9 @@ public class UserController : BaseApiController
         [FromQuery] int pageSize = 20,
         [FromQuery] string? action = null,
         [FromQuery] DateTime? startDate = null,
-        [FromQuery] DateTime? endDate = null)
+        [FromQuery] DateTime? endDate = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortOrder = null)
     {
         // ✅ 添加输入验证
         if (page < 1 || page > 10000)
@@ -580,12 +588,29 @@ public class UserController : BaseApiController
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
             throw new ArgumentException("开始日期不能晚于结束日期");
         
+        // 验证排序参数
+        if (!string.IsNullOrEmpty(sortBy))
+        {
+            var allowedSortFields = new[] { "createdAt", "action" };
+            if (!allowedSortFields.Contains(sortBy, StringComparer.OrdinalIgnoreCase))
+                throw new ArgumentException($"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
+        }
+        
+        if (!string.IsNullOrEmpty(sortOrder))
+        {
+            var allowedSortOrders = new[] { "asc", "desc" };
+            if (!allowedSortOrders.Contains(sortOrder, StringComparer.OrdinalIgnoreCase))
+                throw new ArgumentException($"不支持的排序方向: {sortOrder}，支持: asc、desc");
+        }
+        
         var (logs, total) = await _userService.GetCurrentUserActivityLogsAsync(
             page, 
             pageSize, 
             action, 
             startDate, 
-            endDate);
+            endDate,
+            sortBy,
+            sortOrder);
         
         return Success(new
         {

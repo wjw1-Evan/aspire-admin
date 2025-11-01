@@ -124,7 +124,8 @@
 ## 📚 相关文档
 
 - [帮助模块功能](HELP-MODULE-FEATURE.md)
-- [v6.0 帮助系统更新](V6-HELP-SYSTEM-UPDATE.md)
+- [v6.0 帮助系统更新](../archived/versions/V6-HELP-SYSTEM-UPDATE.md) (已归档)
+- [v5.0 帮助系统更新](../archived/versions/V5-HELP-SYSTEM-UPDATE.md) (已归档)
 - [代码修改同步更新规范](../README.md)
 
 ---

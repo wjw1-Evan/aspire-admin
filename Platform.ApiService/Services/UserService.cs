@@ -304,9 +304,11 @@ public class UserService : IUserService
             }
 
             // 更新用户在企业中的角色
+            // ✅ 修复：添加软删除过滤，避免更新已删除的记录
             var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
                 .Equal(uc => uc.UserId, id)
                 .Equal(uc => uc.CompanyId, companyId)
+                .Equal(uc => uc.IsDeleted, false)
                 .Build();
 
             var userCompanyUpdate = _userCompanyFactory.CreateUpdateBuilder()
@@ -320,7 +322,12 @@ public class UserService : IUserService
                 IsUpsert = false
             };
 
-            await _userCompanyFactory.FindOneAndUpdateAsync(userCompanyFilter, userCompanyUpdate, userCompanyOptions);
+            // ✅ 修复：检查更新结果，如果 UserCompany 记录不存在则抛出异常
+            var updatedUserCompany = await _userCompanyFactory.FindOneAndUpdateAsync(userCompanyFilter, userCompanyUpdate, userCompanyOptions);
+            if (updatedUserCompany == null)
+            {
+                throw new InvalidOperationException($"用户 {id} 在企业 {companyId} 中的关联记录不存在，无法更新角色");
+            }
         }
 
         return updatedUser;

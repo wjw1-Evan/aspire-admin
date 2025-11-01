@@ -6,6 +6,8 @@ JWT（JSON Web Token）密钥是系统安全的核心。**绝对不能**将真�
 
 本指南说明如何在不同环境中安全地配置JWT密钥。
 
+**⭐ 推荐方式**：使用 .NET Aspire 在 AppHost 中集中管理 JWT 配置，通过环境变量自动传递给所有服务。
+
 ---
 
 ## ⚠️ 安全原则
@@ -18,9 +20,91 @@ JWT（JSON Web Token）密钥是系统安全的核心。**绝对不能**将真�
 
 ---
 
-## 🔧 开发环境配置
+## 🎯 Aspire 集中管理（推荐方式）
 
-### 方法1：用户密钥（推荐）
+### 概述
+
+在 `Platform.AppHost` 中集中管理 JWT 配置，Aspire 会自动将配置传递给 API 服务。这样可以：
+- ✅ 在一个地方管理所有服务的配置
+- ✅ 支持配置继承和环境特定配置
+- ✅ 自动处理配置传递和验证
+
+### 配置步骤
+
+#### 1. 在 AppHost 中设置 User Secrets（开发环境）
+
+```bash
+# 进入 AppHost 目录
+cd Platform.AppHost
+
+# 初始化用户密钥（如果尚未初始化）
+dotnet user-secrets init
+
+# 设置 JWT SecretKey
+dotnet user-secrets set "Jwt:SecretKey" "your-development-secret-key-min-32-chars"
+
+# 可选：设置其他 JWT 配置
+dotnet user-secrets set "Jwt:Issuer" "Platform.ApiService.Dev"
+dotnet user-secrets set "Jwt:Audience" "Platform.Web.Dev"
+dotnet user-secrets set "Jwt:ExpirationMinutes" "120"
+dotnet user-secrets set "Jwt:RefreshTokenExpirationDays" "30"
+
+# 验证配置
+dotnet user-secrets list
+```
+
+#### 2. 使用环境变量（生产环境）
+
+```bash
+# 方式1：直接设置环境变量
+export Jwt__SecretKey="your-production-secret-key-should-be-very-long-and-random"
+export Jwt__Issuer="Platform.ApiService"
+export Jwt__Audience="Platform.Web"
+
+# 方式2：在启动时设置
+Jwt__SecretKey="your-secret-key" dotnet run --project Platform.AppHost
+```
+
+#### 3. 配置文件结构
+
+AppHost 的配置文件：
+- `Platform.AppHost/appsettings.json` - 默认配置（SecretKey 为空）
+- `Platform.AppHost/appsettings.Development.json` - 开发环境配置
+
+**重要**：`SecretKey` 在配置文件中必须为空，实际密钥通过 User Secrets 或环境变量设置。
+
+### 工作原理
+
+1. **AppHost 读取配置**：从 `appsettings.json`、User Secrets、环境变量等读取 JWT 配置
+2. **验证配置**：如果 `SecretKey` 未配置，AppHost 启动时会抛出异常
+3. **传递配置**：通过 `WithEnvironment()` 方法将配置传递给 API 服务
+4. **API 服务使用**：API 服务从环境变量读取配置（`.NET` 配置系统自动处理）
+
+### 优势
+
+- ✅ **集中管理**：所有配置在 AppHost 中统一管理
+- ✅ **类型安全**：配置在编译时验证
+- ✅ **环境隔离**：不同环境使用不同配置
+- ✅ **自动传递**：无需手动配置每个服务
+- ✅ **配置继承**：支持配置文件继承和覆盖
+
+### 验证配置
+
+启动 AppHost 时，如果 JWT SecretKey 未配置，会看到错误：
+
+```
+System.InvalidOperationException: JWT SecretKey must be configured in AppHost. Set it via:
+  - User Secrets: dotnet user-secrets set 'Jwt:SecretKey' 'your-secret-key' (in Platform.AppHost directory)
+  - Environment Variables: Jwt__SecretKey='your-secret-key'
+  - Azure Key Vault or other configuration providers
+Never commit real secrets to source control!
+```
+
+---
+
+## 🔧 开发环境配置（传统方式）
+
+### 方法1：用户密钥（直接配置 API 服务）
 
 使用 .NET 用户密钥功能：
 
@@ -360,10 +444,12 @@ export Jwt__SecretKey='your-secret-key-with-$pecial-chars'
 
 ## 📚 相关文档
 
+- [.NET Aspire 配置管理](https://learn.microsoft.com/dotnet/aspire/fundamentals/configuration)
 - [.NET User Secrets](https://docs.microsoft.com/aspnet/core/security/app-secrets)
 - [Azure Key Vault](https://docs.microsoft.com/azure/key-vault/)
 - [环境变量最佳实践](https://12factor.net/config)
 - [JWT最佳实践](https://tools.ietf.org/html/rfc8725)
+- [Platform.AppHost 配置](../Platform.AppHost/appsettings.json)
 
 ---
 

@@ -170,8 +170,14 @@ builder.Services.AddScoped<IImageCaptchaService, ImageCaptchaService>();
 
 // Configure JWT authentication
 // JWT SecretKey 必须配置，不提供默认值以确保安全
-var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] 
-    ?? throw new InvalidOperationException("JWT SecretKey must be configured. Set it in appsettings.json or environment variables.");
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
+if (string.IsNullOrWhiteSpace(jwtSecretKey))
+{
+    throw new InvalidOperationException(
+        "JWT SecretKey must be configured. Set it via User Secrets (dotnet user-secrets set 'Jwt:SecretKey' 'your-key'), " +
+        "Environment Variables (Jwt__SecretKey), or Azure Key Vault. " +
+        "Never commit secrets to source control!");
+}
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Platform.Web";
 

@@ -6,16 +6,25 @@
 
 ## 🚀 快速开始（开发环境）
 
-### 1. 配置JWT密钥
+### 1. 配置JWT密钥（使用 Aspire 集中管理）
 
-**后端配置**:
+**⭐ 推荐方式**：在 AppHost 中配置，自动传递给所有服务：
 
 ```bash
-# 进入API服务目录
-cd Platform.ApiService
+# 进入 AppHost 目录
+cd Platform.AppHost
+
+# 初始化用户密钥（如果尚未初始化）
+dotnet user-secrets init
 
 # 设置JWT密钥（使用User Secrets）
 dotnet user-secrets set "Jwt:SecretKey" "your-development-secret-key-at-least-32-characters-long"
+
+# 可选：设置其他JWT配置
+dotnet user-secrets set "Jwt:Issuer" "Platform.ApiService.Dev"
+dotnet user-secrets set "Jwt:Audience" "Platform.Web.Dev"
+dotnet user-secrets set "Jwt:ExpirationMinutes" "120"
+dotnet user-secrets set "Jwt:RefreshTokenExpirationDays" "30"
 
 # 验证配置
 dotnet user-secrets list
@@ -28,15 +37,18 @@ dotnet user-secrets list
 openssl rand -base64 32
 ```
 
+**💡 说明**：
+- AppHost 会自动将 JWT 配置传递给 API 服务
+- 不需要在 `Platform.ApiService` 中单独配置
+- 所有服务共享相同的配置源
+
 ### 2. 启动系统
 
 ```bash
 # 启动完整系统（推荐）
 dotnet run --project Platform.AppHost
 
-# 或分别启动各组件
-cd Platform.ApiService && dotnet run
-cd Platform.Admin && npm start
+# AppHost 会自动启动所有服务（MongoDB、API服务、前端应用等）
 ```
 
 ---

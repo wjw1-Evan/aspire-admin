@@ -27,10 +27,15 @@ public class JwtService : IJwtService
     public JwtService(IConfiguration configuration)
     {
         // 🔒 安全修复：移除默认密钥fallback，强制配置
-        _secretKey = configuration["Jwt:SecretKey"] 
-            ?? throw new InvalidOperationException(
-                "JWT SecretKey must be configured. Set it via User Secrets, Environment Variables, or Azure Key Vault. " +
+        var secretKey = configuration["Jwt:SecretKey"];
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            throw new InvalidOperationException(
+                "JWT SecretKey must be configured. Set it via User Secrets (dotnet user-secrets set 'Jwt:SecretKey' 'your-key'), " +
+                "Environment Variables (Jwt__SecretKey), or Azure Key Vault. " +
                 "Never commit secrets to source control!");
+        }
+        _secretKey = secretKey;
         _issuer = configuration["Jwt:Issuer"] ?? "Platform.ApiService";
         _audience = configuration["Jwt:Audience"] ?? "Platform.Web";
         _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "60");

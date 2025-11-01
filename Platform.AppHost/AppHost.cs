@@ -4,6 +4,24 @@ using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// 🔒 从 Aspire 配置中读取 JWT 设置
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Platform.Web";
+var jwtExpirationMinutes = builder.Configuration["Jwt:ExpirationMinutes"] ?? "60";
+var jwtRefreshTokenExpirationDays = builder.Configuration["Jwt:RefreshTokenExpirationDays"] ?? "7";
+
+// 验证 JWT SecretKey 是否已配置
+if (string.IsNullOrWhiteSpace(jwtSecretKey))
+{
+    throw new InvalidOperationException(
+        "JWT SecretKey must be configured in AppHost. Set it via:\n" +
+        "  - User Secrets: dotnet user-secrets set 'Jwt:SecretKey' 'your-secret-key' (in Platform.AppHost directory)\n" +
+        "  - Environment Variables: Jwt__SecretKey='your-secret-key'\n" +
+        "  - Azure Key Vault or other configuration providers\n" +
+        "Never commit real secrets to source control!");
+}
+
 var mongo = builder.AddMongoDB("mongo").WithMongoExpress(config=>{ 
     config.WithLifetime(ContainerLifetime.Persistent);
 }).WithLifetime(ContainerLifetime.Persistent).WithDataVolume();
@@ -18,11 +36,17 @@ var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("dat
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
     // 核心业务服务（端口不暴露，仅供内部访问）
+    // 🔒 通过环境变量传递 JWT 配置
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
         .WithReference(mongodb)
         .WaitForCompletion(datainitializer)
         .WithHttpEndpoint().WithReplicas(3)
-        .WithHttpHealthCheck("/health"),
+        .WithHttpHealthCheck("/health")
+        .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+        .WithEnvironment("Jwt__Issuer", jwtIssuer)
+        .WithEnvironment("Jwt__Audience", jwtAudience)
+        .WithEnvironment("Jwt__ExpirationMinutes", jwtExpirationMinutes)
+        .WithEnvironment("Jwt__RefreshTokenExpirationDays", jwtRefreshTokenExpirationDays),
  };
 
 var yarp = builder.AddYarp("apigateway")

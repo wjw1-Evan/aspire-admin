@@ -77,29 +77,11 @@ public class UserActivityLogService : IUserActivityLogService
 
     /// <summary>
     /// 获取用户活动日志（分页）
+    /// ✅ 使用数据工厂的自动企业过滤（UserActivityLog 实现了 IMultiTenant）
     /// </summary>
     public async Task<UserActivityLogPagedResponse> GetActivityLogsAsync(GetUserActivityLogsRequest request)
     {
         var filterBuilder = _activityLogFactory.CreateFilterBuilder();
-
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await TryGetCurrentCompanyIdAsync();
-        if (!string.IsNullOrEmpty(companyId))
-        {
-            filterBuilder.Equal(log => log.CompanyId, companyId);
-        }
-        else
-        {
-            // 如果无法获取企业上下文，返回空结果
-            return new UserActivityLogPagedResponse
-            {
-                Data = new List<UserActivityLog>(),
-                Total = 0,
-                Page = request.Page,
-                PageSize = request.PageSize,
-                TotalPages = 0
-            };
-        }
 
         // 按用户ID筛选
         if (!string.IsNullOrEmpty(request.UserId))
@@ -126,6 +108,7 @@ public class UserActivityLogService : IUserActivityLogService
 
         var filter = filterBuilder.Build();
 
+        // ✅ 数据工厂会自动添加企业过滤（因为 UserActivityLog 实现了 IMultiTenant）
         // 计算总数
         var total = await _activityLogFactory.CountAsync(filter);
 
@@ -150,26 +133,20 @@ public class UserActivityLogService : IUserActivityLogService
 
     /// <summary>
     /// 获取用户的活动日志
+    /// ✅ 使用数据工厂的自动企业过滤（UserActivityLog 实现了 IMultiTenant）
     /// </summary>
     public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
     {
-        var filterBuilder = _activityLogFactory.CreateFilterBuilder()
-            .Equal(log => log.UserId, userId);
+        var filter = _activityLogFactory.CreateFilterBuilder()
+            .Equal(log => log.UserId, userId)
+            .Build();
+        
+        var sort = _activityLogFactory.CreateSortBuilder()
+            .Descending(log => log.CreatedAt)
+            .Build();
 
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await TryGetCurrentCompanyIdAsync();
-        if (!string.IsNullOrEmpty(companyId))
-        {
-            filterBuilder.Equal(log => log.CompanyId, companyId);
-        }
-
-        var filter = filterBuilder.Build();
-        var sortBuilder = _activityLogFactory.CreateSortBuilder()
-            .Descending(log => log.CreatedAt);
-
-        return await _activityLogFactory.FindAsync(filter, 
-            limit: limit, 
-            sort: sortBuilder.Build());
+        // ✅ 数据工厂会自动添加企业过滤（因为 UserActivityLog 实现了 IMultiTenant）
+        return await _activityLogFactory.FindAsync(filter, sort: sort, limit: limit);
     }
 
     /// <summary>

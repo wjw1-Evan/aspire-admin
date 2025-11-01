@@ -154,16 +154,35 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         return await _collection.CountDocumentsAsync(multiTenantFilter);
     }
 
+    /// <summary>
+    /// 创建多租户过滤器（已修复：从数据库读取企业ID，使用正确的MongoDB字段名）
+    /// </summary>
     private FilterDefinition<T> CreateMultiTenantFilter()
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
+        // ✅ 从数据库读取当前用户的 CurrentCompanyId（不使用 JWT token）
+        var userId = _tenantContext.GetCurrentUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new UnauthorizedAccessException("未找到用户信息");
+        }
+        
+        // 从 users 集合读取 currentCompanyId
+        var users = _database.GetCollection<BsonDocument>("users");
+        var doc = users.Find(...).Project(...).FirstOrDefault();
+        var companyId = doc?.GetValue("currentCompanyId", BsonNull.Value);
+        
+        if (string.IsNullOrEmpty(companyId?.AsString))
         {
             throw new UnauthorizedAccessException("未找到企业信息");
         }
 
+        // ✅ 使用正确的 MongoDB 字段名（从 BsonElement 特性获取）
+        var companyIdProperty = typeof(T).GetProperty("CompanyId");
+        var bsonElementAttr = companyIdProperty?.GetCustomAttribute<Bson.Serialization.Attributes.BsonElementAttribute>();
+        var fieldName = bsonElementAttr?.ElementName ?? "companyId";  // 统一使用小写 camelCase
+        
         // 只返回当前企业的数据
-        return Builders<T>.Filter.Eq("companyId", companyId);
+        return Builders<T>.Filter.Eq(fieldName, companyId.AsString);
     }
 
     // 跨租户查询方法（特殊场景使用）
@@ -294,26 +313,21 @@ public class RoleService : IRoleService
 
     public async Task<List<Role>> GetRolesAsync(RoleListRequest request)
     {
-        // ✅ 自动过滤当前企业的角色（实现 IMultiTenant，自动过滤）
-        var filter = _roleFactory.CreateFilterBuilder()
-            .Build();  // 无需手动添加 CompanyId 过滤，工厂自动处理
+        var filterBuilder = _roleFactory.CreateFilterBuilder();
 
+        // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
+        // 只添加业务过滤条件
         if (!string.IsNullOrEmpty(request.Keyword))
         {
-            var searchFilter = _roleFactory.CreateFilterBuilder()
-                .Regex(r => r.Name, request.Keyword)
-                .Build();
-            
-            filter = _roleFactory.CreateFilterBuilder()
-                .And(filter)
-                .And(searchFilter)
-                .Build();
+            filterBuilder.Regex(r => r.Name, request.Keyword);
         }
 
+        var filter = filterBuilder.Build();
         var sort = _roleFactory.CreateSortBuilder()
             .Descending(r => r.CreatedAt)
             .Build();
 
+        // ✅ 数据工厂会自动添加企业过滤
         return await _roleFactory.FindAsync(filter, sort, request.Limit);
     }
 }
@@ -866,8 +880,13 @@ public class UserService : IUserService
 
 创建或修改多租户功能时检查：
 
-- [ ] 数据模型包含 CompanyId 字段
-- [ ] 数据库操作自动过滤租户数据
+- [ ] 数据模型包含 CompanyId 字段（IMultiTenant 实体）
+- [ ] **数据库操作自动过滤租户数据**：
+  - [ ] 所有实现了 `IMultiTenant` 的实体查询会自动应用企业过滤
+  - [ ] **禁止手动添加 CompanyId 过滤** - 依赖数据工厂的自动过滤
+  - [ ] 创建实体时必须设置 `CompanyId`（使用 `GetRequiredCompanyId()`）
+  - [ ] 数据工厂从数据库读取企业ID（不使用 JWT token）
+  - [ ] 使用正确的 MongoDB 字段名（从 `BsonElement` 特性获取）
 - [ ] 服务使用租户上下文
 - [ ] 权限控制正确实现
 - [ ] 敏感数据加密存储

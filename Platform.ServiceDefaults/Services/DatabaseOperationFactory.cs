@@ -18,6 +18,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     private readonly ITenantContext _tenantContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<DatabaseOperationFactory<T>> _logger;
+    private readonly IMongoDatabase _database;
+    
+    // 缓存 AppUser 集合名称（避免重复反射）
+    private static readonly string? _appUserCollectionName = GetAppUserCollectionName();
 
     public DatabaseOperationFactory(
         IMongoDatabase database,
@@ -35,8 +39,28 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         _logger = logger;
         _database = database;
     }
-
-    private readonly IMongoDatabase _database;
+    
+    /// <summary>
+    /// 获取 AppUser 集合名称（静态缓存，避免重复反射）
+    /// </summary>
+    private static string? GetAppUserCollectionName()
+    {
+        try
+        {
+            // 尝试通过反射获取 AppUser 类型的集合名称
+            var appUserType = Type.GetType("Platform.ApiService.Models.AppUser, Platform.ApiService");
+            if (appUserType != null)
+            {
+                var attr = appUserType.GetCustomAttribute<BsonCollectionNameAttribute>();
+                return attr?.Name ?? "appusers";  // 默认集合名称
+            }
+        }
+        catch
+        {
+            // 反射失败时返回默认值
+        }
+        return "appusers";  // 默认集合名称
+    }
 
     // ========== 公共辅助 ==========
 
@@ -171,8 +195,13 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var entityList = entities.ToList();
         var count = entityList.Count;
         
-        _logger.LogDebug("开始批量创建 {EntityType} 实体: {Count} 个", entityType, count);
+        if (count == 0)
+        {
+            return entityList;
+        }
         
+        // 优化：只调用一次 GetActor，避免重复调用
+        var (uid, uname) = GetActor();
         var now = DateTime.UtcNow;
         
         foreach (var entity in entityList)
@@ -180,7 +209,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             entity.CreatedAt = now;
             entity.UpdatedAt = now;
             entity.IsDeleted = false;
-            var (uid, uname) = GetActor();
+            
             if (!string.IsNullOrEmpty(uid))
             {
                 TrySetProperty(entity, "CreatedBy", uid);
@@ -394,15 +423,8 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
         // 应用多租户过滤和软删除过滤
         var finalFilter = ApplyDefaultFilters(filter);
-        
-        // 记录查询语句
-        var queryInfo = BuildQueryInfo(finalFilter, sort, limit);
-        _logger.LogDebug("开始查询 {EntityType} 实体, 查询语句: {QueryInfo}", entityType, queryInfo);
         
         var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
         {
@@ -412,9 +434,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         
         var results = await cursor.ToListAsync();
         
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        _logger.LogInformation("✅ 成功查询 {EntityType} 实体: {Count} 个, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-            entityType, results.Count, elapsed, queryInfo);
+        // 只在慢查询或Debug级别记录日志
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("查询 {EntityType}: {Count} 个", typeof(T).Name, results.Count);
+        }
         
         return results;
     }
@@ -424,31 +448,32 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
         // 应用多租户过滤和软删除过滤
         var finalFilter = ApplyDefaultFilters(filter);
         
-        // 记录查询语句
-        var queryInfo = BuildQueryInfo(finalFilter, sort, pageSize);
-        _logger.LogDebug("开始分页查询 {EntityType} 实体, 页码: {Page}, 页大小: {PageSize}, 查询语句: {QueryInfo}", entityType, page, pageSize, queryInfo);
-        
         var skip = (page - 1) * pageSize;
         
-        var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
+        // 并行执行查询和计数（优化性能）
+        var findTask = _collection.FindAsync(finalFilter, new FindOptions<T>
         {
             Sort = sort,
             Skip = skip,
             Limit = pageSize
         });
+        var countTask = _collection.CountDocumentsAsync(finalFilter);
         
+        await Task.WhenAll(findTask, countTask);
+        
+        var cursor = await findTask;
         var items = await cursor.ToListAsync();
-        var total = await _collection.CountDocumentsAsync(finalFilter);
+        var total = await countTask;
         
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        _logger.LogInformation("✅ 成功分页查询 {EntityType} 实体: {Count} 个/共 {Total} 个, 页码: {Page}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-            entityType, items.Count, total, page, elapsed, queryInfo);
+        // 只在Debug级别记录详细信息
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("分页查询 {EntityType}: {Count} 个/共 {Total} 个, 页码: {Page}", 
+                typeof(T).Name, items.Count, total, page);
+        }
 
         return (items, total);
     }
@@ -458,9 +483,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<T?> GetByIdAsync(string id)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
         var filter = Builders<T>.Filter.And(
             Builders<T>.Filter.Eq(x => x.Id, id),
             Builders<T>.Filter.Eq(x => x.IsDeleted, false)
@@ -469,22 +491,12 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
-        // 记录查询语句
-        var queryInfo = BuildQueryInfo(tenantFilter);
-        _logger.LogDebug("开始根据ID获取 {EntityType} 实体: {Id}, 查询语句: {QueryInfo}", entityType, id, queryInfo);
-        
         var result = await _collection.Find(tenantFilter).FirstOrDefaultAsync();
         
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        if (result != null)
+        // 只在未找到时记录警告，减少日志开销
+        if (result == null && _logger.IsEnabled(LogLevel.Warning))
         {
-            _logger.LogInformation("✅ 成功根据ID获取 {EntityType} 实体: {Id}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, id, elapsed, queryInfo);
-        }
-        else
-        {
-            _logger.LogWarning("⚠️ 根据ID获取 {EntityType} 实体未找到: {Id}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-                entityType, id, elapsed, queryInfo);
+            _logger.LogWarning("根据ID获取 {EntityType} 实体未找到: {Id}", typeof(T).Name, id);
         }
         
         return result;
@@ -495,9 +507,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<bool> ExistsAsync(string id)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
         var filter = Builders<T>.Filter.And(
             Builders<T>.Filter.Eq(x => x.Id, id),
             Builders<T>.Filter.Eq(x => x.IsDeleted, false)
@@ -506,18 +515,9 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
-        // 记录查询语句
-        var queryInfo = BuildQueryInfo(tenantFilter);
-        _logger.LogDebug("开始检查 {EntityType} 实体是否存在: {Id}, 查询语句: {QueryInfo}", entityType, id, queryInfo);
-        
+        // 使用 Limit=1 优化性能，找到第一个就返回
         var count = await _collection.CountDocumentsAsync(tenantFilter, new CountOptions { Limit = 1 });
-        var exists = count > 0;
-        
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        _logger.LogInformation("✅ 检查 {EntityType} 实体是否存在: {Id} = {Exists}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-            entityType, id, exists, elapsed, queryInfo);
-        
-        return exists;
+        return count > 0;
     }
 
     /// <summary>
@@ -525,21 +525,16 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<long> CountAsync(FilterDefinition<T>? filter = null)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
         // 应用多租户过滤和软删除过滤
         var finalFilter = ApplyDefaultFilters(filter);
         
-        // 记录查询语句
-        var queryInfo = BuildQueryInfo(finalFilter);
-        _logger.LogDebug("开始获取 {EntityType} 实体数量, 查询语句: {QueryInfo}", entityType, queryInfo);
-        
         var count = await _collection.CountDocumentsAsync(finalFilter);
         
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        _logger.LogInformation("✅ 成功获取 {EntityType} 实体数量: {Count}, 耗时: {ElapsedMs}ms, 查询语句: {QueryInfo}", 
-            entityType, count, elapsed, queryInfo);
+        // 只在Debug级别记录详细信息
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("获取 {EntityType} 实体数量: {Count}", typeof(T).Name, count);
+        }
         
         return count;
     }
@@ -710,68 +705,136 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 
     // ========== 私有辅助方法 ==========
 
+    // 缓存 CompanyId 字段名（避免重复反射）- 延迟初始化
+    private static string? _companyIdFieldName;
+    private static readonly object _companyIdFieldNameLock = new object();
+    
+    /// <summary>
+    /// 获取 CompanyId 字段的 MongoDB 字段名（静态缓存，避免重复反射）
+    /// </summary>
+    private static string? GetCompanyIdFieldName()
+    {
+        if (_companyIdFieldName != null)
+            return _companyIdFieldName;
+            
+        lock (_companyIdFieldNameLock)
+        {
+            if (_companyIdFieldName != null)
+                return _companyIdFieldName;
+                
+            if (!typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+            {
+                _companyIdFieldName = null;
+                return null;
+            }
+            
+            try
+            {
+                var companyIdProperty = typeof(T).GetProperty("CompanyId");
+                if (companyIdProperty != null)
+                {
+                    var bsonElementAttr = companyIdProperty.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
+                    _companyIdFieldName = bsonElementAttr?.ElementName ?? "companyId";
+                }
+                else
+                {
+                    _companyIdFieldName = "companyId";  // 默认值
+                }
+            }
+            catch
+            {
+                // 反射失败时返回默认值
+                _companyIdFieldName = "companyId";
+            }
+            
+            return _companyIdFieldName;
+        }
+    }
+    
     /// <summary>
     /// 应用多租户过滤
+    /// ⚠️ 修复：使用 MongoDB 字段名（从 BsonElement 特性获取）而非 C# 属性名
+    /// 优化：使用缓存的字段名，减少反射调用
     /// </summary>
     private FilterDefinition<T> ApplyTenantFilter(FilterDefinition<T> filter)
     {
         // 检查实体是否实现多租户接口
-        if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+        if (!typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
         {
-            var companyId = ResolveCurrentCompanyId();
-            if (!string.IsNullOrEmpty(companyId))
-            {
-                // 使用反射获取 CompanyId 属性
-                var companyIdProperty = typeof(T).GetProperty("CompanyId");
-                if (companyIdProperty != null)
-                {
-                    var companyFilter = Builders<T>.Filter.Eq(companyIdProperty.Name, companyId);
-                    return Builders<T>.Filter.And(filter, companyFilter);
-                }
-            }
+            return filter;
         }
-        
-        return filter;
+
+        var fieldName = GetCompanyIdFieldName();
+        if (string.IsNullOrEmpty(fieldName))
+        {
+            return filter;
+        }
+
+        var companyId = ResolveCurrentCompanyId();
+        if (string.IsNullOrEmpty(companyId))
+        {
+            // 只在警告级别记录，避免过多日志
+            _logger.LogWarning("实体 {EntityType} 实现了 IMultiTenant 但无法获取当前企业ID", typeof(T).Name);
+            return filter;
+        }
+
+        // ✅ 使用缓存的 MongoDB 字段名构建过滤器
+        var companyFilter = Builders<T>.Filter.Eq(fieldName, companyId);
+        return Builders<T>.Filter.And(filter, companyFilter);
     }
 
     /// <summary>
     /// 统一解析当前企业ID：统一从数据库 users 集合读取当前用户的 CurrentCompanyId
+    /// 优化：使用缓存的集合名称，简化查询逻辑
     /// </summary>
     private string? ResolveCurrentCompanyId()
     {
+        var userId = _tenantContext.GetCurrentUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
         try
         {
-            // 从数据库读取当前用户的 CurrentCompanyId
-            var userId = _tenantContext.GetCurrentUserId();
-            if (string.IsNullOrEmpty(userId))
-            {
-                return null;
-            }
-
-            // users 集合（弱类型），仅读取需要的字段
-            var users = _database.GetCollection<BsonDocument>("users");
+            var users = _database.GetCollection<BsonDocument>(_appUserCollectionName ?? "appusers");
+            
+            // 构建ID查询过滤器（支持ObjectId和字符串两种格式）
             FilterDefinition<BsonDocument> idFilter;
-            try
+            if (ObjectId.TryParse(userId, out var objectId))
             {
-                idFilter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(userId));
+                // ObjectId 格式：优先尝试 _id 字段
+                idFilter = Builders<BsonDocument>.Filter.Eq("_id", objectId);
             }
-            catch
+            else
             {
-                // userId 不是 ObjectId 格式时，按字符串 Id 字段兜底
-                idFilter = Builders<BsonDocument>.Filter.Eq("id", userId);
+                // 字符串格式：尝试 _id 和 id 字段
+                idFilter = Builders<BsonDocument>.Filter.Or(
+                    Builders<BsonDocument>.Filter.Eq("_id", userId),
+                    Builders<BsonDocument>.Filter.Eq("id", userId)
+                );
             }
 
             var projection = Builders<BsonDocument>.Projection.Include("currentCompanyId");
             var doc = users.Find(idFilter).Project(projection).FirstOrDefault();
-            var currentCompanyId = doc?.GetValue("currentCompanyId", BsonNull.Value);
-            if (currentCompanyId != null && !currentCompanyId.IsBsonNull && currentCompanyId.IsString)
+            
+            if (doc == null)
             {
-                return currentCompanyId.AsString;
+                _logger.LogWarning("未找到用户 {UserId}，集合: {CollectionName}", userId, _appUserCollectionName);
+                return null;
             }
+            
+            var currentCompanyId = doc.GetValue("currentCompanyId", BsonNull.Value);
+            if (currentCompanyId is BsonString bsonString && !string.IsNullOrEmpty(bsonString.Value))
+            {
+                return bsonString.Value;
+            }
+            
+            _logger.LogWarning("用户 {UserId} 的 currentCompanyId 字段为空或无效", userId);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "ResolveCurrentCompanyId 回退读取失败");
+            _logger.LogError(ex, "ResolveCurrentCompanyId 读取失败，用户ID: {UserId}", userId);
         }
 
         return null;
@@ -800,10 +863,15 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     }
 
     /// <summary>
-    /// 构建查询信息字符串
+    /// 构建查询信息字符串（仅在Debug级别需要时调用）
     /// </summary>
     private string BuildQueryInfo(FilterDefinition<T> filter, SortDefinition<T>? sort = null, int? limit = null)
     {
+        if (!_logger.IsEnabled(LogLevel.Debug))
+        {
+            return string.Empty;  // Debug未启用时跳过构建
+        }
+        
         try
         {
             var queryInfo = new List<string>();
@@ -836,10 +904,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             
             return string.Join(", ", queryInfo);
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogWarning(ex, "构建查询信息失败");
-            return "查询信息构建失败";
+            // 静默失败，不影响主流程
+            return string.Empty;
         }
     }
 }

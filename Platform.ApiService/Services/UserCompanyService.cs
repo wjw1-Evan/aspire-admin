@@ -60,12 +60,14 @@ public class UserCompanyService : IUserCompanyService
     /// </summary>
     public async Task<List<UserCompanyItem>> GetUserCompaniesAsync(string userId)
     {
+        // ✅ 使用 FindWithoutTenantFilterAsync：需要查询用户在所有企业的关联记录，不受当前企业限制
         var filter = _userCompanyFactory.CreateFilterBuilder()
             .Equal(uc => uc.UserId, userId)
             .Equal(uc => uc.Status, "active")
             .Build();
         
-        var memberships = await _userCompanyFactory.FindAsync(filter);
+        // ✅ 跨企业查询：用户可能在多个企业中有关联，不能只查询当前企业
+        var memberships = await _userCompanyFactory.FindWithoutTenantFilterAsync(filter);
         var result = new List<UserCompanyItem>();
         
         if (!memberships.Any())
@@ -78,10 +80,11 @@ public class UserCompanyService : IUserCompanyService
         var companyIds = memberships.Select(m => m.CompanyId).Distinct().ToList();
         var allRoleIds = memberships.SelectMany(m => m.RoleIds).Distinct().ToList();
         
-        // 批量查询企业信息
+        // 批量查询企业信息（跨企业查询，需要查询多个企业的信息）
         var companyFilter = _companyFactory.CreateFilterBuilder()
             .In(c => c.Id, companyIds)
             .Build();
+        // ✅ Company 通常不实现 IMultiTenant，但为安全起见，如果需要跨企业查询可使用 FindWithoutTenantFilterAsync
         var companies = await _companyFactory.FindAsync(companyFilter);
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
         
@@ -167,12 +170,13 @@ public class UserCompanyService : IUserCompanyService
     /// </summary>
     public async Task<UserCompany?> GetUserCompanyAsync(string userId, string companyId)
     {
+        // ✅ 使用 FindWithoutTenantFilterAsync：已在过滤条件中明确指定 CompanyId，无需自动过滤
         var filter = _userCompanyFactory.CreateFilterBuilder()
             .Equal(uc => uc.UserId, userId)
             .Equal(uc => uc.CompanyId, companyId)
             .Build();
         
-        var userCompanies = await _userCompanyFactory.FindAsync(filter);
+        var userCompanies = await _userCompanyFactory.FindWithoutTenantFilterAsync(filter);
         return userCompanies.FirstOrDefault();
     }
 

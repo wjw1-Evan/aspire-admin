@@ -845,6 +845,10 @@ public class UserService : IUserService
         await _activityLogFactory.CreateAsync(log);
     }
 
+    /// <summary>
+    /// 获取用户的活动日志
+    /// ✅ 使用数据工厂的自动企业过滤（UserActivityLog 实现了 IMultiTenant）
+    /// </summary>
     public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
     {
         var filter = _activityLogFactory.CreateFilterBuilder()
@@ -855,11 +859,13 @@ public class UserService : IUserService
             .Descending(log => log.CreatedAt)
             .Build();
         
+        // ✅ 数据工厂会自动添加企业过滤（因为 UserActivityLog 实现了 IMultiTenant）
         return await _activityLogFactory.FindAsync(filter, sort: sort, limit: limit);
     }
 
     /// <summary>
     /// 获取当前用户的活动日志（分页）
+    /// ✅ 使用数据工厂的自动企业过滤（UserActivityLog 实现了 IMultiTenant）
     /// </summary>
     public async Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(
         int page = 1,
@@ -894,6 +900,7 @@ public class UserService : IUserService
         
         var filter = filterBuilder.Build();
         
+        // ✅ 数据工厂会自动添加企业过滤（因为 UserActivityLog 实现了 IMultiTenant）
         // 获取总数
         var total = await _activityLogFactory.CountAsync(filter);
         

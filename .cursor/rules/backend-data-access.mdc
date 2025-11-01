@@ -143,13 +143,61 @@ public class UserService : BaseService, IUserService
 }
 ```
 
-### 2. 查询优化
+### 2. 查询优化与自动企业过滤
+
+**✅ 重要**：所有实现了 `IMultiTenant` 的实体（Role、Rule、Notice、UserActivityLog、UserCompany 等）会自动应用企业过滤，**禁止手动添加 CompanyId 过滤**。
 
 ```csharp
-// ✅ 查询优化
+// ✅ 查询优化 - IMultiTenant 实体（自动企业过滤）
+public async Task<List<Role>> GetRolesAsync(RoleListRequest request)
+{
+    var filterBuilder = _roleFactory.CreateFilterBuilder();
+
+    // 添加搜索条件
+    if (!string.IsNullOrEmpty(request.Keyword))
+    {
+        filterBuilder.Regex(r => r.Name, request.Keyword);
+    }
+
+    // 添加状态过滤
+    if (request.IsActive.HasValue)
+    {
+        filterBuilder.Equal(r => r.IsActive, request.IsActive.Value);
+    }
+
+    var filter = filterBuilder.Build();
+    var sort = _roleFactory.CreateSortBuilder()
+        .Descending(r => r.CreatedAt)
+        .Build();
+    
+    // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
+    return await _roleFactory.FindAsync(filter, sort);
+}
+
+// ❌ 错误：不要手动添加 CompanyId 过滤
+public async Task<List<Role>> GetRolesAsync()
+{
+    var companyId = await GetCurrentCompanyIdAsync();
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
+        .Build();
+    return await _roleFactory.FindAsync(filter);  // ❌ 错误做法
+}
+```
+
+```csharp
+// ✅ 查询优化 - AppUser（不实现 IMultiTenant，需要手动过滤 CurrentCompanyId）
 public async Task<List<User>> GetUsersAsync(UserListRequest request)
 {
+    // ✅ 获取当前企业ID（AppUser 不实现 IMultiTenant，需要手动过滤）
+    var currentUserId = _userFactory.GetRequiredUserId();
+    var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+    var currentCompanyId = currentUser?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
+    
     var filterBuilder = _userFactory.CreateFilterBuilder();
+
+    // ✅ 手动添加 CurrentCompanyId 过滤（AppUser 使用 CurrentCompanyId，不是 CompanyId）
+    filterBuilder.Equal(u => u.CurrentCompanyId, currentCompanyId);
 
     // 添加搜索条件
     if (!string.IsNullOrEmpty(request.Keyword))
@@ -315,14 +363,49 @@ public async Task<List<User>> GetUsersAsync()
     return await _collection.Find(_ => true).ToListAsync();
 }
 
-// ✅ 正确：使用工厂自动处理多租户隔离
+// ✅ 正确：使用工厂自动处理多租户隔离（IMultiTenant 实体）
+public async Task<List<Role>> GetRolesAsync()
+{
+    // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
+    return await _roleFactory.FindAsync();
+}
+
+// ✅ 正确：AppUser 需要手动过滤 CurrentCompanyId（不实现 IMultiTenant）
 public async Task<List<User>> GetUsersAsync()
 {
-    return await _userFactory.FindAsync();
+    var currentCompanyId = await GetCurrentCompanyIdAsync();
+    var filter = _userFactory.CreateFilterBuilder()
+        .Equal(u => u.CurrentCompanyId, currentCompanyId)
+        .Build();
+    return await _userFactory.FindAsync(filter);
 }
 ```
 
-### 4. 不要忽略操作审计
+### 4. 不要手动添加 CompanyId 过滤（IMultiTenant 实体）
+
+```csharp
+// ❌ 错误：手动添加 CompanyId 过滤（不需要）
+public async Task<List<Role>> GetRolesAsync()
+{
+    var companyId = await GetCurrentCompanyIdAsync();
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
+        .Build();
+    return await _roleFactory.FindAsync(filter);
+}
+
+// ✅ 正确：依赖自动过滤
+public async Task<List<Role>> GetRolesAsync()
+{
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.IsActive, true)  // ✅ 只添加业务过滤
+        .Build();
+    // ✅ 数据工厂会自动添加企业过滤
+    return await _roleFactory.FindAsync(filter);
+}
+```
+
+### 5. 不要忽略操作审计
 
 ```csharp
 // ❌ 错误：忽略操作审计
@@ -427,7 +510,11 @@ public async Task<List<OperationAudit>> GetUserAuditHistoryAsync(string userId)
 - [ ] 使用 `IDatabaseOperationFactory<T>` 进行所有数据库操作
 - [ ] 禁止直接使用 `IMongoCollection<T>` 进行 CRUD 操作
 - [ ] 禁止使用 `BaseRepository<T>`（已移除）
-- [ ] 实现多租户隔离（工厂自动处理）
+- [ ] **实现多租户隔离**：
+  - [ ] 对于实现了 `IMultiTenant` 的实体，依赖数据工厂的自动过滤
+  - [ ] **禁止手动添加 CompanyId 过滤** - 所有 IMultiTenant 实体自动过滤
+  - [ ] 创建实体时必须设置 `CompanyId`（使用 `GetRequiredCompanyId()`）
+  - [ ] 只有跨企业查询时才使用 `FindWithoutTenantFilterAsync` 并手动添加过滤
 - [ ] 添加适当的异常处理
 - [ ] 实现查询优化（使用 FilterBuilder）
 - [ ] 添加索引支持

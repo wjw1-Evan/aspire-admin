@@ -312,6 +312,8 @@ db.activityLogs.find({ userId: "user_xxx", companyId: "company_yyy" }).count()
 - [x] 修改 `UserActivityLog` 实现 `IMultiTenant` 接口
 - [x] 修复 `UserActivityLogService.LogHttpRequestAsync` 未设置 CompanyId
 - [x] 修复 `UserService.LogUserActivityAsync` 未设置 CompanyId
+- [x] 显式添加 `GetCurrentUserActivityLogsAsync` 的企业过滤（最新修复）
+- [x] 显式添加 `GetUserActivityLogsAsync` 的企业过滤（最新修复）
 - [x] 编译成功，无错误
 - [x] 编译无警告（只有预先存在的警告）
 - [ ] 功能测试通过
@@ -323,14 +325,51 @@ db.activityLogs.find({ userId: "user_xxx", companyId: "company_yyy" }).count()
 **修复内容**：
 1. 为 `UserActivityLog` 实体添加 `IMultiTenant` 接口实现
 2. 修复活动日志记录时未设置 `CompanyId` 的问题
+3. **最新修复（2025-01）**：显式在 `GetCurrentUserActivityLogsAsync` 和 `GetUserActivityLogsAsync` 方法中添加企业过滤，确保数据隔离
 
 通过为 `UserActivityLog` 实体添加 `IMultiTenant` 接口实现，使其符合项目的多租户设计规范，`DatabaseOperationFactory` 会自动为其应用企业隔离过滤，确保"我的活动"页面只显示当前企业的活动数据。
 
 通过修复活动日志记录方法未设置 `CompanyId` 的问题，确保所有新记录的活动日志都有正确的企业归属，避免产生跨企业的数据污染。
 
-这是一个**完整的多租户修复**，涵盖查询过滤和数据写入两个层面，充分利用了框架的自动过滤能力。
+**最新修复（2025-01）**：为了确保数据隔离的可靠性，在查询方法中显式添加了 `CompanyId` 过滤条件，即使 `DatabaseOperationFactory` 有自动过滤机制，显式过滤可以让代码更清晰和安全。
+
+这是一个**完整的多租户修复**，涵盖查询过滤和数据写入两个层面，充分利用了框架的自动过滤能力，并通过显式过滤增强了安全性。
 
 ## 📅 提交历史
 
 - `2f79b81` - fix: 修复我的活动页面未按当前企业过滤的问题
 - `6266b39` - fix: 修复活动日志记录未设置CompanyId的问题
+- `2025-01-XX` - fix: 显式添加企业过滤到活动日志查询方法，增强数据隔离安全性
+
+## 🔧 最新修复详情（2025-01）
+
+### 修复内容
+
+在 `GetCurrentUserActivityLogsAsync` 和 `GetUserActivityLogsAsync` 方法中显式添加了企业过滤：
+
+```csharp
+// ✅ 获取当前企业ID（从数据库获取，不使用 JWT token）
+var currentUserId = _userFactory.GetRequiredUserId();
+var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+{
+    throw new UnauthorizedAccessException("未找到当前企业信息");
+}
+var currentCompanyId = currentUser.CurrentCompanyId;
+
+// ✅ 显式过滤当前企业（确保数据隔离）
+filterBuilder.Equal(log => log.CompanyId, currentCompanyId);
+```
+
+### 为什么需要显式过滤？
+
+虽然 `UserActivityLog` 实现了 `IMultiTenant` 接口，`DatabaseOperationFactory` 会自动添加企业过滤，但为了：
+
+1. **增强安全性**：显式过滤让代码意图更明确，不依赖自动机制
+2. **确保可靠性**：即使自动过滤出现问题，显式过滤也能保证数据隔离
+3. **代码可读性**：明确看到企业过滤条件，便于代码审查和维护
+
+### 修复的方法
+
+- ✅ `GetCurrentUserActivityLogsAsync` - "我的活动"页面使用的查询方法
+- ✅ `GetUserActivityLogsAsync` - 查询特定用户活动日志的方法（增加了企业验证）

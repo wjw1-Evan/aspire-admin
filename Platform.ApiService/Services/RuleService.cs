@@ -35,13 +35,13 @@ public class RuleService : IRuleService
     }
  
 
+    /// <summary>
+    /// 获取规则列表
+    /// ✅ 使用数据工厂的自动企业过滤（RuleListItem 实现了 IMultiTenant）
+    /// </summary>
     public async Task<RuleListResponse> GetRulesAsync(RuleQueryParams queryParams)
     {
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await GetCurrentCompanyIdAsync();
-
-        var filterBuilder = _ruleFactory.CreateFilterBuilder()
-            .Equal(r => r.CompanyId, companyId);
+        var filterBuilder = _ruleFactory.CreateFilterBuilder();
 
         // 按名称筛选
         if (!string.IsNullOrEmpty(queryParams.Name))
@@ -51,6 +51,7 @@ public class RuleService : IRuleService
 
         var filter = filterBuilder.Build();
 
+        // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
         // 获取总数
         var total = await _ruleFactory.CountAsync(filter);
 
@@ -81,11 +82,13 @@ public class RuleService : IRuleService
         };
     }
 
+    /// <summary>
+    /// 根据ID获取规则
+    /// ✅ 使用数据工厂的自动企业过滤（RuleListItem 实现了 IMultiTenant）
+    /// </summary>
     public async Task<RuleListItem?> GetRuleByIdAsync(string id)
     {
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await GetCurrentCompanyIdAsync();
-        
+        // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
         return await _ruleFactory.GetByIdAsync(id);
     }
 
@@ -118,12 +121,10 @@ public class RuleService : IRuleService
 
     /// <summary>
     /// 更新规则（使用原子操作）
+    /// ✅ 使用数据工厂的自动企业过滤（RuleListItem 实现了 IMultiTenant）
     /// </summary>
     public async Task<RuleListItem?> UpdateRuleAsync(string id, UpdateRuleRequest request)
     {
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await GetCurrentCompanyIdAsync();
-
         var filter = _ruleFactory.CreateFilterBuilder()
             .Equal(r => r.Id, id)
             .Build();
@@ -176,26 +177,32 @@ public class RuleService : IRuleService
     }
 
 
+    /// <summary>
+    /// 删除规则（软删除）
+    /// ✅ 使用数据工厂的自动企业过滤（RuleListItem 实现了 IMultiTenant）
+    /// </summary>
     public async Task<bool> DeleteRuleAsync(string id)
     {
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await GetCurrentCompanyIdAsync();
-
-        var filter = _ruleFactory.CreateFilterBuilder().Equal(r => r.Id, id).Build();
+        var filter = _ruleFactory.CreateFilterBuilder()
+            .Equal(r => r.Id, id)
+            .Build();
+        
+        // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
         var result = await _ruleFactory.FindOneAndSoftDeleteAsync(filter);
         return result != null;
     }
 
+    /// <summary>
+    /// 批量删除规则
+    /// ✅ 使用数据工厂的自动企业过滤（RuleListItem 实现了 IMultiTenant）
+    /// </summary>
     public async Task<bool> DeleteRulesAsync(List<int> keys)
     {
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await GetCurrentCompanyIdAsync();
-
         var filter = _ruleFactory.CreateFilterBuilder()
             .In(r => r.Key, keys)
-            .Equal(r => r.CompanyId, companyId)
             .Build();
         
+        // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
         var rules = await _ruleFactory.FindAsync(filter);
         var ruleIds = rules.Select(r => r.Id!).ToList();
         
@@ -208,19 +215,17 @@ public class RuleService : IRuleService
         return false;
     }
 
+    /// <summary>
+    /// 获取下一个规则Key
+    /// ✅ 使用数据工厂的自动企业过滤（RuleListItem 实现了 IMultiTenant）
+    /// </summary>
     private async Task<int> GetNextKeyAsync()
     {
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await GetCurrentCompanyIdAsync();
-
-        var filter = _ruleFactory.CreateFilterBuilder()
-            .Equal(r => r.CompanyId, companyId)
-            .Build();
-
         var sortBuilder = _ruleFactory.CreateSortBuilder()
             .Descending(r => r.Key);
         
-        var rules = await _ruleFactory.FindAsync(filter, sort: sortBuilder.Build(), limit: 1);
+        // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
+        var rules = await _ruleFactory.FindAsync(sort: sortBuilder.Build(), limit: 1);
         var lastRule = rules.FirstOrDefault();
 
         return lastRule?.Key + 1 ?? 1;

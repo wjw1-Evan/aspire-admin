@@ -99,30 +99,75 @@ public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
 ```csharp
 // Platform.ServiceDefaults/Services/DatabaseOperationFactory.cs
 
+/// <summary>
+/// 应用多租户过滤
+/// ⚠️ 修复：使用 MongoDB 字段名（从 BsonElement 特性获取）而非 C# 属性名
+/// </summary>
 private FilterDefinition<T> ApplyTenantFilter(FilterDefinition<T> filter)
 {
     // 检查实体是否实现多租户接口
     if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();
+        // ✅ 从数据库读取当前用户的 CurrentCompanyId（不使用 JWT token）
+        var companyId = ResolveCurrentCompanyId();
         if (!string.IsNullOrEmpty(companyId))
         {
             var companyIdProperty = typeof(T).GetProperty("CompanyId");
             if (companyIdProperty != null)
             {
-                var companyFilter = Builders<T>.Filter.Eq(companyIdProperty.Name, companyId);
+                // ✅ 获取 MongoDB 字段名：优先使用 BsonElement 特性，否则使用 camelCase
+                var bsonElementAttr = companyIdProperty.GetCustomAttribute<Bson.Serialization.Attributes.BsonElementAttribute>();
+                var fieldName = bsonElementAttr?.ElementName ?? "companyId";  // 统一使用小写 camelCase
+                
+                // ✅ 使用 MongoDB 字段名构建过滤器
+                var companyFilter = Builders<T>.Filter.Eq(fieldName, companyId);
                 return Builders<T>.Filter.And(filter, companyFilter);
             }
         }
     }
     return filter;
 }
+
+/// <summary>
+/// 统一解析当前企业ID：统一从数据库 users 集合读取当前用户的 CurrentCompanyId
+/// </summary>
+private string? ResolveCurrentCompanyId()
+{
+    try
+    {
+        // 从数据库读取当前用户的 CurrentCompanyId
+        var userId = _tenantContext.GetCurrentUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
+        // users 集合（弱类型），仅读取需要的字段
+        var users = _database.GetCollection<BsonDocument>("users");
+        var projection = Builders<BsonDocument>.Projection.Include("currentCompanyId");
+        var doc = users.Find(...).Project(projection).FirstOrDefault();
+        var currentCompanyId = doc?.GetValue("currentCompanyId", BsonNull.Value);
+        if (currentCompanyId != null && !currentCompanyId.IsBsonNull && currentCompanyId.IsString)
+        {
+            return currentCompanyId.AsString;
+        }
+    }
+    catch (Exception ex)
+    {
+        _logger.LogWarning(ex, "ResolveCurrentCompanyId 回退读取失败");
+    }
+
+    return null;
+}
 ```
 
 **关键点：**
 - ✅ 实现 `IMultiTenant` 的实体会自动应用企业过滤
+- ✅ 数据工厂从数据库读取企业ID（不使用 JWT token）
+- ✅ 使用正确的 MongoDB 字段名（从 `BsonElement` 特性获取）
 - ✅ 查询时无需手动添加 `CompanyId` 过滤条件
 - ✅ 创建时使用 `GetRequiredCompanyId()` 设置 `CompanyId`
+- ✅ **禁止手动添加 CompanyId 过滤** - 所有实现了 `IMultiTenant` 的实体都应该依赖自动过滤
 
 ### 使用示例
 
@@ -137,6 +182,19 @@ await _roleFactory.CreateAsync(role);
 
 // ✅ 查询单一企业实体（自动过滤）
 var roles = await _roleFactory.FindAsync();  // ✅ 自动只返回当前企业的角色
+
+// ❌ 错误：不要手动添加 CompanyId 过滤
+var companyId = await GetCurrentCompanyIdAsync();
+var filter = _roleFactory.CreateFilterBuilder()
+    .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
+    .Build();
+var roles = await _roleFactory.FindAsync(filter);  // ❌ 错误做法
+
+// ✅ 正确：依赖自动过滤
+var filter = _roleFactory.CreateFilterBuilder()
+    .Equal(r => r.IsActive, true)  // ✅ 只添加业务过滤
+    .Build();
+var roles = await _roleFactory.FindAsync(filter);  // ✅ 数据工厂会自动添加企业过滤
 ```
 
 ## ✅ 多企业关联实体（使用 CurrentCompanyId）

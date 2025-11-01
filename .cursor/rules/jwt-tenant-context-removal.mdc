@@ -118,21 +118,25 @@ var user = await _userFactory.GetByIdAsync(userId);
 var companyId = user?.CurrentCompanyId;
 ```
 
-### ❌ 错误 2: 依赖自动租户过滤
+### ✅ 正确做法：依赖自动租户过滤（已修复）
 
 ```csharp
-// ❌ 错误：DatabaseOperationFactory.ApplyTenantFilter 不再工作
-// 因为 TenantContext.GetCurrentCompanyId() 返回 null
-var roles = await _roleFactory.FindAsync();  // ❌ 不会自动过滤 CompanyId
+// ✅ 正确：DatabaseOperationFactory 已修复，会自动从数据库读取企业ID并过滤
+var roles = await _roleFactory.FindAsync();  // ✅ 自动过滤当前企业的角色
 
-// ✅ 正确：手动添加 CompanyId 过滤
+// ❌ 错误：不要手动添加 CompanyId 过滤（数据工厂会自动处理）
 var companyId = await GetCurrentCompanyIdAsync();
 var filter = _roleFactory.CreateFilterBuilder()
-    .Equal(r => r.CompanyId, companyId)  // ✅ 手动添加
+    .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
     .Equal(r => r.IsActive, true)
     .Build();
+var roles = await _roleFactory.FindAsync(filter);  // ❌ 错误做法
 
-var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);  // ✅ 跳过自动过滤
+// ✅ 正确：依赖自动过滤
+var filter = _roleFactory.CreateFilterBuilder()
+    .Equal(r => r.IsActive, true)  // ✅ 只添加业务过滤
+    .Build();
+var roles = await _roleFactory.FindAsync(filter);  // ✅ 数据工厂会自动添加企业过滤
 ```
 
 ### ❌ 错误 3: 在 JWT Token 中添加 CurrentCompanyId
@@ -151,28 +155,35 @@ var claims = new List<Claim>
 // ⚠️ 已移除：不再在 JWT token 中包含 CurrentCompanyId
 ```
 
-## 🔧 多租户查询处理
+## 🔧 多租户查询处理（已修复）
 
 ### IMultiTenant 实体查询
 
-由于 `DatabaseOperationFactory.ApplyTenantFilter` 不再自动添加 `CompanyId` 过滤（因为 `TenantContext.GetCurrentCompanyId()` 返回 null），所有查询 `IMultiTenant` 实体的代码必须手动添加 `CompanyId` 过滤：
+**✅ 重要更新**：`DatabaseOperationFactory.ApplyTenantFilter` 已修复，现在会自动从数据库读取企业ID并添加过滤。所有查询 `IMultiTenant` 实体的代码应该依赖自动过滤，**禁止手动添加 `CompanyId` 过滤**：
 
 ```csharp
-// ✅ 正确：手动添加 CompanyId 过滤
+// ✅ 正确：依赖自动过滤（推荐）
 public async Task<List<Role>> GetRolesAsync()
 {
-    // 1. 从数据库获取企业ID
-    var companyId = await GetCurrentCompanyIdAsync();
-    
-    // 2. 手动添加 CompanyId 过滤
+    // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
     var filter = _roleFactory.CreateFilterBuilder()
-        .Equal(r => r.CompanyId, companyId)  // ✅ 手动添加
-        .Equal(r => r.IsActive, true)
+        .Equal(r => r.IsActive, true)  // ✅ 只添加业务过滤
         .Build();
     
-    // 3. 使用 FindWithoutTenantFilterAsync（因为已手动添加了 CompanyId 过滤）
-    var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);
+    var roles = await _roleFactory.FindAsync(filter);
     
+    return roles;
+}
+
+// ❌ 错误：不要手动添加 CompanyId 过滤
+public async Task<List<Role>> GetRolesAsync()
+{
+    var companyId = await GetCurrentCompanyIdAsync();
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
+        .Equal(r => r.IsActive, true)
+        .Build();
+    var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);  // ❌ 错误做法
     return roles;
 }
 ```
@@ -228,26 +239,54 @@ public string? GetCurrentCompanyId()
 }
 ```
 
-### 3. DatabaseOperationFactory 自动租户过滤
+### 3. DatabaseOperationFactory 自动租户过滤（已修复）
 
 ```csharp
 // Platform.ServiceDefaults/Services/DatabaseOperationFactory.cs
-// ⚠️ 注意：此方法不再自动添加 CompanyId 过滤（因为 GetCurrentCompanyId() 返回 null）
+// ✅ 修复：从数据库读取企业ID，自动添加过滤
+/// <summary>
+/// 应用多租户过滤
+/// ⚠️ 修复：使用 MongoDB 字段名（从 BsonElement 特性获取）而非 C# 属性名
+/// </summary>
 private FilterDefinition<T> ApplyTenantFilter(FilterDefinition<T> filter)
 {
     if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
     {
-        var companyId = _tenantContext.GetCurrentCompanyId();  // 返回 null
+        // ✅ 从数据库读取当前用户的 CurrentCompanyId（不使用 JWT token）
+        var companyId = ResolveCurrentCompanyId();
         if (!string.IsNullOrEmpty(companyId))
         {
-            // 这个分支永远不会执行
-            var companyFilter = Builders<T>.Filter.Eq("CompanyId", companyId);
-            return Builders<T>.Filter.And(filter, companyFilter);
+            var companyIdProperty = typeof(T).GetProperty("CompanyId");
+            if (companyIdProperty != null)
+            {
+                // ✅ 获取 MongoDB 字段名：优先使用 BsonElement 特性，否则使用 camelCase
+                var bsonElementAttr = companyIdProperty.GetCustomAttribute<Bson.Serialization.Attributes.BsonElementAttribute>();
+                var fieldName = bsonElementAttr?.ElementName ?? "companyId";
+                
+                // ✅ 使用 MongoDB 字段名构建过滤器
+                var companyFilter = Builders<T>.Filter.Eq(fieldName, companyId);
+                return Builders<T>.Filter.And(filter, companyFilter);
+            }
         }
     }
-    return filter;  // 直接返回原 filter，不添加租户过滤
+    return filter;
+}
+
+/// <summary>
+/// 统一解析当前企业ID：统一从数据库 users 集合读取当前用户的 CurrentCompanyId
+/// </summary>
+private string? ResolveCurrentCompanyId()
+{
+    // 从数据库读取当前用户的 CurrentCompanyId
+    var userId = _tenantContext.GetCurrentUserId();
+    // ... 从 users 集合读取 currentCompanyId 字段
 }
 ```
+
+**重要更新**：
+- ✅ 数据工厂已修复：自动从数据库读取企业ID并添加过滤
+- ✅ 使用正确的 MongoDB 字段名（从 `BsonElement` 特性获取）
+- ✅ **禁止手动添加 CompanyId 过滤** - 所有实现了 `IMultiTenant` 的实体都应该依赖自动过滤
 
 ### 4. BaseApiController.GetRequiredCompanyId()
 
@@ -279,34 +318,40 @@ protected async Task<string> GetRequiredCompanyIdAsync()
 创建或修改代码时检查：
 
 - [ ] **不从 JWT token 获取企业ID** - 不使用 `TenantContext.GetCurrentCompanyId()` 或 `GetRequiredCompanyId()`
-- [ ] **从数据库获取企业ID** - 使用 `user.CurrentCompanyId` 从数据库获取
-- [ ] **手动添加 CompanyId 过滤** - 查询 `IMultiTenant` 实体时手动添加 `CompanyId` 过滤
-- [ ] **使用 FindWithoutTenantFilterAsync** - 当已手动添加 `CompanyId` 过滤时，使用 `FindWithoutTenantFilterAsync` 跳过自动过滤
+- [ ] **从数据库获取企业ID** - 数据工厂自动从数据库读取，无需手动获取（查询场景）
+- [ ] **禁止手动添加 CompanyId 过滤** - 查询 `IMultiTenant` 实体时依赖自动过滤，不要手动添加
+- [ ] **创建时设置 CompanyId** - 创建实体时需要使用 `GetRequiredCompanyId()` 设置 `CompanyId`
+- [ ] **跨企业查询使用 FindWithoutTenantFilterAsync** - 只有需要跨企业查询时才使用 `FindWithoutTenantFilterAsync` 并手动添加过滤
 - [ ] **Controller 使用异步方法** - Controller 中使用 `GetRequiredCompanyIdAsync()` 而不是 `GetRequiredCompanyId()`
 - [ ] **JWT Token 不包含企业ID** - 确认 JWT token 生成时不添加 `currentCompanyId` 或 `companyId` claim
 
 ## 🎯 查询模式
 
-### 模式 1: 标准查询（IMultiTenant 实体）
+### 模式 1: 标准查询（IMultiTenant 实体）- 已更新
 
 ```csharp
-// ✅ 正确模式
+// ✅ 正确模式：依赖自动过滤（推荐）
 public async Task<List<Role>> GetRolesAsync()
 {
-    // 1. 从数据库获取企业ID
-    var userId = _roleFactory.GetRequiredUserId();
-    var user = await _userFactory.GetByIdAsync(userId);
-    var companyId = user?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
-    
-    // 2. 构建过滤器（手动添加 CompanyId）
+    // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
     var filter = _roleFactory.CreateFilterBuilder()
-        .Equal(r => r.CompanyId, companyId)  // ✅ 手动添加
-        .Equal(r => r.IsActive, true)
+        .Equal(r => r.IsActive, true)  // ✅ 只添加业务过滤
         .Build();
     
-    // 3. 使用 FindWithoutTenantFilterAsync（跳过自动过滤）
-    var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);
+    var roles = await _roleFactory.FindAsync(filter);
     
+    return roles;
+}
+
+// ❌ 错误模式：手动添加 CompanyId 过滤
+public async Task<List<Role>> GetRolesAsync()
+{
+    var companyId = await GetCurrentCompanyIdAsync();
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
+        .Equal(r => r.IsActive, true)
+        .Build();
+    var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter);  // ❌ 错误做法
     return roles;
 }
 ```
@@ -356,27 +401,38 @@ public async Task<List<AppUser>> GetUsersAsync()
 
 ## ⚠️ 重要注意事项
 
-### 1. 自动租户过滤已失效
+### 1. 自动租户过滤已修复 ✅
 
-`DatabaseOperationFactory.ApplyTenantFilter` 不再自动添加 `CompanyId` 过滤，因为 `TenantContext.GetCurrentCompanyId()` 返回 null。
+`DatabaseOperationFactory.ApplyTenantFilter` 已修复，现在会自动从数据库读取企业ID并添加 `CompanyId` 过滤。
 
 **影响**：
-- 所有查询 `IMultiTenant` 实体的代码必须手动添加 `CompanyId` 过滤
-- 必须确保多租户数据隔离，避免跨企业数据泄露
+- ✅ 所有查询 `IMultiTenant` 实体的代码会自动应用企业过滤
+- ✅ **禁止手动添加 CompanyId 过滤** - 依赖数据工厂的自动过滤机制
+- ✅ 数据隔离由数据工厂统一保障
 
 ### 2. 性能考虑
 
-从数据库获取企业ID会增加一次数据库查询。考虑：
+数据工厂会缓存企业ID的查询结果（在同一请求中）。如果需要跨多个方法使用企业ID，考虑：
 
 ```csharp
-// ✅ 在方法开始时获取一次，重复使用
+// ✅ 在方法开始时获取一次，重复使用（仅用于创建实体时）
+public async Task<Role> CreateRoleAsync(CreateRoleRequest request)
+{
+    var companyId = await GetCurrentCompanyIdAsync();  // 创建时需要设置 CompanyId
+    
+    var role = new Role
+    {
+        Name = request.Name,
+        CompanyId = companyId  // ✅ 创建时必须设置
+    };
+    return await _roleFactory.CreateAsync(role);
+}
+
+// ✅ 查询时依赖自动过滤（推荐）
 public async Task<List<Role>> GetRolesAsync()
 {
-    var companyId = await GetCurrentCompanyIdAsync();  // 只查询一次
-    
-    // 在同一个方法中重复使用 companyId
-    var roles = await GetRolesByCompanyAsync(companyId);
-    var stats = await GetRoleStatsAsync(companyId);
+    // ✅ 无需手动获取 companyId，数据工厂会自动处理
+    var roles = await _roleFactory.FindAsync();  // 自动过滤当前企业
     
     return roles;
 }
@@ -419,8 +475,8 @@ private async Task<string> GetCurrentCompanyIdAsync()
 
 1. **JWT token 不包含企业ID** - 已完全移除 `currentCompanyId` 和 `companyId` claim
 2. **统一从数据库获取** - 所有企业ID从 `user.CurrentCompanyId` 获取
-3. **手动添加过滤** - 查询 `IMultiTenant` 实体时必须手动添加 `CompanyId` 过滤
-4. **使用 FindWithoutTenantFilterAsync** - 当已手动添加过滤时，跳过自动过滤
+3. **依赖自动过滤** - 查询 `IMultiTenant` 实体时依赖数据工厂的自动过滤，禁止手动添加 `CompanyId` 过滤
+4. **跨企业查询** - 只有需要跨企业查询时才使用 `FindWithoutTenantFilterAsync` 并手动添加过滤
 5. **实时性更好** - 从数据库获取确保切换企业后立即生效，不受 JWT token 延迟影响
 
 遵循这些规范，确保多租户数据隔离的正确性和一致性！

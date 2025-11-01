@@ -42,6 +42,7 @@ public class RoleService : IRoleService
 
     /// <summary>
     /// 获取所有角色
+    /// ✅ 使用数据工厂的自动企业过滤（Role 实现了 IMultiTenant）
     /// </summary>
     public async Task<RoleListResponse> GetAllRolesAsync()
     {
@@ -49,13 +50,8 @@ public class RoleService : IRoleService
             .Ascending(r => r.CreatedAt)
             .Build();
 
-        // 显式公司过滤，避免任何租户上下文异常导致越权
-        var companyId = await GetCurrentCompanyIdAsync();
-        var filter = _roleFactory.CreateFilterBuilder()
-            .Equal(r => r.CompanyId, companyId)
-            .Build();
-
-        var roles = await _roleFactory.FindWithoutTenantFilterAsync(filter, sort: sort);
+        // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
+        var roles = await _roleFactory.FindAsync(sort: sort);
 
         return new RoleListResponse
         {
@@ -66,7 +62,7 @@ public class RoleService : IRoleService
     
     /// <summary>
     /// 获取所有角色（带统计信息）
-    /// 修复：使用工厂确保多租户数据隔离
+    /// ✅ 使用数据工厂的自动企业过滤（Role 和 UserCompany 都实现了 IMultiTenant）
     /// </summary>
     public async Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync()
     {
@@ -74,29 +70,23 @@ public class RoleService : IRoleService
             .Ascending(r => r.CreatedAt)
             .Build();
 
-        // 显式公司过滤，避免任何租户上下文异常导致越权
-        var companyId = await GetCurrentCompanyIdAsync();
-        var roleFilter = _roleFactory.CreateFilterBuilder()
-            .Equal(r => r.CompanyId, companyId)
-            .Build();
-
-        var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter, sort: sort);
+        // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
+        var roles = await _roleFactory.FindAsync(sort: sort);
         
         var rolesWithStats = new List<RoleWithStats>();
         
         foreach (var role in roles)
         {
-            // ✅ 修复：添加企业过滤，只统计当前企业的用户数量
-            // v3.1: 从 UserCompany 表统计使用此角色的用户数量（添加企业过滤）
+            // ✅ 数据工厂会自动添加企业过滤（因为 UserCompany 实现了 IMultiTenant）
+            // 统计使用此角色的用户数量（只统计当前企业的用户）
             var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
-                .Equal(uc => uc.CompanyId, companyId)  // ✅ 添加企业过滤
                 .Equal(uc => uc.Status, "active")
                 .Build();
             
             // 使用原生 MongoDB 查询处理数组包含
             var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, role.Id!);
             var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
-            // 跳过自动租户过滤，使用手动 CompanyId 过滤（已在上面手动添加）
+            // ✅ 数据工厂会自动添加企业过滤
             var userCount = await _userCompanyFactory.CountAsync(combinedFilter);
             
             rolesWithStats.Add(new RoleWithStats

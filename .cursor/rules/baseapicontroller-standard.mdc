@@ -131,6 +131,8 @@ return Success(result);
 
 ## 🎯 完整示例
 
+### 基础 CRUD 控制器
+
 ```csharp
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -181,9 +183,7 @@ public class ProductController : BaseApiController
         if (string.IsNullOrEmpty(request.Name))
             throw new ArgumentException("产品名称不能为空");
         
-        // 使用基类方法获取当前用户ID
         var userId = GetRequiredUserId();
-        
         var product = await _productService.CreateAsync(request, userId);
         return Success(product, "创建成功");
     }
@@ -213,35 +213,148 @@ public class ProductController : BaseApiController
         
         return NoContent();
     }
+}
+```
 
-    /// <summary>
-    /// 获取我的产品（需要用户认证）
-    /// </summary>
-    [HttpGet("my-products")]
-    public async Task<IActionResult> GetMyProducts()
-    {
-        // 自动获取当前用户ID，如果未认证会自动抛异常
-        var userId = GetRequiredUserId();
-        
-        var products = await _productService.GetUserProductsAsync(userId);
-        return Success(products);
-    }
+### 分页查询控制器
 
-    /// <summary>
-    /// 管理员操作（检查权限）
-    /// </summary>
-    [HttpPost("admin-action")]
-    [Authorize(Roles = "admin")]
-    public async Task<IActionResult> AdminAction()
+```csharp
+/// <summary>
+/// 分页获取用户列表
+/// </summary>
+[HttpPost("list")]
+public async Task<IActionResult> GetList([FromBody] UserListRequest request)
+{
+    var (users, total) = await _userService.GetUsersPagedAsync(request);
+    
+    return Success(new
     {
-        // 可以使用 IsAdmin 属性进行额外检查
-        if (!IsAdmin)
-            throw new UnauthorizedAccessException("需要管理员权限");
-        
-        // 执行管理员操作
-        await _productService.DoAdminActionAsync();
-        return Success("操作成功");
-    }
+        Items = users,
+        Total = total,
+        Page = request.Page,
+        PageSize = request.PageSize
+    });
+}
+
+/// <summary>
+/// 搜索用户
+/// </summary>
+[HttpGet("search")]
+public async Task<IActionResult> Search(
+    [FromQuery] string keyword,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 10)
+{
+    var (users, total) = await _userService.SearchUsersAsync(keyword, page, pageSize);
+    
+    return Success(new
+    {
+        Items = users,
+        Total = total,
+        Page = page,
+        PageSize = pageSize
+    });
+}
+```
+
+### 批量操作控制器
+
+```csharp
+/// <summary>
+/// 批量创建用户
+/// </summary>
+[HttpPost("batch")]
+public async Task<IActionResult> CreateBatch([FromBody] CreateUserBatchRequest request)
+{
+    if (request.Users == null || !request.Users.Any())
+        throw new ArgumentException("用户列表不能为空");
+    
+    var userId = GetRequiredUserId();
+    var users = await _userService.CreateUsersBatchAsync(request.Users, userId);
+    
+    return Success(users, $"成功创建 {users.Count} 个用户");
+}
+
+/// <summary>
+/// 批量删除用户
+/// </summary>
+[HttpDelete("batch")]
+public async Task<IActionResult> DeleteBatch([FromBody] DeleteUserBatchRequest request)
+{
+    if (request.UserIds == null || !request.UserIds.Any())
+        throw new ArgumentException("用户ID列表不能为空");
+    
+    var count = await _userService.DeleteUsersBatchAsync(request.UserIds);
+    return Success($"成功删除 {count} 个用户");
+}
+```
+
+### 权限检查示例
+
+```csharp
+/// <summary>
+/// 管理员操作（检查权限）
+/// </summary>
+[HttpPost("admin-action")]
+[Authorize(Roles = "admin")]
+public async Task<IActionResult> AdminAction()
+{
+    // 可以使用 IsAdmin 属性进行额外检查
+    if (!IsAdmin)
+        throw new UnauthorizedAccessException("需要管理员权限");
+    
+    await _productService.DoAdminActionAsync();
+    return Success("操作成功");
+}
+```
+
+## 📋 控制器开发检查清单
+
+创建或修改控制器时检查：
+
+- [ ] 继承 BaseApiController
+- [ ] 添加适当的 HTTP 方法特性
+- [ ] 添加 XML 文档注释
+- [ ] 使用统一的响应格式
+- [ ] 添加参数验证
+- [ ] 使用 GetRequiredUserId() 获取用户信息
+- [ ] 添加适当的授权特性
+- [ ] 遵循 RESTful 设计原则
+- [ ] 添加单元测试
+- [ ] 更新 API 文档
+
+## 🎯 请求/响应模型示例
+
+### 请求模型
+```csharp
+public class UserListRequest
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public string? Keyword { get; set; }
+    public string? Role { get; set; }
+    public bool? IsActive { get; set; }
+}
+
+public class CreateUserBatchRequest
+{
+    public List<CreateUserRequest> Users { get; set; } = new();
+}
+
+public class DeleteUserBatchRequest
+{
+    public List<string> UserIds { get; set; } = new();
+}
+```
+
+### 响应模型
+```csharp
+public class UserListResponse
+{
+    public List<UserResponse> Items { get; set; } = new();
+    public long Total { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
 }
 ```
 
@@ -249,7 +362,7 @@ public class ProductController : BaseApiController
 
 - [BaseApiController 实现](mdc:Platform.ApiService/Controllers/BaseApiController.cs)
 - [全局异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
-- [统一标准报告](mdc:BASEAPICONTROLLER-STANDARDIZATION.md)
+- [业务逻辑和服务层开发规范](mdc:.cursor/rules/business-logic.mdc)
 
 ## 🎯 核心原则
 

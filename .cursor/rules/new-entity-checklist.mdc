@@ -90,54 +90,62 @@ public interface IMyEntityService
 // ✅ 服务实现
 public class MyEntityService : BaseService, IMyEntityService
 {
-    private readonly BaseRepository<MyEntity> _repository;
+    private readonly IDatabaseOperationFactory<MyEntity> _entityFactory;
     
     public MyEntityService(
         IMongoDatabase database,
+        IDatabaseOperationFactory<MyEntity> entityFactory,
         IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,  // ✅ 必须包含
+        ITenantContext tenantContext,
         ILogger<MyEntityService> logger)
         : base(database, httpContextAccessor, tenantContext, logger)
     {
-        _repository = new BaseRepository<MyEntity>(
-            database, 
-            "my_entities",  // ✅ 集合名称
-            httpContextAccessor, 
-            tenantContext  // ✅ 必须传递
-        );
+        _entityFactory = entityFactory;
     }
     
     public async Task<List<MyEntity>> GetAllAsync()
     {
-        return await _repository.GetAllAsync();  // ✅ 自动租户过滤
+        // ✅ 数据工厂自动处理多租户过滤和软删除过滤
+        return await _entityFactory.FindAsync();
+    }
+    
+    public async Task<MyEntity?> GetByIdAsync(string id)
+    {
+        return await _entityFactory.GetByIdAsync(id);
     }
     
     public async Task<MyEntity> CreateAsync(CreateMyEntityRequest request)
     {
         var entity = new MyEntity
         {
-            Name = request.Name
-            // ✅ CompanyId, CreatedAt, UpdatedAt, IsDeleted 自动设置
+            Name = request.Name,
+            CompanyId = GetRequiredCompanyId()  // ✅ 手动设置 CompanyId
+            // ✅ CreatedAt, UpdatedAt, IsDeleted 由数据工厂自动设置
         };
         
-        return await _repository.CreateAsync(entity);
+        return await _entityFactory.CreateAsync(entity);
     }
     
     public async Task<bool> UpdateAsync(string id, UpdateMyEntityRequest request)
     {
-        var updateBuilder = Builders<MyEntity>.Update;
+        var filterBuilder = _entityFactory.CreateFilterBuilder();
+        var filter = filterBuilder.Equal(e => e.Id, id).Build();
+        
+        var updateBuilder = _entityFactory.CreateUpdateBuilder();
         var updates = new List<UpdateDefinition<MyEntity>>();
         
         if (request.Name != null)
             updates.Add(updateBuilder.Set(e => e.Name, request.Name));
         
-        var update = updateBuilder.Combine(updates);
-        return await _repository.UpdateAsync(id, update);
+        var update = updateBuilder.SetCurrentTimestamp().Combine(updates).Build();
+        var result = await _entityFactory.UpdateManyAsync(filter, update);
+        return result > 0;
     }
     
     public async Task<bool> DeleteAsync(string id, string? reason = null)
     {
-        return await _repository.SoftDeleteAsync(id, reason);
+        // ✅ 数据工厂自动处理软删除
+        return await _entityFactory.SoftDeleteAsync(id);
     }
 }
 ```
@@ -223,12 +231,16 @@ public class MyEntityController : BaseApiController
 在 [Program.cs](mdc:Platform.ApiService/Program.cs) 中注册：
 
 ```csharp
+// ✅ 注册数据库操作工厂（如果还没有注册）
+builder.Services.AddDatabaseFactory();
+
+// ✅ 注册服务
 builder.Services.AddScoped<IMyEntityService, MyEntityService>();
 ```
 
 ### 6. 数据库索引
 
-在 [CreateMultiTenantIndexes.cs](mdc:Platform.ApiService/Scripts/CreateMultiTenantIndexes.cs) 中添加索引：
+在 [CreateAllIndexes.cs](mdc:Platform.DataInitializer/Scripts/CreateAllIndexes.cs) 中添加索引：
 
 ```csharp
 private async Task CreateMyEntityIndexesAsync()
@@ -332,57 +344,60 @@ public MyService(
     : base(database, httpContextAccessor, tenantContext, logger)
 ```
 
-### 错误 3：BaseRepository 实例化缺少参数
+### 错误 3：直接使用 IMongoCollection 或 BaseRepository
 
 ```csharp
-// ❌ 错误：缺少 tenantContext
-_repository = new BaseRepository<MyEntity>(
-    database, 
-    "my_entities", 
-    httpContextAccessor
-);  // ❌ 编译错误
-
-// ✅ 正确：包含 tenantContext
-_repository = new BaseRepository<MyEntity>(
-    database, 
-    "my_entities", 
-    httpContextAccessor, 
-    tenantContext  // ✅
-);
-```
-
-### 错误 4：直接使用 IMongoCollection
-
-```csharp
-// ❌ 错误：绕过租户过滤
+// ❌ 错误：直接使用 IMongoCollection，绕过多租户过滤
 var collection = _database.GetCollection<MyEntity>("my_entities");
 var all = await collection.Find(_ => true).ToListAsync();
 
-// ✅ 正确：使用 BaseRepository
-var all = await _repository.GetAllAsync();
+// ❌ 错误：使用已移除的 BaseRepository
+private readonly BaseRepository<MyEntity> _repository;
+
+// ✅ 正确：使用数据库操作工厂
+private readonly IDatabaseOperationFactory<MyEntity> _entityFactory;
+
+public MyEntityService(IDatabaseOperationFactory<MyEntity> entityFactory)
+{
+    _entityFactory = entityFactory;  // ✅ 通过依赖注入获取
+}
+```
+
+### 错误 4：忘记注册数据库操作工厂
+
+```csharp
+// ❌ 错误：在 Program.cs 中忘记注册工厂
+builder.Services.AddScoped<IMyEntityService, MyEntityService>();
+// ❌ 缺少工厂注册
+
+// ✅ 正确：注册数据库操作工厂
+builder.Services.AddDatabaseFactory();  // ✅ 注册所有实体工厂
+// 或者
+builder.Services.AddDatabaseOperationFactory<MyEntity>();  // ✅ 注册特定实体工厂
+builder.Services.AddScoped<IMyEntityService, MyEntityService>();
 ```
 
 ## 📝 完整开发清单
 
 新增业务实体时，按顺序完成：
 
-- [ ] 1. 创建实体类（包含 CompanyId）
-- [ ] 2. 实现 IEntity, ISoftDeletable, ITimestamped
+- [ ] 1. 创建实体类（包含 CompanyId，实现 IMultiTenant 接口）
+- [ ] 2. 实现 IEntity, ISoftDeletable, ITimestamped, IMultiTenant
 - [ ] 3. 创建请求/响应模型
 - [ ] 4. 创建服务接口和实现（继承 BaseService）
-- [ ] 5. 使用 BaseRepository（传递 ITenantContext）
-- [ ] 6. 创建控制器（继承 BaseApiController）
-- [ ] 7. 在 Program.cs 注册服务
-- [ ] 8. 创建数据库索引（CompanyId 相关）
+- [ ] 5. 使用 IDatabaseOperationFactory<T> 进行数据访问
+- [ ] 6. 在 Program.cs 注册数据库操作工厂和服务
+- [ ] 7. 创建控制器（继承 BaseApiController）
+- [ ] 8. 在数据初始化服务中创建数据库索引（CompanyId 相关）
 - [ ] 9. 添加权限定义到 PermissionService
 - [ ] 10. 测试数据隔离（创建多个企业验证）
 
 ## 🎯 记住
 
 **三个必须：**
-1. ✅ 实体必须有 `companyId` 字段
-2. ✅ 服务必须包含 `ITenantContext` 依赖
-3. ✅ 必须使用 `BaseRepository` 进行数据访问
+1. ✅ 实体必须有 `companyId` 字段并实现 `IMultiTenant` 接口
+2. ✅ 服务必须使用 `IDatabaseOperationFactory<T>` 进行数据访问
+3. ✅ 必须在 Program.cs 中注册数据库操作工厂
 
 遵循清单，确保多租户架构的完整性！
 

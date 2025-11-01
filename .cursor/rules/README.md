@@ -95,9 +95,9 @@
   - 禁止手动 try-catch，由中间件处理
 
 #### 服务层开发
-- **`backend-service-pattern.mdc`** - Backend 服务层开发规范
+- **`business-logic.mdc`** - 业务逻辑和服务层开发规范
   - 📁 应用于 `Platform.ApiService/Services/*.cs`
-  - 使用 BaseService 和 BaseRepository
+  - 使用 IDatabaseOperationFactory 进行数据访问
   - 标准服务实现模式
 
 #### 多租户开发规范 ⭐ **重要**
@@ -131,6 +131,12 @@
 
 
 #### 数据库开发规范 🆕
+- **`backend-data-access.mdc`** - 后端数据访问层规范（数据库操作工厂）
+  - ⚡ 始终自动应用
+  - 所有服务必须使用 IDatabaseOperationFactory 进行数据访问
+  - 禁止直接使用 IMongoCollection 或已移除的 BaseRepository
+  - 自动处理多租户过滤、软删除、操作审计
+
 - **`database-initialization.mdc`** - 数据库初始化规范
   - ⚡ 始终自动应用
   - 数据初始化由专门的微服务负责
@@ -144,12 +150,16 @@
   - API 端点设计和监控调试
   - 任务型微服务模式实现
 
-
 - **`mongodb-atomic-operations.mdc`** - MongoDB 原子操作最佳实践
   - 📋 手动引用
   - 插入或忽略、更新或插入模式
   - 条件更新、原子递增
   - 避免"查询+更新"非原子模式
+
+- **`database-operation-factory-auto-audit.mdc`** - 数据库操作工厂自动审计规范
+  - 📋 手动引用
+  - 自动审计和时间戳管理
+  - 禁止手动设置时间戳和审计字段
 
 - **`global-menu-architecture.mdc`** - 全局菜单架构规范 🆕
   - ⚡ 始终自动应用
@@ -245,9 +255,10 @@
 |------|------|------|
 | 项目架构 | 1 | 始终应用 |
 | 前端规范 | 5 | TypeScript、React、Ant Design Pro、移动端、主题系统 |
-| 后端规范 | 4 | C# 开发规范、API控制器、业务逻辑服务层、依赖注入配置 |
+| 后端规范 | 3 | C# 开发规范、API控制器（合并）、业务逻辑服务层、依赖注入配置 |
 | 多租户规范 ⭐ | 3 | 多租户开发、实体设计（完整版）、用户注册、全局数据控制 |
-| 数据库规范 🆕 | 4 | 数据访问（操作工厂）、初始化、微服务、原子操作、全局菜单 |
+| 数据库规范 🆕 | 5 | 数据访问（操作工厂+自动审计）⭐、初始化、微服务、原子操作、全局菜单 |
+| 数据模型规范 | 1 | 数据模型设计（包含软删除字段规范） |
 | 权限规范 | 1 | 权限控制 |
 | 验证扩展 | 2 | 参数验证、资源检查 |
 | 文档管理 | 2 | 文档组织、同步更新 |
@@ -255,7 +266,7 @@
 | 工程规范 | 3 | 测试、部署、Git工作流 |
 | 实体开发 | 1 | 新增实体清单 |
 | **核心开发规范** 🆕 | **6** | 代码审查、性能优化、安全实践、微服务架构、设计模式、移动端最佳实践 |
-| **总计** | **25** | 涵盖全栈开发各个方面（已合并所有重复规则，规则结构完全优化） |
+| **总计** | **24** | 涵盖全栈开发各个方面（已压缩合并重复规则，减少 2 个文件） |
 
 ## 🆕 v5.0 新增规则
 
@@ -440,11 +451,12 @@ description: TypeScript 编码规范和最佳实践
 ### 后端开发
 1. `csharp-backend.mdc` - C# 开发规范
 2. `baseapicontroller-standard.mdc` - 控制器标准
-3. `backend-service-pattern.mdc` - 服务层模式
-4. `database-initialization.mdc` - 数据库初始化
-5. `multi-tenant-development.mdc` - 多租户开发
-6. `api-integration.mdc` - API 设计
-7. `auth-system.mdc` - 认证授权
+3. `backend-data-access.mdc` - 数据访问层规范（数据库操作工厂）⭐ **重要**
+4. `business-logic.mdc` - 业务逻辑和服务层模式
+5. `database-initialization.mdc` - 数据库初始化
+6. `multi-tenant-development.mdc` - 多租户开发
+7. `api-integration.mdc` - API 设计
+8. `auth-system.mdc` - 认证授权
 
 ### 进阶主题
 1. `data-initializer-microservice.mdc` - 数据初始化微服务
@@ -466,4 +478,4 @@ description: TypeScript 编码规范和最佳实践
 
 💡 **提示**: 这些规则由项目团队维护，确保 Cursor AI 能够提供准确、一致的代码建议。如有问题或建议，欢迎提出！
 
-**最后更新**: 2025-01-16 (v5.7 - 完成所有规则合并和清理：API控制器、依赖注入、数据访问、服务层、状态管理、组件规则、移动端开发，规则总数优化至 25 个)
+**最后更新**: 2025-01-XX (v5.9 - 压缩规则文件：合并 api-controllers、database-operation-factory-auto-audit、backend-data-models-soft-delete，规则总数优化至 24 个)

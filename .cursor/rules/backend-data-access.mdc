@@ -272,7 +272,7 @@ public async Task<long> DeactivateUsersAsync(List<string> userIds)
     
     var update = _userFactory.CreateUpdateBuilder()
         .Set(u => u.IsActive, false)
-        .SetCurrentTimestamp()
+        // ✅ 工厂会自动设置 UpdatedAt、UpdatedBy，无需手动调用 SetCurrentTimestamp()
         .Build();
     
     return await _userFactory.UpdateManyAsync(filter, update);
@@ -584,15 +584,58 @@ public async Task MultiTenantFilter_ShouldWorkCorrectly()
 
 - [数据库操作工厂使用指南](mdc:docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md)
 - [数据库操作工厂迁移指南](mdc:docs/features/DATABASE-FACTORY-MIGRATION.md)
-- [多租户系统开发规范](mdc:.cursor/rules/MULTI-TENANT-DEVELOPMENT.md)
+- [多租户系统开发规范](mdc:.cursor/rules/multi-tenant-development.mdc)
 - [操作审计系统](mdc:Platform.ServiceDefaults/Services/AuditService.cs)
 - [MongoDB C# 驱动文档](https://mongodb.github.io/mongo-csharp-driver/)
+
+## 🔧 自动审计和时间戳管理
+
+### 工厂自动处理
+
+数据库操作工厂自动处理以下字段，**禁止手动设置**：
+
+#### 创建操作自动设置
+- `CreatedAt`、`UpdatedAt` - 时间戳
+- `CreatedBy`、`CreatedByUsername` - 操作者信息
+
+#### 更新操作自动设置
+- `UpdatedAt` - 更新时间戳
+- `UpdatedBy`、`UpdatedByUsername` - 更新者信息
+
+#### 软删除操作自动设置
+- `IsDeleted = true`
+- `DeletedAt`、`DeletedBy` - 删除信息
+- `UpdatedAt` - 更新时间戳
+
+### ❌ 禁止的手动操作
+
+```csharp
+// ❌ 错误：手动设置时间戳（冗余）
+var update = _factory.CreateUpdateBuilder()
+    .Set(x => x.IsActive, true)
+    .SetCurrentTimestamp()  // ❌ 工厂已自动设置，无需手动调用
+    .Set(u => u.UpdatedAt, DateTime.UtcNow)  // ❌ 禁止手动设置
+    .Build();
+
+// ✅ 正确：只设置业务字段
+var update = _factory.CreateUpdateBuilder()
+    .Set(x => x.IsActive, true)  // ✅ 只设置业务字段
+    .Build();  // ✅ 工厂会自动设置 UpdatedAt、UpdatedBy 等
+```
+
+### ✅ 自动审计方法
+
+以下方法自动记录审计信息：
+- `CreateAsync`、`CreateManyAsync` - 创建审计
+- `FindOneAndReplaceAsync`、`FindOneAndUpdateAsync` - 更新审计
+- `UpdateManyAsync` - 批量更新审计
+- `SoftDeleteAsync`、`SoftDeleteManyAsync` - 删除审计
 
 ## 🎯 核心原则
 
 1. **强制使用工厂** - 所有数据库操作必须使用 `IDatabaseOperationFactory<T>`
 2. **多租户隔离** - 工厂自动处理多租户数据隔离
-3. **操作审计** - 工厂自动记录所有操作审计
+3. **操作审计** - 工厂自动记录所有操作审计，禁止手动设置时间戳和审计字段
 4. **类型安全** - 使用强类型构建器确保编译时检查
 5. **性能优化** - 使用批量操作和索引优化
 6. **软删除** - 优先使用软删除保护数据

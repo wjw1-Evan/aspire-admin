@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Form, Input, Select, Switch, Button, Space, message } from 'antd';
 import { request } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
+import type { ApiResponse } from '@/types/unified-api';
 import type { AppUser, CreateUserRequest, UpdateUserRequest } from '../types';
 import type { Role } from '@/services/role/types';
 
@@ -55,7 +56,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
     setLoading(true);
     try {
       if (isEdit) {
-        // 更新用户
+        // 更新用户（包含基本信息和角色）
         const updateData: UpdateUserRequest = {
           username: values.username,
           email: values.email,
@@ -63,8 +64,8 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           isActive: values.isActive,
         };
 
-        const response = await request<{ success: boolean; data: AppUser }>(
-          `/api/user/${user.id}/update`,
+        const response = await request<ApiResponse<AppUser>>(
+          `/api/user/${user.id}`,
           {
             method: 'PUT',
             data: updateData,
@@ -74,7 +75,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         if (response.success) {
           message.success('用户更新成功');
         } else {
-          throw new Error('更新失败');
+          throw new Error(response.errorMessage || '更新失败');
         }
       } else {
         // 创建用户
@@ -86,7 +87,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           isActive: values.isActive,
         };
 
-        const response = await request<{ success: boolean; data: AppUser }>(
+        const response = await request<ApiResponse<AppUser>>(
           '/api/user/management',
           {
             method: 'POST',

@@ -144,13 +144,30 @@ public class UserService : IUserService
             }
         }
 
+        // 获取当前企业ID（从当前用户获取，不使用 JWT token）
+        if (string.IsNullOrEmpty(companyId))
+        {
+            throw new UnauthorizedAccessException("未找到当前企业信息");
+        }
+
         // 创建密码哈希
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         // v3.0 多租户：验证角色归属
-        if (request.RoleIds != null && request.RoleIds.Any())
+        var roleIds = request.RoleIds ?? new List<string>();
+        if (roleIds.Any())
         {
-            await ValidateRoleOwnershipAsync(request.RoleIds);
+            // 验证所有角色都属于该企业
+            var roleFilter = _roleFactory.CreateFilterBuilder()
+                .In(r => r.Id, roleIds)
+                .Equal(r => r.CompanyId, companyId)
+                .Build();
+            var validRoles = await _roleFactory.FindAsync(roleFilter);
+            
+            if (validRoles.Count != roleIds.Count)
+            {
+                throw new InvalidOperationException("部分角色不存在或不属于该企业");
+            }
         }
 
         var user = new User
@@ -158,15 +175,32 @@ public class UserService : IUserService
             Username = request.Username,
             Email = request.Email,
             PasswordHash = passwordHash,
-            // v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，而不是 User.RoleIds
-            // 角色分配将在创建用户后通过 UserCompany 关系处理
+            CurrentCompanyId = companyId,  // 设置当前企业ID
             IsActive = request.IsActive,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
-        return await _userFactory.CreateAsync(user);
+        var createdUser = await _userFactory.CreateAsync(user);
+
+        // 创建用户-企业关联，并分配角色
+        var userCompany = new UserCompany
+        {
+            UserId = createdUser.Id!,
+            CompanyId = companyId,
+            RoleIds = roleIds,
+            IsAdmin = false,  // 新创建的用户默认不是管理员
+            Status = ACTIVE_STATUS,
+            JoinedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+
+        await _userCompanyFactory.CreateAsync(userCompany);
+
+        return createdUser;
     }
 
     /// <summary>
@@ -198,6 +232,7 @@ public class UserService : IUserService
 
     /// <summary>
     /// 更新用户（用户管理，使用原子操作）
+    /// 包含基本信息更新和角色更新
     /// </summary>
     /// <param name="id">用户ID</param>
     /// <param name="request">更新用户请求</param>
@@ -217,6 +252,7 @@ public class UserService : IUserService
             await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email, excludeUserId: id);
         }
 
+        // 更新用户基本信息
         var filter = _userFactory.CreateFilterBuilder()
             .Equal(u => u.Id, id)
             .Build();
@@ -238,7 +274,56 @@ public class UserService : IUserService
             IsUpsert = false
         };
 
-        return await _userFactory.FindOneAndUpdateAsync(filter, update, options);
+        var updatedUser = await _userFactory.FindOneAndUpdateAsync(filter, update, options);
+
+        // 如果提供了角色ID列表，更新用户在当前企业的角色
+        if (updatedUser != null && request.RoleIds != null)
+        {
+            // 获取当前用户的企业ID（从当前用户获取，不使用 JWT token）
+            var currentUserId = _userFactory.GetRequiredUserId();
+            var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+            if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+            {
+                throw new UnauthorizedAccessException("未找到当前企业信息");
+            }
+            var companyId = currentUser.CurrentCompanyId;
+
+            // 验证所有角色都属于该企业
+            if (request.RoleIds.Any())
+            {
+                var roleFilter = _roleFactory.CreateFilterBuilder()
+                    .In(r => r.Id, request.RoleIds)
+                    .Equal(r => r.CompanyId, companyId)
+                    .Build();
+                var validRoles = await _roleFactory.FindAsync(roleFilter);
+                
+                if (validRoles.Count != request.RoleIds.Count)
+                {
+                    throw new InvalidOperationException("部分角色不存在或不属于该企业");
+                }
+            }
+
+            // 更新用户在企业中的角色
+            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.UserId, id)
+                .Equal(uc => uc.CompanyId, companyId)
+                .Build();
+
+            var userCompanyUpdate = _userCompanyFactory.CreateUpdateBuilder()
+                .Set(uc => uc.RoleIds, request.RoleIds)
+                .SetCurrentTimestamp()
+                .Build();
+
+            var userCompanyOptions = new FindOneAndUpdateOptions<UserCompany>
+            {
+                ReturnDocument = ReturnDocument.After,
+                IsUpsert = false
+            };
+
+            await _userCompanyFactory.FindOneAndUpdateAsync(userCompanyFilter, userCompanyUpdate, userCompanyOptions);
+        }
+
+        return updatedUser;
     }
 
     /// <summary>

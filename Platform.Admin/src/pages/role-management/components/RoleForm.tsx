@@ -252,23 +252,34 @@ const RoleForm: React.FC<RoleFormProps> = ({
               },
             ]}
           >
-            <Tree
-              checkable
-              defaultExpandAll
-              treeData={menuTree}
-              checkedKeys={form.getFieldValue('menuIds')}
-              expandedKeys={expandedKeys}
-              onExpand={(keys) => {
-                setExpandedKeys(keys.map(String));
+            <Form.Item
+              noStyle
+              shouldUpdate={(prevValues, currentValues) =>
+                prevValues.menuIds !== currentValues.menuIds
+              }
+            >
+              {({ getFieldValue }) => {
+                const checkedKeys = getFieldValue('menuIds') || [];
+                return (
+                  <Tree
+                    checkable
+                    defaultExpandAll
+                    treeData={menuTree}
+                    checkedKeys={checkedKeys}
+                    expandedKeys={expandedKeys}
+                    onExpand={(keys) => {
+                      setExpandedKeys(keys.map(String));
+                    }}
+                    onCheck={(checked) => {
+                      const newCheckedKeys = Array.isArray(checked)
+                        ? (checked as string[])
+                        : (checked.checked as string[]);
+                      form.setFieldsValue({ menuIds: newCheckedKeys });
+                    }}
+                  />
+                );
               }}
-              onCheck={(checked) => {
-                if (Array.isArray(checked)) {
-                  form.setFieldsValue({ menuIds: checked as string[] });
-                } else {
-                  form.setFieldsValue({ menuIds: checked.checked as string[] });
-                }
-              }}
-            />
+            </Form.Item>
           </Form.Item>
         )}
 

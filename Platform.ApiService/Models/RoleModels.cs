@@ -50,6 +50,19 @@ public class Role : Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDef
 
     [BsonElement("deletedReason")]
     public string? DeletedReason { get; set; }
+
+    // 操作审计字段
+    [BsonElement("createdBy")]
+    public string? CreatedBy { get; set; }
+
+    [BsonElement("createdByUsername")]
+    public string? CreatedByUsername { get; set; }
+
+    [BsonElement("updatedBy")]
+    public string? UpdatedBy { get; set; }
+
+    [BsonElement("updatedByUsername")]
+    public string? UpdatedByUsername { get; set; }
 }
 
 /// <summary>

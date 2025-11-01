@@ -84,12 +84,19 @@ public class UserController : BaseApiController
 
     /// <summary>
     /// 创建新用户（管理员功能）
+    /// 自动将用户加入当前企业并分配角色
     /// </summary>
     /// <param name="request">创建用户请求</param>
     /// <remarks>
     /// 管理员创建新用户账户，可以指定用户名、密码、邮箱和角色。
     /// 
     /// 权限要求：需要 user-management 菜单权限
+    /// 
+    /// 角色分配说明：
+    /// - 如果请求中提供了 RoleIds，会自动创建 UserCompany 关联并分配角色
+    /// - 角色必须属于当前企业，否则会返回错误
+    /// - 新创建的用户默认不是管理员（IsAdmin = false）
+    /// - 用户会自动加入当前企业，状态为 active
     /// 
     /// 示例请求：
     /// ```json
@@ -101,7 +108,7 @@ public class UserController : BaseApiController
     ///   "username": "newuser",
     ///   "password": "password123",
     ///   "email": "newuser@example.com",
-    ///   "roleIds": ["role123"],
+    ///   "roleIds": ["role123", "role456"],
     ///   "isActive": true
     /// }
     /// ```
@@ -144,12 +151,14 @@ public class UserController : BaseApiController
     /// <param name="id">用户ID</param>
     /// <param name="request">更新用户请求</param>
     /// <remarks>
-    /// 管理员更新用户的基本信息，包括用户名、邮箱、激活状态等。
+    /// 管理员更新用户的基本信息和角色。可以同时更新用户名、邮箱、激活状态和角色。
     /// 
     /// 权限要求：需要 user-management 菜单权限
     /// 
-    /// 注意：角色管理已移至企业成员管理API，此处只处理用户基本信息。
-    /// 如需修改用户角色，请使用 PUT /api/company/{companyId}/members/{userId}/roles
+    /// 角色更新说明：
+    /// - 如果请求中提供了 RoleIds，会自动更新用户在当前企业的角色
+    /// - 角色必须属于当前企业，否则会返回错误
+    /// - 角色更新会同步更新 UserCompany 表中的角色关联
     /// 
     /// 示例请求：
     /// ```json
@@ -160,7 +169,8 @@ public class UserController : BaseApiController
     /// {
     ///   "username": "updateduser",
     ///   "email": "updated@example.com",
-    ///   "isActive": true
+    ///   "isActive": true,
+    ///   "roleIds": ["role1", "role2"]
     /// }
     /// ```
     /// 
@@ -189,8 +199,8 @@ public class UserController : BaseApiController
     [RequireMenu("user-management")]
     public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
     {
-        // v3.1: 角色管理已移至 UserCompanyService，通过企业成员管理API处理
-        // 用户角色的修改请使用 PUT /api/company/{companyId}/members/{userId}/roles
+        // v6.2: 支持在更新用户时同时更新角色
+        // 如果请求中提供了 RoleIds，会自动更新用户在当前企业的角色
         
         var user = await _userService.UpdateUserManagementAsync(id, request);
         if (user == null)

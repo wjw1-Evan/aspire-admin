@@ -169,8 +169,6 @@ docs/
 - [**getUserStatistics API 函数缺失修复**](bugfixes/GET-USER-STATISTICS-API-FIX.md) - 修复欢迎页面统计数据加载问题 ⭐ **最新**
 - [帮助模块调试](bugfixes/HELP-MODAL-DEBUG.md) - 问题排查指南
 - [**帮助系统版本合并更新**](features/HELP-VERSION-MERGE-UPDATE.md) - 版本信息整合优化 ⭐ **最新**
-- [v6.0 帮助系统更新](features/V6-HELP-SYSTEM-UPDATE.md) - v6.0 权限系统内容同步
-- [v5.0 帮助系统更新](features/V5-HELP-SYSTEM-UPDATE.md) - v5.0 架构升级内容同步
 
 #### 用户界面优化
 - [**UI 主题升级和日间/夜间模式切换**](features/UI-THEME-UPGRADE.md) - 现代化主题系统和主题切换功能 ⭐ **最新**
@@ -238,9 +236,10 @@ docs/
 ### 问题修复
 
 #### Bug 修复
-- [**角色分配全部菜单权限后用户无法访问模块的修复**](bugfixes/ROLE-ALL-MENUS-PERMISSION-FIX.md) - **新增** - 修复分配全部菜单权限后用户无法访问模块的问题 ⭐ **最新**
+- [**我的活动页面多租户过滤修复**](bugfixes/MY-ACTIVITY-MULTI-TENANT-FILTER-FIX.md) - **新增** - 修复我的活动页面未按当前企业过滤的问题 ⭐ **最新**
+- [**角色分配全部菜单权限后用户无法访问模块的修复**](bugfixes/ROLE-ALL-MENUS-PERMISSION-FIX.md) - **新增** - 修复分配全部菜单权限后用户无法访问模块的问题
 - [**角色菜单权限更新导致用户无法访问模块的修复**](bugfixes/ROLE-MENU-PERMISSION-FIX.md) - **新增** - 修复修改角色菜单权限后用户无法访问任何模块的问题
-- [**企业切换JWT Token未更新修复**](bugfixes/COMPANY-SWITCH-TOKEN-FIX.md) - **新增** - 修复企业切换后JWT Token未重新生成的问题 ⭐ **最新**
+- [**企业切换JWT Token未更新修复**](bugfixes/COMPANY-SWITCH-TOKEN-FIX.md) - **新增** - 修复企业切换后JWT Token未重新生成的问题
 - [**新注册用户菜单获取403错误修复**](bugfixes/NEW-USER-MENU-403-FIX.md) - **新增** - 修复新用户注册后无法获取菜单的403错误
 - [**Menu 软删除不一致性修复**](bugfixes/MENU-SOFT-DELETE-INCONSISTENCY-FIX.md) - **新增** - 修复用户注册时菜单查询返回0结果的问题
 

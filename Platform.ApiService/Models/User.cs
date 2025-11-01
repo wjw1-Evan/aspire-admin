@@ -141,7 +141,7 @@ public class UserStatisticsResponse
     public int NewUsersThisMonth { get; set; }
 }
 
-public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
+public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped, Platform.ServiceDefaults.Models.IMultiTenant
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

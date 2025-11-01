@@ -115,12 +115,16 @@ public class TenantContext : ITenantContext
     /// </summary>
     public bool HasPermission(string permission)
     {
+        // 获取用户信息（避免重复查询）
+        var userInfo = LoadUserInfo();
+        if (userInfo == null)
+            return false;
+        
         // 管理员拥有所有权限
-        if (IsAdmin()) return true;
+        if (userInfo.IsAdmin) return true;
         
         // 检查用户权限
-        var permissions = GetUserPermissions();
-        return permissions.Contains(permission);
+        return userInfo.Permissions.Contains(permission);
     }
 
     /// <summary>
@@ -194,16 +198,7 @@ public class TenantContext : ITenantContext
             if (companyId.IsBsonNull || string.IsNullOrEmpty(companyId.AsString))
             {
                 // 没有当前企业，返回基本信息
-                return new UserInfo
-                {
-                    UserId = userId,
-                    Username = username,
-                    CompanyId = null,
-                    CompanyName = null,
-                    IsAdmin = false,
-                    RoleNames = new List<string>(),
-                    Permissions = new List<string>()
-                };
+                return CreateEmptyUserInfo(userId, username);
             }
 
             var currentCompanyId = companyId.AsString;
@@ -212,16 +207,7 @@ public class TenantContext : ITenantContext
             if (!ObjectId.TryParse(currentCompanyId, out var companyIdObjectId))
             {
                 _logger.LogWarning("无效的企业ID格式: {CompanyId}", currentCompanyId);
-                return new UserInfo
-                {
-                    UserId = userId,
-                    Username = username,
-                    CompanyId = null,
-                    CompanyName = null,
-                    IsAdmin = false,
-                    RoleNames = new List<string>(),
-                    Permissions = new List<string>()
-                };
+                return CreateEmptyUserInfo(userId, username);
             }
 
             var companiesCollection = _database.GetCollection<BsonDocument>("companies");
@@ -242,7 +228,6 @@ public class TenantContext : ITenantContext
             );
             var userCompanyDoc = await userCompaniesCollection.Find(userCompanyFilter).FirstOrDefaultAsync();
 
-            var roleNames = new List<string>();
             var permissions = new List<string>();
             var isAdmin = false;
 
@@ -257,7 +242,7 @@ public class TenantContext : ITenantContext
 
                     if (roleIds.Any())
                     {
-                        // 4. 获取角色信息
+                        // 4. 获取角色信息（仅用于获取菜单权限，不需要角色名称）
                         var roleObjectIds = new List<ObjectId>();
                         foreach (var roleId in roleIds)
                         {
@@ -276,11 +261,6 @@ public class TenantContext : ITenantContext
                                 Builders<BsonDocument>.Filter.Eq("isDeleted", false)
                             );
                             var roleDocs = await rolesCollection.Find(roleFilter).ToListAsync();
-
-                            roleNames = roleDocs
-                                .Select(r => r.GetValue("name", BsonString.Empty).AsString)
-                                .Where(name => !string.IsNullOrEmpty(name))
-                                .ToList();
 
                             // 5. 收集所有角色的权限（从菜单中获取）
                             var menuIds = roleDocs
@@ -340,7 +320,6 @@ public class TenantContext : ITenantContext
                 CompanyId = currentCompanyId,
                 CompanyName = companyName,
                 IsAdmin = isAdmin,
-                RoleNames = roleNames,
                 Permissions = permissions
             };
         }
@@ -352,7 +331,23 @@ public class TenantContext : ITenantContext
     }
 
     /// <summary>
-    /// 用户信息缓存模型
+    /// 创建空的用户信息（用于无企业场景）
+    /// </summary>
+    private static UserInfo CreateEmptyUserInfo(string userId, string username)
+    {
+        return new UserInfo
+        {
+            UserId = userId,
+            Username = username,
+            CompanyId = null,
+            CompanyName = null,
+            IsAdmin = false,
+            Permissions = new List<string>()
+        };
+    }
+
+    /// <summary>
+    /// 用户信息模型
     /// </summary>
     private class UserInfo
     {
@@ -361,7 +356,6 @@ public class TenantContext : ITenantContext
         public string? CompanyId { get; set; }
         public string? CompanyName { get; set; }
         public bool IsAdmin { get; set; }
-        public List<string> RoleNames { get; set; } = new();
         public List<string> Permissions { get; set; } = new();
     }
 }

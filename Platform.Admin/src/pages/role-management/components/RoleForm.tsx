@@ -119,19 +119,30 @@ const RoleForm: React.FC<RoleFormProps> = ({
    */
   useEffect(() => {
     if (visible) {
+      // 先重置表单，清除之前的状态
+      form.resetFields();
+      form.setFieldsValue({
+        menuIds: [],
+        isActive: true,
+      });
+      
       loadMenuTree();
       
       if (current) {
-        // 编辑模式：加载角色的菜单权限
-        loadRoleMenus();
+        // 编辑模式：设置基本字段，然后异步加载角色的菜单权限
         form.setFieldsValue({
           name: current.name,
           description: current.description,
           isActive: current.isActive,
+          menuIds: [], // 先设置为空数组，等待 loadRoleMenus 加载
         });
+        loadRoleMenus();
       } else {
-        // 新建模式：重置表单
-        form.resetFields();
+        // 新建模式：确保所有字段都是初始值
+        form.setFieldsValue({
+          menuIds: [],
+          isActive: true,
+        });
       }
     }
   }, [visible, current, loadMenuTree, loadRoleMenus, form]);
@@ -192,6 +203,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
       onOk={handleSubmit}
       confirmLoading={loading}
       width={700}
+      destroyOnClose={true}
     >
       <Form form={form} layout="vertical">
         <Form.Item
@@ -228,6 +240,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
         ) : (
           <Form.Item
             name="menuIds"
+            initialValue={[]}
             rules={[
               {
                 validator: (_, value) => {

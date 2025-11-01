@@ -46,7 +46,18 @@ export default function Register() {
         }
       }
     } catch (error: any) {
-      setRegisterError(error.message || '注册失败，请重试');
+      const errorMsg = error.message || '注册失败，请重试';
+      setRegisterError(errorMsg);
+      
+      // 从错误对象中提取 errorCode（错误拦截器会在 error.info 中存储）
+      const errorCode = error?.info?.errorCode || error?.errorCode;
+      
+      // 如果是验证码错误，自动刷新验证码
+      if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+        if (captchaRef.current) {
+          await captchaRef.current.refresh();
+        }
+      }
     }
   };
 

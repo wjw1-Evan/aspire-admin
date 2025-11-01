@@ -187,12 +187,25 @@ const Login: React.FC = () => {
           await captchaRef.current.refresh();
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       const defaultLoginFailureMessage = intl.formatMessage({
         id: 'pages.login.failure',
         defaultMessage: '登录失败，请重试！',
       });
-      message.error(defaultLoginFailureMessage);
+      
+      const errorMsg = error?.message || defaultLoginFailureMessage;
+      setUserLoginState({ status: 'error', errorMessage: errorMsg });
+      message.error(errorMsg);
+      
+      // 从错误对象中提取 errorCode（错误拦截器会在 error.info 中存储）
+      const errorCode = error?.info?.errorCode || error?.errorCode;
+      
+      // 如果是验证码错误，自动刷新验证码
+      if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+        if (captchaRef.current) {
+          await captchaRef.current.refresh();
+        }
+      }
     }
   };
   const { status, type: loginType } = userLoginState;

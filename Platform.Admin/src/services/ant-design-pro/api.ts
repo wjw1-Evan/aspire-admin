@@ -196,3 +196,11 @@ export async function verifyImageCaptcha(body: API.VerifyImageCaptchaRequest, op
     ...(options || {}),
   });
 }
+
+/** 检查用户名是否存在 GET /api/user/check-username */
+export async function checkUsernameExists(username: string, options?: { [key: string]: any }) {
+  return request<ApiResponse<{ exists: boolean }>>(`/api/user/check-username?username=${encodeURIComponent(username)}`, {
+    method: 'GET',
+    ...(options || {}),
+  });
+}

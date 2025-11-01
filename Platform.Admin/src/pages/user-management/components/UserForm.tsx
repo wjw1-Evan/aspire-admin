@@ -115,7 +115,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
     if (!value) return Promise.resolve();
 
     try {
-      const response = await request<{ exists: boolean }>(
+      const response = await request<ApiResponse<{ exists: boolean }>>(
         '/api/user/check-username',
         {
           method: 'GET',
@@ -126,7 +126,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         },
       );
 
-      if (response.exists) {
+      if (response.success && response.data?.exists) {
         return Promise.reject(new Error('用户名已存在'));
       }
       return Promise.resolve();
@@ -140,7 +140,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
     if (!value) return Promise.resolve();
 
     try {
-      const response = await request<{ exists: boolean }>(
+      const response = await request<ApiResponse<{ exists: boolean }>>(
         '/api/user/check-email',
         {
           method: 'GET',
@@ -151,7 +151,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         },
       );
 
-      if (response.exists) {
+      if (response.success && response.data?.exists) {
         return Promise.reject(new Error('邮箱已存在'));
       }
       return Promise.resolve();

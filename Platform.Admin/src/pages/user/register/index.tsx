@@ -1,10 +1,10 @@
-import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { history, Link } from '@umijs/max';
-import { Alert, App } from 'antd';
+import { Alert, App, Space } from 'antd';
 import React, { useState, useRef } from 'react';
 import { Footer } from '@/components';
-import { register } from '@/services/ant-design-pro/api';
+import { register, checkUsernameExists } from '@/services/ant-design-pro/api';
 import ImageCaptcha, { ImageCaptchaRef } from '@/components/ImageCaptcha';
 
 export default function Register() {
@@ -13,6 +13,11 @@ export default function Register() {
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
   const captchaRef = useRef<ImageCaptchaRef>(null);
+  
+  // 用户名检测状态
+  const [usernameStatus, setUsernameStatus] = useState<'checking' | 'available' | 'exists' | null>(null);
+  const [usernameMessage, setUsernameMessage] = useState<string>('');
+  const [usernameValue, setUsernameValue] = useState<string>('');
 
   const handleSubmit = async (values: API.RegisterParams) => {
     try {
@@ -58,6 +63,61 @@ export default function Register() {
           await captchaRef.current.refresh();
         }
       }
+    }
+  };
+
+  // 检测用户名是否存在
+  const handleUsernameCheck = async (username: string) => {
+    if (!username || username.length < 3) {
+      setUsernameStatus(null);
+      setUsernameMessage('');
+      return;
+    }
+
+    // 验证用户名格式
+    if (!/^\w+$/.test(username)) {
+      setUsernameStatus(null);
+      setUsernameMessage('');
+      return;
+    }
+
+    setUsernameStatus('checking');
+    setUsernameMessage('正在检测用户名...');
+
+    try {
+      const response = await checkUsernameExists(username);
+      
+      if (response.success && response.data) {
+        if (response.data.exists) {
+          setUsernameStatus('exists');
+          setUsernameMessage('用户名已存在，请更换');
+        } else {
+          setUsernameStatus('available');
+          setUsernameMessage('用户名可用');
+        }
+      } else {
+        setUsernameStatus(null);
+        setUsernameMessage('');
+      }
+    } catch (error) {
+      console.error('检测用户名失败:', error);
+      setUsernameStatus(null);
+      setUsernameMessage('');
+    }
+  };
+
+  // 处理用户名输入变化
+  const handleUsernameChange = (value: string) => {
+    setUsernameValue(value);
+    // 清空之前的状态
+    setUsernameStatus(null);
+    setUsernameMessage('');
+  };
+
+  // 处理用户名失焦
+  const handleUsernameBlur = () => {
+    if (usernameValue && usernameValue.length >= 3) {
+      handleUsernameCheck(usernameValue);
     }
   };
 
@@ -112,8 +172,28 @@ export default function Register() {
               fieldProps={{
                 size: 'large',
                 prefix: <UserOutlined />,
+                onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                  handleUsernameChange(e.target.value);
+                },
+                onBlur: handleUsernameBlur,
+                suffix: usernameStatus === 'checking' ? (
+                  <span style={{ color: '#1890ff' }}>检测中...</span>
+                ) : usernameStatus === 'available' ? (
+                  <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                ) : usernameStatus === 'exists' ? (
+                  <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                ) : null,
               }}
               placeholder="用户名（全局唯一）"
+              extra={
+                usernameMessage ? (
+                  <Space style={{ color: usernameStatus === 'exists' ? '#ff4d4f' : '#52c41a', fontSize: '12px', marginTop: '4px' }}>
+                    {usernameStatus === 'checking' && '⏳ 正在检测用户名...'}
+                    {usernameStatus === 'available' && '✅ 用户名可用'}
+                    {usernameStatus === 'exists' && '❌ 用户名已存在'}
+                  </Space>
+                ) : null
+              }
               rules={[
                 {
                   required: true,
@@ -122,6 +202,62 @@ export default function Register() {
                 {
                   min: 3,
                   message: '用户名至少3个字符',
+                },
+                {
+                  pattern: /^\w+$/,
+                  message: '用户名只能包含字母、数字和下划线',
+                },
+                {
+                  validator: async (_: any, value: string) => {
+                    if (!value || value.length < 3) {
+                      return Promise.resolve();
+                    }
+                    
+                    // 如果用户名格式不正确，不进行检测
+                    if (!/^\w+$/.test(value)) {
+                      return Promise.resolve();
+                    }
+                    
+                    // 如果已经检测过且存在，直接拒绝
+                    if (usernameStatus === 'exists' && usernameValue === value) {
+                      return Promise.reject(new Error('用户名已存在'));
+                    }
+                    
+                    // 如果检测结果为可用，通过验证
+                    if (usernameStatus === 'available' && usernameValue === value) {
+                      return Promise.resolve();
+                    }
+                    
+                    // 如果用户名变化了或还没检测过，进行检测
+                    if (usernameValue !== value || usernameStatus === null) {
+                      try {
+                        const response = await checkUsernameExists(value);
+                        
+                        if (response.success && response.data) {
+                          if (response.data.exists) {
+                            // 更新状态
+                            setUsernameStatus('exists');
+                            setUsernameMessage('用户名已存在，请更换');
+                            setUsernameValue(value);
+                            return Promise.reject(new Error('用户名已存在'));
+                          } else {
+                            // 更新状态
+                            setUsernameStatus('available');
+                            setUsernameMessage('用户名可用');
+                            setUsernameValue(value);
+                            return Promise.resolve();
+                          }
+                        }
+                      } catch (error) {
+                        console.error('验证用户名失败:', error);
+                        // 检测失败时允许提交，后端会再次验证
+                        return Promise.resolve();
+                      }
+                    }
+                    
+                    // 如果检测失败或未检测，允许提交（后端会再次验证）
+                    return Promise.resolve();
+                  },
                 },
               ]}
             />

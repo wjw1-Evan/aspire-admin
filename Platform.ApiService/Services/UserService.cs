@@ -814,6 +814,22 @@ public class UserService : IUserService
 
     public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
     {
+        // 获取当前企业ID（从数据库获取，不使用 JWT token）
+        string? companyId = null;
+        try
+        {
+            var currentUserId = _userFactory.GetCurrentUserId();
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+                companyId = currentUser?.CurrentCompanyId;
+            }
+        }
+        catch
+        {
+            // 如果无法获取（如用户未登录），使用空字符串
+        }
+
         var log = new UserActivityLog
         {
             UserId = userId,
@@ -821,6 +837,7 @@ public class UserService : IUserService
             Description = description,
             IpAddress = ipAddress,
             UserAgent = userAgent,
+            CompanyId = companyId ?? string.Empty,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow
         };

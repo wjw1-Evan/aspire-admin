@@ -209,6 +209,9 @@ public class UserActivityLogService : IUserActivityLogService
         var action = GenerateActionFromPath(httpMethod, path);
         var description = GenerateDescription(httpMethod, path, statusCode, username, ipAddress, queryString);
 
+        // 获取当前企业上下文（如果有的话，从数据库获取，不使用 JWT token）
+        var companyId = await TryGetCurrentCompanyIdAsync();
+
         var log = new UserActivityLog
         {
             UserId = userId ?? "anonymous",
@@ -222,6 +225,7 @@ public class UserActivityLogService : IUserActivityLogService
             Duration = durationMs,
             IpAddress = ipAddress,
             UserAgent = userAgent,
+            CompanyId = companyId ?? string.Empty,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

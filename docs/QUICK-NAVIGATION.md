@@ -122,7 +122,6 @@
 ### v5.0
 - [**v5.0 优化完成报告**](reports/V5-OPTIMIZATION-COMPLETE.md) - 多实例部署优化
 - [**v5.0 优化完成摘要**](optimization/OPTIMIZATION-V5-SUMMARY.md) - 优化摘要
-- [**v5.0 帮助系统更新**](features/V5-HELP-SYSTEM-UPDATE.md) - 帮助系统更新
 
 ### v3.1
 - [**v3.1 最终总结**](reports/V3.1-FINAL-SUMMARY.md) - 多企业隶属架构

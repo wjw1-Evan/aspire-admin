@@ -63,6 +63,7 @@ docs/
 - [Token存储方案评估](reports/TOKEN-STORAGE-EVALUATION.md) - JWT Token存储方案对比分析
 
 ### 全面检查报告
+- [**菜单权限模块检查报告 2025**](reports/MENU-PERMISSION-MODULE-CHECK-2025.md) - **新增** - 菜单权限系统设计实现全面检查 ⭐ **最新**
 - [Service BaseService 继承检查报告](reports/SERVICE-BASESERVICE-INHERITANCE-CHECK.md) - **新增** - 服务类继承BaseService规范化检查 ⭐ **架构优化**
 - [全面代码库深度检查报告](bugfixes/COMPREHENSIVE-CODE-REVIEW-REPORT.md) - **新增** - 全栈深度检查，发现并修复多个关键问题
 - [补充深度检查报告](bugfixes/SUPPLEMENTARY-DEEP-CHECK-REPORT.md) - **新增** - 补充安全审计和代码质量检查
@@ -285,6 +286,7 @@ docs/
 - [重构总结](refactoring/REFACTORING-SUMMARY.md) - 重构总结
 
 ### 优化文档
+- [**角色管理菜单权限合并优化**](optimization/ROLE-FORM-MENU-PERMISSION-MERGE.md) - **新增** - 将菜单权限集成到角色表单，提升用户体验 ⭐ **最新**
 - [业务逻辑优化总结](optimization/BUSINESS-LOGIC-OPTIMIZATION-SUMMARY.md) - 业务优化
 - [v3.0 优化最终报告](optimization/OPTIMIZATION-V3-FINAL.md) - v3.0 完整报告
 - [代码清理报告](optimization/CODE-CLEANUP-REPORT.md) - 代码清理

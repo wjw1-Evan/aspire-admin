@@ -1,11 +1,14 @@
-import { Modal, Form, Input, Switch, message } from 'antd';
-import React, { useEffect, useState } from 'react';
-import { createRole, updateRole } from '@/services/role/api';
+import { Modal, Form, Input, Switch, message, Button, Tree, Spin, Divider } from 'antd';
+import React, { useEffect, useState, useCallback } from 'react';
+import { createRole, updateRole, getRoleMenus } from '@/services/role/api';
+import { getMenuTree } from '@/services/menu/api';
 import type {
   Role,
   CreateRoleRequest,
   UpdateRoleRequest,
 } from '@/services/role/types';
+import type { MenuTreeNode } from '@/services/menu/types';
+import type { DataNode } from 'antd/es/tree';
 
 interface RoleFormProps {
   visible: boolean;
@@ -22,21 +25,116 @@ const RoleForm: React.FC<RoleFormProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [menuTree, setMenuTree] = useState<DataNode[]>([]);
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+
+  /**
+   * 将菜单树转换为 Tree 组件数据格式
+   */
+  const convertToTreeData = (menus: MenuTreeNode[]): DataNode[] => {
+    return menus.map((menu) => ({
+      key: menu.id!,
+      title: menu.title || menu.name,
+      children:
+        menu.children && menu.children.length > 0
+          ? convertToTreeData(menu.children)
+          : undefined,
+    }));
+  };
+
+  /**
+   * 获取所有节点的 key
+   */
+  const getAllKeys = (menus: MenuTreeNode[]): string[] => {
+    let keys: string[] = [];
+    menus.forEach((menu) => {
+      if (menu.id) {
+        keys.push(menu.id);
+      }
+      if (menu.children && menu.children.length > 0) {
+        keys = keys.concat(getAllKeys(menu.children));
+      }
+    });
+    return keys;
+  };
+
+  /**
+   * 加载菜单树
+   */
+  const loadMenuTree = useCallback(async () => {
+    setMenuLoading(true);
+    try {
+      const menuResponse = await getMenuTree();
+      if (menuResponse.success && menuResponse.data) {
+        const treeData = convertToTreeData(menuResponse.data);
+        setMenuTree(treeData);
+
+        // 展开所有节点
+        const allKeys = getAllKeys(menuResponse.data);
+        setExpandedKeys(allKeys);
+      }
+    } catch (error) {
+      console.error('Failed to load menu tree:', error);
+    } finally {
+      setMenuLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * 加载角色的菜单权限
+   */
+  const loadRoleMenus = useCallback(async () => {
+    if (!current?.id) return;
+
+    try {
+      const permissionResponse = await getRoleMenus(current.id);
+      if (permissionResponse.success && permissionResponse.data) {
+        form.setFieldsValue({
+          menuIds: permissionResponse.data,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load role menus:', error);
+    }
+  }, [current, form]);
+
+  /**
+   * 全选/反选菜单
+   */
+  const handleSelectAll = useCallback(() => {
+    const checkedKeys = form.getFieldValue('menuIds') || [];
+    const allKeys = expandedKeys;
+    
+    if (checkedKeys.length === allKeys.length) {
+      form.setFieldsValue({ menuIds: [] });
+    } else {
+      form.setFieldsValue({ menuIds: allKeys });
+    }
+  }, [form, expandedKeys]);
 
   /**
    * 设置表单初始值
    */
   useEffect(() => {
-    if (visible && current) {
-      form.setFieldsValue({
-        name: current.name,
-        description: current.description,
-        isActive: current.isActive,
-      });
-    } else if (visible) {
-      form.resetFields();
+    if (visible) {
+      loadMenuTree();
+      
+      if (current) {
+        // 编辑模式：加载角色的菜单权限
+        loadRoleMenus();
+        form.setFieldsValue({
+          name: current.name,
+          description: current.description,
+          isActive: current.isActive,
+        });
+      } else {
+        // 新建模式：重置表单
+        form.resetFields();
+      }
     }
-  }, [visible, current, form]);
+  }, [visible, current, loadMenuTree, loadRoleMenus, form]);
 
   /**
    * 提交表单
@@ -52,6 +150,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           name: values.name,
           description: values.description,
           isActive: values.isActive,
+          menuIds: values.menuIds || [],
         };
 
         const response = await updateRole(current.id!, updateData);
@@ -66,7 +165,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
         const createData: CreateRoleRequest = {
           name: values.name,
           description: values.description,
-          menuIds: [],
+          menuIds: values.menuIds || [],
           isActive: values.isActive !== false,
         };
 
@@ -92,8 +191,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
       onCancel={onCancel}
       onOk={handleSubmit}
       confirmLoading={loading}
-      width={500}
-      destroyOnClose
+      width={700}
     >
       <Form form={form} layout="vertical">
         <Form.Item
@@ -105,8 +203,59 @@ const RoleForm: React.FC<RoleFormProps> = ({
         </Form.Item>
 
         <Form.Item label="角色描述" name="description">
-          <Input.TextArea placeholder="请输入角色描述" rows={4} />
+          <Input.TextArea placeholder="请输入角色描述" rows={3} />
         </Form.Item>
+
+        <Divider orientation="left" style={{ margin: '16px 0' }}>
+          菜单权限
+        </Divider>
+
+        <div style={{ marginBottom: 16 }}>
+          <Button type="link" onClick={handleSelectAll} style={{ padding: 0 }}>
+            {(() => {
+              const checkedKeys = form.getFieldValue('menuIds') || [];
+              return checkedKeys.length === expandedKeys.length
+                ? '取消全选'
+                : '全选';
+            })()}
+          </Button>
+        </div>
+
+        {menuLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin />
+          </div>
+        ) : (
+          <Form.Item
+            name="menuIds"
+            rules={[
+              {
+                validator: (_, value) => {
+                  if (!value || value.length === 0) {
+                    return Promise.reject(new Error('请至少选择一个菜单权限'));
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <Tree
+              checkable
+              defaultExpandAll
+              treeData={menuTree}
+              checkedKeys={form.getFieldValue('menuIds')}
+              expandedKeys={expandedKeys}
+              onExpand={setExpandedKeys}
+              onCheck={(checked) => {
+                if (Array.isArray(checked)) {
+                  form.setFieldsValue({ menuIds: checked as string[] });
+                } else {
+                  form.setFieldsValue({ menuIds: checked.checked as string[] });
+                }
+              }}
+            />
+          </Form.Item>
+        )}
 
         <Form.Item
           label="是否启用"

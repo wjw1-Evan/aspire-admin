@@ -2,8 +2,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  SettingOutlined,
-  MoreOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -14,30 +12,23 @@ import {
 import {
   Button,
   message,
-  Popconfirm,
   Space,
   Tag,
-  Dropdown,
   Modal,
   Input,
   Badge,
 } from 'antd';
-import type { MenuProps } from 'antd';
 import React, { useRef, useState } from 'react';
 import {
-  getAllRoles,
   getAllRolesWithStats,
   deleteRole,
 } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
-import MenuPermissionModal from './components/MenuPermissionModal';
 
 const RoleManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [modalVisible, setModalVisible] = useState(false);
-  const [menuPermissionModalVisible, setMenuPermissionModalVisible] =
-    useState(false);
   const [currentRole, setCurrentRole] = useState<Role | undefined>();
 
   /**
@@ -166,30 +157,6 @@ const RoleManagement: React.FC = () => {
       key: 'action',
       fixed: 'right',
       render: (_, record) => {
-        const moreItems: MenuProps['items'] = [
-          {
-            key: 'menu-permission',
-            icon: <SettingOutlined />,
-            label: '菜单权限',
-            onClick: () => {
-              setCurrentRole(record);
-              setMenuPermissionModalVisible(true);
-            },
-          },
-          {
-            type: 'divider',
-          },
-          {
-            key: 'delete',
-            icon: <DeleteOutlined />,
-            label: '删除',
-            danger: true,
-            onClick: () => {
-              handleDelete(record.id!, record.name);
-            },
-          },
-        ];
-
         return (
           <Space size="small">
             <Button
@@ -203,11 +170,17 @@ const RoleManagement: React.FC = () => {
             >
               编辑
             </Button>
-            <Dropdown menu={{ items: moreItems }} trigger={['click']}>
-              <Button type="link" size="small" icon={<MoreOutlined />}>
-                更多
-              </Button>
-            </Dropdown>
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => {
+                handleDelete(record.id!, record.name);
+              }}
+            >
+              删除
+            </Button>
           </Space>
         );
       },
@@ -253,20 +226,6 @@ const RoleManagement: React.FC = () => {
           setModalVisible(false);
           setCurrentRole(undefined);
           actionRef.current?.reload();
-        }}
-      />
-
-      <MenuPermissionModal
-        visible={menuPermissionModalVisible}
-        role={currentRole}
-        onCancel={() => {
-          setMenuPermissionModalVisible(false);
-          setCurrentRole(undefined);
-        }}
-        onSuccess={() => {
-          setMenuPermissionModalVisible(false);
-          setCurrentRole(undefined);
-          message.success('菜单权限分配成功');
         }}
       />
     </PageContainer>

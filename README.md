@@ -7,6 +7,7 @@
 这是一个使用 .NET Aspire 框架构建的微服务架构项目，采用多租户 SaaS 模式，包含以下核心组件：
 
 - **多租户 API 服务** - 提供企业级用户管理、认证、权限控制、通知等 REST API
+- **数据初始化微服务** - 独立的数据库初始化和菜单管理服务
 - **管理后台** - React + Ant Design Pro 企业级前端界面
 - **移动应用** - React Native + Expo 跨平台移动应用
 - **API 网关** - 基于 YARP 的统一入口
@@ -19,6 +20,7 @@
 ```text
 Platform/
 ├── Platform.AppHost/          # Aspire 应用主机
+├── Platform.DataInitializer/  # 数据初始化微服务
 ├── Platform.ApiService/       # API 服务
 ├── Platform.Admin/            # 管理后台 (React + Ant Design Pro)
 ├── Platform.App/              # 移动应用 (React Native + Expo)
@@ -33,6 +35,14 @@ Platform/
 - 配置 YARP API 网关
 - 集成 Scalar API 文档
 - 管理前端和移动应用的构建与部署
+- 控制微服务启动顺序（DataInitializer → ApiService）
+
+#### Platform.DataInitializer
+- **数据初始化微服务** - 独立的初始化服务，执行完成后自动停止
+- **数据库索引创建** - 自动创建所有必要的 MongoDB 索引
+- **全局菜单初始化** - 创建系统级菜单（所有企业共享）
+- **幂等性保证** - 可以安全地重复执行初始化操作
+- **单实例运行** - 确保只有一个实例执行初始化
 
 #### Platform.ApiService
 - **多租户架构** - 基于 CompanyId 的企业数据隔离
@@ -45,9 +55,11 @@ Platform/
 - **角色权限管理** - 企业独立管理角色和权限
 - **菜单管理 API** - 动态菜单配置
 - **标签管理 API** - 用户标签分类管理
+- **数据库操作工厂** - 统一的数据访问层，自动处理多租户过滤、软删除、操作审计
 - **MongoDB 数据访问** - 支持软删除和时间戳
 - **OpenAPI 文档支持** - 完整的 API 文档
 - **健康检查端点** - 服务状态监控
+- **依赖数据初始化服务** - 在 DataInitializer 完成后启动
 
 #### Platform.Admin
 - **React 19 + Ant Design Pro** - 企业级管理后台
@@ -88,6 +100,7 @@ Platform/
 - **Scalar** - API 文档生成
 - **OpenTelemetry** - 可观测性
 - **JWT** - 多企业认证和授权
+- **数据库操作工厂** - 统一数据访问层，自动处理多租户、软删除、审计
 - **软删除** - 数据安全删除机制
 
 ### 前端技术
@@ -140,6 +153,12 @@ Platform/
    ```bash
    dotnet run --project Platform.AppHost
    ```
+   
+   **启动说明**：
+   - AppHost 会自动启动所有微服务
+   - DataInitializer 会首先执行数据初始化（创建索引和菜单）
+   - API 服务会在 DataInitializer 完成后自动启动
+   - 前端应用会在 API 服务就绪后启动
 
 4. **访问应用**
    - **管理后台**: http://localhost:15001
@@ -512,7 +531,8 @@ public class ChangePasswordRequest
 - **API 网关**: 15000
 - **管理后台**: 15001
 - **移动应用**: 15002
-- **API 服务**: 动态分配
+- **API 服务**: 动态分配（内部服务，通过网关访问）
+- **数据初始化服务**: 动态分配（一次性任务，完成后自动停止）
 - **MongoDB**: 27017
 - **Mongo Express**: 8081
 
@@ -627,10 +647,18 @@ npm start
 - ✅ **权限管理 API** - 角色、菜单、权限管理
 - ✅ **通知管理 API** - 企业级通知系统
 - ✅ **用户活动日志** - 自动记录和查询
+- ✅ **数据库操作工厂** - 统一数据访问层，自动处理多租户、软删除、审计
 - ✅ **软删除机制** - 数据安全删除
 - ✅ **MongoDB 数据存储** - 支持多租户和软删除
 - ✅ **OpenAPI 文档** - 完整的 API 文档
 - ✅ **健康检查** - 服务状态监控
+
+### 数据初始化功能
+- ✅ **数据库索引管理** - 自动创建和更新所有必要的索引
+- ✅ **全局菜单初始化** - 创建系统级菜单（所有企业共享）
+- ✅ **幂等性保证** - 可以安全地重复执行初始化操作
+- ✅ **单实例运行** - 确保只有一个实例执行初始化
+- ✅ **自动停止** - 初始化完成后自动停止，节省资源
 
 ## 🎯 版本历史
 
@@ -666,7 +694,9 @@ npm start
 - [多租户系统说明](docs/features/MULTI-TENANT-SYSTEM.md) - 完整的多租户架构文档
 
 ### 开发指南
-- [移除全局数据初始化](docs/reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - v3.1.1 数据隔离优化 ⭐ **最新**
+- [数据初始化微服务](docs/features/DATA-INITIALIZER-MICROSERVICE.md) - 数据初始化微服务架构和使用指南 ⭐ **最新**
+- [数据库操作工厂指南](docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md) - 统一数据访问层使用指南
+- [移除全局数据初始化](docs/reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - v3.1.1 数据隔离优化
 - [v5.0 优化完成报告](docs/reports/V5-OPTIMIZATION-COMPLETE.md) - 后端架构优化详情
 - [菜单级权限使用指南](docs/features/MENU-LEVEL-PERMISSION-GUIDE.md) - v6.0 菜单级权限系统使用指南
 - [帮助系统功能](docs/features/HELP-MODULE-FEATURE.md) - 内置帮助模块说明

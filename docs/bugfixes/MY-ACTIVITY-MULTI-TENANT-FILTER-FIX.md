@@ -105,7 +105,7 @@ private FilterDefinition<T> ApplyTenantFilter(FilterDefinition<T> filter)
 
 ### 修复内容
 
-为 `UserActivityLog` 实体添加 `IMultiTenant` 接口实现：
+#### 1. 为 `UserActivityLog` 实体添加 `IMultiTenant` 接口实现
 
 ```csharp
 // 修复前
@@ -113,6 +113,45 @@ public class UserActivityLog : ISoftDeletable, IEntity, ITimestamped
 
 // 修复后
 public class UserActivityLog : ISoftDeletable, IEntity, ITimestamped, IMultiTenant
+```
+
+#### 2. 修复活动日志记录时未设置 CompanyId 的问题
+
+修复了两个活动日志记录方法未设置 `CompanyId` 的问题：
+
+**UserActivityLogService.LogHttpRequestAsync** - 中间件调用的HTTP请求日志:
+```csharp
+// 修复：添加企业ID获取逻辑
+var companyId = await TryGetCurrentCompanyIdAsync();
+var log = new UserActivityLog
+{
+    // ...
+    CompanyId = companyId ?? string.Empty,
+    // ...
+};
+```
+
+**UserService.LogUserActivityAsync** - 用户操作活动日志（登录、登出、修改密码等）:
+```csharp
+// 修复：添加企业ID获取逻辑
+string? companyId = null;
+try
+{
+    var currentUserId = _userFactory.GetCurrentUserId();
+    if (!string.IsNullOrEmpty(currentUserId))
+    {
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        companyId = currentUser?.CurrentCompanyId;
+    }
+}
+catch { }
+
+var log = new UserActivityLog
+{
+    // ...
+    CompanyId = companyId ?? string.Empty,
+    // ...
+};
 ```
 
 ### 修复代码
@@ -271,14 +310,27 @@ db.activityLogs.find({ userId: "user_xxx", companyId: "company_yyy" }).count()
 ## ✅ 验证清单
 
 - [x] 修改 `UserActivityLog` 实现 `IMultiTenant` 接口
+- [x] 修复 `UserActivityLogService.LogHttpRequestAsync` 未设置 CompanyId
+- [x] 修复 `UserService.LogUserActivityAsync` 未设置 CompanyId
 - [x] 编译成功，无错误
 - [x] 编译无警告（只有预先存在的警告）
 - [ ] 功能测试通过
 - [ ] 数据库验证通过
-- [ ] 更新相关文档
+- [x] 更新相关文档
 
 ## 📝 总结
 
+**修复内容**：
+1. 为 `UserActivityLog` 实体添加 `IMultiTenant` 接口实现
+2. 修复活动日志记录时未设置 `CompanyId` 的问题
+
 通过为 `UserActivityLog` 实体添加 `IMultiTenant` 接口实现，使其符合项目的多租户设计规范，`DatabaseOperationFactory` 会自动为其应用企业隔离过滤，确保"我的活动"页面只显示当前企业的活动数据。
 
-这是一个**最小化修复**，只修改了一个接口声明，没有影响其他逻辑，充分利用了框架的自动过滤能力。
+通过修复活动日志记录方法未设置 `CompanyId` 的问题，确保所有新记录的活动日志都有正确的企业归属，避免产生跨企业的数据污染。
+
+这是一个**完整的多租户修复**，涵盖查询过滤和数据写入两个层面，充分利用了框架的自动过滤能力。
+
+## 📅 提交历史
+
+- `2f79b81` - fix: 修复我的活动页面未按当前企业过滤的问题
+- `6266b39` - fix: 修复活动日志记录未设置CompanyId的问题

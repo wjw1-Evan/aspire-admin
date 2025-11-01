@@ -34,7 +34,7 @@ const RoleManagement: React.FC = () => {
   /**
    * 加载角色数据（带统计信息）
    */
-  const loadRoleData = async () => {
+  const loadRoleData = async (params: any, sort?: Record<string, any>) => {
     try {
       const response = await getAllRolesWithStats();
       if (response.success && response.data) {

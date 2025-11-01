@@ -19,9 +19,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<DatabaseOperationFactory<T>> _logger;
     private readonly IMongoDatabase _database;
-    
-    // 缓存 AppUser 集合名称（避免重复反射）
-    private static readonly string? _appUserCollectionName = GetAppUserCollectionName();
 
     public DatabaseOperationFactory(
         IMongoDatabase database,
@@ -39,28 +36,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         _logger = logger;
         _database = database;
     }
-    
-    /// <summary>
-    /// 获取 AppUser 集合名称（静态缓存，避免重复反射）
-    /// </summary>
-    private static string? GetAppUserCollectionName()
-    {
-        try
-        {
-            // 尝试通过反射获取 AppUser 类型的集合名称
-            var appUserType = Type.GetType("Platform.ApiService.Models.AppUser, Platform.ApiService");
-            if (appUserType != null)
-            {
-                var attr = appUserType.GetCustomAttribute<BsonCollectionNameAttribute>();
-                return attr?.Name ?? "appusers";  // 默认集合名称
-            }
-        }
-        catch
-        {
-            // 反射失败时返回默认值
-        }
-        return "appusers";  // 默认集合名称
-    }
 
     // ========== 公共辅助 ==========
 
@@ -71,17 +46,19 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 
     private void TrySetProperty(object target, string propertyName, object? value)
     {
-        try
+        if (target == null || value == null)
+            return;
+            
+        var prop = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (prop != null && prop.CanWrite)
         {
-            var prop = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-            if (prop != null && prop.CanWrite)
+            // 检查值类型是否兼容
+            var propType = prop.PropertyType;
+            if (propType.IsInstanceOfType(value) || 
+                (value is string strValue && propType == typeof(string)))
             {
                 prop.SetValue(target, value);
             }
-        }
-        catch
-        {
-            // 忽略反射赋值失败，保持容错
         }
     }
 
@@ -728,23 +705,16 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
                 return null;
             }
             
-            try
+            // GetProperty 和 GetCustomAttribute 不会抛出异常（除非内存不足等极端情况）
+            var companyIdProperty = typeof(T).GetProperty("CompanyId");
+            if (companyIdProperty != null)
             {
-                var companyIdProperty = typeof(T).GetProperty("CompanyId");
-                if (companyIdProperty != null)
-                {
-                    var bsonElementAttr = companyIdProperty.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
-                    _companyIdFieldName = bsonElementAttr?.ElementName ?? "companyId";
-                }
-                else
-                {
-                    _companyIdFieldName = "companyId";  // 默认值
-                }
+                var bsonElementAttr = companyIdProperty.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
+                _companyIdFieldName = bsonElementAttr?.ElementName ?? "companyId";
             }
-            catch
+            else
             {
-                // 反射失败时返回默认值
-                _companyIdFieldName = "companyId";
+                _companyIdFieldName = "companyId";  // 默认值
             }
             
             return _companyIdFieldName;
@@ -795,48 +765,40 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             return null;
         }
 
-        try
+        var users = _database.GetCollection<BsonDocument>("appusers");
+        
+        // 构建ID查询过滤器（支持ObjectId和字符串两种格式）
+        FilterDefinition<BsonDocument> idFilter;
+        if (ObjectId.TryParse(userId, out var objectId))
         {
-            var users = _database.GetCollection<BsonDocument>(_appUserCollectionName ?? "appusers");
-            
-            // 构建ID查询过滤器（支持ObjectId和字符串两种格式）
-            FilterDefinition<BsonDocument> idFilter;
-            if (ObjectId.TryParse(userId, out var objectId))
-            {
-                // ObjectId 格式：优先尝试 _id 字段
-                idFilter = Builders<BsonDocument>.Filter.Eq("_id", objectId);
-            }
-            else
-            {
-                // 字符串格式：尝试 _id 和 id 字段
-                idFilter = Builders<BsonDocument>.Filter.Or(
-                    Builders<BsonDocument>.Filter.Eq("_id", userId),
-                    Builders<BsonDocument>.Filter.Eq("id", userId)
-                );
-            }
-
-            var projection = Builders<BsonDocument>.Projection.Include("currentCompanyId");
-            var doc = users.Find(idFilter).Project(projection).FirstOrDefault();
-            
-            if (doc == null)
-            {
-                _logger.LogWarning("未找到用户 {UserId}，集合: {CollectionName}", userId, _appUserCollectionName);
-                return null;
-            }
-            
-            var currentCompanyId = doc.GetValue("currentCompanyId", BsonNull.Value);
-            if (currentCompanyId is BsonString bsonString && !string.IsNullOrEmpty(bsonString.Value))
-            {
-                return bsonString.Value;
-            }
-            
-            _logger.LogWarning("用户 {UserId} 的 currentCompanyId 字段为空或无效", userId);
+            // ObjectId 格式：优先尝试 _id 字段
+            idFilter = Builders<BsonDocument>.Filter.Eq("_id", objectId);
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError(ex, "ResolveCurrentCompanyId 读取失败，用户ID: {UserId}", userId);
+            // 字符串格式：尝试 _id 和 id 字段
+            idFilter = Builders<BsonDocument>.Filter.Or(
+                Builders<BsonDocument>.Filter.Eq("_id", userId),
+                Builders<BsonDocument>.Filter.Eq("id", userId)
+            );
         }
 
+        var projection = Builders<BsonDocument>.Projection.Include("currentCompanyId");
+        var doc = users.Find(idFilter).Project(projection).FirstOrDefault();
+        
+        if (doc == null)
+        {
+            _logger.LogWarning("未找到用户 {UserId}，集合: appusers", userId);
+            return null;
+        }
+        
+        var currentCompanyId = doc.GetValue("currentCompanyId", BsonNull.Value);
+        if (currentCompanyId is BsonString bsonString && !string.IsNullOrEmpty(bsonString.Value))
+        {
+            return bsonString.Value;
+        }
+        
+        _logger.LogWarning("用户 {UserId} 的 currentCompanyId 字段为空或无效", userId);
         return null;
     }
 
@@ -872,42 +834,34 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             return string.Empty;  // Debug未启用时跳过构建
         }
         
-        try
+        var queryInfo = new List<string>();
+        
+        // 添加过滤条件
+        if (filter != null)
         {
-            var queryInfo = new List<string>();
-            
-            // 添加过滤条件
-            if (filter != null)
-            {
-                var registry = MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry;
-                var serializer = registry.GetSerializer<T>();
-                var args = new MongoDB.Driver.RenderArgs<T>(serializer, registry);
-                var filterJson = filter.Render(args);
-                queryInfo.Add($"Filter: {filterJson}");
-            }
-            
-            // 添加排序条件
-            if (sort != null)
-            {
-                var registry = MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry;
-                var serializer = registry.GetSerializer<T>();
-                var args = new MongoDB.Driver.RenderArgs<T>(serializer, registry);
-                var sortJson = sort.Render(args);
-                queryInfo.Add($"Sort: {sortJson}");
-            }
-            
-            // 添加限制条件
-            if (limit.HasValue)
-            {
-                queryInfo.Add($"Limit: {limit.Value}");
-            }
-            
-            return string.Join(", ", queryInfo);
+            var registry = MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry;
+            var serializer = registry.GetSerializer<T>();
+            var args = new MongoDB.Driver.RenderArgs<T>(serializer, registry);
+            var filterJson = filter.Render(args);
+            queryInfo.Add($"Filter: {filterJson}");
         }
-        catch
+        
+        // 添加排序条件
+        if (sort != null)
         {
-            // 静默失败，不影响主流程
-            return string.Empty;
+            var registry = MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry;
+            var serializer = registry.GetSerializer<T>();
+            var args = new MongoDB.Driver.RenderArgs<T>(serializer, registry);
+            var sortJson = sort.Render(args);
+            queryInfo.Add($"Sort: {sortJson}");
         }
+        
+        // 添加限制条件
+        if (limit.HasValue)
+        {
+            queryInfo.Add($"Limit: {limit.Value}");
+        }
+        
+        return string.Join(", ", queryInfo);
     }
 }

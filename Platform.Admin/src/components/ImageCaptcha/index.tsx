@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Button, Input, Space, message, Image } from 'antd';
 import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import { getImageCaptcha, verifyImageCaptcha } from '@/services/ant-design-pro/api';
@@ -12,14 +12,18 @@ interface ImageCaptchaProps {
   size?: 'small' | 'middle' | 'large';
 }
 
-const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
+export interface ImageCaptchaRef {
+  refresh: () => Promise<void>;
+}
+
+const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
   value,
   onChange,
   onCaptchaIdChange,
   type = 'login',
   placeholder = '请输入图形验证码',
   size = 'large',
-}) => {
+}, ref) => {
   const [captchaId, setCaptchaId] = useState<string>('');
   const [imageData, setImageData] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +31,7 @@ const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
   const inputRef = useRef<any>(null);
 
   // 获取图形验证码
-  const fetchCaptcha = async () => {
+  const fetchCaptcha = async (showSuccessMessage = false) => {
     try {
       setLoading(true);
       const response = await getImageCaptcha(type);
@@ -43,7 +47,10 @@ const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
         }
         onChange?.('');
         
-        message.success('验证码已刷新');
+        // 只有在手动刷新时显示成功消息，自动刷新时不显示（避免频繁提示）
+        if (showSuccessMessage) {
+          message.success('验证码已刷新');
+        }
       } else {
         message.error('获取验证码失败');
       }
@@ -54,6 +61,11 @@ const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
       setLoading(false);
     }
   };
+
+  // 暴露刷新方法给父组件（自动刷新，不显示成功消息）
+  useImperativeHandle(ref, () => ({
+    refresh: () => fetchCaptcha(false),
+  }));
 
   // 验证图形验证码
   const verifyCaptcha = async (answer: string) => {
@@ -74,8 +86,8 @@ const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
         return true;
       } else {
         message.error('验证码错误，请重新输入');
-        // 刷新验证码
-        await fetchCaptcha();
+        // 刷新验证码（自动刷新，不显示成功消息）
+        await fetchCaptcha(false);
         return false;
       }
     } catch (error) {
@@ -126,7 +138,7 @@ const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
               width={120}
               height={40}
               style={{ cursor: 'pointer' }}
-              onClick={fetchCaptcha}
+              onClick={() => fetchCaptcha(true)}
               preview={false}
             />
             <Button
@@ -134,7 +146,7 @@ const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
               icon={<ReloadOutlined />}
               size="small"
               loading={loading}
-              onClick={fetchCaptcha}
+              onClick={() => fetchCaptcha(true)}
               style={{
                 position: 'absolute',
                 top: -8,
@@ -151,7 +163,7 @@ const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
             type="default"
             icon={<ReloadOutlined />}
             loading={loading}
-            onClick={fetchCaptcha}
+            onClick={() => fetchCaptcha(true)}
             size={size}
             style={{ height: '100%' }}
           >
@@ -161,6 +173,8 @@ const ImageCaptcha: React.FC<ImageCaptchaProps> = ({
       </div>
     </Space.Compact>
   );
-};
+});
+
+ImageCaptcha.displayName = 'ImageCaptcha';
 
 export default ImageCaptcha;

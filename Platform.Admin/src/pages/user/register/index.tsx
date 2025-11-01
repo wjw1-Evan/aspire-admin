@@ -2,16 +2,17 @@ import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { history, Link } from '@umijs/max';
 import { Alert, App } from 'antd';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Footer } from '@/components';
 import { register } from '@/services/ant-design-pro/api';
-import ImageCaptcha from '@/components/ImageCaptcha';
+import ImageCaptcha, { ImageCaptchaRef } from '@/components/ImageCaptcha';
 
 export default function Register() {
   const { message } = App.useApp();
   const [registerError, setRegisterError] = useState<string>('');
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
+  const captchaRef = useRef<ImageCaptchaRef>(null);
 
   const handleSubmit = async (values: API.RegisterParams) => {
     try {
@@ -35,7 +36,15 @@ export default function Register() {
       }
 
       // 注册失败
-      setRegisterError(response.errorMessage || '注册失败');
+      const errorMsg = response.errorMessage || '注册失败';
+      setRegisterError(errorMsg);
+      
+      // 如果是验证码错误，自动刷新验证码
+      if (response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
+        if (captchaRef.current) {
+          await captchaRef.current.refresh();
+        }
+      }
     } catch (error: any) {
       setRegisterError(error.message || '注册失败，请重试');
     }
@@ -141,6 +150,7 @@ export default function Register() {
             />
 
             <ImageCaptcha
+              ref={captchaRef}
               value={captchaAnswer}
               onChange={setCaptchaAnswer}
               onCaptchaIdChange={setCaptchaId}

@@ -23,10 +23,10 @@ import {
 } from '@umijs/max';
 import { Alert, App, Button, Tabs } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
-import ImageCaptcha from '@/components/ImageCaptcha';
+import ImageCaptcha, { ImageCaptchaRef } from '@/components/ImageCaptcha';
 import { login } from '@/services/ant-design-pro/api';
 import { getFakeCaptcha } from '@/services/ant-design-pro/login';
 import { tokenUtils } from '@/utils/token';
@@ -119,6 +119,7 @@ const Login: React.FC = () => {
   const [type, setType] = useState<string>('account');
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
+  const captchaRef = useRef<ImageCaptchaRef>(null);
   const { initialState, setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
   const { message } = App.useApp();
@@ -179,6 +180,13 @@ const Login: React.FC = () => {
       // 如果失败，处理错误信息
       const errorMsg = response.errorMessage || '登录失败，请重试！';
       setUserLoginState({ status: 'error', errorMessage: errorMsg });
+      
+      // 如果是验证码错误，自动刷新验证码
+      if (response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
+        if (captchaRef.current) {
+          await captchaRef.current.refresh();
+        }
+      }
     } catch (error) {
       const defaultLoginFailureMessage = intl.formatMessage({
         id: 'pages.login.failure',
@@ -309,6 +317,7 @@ const Login: React.FC = () => {
                 ]}
               />
               <ImageCaptcha
+                ref={captchaRef}
                 value={captchaAnswer}
                 onChange={setCaptchaAnswer}
                 onCaptchaIdChange={setCaptchaId}

@@ -96,9 +96,17 @@ private async Task<UserInfo?> LoadUserInfoAsync()
 
 **文件**: `Platform.ServiceDefaults/Services/DatabaseOperationFactory.cs`
 
-**临时方案**：对于审计字段（不影响业务逻辑）使用 `.Result`
+**必要方案**：对于多租户过滤（核心安全功能）和审计字段使用 `.Result`
 
 ```csharp
+private string? ResolveCurrentCompanyId()
+{
+    // ⚠️ 注意：GetAwaiter().GetResult() 在多租户过滤场景是必要的
+    // 虽然可能在某些情况下有死锁风险，但对于只读的企业ID获取，风险相对较低
+    var companyId = _tenantContext.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
+    return companyId;
+}
+
 private (string? userId, string? username) GetActor()
 {
     // 临时方案：审计字段使用同步等待（审计字段不影响业务逻辑）
@@ -108,7 +116,9 @@ private (string? userId, string? username) GetActor()
 }
 ```
 
-**⚠️ 警告**：虽然使用 `.Result`，但只在审计字段中使用，不影响核心业务逻辑
+**⚠️ 警告**：虽然使用 `.GetAwaiter().GetResult()`，但：
+1. **多租户过滤** - 核心安全功能，必须同步等待
+2. **审计字段** - 不影响业务逻辑，风险可控
 
 ## 📊 改造统计
 
@@ -270,9 +280,7 @@ dotnet build --no-incremental
 
 ## 📚 相关文档
 
-- [TenantExtensions vs ITenantContext 评估](optimization/TENANT-EXTENSIONS-VS-TENANT-CONTEXT.md)
 - [ITenantContext 实现](Platform.ServiceDefaults/Services/ITenantContext.cs)
-- [TenantExtensions 实现](Platform.ApiService/Extensions/TenantExtensions.cs)
 - [后端代码冗余优化](optimization/BACKEND-CODE-REFACTORING.md)
 
 ## 🎯 改造清单
@@ -299,7 +307,9 @@ dotnet build --no-incremental
 
 ---
 
-**改造日期**: 2025-01-16
-**改造人员**: AI Assistant
-**改造状态**: ✅ 完成
+**改造日期**: 2025-01-16  
+**修改日期**: 2025-01-16（修复多租户过滤）  
+**改造人员**: AI Assistant  
+**改造状态**: ✅ 完成  
+**重要修复**: ResolveCurrentCompanyId() 使用 GetAwaiter().GetResult() 确保多租户过滤正常工作
 

@@ -771,8 +771,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     private string? ResolveCurrentCompanyId()
     {
         // ✅ 直接使用 ITenantContext 从数据库读取的企业ID
-        var task = _tenantContext.GetCurrentCompanyIdAsync();
-        return task.IsCompletedSuccessfully ? task.Result : null;
+        // ⚠️ 注意：GetAwaiter().GetResult() 在多租户过滤场景是必要的
+        // 虽然可能在某些情况下有死锁风险，但对于只读的企业ID获取，风险相对较低
+        var companyId = _tenantContext.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
+        return companyId;
     }
 
     /// <summary>

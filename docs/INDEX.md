@@ -236,6 +236,7 @@ docs/
 ### 问题修复
 
 #### Bug 修复
+- [**多租户过滤失效修复**](bugfixes/MULTI-TENANT-FILTER-BUG-FIX.md) - **新增** - 修复角色管理显示所有企业角色的 Bug ⭐ **最新**
 - [**表格排序功能修复**](bugfixes/TABLE-SORT-FUNCTION-FIX.md) - **新增** - 修复用户管理页面排序功能无法正常使用 ⭐ **最新**
 - [**我的活动页面多租户过滤修复**](bugfixes/MY-ACTIVITY-MULTI-TENANT-FILTER-FIX.md) - **新增** - 修复我的活动页面未按当前企业过滤的问题
 - [**角色分配全部菜单权限后用户无法访问模块的修复**](bugfixes/ROLE-ALL-MENUS-PERMISSION-FIX.md) - **新增** - 修复分配全部菜单权限后用户无法访问模块的问题

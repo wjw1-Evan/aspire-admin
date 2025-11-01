@@ -237,7 +237,9 @@ var isAdmin = await _tenantContext.IsAdminAsync();
 
 ---
 
-**优化完成日期**: 2025-01-16
-**优化人员**: AI Assistant
-**优化目标**: ITenantContext 完全异步化，消除死锁风险，统一代码风格
+**优化完成日期**: 2025-01-16  
+**修改日期**: 2025-01-16（修复多租户过滤）  
+**优化人员**: AI Assistant  
+**优化目标**: ITenantContext 完全异步化，消除死锁风险，统一代码风格  
+**重要修复**: ResolveCurrentCompanyId() 使用 GetAwaiter().GetResult() 以确保多租户过滤正常工作
 

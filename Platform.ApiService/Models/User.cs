@@ -1,8 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
-using User = Platform.ApiService.Models.AppUser;
 
 namespace Platform.ApiService.Models;
 

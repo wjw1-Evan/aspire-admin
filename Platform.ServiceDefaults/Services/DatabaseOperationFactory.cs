@@ -754,52 +754,14 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     }
 
     /// <summary>
-    /// 统一解析当前企业ID：统一从数据库 users 集合读取当前用户的 CurrentCompanyId
-    /// 优化：使用缓存的集合名称，简化查询逻辑
+    /// 统一解析当前企业ID：从 ITenantContext 获取（ITenantContext 已从数据库读取）
+    /// ⚠️ 变更：不再重复查询数据库，直接使用 ITenantContext 提供的数据
     /// </summary>
     private string? ResolveCurrentCompanyId()
     {
-        var userId = _tenantContext.GetCurrentUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            return null;
-        }
-
-        var users = _database.GetCollection<BsonDocument>("appusers");
-        
-        // 构建ID查询过滤器（支持ObjectId和字符串两种格式）
-        FilterDefinition<BsonDocument> idFilter;
-        if (ObjectId.TryParse(userId, out var objectId))
-        {
-            // ObjectId 格式：优先尝试 _id 字段
-            idFilter = Builders<BsonDocument>.Filter.Eq("_id", objectId);
-        }
-        else
-        {
-            // 字符串格式：尝试 _id 和 id 字段
-            idFilter = Builders<BsonDocument>.Filter.Or(
-                Builders<BsonDocument>.Filter.Eq("_id", userId),
-                Builders<BsonDocument>.Filter.Eq("id", userId)
-            );
-        }
-
-        var projection = Builders<BsonDocument>.Projection.Include("currentCompanyId");
-        var doc = users.Find(idFilter).Project(projection).FirstOrDefault();
-        
-        if (doc == null)
-        {
-            _logger.LogWarning("未找到用户 {UserId}，集合: appusers", userId);
-            return null;
-        }
-        
-        var currentCompanyId = doc.GetValue("currentCompanyId", BsonNull.Value);
-        if (currentCompanyId is BsonString bsonString && !string.IsNullOrEmpty(bsonString.Value))
-        {
-            return bsonString.Value;
-        }
-        
-        _logger.LogWarning("用户 {UserId} 的 currentCompanyId 字段为空或无效", userId);
-        return null;
+        // ✅ 直接使用 ITenantContext 从数据库读取的企业ID
+        // ITenantContext.GetCurrentCompanyId() 已经从数据库读取了 user.CurrentCompanyId
+        return _tenantContext.GetCurrentCompanyId();
     }
 
     /// <summary>

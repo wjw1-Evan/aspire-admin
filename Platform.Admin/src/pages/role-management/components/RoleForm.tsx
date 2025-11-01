@@ -258,7 +258,9 @@ const RoleForm: React.FC<RoleFormProps> = ({
               treeData={menuTree}
               checkedKeys={form.getFieldValue('menuIds')}
               expandedKeys={expandedKeys}
-              onExpand={setExpandedKeys}
+              onExpand={(keys) => {
+                setExpandedKeys(keys.map(String));
+              }}
               onCheck={(checked) => {
                 if (Array.isArray(checked)) {
                   form.setFieldsValue({ menuIds: checked as string[] });

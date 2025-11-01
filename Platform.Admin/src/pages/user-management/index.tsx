@@ -96,22 +96,29 @@ const UserManagement: React.FC = () => {
   };
 
   // 获取用户列表
-  type TableRequestParams = {
-    current?: number;
-    pageSize?: number;
-    sortBy?: string;
-    sortOrder?: string;
-  } & Record<string, unknown>;
+  const fetchUsers = async (params: any, sort?: Record<string, any>) => {
+    // 处理排序参数
+    let sortBy = searchParams.SortBy;
+    let sortOrder = searchParams.SortOrder;
+    
+    if (sort && Object.keys(sort).length > 0) {
+      // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
+      const sortKey = Object.keys(sort)[0];
+      const sortValue = sort[sortKey];
+      
+      // 后端使用小写字段名
+      sortBy = sortKey;
+      sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
+    }
 
-  const fetchUsers = async (params: TableRequestParams) => {
     const requestData: UserListRequest = {
       Page: params.current || searchParams.Page,
       PageSize: params.pageSize || searchParams.PageSize,
       Search: searchParams.Search,
       RoleIds: searchParams.RoleIds,
       IsActive: searchParams.IsActive,
-      SortBy: params.sortBy || searchParams.SortBy,
-      SortOrder: params.sortOrder || searchParams.SortOrder,
+      SortBy: sortBy,
+      SortOrder: sortOrder,
       StartDate: searchParams.StartDate,
       EndDate: searchParams.EndDate,
     };

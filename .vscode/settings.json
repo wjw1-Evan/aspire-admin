@@ -1,0 +1,16 @@
+{
+  "dotnet.test.runSettings": {
+    "isDataCollectionEnabled": false
+  },
+  "dotnet.unitTests.runSettingsPath": "",
+  "dotnet.defaultSolution": "Platform.sln",
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.enableEditorConfigSupport": true,
+  "files.exclude": {
+    "**/bin": false,
+    "**/obj": false
+  },
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true
+}
+
+

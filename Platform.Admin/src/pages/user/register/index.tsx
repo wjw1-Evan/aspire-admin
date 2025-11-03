@@ -5,7 +5,7 @@ import { Alert, App, Space } from 'antd';
 import React, { useState, useRef } from 'react';
 import { Footer } from '@/components';
 import { register, checkUsernameExists } from '@/services/ant-design-pro/api';
-import ImageCaptcha, { ImageCaptchaRef } from '@/components/ImageCaptcha';
+import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 
 export default function Register() {
   const { message } = App.useApp();

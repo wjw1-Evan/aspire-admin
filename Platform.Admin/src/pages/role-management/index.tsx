@@ -6,8 +6,8 @@ import {
 import {
   PageContainer,
   ProTable,
-  ActionType,
-  ProColumns,
+  type ActionType,
+  type ProColumns,
 } from '@ant-design/pro-components';
 import {
   Button,
@@ -34,7 +34,7 @@ const RoleManagement: React.FC = () => {
   /**
    * 加载角色数据（带统计信息）
    */
-  const loadRoleData = async (params: any, sort?: Record<string, any>) => {
+  const loadRoleData = async (_params: any, _sort?: Record<string, any>) => {
     try {
       const response = await getAllRolesWithStats();
       if (response.success && response.data) {
@@ -49,7 +49,7 @@ const RoleManagement: React.FC = () => {
         total: 0,
         success: false,
       };
-    } catch (error) {
+    } catch (_error) {
       message.error('加载角色失败');
       return {
         data: [],
@@ -176,7 +176,11 @@ const RoleManagement: React.FC = () => {
               danger
               icon={<DeleteOutlined />}
               onClick={() => {
-                handleDelete(record.id!, record.name);
+                if (record.id) {
+                  handleDelete(record.id, record.name);
+                } else {
+                  message.error('角色缺少唯一标识，无法删除');
+                }
               }}
             >
               删除

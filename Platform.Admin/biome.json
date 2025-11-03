@@ -30,7 +30,8 @@
         "noExplicitAny": "off"
       },
       "correctness": {
-        "useExhaustiveDependencies": "off"
+        "useExhaustiveDependencies": "off",
+        "useUniqueElementIds": "off"
       },
       "a11y": {
         "noStaticElementInteractions": "off",

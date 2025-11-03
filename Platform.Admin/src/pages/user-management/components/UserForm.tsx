@@ -20,6 +20,13 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
 
   const isEdit = !!user;
 
+  const roleOptions = roles
+    .filter((role): role is Role & { id: string } => Boolean(role.id))
+    .map((role) => ({
+      label: role.name,
+      value: role.id,
+    }));
+
   // 加载角色列表
   useEffect(() => {
     const fetchRoles = async () => {
@@ -222,10 +229,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           filterOption={(input, option) =>
             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
           }
-          options={roles.map((role) => ({
-            label: role.name,
-            value: role.id!,
-          }))}
+          options={roleOptions}
         />
       </Form.Item>
 

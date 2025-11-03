@@ -1,6 +1,6 @@
 import { ProTable } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
-import { Tag, Button, Space, App, Popconfirm } from 'antd';
+import { Tag, Button, App, Popconfirm } from 'antd';
 import React, { useRef, useState } from 'react';
 import { getMyRequests, cancelRequest } from '@/services/company';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -161,7 +161,7 @@ const MyJoinRequests: React.FC = () => {
       <ProTable<API.JoinRequestDetail>
         columns={columns}
         actionRef={actionRef}
-        request={async (params, sort) => {
+        request={async (_params, _sort) => {
           try {
             const response = await getMyRequests();
 
@@ -177,7 +177,7 @@ const MyJoinRequests: React.FC = () => {
               data: [],
               success: false,
             };
-          } catch (error) {
+          } catch (_error) {
             return {
               data: [],
               success: false,

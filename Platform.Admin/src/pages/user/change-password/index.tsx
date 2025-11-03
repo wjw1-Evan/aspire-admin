@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { changePassword } from '@/services/ant-design-pro/api';
 import Settings from '../../../../config/defaultSettings';
 
-const useStyles = createStyles(({ token }) => {
+const useStyles = createStyles(() => {
   return {
     container: {
       padding: '24px',
@@ -65,7 +65,7 @@ const ChangePassword: React.FC = () => {
         id: 'pages.changePassword.failure',
         defaultMessage: '密码修改失败，请重试！',
       });
-      console.log(error);
+      console.error('修改密码失败:', error);
       message.error(defaultChangePasswordFailureMessage);
     }
   };

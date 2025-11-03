@@ -26,7 +26,7 @@ import { createStyles } from 'antd-style';
 import React, { useState, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
-import ImageCaptcha, { ImageCaptchaRef } from '@/components/ImageCaptcha';
+import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 import { login } from '@/services/ant-design-pro/api';
 import { getFakeCaptcha } from '@/services/ant-design-pro/login';
 import { tokenUtils } from '@/utils/token';
@@ -429,7 +429,7 @@ const Login: React.FC = () => {
                     } else {
                       message.error('获取验证码失败');
                     }
-                  } catch (error) {
+                  } catch (_error) {
                     message.error('获取验证码失败，请稍后重试');
                   }
                 }}

@@ -2,7 +2,6 @@ import {
   LogoutOutlined,
   UserOutlined,
   LockOutlined,
-  ReloadOutlined,
 } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';

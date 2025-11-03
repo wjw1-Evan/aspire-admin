@@ -24,7 +24,7 @@ import { getAllRoles } from '@/services/role/api';
 import type { AppUser, UserActivityLog } from '../types';
 import dayjs from 'dayjs';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface UserDetailProps {
   user: AppUser;

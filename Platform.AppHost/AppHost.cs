@@ -1,4 +1,3 @@
-
 using Aspire.Hosting.Yarp.Transforms;
 using Scalar.Aspire;
 
@@ -7,9 +6,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey");
 
-var mongo = builder.AddMongoDB("mongo").WithMongoExpress(config=>{ 
-    config.WithLifetime(ContainerLifetime.Persistent);
-}).WithLifetime(ContainerLifetime.Persistent).WithDataVolume();
+var mongo = builder.AddMongoDB("mongo")
+    .WithMongoExpress(config => config.WithLifetime(ContainerLifetime.Persistent))
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithDataVolume();
 
 var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
@@ -25,11 +25,11 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
         .WithReference(mongodb)
         .WaitForCompletion(datainitializer)
-        .WithHttpEndpoint().WithReplicas(3)
+        .WithHttpEndpoint()
+        .WithReplicas(1)
         .WithHttpHealthCheck("/health")
         .WithEnvironment("Jwt__SecretKey", jwtSecretKey.Value)
-        
- };
+};
 
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
@@ -41,8 +41,7 @@ var yarp = builder.AddYarp("apigateway")
         {
             var route = $"/{service.Key}/{{**catch-all}}";
             config.AddRoute(route, config.AddCluster(service.Value))
-                .WithTransformPathRouteValues("/api/{**catch-all}")
-            ;
+                .WithTransformPathRouteValues("/api/{**catch-all}");
         }
     });
 
@@ -50,25 +49,25 @@ builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
-    .WithHttpEndpoint(env: "PORT",port:15001)
+    .WithHttpEndpoint(env: "PORT", port: 15001)
     .WithNpmPackageInstallation()
     .PublishAsDockerFile();
- 
+
 builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
-    .WithHttpEndpoint(env: "PORT",port:15002)
+    .WithHttpEndpoint(env: "PORT", port: 15002)
     .WithNpmPackageInstallation()
     .PublishAsDockerFile();
- 
+
 // 配置 Scalar API 文档
 // 使用 .NET 9 原生 OpenAPI 支持
 // 默认端点是 /openapi/v1.json
-var scalar = builder.AddScalarApiReference( );
+var scalar = builder.AddScalarApiReference();
 foreach (var service in services.Values)
 {
-    scalar.WithApiReference(service); 
+    scalar.WithApiReference(service);
 }
 
 await builder.Build().RunAsync();

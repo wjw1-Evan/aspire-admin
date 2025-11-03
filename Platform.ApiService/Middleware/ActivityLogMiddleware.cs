@@ -11,6 +11,7 @@ public class ActivityLogMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<ActivityLogMiddleware> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IServiceProvider _serviceProvider;
 
     // 排除路径列表
     private static readonly string[] ExcludedPaths =
@@ -26,11 +27,13 @@ public class ActivityLogMiddleware
     public ActivityLogMiddleware(
         RequestDelegate next,
         ILogger<ActivityLogMiddleware> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IServiceProvider serviceProvider)
     {
         _next = next;
         _logger = logger;
         _configuration = configuration;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -65,13 +68,13 @@ public class ActivityLogMiddleware
         if (logData.HasValue)
         {
             // 异步记录日志（不等待完成，避免阻塞响应）
-            // ⚠️ P0 修复：在后台线程中创建新的服务 Scope，避免服务生命周期问题
+            // 使用根 ServiceProvider 创建新的 Scope
             _ = Task.Run(async () =>
             {
                 try
                 {
                     // 创建新的 Scope，确保 Scoped 服务正常工作
-                    using var scope = context.RequestServices.CreateScope();
+                    using var scope = _serviceProvider.CreateScope();
                     var scopedLogService = scope.ServiceProvider.GetRequiredService<IUserActivityLogService>();
                     
                     await LogRequestAsync(logData.Value, scopedLogService);
@@ -96,25 +99,16 @@ public class ActivityLogMiddleware
         var pathString = path.Value?.ToLower() ?? string.Empty;
 
         // 检查预定义的排除路径
-        foreach (var excludedPath in ExcludedPaths)
+        if (ExcludedPaths.Any(excludedPath => pathString.StartsWith(excludedPath.ToLower())))
         {
-            if (pathString.StartsWith(excludedPath.ToLower()))
-            {
-                return true;
-            }
+            return true;
         }
 
         // 检查配置的排除路径
         var configuredExcludedPaths = _configuration.GetSection("ActivityLog:ExcludedPaths").Get<string[]>();
-        if (configuredExcludedPaths != null)
+        if (configuredExcludedPaths != null && configuredExcludedPaths.Any(excludedPath => pathString.StartsWith(excludedPath.ToLower())))
         {
-            foreach (var excludedPath in configuredExcludedPaths)
-            {
-                if (pathString.StartsWith(excludedPath.ToLower()))
-                {
-                    return true;
-                }
-            }
+            return true;
         }
 
         return false;
@@ -178,7 +172,7 @@ public class ActivityLogMiddleware
     /// <summary>
     /// 记录请求信息（使用已提取的数据，不访问 HttpContext）
     /// </summary>
-    private async Task LogRequestAsync(
+    private static async Task LogRequestAsync(
         (string? userId, string? username, string httpMethod, string path, string? queryString, int statusCode, long durationMs, string? ipAddress, string? userAgent) logData,
         IUserActivityLogService logService)
     {

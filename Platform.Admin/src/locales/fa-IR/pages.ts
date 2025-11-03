@@ -72,4 +72,16 @@ export default {
   'pages.searchTable.tenThousand': '0000',
   'pages.searchTable.batchDeletion': 'حذف دسته ای',
   'pages.searchTable.batchApproval': 'تصویب دسته ای',
+  // منوی تغییر شرکت
+  'pages.company.search.title': 'جستجوی شرکت‌ها',
+  'pages.company.search.subTitle': 'جستجو و درخواست پیوستن به شرکت‌های دیگر',
+  'pages.company.loadFailed': 'بارگذاری فهرست شرکت‌ها با خطا مواجه شد',
+  'pages.company.switchSuccess': 'به شرکت تغییر یافت: {name}',
+  'pages.company.switchFailed': 'تغییر شرکت با خطا مواجه شد',
+  'pages.company.personal': 'شخصی',
+  'pages.company.admin': 'مدیر',
+  'pages.company.noRole': 'بدون نقش',
+  'pages.company.createNew': 'ایجاد شرکت جدید',
+  'pages.company.joinNew': 'پیوستن به شرکت جدید',
+  'pages.company.roleSeparator': '، ',
 };

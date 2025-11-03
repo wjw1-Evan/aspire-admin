@@ -172,6 +172,9 @@ public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, P
     [BsonElement("queryString")]
     public string? QueryString { get; set; }
 
+    [BsonElement("fullUrl")]
+    public string? FullUrl { get; set; } // 完整URL (path + queryString)
+
     [BsonElement("statusCode")]
     public int? StatusCode { get; set; }
 
@@ -224,6 +227,24 @@ public class UserActivityLogPagedResponse
     public int Page { get; set; }
     public int PageSize { get; set; }
     public int TotalPages { get; set; }
+}
+
+/// <summary>
+/// HTTP 请求日志记录请求
+/// </summary>
+public class LogHttpRequestRequest
+{
+    public string? UserId { get; set; }
+    public string? Username { get; set; }
+    public string HttpMethod { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+    public string? QueryString { get; set; }
+    public string Scheme { get; set; } = string.Empty;
+    public string Host { get; set; } = string.Empty;
+    public int StatusCode { get; set; }
+    public long DurationMs { get; set; }
+    public string? IpAddress { get; set; }
+    public string? UserAgent { get; set; }
 }
 
 // 个人中心相关模型

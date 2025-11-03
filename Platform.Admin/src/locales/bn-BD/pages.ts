@@ -69,4 +69,16 @@ export default {
   'pages.searchTable.tenThousand': '000',
   'pages.searchTable.batchDeletion': 'একসাখে ডিলিট',
   'pages.searchTable.batchApproval': 'একসাখে অনুমোদন',
+  // কোম্পানি স্যুইচ মেনু
+  'pages.company.search.title': 'কোম্পানি অনুসন্ধান করুন',
+  'pages.company.search.subTitle': 'অন্যান্য কোম্পানিতে যোগদানের জন্য অনুসন্ধান করুন',
+  'pages.company.loadFailed': 'কোম্পানি তালিকা লোড করতে ব্যর্থ',
+  'pages.company.switchSuccess': 'কোম্পানিতে স্যুইচ করা হয়েছে: {name}',
+  'pages.company.switchFailed': 'কোম্পানি স্যুইচ করতে ব্যর্থ',
+  'pages.company.personal': 'ব্যক্তিগত',
+  'pages.company.admin': 'অ্যাডমিন',
+  'pages.company.noRole': 'কোন ভূমিকা নেই',
+  'pages.company.createNew': 'নতুন কোম্পানি তৈরি করুন',
+  'pages.company.joinNew': 'নতুন কোম্পানিতে যোগদান করুন',
+  'pages.company.roleSeparator': ', ',
 };

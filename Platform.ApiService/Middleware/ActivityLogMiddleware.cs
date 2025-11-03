@@ -1,4 +1,5 @@
 using Platform.ApiService.Services;
+using Platform.ApiService.Models;
 using System.Diagnostics;
 
 namespace Platform.ApiService.Middleware;
@@ -117,7 +118,7 @@ public class ActivityLogMiddleware
     /// <summary>
     /// 在请求线程中提取日志数据（避免后台线程访问 HttpContext）
     /// </summary>
-    private (string? userId, string? username, string httpMethod, string path, string? queryString, int statusCode, long durationMs, string? ipAddress, string? userAgent)? ExtractLogData(HttpContext context, long durationMs)
+    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent)? ExtractLogData(HttpContext context, long durationMs)
     {
         // 提取用户信息
         string? userId = null;
@@ -143,6 +144,10 @@ public class ActivityLogMiddleware
         var path = context.Request.Path.Value ?? string.Empty;
         var queryString = context.Request.QueryString.Value;
 
+        // 提取 URL 相关信息
+        var scheme = context.Request.Scheme; // http 或 https
+        var host = context.Request.Host.Value ?? "localhost"; // 包含主机名和端口，例如：localhost:15000
+
         // 限制查询字符串长度
         var maxQueryStringLength = _configuration.GetValue<int>("ActivityLog:MaxQueryStringLength", 500);
         if (!string.IsNullOrEmpty(queryString) && queryString.Length > maxQueryStringLength)
@@ -166,29 +171,35 @@ public class ActivityLogMiddleware
         // 响应状态码
         var statusCode = context.Response.StatusCode;
 
-        return (userId, username, httpMethod, path, queryString, statusCode, durationMs, ipAddress, userAgent);
+        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent);
     }
 
     /// <summary>
     /// 记录请求信息（使用已提取的数据，不访问 HttpContext）
     /// </summary>
     private static async Task LogRequestAsync(
-        (string? userId, string? username, string httpMethod, string path, string? queryString, int statusCode, long durationMs, string? ipAddress, string? userAgent) logData,
+        (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent) logData,
         IUserActivityLogService logService)
     {
-        var (userId, username, httpMethod, path, queryString, statusCode, durationMs, ipAddress, userAgent) = logData;
+        var (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent) = logData;
+
+        // 构建请求对象
+        var request = new LogHttpRequestRequest
+        {
+            UserId = userId,
+            Username = username,
+            HttpMethod = httpMethod,
+            Path = path,
+            QueryString = queryString,
+            Scheme = scheme,
+            Host = host,
+            StatusCode = statusCode,
+            DurationMs = durationMs,
+            IpAddress = ipAddress,
+            UserAgent = userAgent
+        };
 
         // 调用日志服务记录
-        await logService.LogHttpRequestAsync(
-            userId,
-            username,
-            httpMethod,
-            path,
-            queryString,
-            statusCode,
-            durationMs,
-            ipAddress,
-            userAgent
-        );
+        await logService.LogHttpRequestAsync(request);
     }
 }

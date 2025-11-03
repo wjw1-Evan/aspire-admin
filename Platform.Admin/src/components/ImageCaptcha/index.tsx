@@ -1,6 +1,6 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Button, Input, Space, message, Image } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import { getImageCaptcha, verifyImageCaptcha } from '@/services/ant-design-pro/api';
 
 interface ImageCaptchaProps {
@@ -21,14 +21,16 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
   onChange,
   onCaptchaIdChange,
   type = 'login',
-  placeholder = '请输入图形验证码',
+  placeholder,
   size = 'large',
 }, ref) => {
+  const intl = useIntl();
   const [captchaId, setCaptchaId] = useState<string>('');
   const [imageData, setImageData] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const inputRef = useRef<any>(null);
+  const defaultPlaceholder = placeholder || intl.formatMessage({ id: 'pages.captcha.placeholder' });
 
   // 获取图形验证码
   const fetchCaptcha = async (showSuccessMessage = false) => {
@@ -49,14 +51,14 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
         
         // 只有在手动刷新时显示成功消息，自动刷新时不显示（避免频繁提示）
         if (showSuccessMessage) {
-          message.success('验证码已刷新');
+          message.success(intl.formatMessage({ id: 'pages.captcha.refreshSuccess' }));
         }
       } else {
-        message.error('获取验证码失败');
+        message.error(intl.formatMessage({ id: 'pages.captcha.fetchFailed' }));
       }
     } catch (error) {
       console.error('获取图形验证码失败:', error);
-      message.error('获取验证码失败，请稍后重试');
+      message.error(intl.formatMessage({ id: 'pages.captcha.fetchFailedRetry' }));
     } finally {
       setLoading(false);
     }
@@ -82,17 +84,17 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
       });
 
       if (response.success && response.data?.valid) {
-        message.success('验证码正确');
+        message.success(intl.formatMessage({ id: 'pages.captcha.verifySuccess' }));
         return true;
       } else {
-        message.error('验证码错误，请重新输入');
+        message.error(intl.formatMessage({ id: 'pages.captcha.verifyFailed' }));
         // 刷新验证码（自动刷新，不显示成功消息）
         await fetchCaptcha(false);
         return false;
       }
     } catch (error) {
       console.error('验证图形验证码失败:', error);
-      message.error('验证失败，请稍后重试');
+      message.error(intl.formatMessage({ id: 'pages.captcha.verifyError' }));
       return false;
     } finally {
       setVerifying(false);
@@ -124,7 +126,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
         value={value}
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
-        placeholder={placeholder}
+        placeholder={defaultPlaceholder}
         size={size}
         disabled={verifying}
         style={{ flex: 1 }}
@@ -134,7 +136,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
           <div style={{ position: 'relative', display: 'inline-block' }}>
             <Image
               src={`data:image/png;base64,${imageData}`}
-              alt="验证码"
+              alt={intl.formatMessage({ id: 'pages.captcha.alt' })}
               width={120}
               height={40}
               style={{ cursor: 'pointer' }}
@@ -155,7 +157,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
                 height: 24,
                 padding: 0,
               }}
-              title="刷新验证码"
+              title={intl.formatMessage({ id: 'pages.captcha.refreshTitle' })}
             />
           </div>
         ) : (
@@ -167,7 +169,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
             size={size}
             style={{ height: '100%' }}
           >
-            获取验证码
+            {intl.formatMessage({ id: 'pages.captcha.getCaptcha' })}
           </Button>
         )}
       </div>

@@ -90,76 +90,279 @@ public class ActivityLogMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ActivityLogMiddleware> _logger;
+    private readonly IConfiguration _configuration;
+    private readonly IServiceProvider _serviceProvider;  // ✅ 使用 IServiceProvider 创建 Scope
 
-    public ActivityLogMiddleware(RequestDelegate next, ILogger<ActivityLogMiddleware> logger)
+    // 排除路径列表
+    private static readonly string[] ExcludedPaths =
+    {
+        "/health",
+        "/api/openapi",
+        "/scalar/",
+        "/metrics",
+        "/_framework/",
+        "/favicon.ico"
+    };
+
+    public ActivityLogMiddleware(
+        RequestDelegate next,
+        ILogger<ActivityLogMiddleware> logger,
+        IConfiguration configuration,
+        IServiceProvider serviceProvider)  // ✅ 注入 IServiceProvider
     {
         _next = next;
         _logger = logger;
+        _configuration = configuration;
+        _serviceProvider = serviceProvider;
     }
 
-    public async Task InvokeAsync(HttpContext context, IUserActivityLogService logService)
+    public async Task InvokeAsync(HttpContext context)
     {
+        // 检查是否启用日志记录
+        var enabled = _configuration.GetValue<bool>("ActivityLog:Enabled", true);
+        if (!enabled)
+        {
+            await _next(context);
+            return;
+        }
+
+        // 检查是否需要排除此路径
+        if (ShouldExclude(context.Request.Path))
+        {
+            await _next(context);
+            return;
+        }
+
+        // 记录请求开始并计时
         var stopwatch = Stopwatch.StartNew();
-        var requestId = context.TraceIdentifier;
+
+        // 执行请求
+        await _next(context);
+
+        // 停止计时
+        stopwatch.Stop();
+
+        // ⚠️ 关键：在请求线程中提取所有数据，避免在后台线程访问 HttpContext
+        var logData = ExtractLogData(context, stopwatch.ElapsedMilliseconds);
         
-        using (_logger.BeginScope(new Dictionary<string, object>
+        if (logData.HasValue)
         {
-            ["RequestId"] = requestId,
-            ["Method"] = context.Request.Method,
-            ["Path"] = context.Request.Path
-        }))
-        {
-            _logger.LogDebug("Processing request {RequestId}", requestId);
-            
-            try
+            // 异步记录日志（不等待完成，避免阻塞响应）
+            // 使用根 ServiceProvider 创建新的 Scope
+            _ = Task.Run(async () =>
             {
-                await _next(context);
-                
-                var elapsed = stopwatch.ElapsedMilliseconds;
-                _logger.LogInformation("Request {RequestId} completed in {ElapsedMs}ms with status {StatusCode}",
-                    requestId, elapsed, context.Response.StatusCode);
-                
-                // 异步记录活动日志
-                _ = Task.Run(async () =>
+                try
                 {
-                    try
-                    {
-                        await logService.LogActivityAsync(new ActivityLogRequest
-                        {
-                            RequestId = requestId,
-                            Method = context.Request.Method,
-                            Path = context.Request.Path.Value ?? "",
-                            StatusCode = context.Response.StatusCode,
-                            ElapsedMs = elapsed,
-                            UserId = GetUserId(context),
-                            UserAgent = context.Request.Headers.UserAgent.ToString(),
-                            ClientIp = GetClientIp(context)
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to log activity for request {RequestId}", requestId);
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                var elapsed = stopwatch.ElapsedMilliseconds;
-                _logger.LogError(ex, "Request {RequestId} failed after {ElapsedMs}ms",
-                    requestId, elapsed);
-                throw;
-            }
+                    // 创建新的 Scope，确保 Scoped 服务正常工作
+                    using var scope = _serviceProvider.CreateScope();
+                    var scopedLogService = scope.ServiceProvider.GetRequiredService<IUserActivityLogService>();
+                    
+                    await LogRequestAsync(logData.Value, scopedLogService);
+                }
+                catch (OperationCanceledException)
+                {
+                    // 正常取消，不记录日志
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to log activity for {Path}", logData.Value.path);
+                }
+            }, context.RequestAborted);
         }
     }
 
-    private string? GetUserId(HttpContext context)
+    /// <summary>
+    /// 检查是否应该排除此路径
+    /// </summary>
+    private bool ShouldExclude(PathString path)
     {
-        return context.User?.FindFirst("userId")?.Value;
+        var pathString = path.Value?.ToLower() ?? string.Empty;
+
+        // 检查预定义的排除路径
+        if (ExcludedPaths.Any(excludedPath => pathString.StartsWith(excludedPath.ToLower())))
+        {
+            return true;
+        }
+
+        // 检查配置的排除路径
+        var configuredExcludedPaths = _configuration.GetSection("ActivityLog:ExcludedPaths").Get<string[]>();
+        if (configuredExcludedPaths != null && configuredExcludedPaths.Any(excludedPath => pathString.StartsWith(excludedPath.ToLower())))
+        {
+            return true;
+        }
+
+        return false;
     }
 
-    private string GetClientIp(HttpContext context)
+    /// <summary>
+    /// 在请求线程中提取日志数据（避免后台线程访问 HttpContext）
+    /// </summary>
+    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent)? ExtractLogData(HttpContext context, long durationMs)
     {
-        return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        // 提取用户信息
+        string? userId = null;
+        string? username = null;
+
+        if (context.User?.Identity?.IsAuthenticated == true)
+        {
+            userId = context.User.FindFirst("userId")?.Value;
+            username = context.User.FindFirst("username")?.Value
+                      ?? context.User.FindFirst("name")?.Value
+                      ?? context.User.Identity.Name;
+        }
+
+        // 检查是否包含匿名用户
+        var includeAnonymous = _configuration.GetValue<bool>("ActivityLog:IncludeAnonymous", false);
+        if (string.IsNullOrEmpty(userId) && !includeAnonymous)
+        {
+            return null; // 不记录匿名请求
+        }
+
+        // 提取请求信息
+        var httpMethod = context.Request.Method;
+        var path = context.Request.Path.Value ?? string.Empty;
+        var queryString = context.Request.QueryString.Value;
+
+        // 提取 URL 相关信息
+        var scheme = context.Request.Scheme; // http 或 https
+        var host = context.Request.Host.Value ?? "localhost"; // 包含主机名和端口
+
+        // 限制查询字符串长度
+        var maxQueryStringLength = _configuration.GetValue<int>("ActivityLog:MaxQueryStringLength", 500);
+        if (!string.IsNullOrEmpty(queryString) && queryString.Length > maxQueryStringLength)
+        {
+            queryString = queryString.Substring(0, maxQueryStringLength) + "...";
+        }
+
+        // 检查是否包含查询字符串
+        var includeQueryString = _configuration.GetValue<bool>("ActivityLog:IncludeQueryString", true);
+        if (!includeQueryString)
+        {
+            queryString = null;
+        }
+
+        // 提取IP地址
+        var ipAddress = context.Connection.RemoteIpAddress?.ToString();
+
+        // 提取User-Agent
+        var userAgent = context.Request.Headers["User-Agent"].ToString();
+
+        // 响应状态码
+        var statusCode = context.Response.StatusCode;
+
+        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent);
+    }
+
+    /// <summary>
+    /// 记录请求信息（使用已提取的数据，不访问 HttpContext）
+    /// </summary>
+    private static async Task LogRequestAsync(
+        (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent) logData,
+        IUserActivityLogService logService)
+    {
+        var (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent) = logData;
+
+        // 构建请求对象
+        var request = new LogHttpRequestRequest
+        {
+            UserId = userId,
+            Username = username,
+            HttpMethod = httpMethod,
+            Path = path,
+            QueryString = queryString,
+            Scheme = scheme,
+            Host = host,
+            StatusCode = statusCode,
+            DurationMs = durationMs,
+            IpAddress = ipAddress,
+            UserAgent = userAgent
+        };
+
+        // 调用日志服务记录
+        await logService.LogHttpRequestAsync(request);
+    }
+}
+```
+
+**关键设计要点**：
+
+1. **✅ 在请求线程中提取数据** - `ExtractLogData` 方法在请求处理线程中提取所有需要的数据，避免在后台线程访问 `HttpContext`
+2. **✅ 使用 IServiceProvider 创建 Scope** - 在后台线程中使用 `_serviceProvider.CreateScope()` 创建新的 Scope，确保 Scoped 服务正常工作
+3. **✅ 异步不阻塞** - 使用 `Task.Run` 异步记录日志，不阻塞请求响应
+4. **✅ 排除特定路径** - 自动排除健康检查、API 文档等不需要记录的路径
+5. **✅ 可配置** - 支持通过配置文件启用/禁用、排除路径、匿名用户等配置
+
+### UserActivityLogService 设计说明
+
+**⚠️ 重要**：`UserActivityLogService` 在后台线程中记录日志，因此不能使用 `ITenantContext` 或 `IHttpContextAccessor`（这些依赖 `HttpContext`）。
+
+**✅ 正确做法**：直接从数据库查询用户的企业ID：
+
+```csharp
+public class UserActivityLogService : IUserActivityLogService
+{
+    private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;  // ✅ 直接查询用户
+
+    /// <summary>
+    /// 尝试获取用户的企业ID（从数据库获取，不使用 JWT token）
+    /// ⚠️ 重要：后台线程无法访问 HttpContext，因此直接查询数据库
+    /// </summary>
+    private async Task<string?> TryGetUserCompanyIdAsync(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var user = await _userFactory.GetByIdAsync(userId);
+            return user?.CurrentCompanyId;  // ✅ 从数据库获取 CurrentCompanyId
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
+    {
+        // ✅ 从数据库获取企业ID，而不是从 JWT token
+        var companyId = await TryGetUserCompanyIdAsync(request.UserId);
+
+        var log = new UserActivityLog
+        {
+            UserId = request.UserId ?? "anonymous",
+            Username = request.Username ?? "匿名用户",
+            HttpMethod = request.HttpMethod,
+            Path = request.Path,
+            QueryString = request.QueryString,
+            StatusCode = request.StatusCode,
+            Duration = request.DurationMs,
+            IpAddress = request.IpAddress,
+            UserAgent = request.UserAgent,
+            CompanyId = companyId ?? string.Empty  // ✅ 从数据库获取
+        };
+
+        await _activityLogFactory.CreateAsync(log);
+    }
+}
+```
+
+**❌ 错误做法**：
+
+```csharp
+// ❌ 错误：在后台线程中无法访问 HttpContext
+public class UserActivityLogService : IUserActivityLogService
+{
+    private readonly ITenantContext _tenantContext;  // ❌ 依赖 HttpContext，后台线程不可用
+    private readonly IHttpContextAccessor _httpContextAccessor;  // ❌ 后台线程不可用
+
+    public async Task LogHttpRequestAsync(...)
+    {
+        var companyId = _tenantContext.GetCurrentCompanyId();  // ❌ 会在后台线程中失败
+        // ...
     }
 }
 ```
@@ -351,14 +554,39 @@ public static void ConfigureMiddlewarePipeline(WebApplication app)
 public static void ConfigureServices(IServiceCollection services)
 {
     // 注册中间件依赖的服务
-    services.AddScoped<IUserActivityLogService, UserActivityLogService>();
+    services.AddScoped<IUserActivityLogService, UserActivityLogService>();  // ✅ 注册日志服务
     services.AddMemoryCache();
     
-    // 注册中间件
-    services.AddScoped<GlobalExceptionMiddleware>();
-    services.AddScoped<ActivityLogMiddleware>();
-    services.AddScoped<ResponseFormattingMiddleware>();
-    services.AddScoped<RateLimitingMiddleware>();
+    // ⚠️ 注意：中间件不需要注册为服务，它们通过 UseMiddleware 直接实例化
+    // ActivityLogMiddleware 需要注入 IServiceProvider，通过依赖注入自动提供
+}
+```
+
+**中间件注册方式**：
+
+```csharp
+// Platform.ApiService/Program.cs
+public static void ConfigureMiddlewarePipeline(WebApplication app)
+{
+    // 1. 异常处理（最外层）
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+    
+    // 2. 请求限流
+    app.UseMiddleware<RateLimitingMiddleware>();
+    
+    // 3. 认证和授权
+    app.UseAuthentication();
+    app.UseAuthorization();
+    
+    // 4. 活动日志记录
+    // ✅ UseMiddleware 会自动解析构造函数依赖（包括 IServiceProvider）
+    app.UseMiddleware<ActivityLogMiddleware>();
+    
+    // 5. CORS
+    app.UseCors();
+    
+    // 6. 控制器
+    app.MapControllers();
 }
 ```
 

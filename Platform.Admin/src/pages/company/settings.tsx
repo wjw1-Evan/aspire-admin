@@ -12,10 +12,12 @@ import {
   SafetyOutlined,
   ClockCircleOutlined,
 } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
 import EditCompanyModal from './components/EditCompanyModal';
 
 export default function CompanySettings() {
+  const intl = useIntl();
   const [company, setCompany] = useState<API.Company | null>(null);
   const [statistics, setStatistics] = useState<API.CompanyStatistics | null>(
     null,
@@ -43,7 +45,7 @@ export default function CompanySettings() {
         setStatistics(statsRes.data);
       }
     } catch (error: any) {
-      message.error(error.message || '加载企业信息失败');
+      message.error(error.message || intl.formatMessage({ id: 'pages.companySettings.loadFailed' }));
     } finally {
       setLoading(false);
     }
@@ -59,7 +61,7 @@ export default function CompanySettings() {
     return (
       <PageContainer>
         <div style={{ textAlign: 'center', padding: 100 }}>
-          <Spin size="large" tip="加载中..." />
+          <Spin size="large" tip={intl.formatMessage({ id: 'pages.companySettings.loading' })} />
         </div>
       </PageContainer>
     );
@@ -70,7 +72,7 @@ export default function CompanySettings() {
       <PageContainer>
         <Card>
           <div style={{ textAlign: 'center', padding: 50 }}>
-            <p>未找到企业信息</p>
+            <p>{intl.formatMessage({ id: 'pages.companySettings.companyNotFound' })}</p>
           </div>
         </Card>
       </PageContainer>
@@ -83,17 +85,17 @@ export default function CompanySettings() {
 
   return (
     <PageContainer
-      title="企业设置"
+      title={intl.formatMessage({ id: 'pages.companySettings.title' })}
       extra={[
         <a key="edit" onClick={() => setEditModalVisible(true)}>
-          编辑企业信息
+          {intl.formatMessage({ id: 'pages.companySettings.editCompany' })}
         </a>,
       ]}
     >
       {/* 企业统计 */}
       {statistics && (
         <ProCard
-          title="企业数据统计"
+          title={intl.formatMessage({ id: 'pages.companySettings.statistics' })}
           bordered
           headerBordered
           style={{ marginBottom: 24 }}
@@ -102,7 +104,7 @@ export default function CompanySettings() {
             <Col span={8}>
               <Card bordered={false}>
                 <Statistic
-                  title="用户总数"
+                  title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalUsers' })}
                   value={statistics.totalUsers}
                   suffix={`/ ${statistics.maxUsers}`}
                   prefix={<UserOutlined />}
@@ -118,7 +120,7 @@ export default function CompanySettings() {
             <Col span={8}>
               <Card bordered={false}>
                 <Statistic
-                  title="活跃用户"
+                  title={intl.formatMessage({ id: 'pages.companySettings.statistics.activeUsers' })}
                   value={statistics.activeUsers}
                   prefix={<UserOutlined />}
                 />
@@ -127,7 +129,7 @@ export default function CompanySettings() {
             <Col span={8}>
               <Card bordered={false}>
                 <Statistic
-                  title="角色数量"
+                  title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalRoles' })}
                   value={statistics.totalRoles}
                   prefix={<TeamOutlined />}
                 />
@@ -138,7 +140,7 @@ export default function CompanySettings() {
             <Col span={8}>
               <Card bordered={false}>
                 <Statistic
-                  title="菜单数量"
+                  title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalMenus' })}
                   value={statistics.totalMenus}
                   prefix={<MenuOutlined />}
                 />
@@ -147,7 +149,7 @@ export default function CompanySettings() {
             <Col span={8}>
               <Card bordered={false}>
                 <Statistic
-                  title="权限数量"
+                  title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalPermissions' })}
                   value={statistics.totalPermissions}
                   prefix={<SafetyOutlined />}
                 />
@@ -156,21 +158,21 @@ export default function CompanySettings() {
             <Col span={8}>
               <Card bordered={false}>
                 <div style={{ marginBottom: 8 }}>
-                  <span style={{ color: '#00000073' }}>企业状态</span>
+                  <span style={{ color: '#00000073' }}>{intl.formatMessage({ id: 'pages.companySettings.statistics.companyStatus' })}</span>
                 </div>
                 <div>
                   {statistics.isExpired ? (
-                    <Tag color="red">已过期</Tag>
+                    <Tag color="red">{intl.formatMessage({ id: 'pages.companySettings.statistics.expired' })}</Tag>
                   ) : company.isActive ? (
-                    <Tag color="green">正常</Tag>
+                    <Tag color="green">{intl.formatMessage({ id: 'pages.companySettings.statistics.normal' })}</Tag>
                   ) : (
-                    <Tag color="orange">已停用</Tag>
+                    <Tag color="orange">{intl.formatMessage({ id: 'pages.companySettings.statistics.disabled' })}</Tag>
                   )}
                   {statistics.expiresAt && (
                     <div
                       style={{ marginTop: 8, fontSize: 12, color: '#00000073' }}
                     >
-                      <ClockCircleOutlined /> 过期时间：
+                      <ClockCircleOutlined /> {intl.formatMessage({ id: 'pages.companySettings.statistics.expiresAt' })}
                       {new Date(statistics.expiresAt).toLocaleDateString()}
                     </div>
                   )}
@@ -182,57 +184,57 @@ export default function CompanySettings() {
       )}
 
       {/* 企业详细信息 */}
-      <ProCard title="企业详细信息" bordered headerBordered>
+      <ProCard title={intl.formatMessage({ id: 'pages.companySettings.details' })} bordered headerBordered>
         <ProDescriptions
           column={2}
           dataSource={company}
           columns={[
             {
-              title: '企业名称',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.name' }),
               dataIndex: 'name',
               copyable: true,
             },
             {
-              title: '企业代码',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.code' }),
               dataIndex: 'code',
               copyable: true,
               render: (_, record) => <Tag color="blue">{record.code}</Tag>,
             },
             {
-              title: '所属行业',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.industry' }),
               dataIndex: 'industry',
               render: (text) => text || '-',
             },
             {
-              title: '联系人',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.contactName' }),
               dataIndex: 'contactName',
               render: (text) => text || '-',
             },
             {
-              title: '联系邮箱',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.contactEmail' }),
               dataIndex: 'contactEmail',
               copyable: true,
               render: (text) => text || '-',
             },
             {
-              title: '联系电话',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.contactPhone' }),
               dataIndex: 'contactPhone',
               copyable: true,
               render: (text) => text || '-',
             },
             {
-              title: '企业描述',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.description' }),
               dataIndex: 'description',
               span: 2,
               render: (text) => text || '-',
             },
             {
-              title: '创建时间',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.createdAt' }),
               dataIndex: 'createdAt',
               valueType: 'dateTime',
             },
             {
-              title: '更新时间',
+              title: intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' }),
               dataIndex: 'updatedAt',
               valueType: 'dateTime',
             },

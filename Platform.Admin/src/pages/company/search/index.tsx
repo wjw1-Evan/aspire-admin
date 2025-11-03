@@ -18,6 +18,7 @@ import {
   App,
 } from 'antd';
 import React, { useState } from 'react';
+import { useIntl } from '@umijs/max';
 import { searchCompanies, applyToJoinCompany } from '@/services/company';
 
 const { TextArea } = Input;
@@ -27,6 +28,7 @@ const { TextArea } = Input;
  * 用户可以搜索企业并申请加入
  */
 const CompanySearch: React.FC = () => {
+  const intl = useIntl();
   const { message, modal } = App.useApp();
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,7 +40,7 @@ const CompanySearch: React.FC = () => {
   // 搜索企业
   const handleSearch = async () => {
     if (!keyword.trim()) {
-      message.warning('请输入搜索关键词');
+      message.warning(intl.formatMessage({ id: 'pages.message.pleaseEnterKeyword' }));
       return;
     }
 
@@ -49,13 +51,13 @@ const CompanySearch: React.FC = () => {
       if (response.success && response.data) {
         setSearchResults(response.data);
         if (response.data.length === 0) {
-          message.info('未找到匹配的企业');
+          message.info(intl.formatMessage({ id: 'pages.placeholder.noCompaniesFound' }));
         }
       } else {
-        message.error(response.errorMessage || '搜索失败');
+        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.searchFailed' }));
       }
     } catch (error: any) {
-      message.error(error.message || '搜索失败');
+      message.error(error.message || intl.formatMessage({ id: 'pages.message.searchFailed' }));
     } finally {
       setLoading(false);
     }
@@ -66,21 +68,21 @@ const CompanySearch: React.FC = () => {
     let reason = '';
 
     modal.confirm({
-      title: `申请加入：${company.name}`,
+      title: intl.formatMessage({ id: 'pages.modal.applyToJoin' }, { companyName: company.name }),
       content: (
         <div style={{ marginTop: 16 }}>
-          <div style={{ marginBottom: 8 }}>请说明您的申请理由（可选）：</div>
+          <div style={{ marginBottom: 8 }}>{intl.formatMessage({ id: 'pages.modal.applyReasonLabel' })}</div>
           <TextArea
             rows={4}
-            placeholder="例如：我想加入贵公司的开发团队..."
+            placeholder={intl.formatMessage({ id: 'pages.modal.applyReasonPlaceholder' })}
             onChange={(e) => {
               reason = e.target.value;
             }}
           />
         </div>
       ),
-      okText: '提交申请',
-      cancelText: '取消',
+      okText: intl.formatMessage({ id: 'pages.modal.okSubmit' }),
+      cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
       onOk: async () => {
         setApplyingId(company.id || '');
         try {
@@ -90,14 +92,14 @@ const CompanySearch: React.FC = () => {
           });
 
           if (response.success) {
-            message.success('申请已提交，请等待企业管理员审核');
+            message.success(intl.formatMessage({ id: 'pages.message.applicationSubmitted' }));
             // 刷新搜索结果
             await handleSearch();
           } else {
-            message.error(response.errorMessage || '申请失败');
+            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.applicationFailed' }));
           }
         } catch (error: any) {
-          message.error(error.message || '申请失败');
+          message.error(error.message || intl.formatMessage({ id: 'pages.message.applicationFailed' }));
         } finally {
           setApplyingId('');
         }
@@ -108,8 +110,8 @@ const CompanySearch: React.FC = () => {
   return (
     <PageContainer
       header={{
-        title: '搜索企业',
-        subTitle: '搜索并申请加入其他企业',
+        title: intl.formatMessage({ id: 'pages.company.search.title' }),
+        subTitle: intl.formatMessage({ id: 'pages.company.search.subTitle' }),
       }}
     >
       <ProCard>
@@ -117,7 +119,7 @@ const CompanySearch: React.FC = () => {
         <Space.Compact style={{ width: '100%', marginBottom: 24 }}>
           <Input
             size="large"
-            placeholder="输入企业名称或代码搜索..."
+            placeholder={intl.formatMessage({ id: 'pages.placeholder.searchCompany' })}
             prefix={<SearchOutlined />}
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
@@ -129,14 +131,14 @@ const CompanySearch: React.FC = () => {
             onClick={handleSearch}
             loading={loading}
           >
-            搜索
+            {intl.formatMessage({ id: 'pages.button.search' })}
           </Button>
         </Space.Compact>
 
         {/* 搜索结果 */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60 }}>
-            <Spin size="large" tip="搜索中..." />
+            <Spin size="large" tip={intl.formatMessage({ id: 'pages.message.searching' })} />
           </div>
         ) : searchResults.length > 0 ? (
           <List
@@ -157,11 +159,11 @@ const CompanySearch: React.FC = () => {
                   actions={[
                     item.isMember ? (
                       <Button key="joined" type="text" disabled>
-                        <CheckCircleOutlined /> 已加入
+                        <CheckCircleOutlined /> {intl.formatMessage({ id: 'pages.status.joined' })}
                       </Button>
                     ) : item.hasPendingRequest ? (
                       <Button key="pending" type="text" disabled>
-                        审核中...
+                        {intl.formatMessage({ id: 'pages.status.pending' })}...
                       </Button>
                     ) : (
                       <Button
@@ -170,7 +172,7 @@ const CompanySearch: React.FC = () => {
                         onClick={() => handleApply(item.company)}
                         loading={applyingId === item.company.id}
                       >
-                        申请加入
+                        {intl.formatMessage({ id: 'pages.button.add' })}
                       </Button>
                     ),
                   ]}
@@ -187,19 +189,19 @@ const CompanySearch: React.FC = () => {
                         {item.isMember && (
                           <Tag color="success">
                             {item.memberStatus === 'active'
-                              ? '已加入'
-                              : '待激活'}
+                              ? intl.formatMessage({ id: 'pages.status.joined' })
+                              : intl.formatMessage({ id: 'pages.status.pendingActivation' })}
                           </Tag>
                         )}
                         {item.hasPendingRequest && (
-                          <Tag color="processing">审核中</Tag>
+                          <Tag color="processing">{intl.formatMessage({ id: 'pages.status.pending' })}</Tag>
                         )}
                       </Space>
                     }
                     description={
                       <div>
                         <div style={{ marginBottom: 8 }}>
-                          <span style={{ color: '#666' }}>企业代码：</span>
+                          <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.companyCode' })}</span>
                           <span style={{ fontWeight: 500 }}>
                             {item.company.code}
                           </span>
@@ -212,7 +214,7 @@ const CompanySearch: React.FC = () => {
                         <div style={{ marginTop: 12 }}>
                           <Space>
                             <TeamOutlined />
-                            <span>{item.memberCount} 名成员</span>
+                            <span>{intl.formatMessage({ id: 'pages.table.members' }, { count: item.memberCount })}</span>
                           </Space>
                         </div>
                       </div>
@@ -223,10 +225,10 @@ const CompanySearch: React.FC = () => {
             )}
           />
         ) : keyword ? (
-          <Empty description="未找到匹配的企业" style={{ padding: 60 }} />
+          <Empty description={intl.formatMessage({ id: 'pages.placeholder.noCompaniesFound' })} style={{ padding: 60 }} />
         ) : (
           <Empty
-            description="请输入企业名称或代码进行搜索"
+            description={intl.formatMessage({ id: 'pages.placeholder.pleaseSearchCompany' })}
             style={{ padding: 60 }}
           />
         )}

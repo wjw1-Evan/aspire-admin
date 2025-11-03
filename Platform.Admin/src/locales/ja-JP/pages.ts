@@ -74,4 +74,16 @@ export default {
   'pages.searchTable.tenThousand': '万',
   'pages.searchTable.batchDeletion': 'バッチ削除',
   'pages.searchTable.batchApproval': 'バッチ承認',
+  // 企業切り替えメニュー
+  'pages.company.search.title': '企業を検索',
+  'pages.company.search.subTitle': '他の企業を検索して参加申請',
+  'pages.company.loadFailed': '企業リストの読み込みに失敗しました',
+  'pages.company.switchSuccess': '企業に切り替えました：{name}',
+  'pages.company.switchFailed': '企業の切り替えに失敗しました',
+  'pages.company.personal': '個人',
+  'pages.company.admin': '管理者',
+  'pages.company.noRole': 'ロールなし',
+  'pages.company.createNew': '新規企業を作成',
+  'pages.company.joinNew': '新しい企業に参加',
+  'pages.company.roleSeparator': '、',
 };

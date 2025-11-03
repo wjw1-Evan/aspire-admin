@@ -225,60 +225,84 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 ### 租户上下文管理
 
 ```csharp
-// ✅ 正确 - 租户上下文服务
+// ✅ 正确 - 租户上下文服务（v6.1+ 异步改造）
 public interface ITenantContext
 {
+    /// <summary>
+    /// 获取当前用户ID（从 JWT token 读取）
+    /// </summary>
     string? GetCurrentUserId();
-    string? GetCurrentUsername();
-    string? GetCurrentCompanyId();
-    string GetRequiredUserId();
-    string GetRequiredCompanyId();
+
+    /// <summary>
+    /// 获取当前用户名（从数据库读取）
+    /// </summary>
+    Task<string?> GetCurrentUsernameAsync();
+
+    /// <summary>
+    /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId）
+    /// </summary>
+    Task<string?> GetCurrentCompanyIdAsync();
+
+    /// <summary>
+    /// 获取当前企业名称（从数据库读取）
+    /// </summary>
+    Task<string?> GetCurrentCompanyNameAsync();
+
+    /// <summary>
+    /// 是否为管理员（从数据库读取）
+    /// </summary>
+    Task<bool> IsAdminAsync();
 }
 
 public class TenantContext : ITenantContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IMongoDatabase _database;
 
-    public TenantContext(IHttpContextAccessor httpContextAccessor)
+    public TenantContext(
+        IHttpContextAccessor httpContextAccessor,
+        IMongoDatabase database)
     {
         _httpContextAccessor = httpContextAccessor;
+        _database = database;
     }
 
+    /// <summary>
+    /// 获取当前用户ID（仅从 JWT token 读取）
+    /// </summary>
     public string? GetCurrentUserId()
     {
         return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
     }
 
-    public string? GetCurrentUsername()
+    /// <summary>
+    /// 获取当前用户名（从数据库读取）
+    /// </summary>
+    public async Task<string?> GetCurrentUsernameAsync()
     {
-        return _httpContextAccessor.HttpContext?.User?.FindFirst("username")?.Value;
+        var userInfo = await LoadUserInfoAsync();
+        return userInfo?.Username;
     }
 
-    public string? GetCurrentCompanyId()
+    /// <summary>
+    /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId）
+    /// ⚠️ 重要：不再从 JWT token 读取，统一从数据库读取
+    /// </summary>
+    public async Task<string?> GetCurrentCompanyIdAsync()
     {
-        return _httpContextAccessor.HttpContext?.User?.FindFirst("companyId")?.Value;
+        var userInfo = await LoadUserInfoAsync();
+        return userInfo?.CompanyId;
     }
 
-    public string GetRequiredUserId()
-    {
-        var userId = GetCurrentUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedAccessException("未找到用户信息");
-        }
-        return userId;
-    }
-
-    public string GetRequiredCompanyId()
-    {
-        var companyId = GetCurrentCompanyId();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到企业信息");
-        }
-        return companyId;
-    }
+    // ... 其他异步方法
 }
+```
+
+**⚠️ 重要限制**：
+
+1. **`ITenantContext` 依赖 `HttpContext`** - 只能在请求线程中使用
+2. **后台线程不可用** - 在 `Task.Run`、后台任务等场景中，`HttpContext` 不可用
+3. **后台线程解决方案** - 直接通过 userId 从数据库查询企业ID（见下方示例）
 
 // ✅ 正确 - 服务中使用租户上下文（单一企业实体示例：Role）
 public class RoleService : IRoleService
@@ -296,8 +320,9 @@ public class RoleService : IRoleService
 
     public async Task<Role> CreateRoleAsync(CreateRoleRequest request)
     {
-        // 获取当前企业ID
-        var companyId = _tenantContext.GetRequiredCompanyId();
+        // ✅ 获取当前企业ID（异步方法）
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
+            ?? throw new UnauthorizedAccessException("未找到企业信息");
         var userId = _tenantContext.GetRequiredUserId();
 
         var role = new Role
@@ -348,7 +373,9 @@ public class UserService : IUserService
 
     public async Task<AppUser> CreateUserAsync(CreateUserRequest request)
     {
-        var companyId = _tenantContext.GetRequiredCompanyId();
+        // ✅ 获取当前企业ID（异步方法）
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
+            ?? throw new UnauthorizedAccessException("未找到企业信息");
 
         var user = new AppUser
         {
@@ -364,7 +391,9 @@ public class UserService : IUserService
     public async Task<List<AppUser>> GetUsersAsync(UserListRequest request)
     {
         // ✅ 手动添加 CurrentCompanyId 过滤（AppUser 不实现 IMultiTenant）
-        var currentCompanyId = _tenantContext.GetRequiredCompanyId();
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync() 
+            ?? throw new UnauthorizedAccessException("未找到企业信息");
+        
         var filter = _userFactory.CreateFilterBuilder()
             .Equal(u => u.CurrentCompanyId, currentCompanyId)  // ✅ 手动添加过滤
             .Build();
@@ -388,6 +417,48 @@ public class UserService : IUserService
             .Build();
 
         return await _userFactory.FindAsync(filter, sort, request.Limit);
+    }
+}
+
+// ✅ 后台线程中获取企业ID（不能使用 ITenantContext）
+public class UserActivityLogService : IUserActivityLogService
+{
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+
+    /// <summary>
+    /// 尝试获取用户的企业ID（从数据库获取，不使用 JWT token）
+    /// ⚠️ 重要：后台线程无法访问 HttpContext，因此直接查询数据库
+    /// </summary>
+    private async Task<string?> TryGetUserCompanyIdAsync(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var user = await _userFactory.GetByIdAsync(userId);
+            return user?.CurrentCompanyId;  // ✅ 从数据库获取 CurrentCompanyId
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
+    {
+        // ✅ 从数据库获取企业ID，而不是从 JWT token 或 ITenantContext
+        var companyId = await TryGetUserCompanyIdAsync(request.UserId);
+
+        var log = new UserActivityLog
+        {
+            CompanyId = companyId ?? string.Empty,
+            // ...
+        };
+
+        await _activityLogFactory.CreateAsync(log);
     }
 }
 
@@ -453,11 +524,10 @@ public class RoleService : IRoleService
 
     public async Task<List<Role>> GetRolesAsync()
     {
-        // 只返回当前企业的角色
+        // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
+        // 只添加业务过滤条件
         var filter = _roleFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .WithTenant()
-            .Build();
+            .Build();  // ✅ 企业过滤自动应用
 
         return await _roleFactory.FindAsync(filter);
     }
@@ -472,11 +542,12 @@ public class RoleService : IRoleService
             throw new UnauthorizedAccessException("需要管理员权限");
         }
 
-        var companyId = _tenantContext.GetRequiredCompanyId();
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
+            ?? throw new UnauthorizedAccessException("未找到企业信息");
 
         // 验证用户和角色都属于当前企业
         var user = await _userFactory.GetByIdAsync(userId);
-        if (user == null || user.CompanyId != companyId)
+        if (user == null || user.CurrentCompanyId != companyId)
         {
             throw new KeyNotFoundException("用户不存在或不属于当前企业");
         }
@@ -626,6 +697,9 @@ public class UserService : IUserService
 
     public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
+            ?? throw new UnauthorizedAccessException("未找到企业信息");
+        
         var user = new User
         {
             Username = request.Username,
@@ -633,8 +707,8 @@ public class UserService : IUserService
             // 加密敏感数据
             PasswordHash = _encryptionService.HashPassword(request.Password),
             PhoneNumber = _encryptionService.Encrypt(request.PhoneNumber),
-            CompanyId = _userFactory.GetRequiredCompanyId(),
-            CreatedBy = _userFactory.GetCurrentUserId(),
+            CompanyId = companyId,
+            CreatedBy = _tenantContext.GetRequiredUserId(),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -690,26 +764,30 @@ public class UserService : IUserService
 
     public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
+            ?? throw new UnauthorizedAccessException("未找到企业信息");
+        
         var user = new User
         {
             Username = request.Username,
             Email = request.Email,
-            CompanyId = _userFactory.GetRequiredCompanyId(),
-            CreatedBy = _userFactory.GetCurrentUserId(),
+            CompanyId = companyId,
+            CreatedBy = _tenantContext.GetRequiredUserId(),
             CreatedAt = DateTime.UtcNow
         };
 
         var createdUser = await _userFactory.CreateAsync(user);
 
         // 记录审计日志
+        var username = await _tenantContext.GetCurrentUsernameAsync();
         await _auditService.RecordOperationAsync(new OperationAudit
         {
             EntityType = nameof(User),
             EntityId = createdUser.Id,
             OperationType = OperationType.Create,
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
+            UserId = _tenantContext.GetRequiredUserId(),
+            Username = username ?? string.Empty,
+            CompanyId = companyId,
             Description = "创建用户",
             AfterData = JsonSerializer.Serialize(createdUser)
         });
@@ -798,11 +876,10 @@ public class UserService : IUserService
 {
     public async Task<List<User>> GetUsersAsync()
     {
-        // 只返回当前企业的用户
+        // ✅ 对于实现了 IMultiTenant 的实体，数据工厂会自动添加企业过滤
+        // 只添加业务过滤条件
         var filter = _userFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .WithTenant()
-            .Build();
+            .Build();  // ✅ 企业过滤自动应用
 
         return await _userFactory.FindAsync(filter);
     }
@@ -837,7 +914,8 @@ public class UserService : IUserService
         {
             Username = request.Username,
             Email = request.Email,
-            CompanyId = _userFactory.GetRequiredCompanyId() // 动态获取
+            CompanyId = await _tenantContext.GetCurrentCompanyIdAsync() 
+                ?? throw new UnauthorizedAccessException("未找到企业信息") // ✅ 异步获取
         };
 
         return await _userFactory.CreateAsync(user);
@@ -884,10 +962,13 @@ public class UserService : IUserService
 - [ ] **数据库操作自动过滤租户数据**：
   - [ ] 所有实现了 `IMultiTenant` 的实体查询会自动应用企业过滤
   - [ ] **禁止手动添加 CompanyId 过滤** - 依赖数据工厂的自动过滤
-  - [ ] 创建实体时必须设置 `CompanyId`（使用 `GetRequiredCompanyId()`）
+  - [ ] 创建实体时必须设置 `CompanyId`（使用 `GetRequiredCompanyId()` 或 `await GetCurrentCompanyIdAsync()`）
   - [ ] 数据工厂从数据库读取企业ID（不使用 JWT token）
   - [ ] 使用正确的 MongoDB 字段名（从 `BsonElement` 特性获取）
-- [ ] 服务使用租户上下文
+- [ ] **租户上下文使用**：
+  - [ ] 在请求线程中使用 `ITenantContext` 的异步方法
+  - [ ] 在后台线程中直接查询数据库获取企业ID（不使用 `ITenantContext`）
+  - [ ] 所有获取企业ID的方法都使用异步版本
 - [ ] 权限控制正确实现
 - [ ] 敏感数据加密存储
 - [ ] 审计日志完整记录

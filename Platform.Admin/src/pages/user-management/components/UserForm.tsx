@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Form, Input, Select, Switch, Button, Space, message } from 'antd';
-import { request } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
 import type { ApiResponse } from '@/types/unified-api';
 import type { AppUser, CreateUserRequest, UpdateUserRequest } from '../types';
@@ -13,6 +13,7 @@ interface UserFormProps {
 }
 
 const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
+  const intl = useIntl();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -38,7 +39,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         }
       } catch (error) {
         console.error('加载角色列表失败:', error);
-        message.error('加载角色列表失败');
+        message.error(intl.formatMessage({ id: 'pages.message.loadFailed' }));
       } finally {
         setLoadingRoles(false);
       }
@@ -80,9 +81,9 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         );
 
         if (response.success) {
-          message.success('用户更新成功');
+          message.success(intl.formatMessage({ id: 'pages.message.updateSuccess' }));
         } else {
-          throw new Error(response.errorMessage || '更新失败');
+          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.updateFailed' }));
         }
       } else {
         // 创建用户
@@ -103,16 +104,16 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         );
 
         if (response.success) {
-          message.success('用户创建成功');
+          message.success(intl.formatMessage({ id: 'pages.message.createSuccess' }));
         } else {
-          throw new Error('创建失败');
+          throw new Error(intl.formatMessage({ id: 'pages.message.createFailed' }));
         }
       }
 
       onSuccess();
     } catch (error: any) {
       console.error('用户操作失败:', error);
-      message.error(error.message || '操作失败');
+      message.error(error.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
     } finally {
       setLoading(false);
     }

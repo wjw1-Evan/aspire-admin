@@ -4,6 +4,7 @@ import {
   ProFormTextArea,
 } from '@ant-design/pro-components';
 import { message } from 'antd';
+import { useIntl } from '@umijs/max';
 import { updateCurrentCompany } from '@/services/company';
 
 interface EditCompanyModalProps {
@@ -19,27 +20,29 @@ export default function EditCompanyModal({
   onCancel,
   onSuccess,
 }: EditCompanyModalProps) {
+  const intl = useIntl();
+
   const handleSubmit = async (values: API.UpdateCompanyRequest) => {
     try {
       const response = await updateCurrentCompany(values);
 
       if (response.success) {
-        message.success('企业信息更新成功');
+        message.success(intl.formatMessage({ id: 'pages.companySettings.edit.updateSuccess' }));
         onSuccess();
         return true;
       }
 
-      message.error(response.errorMessage || '更新失败');
+      message.error(response.errorMessage || intl.formatMessage({ id: 'pages.companySettings.edit.updateFailed' }));
       return false;
     } catch (error: any) {
-      message.error(error.message || '更新失败');
+      message.error(error.message || intl.formatMessage({ id: 'pages.companySettings.edit.updateFailed' }));
       return false;
     }
   };
 
   return (
     <ModalForm
-      title="编辑企业信息"
+      title={intl.formatMessage({ id: 'pages.companySettings.edit.title' })}
       open={visible}
       onFinish={handleSubmit}
       onOpenChange={(open) => {
@@ -50,18 +53,18 @@ export default function EditCompanyModal({
     >
       <ProFormText
         name="name"
-        label="企业名称"
-        placeholder="请输入企业名称"
+        label={intl.formatMessage({ id: 'pages.companySettings.edit.nameLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.namePlaceholder' })}
         rules={[
-          { required: true, message: '请输入企业名称' },
-          { min: 2, max: 100, message: '企业名称长度必须在2-100个字符之间' },
+          { required: true, message: intl.formatMessage({ id: 'pages.companySettings.edit.nameRequired' }) },
+          { min: 2, max: 100, message: intl.formatMessage({ id: 'pages.companySettings.edit.nameLength' }) },
         ]}
       />
 
       <ProFormTextArea
         name="description"
-        label="企业描述"
-        placeholder="请输入企业描述"
+        label={intl.formatMessage({ id: 'pages.companySettings.edit.descriptionLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.descriptionPlaceholder' })}
         fieldProps={{
           rows: 3,
           maxLength: 500,
@@ -71,42 +74,42 @@ export default function EditCompanyModal({
 
       <ProFormText
         name="industry"
-        label="所属行业"
-        placeholder="请输入所属行业"
-        rules={[{ max: 50, message: '行业名称不能超过50个字符' }]}
+        label={intl.formatMessage({ id: 'pages.companySettings.edit.industryLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.industryPlaceholder' })}
+        rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.companySettings.edit.industryMaxLength' }) }]}
       />
 
       <ProFormText
         name="contactName"
-        label="联系人"
-        placeholder="请输入联系人姓名"
-        rules={[{ max: 50, message: '联系人长度不能超过50个字符' }]}
+        label={intl.formatMessage({ id: 'pages.companySettings.edit.contactNameLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactNamePlaceholder' })}
+        rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.companySettings.edit.contactNameMaxLength' }) }]}
       />
 
       <ProFormText
         name="contactEmail"
-        label="联系邮箱"
-        placeholder="请输入联系邮箱"
-        rules={[{ type: 'email', message: '邮箱格式不正确' }]}
+        label={intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailPlaceholder' })}
+        rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailInvalid' }) }]}
       />
 
       <ProFormText
         name="contactPhone"
-        label="联系电话"
-        placeholder="请输入联系电话"
+        label={intl.formatMessage({ id: 'pages.companySettings.edit.contactPhoneLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactPhonePlaceholder' })}
         rules={[
           {
             pattern: /^1[3-9]\d{9}$/,
-            message: '请输入有效的手机号码',
+            message: intl.formatMessage({ id: 'pages.companySettings.edit.contactPhoneInvalid' }),
           },
         ]}
       />
 
       <ProFormText
         name="logo"
-        label="企业Logo"
-        placeholder="请输入Logo URL"
-        tooltip="暂时只支持输入图片URL，后续将支持上传"
+        label={intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.logoPlaceholder' })}
+        tooltip={intl.formatMessage({ id: 'pages.companySettings.edit.logoTooltip' })}
       />
     </ModalForm>
   );

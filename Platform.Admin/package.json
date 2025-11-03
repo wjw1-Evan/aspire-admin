@@ -15,15 +15,12 @@
     "postinstall": "max setup",
     "lint": "npm run biome:lint && npm run tsc",
     "lint-staged": "lint-staged",
-    "openapi": "max openapi",
     "prepare": "husky",
     "preview": "npm run build && max preview --port 8000",
-    "serve": "umi-serve",
-    "start": "cross-env MOCK=none UMI_ENV=dev max dev",
-    "start:dev": "cross-env REACT_APP_ENV=dev MOCK=none UMI_ENV=dev max dev",
-    "start:no-mock": "cross-env MOCK=none UMI_ENV=dev max dev",
+    "start": "cross-env UMI_ENV=dev max dev",
+    "start:dev": "cross-env REACT_APP_ENV=dev UMI_ENV=dev max dev",
     "start:pre": "cross-env REACT_APP_ENV=pre UMI_ENV=dev max dev",
-    "start:test": "cross-env REACT_APP_ENV=test MOCK=none UMI_ENV=dev max dev",
+    "start:test": "cross-env REACT_APP_ENV=test UMI_ENV=dev max dev",
     "tsc": "tsc --noEmit"
   },
   "browserslist": [
@@ -60,8 +57,7 @@
     "lint-staged": "^16.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
-    "umi-presets-pro": "^2.0.3",
-    "umi-serve": "^1.9.11"
+    "umi-presets-pro": "^2.0.3"
   },
   "engines": {
     "node": ">=20.0.0"

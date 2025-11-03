@@ -1,5 +1,6 @@
 import { Modal, Form, Input, Switch, message, Button, Tree, Spin, Divider } from 'antd';
 import React, { useEffect, useState, useCallback } from 'react';
+import { useIntl } from '@umijs/max';
 import { createRole, updateRole, getRoleMenus } from '@/services/role/api';
 import { getMenuTree } from '@/services/menu/api';
 import type {
@@ -23,6 +24,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
   onCancel,
   onSuccess,
 }) => {
+  const intl = useIntl();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [menuLoading, setMenuLoading] = useState(false);
@@ -173,10 +175,10 @@ const RoleForm: React.FC<RoleFormProps> = ({
 
         const response = await updateRole(current.id, updateData);
         if (response.success) {
-          message.success('更新成功');
+          message.success(intl.formatMessage({ id: 'pages.roleForm.updateSuccess' }));
           onSuccess();
         } else {
-          message.error(response.errorMessage || '更新失败');
+          message.error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.updateFailed' }));
         }
       } else {
         // 创建角色
@@ -189,14 +191,14 @@ const RoleForm: React.FC<RoleFormProps> = ({
 
         const response = await createRole(createData);
         if (response.success) {
-          message.success('创建成功');
+          message.success(intl.formatMessage({ id: 'pages.roleForm.createSuccess' }));
           onSuccess();
         } else {
-          message.error(response.errorMessage || '创建失败');
+          message.error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.createFailed' }));
         }
       }
     } catch (error: any) {
-      message.error(error.message || '操作失败');
+      message.error(error.message || intl.formatMessage({ id: 'pages.roleForm.operationFailed' }));
     } finally {
       setLoading(false);
     }
@@ -204,7 +206,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
 
   return (
     <Modal
-      title={current ? '编辑角色' : '新增角色'}
+      title={current ? intl.formatMessage({ id: 'pages.roleForm.editTitle' }) : intl.formatMessage({ id: 'pages.roleForm.createTitle' })}
       open={visible}
       onCancel={onCancel}
       onOk={handleSubmit}
@@ -214,19 +216,19 @@ const RoleForm: React.FC<RoleFormProps> = ({
     >
       <Form form={form} layout="vertical">
         <Form.Item
-          label="角色名称"
+          label={intl.formatMessage({ id: 'pages.roleForm.nameLabel' })}
           name="name"
-          rules={[{ required: true, message: '请输入角色名称' }]}
+          rules={[{ required: true, message: intl.formatMessage({ id: 'pages.roleForm.nameRequired' }) }]}
         >
-          <Input placeholder="请输入角色名称" />
+          <Input placeholder={intl.formatMessage({ id: 'pages.roleForm.namePlaceholder' })} />
         </Form.Item>
 
-        <Form.Item label="角色描述" name="description">
-          <Input.TextArea placeholder="请输入角色描述" rows={3} />
+        <Form.Item label={intl.formatMessage({ id: 'pages.roleForm.descriptionLabel' })} name="description">
+          <Input.TextArea placeholder={intl.formatMessage({ id: 'pages.roleForm.descriptionPlaceholder' })} rows={3} />
         </Form.Item>
 
         <Divider orientation="left" style={{ margin: '16px 0' }}>
-          菜单权限
+          {intl.formatMessage({ id: 'pages.roleForm.menuPermission' })}
         </Divider>
 
         <div style={{ marginBottom: 16 }}>
@@ -234,8 +236,8 @@ const RoleForm: React.FC<RoleFormProps> = ({
             {(() => {
               const checkedKeys = form.getFieldValue('menuIds') || [];
               return checkedKeys.length === expandedKeys.length
-                ? '取消全选'
-                : '全选';
+                ? intl.formatMessage({ id: 'pages.roleForm.deselectAll' })
+                : intl.formatMessage({ id: 'pages.roleForm.selectAll' });
             })()}
           </Button>
         </div>
@@ -252,7 +254,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
               {
                 validator: (_, value) => {
                   if (!value || value.length === 0) {
-                    return Promise.reject(new Error('请至少选择一个菜单权限'));
+                    return Promise.reject(new Error(intl.formatMessage({ id: 'pages.roleForm.menuRequired' })));
                   }
                   return Promise.resolve();
                 },
@@ -291,7 +293,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
         )}
 
         <Form.Item
-          label="是否启用"
+          label={intl.formatMessage({ id: 'pages.roleForm.isActiveLabel' })}
           name="isActive"
           valuePropName="checked"
           initialValue={true}

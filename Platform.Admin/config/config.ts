@@ -147,7 +147,6 @@ export default defineConfig({
   //================ pro 插件配置 =================
   presets: ['umi-presets-pro'],
   
-  mock: false, // 完全禁用mock功能
   /**
    * @name 是否开启 mako
    * @description 使用 mako 极速研发

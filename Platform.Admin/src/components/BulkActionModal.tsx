@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Input, Typography, Alert } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { useModalState } from '../hooks/useModalState';
 
 const { TextArea } = Input;
@@ -26,33 +27,6 @@ export interface BulkActionModalProps {
   /** 原因输入框占位符 */
   reasonPlaceholder?: string;
 }
-
-const ACTION_CONFIG = {
-  delete: {
-    title: '批量删除',
-    okText: '确定删除',
-    danger: true,
-    description: '删除后将无法恢复，请谨慎操作',
-  },
-  activate: {
-    title: '批量启用',
-    okText: '确定启用',
-    danger: false,
-    description: '将启用选中的所有项目',
-  },
-  deactivate: {
-    title: '批量停用',
-    okText: '确定停用',
-    danger: false,
-    description: '将停用选中的所有项目',
-  },
-  custom: {
-    title: '批量操作',
-    okText: '确定',
-    danger: false,
-    description: undefined,
-  },
-};
 
 /**
  * 批量操作确认对话框组件
@@ -80,8 +54,10 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
   selectedCount = 0,
   description,
   requireReason = false,
-  reasonPlaceholder = '请输入操作原因（选填，最多200字）',
+  reasonPlaceholder,
 }) => {
+  const intl = useIntl();
+  
   // 使用自定义 Hook 管理状态
   const modalState = useModalState({
     visible,
@@ -90,11 +66,39 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
     onCancel,
   });
 
+  const ACTION_CONFIG = {
+    delete: {
+      title: intl.formatMessage({ id: 'pages.bulkAction.batchDelete' }),
+      okText: intl.formatMessage({ id: 'pages.bulkAction.okDelete' }),
+      danger: true,
+      description: intl.formatMessage({ id: 'pages.bulkAction.description.delete' }),
+    },
+    activate: {
+      title: intl.formatMessage({ id: 'pages.bulkAction.batchActivate' }),
+      okText: intl.formatMessage({ id: 'pages.bulkAction.okActivate' }),
+      danger: false,
+      description: intl.formatMessage({ id: 'pages.bulkAction.description.activate' }),
+    },
+    deactivate: {
+      title: intl.formatMessage({ id: 'pages.bulkAction.batchDeactivate' }),
+      okText: intl.formatMessage({ id: 'pages.bulkAction.okDeactivate' }),
+      danger: false,
+      description: intl.formatMessage({ id: 'pages.bulkAction.description.deactivate' }),
+    },
+    custom: {
+      title: intl.formatMessage({ id: 'pages.bulkAction.batchOperation' }),
+      okText: intl.formatMessage({ id: 'pages.bulkAction.ok' }),
+      danger: false,
+      description: undefined,
+    },
+  };
+
   const config = ACTION_CONFIG[actionType];
   const title = actionName || config.title;
   const okText = config.okText;
   const isDanger = config.danger;
   const defaultDescription = config.description;
+  const defaultReasonPlaceholder = reasonPlaceholder || intl.formatMessage({ id: 'pages.bulkAction.reasonPlaceholder' });
 
   return (
     <Modal
@@ -110,12 +114,12 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
       onOk={modalState.handleConfirm}
       onCancel={modalState.handleCancel}
       okText={okText}
-      cancelText="取消"
+      cancelText={intl.formatMessage({ id: 'pages.modal.cancel' })}
       okButtonProps={{ danger: isDanger, loading: modalState.loading }}
       cancelButtonProps={{ disabled: modalState.loading }}
     >
       <Alert
-        message={`已选中 ${selectedCount} 项`}
+        message={intl.formatMessage({ id: 'pages.bulkAction.selectedItems' }, { count: selectedCount })}
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
@@ -127,7 +131,7 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
 
       {requireReason && (
         <TextArea
-          placeholder={reasonPlaceholder}
+          placeholder={defaultReasonPlaceholder}
           value={modalState.reason}
           onChange={(e) => modalState.setReason(e.target.value)}
           maxLength={200}

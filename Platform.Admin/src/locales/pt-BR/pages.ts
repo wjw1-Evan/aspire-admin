@@ -73,4 +73,16 @@ export default {
   'pages.searchTable.tenThousand': '0000',
   'pages.searchTable.batchDeletion': 'deleção em lote',
   'pages.searchTable.batchApproval': 'aprovação em lote',
+  // Menu de troca de empresa
+  'pages.company.search.title': 'Pesquisar Empresas',
+  'pages.company.search.subTitle': 'Pesquisar e solicitar para se juntar a outras empresas',
+  'pages.company.loadFailed': 'Falha ao carregar lista de empresas',
+  'pages.company.switchSuccess': 'Trocado para empresa: {name}',
+  'pages.company.switchFailed': 'Falha ao trocar empresa',
+  'pages.company.personal': 'Pessoal',
+  'pages.company.admin': 'Admin',
+  'pages.company.noRole': 'Sem Função',
+  'pages.company.createNew': 'Criar Nova Empresa',
+  'pages.company.joinNew': 'Entrar em Nova Empresa',
+  'pages.company.roleSeparator': ', ',
 };

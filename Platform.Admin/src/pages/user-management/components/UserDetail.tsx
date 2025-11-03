@@ -19,7 +19,7 @@ import {
   CloseCircleOutlined,
   HistoryOutlined,
 } from '@ant-design/icons';
-import { request } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
 import type { AppUser, UserActivityLog } from '../types';
 import dayjs from 'dayjs';
@@ -32,6 +32,7 @@ interface UserDetailProps {
 }
 
 const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
+  const intl = useIntl();
   const [activityLogs, setActivityLogs] = useState<UserActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
@@ -127,13 +128,13 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
   return (
     <div>
       {/* 基本信息 */}
-      <Card title="基本信息" style={{ marginBottom: 16 }}>
+      <Card title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })} style={{ marginBottom: 16 }}>
         <Descriptions column={1} size="small">
           <Descriptions.Item
             label={
               <Space>
                 <UserOutlined />
-                用户名
+                {intl.formatMessage({ id: 'pages.userDetail.username' })}
               </Space>
             }
           >
@@ -144,16 +145,16 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             label={
               <Space>
                 <MailOutlined />
-                邮箱
+                {intl.formatMessage({ id: 'pages.userDetail.email' })}
               </Space>
             }
           >
             {user.email || '-'}
           </Descriptions.Item>
 
-          <Descriptions.Item label="角色">
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })}>
             {!user.roleIds || user.roleIds.length === 0 ? (
-              <Tag color="default">未分配</Tag>
+              <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag>
             ) : (
               <Space wrap>
                 {user.roleIds.map((roleId) => (
@@ -165,7 +166,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             )}
           </Descriptions.Item>
 
-          <Descriptions.Item label="状态">
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.status' })}>
             <Badge
               status={user.isActive ? 'success' : 'error'}
               text={
@@ -175,7 +176,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                   ) : (
                     <CloseCircleOutlined />
                   )}
-                  {user.isActive ? '启用' : '禁用'}
+                  {user.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}
                 </Space>
               }
             />
@@ -185,7 +186,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             label={
               <Space>
                 <CalendarOutlined />
-                创建时间
+                {intl.formatMessage({ id: 'pages.userDetail.createdAt' })}
               </Space>
             }
           >
@@ -196,7 +197,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             label={
               <Space>
                 <ClockCircleOutlined />
-                更新时间
+                {intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}
               </Space>
             }
           >
@@ -208,7 +209,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
               label={
                 <Space>
                   <ClockCircleOutlined />
-                  最后登录
+                  {intl.formatMessage({ id: 'pages.userDetail.lastLogin' })}
                 </Space>
               }
             >
@@ -223,12 +224,12 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
         title={
           <Space>
             <HistoryOutlined />
-            最近活动
+            {intl.formatMessage({ id: 'pages.userDetail.recentActivity' })}
           </Space>
         }
         extra={
           <Button size="small" onClick={fetchActivityLogs}>
-            刷新
+            {intl.formatMessage({ id: 'pages.userDetail.refresh' })}
           </Button>
         }
       >
@@ -255,7 +256,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                         <div>{log.description}</div>
                         {log.ipAddress && (
                           <Text type="secondary" style={{ fontSize: '12px' }}>
-                            IP: {log.ipAddress}
+                            {intl.formatMessage({ id: 'pages.userDetail.ipPrefix' }, { ip: log.ipAddress })}
                           </Text>
                         )}
                       </div>
@@ -268,14 +269,14 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             <div
               style={{ textAlign: 'center', padding: '20px', color: '#999' }}
             >
-              暂无活动记录
+              {intl.formatMessage({ id: 'pages.userDetail.noActivity' })}
             </div>
           )}
         </Spin>
       </Card>
 
       <div style={{ marginTop: 16, textAlign: 'right' }}>
-        <Button onClick={onClose}>关闭</Button>
+        <Button onClick={onClose}>{intl.formatMessage({ id: 'pages.userDetail.close' })}</Button>
       </div>
     </div>
   );

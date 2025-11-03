@@ -298,6 +298,81 @@ public async Task<List<User>> FindUsersWithoutTenantFilterAsync(string keyword)
 }
 ```
 
+### 5. 后台线程中获取企业ID
+
+**⚠️ 重要**：在后台线程（如 `Task.Run`、后台任务、消息队列处理等）中，无法访问 `HttpContext`，因此不能使用 `ITenantContext` 或 `IHttpContextAccessor`。
+
+**✅ 正确做法**：直接通过 userId 从数据库查询用户的企业ID：
+
+```csharp
+// ✅ 后台线程中获取企业ID
+public class UserActivityLogService : IUserActivityLogService
+{
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+
+    /// <summary>
+    /// 尝试获取用户的企业ID（从数据库获取，不使用 JWT token）
+    /// ⚠️ 重要：后台线程无法访问 HttpContext，因此直接查询数据库
+    /// </summary>
+    private async Task<string?> TryGetUserCompanyIdAsync(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var user = await _userFactory.GetByIdAsync(userId);
+            return user?.CurrentCompanyId;  // ✅ 从数据库获取 CurrentCompanyId
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
+    {
+        // ✅ 从数据库获取企业ID，而不是从 JWT token
+        var companyId = await TryGetUserCompanyIdAsync(request.UserId);
+
+        var log = new UserActivityLog
+        {
+            CompanyId = companyId ?? string.Empty,
+            // ...
+        };
+
+        await _activityLogFactory.CreateAsync(log);
+    }
+}
+```
+
+**❌ 错误做法**：
+
+```csharp
+// ❌ 错误：在后台线程中无法访问 HttpContext
+public class UserActivityLogService : IUserActivityLogService
+{
+    private readonly ITenantContext _tenantContext;  // ❌ 依赖 HttpContext，后台线程不可用
+    private readonly IHttpContextAccessor _httpContextAccessor;  // ❌ 后台线程不可用
+
+    public async Task LogHttpRequestAsync(...)
+    {
+        // ❌ 在后台线程中会失败，HttpContext 不可用
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        // ...
+    }
+}
+```
+
+**常见场景**：
+- 活动日志中间件（`ActivityLogMiddleware`）
+- 后台任务处理
+- 消息队列消费者
+- 定时任务
+- WebSocket 后台处理
+
 ## ❌ 避免的做法
 
 ### 1. 不要直接使用 MongoDB 驱动

@@ -18,7 +18,8 @@ import {
   Input,
   Badge,
 } from 'antd';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { useIntl } from '@umijs/max';
 import {
   getAllRolesWithStats,
   deleteRole,
@@ -27,7 +28,9 @@ import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
 
 const RoleManagement: React.FC = () => {
+  const intl = useIntl();
   const actionRef = useRef<ActionType>();
+  const tableRef = useRef<HTMLDivElement>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRole, setCurrentRole] = useState<Role | undefined>();
 
@@ -65,14 +68,14 @@ const RoleManagement: React.FC = () => {
   const handleDelete = async (id: string, roleName: string) => {
     let deleteReason = '';
     Modal.confirm({
-      title: `确定要删除角色"${roleName}"吗？`,
+      title: intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName }),
       content: (
         <div>
-          <p>删除角色将自动从所有用户的角色列表中移除此角色</p>
-          <p>请输入删除原因：</p>
+          <p>{intl.formatMessage({ id: 'pages.modal.deleteRoleWarning' })}</p>
+          <p>{intl.formatMessage({ id: 'pages.modal.pleaseEnterReason' })}</p>
           <Input.TextArea
             rows={3}
-            placeholder="请输入删除原因（选填）"
+            placeholder={intl.formatMessage({ id: 'pages.modal.pleaseEnterReasonOptional' })}
             onChange={(e) => {
               deleteReason = e.target.value;
             }}
@@ -80,31 +83,167 @@ const RoleManagement: React.FC = () => {
           />
         </div>
       ),
-      okText: '确定删除',
-      cancelText: '取消',
+      okText: intl.formatMessage({ id: 'pages.modal.okDelete' }),
+      cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
       okType: 'danger',
       onOk: async () => {
         try {
           const response = await deleteRole(id, deleteReason);
           if (response.success) {
-            message.success('删除成功');
+            message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
             actionRef.current?.reload();
           } else {
-            message.error(response.errorMessage || '删除失败');
+            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.deleteFailed' }));
           }
         } catch (error: any) {
-          message.error(error.message || '删除失败');
+          message.error(error.message || intl.formatMessage({ id: 'pages.message.deleteFailed' }));
         }
       },
     });
   };
 
   /**
+   * 初始化列宽调整功能
+   */
+  useEffect(() => {
+    if (!tableRef.current) return;
+
+    const initResizeHandlers = () => {
+      const table = tableRef.current;
+      if (!table) return;
+
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+
+      const headers = thead.querySelectorAll('th');
+      let isResizing = false;
+      let currentHeader: HTMLElement | null = null;
+      let startX = 0;
+      let startWidth = 0;
+
+      const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
+        // 只允许在表头右边缘 5px 内拖动
+        const rect = header.getBoundingClientRect();
+        const edgeThreshold = 5;
+        const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+
+        if (!isNearRightEdge) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        
+        isResizing = true;
+        currentHeader = header;
+        startX = e.clientX;
+        startWidth = header.offsetWidth;
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      };
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!isResizing || !currentHeader) return;
+
+        const diff = e.clientX - startX;
+        const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
+        currentHeader.style.width = `${newWidth}px`;
+        currentHeader.style.minWidth = `${newWidth}px`;
+        currentHeader.style.maxWidth = `${newWidth}px`;
+      };
+
+      const handleMouseUp = () => {
+        isResizing = false;
+        currentHeader = null;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+
+      headers.forEach((header) => {
+        const headerEl = header as HTMLElement;
+        headerEl.style.position = 'relative';
+        headerEl.style.cursor = 'default';
+        
+        const mouseMoveHandler = (e: MouseEvent) => {
+          const rect = headerEl.getBoundingClientRect();
+          const edgeThreshold = 5;
+          const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+          
+          if (isNearRightEdge && !isResizing) {
+            headerEl.style.cursor = 'col-resize';
+          } else if (!isResizing) {
+            headerEl.style.cursor = 'default';
+          }
+        };
+
+        headerEl.addEventListener('mousemove', mouseMoveHandler);
+        (headerEl as any)._mouseMoveHandler = mouseMoveHandler;
+
+        const mouseDownHandler = (e: MouseEvent) => {
+          handleMouseDown(e, headerEl);
+        };
+        headerEl.addEventListener('mousedown', mouseDownHandler);
+        (headerEl as any)._mouseDownHandler = mouseDownHandler;
+      });
+    };
+
+    // 延迟初始化，确保表格已渲染
+    let timer: NodeJS.Timeout | null = setTimeout(() => {
+      initResizeHandlers();
+    }, 300);
+
+    // 监听表格变化，重新初始化
+    const observer = new MutationObserver(() => {
+      // 防抖，避免频繁初始化
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => {
+        initResizeHandlers();
+      }, 300);
+    });
+
+    if (tableRef.current) {
+      observer.observe(tableRef.current, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      observer.disconnect();
+      
+      // 清理事件监听器
+      if (tableRef.current) {
+        const thead = tableRef.current.querySelector('thead');
+        if (thead) {
+          const headers = thead.querySelectorAll('th');
+          headers.forEach((header) => {
+            const headerEl = header as HTMLElement;
+            if ((headerEl as any)._mouseMoveHandler) {
+              headerEl.removeEventListener('mousemove', (headerEl as any)._mouseMoveHandler);
+            }
+            if ((headerEl as any)._mouseDownHandler) {
+              headerEl.removeEventListener('mousedown', (headerEl as any)._mouseDownHandler);
+            }
+          });
+        }
+      }
+    };
+  }, []);
+
+  /**
    * 表格列定义
    */
   const columns: ProColumns<Role>[] = [
     {
-      title: '角色名称',
+      title: intl.formatMessage({ id: 'pages.table.roleName' }),
       dataIndex: 'name',
       key: 'name',
       render: (text, record: any) => (
@@ -114,46 +253,49 @@ const RoleManagement: React.FC = () => {
             <Badge
               count={record.userCount}
               style={{ backgroundColor: '#52c41a' }}
-              title={`${record.userCount} 个用户`}
+              title={intl.formatMessage(
+                { id: 'pages.table.userCount' },
+                { count: record.userCount },
+              )}
             />
           )}
         </Space>
       ),
     },
     {
-      title: '描述',
+      title: intl.formatMessage({ id: 'pages.table.description' }),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'pages.table.status' }),
       dataIndex: 'isActive',
       key: 'isActive',
       render: (_, record) => (
         <Tag color={record.isActive ? 'success' : 'default'}>
-          {record.isActive ? '启用' : '禁用'}
+          {record.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}
         </Tag>
       ),
     },
     {
-      title: '统计',
+      title: intl.formatMessage({ id: 'pages.table.stats' }),
       key: 'stats',
       render: (_, record: any) => (
         <Space split="|">
-          <span>用户: {record.userCount || 0}</span>
-          <span>菜单: {record.menuCount || 0}</span>
+          <span>{intl.formatMessage({ id: 'pages.table.user' })}: {record.userCount || 0}</span>
+          <span>{intl.formatMessage({ id: 'pages.table.menu' })}: {record.menuCount || 0}</span>
         </Space>
       ),
     },
     {
-      title: '创建时间',
+      title: intl.formatMessage({ id: 'pages.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
       valueType: 'dateTime',
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.table.actions' }),
       key: 'action',
       fixed: 'right',
       render: (_, record) => {
@@ -168,7 +310,7 @@ const RoleManagement: React.FC = () => {
                 setModalVisible(true);
               }}
             >
-              编辑
+              {intl.formatMessage({ id: 'pages.table.edit' })}
             </Button>
             <Button
               type="link"
@@ -183,7 +325,7 @@ const RoleManagement: React.FC = () => {
                 }
               }}
             >
-              删除
+              {intl.formatMessage({ id: 'pages.table.delete' })}
             </Button>
           </Space>
         );
@@ -194,14 +336,16 @@ const RoleManagement: React.FC = () => {
   return (
     <PageContainer
       header={{
-        title: '角色管理',
-        subTitle: '系统角色配置和权限管理',
+        title: intl.formatMessage({ id: 'pages.roleManagement.title' }),
+        subTitle: intl.formatMessage({ id: 'pages.roleManagement.subTitle' }),
       }}
     >
-      <ProTable<Role>
-        actionRef={actionRef}
-        rowKey="id"
-        search={false}
+      <div ref={tableRef}>
+        <ProTable<Role>
+          actionRef={actionRef}
+          rowKey="id"
+          scroll={{ x: 'max-content' }}
+          search={false}
         toolBarRender={() => [
           <Button
             key="create"
@@ -212,12 +356,13 @@ const RoleManagement: React.FC = () => {
               setModalVisible(true);
             }}
           >
-            新增角色
+            {intl.formatMessage({ id: 'pages.button.addRole' })}
           </Button>,
         ]}
         request={loadRoleData}
         columns={columns}
-      />
+        />
+      </div>
 
       <RoleForm
         visible={modalVisible}

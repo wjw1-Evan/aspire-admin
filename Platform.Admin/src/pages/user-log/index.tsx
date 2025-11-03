@@ -4,15 +4,18 @@ import {
   type ActionType,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { Tag, Button } from 'antd';
+import { Tag, Button, Badge } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { useIntl } from '@umijs/max';
 import { getUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import LogDetailDrawer from './components/LogDetailDrawer';
 
 const UserLog: React.FC = () => {
+  const intl = useIntl();
   const actionRef = useRef<ActionType>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<UserActivityLog | null>(null);
 
@@ -178,15 +181,183 @@ const UserLog: React.FC = () => {
     return textMap[action] || action;
   };
 
+  /**
+   * 获取 HTTP 方法的颜色
+   */
+  const getMethodColor = (method?: string): string => {
+    const colors: Record<string, string> = {
+      GET: 'blue',
+      POST: 'green',
+      PUT: 'orange',
+      DELETE: 'red',
+      PATCH: 'purple',
+    };
+    return colors[method || ''] || 'default';
+  };
+
+  /**
+   * 获取状态码的 Badge 状态
+   */
+  const getStatusBadge = (statusCode?: number) => {
+    if (statusCode === undefined || statusCode === null) return null;
+
+    if (statusCode >= 200 && statusCode < 300) {
+      return <Badge status="success" text={statusCode} />;
+    }
+    if (statusCode >= 400 && statusCode < 500) {
+      return <Badge status="warning" text={statusCode} />;
+    }
+    if (statusCode >= 500) {
+      return <Badge status="error" text={statusCode} />;
+    }
+    return <Badge status="default" text={statusCode} />;
+  };
+
+  /**
+   * 初始化列宽调整功能
+   */
+  useEffect(() => {
+    if (!tableRef.current) return;
+
+    const initResizeHandlers = () => {
+      const table = tableRef.current;
+      if (!table) return;
+
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+
+      const headers = thead.querySelectorAll('th');
+      let isResizing = false;
+      let currentHeader: HTMLElement | null = null;
+      let startX = 0;
+      let startWidth = 0;
+
+      const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
+        // 只允许在表头右边缘 5px 内拖动
+        const rect = header.getBoundingClientRect();
+        const edgeThreshold = 5;
+        const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+
+        if (!isNearRightEdge) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        
+        isResizing = true;
+        currentHeader = header;
+        startX = e.clientX;
+        startWidth = header.offsetWidth;
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      };
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!isResizing || !currentHeader) return;
+
+        const diff = e.clientX - startX;
+        const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
+        currentHeader.style.width = `${newWidth}px`;
+        currentHeader.style.minWidth = `${newWidth}px`;
+        currentHeader.style.maxWidth = `${newWidth}px`;
+      };
+
+      const handleMouseUp = () => {
+        isResizing = false;
+        currentHeader = null;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+
+      headers.forEach((header) => {
+        const headerEl = header as HTMLElement;
+        headerEl.style.position = 'relative';
+        headerEl.style.cursor = 'default';
+        
+        const mouseMoveHandler = (e: MouseEvent) => {
+          const rect = headerEl.getBoundingClientRect();
+          const edgeThreshold = 5;
+          const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+          
+          if (isNearRightEdge && !isResizing) {
+            headerEl.style.cursor = 'col-resize';
+          } else if (!isResizing) {
+            headerEl.style.cursor = 'default';
+          }
+        };
+
+        headerEl.addEventListener('mousemove', mouseMoveHandler);
+        (headerEl as any)._mouseMoveHandler = mouseMoveHandler;
+
+        const mouseDownHandler = (e: MouseEvent) => {
+          handleMouseDown(e, headerEl);
+        };
+        headerEl.addEventListener('mousedown', mouseDownHandler);
+        (headerEl as any)._mouseDownHandler = mouseDownHandler;
+      });
+    };
+
+    // 延迟初始化，确保表格已渲染
+    let timer: NodeJS.Timeout | null = setTimeout(() => {
+      initResizeHandlers();
+    }, 300);
+
+    // 监听表格变化，重新初始化
+    const observer = new MutationObserver(() => {
+      // 防抖，避免频繁初始化
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => {
+        initResizeHandlers();
+      }, 300);
+    });
+
+    if (tableRef.current) {
+      observer.observe(tableRef.current, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      observer.disconnect();
+      
+      // 清理事件监听器
+      if (tableRef.current) {
+        const thead = tableRef.current.querySelector('thead');
+        if (thead) {
+          const headers = thead.querySelectorAll('th');
+          headers.forEach((header) => {
+            const headerEl = header as HTMLElement;
+            if ((headerEl as any)._mouseMoveHandler) {
+              headerEl.removeEventListener('mousemove', (headerEl as any)._mouseMoveHandler);
+            }
+            if ((headerEl as any)._mouseDownHandler) {
+              headerEl.removeEventListener('mousedown', (headerEl as any)._mouseDownHandler);
+            }
+          });
+        }
+      }
+    };
+  }, []);
+
   const columns: ProColumns<UserActivityLog>[] = [
     {
-      title: '用户',
+      title: intl.formatMessage({ id: 'pages.table.user' }),
       dataIndex: 'username',
       key: 'username',
       ellipsis: true,
     },
     {
-      title: '操作类型',
+      title: intl.formatMessage({ id: 'pages.table.action' }),
       dataIndex: 'action',
       key: 'action',
       render: (_, record) => (
@@ -259,20 +430,70 @@ const UserLog: React.FC = () => {
       },
     },
     {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
+      title: intl.formatMessage({ id: 'pages.table.httpMethod' }),
+      dataIndex: 'httpMethod',
+      key: 'httpMethod',
       search: false,
+      render: (_, record) => {
+        if (!record.httpMethod) return '-';
+        return (
+          <Tag color={getMethodColor(record.httpMethod)}>
+            {record.httpMethod}
+          </Tag>
+        );
+      },
     },
     {
-      title: 'IP地址',
+      title: intl.formatMessage({ id: 'pages.table.statusCode' }),
+      dataIndex: 'statusCode',
+      key: 'statusCode',
+      search: false,
+      render: (_, record) => getStatusBadge(record.statusCode),
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.path' }),
+      dataIndex: 'path',
+      key: 'path',
+      search: false,
+      ellipsis: true,
+      render: (_, record) => {
+        if (!record.path) return '-';
+        return <span style={{ fontFamily: 'monospace' }}>{record.path}</span>;
+      },
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.queryString' }),
+      dataIndex: 'queryString',
+      key: 'queryString',
+      search: false,
+      ellipsis: true,
+      hideInTable: true,
+      render: (_, record) => {
+        if (!record.queryString) return '-';
+        return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.queryString}</span>;
+      },
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.fullUrl' }),
+      dataIndex: 'fullUrl',
+      key: 'fullUrl',
+      search: false,
+      ellipsis: true,
+      hideInTable: true,
+      render: (_, record) => {
+        if (!record.fullUrl) return '-';
+        return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.fullUrl}</span>;
+      },
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.ipAddress' }),
       dataIndex: 'ipAddress',
       key: 'ipAddress',
       search: false,
       ellipsis: true,
     },
     {
-      title: '用户代理',
+      title: intl.formatMessage({ id: 'pages.table.userAgent' }),
       dataIndex: 'userAgent',
       key: 'userAgent',
       search: false,
@@ -280,7 +501,7 @@ const UserLog: React.FC = () => {
       hideInTable: true,
     },
     {
-      title: '操作时间',
+      title: intl.formatMessage({ id: 'pages.table.actionTime' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
       valueType: 'dateTime',
@@ -288,9 +509,10 @@ const UserLog: React.FC = () => {
       sorter: true,
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.table.actions' }),
       key: 'option',
       valueType: 'option',
+      fixed: 'right',
       render: (_, record) => [
         <Button
           key="view"
@@ -299,7 +521,7 @@ const UserLog: React.FC = () => {
           icon={<EyeOutlined />}
           onClick={() => handleViewDetail(record)}
         >
-          详情
+          {intl.formatMessage({ id: 'pages.table.detail' })}
         </Button>,
       ],
     },
@@ -308,14 +530,16 @@ const UserLog: React.FC = () => {
   return (
     <PageContainer
       header={{
-        title: '用户操作日志',
-        subTitle: '系统用户活动记录和审计日志',
+        title: intl.formatMessage({ id: 'pages.userLog.title' }),
+        subTitle: intl.formatMessage({ id: 'pages.userLog.subTitle' }),
       }}
     >
-      <ProTable<UserActivityLog>
-        actionRef={actionRef}
-        rowKey="id"
-        search={{
+      <div ref={tableRef}>
+        <ProTable<UserActivityLog>
+          actionRef={actionRef}
+          rowKey="id"
+          scroll={{ x: 'max-content' }}
+          search={{
           labelWidth: 120,
           optionRender: (_searchConfig, _formProps, dom) => {
             const reversed = [...dom];
@@ -363,7 +587,8 @@ const UserLog: React.FC = () => {
           showSizeChanger: true,
           showQuickJumper: true,
         }}
-      />
+        />
+      </div>
 
       <LogDetailDrawer
         open={detailDrawerOpen}

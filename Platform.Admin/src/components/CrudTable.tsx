@@ -2,6 +2,7 @@ import React from 'react';
 import { Table, Button, Space, Popconfirm } from 'antd';
 import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { TableColumnsType, TableProps } from 'antd';
+import { useIntl } from '@umijs/max';
 
 export interface CrudTableColumn<T = any> {
   key: string;
@@ -59,14 +60,16 @@ function CrudTable<T extends Record<string, any> = any>({
   canView = () => true,
   canEdit = () => true,
   canDelete = () => true,
-  deleteConfirmTitle = '确认删除',
-  deleteConfirmContent = '确定要删除这条记录吗？',
+  deleteConfirmTitle,
+  deleteConfirmContent,
   ...tableProps
 }: CrudTableProps<T>) {
+  const intl = useIntl();
+
   // 构建操作列
   const actionColumn: CrudTableColumn<T> = {
     key: 'actions',
-    title: '操作',
+    title: intl.formatMessage({ id: 'pages.table.actions' }),
     width: 150,
     fixed: 'right',
     render: (_, record) => {
@@ -82,7 +85,7 @@ function CrudTable<T extends Record<string, any> = any>({
             icon={<EyeOutlined />}
             onClick={() => onView(record)}
           >
-            查看
+            {intl.formatMessage({ id: 'pages.table.view' })}
           </Button>,
         );
       }
@@ -97,7 +100,7 @@ function CrudTable<T extends Record<string, any> = any>({
             icon={<EditOutlined />}
             onClick={() => onEdit(record)}
           >
-            编辑
+            {intl.formatMessage({ id: 'pages.table.edit' })}
           </Button>,
         );
       }
@@ -107,14 +110,14 @@ function CrudTable<T extends Record<string, any> = any>({
         actions.push(
           <Popconfirm
             key="delete"
-            title={deleteConfirmTitle}
-            description={deleteConfirmContent}
+            title={deleteConfirmTitle || intl.formatMessage({ id: 'pages.table.confirmDelete' })}
+            description={deleteConfirmContent || intl.formatMessage({ id: 'pages.table.confirmDeleteContent' })}
             onConfirm={() => onDelete(record)}
-            okText="确定"
-            cancelText="取消"
+            okText={intl.formatMessage({ id: 'pages.table.ok' })}
+            cancelText={intl.formatMessage({ id: 'pages.table.cancel' })}
           >
             <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
+              {intl.formatMessage({ id: 'pages.table.delete' })}
             </Button>
           </Popconfirm>,
         );
@@ -139,7 +142,10 @@ function CrudTable<T extends Record<string, any> = any>({
         showSizeChanger: true,
         showQuickJumper: true,
         showTotal: (total, range) =>
-          `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+          intl.formatMessage(
+            { id: 'pages.table.pageInfo' },
+            { start: range[0], end: range[1], total },
+          ),
       }}
       {...tableProps}
     />

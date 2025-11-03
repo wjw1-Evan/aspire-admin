@@ -16,35 +16,37 @@ const { TextArea } = Input;
  * v3.1: 待审核的加入申请列表（管理员）
  */
 const PendingJoinRequests: React.FC = () => {
+  const intl = useIntl();
   const { message, modal } = App.useApp();
   const actionRef = useRef<ActionType>();
+  const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
 
   // 审核通过
   const handleApprove = async (record: API.JoinRequestDetail) => {
     Modal.confirm({
-      title: `确定通过 ${record.username} 的申请吗？`,
+      title: intl.formatMessage({ id: 'pages.modal.confirmApprove' }, { username: record.username }),
       content: (
         <div>
-          <p>申请理由：{record.reason || '无'}</p>
-          <p>通过后，该用户将成为企业成员。</p>
+          <p>{intl.formatMessage({ id: 'pages.modal.applyReasonPrefix' })}{record.reason || intl.formatMessage({ id: 'pages.table.noReason' })}</p>
+          <p>{intl.formatMessage({ id: 'pages.modal.approveWarning' })}</p>
         </div>
       ),
-      okText: '通过',
-      cancelText: '取消',
+      okText: intl.formatMessage({ id: 'pages.modal.okApprove' }),
+      cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
       onOk: async () => {
         setLoading(true);
         try {
           const response = await approveRequest(record.id);
 
           if (response.success) {
-            message.success('申请已通过');
+            message.success(intl.formatMessage({ id: 'pages.message.applicationApproved' }));
             actionRef.current?.reload();
           } else {
-            message.error(response.errorMessage || '操作失败');
+            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
           }
         } catch (error: any) {
-          message.error(error.message || '操作失败');
+          message.error(error.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
         } finally {
           setLoading(false);
         }
@@ -57,25 +59,25 @@ const PendingJoinRequests: React.FC = () => {
     let rejectReason = '';
 
     modal.confirm({
-      title: `拒绝 ${record.username} 的申请`,
+      title: intl.formatMessage({ id: 'pages.modal.rejectApplication' }, { username: record.username }),
       content: (
         <div style={{ marginTop: 16 }}>
-          <div style={{ marginBottom: 8 }}>请说明拒绝理由：</div>
+          <div style={{ marginBottom: 8 }}>{intl.formatMessage({ id: 'pages.modal.rejectReasonLabel' })}</div>
           <TextArea
             rows={4}
-            placeholder="请输入拒绝理由..."
+            placeholder={intl.formatMessage({ id: 'pages.modal.rejectReasonPlaceholder' })}
             onChange={(e) => {
               rejectReason = e.target.value;
             }}
           />
         </div>
       ),
-      okText: '确定拒绝',
+      okText: intl.formatMessage({ id: 'pages.modal.confirmReject' }),
       okButtonProps: { danger: true },
-      cancelText: '取消',
+      cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
       onOk: async () => {
         if (!rejectReason.trim()) {
-          message.warning('请输入拒绝理由');
+          message.warning(intl.formatMessage({ id: 'pages.message.pleaseEnterReason' }));
           return Promise.reject();
         }
 
@@ -86,13 +88,13 @@ const PendingJoinRequests: React.FC = () => {
           });
 
           if (response.success) {
-            message.success('申请已拒绝');
+            message.success(intl.formatMessage({ id: 'pages.message.applicationRejected' }));
             actionRef.current?.reload();
           } else {
-            message.error(response.errorMessage || '操作失败');
+            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
           }
         } catch (error: any) {
-          message.error(error.message || '操作失败');
+          message.error(error.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
         } finally {
           setLoading(false);
         }
@@ -100,11 +102,146 @@ const PendingJoinRequests: React.FC = () => {
     });
   };
 
+  /**
+   * 初始化列宽调整功能
+   */
+  useEffect(() => {
+    if (!tableRef.current) return;
+
+    const initResizeHandlers = () => {
+      const table = tableRef.current;
+      if (!table) return;
+
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+
+      const headers = thead.querySelectorAll('th');
+      let isResizing = false;
+      let currentHeader: HTMLElement | null = null;
+      let startX = 0;
+      let startWidth = 0;
+
+      const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
+        // 只允许在表头右边缘 5px 内拖动
+        const rect = header.getBoundingClientRect();
+        const edgeThreshold = 5;
+        const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+
+        if (!isNearRightEdge) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        
+        isResizing = true;
+        currentHeader = header;
+        startX = e.clientX;
+        startWidth = header.offsetWidth;
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      };
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!isResizing || !currentHeader) return;
+
+        const diff = e.clientX - startX;
+        const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
+        currentHeader.style.width = `${newWidth}px`;
+        currentHeader.style.minWidth = `${newWidth}px`;
+        currentHeader.style.maxWidth = `${newWidth}px`;
+      };
+
+      const handleMouseUp = () => {
+        isResizing = false;
+        currentHeader = null;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+
+      headers.forEach((header) => {
+        const headerEl = header as HTMLElement;
+        headerEl.style.position = 'relative';
+        headerEl.style.cursor = 'default';
+        
+        const mouseMoveHandler = (e: MouseEvent) => {
+          const rect = headerEl.getBoundingClientRect();
+          const edgeThreshold = 5;
+          const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+          
+          if (isNearRightEdge && !isResizing) {
+            headerEl.style.cursor = 'col-resize';
+          } else if (!isResizing) {
+            headerEl.style.cursor = 'default';
+          }
+        };
+
+        headerEl.addEventListener('mousemove', mouseMoveHandler);
+        (headerEl as any)._mouseMoveHandler = mouseMoveHandler;
+
+        const mouseDownHandler = (e: MouseEvent) => {
+          handleMouseDown(e, headerEl);
+        };
+        headerEl.addEventListener('mousedown', mouseDownHandler);
+        (headerEl as any)._mouseDownHandler = mouseDownHandler;
+      });
+    };
+
+    // 延迟初始化，确保表格已渲染
+    let timer: NodeJS.Timeout | null = setTimeout(() => {
+      initResizeHandlers();
+    }, 300);
+
+    // 监听表格变化，重新初始化
+    const observer = new MutationObserver(() => {
+      // 防抖，避免频繁初始化
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => {
+        initResizeHandlers();
+      }, 300);
+    });
+
+    if (tableRef.current) {
+      observer.observe(tableRef.current, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      observer.disconnect();
+      
+      // 清理事件监听器
+      if (tableRef.current) {
+        const thead = tableRef.current.querySelector('thead');
+        if (thead) {
+          const headers = thead.querySelectorAll('th');
+          headers.forEach((header) => {
+            const headerEl = header as HTMLElement;
+            if ((headerEl as any)._mouseMoveHandler) {
+              headerEl.removeEventListener('mousemove', (headerEl as any)._mouseMoveHandler);
+            }
+            if ((headerEl as any)._mouseDownHandler) {
+              headerEl.removeEventListener('mousedown', (headerEl as any)._mouseDownHandler);
+            }
+          });
+        }
+      }
+    };
+  }, []);
+
   const columns: ProColumns<API.JoinRequestDetail>[] = [
     {
-      title: '申请人',
+      title: intl.formatMessage({ id: 'pages.table.applicant' }),
       dataIndex: 'username',
-      width: 150,
       render: (_, record) => (
         <div>
           <div>
@@ -119,36 +256,34 @@ const PendingJoinRequests: React.FC = () => {
       ),
     },
     {
-      title: '申请理由',
+      title: intl.formatMessage({ id: 'pages.table.applyReason' }),
       dataIndex: 'reason',
       ellipsis: true,
       search: false,
-      render: (text) => text || <span style={{ color: '#999' }}>无</span>,
+      render: (text) => text || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
     },
     {
-      title: '申请时间',
+      title: intl.formatMessage({ id: 'pages.table.applyTime' }),
       dataIndex: 'createdAt',
-      width: 180,
       valueType: 'dateTime',
       sorter: true,
       search: false,
     },
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'pages.table.status' }),
       dataIndex: 'status',
-      width: 100,
       hideInTable: true,
       valueEnum: {
         pending: {
-          text: '待审核',
+          text: intl.formatMessage({ id: 'pages.status.pending' }),
           status: 'Processing',
         },
       },
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.table.actions' }),
       valueType: 'option',
-      width: 180,
+      fixed: 'right',
       render: (_, record) => (
         <Space>
           <Button
@@ -158,7 +293,7 @@ const PendingJoinRequests: React.FC = () => {
             loading={loading}
             icon={<CheckCircleOutlined />}
           >
-            通过
+            {intl.formatMessage({ id: 'pages.button.approve' })}
           </Button>
           <Button
             danger
@@ -167,7 +302,7 @@ const PendingJoinRequests: React.FC = () => {
             loading={loading}
             icon={<CloseCircleOutlined />}
           >
-            拒绝
+            {intl.formatMessage({ id: 'pages.button.reject' })}
           </Button>
         </Space>
       ),
@@ -177,8 +312,8 @@ const PendingJoinRequests: React.FC = () => {
   return (
     <PageContainer
       header={{
-        title: '待审核申请',
-        subTitle: '审核企业加入申请',
+        title: intl.formatMessage({ id: 'pages.joinRequests.pending.title' }),
+        subTitle: intl.formatMessage({ id: 'pages.joinRequests.pending.subTitle' }),
       }}
     >
       <ProTable<API.JoinRequestDetail>
@@ -214,7 +349,8 @@ const PendingJoinRequests: React.FC = () => {
           showSizeChanger: true,
         }}
         dateFormatter="string"
-      />
+        />
+      </div>
     </PageContainer>
   );
 };

@@ -1,6 +1,6 @@
 import { CheckCircleOutlined, CloseCircleOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
-import { history, Link } from '@umijs/max';
+import { history, Link, useIntl } from '@umijs/max';
 import { Alert, App, Space } from 'antd';
 import React, { useState, useRef } from 'react';
 import { Footer } from '@/components';
@@ -8,6 +8,7 @@ import { register, checkUsernameExists } from '@/services/ant-design-pro/api';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 
 export default function Register() {
+  const intl = useIntl();
   const { message } = App.useApp();
   const [registerError, setRegisterError] = useState<string>('');
   const [captchaId, setCaptchaId] = useState<string>('');
@@ -30,7 +31,7 @@ export default function Register() {
       });
 
       if (response.success && response.data) {
-        message.success('注册成功！已为您自动创建个人企业，正在跳转...');
+        message.success(intl.formatMessage({ id: 'pages.message.registerSuccess' }));
 
         // 自动登录（注册成功后）
         setTimeout(() => {

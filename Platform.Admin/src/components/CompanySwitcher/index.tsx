@@ -2,7 +2,7 @@ import { BankOutlined, CheckOutlined, PlusOutlined } from '@ant-design/icons';
 import { Dropdown, Spin, App as AntApp } from 'antd';
 import type { MenuProps } from 'antd';
 import React, { useState, useEffect } from 'react';
-import { request, useModel } from '@umijs/max';
+import { request, useModel, useIntl } from '@umijs/max';
 import { JoinCompanyModal } from '../JoinCompanyModal';
 import { CreateCompanyModal } from '../CreateCompanyModal';
 import styles from './index.less';
@@ -12,6 +12,7 @@ import styles from './index.less';
  * 显示在 Header 右侧，允许用户在多个企业间切换
  */
 export const CompanySwitcher: React.FC = () => {
+  const intl = useIntl();
   const { initialState, setInitialState } = useModel('@@initialState');
   const { message } = AntApp.useApp();
   const [companies, setCompanies] = useState<API.UserCompanyItem[]>([]);
@@ -41,11 +42,11 @@ export const CompanySwitcher: React.FC = () => {
       if (response.success && response.data) {
         setCompanies(response.data);
       } else {
-        message.error(response.errorMessage || '加载企业列表失败');
+        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.loadFailed' }));
       }
     } catch (error: any) {
       console.error('加载企业列表失败:', error);
-      message.error(error.message || '加载企业列表失败');
+      message.error(error.message || intl.formatMessage({ id: 'pages.company.loadFailed' }));
     } finally {
       setLoading(false);
     }
@@ -75,7 +76,7 @@ export const CompanySwitcher: React.FC = () => {
       );
 
       if (response.success && response.data) {
-        message.success(`已切换到：${response.data.companyName}`);
+        message.success(intl.formatMessage({ id: 'pages.company.switchSuccess' }, { name: response.data.companyName }));
 
         // 更新本地存储的token（如果后端返回了新token）
         if (response.data.token) {
@@ -99,10 +100,10 @@ export const CompanySwitcher: React.FC = () => {
           window.location.reload();
         }, 500);
       } else {
-        message.error(response.errorMessage || '切换失败');
+        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.switchFailed' }));
       }
     } catch (error: any) {
-      message.error(error.message || '切换企业失败');
+      message.error(error.message || intl.formatMessage({ id: 'pages.company.switchFailed' }));
     } finally {
       setSwitching(false);
     }
@@ -118,14 +119,14 @@ export const CompanySwitcher: React.FC = () => {
             <div className={styles.companyName}>
               {company.companyName}
               {company.isPersonal && (
-                <span className={styles.personalBadge}>个人</span>
+                <span className={styles.personalBadge}>{intl.formatMessage({ id: 'pages.company.personal' })}</span>
               )}
               {company.isAdmin && (
-                <span className={styles.adminBadge}>管理员</span>
+                <span className={styles.adminBadge}>{intl.formatMessage({ id: 'pages.company.admin' })}</span>
               )}
             </div>
             <div className={styles.companyRoles}>
-              {company.roleNames.join('、') || '无角色'}
+              {company.roleNames.join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) || intl.formatMessage({ id: 'pages.company.noRole' })}
             </div>
           </div>
           {company.isCurrent && <CheckOutlined className={styles.checkIcon} />}
@@ -140,7 +141,7 @@ export const CompanySwitcher: React.FC = () => {
       key: 'create-company',
       label: (
         <div className={styles.joinCompany}>
-          <PlusOutlined /> 新建企业
+          <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.createNew' })}
         </div>
       ),
       onClick: () => {
@@ -151,7 +152,7 @@ export const CompanySwitcher: React.FC = () => {
       key: 'join-company',
       label: (
         <div className={styles.joinCompany}>
-          <PlusOutlined /> 加入新企业
+          <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.joinNew' })}
         </div>
       ),
       onClick: () => {

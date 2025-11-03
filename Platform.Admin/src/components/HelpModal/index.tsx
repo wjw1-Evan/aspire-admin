@@ -57,15 +57,53 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             <li>
               <strong>API 文档</strong> - 集成 Scalar API 文档系统
             </li>
+            <li>
+              <strong>多语言支持</strong> - 支持 8 种语言的完整翻译
+            </li>
           </ul>
 
-          <Title level={5}>默认账户</Title>
+          <Title level={5}>多语言支持</Title>
           <Paragraph>
-            <Text code>用户名: admin</Text>
-            <br />
-            <Text code>密码: admin123</Text>
-            <br />
-            <Text type="warning">⚠️ 请登录后立即修改密码！</Text>
+            系统支持 8 种语言的完整界面翻译：
+          </Paragraph>
+          <ul>
+            <li>🇨🇳 简体中文 (zh-CN)</li>
+            <li>🇹🇼 繁体中文 (zh-TW)</li>
+            <li>🇺🇸 英语 (en-US)</li>
+            <li>🇯🇵 日语 (ja-JP)</li>
+            <li>🇧🇷 葡萄牙语-巴西 (pt-BR)</li>
+            <li>🇮🇷 波斯语-伊朗 (fa-IR)</li>
+            <li>🇮🇩 印尼语 (id-ID)</li>
+            <li>🇧🇩 孟加拉语 (bn-BD)</li>
+          </ul>
+          <Paragraph>
+            <Text type="secondary">
+              点击右上角的语言选择器可以切换界面语言。所有界面元素（菜单、按钮、提示信息等）都已完整翻译。
+            </Text>
+          </Paragraph>
+
+          <Title level={5}>开始使用</Title>
+          <Paragraph>
+            系统采用注册制，没有默认账户。请按照以下步骤开始使用：
+          </Paragraph>
+          <ol>
+            <li>
+              <strong>注册账户</strong> - 访问注册页面，填写用户名、邮箱和密码
+            </li>
+            <li>
+              <strong>自动创建企业</strong> - 注册成功后，系统会自动为您创建个人企业
+            </li>
+            <li>
+              <strong>自动设置管理员</strong> - 您将自动成为企业管理员，拥有所有权限
+            </li>
+            <li>
+              <strong>立即登录</strong> - 注册完成后会自动登录系统
+            </li>
+          </ol>
+          <Paragraph>
+            <Text type="secondary">
+              💡 提示：每个用户注册时都会自动获得一个个人企业，您可以后续申请加入其他企业或创建新企业。
+            </Text>
           </Paragraph>
         </div>
       ),
@@ -84,6 +122,49 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             以下是 Aspire Admin
             平台的完整版本历史，记录了每个版本的重要更新和改进。
           </Paragraph>
+
+          {/* v6.1 版本 */}
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+            }}
+          >
+            <Title level={5} style={{ color: '#1890ff', marginBottom: 16 }}>
+              🌐 v6.1.0 - 多语言支持完善 (2025-01-XX)
+            </Title>
+
+            <Title level={6}>多语言翻译补充</Title>
+            <ul>
+              <li>
+                <strong>完整翻译覆盖</strong> - 所有 8 种语言现在都有完整的界面翻译
+              </li>
+              <li>
+                <strong>企业切换菜单多语言</strong> - 企业切换功能已支持所有语言
+              </li>
+              <li>
+                <strong>翻译一致性</strong> - 统一翻译风格和术语使用
+              </li>
+              <li>
+                <strong>字符分隔符优化</strong> - 根据语言特性使用合适的分隔符
+              </li>
+            </ul>
+
+            <Title level={6}>翻译统计</Title>
+            <ul>
+              <li>
+                <strong>zh-TW (繁体中文)</strong> - 已补充 387 个翻译键
+              </li>
+              <li>
+                <strong>其他语言</strong> - 正在补充中（参考 zh-CN 和 en-US）
+              </li>
+              <li>
+                <strong>翻译模块</strong> - 涵盖用户管理、角色管理、企业设置、欢迎页面等所有功能模块
+              </li>
+            </ul>
+          </div>
 
           {/* v6.0 版本 */}
           <div
@@ -464,6 +545,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             <li>
               <strong>v6.0</strong> - 权限简化，用户体验优化
             </li>
+            <li>
+              <strong>v6.1</strong> - 多语言支持完善，国际化覆盖
+            </li>
           </ul>
 
           <Title level={5}>🔮 未来规划</Title>
@@ -523,6 +607,19 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             <br />
             4. 如果问题持续，请联系技术支持
           </Paragraph>
+
+          <Title level={5}>Q: 如何切换界面语言？</Title>
+          <Paragraph>
+            点击右上角的语言选择器（🌐 图标），选择您想要的语言。系统支持 8 种语言：
+            <br />
+            简体中文、繁体中文、英语、日语、葡萄牙语（巴西）、波斯语（伊朗）、印尼语、孟加拉语
+          </Paragraph>
+
+          <Title level={5}>Q: 某些界面元素没有翻译？</Title>
+          <Paragraph>
+            系统正在持续完善多语言支持。如果发现某些内容未翻译，请联系技术支持。
+            目前核心功能（用户管理、角色管理、企业设置等）已完整支持所有语言。
+          </Paragraph>
         </div>
       ),
     },
@@ -579,11 +676,13 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           <Title level={5}>版本信息</Title>
           <Paragraph>
             <Text type="secondary">
-              Aspire Admin v6.0.0
+              Aspire Admin v6.1.0
               <br />
-              更新日期: 2025-10-14
+              更新日期: 2025-01-XX
               <br />
-              更新内容: 菜单级权限系统重构，简化权限控制架构
+              更新内容: 多语言支持完善，补充所有语言的完整翻译
+              <br />
+              支持语言: 8 种语言（中文、英文、日语、葡萄牙语、波斯语、印尼语、孟加拉语）
               <br />© 2025 All Rights Reserved
             </Text>
           </Paragraph>

@@ -1,6 +1,7 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable, ProCard } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import {
   Button,
   Tag,
@@ -41,7 +42,9 @@ import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
 
 const UserManagement: React.FC = () => {
+  const intl = useIntl();
   const actionRef = useRef<ActionType>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [searchForm] = Form.useForm();
   const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);
   const [formVisible, setFormVisible] = useState(false);
@@ -187,13 +190,13 @@ const UserManagement: React.FC = () => {
   const handleDelete = async (userId: string) => {
     let deleteReason = '';
     Modal.confirm({
-      title: '确定要删除这个用户吗？',
+      title: intl.formatMessage({ id: 'pages.modal.confirmDeleteUser' }),
       content: (
         <div>
-          <p>此操作不可恢复，请输入删除原因：</p>
+          <p>{intl.formatMessage({ id: 'pages.modal.irreversibleOperation' })}</p>
           <Input.TextArea
             rows={3}
-            placeholder="请输入删除原因（选填）"
+            placeholder={intl.formatMessage({ id: 'pages.modal.pleaseEnterReasonOptional' })}
             onChange={(e) => {
               deleteReason = e.target.value;
             }}
@@ -201,8 +204,8 @@ const UserManagement: React.FC = () => {
           />
         </div>
       ),
-      okText: '确定删除',
-      cancelText: '取消',
+      okText: intl.formatMessage({ id: 'pages.modal.okDelete' }),
+      cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
       okType: 'danger',
       onOk: async () => {
         try {
@@ -210,7 +213,7 @@ const UserManagement: React.FC = () => {
             method: 'DELETE',
             params: { reason: deleteReason },
           });
-          message.success('删除成功');
+          message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
           actionRef.current?.reload();
           fetchStatistics();
         } catch (error) {
@@ -225,7 +228,7 @@ const UserManagement: React.FC = () => {
   // 批量操作
   const handleBulkAction = async (action: string) => {
     if (selectedRows.length === 0) {
-      message.warning('请选择要操作的用户');
+      message.warning(intl.formatMessage({ id: 'pages.message.pleaseSelect' }));
       return;
     }
 
@@ -233,13 +236,13 @@ const UserManagement: React.FC = () => {
     if (action === 'delete') {
       let deleteReason = '';
       Modal.confirm({
-        title: `确定要批量删除 ${selectedRows.length} 个用户吗？`,
+        title: intl.formatMessage({ id: 'pages.modal.confirmBatchDelete' }, { count: selectedRows.length }),
         content: (
           <div>
-            <p>此操作不可恢复，请输入删除原因：</p>
+            <p>{intl.formatMessage({ id: 'pages.modal.irreversibleOperation' })}</p>
             <Input.TextArea
               rows={3}
-              placeholder="请输入删除原因（选填）"
+              placeholder={intl.formatMessage({ id: 'pages.modal.pleaseEnterReasonOptional' })}
               onChange={(e) => {
                 deleteReason = e.target.value;
               }}
@@ -247,8 +250,8 @@ const UserManagement: React.FC = () => {
             />
           </div>
         ),
-        okText: '确定删除',
-        cancelText: '取消',
+        okText: intl.formatMessage({ id: 'pages.modal.okDelete' }),
+        cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
         okType: 'danger',
         onOk: async () => {
           try {
@@ -286,11 +289,11 @@ const UserManagement: React.FC = () => {
 
       const actionText =
         {
-          activate: '启用',
-          deactivate: '禁用',
-        }[action] || '操作';
+          activate: intl.formatMessage({ id: 'pages.userManagement.action.activate' }),
+          deactivate: intl.formatMessage({ id: 'pages.userManagement.action.deactivate' }),
+        }[action] || intl.formatMessage({ id: 'pages.userManagement.action.operation' });
 
-      message.success(`批量${actionText}成功`);
+      message.success(intl.formatMessage({ id: 'pages.message.success' }));
       setSelectedRows([]);
       actionRef.current?.reload();
       fetchStatistics();
@@ -309,7 +312,7 @@ const UserManagement: React.FC = () => {
         method: 'PUT',
       });
 
-      message.success(`用户已${user.isActive ? '禁用' : '启用'}`);
+      message.success(user.isActive ? intl.formatMessage({ id: 'pages.userManagement.userActivated' }) : intl.formatMessage({ id: 'pages.userManagement.userDeactivated' }));
       actionRef.current?.reload();
       fetchStatistics();
     } catch (error) {
@@ -319,10 +322,146 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  /**
+   * 初始化列宽调整功能
+   */
+  useEffect(() => {
+    if (!tableRef.current) return;
+
+    const initResizeHandlers = () => {
+      const table = tableRef.current;
+      if (!table) return;
+
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+
+      const headers = thead.querySelectorAll('th');
+      let isResizing = false;
+      let currentHeader: HTMLElement | null = null;
+      let startX = 0;
+      let startWidth = 0;
+
+      const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
+        // 只允许在表头右边缘 5px 内拖动
+        const rect = header.getBoundingClientRect();
+        const edgeThreshold = 5;
+        const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+
+        if (!isNearRightEdge) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        
+        isResizing = true;
+        currentHeader = header;
+        startX = e.clientX;
+        startWidth = header.offsetWidth;
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      };
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!isResizing || !currentHeader) return;
+
+        const diff = e.clientX - startX;
+        const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
+        currentHeader.style.width = `${newWidth}px`;
+        currentHeader.style.minWidth = `${newWidth}px`;
+        currentHeader.style.maxWidth = `${newWidth}px`;
+      };
+
+      const handleMouseUp = () => {
+        isResizing = false;
+        currentHeader = null;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+
+      headers.forEach((header) => {
+        const headerEl = header as HTMLElement;
+        headerEl.style.position = 'relative';
+        headerEl.style.cursor = 'default';
+        
+        const mouseMoveHandler = (e: MouseEvent) => {
+          const rect = headerEl.getBoundingClientRect();
+          const edgeThreshold = 5;
+          const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+          
+          if (isNearRightEdge && !isResizing) {
+            headerEl.style.cursor = 'col-resize';
+          } else if (!isResizing) {
+            headerEl.style.cursor = 'default';
+          }
+        };
+
+        headerEl.addEventListener('mousemove', mouseMoveHandler);
+        (headerEl as any)._mouseMoveHandler = mouseMoveHandler;
+
+        const mouseDownHandler = (e: MouseEvent) => {
+          handleMouseDown(e, headerEl);
+        };
+        headerEl.addEventListener('mousedown', mouseDownHandler);
+        (headerEl as any)._mouseDownHandler = mouseDownHandler;
+      });
+    };
+
+    // 延迟初始化，确保表格已渲染
+    let timer: NodeJS.Timeout | null = setTimeout(() => {
+      initResizeHandlers();
+    }, 300);
+
+    // 监听表格变化，重新初始化
+    const observer = new MutationObserver(() => {
+      // 防抖，避免频繁初始化
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => {
+        initResizeHandlers();
+      }, 300);
+    });
+
+    if (tableRef.current) {
+      observer.observe(tableRef.current, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      observer.disconnect();
+      
+      // 清理事件监听器
+      if (tableRef.current) {
+        const thead = tableRef.current.querySelector('thead');
+        if (thead) {
+          const headers = thead.querySelectorAll('th');
+          headers.forEach((header) => {
+            const headerEl = header as HTMLElement;
+            if ((headerEl as any)._mouseMoveHandler) {
+              headerEl.removeEventListener('mousemove', (headerEl as any)._mouseMoveHandler);
+            }
+            if ((headerEl as any)._mouseDownHandler) {
+              headerEl.removeEventListener('mousedown', (headerEl as any)._mouseDownHandler);
+            }
+          });
+        }
+      }
+    };
+  }, []);
+
   // 表格列定义（记忆化，避免不必要渲染）
   const columns: ProColumns<AppUser>[] = useMemo(() => [
     {
-      title: '用户名',
+      title: intl.formatMessage({ id: 'pages.table.username' }),
       dataIndex: 'username',
       key: 'username',
       render: (text, _record) => (
@@ -333,18 +472,18 @@ const UserManagement: React.FC = () => {
       ),
     },
     {
-      title: '邮箱',
+      title: intl.formatMessage({ id: 'pages.table.email' }),
       dataIndex: 'email',
       key: 'email',
       ellipsis: true,
     },
     {
-      title: '角色',
+      title: intl.formatMessage({ id: 'pages.table.role' }),
       dataIndex: 'roleIds',
       key: 'roleIds',
       render: (_, record) => {
         if (!record.roleIds || record.roleIds.length === 0) {
-          return <Tag color="default">未分配</Tag>;
+          return <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag>;
         }
         return (
           <Space wrap>
@@ -358,13 +497,13 @@ const UserManagement: React.FC = () => {
       },
     },
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'pages.table.status' }),
       dataIndex: 'isActive',
       key: 'isActive',
       render: (_, record) => (
         <Badge
           status={record.isActive ? 'success' : 'error'}
-          text={record.isActive ? '启用' : '禁用'}
+          text={record.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}
         />
       ),
       renderFormItem: (_, { record }) => (
@@ -375,21 +514,21 @@ const UserManagement: React.FC = () => {
       ),
     },
     {
-      title: '创建时间',
+      title: intl.formatMessage({ id: 'pages.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
       valueType: 'dateTime',
       sorter: true,
     },
     {
-      title: '最后登录',
+      title: intl.formatMessage({ id: 'pages.table.lastLogin' }),
       dataIndex: 'lastLoginAt',
       key: 'lastLoginAt',
       valueType: 'dateTime',
       render: (text) => text || '-',
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.table.actions' }),
       key: 'action',
       fixed: 'right',
       render: (_, record) => {
@@ -397,7 +536,7 @@ const UserManagement: React.FC = () => {
           {
             key: 'view',
             icon: <EyeOutlined />,
-            label: '查看详情',
+            label: intl.formatMessage({ id: 'pages.table.viewDetail' }),
             onClick: () => {
               setViewingUser(record);
               setDetailVisible(true);
@@ -406,7 +545,7 @@ const UserManagement: React.FC = () => {
           {
             key: 'edit',
             icon: <EditOutlined />,
-            label: '编辑',
+            label: intl.formatMessage({ id: 'pages.table.edit' }),
             onClick: () => {
               setEditingUser(record);
               setFormVisible(true);
@@ -418,7 +557,7 @@ const UserManagement: React.FC = () => {
           {
             key: 'delete',
             icon: <DeleteOutlined />,
-            label: '删除',
+            label: intl.formatMessage({ id: 'pages.table.delete' }),
             danger: true,
             onClick: () => {
               record.id && handleDelete(record.id);
@@ -436,9 +575,9 @@ const UserManagement: React.FC = () => {
                 setViewingUser(record);
                 setDetailVisible(true);
               }}
-              aria-label="查看详情"
+              aria-label={intl.formatMessage({ id: 'pages.table.viewDetail' })}
             >
-              查看
+              {intl.formatMessage({ id: 'pages.table.view' })}
             </Button>
             <Button
               type="link"
@@ -448,20 +587,20 @@ const UserManagement: React.FC = () => {
                 setEditingUser(record);
                 setFormVisible(true);
               }}
-              aria-label="编辑用户"
+              aria-label={intl.formatMessage({ id: 'pages.table.edit' })}
             >
-              编辑
+              {intl.formatMessage({ id: 'pages.table.edit' })}
             </Button>
             <Dropdown menu={{ items: items.slice(2) }} trigger={["click"]}>
               <Button type="link" size="small" icon={<MoreOutlined />}>
-                更多
+                {intl.formatMessage({ id: 'pages.table.more' })}
               </Button>
             </Dropdown>
           </Space>
         );
       },
     },
-  ], [roleMap]);
+  ], [roleMap, intl]);
 
   React.useEffect(() => {
     fetchStatistics();
@@ -469,30 +608,30 @@ const UserManagement: React.FC = () => {
 
   return (
     <PageContainer
-      title="用户管理"
+      title={intl.formatMessage({ id: 'pages.userManagement.title' })}
       extra={[
         <Button
           key="refresh"
           icon={<ReloadOutlined />}
-          aria-label="刷新列表"
+          aria-label={intl.formatMessage({ id: 'pages.userManagement.refresh' })}
           onClick={() => {
             actionRef.current?.reload();
             fetchStatistics();
           }}
         >
-          刷新
+          {intl.formatMessage({ id: 'pages.userManagement.refresh' })}
         </Button>,
         <Button
           key="add"
           type="primary"
           icon={<PlusOutlined />}
-          aria-label="新增用户"
+          aria-label={intl.formatMessage({ id: 'pages.userManagement.addUser' })}
           onClick={() => {
             setEditingUser(null);
             setFormVisible(true);
           }}
         >
-          新增用户
+          {intl.formatMessage({ id: 'pages.userManagement.addUser' })}
         </Button>,
       ]}
     >
@@ -502,14 +641,14 @@ const UserManagement: React.FC = () => {
           <Row gutter={16}>
             <Col span={6}>
               <Statistic
-                title="总用户数"
+                title={intl.formatMessage({ id: 'pages.userManagement.statistics.totalUsers' })}
                 value={statistics.totalUsers}
                 prefix={<TeamOutlined />}
               />
             </Col>
             <Col span={6}>
               <Statistic
-                title="活跃用户"
+                title={intl.formatMessage({ id: 'pages.userManagement.statistics.activeUsers' })}
                 value={statistics.activeUsers}
                 prefix={<CheckCircleOutlined />}
                 valueStyle={{ color: '#3f8600' }}
@@ -517,7 +656,7 @@ const UserManagement: React.FC = () => {
             </Col>
             <Col span={6}>
               <Statistic
-                title="管理员"
+                title={intl.formatMessage({ id: 'pages.userManagement.statistics.adminUsers' })}
                 value={statistics.adminUsers}
                 prefix={<UserOutlined />}
                 valueStyle={{ color: '#cf1322' }}
@@ -525,7 +664,7 @@ const UserManagement: React.FC = () => {
             </Col>
             <Col span={6}>
               <Statistic
-                title="本月新增"
+                title={intl.formatMessage({ id: 'pages.userManagement.statistics.newUsersThisMonth' })}
                 value={statistics.newUsersThisMonth}
                 prefix={<PlusOutlined />}
                 valueStyle={{ color: '#1890ff' }}
@@ -543,17 +682,17 @@ const UserManagement: React.FC = () => {
           onFinish={handleSearch}
           style={{ marginBottom: 16 }}
         >
-          <Form.Item name="search" label="搜索">
-            <Input placeholder="用户名或邮箱" style={{ width: 200 }} aria-label="搜索关键词" />
+          <Form.Item name="search" label={intl.formatMessage({ id: 'pages.userManagement.search.label' })}>
+            <Input placeholder={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })} style={{ width: 200 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })} />
           </Form.Item>
-          <Form.Item name="roleIds" label="角色">
+          <Form.Item name="roleIds" label={intl.formatMessage({ id: 'pages.userManagement.role.label' })}>
             <Select
               mode="multiple"
-              placeholder="选择角色"
+              placeholder={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
               style={{ width: 200 }}
               allowClear
               loading={Object.keys(roleMap).length === 0}
-              aria-label="角色筛选"
+              aria-label={intl.formatMessage({ id: 'pages.userManagement.role.label' })}
             >
               {Object.entries(roleMap).map(([id, name]) => (
                 <Select.Option key={id} value={id}>
@@ -562,56 +701,58 @@ const UserManagement: React.FC = () => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="isActive" label="状态">
-            <Select placeholder="选择状态" style={{ width: 120 }} allowClear aria-label="状态筛选">
-              <Select.Option value={true}>启用</Select.Option>
-              <Select.Option value={false}>禁用</Select.Option>
+          <Form.Item name="isActive" label={intl.formatMessage({ id: 'pages.userManagement.status.label' })}>
+            <Select placeholder={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })} style={{ width: 120 }} allowClear aria-label={intl.formatMessage({ id: 'pages.userManagement.status.label' })}>
+              <Select.Option value={true}>{intl.formatMessage({ id: 'pages.table.activated' })}</Select.Option>
+              <Select.Option value={false}>{intl.formatMessage({ id: 'pages.table.deactivated' })}</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="dateRange" label="创建时间">
-            <DatePicker.RangePicker style={{ width: 240 }} aria-label="创建时间范围" />
+          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.userManagement.createdAt.label' })}>
+            <DatePicker.RangePicker style={{ width: 240 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.createdAt.label' })} />
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit" aria-label="提交查询">
-                查询
+              <Button type="primary" htmlType="submit" aria-label={intl.formatMessage({ id: 'pages.userManagement.query' })}>
+                {intl.formatMessage({ id: 'pages.userManagement.query' })}
               </Button>
-              <Button onClick={handleReset} aria-label="重置查询">重置</Button>
+              <Button onClick={handleReset} aria-label={intl.formatMessage({ id: 'pages.userManagement.reset' })}>{intl.formatMessage({ id: 'pages.userManagement.reset' })}</Button>
             </Space>
           </Form.Item>
         </Form>
       </Card>
 
       {/* 用户列表表格 */}
-      <ProTable<AppUser>
-        actionRef={actionRef}
-        rowKey="id"
-        search={false}
+      <div ref={tableRef}>
+        <ProTable<AppUser>
+          actionRef={actionRef}
+          rowKey="id"
+          scroll={{ x: 'max-content' }}
+          search={false}
         toolBarRender={() => [
           <Button
             key="activate"
             onClick={() => handleBulkAction('activate')}
             disabled={selectedRows.length === 0}
-            aria-label="批量启用"
+            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
           >
-            批量启用
+            {intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
           </Button>,
           <Button
             key="deactivate"
             onClick={() => handleBulkAction('deactivate')}
             disabled={selectedRows.length === 0}
-            aria-label="批量禁用"
+            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
           >
-            批量禁用
+            {intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
           </Button>,
           <Button
             key="delete"
             danger
             onClick={() => handleBulkAction('delete')}
             disabled={selectedRows.length === 0}
-            aria-label="批量删除"
+            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
           >
-            批量删除
+            {intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
           </Button>,
         ]}
         request={fetchUsers}
@@ -626,13 +767,17 @@ const UserManagement: React.FC = () => {
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total, range) =>
-            `第 ${range[0]}-${range[1]} 条/总共 ${total} 条`,
+            intl.formatMessage(
+              { id: 'pages.userManagement.pagination.total' },
+              { start: range[0], end: range[1], total },
+            ),
         }}
-      />
+        />
+      </div>
 
       {/* 用户表单弹窗 */}
       <Modal
-        title={editingUser ? '编辑用户' : '新增用户'}
+        title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
         open={formVisible}
         onCancel={() => setFormVisible(false)}
         footer={null}
@@ -651,7 +796,7 @@ const UserManagement: React.FC = () => {
 
       {/* 用户详情抽屉 */}
       <Drawer
-        title="用户详情"
+        title={intl.formatMessage({ id: 'pages.userDetail.title' })}
         open={detailVisible}
         onClose={() => setDetailVisible(false)}
         width={600}

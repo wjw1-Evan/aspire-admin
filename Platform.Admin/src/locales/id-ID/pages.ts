@@ -71,4 +71,16 @@ export default {
   'pages.searchTable.tenThousand': '0000',
   'pages.searchTable.batchDeletion': 'Penghapusan batch',
   'pages.searchTable.batchApproval': 'Persetujuan batch',
+  // Menu pengalihan perusahaan
+  'pages.company.search.title': 'Cari Perusahaan',
+  'pages.company.search.subTitle': 'Cari dan ajukan untuk bergabung dengan perusahaan lain',
+  'pages.company.loadFailed': 'Gagal memuat daftar perusahaan',
+  'pages.company.switchSuccess': 'Beralih ke perusahaan: {name}',
+  'pages.company.switchFailed': 'Gagal beralih perusahaan',
+  'pages.company.personal': 'Pribadi',
+  'pages.company.admin': 'Admin',
+  'pages.company.noRole': 'Tidak Ada Peran',
+  'pages.company.createNew': 'Buat Perusahaan Baru',
+  'pages.company.joinNew': 'Bergabung dengan Perusahaan Baru',
+  'pages.company.roleSeparator': ', ',
 };

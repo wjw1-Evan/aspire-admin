@@ -1,6 +1,7 @@
 import React from 'react';
 import { ModalForm, ProFormText } from '@ant-design/pro-components';
 import { message } from 'antd';
+import { useIntl } from '@umijs/max';
 import { createCompany } from '@/services/company';
 
 interface CreateCompanyModalProps {
@@ -17,6 +18,8 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const intl = useIntl();
+
   /**
    * 提交创建企业
    */
@@ -27,23 +30,23 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
       
       const response = await createCompany(requestData);
       if (response.success && response.data) {
-        message.success('企业创建成功！您已成为该企业的管理员。');
+        message.success(intl.formatMessage({ id: 'pages.company.createSuccess' }));
         onSuccess();
         onClose();
         return true;
       } else {
-        message.error(response.errorMessage || '创建企业失败');
+        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.createFailed' }));
         return false;
       }
     } catch (error: any) {
-      message.error(error.message || '创建企业失败');
+      message.error(error.message || intl.formatMessage({ id: 'pages.company.createFailed' }));
       return false;
     }
   };
 
   return (
     <ModalForm<API.CreateCompanyRequest>
-      title="新建企业"
+      title={intl.formatMessage({ id: 'pages.company.createTitle' })}
       open={open}
       onOpenChange={(visible) => {
         if (!visible) {
@@ -59,11 +62,11 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
     >
       <ProFormText
         name="name"
-        label="企业名称"
-        placeholder="请输入企业名称"
+        label={intl.formatMessage({ id: 'pages.company.nameLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.company.namePlaceholder' })}
         rules={[
-          { required: true, message: '请输入企业名称' },
-          { min: 2, max: 100, message: '企业名称长度必须在2-100个字符之间' },
+          { required: true, message: intl.formatMessage({ id: 'pages.company.nameRequired' }) },
+          { min: 2, max: 100, message: intl.formatMessage({ id: 'pages.company.nameLength' }) },
         ]}
         fieldProps={{
           maxLength: 100,
@@ -72,9 +75,9 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
 
       <ProFormText
         name="description"
-        label="企业描述"
-        placeholder="请输入企业描述（可选）"
-        rules={[{ max: 500, message: '描述长度不能超过500个字符' }]}
+        label={intl.formatMessage({ id: 'pages.company.descriptionLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.company.descriptionPlaceholder' })}
+        rules={[{ max: 500, message: intl.formatMessage({ id: 'pages.company.descriptionMaxLength' }) }]}
         fieldProps={{
           maxLength: 500,
         }}
@@ -82,9 +85,9 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
 
       <ProFormText
         name="industry"
-        label="行业"
-        placeholder="请输入行业（可选）"
-        rules={[{ max: 50, message: '行业长度不能超过50个字符' }]}
+        label={intl.formatMessage({ id: 'pages.company.industryLabel' })}
+        placeholder={intl.formatMessage({ id: 'pages.company.industryPlaceholder' })}
+        rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.company.industryMaxLength' }) }]}
         fieldProps={{
           maxLength: 50,
         }}

@@ -1,5 +1,5 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { useModel, history } from '@umijs/max';
+import { useModel, history, useIntl } from '@umijs/max';
 import { 
   Card, 
   Row, 
@@ -28,7 +28,8 @@ import {
   DatabaseOutlined,
   HddOutlined,
   CiOutlined,
-  MonitorOutlined
+  MonitorOutlined,
+  LinkOutlined
 } from '@ant-design/icons';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
@@ -155,13 +156,15 @@ const ResourceCard: React.FC<{
 );
 
 const Welcome: React.FC = () => {
+  const intl = useIntl();
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser as CurrentUser;
   
   const [statistics, setStatistics] = useState<any>(null);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
-  const [recentActivities, setRecentActivities] = useState<API.UserActivityLog[]>([]);
+  // 扩展类型以包含 fullUrl 字段（后端实际返回的字段）
+  const [recentActivities, setRecentActivities] = useState<(API.UserActivityLog & { fullUrl?: string; path?: string; queryString?: string; httpMethod?: string })[]>([]);
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -272,12 +275,12 @@ const Welcome: React.FC = () => {
   // 获取当前时间问候语
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 6) return '夜深了';
-    if (hour < 12) return '早上好';
-    if (hour < 14) return '中午好';
-    if (hour < 18) return '下午好';
-    if (hour < 22) return '晚上好';
-    return '夜深了';
+    if (hour < 6) return intl.formatMessage({ id: 'pages.welcome.greeting.lateNight' });
+    if (hour < 12) return intl.formatMessage({ id: 'pages.welcome.greeting.morning' });
+    if (hour < 14) return intl.formatMessage({ id: 'pages.welcome.greeting.noon' });
+    if (hour < 18) return intl.formatMessage({ id: 'pages.welcome.greeting.afternoon' });
+    if (hour < 22) return intl.formatMessage({ id: 'pages.welcome.greeting.evening' });
+    return intl.formatMessage({ id: 'pages.welcome.greeting.lateNight' });
   };
 
   // 获取用户角色标签
@@ -355,16 +358,16 @@ const Welcome: React.FC = () => {
             </Col>
             <Col flex={1}>
               <Title level={2} style={{ color: 'white', margin: 0 }}>
-                {getGreeting()}，{currentUser?.displayName || currentUser?.username || '用户'}！
+                {getGreeting()}，{currentUser?.displayName || currentUser?.username || intl.formatMessage({ id: 'pages.welcome.user' })}！
               </Title>
               <Paragraph style={{ color: 'rgba(255,255,255,0.8)', margin: '8px 0 16px 0' }}>
-                欢迎回到 Aspire Admin Platform 企业级管理平台
+                {intl.formatMessage({ id: 'pages.welcome.welcomeText' })}
                 {companyInfo?.name && ` - ${companyInfo.name}`}
               </Paragraph>
               <Space wrap>
                 {getUserRoleTags()}
                 <Tag color="green" icon={<GlobalOutlined />}>
-                  在线
+                  {intl.formatMessage({ id: 'pages.welcome.online' })}
                 </Tag>
               </Space>
             </Col>
@@ -372,14 +375,14 @@ const Welcome: React.FC = () => {
               <Space direction="vertical" size="large">
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                    {new Date().toLocaleDateString('zh-CN', { 
+                    {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', { 
                       year: 'numeric', 
                       month: 'long', 
                       day: 'numeric' 
                     })}
                   </div>
                   <div style={{ fontSize: '14px', opacity: 0.8 }}>
-                    {new Date().toLocaleDateString('zh-CN', { weekday: 'long' })}
+                    {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', { weekday: 'long' })}
                   </div>
           </div>
               </Space>
@@ -394,7 +397,7 @@ const Welcome: React.FC = () => {
           title={
             <Space>
               <BarChartOutlined />
-              <span>系统概览</span>
+              <span>{intl.formatMessage({ id: 'pages.welcome.overview' })}</span>
             </Space>
           }
           style={{ marginBottom: '24px', borderRadius: '12px' }}
@@ -402,7 +405,7 @@ const Welcome: React.FC = () => {
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
-                title="总用户数"
+                title={intl.formatMessage({ id: 'pages.welcome.stats.totalUsers' })}
                 value={statistics?.totalUsers || 0}
                 icon={<TeamOutlined />}
                 color={token.colorPrimary}
@@ -412,7 +415,7 @@ const Welcome: React.FC = () => {
             </Col>
             <Col xs={24} sm={12} md={6}>
               <StatCard
-                title="活跃用户"
+                title={intl.formatMessage({ id: 'pages.welcome.stats.activeUsers' })}
                 value={statistics?.activeUsers || 0}
                 icon={<ThunderboltOutlined />}
                 color={token.colorSuccess}
@@ -422,7 +425,7 @@ const Welcome: React.FC = () => {
             </Col>
             <Col xs={24} sm={12} md={6}>
               <StatCard
-                title="管理员"
+                title={intl.formatMessage({ id: 'pages.welcome.stats.adminUsers' })}
                 value={statistics?.adminUsers || 0}
                 icon={<CrownOutlined />}
                 color={token.colorWarning}
@@ -432,7 +435,7 @@ const Welcome: React.FC = () => {
             </Col>
             <Col xs={24} sm={12} md={6}>
               <StatCard
-                title="今日新增"
+                title={intl.formatMessage({ id: 'pages.welcome.stats.newUsersToday' })}
                 value={statistics?.newUsersToday || 0}
                 icon={<RocketOutlined />}
                 color={token.colorError}
@@ -450,7 +453,7 @@ const Welcome: React.FC = () => {
               title={
                 <Space>
                   <RocketOutlined />
-                  <span>快速操作</span>
+                  <span>{intl.formatMessage({ id: 'pages.welcome.quickActions' })}</span>
                 </Space>
               }
               style={{ borderRadius: '12px' }}
@@ -458,8 +461,8 @@ const Welcome: React.FC = () => {
               <Row gutter={[16, 16]}>
                 <Col xs={12} sm={8}>
                   <QuickAction
-                    title="用户管理"
-                    description="管理系统用户"
+                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.title' })}
+                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.desc' })}
                     icon={<TeamOutlined />}
                     onClick={() => handleQuickAction('user-management')}
                     color="#1890ff"
@@ -467,8 +470,8 @@ const Welcome: React.FC = () => {
                 </Col>
                 <Col xs={12} sm={8}>
                   <QuickAction
-                    title="角色管理"
-                    description="配置用户角色"
+                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.title' })}
+                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.desc' })}
                     icon={<SafetyOutlined />}
                     onClick={() => handleQuickAction('role-management')}
                     color="#52c41a"
@@ -476,8 +479,8 @@ const Welcome: React.FC = () => {
                 </Col>
                 <Col xs={12} sm={8}>
                   <QuickAction
-                    title="企业设置"
-                    description="配置企业信息"
+                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.title' })}
+                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.desc' })}
                     icon={<SettingOutlined />}
                     onClick={() => handleQuickAction('company-settings')}
                     color="#faad14"
@@ -485,8 +488,8 @@ const Welcome: React.FC = () => {
                 </Col>
                 <Col xs={12} sm={8}>
                   <QuickAction
-                    title="个人中心"
-                    description="管理个人信息"
+                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.title' })}
+                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.desc' })}
                     icon={<UserOutlined />}
                     onClick={() => handleQuickAction('account-center')}
                     color="#722ed1"
@@ -494,8 +497,8 @@ const Welcome: React.FC = () => {
                 </Col>
                 <Col xs={12} sm={8}>
                   <QuickAction
-                    title="系统菜单"
-                    description="配置系统菜单"
+                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.menuManagement.title' })}
+                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.menuManagement.desc' })}
                     icon={<MenuOutlined />}
                     onClick={() => handleQuickAction('menu-management')}
                     color="#13c2c2"
@@ -504,8 +507,8 @@ const Welcome: React.FC = () => {
                 </Col>
                 <Col xs={12} sm={8}>
                   <QuickAction
-                    title="添加用户"
-                    description="创建新用户"
+                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.addUser.title' })}
+                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.addUser.desc' })}
                     icon={<PlusOutlined />}
                     onClick={() => handleQuickAction('add-user')}
                     color="#eb2f96"
@@ -522,36 +525,61 @@ const Welcome: React.FC = () => {
               title={
                 <Space>
                   <ClockCircleOutlined />
-                  <span>最近活动</span>
+                  <span>{intl.formatMessage({ id: 'pages.welcome.recentActivities' })}</span>
                 </Space>
               }
               style={{ borderRadius: '12px' }}
             >
               <Timeline
-                items={recentActivities.length > 0 ? recentActivities.map(activity => ({
-                  color: getActivityColor(activity.action),
-                  children: (
-                    <div>
-                      <Text strong>{activity.description || activity.action}</Text>
-                      <br />
-                      <Text type="secondary">
-                        {activity.action && activity.action !== activity.description ? activity.action : '系统活动'}
-                      </Text>
-                      <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                        {activity.createdAt ? new Date(activity.createdAt).toLocaleString('zh-CN') : '未知时间'}
+                items={recentActivities.length > 0 ? recentActivities.map(activity => {
+                  const locale = intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US';
+                  const formattedDate = activity.createdAt 
+                    ? new Date(activity.createdAt).toLocaleString(locale)
+                    : intl.formatMessage({ id: 'pages.welcome.recentActivities.unknownTime' });
+                  
+                  const urlDisplay = activity.fullUrl 
+                    || (activity.path && activity.queryString ? `${activity.path}${activity.queryString}` : activity.path);
+                  
+                  return {
+                    color: getActivityColor(activity.action),
+                    children: (
+                      <div>
+                        <Text strong>{activity.action || intl.formatMessage({ id: 'pages.welcome.recentActivities.systemActivity' })}</Text>
+                        {(activity.fullUrl || activity.path) && (
+                          <div style={{ marginTop: '4px', fontSize: '12px' }}>
+                            <Space size={4}>
+                              <LinkOutlined style={{ fontSize: '11px', color: '#8c8c8c' }} />
+                              <Text 
+                                type="secondary" 
+                                style={{ 
+                                  fontFamily: 'monospace', 
+                                  fontSize: '11px',
+                                  wordBreak: 'break-all',
+                                  maxWidth: '100%'
+                                }}
+                                title={urlDisplay || ''}
+                              >
+                                {urlDisplay}
+                              </Text>
+                            </Space>
+                          </div>
+                        )}
+                        <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '4px' }}>
+                          {formattedDate}
+                        </div>
                       </div>
-                    </div>
-                  ),
-                })) : [
+                    ),
+                  };
+                }) : [
                   {
                     color: 'green',
                     children: (
                       <div>
-                        <Text strong>系统启动</Text>
+                        <Text strong>{intl.formatMessage({ id: 'pages.welcome.recentActivities.systemStart.title' })}</Text>
                         <br />
-                        <Text type="secondary">系统已成功启动并运行</Text>
+                        <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.recentActivities.systemStart.desc' })}</Text>
                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                          {new Date().toLocaleString('zh-CN')}
+                          {new Date().toLocaleString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US')}
                         </div>
                       </div>
                     ),
@@ -560,13 +588,13 @@ const Welcome: React.FC = () => {
                     color: 'blue',
                     children: (
                       <div>
-                        <Text strong>用户登录</Text>
+                        <Text strong>{intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.title' })}</Text>
                         <br />
                         <Text type="secondary">
-                          {currentUser?.displayName || currentUser?.username} 已登录系统
+                          {intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.desc' }, { username: currentUser?.displayName || currentUser?.username || intl.formatMessage({ id: 'pages.welcome.user' }) })}
                         </Text>
                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                          {new Date().toLocaleString('zh-CN')}
+                          {new Date().toLocaleString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US')}
                         </div>
                       </div>
                     ),
@@ -575,11 +603,11 @@ const Welcome: React.FC = () => {
                     color: 'orange',
                     children: (
                       <div>
-                        <Text strong>数据同步</Text>
+                        <Text strong>{intl.formatMessage({ id: 'pages.welcome.recentActivities.dataSync.title' })}</Text>
                         <br />
-                        <Text type="secondary">用户权限数据已同步</Text>
+                        <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.recentActivities.dataSync.desc' })}</Text>
                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                          {new Date().toLocaleString('zh-CN')}
+                          {new Date().toLocaleString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US')}
                         </div>
                       </div>
                     ),
@@ -595,7 +623,7 @@ const Welcome: React.FC = () => {
           title={
             <Space>
               <MonitorOutlined />
-              <span>系统信息</span>
+              <span>{intl.formatMessage({ id: 'pages.welcome.systemInfo' })}</span>
             </Space>
           }
           style={{ marginTop: '24px', borderRadius: '12px' }}
@@ -606,7 +634,7 @@ const Welcome: React.FC = () => {
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>                                                                        
                   .NET 9
                 </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>后端框架</div>                                                                              
+                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>{intl.formatMessage({ id: 'pages.welcome.systemInfo.backendFramework' })}</div>                                                                              
               </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
@@ -614,7 +642,7 @@ const Welcome: React.FC = () => {
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>                                                                        
                   React 19
                 </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>前端框架</div>                                                                              
+                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>{intl.formatMessage({ id: 'pages.welcome.systemInfo.frontendFramework' })}</div>                                                                              
               </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
@@ -622,7 +650,7 @@ const Welcome: React.FC = () => {
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>                                                                        
                   MongoDB
                 </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>数据库</div>
+                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>{intl.formatMessage({ id: 'pages.welcome.systemInfo.database' })}</div>
               </div>
             </Col>
             <Col xs={24} sm={12} md={6}>
@@ -630,7 +658,7 @@ const Welcome: React.FC = () => {
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#722ed1' }}>                                                                        
                   Aspire
                 </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>微服务编排</div>                                                                            
+                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>{intl.formatMessage({ id: 'pages.welcome.systemInfo.orchestration' })}</div>                                                                            
               </div>
             </Col>
           </Row>
@@ -642,8 +670,8 @@ const Welcome: React.FC = () => {
             title={
               <Space>
                 <DatabaseOutlined />
-                <span>系统资源监控</span>
-                <Tag color="blue">5秒更新</Tag>
+                <span>{intl.formatMessage({ id: 'pages.welcome.systemResources' })}</span>
+                <Tag color="blue">{intl.formatMessage({ id: 'pages.welcome.systemResources.updateInterval' })}</Tag>
               </Space>
             }
             style={{ marginTop: '24px', borderRadius: '12px' }}
@@ -653,7 +681,7 @@ const Welcome: React.FC = () => {
               {systemResources.memory && (
                 <Col xs={24} sm={12} md={8}>
                   <ResourceCard
-                    title="系统内存使用率"
+                    title={intl.formatMessage({ id: 'pages.welcome.systemResources.memoryUsage' })}
                     value={`${systemResources.memory?.usagePercent || 0}%`}
                     icon={<ThunderboltOutlined />}
                     color={getResourceColor(systemResources.memory?.usagePercent || 0)}
@@ -661,10 +689,22 @@ const Welcome: React.FC = () => {
                     token={token}
                   />
                   <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                    系统: {((systemResources.memory?.totalMemoryMB || 0) - (systemResources.memory?.availableMemoryMB || 0)).toFixed(2)}MB / {(systemResources.memory?.totalMemoryMB || 0).toFixed(2)}MB
+                    {intl.formatMessage(
+                      { id: 'pages.welcome.systemResources.systemMemory' },
+                      {
+                        used: ((systemResources.memory?.totalMemoryMB || 0) - (systemResources.memory?.availableMemoryMB || 0)).toFixed(2),
+                        total: (systemResources.memory?.totalMemoryMB || 0).toFixed(2),
+                      }
+                    )}
                   </div>
                   <div style={{ fontSize: '12px', color: '#1890ff', textAlign: 'center', marginTop: '4px' }}>
-                    程序: {(systemResources.memory?.processMemoryMB || 0).toFixed(2)}MB ({(systemResources.memory?.processUsagePercent || 0).toFixed(2)}%)
+                    {intl.formatMessage(
+                      { id: 'pages.welcome.systemResources.processMemory' },
+                      {
+                        memory: (systemResources.memory?.processMemoryMB || 0).toFixed(2),
+                        percent: (systemResources.memory?.processUsagePercent || 0).toFixed(2),
+                      }
+                    )}
                   </div>
                 </Col>
               )}
@@ -672,7 +712,7 @@ const Welcome: React.FC = () => {
               {systemResources.cpu && (
                 <Col xs={24} sm={12} md={8}>
                   <ResourceCard
-                    title="CPU 使用率"
+                    title={intl.formatMessage({ id: 'pages.welcome.systemResources.cpuUsage' })}
                     value={`${systemResources.cpu?.usagePercent || 0}%`}
                     icon={<CiOutlined />}
                     color={getResourceColor(systemResources.cpu?.usagePercent || 0)}
@@ -680,7 +720,10 @@ const Welcome: React.FC = () => {
                     token={token}
                   />
                   <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                    运行时间: {Math.round((systemResources.cpu?.uptime || 0) / 3600)}h
+                    {intl.formatMessage(
+                      { id: 'pages.welcome.systemResources.uptime' },
+                      { hours: Math.round((systemResources.cpu?.uptime || 0) / 3600) }
+                    )}
                   </div>
                 </Col>
               )}
@@ -689,7 +732,7 @@ const Welcome: React.FC = () => {
               {systemResources.disk && (
                 <Col xs={24} sm={12} md={8}>
                   <ResourceCard
-                    title="磁盘使用率"
+                    title={intl.formatMessage({ id: 'pages.welcome.systemResources.diskUsage' })}
                     value={`${systemResources.disk?.usagePercent || 0}%`}
                     icon={<HddOutlined />}
                     color={getResourceColor(systemResources.disk?.usagePercent || 0)}
@@ -697,7 +740,13 @@ const Welcome: React.FC = () => {
                     token={token}
                   />
                   <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
-                    {systemResources.disk?.usedSizeGB || 0}GB / {systemResources.disk?.totalSizeGB || 0}GB
+                    {intl.formatMessage(
+                      { id: 'pages.welcome.systemResources.diskSize' },
+                      {
+                        used: systemResources.disk?.usedSizeGB || 0,
+                        total: systemResources.disk?.totalSizeGB || 0,
+                      }
+                    )}
                   </div>
                 </Col>
               )}
@@ -708,20 +757,20 @@ const Welcome: React.FC = () => {
               <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
                 <Row gutter={[16, 8]}>
                   <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">机器名: </Text>
-                    <Text strong>{systemResources.system?.machineName || 'Unknown'}</Text>
+                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.machineName' })} </Text>
+                    <Text strong>{systemResources.system?.machineName || intl.formatMessage({ id: 'pages.welcome.systemDetails.unknown' })}</Text>
                   </Col>
                   <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">CPU 核心: </Text>
+                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.processorCount' })} </Text>
                     <Text strong>{systemResources.system?.processorCount || 0}</Text>
                   </Col>
                   <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">系统架构: </Text>
-                    <Text strong>{systemResources.system?.is64BitOperatingSystem ? '64位' : '32位'}</Text>
+                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.architecture' })} </Text>
+                    <Text strong>{systemResources.system?.is64BitOperatingSystem ? intl.formatMessage({ id: 'pages.welcome.systemDetails.bit64' }) : intl.formatMessage({ id: 'pages.welcome.systemDetails.bit32' })}</Text>
                   </Col>
                   <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">系统运行时间: </Text>
-                    <Text strong>{Math.round((systemResources.system?.systemUpTime || 0) / 3600)}小时</Text>
+                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.systemUpTime' })} </Text>
+                    <Text strong>{Math.round((systemResources.system?.systemUpTime || 0) / 3600)}{intl.formatMessage({ id: 'pages.welcome.systemDetails.hours' })}</Text>
                   </Col>
                 </Row>
               </div>
@@ -732,15 +781,15 @@ const Welcome: React.FC = () => {
             title={
               <Space>
                 <DatabaseOutlined />
-                <span>系统资源监控</span>
-                <Tag color="blue">5秒更新</Tag>
+                <span>{intl.formatMessage({ id: 'pages.welcome.systemResources' })}</span>
+                <Tag color="blue">{intl.formatMessage({ id: 'pages.welcome.systemResources.updateInterval' })}</Tag>
               </Space>
             }
             style={{ marginTop: '24px', borderRadius: '12px' }}
           >
             <Alert
-              message="系统资源数据不可用"
-              description="无法获取系统资源信息，请检查后端服务是否正常运行。"
+              message={intl.formatMessage({ id: 'pages.welcome.systemResources.unavailable' })}
+              description={intl.formatMessage({ id: 'pages.welcome.systemResources.unavailableDesc' })}
               type="warning"
               showIcon
               style={{ borderRadius: '8px' }}

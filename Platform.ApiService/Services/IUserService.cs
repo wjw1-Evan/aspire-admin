@@ -21,7 +21,6 @@ public interface IUserService
     Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request);
     Task<UserStatisticsResponse> GetUserStatisticsAsync();
     Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null);
-    Task<bool> UpdateUserRoleAsync(string id, string role);
     Task<bool> ActivateUserAsync(string id);
     Task<bool> DeactivateUserAsync(string id);
     Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);

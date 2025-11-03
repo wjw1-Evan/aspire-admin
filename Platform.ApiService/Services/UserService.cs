@@ -804,12 +804,6 @@ public class UserService : IUserService
         return true;
     }
 
-    public Task<bool> UpdateUserRoleAsync(string id, string role)
-    {
-        // 注意：此方法已废弃，使用 RoleIds 代替
-        throw new InvalidOperationException("此方法已废弃，请使用 UpdateUserManagementAsync 更新用户的 RoleIds");
-    }
-
     public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
     {
         // 获取用户的企业ID（从数据库获取，不使用 JWT token）

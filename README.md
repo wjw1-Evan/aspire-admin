@@ -555,7 +555,8 @@ npm start
 - `npm run start:dev` - 启动开发服务器（开发环境）
 - `npm run build` - 构建生产版本
 - `npm run lint` - 代码检查和格式化
-- `npm run test` - 运行测试
+- `npm run preview` - 预览生产构建版本
+- `npm run analyze` - 分析打包大小
 
 #### 移动应用可用脚本
 - `npm start` - 启动开发服务器

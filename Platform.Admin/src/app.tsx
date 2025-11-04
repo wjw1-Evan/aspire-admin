@@ -67,7 +67,7 @@ export async function getInitialState(): Promise<{
         if (menuResponse.success && menuResponse.data) {
           (userInfo as any).menus = menuResponse.data;
         }
-      } catch (menuError) {
+      } catch (_menuError) {
         // 菜单获取失败，使用空菜单
       }
 
@@ -78,12 +78,12 @@ export async function getInitialState(): Promise<{
           (userInfo as any).permissions =
             permissionsResponse.data.allPermissionCodes || [];
         }
-      } catch (permissionsError) {
+      } catch (_permissionsError) {
         // 权限获取失败，使用空权限
       }
 
       return userInfo;
-    } catch (error) {
+    } catch (_error) {
       // 如果获取用户信息失败（包括 token 过期），清除 token
       // 响应拦截器已经处理了 token 刷新，如果走到这里说明刷新也失败了
       tokenUtils.clearAllTokens();
@@ -415,7 +415,7 @@ async function attemptTokenRefresh(refreshToken: string, originalRequest: any) {
     }
 
     return null;
-  } catch (refreshError) {
+  } catch (_refreshError) {
     return null;
   }
 }

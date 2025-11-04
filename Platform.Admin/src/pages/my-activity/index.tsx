@@ -1,10 +1,10 @@
 import {
   PageContainer,
   ProTable,
-  ActionType,
-  ProColumns,
+  type ActionType,
+  type ProColumns,
 } from '@ant-design/pro-components';
-import {  Button } from 'antd';
+import { Button } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
 import React, { useRef, useState } from 'react';
 import { getCurrentUserActivityLogs } from '@/services/user-log/api';
@@ -95,7 +95,7 @@ const MyActivity: React.FC = () => {
         rowKey="id"
         search={{
           labelWidth: 120,
-          optionRender: (searchConfig, formProps, dom) => {
+          optionRender: (_searchConfig, _formProps, dom) => {
             const reversed = [...dom];
             reversed.reverse();
             return reversed;

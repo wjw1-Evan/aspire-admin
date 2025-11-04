@@ -23,7 +23,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
   const handleSubmit = async (values: API.CreateCompanyRequest) => {
     try {
       // 企业代码由后端自动生成，不需要传递
-      const { code, ...requestData } = values;
+      const { code: _code, ...requestData } = values;
       
       const response = await createCompany(requestData);
       if (response.success && response.data) {

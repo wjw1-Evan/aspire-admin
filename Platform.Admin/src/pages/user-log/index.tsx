@@ -1,8 +1,8 @@
 import {
   PageContainer,
   ProTable,
-  ActionType,
-  ProColumns,
+  type ActionType,
+  type ProColumns,
 } from '@ant-design/pro-components';
 import { Tag, Button } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
@@ -317,13 +317,13 @@ const UserLog: React.FC = () => {
         rowKey="id"
         search={{
           labelWidth: 120,
-          optionRender: (searchConfig, formProps, dom) => {
+          optionRender: (_searchConfig, _formProps, dom) => {
             const reversed = [...dom];
             reversed.reverse();
             return reversed;
           },
         }}
-        request={async (params, sort) => {
+        request={async (params, _sort) => {
           const { current = 1, pageSize = 20, action } = params;
 
           try {

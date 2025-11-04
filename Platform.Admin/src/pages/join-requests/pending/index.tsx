@@ -1,6 +1,6 @@
 import { ProTable } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
-import { Tag, Button, Space, App, Modal, Input } from 'antd';
+import { Button, Space, App, Modal, Input } from 'antd';
 import React, { useRef, useState } from 'react';
 import {
   getPendingRequests,
@@ -8,11 +8,7 @@ import {
   rejectRequest,
 } from '@/services/company';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import {
-  ClockCircleOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-} from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 
@@ -188,7 +184,7 @@ const PendingJoinRequests: React.FC = () => {
       <ProTable<API.JoinRequestDetail>
         columns={columns}
         actionRef={actionRef}
-        request={async (params, sort) => {
+        request={async (_params, _sort) => {
           try {
             const response = await getPendingRequests();
 
@@ -204,7 +200,7 @@ const PendingJoinRequests: React.FC = () => {
               data: [],
               success: false,
             };
-          } catch (error) {
+          } catch (_error) {
             return {
               data: [],
               success: false,

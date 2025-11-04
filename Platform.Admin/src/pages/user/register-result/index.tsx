@@ -4,7 +4,7 @@ import { FormattedMessage, history, useIntl } from '@umijs/max';
 import { createStyles } from 'antd-style';
 import React from 'react';
 
-const useStyles = createStyles(({ token }) => {
+const useStyles = createStyles(() => {
   return {
     container: {
       display: 'flex',

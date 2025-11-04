@@ -33,14 +33,16 @@ const RoleForm: React.FC<RoleFormProps> = ({
    * 将菜单树转换为 Tree 组件数据格式
    */
   const convertToTreeData = (menus: MenuTreeNode[]): DataNode[] => {
-    return menus.map((menu) => ({
-      key: menu.id!,
-      title: menu.title || menu.name,
-      children:
-        menu.children && menu.children.length > 0
-          ? convertToTreeData(menu.children)
-          : undefined,
-    }));
+    return menus
+      .filter((menu): menu is MenuTreeNode & { id: string } => Boolean(menu.id))
+      .map((menu) => ({
+        key: menu.id,
+        title: menu.title || menu.name,
+        children:
+          menu.children && menu.children.length > 0
+            ? convertToTreeData(menu.children)
+            : undefined,
+      }));
   };
 
   /**
@@ -156,6 +158,11 @@ const RoleForm: React.FC<RoleFormProps> = ({
       setLoading(true);
 
       if (current) {
+        if (!current.id) {
+          message.error('当前角色缺少唯一标识，无法更新');
+          setLoading(false);
+          return;
+        }
         // 更新角色
         const updateData: UpdateRoleRequest = {
           name: values.name,
@@ -164,7 +171,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           menuIds: values.menuIds || [],
         };
 
-        const response = await updateRole(current.id!, updateData);
+        const response = await updateRole(current.id, updateData);
         if (response.success) {
           message.success('更新成功');
           onSuccess();

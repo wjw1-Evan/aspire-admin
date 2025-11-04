@@ -200,12 +200,6 @@ const Welcome: React.FC = () => {
         getUserActivityLogs({ limit: 5 })
       ]);
       
-      console.log('API 响应结果:', {
-        stats: statsRes,
-        company: companyRes,
-        activities: activitiesRes
-      });
-      
       if (statsRes.success) {
         setStatistics(statsRes.data);
       }

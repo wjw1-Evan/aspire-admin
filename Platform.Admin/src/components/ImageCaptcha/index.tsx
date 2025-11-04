@@ -1,6 +1,6 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Button, Input, Space, message, Image } from 'antd';
-import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
+import { ReloadOutlined } from '@ant-design/icons';
 import { getImageCaptcha, verifyImageCaptcha } from '@/services/ant-design-pro/api';
 
 interface ImageCaptchaProps {

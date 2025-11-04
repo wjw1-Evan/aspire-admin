@@ -18,9 +18,7 @@
     "start:test": "cross-env REACT_APP_ENV=test UMI_ENV=dev max dev",
     "tsc": "tsc --noEmit"
   },
-  "browserslist": [
-    "defaults"
-  ],
+
   "dependencies": {
     "@ant-design/charts": "^2.6.6",
     "@ant-design/icons": "^5.6.1",

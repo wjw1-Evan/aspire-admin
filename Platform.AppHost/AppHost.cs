@@ -70,4 +70,7 @@ foreach (var service in services.Values)
     scalar.WithApiReference(service);
 }
 
-await builder.Build().RunAsync();
+Console.WriteLine("🔨 开始构建 Aspire 应用...");
+var app = builder.Build();
+Console.WriteLine("✅ Aspire 应用构建完成，开始运行...");
+await app.RunAsync();

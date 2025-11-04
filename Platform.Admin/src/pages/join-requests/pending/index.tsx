@@ -350,7 +350,6 @@ const PendingJoinRequests: React.FC = () => {
         }}
         dateFormatter="string"
         />
-      </div>
     </PageContainer>
   );
 };

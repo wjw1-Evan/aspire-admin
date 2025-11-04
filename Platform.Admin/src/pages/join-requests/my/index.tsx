@@ -338,7 +338,6 @@ const MyJoinRequests: React.FC = () => {
           </Button>,
         ]}
         />
-      </div>
     </PageContainer>
   );
 };

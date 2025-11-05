@@ -84,7 +84,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
         type,
       });
 
-      if (response.success && response.data?.valid) {
+      if (response.success && (response.data as any)?.valid) {
         message.success(intl.formatMessage({ id: 'pages.captcha.verifySuccess' }));
         return true;
       } else {

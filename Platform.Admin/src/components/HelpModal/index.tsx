@@ -136,7 +136,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               🌐 v6.1.0 - 多语言支持完善 (2025-01-XX)
             </Title>
 
-            <Title level={6}>多语言翻译补充</Title>
+            <Title level={5}>多语言翻译补充</Title>
             <ul>
               <li>
                 <strong>完整翻译覆盖</strong> - 所有 8 种语言现在都有完整的界面翻译
@@ -152,7 +152,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>翻译统计</Title>
+            <Title level={5}>翻译统计</Title>
             <ul>
               <li>
                 <strong>zh-TW (繁体中文)</strong> - 已补充 387 个翻译键
@@ -179,7 +179,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               🎯 v6.0.0 - 菜单级权限系统重构 (2025-10-14)
             </Title>
 
-            <Title level={6}>核心特性</Title>
+            <Title level={5}>核心特性</Title>
             <ul>
               <li>
                 <strong>菜单即权限</strong> - 能访问菜单，就能使用该功能
@@ -195,7 +195,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>优化成果</Title>
+            <Title level={5}>优化成果</Title>
             <ul>
               <li>
                 架构简化：减少 <Text strong>70%</Text> 的权限相关代码
@@ -206,7 +206,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               <li>用户友好：前端显示所有按钮，避免用户困惑</li>
             </ul>
 
-            <Title level={6}>架构变更</Title>
+            <Title level={5}>架构变更</Title>
             <Paragraph>
               <Text code>用户 → 角色 → 菜单 → API</Text>
               <br />
@@ -228,7 +228,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               🚀 v5.0.0 - 后端架构重大升级 (2025-10-13)
             </Title>
 
-            <Title level={6}>新增基础组件</Title>
+            <Title level={5}>新增基础组件</Title>
             <ul>
               <li>
                 <strong>BaseService</strong> - 服务基类，统一公共功能
@@ -245,7 +245,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>优化成果</Title>
+            <Title level={5}>优化成果</Title>
             <ul>
               <li>
                 代码减少 <Text strong>161 行（8.4%）</Text>
@@ -264,7 +264,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>设计模式应用</Title>
+            <Title level={5}>设计模式应用</Title>
             <ul>
               <li>
                 <strong>仓储模式</strong> - 统一数据访问层
@@ -280,7 +280,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>SOLID 原则</Title>
+            <Title level={5}>SOLID 原则</Title>
             <Paragraph>
               所有代码遵循 SOLID
               五大原则：单一职责、开闭原则、里氏替换、接口隔离、依赖倒置
@@ -300,21 +300,21 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               🔧 v4.0.0 - 系统架构扩展优化 (2025-10-11)
             </Title>
 
-            <Title level={6}>架构扩展</Title>
+            <Title level={5}>架构扩展</Title>
             <ul>
               <li>扩展系统架构，增强可扩展性</li>
               <li>优化组件结构，提升代码复用性</li>
               <li>完善错误处理机制</li>
             </ul>
 
-            <Title level={6}>性能提升</Title>
+            <Title level={5}>性能提升</Title>
             <ul>
               <li>进一步优化查询性能</li>
               <li>改进缓存机制</li>
               <li>优化内存使用</li>
             </ul>
 
-            <Title level={6}>开发体验</Title>
+            <Title level={5}>开发体验</Title>
             <ul>
               <li>完善开发工具和调试功能</li>
               <li>优化代码生成和模板</li>
@@ -335,7 +335,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               🏢 v3.1.0 - 多企业隶属架构 (2025-01-13)
             </Title>
 
-            <Title level={6}>多企业支持</Title>
+            <Title level={5}>多企业支持</Title>
             <ul>
               <li>
                 <strong>多企业隶属</strong> - 用户可以隶属多个企业
@@ -351,7 +351,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>架构重构</Title>
+            <Title level={5}>架构重构</Title>
             <ul>
               <li>UserCompany 多对多关联表</li>
               <li>CompanyJoinRequest 申请审核表</li>
@@ -359,7 +359,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               <li>9个数据库索引优化</li>
             </ul>
 
-            <Title level={6}>核心服务</Title>
+            <Title level={5}>核心服务</Title>
             <ul>
               <li>AuthService 重构 - 注册自动创建个人企业</li>
               <li>UserCompanyService - 企业成员管理</li>
@@ -367,7 +367,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               <li>TenantContext 重构 - 多企业支持</li>
             </ul>
 
-            <Title level={6}>API接口</Title>
+            <Title level={5}>API接口</Title>
             <ul>
               <li>16个新增API端点</li>
               <li>企业搜索、成员管理、申请审核</li>
@@ -388,7 +388,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               ⚡ v3.0.0 - 代码质量提升 (2025-10-12)
             </Title>
 
-            <Title level={6}>代码质量优化</Title>
+            <Title level={5}>代码质量优化</Title>
             <ul>
               <li>
                 <strong>常量管理</strong> - 消除魔法字符串，使用常量管理
@@ -404,7 +404,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>组件优化</Title>
+            <Title level={5}>组件优化</Title>
             <ul>
               <li>
                 <strong>公共组件</strong> - 提高组件复用性
@@ -417,7 +417,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>后端优化</Title>
+            <Title level={5}>后端优化</Title>
             <ul>
               <li>30+ 权限资源和操作常量</li>
               <li>15+ 个参数验证扩展方法</li>
@@ -425,7 +425,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               <li>10+ MongoDB 过滤器扩展方法</li>
             </ul>
 
-            <Title level={6}>前端优化</Title>
+            <Title level={5}>前端优化</Title>
             <ul>
               <li>DeleteConfirmModal - 删除确认对话框</li>
               <li>BulkActionModal - 批量操作对话框</li>
@@ -447,14 +447,14 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               📊 v2.0.0 - 数据模型统一与性能优化 (2025-10-12)
             </Title>
 
-            <Title level={6}>数据模型统一</Title>
+            <Title level={5}>数据模型统一</Title>
             <ul>
               <li>移除冗余的 Role 字段，统一使用 RoleIds</li>
               <li>优化 JWT 结构，简化认证流程</li>
               <li>自动数据迁移，向后兼容</li>
             </ul>
 
-            <Title level={6}>性能优化</Title>
+            <Title level={5}>性能优化</Title>
             <ul>
               <li>
                 解决 N+1 查询问题，提升 <Text strong>80%+</Text> 性能
@@ -463,14 +463,14 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               <li>优化批量操作逻辑</li>
             </ul>
 
-            <Title level={6}>安全加固</Title>
+            <Title level={5}>安全加固</Title>
             <ul>
               <li>完善权限验证机制</li>
               <li>实现级联删除保护</li>
               <li>添加业务规则保护</li>
             </ul>
 
-            <Title level={6}>搜索增强</Title>
+            <Title level={5}>搜索增强</Title>
             <ul>
               <li>支持多角色筛选</li>
               <li>支持日期范围查询</li>
@@ -491,7 +491,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               📖 API 文档系统 - Scalar 集成
             </Title>
 
-            <Title level={6}>功能特性</Title>
+            <Title level={5}>功能特性</Title>
             <ul>
               <li>
                 <strong>浏览所有 API 端点</strong> - 按 Controller 分组展示
@@ -510,7 +510,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
             </ul>
 
-            <Title level={6}>如何访问</Title>
+            <Title level={5}>如何访问</Title>
             <ol>
               <li>
                 启动应用 - 运行{' '}

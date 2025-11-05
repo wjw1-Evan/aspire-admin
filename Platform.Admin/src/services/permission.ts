@@ -1,10 +1,10 @@
-import { apiClient } from '@/utils/apiClient';
+import { api } from '@/utils/apiClient';
 
 /**
  * 获取当前用户的权限信息
  */
 export async function getMyPermissions() {
-  return apiClient.permission.getMyPermissions();
+  return api.permission.getMyPermissions();
 }
 
 /**
@@ -12,7 +12,7 @@ export async function getMyPermissions() {
  * @param userId 用户ID
  */
 export async function getUserPermissions(userId: string) {
-  return apiClient.permission.getUserPermissions(userId);
+  return api.permission.getUserPermissions(userId);
 }
 
 /**
@@ -21,5 +21,5 @@ export async function getUserPermissions(userId: string) {
  * @param permissions 权限数据
  */
 export async function assignUserPermissions(userId: string, permissions: any) {
-  return apiClient.permission.assignPermissions(userId, permissions);
+  return api.permission.assignPermissions(userId, permissions);
 }

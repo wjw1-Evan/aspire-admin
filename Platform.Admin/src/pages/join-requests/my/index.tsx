@@ -1,7 +1,7 @@
 import { ProTable } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
 import { Tag, Button, App, Popconfirm } from 'antd';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { getMyRequests, cancelRequest } from '@/services/company';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -17,7 +17,7 @@ import {
 const MyJoinRequests: React.FC = () => {
   const intl = useIntl();
   const { message } = App.useApp();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
 

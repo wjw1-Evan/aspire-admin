@@ -154,7 +154,7 @@ export default function CompanySettings() {
               <Card variant="borderless">
                 <Statistic
                   title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalPermissions' })}
-                  value={statistics.totalPermissions}
+                  value={statistics.totalRoles}
                   prefix={<SafetyOutlined />}
                 />
               </Card>

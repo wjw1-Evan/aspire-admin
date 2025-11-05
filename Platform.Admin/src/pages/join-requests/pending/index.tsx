@@ -1,7 +1,7 @@
 import { ProTable } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
 import { Button, Space, App, Modal, Input } from 'antd';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import {
   getPendingRequests,
@@ -19,7 +19,7 @@ const { TextArea } = Input;
 const PendingJoinRequests: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
 

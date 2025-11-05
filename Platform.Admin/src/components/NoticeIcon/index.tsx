@@ -6,6 +6,7 @@ import {
   markNoticeAsRead,
   markNoticeAsUnread,
   markAllAsRead,
+  clearReadNotices,
 } from '@/services/notice';
 import type { NoticeIconItem } from '@/services/notice';
 import NoticeList from './NoticeList';
@@ -53,8 +54,13 @@ export default function NoticeIcon() {
       message.success('已标记为已读');
 
       // 如果是在详情模态框中操作，更新选中的通知状态
-      if (selectedNotice?.id === item.id) {
-        setSelectedNotice({ ...selectedNotice, read: true });
+      if (selectedNotice?.id === item.id && selectedNotice) {
+        setSelectedNotice({ 
+          ...selectedNotice, 
+          read: true,
+          id: selectedNotice.id,
+          title: selectedNotice.title,
+        });
       }
 
       refetch();
@@ -70,8 +76,13 @@ export default function NoticeIcon() {
       message.success('已标记为未读');
 
       // 如果是在详情模态框中操作，更新选中的通知状态
-      if (selectedNotice?.id === item.id) {
-        setSelectedNotice({ ...selectedNotice, read: false });
+      if (selectedNotice?.id === item.id && selectedNotice) {
+        setSelectedNotice({ 
+          ...selectedNotice, 
+          read: false,
+          id: selectedNotice.id,
+          title: selectedNotice.title,
+        });
       }
 
       refetch();

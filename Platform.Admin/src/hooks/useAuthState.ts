@@ -14,9 +14,10 @@ export function useAuthState() {
   // 简化的权限检查
   const hasPermission = useCallback(
     (permissionCode: string): boolean => {
-      return currentUser?.permissions?.includes(permissionCode) ?? false;
+      const permissions = (currentUser as any)?.permissions;
+      return (permissions ?? []).includes(permissionCode);
     },
-    [currentUser?.permissions],
+    [currentUser],
   );
 
   // 简化的角色检查

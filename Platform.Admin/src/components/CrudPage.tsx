@@ -113,7 +113,7 @@ function CrudPage<T extends Record<string, any>>({
     if (ViewForm) {
       setCurrentItem(record);
       setViewVisible(true);
-    } else if (fetchById) {
+    } else if (dataOptions.fetchById) {
       await loadById(record.id);
       setViewVisible(true);
     }

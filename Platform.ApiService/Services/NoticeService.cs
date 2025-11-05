@@ -65,6 +65,30 @@ public class NoticeService : INoticeService
     }
 
     /// <summary>
+    /// 为指定企业创建通知（用于系统通知，不依赖当前用户上下文）
+    /// </summary>
+    public async Task<NoticeIconItem> CreateNoticeForCompanyAsync(string companyId, CreateNoticeRequest request)
+    {
+        var notice = new NoticeIconItem
+        {
+            Title = request.Title ?? string.Empty,
+            Description = request.Description,
+            Avatar = request.Avatar,
+            Status = request.Status,
+            Extra = request.Extra,
+            Type = request.Type,
+            ClickClose = request.ClickClose,
+            Datetime = request.Datetime ?? DateTime.UtcNow,
+            CompanyId = companyId  // 使用指定的企业ID
+        };
+
+        // 直接创建通知，CompanyId 已设置，工厂会自动处理多租户过滤
+        // 注意：由于 NoticeIconItem 实现了 IMultiTenant，工厂会自动应用企业过滤
+        // 但这里我们直接设置 CompanyId，所以创建时不会自动过滤
+        return await _noticeFactory.CreateAsync(notice);
+    }
+
+    /// <summary>
     /// 更新通知（使用原子操作）
     /// </summary>
     public async Task<NoticeIconItem?> UpdateNoticeAsync(string id, UpdateNoticeRequest request)

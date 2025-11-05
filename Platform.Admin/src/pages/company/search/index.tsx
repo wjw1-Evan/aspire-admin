@@ -188,8 +188,8 @@ const CompanySearch: React.FC = () => {
                       />
                     }
                     title={
-                      <Space>
-                        {item.company.name}
+                      <Space wrap>
+                        <span>{item.company.name || intl.formatMessage({ id: 'pages.table.unknownCompany' })}</span>
                         {item.isMember && (
                           <Tag color="success">
                             {item.memberStatus === 'active'
@@ -204,21 +204,29 @@ const CompanySearch: React.FC = () => {
                     }
                     description={
                       <div>
-                        <div style={{ marginBottom: 8 }}>
-                          <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.companyCode' })}</span>
-                          <span style={{ fontWeight: 500 }}>
-                            {item.company.code}
-                          </span>
-                        </div>
+                        {item.company.code && (
+                          <div style={{ marginBottom: 8 }}>
+                            <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.companyCode' })}: </span>
+                            <span style={{ fontWeight: 500 }}>
+                              {item.company.code}
+                            </span>
+                          </div>
+                        )}
                         {item.company.description && (
-                          <div style={{ marginBottom: 8, color: '#666' }}>
+                          <div style={{ marginBottom: 8, color: '#666', fontSize: '14px' }}>
                             {item.company.description}
+                          </div>
+                        )}
+                        {item.company.industry && (
+                          <div style={{ marginBottom: 8 }}>
+                            <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.industry' })}: </span>
+                            <span>{item.company.industry}</span>
                           </div>
                         )}
                         <div style={{ marginTop: 12 }}>
                           <Space>
                             <TeamOutlined />
-                            <span>{intl.formatMessage({ id: 'pages.table.members' }, { count: item.memberCount })}</span>
+                            <span>{intl.formatMessage({ id: 'pages.table.members' }, { count: item.memberCount ?? 0 })}</span>
                           </Space>
                         </div>
                       </div>

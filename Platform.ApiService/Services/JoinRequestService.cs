@@ -27,6 +27,7 @@ public class JoinRequestService : IJoinRequestService
     private readonly IDatabaseOperationFactory<Company> _companyFactory;
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
     private readonly IUserCompanyService _userCompanyService;
+    private readonly INoticeService _noticeService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<JoinRequestService> _logger;
 
@@ -37,6 +38,7 @@ public class JoinRequestService : IJoinRequestService
         IDatabaseOperationFactory<Company> companyFactory,
         IDatabaseOperationFactory<Role> roleFactory,
         IUserCompanyService userCompanyService,
+        INoticeService noticeService,
         ITenantContext tenantContext,
         ILogger<JoinRequestService> logger)
     {
@@ -46,6 +48,7 @@ public class JoinRequestService : IJoinRequestService
         _companyFactory = companyFactory;
         _roleFactory = roleFactory;
         _userCompanyService = userCompanyService;
+        _noticeService = noticeService;
         _tenantContext = tenantContext;
         _logger = logger;
     }
@@ -110,7 +113,8 @@ public class JoinRequestService : IJoinRequestService
         
         _logger.LogInformation("用户 {UserId} 申请加入企业 {CompanyId}", userId, companyId);
         
-        // TODO: 发送通知给企业管理员
+        // 发送通知给企业管理员
+        await NotifyCompanyAdminsAsync(companyId, userId, company.Name, joinRequest.Id!);
         
         return joinRequest;
     }
@@ -329,6 +333,77 @@ public class JoinRequestService : IJoinRequestService
     }
 
     #region 私有辅助方法
+
+    /// <summary>
+    /// 获取企业的所有管理员用户ID
+    /// </summary>
+    private async Task<List<string>> GetCompanyAdminUserIdsAsync(string companyId)
+    {
+        // 查询企业的所有管理员（IsAdmin = true 且 Status = active）
+        var adminFilter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.CompanyId, companyId)
+            .Equal(uc => uc.IsAdmin, true)
+            .Equal(uc => uc.Status, "active")
+            .Build();
+        
+        var adminMemberships = await _userCompanyFactory.FindWithoutTenantFilterAsync(adminFilter);
+        return adminMemberships.Select(m => m.UserId).Distinct().ToList();
+    }
+
+    /// <summary>
+    /// 通知企业管理员有新加入申请
+    /// </summary>
+    private async Task NotifyCompanyAdminsAsync(string companyId, string applicantUserId, string companyName, string requestId)
+    {
+        try
+        {
+            // 获取申请人信息
+            var applicant = await _userFactory.GetByIdAsync(applicantUserId);
+            var applicantName = applicant?.Username ?? applicant?.Email ?? "未知用户";
+
+            // 获取企业的所有管理员
+            var adminUserIds = await GetCompanyAdminUserIdsAsync(companyId);
+            
+            if (!adminUserIds.Any())
+            {
+                _logger.LogWarning("企业 {CompanyId} 没有管理员，无法发送通知", companyId);
+                return;
+            }
+
+            // 为每个管理员创建通知
+            var noticeTitle = "新的加入企业申请";
+            var noticeDescription = $"{applicantName} 申请加入企业 {companyName}";
+            if (!string.IsNullOrEmpty(applicant?.Email))
+            {
+                noticeDescription += $" ({applicant.Email})";
+            }
+
+            // 创建通知请求
+            var noticeRequest = new CreateNoticeRequest
+            {
+                Title = noticeTitle,
+                Description = noticeDescription,
+                Type = NoticeIconItemType.Event,
+                Status = "processing",
+                Extra = requestId,  // 将申请ID存储在 Extra 字段中，方便前端跳转
+                ClickClose = false,
+                Datetime = DateTime.UtcNow
+            };
+
+            // 为指定企业创建通知（通知会显示在该企业的所有管理员的通知列表中）
+            await _noticeService.CreateNoticeForCompanyAsync(companyId, noticeRequest);
+
+            _logger.LogInformation(
+                "已为企业 {CompanyId} 的 {AdminCount} 位管理员发送加入申请通知，申请人: {ApplicantName}",
+                companyId, adminUserIds.Count, applicantName);
+        }
+        catch (Exception ex)
+        {
+            // 通知失败不影响申请流程，只记录日志
+            _logger.LogError(ex, "发送加入申请通知失败，企业: {CompanyId}, 申请人: {ApplicantUserId}",
+                companyId, applicantUserId);
+        }
+    }
 
     /// <summary>
     /// 构建申请详情列表

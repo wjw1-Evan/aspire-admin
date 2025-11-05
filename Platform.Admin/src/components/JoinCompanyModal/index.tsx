@@ -1,22 +1,16 @@
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Input, List, Modal, Space, App as AntApp } from 'antd';
-import React, { useState } from 'react';
+import { PlusOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Button, Input, List, Modal, Space, App as AntApp, Tag, Divider, Typography } from 'antd';
+import React, { useState, useMemo } from 'react';
 import { applyToJoinCompany, searchCompanies } from '@/services/company';
 
+const { Text } = Typography;
+
 const { TextArea } = Input;
-const { Search } = Input;
 
 interface JoinCompanyModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-}
-
-interface CompanySearchResult {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
 }
 
 /**
@@ -30,9 +24,9 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
 }) => {
   const { message } = AntApp.useApp();
   const [keyword, setKeyword] = useState('');
-  const [searchResults, setSearchResults] = useState<CompanySearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<API.CompanySearchResult[]>([]);
   const [selectedCompany, setSelectedCompany] =
-    useState<CompanySearchResult | null>(null);
+    useState<API.CompanySearchResult | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -60,6 +54,19 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
 
       if (response.success && response.data) {
         setSearchResults(response.data);
+        // 调试信息：显示分组结果
+        const joined = response.data.filter((item: API.CompanySearchResult) => item.isMember || item.hasPendingRequest);
+        const available = response.data.filter((item: API.CompanySearchResult) => !item.isMember && !item.hasPendingRequest);
+        console.log('🔍 搜索结果分组:', {
+          total: response.data.length,
+          joined: joined.length,
+          available: available.length,
+          joinedItems: joined.map((item: API.CompanySearchResult) => ({
+            name: item.company.name,
+            isMember: item.isMember,
+            hasPendingRequest: item.hasPendingRequest,
+          })),
+        });
         if (response.data.length === 0) {
           message.info('未找到匹配的企业');
         }
@@ -77,14 +84,33 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
   };
 
   // 选择企业
-  const handleSelectCompany = (company: CompanySearchResult) => {
-    setSelectedCompany(company);
+  const handleSelectCompany = (result: API.CompanySearchResult) => {
+    // 检查是否已是成员或已有待审核申请
+    if (result.isMember) {
+      message.warning('您已是该企业的成员');
+      return;
+    }
+    if (result.hasPendingRequest) {
+      message.warning('您已提交过申请，请等待审核');
+      return;
+    }
+    setSelectedCompany(result);
   };
 
   // 提交申请
   const handleApply = async () => {
     if (!selectedCompany) {
       message.warning('请选择要加入的企业');
+      return;
+    }
+
+    // 再次检查是否已是成员或已有待审核申请（防止状态变化）
+    if (selectedCompany.isMember) {
+      message.warning('您已是该企业的成员');
+      return;
+    }
+    if (selectedCompany.hasPendingRequest) {
+      message.warning('您已提交过申请，请等待审核');
       return;
     }
 
@@ -96,7 +122,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
     setLoading(true);
     try {
       const response = await applyToJoinCompany({
-        companyId: selectedCompany.id,
+        companyId: selectedCompany.company.id || '',
         reason: reason.trim(),
       });
 
@@ -122,6 +148,37 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
     onClose();
   };
 
+  // 将搜索结果分为已加入和未加入两组
+  const { joinedCompanies, availableCompanies } = useMemo(() => {
+    const joined: API.CompanySearchResult[] = [];
+    const available: API.CompanySearchResult[] = [];
+
+    for (const item of searchResults) {
+      if (item.isMember || item.hasPendingRequest) {
+        joined.push(item);
+      } else {
+        available.push(item);
+      }
+    }
+
+    // 调试日志
+    console.log('📊 搜索结果分组:', {
+      total: searchResults.length,
+      joined: joined.length,
+      available: available.length,
+      searchResults: searchResults.map((item) => ({
+        name: item.company.name,
+        isMember: item.isMember,
+        hasPendingRequest: item.hasPendingRequest,
+      })),
+    });
+
+    return {
+      joinedCompanies: joined,
+      availableCompanies: available,
+    };
+  }, [searchResults]);
+
   return (
     <Modal
       title="加入企业"
@@ -133,62 +190,202 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         {/* 搜索框 */}
         <div>
-          <Search
-            placeholder="搜索企业名称或代码"
-            onSearch={handleSearch}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            enterButton={<SearchOutlined />}
-            loading={searching}
-            size="large"
-          />
+          <Space.Compact style={{ width: '100%' }}>
+            <Input
+              placeholder="搜索企业名称或代码"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onPressEnter={handleSearch}
+              size="large"
+              prefix={<SearchOutlined />}
+            />
+            <Button
+              type="primary"
+              icon={<SearchOutlined />}
+              onClick={handleSearch}
+              loading={searching}
+              size="large"
+            >
+              搜索
+            </Button>
+          </Space.Compact>
         </div>
 
         {/* 搜索结果列表 */}
         {searchResults.length > 0 && (
           <div
             style={{
-              maxHeight: 300,
+              maxHeight: 400,
               overflow: 'auto',
               border: '1px solid #f0f0f0',
               borderRadius: 4,
             }}
           >
-            <List
-              dataSource={searchResults}
-              renderItem={(item) => (
-                <List.Item
-                  onClick={() => handleSelectCompany(item)}
+            {/* 已加入的企业 */}
+            {joinedCompanies.length > 0 ? (
+              <div>
+                <div
                   style={{
-                    cursor: 'pointer',
-                    background:
-                      selectedCompany?.id === item.id ? '#e6f7ff' : undefined,
                     padding: '12px 16px',
+                    background: '#f6ffed',
+                    borderBottom: '1px solid #b7eb8f',
                   }}
-                  extra={
-                    selectedCompany?.id === item.id && (
-                      <span style={{ color: '#1890ff' }}>已选择</span>
-                    )
-                  }
                 >
-                  <List.Item.Meta
-                    title={<span style={{ fontWeight: 500 }}>{item.name}</span>}
-                    description={
-                      <Space direction="vertical" size={0}>
-                        <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                          企业代码: {item.code}
-                        </span>
-                        {item.description && (
-                          <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                            {item.description}
-                          </span>
-                        )}
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
+                  <Space>
+                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                    <Text strong style={{ color: '#52c41a' }}>
+                      已加入的企业 ({joinedCompanies.length})
+                    </Text>
+                  </Space>
+                </div>
+                <List
+                  dataSource={joinedCompanies}
+                  renderItem={(item) => {
+                    return (
+                      <List.Item
+                        style={{
+                          cursor: 'not-allowed',
+                          opacity: 0.7,
+                          padding: '12px 16px',
+                          background: '#fafafa',
+                        }}
+                        extra={
+                          <Space>
+                            {item.isMember && (
+                              <Tag color="success" icon={<CheckCircleOutlined />}>
+                                已加入
+                              </Tag>
+                            )}
+                            {item.hasPendingRequest && (
+                              <Tag color="processing">待审核</Tag>
+                            )}
+                          </Space>
+                        }
+                      >
+                        <List.Item.Meta
+                          title={
+                            <Space wrap>
+                              <span style={{ fontWeight: 500, color: '#595959' }}>
+                                {item.company.name}
+                              </span>
+                              {item.isMember && (
+                                <Tag color="success" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>
+                                  已加入
+                                </Tag>
+                              )}
+                              {item.hasPendingRequest && !item.isMember && (
+                                <Tag color="processing" style={{ margin: 0 }}>待审核</Tag>
+                              )}
+                            </Space>
+                          }
+                          description={
+                            <Space direction="vertical" size={0}>
+                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                企业代码: {item.company.code}
+                              </span>
+                              {item.company.description && (
+                                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                  {item.company.description}
+                                </span>
+                              )}
+                              {item.memberCount > 0 && (
+                                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                  成员数: {item.memberCount}
+                                </span>
+                              )}
+                            </Space>
+                          }
+                        />
+                      </List.Item>
+                    );
+                  }}
+                />
+              </div>
+            ) : null}
+
+            {/* 分隔线 */}
+            {joinedCompanies.length > 0 && availableCompanies.length > 0 && (
+              <Divider style={{ margin: 0 }} />
+            )}
+
+            {/* 可申请的企业 */}
+            {availableCompanies.length > 0 ? (
+              <div>
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    background: '#e6f7ff',
+                    borderBottom: '1px solid #91d5ff',
+                  }}
+                >
+                  <Space>
+                    <PlusOutlined style={{ color: '#1890ff' }} />
+                    <Text strong style={{ color: '#1890ff' }}>
+                      可申请的企业 ({availableCompanies.length})
+                    </Text>
+                  </Space>
+                </div>
+                <List
+                  dataSource={availableCompanies}
+                  renderItem={(item) => {
+                    const isDisabled = item.isMember || item.hasPendingRequest;
+                    const isSelected = selectedCompany?.company.id === item.company.id;
+                    
+                    return (
+                      <List.Item
+                        onClick={() => !isDisabled && handleSelectCompany(item)}
+                        style={{
+                          cursor: isDisabled ? 'not-allowed' : 'pointer',
+                          background: isSelected ? '#e6f7ff' : undefined,
+                          padding: '12px 16px',
+                          transition: 'background-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isDisabled && !isSelected) {
+                            e.currentTarget.style.background = '#f0f0f0';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = '';
+                          }
+                        }}
+                        extra={
+                          <Space>
+                            {isSelected && (
+                              <Tag color="blue">已选择</Tag>
+                            )}
+                          </Space>
+                        }
+                      >
+                        <List.Item.Meta
+                          title={
+                            <span style={{ fontWeight: 500 }}>{item.company.name}</span>
+                          }
+                          description={
+                            <Space direction="vertical" size={0}>
+                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                企业代码: {item.company.code}
+                              </span>
+                              {item.company.description && (
+                                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                  {item.company.description}
+                                </span>
+                              )}
+                              {item.memberCount > 0 && (
+                                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                  成员数: {item.memberCount}
+                                </span>
+                              )}
+                            </Space>
+                          }
+                        />
+                      </List.Item>
+                    );
+                  }}
+                />
+              </div>
+            ) : null}
           </div>
         )}
 

@@ -478,6 +478,7 @@ public class CompanyService : ICompanyService
         foreach (var company in companies)
         {
             // 检查用户是否已是成员
+            // ✅ 使用 FindWithoutTenantFilterAsync：需要跨企业查询用户的企业关联关系
             UserCompany? membership = null;
             if (!string.IsNullOrEmpty(userId))
             {
@@ -485,11 +486,13 @@ public class CompanyService : ICompanyService
                     .Equal(uc => uc.UserId, userId)
                     .Equal(uc => uc.CompanyId, company.Id)
                     .Build();
-                var memberships = await _userCompanyFactory.FindAsync(membershipFilter);
+                // ✅ 跨企业查询：用户可能在其他企业有成员关系，不能只查询当前企业
+                var memberships = await _userCompanyFactory.FindWithoutTenantFilterAsync(membershipFilter);
                 membership = memberships.FirstOrDefault();
             }
             
             // 检查是否有待审核的申请
+            // ✅ 使用 FindWithoutTenantFilterAsync：需要跨企业查询申请记录
             CompanyJoinRequest? pendingRequest = null;
             if (!string.IsNullOrEmpty(userId))
             {
@@ -498,16 +501,19 @@ public class CompanyService : ICompanyService
                     .Equal(jr => jr.CompanyId, company.Id)
                     .Equal(jr => jr.Status, "pending")
                     .Build();
-                var requests = await _joinRequestFactory.FindAsync(requestFilter);
+                // ✅ 跨企业查询：申请记录可能属于其他企业，不能只查询当前企业
+                var requests = await _joinRequestFactory.FindWithoutTenantFilterAsync(requestFilter);
                 pendingRequest = requests.FirstOrDefault();
             }
             
             // 统计成员数
+            // ✅ 使用 FindWithoutTenantFilterAsync：统计指定企业的成员数，不受当前企业限制
             var memberCountFilter = _userCompanyFactory.CreateFilterBuilder()
                 .Equal(uc => uc.CompanyId, company.Id)
                 .Equal(uc => uc.Status, "active")
                 .Build();
-            var memberCount = await _userCompanyFactory.CountAsync(memberCountFilter);
+            var memberCountList = await _userCompanyFactory.FindWithoutTenantFilterAsync(memberCountFilter);
+            var memberCount = memberCountList.Count;
             
             results.Add(new CompanySearchResult
             {

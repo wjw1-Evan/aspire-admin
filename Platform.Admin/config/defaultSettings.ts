@@ -20,7 +20,7 @@ const Settings: ProLayoutProps & {
   colorWeak: false,
   title: 'Aspire Admin Platform',
   pwa: true,
-  logo: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
+  logo: '/logo.svg',
   iconfontUrl: '',
   token: {
     // 现代化设计 token 配置

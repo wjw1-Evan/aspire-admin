@@ -234,9 +234,13 @@ const Login: React.FC = () => {
             maxWidth: '75vw',
           }}
           logo={<img alt="logo" src="/logo.svg" />}
-          title="Ant Design"
+          title={intl.formatMessage({
+            id: 'pages.login.title',
+            defaultMessage: 'Aspire Admin Platform',
+          })}
           subTitle={intl.formatMessage({
-            id: 'pages.layouts.userLayout.title',
+            id: 'pages.login.subTitle',
+            defaultMessage: '企业级多租户微服务管理平台',
           })}
           initialValues={{
             autoLogin: true,

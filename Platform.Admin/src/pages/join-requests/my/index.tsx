@@ -2,6 +2,7 @@ import { ProTable } from '@ant-design/pro-components';
 import { PageContainer } from '@ant-design/pro-layout';
 import { Tag, Button, App, Popconfirm } from 'antd';
 import React, { useRef, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import { getMyRequests, cancelRequest } from '@/services/company';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import {

@@ -1,6 +1,8 @@
 export default {
   'pages.layouts.userLayout.title':
-    'Ant Design 是西湖区最具影响力的 Web 设计规范',
+    '企业级多租户微服务管理平台',
+  'pages.login.title': 'Aspire Admin Platform',
+  'pages.login.subTitle': '企业级多租户微服务管理平台',
   'pages.login.accountLogin.tab': '账户密码登录',
   'pages.login.accountLogin.errorMessage': '错误的用户名和密码',
   'pages.login.failure': '登录失败，请重试！',

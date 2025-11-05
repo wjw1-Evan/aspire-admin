@@ -1,6 +1,8 @@
 export default {
   'pages.layouts.userLayout.title':
-    'Ant Design adalah spesifikasi desain Web yang paling berpengaruh di Kabupaten Xihu',
+    'Platform Manajemen Microservices Multi-Tenant Tingkat Enterprise',
+  'pages.login.title': 'Aspire Admin Platform',
+  'pages.login.subTitle': 'Platform Manajemen Microservices Multi-Tenant Tingkat Enterprise',
   'pages.login.accountLogin.tab': 'Login dengan akun',
   'pages.login.accountLogin.errorMessage': 'Nama pengguna dan kata sandi salah',
   'pages.login.failure': 'Log masuk gagal, silakan coba lagi!',

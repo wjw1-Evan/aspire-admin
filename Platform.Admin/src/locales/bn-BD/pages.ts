@@ -1,6 +1,8 @@
 export default {
   'pages.layouts.userLayout.title':
-    'পিঁপড়া ডিজাইন হচ্ছে সিহু জেলার সবচেয়ে প্রভাবশালী ওয়েব ডিজাইনের স্পেসিফিকেশন',
+    'এন্টারপ্রাইজ মাল্টি-টেন্যান্ট মাইক্রোসার্ভিস ম্যানেজমেন্ট প্ল্যাটফর্ম',
+  'pages.login.title': 'Aspire Admin Platform',
+  'pages.login.subTitle': 'এন্টারপ্রাইজ মাল্টি-টেন্যান্ট মাইক্রোসার্ভিস ম্যানেজমেন্ট প্ল্যাটফর্ম',
   'pages.login.accountLogin.tab': 'অ্যাকাউন্টে লগইন',
   'pages.login.accountLogin.errorMessage': 'ভুল ব্যবহারকারীর নাম/পাসওয়ার্ড',
   'pages.login.failure': 'লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন!',

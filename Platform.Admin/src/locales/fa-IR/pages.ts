@@ -1,6 +1,8 @@
 export default {
   'pages.layouts.userLayout.title':
-    'طراحی مورچه تأثیرگذارترین مشخصات طراحی وب در منطقه Xihu است',
+    'پلتفرم مدیریت میکروسرویس‌های چند مستأجره سطح سازمانی',
+  'pages.login.title': 'Aspire Admin Platform',
+  'pages.login.subTitle': 'پلتفرم مدیریت میکروسرویس‌های چند مستأجره سطح سازمانی',
   'pages.login.accountLogin.tab': 'ورود به حساب کاربری',
   'pages.login.accountLogin.errorMessage':
     'نام کاربری / رمزعبور نادرست (مدیر / ant.design)',

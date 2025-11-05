@@ -1,6 +1,8 @@
 export default {
   'pages.layouts.userLayout.title':
-    'Ant Design é a especificação de web design mais influente no distrito de Xihu',
+    'Plataforma de Gerenciamento de Microserviços Multi-Inquilino de Nível Empresarial',
+  'pages.login.title': 'Aspire Admin Platform',
+  'pages.login.subTitle': 'Plataforma de Gerenciamento de Microserviços Multi-Inquilino de Nível Empresarial',
   'pages.login.accountLogin.tab': 'Login da conta',
   'pages.login.accountLogin.errorMessage': 'usuário/senha incorreto',
   'pages.login.failure': 'Login falhou, por favor tente novamente!',

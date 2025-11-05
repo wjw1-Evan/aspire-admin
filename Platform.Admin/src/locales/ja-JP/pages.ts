@@ -1,6 +1,8 @@
 export default {
   'pages.layouts.userLayout.title':
-    'Ant Designは、西湖区で最も影響力のあるWebデザイン仕様です。',
+    'エンタープライズマルチテナントマイクロサービス管理プラットフォーム',
+  'pages.login.title': 'Aspire Admin Platform',
+  'pages.login.subTitle': 'エンタープライズマルチテナントマイクロサービス管理プラットフォーム',
   'pages.login.accountLogin.tab': 'アカウントログイン',
   'pages.login.accountLogin.errorMessage':
     'ユーザー名/パスワードが正しくありません',

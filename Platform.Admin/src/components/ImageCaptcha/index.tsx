@@ -1,6 +1,6 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Button, Input, Space, message, Image } from 'antd';
-import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
+import { ReloadOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { getImageCaptcha, verifyImageCaptcha } from '@/services/ant-design-pro/api';
 
@@ -109,7 +109,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
   };
 
   // 处理回车键
-  const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && value) {
       await verifyCaptcha(value);
     }
@@ -126,7 +126,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
         ref={inputRef}
         value={value}
         onChange={handleInputChange}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyDown}
         placeholder={defaultPlaceholder}
         size={size}
         disabled={verifying}

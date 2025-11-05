@@ -100,7 +100,7 @@ const MyJoinRequests: React.FC = () => {
         document.body.style.userSelect = '';
       };
 
-      headers.forEach((header) => {
+      for (const header of headers) {
         const headerEl = header as HTMLElement;
         headerEl.style.position = 'relative';
         headerEl.style.cursor = 'default';
@@ -125,7 +125,7 @@ const MyJoinRequests: React.FC = () => {
         };
         headerEl.addEventListener('mousedown', mouseDownHandler);
         (headerEl as any)._mouseDownHandler = mouseDownHandler;
-      });
+      }
     };
 
     // 延迟初始化，确保表格已渲染
@@ -162,7 +162,7 @@ const MyJoinRequests: React.FC = () => {
         const thead = tableRef.current.querySelector('thead');
         if (thead) {
           const headers = thead.querySelectorAll('th');
-          headers.forEach((header) => {
+          for (const header of headers) {
             const headerEl = header as HTMLElement;
             if ((headerEl as any)._mouseMoveHandler) {
               headerEl.removeEventListener('mousemove', (headerEl as any)._mouseMoveHandler);
@@ -170,7 +170,7 @@ const MyJoinRequests: React.FC = () => {
             if ((headerEl as any)._mouseDownHandler) {
               headerEl.removeEventListener('mousedown', (headerEl as any)._mouseDownHandler);
             }
-          });
+          }
         }
       }
     };
@@ -313,7 +313,8 @@ const MyJoinRequests: React.FC = () => {
               data: [],
               success: false,
             };
-          } catch (_error) {
+          } catch (error) {
+            console.error('获取我的加入申请失败:', error);
             return {
               data: [],
               success: false,
@@ -332,7 +333,7 @@ const MyJoinRequests: React.FC = () => {
             key="search"
             type="primary"
             onClick={() => {
-              window.location.href = '/company/search';
+              globalThis.location.href = '/company/search';
             }}
           >
             {intl.formatMessage({ id: 'pages.button.searchCompany' })}

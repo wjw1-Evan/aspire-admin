@@ -9,41 +9,41 @@ import { useCrudData, type CrudDataOptions } from '../hooks/useCrudData';
 
 export interface CrudPageProps<T = any> {
   // 页面配置
-  title?: string;
+  readonly title?: string;
 
   // 表格配置
-  tableColumns: CrudTableColumn<T>[];
-  tableProps?: Omit<CrudTableProps<T>, 'columns' | 'data' | 'loading'>;
+  readonly tableColumns: readonly CrudTableColumn<T>[];
+  readonly tableProps?: Omit<CrudTableProps<T>, 'columns' | 'data' | 'loading'>;
 
   // 数据操作配置
-  dataOptions: CrudDataOptions<T>;
+  readonly dataOptions: CrudDataOptions<T>;
 
   // 表单组件
-  CreateForm?: React.ComponentType<{
+  readonly CreateForm?: React.ComponentType<{
     onSubmit: (data: any) => void;
     onCancel: () => void;
   }>;
-  EditForm?: React.ComponentType<{
+  readonly EditForm?: React.ComponentType<{
     data: T;
     onSubmit: (data: any) => void;
     onCancel: () => void;
   }>;
-  ViewForm?: React.ComponentType<{ data: T; onClose: () => void }>;
+  readonly ViewForm?: React.ComponentType<{ data: T; onClose: () => void }>;
 
   // 操作权限
-  canCreate?: boolean;
-  canEdit?: boolean;
-  canDelete?: boolean;
-  canView?: boolean;
+  readonly canCreate?: boolean;
+  readonly canEdit?: boolean;
+  readonly canDelete?: boolean;
+  readonly canView?: boolean;
 
   // 自定义渲染
-  renderHeader?: () => React.ReactNode;
-  renderActions?: (refresh: () => void) => React.ReactNode;
+  readonly renderHeader?: () => React.ReactNode;
+  readonly renderActions?: (refresh: () => void) => React.ReactNode;
 
   // 事件回调
-  onItemCreated?: (item: T) => void;
-  onItemUpdated?: (item: T) => void;
-  onItemDeleted?: (item: T) => void;
+  readonly onItemCreated?: (item: T) => void;
+  readonly onItemUpdated?: (item: T) => void;
+  readonly onItemDeleted?: (item: T) => void;
 }
 
 /**

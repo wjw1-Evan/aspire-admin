@@ -79,7 +79,7 @@ const PendingJoinRequests: React.FC = () => {
       onOk: async () => {
         if (!rejectReason.trim()) {
           message.warning(intl.formatMessage({ id: 'pages.message.pleaseEnterReason' }));
-          return Promise.reject();
+          throw new Error(intl.formatMessage({ id: 'pages.message.pleaseEnterReason' }));
         }
 
         setLoading(true);
@@ -163,7 +163,7 @@ const PendingJoinRequests: React.FC = () => {
         document.body.style.userSelect = '';
       };
 
-      headers.forEach((header) => {
+      for (const header of headers) {
         const headerEl = header as HTMLElement;
         headerEl.style.position = 'relative';
         headerEl.style.cursor = 'default';
@@ -188,7 +188,7 @@ const PendingJoinRequests: React.FC = () => {
         };
         headerEl.addEventListener('mousedown', mouseDownHandler);
         (headerEl as any)._mouseDownHandler = mouseDownHandler;
-      });
+      }
     };
 
     // 延迟初始化，确保表格已渲染
@@ -225,7 +225,7 @@ const PendingJoinRequests: React.FC = () => {
         const thead = tableRef.current.querySelector('thead');
         if (thead) {
           const headers = thead.querySelectorAll('th');
-          headers.forEach((header) => {
+          for (const header of headers) {
             const headerEl = header as HTMLElement;
             if ((headerEl as any)._mouseMoveHandler) {
               headerEl.removeEventListener('mousemove', (headerEl as any)._mouseMoveHandler);
@@ -233,7 +233,7 @@ const PendingJoinRequests: React.FC = () => {
             if ((headerEl as any)._mouseDownHandler) {
               headerEl.removeEventListener('mousedown', (headerEl as any)._mouseDownHandler);
             }
-          });
+          }
         }
       }
     };
@@ -336,7 +336,8 @@ const PendingJoinRequests: React.FC = () => {
               data: [],
               success: false,
             };
-          } catch (_error) {
+          } catch (error) {
+            console.error('获取待审核申请失败:', error);
             return {
               data: [],
               success: false,

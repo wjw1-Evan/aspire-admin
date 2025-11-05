@@ -87,4 +87,18 @@ export default {
   'pages.company.createNew': 'Buat Perusahaan Baru',
   'pages.company.joinNew': 'Bergabung dengan Perusahaan Baru',
   'pages.company.roleSeparator': ', ',
+  // Formulir pembuatan perusahaan
+  'pages.company.createTitle': 'Buat Perusahaan Baru',
+  'pages.company.createSuccess': 'Perusahaan berhasil dibuat',
+  'pages.company.createFailed': 'Gagal membuat perusahaan',
+  'pages.company.nameLabel': 'Nama Perusahaan',
+  'pages.company.namePlaceholder': 'Masukkan nama perusahaan',
+  'pages.company.nameRequired': 'Masukkan nama perusahaan',
+  'pages.company.nameLength': 'Nama perusahaan harus antara 2 dan 100 karakter',
+  'pages.company.descriptionLabel': 'Deskripsi Perusahaan',
+  'pages.company.descriptionPlaceholder': 'Masukkan deskripsi perusahaan (opsional)',
+  'pages.company.descriptionMaxLength': 'Deskripsi perusahaan tidak boleh melebihi 500 karakter',
+  'pages.company.industryLabel': 'Industri',
+  'pages.company.industryPlaceholder': 'Masukkan industri (opsional)',
+  'pages.company.industryMaxLength': 'Industri tidak boleh melebihi 50 karakter',
 };

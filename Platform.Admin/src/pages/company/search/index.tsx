@@ -137,9 +137,13 @@ const CompanySearch: React.FC = () => {
 
         {/* 搜索结果 */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60 }}>
-            <Spin size="large" tip={intl.formatMessage({ id: 'pages.message.searching' })} />
-          </div>
+          <Spin 
+            size="large" 
+            tip={intl.formatMessage({ id: 'pages.message.searching' })}
+            style={{ display: 'block', padding: 60, textAlign: 'center' }}
+          >
+            <div style={{ minHeight: 200 }} />
+          </Spin>
         ) : searchResults.length > 0 ? (
           <List
             grid={{

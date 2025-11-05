@@ -155,5 +155,6 @@ export default defineConfig({
   mako: {},
   esbuildMinifyIIFE: true,
   requestRecord: {},
-  exportStatic: {},
+  // exportStatic 仅在构建时使用，开发模式下不需要
+  // exportStatic: {},
 });

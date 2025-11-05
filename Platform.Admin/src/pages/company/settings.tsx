@@ -60,9 +60,13 @@ export default function CompanySettings() {
   if (loading) {
     return (
       <PageContainer>
-        <div style={{ textAlign: 'center', padding: 100 }}>
-          <Spin size="large" tip={intl.formatMessage({ id: 'pages.companySettings.loading' })} />
-        </div>
+        <Spin 
+          size="large" 
+          tip={intl.formatMessage({ id: 'pages.companySettings.loading' })}
+          style={{ display: 'block', padding: 100 }}
+        >
+          <div style={{ minHeight: 200 }} />
+        </Spin>
       </PageContainer>
     );
   }
@@ -102,7 +106,7 @@ export default function CompanySettings() {
         >
           <Row gutter={16}>
             <Col span={8}>
-              <Card bordered={false}>
+              <Card variant="borderless">
                 <Statistic
                   title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalUsers' })}
                   value={statistics.totalUsers}
@@ -118,7 +122,7 @@ export default function CompanySettings() {
               </Card>
             </Col>
             <Col span={8}>
-              <Card bordered={false}>
+              <Card variant="borderless">
                 <Statistic
                   title={intl.formatMessage({ id: 'pages.companySettings.statistics.activeUsers' })}
                   value={statistics.activeUsers}
@@ -127,7 +131,7 @@ export default function CompanySettings() {
               </Card>
             </Col>
             <Col span={8}>
-              <Card bordered={false}>
+              <Card variant="borderless">
                 <Statistic
                   title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalRoles' })}
                   value={statistics.totalRoles}
@@ -138,7 +142,7 @@ export default function CompanySettings() {
           </Row>
           <Row gutter={16} style={{ marginTop: 16 }}>
             <Col span={8}>
-              <Card bordered={false}>
+              <Card variant="borderless">
                 <Statistic
                   title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalMenus' })}
                   value={statistics.totalMenus}
@@ -147,7 +151,7 @@ export default function CompanySettings() {
               </Card>
             </Col>
             <Col span={8}>
-              <Card bordered={false}>
+              <Card variant="borderless">
                 <Statistic
                   title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalPermissions' })}
                   value={statistics.totalPermissions}
@@ -156,7 +160,7 @@ export default function CompanySettings() {
               </Card>
             </Col>
             <Col span={8}>
-              <Card bordered={false}>
+              <Card variant="borderless">
                 <div style={{ marginBottom: 8 }}>
                   <span style={{ color: '#00000073' }}>{intl.formatMessage({ id: 'pages.companySettings.statistics.companyStatus' })}</span>
                 </div>
@@ -188,6 +192,9 @@ export default function CompanySettings() {
         <ProDescriptions
           column={2}
           dataSource={company}
+          styles={{
+            content: {},
+          }}
           columns={[
             {
               title: intl.formatMessage({ id: 'pages.companySettings.details.name' }),

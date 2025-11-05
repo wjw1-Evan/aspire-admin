@@ -57,7 +57,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
       width={600}
       layout="vertical"
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
       }}
     >
       <ProFormText

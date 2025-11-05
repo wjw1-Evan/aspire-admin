@@ -180,7 +180,7 @@ function CrudPage<T extends Record<string, any>>({
           open={createVisible}
           onClose={() => setCreateVisible(false)}
           width={600}
-          destroyOnClose
+          destroyOnHidden
         >
           <CreateForm
             onSubmit={handleCreateSubmit}
@@ -199,7 +199,7 @@ function CrudPage<T extends Record<string, any>>({
             setCurrentItem(null);
           }}
           width={600}
-          destroyOnClose
+          destroyOnHidden
         >
           <EditForm
             data={currentItem}

@@ -704,7 +704,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       footer={null}
       width={800}
       style={{ top: 40 }}
-      destroyOnClose
+      destroyOnHidden
     >
       <Tabs
         defaultActiveKey="quick-start"

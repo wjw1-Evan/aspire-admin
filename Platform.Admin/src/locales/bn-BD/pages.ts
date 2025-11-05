@@ -85,4 +85,18 @@ export default {
   'pages.company.createNew': 'নতুন কোম্পানি তৈরি করুন',
   'pages.company.joinNew': 'নতুন কোম্পানিতে যোগদান করুন',
   'pages.company.roleSeparator': ', ',
+  // কোম্পানি তৈরি ফর্ম
+  'pages.company.createTitle': 'নতুন কোম্পানি তৈরি করুন',
+  'pages.company.createSuccess': 'কোম্পানি সফলভাবে তৈরি হয়েছে',
+  'pages.company.createFailed': 'কোম্পানি তৈরি করতে ব্যর্থ',
+  'pages.company.nameLabel': 'কোম্পানির নাম',
+  'pages.company.namePlaceholder': 'অনুগ্রহ করে কোম্পানির নাম লিখুন',
+  'pages.company.nameRequired': 'অনুগ্রহ করে কোম্পানির নাম লিখুন',
+  'pages.company.nameLength': 'কোম্পানির নাম 2 থেকে 100 অক্ষরের মধ্যে হতে হবে',
+  'pages.company.descriptionLabel': 'কোম্পানির বিবরণ',
+  'pages.company.descriptionPlaceholder': 'অনুগ্রহ করে কোম্পানির বিবরণ লিখুন (ঐচ্ছিক)',
+  'pages.company.descriptionMaxLength': 'কোম্পানির বিবরণ 500 অক্ষরের বেশি হতে পারবে না',
+  'pages.company.industryLabel': 'শিল্প',
+  'pages.company.industryPlaceholder': 'অনুগ্রহ করে শিল্প লিখুন (ঐচ্ছিক)',
+  'pages.company.industryMaxLength': 'শিল্প 50 অক্ষরের বেশি হতে পারবে না',
 };

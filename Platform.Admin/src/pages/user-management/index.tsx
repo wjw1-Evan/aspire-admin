@@ -776,23 +776,26 @@ const UserManagement: React.FC = () => {
       </div>
 
       {/* 用户表单弹窗 */}
-      <Modal
-        title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
-        open={formVisible}
-        onCancel={() => setFormVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <UserForm
-          user={editingUser}
-          onSuccess={() => {
-            setFormVisible(false);
-            actionRef.current?.reload();
-            fetchStatistics();
-          }}
+      {formVisible && (
+        <Modal
+          title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
+          open={formVisible}
           onCancel={() => setFormVisible(false)}
-        />
-      </Modal>
+          footer={null}
+          width={600}
+          destroyOnHidden={true}
+        >
+          <UserForm
+            user={editingUser}
+            onSuccess={() => {
+              setFormVisible(false);
+              actionRef.current?.reload();
+              fetchStatistics();
+            }}
+            onCancel={() => setFormVisible(false)}
+          />
+        </Modal>
+      )}
 
       {/* 用户详情抽屉 */}
       <Drawer

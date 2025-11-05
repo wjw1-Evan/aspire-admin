@@ -89,4 +89,18 @@ export default {
   'pages.company.createNew': 'Criar Nova Empresa',
   'pages.company.joinNew': 'Entrar em Nova Empresa',
   'pages.company.roleSeparator': ', ',
+  // Formulário de criação de empresa
+  'pages.company.createTitle': 'Criar Nova Empresa',
+  'pages.company.createSuccess': 'Empresa criada com sucesso',
+  'pages.company.createFailed': 'Falha ao criar empresa',
+  'pages.company.nameLabel': 'Nome da Empresa',
+  'pages.company.namePlaceholder': 'Por favor, insira o nome da empresa',
+  'pages.company.nameRequired': 'Por favor, insira o nome da empresa',
+  'pages.company.nameLength': 'O nome da empresa deve ter entre 2 e 100 caracteres',
+  'pages.company.descriptionLabel': 'Descrição da Empresa',
+  'pages.company.descriptionPlaceholder': 'Por favor, insira a descrição da empresa (opcional)',
+  'pages.company.descriptionMaxLength': 'A descrição da empresa não pode exceder 500 caracteres',
+  'pages.company.industryLabel': 'Indústria',
+  'pages.company.industryPlaceholder': 'Por favor, insira a indústria (opcional)',
+  'pages.company.industryMaxLength': 'A indústria não pode exceder 50 caracteres',
 };

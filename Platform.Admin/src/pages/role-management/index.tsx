@@ -387,19 +387,21 @@ const RoleManagement: FC = () => {
         />
       </div>
 
-      <RoleForm
-        visible={modalVisible}
-        current={currentRole}
-        onCancel={() => {
-          setModalVisible(false);
-          setCurrentRole(undefined);
-        }}
-        onSuccess={() => {
-          setModalVisible(false);
-          setCurrentRole(undefined);
-          actionRef.current?.reload();
-        }}
-      />
+      {modalVisible && (
+        <RoleForm
+          visible={modalVisible}
+          current={currentRole}
+          onCancel={() => {
+            setModalVisible(false);
+            setCurrentRole(undefined);
+          }}
+          onSuccess={() => {
+            setModalVisible(false);
+            setCurrentRole(undefined);
+            actionRef.current?.reload();
+          }}
+        />
+      )}
     </PageContainer>
   );
 };

@@ -88,4 +88,18 @@ export default {
   'pages.company.createNew': 'ایجاد شرکت جدید',
   'pages.company.joinNew': 'پیوستن به شرکت جدید',
   'pages.company.roleSeparator': '، ',
+  // فرم ایجاد شرکت
+  'pages.company.createTitle': 'ایجاد شرکت جدید',
+  'pages.company.createSuccess': 'شرکت با موفقیت ایجاد شد',
+  'pages.company.createFailed': 'ایجاد شرکت با خطا مواجه شد',
+  'pages.company.nameLabel': 'نام شرکت',
+  'pages.company.namePlaceholder': 'لطفا نام شرکت را وارد کنید',
+  'pages.company.nameRequired': 'لطفا نام شرکت را وارد کنید',
+  'pages.company.nameLength': 'نام شرکت باید بین 2 تا 100 کاراکتر باشد',
+  'pages.company.descriptionLabel': 'توضیحات شرکت',
+  'pages.company.descriptionPlaceholder': 'لطفا توضیحات شرکت را وارد کنید (اختیاری)',
+  'pages.company.descriptionMaxLength': 'توضیحات شرکت نمی‌تواند بیش از 500 کاراکتر باشد',
+  'pages.company.industryLabel': 'صنعت',
+  'pages.company.industryPlaceholder': 'لطفا صنعت را وارد کنید (اختیاری)',
+  'pages.company.industryMaxLength': 'صنعت نمی‌تواند بیش از 50 کاراکتر باشد',
 };

@@ -19,12 +19,14 @@ export default {
   'pages.login.captcha.placeholder': 'Código de Verificação',
   'pages.login.captcha.required':
     'Por favor entre com o código de verificação!',
+  'pages.login.imageCaptcha.placeholder': 'Por favor insira o código de imagem',
   'pages.login.phoneLogin.getVerificationCode': 'Obter Código',
   'pages.getCaptchaSecondText': 'seg(s)',
   'pages.login.rememberMe': 'Lembre-me',
   'pages.login.forgotPassword': 'Perdeu a Senha ?',
   'pages.login.submit': 'Enviar',
   'pages.login.loginWith': 'Login com :',
+  'pages.login.register': 'Não tem uma conta? Cadastre-se agora',
   'pages.login.registerAccount': 'Registra Conta',
   'pages.welcome.link': 'Bem-vindo',
   'pages.welcome.alertMessage':

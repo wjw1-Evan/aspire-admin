@@ -135,36 +135,8 @@ builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Pla
 // ✅ 注册数据库操作工厂（必须在业务服务之前注册）
 builder.Services.AddDatabaseFactory();
 
-// 核心服务
-builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
-builder.Services.AddScoped<IPasswordPolicyService, PasswordPolicyService>();  // ✅ 密码策略服务
-builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<INoticeService, NoticeService>();
-builder.Services.AddScoped<IMenuService, MenuService>();
-builder.Services.AddScoped<IRuleService, RuleService>();
-builder.Services.AddScoped<IUserActivityLogService, UserActivityLogService>();
-builder.Services.AddScoped<IMenuAccessService, MenuAccessService>();
-
-// 企业管理服务（v3.0 新增）
-builder.Services.AddScoped<ICompanyService, CompanyService>();
-
-// v3.1: 多企业隶属服务
-builder.Services.AddScoped<IUserCompanyService, UserCompanyService>();
-builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
-
-// 通用工具服务（v4.0 优化）
-builder.Services.AddScoped<IUniquenessChecker, UniquenessChecker>();
-builder.Services.AddScoped<IFieldValidationService, FieldValidationService>();
-builder.Services.AddScoped<IPhoneValidationService, PhoneValidationService>();
-
-// Captcha service (Scoped - 使用 MongoDB 存储)
-builder.Services.AddScoped<ICaptchaService, CaptchaService>();
-
-// Image Captcha service (Scoped - 使用 MongoDB 存储)
-builder.Services.AddScoped<IImageCaptchaService, ImageCaptchaService>();
+// ✅ 自动注册所有业务服务（自动扫描并注册 Platform.ApiService.Services 命名空间下的所有服务）
+builder.Services.AddBusinessServices();
 
 
 

@@ -226,14 +226,26 @@ public class MyEntityController : BaseApiController
 
 ### 5. 服务注册
 
-在 [Program.cs](mdc:Platform.ApiService/Program.cs) 中注册：
+**✅ 自动注册**：服务会自动通过 `AddBusinessServices()` 方法注册，无需手动添加。
+
+确保服务接口和实现类都在 `Platform.ApiService.Services` 命名空间下：
 
 ```csharp
-// ✅ 注册数据库操作工厂（如果还没有注册）
-builder.Services.AddDatabaseFactory();
+// ✅ 服务接口和实现类会自动注册
+namespace Platform.ApiService.Services;
 
-// ✅ 注册服务
-builder.Services.AddScoped<IMyEntityService, MyEntityService>();
+public interface IMyEntityService { }
+public class MyEntityService : IMyEntityService { }
+
+// 在 Program.cs 中已调用（无需修改）
+builder.Services.AddBusinessServices(); // 自动注册所有服务
+```
+
+**❌ 禁止**：不要在 Program.cs 中手动注册服务：
+```csharp
+// ❌ 禁止：手动注册服务
+// ✅ 服务会自动注册，无需手动添加
+// builder.Services.AddScoped<IMyEntityService, MyEntityService>(); // ❌ 禁止
 ```
 
 ### 6. 数据库索引
@@ -365,14 +377,16 @@ public MyEntityService(IDatabaseOperationFactory<MyEntity> entityFactory)
 
 ```csharp
 // ❌ 错误：在 Program.cs 中忘记注册工厂
-builder.Services.AddScoped<IMyEntityService, MyEntityService>();
+// ✅ 服务会自动注册，无需手动添加
+// builder.Services.AddScoped<IMyEntityService, MyEntityService>(); // ❌ 禁止
 // ❌ 缺少工厂注册
 
 // ✅ 正确：注册数据库操作工厂
 builder.Services.AddDatabaseFactory();  // ✅ 注册所有实体工厂
 // 或者
 builder.Services.AddDatabaseOperationFactory<MyEntity>();  // ✅ 注册特定实体工厂
-builder.Services.AddScoped<IMyEntityService, MyEntityService>();
+// ✅ 服务会自动注册，无需手动添加
+// builder.Services.AddScoped<IMyEntityService, MyEntityService>(); // ❌ 禁止
 ```
 
 ## 📝 完整开发清单

@@ -756,46 +756,54 @@ builder.Services.AddScoped<IUserService, UserService>();
 ### 服务注册模式
 
 ```csharp
-// ✅ 标准服务注册
-public static class ServiceCollectionExtensions
+// ✅ 自动服务注册（推荐）
+// Platform.ApiService/Extensions/ServiceRegistrationExtensions.cs
+public static class ServiceRegistrationExtensions
 {
     /// <summary>
-    /// 添加数据库操作工厂服务
+    /// 自动注册 Platform.ApiService.Services 命名空间下的所有服务
     /// </summary>
-    public static IServiceCollection AddDatabaseFactory(this IServiceCollection services)
-    {
-        services.AddScoped<IAuditService, AuditService>();
-        services.AddScoped(typeof(IDatabaseOperationFactory<>), typeof(DatabaseOperationFactory<>));
-        return services;
-    }
-
-    /// <summary>
-    /// 添加业务服务
-    /// </summary>
+    /// <param name="services">服务集合</param>
+    /// <returns>服务集合</returns>
+    /// <remarks>
+    /// 通过反射自动发现并注册服务：
+    /// - 扫描实现类，自动查找它们实现的接口并注册
+    /// - 使用 IsInterface 识别接口，不依赖命名约定（如 "I" 开头）
+    /// - 基于实际的类型关系进行注册
+    /// - 所有服务使用 Scoped 生命周期注册
+    /// </remarks>
     public static IServiceCollection AddBusinessServices(this IServiceCollection services)
     {
-        // 用户相关服务
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IUserCompanyService, UserCompanyService>();
-        services.AddScoped<IUserActivityLogService, UserActivityLogService>();
+        var assembly = Assembly.GetExecutingAssembly();
+        var servicesNamespace = typeof(IUserService).Namespace; // Platform.ApiService.Services
         
-        // 企业相关服务
-        services.AddScoped<ICompanyService, CompanyService>();
-        services.AddScoped<IJoinRequestService, JoinRequestService>();
-        
-        // 权限相关服务
-        services.AddScoped<IRoleService, RoleService>();
-        services.AddScoped<IMenuService, MenuService>();
-        services.AddScoped<IMenuAccessService, MenuAccessService>();
-        
-        // 工具服务
-        services.AddScoped<IPasswordHasher, PasswordHasher>();
-        services.AddScoped<IJwtService, JwtService>();
-        
+        // 遍历所有实现类，找到它们实现的接口并注册
+        foreach (var implementationType in assembly.GetTypes()
+            .Where(t => t.IsClass 
+                && !t.IsAbstract 
+                && t.Namespace == servicesNamespace))
+        {
+            // 查找实现类实现的接口（在指定命名空间下，不依赖命名约定）
+            var interfaceType = implementationType.GetInterfaces()
+                .FirstOrDefault(i => i.IsInterface && i.Namespace == servicesNamespace);
+            
+            if (interfaceType != null)
+            {
+                services.AddScoped(interfaceType, implementationType);
+            }
+        }
+
         return services;
     }
 }
+
+// ✅ 在 Program.cs 中使用
+builder.Services.AddBusinessServices(); // 自动注册所有业务服务
+
+// ❌ 禁止：手动逐个注册服务
+// builder.Services.AddScoped<IUserService, UserService>();
+// builder.Services.AddScoped<IAuthService, AuthService>();
+// ... 更多服务
 ```
 
 ### MongoDB 集合注册
@@ -961,26 +969,12 @@ builder.Services.Decorate<IUserService, CachedUserService>();
 ### 依赖注入最佳实践
 
 ```csharp
-// ✅ 自动注册服务
-public static class ServiceCollectionExtensions
-{
-    public static IServiceCollection AddServicesFromAssembly(this IServiceCollection services, Assembly assembly)
-    {
-        var serviceTypes = assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract)
-            .Where(t => t.GetInterfaces().Any(i => i.Name == $"I{t.Name}"));
+// ✅ 自动注册服务（已实现）
+// 使用 Platform.ApiService/Extensions/ServiceRegistrationExtensions.cs 中的 AddBusinessServices 方法
+// 该方法通过反射自动扫描并注册所有服务，不依赖命名约定
 
-        foreach (var serviceType in serviceTypes)
-        {
-            var interfaceType = serviceType.GetInterfaces()
-                .First(i => i.Name == $"I{serviceType.Name}");
-            
-            services.AddScoped(interfaceType, serviceType);
-        }
-
-        return services;
-    }
-}
+// 在 Program.cs 中使用
+builder.Services.AddBusinessServices(); // 自动注册所有业务服务
 
 // ✅ 条件注册服务
 if (builder.Environment.IsDevelopment())
@@ -1068,8 +1062,9 @@ builder.Services.AddOptions<JwtSettings>()
 - [ ] 异步操作正确使用 async/await
 - [ ] 查询使用了适当的索引和分页
 - [ ] 遵循了命名规范和项目结构
+- [ ] 使用 `AddBusinessServices()` 自动注册服务，禁止手动逐个注册
 - [ ] 使用接口而不是具体类型进行服务注册
-- [ ] 选择正确的生命周期（Singleton/Scoped/Transient）
+- [ ] 选择正确的生命周期（Singleton/Scoped/Transient，业务服务使用 Scoped）
 - [ ] 验证配置选项
 - [ ] 避免循环依赖
 - [ ] 使用结构化日志记录
@@ -1084,6 +1079,7 @@ builder.Services.AddOptions<JwtSettings>()
 - [后端数据访问层规范](mdc:.cursor/rules/backend-data-access.mdc)
 - [异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
 - [服务扩展方法](mdc:Platform.ServiceDefaults/Extensions/ServiceExtensions.cs)
+- [自动服务注册](mdc:Platform.ApiService/Extensions/ServiceRegistrationExtensions.cs)
 - [MongoDB 集合注册](mdc:Platform.ApiService/Extensions/MongoDbExtensions.cs)
 - [配置管理服务](mdc:Platform.ApiService/Configuration/)
 - [Program.cs 配置](mdc:Platform.ApiService/Program.cs)

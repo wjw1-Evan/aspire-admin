@@ -6,10 +6,9 @@
   "repository": "git@github.com:ant-design/ant-design-pro.git",
   "scripts": {
     "analyze": "cross-env ANALYZE=1 max build",
-    "biome:lint": "npx @biomejs/biome lint",
     "build": "max build",
     "dev": "npm run start:dev",
-    "lint": "npm run biome:lint && npm run tsc",
+    "lint": "npm run tsc",
     "postinstall": "max setup",
     "preview": "npm run build && max preview --port 8000",
     "start": "cross-env UMI_ENV=dev max dev",
@@ -19,22 +18,18 @@
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
-    "@ant-design/charts": "^2.6.6",
     "@ant-design/icons": "^6.1.0",
-    "@ant-design/pro-components": "^2.7.19",
+    "@ant-design/pro-components": "^2.8.10",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "antd": "^5.28.0",
     "antd-style": "^3.7.0",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@ant-design/pro-cli": "^3.1.0",
-    "@biomejs/biome": "^2.3.4",
     "@types/express": "^5.0.5",
-    "@types/lodash": "^4.17.10",
     "@types/node": "^24.9.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
@@ -42,7 +37,6 @@
     "@umijs/max": "^4.5.3",
     "cross-env": "^10.1.0",
     "express": "^5.1.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
     "umi-presets-pro": "^2.0.3"
   },

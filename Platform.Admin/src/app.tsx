@@ -1,9 +1,8 @@
-import { LinkOutlined } from '@ant-design/icons';
 import * as Icons from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { history, Link, request as requestClient } from '@umijs/max';
+import { history, request as requestClient } from '@umijs/max';
 import React from 'react';
 import {
   AvatarDropdown,
@@ -290,14 +289,7 @@ export const layout: RunTimeLayoutConfig = ({
         width: '331px',
       },
     ],
-    links: isDev
-      ? [
-          <Link key="openapi" to="/umi/plugin/openapi" target="_blank">
-            <LinkOutlined />
-            <span>OpenAPI 文档</span>
-          </Link>,
-        ]
-      : [],
+    links: [],
     menuHeaderRender: undefined,
     childrenRender: (children) => {
       return (

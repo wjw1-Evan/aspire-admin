@@ -4,8 +4,7 @@ import {
   TeamOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { ProCard } from '@ant-design/pro-components';
-import { PageContainer } from '@ant-design/pro-layout';
+import { ProCard, PageContainer } from '@ant-design/pro-components';
 import {
   Input,
   Card,

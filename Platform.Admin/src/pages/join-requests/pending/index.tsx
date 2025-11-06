@@ -1,5 +1,4 @@
-import { ProTable } from '@ant-design/pro-components';
-import { PageContainer } from '@ant-design/pro-layout';
+import { ProTable, PageContainer } from '@ant-design/pro-components';
 import { Button, Space, App, Modal, Input } from 'antd';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';

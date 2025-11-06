@@ -135,7 +135,7 @@ builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Pla
 // ✅ 注册数据库操作工厂（必须在业务服务之前注册）
 builder.Services.AddDatabaseFactory();
 
-// ✅ 自动注册所有业务服务（自动扫描并注册 Platform.ApiService.Services 命名空间下的所有服务）
+// ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
 
 

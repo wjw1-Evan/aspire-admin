@@ -6,11 +6,19 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 菜单服务 - 管理全局系统菜单资源
+/// </summary>
 public class MenuService : IMenuService
 {
     private readonly IDatabaseOperationFactory<Menu> _menuFactory;
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
 
+    /// <summary>
+    /// 初始化菜单服务
+    /// </summary>
+    /// <param name="menuFactory">菜单数据操作工厂</param>
+    /// <param name="roleFactory">角色数据操作工厂</param>
     public MenuService(
         IDatabaseOperationFactory<Menu> menuFactory,
         IDatabaseOperationFactory<Role> roleFactory)

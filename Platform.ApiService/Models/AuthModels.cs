@@ -11,6 +11,9 @@ namespace Platform.ApiService.Models;
 /// </summary>
 public class CurrentUser
 {
+    /// <summary>
+    /// 用户ID（MongoDB ObjectId）
+    /// </summary>
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
@@ -131,33 +134,63 @@ public class CurrentUser
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
+/// <summary>
+/// 用户标签
+/// </summary>
 public class UserTag
 {
+    /// <summary>
+    /// 标签键
+    /// </summary>
     [BsonElement("key")]
     public string? Key { get; set; }
 
+    /// <summary>
+    /// 标签显示名称
+    /// </summary>
     [BsonElement("label")]
     public string? Label { get; set; }
 }
 
+/// <summary>
+/// 地理信息
+/// </summary>
 public class GeographicInfo
 {
+    /// <summary>
+    /// 省份信息
+    /// </summary>
     [BsonElement("province")]
     public LocationInfo? Province { get; set; }
 
+    /// <summary>
+    /// 城市信息
+    /// </summary>
     [BsonElement("city")]
     public LocationInfo? City { get; set; }
 }
 
+/// <summary>
+/// 位置信息
+/// </summary>
 public class LocationInfo
 {
+    /// <summary>
+    /// 位置显示名称
+    /// </summary>
     [BsonElement("label")]
     public string? Label { get; set; }
 
+    /// <summary>
+    /// 位置键
+    /// </summary>
     [BsonElement("key")]
     public string? Key { get; set; }
 }
 
+/// <summary>
+/// 登录请求
+/// </summary>
 public class LoginRequest
 {
     /// <summary>
@@ -167,11 +200,21 @@ public class LoginRequest
     [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
     public string? Username { get; set; }
     
+    /// <summary>
+    /// 密码
+    /// </summary>
     [Required(ErrorMessage = "密码不能为空")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
     public string? Password { get; set; }
     
+    /// <summary>
+    /// 是否自动登录
+    /// </summary>
     public bool AutoLogin { get; set; }
+    
+    /// <summary>
+    /// 登录类型
+    /// </summary>
     public string? Type { get; set; }
 
     /// <summary>
@@ -185,13 +228,39 @@ public class LoginRequest
     public string? CaptchaAnswer { get; set; }
 }
 
+/// <summary>
+/// 登录结果
+/// </summary>
 public class LoginResult
 {
+    /// <summary>
+    /// 登录状态
+    /// </summary>
     public string? Status { get; set; }
+    
+    /// <summary>
+    /// 登录类型
+    /// </summary>
     public string? Type { get; set; }
+    
+    /// <summary>
+    /// 当前权限
+    /// </summary>
     public string? CurrentAuthority { get; set; }
+    
+    /// <summary>
+    /// JWT Token
+    /// </summary>
     public string? Token { get; set; }
+    
+    /// <summary>
+    /// 刷新 Token
+    /// </summary>
     public string? RefreshToken { get; set; }
+    
+    /// <summary>
+    /// Token 过期时间
+    /// </summary>
     public DateTime? ExpiresAt { get; set; }
 }
 
@@ -200,17 +269,45 @@ public class LoginResult
 /// </summary>
 public class LoginData
 {
+    /// <summary>
+    /// 登录类型
+    /// </summary>
     public string? Type { get; set; }
+    
+    /// <summary>
+    /// 当前权限
+    /// </summary>
     public string? CurrentAuthority { get; set; }
+    
+    /// <summary>
+    /// JWT Token
+    /// </summary>
     public string? Token { get; set; }
+    
+    /// <summary>
+    /// 刷新 Token
+    /// </summary>
     public string? RefreshToken { get; set; }
+    
+    /// <summary>
+    /// Token 过期时间
+    /// </summary>
     public DateTime? ExpiresAt { get; set; }
 }
 
-
+/// <summary>
+/// 分页参数
+/// </summary>
 public class PageParams
 {
+    /// <summary>
+    /// 当前页码
+    /// </summary>
     public int Current { get; set; } = 1;
+    
+    /// <summary>
+    /// 每页大小
+    /// </summary>
     public int PageSize { get; set; } = 10;
 }
 
@@ -222,18 +319,33 @@ public class PageParams
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如旧的 role 字段、companyId 字段）
 public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
 {
+    /// <summary>
+    /// 用户名（全局唯一）
+    /// </summary>
     [BsonElement("username")]
     public string Username { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 显示名称
+    /// </summary>
     [BsonElement("name")]
     public string? Name { get; set; }
 
+    /// <summary>
+    /// 年龄
+    /// </summary>
     [BsonElement("age")]
     public int? Age { get; set; }
 
+    /// <summary>
+    /// 密码哈希值
+    /// </summary>
     [BsonElement("passwordHash")]
     public string PasswordHash { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 邮箱地址
+    /// </summary>
     [BsonElement("email")]
     public string? Email { get; set; }
 
@@ -249,24 +361,42 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     [BsonElement("personalCompanyId")]
     public string? PersonalCompanyId { get; set; }
 
+    /// <summary>
+    /// 是否活跃
+    /// </summary>
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// 最后登录时间
+    /// </summary>
     [BsonElement("lastLoginAt")]
     public DateTime? LastLoginAt { get; set; }
 
 }
 
+/// <summary>
+/// 用户注册请求
+/// </summary>
 public class RegisterRequest
 {
+    /// <summary>
+    /// 用户名（3-20个字符）
+    /// </summary>
     [Required(ErrorMessage = "用户名不能为空")]
     [StringLength(20, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-20个字符之间")]
     public string Username { get; set; } = string.Empty;
     
+    /// <summary>
+    /// 密码（至少6个字符）
+    /// </summary>
     [Required(ErrorMessage = "密码不能为空")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
     public string Password { get; set; } = string.Empty;
     
+    /// <summary>
+    /// 邮箱地址（可选）
+    /// </summary>
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
     public string? Email { get; set; }
 
@@ -281,32 +411,72 @@ public class RegisterRequest
     public string? CaptchaAnswer { get; set; }
 }
 
+/// <summary>
+/// 修改密码请求
+/// </summary>
 public class ChangePasswordRequest
 {
+    /// <summary>
+    /// 当前密码
+    /// </summary>
     [Required(ErrorMessage = "当前密码不能为空")]
     public string CurrentPassword { get; set; } = string.Empty;
     
+    /// <summary>
+    /// 新密码
+    /// </summary>
     [Required(ErrorMessage = "新密码不能为空")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "新密码长度至少6个字符")]
     public string NewPassword { get; set; } = string.Empty;
     
+    /// <summary>
+    /// 确认密码
+    /// </summary>
     [Required(ErrorMessage = "确认密码不能为空")]
     [Compare("NewPassword", ErrorMessage = "新密码和确认密码不一致")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// 刷新 Token 请求
+/// </summary>
 public class RefreshTokenRequest
 {
+    /// <summary>
+    /// 刷新 Token
+    /// </summary>
     [Required(ErrorMessage = "刷新token不能为空")]
     public string RefreshToken { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// 刷新 Token 结果
+/// </summary>
 public class RefreshTokenResult
 {
+    /// <summary>
+    /// 状态
+    /// </summary>
     public string? Status { get; set; }
+    
+    /// <summary>
+    /// 新的 JWT Token
+    /// </summary>
     public string? Token { get; set; }
+    
+    /// <summary>
+    /// 新的刷新 Token
+    /// </summary>
     public string? RefreshToken { get; set; }
+    
+    /// <summary>
+    /// Token 过期时间
+    /// </summary>
     public DateTime? ExpiresAt { get; set; }
+    
+    /// <summary>
+    /// 错误消息
+    /// </summary>
     public string? ErrorMessage { get; set; }
 }
 
@@ -315,9 +485,15 @@ public class RefreshTokenResult
 /// </summary>
 public class VerifyCaptchaRequest
 {
+    /// <summary>
+    /// 手机号
+    /// </summary>
     [Required(ErrorMessage = "手机号不能为空")]
     public string Phone { get; set; } = string.Empty;
     
+    /// <summary>
+    /// 验证码
+    /// </summary>
     [Required(ErrorMessage = "验证码不能为空")]
     public string Code { get; set; } = string.Empty;
 }

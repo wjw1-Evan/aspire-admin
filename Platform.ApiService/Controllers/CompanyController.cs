@@ -8,6 +8,9 @@ using Platform.ServiceDefaults.Controllers;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 企业管理控制器 - 处理企业相关的 CRUD 操作和成员管理
+/// </summary>
 [ApiController]
 [Route("api/company")]
 public class CompanyController : BaseApiController
@@ -16,6 +19,12 @@ public class CompanyController : BaseApiController
     private readonly IAuthService _authService;
     private readonly IUserCompanyService _userCompanyService;
 
+    /// <summary>
+    /// 初始化企业控制器
+    /// </summary>
+    /// <param name="companyService">企业服务</param>
+    /// <param name="authService">认证服务</param>
+    /// <param name="userCompanyService">用户企业关联服务</param>
     public CompanyController(
         ICompanyService companyService, 
         IAuthService authService,
@@ -385,6 +394,9 @@ public class CompanyController : BaseApiController
 /// </summary>
 public class SwitchCompanyRequest
 {
+    /// <summary>
+    /// 目标企业ID
+    /// </summary>
     public string TargetCompanyId { get; set; } = string.Empty;
 }
 
@@ -393,6 +405,9 @@ public class SwitchCompanyRequest
 /// </summary>
 public class UpdateMemberRolesRequest
 {
+    /// <summary>
+    /// 角色ID列表
+    /// </summary>
     public List<string> RoleIds { get; set; } = new();
 }
 
@@ -401,6 +416,9 @@ public class UpdateMemberRolesRequest
 /// </summary>
 public class SetAdminRequest
 {
+    /// <summary>
+    /// 是否设置为管理员
+    /// </summary>
     public bool IsAdmin { get; set; }
 }
 

@@ -11,36 +11,69 @@ namespace Platform.ApiService.Models;
 /// </summary>
 public class Company : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
 {
+    /// <summary>
+    /// 企业名称
+    /// </summary>
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 企业代码（唯一标识）
+    /// </summary>
     [BsonElement("code")]
     public string Code { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 企业Logo URL
+    /// </summary>
     [BsonElement("logo")]
     public string? Logo { get; set; }
 
+    /// <summary>
+    /// 企业描述
+    /// </summary>
     [BsonElement("description")]
     public string? Description { get; set; }
 
+    /// <summary>
+    /// 所属行业
+    /// </summary>
     [BsonElement("industry")]
     public string? Industry { get; set; }
 
+    /// <summary>
+    /// 联系人姓名
+    /// </summary>
     [BsonElement("contactName")]
     public string? ContactName { get; set; }
 
+    /// <summary>
+    /// 联系人邮箱
+    /// </summary>
     [BsonElement("contactEmail")]
     public string? ContactEmail { get; set; }
 
+    /// <summary>
+    /// 联系人电话
+    /// </summary>
     [BsonElement("contactPhone")]
     public string? ContactPhone { get; set; }
 
+    /// <summary>
+    /// 是否激活
+    /// </summary>
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// 最大用户数
+    /// </summary>
     [BsonElement("maxUsers")]
     public int MaxUsers { get; set; } = 100;
 
+    /// <summary>
+    /// 过期时间
+    /// </summary>
     [BsonElement("expiresAt")]
     public DateTime? ExpiresAt { get; set; }
 
@@ -51,6 +84,9 @@ public class Company : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletabl
 /// </summary>
 public class CreateCompanyRequest
 {
+    /// <summary>
+    /// 企业名称（2-100个字符）
+    /// </summary>
     [Required(ErrorMessage = "企业名称不能为空")]
     [StringLength(100, MinimumLength = 2, ErrorMessage = "企业名称长度必须在2-100个字符之间")]
     public string Name { get; set; } = string.Empty;
@@ -62,21 +98,39 @@ public class CreateCompanyRequest
     [RegularExpression("^[a-zA-Z0-9_-]+$", ErrorMessage = "企业代码只能包含字母、数字、下划线和横线")]
     public string? Code { get; set; }
 
+    /// <summary>
+    /// 企业描述
+    /// </summary>
     [StringLength(500, ErrorMessage = "描述长度不能超过500个字符")]
     public string? Description { get; set; }
 
+    /// <summary>
+    /// 所属行业
+    /// </summary>
     [StringLength(50, ErrorMessage = "行业长度不能超过50个字符")]
     public string? Industry { get; set; }
 
+    /// <summary>
+    /// 联系人姓名
+    /// </summary>
     [StringLength(50, ErrorMessage = "联系人长度不能超过50个字符")]
     public string? ContactName { get; set; }
 
+    /// <summary>
+    /// 联系人邮箱
+    /// </summary>
     [EmailAddress(ErrorMessage = "联系邮箱格式不正确")]
     public string? ContactEmail { get; set; }
 
+    /// <summary>
+    /// 联系人电话
+    /// </summary>
     [Phone(ErrorMessage = "联系电话格式不正确")]
     public string? ContactPhone { get; set; }
 
+    /// <summary>
+    /// 最大用户数（默认100）
+    /// </summary>
     public int MaxUsers { get; set; } = 100;
 }
 
@@ -85,24 +139,45 @@ public class CreateCompanyRequest
 /// </summary>
 public class UpdateCompanyRequest
 {
+    /// <summary>
+    /// 企业名称
+    /// </summary>
     [StringLength(100, MinimumLength = 2, ErrorMessage = "企业名称长度必须在2-100个字符之间")]
     public string? Name { get; set; }
 
+    /// <summary>
+    /// 企业描述
+    /// </summary>
     [StringLength(500, ErrorMessage = "描述长度不能超过500个字符")]
     public string? Description { get; set; }
 
+    /// <summary>
+    /// 所属行业
+    /// </summary>
     [StringLength(50, ErrorMessage = "行业长度不能超过50个字符")]
     public string? Industry { get; set; }
 
+    /// <summary>
+    /// 联系人姓名
+    /// </summary>
     [StringLength(50, ErrorMessage = "联系人长度不能超过50个字符")]
     public string? ContactName { get; set; }
 
+    /// <summary>
+    /// 联系人邮箱
+    /// </summary>
     [EmailAddress(ErrorMessage = "联系邮箱格式不正确")]
     public string? ContactEmail { get; set; }
 
+    /// <summary>
+    /// 联系人电话
+    /// </summary>
     [Phone(ErrorMessage = "联系电话格式不正确")]
     public string? ContactPhone { get; set; }
 
+    /// <summary>
+    /// 企业Logo URL
+    /// </summary>
     public string? Logo { get; set; }
 }
 
@@ -111,36 +186,63 @@ public class UpdateCompanyRequest
 /// </summary>
 public class RegisterCompanyRequest
 {
+    /// <summary>
+    /// 企业名称
+    /// </summary>
     [Required(ErrorMessage = "企业名称不能为空")]
     [StringLength(100, MinimumLength = 2, ErrorMessage = "企业名称长度必须在2-100个字符之间")]
     public string CompanyName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 企业代码（唯一标识）
+    /// </summary>
     [Required(ErrorMessage = "企业代码不能为空")]
     [StringLength(20, MinimumLength = 3, ErrorMessage = "企业代码长度必须在3-20个字符之间")]
     [RegularExpression("^[a-zA-Z0-9_-]+$", ErrorMessage = "企业代码只能包含字母、数字、下划线和横线")]
     public string CompanyCode { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 企业描述
+    /// </summary>
     [StringLength(500, ErrorMessage = "描述长度不能超过500个字符")]
     public string? CompanyDescription { get; set; }
 
+    /// <summary>
+    /// 所属行业
+    /// </summary>
     [StringLength(50, ErrorMessage = "行业长度不能超过50个字符")]
     public string? Industry { get; set; }
 
+    /// <summary>
+    /// 管理员用户名
+    /// </summary>
     [Required(ErrorMessage = "管理员用户名不能为空")]
     [StringLength(50, MinimumLength = 3, ErrorMessage = "管理员用户名长度必须在3-50个字符之间")]
     public string AdminUsername { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 管理员密码
+    /// </summary>
     [Required(ErrorMessage = "管理员密码不能为空")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "管理员密码长度至少6个字符")]
     public string AdminPassword { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 管理员邮箱
+    /// </summary>
     [Required(ErrorMessage = "管理员邮箱不能为空")]
     [EmailAddress(ErrorMessage = "管理员邮箱格式不正确")]
     public string AdminEmail { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 联系人姓名
+    /// </summary>
     [StringLength(50, ErrorMessage = "联系人长度不能超过50个字符")]
     public string? ContactName { get; set; }
 
+    /// <summary>
+    /// 联系人电话
+    /// </summary>
     [Phone(ErrorMessage = "联系电话格式不正确")]
     public string? ContactPhone { get; set; }
 }
@@ -150,13 +252,44 @@ public class RegisterCompanyRequest
 /// </summary>
 public class CompanyStatistics
 {
+    /// <summary>
+    /// 总用户数
+    /// </summary>
     public int TotalUsers { get; set; }
+    
+    /// <summary>
+    /// 活跃用户数
+    /// </summary>
     public int ActiveUsers { get; set; }
+    
+    /// <summary>
+    /// 总角色数
+    /// </summary>
     public int TotalRoles { get; set; }
+    
+    /// <summary>
+    /// 总菜单数
+    /// </summary>
     public int TotalMenus { get; set; }
+    
+    /// <summary>
+    /// 最大用户数
+    /// </summary>
     public int MaxUsers { get; set; }
+    
+    /// <summary>
+    /// 剩余用户数
+    /// </summary>
     public int RemainingUsers { get; set; }
+    
+    /// <summary>
+    /// 是否已过期
+    /// </summary>
     public bool IsExpired { get; set; }
+    
+    /// <summary>
+    /// 过期时间
+    /// </summary>
     public DateTime? ExpiresAt { get; set; }
 }
 
@@ -165,9 +298,24 @@ public class CompanyStatistics
 /// </summary>
 public class RegisterCompanyResult
 {
+    /// <summary>
+    /// 企业信息
+    /// </summary>
     public Company? Company { get; set; }
+    
+    /// <summary>
+    /// JWT Token
+    /// </summary>
     public string? Token { get; set; }
+    
+    /// <summary>
+    /// 刷新 Token
+    /// </summary>
     public string? RefreshToken { get; set; }
+    
+    /// <summary>
+    /// Token 过期时间
+    /// </summary>
     public DateTime? ExpiresAt { get; set; }
 }
 

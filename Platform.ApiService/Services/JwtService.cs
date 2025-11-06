@@ -6,16 +6,57 @@ using System.Text;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// JWT 服务接口
+/// </summary>
 public interface IJwtService
 {
+    /// <summary>
+    /// 生成访问 Token
+    /// </summary>
+    /// <param name="user">用户信息</param>
+    /// <returns>JWT Token</returns>
     string GenerateToken(AppUser user);
+    
+    /// <summary>
+    /// 生成刷新 Token
+    /// </summary>
+    /// <param name="user">用户信息</param>
+    /// <returns>刷新 Token</returns>
     string GenerateRefreshToken(AppUser user);
+    
+    /// <summary>
+    /// 验证访问 Token
+    /// </summary>
+    /// <param name="token">JWT Token</param>
+    /// <returns>Claims 主体，如果无效则返回 null</returns>
     ClaimsPrincipal? ValidateToken(string token);
+    
+    /// <summary>
+    /// 验证刷新 Token
+    /// </summary>
+    /// <param name="refreshToken">刷新 Token</param>
+    /// <returns>Claims 主体，如果无效则返回 null</returns>
     ClaimsPrincipal? ValidateRefreshToken(string refreshToken);
+    
+    /// <summary>
+    /// 从访问 Token 中获取用户ID
+    /// </summary>
+    /// <param name="token">JWT Token</param>
+    /// <returns>用户ID，如果无效则返回 null</returns>
     string? GetUserIdFromToken(string token);
+    
+    /// <summary>
+    /// 从刷新 Token 中获取用户ID
+    /// </summary>
+    /// <param name="refreshToken">刷新 Token</param>
+    /// <returns>用户ID，如果无效则返回 null</returns>
     string? GetUserIdFromRefreshToken(string refreshToken);
 }
 
+/// <summary>
+/// JWT 服务实现
+/// </summary>
 public class JwtService : IJwtService
 {
     private readonly string _secretKey;
@@ -24,6 +65,10 @@ public class JwtService : IJwtService
     private readonly int _expirationMinutes;
     private readonly int _refreshTokenExpirationDays;
 
+    /// <summary>
+    /// 初始化 JWT 服务
+    /// </summary>
+    /// <param name="configuration">配置对象</param>
     public JwtService(IConfiguration configuration)
     {
         // 🔒 安全修复：移除默认密钥fallback，强制配置
@@ -42,6 +87,11 @@ public class JwtService : IJwtService
         _refreshTokenExpirationDays = int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
     }
 
+    /// <summary>
+    /// 生成访问 Token
+    /// </summary>
+    /// <param name="user">用户信息</param>
+    /// <returns>JWT Token</returns>
     public string GenerateToken(AppUser user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -73,6 +123,11 @@ public class JwtService : IJwtService
         return tokenHandler.WriteToken(token);
     }
 
+    /// <summary>
+    /// 验证访问 Token
+    /// </summary>
+    /// <param name="token">JWT Token</param>
+    /// <returns>Claims 主体，如果无效则返回 null</returns>
     public ClaimsPrincipal? ValidateToken(string token)
     {
         try
@@ -89,6 +144,11 @@ public class JwtService : IJwtService
         }
     }
 
+    /// <summary>
+    /// 生成刷新 Token
+    /// </summary>
+    /// <param name="user">用户信息</param>
+    /// <returns>刷新 Token</returns>
     public string GenerateRefreshToken(AppUser user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -117,6 +177,11 @@ public class JwtService : IJwtService
         return tokenHandler.WriteToken(token);
     }
 
+    /// <summary>
+    /// 验证刷新 Token
+    /// </summary>
+    /// <param name="refreshToken">刷新 Token</param>
+    /// <returns>Claims 主体，如果无效则返回 null</returns>
     public ClaimsPrincipal? ValidateRefreshToken(string refreshToken)
     {
         try
@@ -141,12 +206,22 @@ public class JwtService : IJwtService
         }
     }
 
+    /// <summary>
+    /// 从访问 Token 中获取用户ID
+    /// </summary>
+    /// <param name="token">JWT Token</param>
+    /// <returns>用户ID，如果无效则返回 null</returns>
     public string? GetUserIdFromToken(string token)
     {
         var principal = ValidateToken(token);
         return principal?.FindFirst("userId")?.Value;
     }
 
+    /// <summary>
+    /// 从刷新 Token 中获取用户ID
+    /// </summary>
+    /// <param name="refreshToken">刷新 Token</param>
+    /// <returns>用户ID，如果无效则返回 null</returns>
     public string? GetUserIdFromRefreshToken(string refreshToken)
     {
         var principal = ValidateRefreshToken(refreshToken);

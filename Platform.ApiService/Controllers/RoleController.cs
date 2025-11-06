@@ -9,6 +9,9 @@ using Platform.ServiceDefaults.Controllers;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 角色管理控制器 - 处理角色相关的 CRUD 操作和权限管理
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -16,6 +19,10 @@ public class RoleController : BaseApiController
 {
     private readonly IRoleService _roleService;
 
+    /// <summary>
+    /// 初始化角色控制器
+    /// </summary>
+    /// <param name="roleService">角色服务</param>
     public RoleController(IRoleService roleService)
     {
         _roleService = roleService;

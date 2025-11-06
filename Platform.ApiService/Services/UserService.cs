@@ -8,6 +8,9 @@ using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 用户服务实现
+/// </summary>
 public class UserService : IUserService
 {
     private const string ACTIVE_STATUS = "active";
@@ -20,6 +23,16 @@ public class UserService : IUserService
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
 
+    /// <summary>
+    /// 初始化用户服务
+    /// </summary>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="activityLogFactory">活动日志数据操作工厂</param>
+    /// <param name="roleFactory">角色数据操作工厂</param>
+    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
+    /// <param name="companyFactory">企业数据操作工厂</param>
+    /// <param name="uniquenessChecker">唯一性检查服务</param>
+    /// <param name="validationService">字段验证服务</param>
     public UserService(
         IDatabaseOperationFactory<User> userFactory,
         IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
@@ -82,6 +95,11 @@ public class UserService : IUserService
         return await _userFactory.GetByIdWithoutTenantFilterAsync(id);
     }
 
+    /// <summary>
+    /// 创建用户
+    /// </summary>
+    /// <param name="request">创建用户请求</param>
+    /// <returns>创建的用户信息</returns>
     public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
         var user = new User
@@ -337,6 +355,11 @@ public class UserService : IUserService
         return result != null;
     }
 
+    /// <summary>
+    /// 按名称搜索用户
+    /// </summary>
+    /// <param name="name">用户名或姓名</param>
+    /// <returns>匹配的用户列表</returns>
     public async Task<List<User>> SearchUsersByNameAsync(string name)
     {
         var filter = _userFactory.CreateFilterBuilder()
@@ -804,12 +827,27 @@ public class UserService : IUserService
         return true;
     }
 
+    /// <summary>
+    /// 更新用户角色（已废弃）
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <param name="role">角色名称</param>
+    /// <returns>此方法已废弃，会抛出异常</returns>
+    /// <exception cref="InvalidOperationException">此方法已废弃，请使用 UpdateUserManagementAsync 更新用户的 RoleIds</exception>
     public Task<bool> UpdateUserRoleAsync(string id, string role)
     {
         // 注意：此方法已废弃，使用 RoleIds 代替
         throw new InvalidOperationException("此方法已废弃，请使用 UpdateUserManagementAsync 更新用户的 RoleIds");
     }
 
+    /// <summary>
+    /// 记录用户活动日志
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="action">操作类型</param>
+    /// <param name="description">操作描述</param>
+    /// <param name="ipAddress">IP地址（可选）</param>
+    /// <param name="userAgent">用户代理（可选）</param>
     public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
     {
         // 获取用户的企业ID（从数据库获取，不使用 JWT token）
@@ -1074,6 +1112,12 @@ public class UserService : IUserService
         return value.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
     }
 
+    /// <summary>
+    /// 检查邮箱是否已存在
+    /// </summary>
+    /// <param name="email">邮箱地址</param>
+    /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
+    /// <returns>是否存在</returns>
     public async Task<bool> CheckEmailExistsAsync(string email, string? excludeUserId = null)
     {
         var filterBuilder = _userFactory.CreateFilterBuilder()
@@ -1089,6 +1133,12 @@ public class UserService : IUserService
         return await _userFactory.CountAsync(filter) > 0;
     }
 
+    /// <summary>
+    /// 检查用户名是否已存在
+    /// </summary>
+    /// <param name="username">用户名</param>
+    /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
+    /// <returns>是否存在</returns>
     public async Task<bool> CheckUsernameExistsAsync(string username, string? excludeUserId = null)
     {
         var filterBuilder = _userFactory.CreateFilterBuilder()
@@ -1152,6 +1202,12 @@ public class UserService : IUserService
         return await GetUserByIdWithoutTenantFilterAsync(userId);
     }
 
+    /// <summary>
+    /// 修改用户密码
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="request">修改密码请求</param>
+    /// <returns>是否成功修改</returns>
     public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
     {
         // v3.1: 修改密码时不使用多租户过滤

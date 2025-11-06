@@ -119,7 +119,14 @@ public class CompanyJoinRequest : BaseEntity, Platform.ServiceDefaults.Models.IS
 /// </summary>
 public class ApplyToJoinCompanyRequest
 {
+    /// <summary>
+    /// 企业ID
+    /// </summary>
     public string CompanyId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 申请理由（可选）
+    /// </summary>
     public string? Reason { get; set; }
 }
 
@@ -128,10 +135,29 @@ public class ApplyToJoinCompanyRequest
 /// </summary>
 public class CompanySearchResult
 {
+    /// <summary>
+    /// 企业信息
+    /// </summary>
     public Company Company { get; set; } = new();
+    
+    /// <summary>
+    /// 是否为该企业成员
+    /// </summary>
     public bool IsMember { get; set; }
+    
+    /// <summary>
+    /// 是否有待处理的加入申请
+    /// </summary>
     public bool HasPendingRequest { get; set; }
+    
+    /// <summary>
+    /// 成员状态（如果已加入）
+    /// </summary>
     public string? MemberStatus { get; set; }
+    
+    /// <summary>
+    /// 企业成员数量
+    /// </summary>
     public int MemberCount { get; set; }
 }
 
@@ -140,10 +166,25 @@ public class CompanySearchResult
 /// </summary>
 public class SwitchCompanyResult
 {
+    /// <summary>
+    /// 企业ID
+    /// </summary>
     public string CompanyId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 企业名称
+    /// </summary>
     public string CompanyName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 该企业的菜单列表
+    /// </summary>
     public List<MenuTreeNode> Menus { get; set; } = new();
-    public string? Token { get; set; }  // 可选的新token
+    
+    /// <summary>
+    /// 可选的新 JWT Token（如果需要刷新）
+    /// </summary>
+    public string? Token { get; set; }
 }
 
 /// <summary>
@@ -151,13 +192,44 @@ public class SwitchCompanyResult
 /// </summary>
 public class UserCompanyItem
 {
+    /// <summary>
+    /// 企业ID
+    /// </summary>
     public string CompanyId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 企业名称
+    /// </summary>
     public string CompanyName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 企业代码
+    /// </summary>
     public string CompanyCode { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 是否为企业管理员
+    /// </summary>
     public bool IsAdmin { get; set; }
+    
+    /// <summary>
+    /// 是否为当前选中的企业
+    /// </summary>
     public bool IsCurrent { get; set; }
+    
+    /// <summary>
+    /// 是否为个人企业
+    /// </summary>
     public bool IsPersonal { get; set; }
+    
+    /// <summary>
+    /// 加入时间
+    /// </summary>
     public DateTime JoinedAt { get; set; }
+    
+    /// <summary>
+    /// 在该企业的角色名称列表
+    /// </summary>
     public List<string> RoleNames { get; set; } = new();
 }
 
@@ -166,7 +238,14 @@ public class UserCompanyItem
 /// </summary>
 public class ReviewJoinRequestRequest
 {
+    /// <summary>
+    /// 默认分配的角色ID列表（审核通过时使用）
+    /// </summary>
     public List<string>? DefaultRoleIds { get; set; }
+    
+    /// <summary>
+    /// 拒绝原因（审核拒绝时使用）
+    /// </summary>
     public string? RejectReason { get; set; }
 }
 
@@ -175,18 +254,69 @@ public class ReviewJoinRequestRequest
 /// </summary>
 public class JoinRequestDetail
 {
+    /// <summary>
+    /// 申请ID
+    /// </summary>
     public string Id { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 申请人用户ID
+    /// </summary>
     public string UserId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 申请人用户名
+    /// </summary>
     public string Username { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 申请人邮箱
+    /// </summary>
     public string? UserEmail { get; set; }
+    
+    /// <summary>
+    /// 目标企业ID
+    /// </summary>
     public string CompanyId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 目标企业名称
+    /// </summary>
     public string CompanyName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 申请状态：pending, approved, rejected, cancelled
+    /// </summary>
     public string Status { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 申请理由
+    /// </summary>
     public string? Reason { get; set; }
+    
+    /// <summary>
+    /// 审核人ID
+    /// </summary>
     public string? ReviewedBy { get; set; }
+    
+    /// <summary>
+    /// 审核人用户名
+    /// </summary>
     public string? ReviewedByName { get; set; }
+    
+    /// <summary>
+    /// 审核时间
+    /// </summary>
     public DateTime? ReviewedAt { get; set; }
+    
+    /// <summary>
+    /// 拒绝原因
+    /// </summary>
     public string? RejectReason { get; set; }
+    
+    /// <summary>
+    /// 创建时间
+    /// </summary>
     public DateTime CreatedAt { get; set; }
 }
 

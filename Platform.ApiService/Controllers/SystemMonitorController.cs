@@ -16,6 +16,10 @@ public class SystemMonitorController : BaseApiController
 {
     private readonly ILogger<SystemMonitorController> _logger;
 
+    /// <summary>
+    /// 初始化系统监控控制器
+    /// </summary>
+    /// <param name="logger">日志记录器</param>
     public SystemMonitorController(ILogger<SystemMonitorController> logger)
     {
         _logger = logger;

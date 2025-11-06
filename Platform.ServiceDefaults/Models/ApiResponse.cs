@@ -158,9 +158,28 @@ public class ApiResponse<T>
 /// <typeparam name="T">数据类型</typeparam>
 public class PagedResult<T>
 {
+    /// <summary>
+    /// 数据列表
+    /// </summary>
     public List<T> list { get; set; } = new();
+    
+    /// <summary>
+    /// 总记录数
+    /// </summary>
     public long total { get; set; }
+    
+    /// <summary>
+    /// 当前页码
+    /// </summary>
     public int page { get; set; }
+    
+    /// <summary>
+    /// 每页大小
+    /// </summary>
     public int pageSize { get; set; }
+    
+    /// <summary>
+    /// 总页数
+    /// </summary>
     public int totalPages => (int)Math.Ceiling((double)total / pageSize);
 }

@@ -18,6 +18,15 @@ public class MenuAccessService : IMenuAccessService
     private readonly ILogger<MenuAccessService> _logger;
     private readonly ITenantContext _tenantContext;
 
+    /// <summary>
+    /// 初始化菜单访问权限服务
+    /// </summary>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="roleFactory">角色数据操作工厂</param>
+    /// <param name="menuFactory">菜单数据操作工厂</param>
+    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
+    /// <param name="logger">日志记录器</param>
+    /// <param name="tenantContext">租户上下文</param>
     public MenuAccessService(
         IDatabaseOperationFactory<AppUser> userFactory,
         IDatabaseOperationFactory<Role> roleFactory,
@@ -34,12 +43,24 @@ public class MenuAccessService : IMenuAccessService
         _tenantContext = tenantContext;
     }
 
+    /// <summary>
+    /// 检查用户是否有指定菜单的访问权限
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="menuName">菜单名称</param>
+    /// <returns>是否有访问权限</returns>
     public async Task<bool> HasMenuAccessAsync(string userId, string menuName)
     {
         var userMenuNames = await GetUserMenuNamesAsync(userId);
         return userMenuNames.Contains(menuName.ToLower());
     }
 
+    /// <summary>
+    /// 检查用户是否有任意一个菜单的访问权限
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="menuNames">菜单名称列表</param>
+    /// <returns>是否有访问权限</returns>
     public async Task<bool> HasAnyMenuAccessAsync(string userId, params string[] menuNames)
     {
         var userMenuNames = await GetUserMenuNamesAsync(userId);
@@ -47,6 +68,11 @@ public class MenuAccessService : IMenuAccessService
         return lowerMenuNames.Any(m => userMenuNames.Contains(m));
     }
 
+    /// <summary>
+    /// 获取用户的菜单名称列表
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <returns>菜单名称列表</returns>
     public async Task<List<string>> GetUserMenuNamesAsync(string userId)
     {
         try

@@ -25,6 +25,13 @@ public class ActivityLogMiddleware
         "/favicon.ico"
     };
 
+    /// <summary>
+    /// 初始化活动日志中间件
+    /// </summary>
+    /// <param name="next">下一个中间件委托</param>
+    /// <param name="logger">日志记录器</param>
+    /// <param name="configuration">配置对象</param>
+    /// <param name="serviceProvider">服务提供者</param>
     public ActivityLogMiddleware(
         RequestDelegate next,
         ILogger<ActivityLogMiddleware> logger,
@@ -37,6 +44,10 @@ public class ActivityLogMiddleware
         _serviceProvider = serviceProvider;
     }
 
+    /// <summary>
+    /// 执行中间件逻辑
+    /// </summary>
+    /// <param name="context">HTTP 上下文</param>
     public async Task InvokeAsync(HttpContext context)
     {
         // 检查是否启用日志记录

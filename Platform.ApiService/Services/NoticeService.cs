@@ -5,11 +5,19 @@ using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 通知服务实现
+/// </summary>
 public class NoticeService : INoticeService
 {
     private readonly IDatabaseOperationFactory<NoticeIconItem> _noticeFactory;
     private readonly Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser> _userFactory;
 
+    /// <summary>
+    /// 初始化通知服务
+    /// </summary>
+    /// <param name="noticeFactory">通知数据操作工厂</param>
+    /// <param name="userFactory">用户数据操作工厂</param>
     public NoticeService(
         IDatabaseOperationFactory<NoticeIconItem> noticeFactory,
         Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser> userFactory)
@@ -18,6 +26,10 @@ public class NoticeService : INoticeService
         _userFactory = userFactory;
     }
 
+    /// <summary>
+    /// 获取当前用户的通知列表
+    /// </summary>
+    /// <returns>通知列表响应</returns>
     public async Task<NoticeIconListResponse> GetNoticesAsync()
     {
         // 仅返回当前企业的未删除通知，按时间倒序（工厂自动叠加租户与软删除过滤）
@@ -34,11 +46,21 @@ public class NoticeService : INoticeService
         };
     }
 
+    /// <summary>
+    /// 根据ID获取通知详情
+    /// </summary>
+    /// <param name="id">通知ID</param>
+    /// <returns>通知信息，如果不存在则返回 null</returns>
     public async Task<NoticeIconItem?> GetNoticeByIdAsync(string id)
     {
         return await _noticeFactory.GetByIdAsync(id);
     }
 
+    /// <summary>
+    /// 创建通知
+    /// </summary>
+    /// <param name="request">创建通知请求</param>
+    /// <returns>创建的通知信息</returns>
     public async Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request)
     {
         // 按规范：从数据库获取当前用户的企业ID（JWT 中不包含 companyId）
@@ -139,6 +161,11 @@ public class NoticeService : INoticeService
         return updatedNotice;
     }
 
+    /// <summary>
+    /// 删除通知
+    /// </summary>
+    /// <param name="id">通知ID</param>
+    /// <returns>是否成功删除</returns>
     public async Task<bool> DeleteNoticeAsync(string id)
     {
         // 仅允许删除当前企业的通知（工厂自动叠加租户过滤）
@@ -172,6 +199,10 @@ public class NoticeService : INoticeService
         return updatedNotice != null;
     }
 
+    /// <summary>
+    /// 标记所有通知为已读
+    /// </summary>
+    /// <returns>是否成功标记</returns>
     public async Task<bool> MarkAllAsReadAsync()
     {
         // 仅作用于当前企业的未读通知（工厂自动叠加租户过滤）

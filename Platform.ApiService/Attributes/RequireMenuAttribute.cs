@@ -17,11 +17,19 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
     /// </summary>
     public string MenuName { get; }
 
+    /// <summary>
+    /// 初始化菜单访问权限验证特性
+    /// </summary>
+    /// <param name="menuName">所需访问的菜单名称</param>
     public RequireMenuAttribute(string menuName)
     {
         MenuName = menuName;
     }
 
+    /// <summary>
+    /// 执行授权验证
+    /// </summary>
+    /// <param name="context">授权过滤器上下文</param>
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         // 检查用户是否已认证

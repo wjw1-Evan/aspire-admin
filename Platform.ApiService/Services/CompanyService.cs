@@ -7,18 +7,72 @@ using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 企业服务接口
+/// </summary>
 public interface ICompanyService
 {
+    /// <summary>
+    /// 企业注册（创建企业和管理员账户）
+    /// </summary>
+    /// <param name="request">企业注册请求</param>
+    /// <returns>注册的企业信息</returns>
     Task<Company> RegisterCompanyAsync(RegisterCompanyRequest request);
-    Task<Company> CreateCompanyAsync(CreateCompanyRequest request, string userId);  // v3.1: 已登录用户创建企业
+    
+    /// <summary>
+    /// 创建企业（已登录用户创建企业）
+    /// </summary>
+    /// <param name="request">创建企业请求</param>
+    /// <param name="userId">创建者用户ID</param>
+    /// <returns>创建的企业信息</returns>
+    Task<Company> CreateCompanyAsync(CreateCompanyRequest request, string userId);
+    
+    /// <summary>
+    /// 根据ID获取企业信息
+    /// </summary>
+    /// <param name="id">企业ID</param>
+    /// <returns>企业信息，如果不存在则返回 null</returns>
     Task<Company?> GetCompanyByIdAsync(string id);
+    
+    /// <summary>
+    /// 根据企业代码获取企业信息
+    /// </summary>
+    /// <param name="code">企业代码</param>
+    /// <returns>企业信息，如果不存在则返回 null</returns>
     Task<Company?> GetCompanyByCodeAsync(string code);
+    
+    /// <summary>
+    /// 更新企业信息
+    /// </summary>
+    /// <param name="id">企业ID</param>
+    /// <param name="request">更新企业请求</param>
+    /// <returns>是否成功更新</returns>
     Task<bool> UpdateCompanyAsync(string id, UpdateCompanyRequest request);
+    
+    /// <summary>
+    /// 获取企业统计信息
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <returns>企业统计信息</returns>
     Task<CompanyStatistics> GetCompanyStatisticsAsync(string companyId);
+    
+    /// <summary>
+    /// 获取所有企业列表
+    /// </summary>
+    /// <returns>企业列表</returns>
     Task<List<Company>> GetAllCompaniesAsync();
-    Task<List<CompanySearchResult>> SearchCompaniesAsync(string keyword);  // v3.1新增
+    
+    /// <summary>
+    /// 搜索企业（按关键词）
+    /// </summary>
+    /// <param name="keyword">搜索关键词</param>
+    /// <returns>匹配的企业列表</returns>
+    Task<List<CompanySearchResult>> SearchCompaniesAsync(string keyword);
 }
 
+/// <summary>
+/// 企业服务实现
+/// </summary>
 public class CompanyService : ICompanyService
 {
     private readonly IDatabaseOperationFactory<Company> _companyFactory;
@@ -31,6 +85,18 @@ public class CompanyService : ICompanyService
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CompanyService> _logger;
 
+    /// <summary>
+    /// 初始化企业服务
+    /// </summary>
+    /// <param name="companyFactory">企业数据操作工厂</param>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="roleFactory">角色数据操作工厂</param>
+    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
+    /// <param name="joinRequestFactory">企业加入申请数据操作工厂</param>
+    /// <param name="menuFactory">菜单数据操作工厂</param>
+    /// <param name="passwordHasher">密码哈希服务</param>
+    /// <param name="tenantContext">租户上下文</param>
+    /// <param name="logger">日志记录器</param>
     public CompanyService(
         IDatabaseOperationFactory<Company> companyFactory,
         IDatabaseOperationFactory<AppUser> userFactory,

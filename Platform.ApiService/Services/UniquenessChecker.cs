@@ -10,17 +10,50 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface IUniquenessChecker
 {
+    /// <summary>
+    /// 确保用户名唯一，如果已存在则抛出异常
+    /// </summary>
+    /// <param name="username">用户名</param>
+    /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
     Task EnsureUsernameUniqueAsync(string username, string? excludeUserId = null);
+    
+    /// <summary>
+    /// 确保邮箱唯一，如果已存在则抛出异常
+    /// </summary>
+    /// <param name="email">邮箱地址</param>
+    /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
     Task EnsureEmailUniqueAsync(string email, string? excludeUserId = null);
+    
+    /// <summary>
+    /// 检查用户名是否唯一
+    /// </summary>
+    /// <param name="username">用户名</param>
+    /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
+    /// <returns>如果唯一返回 true，否则返回 false</returns>
     Task<bool> IsUsernameUniqueAsync(string username, string? excludeUserId = null);
+    
+    /// <summary>
+    /// 检查邮箱是否唯一
+    /// </summary>
+    /// <param name="email">邮箱地址</param>
+    /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
+    /// <returns>如果唯一返回 true，否则返回 false</returns>
     Task<bool> IsEmailUniqueAsync(string email, string? excludeUserId = null);
 }
 
+/// <summary>
+/// 唯一性检查服务实现
+/// </summary>
 public class UniquenessChecker : IUniquenessChecker
 {
     private readonly IDatabaseOperationFactory<User> _userFactory;
     private readonly ITenantContext _tenantContext;
 
+    /// <summary>
+    /// 初始化唯一性检查服务
+    /// </summary>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
     public UniquenessChecker(
         IDatabaseOperationFactory<User> userFactory,
         ITenantContext tenantContext)

@@ -7,6 +7,9 @@ using Platform.ServiceDefaults.Controllers;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 认证控制器 - 处理用户登录、注册、密码管理等认证相关操作
+/// </summary>
 [ApiController]
 [Route("api")]
 public class AuthController : BaseApiController
@@ -16,6 +19,13 @@ public class AuthController : BaseApiController
     private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IPhoneValidationService _phoneValidationService;
 
+    /// <summary>
+    /// 初始化认证控制器
+    /// </summary>
+    /// <param name="authService">认证服务</param>
+    /// <param name="captchaService">验证码服务</param>
+    /// <param name="imageCaptchaService">图形验证码服务</param>
+    /// <param name="phoneValidationService">手机号验证服务</param>
     public AuthController(
         IAuthService authService, 
         ICaptchaService captchaService,

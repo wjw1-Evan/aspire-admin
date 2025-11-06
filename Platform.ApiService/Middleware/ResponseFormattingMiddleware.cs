@@ -21,12 +21,21 @@ public class ResponseFormattingMiddleware
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
+    /// <summary>
+    /// 初始化响应格式化中间件
+    /// </summary>
+    /// <param name="next">下一个中间件委托</param>
+    /// <param name="logger">日志记录器</param>
     public ResponseFormattingMiddleware(RequestDelegate next, ILogger<ResponseFormattingMiddleware> logger)
     {
         _next = next;
         _logger = logger;
     }
 
+    /// <summary>
+    /// 执行中间件逻辑
+    /// </summary>
+    /// <param name="context">HTTP 上下文</param>
     public async Task InvokeAsync(HttpContext context)
     {
         // 跳过健康检查端点和特殊端点

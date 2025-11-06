@@ -5,15 +5,22 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 用户活动日志服务实现
+/// </summary>
 public class UserActivityLogService : IUserActivityLogService
 {
     private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
 
+    /// <summary>
+    /// 初始化用户活动日志服务
+    /// </summary>
+    /// <param name="activityLogFactory">活动日志数据操作工厂</param>
+    /// <param name="userFactory">用户数据操作工厂</param>
     public UserActivityLogService(
         IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
-        IDatabaseOperationFactory<AppUser> userFactory
-         )
+        IDatabaseOperationFactory<AppUser> userFactory)
     {
         _activityLogFactory = activityLogFactory;
         _userFactory = userFactory;

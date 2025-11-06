@@ -17,6 +17,11 @@ public class MaintenanceController : BaseApiController
     private readonly IMongoDatabase _database;
     private readonly ILogger<MaintenanceController> _logger;
 
+    /// <summary>
+    /// 初始化系统维护控制器
+    /// </summary>
+    /// <param name="database">MongoDB 数据库</param>
+    /// <param name="logger">日志记录器</param>
     public MaintenanceController(IMongoDatabase database, ILogger<MaintenanceController> logger)
     {
         _database = database;

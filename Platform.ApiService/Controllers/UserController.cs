@@ -10,12 +10,19 @@ using Platform.ServiceDefaults.Controllers;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 用户管理控制器 - 处理用户相关的 CRUD 操作
+/// </summary>
 [ApiController]
 [Route("api/user")]
 public class UserController : BaseApiController
 {
     private readonly IUserService _userService;
 
+    /// <summary>
+    /// 初始化用户控制器
+    /// </summary>
+    /// <param name="userService">用户服务</param>
     public UserController(IUserService userService)
     {
         _userService = userService;

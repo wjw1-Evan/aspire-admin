@@ -6,12 +6,19 @@ using Platform.ServiceDefaults.Controllers;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 规则管理控制器 - 处理规则相关的 CRUD 操作
+/// </summary>
 [ApiController]
 [Route("api")]
 public class RuleController : BaseApiController
 {
     private readonly IRuleService _ruleService;
 
+    /// <summary>
+    /// 初始化规则控制器
+    /// </summary>
+    /// <param name="ruleService">规则服务</param>
     public RuleController(IRuleService ruleService)
     {
         _ruleService = ruleService;

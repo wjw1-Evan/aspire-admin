@@ -7,23 +7,78 @@ using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 用户企业关联服务接口
+/// </summary>
 public interface IUserCompanyService
 {
-    // 用户企业关系
+    /// <summary>
+    /// 获取用户的企业列表
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <returns>用户企业列表</returns>
     Task<List<UserCompanyItem>> GetUserCompaniesAsync(string userId);
+    
+    /// <summary>
+    /// 获取用户企业关联信息
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="companyId">企业ID</param>
+    /// <returns>用户企业关联信息，如果不存在则返回 null</returns>
     Task<UserCompany?> GetUserCompanyAsync(string userId, string companyId);
+    
+    /// <summary>
+    /// 检查用户是否是企业管理员
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="companyId">企业ID</param>
+    /// <returns>是否是管理员</returns>
     Task<bool> IsUserAdminInCompanyAsync(string userId, string companyId);
     
-    // 企业切换
+    /// <summary>
+    /// 切换当前企业
+    /// </summary>
+    /// <param name="targetCompanyId">目标企业ID</param>
+    /// <returns>切换结果</returns>
     Task<SwitchCompanyResult> SwitchCompanyAsync(string targetCompanyId);
     
-    // 成员管理（管理员）
+    /// <summary>
+    /// 获取企业成员列表（管理员功能）
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <returns>企业成员列表</returns>
     Task<List<CompanyMemberItem>> GetCompanyMembersAsync(string companyId);
+    
+    /// <summary>
+    /// 更新成员角色（管理员功能）
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="userId">用户ID</param>
+    /// <param name="roleIds">角色ID列表</param>
+    /// <returns>是否成功更新</returns>
     Task<bool> UpdateMemberRolesAsync(string companyId, string userId, List<string> roleIds);
+    
+    /// <summary>
+    /// 设置成员为管理员（管理员功能）
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="userId">用户ID</param>
+    /// <param name="isAdmin">是否是管理员</param>
+    /// <returns>是否成功设置</returns>
     Task<bool> SetMemberAsAdminAsync(string companyId, string userId, bool isAdmin);
+    
+    /// <summary>
+    /// 移除企业成员（管理员功能）
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="userId">用户ID</param>
+    /// <returns>是否成功移除</returns>
     Task<bool> RemoveMemberAsync(string companyId, string userId);
 }
 
+/// <summary>
+/// 用户企业关联服务实现
+/// </summary>
 public class UserCompanyService : IUserCompanyService
 {
     private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
@@ -35,6 +90,17 @@ public class UserCompanyService : IUserCompanyService
     private readonly ITenantContext _tenantContext;
     private readonly IJwtService _jwtService;
 
+    /// <summary>
+    /// 初始化用户企业关联服务
+    /// </summary>
+    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="companyFactory">企业数据操作工厂</param>
+    /// <param name="roleFactory">角色数据操作工厂</param>
+    /// <param name="menuFactory">菜单数据操作工厂</param>
+    /// <param name="menuService">菜单服务</param>
+    /// <param name="tenantContext">租户上下文</param>
+    /// <param name="jwtService">JWT 服务</param>
     public UserCompanyService(
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
         IDatabaseOperationFactory<AppUser> userFactory,
@@ -430,13 +496,44 @@ public class UserCompanyService : IUserCompanyService
 /// </summary>
 public class CompanyMemberItem
 {
+    /// <summary>
+    /// 用户ID
+    /// </summary>
     public string UserId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 用户名
+    /// </summary>
     public string Username { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 邮箱地址
+    /// </summary>
     public string? Email { get; set; }
+    
+    /// <summary>
+    /// 是否为企业管理员
+    /// </summary>
     public bool IsAdmin { get; set; }
+    
+    /// <summary>
+    /// 角色ID列表
+    /// </summary>
     public List<string> RoleIds { get; set; } = new();
+    
+    /// <summary>
+    /// 角色名称列表
+    /// </summary>
     public List<string> RoleNames { get; set; } = new();
+    
+    /// <summary>
+    /// 加入时间
+    /// </summary>
     public DateTime JoinedAt { get; set; }
+    
+    /// <summary>
+    /// 是否活跃
+    /// </summary>
     public bool IsActive { get; set; }
 }
 

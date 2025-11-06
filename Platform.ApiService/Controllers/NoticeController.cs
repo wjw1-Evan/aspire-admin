@@ -23,6 +23,10 @@ public class NoticeController : BaseApiController
 {
     private readonly INoticeService _noticeService;
 
+    /// <summary>
+    /// 初始化通知控制器
+    /// </summary>
+    /// <param name="noticeService">通知服务</param>
     public NoticeController(INoticeService noticeService)
     {
         _noticeService = noticeService;

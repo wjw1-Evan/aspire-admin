@@ -6,19 +6,58 @@ using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 企业加入申请服务接口
+/// </summary>
 public interface IJoinRequestService
 {
-    // 申请管理
+    /// <summary>
+    /// 申请加入企业
+    /// </summary>
+    /// <param name="request">申请加入企业请求</param>
+    /// <returns>创建的申请记录</returns>
     Task<CompanyJoinRequest> ApplyToJoinCompanyAsync(ApplyToJoinCompanyRequest request);
+    
+    /// <summary>
+    /// 获取我的申请列表
+    /// </summary>
+    /// <returns>申请详情列表</returns>
     Task<List<JoinRequestDetail>> GetMyRequestsAsync();
+    
+    /// <summary>
+    /// 取消申请
+    /// </summary>
+    /// <param name="requestId">申请ID</param>
+    /// <returns>是否成功取消</returns>
     Task<bool> CancelRequestAsync(string requestId);
     
-    // 审核管理（管理员）
+    /// <summary>
+    /// 获取待审核的申请列表（管理员功能）
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <returns>申请详情列表</returns>
     Task<List<JoinRequestDetail>> GetPendingRequestsAsync(string companyId);
+    
+    /// <summary>
+    /// 批准申请（管理员功能）
+    /// </summary>
+    /// <param name="requestId">申请ID</param>
+    /// <param name="request">审核请求（可选）</param>
+    /// <returns>是否成功批准</returns>
     Task<bool> ApproveRequestAsync(string requestId, ReviewJoinRequestRequest? request = null);
+    
+    /// <summary>
+    /// 拒绝申请（管理员功能）
+    /// </summary>
+    /// <param name="requestId">申请ID</param>
+    /// <param name="rejectReason">拒绝原因</param>
+    /// <returns>是否成功拒绝</returns>
     Task<bool> RejectRequestAsync(string requestId, string rejectReason);
 }
 
+/// <summary>
+/// 企业加入申请服务实现
+/// </summary>
 public class JoinRequestService : IJoinRequestService
 {
     private readonly IDatabaseOperationFactory<CompanyJoinRequest> _joinRequestFactory;
@@ -31,6 +70,18 @@ public class JoinRequestService : IJoinRequestService
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<JoinRequestService> _logger;
 
+    /// <summary>
+    /// 初始化企业加入申请服务
+    /// </summary>
+    /// <param name="joinRequestFactory">企业加入申请数据操作工厂</param>
+    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="companyFactory">企业数据操作工厂</param>
+    /// <param name="roleFactory">角色数据操作工厂</param>
+    /// <param name="userCompanyService">用户企业服务</param>
+    /// <param name="noticeService">通知服务</param>
+    /// <param name="tenantContext">租户上下文</param>
+    /// <param name="logger">日志记录器</param>
     public JoinRequestService(
         IDatabaseOperationFactory<CompanyJoinRequest> joinRequestFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,

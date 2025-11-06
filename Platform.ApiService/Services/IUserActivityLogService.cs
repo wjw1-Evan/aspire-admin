@@ -7,7 +7,18 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface IUserActivityLogService
 {
+    /// <summary>
+    /// 获取用户活动日志
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="limit">返回数量限制（默认50）</param>
+    /// <returns>活动日志列表</returns>
     Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);
+    
+    /// <summary>
+    /// 记录HTTP请求日志
+    /// </summary>
+    /// <param name="request">HTTP请求日志请求</param>
     Task LogHttpRequestAsync(LogHttpRequestRequest request);
 }
 

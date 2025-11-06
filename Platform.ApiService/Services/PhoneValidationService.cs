@@ -7,10 +7,22 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface IPhoneValidationService
 {
+    /// <summary>
+    /// 验证手机号格式
+    /// </summary>
+    /// <param name="phone">手机号</param>
     void ValidatePhone(string? phone);
+    
+    /// <summary>
+    /// 验证验证码格式
+    /// </summary>
+    /// <param name="code">验证码</param>
     void ValidateCaptchaCode(string? code);
 }
 
+/// <summary>
+/// 手机号验证服务实现
+/// </summary>
 public class PhoneValidationService : IPhoneValidationService
 {
     /// <summary>

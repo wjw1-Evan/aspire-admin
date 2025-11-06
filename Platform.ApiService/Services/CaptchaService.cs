@@ -9,16 +9,36 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface ICaptchaService
 {
+    /// <summary>
+    /// 生成验证码
+    /// </summary>
+    /// <param name="phone">手机号（作为标识）</param>
+    /// <returns>验证码结果</returns>
     Task<CaptchaResult> GenerateCaptchaAsync(string phone);
+    
+    /// <summary>
+    /// 验证验证码
+    /// </summary>
+    /// <param name="phone">手机号</param>
+    /// <param name="code">用户输入的验证码</param>
+    /// <returns>验证是否成功</returns>
     Task<bool> ValidateCaptchaAsync(string phone, string code);
 }
 
+/// <summary>
+/// 验证码服务实现
+/// </summary>
 public class CaptchaService : ICaptchaService
 {
     private readonly IDatabaseOperationFactory<Captcha> _captchaFactory;
     private readonly ILogger<CaptchaService> _logger;
     private const int EXPIRATION_MINUTES = 5;
 
+    /// <summary>
+    /// 初始化验证码服务
+    /// </summary>
+    /// <param name="captchaFactory">验证码数据操作工厂</param>
+    /// <param name="logger">日志记录器</param>
     public CaptchaService(
         IDatabaseOperationFactory<Captcha> captchaFactory,
         ILogger<CaptchaService> logger)

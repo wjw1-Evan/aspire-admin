@@ -15,6 +15,11 @@ public class FixMissingUserCompanyRecords
     private readonly IMongoDatabase _database;
     private readonly ILogger<FixMissingUserCompanyRecords> _logger;
 
+    /// <summary>
+    /// 初始化修复工具
+    /// </summary>
+    /// <param name="database">MongoDB 数据库</param>
+    /// <param name="logger">日志记录器</param>
     public FixMissingUserCompanyRecords(IMongoDatabase database, ILogger<FixMissingUserCompanyRecords> logger)
     {
         _database = database;
@@ -198,11 +203,34 @@ public class FixMissingUserCompanyRecords
 /// </summary>
 public class FixResult
 {
+    /// <summary>
+    /// 是否成功
+    /// </summary>
     public bool Success { get; set; }
+    
+    /// <summary>
+    /// 总企业数
+    /// </summary>
     public int TotalCompanies { get; set; }
+    
+    /// <summary>
+    /// 修复的用户数
+    /// </summary>
     public int FixedUsers { get; set; }
+    
+    /// <summary>
+    /// 跳过的用户数
+    /// </summary>
     public int SkippedUsers { get; set; }
+    
+    /// <summary>
+    /// 跳过的企业数
+    /// </summary>
     public int SkippedCompanies { get; set; }
+    
+    /// <summary>
+    /// 错误消息
+    /// </summary>
     public string? ErrorMessage { get; set; }
 }
 
@@ -211,11 +239,34 @@ public class FixResult
 /// </summary>
 public class ValidationResult
 {
+    /// <summary>
+    /// 是否有效
+    /// </summary>
     public bool IsValid { get; set; }
+    
+    /// <summary>
+    /// 总用户数
+    /// </summary>
     public int TotalUsers { get; set; }
+    
+    /// <summary>
+    /// 有 UserCompany 记录的用户数
+    /// </summary>
     public int UsersWithUserCompany { get; set; }
+    
+    /// <summary>
+    /// 没有 UserCompany 记录的用户数
+    /// </summary>
     public int UsersWithoutUserCompany { get; set; }
+    
+    /// <summary>
+    /// 没有企业的用户数
+    /// </summary>
     public int UsersWithoutCompany { get; set; }
+    
+    /// <summary>
+    /// 错误消息
+    /// </summary>
     public string? ErrorMessage { get; set; }
 }
 

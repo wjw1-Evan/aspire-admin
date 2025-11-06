@@ -8,13 +8,45 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface IFieldValidationService
 {
+    /// <summary>
+    /// 验证用户名
+    /// </summary>
+    /// <param name="username">用户名</param>
     void ValidateUsername(string? username);
+    
+    /// <summary>
+    /// 验证密码
+    /// </summary>
+    /// <param name="password">密码</param>
     void ValidatePassword(string? password);
+    
+    /// <summary>
+    /// 验证邮箱
+    /// </summary>
+    /// <param name="email">邮箱地址</param>
+    /// <param name="required">是否必填</param>
     void ValidateEmail(string? email, bool required = false);
+    
+    /// <summary>
+    /// 验证必填字段
+    /// </summary>
+    /// <param name="value">字段值</param>
+    /// <param name="fieldName">字段名称</param>
     void ValidateRequired(string? value, string fieldName);
+    
+    /// <summary>
+    /// 验证字符串长度
+    /// </summary>
+    /// <param name="value">字段值</param>
+    /// <param name="fieldName">字段名称</param>
+    /// <param name="minLength">最小长度</param>
+    /// <param name="maxLength">最大长度</param>
     void ValidateStringLength(string? value, string fieldName, int minLength, int maxLength);
 }
 
+/// <summary>
+/// 字段验证服务实现
+/// </summary>
 public class FieldValidationService : IFieldValidationService
 {
     private static readonly Regex EmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);

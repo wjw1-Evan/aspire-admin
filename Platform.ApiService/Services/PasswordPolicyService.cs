@@ -16,7 +16,14 @@ public interface IPasswordPolicyService
 /// </summary>
 public class PasswordPolicyService : IPasswordPolicyService
 {
+    /// <summary>
+    /// 密码最小长度
+    /// </summary>
     public const int MinLength = 8;
+    
+    /// <summary>
+    /// 密码最大长度
+    /// </summary>
     public const int MaxLength = 128;
     
     // 常见弱密码列表
@@ -27,6 +34,11 @@ public class PasswordPolicyService : IPasswordPolicyService
         "abc123", "password123", "admin123"
     };
     
+    /// <summary>
+    /// 验证密码是否符合安全策略
+    /// </summary>
+    /// <param name="password">待验证的密码</param>
+    /// <exception cref="ArgumentException">当密码不符合策略时抛出</exception>
     public void ValidatePassword(string password)
     {
         if (string.IsNullOrWhiteSpace(password))

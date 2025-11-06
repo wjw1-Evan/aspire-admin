@@ -8,6 +8,9 @@ using System.Security.Claims;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 认证服务实现 - 处理用户登录、注册、密码管理等认证相关操作
+/// </summary>
 public class AuthService : IAuthService
 {
     private readonly IDatabaseOperationFactory<User> _userFactory;
@@ -24,6 +27,22 @@ public class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IImageCaptchaService _imageCaptchaService;
 
+    /// <summary>
+    /// 初始化认证服务
+    /// </summary>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
+    /// <param name="roleFactory">角色数据操作工厂</param>
+    /// <param name="companyFactory">企业数据操作工厂</param>
+    /// <param name="menuFactory">菜单数据操作工厂</param>
+    /// <param name="jwtService">JWT 服务</param>
+    /// <param name="httpContextAccessor">HTTP 上下文访问器</param>
+    /// <param name="userService">用户服务</param>
+    /// <param name="logger">日志记录器</param>
+    /// <param name="uniquenessChecker">唯一性检查服务</param>
+    /// <param name="validationService">字段验证服务</param>
+    /// <param name="passwordHasher">密码哈希服务</param>
+    /// <param name="imageCaptchaService">图形验证码服务</param>
     public AuthService(
         IDatabaseOperationFactory<User> userFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
@@ -57,6 +76,10 @@ public class AuthService : IAuthService
     // 🔒 安全修复：移除静态密码哈希方法，统一使用注入的 IPasswordHasher
     // 这样可以集中管理密码哈希逻辑，便于测试和更换哈希算法
 
+    /// <summary>
+    /// 获取当前登录用户信息
+    /// </summary>
+    /// <returns>当前用户信息，如果未登录则返回 null</returns>
     public async Task<CurrentUser?> GetCurrentUserAsync()
     {
         // 从 HTTP 上下文获取当前用户信息
@@ -163,6 +186,11 @@ public class AuthService : IAuthService
         };
     }
 
+    /// <summary>
+    /// 用户登录
+    /// </summary>
+    /// <param name="request">登录请求</param>
+    /// <returns>登录结果，包含 Token 和用户信息</returns>
     public async Task<ApiResponse<LoginData>> LoginAsync(LoginRequest request)
     {
         // 验证图形验证码 - 必填项
@@ -269,6 +297,10 @@ public class AuthService : IAuthService
         return ApiResponse<LoginData>.SuccessResult(loginData);
     }
 
+    /// <summary>
+    /// 用户登出
+    /// </summary>
+    /// <returns>是否成功登出</returns>
     public async Task<bool> LogoutAsync()
     {
         // 从 HTTP 上下文获取当前用户信息
@@ -666,6 +698,11 @@ public class AuthService : IAuthService
         }
     }
 
+    /// <summary>
+    /// 修改密码
+    /// </summary>
+    /// <param name="request">修改密码请求</param>
+    /// <returns>是否成功修改</returns>
     public async Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordRequest request)
     {
         try
@@ -758,6 +795,11 @@ public class AuthService : IAuthService
         }
     }
 
+    /// <summary>
+    /// 刷新 Token
+    /// </summary>
+    /// <param name="request">刷新 Token 请求</param>
+    /// <returns>新的 Token 信息</returns>
     public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
     {
         // 验证输入参数

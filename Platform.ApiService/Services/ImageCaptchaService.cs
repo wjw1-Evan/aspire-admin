@@ -45,6 +45,11 @@ public class ImageCaptchaService : IImageCaptchaService
     // 验证码字符集（排除容易混淆的字符）
     private static readonly string[] CHARACTERS = { "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "2", "3", "4", "5", "6", "7", "8", "9" };
 
+    /// <summary>
+    /// 初始化图形验证码服务
+    /// </summary>
+    /// <param name="captchaFactory">图形验证码数据操作工厂</param>
+    /// <param name="logger">日志记录器</param>
     public ImageCaptchaService(
         IDatabaseOperationFactory<CaptchaImage> captchaFactory,
         ILogger<ImageCaptchaService> logger)

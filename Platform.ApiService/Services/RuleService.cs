@@ -7,11 +7,19 @@ using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 规则服务实现
+/// </summary>
 public class RuleService : IRuleService
 {
     private readonly IDatabaseOperationFactory<RuleListItem> _ruleFactory;
     private readonly ITenantContext _tenantContext;
 
+    /// <summary>
+    /// 初始化规则服务
+    /// </summary>
+    /// <param name="ruleFactory">规则数据操作工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
     public RuleService(
         IDatabaseOperationFactory<RuleListItem> ruleFactory,
         ITenantContext tenantContext)
@@ -87,12 +95,19 @@ public class RuleService : IRuleService
     /// 根据ID获取规则
     /// ✅ 使用数据工厂的自动企业过滤（RuleListItem 实现了 IMultiTenant）
     /// </summary>
+    /// <param name="id">规则ID</param>
+    /// <returns>规则信息，如果不存在则返回 null</returns>
     public async Task<RuleListItem?> GetRuleByIdAsync(string id)
     {
         // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
         return await _ruleFactory.GetByIdAsync(id);
     }
 
+    /// <summary>
+    /// 创建规则
+    /// </summary>
+    /// <param name="request">创建规则请求</param>
+    /// <returns>创建的规则信息</returns>
     public async Task<RuleListItem> CreateRuleAsync(CreateRuleRequest request)
     {
         // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）

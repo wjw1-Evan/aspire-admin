@@ -6,6 +6,9 @@ using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 角色服务实现
+/// </summary>
 public class RoleService : IRoleService
 {
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
@@ -14,12 +17,19 @@ public class RoleService : IRoleService
     private readonly IDatabaseOperationFactory<Menu> _menuFactory;
     private readonly ILogger<RoleService> _logger;
 
+    /// <summary>
+    /// 初始化角色服务
+    /// </summary>
+    /// <param name="roleFactory">角色数据操作工厂</param>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
+    /// <param name="menuFactory">菜单数据操作工厂</param>
+    /// <param name="logger">日志记录器</param>
     public RoleService(
         IDatabaseOperationFactory<Role> roleFactory,
         IDatabaseOperationFactory<AppUser> userFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
         IDatabaseOperationFactory<Menu> menuFactory,
-       
         ILogger<RoleService> logger)
     {
         _roleFactory = roleFactory;

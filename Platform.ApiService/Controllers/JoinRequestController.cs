@@ -16,6 +16,10 @@ public class JoinRequestController : BaseApiController
 {
     private readonly IJoinRequestService _joinRequestService;
 
+    /// <summary>
+    /// 初始化企业加入申请控制器
+    /// </summary>
+    /// <param name="joinRequestService">企业加入申请服务</param>
     public JoinRequestController(IJoinRequestService joinRequestService)
     {
         _joinRequestService = joinRequestService;

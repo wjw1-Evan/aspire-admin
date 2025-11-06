@@ -18,6 +18,11 @@ public class MenuController : BaseApiController
     private readonly IMenuService _menuService;
     private readonly ILogger<MenuController> _logger;
 
+    /// <summary>
+    /// 初始化菜单控制器
+    /// </summary>
+    /// <param name="menuService">菜单服务</param>
+    /// <param name="logger">日志记录器</param>
     public MenuController(IMenuService menuService, ILogger<MenuController> logger)
     {
         _menuService = menuService;

@@ -64,22 +64,20 @@ public interface IUserService
     Task<bool> ExistsAsync(string id);
 }
 
-public class UserService : BaseService, IUserService
+public class UserService : IUserService
 {
     private readonly IDatabaseOperationFactory<User> _userFactory;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly ILogger<UserService> _logger;
 
     public UserService(
-        IMongoDatabase database,
         IDatabaseOperationFactory<User> userFactory,
         IPasswordHasher passwordHasher,
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
-        ILogger<UserService> logger) 
-        : base(database, httpContextAccessor, tenantContext, logger)
+        ILogger<UserService> logger)
     {
         _userFactory = userFactory;
         _passwordHasher = passwordHasher;
+        _logger = logger;
     }
 
     public async Task<User?> GetUserByIdAsync(string id)
@@ -131,7 +129,7 @@ public class UserService : BaseService, IUserService
             Username = request.Username,
             Email = request.Email,
             PasswordHash = _passwordHasher.HashPassword(request.Password),
-            CompanyId = GetRequiredCompanyId(),
+            CompanyId = _userFactory.GetRequiredCompanyId(),
             IsActive = true
         };
 
@@ -177,11 +175,13 @@ public async Task<List<Role>> GetRolesAsync(RoleListRequest request)
 // ❌ 错误：不要手动添加 CompanyId 过滤
 public async Task<List<Role>> GetRolesAsync()
 {
-    var companyId = await GetCurrentCompanyIdAsync();
+    // ❌ 不需要手动获取 CompanyId，数据工厂会自动过滤
     var filter = _roleFactory.CreateFilterBuilder()
-        .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
+        .Equal(r => r.IsActive, true)  // ❌ 即使这样，也不需要手动添加 CompanyId
         .Build();
     return await _roleFactory.FindAsync(filter);  // ❌ 错误做法
+    // ✅ 正确：直接查询，工厂自动过滤 CompanyId
+    // return await _roleFactory.FindAsync();
 }
 ```
 
@@ -257,7 +257,7 @@ public async Task<List<User>> CreateUsersAsync(List<CreateUserRequest> requests)
         Username = request.Username,
         Email = request.Email,
         PasswordHash = _passwordHasher.HashPassword(request.Password),
-        CompanyId = GetRequiredCompanyId(),
+        CompanyId = _userFactory.GetRequiredCompanyId(),
         IsActive = true
     }).ToList();
 
@@ -448,7 +448,11 @@ public async Task<List<Role>> GetRolesAsync()
 // ✅ 正确：AppUser 需要手动过滤 CurrentCompanyId（不实现 IMultiTenant）
 public async Task<List<User>> GetUsersAsync()
 {
-    var currentCompanyId = await GetCurrentCompanyIdAsync();
+    // ✅ 获取当前用户的企业ID（AppUser 使用 CurrentCompanyId，不是 CompanyId）
+    var currentUserId = _userFactory.GetRequiredUserId();
+    var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+    var currentCompanyId = currentUser?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
+    
     var filter = _userFactory.CreateFilterBuilder()
         .Equal(u => u.CurrentCompanyId, currentCompanyId)
         .Build();
@@ -462,11 +466,13 @@ public async Task<List<User>> GetUsersAsync()
 // ❌ 错误：手动添加 CompanyId 过滤（不需要）
 public async Task<List<Role>> GetRolesAsync()
 {
-    var companyId = await GetCurrentCompanyIdAsync();
+    // ❌ 不需要手动获取 CompanyId，数据工厂会自动过滤
     var filter = _roleFactory.CreateFilterBuilder()
-        .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
+        .Equal(r => r.IsActive, true)  // ❌ 即使这样，也不需要手动添加 CompanyId
         .Build();
     return await _roleFactory.FindAsync(filter);
+    // ✅ 正确：直接查询，工厂自动过滤 CompanyId
+    // return await _roleFactory.FindAsync();
 }
 
 // ✅ 正确：依赖自动过滤
@@ -588,7 +594,7 @@ public async Task<List<OperationAudit>> GetUserAuditHistoryAsync(string userId)
 - [ ] **实现多租户隔离**：
   - [ ] 对于实现了 `IMultiTenant` 的实体，依赖数据工厂的自动过滤
   - [ ] **禁止手动添加 CompanyId 过滤** - 所有 IMultiTenant 实体自动过滤
-  - [ ] 创建实体时必须设置 `CompanyId`（使用 `GetRequiredCompanyId()`）
+  - [ ] 创建实体时必须设置 `CompanyId`（使用 `_factory.GetRequiredCompanyId()`）
   - [ ] 只有跨企业查询时才使用 `FindWithoutTenantFilterAsync` 并手动添加过滤
 - [ ] 添加适当的异常处理
 - [ ] 实现查询优化（使用 FilterBuilder）

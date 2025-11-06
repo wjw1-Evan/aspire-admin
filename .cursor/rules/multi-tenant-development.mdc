@@ -1,228 +1,238 @@
 ---
-globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
-description: 多租户系统开发规范和最佳实践
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs,Platform.ApiService/Models/*.cs
+description: 多租户系统开发规范和最佳实践 - 实体设计、字段使用和查询模式
 ---
+
 # 多租户系统开发规范和最佳实践
 
 ## 🎯 核心原则
 
-### 确保数据隔离、权限控制和租户上下文管理，构建安全可靠的多租户系统
+**区分单一企业关联实体（CompanyId + IMultiTenant）和多企业关联实体（CurrentCompanyId + UserCompany），确保数据隔离、权限控制和租户上下文管理**
 
-## ✅ 多租户数据隔离
+## 📊 实体类型对比表
 
-### 数据模型设计
+| 实体类型 | 关联关系 | 使用字段 | 是否实现 IMultiTenant | 过滤方式 |
+|---------|---------|---------|---------------------|---------|
+| **Role** | 单一企业 | `CompanyId` | ✅ 是 | 自动过滤 |
+| **Notice** | 单一企业 | `CompanyId` | ✅ 是 | 自动过滤 |
+| **Tag** | 单一企业 | `CompanyId` | ✅ 是 | 自动过滤 |
+| **UserActivityLog** | 单一企业 | `CompanyId` | ✅ 是 | 自动过滤 |
+| **AppUser** | 多企业 | `CurrentCompanyId` + `PersonalCompanyId` | ❌ 否 | 手动过滤 |
+| **UserCompany** | 关联表 | `CompanyId` (关联字段) | ✅ 是 | 自动过滤 |
+| **Company** | 独立实体 | 无 | ❌ 否 | 无需过滤 |
+| **Menu** | 全局资源 | 无 | ❌ 否 | 无需过滤 |
+
+## ✅ 单一企业关联实体（使用 CompanyId）
+
+### 何时实现 IMultiTenant
+
+以下实体类型**必须**实现 `IMultiTenant` 接口或继承 `MultiTenantEntity`：
 
 ```csharp
-// ✅ 正确 - 单一企业关联的多租户实体（Role, Notice, Tag 等）
-public class Role : BaseEntity, IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+// ✅ 正确：角色属于单一企业
+public class Role : BaseEntity, IEntity, ISoftDeletable, INamedEntity, ITimestamped, IMultiTenant
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
-
     [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty; // ✅ 多租户字段（必须非空）
-
+    public string CompanyId { get; set; } = string.Empty;  // ✅ 非空，默认空字符串
+    
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
-
-    [BsonElement("description")]
-    public string Description { get; set; } = string.Empty;
-
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
-// ✅ 正确 - 多企业关联的实体（AppUser 使用 CurrentCompanyId）
+// ✅ 正确：通知属于单一企业
+public class Notice : MultiTenantEntity
+{
+    // CompanyId 由 MultiTenantEntity 提供（非空）
+    
+    [BsonElement("title")]
+    public string Title { get; set; } = string.Empty;
+    
+    [BsonElement("content")]
+    public string Content { get; set; } = string.Empty;
+}
+```
+
+### IMultiTenant 接口定义
+
+```csharp
+// Platform.ServiceDefaults/Models/BaseEntity.cs
+
+/// <summary>
+/// 多租户接口 - 提供企业隔离
+/// </summary>
+public interface IMultiTenant
+{
+    /// <summary>
+    /// 企业ID（必须非空）
+    /// </summary>
+    string CompanyId { get; set; }
+}
+
+/// <summary>
+/// 多租户实体基类 - 包含企业隔离
+/// </summary>
+public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
+{
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;  // ✅ 非空，默认空字符串
+}
+```
+
+### 工作原理
+
+当实体实现 `IMultiTenant` 接口时，`DatabaseOperationFactory` 会自动为所有查询添加 `CompanyId` 过滤：
+
+```csharp
+// Platform.ServiceDefaults/Services/DatabaseOperationFactory.cs
+
+/// <summary>
+/// 应用多租户过滤
+/// ⚠️ 修复：使用 MongoDB 字段名（从 BsonElement 特性获取）而非 C# 属性名
+/// </summary>
+private FilterDefinition<T> ApplyTenantFilter(FilterDefinition<T> filter)
+{
+    // 检查实体是否实现多租户接口
+    if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+    {
+        // ✅ 从数据库读取当前用户的 CurrentCompanyId（不使用 JWT token）
+        var companyId = ResolveCurrentCompanyId();
+        if (!string.IsNullOrEmpty(companyId))
+        {
+            var companyIdProperty = typeof(T).GetProperty("CompanyId");
+            if (companyIdProperty != null)
+            {
+                // ✅ 获取 MongoDB 字段名：优先使用 BsonElement 特性，否则使用 camelCase
+                var bsonElementAttr = companyIdProperty.GetCustomAttribute<Bson.Serialization.Attributes.BsonElementAttribute>();
+                var fieldName = bsonElementAttr?.ElementName ?? "companyId";  // 统一使用小写 camelCase
+                
+                // ✅ 使用 MongoDB 字段名构建过滤器
+                var companyFilter = Builders<T>.Filter.Eq(fieldName, companyId);
+                return Builders<T>.Filter.And(filter, companyFilter);
+            }
+        }
+    }
+    return filter;
+}
+```
+
+**关键点：**
+- ✅ 实现 `IMultiTenant` 的实体会自动应用企业过滤
+- ✅ 数据工厂从数据库读取企业ID（不使用 JWT token）
+- ✅ 使用正确的 MongoDB 字段名（从 `BsonElement` 特性获取）
+- ✅ 查询时无需手动添加 `CompanyId` 过滤条件
+- ✅ 创建时使用 `_factory.GetRequiredCompanyId()` 设置 `CompanyId`
+- ✅ **禁止手动添加 CompanyId 过滤** - 所有实现了 `IMultiTenant` 的实体都应该依赖自动过滤
+
+### 使用示例
+
+```csharp
+// ✅ 创建单一企业实体
+var role = new Role
+{
+    Name = "管理员",
+    CompanyId = _roleFactory.GetRequiredCompanyId()  // ✅ 必须设置
+};
+await _roleFactory.CreateAsync(role);
+
+// ✅ 查询单一企业实体（自动过滤）
+var roles = await _roleFactory.FindAsync();  // ✅ 自动只返回当前企业的角色
+
+// ❌ 错误：不要手动添加 CompanyId 过滤
+var companyId = await GetCurrentCompanyIdAsync();
+var filter = _roleFactory.CreateFilterBuilder()
+    .Equal(r => r.CompanyId, companyId)  // ❌ 不需要手动添加
+    .Build();
+var roles = await _roleFactory.FindAsync(filter);  // ❌ 错误做法
+
+// ✅ 正确：依赖自动过滤
+var filter = _roleFactory.CreateFilterBuilder()
+    .Equal(r => r.IsActive, true)  // ✅ 只添加业务过滤
+    .Build();
+var roles = await _roleFactory.FindAsync(filter);  // ✅ 数据工厂会自动添加企业过滤
+```
+
+## ✅ 多企业关联实体（使用 CurrentCompanyId）
+
+### 何时不实现 IMultiTenant
+
+以下实体类型**不应该**实现 `IMultiTenant` 接口或继承 `MultiTenantEntity`：
+
+```csharp
+// ✅ 正确：AppUser 与企业是多对多关系，不实现 IMultiTenant
 public class AppUser : BaseEntity, IEntity, ISoftDeletable, ITimestamped
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
-
+    
     [BsonElement("username")]
     public string Username { get; set; } = string.Empty;
-
-    [BsonElement("email")]
-    public string Email { get; set; } = string.Empty;
-
+    
     /// <summary>
     /// 当前选中的企业ID（用于数据隔离和菜单权限）
     /// </summary>
     [BsonElement("currentCompanyId")]
     public string? CurrentCompanyId { get; set; }
-
+    
     /// <summary>
     /// 个人企业ID（注册时自动创建）
     /// </summary>
     [BsonElement("personalCompanyId")]
     public string? PersonalCompanyId { get; set; }
-
+    
     // ❌ 没有 CompanyId 字段
     // 通过 UserCompany 中间表管理多对多关系
-
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
-// ✅ 正确 - 多租户接口
-public interface IMultiTenant
+// ✅ 正确：企业实体本身不需要 CompanyId
+public class Company : BaseEntity, IEntity, ISoftDeletable, ITimestamped
 {
-    string CompanyId { get; set; }  // 必须非空
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+    
+    [BsonElement("code")]
+    public string Code { get; set; } = string.Empty;
 }
 
-// ❌ 错误 - AppUser 不应该实现 IMultiTenant
-public class AppUser : BaseEntity, IMultiTenant
+// ✅ 正确：Menu 是全局系统资源（所有企业共享）
+public class Menu : BaseEntity, IEntity, ISoftDeletable, ITimestamped
 {
-    // ❌ AppUser 不应该实现 IMultiTenant，应该使用 CurrentCompanyId
+    // Menu 没有 CompanyId，因为它是全局资源
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+    
+    [BsonElement("path")]
+    public string Path { get; set; } = string.Empty;
 }
 ```
 
-### 数据库操作工厂多租户支持
+### 使用示例
 
 ```csharp
-// ✅ 正确 - 自动多租户过滤
-public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
+// ✅ 创建 AppUser（使用 CurrentCompanyId）
+var user = new AppUser
 {
-    private readonly IMongoCollection<T> _collection;
-    private readonly ITenantContext _tenantContext;
+    Username = "test",
+    Email = "test@example.com",
+    CurrentCompanyId = companyId,      // ✅ 使用 CurrentCompanyId
+    PersonalCompanyId = personalCompanyId
+};
+await _userFactory.CreateAsync(user);
 
-    public DatabaseOperationFactory(
-        IMongoCollection<T> collection,
-        ITenantContext tenantContext)
-    {
-        _collection = collection;
-        _tenantContext = tenantContext;
-    }
+// ✅ 查询 AppUser（手动添加 CurrentCompanyId 过滤）
+var currentUserId = _userFactory.GetRequiredUserId();
+var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+var currentCompanyId = currentUser?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
 
-    public async Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null)
-    {
-        // 自动添加多租户过滤
-        var multiTenantFilter = CreateMultiTenantFilter();
-        
-        if (filter != null)
-        {
-            multiTenantFilter = Builders<T>.Filter.And(multiTenantFilter, filter);
-        }
-
-        var query = _collection.Find(multiTenantFilter);
-        
-        if (sort != null)
-        {
-            query = query.Sort(sort);
-        }
-        
-        if (limit.HasValue)
-        {
-            query = query.Limit(limit.Value);
-        }
-
-        return await query.ToListAsync();
-    }
-
-    public async Task<T?> GetByIdAsync(string id)
-    {
-        var filter = Builders<T>.Filter.And(
-            Builders<T>.Filter.Eq(x => x.Id, id),
-            CreateMultiTenantFilter()
-        );
-
-        return await _collection.Find(filter).FirstOrDefaultAsync();
-    }
-
-    public async Task<long> CountAsync(FilterDefinition<T>? filter = null)
-    {
-        var multiTenantFilter = CreateMultiTenantFilter();
-        
-        if (filter != null)
-        {
-            multiTenantFilter = Builders<T>.Filter.And(multiTenantFilter, filter);
-        }
-
-        return await _collection.CountDocumentsAsync(multiTenantFilter);
-    }
-
-    /// <summary>
-    /// 创建多租户过滤器（已修复：从数据库读取企业ID，使用正确的MongoDB字段名）
-    /// </summary>
-    private FilterDefinition<T> CreateMultiTenantFilter()
-    {
-        // ✅ 从数据库读取当前用户的 CurrentCompanyId（不使用 JWT token）
-        var userId = _tenantContext.GetCurrentUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new UnauthorizedAccessException("未找到用户信息");
-        }
-        
-        // 从 users 集合读取 currentCompanyId
-        var users = _database.GetCollection<BsonDocument>("users");
-        var doc = users.Find(...).Project(...).FirstOrDefault();
-        var companyId = doc?.GetValue("currentCompanyId", BsonNull.Value);
-        
-        if (string.IsNullOrEmpty(companyId?.AsString))
-        {
-            throw new UnauthorizedAccessException("未找到企业信息");
-        }
-
-        // ✅ 使用正确的 MongoDB 字段名（从 BsonElement 特性获取）
-        var companyIdProperty = typeof(T).GetProperty("CompanyId");
-        var bsonElementAttr = companyIdProperty?.GetCustomAttribute<Bson.Serialization.Attributes.BsonElementAttribute>();
-        var fieldName = bsonElementAttr?.ElementName ?? "companyId";  // 统一使用小写 camelCase
-        
-        // 只返回当前企业的数据
-        return Builders<T>.Filter.Eq(fieldName, companyId.AsString);
-    }
-
-    // 跨租户查询方法（特殊场景使用）
-    public async Task<List<T>> FindWithoutTenantFilterAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null)
-    {
-        var query = _collection.Find(filter ?? Builders<T>.Filter.Empty);
-        
-        if (sort != null)
-        {
-            query = query.Sort(sort);
-        }
-        
-        if (limit.HasValue)
-        {
-            query = query.Limit(limit.Value);
-        }
-
-        return await query.ToListAsync();
-    }
-
-    public async Task<T?> GetByIdWithoutTenantFilterAsync(string id)
-    {
-        var filter = Builders<T>.Filter.Eq(x => x.Id, id);
-        return await _collection.Find(filter).FirstOrDefaultAsync();
-    }
-}
-
-// ❌ 错误 - 没有多租户过滤
-public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
-{
-    public async Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null)
-    {
-        // 没有多租户过滤，可能返回其他企业的数据
-        var query = _collection.Find(filter ?? Builders<T>.Filter.Empty);
-        return await query.ToListAsync();
-    }
-}
+var filter = _userFactory.CreateFilterBuilder()
+    .Equal(u => u.CurrentCompanyId, currentCompanyId)  // ✅ 手动添加过滤条件
+    .Build();
+var users = await _userFactory.FindAsync(filter);
 ```
 
-### 租户上下文管理
+## 🔧 租户上下文管理
+
+### ITenantContext 接口
 
 ```csharp
 // ✅ 正确 - 租户上下文服务（v6.1+ 异步改造）
@@ -240,6 +250,7 @@ public interface ITenantContext
 
     /// <summary>
     /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId）
+    /// ⚠️ 重要：不再从 JWT token 读取，统一从数据库读取
     /// </summary>
     Task<string?> GetCurrentCompanyIdAsync();
 
@@ -253,49 +264,6 @@ public interface ITenantContext
     /// </summary>
     Task<bool> IsAdminAsync();
 }
-
-public class TenantContext : ITenantContext
-{
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IMongoDatabase _database;
-
-    public TenantContext(
-        IHttpContextAccessor httpContextAccessor,
-        IMongoDatabase database)
-    {
-        _httpContextAccessor = httpContextAccessor;
-        _database = database;
-    }
-
-    /// <summary>
-    /// 获取当前用户ID（仅从 JWT token 读取）
-    /// </summary>
-    public string? GetCurrentUserId()
-    {
-        return _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
-    }
-
-    /// <summary>
-    /// 获取当前用户名（从数据库读取）
-    /// </summary>
-    public async Task<string?> GetCurrentUsernameAsync()
-    {
-        var userInfo = await LoadUserInfoAsync();
-        return userInfo?.Username;
-    }
-
-    /// <summary>
-    /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId）
-    /// ⚠️ 重要：不再从 JWT token 读取，统一从数据库读取
-    /// </summary>
-    public async Task<string?> GetCurrentCompanyIdAsync()
-    {
-        var userInfo = await LoadUserInfoAsync();
-        return userInfo?.CompanyId;
-    }
-
-    // ... 其他异步方法
-}
 ```
 
 **⚠️ 重要限制**：
@@ -304,33 +272,31 @@ public class TenantContext : ITenantContext
 2. **后台线程不可用** - 在 `Task.Run`、后台任务等场景中，`HttpContext` 不可用
 3. **后台线程解决方案** - 直接通过 userId 从数据库查询企业ID（见下方示例）
 
+### 服务中使用租户上下文
+
+```csharp
 // ✅ 正确 - 服务中使用租户上下文（单一企业实体示例：Role）
 public class RoleService : IRoleService
 {
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
-    private readonly ITenantContext _tenantContext;
+    private readonly ILogger<RoleService> _logger;
 
     public RoleService(
         IDatabaseOperationFactory<Role> roleFactory,
-        ITenantContext tenantContext)
+        ILogger<RoleService> logger)
     {
         _roleFactory = roleFactory;
-        _tenantContext = tenantContext;
+        _logger = logger;
     }
 
     public async Task<Role> CreateRoleAsync(CreateRoleRequest request)
     {
-        // ✅ 获取当前企业ID（异步方法）
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
-            ?? throw new UnauthorizedAccessException("未找到企业信息");
-        var userId = _tenantContext.GetRequiredUserId();
-
         var role = new Role
         {
             Name = request.Name,
             Description = request.Description,
-            CompanyId = companyId, // ✅ 设置企业ID（单一企业实体）
-            CreatedAt = DateTime.UtcNow
+            CompanyId = _roleFactory.GetRequiredCompanyId(), // ✅ 设置企业ID（单一企业实体）
+            IsActive = true
         };
 
         return await _roleFactory.CreateAsync(role);
@@ -347,13 +313,18 @@ public class RoleService : IRoleService
             filterBuilder.Regex(r => r.Name, request.Keyword);
         }
 
+        if (request.IsActive.HasValue)
+        {
+            filterBuilder.Equal(r => r.IsActive, request.IsActive.Value);
+        }
+
         var filter = filterBuilder.Build();
         var sort = _roleFactory.CreateSortBuilder()
             .Descending(r => r.CreatedAt)
             .Build();
 
         // ✅ 数据工厂会自动添加企业过滤
-        return await _roleFactory.FindAsync(filter, sort, request.Limit);
+        return await _roleFactory.FindAsync(filter, sort);
     }
 }
 
@@ -361,66 +332,59 @@ public class RoleService : IRoleService
 public class UserService : IUserService
 {
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
-    private readonly ITenantContext _tenantContext;
+    private readonly ILogger<UserService> _logger;
 
     public UserService(
         IDatabaseOperationFactory<AppUser> userFactory,
-        ITenantContext tenantContext)
+        ILogger<UserService> logger)
     {
         _userFactory = userFactory;
-        _tenantContext = tenantContext;
-    }
-
-    public async Task<AppUser> CreateUserAsync(CreateUserRequest request)
-    {
-        // ✅ 获取当前企业ID（异步方法）
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
-            ?? throw new UnauthorizedAccessException("未找到企业信息");
-
-        var user = new AppUser
-        {
-            Username = request.Username,
-            Email = request.Email,
-            CurrentCompanyId = companyId, // ✅ 使用 CurrentCompanyId（多企业实体）
-            CreatedAt = DateTime.UtcNow
-        };
-
-        return await _userFactory.CreateAsync(user);
+        _logger = logger;
     }
 
     public async Task<List<AppUser>> GetUsersAsync(UserListRequest request)
     {
-        // ✅ 手动添加 CurrentCompanyId 过滤（AppUser 不实现 IMultiTenant）
-        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync() 
-            ?? throw new UnauthorizedAccessException("未找到企业信息");
+        // ✅ 获取当前用户的企业ID（AppUser 不实现 IMultiTenant，需要手动过滤）
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        var currentCompanyId = currentUser?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
         
-        var filter = _userFactory.CreateFilterBuilder()
-            .Equal(u => u.CurrentCompanyId, currentCompanyId)  // ✅ 手动添加过滤
-            .Build();
+        var filterBuilder = _userFactory.CreateFilterBuilder();
 
+        // ✅ 手动添加 CurrentCompanyId 过滤（AppUser 使用 CurrentCompanyId，不是 CompanyId）
+        filterBuilder.Equal(u => u.CurrentCompanyId, currentCompanyId);
+
+        // 添加搜索条件
         if (!string.IsNullOrEmpty(request.Keyword))
         {
-            var searchFilter = _userFactory.CreateFilterBuilder()
-                .Regex(u => u.Username, request.Keyword)
-                .Or()
-                .Regex(u => u.Email, request.Keyword)
-                .Build();
-            
-            filter = _userFactory.CreateFilterBuilder()
-                .And(filter)
-                .And(searchFilter)
-                .Build();
+            filterBuilder.Regex(u => u.Username, request.Keyword)
+                        .Regex(u => u.Email, request.Keyword);
         }
 
+        // 添加状态过滤
+        if (request.IsActive.HasValue)
+        {
+            filterBuilder.Equal(u => u.IsActive, request.IsActive.Value);
+        }
+
+        var filter = filterBuilder.Build();
         var sort = _userFactory.CreateSortBuilder()
             .Descending(u => u.CreatedAt)
             .Build();
-
-        return await _userFactory.FindAsync(filter, sort, request.Limit);
+        
+        return await _userFactory.FindAsync(filter, sort);
     }
 }
+```
 
-// ✅ 后台线程中获取企业ID（不能使用 ITenantContext）
+### 后台线程中获取企业ID
+
+**⚠️ 重要**：在后台线程（如 `Task.Run`、后台任务、消息队列处理等）中，无法访问 `HttpContext`，因此不能使用 `ITenantContext` 或 `IHttpContextAccessor`。
+
+**✅ 正确做法**：直接通过 userId 从数据库查询用户的企业ID：
+
+```csharp
+// ✅ 后台线程中获取企业ID
 public class UserActivityLogService : IUserActivityLogService
 {
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
@@ -449,7 +413,7 @@ public class UserActivityLogService : IUserActivityLogService
 
     public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
     {
-        // ✅ 从数据库获取企业ID，而不是从 JWT token 或 ITenantContext
+        // ✅ 从数据库获取企业ID，而不是从 JWT token
         var companyId = await TryGetUserCompanyIdAsync(request.UserId);
 
         var log = new UserActivityLog
@@ -461,23 +425,32 @@ public class UserActivityLogService : IUserActivityLogService
         await _activityLogFactory.CreateAsync(log);
     }
 }
+```
 
-// ❌ 错误 - 没有使用租户上下文
-public class RoleService : IRoleService
+**❌ 错误做法**：
+
+```csharp
+// ❌ 错误：在后台线程中无法访问 HttpContext
+public class UserActivityLogService : IUserActivityLogService
 {
-    public async Task<Role> CreateRoleAsync(CreateRoleRequest request)
-    {
-        var role = new Role
-        {
-            Name = request.Name,
-            Description = request.Description,
-            // ❌ 没有设置 CompanyId
-        };
+    private readonly ITenantContext _tenantContext;  // ❌ 依赖 HttpContext，后台线程不可用
+    private readonly IHttpContextAccessor _httpContextAccessor;  // ❌ 后台线程不可用
 
-        return await _roleFactory.CreateAsync(role);
+    public async Task LogHttpRequestAsync(...)
+    {
+        // ❌ 在后台线程中会失败，HttpContext 不可用
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        // ...
     }
 }
 ```
+
+**常见场景**：
+- 活动日志中间件（`ActivityLogMiddleware`）
+- 后台任务处理
+- 消息队列消费者
+- 定时任务
+- WebSocket 后台处理
 
 ## 🎯 权限控制
 
@@ -488,35 +461,35 @@ public class RoleService : IRoleService
 public class RoleService : IRoleService
 {
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
-    private readonly ITenantContext _tenantContext;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly ILogger<RoleService> _logger;
 
     public RoleService(
         IDatabaseOperationFactory<Role> roleFactory,
-        ITenantContext tenantContext)
+        IDatabaseOperationFactory<AppUser> userFactory,
+        ILogger<RoleService> logger)
     {
         _roleFactory = roleFactory;
-        _tenantContext = tenantContext;
+        _userFactory = userFactory;
+        _logger = logger;
     }
 
     public async Task<Role> CreateRoleAsync(CreateRoleRequest request)
     {
         // 检查权限
-        var currentUserId = _tenantContext.GetRequiredUserId();
+        var currentUserId = _roleFactory.GetRequiredUserId();
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
         if (currentUser == null || !currentUser.IsAdmin)
         {
             throw new UnauthorizedAccessException("需要管理员权限");
         }
 
-        var companyId = _tenantContext.GetRequiredCompanyId();
-
         var role = new Role
         {
             Name = request.Name,
             Description = request.Description,
-            CompanyId = companyId, // 角色属于当前企业
-            CreatedBy = currentUserId,
-            CreatedAt = DateTime.UtcNow
+            CompanyId = _roleFactory.GetRequiredCompanyId(), // 角色属于当前企业
+            IsActive = true
         };
 
         return await _roleFactory.CreateAsync(role);
@@ -527,151 +500,10 @@ public class RoleService : IRoleService
         // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
         // 只添加业务过滤条件
         var filter = _roleFactory.CreateFilterBuilder()
-            .Build();  // ✅ 企业过滤自动应用
+            .Equal(r => r.IsActive, true)
+            .Build();
 
         return await _roleFactory.FindAsync(filter);
-    }
-
-    public async Task<bool> AssignRoleToUserAsync(string userId, string roleId)
-    {
-        // 检查权限
-        var currentUserId = _tenantContext.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || !currentUser.IsAdmin)
-        {
-            throw new UnauthorizedAccessException("需要管理员权限");
-        }
-
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
-            ?? throw new UnauthorizedAccessException("未找到企业信息");
-
-        // 验证用户和角色都属于当前企业
-        var user = await _userFactory.GetByIdAsync(userId);
-        if (user == null || user.CurrentCompanyId != companyId)
-        {
-            throw new KeyNotFoundException("用户不存在或不属于当前企业");
-        }
-
-        var role = await _roleFactory.GetByIdAsync(roleId);
-        if (role == null || role.CompanyId != companyId)
-        {
-            throw new KeyNotFoundException("角色不存在或不属于当前企业");
-        }
-
-        // 分配角色
-        var userRole = new UserRole
-        {
-            UserId = userId,
-            RoleId = roleId,
-            CompanyId = companyId,
-            AssignedBy = currentUserId,
-            AssignedAt = DateTime.UtcNow
-        };
-
-        await _userRoleFactory.CreateAsync(userRole);
-        return true;
-    }
-}
-
-// ❌ 错误 - 没有权限控制
-public class RoleService : IRoleService
-{
-    public async Task<Role> CreateRoleAsync(CreateRoleRequest request)
-    {
-        // 没有权限检查
-        var role = new Role
-        {
-            Name = request.Name,
-            Description = request.Description
-            // 没有设置 CompanyId
-        };
-
-        return await _roleFactory.CreateAsync(role);
-    }
-}
-```
-
-### 菜单权限控制
-
-```csharp
-// ✅ 正确 - 菜单权限控制
-public class MenuService : IMenuService
-{
-    private readonly IMongoCollection<Menu> _menus;
-    private readonly IMongoCollection<Role> _roles;
-    private readonly ITenantContext _tenantContext;
-
-    public MenuService(
-        IMongoCollection<Menu> menus,
-        IMongoCollection<Role> roles,
-        ITenantContext tenantContext)
-    {
-        _menus = menus;
-        _roles = roles;
-        _tenantContext = tenantContext;
-    }
-
-    public async Task<List<Menu>> GetUserMenusAsync()
-    {
-        var userId = _tenantContext.GetRequiredUserId();
-        var companyId = _tenantContext.GetRequiredCompanyId();
-
-        // 获取用户角色
-        var userRoles = await _roles.Find(r => 
-            r.UserIds.Contains(userId) && 
-            r.CompanyId == companyId && 
-            !r.IsDeleted).ToListAsync();
-
-        // 获取角色可访问的菜单ID
-        var menuIds = userRoles.SelectMany(r => r.MenuIds).Distinct().ToList();
-
-        // 获取菜单
-        var menus = await _menus.Find(m => 
-            menuIds.Contains(m.Id) && 
-            m.IsEnabled && 
-            !m.IsDeleted).ToListAsync();
-
-        return menus;
-    }
-
-    public async Task<bool> HasMenuAccessAsync(string menuId)
-    {
-        var userId = _tenantContext.GetRequiredUserId();
-        var companyId = _tenantContext.GetRequiredCompanyId();
-
-        // 获取用户角色
-        var userRoles = await _roles.Find(r => 
-            r.UserIds.Contains(userId) && 
-            r.CompanyId == companyId && 
-            !r.IsDeleted).ToListAsync();
-
-        // 检查是否有菜单访问权限
-        return userRoles.Any(r => r.MenuIds.Contains(menuId));
-    }
-
-    public async Task<bool> HasPermissionAsync(string permission)
-    {
-        var userId = _tenantContext.GetRequiredUserId();
-        var companyId = _tenantContext.GetRequiredCompanyId();
-
-        // 获取用户角色
-        var userRoles = await _roles.Find(r => 
-            r.UserIds.Contains(userId) && 
-            r.CompanyId == companyId && 
-            !r.IsDeleted).ToListAsync();
-
-        // 检查是否有权限
-        return userRoles.Any(r => r.Permissions.Contains(permission));
-    }
-}
-
-// ❌ 错误 - 没有权限控制
-public class MenuService : IMenuService
-{
-    public async Task<List<Menu>> GetUserMenusAsync()
-    {
-        // 返回所有菜单，没有权限控制
-        return await _menus.Find(m => m.IsEnabled && !m.IsDeleted).ToListAsync();
     }
 }
 ```
@@ -684,173 +516,29 @@ public class MenuService : IMenuService
 // ✅ 正确 - 敏感数据加密
 public class UserService : IUserService
 {
-    private readonly IDatabaseOperationFactory<User> _userFactory;
-    private readonly IEncryptionService _encryptionService;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IPasswordHasher _passwordHasher;
 
     public UserService(
-        IDatabaseOperationFactory<User> userFactory,
-        IEncryptionService encryptionService)
+        IDatabaseOperationFactory<AppUser> userFactory,
+        IPasswordHasher passwordHasher)
     {
         _userFactory = userFactory;
-        _encryptionService = encryptionService;
+        _passwordHasher = passwordHasher;
     }
 
-    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    public async Task<AppUser> CreateUserAsync(CreateUserRequest request)
     {
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
-            ?? throw new UnauthorizedAccessException("未找到企业信息");
-        
-        var user = new User
+        var user = new AppUser
         {
             Username = request.Username,
             Email = request.Email,
             // 加密敏感数据
-            PasswordHash = _encryptionService.HashPassword(request.Password),
-            PhoneNumber = _encryptionService.Encrypt(request.PhoneNumber),
-            CompanyId = companyId,
-            CreatedBy = _tenantContext.GetRequiredUserId(),
-            CreatedAt = DateTime.UtcNow
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
+            CurrentCompanyId = _userFactory.GetRequiredCompanyId(),
+            IsActive = true
         };
 
-        return await _userFactory.CreateAsync(user);
-    }
-
-    public async Task<bool> ValidatePasswordAsync(string userId, string password)
-    {
-        var user = await _userFactory.GetByIdAsync(userId);
-        if (user == null)
-            return false;
-
-        return _encryptionService.VerifyPassword(password, user.PasswordHash);
-    }
-}
-
-// ❌ 错误 - 敏感数据未加密
-public class UserService : IUserService
-{
-    public async Task<User> CreateUserAsync(CreateUserRequest request)
-    {
-        var user = new User
-        {
-            Username = request.Username,
-            Email = request.Email,
-            // 密码未加密
-            Password = request.Password,
-            // 手机号未加密
-            PhoneNumber = request.PhoneNumber
-        };
-
-        return await _userFactory.CreateAsync(user);
-    }
-}
-```
-
-### 审计日志
-
-```csharp
-// ✅ 正确 - 审计日志记录
-public class UserService : IUserService
-{
-    private readonly IDatabaseOperationFactory<User> _userFactory;
-    private readonly IAuditService _auditService;
-
-    public UserService(
-        IDatabaseOperationFactory<User> userFactory,
-        IAuditService auditService)
-    {
-        _userFactory = userFactory;
-        _auditService = auditService;
-    }
-
-    public async Task<User> CreateUserAsync(CreateUserRequest request)
-    {
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() 
-            ?? throw new UnauthorizedAccessException("未找到企业信息");
-        
-        var user = new User
-        {
-            Username = request.Username,
-            Email = request.Email,
-            CompanyId = companyId,
-            CreatedBy = _tenantContext.GetRequiredUserId(),
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var createdUser = await _userFactory.CreateAsync(user);
-
-        // 记录审计日志
-        var username = await _tenantContext.GetCurrentUsernameAsync();
-        await _auditService.RecordOperationAsync(new OperationAudit
-        {
-            EntityType = nameof(User),
-            EntityId = createdUser.Id,
-            OperationType = OperationType.Create,
-            UserId = _tenantContext.GetRequiredUserId(),
-            Username = username ?? string.Empty,
-            CompanyId = companyId,
-            Description = "创建用户",
-            AfterData = JsonSerializer.Serialize(createdUser)
-        });
-
-        return createdUser;
-    }
-
-    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
-    {
-        var existingUser = await _userFactory.GetByIdAsync(request.Id);
-        if (existingUser == null)
-            return false;
-
-        var beforeData = JsonSerializer.Serialize(existingUser);
-
-        var update = _userFactory.CreateUpdateBuilder()
-            .Set(u => u.Username, request.Username)
-            .SetCurrentTimestamp()
-            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
-            .Build();
-
-        var result = await _userFactory.UpdateAsync(existingUser, new OperationContext
-        {
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
-            OperationType = OperationType.Update,
-            Description = "更新用户信息"
-        });
-
-        if (result)
-        {
-            // 记录审计日志
-            await _auditService.RecordOperationAsync(new OperationAudit
-            {
-                EntityType = nameof(User),
-                EntityId = request.Id,
-                OperationType = OperationType.Update,
-                UserId = _userFactory.GetCurrentUserId(),
-                Username = _userFactory.GetCurrentUsername(),
-                CompanyId = _userFactory.GetCurrentCompanyId(),
-                Description = "更新用户信息",
-                BeforeData = beforeData,
-                AfterData = JsonSerializer.Serialize(existingUser)
-            });
-        }
-
-        return result;
-    }
-}
-
-// ❌ 错误 - 没有审计日志
-public class UserService : IUserService
-{
-    public async Task<User> CreateUserAsync(CreateUserRequest request)
-    {
-        var user = new User
-        {
-            Username = request.Username,
-            Email = request.Email
-        };
-
-        // 没有记录审计日志
         return await _userFactory.CreateAsync(user);
     }
 }
@@ -858,101 +546,132 @@ public class UserService : IUserService
 
 ## 🚫 禁止的做法
 
-### 不要忽略数据隔离
+### ❌ 错误 1: AppUser 实现 IMultiTenant
 
 ```csharp
-// ❌ 错误 - 没有数据隔离
-public class UserService : IUserService
+// ❌ 错误：AppUser 与企业是多对多关系，不应该实现 IMultiTenant
+public class AppUser : MultiTenantEntity
 {
-    public async Task<List<User>> GetUsersAsync()
-    {
-        // 返回所有企业的用户，没有数据隔离
-        return await _userFactory.FindAsync();
-    }
+    // 这会导致自动过滤冲突
 }
 
-// ✅ 正确 - 数据隔离
-public class UserService : IUserService
+// ✅ 正确：使用 BaseEntity，手动通过 CurrentCompanyId 过滤
+public class AppUser : BaseEntity
 {
-    public async Task<List<User>> GetUsersAsync()
-    {
-        // ✅ 对于实现了 IMultiTenant 的实体，数据工厂会自动添加企业过滤
-        // 只添加业务过滤条件
-        var filter = _userFactory.CreateFilterBuilder()
-            .Build();  // ✅ 企业过滤自动应用
-
-        return await _userFactory.FindAsync(filter);
-    }
+    public string? CurrentCompanyId { get; set; }
+    public string? PersonalCompanyId { get; set; }
 }
 ```
 
-### 不要硬编码企业ID
+### ❌ 错误 2: AppUser 使用 CompanyId 查询
 
 ```csharp
-// ❌ 错误 - 硬编码企业ID
-public class UserService : IUserService
-{
-    public async Task<User> CreateUserAsync(CreateUserRequest request)
-    {
-        var user = new User
-        {
-            Username = request.Username,
-            Email = request.Email,
-            CompanyId = "company123" // 硬编码企业ID
-        };
+// ❌ 错误：AppUser 没有 CompanyId 字段
+var filter = _userFactory.CreateFilterBuilder()
+    .Equal(u => u.CompanyId, companyId)  // ❌ 编译错误
+    .Build();
 
-        return await _userFactory.CreateAsync(user);
-    }
+// ✅ 正确：使用 CurrentCompanyId
+var filter = _userFactory.CreateFilterBuilder()
+    .Equal(u => u.CurrentCompanyId, companyId)  // ✅ 正确
+    .Build();
+```
+
+### ❌ 错误 3: Role 使用 CurrentCompanyId
+
+```csharp
+// ❌ 错误：Role 没有 CurrentCompanyId 字段
+var filter = _roleFactory.CreateFilterBuilder()
+    .Equal(r => r.CurrentCompanyId, companyId)  // ❌ 编译错误
+    .Build();
+
+// ✅ 正确：Role 会自动通过 CompanyId 过滤（实现 IMultiTenant）
+var roles = await _roleFactory.FindAsync();  // ✅ 自动过滤当前企业
+```
+
+### ❌ 错误 4: CompanyId 设为可空
+
+```csharp
+// ❌ 错误：CompanyId 不应该可空
+public class Role : IMultiTenant
+{
+    public string? CompanyId { get; set; }  // ❌ 可空
 }
 
-// ✅ 正确 - 动态获取企业ID
-public class UserService : IUserService
+// ✅ 正确：CompanyId 必须非空
+public class Role : IMultiTenant
 {
-    public async Task<User> CreateUserAsync(CreateUserRequest request)
-    {
-        var user = new User
-        {
-            Username = request.Username,
-            Email = request.Email,
-            CompanyId = await _tenantContext.GetCurrentCompanyIdAsync() 
-                ?? throw new UnauthorizedAccessException("未找到企业信息") // ✅ 异步获取
-        };
-
-        return await _userFactory.CreateAsync(user);
-    }
+    public string CompanyId { get; set; } = string.Empty;  // ✅ 非空
 }
 ```
 
-### 不要忽略权限检查
+### ❌ 错误 5: 创建时未设置 CompanyId
 
 ```csharp
-// ❌ 错误 - 没有权限检查
-public class UserService : IUserService
+// ❌ 错误：创建时没有设置 CompanyId
+var role = new Role
 {
-    public async Task<bool> DeleteUserAsync(string id)
-    {
-        // 没有权限检查，任何人都可以删除用户
-        return await _userFactory.SoftDeleteAsync(id);
-    }
+    Name = "管理员",
+    // ❌ 缺少 CompanyId
+};
+
+// ✅ 正确：创建时设置 CompanyId
+var role = new Role
+{
+    Name = "管理员",
+    CompanyId = _roleFactory.GetRequiredCompanyId()  // ✅ 设置企业ID
+};
+```
+
+### ❌ 错误 6: 手动添加 CompanyId 过滤（IMultiTenant 实体）
+
+```csharp
+// ❌ 错误：不要手动添加 CompanyId 过滤（不需要）
+public async Task<List<Role>> GetRolesAsync()
+{
+    // ❌ 不需要手动获取 CompanyId，数据工厂会自动过滤
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.IsActive, true)  // ❌ 即使这样，也不需要手动添加 CompanyId
+        .Build();
+    return await _roleFactory.FindAsync(filter);
+    // ✅ 正确：直接查询，工厂自动过滤 CompanyId
+    // return await _roleFactory.FindAsync();
 }
 
-// ✅ 正确 - 权限检查
-public class UserService : IUserService
+// ✅ 正确：依赖自动过滤
+public async Task<List<Role>> GetRolesAsync()
 {
-    public async Task<bool> DeleteUserAsync(string id)
-    {
-        // 检查权限
-        var currentUserId = _userFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || !currentUser.IsAdmin)
-        {
-            throw new UnauthorizedAccessException("需要管理员权限");
-        }
-
-        return await _userFactory.SoftDeleteAsync(id);
-    }
+    var filter = _roleFactory.CreateFilterBuilder()
+        .Equal(r => r.IsActive, true)  // ✅ 只添加业务过滤
+        .Build();
+    // ✅ 数据工厂会自动添加企业过滤
+    return await _roleFactory.FindAsync(filter);
 }
 ```
+
+## 📋 设计决策检查清单
+
+创建新实体时，按照以下步骤检查：
+
+- [ ] **实体是否属于单一企业？**
+  - ✅ 是 → 实现 `IMultiTenant` 或继承 `MultiTenantEntity`
+  - ❌ 否 → 不实现 `IMultiTenant`，使用手动过滤
+
+- [ ] **实体是否支持多企业关联？**
+  - ✅ 是（如 AppUser）→ 不实现 `IMultiTenant`，使用 `CurrentCompanyId` + `UserCompany`
+  - ❌ 否 → 可以实现 `IMultiTenant`
+
+- [ ] **CompanyId 字段是否必须非空？**
+  - ✅ 是 → 使用 `string CompanyId { get; set; } = string.Empty;`
+  - ❌ 否 → 考虑是否应该实现 `IMultiTenant`
+
+- [ ] **创建时是否设置了正确的企业ID？**
+  - ✅ 单一企业实体 → `CompanyId = _factory.GetRequiredCompanyId()`
+  - ✅ 多企业实体 → `CurrentCompanyId = companyId`
+
+- [ ] **查询时是否正确处理过滤？**
+  - ✅ 单一企业实体 → 自动过滤（无需手动添加）
+  - ✅ 多企业实体 → 手动添加 `CurrentCompanyId` 过滤
 
 ## 📋 多租户开发检查清单
 
@@ -962,13 +681,12 @@ public class UserService : IUserService
 - [ ] **数据库操作自动过滤租户数据**：
   - [ ] 所有实现了 `IMultiTenant` 的实体查询会自动应用企业过滤
   - [ ] **禁止手动添加 CompanyId 过滤** - 依赖数据工厂的自动过滤
-  - [ ] 创建实体时必须设置 `CompanyId`（使用 `GetRequiredCompanyId()` 或 `await GetCurrentCompanyIdAsync()`）
+  - [ ] 创建实体时必须设置 `CompanyId`（使用 `_factory.GetRequiredCompanyId()`）
   - [ ] 数据工厂从数据库读取企业ID（不使用 JWT token）
   - [ ] 使用正确的 MongoDB 字段名（从 `BsonElement` 特性获取）
 - [ ] **租户上下文使用**：
-  - [ ] 在请求线程中使用 `ITenantContext` 的异步方法
+  - [ ] 在请求线程中使用 `IDatabaseOperationFactory` 的 `GetRequiredCompanyId()` 方法
   - [ ] 在后台线程中直接查询数据库获取企业ID（不使用 `ITenantContext`）
-  - [ ] 所有获取企业ID的方法都使用异步版本
 - [ ] 权限控制正确实现
 - [ ] 敏感数据加密存储
 - [ ] 审计日志完整记录
@@ -977,9 +695,45 @@ public class UserService : IUserService
 - [ ] 角色权限正确分配
 - [ ] 数据隔离测试通过
 
+## 🔍 快速参考
+
+```csharp
+// ✅ Role（单一企业）
+var role = new Role
+{
+    Name = "管理员",
+    CompanyId = _roleFactory.GetRequiredCompanyId()  // ✅ 使用 CompanyId
+};
+// 查询时自动过滤，无需手动添加 CompanyId 条件
+
+// ✅ AppUser（多企业）
+var user = new AppUser
+{
+    Username = "test",
+    CurrentCompanyId = companyId,      // ✅ 使用 CurrentCompanyId
+    PersonalCompanyId = personalCompanyId
+};
+// 查询时需要手动添加 CurrentCompanyId 过滤条件
+```
+
 ## 📚 相关文档
 
 - [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
 - [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
 - [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)
-- [多租户架构设计](https://docs.microsoft.com/en-us/azure/sql-database/saas-tenancy-app-design-patterns)
+- [BaseEntity.cs](mdc:Platform.ServiceDefaults/Models/BaseEntity.cs) - IMultiTenant 接口定义
+- [RoleModels.cs](mdc:Platform.ApiService/Models/RoleModels.cs) - ✅ 单一企业示例：Role 实现 IMultiTenant
+- [AuthModels.cs](mdc:Platform.ApiService/Models/AuthModels.cs) - ✅ 多企业示例：AppUser 不实现 IMultiTenant
+- [DatabaseOperationFactory.cs](mdc:Platform.ServiceDefaults/Services/DatabaseOperationFactory.cs) - 自动过滤实现
+- [后端数据访问层规范](mdc:.cursor/rules/backend-data-access.mdc)
+
+## 🎯 核心原则总结
+
+1. **单一企业关联** → 使用 `CompanyId` + 实现 `IMultiTenant` → 自动过滤
+2. **多企业关联** → 使用 `CurrentCompanyId` + `UserCompany` → 手动过滤
+3. **CompanyId 必须非空** → 使用 `string CompanyId { get; set; } = string.Empty;`
+4. **创建时设置企业ID** → 确保新创建的实体都设置了正确的企业ID
+5. **AppUser 永远不使用 CompanyId** → 只使用 `CurrentCompanyId` 和 `PersonalCompanyId`
+6. **禁止手动添加 CompanyId 过滤** - 所有实现了 `IMultiTenant` 的实体都应该依赖自动过滤
+
+遵循这些规范，确保多租户数据隔离的正确性和一致性！

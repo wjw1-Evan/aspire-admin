@@ -1,0 +1,521 @@
+---
+globs: Platform.ApiService/Services/*.cs,Platform.ServiceDefaults/Services/*.cs
+description: 扩展方法使用规范 - ValidationExtensions 和 ResourceExtensions
+---
+
+# 扩展方法使用规范
+
+## 🎯 核心原则
+
+**使用统一的扩展方法（ValidationExtensions 和 ResourceExtensions）进行参数验证和资源检查，确保数据完整性、安全性和业务规则一致性**
+
+## ✅ 参数验证扩展方法
+
+### 基础验证扩展
+
+```csharp
+// Platform.ServiceDefaults/Extensions/ValidationExtensions.cs
+public static class ValidationExtensions
+{
+    /// <summary>
+    /// 验证字符串不为空
+    /// </summary>
+    public static string ValidateNotEmpty(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+        return value;
+    }
+
+    /// <summary>
+    /// 验证字符串长度
+    /// </summary>
+    public static string ValidateLength(this string value, int minLength, int maxLength, string parameterName)
+    {
+        if (string.IsNullOrEmpty(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (value.Length < minLength)
+            throw new ArgumentException($"{parameterName} 长度不能少于 {minLength} 个字符", parameterName);
+
+        if (value.Length > maxLength)
+            throw new ArgumentException($"{parameterName} 长度不能超过 {maxLength} 个字符", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证邮箱格式
+    /// </summary>
+    public static string ValidateEmail(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(value);
+            if (addr.Address != value)
+                throw new ArgumentException($"{parameterName} 格式不正确", parameterName);
+        }
+        catch
+        {
+            throw new ArgumentException($"{parameterName} 格式不正确", parameterName);
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证用户名格式
+    /// </summary>
+    public static string ValidateUsername(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (value.Length < 3 || value.Length > 50)
+            throw new ArgumentException($"{parameterName} 长度必须在3-50个字符之间", parameterName);
+
+        if (!value.All(c => char.IsLetterOrDigit(c) || c == '_'))
+            throw new ArgumentException($"{parameterName} 只能包含字母、数字和下划线", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证密码强度
+    /// </summary>
+    public static string ValidatePassword(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (value.Length < 8)
+            throw new ArgumentException($"{parameterName} 长度不能少于8个字符", parameterName);
+
+        var hasLetter = value.Any(char.IsLetter);
+        var hasDigit = value.Any(char.IsDigit);
+        var hasSpecialChar = value.Any(c => !char.IsLetterOrDigit(c));
+
+        if (!hasLetter)
+            throw new ArgumentException($"{parameterName} 必须包含字母", parameterName);
+
+        if (!hasDigit)
+            throw new ArgumentException($"{parameterName} 必须包含数字", parameterName);
+
+        if (!hasSpecialChar)
+            throw new ArgumentException($"{parameterName} 必须包含特殊字符", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证对象ID格式
+    /// </summary>
+    public static string ValidateObjectId(this string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        if (!ObjectId.TryParse(value, out _))
+            throw new ArgumentException($"{parameterName} 格式不正确", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证数值范围
+    /// </summary>
+    public static T ValidateRange<T>(this T value, T minValue, T maxValue, string parameterName) where T : IComparable<T>
+    {
+        if (value.CompareTo(minValue) < 0)
+            throw new ArgumentException($"{parameterName} 不能小于 {minValue}", parameterName);
+
+        if (value.CompareTo(maxValue) > 0)
+            throw new ArgumentException($"{parameterName} 不能大于 {maxValue}", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证集合不为空
+    /// </summary>
+    public static IEnumerable<T> ValidateNotEmpty<T>(this IEnumerable<T> value, string parameterName)
+    {
+        if (value == null || !value.Any())
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        return value;
+    }
+
+    /// <summary>
+    /// 验证集合数量
+    /// </summary>
+    public static IEnumerable<T> ValidateCount<T>(this IEnumerable<T> value, int minCount, int maxCount, string parameterName)
+    {
+        if (value == null)
+            throw new ArgumentException($"{parameterName} 不能为空", parameterName);
+
+        var count = value.Count();
+        if (count < minCount)
+            throw new ArgumentException($"{parameterName} 数量不能少于 {minCount}", parameterName);
+
+        if (count > maxCount)
+            throw new ArgumentException($"{parameterName} 数量不能超过 {maxCount}", parameterName);
+
+        return value;
+    }
+}
+```
+
+### 业务验证扩展
+
+```csharp
+// Platform.ApiService/Extensions/BusinessValidationExtensions.cs
+public static class BusinessValidationExtensions
+{
+    /// <summary>
+    /// 验证用户创建请求
+    /// </summary>
+    public static CreateUserRequest ValidateCreateUserRequest(this CreateUserRequest request)
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        request.Username.ValidateUsername(nameof(request.Username));
+        request.Email.ValidateEmail(nameof(request.Email));
+        request.Password.ValidatePassword(nameof(request.Password));
+
+        return request;
+    }
+
+    /// <summary>
+    /// 验证用户更新请求
+    /// </summary>
+    public static UpdateUserRequest ValidateUpdateUserRequest(this UpdateUserRequest request)
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        request.Id.ValidateObjectId(nameof(request.Id));
+
+        if (!string.IsNullOrEmpty(request.Username))
+            request.Username.ValidateUsername(nameof(request.Username));
+
+        if (!string.IsNullOrEmpty(request.Email))
+            request.Email.ValidateEmail(nameof(request.Email));
+
+        return request;
+    }
+
+    /// <summary>
+    /// 验证分页请求
+    /// </summary>
+    public static T ValidatePagination<T>(this T request) where T : IPaginationRequest
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+
+        if (request.Page.HasValue)
+            request.Page.Value.ValidateRange(1, int.MaxValue, nameof(request.Page));
+
+        if (request.PageSize.HasValue)
+            request.PageSize.Value.ValidateRange(1, 1000, nameof(request.PageSize));
+
+        return request;
+    }
+}
+```
+
+## ✅ 资源检查扩展方法
+
+### 基础资源检查扩展
+
+```csharp
+// Platform.ServiceDefaults/Extensions/ResourceExtensions.cs
+public static class ResourceExtensions
+{
+    /// <summary>
+    /// 检查资源是否存在
+    /// </summary>
+    public static async Task<T> EnsureExistsAsync<T>(this Task<T?> resourceTask, string resourceName, string resourceId) where T : class
+    {
+        var resource = await resourceTask;
+        if (resource == null)
+        {
+            throw new KeyNotFoundException($"{resourceName} {resourceId} 不存在");
+        }
+        return resource;
+    }
+
+    /// <summary>
+    /// 检查资源是否存在（带自定义错误消息）
+    /// </summary>
+    public static async Task<T> EnsureExistsAsync<T>(this Task<T?> resourceTask, string errorMessage) where T : class
+    {
+        var resource = await resourceTask;
+        if (resource == null)
+        {
+            throw new KeyNotFoundException(errorMessage);
+        }
+        return resource;
+    }
+
+    /// <summary>
+    /// 检查资源是否不存在
+    /// </summary>
+    public static async Task EnsureNotExistsAsync<T>(this Task<T?> resourceTask, string resourceName, string resourceId) where T : class
+    {
+        var resource = await resourceTask;
+        if (resource != null)
+        {
+            throw new InvalidOperationException($"{resourceName} {resourceId} 已存在");
+        }
+    }
+
+    /// <summary>
+    /// 检查资源是否不存在（带自定义错误消息）
+    /// </summary>
+    public static async Task EnsureNotExistsAsync<T>(this Task<T?> resourceTask, string errorMessage) where T : class
+    {
+        var resource = await resourceTask;
+        if (resource != null)
+        {
+            throw new InvalidOperationException(errorMessage);
+        }
+    }
+
+    /// <summary>
+    /// 检查资源是否属于当前企业
+    /// </summary>
+    public static T EnsureBelongsToCurrentCompany<T>(this T resource, string currentCompanyId, string resourceName, string resourceId) where T : IMultiTenant
+    {
+        if (resource == null)
+        {
+            throw new KeyNotFoundException($"{resourceName} {resourceId} 不存在");
+        }
+
+        if (resource.CompanyId != currentCompanyId)
+        {
+            throw new UnauthorizedAccessException($"无权访问 {resourceName} {resourceId}");
+        }
+
+        return resource;
+    }
+
+    /// <summary>
+    /// 检查资源是否未被删除
+    /// </summary>
+    public static T EnsureNotDeleted<T>(this T resource, string resourceName, string resourceId) where T : ISoftDeletable
+    {
+        if (resource == null)
+        {
+            throw new KeyNotFoundException($"{resourceName} {resourceId} 不存在");
+        }
+
+        if (resource.IsDeleted)
+        {
+            throw new InvalidOperationException($"{resourceName} {resourceId} 已被删除");
+        }
+
+        return resource;
+    }
+
+    /// <summary>
+    /// 检查资源是否处于活跃状态
+    /// </summary>
+    public static T EnsureActive<T>(this T resource, string resourceName, string resourceId) where T : IActiveEntity
+    {
+        if (resource == null)
+        {
+            throw new KeyNotFoundException($"{resourceName} {resourceId} 不存在");
+        }
+
+        if (!resource.IsActive)
+        {
+            throw new InvalidOperationException($"{resourceName} {resourceId} 已停用");
+        }
+
+        return resource;
+    }
+
+    /// <summary>
+    /// 检查资源数量限制
+    /// </summary>
+    public static async Task EnsureWithinLimitAsync<T>(this Task<long> countTask, long limit, string resourceName)
+    {
+        var count = await countTask;
+        if (count >= limit)
+        {
+            throw new InvalidOperationException($"{resourceName} 数量已达上限 {limit}");
+        }
+    }
+}
+```
+
+## 🎯 服务中使用扩展方法
+
+### 用户服务示例
+
+```csharp
+// ✅ 正确 - 使用验证和资源检查扩展
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(
+        IDatabaseOperationFactory<User> userFactory,
+        ILogger<UserService> logger)
+    {
+        _userFactory = userFactory;
+        _logger = logger;
+    }
+
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 1. 使用验证扩展进行参数验证
+        request.ValidateCreateUserRequest();
+        
+        // 2. 检查唯一性（使用资源检查扩展）
+        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        var currentCompanyId = currentUser?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
+        
+        var existingUser = await _userFactory.FindAsync(
+            _userFactory.CreateFilterBuilder()
+                .Equal(u => u.Username, request.Username)
+                .Equal(u => u.CurrentCompanyId, currentCompanyId)
+                .Build()
+        );
+        
+        if (existingUser.Any())
+        {
+            throw new InvalidOperationException("用户名已存在");
+        }
+        
+        // 3. 创建用户实体
+        var user = new User
+        {
+            Username = request.Username.Trim(),
+            Email = request.Email.Trim().ToLowerInvariant(),
+            CurrentCompanyId = currentCompanyId,
+            IsActive = true
+        };
+        
+        return await _userFactory.CreateAsync(user);
+    }
+
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        // 使用验证扩展验证ID
+        id.ValidateObjectId(nameof(id));
+        
+        return await _userFactory.GetByIdAsync(id);
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserRequest request)
+    {
+        // 1. 使用验证扩展进行参数验证
+        request.ValidateUpdateUserRequest();
+        
+        // 2. 检查资源是否存在
+        var existingUser = await _userFactory.GetByIdAsync(request.Id);
+        if (existingUser == null)
+        {
+            throw new KeyNotFoundException($"用户 {request.Id} 不存在");
+        }
+
+        // 3. 检查唯一性（如果需要）
+        if (!string.IsNullOrEmpty(request.Username) && request.Username != existingUser.Username)
+        {
+            var currentUserId = _userFactory.GetRequiredUserId();
+            var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+            var currentCompanyId = currentUser?.CurrentCompanyId ?? throw new UnauthorizedAccessException("未找到企业信息");
+            
+            var duplicateUser = await _userFactory.FindAsync(
+                _userFactory.CreateFilterBuilder()
+                    .Equal(u => u.Username, request.Username)
+                    .Equal(u => u.CurrentCompanyId, currentCompanyId)
+                    .Build()
+            );
+            
+            if (duplicateUser.Any())
+            {
+                throw new InvalidOperationException("用户名已存在");
+            }
+        }
+
+        // 4. 构建更新操作
+        var update = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.Username, request.Username ?? existingUser.Username)
+            .Set(u => u.Email, request.Email ?? existingUser.Email)
+            .Build();
+
+        // 5. 执行更新
+        return await _userFactory.UpdateAsync(existingUser, update);
+    }
+}
+```
+
+## 🚫 禁止的做法
+
+### 不要手动验证和检查
+
+```csharp
+// ❌ 错误 - 手动验证和检查
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 手动验证（容易遗漏和重复）
+        if (string.IsNullOrEmpty(request.Username))
+            throw new ArgumentException("用户名不能为空");
+        
+        if (request.Username.Length < 3 || request.Username.Length > 50)
+            throw new ArgumentException("用户名长度必须在3-50个字符之间");
+        
+        // 手动检查（容易遗漏）
+        var existingUser = await _userFactory.GetByUsernameAsync(request.Username);
+        if (existingUser != null)
+        {
+            throw new InvalidOperationException("用户名已存在");
+        }
+    }
+}
+
+// ✅ 正确 - 使用扩展方法
+public class UserService : IUserService
+{
+    public async Task<User> CreateUserAsync(CreateUserRequest request)
+    {
+        // 使用统一的验证扩展
+        request.ValidateCreateUserRequest();
+        
+        // 使用统一的资源检查扩展
+        // ... 检查唯一性
+    }
+}
+```
+
+## 📋 扩展方法使用检查清单
+
+创建或修改服务时检查：
+
+- [ ] 使用 ValidationExtensions 进行参数验证
+- [ ] 使用 ResourceExtensions 进行资源检查
+- [ ] 验证所有输入参数
+- [ ] 检查资源是否存在
+- [ ] 检查资源是否属于当前企业
+- [ ] 检查资源是否未被删除
+- [ ] 避免重复验证和检查逻辑
+- [ ] 提供清晰的错误消息
+- [ ] 保持验证和检查一致性
+
+## 📚 相关文档
+
+- [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
+- [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
+- [验证扩展方法](mdc:Platform.ServiceDefaults/Extensions/ValidationExtensions.cs)
+- [资源检查扩展方法](mdc:Platform.ServiceDefaults/Extensions/ResourceExtensions.cs)

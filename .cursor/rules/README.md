@@ -11,12 +11,11 @@
   - 提供开发指南、常见问题解答
 
 ### 🔧 微服务架构
-- **`data-initializer-microservice.mdc`** - 数据初始化微服务开发规范
-  - 📋 手动引用
-  - 微服务架构设计和实现规范
-  - 单实例运行保证、自动停止机制
-  - API 端点设计和监控调试
-  - 任务型微服务模式实现
+- **`aspire-microservices.mdc`** - .NET Aspire 微服务架构和编排规范
+  - 📁 应用于配置文件
+  - 服务编排和生命周期管理
+  - 监控和可观测性
+  - 配置管理和部署
 
 ### 💻 前端开发规范
 
@@ -26,10 +25,11 @@
   - 包含代码风格、命名约定、类型定义、最佳实践
   - Biome 配置规范
 
-- **`react-components.mdc`** - React 组件开发规范
-  - 📁 应用于 `*.tsx` 和 `*.jsx` 文件
-  - 包含组件设计、Props 设计、样式规范、状态管理
-  - 性能优化和最佳实践
+- **`frontend-development.mdc`** - 前端开发规范和最佳实践
+  - 📁 应用于 `*.ts`、`*.tsx`、`*.js`、`*.jsx` 文件
+  - 包含项目结构、命名规范、组件开发、Props 设计
+  - 自定义 Hook、API 服务、样式规范、状态管理
+  - 性能优化、安全规范、移动端特定规范
 
 #### Ant Design Pro & UmiJS
 - **`antd-pro-umi.mdc`** - Ant Design Pro 和 UmiJS 开发规范
@@ -85,6 +85,9 @@
 - **`csharp-backend.mdc`** - C# 后端开发规范
   - 📁 应用于 `*.cs` 文件
   - 控制器设计、服务层、数据访问
+  - 依赖注入和配置管理
+  - 日志记录和监控
+  - 中间件开发规范
   - MongoDB 集成、JWT 认证
   - 命名约定和最佳实践
 
@@ -107,21 +110,15 @@
   - 禁止在系统启动时创建全局数据
   - 数据孤儿检查和验证
 
-- **`multi-tenant-entity-design-complete.mdc`** - 多租户实体完整设计规范
-  - 📁 应用于所有 `*.cs` 文件
-  - 单一企业实体 vs 多企业实体设计对比
-  - CompanyId vs CurrentCompanyId 使用指南
-  - IMultiTenant 接口实现决策树
-  - 自动过滤 vs 手动过滤模式
-  - 完整的设计决策检查清单
-
 - **`multi-tenant-development.mdc`** - 多租户系统开发规范和最佳实践
   - 📁 应用于 `Platform.ApiService/Services/*.cs` 和 `Platform.ServiceDefaults/Services/*.cs`
+  - 实体类型对比表（单一企业 vs 多企业）
+  - CompanyId vs CurrentCompanyId 使用指南
+  - IMultiTenant 接口实现决策树
   - DatabaseOperationFactory 自动租户过滤
-  - ITenantContext 使用
+  - ITenantContext 使用（后台线程注意事项）
   - 权限控制和数据安全
-  - 审计日志和加密存储
-  - ⚠️ 已更新：修正了 AppUser 使用 CurrentCompanyId 的示例
+  - 完整的设计决策检查清单
 
 - **`user-registration-flow.mdc`** - 用户注册流程和企业自动创建规范
   - 📋 手动引用
@@ -136,19 +133,15 @@
   - 所有服务必须使用 IDatabaseOperationFactory 进行数据访问
   - 禁止直接使用 IMongoCollection 或已移除的 BaseRepository
   - 自动处理多租户过滤、软删除、操作审计
+  - 自动审计和时间戳管理（禁止手动设置）
 
 - **`database-initialization.mdc`** - 数据库初始化规范
   - ⚡ 始终自动应用
   - 数据初始化由专门的微服务负责
   - 单实例运行保证安全
+  - 自动停止机制（完成或失败后停止）
   - 确保幂等性和原子操作
-
-- **`data-initializer-microservice.mdc`** - 数据初始化微服务开发规范
-  - 📋 手动引用
-  - 微服务架构设计和实现规范
-  - 单实例运行保证、自动停止机制
   - API 端点设计和监控调试
-  - 任务型微服务模式实现
 
 - **`mongodb-atomic-operations.mdc`** - MongoDB 原子操作最佳实践
   - 📋 手动引用
@@ -175,14 +168,11 @@
   - 菜单权限映射规范
 
 #### 验证和扩展方法
-- **`validation-extensions.mdc`** - 参数验证规范
+- **`extension-methods-usage.mdc`** - 扩展方法使用规范
   - 📋 手动引用
-  - 使用 ValidationExtensions 扩展方法
+  - ValidationExtensions - 参数验证扩展方法
+  - ResourceExtensions - 资源检查扩展方法
   - 统一验证和错误消息
-
-- **`resource-extensions-usage.mdc`** - 资源检查规范
-  - 📋 手动引用
-  - 使用 ResourceExtensions 扩展方法
 
 - **`error-messages-usage.mdc`** - 错误消息规范
   - 📋 手动引用
@@ -245,7 +235,7 @@
 
 ### 规则匹配示例
 - 编辑 `*.ts` 文件时，自动应用 `typescript-coding-standards.mdc`
-- 编辑 `*.tsx` 文件时，自动应用 `react-components.mdc`
+- 编辑 `*.tsx` 文件时，自动应用 `frontend-development.mdc`
 - 编辑认证相关文件时，自动应用 `auth-system.mdc`
 - 编辑 Context 文件时，自动应用 `state-management.mdc`
 
@@ -254,19 +244,18 @@
 | 类型 | 数量 | 说明 |
 |------|------|------|
 | 项目架构 | 1 | 始终应用 |
-| 前端规范 | 5 | TypeScript、React、Ant Design Pro、移动端、主题系统 |
-| 后端规范 | 3 | C# 开发规范、API控制器（合并）、业务逻辑服务层、依赖注入配置 |
-| 多租户规范 ⭐ | 3 | 多租户开发、实体设计（完整版）、用户注册、全局数据控制 |
-| 数据库规范 🆕 | 5 | 数据访问（操作工厂+自动审计）⭐、初始化、微服务、原子操作、全局菜单 |
-| 数据模型规范 | 1 | 数据模型设计（包含软删除字段规范） |
+| 前端规范 | 4 | TypeScript、前端开发（合并 React 组件）、Ant Design Pro、移动端、主题系统 |
+| 后端规范 | 1 | C# 开发规范（合并依赖注入、日志监控、中间件） |
+| 多租户规范 ⭐ | 2 | 多租户开发（合并实体设计）、用户注册、全局数据控制 |
+| 数据库规范 🆕 | 4 | 数据访问（操作工厂+自动审计）⭐、初始化（合并微服务）、原子操作、全局菜单 |
 | 权限规范 | 1 | 权限控制 |
-| 验证扩展 | 2 | 参数验证、资源检查 |
+| 验证扩展 | 1 | 扩展方法使用（合并验证和资源检查） |
 | 文档管理 | 2 | 文档组织、同步更新 |
-| 系统规范 | 3 | 认证、错误处理、状态管理（已合并到统一的规范文件） |
+| 系统规范 | 3 | 认证、错误处理、状态管理 |
 | 工程规范 | 3 | 测试、部署、Git工作流 |
 | 实体开发 | 1 | 新增实体清单 |
 | **核心开发规范** 🆕 | **6** | 代码审查、性能优化、安全实践、微服务架构、设计模式、移动端最佳实践 |
-| **总计** | **24** | 涵盖全栈开发各个方面（已压缩合并重复规则，减少 2 个文件） |
+| **总计** | **19** | 涵盖全栈开发各个方面（已合并重复规则，减少 5 个文件） |
 
 ## 🆕 v5.0 新增规则
 
@@ -440,7 +429,7 @@ description: TypeScript 编码规范和最佳实践
 ### 新手入门
 1. 阅读 `project-structure.mdc` 了解项目架构
 2. 学习 `typescript-coding-standards.mdc` 掌握代码规范
-3. 参考 `react-components.mdc` 开始组件开发
+3. 参考 `frontend-development.mdc` 开始组件开发
 
 ### 前端开发
 1. `antd-pro-umi.mdc` - 管理后台开发
@@ -449,17 +438,17 @@ description: TypeScript 编码规范和最佳实践
 4. `state-management.mdc` - 状态管理
 
 ### 后端开发
-1. `csharp-backend.mdc` - C# 开发规范
+1. `csharp-backend.mdc` - C# 开发规范（包含依赖注入、日志监控、中间件）
 2. `baseapicontroller-standard.mdc` - 控制器标准
 3. `backend-data-access.mdc` - 数据访问层规范（数据库操作工厂）⭐ **重要**
 4. `business-logic.mdc` - 业务逻辑和服务层模式
-5. `database-initialization.mdc` - 数据库初始化
-6. `multi-tenant-development.mdc` - 多租户开发
+5. `database-initialization.mdc` - 数据库初始化（包含微服务规范）
+6. `multi-tenant-development.mdc` - 多租户开发（包含实体设计）
 7. `api-integration.mdc` - API 设计
 8. `auth-system.mdc` - 认证授权
 
 ### 进阶主题
-1. `data-initializer-microservice.mdc` - 数据初始化微服务
+1. `database-initialization.mdc` - 数据初始化微服务（已合并）
 2. `mongodb-atomic-operations.mdc` - 原子操作
 3. `error-handling.mdc` - 错误处理
 4. `testing-standards.mdc` - 测试规范
@@ -478,4 +467,4 @@ description: TypeScript 编码规范和最佳实践
 
 💡 **提示**: 这些规则由项目团队维护，确保 Cursor AI 能够提供准确、一致的代码建议。如有问题或建议，欢迎提出！
 
-**最后更新**: 2025-01-XX (v5.9 - 压缩规则文件：合并 api-controllers、database-operation-factory-auto-audit、backend-data-models-soft-delete，规则总数优化至 24 个)
+**最后更新**: 2025-01-XX (v6.0 - 规则文件清理和合并：合并扩展方法、数据库初始化、多租户实体设计、前端开发、依赖注入、日志监控和中间件，规则总数优化至 19 个)

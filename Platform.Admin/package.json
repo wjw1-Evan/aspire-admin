@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@ant-design/pro-cli": "^3.1.0",
-    "@biomejs/biome": "^2.3.3",
+    "@biomejs/biome": "^2.3.4",
     "@types/express": "^5.0.5",
     "@types/lodash": "^4.17.10",
     "@types/node": "^24.9.1",

@@ -88,19 +88,17 @@ public interface IMyEntityService
 }
 
 // ✅ 服务实现
-public class MyEntityService : BaseService, IMyEntityService
+public class MyEntityService : IMyEntityService
 {
     private readonly IDatabaseOperationFactory<MyEntity> _entityFactory;
+    private readonly ILogger<MyEntityService> _logger;
     
     public MyEntityService(
-        IMongoDatabase database,
         IDatabaseOperationFactory<MyEntity> entityFactory,
-        IHttpContextAccessor httpContextAccessor,
-        ITenantContext tenantContext,
         ILogger<MyEntityService> logger)
-        : base(database, httpContextAccessor, tenantContext, logger)
     {
         _entityFactory = entityFactory;
+        _logger = logger;
     }
     
     public async Task<List<MyEntity>> GetAllAsync()
@@ -119,7 +117,7 @@ public class MyEntityService : BaseService, IMyEntityService
         var entity = new MyEntity
         {
             Name = request.Name,
-            CompanyId = GetRequiredCompanyId()  // ✅ 手动设置 CompanyId
+            CompanyId = _entityFactory.GetRequiredCompanyId()  // ✅ 从工厂获取 CompanyId
             // ✅ CreatedAt, UpdatedAt, IsDeleted 由数据工厂自动设置
         };
         
@@ -325,23 +323,23 @@ public class MyEntity : IEntity, ISoftDeletable, ITimestamped
 }
 ```
 
-### 错误 2：服务构造函数缺少 ITenantContext
+### 错误 2：服务构造函数缺少必要的依赖
 
 ```csharp
-// ❌ 错误：缺少 ITenantContext
-public MyService(
-    IMongoDatabase database,
-    IHttpContextAccessor httpContextAccessor,
-    ILogger<MyService> logger)
-    : base(database, httpContextAccessor, logger)  // ❌ 编译错误
+// ❌ 错误：缺少 IDatabaseOperationFactory
+public MyService(ILogger<MyService> logger)
+{
+    // ❌ 无法进行数据访问
+}
 
-// ✅ 正确：包含 ITenantContext
+// ✅ 正确：注入 IDatabaseOperationFactory
 public MyService(
-    IMongoDatabase database,
-    IHttpContextAccessor httpContextAccessor,
-    ITenantContext tenantContext,  // ✅
+    IDatabaseOperationFactory<MyEntity> entityFactory,
     ILogger<MyService> logger)
-    : base(database, httpContextAccessor, tenantContext, logger)
+{
+    _entityFactory = entityFactory;  // ✅ 通过工厂进行数据访问
+    _logger = logger;
+}
 ```
 
 ### 错误 3：直接使用 IMongoCollection 或 BaseRepository
@@ -384,7 +382,7 @@ builder.Services.AddScoped<IMyEntityService, MyEntityService>();
 - [ ] 1. 创建实体类（包含 CompanyId，实现 IMultiTenant 接口）
 - [ ] 2. 实现 IEntity, ISoftDeletable, ITimestamped, IMultiTenant
 - [ ] 3. 创建请求/响应模型
-- [ ] 4. 创建服务接口和实现（继承 BaseService）
+- [ ] 4. 创建服务接口和实现（直接实现接口，注入 IDatabaseOperationFactory）
 - [ ] 5. 使用 IDatabaseOperationFactory<T> 进行数据访问
 - [ ] 6. 在 Program.cs 注册数据库操作工厂和服务
 - [ ] 7. 创建控制器（继承 BaseApiController）

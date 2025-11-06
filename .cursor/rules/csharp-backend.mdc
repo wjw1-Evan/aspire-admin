@@ -407,6 +407,327 @@ var filter = _userFactory.CreateFilterBuilder()
     .Build();
 ```
 
+## 🔧 依赖注入和配置管理
+
+### 服务生命周期
+
+```csharp
+// ✅ 正确的服务生命周期选择
+builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();  // 单例：配置服务
+builder.Services.AddScoped<IUserService, UserService>();                      // 作用域：业务服务
+builder.Services.AddTransient<IValidator, RequestValidator>();                // 瞬时：验证器
+```
+
+### 接口优先原则
+
+```csharp
+// ✅ 推荐：面向接口编程
+public interface IUserService
+{
+    Task<User> GetUserByIdAsync(string id);
+    Task<User> CreateUserAsync(CreateUserRequest request);
+}
+
+public class UserService : IUserService
+{
+    // 实现
+}
+
+// 注册服务
+builder.Services.AddScoped<IUserService, UserService>();
+```
+
+### 服务注册模式
+
+```csharp
+// ✅ 标准服务注册
+public static class ServiceCollectionExtensions
+{
+    /// <summary>
+    /// 添加数据库操作工厂服务
+    /// </summary>
+    public static IServiceCollection AddDatabaseFactory(this IServiceCollection services)
+    {
+        services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped(typeof(IDatabaseOperationFactory<>), typeof(DatabaseOperationFactory<>));
+        return services;
+    }
+
+    /// <summary>
+    /// 添加业务服务
+    /// </summary>
+    public static IServiceCollection AddBusinessServices(this IServiceCollection services)
+    {
+        // 用户相关服务
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserCompanyService, UserCompanyService>();
+        services.AddScoped<IUserActivityLogService, UserActivityLogService>();
+        
+        // 企业相关服务
+        services.AddScoped<ICompanyService, CompanyService>();
+        services.AddScoped<IJoinRequestService, JoinRequestService>();
+        
+        // 权限相关服务
+        services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<IMenuAccessService, MenuAccessService>();
+        
+        // 工具服务
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IJwtService, JwtService>();
+        
+        return services;
+    }
+}
+```
+
+### MongoDB 集合注册
+
+```csharp
+// Platform.ApiService/Extensions/MongoDbExtensions.cs
+public static class MongoDbExtensions
+{
+    /// <summary>
+    /// 注册 MongoDB 集合
+    /// </summary>
+    public static IServiceCollection AddMongoCollections(this IServiceCollection services)
+    {
+        services.AddSingleton<IMongoCollection<AppUser>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<AppUser>("users");
+        });
+
+        services.AddSingleton<IMongoCollection<Company>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<Company>("companies");
+        });
+
+        services.AddSingleton<IMongoCollection<Role>>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return database.GetCollection<Role>("roles");
+        });
+
+        // ... 其他集合注册
+        return services;
+    }
+}
+```
+
+### 配置管理
+
+```csharp
+// ✅ 强类型配置
+public class JwtSettings
+{
+    public string SecretKey { get; set; } = string.Empty;
+    public string Issuer { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+    public int ExpirationMinutes { get; set; } = 60;
+    public int RefreshTokenExpirationDays { get; set; } = 7;
+}
+
+// 注册配置
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+// 使用配置
+public class JwtService : IJwtService
+{
+    private readonly JwtSettings _jwtSettings;
+    
+    public JwtService(IOptions<JwtSettings> jwtSettings)
+    {
+        _jwtSettings = jwtSettings.Value;
+    }
+}
+```
+
+### 选项模式
+
+```csharp
+// ✅ 选项模式实现
+public class DatabaseOptions
+{
+    public string ConnectionString { get; set; } = string.Empty;
+    public string DatabaseName { get; set; } = string.Empty;
+    public int MaxPoolSize { get; set; } = 100;
+    public TimeSpan ConnectionTimeout { get; set; } = TimeSpan.FromSeconds(30);
+}
+
+// 注册选项
+builder.Services.Configure<DatabaseOptions>(
+    builder.Configuration.GetSection("Database"));
+
+// 验证选项
+builder.Services.AddOptions<DatabaseOptions>()
+    .Bind(builder.Configuration.GetSection("Database"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
+### 工厂模式
+
+```csharp
+// ✅ 服务工厂模式
+public interface IHttpClientFactory
+{
+    HttpClient CreateClient(string name);
+}
+
+public class CustomHttpClientFactory : IHttpClientFactory
+{
+    private readonly IHttpClientFactory _httpClientFactory;
+    
+    public CustomHttpClientFactory(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory;
+    }
+    
+    public HttpClient CreateClient(string name)
+    {
+        var client = _httpClientFactory.CreateClient(name);
+        // 配置客户端
+        client.DefaultRequestHeaders.Add("User-Agent", "Platform-Client");
+        return client;
+    }
+}
+
+// 注册工厂
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IHttpClientFactory, CustomHttpClientFactory>();
+```
+
+### 装饰器模式
+
+```csharp
+// ✅ 装饰器模式实现
+public interface IUserService
+{
+    Task<User> GetUserByIdAsync(string id);
+}
+
+public class UserService : IUserService
+{
+    // 基础实现
+}
+
+public class CachedUserService : IUserService
+{
+    private readonly IUserService _userService;
+    private readonly IMemoryCache _cache;
+    
+    public CachedUserService(IUserService userService, IMemoryCache cache)
+    {
+        _userService = userService;
+        _cache = cache;
+    }
+    
+    public async Task<User> GetUserByIdAsync(string id)
+    {
+        var cacheKey = $"user_{id}";
+        if (_cache.TryGetValue(cacheKey, out User? cachedUser))
+            return cachedUser!;
+            
+        var user = await _userService.GetUserByIdAsync(id);
+        _cache.Set(cacheKey, user, TimeSpan.FromMinutes(5));
+        return user;
+    }
+}
+
+// 注册装饰器
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.Decorate<IUserService, CachedUserService>();
+```
+
+### 依赖注入最佳实践
+
+```csharp
+// ✅ 自动注册服务
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddServicesFromAssembly(this IServiceCollection services, Assembly assembly)
+    {
+        var serviceTypes = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .Where(t => t.GetInterfaces().Any(i => i.Name == $"I{t.Name}"));
+
+        foreach (var serviceType in serviceTypes)
+        {
+            var interfaceType = serviceType.GetInterfaces()
+                .First(i => i.Name == $"I{serviceType.Name}");
+            
+            services.AddScoped(interfaceType, serviceType);
+        }
+
+        return services;
+    }
+}
+
+// ✅ 条件注册服务
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddScoped<IDevelopmentService, DevelopmentService>();
+}
+else
+{
+    builder.Services.AddScoped<IProductionService, ProductionService>();
+}
+
+// ✅ 健康检查服务注册
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database")
+    .AddCheck<ExternalApiHealthCheck>("external-api");
+```
+
+### 依赖注入禁止的做法
+
+```csharp
+// ❌ 禁止：服务定位器模式
+public class UserController : ControllerBase
+{
+    public async Task<IActionResult> GetUser(string id)
+    {
+        var userService = HttpContext.RequestServices.GetService<IUserService>();
+        // 使用服务
+    }
+}
+
+// ✅ 正确：构造函数注入
+public class UserController : ControllerBase
+{
+    private readonly IUserService _userService;
+    
+    public UserController(IUserService userService)
+    {
+        _userService = userService;
+    }
+}
+
+// ❌ 禁止：注册具体类型
+builder.Services.AddScoped<UserService>();
+
+// ✅ 正确：注册接口
+builder.Services.AddScoped<IUserService, UserService>();
+
+// ❌ 禁止：业务服务使用单例
+builder.Services.AddSingleton<IUserService, UserService>();
+
+// ✅ 正确：业务服务使用作用域
+builder.Services.AddScoped<IUserService, UserService>();
+
+// ❌ 禁止：不验证配置
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+// ✅ 正确：验证配置
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection("Jwt"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
 ## 📋 代码审查清单
 
 在提交代码前，检查：
@@ -421,6 +742,15 @@ var filter = _userFactory.CreateFilterBuilder()
 - [ ] 查询使用了适当的索引和分页
 - [ ] 代码有适当的 XML 文档注释
 - [ ] 遵循了命名规范和项目结构
+- [ ] 使用接口而不是具体类型进行服务注册
+- [ ] 选择正确的生命周期（Singleton/Scoped/Transient）
+- [ ] 验证配置选项
+- [ ] 避免循环依赖
+- [ ] 使用结构化日志记录
+- [ ] 记录性能指标和操作日志
+- [ ] 实现健康检查
+- [ ] 中间件使用异步操作避免阻塞
+- [ ] 在请求线程中提取数据，避免后台线程访问 HttpContext
 
 ## 📚 相关文档
 
@@ -428,6 +758,11 @@ var filter = _userFactory.CreateFilterBuilder()
 - [后端数据访问层规范](mdc:.cursor/rules/backend-data-access.mdc)
 - [异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
 - [服务扩展方法](mdc:Platform.ServiceDefaults/Extensions/ServiceExtensions.cs)
+- [MongoDB 集合注册](mdc:Platform.ApiService/Extensions/MongoDbExtensions.cs)
+- [配置管理服务](mdc:Platform.ApiService/Configuration/)
+- [Program.cs 配置](mdc:Platform.ApiService/Program.cs)
+- [.NET 依赖注入文档](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection)
+- [配置选项模式](https://docs.microsoft.com/aspnet/core/fundamentals/configuration/options)
 
 ## 🎯 记住
 

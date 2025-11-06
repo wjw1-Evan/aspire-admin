@@ -187,32 +187,26 @@ public class UserService : IUserService
 ### 里氏替换原则 (LSP)
 
 ```csharp
-// ✅ 正确 - 子类可以替换父类
-public abstract class BaseService
+// ✅ 正确 - 使用接口实现，子类可以替换父类
+public interface IValidationService
 {
-    protected readonly ILogger Logger;
-
-    protected BaseService(ILogger logger)
-    {
-        Logger = logger;
-    }
-
-    public abstract Task<bool> ValidateAsync();
+    Task<bool> ValidateAsync();
 }
 
-public class UserService : BaseService
+public class UserService : IUserService, IValidationService
 {
     private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly ILogger<UserService> _logger;
 
     public UserService(
         IDatabaseOperationFactory<User> userFactory,
         ILogger<UserService> logger)
-        : base(logger)
     {
         _userFactory = userFactory;
+        _logger = logger;
     }
 
-    public override async Task<bool> ValidateAsync()
+    public async Task<bool> ValidateAsync()
     {
         // 用户服务特定的验证逻辑
         var userCount = await _userFactory.CountAsync();
@@ -220,19 +214,20 @@ public class UserService : BaseService
     }
 }
 
-public class RoleService : BaseService
+public class RoleService : IRoleService, IValidationService
 {
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly ILogger<RoleService> _logger;
 
     public RoleService(
         IDatabaseOperationFactory<Role> roleFactory,
         ILogger<RoleService> logger)
-        : base(logger)
     {
         _roleFactory = roleFactory;
+        _logger = logger;
     }
 
-    public override async Task<bool> ValidateAsync()
+    public async Task<bool> ValidateAsync()
     {
         // 角色服务特定的验证逻辑
         var roleCount = await _roleFactory.CountAsync();
@@ -240,12 +235,12 @@ public class RoleService : BaseService
     }
 }
 
-// 使用基类引用，子类可以正确替换
+// 使用接口引用，实现类可以正确替换
 public class ServiceValidator
 {
-    private readonly BaseService _service;
+    private readonly IValidationService _service;
 
-    public ServiceValidator(BaseService service)
+    public ServiceValidator(IValidationService service)
     {
         _service = service;
     }
@@ -257,19 +252,8 @@ public class ServiceValidator
 }
 
 // ❌ 错误 - 违反里氏替换原则
-public abstract class BaseService
-{
-    public abstract Task<bool> ValidateAsync();
-}
-
-public class UserService : BaseService
-{
-    public override async Task<bool> ValidateAsync()
-    {
-        // 抛出异常，违反了LSP
-        throw new NotImplementedException("用户服务验证未实现");
-    }
-}
+// 注意：BaseService 已完全移除，不应使用基类继承模式
+// 如果使用接口，所有实现类都应该能够正确替换，不应该抛出 NotImplementedException
 ```
 
 ### 接口隔离原则 (ISP)

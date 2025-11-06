@@ -1,6 +1,6 @@
 ---
 globs: *.ts,*.tsx,*.js,*.jsx
-description: 前端开发规范和最佳实践
+description: 前端开发规范和最佳实践 - React 组件、TypeScript、状态管理、样式和性能优化
 ---
 
 # 前端开发规范
@@ -66,89 +66,74 @@ type UserStatus = 'active' | 'inactive' | 'pending';
 
 ## 🔧 组件开发规范
 
-### 1. 函数组件规范
+### 组件结构
 
 ```typescript
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, message } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+// ✅ 推荐：标准的组件结构
+import React, { useState, useCallback } from 'react';
+import { Card, Button } from 'antd';
+import type { UserCardProps } from './types';
 
-interface UserTableProps {
-  users: User[];
-  loading?: boolean;
-  onEdit?: (user: User) => void;
-  onDelete?: (userId: string) => void;
+export default function UserCard({ user, onEdit }: UserCardProps) {
+  // 1. Hooks
+  const [loading, setLoading] = useState(false);
+  
+  // 2. 事件处理函数
+  const handleEdit = useCallback(() => {
+    onEdit?.(user);
+  }, [user, onEdit]);
+  
+  // 3. 渲染逻辑
+  return (
+    <Card>
+      <h3>{user.name}</h3>
+      <Button onClick={handleEdit}>编辑</Button>
+    </Card>
+  );
+}
+```
+
+### Props 设计
+
+```typescript
+// ✅ 推荐：明确的 Props 接口
+interface UserCardProps {
+  readonly user: User;
+  readonly onEdit?: (user: User) => void;
+  readonly onDelete?: (userId: string) => void;
+  readonly loading?: boolean;
+  readonly className?: string;
 }
 
-/**
- * 用户表格组件
- * @param props - 组件属性
- */
-export const UserTable: React.FC<UserTableProps> = ({
-  users,
-  loading = false,
-  onEdit,
-  onDelete
-}) => {
-  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
-
-  const handleEdit = useCallback((user: User) => {
-    onEdit?.(user);
-  }, [onEdit]);
-
-  const handleDelete = useCallback((userId: string) => {
-    onDelete?.(userId);
-  }, [onDelete]);
-
-  const columns: ColumnsType<User> = [
-    {
-      title: '用户名',
-      dataIndex: 'username',
-      key: 'username',
-    },
-    {
-      title: '邮箱',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_, record) => (
-        <div>
-          <Button type="link" onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Button 
-            type="link" 
-            danger 
-            onClick={() => handleDelete(record.id)}
-          >
-            删除
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
+// ✅ 单一职责原则
+export const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
   return (
-    <Card title="用户列表">
-      <Table
-        columns={columns}
-        dataSource={users}
-        loading={loading}
-        rowKey="id"
-        rowSelection={{
-          selectedRowKeys,
-          onChange: setSelectedRowKeys,
-        }}
-      />
+    <Card>
+      <CardHeader>
+        <Avatar src={user.avatar} />
+        <Typography>{user.name}</Typography>
+      </CardHeader>
+      <CardActions>
+        <Button onClick={() => onEdit?.(user)}>编辑</Button>
+        <Button onClick={() => onDelete?.(user.id)}>删除</Button>
+      </CardActions>
     </Card>
   );
 };
 ```
 
-### 2. 自定义 Hook 规范
+### 组件分层架构
+
+```typescript
+// ✅ 组件分层架构
+// 1. 页面组件 (Pages) - 业务逻辑和状态管理
+// 2. 容器组件 (Containers) - 数据获取和状态管理
+// 3. 展示组件 (Presentational) - 纯展示逻辑
+// 4. 基础组件 (Base) - 可复用的基础组件
+// 5. 布局组件 (Layout) - 页面布局结构
+```
+
+## 🎯 自定义 Hook 规范
 
 ```typescript
 import { useState, useEffect, useCallback } from 'react';
@@ -235,7 +220,7 @@ export const useUserList = (options: UseUserListOptions = {}): UseUserListReturn
 };
 ```
 
-### 3. API 服务规范
+## 🔧 API 服务规范
 
 ```typescript
 import { request } from '@umijs/max';
@@ -303,7 +288,7 @@ export const userService = {
 
 ## 🎨 样式规范
 
-### 1. CSS-in-JS 使用
+### CSS-in-JS 使用
 
 ```typescript
 import { styled } from '@emotion/styled';
@@ -339,7 +324,7 @@ const containerStyle: React.CSSProperties = {
 };
 ```
 
-### 2. 响应式设计
+### 响应式设计
 
 ```typescript
 import { useBreakpoint } from 'antd';
@@ -361,9 +346,27 @@ const UserManagement: React.FC = () => {
 };
 ```
 
+### 主题化组件（移动端）
+
+```typescript
+// ✅ 推荐：使用主题化组件
+import { ThemedText, ThemedView, ThemedButton } from '@/components';
+
+export default function ProfileScreen() {
+  const backgroundColor = useThemeColor({}, 'background');
+  
+  return (
+    <ThemedView style={{ backgroundColor }}>
+      <ThemedText type="title">个人中心</ThemedText>
+      <ThemedButton title="编辑资料" />
+    </ThemedView>
+  );
+}
+```
+
 ## 🔍 状态管理规范
 
-### 1. 本地状态管理
+### 本地状态管理
 
 ```typescript
 import { useState, useReducer } from 'react';
@@ -413,7 +416,7 @@ const useUserManagement = () => {
 };
 ```
 
-### 2. 全局状态管理
+### 全局状态管理
 
 ```typescript
 import { create } from 'zustand';
@@ -521,9 +524,32 @@ const loadUsers = async () => {
 };
 ```
 
+### 4. 不要忘记清理副作用
+
+```typescript
+// ❌ 禁止：忘记清理副作用
+useEffect(() => {
+  const timer = setInterval(() => {
+    // 定时任务
+  }, 1000);
+  // ❌ 没有清理
+}, []);
+
+// ✅ 正确：清理副作用
+useEffect(() => {
+  const timer = setInterval(() => {
+    // 定时任务
+  }, 1000);
+  
+  return () => {
+    clearInterval(timer);  // ✅ 清理
+  };
+}, []);
+```
+
 ## 🔐 安全规范
 
-### 1. 输入验证
+### 输入验证
 
 ```typescript
 import { z } from 'zod';
@@ -544,7 +570,7 @@ const validateUser = (data: unknown) => {
 };
 ```
 
-### 2. XSS 防护
+### XSS 防护
 
 ```typescript
 import DOMPurify from 'dompurify';
@@ -566,6 +592,81 @@ const SafeContent: React.FC<{ content: string }> = ({ content }) => {
 };
 ```
 
+## 🔧 性能优化
+
+### 记忆化
+
+```typescript
+// ✅ 推荐：使用 useMemo 和 useCallback
+const expensiveValue = useMemo(() => {
+  return computeExpensiveValue(data);
+}, [data]);
+
+const handleClick = useCallback(() => {
+  onItemClick(item.id);
+}, [item.id, onItemClick]);
+```
+
+### 懒加载
+
+```typescript
+// ✅ 推荐：使用 React.lazy 进行代码分割
+const UserManagement = lazy(() => import('./UserManagement'));
+
+// 使用 Suspense 包装
+<Suspense fallback={<Loading />}>
+  <UserManagement />
+</Suspense>
+```
+
+### 列表优化
+
+```typescript
+// ✅ 推荐：使用虚拟滚动（大数据列表）
+import { VirtualList } from 'antd';
+
+const UserList: React.FC<{ users: User[] }> = ({ users }) => {
+  return (
+    <VirtualList
+      dataSource={users}
+      height={600}
+      itemHeight={50}
+      renderItem={(user) => (
+        <List.Item key={user.id}>
+          {user.name}
+        </List.Item>
+      )}
+    />
+  );
+};
+```
+
+## 📱 移动端特定规范
+
+### 导航
+
+```typescript
+// ✅ 推荐：使用 Expo Router
+import { router } from 'expo-router';
+
+const navigateToProfile = () => {
+  router.push('/profile');
+};
+```
+
+### 平台适配
+
+```typescript
+// ✅ 推荐：使用 Platform 进行平台适配
+import { Platform } from 'react-native';
+
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: Platform.OS === 'ios' ? 44 : 24,
+  },
+});
+```
+
 ## 📋 代码审查清单
 
 在提交代码前，检查：
@@ -580,6 +681,7 @@ const SafeContent: React.FC<{ content: string }> = ({ content }) => {
 - [ ] 输入验证和 XSS 防护到位
 - [ ] 组件有适当的文档注释
 - [ ] 遵循了无障碍访问规范
+- [ ] 性能优化到位（useMemo、useCallback、懒加载）
 
 ## 📚 相关文档
 
@@ -587,6 +689,8 @@ const SafeContent: React.FC<{ content: string }> = ({ content }) => {
 - [React 19 官方文档](https://react.dev/)
 - [TypeScript 官方文档](https://www.typescriptlang.org/)
 - [UmiJS 官方文档](https://umijs.org/)
+- [React Native 官方文档](https://reactnative.dev/)
+- [Expo 官方文档](https://docs.expo.dev/)
 
 ## 🎯 记住
 

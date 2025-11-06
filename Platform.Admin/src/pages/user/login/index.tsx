@@ -84,6 +84,7 @@ const Login: React.FC = () => {
   const [type, setType] = useState<string>('account');
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
+  const [showCaptcha, setShowCaptcha] = useState<boolean>(false); // 控制验证码显示
   const captchaRef = useRef<ImageCaptchaRef>(null);
   const { initialState, setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
@@ -146,10 +147,19 @@ const Login: React.FC = () => {
       const errorMsg = response.errorMessage || '登录失败，请重试！';
       setUserLoginState({ status: 'error', errorMessage: errorMsg });
       
-      // 如果是验证码错误，自动刷新验证码
-      if (response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
-        if (captchaRef.current) {
-          await captchaRef.current.refresh();
+      // 登录失败后显示验证码
+      if (response.errorCode === 'LOGIN_FAILED' || response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
+        setShowCaptcha(true);
+        // 如果是验证码错误，自动刷新验证码
+        if (response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        } else {
+          // 第一次失败，获取新的验证码
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
         }
       }
     } catch (error: any) {
@@ -165,10 +175,19 @@ const Login: React.FC = () => {
       // 从错误对象中提取 errorCode（错误拦截器会在 error.info 中存储）
       const errorCode = error?.info?.errorCode || error?.errorCode;
       
-      // 如果是验证码错误，自动刷新验证码
-      if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
-        if (captchaRef.current) {
-          await captchaRef.current.refresh();
+      // 登录失败后显示验证码
+      if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+        setShowCaptcha(true);
+        // 如果是验证码错误，自动刷新验证码
+        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        } else {
+          // 第一次失败，获取新的验证码
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
         }
       }
     }
@@ -290,18 +309,20 @@ const Login: React.FC = () => {
                   },
                 ]}
               />
-              <ImageCaptcha
-                ref={captchaRef}
-                value={captchaAnswer}
-                onChange={setCaptchaAnswer}
-                onCaptchaIdChange={setCaptchaId}
-                type="login"
-                placeholder={intl.formatMessage({
-                  id: 'pages.login.imageCaptcha.placeholder',
-                  defaultMessage: '请输入图形验证码',
-                })}
-                size="large"
-              />
+              {showCaptcha && (
+                <ImageCaptcha
+                  ref={captchaRef}
+                  value={captchaAnswer}
+                  onChange={setCaptchaAnswer}
+                  onCaptchaIdChange={setCaptchaId}
+                  type="login"
+                  placeholder={intl.formatMessage({
+                    id: 'pages.login.imageCaptcha.placeholder',
+                    defaultMessage: '请输入图形验证码',
+                  })}
+                  size="large"
+                />
+              )}
             </>
           )}
 

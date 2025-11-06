@@ -5,6 +5,7 @@ using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Security.Claims;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -26,6 +27,7 @@ public class AuthService : IAuthService
     private readonly IFieldValidationService _validationService;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IImageCaptchaService _imageCaptchaService;
+    private readonly IDatabaseOperationFactory<LoginFailureRecord> _failureRecordFactory;
 
     /// <summary>
     /// 初始化认证服务
@@ -43,6 +45,7 @@ public class AuthService : IAuthService
     /// <param name="validationService">字段验证服务</param>
     /// <param name="passwordHasher">密码哈希服务</param>
     /// <param name="imageCaptchaService">图形验证码服务</param>
+    /// <param name="failureRecordFactory">登录失败记录数据操作工厂</param>
     public AuthService(
         IDatabaseOperationFactory<User> userFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
@@ -56,7 +59,8 @@ public class AuthService : IAuthService
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
         IPasswordHasher passwordHasher,
-        IImageCaptchaService imageCaptchaService)
+        IImageCaptchaService imageCaptchaService,
+        IDatabaseOperationFactory<LoginFailureRecord> failureRecordFactory)
     {
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
@@ -71,10 +75,113 @@ public class AuthService : IAuthService
         _validationService = validationService;
         _passwordHasher = passwordHasher;
         _imageCaptchaService = imageCaptchaService;
+        _failureRecordFactory = failureRecordFactory;
     }
 
     // 🔒 安全修复：移除静态密码哈希方法，统一使用注入的 IPasswordHasher
     // 这样可以集中管理密码哈希逻辑，便于测试和更换哈希算法
+
+    /// <summary>
+    /// 获取失败尝试次数（用于判断是否需要验证码）
+    /// </summary>
+    /// <param name="clientId">客户端标识（IP地址或用户名）</param>
+    /// <param name="type">类型（login 或 register）</param>
+    /// <returns>失败次数</returns>
+    private async Task<int> GetFailureCountAsync(string clientId, string type)
+    {
+        var filter = _failureRecordFactory.CreateFilterBuilder()
+            .Equal(r => r.ClientId, clientId)
+            .Equal(r => r.Type, type)
+            .GreaterThan(r => r.ExpiresAt, DateTime.UtcNow) // 只查询未过期的记录
+            .Build();
+        
+        var records = await _failureRecordFactory.FindWithoutTenantFilterAsync(filter);
+        var record = records.FirstOrDefault();
+        
+        return record?.FailureCount ?? 0;
+    }
+
+    /// <summary>
+    /// 记录失败尝试（增加失败次数）
+    /// </summary>
+    /// <param name="clientId">客户端标识（IP地址或用户名）</param>
+    /// <param name="type">类型（login 或 register）</param>
+    private async Task RecordFailureAsync(string clientId, string type)
+    {
+        var filter = _failureRecordFactory.CreateFilterBuilder()
+            .Equal(r => r.ClientId, clientId)
+            .Equal(r => r.Type, type)
+            .Build();
+        
+        var existingRecords = await _failureRecordFactory.FindWithoutTenantFilterAsync(filter);
+        var existingRecord = existingRecords.FirstOrDefault();
+        
+        if (existingRecord != null)
+        {
+            // 更新现有记录
+            var update = _failureRecordFactory.CreateUpdateBuilder()
+                .Set(r => r.FailureCount, existingRecord.FailureCount + 1)
+                .Set(r => r.LastFailureAt, DateTime.UtcNow)
+                .Set(r => r.ExpiresAt, DateTime.UtcNow.AddMinutes(30)) // 重置过期时间
+                .Build();
+            
+            await _failureRecordFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update);
+        }
+        else
+        {
+            // 创建新记录（使用 FindOneAndReplace 配合 IsUpsert）
+            var newRecord = new LoginFailureRecord
+            {
+                ClientId = clientId,
+                Type = type,
+                FailureCount = 1,
+                LastFailureAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30)
+            };
+            
+            var options = new FindOneAndReplaceOptions<LoginFailureRecord>
+            {
+                IsUpsert = true,  // 如果不存在则插入
+                ReturnDocument = ReturnDocument.After
+            };
+            
+            await _failureRecordFactory.FindOneAndReplaceWithoutTenantFilterAsync(filter, newRecord, options);
+        }
+    }
+
+    /// <summary>
+    /// 清除失败记录（登录/注册成功时调用）
+    /// </summary>
+    /// <param name="clientId">客户端标识（IP地址或用户名）</param>
+    /// <param name="type">类型（login 或 register）</param>
+    private async Task ClearFailureAsync(string clientId, string type)
+    {
+        var filter = _failureRecordFactory.CreateFilterBuilder()
+            .Equal(r => r.ClientId, clientId)
+            .Equal(r => r.Type, type)
+            .Build();
+        
+        // 使用软删除（原子操作）
+        await _failureRecordFactory.FindOneAndSoftDeleteWithoutTenantFilterAsync(filter);
+    }
+
+    /// <summary>
+    /// 获取客户端标识（IP地址或用户名）
+    /// </summary>
+    /// <param name="username">用户名（可选）</param>
+    /// <returns>客户端标识</returns>
+    private string GetClientIdentifier(string? username = null)
+    {
+        // 优先使用用户名，如果没有则使用IP地址
+        if (!string.IsNullOrEmpty(username))
+        {
+            return username.ToLowerInvariant();
+        }
+
+        var httpContext = _httpContextAccessor.HttpContext;
+        var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
+        return ipAddress;
+    }
 
     /// <summary>
     /// 获取当前登录用户信息
@@ -193,22 +300,30 @@ public class AuthService : IAuthService
     /// <returns>登录结果，包含 Token 和用户信息</returns>
     public async Task<ApiResponse<LoginData>> LoginAsync(LoginRequest request)
     {
-        // 验证图形验证码 - 必填项
-        if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
-        {
-            return ApiResponse<LoginData>.ErrorResult(
-                "CAPTCHA_REQUIRED",
-                "图形验证码是必填项，请先获取验证码"
-            );
-        }
+        var clientId = GetClientIdentifier(request.Username);
+        var failureCount = await GetFailureCountAsync(clientId, "login");
+        var requiresCaptcha = failureCount > 0; // 失败过一次后需要验证码
 
-        var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
-        if (!captchaValid)
+        // 如果之前失败过，需要验证码
+        if (requiresCaptcha)
         {
-            return ApiResponse<LoginData>.ErrorResult(
-                "CAPTCHA_INVALID",
-                "图形验证码错误，请重新输入"
-            );
+            if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
+            {
+                return ApiResponse<LoginData>.ErrorResult(
+                    "CAPTCHA_REQUIRED",
+                    "登录失败后需要输入验证码，请先获取验证码"
+                );
+            }
+
+            var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
+            if (!captchaValid)
+            {
+                await RecordFailureAsync(clientId, "login"); // 验证码错误也记录失败
+                return ApiResponse<LoginData>.ErrorResult(
+                    "CAPTCHA_INVALID",
+                    "图形验证码错误，请重新输入"
+                );
+            }
         }
 
         // v3.1: 用户名全局查找（不需要企业代码）
@@ -221,6 +336,7 @@ public class AuthService : IAuthService
         
         if (user == null)
         {
+            await RecordFailureAsync(clientId, "login");
             return ApiResponse<LoginData>.ErrorResult(
                 "LOGIN_FAILED", 
                 "用户名或密码错误，请检查后重试"
@@ -230,11 +346,15 @@ public class AuthService : IAuthService
         // 验证密码
         if (!_passwordHasher.VerifyPassword(request.Password ?? string.Empty, user.PasswordHash))
         {
+            await RecordFailureAsync(clientId, "login");
             return ApiResponse<LoginData>.ErrorResult(
                 "LOGIN_FAILED", 
                 "用户名或密码错误，请检查后重试"
             );
         }
+
+        // 登录成功，清除失败记录
+        await ClearFailureAsync(clientId, "login");
 
         // v3.1: 检查当前企业状态（如果有）
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
@@ -328,22 +448,30 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task<ApiResponse<User>> RegisterAsync(RegisterRequest request)
     {
-        // 验证图形验证码 - 必填项
-        if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
-        {
-            return ApiResponse<User>.ErrorResult(
-                "CAPTCHA_REQUIRED",
-                "图形验证码是必填项，请先获取验证码"
-            );
-        }
+        var clientId = GetClientIdentifier(request.Username);
+        var failureCount = await GetFailureCountAsync(clientId, "register");
+        var requiresCaptcha = failureCount > 0; // 失败过一次后需要验证码
 
-        var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
-        if (!captchaValid)
+        // 如果之前失败过，需要验证码
+        if (requiresCaptcha)
         {
-            return ApiResponse<User>.ErrorResult(
-                "CAPTCHA_INVALID",
-                "图形验证码错误，请重新输入"
-            );
+            if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
+            {
+                return ApiResponse<User>.ErrorResult(
+                    "CAPTCHA_REQUIRED",
+                    "注册失败后需要输入验证码，请先获取验证码"
+                );
+            }
+
+            var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
+            if (!captchaValid)
+            {
+                await RecordFailureAsync(clientId, "register"); // 验证码错误也记录失败
+                return ApiResponse<User>.ErrorResult(
+                    "CAPTCHA_INVALID",
+                    "图形验证码错误，请重新输入"
+                );
+            }
         }
 
         // 1. 验证输入
@@ -352,10 +480,27 @@ public class AuthService : IAuthService
         _validationService.ValidateEmail(request.Email);
         
         // 2. 检查用户名全局唯一
-        await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username);
+        try
+        {
+            await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username);
+        }
+        catch (InvalidOperationException)
+        {
+            await RecordFailureAsync(clientId, "register");
+            throw; // 重新抛出异常，让调用者处理
+        }
+        
         if (!string.IsNullOrEmpty(request.Email))
         {
-            await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
+            try
+            {
+                await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
+            }
+            catch (InvalidOperationException)
+            {
+                await RecordFailureAsync(clientId, "register");
+                throw; // 重新抛出异常，让调用者处理
+            }
         }
 
         // 3. 执行注册流程（使用错误回滚机制，因为单机MongoDB不支持事务）
@@ -407,16 +552,21 @@ public class AuthService : IAuthService
             _logger.LogInformation("用户 {Username} 注册完成，个人企业: {CompanyName}", 
                 user.Username, personalCompany.Name);
             
+            // 注册成功，清除失败记录
+            await ClearFailureAsync(clientId, "register");
+            
             return ApiResponse<User>.SuccessResult(user, "注册成功！已为您创建个人企业。");
         }
         catch (ArgumentException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
+            await RecordFailureAsync(clientId, "register");
             return ApiResponse<User>.ValidationErrorResult(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
+            await RecordFailureAsync(clientId, "register");
             // 唯一性检查失败
             var errorCode = ex.Message.Contains("用户名") ? "USER_EXISTS" : "EMAIL_EXISTS";
             return ApiResponse<User>.ErrorResult(errorCode, ex.Message);
@@ -424,6 +574,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
+            await RecordFailureAsync(clientId, "register");
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
             return ApiResponse<User>.ErrorResult("SERVER_ERROR", $"注册失败: {ex.Message}");
         }

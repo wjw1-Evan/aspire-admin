@@ -13,6 +13,7 @@ export default function Register() {
   const [registerError, setRegisterError] = useState<string>('');
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
+  const [showCaptcha, setShowCaptcha] = useState<boolean>(false); // 控制验证码显示
   const captchaRef = useRef<ImageCaptchaRef>(null);
   
   // 用户名检测状态
@@ -45,10 +46,21 @@ export default function Register() {
       const errorMsg = response.errorMessage || '注册失败';
       setRegisterError(errorMsg);
       
-      // 如果是验证码错误，自动刷新验证码
-      if (response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
-        if (captchaRef.current) {
-          await captchaRef.current.refresh();
+      // 注册失败后显示验证码
+      if (response.errorCode === 'USER_EXISTS' || response.errorCode === 'EMAIL_EXISTS' || 
+          response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED' ||
+          response.errorCode === 'SERVER_ERROR') {
+        setShowCaptcha(true);
+        // 如果是验证码错误，自动刷新验证码
+        if (response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        } else {
+          // 第一次失败，获取新的验证码
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
         }
       }
     } catch (error: any) {
@@ -58,10 +70,21 @@ export default function Register() {
       // 从错误对象中提取 errorCode（错误拦截器会在 error.info 中存储）
       const errorCode = error?.info?.errorCode || error?.errorCode;
       
-      // 如果是验证码错误，自动刷新验证码
-      if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
-        if (captchaRef.current) {
-          await captchaRef.current.refresh();
+      // 注册失败后显示验证码
+      if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' || 
+          errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' ||
+          errorCode === 'SERVER_ERROR') {
+        setShowCaptcha(true);
+        // 如果是验证码错误，自动刷新验证码
+        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        } else {
+          // 第一次失败，获取新的验证码
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
         }
       }
     }
@@ -297,15 +320,17 @@ export default function Register() {
               ]}
             />
 
-            <ImageCaptcha
-              ref={captchaRef}
-              value={captchaAnswer}
-              onChange={setCaptchaAnswer}
-              onCaptchaIdChange={setCaptchaId}
-              type="register"
-              placeholder="请输入图形验证码"
-              size="large"
-            />
+            {showCaptcha && (
+              <ImageCaptcha
+                ref={captchaRef}
+                value={captchaAnswer}
+                onChange={setCaptchaAnswer}
+                onCaptchaIdChange={setCaptchaId}
+                type="register"
+                placeholder="请输入图形验证码"
+                size="large"
+              />
+            )}
 
             <div
               style={{

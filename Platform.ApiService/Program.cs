@@ -166,6 +166,8 @@ builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 // Image Captcha service (Scoped - 使用 MongoDB 存储)
 builder.Services.AddScoped<IImageCaptchaService, ImageCaptchaService>();
 
+
+
 // 数据库初始化服务已迁移到 Platform.DataInitializer 微服务
 
 // Configure JWT authentication

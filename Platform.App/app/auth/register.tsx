@@ -1,6 +1,6 @@
 // 注册页面
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
@@ -19,6 +19,7 @@ import { ThemedInput } from '@/components/themed-input';
 import { ThemedButton } from '@/components/themed-button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 
 export default function RegisterScreen() {
   const [username, setUsername] = useState('');
@@ -29,6 +30,10 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
+  const [captchaId, setCaptchaId] = useState<string>('');
+  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
+  const captchaRef = useRef<ImageCaptchaRef>(null);
   const { register } = useAuth();
   
   const backgroundColor = useThemeColor({}, 'background');
@@ -89,6 +94,8 @@ export default function RegisterScreen() {
         username: username.trim(),
         email: email.trim() || undefined,
         password: password.trim(),
+        captchaId: showCaptcha ? captchaId : undefined,
+        captchaAnswer: showCaptcha ? captchaAnswer : undefined,
       });
       
       Alert.alert(
@@ -101,8 +108,28 @@ export default function RegisterScreen() {
           },
         ]
       );
-    } catch (error) {
-      Alert.alert('注册失败', error instanceof Error ? error.message : '注册失败，请重试');
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : '注册失败，请重试';
+      Alert.alert('注册失败', errorMessage);
+      
+      // 注册失败后显示验证码
+      const errorCode = error?.errorCode || error?.info?.errorCode;
+      if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' || 
+          errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' ||
+          errorCode === 'SERVER_ERROR') {
+        setShowCaptcha(true);
+        // 如果是验证码错误，自动刷新验证码
+        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        } else {
+          // 第一次失败，获取新的验证码
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -233,6 +260,20 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {showCaptcha && (
+              <View style={styles.captchaContainer}>
+                <ThemedText style={styles.captchaLabel}>图形验证码</ThemedText>
+                <ImageCaptcha
+                  ref={captchaRef}
+                  value={captchaAnswer}
+                  onChange={setCaptchaAnswer}
+                  onCaptchaIdChange={setCaptchaId}
+                  type="register"
+                  placeholder="请输入图形验证码"
+                />
+              </View>
+            )}
 
             {/* 用户协议同意 */}
             <View style={styles.termsContainer}>
@@ -452,5 +493,14 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  captchaContainer: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  captchaLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
   },
 });

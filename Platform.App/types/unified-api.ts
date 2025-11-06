@@ -19,6 +19,8 @@ export interface LoginRequest {
   password?: string;
   autoLogin?: boolean;
   type?: string;
+  captchaId?: string;
+  captchaAnswer?: string;
 }
 
 // 登录响应数据
@@ -75,6 +77,8 @@ export interface RegisterRequest {
   username: string;
   password: string;
   email?: string;
+  captchaId?: string;
+  captchaAnswer?: string;
 }
 
 // 应用用户（后端数据模型）

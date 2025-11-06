@@ -1,6 +1,6 @@
 // 登录页面
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
@@ -20,6 +20,7 @@ import { InputWithValidation } from '@/components/InputWithValidation';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useLoginAttempts } from '@/hooks/useLoginAttempts';
 import { AuthError, AuthErrorType } from '@/types/unified-api';
+import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -27,6 +28,10 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<AuthError | null>(null);
   const [showError, setShowError] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
+  const [captchaId, setCaptchaId] = useState<string>('');
+  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
+  const captchaRef = useRef<ImageCaptchaRef>(null);
   const { login } = useAuth();
   const { 
     recordAttempt, 
@@ -78,6 +83,8 @@ export default function LoginScreen() {
         password: password.trim(),
         autoLogin: true,
         type: 'account',
+        captchaId: showCaptcha ? captchaId : undefined,
+        captchaAnswer: showCaptcha ? captchaAnswer : undefined,
       });
       
       // 登录成功，清除尝试记录
@@ -85,7 +92,7 @@ export default function LoginScreen() {
       
       // 登录成功后跳转到主页
       router.replace('/(tabs)');
-    } catch (error) {
+    } catch (error: any) {
       // 记录失败的登录尝试
       await recordAttempt(username.trim(), false);
       
@@ -102,6 +109,23 @@ export default function LoginScreen() {
           message: errorMessage,
           retryable: true,
         };
+      }
+      
+      // 登录失败后显示验证码
+      const errorCode = error?.errorCode || error?.info?.errorCode;
+      if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+        setShowCaptcha(true);
+        // 如果是验证码错误，自动刷新验证码
+        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        } else {
+          // 第一次失败，获取新的验证码
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        }
       }
       
       setError(authError);
@@ -202,6 +226,20 @@ export default function LoginScreen() {
               }}
               showValidation={true}
             />
+
+            {showCaptcha && (
+              <View style={styles.captchaContainer}>
+                <ThemedText style={styles.captchaLabel}>图形验证码</ThemedText>
+                <ImageCaptcha
+                  ref={captchaRef}
+                  value={captchaAnswer}
+                  onChange={setCaptchaAnswer}
+                  onCaptchaIdChange={setCaptchaId}
+                  type="login"
+                  placeholder="请输入图形验证码"
+                />
+              </View>
+            )}
 
             <ThemedButton
               title="登录"
@@ -360,5 +398,14 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  captchaContainer: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  captchaLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
   },
 });

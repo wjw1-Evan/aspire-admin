@@ -7,7 +7,6 @@ import { apiService } from './api';
 import { getErrorMessage } from './errorHandler';
 import {
   LoginRequest,
-  LoginResult,
   RegisterRequest,
   CurrentUser,
   ApiResponse,
@@ -23,36 +22,27 @@ export class AuthService {
   /**
    * 用户登录
    */
-  async login(credentials: LoginRequest): Promise<LoginResult> {
+  async login(credentials: LoginRequest): Promise<ApiResponse<LoginData>> {
     try {
       const response = await apiService.post<ApiResponse<LoginData>>('/login/account', credentials);
 
-      if (response.success && response.data?.token && response.data?.refreshToken) {
-        // 保存 token 和刷新token到本地存储
-        const expiresAt = response.data.expiresAt 
-          ? new Date(response.data.expiresAt).getTime() 
-          : undefined;
-        await apiService.setTokens(
-          response.data.token,
-          response.data.refreshToken,
-          expiresAt
-        );
-        
-        // 转换为旧格式以保持兼容性
-        return {
-          status: 'ok',
-          type: response.data.type,
-          currentAuthority: response.data.currentAuthority,
-          token: response.data.token,
-          refreshToken: response.data.refreshToken,
-          expiresAt: response.data.expiresAt 
-            ? new Date(response.data.expiresAt).toISOString() 
-            : undefined,
-        };
+      const loginData = response.data;
+
+      if (!response.success || !loginData?.token || !loginData.refreshToken) {
+        throw new Error(getErrorMessage(response.errorCode, response.errorMessage || '登录失败'));
       }
-      
-      // 处理错误响应
-      throw new Error(getErrorMessage(response.errorCode, response.errorMessage));
+
+      // 保存 token 和刷新 token 到本地存储
+      const expiresAt = loginData.expiresAt ? new Date(loginData.expiresAt).getTime() : undefined;
+      await apiService.setTokens(loginData.token, loginData.refreshToken, expiresAt);
+
+      return {
+        ...response,
+        success: true,
+        data: {
+          ...loginData,
+        },
+      };
     } catch (error: any) {
       console.error('Login error:', error);
       throw error;

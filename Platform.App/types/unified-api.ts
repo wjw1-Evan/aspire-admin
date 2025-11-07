@@ -4,7 +4,7 @@
  */
 
 // 统一 API 响应格式
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   errorCode?: string;
@@ -141,26 +141,6 @@ export enum ApiErrorCode {
   REGISTER_ERROR = 'REGISTER_ERROR',
   CHANGE_PASSWORD_ERROR = 'CHANGE_PASSWORD_ERROR',
   REFRESH_TOKEN_ERROR = 'REFRESH_TOKEN_ERROR',
-}
-
-// 向后兼容的 API 响应格式（用于内部转换）
-export interface LegacyApiResponse<T> {
-  success: boolean;
-  data?: T;
-  errorCode?: string;
-  errorMessage?: string;
-}
-
-// 登录结果（向后兼容）
-export interface LoginResult {
-  status?: string;
-  type?: string;
-  currentAuthority?: string;
-  token?: string;
-  refreshToken?: string;
-  expiresAt?: string;
-  errorCode?: string;
-  errorMessage?: string;
 }
 
 // 用户列表请求

@@ -32,30 +32,36 @@ export async function loginAction(
   try {
     dispatch({ type: 'AUTH_START' });
     
-    const result = await authService.login(credentials);
+    const loginResponse = await authService.login(credentials);
+    const loginData = loginResponse.data;
+
+    if (!loginData?.token || !loginData.refreshToken) {
+      throw new Error('登录失败');
+    }
+
+    // 获取用户信息
+    const userResponse = await authService.getCurrentUser();
     
-    if (result.status === 'ok' && result.token && result.refreshToken) {
-      // 获取用户信息
-      const userResponse = await authService.getCurrentUser();
-      
-      if (isAuthResponseValid(userResponse)) {
-        const tokenExpiresAt = result.expiresAt 
-          ? new Date(result.expiresAt).getTime() 
-          : undefined;
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: {
-            user: userResponse.data,
-            token: result.token,
-            refreshToken: result.refreshToken,
-            tokenExpiresAt,
-          },
-        });
-      } else {
+    if (isAuthResponseValid(userResponse)) {
+      const currentUser = userResponse.data;
+      if (!currentUser) {
         throw new Error('获取用户信息失败');
       }
+
+      const tokenExpiresAt = loginData.expiresAt 
+        ? new Date(loginData.expiresAt).getTime() 
+        : undefined;
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: {
+          user: currentUser,
+          token: loginData.token,
+          refreshToken: loginData.refreshToken,
+          tokenExpiresAt,
+        },
+      });
     } else {
-      throw new Error('登录失败');
+      throw new Error('获取用户信息失败');
     }
   } catch (error) {
     console.error('AuthContext: Login error:', error);
@@ -121,8 +127,9 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
     if (currentToken && !isExpired) {
       // 尝试获取最新用户信息
       const userResponse = await authService.getCurrentUser();
-      if (isAuthResponseValid(userResponse)) {
-        dispatch({ type: 'AUTH_UPDATE_USER', payload: userResponse.data });
+      const currentUser = userResponse.data;
+      if (isAuthResponseValid(userResponse) && currentUser) {
+        dispatch({ type: 'AUTH_UPDATE_USER', payload: currentUser });
         return;
       }
     }
@@ -140,8 +147,9 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
         
         // 获取用户信息
         const userResponse = await authService.getCurrentUser();
-        if (isAuthResponseValid(userResponse)) {
-          dispatch({ type: 'AUTH_UPDATE_USER', payload: userResponse.data });
+        const currentUser = userResponse.data;
+        if (isAuthResponseValid(userResponse) && currentUser) {
+          dispatch({ type: 'AUTH_UPDATE_USER', payload: currentUser });
         }
         return;
       }
@@ -171,11 +179,12 @@ export async function checkAuthAction(dispatch: Dispatch<AuthAction>): Promise<v
     }
     
     const userResponse = await authService.getCurrentUser();
-    if (isAuthResponseValid(userResponse)) {
+    const currentUser = userResponse.data;
+    if (isAuthResponseValid(userResponse) && currentUser) {
       dispatch({
         type: 'AUTH_SUCCESS',
         payload: {
-          user: userResponse.data,
+          user: currentUser,
           token,
         },
       });

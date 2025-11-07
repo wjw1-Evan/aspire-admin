@@ -71,15 +71,19 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.getBaseURL()}${endpoint}`;
     
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    const headers = new Headers(options.headers as HeadersInit | undefined);
+
+    const isFormData =
+      typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+    if (!isFormData && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
 
     // 添加认证头
     const token = await this.getToken();
     if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      headers.set('Authorization', `Bearer ${token}`);
     }
 
     // 创建 AbortController 用于超时控制
@@ -249,6 +253,16 @@ class ApiService {
     return this.requestWithRetry<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
+    }, config);
+  }
+
+  /**
+   * POST 表单请求（multipart/form-data）
+   */
+  async postForm<T>(endpoint: string, formData: FormData, config?: RequestConfig): Promise<T> {
+    return this.requestWithRetry<T>(endpoint, {
+      method: 'POST',
+      body: formData,
     }, config);
   }
 

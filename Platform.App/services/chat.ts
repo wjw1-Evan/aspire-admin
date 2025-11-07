@@ -1,13 +1,14 @@
 import { apiService } from './api';
 import { API_ENDPOINTS } from './apiConfig';
+import type { ApiResponse } from '@/types/unified-api';
 import type {
   AttachmentMetadata,
   ChatMessage,
   MessageSendRequest,
   MessageTimelineResponse,
   SessionListResponse,
+  UploadAttachmentResponse,
 } from '@/types/chat';
-import { getApiBaseUrl } from '@/constants/apiConfig';
 
 export interface SessionQueryParams {
   page?: number;
@@ -34,12 +35,12 @@ const buildQueryString = (params: Record<string, string | number | boolean | und
 
 export const chatService = {
   getSessions: async (params: SessionQueryParams = {}): Promise<SessionListResponse> => {
-    const query = buildQueryString(params);
+    const query = buildQueryString(params as Record<string, string | number | boolean | undefined>);
     return apiService.get<SessionListResponse>(`${API_ENDPOINTS.chatSessions}${query}`);
   },
 
   getMessages: async (sessionId: string, params: MessageQueryParams = {}): Promise<MessageTimelineResponse> => {
-    const query = buildQueryString(params);
+    const query = buildQueryString(params as Record<string, string | number | boolean | undefined>);
     return apiService.get<MessageTimelineResponse>(
       `${API_ENDPOINTS.chatMessages}/${encodeURIComponent(sessionId)}${query}`
     );
@@ -65,7 +66,6 @@ export const chatService = {
     sessionId: string,
     file: { uri: string; name: string; type: string }
   ): Promise<AttachmentMetadata> => {
-    const token = await apiService.getToken();
     const formData = new FormData();
     formData.append('file', {
       uri: file.uri,
@@ -73,24 +73,17 @@ export const chatService = {
       type: file.type,
     } as unknown as any);
 
-    const response = await fetch(
-      `${getApiBaseUrl()}${API_ENDPOINTS.chatAttachments}/${encodeURIComponent(sessionId)}/attachments`,
-      {
-        method: 'POST',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      }
+    const response = await apiService.postForm<ApiResponse<UploadAttachmentResponse>>(
+      `${API_ENDPOINTS.chatAttachments}/${encodeURIComponent(sessionId)}/attachments`,
+      formData,
+      { timeout: 30000 }
     );
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || '上传附件失败');
+    if (!response.success || !response.data?.attachment) {
+      throw new Error(response.errorMessage || '上传附件失败');
     }
 
-    const data = (await response.json()) as AttachmentMetadata;
-    return data;
+    return response.data.attachment;
   },
 };
 

@@ -5,6 +5,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
+using System.IO;
 
 namespace Platform.ApiService.Controllers;
 
@@ -96,6 +97,28 @@ public class ChatMessagesController : BaseApiController
     {
         var attachment = await _chatService.UploadAttachmentAsync(sessionId, file);
         return Success(new UploadAttachmentResponse { Attachment = attachment });
+    }
+
+    /// <summary>
+    /// 下载附件
+    /// </summary>
+    /// <param name="sessionId">会话标识</param>
+    /// <param name="attachmentId">附件存储标识</param>
+    /// <returns>文件流</returns>
+    [HttpGet("{sessionId}/attachments/{attachmentId}")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DownloadAttachment(string sessionId, string attachmentId)
+    {
+        var result = await _chatService.DownloadAttachmentAsync(sessionId, attachmentId);
+
+        if (result.Content.CanSeek)
+        {
+            result.Content.Seek(0, SeekOrigin.Begin);
+        }
+
+        Response.ContentLength = result.ContentLength;
+
+        return File(result.Content, result.ContentType, result.FileName, enableRangeProcessing: true);
     }
 
     /// <summary>

@@ -39,6 +39,14 @@ public interface IChatService
     Task<ChatAttachmentInfo> UploadAttachmentAsync(string sessionId, IFormFile file);
 
     /// <summary>
+    /// 下载附件内容
+    /// </summary>
+    /// <param name="sessionId">会话标识</param>
+    /// <param name="storageObjectId">附件存储标识</param>
+    /// <returns>附件流及元数据</returns>
+    Task<ChatAttachmentDownloadResult> DownloadAttachmentAsync(string sessionId, string storageObjectId);
+
+    /// <summary>
     /// 将指定会话标记为已读
     /// </summary>
     /// <param name="sessionId">会话标识</param>

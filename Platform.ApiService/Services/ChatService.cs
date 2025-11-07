@@ -10,6 +10,7 @@ using Platform.ServiceDefaults.Services;
 using System.Security.Cryptography;
 using System.Text;
 using System.Linq;
+using System.IO;
 using Platform.ApiService.Constants;
 
 namespace Platform.ApiService.Services;
@@ -341,6 +342,73 @@ public class ChatService : IChatService
             ThumbnailUrl = attachment.ThumbnailUrl,
             UploadedAt = attachment.CreatedAt
         };
+    }
+
+    /// <inheritdoc />
+    public async Task<ChatAttachmentDownloadResult> DownloadAttachmentAsync(string sessionId, string storageObjectId)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            throw new ArgumentException("会话标识不能为空", nameof(sessionId));
+        }
+
+        if (string.IsNullOrWhiteSpace(storageObjectId))
+        {
+            throw new ArgumentException("附件标识不能为空", nameof(storageObjectId));
+        }
+
+        if (!ObjectId.TryParse(sessionId, out _))
+        {
+            throw new ArgumentException("会话标识格式不正确", nameof(sessionId));
+        }
+
+        if (!ObjectId.TryParse(storageObjectId, out var gridFsId))
+        {
+            throw new ArgumentException("附件标识格式不正确", nameof(storageObjectId));
+        }
+
+        var session = await EnsureSessionAccessibleAsync(sessionId);
+        var currentUserId = _attachmentFactory.GetRequiredUserId();
+
+        if (!session.Participants.Contains(currentUserId))
+        {
+            throw new UnauthorizedAccessException("当前用户不属于该会话");
+        }
+
+        var filter = _attachmentFactory.CreateFilterBuilder()
+            .Equal(attachment => attachment.SessionId, session.Id)
+            .Equal(attachment => attachment.StorageObjectId, storageObjectId)
+            .Build();
+
+        var attachments = await _attachmentFactory.FindAsync(filter, null, 1);
+        var attachment = attachments.FirstOrDefault();
+        if (attachment == null)
+        {
+            throw new KeyNotFoundException("附件不存在或不属于当前会话");
+        }
+
+        try
+        {
+            var downloadStream = await _gridFsBucket.OpenDownloadStreamAsync(gridFsId);
+            if (downloadStream.CanSeek)
+            {
+                downloadStream.Seek(0, SeekOrigin.Begin);
+            }
+
+            return new ChatAttachmentDownloadResult
+            {
+                Content = downloadStream,
+                FileName = attachment.Name,
+                ContentType = string.IsNullOrWhiteSpace(attachment.MimeType)
+                    ? "application/octet-stream"
+                    : attachment.MimeType,
+                ContentLength = downloadStream.FileInfo.Length
+            };
+        }
+        catch (GridFSFileNotFoundException)
+        {
+            throw new KeyNotFoundException("附件内容不存在或已被删除");
+        }
     }
 
     /// <inheritdoc />

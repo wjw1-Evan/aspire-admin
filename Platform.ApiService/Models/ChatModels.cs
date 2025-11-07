@@ -2,6 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 
 namespace Platform.ApiService.Models;
 
@@ -469,6 +470,33 @@ public class UploadAttachmentResponse
     /// 附件信息
     /// </summary>
     public ChatAttachmentInfo Attachment { get; set; } = new();
+}
+
+/// <summary>
+/// 附件下载结果
+/// </summary>
+public class ChatAttachmentDownloadResult
+{
+    /// <summary>
+    /// 文件内容流
+    /// </summary>
+    public Stream Content { get; set; } = Stream.Null;
+
+    /// <summary>
+    /// 文件名称
+    /// </summary>
+    public string FileName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 内容类型
+    /// </summary>
+    public string ContentType { get; set; } = "application/octet-stream";
+
+    /// <summary>
+    /// 内容长度（字节）
+    /// </summary>
+    public long ContentLength { get; set; }
+        = 0;
 }
 
 /// <summary>

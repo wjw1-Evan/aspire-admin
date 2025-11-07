@@ -29,6 +29,10 @@ export interface AttachmentMetadata {
   uploadedAt?: string;
 }
 
+export interface UploadAttachmentResponse {
+  attachment: AttachmentMetadata;
+}
+
 export interface ChatMessage {
   id: string;
   sessionId: string;

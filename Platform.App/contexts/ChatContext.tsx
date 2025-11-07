@@ -308,8 +308,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
       const connection = new HubConnectionBuilder()
         .withUrl(`${getApiBaseUrl()}/hubs/chat`, {
           accessTokenFactory: async () => (await apiService.getToken()) ?? '',
-          skipNegotiation: true,
-          transport: HttpTransportType.WebSockets,
         })
         .withAutomaticReconnect()
         .configureLogging(__DEV__ ? LogLevel.Information : LogLevel.Warning)

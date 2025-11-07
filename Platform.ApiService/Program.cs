@@ -21,6 +21,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.WriteIndented = false;
     });
 
+builder.Services.AddSignalR();
+
 // 配置 CORS - 严格的安全策略
 builder.Services.AddCors(options =>
 {
@@ -215,6 +217,7 @@ app.UseMiddleware<Platform.ApiService.Middleware.ResponseFormattingMiddleware>()
 
 // Configure controllers
 app.MapControllers();
+app.MapHub<Platform.ApiService.Hubs.ChatHub>("/hubs/chat").RequireAuthorization();
 
 // Map OpenAPI endpoint
 app.MapOpenApi();

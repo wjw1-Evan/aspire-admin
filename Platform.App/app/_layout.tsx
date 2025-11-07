@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { ChatProvider } from '@/contexts/ChatContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { useTokenValidation } from '@/hooks/useTokenValidation';
 import { AuthErrorHandler, NetworkStatusIndicator } from '@/components/AuthErrorHandler';
@@ -77,7 +78,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AuthRouter />
+        <ChatProvider>
+          <AuthRouter />
+        </ChatProvider>
       </AuthProvider>
     </ThemeProvider>
   );

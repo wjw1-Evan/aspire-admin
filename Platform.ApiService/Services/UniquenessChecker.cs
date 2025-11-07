@@ -39,6 +39,16 @@ public interface IUniquenessChecker
     /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
     /// <returns>如果唯一返回 true，否则返回 false</returns>
     Task<bool> IsEmailUniqueAsync(string email, string? excludeUserId = null);
+
+    /// <summary>
+    /// 确保手机号唯一，如果已存在则抛出异常
+    /// </summary>
+    Task EnsurePhoneUniqueAsync(string phone, string? excludeUserId = null);
+
+    /// <summary>
+    /// 检查手机号是否唯一
+    /// </summary>
+    Task<bool> IsPhoneUniqueAsync(string phone, string? excludeUserId = null);
 }
 
 /// <summary>
@@ -85,6 +95,17 @@ public class UniquenessChecker : IUniquenessChecker
     }
 
     /// <summary>
+    /// 确保手机号唯一，如果已存在则抛出异常
+    /// </summary>
+    public async Task EnsurePhoneUniqueAsync(string phone, string? excludeUserId = null)
+    {
+        if (!await IsPhoneUniqueAsync(phone, excludeUserId))
+        {
+            throw new InvalidOperationException("手机号已存在");
+        }
+    }
+
+    /// <summary>
     /// 检查用户名是否唯一（v3.1: 全局唯一）
     /// </summary>
     public async Task<bool> IsUsernameUniqueAsync(string username, string? excludeUserId = null)
@@ -126,6 +147,31 @@ public class UniquenessChecker : IUniquenessChecker
         
         var filter = filterBuilder.Build();
         
+        var users = await _userFactory.FindAsync(filter);
+        var existing = users.FirstOrDefault();
+        return existing == null;
+    }
+
+    /// <summary>
+    /// 检查手机号是否唯一
+    /// </summary>
+    public async Task<bool> IsPhoneUniqueAsync(string phone, string? excludeUserId = null)
+    {
+        if (string.IsNullOrEmpty(phone))
+        {
+            return true;
+        }
+
+        var filterBuilder = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.PhoneNumber, phone);
+
+        if (!string.IsNullOrEmpty(excludeUserId))
+        {
+            filterBuilder.NotEqual(u => u.Id, excludeUserId);
+        }
+
+        var filter = filterBuilder.Build();
+
         var users = await _userFactory.FindAsync(filter);
         var existing = users.FirstOrDefault();
         return existing == null;

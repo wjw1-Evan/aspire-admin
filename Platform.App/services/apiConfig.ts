@@ -84,3 +84,19 @@ export function shouldRetryError(error: any): boolean {
   return false;
 }
 
+export const API_ENDPOINTS = {
+  chatSessions: '/chat/sessions',
+  chatMessages: '/chat/messages',
+  chatAttachments: '/chat/messages',
+  aiSmartReplies: '/chat/ai/smart-replies',
+  aiMatchSuggestions: '/chat/ai/match-suggestions',
+  aiTopicGuides: '/chat/ai/topic-guides',
+  nearbyUsers: '/social/nearby-users',
+  locationBeacon: '/social/location/beacon',
+  friends: '/friends',
+  friendRequests: '/friends/requests',
+} as const;
+
+export const NEARBY_SEARCH_DEFAULT_RADIUS = 2000; // 单位：米
+export const NEARBY_SEARCH_DEFAULT_LIMIT = 20;
+

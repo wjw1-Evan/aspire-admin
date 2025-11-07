@@ -1,249 +1,176 @@
 import React from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-  Linking,
-  Alert,
-} from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ThemedView } from '@/components/themed-view';
+
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { Image } from 'expo-image';
 
-const InfoItem = ({
-  icon,
-  title,
-  value,
-  onPress,
-  showArrow = false,
-  borderColor
-}: {
-  icon: 'info.circle.fill' | 'person.fill' | 'calendar.fill' | 'arrow.clockwise' | 'envelope.fill' | 'phone.fill' | 'location.fill';
-  title: string;
-  value?: string;
-  onPress?: () => void;
-  showArrow?: boolean;
-  borderColor?: string;
-}) => (
-  <TouchableOpacity
-    style={[styles.infoItem, { borderBottomColor: borderColor }]}
-    onPress={onPress}
-    disabled={!onPress}
-  >
-    <View style={styles.infoItemLeft}>
-      <IconSymbol name={icon as any} size={24} color="#666" />
-      <ThemedText style={styles.infoItemTitle}>{title}</ThemedText>
-    </View>
-    <View style={styles.infoItemRight}>
-      {value && <ThemedText style={styles.infoItemValue}>{value}</ThemedText>}
-      {showArrow && onPress && (
-        <IconSymbol name="chevron.right" size={16} color="#999" />
-      )}
-    </View>
-  </TouchableOpacity>
-);
+const contactEntries = [
+  {
+    icon: 'envelope.fill' as const,
+    title: '联系邮箱',
+    value: 'support@aspire-admin.com',
+    link: 'mailto:support@aspire-admin.com',
+  },
+  {
+    icon: 'phone.fill' as const,
+    title: '服务热线',
+    value: '+86 400-123-4567',
+    link: 'tel:+864001234567',
+  },
+  {
+    icon: 'location.fill' as const,
+    title: '办公地址',
+    value: '北京市朝阳区望京街道 18 号',
+  },
+];
 
-export default function AboutScreen() {
+const valuePillars = [
+  { icon: 'shield.lefthalf.and.lh' as const, label: '安全合规' },
+  { icon: 'bolt.fill' as const, label: '高效协同' },
+  { icon: 'sparkles' as const, label: '持续创新' },
+  { icon: 'globe.asia.australia.fill' as const, label: '全球连接' },
+];
+
+export default function AboutScreen(): JSX.Element {
   const backgroundColor = useThemeColor({}, 'background');
-  const cardBackgroundColor = useThemeColor(
-    { light: '#fff', dark: '#1c1c1e' },
-    'background'
-  );
-  const borderColor = useThemeColor(
-    { light: '#f0f0f0', dark: '#2c2c2e' },
-    'icon'
-  );
+  const cardBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#1f2933' }, 'card');
+  const borderColor = useThemeColor({ light: '#e2e8f0', dark: '#2d3643' }, 'border');
+  const secondaryText = useThemeColor({ light: '#6b7280', dark: '#94a3b8' }, 'text');
+  const accent = useThemeColor({}, 'tint');
 
-  const handleOpenLink = async (url: string, title: string) => {
+  const handleOpenLink = async (url?: string) => {
+    if (!url) return;
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('错误', `无法打开${title}`);
+        Alert.alert('提示', '当前设备无法打开该链接');
       }
     } catch {
-      Alert.alert('错误', `打开${title}时发生错误`);
+      Alert.alert('提示', '打开链接时出现问题，请稍后再试');
     }
   };
 
-  const handleCheckUpdate = () => {
-    Alert.alert(
-      '检查更新',
-      '当前已是最新版本 v1.0.0',
-      [{ text: '确定' }]
-    );
-  };
-
   return (
-    <ScrollView style={[styles.container, { backgroundColor }]}>
-      {/* 页面标题 */}
-      <ThemedView style={[styles.header, { backgroundColor: cardBackgroundColor }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <IconSymbol name="chevron.left.forwardslash.chevron.right" size={24} color="#666" />
+    <ScrollView style={[styles.container, { backgroundColor }]} contentInsetAdjustmentBehavior="automatic">
+      <ThemedView style={[styles.navbar, { backgroundColor: cardBackgroundColor, borderBottomColor: borderColor }] }>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <IconSymbol name="chevron.left" size={20} color={secondaryText} />
         </TouchableOpacity>
-        <ThemedText type="title" style={styles.headerTitle}>
-          关于我们
-        </ThemedText>
-        <View style={styles.placeholder} />
+        <ThemedText type="title" style={styles.navTitle}>关于我们</ThemedText>
+        <View style={styles.backButton} />
       </ThemedView>
 
-      {/* 应用信息 */}
-      <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor }]}>
-        <View style={styles.appInfo}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={{ uri: 'https://via.placeholder.com/80x80/007AFF/FFFFFF?text=A' }}
-              style={styles.logo}
-            />
-          </View>
-          <ThemedText type="title" style={styles.appName}>
-            Aspire Admin Platform
-          </ThemedText>
-          <ThemedText style={styles.appVersion}>
-            版本 1.0.0
-          </ThemedText>
-          <ThemedText style={styles.appDescription}>
-            基于 .NET Aspire 构建的现代化微服务管理平台
-          </ThemedText>
+      <ThemedView style={[styles.hero, { backgroundColor: cardBackgroundColor }]}>
+        <View style={[styles.logoWrapper, { borderColor: borderColor }] }>
+          <Image
+            source={{ uri: 'https://assets.cursor.team/aspire/logo-square.png' }}
+            style={styles.logo}
+          />
         </View>
-      </ThemedView>
-
-      {/* 版本信息 */}
-      <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor }]}>
-        <ThemedText type="subtitle" style={[styles.sectionTitle, { borderBottomColor: borderColor }]}>
-          版本信息
+        <ThemedText type="title" style={styles.appName}>Aspire Admin Platform</ThemedText>
+        <ThemedText style={[styles.appTagline, { color: secondaryText }] }>
+          连接企业服务 · 构建实时协作体验
         </ThemedText>
-
-        <InfoItem
-          icon="info.circle.fill"
-          title="当前版本"
-          value="1.0.0"
-          borderColor={borderColor}
-        />
-        <InfoItem
-          icon="calendar.fill"
-          title="发布日期"
-          value="2024年1月"
-          borderColor={borderColor}
-        />
-        <InfoItem
-          icon="arrow.clockwise"
-          title="检查更新"
-          onPress={handleCheckUpdate}
-          showArrow={true}
-          borderColor={borderColor}
-        />
-      </ThemedView>
-
-      {/* 开发团队 */}
-      <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor }]}>
-        <ThemedText type="subtitle" style={[styles.sectionTitle, { borderBottomColor: borderColor }]}>
-          开发团队
-        </ThemedText>
-
-        <ThemedText style={styles.teamDescription}>
-          我们是一支专注于企业级应用开发的团队，致力于为用户提供高效、安全、易用的管理平台。
-        </ThemedText>
-
-        <View style={styles.teamFeatures}>
-          <View style={styles.featureItem}>
-            <IconSymbol name="checkmark.circle.fill" size={16} color="#34C759" />
-            <ThemedText style={styles.featureText}>现代化架构</ThemedText>
+        <View style={styles.badgeRow}>
+          <View style={[styles.badge, { backgroundColor: `${accent}20` }] }>
+            <IconSymbol name="sparkles" size={14} color={accent} />
+            <ThemedText style={[styles.badgeText, { color: accent }]}>v1.0.0</ThemedText>
           </View>
-          <View style={styles.featureItem}>
-            <IconSymbol name="checkmark.circle.fill" size={16} color="#34C759" />
-            <ThemedText style={styles.featureText}>微服务设计</ThemedText>
-          </View>
-          <View style={styles.featureItem}>
-            <IconSymbol name="checkmark.circle.fill" size={16} color="#34C759" />
-            <ThemedText style={styles.featureText}>跨平台支持</ThemedText>
-          </View>
-          <View style={styles.featureItem}>
-            <IconSymbol name="checkmark.circle.fill" size={16} color="#34C759" />
-            <ThemedText style={styles.featureText}>安全可靠</ThemedText>
+          <View style={[styles.badge, { backgroundColor: `${accent}20` }] }>
+            <IconSymbol name="clock.badge.checkmark" size={14} color={accent} />
+            <ThemedText style={[styles.badgeText, { color: accent }]}>最近更新 · 2025-11</ThemedText>
           </View>
         </View>
       </ThemedView>
 
-      {/* 技术栈 */}
       <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor }]}>
-        <ThemedText type="subtitle" style={[styles.sectionTitle, { borderBottomColor: borderColor }]}>
-          技术栈
+        <ThemedText type="subtitle" style={[styles.sectionTitle, { borderBottomColor: borderColor }] }>
+          品牌故事
         </ThemedText>
+        <ThemedText style={[styles.description, { color: secondaryText }] }>
+          Aspire 团队扎根企业服务领域多年，专注打造实时、可靠的管理平台。我们相信沟通协作的效率，决定着企业的创新速度。
+          因此，我们将聊天、好友、智能推荐与微服务治理深度融合，让组织可以在一个平台上完成即时沟通、数据洞察和业务运营。
+        </ThemedText>
+      </ThemedView>
 
-        <View style={styles.techStack}>
-          <View style={styles.techCategory}>
-            <ThemedText style={styles.techCategoryTitle}>后端</ThemedText>
-            <ThemedText style={styles.techItem}>• .NET Aspire</ThemedText>
-            <ThemedText style={styles.techItem}>• ASP.NET Core</ThemedText>
-            <ThemedText style={styles.techItem}>• Entity Framework</ThemedText>
-            <ThemedText style={styles.techItem}>• SQL Server</ThemedText>
+      <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor }]}>
+        <ThemedText type="subtitle" style={[styles.sectionTitle, { borderBottomColor: borderColor }] }>
+          核心价值
+        </ThemedText>
+        <View style={styles.valueGrid}>
+          {valuePillars.map(pillar => (
+            <View key={pillar.label} style={[styles.valueCard, { borderColor }] }>
+              <IconSymbol name={pillar.icon as any} size={20} color={accent} />
+              <ThemedText style={styles.valueLabel}>{pillar.label}</ThemedText>
+            </View>
+          ))}
+        </View>
+      </ThemedView>
+
+      <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor }]}>
+        <ThemedText type="subtitle" style={[styles.sectionTitle, { borderBottomColor: borderColor }] }>
+          产品亮点
+        </ThemedText>
+        <View style={styles.featureList}>
+          <View style={styles.featureItem}>
+            <IconSymbol name="bubble.left.and.text.bubble.fill" size={18} color={accent} />
+            <ThemedText style={[styles.featureText, { color: secondaryText }] }>
+              SignalR 实时通信，移动端与后台同步更新
+            </ThemedText>
           </View>
-
-          <View style={styles.techCategory}>
-            <ThemedText style={styles.techCategoryTitle}>前端</ThemedText>
-            <ThemedText style={styles.techItem}>• React Native</ThemedText>
-            <ThemedText style={styles.techItem}>• Expo</ThemedText>
-            <ThemedText style={styles.techItem}>• TypeScript</ThemedText>
-            <ThemedText style={styles.techItem}>• React Navigation</ThemedText>
+          <View style={styles.featureItem}>
+            <IconSymbol name="person.2.fill" size={18} color={accent} />
+            <ThemedText style={[styles.featureText, { color: secondaryText }] }>
+              微信式通讯录体验，快捷管理企业好友关系
+            </ThemedText>
           </View>
-
-          <View style={styles.techCategory}>
-            <ThemedText style={styles.techCategoryTitle}>工具</ThemedText>
-            <ThemedText style={styles.techItem}>• Visual Studio</ThemedText>
-            <ThemedText style={styles.techItem}>• Git</ThemedText>
-            <ThemedText style={styles.techItem}>• Docker</ThemedText>
-            <ThemedText style={styles.techItem}>• Azure DevOps</ThemedText>
+          <View style={styles.featureItem}>
+            <IconSymbol name="sparkles" size={18} color={accent} />
+            <ThemedText style={[styles.featureText, { color: secondaryText }] }>
+              AI 智能推荐，精准匹配业务联系人
+            </ThemedText>
+          </View>
+          <View style={styles.featureItem}>
+            <IconSymbol name="lock.shield" size={18} color={accent} />
+            <ThemedText style={[styles.featureText, { color: secondaryText }] }>
+              多租户隔离与审计日志，保障数据安全合规
+            </ThemedText>
           </View>
         </View>
       </ThemedView>
 
-      {/* 联系方式 */}
       <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor }]}>
-        <ThemedText type="subtitle" style={[styles.sectionTitle, { borderBottomColor: borderColor }]}>
-          联系方式
+        <ThemedText type="subtitle" style={[styles.sectionTitle, { borderBottomColor: borderColor }] }>
+          联系我们
         </ThemedText>
-
-        <InfoItem
-          icon="envelope.fill"
-          title="邮箱"
-          value="support@aspire-admin.com"
-          onPress={() => handleOpenLink('mailto:support@aspire-admin.com', '邮箱')}
-          showArrow={true}
-          borderColor={borderColor}
-        />
-        <InfoItem
-          icon="phone.fill"
-          title="电话"
-          value="+86 400-123-4567"
-          onPress={() => handleOpenLink('tel:+864001234567', '电话')}
-          showArrow={true}
-          borderColor={borderColor}
-        />
-        <InfoItem
-          icon="location.fill"
-          title="地址"
-          value="北京市朝阳区"
-          borderColor={borderColor}
-        />
+        {contactEntries.map(entry => (
+          <TouchableOpacity
+            key={entry.title}
+            style={[styles.contactRow, { borderBottomColor: borderColor }]}
+            activeOpacity={entry.link ? 0.7 : 1}
+            onPress={() => handleOpenLink(entry.link)}
+          >
+            <View style={styles.contactLeft}>
+              <IconSymbol name={entry.icon} size={20} color={accent} />
+              <ThemedText style={styles.contactTitle}>{entry.title}</ThemedText>
+            </View>
+            <ThemedText style={[styles.contactValue, { color: secondaryText }]} numberOfLines={1}>
+              {entry.value}
+            </ThemedText>
+            {entry.link && <IconSymbol name="arrow.up.right" size={14} color={secondaryText} />}
+          </TouchableOpacity>
+        ))}
       </ThemedView>
 
-      {/* 版权信息 */}
-      <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor }]}>
-        <ThemedText style={styles.copyright}>
-          © 2024 Aspire Admin Platform. All rights reserved.
-        </ThemedText>
-        <ThemedText style={styles.copyright}>
-          本应用遵循 MIT 开源协议
-        </ThemedText>
+      <ThemedView style={[styles.section, { backgroundColor: cardBackgroundColor, alignItems: 'center', gap: 6, paddingVertical: 16 }]}>
+        <ThemedText style={[styles.footerText, { color: secondaryText }]}>© 2025 Aspire Team. All rights reserved.</ThemedText>
+        <ThemedText style={[styles.footerText, { color: secondaryText }]}>遵循 MIT License · 构建于 .NET Aspire 与 Expo</ThemedText>
       </ThemedView>
     </ScrollView>
   );
@@ -253,127 +180,139 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  navbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    marginBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backButton: {
-    padding: 8,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerTitle: {
+  navTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
   },
-  placeholder: {
-    width: 40,
+  hero: {
+    margin: 16,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    gap: 12,
+  },
+  logoWrapper: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 24,
+    padding: 8,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+  },
+  appName: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  appTagline: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   section: {
-    marginBottom: 10,
-    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    marginBottom: 8,
-  },
-  appInfo: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  logoContainer: {
+    paddingBottom: 14,
     marginBottom: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 16,
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  appVersion: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 12,
-  },
-  appDescription: {
+  description: {
     fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    opacity: 0.8,
+    lineHeight: 22,
   },
-  infoItem: {
+  valueGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  valueCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  infoItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  infoItemTitle: {
-    fontSize: 16,
-    marginLeft: 12,
-    flex: 1,
-  },
-  infoItemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoItemValue: {
+  valueLabel: {
     fontSize: 14,
-    color: '#666',
-    marginRight: 8,
+    fontWeight: '500',
   },
-  teamDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
-    opacity: 0.8,
-  },
-  teamFeatures: {
-    marginTop: 8,
+  featureList: {
+    gap: 12,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 10,
   },
   featureText: {
     fontSize: 14,
-    marginLeft: 8,
+    flex: 1,
+    lineHeight: 20,
   },
-  techStack: {
-    marginTop: 8,
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  techCategory: {
-    marginBottom: 16,
+  contactLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+    width: 110,
   },
-  techCategoryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  techItem: {
+  contactTitle: {
     fontSize: 14,
-    marginBottom: 4,
-    opacity: 0.8,
+    fontWeight: '500',
   },
-  copyright: {
+  contactValue: {
+    flex: 1,
+    fontSize: 14,
+  },
+  footerText: {
     fontSize: 12,
     textAlign: 'center',
-    opacity: 0.6,
-    marginBottom: 4,
   },
 });

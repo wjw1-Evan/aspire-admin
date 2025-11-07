@@ -22,6 +22,12 @@ public class CreateUserRequest
     [Required(ErrorMessage = "邮箱不能为空")]
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
     public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 手机号码
+    /// </summary>
+    [Phone(ErrorMessage = "手机号格式不正确")]
+    public string? PhoneNumber { get; set; }
     
     /// <summary>
     /// 年龄
@@ -47,6 +53,12 @@ public class CreateUserManagementRequest
     /// </summary>
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
     public string? Email { get; set; }
+
+    /// <summary>
+    /// 手机号码
+    /// </summary>
+    [Phone(ErrorMessage = "手机号格式不正确")]
+    public string? PhoneNumber { get; set; }
     
     /// <summary>
     /// 密码（至少6个字符）
@@ -80,6 +92,12 @@ public class UpdateUserRequest
     /// 邮箱地址
     /// </summary>
     public string? Email { get; set; }
+
+    /// <summary>
+    /// 手机号码
+    /// </summary>
+    [Phone(ErrorMessage = "手机号格式不正确")]
+    public string? PhoneNumber { get; set; }
     
     /// <summary>
     /// 年龄
@@ -101,6 +119,12 @@ public class UpdateUserManagementRequest
     /// 邮箱地址
     /// </summary>
     public string? Email { get; set; }
+
+    /// <summary>
+    /// 手机号码
+    /// </summary>
+    [Phone(ErrorMessage = "手机号格式不正确")]
+    public string? PhoneNumber { get; set; }
     
     /// <summary>
     /// 角色ID列表
@@ -189,6 +213,11 @@ public class UserWithRolesResponse
     /// 邮箱地址
     /// </summary>
     public string? Email { get; set; }
+
+    /// <summary>
+    /// 手机号码
+    /// </summary>
+    public string? PhoneNumber { get; set; }
     
     /// <summary>
     /// 年龄

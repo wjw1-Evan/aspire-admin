@@ -12,4 +12,9 @@
     <ProjectReference Include="..\Platform.ServiceDefaults\Platform.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver.GridFS" Version="2.30.0" />
+    <PackageReference Include="MongoDB.Driver" Version="2.30.0" />
+  </ItemGroup>
+
 </Project>

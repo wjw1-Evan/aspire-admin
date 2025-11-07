@@ -350,6 +350,12 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     public string? Email { get; set; }
 
     /// <summary>
+    /// 手机号码
+    /// </summary>
+    [BsonElement("phone")]
+    public string? PhoneNumber { get; set; }
+
+    /// <summary>
     /// 当前选中的企业ID（v3.1新增）
     /// </summary>
     [BsonElement("currentCompanyId")]
@@ -399,6 +405,12 @@ public class RegisterRequest
     /// </summary>
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
     public string? Email { get; set; }
+
+    /// <summary>
+    /// 手机号码（可选）
+    /// </summary>
+    [Phone(ErrorMessage = "手机号格式不正确")]
+    public string? PhoneNumber { get; set; }
 
     /// <summary>
     /// 图形验证码ID

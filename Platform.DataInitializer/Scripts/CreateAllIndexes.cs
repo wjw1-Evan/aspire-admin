@@ -29,6 +29,10 @@ public class CreateAllIndexes
         await CreateMenuIndexesAsync();
         await CreateCaptchaIndexesAsync();
         await CreateCaptchaImageIndexesAsync();
+        await CreateAppUserIndexesAsync();
+        await CreateChatIndexesAsync();
+        await CreateFriendshipIndexesAsync();
+        await CreateFriendRequestIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
     }
@@ -155,6 +159,173 @@ public class CreateAllIndexes
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建 CaptchaImage 索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建 AppUser 索引
+    /// </summary>
+    private async Task CreateAppUserIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("appusers");
+
+        try
+        {
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("phone"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_appusers_phone_unique",
+                    Unique = true,
+                    Sparse = true
+                },
+                "appusers.phone (唯一，忽略空值)");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建 AppUser 索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建聊天相关索引
+    /// </summary>
+    private async Task CreateChatIndexesAsync()
+    {
+        var sessions = _database.GetCollection<BsonDocument>("chatsessions");
+        var messages = _database.GetCollection<BsonDocument>("chatmessages");
+
+        try
+        {
+            await CreateIndexAsync(sessions,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("companyId")
+                    .Descending("updatedAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_chat_sessions_company_updatedAt"
+                },
+                "chatsessions.companyId + updatedAt");
+
+            await CreateIndexAsync(sessions,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("companyId")
+                    .Ascending("participants"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_chat_sessions_company_participants"
+                },
+                "chatsessions.companyId + participants");
+
+            await CreateIndexAsync(messages,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("companyId")
+                    .Ascending("sessionId")
+                    .Descending("createdAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_chat_messages_company_session_createdAt"
+                },
+                "chatmessages.companyId + sessionId + createdAt");
+
+            await CreateIndexAsync(messages,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("companyId")
+                    .Ascending("senderId")
+                    .Descending("createdAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_chat_messages_company_sender_createdAt"
+                },
+                "chatmessages.companyId + senderId + createdAt");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建聊天索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建好友关系索引
+    /// </summary>
+    private async Task CreateFriendshipIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("friendships");
+
+        try
+        {
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("userId")
+                    .Ascending("friendUserId"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_friendships_user_friend",
+                    Unique = true
+                },
+                "friendships.userId + friendUserId (唯一)");
+
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("userId")
+                    .Descending("createdAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_friendships_user_createdAt"
+                },
+                "friendships.userId + createdAt");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建好友关系索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建好友请求索引
+    /// </summary>
+    private async Task CreateFriendRequestIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("friendrequests");
+
+        try
+        {
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("requesterId")
+                    .Ascending("targetUserId")
+                    .Descending("status"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_friendrequests_pair_status"
+                },
+                "friendrequests.requesterId + targetUserId + status");
+
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("targetUserId")
+                    .Ascending("status")
+                    .Descending("createdAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_friendrequests_target_status"
+                },
+                "friendrequests.targetUserId + status");
+
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("requesterId")
+                    .Ascending("status")
+                    .Descending("createdAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_friendrequests_requester_status"
+                },
+                "friendrequests.requesterId + status");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建好友请求索引失败");
         }
     }
     private async Task CreateIndexAsync<T>(

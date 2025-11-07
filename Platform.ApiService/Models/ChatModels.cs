@@ -1,0 +1,592 @@
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using Platform.ServiceDefaults.Models;
+using System.ComponentModel.DataAnnotations;
+
+namespace Platform.ApiService.Models;
+
+/// <summary>
+/// 聊天消息类型
+/// </summary>
+public enum ChatMessageType
+{
+    /// <summary>
+    /// 文本消息
+    /// </summary>
+    Text,
+
+    /// <summary>
+    /// 图片附件
+    /// </summary>
+    Image,
+
+    /// <summary>
+    /// 文件附件
+    /// </summary>
+    File,
+
+    /// <summary>
+    /// 系统消息
+    /// </summary>
+    System
+}
+
+/// <summary>
+/// 聊天附件信息
+/// </summary>
+public class ChatAttachmentInfo
+{
+    /// <summary>
+    /// 附件标识
+    /// </summary>
+    [BsonElement("id")]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 附件名称
+    /// </summary>
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 附件大小（单位：字节）
+    /// </summary>
+    [BsonElement("size")]
+    public long Size { get; set; }
+        = 0;
+
+    /// <summary>
+    /// 内容类型（MIME）
+    /// </summary>
+    [BsonElement("mimeType")]
+    public string MimeType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 服务器可访问地址
+    /// </summary>
+    [BsonElement("url")]
+    public string Url { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 缩略图地址（可选）
+    /// </summary>
+    [BsonElement("thumbnailUrl")]
+    public string? ThumbnailUrl { get; set; }
+        = default;
+
+    /// <summary>
+    /// 上传时间（UTC）
+    /// </summary>
+    [BsonElement("uploadedAt")]
+    public DateTime UploadedAt { get; set; }
+        = DateTime.UtcNow;
+}
+
+/// <summary>
+/// 聊天附件实体
+/// </summary>
+public class ChatAttachment : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+{
+    /// <summary>
+    /// MongoDB 主键
+    /// </summary>
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public new string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 关联会话标识
+    /// </summary>
+    [BsonElement("sessionId")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    [Required]
+    public string SessionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 关联消息标识
+    /// </summary>
+    [BsonElement("messageId")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? MessageId { get; set; }
+        = default;
+
+    /// <summary>
+    /// 上传者用户标识
+    /// </summary>
+    [BsonElement("uploaderId")]
+    public string UploaderId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 文件名称
+    /// </summary>
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 文件大小（字节）
+    /// </summary>
+    [BsonElement("size")]
+    public long Size { get; set; }
+        = 0;
+
+    /// <summary>
+    /// 内容类型
+    /// </summary>
+    [BsonElement("mimeType")]
+    public string MimeType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 存储对象标识（GridFS/Object Storage）
+    /// </summary>
+    [BsonElement("storageObjectId")]
+    public string StorageObjectId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 下载地址（预签名或代理地址）
+    /// </summary>
+    [BsonElement("downloadUrl")]
+    public string DownloadUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 附件校验摘要（可选）
+    /// </summary>
+    [BsonElement("checksum")]
+    public string? Checksum { get; set; }
+        = default;
+
+    /// <summary>
+    /// 缩略图地址（可选）
+    /// </summary>
+    [BsonElement("thumbnailUrl")]
+    public string? ThumbnailUrl { get; set; }
+        = default;
+
+    /// <summary>
+    /// 上传时间
+    /// </summary>
+    [BsonElement("createdAt")]
+    public new DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 更新时间
+    /// </summary>
+    [BsonElement("updatedAt")]
+    public new DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 是否已删除
+    /// </summary>
+    [BsonElement("isDeleted")]
+    public new bool IsDeleted { get; set; }
+        = false;
+
+    /// <summary>
+    /// 删除时间
+    /// </summary>
+    [BsonElement("deletedAt")]
+    public new DateTime? DeletedAt { get; set; }
+        = default;
+}
+
+/// <summary>
+/// 聊天会话实体
+/// </summary>
+public class ChatSession : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+{
+    /// <summary>
+    /// MongoDB 主键
+    /// </summary>
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public new string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 会话参与用户标识集合
+    /// </summary>
+    [BsonElement("participants")]
+    [Required]
+    public List<string> Participants { get; set; } = new();
+
+    /// <summary>
+    /// 参与人昵称映射（可选）
+    /// </summary>
+    [BsonElement("participantNames")]
+    public Dictionary<string, string> ParticipantNames { get; set; } = new();
+
+    /// <summary>
+    /// 最后一条消息内容摘要
+    /// </summary>
+    [BsonElement("lastMessageExcerpt")]
+    public string? LastMessageExcerpt { get; set; }
+        = default;
+
+    /// <summary>
+    /// 最后一条消息标识
+    /// </summary>
+    [BsonElement("lastMessageId")]
+    public string? LastMessageId { get; set; }
+        = default;
+
+    /// <summary>
+    /// 最后一条消息时间（UTC）
+    /// </summary>
+    [BsonElement("lastMessageAt")]
+    public DateTime? LastMessageAt { get; set; }
+        = default;
+
+    /// <summary>
+    /// 每位参与者的未读计数
+    /// </summary>
+    [BsonElement("unreadCounts")]
+    public Dictionary<string, int> UnreadCounts { get; set; } = new();
+
+    /// <summary>
+    /// 会话标签/主题
+    /// </summary>
+    [BsonElement("topicTags")]
+    public List<string> TopicTags { get; set; } = new();
+
+    /// <summary>
+    /// 是否静音
+    /// </summary>
+    [BsonElement("isMuted")]
+    public bool IsMuted { get; set; }
+        = false;
+
+    /// <summary>
+    /// 创建时间（UTC）
+    /// </summary>
+    [BsonElement("createdAt")]
+    public new DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 更新时间（UTC）
+    /// </summary>
+    [BsonElement("updatedAt")]
+    public new DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 是否已删除
+    /// </summary>
+    [BsonElement("isDeleted")]
+    public new bool IsDeleted { get; set; }
+        = false;
+
+    /// <summary>
+    /// 删除时间（UTC）
+    /// </summary>
+    [BsonElement("deletedAt")]
+    public new DateTime? DeletedAt { get; set; }
+        = default;
+}
+
+/// <summary>
+/// 聊天消息实体
+/// </summary>
+public class ChatMessage : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+{
+    /// <summary>
+    /// MongoDB 主键
+    /// </summary>
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public new string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 会话标识
+    /// </summary>
+    [BsonElement("sessionId")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    [Required]
+    public string SessionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 发送方用户标识
+    /// </summary>
+    [BsonElement("senderId")]
+    public string SenderId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 发送方显示名称
+    /// </summary>
+    [BsonElement("senderName")]
+    public string? SenderName { get; set; }
+        = default;
+
+    /// <summary>
+    /// 接收方用户标识（私聊场景可用）
+    /// </summary>
+    [BsonElement("recipientId")]
+    public string? RecipientId { get; set; }
+        = default;
+
+    /// <summary>
+    /// 消息类型
+    /// </summary>
+    [BsonElement("type")]
+    [BsonRepresentation(BsonType.String)]
+    public ChatMessageType Type { get; set; }
+        = ChatMessageType.Text;
+
+    /// <summary>
+    /// 文本内容
+    /// </summary>
+    [BsonElement("content")]
+    public string? Content { get; set; }
+        = default;
+
+    /// <summary>
+    /// 附件信息
+    /// </summary>
+    [BsonElement("attachment")]
+    public ChatAttachmentInfo? Attachment { get; set; }
+        = default;
+
+    /// <summary>
+    /// 扩展元数据
+    /// </summary>
+    [BsonElement("metadata")]
+    public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// 消息是否被撤回
+    /// </summary>
+    [BsonElement("isRecalled")]
+    public bool IsRecalled { get; set; }
+        = false;
+
+    /// <summary>
+    /// 创建时间（UTC）
+    /// </summary>
+    [BsonElement("createdAt")]
+    public new DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 更新时间（UTC）
+    /// </summary>
+    [BsonElement("updatedAt")]
+    public new DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 是否已删除
+    /// </summary>
+    [BsonElement("isDeleted")]
+    public new bool IsDeleted { get; set; }
+        = false;
+
+    /// <summary>
+    /// 删除时间（UTC）
+    /// </summary>
+    [BsonElement("deletedAt")]
+    public new DateTime? DeletedAt { get; set; }
+        = default;
+}
+
+/// <summary>
+/// 聊天会话查询请求
+/// </summary>
+public class ChatSessionListRequest
+{
+    /// <summary>
+    /// 页码（从 1 开始）
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public int Page { get; set; } = 1;
+
+    /// <summary>
+    /// 每页数量
+    /// </summary>
+    [Range(1, 100)]
+    public int PageSize { get; set; } = 20;
+
+    /// <summary>
+    /// 关键字过滤
+    /// </summary>
+    public string? Keyword { get; set; }
+        = default;
+}
+
+/// <summary>
+/// 聊天消息查询请求
+/// </summary>
+public class ChatMessageListRequest
+{
+    /// <summary>
+    /// 游标（上一页最后一条消息标识）
+    /// </summary>
+    public string? Cursor { get; set; }
+        = default;
+
+    /// <summary>
+    /// 请求的消息条数
+    /// </summary>
+    [Range(1, 200)]
+    public int Limit { get; set; } = 50;
+}
+
+/// <summary>
+/// 发送消息请求
+/// </summary>
+public class SendChatMessageRequest
+{
+    /// <summary>
+    /// 会话标识
+    /// </summary>
+    [Required]
+    public string SessionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 消息类型
+    /// </summary>
+    [Required]
+    public ChatMessageType Type { get; set; } = ChatMessageType.Text;
+
+    /// <summary>
+    /// 文本内容（文本消息必填）
+    /// </summary>
+    public string? Content { get; set; }
+        = default;
+
+    /// <summary>
+    /// 已上传附件标识（附件消息必填）
+    /// </summary>
+    public string? AttachmentId { get; set; }
+        = default;
+
+    /// <summary>
+    /// 目标用户（私聊/点对点场景）
+    /// </summary>
+    public string? RecipientId { get; set; }
+        = default;
+}
+
+/// <summary>
+/// 附件上传响应
+/// </summary>
+public class UploadAttachmentResponse
+{
+    /// <summary>
+    /// 附件信息
+    /// </summary>
+    public ChatAttachmentInfo Attachment { get; set; } = new();
+}
+
+/// <summary>
+/// 标记会话已读请求
+/// </summary>
+public class MarkSessionReadRequest
+{
+    /// <summary>
+    /// 最后一条已读消息标识
+    /// </summary>
+    [Required]
+    public string LastMessageId { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 消息时间线响应
+/// </summary>
+public class ChatMessageTimelineResponse
+{
+    /// <summary>
+    /// 消息列表
+    /// </summary>
+    public List<ChatMessage> Items { get; set; } = new();
+
+    /// <summary>
+    /// 是否存在更多数据
+    /// </summary>
+    public bool HasMore { get; set; }
+        = false;
+
+    /// <summary>
+    /// 下一次请求的游标
+    /// </summary>
+    public string? NextCursor { get; set; }
+        = default;
+}
+
+/// <summary>
+/// 实时消息推送负载
+/// </summary>
+public class ChatMessageRealtimePayload
+{
+    /// <summary>
+    /// 会话标识
+    /// </summary>
+    public string SessionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 消息内容
+    /// </summary>
+    public ChatMessage Message { get; set; } = new();
+
+    /// <summary>
+    /// 推送时间（UTC）
+    /// </summary>
+    public DateTime BroadcastAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// 实时会话摘要推送负载
+/// </summary>
+public class ChatSessionRealtimePayload
+{
+    /// <summary>
+    /// 会话摘要
+    /// </summary>
+    public ChatSession Session { get; set; } = new();
+
+    /// <summary>
+    /// 推送时间（UTC）
+    /// </summary>
+    public DateTime BroadcastAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// 实时消息删除推送负载
+/// </summary>
+public class ChatMessageDeletedPayload
+{
+    /// <summary>
+    /// 会话标识
+    /// </summary>
+    public string SessionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 消息标识
+    /// </summary>
+    public string MessageId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 删除时间（UTC）
+    /// </summary>
+    public DateTime DeletedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// 实时会话已读推送负载
+/// </summary>
+public class ChatSessionReadPayload
+{
+    /// <summary>
+    /// 会话标识
+    /// </summary>
+    public string SessionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 用户标识
+    /// </summary>
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 最后一条已读消息标识
+    /// </summary>
+    public string LastMessageId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 已读时间（UTC）
+    /// </summary>
+    public DateTime ReadAtUtc { get; set; } = DateTime.UtcNow;
+}
+

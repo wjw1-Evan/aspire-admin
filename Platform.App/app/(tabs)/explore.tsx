@@ -1,112 +1,107 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
-export default function TabTwoScreen() {
+interface ExploreTile {
+  title: string;
+  description: string;
+  icon: string;
+  route: string;
+}
+
+const tiles: ExploreTile[] = [
+  {
+    title: '附近的人',
+    description: '发现身边的实时动态，向附近的同事或伙伴发起聊天。',
+    icon: 'mappin.and.ellipse',
+    route: '/people/nearby',
+  },
+  {
+    title: '智能推荐',
+    description: '让 AI 快速匹配与你兴趣相投的好友或业务联系人。',
+    icon: 'sparkles',
+    route: '/people/recommend',
+  },
+  {
+    title: '消息中心',
+    description: '集中查看所有会话，一键返回聊天列表开始沟通。',
+    icon: 'bubble.left.and.bubble.right.fill',
+    route: '/(tabs)/chat',
+  },
+];
+
+export default function ExploreScreen() {
+  const router = useRouter();
+  const heroBackground = useThemeColor({ light: '#e0f2ff', dark: '#0f172a' }, 'card');
+  const heroText = useThemeColor({ light: '#0f172a', dark: '#e2e8f0' }, 'text');
+  const tileBackground = useThemeColor({ light: '#f8fafc', dark: '#1f2937' }, 'card');
+  const accent = useThemeColor({ light: '#0ea5e9', dark: '#38bdf8' }, 'tint');
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
+    <ScrollView contentContainerStyle={styles.container}>
+      <ThemedView style={[styles.hero, { backgroundColor: heroBackground }] }>
+        <IconSymbol name="safari.fill" size={64} color={accent} />
+        <ThemedText type="title" style={[styles.heroTitle, { color: heroText }]}>发现更多精彩</ThemedText>
+        <ThemedText style={[styles.heroSubtitle, { color: heroText, opacity: 0.75 }] }>
+          打开社交通道，快速拓展人脉、寻找灵感，让工作与交流更高效。
         </ThemedText>
       </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+
+      {tiles.map(tile => (
+        <ThemedView key={tile.route} style={[styles.tile, { backgroundColor: tileBackground }] }>
+          <IconSymbol name={tile.icon as any} size={28} color={accent} />
+          <ThemedText type="subtitle" style={styles.tileTitle}>
+            {tile.title}
+          </ThemedText>
+          <ThemedText style={styles.tileDescription}>{tile.description}</ThemedText>
+          <ThemedText style={[styles.tileAction, { color: accent }]} onPress={() => router.push(tile.route)}>
+            立即前往 →
+          </ThemedText>
+        </ThemedView>
+      ))}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    padding: 16,
+    gap: 16,
   },
-  titleContainer: {
-    flexDirection: 'row',
+  hero: {
+    padding: 24,
+    borderRadius: 20,
+    alignItems: 'center',
+    gap: 12,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  tile: {
+    borderRadius: 16,
+    padding: 20,
     gap: 8,
+  },
+  tileTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  tileDescription: {
+    fontSize: 14,
+    opacity: 0.75,
+  },
+  tileAction: {
+    marginTop: 12,
+    fontSize: 14,
   },
 });

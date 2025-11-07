@@ -77,6 +77,7 @@ export interface RegisterRequest {
   username: string;
   password: string;
   email?: string;
+  phoneNumber?: string;
   captchaId?: string;
   captchaAnswer?: string;
 }

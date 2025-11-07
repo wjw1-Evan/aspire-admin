@@ -28,6 +28,7 @@ public class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IDatabaseOperationFactory<LoginFailureRecord> _failureRecordFactory;
+    private readonly IPhoneValidationService _phoneValidationService;
 
     /// <summary>
     /// 初始化认证服务
@@ -45,6 +46,7 @@ public class AuthService : IAuthService
     /// <param name="validationService">字段验证服务</param>
     /// <param name="passwordHasher">密码哈希服务</param>
     /// <param name="imageCaptchaService">图形验证码服务</param>
+    /// <param name="phoneValidationService">手机号校验服务</param>
     /// <param name="failureRecordFactory">登录失败记录数据操作工厂</param>
     public AuthService(
         IDatabaseOperationFactory<User> userFactory,
@@ -60,6 +62,7 @@ public class AuthService : IAuthService
         IFieldValidationService validationService,
         IPasswordHasher passwordHasher,
         IImageCaptchaService imageCaptchaService,
+        IPhoneValidationService phoneValidationService,
         IDatabaseOperationFactory<LoginFailureRecord> failureRecordFactory)
     {
         _userFactory = userFactory;
@@ -76,6 +79,7 @@ public class AuthService : IAuthService
         _passwordHasher = passwordHasher;
         _imageCaptchaService = imageCaptchaService;
         _failureRecordFactory = failureRecordFactory;
+        _phoneValidationService = phoneValidationService;
     }
 
     // 🔒 安全修复：移除静态密码哈希方法，统一使用注入的 IPasswordHasher
@@ -478,6 +482,10 @@ public class AuthService : IAuthService
         _validationService.ValidateUsername(request.Username);
         _validationService.ValidatePassword(request.Password);
         _validationService.ValidateEmail(request.Email);
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            _phoneValidationService.ValidatePhone(request.PhoneNumber.Trim());
+        }
         
         // 2. 检查用户名全局唯一
         try
@@ -503,6 +511,19 @@ public class AuthService : IAuthService
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            try
+            {
+                await _uniquenessChecker.EnsurePhoneUniqueAsync(request.PhoneNumber.Trim());
+            }
+            catch (InvalidOperationException)
+            {
+                await RecordFailureAsync(clientId, "register");
+                throw;
+            }
+        }
+
         // 3. 执行注册流程（使用错误回滚机制，因为单机MongoDB不支持事务）
         User? user = null;
         Company? personalCompany = null;
@@ -517,6 +538,7 @@ public class AuthService : IAuthService
                 Username = request.Username.Trim(),
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
                 Email = string.IsNullOrEmpty(request.Email) ? null : request.Email.Trim(),
+                PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim(),
                 IsActive = true
                 // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };

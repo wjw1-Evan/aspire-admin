@@ -1,716 +1,250 @@
 # Aspire Admin Platform
 
-基于 .NET Aspire 构建的现代化多租户微服务管理平台，提供企业级用户管理、权限控制、通知系统、React 前端界面和移动端应用等功能。
+基于 .NET Aspire 构建的多租户企业管理平台。项目提供统一的后端服务、管理后台与跨平台移动应用，涵盖用户管理、企业协作、菜单级权限控制、审计日志与系统监控等能力。
 
-## 🚀 项目概述
+## ✨ 关键特性
 
-这是一个使用 .NET Aspire 框架构建的微服务架构项目，采用多租户 SaaS 模式，包含以下核心组件：
+- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集。
+- **管理后台**：Ant Design Pro 动态菜单、企业与成员管理、加入申请审批、用户活动日志、帮助中心、国际化与统一错误处理。
+- **移动应用**：Expo Router 导航、深色/浅色主题切换、认证守卫、企业切换、密码修改与基础组件库。
+- **基础设施**：Aspire AppHost 服务编排、YARP 统一网关、Scalar API 文档、MongoDB + Mongo Express、健康检查与可观察性。
 
-- **多租户 API 服务** - 提供企业级用户管理、认证、权限控制、通知等 REST API
-- **数据初始化微服务** - 独立的数据库初始化和菜单管理服务
-- **管理后台** - React + Ant Design Pro 企业级前端界面
-- **移动应用** - React Native + Expo 跨平台移动应用
-- **API 网关** - 基于 YARP 的统一入口
-- **多租户数据库** - MongoDB 数据存储，支持企业数据隔离
-- **API 文档** - Scalar API 文档界面
-- **帮助系统** - 内置系统帮助模块
-
-## 🏗️ 项目结构
+## 🏗 架构总览
 
 ```text
 Platform/
-├── Platform.AppHost/          # Aspire 应用主机
-├── Platform.DataInitializer/  # 数据初始化微服务
-├── Platform.ApiService/       # API 服务
-├── Platform.Admin/            # 管理后台 (React + Ant Design Pro)
-├── Platform.App/              # 移动应用 (React Native + Expo)
-└── Platform.ServiceDefaults/  # 共享服务配置
+├── Platform.AppHost/          # Aspire 应用主机与服务编排
+├── Platform.DataInitializer/  # 数据初始化微服务（索引 + 全局菜单）
+├── Platform.ApiService/       # 多租户 REST API 服务
+├── Platform.Admin/            # 管理后台（React 19 + Ant Design Pro）
+├── Platform.App/              # 移动端（React Native + Expo）
+└── Platform.ServiceDefaults/  # 统一的服务发现、观测与安全配置
 ```
 
-### 核心组件
+### 服务编排
 
-#### Platform.AppHost
-- 应用编排和配置中心
-- 集成 MongoDB 和 Mongo Express
-- 配置 YARP API 网关
-- 集成 Scalar API 文档
-- 管理前端和移动应用的构建与部署
-- 控制微服务启动顺序（DataInitializer → ApiService）
+`Platform.AppHost` 会拉起 MongoDB、数据初始化服务、API 服务以及前端应用，并通过 YARP 将 `http://localhost:15000/{service}/**` 重写到后端 `/api/**`。示例配置：
 
-#### Platform.DataInitializer
-- **数据初始化微服务** - 独立的初始化服务，执行完成后自动停止
-- **数据库索引创建** - 自动创建所有必要的 MongoDB 索引
-- **全局菜单初始化** - 创建系统级菜单（所有企业共享）
-- **幂等性保证** - 可以安全地重复执行初始化操作
-- **单实例运行** - 确保只有一个实例执行初始化
+```34:62:Platform.AppHost/AppHost.cs
+var yarp = builder.AddYarp("apigateway")
+    .WithHostPort(15000)
+    .WithConfiguration(config =>
+    {
+        foreach (var service in services)
+        {
+            var route = $"/{service.Key}/{{**catch-all}}";
+            config.AddRoute(route, config.AddCluster(service.Value))
+                .WithTransformPathRouteValues("/api/{**catch-all}");
+        }
+    });
 
-#### Platform.ApiService
-- **多租户架构** - 基于 CompanyId 的企业数据隔离
-- **企业自助注册** - 企业可自助注册，首个用户自动成为管理员
-- **用户管理 API** - 支持 CRUD、搜索、分页、批量操作
-- **统一权限控制** - 基于 [RequirePermission] 特性的声明式权限管理
-- **JWT 认证系统** - 支持多企业切换的认证机制
-- **用户活动日志** - 自动记录用户操作日志
-- **通知管理 API** - 企业级通知系统
-- **角色权限管理** - 企业独立管理角色和权限
-- **菜单管理 API** - 动态菜单配置
-- **标签管理 API** - 用户标签分类管理
-- **数据库操作工厂** - 统一的数据访问层，自动处理多租户过滤、软删除、操作审计
-- **MongoDB 数据访问** - 支持软删除和时间戳
-- **OpenAPI 文档支持** - 完整的 API 文档
-- **健康检查端点** - 服务状态监控
-- **依赖数据初始化服务** - 在 DataInitializer 完成后启动
+builder.AddNpmApp("admin", "../Platform.Admin")
+    .WithReference(yarp)
+    .WaitFor(yarp)
+    .WithEnvironment("BROWSER", "none")
+    .WithHttpEndpoint(env: "PORT", port: 15001)
+    .WithNpmPackageInstallation()
+    .PublishAsDockerFile();
+```
 
-#### Platform.Admin
-- **React 19 + Ant Design Pro** - 企业级管理后台
-- **基于 UmiJS** - 企业级前端应用框架
-- **多租户支持** - 企业注册、切换、管理功能
-- **用户管理界面** - 列表、创建、编辑、删除、批量操作
-- **权限管理** - 角色分配、权限配置、菜单管理
-- **个人中心** - 资料管理、密码修改、企业切换
-- **通知系统** - 企业通知、消息管理、未读提醒
-- **帮助系统** - 内置系统帮助模块和使用指南
-- **多语言支持** - 中文、英文等多语言界面
-- **响应式设计** - 适配桌面、平板、手机等设备
-- **JWT 认证集成** - 统一认证和权限控制
+## 🔙 后端服务（Platform.ApiService）
 
-#### Platform.App
-- **React Native + Expo** - 跨平台移动应用
-- **多平台支持** - iOS、Android 和 Web 平台
-- **基于 Expo Router** - 文件系统路由
-- **现代化 UI 设计** - 企业级移动端界面
-- **多租户支持** - 企业切换和用户管理
-- **与后端 API 集成** - 统一的认证和权限控制
+- **多租户数据访问**：所有实体通过 `IDatabaseOperationFactory<T>` 访问数据库，自动处理企业过滤、软删除、审计字段与批量操作，禁止直接使用 `IMongoCollection<T>`。
+- **认证与安全**：支持账户密码登录、刷新令牌、登录失败计数 + 图形验证码、密码复杂度校验、手机号验证码校验与 HSTS/CORS 配置。
+- **菜单级权限**：通过 `[RequireMenu("menu-name")]` 声明菜单访问权限，配合全局菜单与角色的 `MenuIds` 实现粗粒度控制。
+- **企业协作**：公司注册、个人企业创建、企业成员管理、管理员设置、加入申请审批、企业统计与企业切换。
+- **运营能力**：通知中心、规则配置、系统维护脚本（补全缺失关联、数据校验）、系统资源监控 (`/api/SystemMonitor/resources`)。
+- **审计与日志**：`ActivityLogMiddleware` 捕获请求轨迹，`UserActivityLog` 记录 CRUD 审计操作，所有异常由统一响应中间件处理。
+- **OpenAPI 文档**：基于 .NET 9 原生 OpenAPI + Scalar，所有公共成员已补全 XML 注释，保证文档可读性。
 
-#### Platform.ServiceDefaults
-- **共享服务配置** - 统一的服务配置管理
-- **OpenTelemetry 集成** - 分布式追踪和监控
-- **服务发现配置** - 微服务自动发现
-- **JWT 认证配置** - 统一认证配置
-- **MongoDB 驱动配置** - 数据库连接配置
-- **多租户支持** - 企业数据隔离配置
+核心启动逻辑集中在 `Program.cs`，完成 CORS、OpenAPI、JWT、健康检查与中间件管线配置：
 
-## 🛠️ 技术栈
+```24:224:Platform.ApiService/Program.cs
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info = new()
+        {
+            Title = "Platform API",
+            Version = "v1",
+            Description = "Aspire Admin Platform API - 企业级管理平台后端服务",
+            Contact = new()
+            {
+                Name = "Platform Team",
+                Email = "support@platform.com"
+            }
+        };
 
-### 后端技术
-- **.NET 9.0** - 最新 .NET 框架
-- **.NET Aspire** - 微服务编排框架
-- **MongoDB** - NoSQL 数据库，支持多租户数据隔离
-- **YARP** - 反向代理和负载均衡
-- **Scalar** - API 文档生成
-- **OpenTelemetry** - 可观测性
-- **JWT** - 多企业认证和授权
-- **数据库操作工厂** - 统一数据访问层，自动处理多租户、软删除、审计
-- **软删除** - 数据安全删除机制
+        document.Components ??= new();
+        document.Components.SecuritySchemes ??= new Dictionary<string, Microsoft.OpenApi.Models.OpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new()
+        {
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "JWT Authorization header using the Bearer scheme."
+        };
 
-### 前端技术
-- **React 19** - 现代前端框架
-- **Ant Design Pro** - 企业级UI组件库
-- **UmiJS** - 企业级前端应用框架
-- **TypeScript** - 类型安全的JavaScript
-- **Biome** - 代码格式化和检查工具
-- **多语言支持** - 国际化框架
-- **帮助系统** - 内置用户指南
+        document.SecurityRequirements ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
+        document.SecurityRequirements.Add(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            [document.Components.SecuritySchemes["Bearer"]] = new string[0]
+        });
 
-### 移动端技术
-- **React Native** - 跨平台移动应用框架
-- **Expo** - React Native 开发平台
-- **Expo Router** - 基于文件系统的路由
-- **TypeScript** - 类型安全的JavaScript
-- **多租户支持** - 企业切换和管理
+        return Task.CompletedTask;
+    });
+
+    options.AddOperationTransformer((operation, context, cancellationToken) =>
+    {
+        var authorizeAttributes = context.Description.ActionDescriptor.EndpointMetadata
+            .OfType<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>();
+
+        if (authorizeAttributes.Any())
+        {
+            operation.Security ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
+            operation.Security.Add(new()
+            {
+                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new()
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                }] = Array.Empty<string>()
+            });
+        }
+
+        return Task.CompletedTask;
+    });
+});
+```
+
+## 🗄 数据初始化（Platform.DataInitializer）
+
+独立微服务负责：
+
+- 创建所有集合索引（用户、企业、角色、日志等）。
+- 同步全局菜单（欢迎页 + 系统管理子菜单），按名称识别避免重复。
+- 幂等运行，执行完成后记录统计并优雅停止。
+
+菜单是全局资源（无 `CompanyId`），企业通过角色 `MenuIds` 控制可见项。
+
+## 🖥 管理后台（Platform.Admin）
+
+- UmiJS 运行时获取当前用户与动态菜单，直接对接网关 `/apiservice`。
+- 功能模块：用户管理、角色管理、企业设置、加入申请（我发起 / 待审批）、我的活动、系统帮助。
+- 统一请求封装、自动刷新 token、Ant Design Pro 组件体系、Biome 代码规范。
+- 支持多语言、响应式布局、错误提示与细粒度操作验证。
+
+## 📱 移动应用（Platform.App）
+
+- Expo Router 文件路由，`AuthGuard` 保证敏感页面登录可达。
+- 提供登录、注册、企业切换、个人资料、密码修改、关于信息等页面。
+- 主题切换、Toast/对话框封装、会话管理、网络错误处理。
 
 ## 🚀 快速开始
 
-### 前置要求
+1. **安装依赖**
+   - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+   - [Node.js 20+](https://nodejs.org/)
+   - [Docker Desktop](https://www.docker.com/products/docker-desktop)
+   - （移动端调试）[Expo CLI](https://docs.expo.dev/get-started/installation/)
 
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [Node.js 20+](https://nodejs.org/)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop)
-- [Expo CLI](https://docs.expo.dev/get-started/installation/) (用于移动应用开发)
-
-### 运行项目
-
-1. **克隆项目**
+2. **配置 JWT 密钥**（首次运行必需）
    ```bash
-   git clone <repository-url>
-   cd aspire-admin
-   ```
-
-2. **安装前端依赖**
-   ```bash
-   # 安装管理后台依赖
-   cd Platform.Admin
-   npm install
-   cd ..
-   
-   # 安装移动应用依赖
-   cd Platform.App
-   npm install
+   cd Platform.ApiService
+   dotnet user-secrets init
+   dotnet user-secrets set "Jwt:SecretKey" "请替换为强随机密钥"
    cd ..
    ```
+   或设置环境变量 `Jwt__SecretKey`。
 
-3. **启动应用**
+3. **安装前端依赖**
+   ```bash
+   (cd Platform.Admin && npm install)
+   (cd Platform.App && npm install)
+   ```
+
+4. **启动全栈环境**
    ```bash
    dotnet run --project Platform.AppHost
    ```
-   
-   **启动说明**：
-   - AppHost 会自动启动所有微服务
-   - DataInitializer 会首先执行数据初始化（创建索引和菜单）
-   - API 服务会在 DataInitializer 完成后自动启动
-   - 前端应用会在 API 服务就绪后启动
+   AppHost 会依次启动 MongoDB → DataInitializer → ApiService → 网关 → 前端应用。
 
-4. **访问应用**
-   - **管理后台**: http://localhost:15001
-   - **移动应用**: http://localhost:15002
-   - **API 网关**: http://localhost:15000
-   - **Aspire Dashboard**: http://localhost:15003 （包含 Scalar API 文档）
-   - **Mongo Express**: http://localhost:15000/mongo-express
+5. **访问入口**
+   - 管理后台：<http://localhost:15001>
+   - 移动应用（Web 预览）：<http://localhost:15002>
+   - 网关与 API：<http://localhost:15000>
+   - Aspire Dashboard + Scalar：<http://localhost:15003>
+   - Mongo Express：<http://localhost:15000/mongo-express>
 
-## 📖 API 文档
+6. **首次登录**
+   - 管理后台/移动端均支持直接注册。
+   - 注册成功将自动创建个人企业并赋予管理员菜单权限。
 
-### 查看 API 文档
+> 如果只需单独调试某个前端，可在对应目录执行 `npm run start`（Admin）或 `npm start`（App）。
 
-详细的 API 文档通过 Scalar 提供，集成在 Aspire Dashboard 中：
+## 📘 API 文档
 
-**快速访问指南**: 查看 [HOW-TO-VIEW-API-DOCS.md](docs/features/HOW-TO-VIEW-API-DOCS.md)
+- Aspire Dashboard → “Resources” → “Scalar API Reference” → 打开文档页面。
+- 直接访问 `http://localhost:15000/apiservice/openapi/v1.json` 获取 OpenAPI JSON。
+- 在 Scalar 页面点击 “Authorize”，填入 `Bearer <token>` 即可在线调试。
 
-简要步骤：
-1. 访问 Aspire Dashboard: http://localhost:15003
-2. 点击顶部 "Resources" 标签
-3. 找到 "Scalar API Reference" 资源
-4. 点击端点链接打开 API 文档
+## 🧩 多租户与权限模型
 
-或直接查看 OpenAPI JSON: http://localhost:15000/apiservice/openapi/v1.json
+- **企业隔离**：实现 `IMultiTenant` 的实体（角色、通知等）自动附加 `CompanyId` 过滤；`AppUser` 通过 `CurrentCompanyId` + `UserCompany` 多对多关联。
+- **企业协作**：企业创建、搜索、成员列表、角色分配、管理员设置、成员移除。
+- **加入申请**：用户可申请加入其他企业；管理员在“待审核”页面审批或拒绝。
+- **菜单级权限**：角色仅包含 `MenuIds`，获得菜单即具备对应 API 访问权限；前端不再隐藏按钮，真实权限由后端控制。
 
-## 🏢 多租户功能
+## 🔐 安全与可观测性
 
-### 用户注册和登录
-1. **用户自主注册** - 访问注册页面创建新账户
-2. **自动创建企业** - 注册时系统自动为用户创建个人企业
-3. **自动成为管理员** - 注册用户自动成为其企业的管理员
-4. **企业切换** - 用户可以在多个企业间自由切换
-5. **数据完全隔离** - 每个企业的数据完全独立，确保安全性
+- 图形验证码 / 短信验证码（可扩展）、登录失败计数、密码策略、刷新令牌、用户登出。
+- 统一异常处理中间件输出一致响应格式，前端根据 `showType` 渲染提示。
+- OpenTelemetry 追踪、健康检查端点 `/health`、SystemMonitor 资源信息、Mongo Express 数据查看。
+- `Platform.ServiceDefaults` 为所有服务注入服务发现、标准重试策略、日志记录与指标采集。
 
-## 📡 API 接口
+## 🧪 测试与质量
 
-### 认证 API
+- 使用 Biome / ESLint（移动端）维持前端代码规范。
+- `Platform.AppHost.Tests` 提供 AppHost 集成测试示例，可通过 `dotnet test` 执行。
+- 所有公共 C# 类型保持 XML 注释，确保 Scalar 文档完整。
 
-所有 API 通过网关访问：`http://localhost:15000/apiservice/`
+## 📂 目录结构
 
-#### 用户注册（推荐）
-```http
-POST /apiservice/api/register
-Content-Type: application/json
+```text
+Platform.ApiService/
+├── Controllers/      # Auth、User、Company、Menu、JoinRequest、Maintenance、Monitor 等控制器
+├── Services/         # 业务服务层与自动注册
+├── Models/           # 实体与 DTO（含 Response 模型）
+├── Middleware/       # 活动日志、统一响应
+├── Extensions/       # 数据过滤、分页、自动注册等扩展方法
+└── Program.cs        # 服务启动入口
 
-{
-  "username": "yourname",
-  "password": "YourPassword123",
-  "email": "your@email.com"
-}
+Platform.Admin/
+├── config/           # UmiJS 配置、路由、代理
+├── src/
+│   ├── pages/        # 用户管理、角色管理、企业设置、加入申请、活动日志等
+│   ├── components/   # 复用组件、帮助弹窗等
+│   ├── services/     # API 封装（自动刷新 token）
+│   └── utils/        # token 工具、国际化、错误处理
+
+Platform.App/
+├── app/              # Expo Router 页面，含认证、标签页、个人中心
+├── components/       # 主题化组件、告警、输入校验
+└── services/         # 与网关交互的 API 封装
 ```
 
-**说明**：
-- 系统会自动为您创建个人企业
-- 您将自动成为该企业的管理员
-- 企业名称："{username} 的企业"
-- 自动创建28个默认权限、1个管理员角色、3个默认菜单
-
-#### 用户登录
-```http
-POST /apiservice/api/login/account
-Content-Type: application/json
-
-{
-  "username": "admin",
-  "password": "admin123",
-  "autoLogin": true,
-  "type": "account"
-}
-```
-
-#### 获取当前用户信息
-```http
-GET /apiservice/api/currentUser
-Authorization: Bearer {token}
-```
-
-#### 用户登出
-```http
-POST /apiservice/api/login/outLogin
-Authorization: Bearer {token}
-```
-
-### 用户管理 API
-
-#### 获取用户列表（分页）
-```http
-POST /apiservice/api/users/list
-Content-Type: application/json
-
-{
-  "page": 1,
-  "pageSize": 10,
-  "search": "张三",
-  "role": "user",
-  "isActive": true
-}
-```
-
-#### 创建用户
-```http
-POST /apiservice/api/users/management
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "username": "newuser",
-  "email": "user@example.com",
-  "password": "password123",
-  "role": "user",
-  "isActive": true
-}
-```
-
-#### 更新用户
-```http
-PUT /apiservice/api/users/{id}/update
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "username": "updateduser",
-  "email": "updated@example.com",
-  "role": "admin",
-  "isActive": true
-}
-```
-
-#### 删除用户
-```http
-DELETE /apiservice/api/users/{id}
-Authorization: Bearer {token}
-```
-
-#### 批量操作用户
-```http
-POST /apiservice/api/users/bulk-action
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "userIds": ["id1", "id2", "id3"],
-  "action": "activate"
-}
-```
-
-#### 获取用户统计信息
-```http
-GET /apiservice/api/users/statistics
-```
-
-### 企业管理 API
-
-#### 获取企业信息
-```http
-GET /apiservice/api/company/info
-Authorization: Bearer {token}
-```
-
-#### 更新企业信息
-```http
-PUT /apiservice/api/company/info
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "name": "更新后的企业名称",
-  "description": "企业描述",
-  "industry": "IT行业"
-}
-```
-
-#### 切换企业
-```http
-POST /apiservice/api/company/switch
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "companyId": "目标企业ID"
-}
-```
-
-### 权限管理 API
-
-#### 获取角色列表
-```http
-GET /apiservice/api/roles
-Authorization: Bearer {token}
-```
-
-#### 创建角色
-```http
-POST /apiservice/api/roles
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "name": "新角色",
-  "description": "角色描述",
-  "permissions": ["user:read", "user:create"]
-}
-```
-
-#### 获取菜单列表
-```http
-GET /apiservice/api/menus
-Authorization: Bearer {token}
-```
-
-#### 获取通知列表
-```http
-GET /apiservice/api/notices
-Authorization: Bearer {token}
-```
-
-### 个人中心 API
-
-#### 获取个人资料
-```http
-GET /apiservice/api/users/profile
-Authorization: Bearer {token}
-```
-
-#### 更新个人资料
-```http
-PUT /apiservice/api/users/profile
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "username": "myusername",
-  "email": "myemail@example.com",
-  "name": "我的姓名",
-  "age": 25
-}
-```
-
-#### 修改密码
-```http
-PUT /apiservice/api/users/profile/password
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "currentPassword": "oldpassword",
-  "newPassword": "newpassword",
-  "confirmPassword": "newpassword"
-}
-```
-
-### 其他 API
-
-#### 获取天气预测
-```http
-GET /apiservice/weatherforecast
-```
-
-## 🗄️ 数据模型
-
-### 多租户模型
-
-#### 企业模型
-```csharp
-public class Company : ISoftDeletable, IEntity, ITimestamped
-{
-    public string? Id { get; set; }           // MongoDB ObjectId
-    public string Name { get; set; }          // 企业名称
-    public string Code { get; set; }          // 企业代码（唯一）
-    public string? Logo { get; set; }         // 企业Logo
-    public string? Description { get; set; }  // 企业描述
-    public string? Industry { get; set; }     // 行业
-    public string? ContactName { get; set; }  // 联系人
-    public string? ContactEmail { get; set; } // 联系邮箱
-    public string? ContactPhone { get; set; } // 联系电话
-    public bool IsActive { get; set; }        // 是否激活
-    public int MaxUsers { get; set; }         // 最大用户数
-    public DateTime? ExpiresAt { get; set; }  // 过期时间（可选）
-    public bool IsDeleted { get; set; }       // 软删除标记
-    public DateTime CreatedAt { get; set; }   // 创建时间
-    public DateTime UpdatedAt { get; set; }   // 更新时间
-}
-```
-
-### 用户模型
-```csharp
-public class AppUser : ISoftDeletable, IEntity, ITimestamped
-{
-    public string? Id { get; set; }           // MongoDB ObjectId
-    public string Username { get; set; }      // 用户名
-    public string? Name { get; set; }         // 用户姓名
-    public int? Age { get; set; }             // 年龄
-    public string PasswordHash { get; set; }  // 密码哈希
-    public string? Email { get; set; }        // 邮箱地址
-    public string Role { get; set; }          // 用户角色 (admin/user)
-    public bool IsActive { get; set; }        // 是否激活
-    public string CompanyId { get; set; }     // 所属企业ID（多租户）
-    public DateTime? LastLoginAt { get; set; } // 最后登录时间
-    public bool IsDeleted { get; set; }       // 软删除标记
-    public DateTime CreatedAt { get; set; }   // 创建时间
-    public DateTime UpdatedAt { get; set; }   // 更新时间
-}
-
-public class CurrentUser
-{
-    public string? Id { get; set; }           // 用户ID
-    public string? Name { get; set; }         // 用户姓名
-    public string? Avatar { get; set; }       // 头像
-    public string? UserId { get; set; }       // 用户ID
-    public string? Email { get; set; }        // 邮箱
-    public string? Signature { get; set; }    // 签名
-    public string? Title { get; set; }        // 职位
-    public string? Group { get; set; }        // 组织
-    public List<UserTag>? Tags { get; set; }  // 标签
-    public int NotifyCount { get; set; }      // 通知数量
-    public int UnreadCount { get; set; }      // 未读数量
-    public string? Country { get; set; }      // 国家
-    public string? Access { get; set; }       // 权限
-    public GeographicInfo? Geographic { get; set; } // 地理信息
-    public string? Address { get; set; }      // 地址
-    public string? Phone { get; set; }        // 电话
-    public bool IsLogin { get; set; }         // 是否登录
-    public DateTime CreatedAt { get; set; }   // 创建时间
-    public DateTime UpdatedAt { get; set; }   // 更新时间
-}
-
-public class UserActivityLog
-{
-    public string? Id { get; set; }           // 日志ID
-    public string UserId { get; set; }        // 用户ID
-    public string Action { get; set; }        // 操作类型
-    public string Description { get; set; }   // 操作描述
-    public string? IpAddress { get; set; }    // IP地址
-    public string? UserAgent { get; set; }    // 用户代理
-    public DateTime CreatedAt { get; set; }   // 创建时间
-}
-```
-
-### 认证模型
-```csharp
-public class LoginRequest
-{
-    public string? Username { get; set; }     // 用户名
-    public string? Password { get; set; }     // 密码
-    public bool AutoLogin { get; set; }       // 自动登录
-    public string? Type { get; set; }         // 登录类型
-}
-
-public class RegisterRequest
-{
-    public string Username { get; set; }      // 用户名
-    public string Password { get; set; }      // 密码
-    public string? Email { get; set; }        // 邮箱
-}
-
-public class ChangePasswordRequest
-{
-    public string CurrentPassword { get; set; }   // 当前密码
-    public string NewPassword { get; set; }       // 新密码
-    public string ConfirmPassword { get; set; }   // 确认密码
-}
-```
-
-## 🔧 配置说明
-
-### 环境配置
-- **开发环境**: `appsettings.Development.json`
-- **生产环境**: `appsettings.json`
-
-### 服务端口
-- **API 网关**: 15000
-- **管理后台**: 15001
-- **移动应用**: 15002
-- **API 服务**: 动态分配（内部服务，通过网关访问）
-- **数据初始化服务**: 动态分配（一次性任务，完成后自动停止）
-- **MongoDB**: 27017
-- **Mongo Express**: 8081
-
-### 前端开发
-
-#### 独立开发管理后台
-```bash
-cd Platform.Admin
-npm run start:dev
-```
-
-#### 独立开发移动应用
-```bash
-cd Platform.App
-npm start
-```
-
-#### 管理后台可用脚本
-- `npm run start` - 启动开发服务器
-- `npm run start:dev` - 启动开发服务器（开发环境）
-- `npm run build` - 构建生产版本
-- `npm run lint` - 代码检查和格式化
-- `npm run preview` - 预览生产构建版本
-- `npm run analyze` - 分析打包大小
-
-#### 移动应用可用脚本
-- `npm start` - 启动开发服务器
-- `npm run android` - 启动 Android 应用
-- `npm run ios` - 启动 iOS 应用
-- `npm run web` - 启动 Web 版本
-- `npm run lint` - 代码检查
-
-## 🐳 Docker 支持
-
-项目使用 Aspire 自动管理 Docker 容器：
-
-- **MongoDB**: 持久化数据存储
-- **Mongo Express**: 数据库管理界面
-
-## 📊 监控和可观测性
-
-- **健康检查**: `/health` 端点
-- **OpenTelemetry**: 分布式追踪
-- **服务发现**: 自动服务注册
-- **日志聚合**: 统一日志管理
-
-## 🤝 贡献指南
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 🔗 技术文档
-
-### 后端技术文档
-- [.NET Aspire 文档](https://learn.microsoft.com/dotnet/aspire/)
-- [MongoDB 驱动文档](https://mongodb.github.io/mongo-csharp-driver/)
-- [YARP 文档](https://microsoft.github.io/reverse-proxy/)
-
-### 前端技术文档
-- [React 文档](https://react.dev/)
-- [Ant Design Pro 文档](https://pro.ant.design/)
-- [UmiJS 文档](https://umijs.org/)
-- [TypeScript 文档](https://www.typescriptlang.org/)
-
-### 移动端技术文档
-- [React Native 文档](https://reactnative.dev/)
-- [Expo 文档](https://docs.expo.dev/)
-- [Expo Router 文档](https://expo.github.io/router/)
-
-## 📱 功能特性
-
-### 多租户功能 ⭐ **v3.1 新增**
-- ✅ **用户自主注册** - 用户注册时自动创建个人企业
-- ✅ **自动成为管理员** - 注册用户自动成为其企业的管理员
-- ✅ **数据完全隔离** - 基于 CompanyId 的企业数据隔离
-- ✅ **企业切换** - 用户可在多个企业间自由切换
-- ✅ **企业配额管理** - 支持企业用户数量限制
-- ✅ **零配置启动** - 无需预配置，用户注册即可使用
-
-### 管理后台功能
-- ✅ **用户认证** - 登录、注册、登出、企业切换
-- ✅ **用户管理** - CRUD、搜索、分页、批量操作
-- ✅ **权限管理** - 角色分配、权限配置、菜单管理
-- ✅ **企业管理** - 企业信息、用户配额、过期设置
-- ✅ **通知系统** - 企业通知、消息管理、未读提醒
-- ✅ **帮助系统** - 内置系统帮助模块和使用指南
-- ✅ **个人中心** - 资料管理、密码修改、企业切换
-- ✅ **用户活动日志** - 自动记录用户操作
-- ✅ **响应式设计** - 适配多种设备
-- ✅ **多语言支持** - 中文、英文等
-- ✅ **JWT Token 认证** - 统一认证和权限控制
-
-### 移动应用功能
-- ✅ **跨平台支持** - iOS、Android、Web
-- ✅ **多租户支持** - 企业切换和管理
-- ✅ **现代化 UI 设计** - 企业级移动端界面
-- ✅ **基于文件系统的路由** - Expo Router
-- ✅ **与后端 API 集成** - 统一认证和权限控制
-
-### 后端 API 功能
-- ✅ **多租户架构** - 企业数据隔离和管理
-- ✅ **统一权限控制** - 基于 [RequirePermission] 特性的声明式权限管理
-- ✅ **JWT 认证和授权** - 支持多企业切换
-- ✅ **用户管理 API** - 完整的用户 CRUD 操作
-- ✅ **企业管理 API** - 企业注册、切换、管理
-- ✅ **权限管理 API** - 角色、菜单、权限管理
-- ✅ **通知管理 API** - 企业级通知系统
-- ✅ **用户活动日志** - 自动记录和查询
-- ✅ **数据库操作工厂** - 统一数据访问层，自动处理多租户、软删除、审计
-- ✅ **软删除机制** - 数据安全删除
-- ✅ **MongoDB 数据存储** - 支持多租户和软删除
-- ✅ **OpenAPI 文档** - 完整的 API 文档
-- ✅ **健康检查** - 服务状态监控
-
-### 数据初始化功能
-- ✅ **数据库索引管理** - 自动创建和更新所有必要的索引
-- ✅ **全局菜单初始化** - 创建系统级菜单（所有企业共享）
-- ✅ **幂等性保证** - 可以安全地重复执行初始化操作
-- ✅ **单实例运行** - 确保只有一个实例执行初始化
-- ✅ **自动停止** - 初始化完成后自动停止，节省资源
-
-## 🎯 版本历史
-
-### v3.1.1 - 数据隔离优化（最新）
-- ✅ **移除全局数据初始化** - 修复多租户数据隔离漏洞
-- ✅ **禁止孤儿数据** - 所有数据必须归属于特定企业
-- ✅ **用户注册优化** - 自动创建完整的企业环境
-- ✅ **零配置启动** - 不再需要预配置默认用户
-
-### v5.0 - 后端架构优化
-- ✅ **代码重构** - 减少 50% 重复代码，提高代码复用性
-- ✅ **统一错误处理** - 50+ 个错误消息统一管理
-- ✅ **基础组件** - BaseService、BaseRepository、ValidationExtensions
-- ✅ **软删除机制** - 数据安全删除，支持恢复
-- ✅ **时间戳管理** - ITimestamped 接口统一时间管理
-
-### v3.1 - 多企业隶属架构
-- ✅ **多租户系统** - 用户自主注册，数据完全隔离
-- ✅ **企业切换** - 用户可在多个企业间自由切换
-- ✅ **权限系统** - 企业级独立权限管理
-- ✅ **自动企业创建** - 注册时自动创建个人企业
-
-### v2.0 - 功能完善
-- ✅ **通知系统** - 企业级通知管理
-- ✅ **帮助系统** - 内置用户指南
-- ✅ **权限控制** - 统一权限管理
-- ✅ **用户日志** - 活动日志记录
-
-## 📚 相关文档
-
-### 快速开始
-- [v3.1 快速开始指南](docs/features/QUICK-START-V3.1.md) - 5分钟快速上手多租户系统
-- [多租户系统说明](docs/features/MULTI-TENANT-SYSTEM.md) - 完整的多租户架构文档
-
-### 开发指南
-- [数据初始化微服务](docs/features/DATA-INITIALIZER-MICROSERVICE.md) - 数据初始化微服务架构和使用指南 ⭐ **最新**
-- [数据库操作工厂指南](docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md) - 统一数据访问层使用指南
-- [移除全局数据初始化](docs/reports/REMOVE-GLOBAL-DATA-INITIALIZATION.md) - v3.1.1 数据隔离优化
-- [v5.0 优化完成报告](docs/reports/V5-OPTIMIZATION-COMPLETE.md) - 后端架构优化详情
-- [菜单级权限使用指南](docs/features/MENU-LEVEL-PERMISSION-GUIDE.md) - v6.0 菜单级权限系统使用指南
-- [帮助系统功能](docs/features/HELP-MODULE-FEATURE.md) - 内置帮助模块说明
-
-### 技术文档
-- [文档总索引](docs/INDEX.md) - 完整的项目文档导航
-- [API 端点汇总](docs/features/API-ENDPOINTS-SUMMARY.md) - 所有 API 接口列表
-
-### Cursor Rules
-- [Cursor Rules 使用指南](.cursor/rules/README.md) - AI 编程规范
-- [多租户开发规范](.cursor/rules/multi-tenant-data-isolation.mdc) - 数据隔离最佳实践
-- [用户注册流程规范](.cursor/rules/user-registration-flow.mdc) - 注册流程开发指南
+## 📚 延伸阅读
+
+- [docs/features/DATA-INITIALIZER-MICROSERVICE.md](docs/features/DATA-INITIALIZER-MICROSERVICE.md) – 数据初始化微服务说明。
+- [docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md](docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md) – 数据访问工厂使用指南。
+- [docs/features/MENU-LEVEL-PERMISSION-GUIDE.md](docs/features/MENU-LEVEL-PERMISSION-GUIDE.md) – 菜单级权限模型。
+- [docs/features/HELP-MODULE-FEATURE.md](docs/features/HELP-MODULE-FEATURE.md) – 管理后台帮助系统介绍。
+- [docs/features/HOW-TO-VIEW-API-DOCS.md](docs/features/HOW-TO-VIEW-API-DOCS.md) – Scalar 文档访问指引。
 
 ---
 
-**注意**: 这是一个基于 .NET Aspire 的完整多租户微服务项目，展示了现代微服务架构和 SaaS 应用的最佳实践，包含完整的前后端和移动端应用。
+欢迎基于此项目探索 .NET Aspire 在多租户 SaaS 场景下的最佳实践，结合前端与移动端快速构建企业级产品。

@@ -491,13 +491,13 @@ public class ChatService : IChatService
             .Equal(m => m.Id, message.Id)
             .Build();
 
-        await _messageFactory.FindOneAndSoftDeleteAsync(filter);
-
         var update = _messageFactory.CreateUpdateBuilder()
             .Set(m => m.IsRecalled, true)
             .SetCurrentTimestamp();
 
         await _messageFactory.FindOneAndUpdateAsync(filter, update.Build());
+
+        await _messageFactory.FindOneAndSoftDeleteAsync(filter);
 
         await NotifyMessageDeletedAsync(session.Id, message.Id);
     }

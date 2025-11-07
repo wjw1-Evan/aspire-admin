@@ -103,13 +103,13 @@ public class ChatMessagesController : BaseApiController
     /// 下载附件
     /// </summary>
     /// <param name="sessionId">会话标识</param>
-    /// <param name="attachmentId">附件存储标识</param>
+    /// <param name="storageObjectId">附件存储标识</param>
     /// <returns>文件流</returns>
-    [HttpGet("{sessionId}/attachments/{attachmentId}")]
+    [HttpGet("{sessionId}/attachments/{storageObjectId}")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
-    public async Task<IActionResult> DownloadAttachment(string sessionId, string attachmentId)
+    public async Task<IActionResult> DownloadAttachment(string sessionId, string storageObjectId)
     {
-        var result = await _chatService.DownloadAttachmentAsync(sessionId, attachmentId);
+        var result = await _chatService.DownloadAttachmentAsync(sessionId, storageObjectId);
 
         if (result.Content.CanSeek)
         {

@@ -205,14 +205,15 @@ if (!app.Environment.IsDevelopment())
 // 全局异常处理（最外层）
 app.UseExceptionHandler();
 
+// CORS 必须在认证之前执行，确保 401/403 等响应也包含跨域头
+app.UseCors();
+
 // Add authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
 // 活动日志中间件（在认证之后，可以获取用户信息）
 app.UseMiddleware<Platform.ApiService.Middleware.ActivityLogMiddleware>();
-
-app.UseCors();
 
 // 响应格式化中间件（在控制器之前）
 app.UseMiddleware<Platform.ApiService.Middleware.ResponseFormattingMiddleware>();

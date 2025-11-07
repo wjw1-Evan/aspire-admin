@@ -50,7 +50,7 @@ export const getApiGatewayUrlDynamic = (): string => {
 // 获取完整的 API 基础 URL（动态获取，解决生命周期问题）
 export const getApiBaseUrl = (): string => {
   const gatewayUrl = getApiGatewayUrlDynamic();
-  return `${gatewayUrl}/apiservice`;
+  return `${gatewayUrl}/apiservice/api`;
 };
 
 // 获取 API 超时时间

@@ -9,7 +9,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   errorCode?: string;
   errorMessage?: string;
-  timestamp: string;
+  timestamp?: string;
   traceId?: string;
 }
 
@@ -144,7 +144,7 @@ export enum ApiErrorCode {
 }
 
 // 向后兼容的 API 响应格式（用于内部转换）
-export interface ApiResponse<T> {
+export interface LegacyApiResponse<T> {
   success: boolean;
   data?: T;
   errorCode?: string;

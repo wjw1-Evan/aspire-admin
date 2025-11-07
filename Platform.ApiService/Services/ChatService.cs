@@ -10,6 +10,7 @@ using Platform.ServiceDefaults.Services;
 using System.Security.Cryptography;
 using System.Text;
 using System.Linq;
+using Platform.ApiService.Constants;
 
 namespace Platform.ApiService.Services;
 
@@ -19,7 +20,7 @@ namespace Platform.ApiService.Services;
 public class ChatService : IChatService
 {
     private const int DefaultPageSize = 20;
-    private const int MaxPageSize = 100;
+    private const int MaxPageSize = 200;
 
     private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
     private readonly IDatabaseOperationFactory<ChatMessage> _messageFactory;
@@ -28,38 +29,54 @@ public class ChatService : IChatService
     private readonly IMongoDatabase _database;
     private readonly ILogger<ChatService> _logger;
     private readonly IHubContext<ChatHub> _hubContext;
+    private readonly GridFSBucket _gridFsBucket;
+    private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
+    private readonly IAiCompletionService _aiCompletionService;
 
     /// <summary>
-    /// 初始化聊天服务
+    /// 初始化聊天服务。
     /// </summary>
-    /// <param name="sessionFactory">会话数据工厂</param>
-    /// <param name="messageFactory">消息数据工厂</param>
-    /// <param name="attachmentFactory">附件数据工厂</param>
-    /// <param name="userFactory">用户数据工厂</param>
-    /// <param name="database">MongoDB 数据库</param>
-    /// <param name="logger">日志记录器</param>
+    /// <param name="sessionFactory">会话数据操作工厂</param>
+    /// <param name="messageFactory">消息数据操作工厂</param>
+    /// <param name="attachmentFactory">附件数据操作工厂</param>
+    /// <param name="database">MongoDB 数据库实例</param>
     /// <param name="hubContext">SignalR Hub 上下文</param>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="aiAssistantCoordinator">AI 助手协调器</param>
+    /// <param name="aiCompletionService">调用大模型生成回复的服务</param>
+    /// <param name="logger">日志记录器</param>
     public ChatService(
         IDatabaseOperationFactory<ChatSession> sessionFactory,
         IDatabaseOperationFactory<ChatMessage> messageFactory,
         IDatabaseOperationFactory<ChatAttachment> attachmentFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
         IMongoDatabase database,
-        ILogger<ChatService> logger,
-        IHubContext<ChatHub> hubContext)
+        IHubContext<ChatHub> hubContext,
+        IDatabaseOperationFactory<AppUser> userFactory,
+        IAiAssistantCoordinator aiAssistantCoordinator,
+        IAiCompletionService aiCompletionService,
+        ILogger<ChatService> logger)
     {
         _sessionFactory = sessionFactory;
         _messageFactory = messageFactory;
         _attachmentFactory = attachmentFactory;
-        _userFactory = userFactory;
         _database = database;
-        _logger = logger;
         _hubContext = hubContext;
+        _userFactory = userFactory;
+        _aiAssistantCoordinator = aiAssistantCoordinator;
+        _aiCompletionService = aiCompletionService;
+        _logger = logger;
+
+        _gridFsBucket = new GridFSBucket(database, new GridFSBucketOptions
+        {
+            BucketName = "chat_attachments"
+        });
     }
 
     /// <inheritdoc />
     public async Task<(List<ChatSession> sessions, long total)> GetSessionsAsync(ChatSessionListRequest request)
     {
+        await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
+
         request ??= new ChatSessionListRequest();
 
         var currentUserId = _sessionFactory.GetRequiredUserId();
@@ -234,6 +251,8 @@ public class ChatService : IChatService
 
         await NotifyMessageCreatedAsync(session, message);
 
+        await RespondAsAssistantAsync(session, message);
+
         return message;
     }
 
@@ -277,16 +296,11 @@ public class ChatService : IChatService
 
         memoryStream.Position = 0;
 
-        var bucket = new GridFSBucket(_database, new GridFSBucketOptions
-        {
-            BucketName = "chat_attachments"
-        });
-
         var fileName = string.IsNullOrWhiteSpace(file.FileName)
             ? $"attachment-{Guid.NewGuid():N}"
             : file.FileName;
 
-        var gridFsId = await bucket.UploadFromStreamAsync(
+        var gridFsId = await _gridFsBucket.UploadFromStreamAsync(
             fileName,
             memoryStream,
             new GridFSUploadOptions
@@ -642,6 +656,59 @@ public class ChatService : IChatService
         {
             _logger.LogError(ex, "广播会话摘要失败: {SessionId}", sessionId);
         }
+    }
+
+    private async Task RespondAsAssistantAsync(ChatSession session, ChatMessage triggerMessage)
+    {
+        if (!session.Participants.Contains(AiAssistantConstants.AssistantUserId))
+        {
+            return;
+        }
+
+        if (triggerMessage.SenderId == AiAssistantConstants.AssistantUserId)
+        {
+            return;
+        }
+
+        string replyContent;
+        if (triggerMessage.Type == ChatMessageType.Text)
+        {
+            replyContent = await _aiCompletionService.GenerateReplyAsync(
+                triggerMessage.SenderId,
+                session.Id,
+                triggerMessage.Content ?? string.Empty);
+        }
+        else
+        {
+            replyContent = "我已收到您的附件，目前仅支持文本对话，欢迎告诉我想要讨论的内容。";
+        }
+        if (string.IsNullOrWhiteSpace(replyContent))
+        {
+            return;
+        }
+
+        var assistantMessage = new ChatMessage
+        {
+            SessionId = session.Id,
+            CompanyId = session.CompanyId,
+            SenderId = AiAssistantConstants.AssistantUserId,
+            SenderName = AiAssistantConstants.AssistantDisplayName,
+            RecipientId = triggerMessage.SenderId,
+            Type = ChatMessageType.Text,
+            Content = replyContent,
+            Metadata = new Dictionary<string, object>
+            {
+                ["isAssistant"] = true
+            },
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        assistantMessage = await _messageFactory.CreateAsync(assistantMessage);
+
+        var refreshedSession = await _sessionFactory.GetByIdAsync(session.Id) ?? session;
+        await UpdateSessionAfterMessageAsync(refreshedSession, assistantMessage, AiAssistantConstants.AssistantUserId);
+        await NotifyMessageCreatedAsync(refreshedSession, assistantMessage);
     }
 }
 

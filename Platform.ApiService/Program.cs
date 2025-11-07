@@ -140,6 +140,9 @@ builder.Services.AddDatabaseFactory();
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
 
+builder.Services.Configure<AiCompletionOptions>(builder.Configuration.GetSection(AiCompletionOptions.SectionName));
+builder.Services.AddHttpClient<IAiCompletionService, AiCompletionService>();
+
 
 
 // 数据库初始化服务已迁移到 Platform.DataInitializer 微服务

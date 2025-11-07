@@ -1,9 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
+import type { JSX } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -16,8 +18,11 @@ import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useChat } from '@/contexts/ChatContext';
 import { useFriends } from '@/hooks/useFriends';
 import type { FriendRequestItem, FriendSearchResult, FriendSummary } from '@/types/friends';
+import { AI_ASSISTANT_AVATAR, AI_ASSISTANT_ID, AI_ASSISTANT_NAME } from '@/constants/ai';
+import dayjs from 'dayjs';
 
 const errorMessage = (error: unknown, fallback: string): string => {
   if (error instanceof Error && error.message) {
@@ -179,6 +184,7 @@ export default function ContactsScreen(): JSX.Element {
   const [refreshing, setRefreshing] = useState(false);
 
   const router = useRouter();
+  const { sessions, loadSessions, setActiveSession } = useChat();
   const { isDark } = useTheme();
   const colors = Colors[isDark ? 'dark' : 'light'];
   const accentSoftColor = isDark ? 'rgba(74, 144, 226, 0.2)' : 'rgba(0, 58, 107, 0.12)';
@@ -263,34 +269,69 @@ export default function ContactsScreen(): JSX.Element {
   const handleOpenChat = useCallback(
     async (friend: FriendSummary) => {
       try {
-        const session = await ensureSession(friend.userId);
-        router.push(`/chat/${session.sessionId}`);
+        const existingSessionId = friend.sessionId;
+        const ensuredSession = existingSessionId ? { sessionId: existingSessionId } : await ensureSession(friend.userId);
+        const targetSessionId = ensuredSession.sessionId;
+
+        if (!sessions[targetSessionId]) {
+          await loadSessions();
+        }
+
+        setActiveSession(targetSessionId);
+        router.push(`/chat/${targetSessionId}`);
       } catch (error) {
         Alert.alert('打开聊天失败', errorMessage(error, '无法打开聊天，请稍后重试'));
       }
     },
-    [ensureSession, router]
+    [ensureSession, loadSessions, router, sessions, setActiveSession]
   );
 
-  const renderFriendItem = useCallback(
-    ({ item }: { item: FriendSummary }) => (
-      <Pressable style={styles.friendItem} onPress={() => handleOpenChat(item)}>
-        <View style={[styles.avatarPlaceholderSmall, { backgroundColor: accentSoftColor }]}>
-          <IconSymbol name="person.circle.fill" size={32} color={colors.tint} />
+  const sortedFriends = useMemo(() => {
+    const assistant = friends.find(friend => friend.userId === AI_ASSISTANT_ID);
+    const others = friends.filter(friend => friend.userId !== AI_ASSISTANT_ID);
+
+    const assistantEntry = assistant ?? {
+      userId: AI_ASSISTANT_ID,
+      username: AI_ASSISTANT_NAME,
+      displayName: AI_ASSISTANT_NAME,
+      friendshipId: AI_ASSISTANT_ID,
+    };
+
+    return [assistantEntry, ...others];
+  }, [friends]);
+
+  const renderFriendItem = useCallback(({ item }: { item: FriendSummary }) => {
+    const isAssistant = item.userId === AI_ASSISTANT_ID;
+    return (
+      <Pressable style={[styles.friendItem, { borderBottomColor: colors.border }]} onPress={() => handleOpenChat(item)}>
+        <View
+          style={[styles.avatarPlaceholderSmall, { backgroundColor: accentSoftColor }]}
+        >
+          {isAssistant ? (
+            <Image source={{ uri: AI_ASSISTANT_AVATAR }} style={styles.avatarImage} resizeMode="cover" />
+          ) : (
+            <IconSymbol name="person.circle.fill" size={32} color={colors.tint} />
+          )}
         </View>
         <View style={styles.friendInfo}>
           <ThemedText style={styles.friendName} numberOfLines={1}>
-            {item.displayName ?? item.username}
+            {isAssistant ? AI_ASSISTANT_NAME : item.displayName}
           </ThemedText>
-          {item.phoneNumber ? (
-            <ThemedText style={[styles.friendMeta, { color: colors.tabIconDefault }]}>{item.phoneNumber}</ThemedText>
-          ) : null}
+          {isAssistant ? (
+            <ThemedText style={[styles.friendMeta, styles.assistantMeta, { color: colors.tabIconDefault }]}>内置智能助手 · 系统自动保留</ThemedText>
+          ) : (
+            <>
+              {item.phoneNumber ? (
+                <ThemedText style={[styles.friendMeta, { color: colors.tabIconDefault }]}>电话：{item.phoneNumber}</ThemedText>
+              ) : null}
+              <ThemedText style={[styles.friendMeta, { color: colors.tabIconDefault }]}>添加时间：{dayjs(item.createdAt).format('YYYY-MM-DD')}</ThemedText>
+            </>
+          )}
         </View>
         <IconSymbol name="chevron.right" size={18} color={colors.icon} />
       </Pressable>
-    ),
-    [accentSoftColor, colors.icon, colors.tabIconDefault, colors.tint, handleOpenChat]
-  );
+    );
+  }, [accentSoftColor, colors, handleOpenChat]);
 
   const listHeader = useMemo(() => (
     <View>
@@ -391,7 +432,6 @@ export default function ContactsScreen(): JSX.Element {
     clearSearch,
     colors,
     handleApprove,
-    handleOpenChat,
     handleReject,
     handleSearch,
     handleSendRequest,
@@ -408,7 +448,7 @@ export default function ContactsScreen(): JSX.Element {
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        data={friends}
+        data={sortedFriends}
         keyExtractor={item => item.friendshipId || item.userId}
         renderItem={renderFriendItem}
         ListHeaderComponent={listHeader}
@@ -616,6 +656,14 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  assistantMeta: {
+    fontWeight: '600',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 21,
   },
 });
 

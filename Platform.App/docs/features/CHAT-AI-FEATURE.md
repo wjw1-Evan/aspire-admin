@@ -48,6 +48,22 @@
 
 - **环境变量**：
   - API 网关沿用 `constants/apiConfig.ts` 动态解析的 Aspire Endpoint。
+- **后端大模型配置**：在 `Platform.AppHost/appsettings.json` 中通过 `Ai` 节点统一管理大模型接口信息，默认示例（OpenAI）如下：
+
+```json
+{
+  "Ai": {
+    "Endpoint": "https://api.openai.com/v1/chat/completions",
+    "Model": "gpt-4o-mini",
+    "SystemPrompt": "你是小科，请使用简体中文提供简洁、专业且友好的回复。",
+    "TimeoutSeconds": 30,
+    "MaxTokens": 512
+  }
+}
+```
+
+  - 通过 `dotnet user-secrets set "Ai:ApiKey" "sk-xxxxx"` 或 Aspire 环境变量 `Ai__ApiKey` 注入敏感令牌，禁止将 token 写入仓库。
+  - 可根据需要定制 `SystemPrompt`、`TimeoutSeconds` 与 `MaxTokens` 等高级参数，ApiService 会自动读取并注入到 `AiCompletionOptions`。
 - **设备权限**：
   - 相册/文件：附件选择需在系统设置中允许访问。
   - 定位：附近的人功能需前台定位权限。

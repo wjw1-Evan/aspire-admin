@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.Linq;
+using Platform.ApiService.Constants;
 
 namespace Platform.ApiService.Services;
 
@@ -61,6 +62,7 @@ public class FriendService : IFriendService
     private readonly IDatabaseOperationFactory<Friendship> _friendshipFactory;
     private readonly IDatabaseOperationFactory<FriendRequest> _friendRequestFactory;
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
     private readonly IChatService _chatService;
     private readonly ILogger<FriendService> _logger;
 
@@ -71,12 +73,14 @@ public class FriendService : IFriendService
         IDatabaseOperationFactory<Friendship> friendshipFactory,
         IDatabaseOperationFactory<FriendRequest> friendRequestFactory,
         IDatabaseOperationFactory<AppUser> userFactory,
+        IAiAssistantCoordinator aiAssistantCoordinator,
         IChatService chatService,
         ILogger<FriendService> logger)
     {
         _friendshipFactory = friendshipFactory;
         _friendRequestFactory = friendRequestFactory;
         _userFactory = userFactory;
+        _aiAssistantCoordinator = aiAssistantCoordinator;
         _chatService = chatService;
         _logger = logger;
     }
@@ -201,6 +205,11 @@ public class FriendService : IFriendService
         if (request.TargetUserId == currentUserId)
         {
             throw new InvalidOperationException("不能添加自己为好友");
+        }
+
+        if (request.TargetUserId == AiAssistantConstants.AssistantUserId)
+        {
+            throw new InvalidOperationException("AI 助手无需发送好友请求");
         }
 
         var targetUser = await _userFactory.GetByIdAsync(request.TargetUserId)
@@ -345,6 +354,17 @@ public class FriendService : IFriendService
         }
 
         var currentUserId = _friendshipFactory.GetRequiredUserId();
+
+        if (friendUserId == AiAssistantConstants.AssistantUserId)
+        {
+            var assistantSession = await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
+
+            return new FriendSessionResponse
+            {
+                SessionId = assistantSession.Id,
+                FriendUserId = friendUserId
+            };
+        }
 
         var friendshipFilter = _friendshipFactory.CreateFilterBuilder()
             .Equal(f => f.UserId, currentUserId)

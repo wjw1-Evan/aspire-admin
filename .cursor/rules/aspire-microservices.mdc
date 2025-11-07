@@ -40,7 +40,7 @@ var yarp = builder.AddYarp("apigateway")
     .WithConfiguration(config => {
         // 自动路由配置
         config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
-            .WithTransformPathRouteValues("/api/{**catch-all}");
+            .WithTransformPathRouteValues("/{**catch-all}");
     });
 
 // 5. 添加前端应用
@@ -87,7 +87,7 @@ public static void ConfigureServiceDependencies(DistributedApplicationBuilder bu
         .WithHostPort(15000)
         .WithConfiguration(config => {
             config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
-                .WithTransformPathRouteValues("/api/{**catch-all}");
+                .WithTransformPathRouteValues("/{**catch-all}");
         });
 
     // 前端应用
@@ -394,7 +394,7 @@ public static void ConfigureServiceOrchestration(DistributedApplicationBuilder b
         .WithHostPort(15000)
         .WithConfiguration(config => {
             config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
-                .WithTransformPathRouteValues("/api/{**catch-all}");
+                .WithTransformPathRouteValues("/{**catch-all}");
         });
 
     // 5. 前端应用
@@ -451,7 +451,7 @@ private static void ConfigureDevelopmentEnvironment(DistributedApplicationBuilde
         .WithHostPort(15000)
         .WithConfiguration(config => {
             config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
-                .WithTransformPathRouteValues("/api/{**catch-all}");
+                .WithTransformPathRouteValues("/{**catch-all}");
         });
 
     builder.AddNpmApp("admin", "../Platform.Admin")
@@ -489,7 +489,7 @@ private static void ConfigureProductionEnvironment(DistributedApplicationBuilder
         .WithHostPort(15000)
         .WithConfiguration(config => {
             config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
-                .WithTransformPathRouteValues("/api/{**catch-all}");
+                .WithTransformPathRouteValues("/{**catch-all}");
         });
 
     builder.AddNpmApp("admin", "../Platform.Admin")

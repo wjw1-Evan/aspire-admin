@@ -95,7 +95,7 @@ public class DataInitializerService : IDataInitializerService
             throw;
         }
     }
-    
+
     /// <summary>
     /// 创建全局系统菜单（所有企业共享）
     /// 支持增量同步：检查每个菜单是否存在，不存在则创建
@@ -108,22 +108,22 @@ public class DataInitializerService : IDataInitializerService
 
             var menus = _database.GetCollection<Menu>("menus");
             var now = DateTime.UtcNow;
-            
+
             // 定义所有预期的菜单（按依赖关系排序：先顶级菜单，再子菜单）
             var expectedMenus = GetExpectedMenus(now);
-            
+
             int createdCount = 0;
             int skippedCount = 0;
-            
+
             // 先处理顶级菜单（无 ParentId）
             var topLevelMenus = expectedMenus.Where(m => string.IsNullOrEmpty(m.ParentId)).ToList();
             var parentMenuIdMap = new Dictionary<string, string>();  // name -> id
-            
+
             foreach (var menu in topLevelMenus)
             {
                 var existingMenu = await menus.Find(m => m.Name == menu.Name && !m.IsDeleted)
                     .FirstOrDefaultAsync();
-                
+
                 if (existingMenu == null)
                 {
                     await menus.InsertOneAsync(menu);
@@ -144,10 +144,10 @@ public class DataInitializerService : IDataInitializerService
                     }
                 }
             }
-            
+
             // 再处理子菜单（需要父菜单的 ID）
             var childMenus = expectedMenus.Where(m => !string.IsNullOrEmpty(m.ParentId)).ToList();
-            
+
             foreach (var menu in childMenus)
             {
                 // 根据 ParentId 的名称查找父菜单的实际 ID
@@ -162,10 +162,10 @@ public class DataInitializerService : IDataInitializerService
                     skippedCount++;
                     continue;
                 }
-                
+
                 var existingMenu = await menus.Find(m => m.Name == menu.Name && !m.IsDeleted)
                     .FirstOrDefaultAsync();
-                
+
                 if (existingMenu == null)
                 {
                     await menus.InsertOneAsync(menu);
@@ -178,8 +178,8 @@ public class DataInitializerService : IDataInitializerService
                     skippedCount++;
                 }
             }
-            
-            _logger.LogInformation("全局系统菜单同步完成 - 新建: {Created} 个，已存在: {Skipped} 个，总计: {Total} 个", 
+
+            _logger.LogInformation("全局系统菜单同步完成 - 新建: {Created} 个，已存在: {Skipped} 个，总计: {Total} 个",
                 createdCount, skippedCount, expectedMenus.Count);
 
         }
@@ -189,7 +189,7 @@ public class DataInitializerService : IDataInitializerService
             throw;
         }
     }
-    
+
     /// <summary>
     /// 获取所有预期的菜单定义
     /// 在此方法中添加新的菜单，系统会自动同步到数据库

@@ -120,7 +120,7 @@ class ApiService {
         throw error;
       }
 
-      return await response.json();
+      return await this.parseSuccessResponse<T>(response);
     } catch (error: unknown) {
       clearTimeout(timeoutId);
       
@@ -160,6 +160,42 @@ class ApiService {
         message: `HTTP ${response.status}: ${response.statusText}`,
       };
     }
+  }
+
+  private async parseSuccessResponse<T>(response: Response): Promise<T> {
+    if (response.status === 204 || response.status === 205) {
+      return undefined as T;
+    }
+
+    const contentLength = response.headers.get('content-length');
+    const isEmptyContentLength = contentLength !== null && Number(contentLength) === 0;
+    const contentType = response.headers.get('content-type') ?? '';
+
+    if (isEmptyContentLength) {
+      return undefined as T;
+    }
+
+    const rawText = await response.text();
+    if (!rawText) {
+      return undefined as T;
+    }
+
+    if (contentType.includes('application/json') || contentType === '') {
+      try {
+        return JSON.parse(rawText) as T;
+      } catch (error) {
+        const parseError = new Error('无效的 JSON 响应') as ApiError;
+        parseError.code = 'INVALID_JSON_RESPONSE';
+        (parseError as ApiError).response = {
+          status: response.status,
+          statusText: response.statusText,
+          data: { message: rawText },
+        };
+        throw parseError;
+      }
+    }
+
+    return rawText as unknown as T;
   }
 
   /**

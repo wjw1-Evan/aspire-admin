@@ -140,7 +140,7 @@ var yarp = builder.AddYarp("apigateway")
     .WithConfiguration(config => {
         // 自动路由配置
         config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
-            .WithTransformPathRouteValues("/api/{**catch-all}");
+            .WithTransformPathRouteValues("/{**catch-all}");
     });
 
 // 5. 添加前端应用

@@ -5,6 +5,15 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey");
+var aiSection = builder.Configuration.GetSection("Ai");
+var aiProvider = aiSection["Provider"] ?? string.Empty;
+var aiEndpoint = aiSection["ChatEndpoint"] ?? string.Empty;
+var aiApiKey = aiSection["ApiKey"] ?? string.Empty;
+var aiModel = aiSection["Model"] ?? string.Empty;
+var aiSystemPrompt = aiSection["SystemPrompt"] ?? string.Empty;
+var aiTimeout = aiSection["TimeoutSeconds"] ?? string.Empty;
+var aiMaxTokens = aiSection["MaxTokens"] ?? string.Empty;
+var aiOrganization = aiSection["Organization"] ?? string.Empty;
 
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress(config => config.WithLifetime(ContainerLifetime.Persistent))
@@ -29,6 +38,14 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WithReplicas(1)
         .WithHttpHealthCheck("/health")
         .WithEnvironment("Jwt__SecretKey", jwtSecretKey.Value)
+        .WithEnvironment("Ai__Provider", aiProvider)
+        .WithEnvironment("Ai__ChatEndpoint", aiEndpoint)
+        .WithEnvironment("Ai__ApiKey", aiApiKey)
+        .WithEnvironment("Ai__Model", aiModel)
+        .WithEnvironment("Ai__SystemPrompt", aiSystemPrompt)
+        .WithEnvironment("Ai__TimeoutSeconds", aiTimeout)
+        .WithEnvironment("Ai__MaxTokens", aiMaxTokens)
+        .WithEnvironment("Ai__Organization", aiOrganization)
 };
 
 var yarp = builder.AddYarp("apigateway")
@@ -39,9 +56,8 @@ var yarp = builder.AddYarp("apigateway")
         // 使用通配符{**catch-all}捕获所有子路径
         foreach (var service in services)
         {
-            var route = $"/{service.Key}/{{**catch-all}}";
-            config.AddRoute(route, config.AddCluster(service.Value))
-                .WithTransformPathRouteValues("/api/{**catch-all}");
+            config.AddRoute($"/{service.Key}/{{**catch-all}}", config.AddCluster(service.Value))
+                .WithTransformPathRouteValues("/{**catch-all}");
         }
     });
 

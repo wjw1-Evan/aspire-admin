@@ -20,6 +20,7 @@ import { Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useFriends } from '@/hooks/useFriends';
+import { useAuth } from '@/contexts/AuthContext';
 import type { FriendRequestItem, FriendSearchResult, FriendSummary } from '@/types/friends';
 import { AI_ASSISTANT_AVATAR, AI_ASSISTANT_ID, AI_ASSISTANT_NAME } from '@/constants/ai';
 import dayjs from 'dayjs';
@@ -186,14 +187,17 @@ export default function ContactsScreen(): JSX.Element {
   const router = useRouter();
   const { sessions, loadSessions, setActiveSession } = useChat();
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const colors = Colors[isDark ? 'dark' : 'light'];
   const accentSoftColor = isDark ? 'rgba(74, 144, 226, 0.2)' : 'rgba(0, 58, 107, 0.12)';
+  const currentUserId = useMemo(() => user?.id ?? user?.username ?? '', [user?.id, user?.username]);
 
   const handleInitialLoad = useCallback(async () => {
     try {
       await Promise.all([loadFriends(), loadRequests()]);
     } catch (error) {
       console.error('加载通讯录失败', error);
+      Alert.alert('加载失败', errorMessage(error, '加载通讯录失败，请稍后再试'));
     }
   }, [loadFriends, loadRequests]);
 
@@ -266,39 +270,62 @@ export default function ContactsScreen(): JSX.Element {
     [rejectRequest]
   );
 
+  const sessionLookup = useMemo(() => {
+    const lookup = new Map<string, string>();
+    Object.values(sessions).forEach(session => {
+      session.participants.forEach(participantId => {
+        if (participantId && participantId !== currentUserId && !lookup.has(participantId)) {
+          lookup.set(participantId, session.id);
+        }
+      });
+    });
+    return lookup;
+  }, [currentUserId, sessions]);
+
   const handleOpenChat = useCallback(
     async (friend: FriendSummary) => {
       try {
-        const existingSessionId = friend.sessionId;
+        const existingSessionId = friend.sessionId ?? sessionLookup.get(friend.userId);
         const ensuredSession = existingSessionId ? { sessionId: existingSessionId } : await ensureSession(friend.userId);
         const targetSessionId = ensuredSession.sessionId;
+
+        if (!targetSessionId) {
+          throw new Error('未能获取到会话标识');
+        }
 
         if (!sessions[targetSessionId]) {
           await loadSessions();
         }
 
         setActiveSession(targetSessionId);
-        router.push(`/chat/${targetSessionId}`);
+        router.push({ pathname: '/chat/[sessionId]', params: { sessionId: targetSessionId } });
       } catch (error) {
         Alert.alert('打开聊天失败', errorMessage(error, '无法打开聊天，请稍后重试'));
       }
     },
-    [ensureSession, loadSessions, router, sessions, setActiveSession]
+    [ensureSession, loadSessions, router, sessionLookup, sessions, setActiveSession]
   );
 
   const sortedFriends = useMemo(() => {
-    const assistant = friends.find(friend => friend.userId === AI_ASSISTANT_ID);
-    const others = friends.filter(friend => friend.userId !== AI_ASSISTANT_ID);
+    const enrichedFriends = friends.map(friend => ({
+      ...friend,
+      sessionId: friend.sessionId ?? sessionLookup.get(friend.userId),
+    }));
 
-    const assistantEntry = assistant ?? {
-      userId: AI_ASSISTANT_ID,
-      username: AI_ASSISTANT_NAME,
-      displayName: AI_ASSISTANT_NAME,
-      friendshipId: AI_ASSISTANT_ID,
-    };
+    const assistant = enrichedFriends.find(friend => friend.userId === AI_ASSISTANT_ID);
+    const others = enrichedFriends.filter(friend => friend.userId !== AI_ASSISTANT_ID);
+
+    const assistantEntry: FriendSummary =
+      assistant ?? {
+        userId: AI_ASSISTANT_ID,
+        username: AI_ASSISTANT_NAME,
+        displayName: AI_ASSISTANT_NAME,
+        friendshipId: AI_ASSISTANT_ID,
+        sessionId: sessionLookup.get(AI_ASSISTANT_ID),
+      };
 
     return [assistantEntry, ...others];
-  }, [friends]);
+  }, [friends, sessionLookup]);
 
   const renderFriendItem = useCallback(({ item }: { item: FriendSummary }) => {
     const isAssistant = item.userId === AI_ASSISTANT_ID;
@@ -432,6 +459,7 @@ export default function ContactsScreen(): JSX.Element {
     clearSearch,
     colors,
     handleApprove,
+    handleOpenChat,
     handleReject,
     handleSearch,
     handleSendRequest,

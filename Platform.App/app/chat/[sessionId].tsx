@@ -3,9 +3,9 @@ import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { HubConnectionState } from '@microsoft/signalr';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import ConversationHeader from '@/components/chat/ConversationHeader';
+import { ConversationHeader } from '@/components/chat/ConversationHeader';
 import MessageList from '@/components/chat/MessageList';
-import MessageComposer from '@/components/chat/MessageComposer';
+import { MessageComposer } from '@/components/chat/MessageComposer';
 import AiSuggestionBar from '@/components/chat/AiSuggestionBar';
 import AttachmentPicker from '@/components/chat/AttachmentPicker';
 import { ThemedText } from '@/components/themed-text';
@@ -65,7 +65,7 @@ export default function ChatSessionScreen() {
     return () => clearInterval(intervalId);
   }, [connectionState, loadMessages, sessionId]);
 
-  const currentUserId = useMemo(() => user?.id ?? user?.username ?? '', [user?.id, user?.username]);
+  const currentUserId = useMemo(() => user?.id ?? user?.username ?? '', [user]);
 
   const { suggestions, loading: suggestionLoading, requestSuggestions } = useAiAssistant(sessionId ?? '');
 
@@ -118,7 +118,10 @@ export default function ChatSessionScreen() {
   );
 
   const timelineState = sessionId ? messageState[sessionId] : undefined;
-  const sessionMessages = sessionId ? messages[sessionId] ?? [] : [];
+  const sessionMessages = useMemo(
+    () => (sessionId ? messages[sessionId] ?? [] : []),
+    [messages, sessionId]
+  );
 
   const previousMessageCountRef = useRef<number>(0);
   useEffect(() => {

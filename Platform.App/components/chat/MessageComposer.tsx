@@ -8,7 +8,7 @@ interface MessageComposerProps {
   readonly disabled?: boolean;
   readonly placeholder?: string;
   readonly onSend: (content: string) => Promise<void>;
-  readonly onPickAttachment?: () => Promise<void>;
+  readonly onPickAttachment?: () => Promise<void> | void;
 }
 
 export const MessageComposer: React.FC<MessageComposerProps> = ({
@@ -38,7 +38,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     if (!onPickAttachment || submitting || disabled) {
       return;
     }
-    await onPickAttachment();
+    await Promise.resolve(onPickAttachment());
   }, [disabled, onPickAttachment, submitting]);
 
   return (

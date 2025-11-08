@@ -35,7 +35,8 @@ builder.Services.AddCors(options =>
             // ✅ 开发环境：明确列出允许的源
             policy.WithOrigins(
                     "http://localhost:15001",  // Admin frontend
-                    "http://localhost:15002"   // Mobile app
+                    "http://localhost:15002",  // Mobile app
+                    "http://localhost:19006"   // Expo web (development)
                 )
                 .AllowAnyMethod()
                 .AllowAnyHeader()
@@ -218,6 +219,9 @@ app.UseMiddleware<Platform.ApiService.Middleware.ActivityLogMiddleware>();
 
 // 响应格式化中间件（在控制器之前）
 app.UseMiddleware<Platform.ApiService.Middleware.ResponseFormattingMiddleware>();
+
+// 启用 WebSocket 支持（SignalR 实时通信依赖）
+app.UseWebSockets();
 
 
 // Configure controllers

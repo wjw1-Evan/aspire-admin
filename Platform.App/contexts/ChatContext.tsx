@@ -14,7 +14,6 @@ import {
   HubConnection,
   HubConnectionBuilder,
   HubConnectionState,
-  HttpTransportType,
   LogLevel,
 } from '@microsoft/signalr';
 
@@ -47,7 +46,7 @@ import {
 } from './chatActions';
 import { chatService } from '@/services/chat';
 import { apiService } from '@/services/api';
-import { getApiBaseUrl } from '@/constants/apiConfig';
+import { getApiGatewayUrlDynamic } from '@/constants/apiConfig';
 import { chatReducer, initialChatState, type ChatState } from './chatReducer';
 import { useAuth } from './AuthContext';
 
@@ -306,7 +305,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       }
 
       const connection = new HubConnectionBuilder()
-        .withUrl(`${getApiBaseUrl()}/hubs/chat`, {
+        .withUrl(`${getApiGatewayUrlDynamic()}/apiservice/hubs/chat`, {
           accessTokenFactory: async () => (await apiService.getToken()) ?? '',
         })
         .withAutomaticReconnect()

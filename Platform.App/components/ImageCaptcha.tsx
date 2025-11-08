@@ -3,11 +3,10 @@
  * 用于登录和注册时的验证码输入
  */
 
-import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
+import React, { useState, useImperativeHandle, forwardRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { ThemedInput } from './themed-input';
-import { ThemedText } from './themed-text';
 import { IconSymbol } from './ui/icon-symbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { apiService } from '@/services/api';
@@ -42,23 +41,19 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
   type = 'login',
   placeholder = '请输入图形验证码',
 }, ref) => {
-  const [captchaId, setCaptchaId] = useState<string>('');
   const [imageData, setImageData] = useState<string>('');
   const [loading, setLoading] = useState(false);
   
-  const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'border');
-  const iconColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
 
   // 获取图形验证码
-  const fetchCaptcha = async () => {
+  const fetchCaptcha = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiService.get<CaptchaResponse>(`/api/captcha/image?type=${type}`);
       
       if (response.success && response.data) {
-        setCaptchaId(response.data.captchaId);
         setImageData(response.data.imageData);
         onCaptchaIdChange?.(response.data.captchaId);
         
@@ -73,17 +68,17 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
     } finally {
       setLoading(false);
     }
-  };
+  }, [onCaptchaIdChange, onChange, type]);
 
   // 暴露刷新方法给父组件
   useImperativeHandle(ref, () => ({
     refresh: fetchCaptcha,
-  }));
+  }), [fetchCaptcha]);
 
   // 组件挂载时获取验证码
   useEffect(() => {
-    fetchCaptcha();
-  }, [type]);
+    void fetchCaptcha();
+  }, [fetchCaptcha]);
 
   return (
     <View style={styles.container}>

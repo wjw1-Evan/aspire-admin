@@ -89,13 +89,6 @@ public class ChatAttachmentInfo
 public class ChatAttachment : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
 {
     /// <summary>
-    /// MongoDB 主键
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public new string Id { get; set; } = string.Empty;
-
-    /// <summary>
     /// 关联会话标识
     /// </summary>
     [BsonElement("sessionId")]
@@ -162,31 +155,7 @@ public class ChatAttachment : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
     public string? ThumbnailUrl { get; set; }
         = default;
 
-    /// <summary>
-    /// 上传时间
-    /// </summary>
-    [BsonElement("createdAt")]
-    public new DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    [BsonElement("updatedAt")]
-    public new DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 是否已删除
-    /// </summary>
-    [BsonElement("isDeleted")]
-    public new bool IsDeleted { get; set; }
-        = false;
-
-    /// <summary>
-    /// 删除时间
-    /// </summary>
-    [BsonElement("deletedAt")]
-    public new DateTime? DeletedAt { get; set; }
-        = default;
+    // 时间戳和软删除字段继承自 MultiTenantEntity，无需重复定义
 }
 
 /// <summary>
@@ -194,13 +163,6 @@ public class ChatAttachment : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
 /// </summary>
 public class ChatSession : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
 {
-    /// <summary>
-    /// MongoDB 主键
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public new string Id { get; set; } = string.Empty;
-
     /// <summary>
     /// 会话参与用户标识集合
     /// </summary>
@@ -254,31 +216,7 @@ public class ChatSession : MultiTenantEntity, IEntity, ISoftDeletable, ITimestam
     public bool IsMuted { get; set; }
         = false;
 
-    /// <summary>
-    /// 创建时间（UTC）
-    /// </summary>
-    [BsonElement("createdAt")]
-    public new DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 更新时间（UTC）
-    /// </summary>
-    [BsonElement("updatedAt")]
-    public new DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 是否已删除
-    /// </summary>
-    [BsonElement("isDeleted")]
-    public new bool IsDeleted { get; set; }
-        = false;
-
-    /// <summary>
-    /// 删除时间（UTC）
-    /// </summary>
-    [BsonElement("deletedAt")]
-    public new DateTime? DeletedAt { get; set; }
-        = default;
+    // 时间戳和软删除字段继承自 MultiTenantEntity，无需重复定义
 }
 
 /// <summary>
@@ -286,13 +224,6 @@ public class ChatSession : MultiTenantEntity, IEntity, ISoftDeletable, ITimestam
 /// </summary>
 public class ChatMessage : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
 {
-    /// <summary>
-    /// MongoDB 主键
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public new string Id { get; set; } = string.Empty;
-
     /// <summary>
     /// 会话标识
     /// </summary>
@@ -356,31 +287,7 @@ public class ChatMessage : MultiTenantEntity, IEntity, ISoftDeletable, ITimestam
     public bool IsRecalled { get; set; }
         = false;
 
-    /// <summary>
-    /// 创建时间（UTC）
-    /// </summary>
-    [BsonElement("createdAt")]
-    public new DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 更新时间（UTC）
-    /// </summary>
-    [BsonElement("updatedAt")]
-    public new DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 是否已删除
-    /// </summary>
-    [BsonElement("isDeleted")]
-    public new bool IsDeleted { get; set; }
-        = false;
-
-    /// <summary>
-    /// 删除时间（UTC）
-    /// </summary>
-    [BsonElement("deletedAt")]
-    public new DateTime? DeletedAt { get; set; }
-        = default;
+    // 时间戳和软删除字段继承自 MultiTenantEntity，无需重复定义
 }
 
 /// <summary>

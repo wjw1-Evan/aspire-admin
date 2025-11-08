@@ -34,6 +34,8 @@
 ### SignalR 连接管理
 
 - 在 `ChatContext` 中创建 `HubConnection`，使用 `@microsoft/signalr`（自动重连、WebSocket 优先）。
+- 通过 API 网关地址 `${网关}/apiservice/hubs/chat` 建立连接，避免携带多余的 `/api` 前缀导致 404。
+- API 服务在中间件管道中显式调用 `app.UseWebSockets()`，确保 SignalR 可以使用 WebSocket 通道；前端保留协商流程，自动选择最佳传输方式。
 - `connectionState` 暴露给 UI，`ConversationHeader` 根据状态展示“实时连接已建立 / 正在重新连接”等文案。
 - 连接建立或断开时自动加入 / 离开当前会话组；重连后会再次调用 `JoinSessionAsync`。
 - `activeSessionRef`、`sessionsRef` 等 `useRef` 保存最新上下文，避免事件处理函数重新绑定。

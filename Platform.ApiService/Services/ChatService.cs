@@ -1,16 +1,11 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using Platform.ApiService.Models;
 using Platform.ApiService.Hubs;
-using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Security.Cryptography;
-using System.Text;
-using System.Linq;
-using System.IO;
 using Platform.ApiService.Constants;
 
 namespace Platform.ApiService.Services;
@@ -20,14 +15,12 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ChatService : IChatService
 {
-    private const int DefaultPageSize = 20;
     private const int MaxPageSize = 200;
 
     private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
     private readonly IDatabaseOperationFactory<ChatMessage> _messageFactory;
     private readonly IDatabaseOperationFactory<ChatAttachment> _attachmentFactory;
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
-    private readonly IMongoDatabase _database;
     private readonly ILogger<ChatService> _logger;
     private readonly IHubContext<ChatHub> _hubContext;
     private readonly GridFSBucket _gridFsBucket;
@@ -37,40 +30,21 @@ public class ChatService : IChatService
     /// <summary>
     /// 初始化聊天服务。
     /// </summary>
-    /// <param name="sessionFactory">会话数据操作工厂</param>
-    /// <param name="messageFactory">消息数据操作工厂</param>
-    /// <param name="attachmentFactory">附件数据操作工厂</param>
-    /// <param name="database">MongoDB 数据库实例</param>
-    /// <param name="hubContext">SignalR Hub 上下文</param>
-    /// <param name="userFactory">用户数据操作工厂</param>
-    /// <param name="aiAssistantCoordinator">AI 助手协调器</param>
-    /// <param name="aiCompletionService">调用大模型生成回复的服务</param>
+    /// <param name="dependencies">聊天服务所需的依赖项聚合。</param>
     /// <param name="logger">日志记录器</param>
-    public ChatService(
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
-        IDatabaseOperationFactory<ChatMessage> messageFactory,
-        IDatabaseOperationFactory<ChatAttachment> attachmentFactory,
-        IMongoDatabase database,
-        IHubContext<ChatHub> hubContext,
-        IDatabaseOperationFactory<AppUser> userFactory,
-        IAiAssistantCoordinator aiAssistantCoordinator,
-        IAiCompletionService aiCompletionService,
-        ILogger<ChatService> logger)
+    public ChatService(ChatServiceDependencies dependencies, ILogger<ChatService> logger)
     {
-        _sessionFactory = sessionFactory;
-        _messageFactory = messageFactory;
-        _attachmentFactory = attachmentFactory;
-        _database = database;
-        _hubContext = hubContext;
-        _userFactory = userFactory;
-        _aiAssistantCoordinator = aiAssistantCoordinator;
-        _aiCompletionService = aiCompletionService;
-        _logger = logger;
+        ArgumentNullException.ThrowIfNull(dependencies);
 
-        _gridFsBucket = new GridFSBucket(database, new GridFSBucketOptions
-        {
-            BucketName = "chat_attachments"
-        });
+        _sessionFactory = dependencies.SessionFactory;
+        _messageFactory = dependencies.MessageFactory;
+        _attachmentFactory = dependencies.AttachmentFactory;
+        _hubContext = dependencies.HubContext;
+        _userFactory = dependencies.UserFactory;
+        _aiAssistantCoordinator = dependencies.AiAssistantCoordinator;
+        _aiCompletionService = dependencies.AiCompletionService;
+        _gridFsBucket = dependencies.GridFsBucket;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -777,6 +751,88 @@ public class ChatService : IChatService
         var refreshedSession = await _sessionFactory.GetByIdAsync(session.Id) ?? session;
         await UpdateSessionAfterMessageAsync(refreshedSession, assistantMessage, AiAssistantConstants.AssistantUserId);
         await NotifyMessageCreatedAsync(refreshedSession, assistantMessage);
+    }
+
+    /// <summary>
+    /// 聊天服务的依赖项聚合。
+    /// </summary>
+    public sealed class ChatServiceDependencies
+    {
+        /// <summary>
+        /// 初始化 <see cref="ChatServiceDependencies"/> 的新实例。
+        /// </summary>
+        /// <param name="sessionFactory">会话数据操作工厂。</param>
+        /// <param name="messageFactory">消息数据操作工厂。</param>
+        /// <param name="attachmentFactory">附件数据操作工厂。</param>
+        /// <param name="userFactory">用户数据操作工厂。</param>
+        /// <param name="database">MongoDB 数据库实例。</param>
+        /// <param name="hubContext">SignalR Hub 上下文。</param>
+        /// <param name="aiAssistantCoordinator">AI 助手协调器。</param>
+        /// <param name="aiCompletionService">AI 生成回复服务。</param>
+        public ChatServiceDependencies(
+            IDatabaseOperationFactory<ChatSession> sessionFactory,
+            IDatabaseOperationFactory<ChatMessage> messageFactory,
+            IDatabaseOperationFactory<ChatAttachment> attachmentFactory,
+            IDatabaseOperationFactory<AppUser> userFactory,
+            IMongoDatabase database,
+            IHubContext<ChatHub> hubContext,
+            IAiAssistantCoordinator aiAssistantCoordinator,
+            IAiCompletionService aiCompletionService)
+        {
+            SessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
+            MessageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
+            AttachmentFactory = attachmentFactory ?? throw new ArgumentNullException(nameof(attachmentFactory));
+            UserFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
+            HubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+            AiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
+            AiCompletionService = aiCompletionService ?? throw new ArgumentNullException(nameof(aiCompletionService));
+
+            var mongoDatabase = database ?? throw new ArgumentNullException(nameof(database));
+            GridFsBucket = new GridFSBucket(mongoDatabase, new GridFSBucketOptions
+            {
+                BucketName = "chat_attachments"
+            });
+        }
+
+        /// <summary>
+        /// 获取会话数据操作工厂。
+        /// </summary>
+        public IDatabaseOperationFactory<ChatSession> SessionFactory { get; }
+
+        /// <summary>
+        /// 获取消息数据操作工厂。
+        /// </summary>
+        public IDatabaseOperationFactory<ChatMessage> MessageFactory { get; }
+
+        /// <summary>
+        /// 获取附件数据操作工厂。
+        /// </summary>
+        public IDatabaseOperationFactory<ChatAttachment> AttachmentFactory { get; }
+
+        /// <summary>
+        /// 获取用户数据操作工厂。
+        /// </summary>
+        public IDatabaseOperationFactory<AppUser> UserFactory { get; }
+
+        /// <summary>
+        /// 获取 SignalR Hub 上下文。
+        /// </summary>
+        public IHubContext<ChatHub> HubContext { get; }
+
+        /// <summary>
+        /// 获取 AI 助手协调器。
+        /// </summary>
+        public IAiAssistantCoordinator AiAssistantCoordinator { get; }
+
+        /// <summary>
+        /// 获取 AI 生成回复服务。
+        /// </summary>
+        public IAiCompletionService AiCompletionService { get; }
+
+        /// <summary>
+        /// 获取附件使用的 GridFS 存储桶。
+        /// </summary>
+        public GridFSBucket GridFsBucket { get; }
     }
 }
 

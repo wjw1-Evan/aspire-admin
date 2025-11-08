@@ -25,6 +25,7 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.10" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="System.Management" Version="9.0.10" />
+    <PackageReference Include="MongoDB.Driver.GridFS" Version="2.30.0" />
   </ItemGroup>
 
 </Project>

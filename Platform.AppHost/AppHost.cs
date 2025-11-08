@@ -9,10 +9,17 @@ var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey");
 
 // dotnet user-secrets set Parameters:openai-openai-apikey sk-your-api-key
 
-var openai = builder.AddOpenAI("openai")
-                    .WithEndpoint("https://my-gateway.example.com/v1");
+var openAiSection = builder.Configuration.GetSection("OpenAI");
+var openAiEndpoint = openAiSection["Endpoint"];
 
-var chat = openai.AddModel("chat", "gpt-4o-mini").WithHealthCheck();;
+var openai = builder.AddOpenAI("openai");
+
+if (!string.IsNullOrWhiteSpace(openAiEndpoint))
+{
+    openai.WithEndpoint(openAiEndpoint);
+}
+
+var chat = openai.AddModel("chat", "gpt-4o-mini").WithHealthCheck();
 
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress(config => config.WithLifetime(ContainerLifetime.Persistent))

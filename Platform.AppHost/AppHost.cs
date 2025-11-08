@@ -5,15 +5,14 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey");
-var aiSection = builder.Configuration.GetSection("Ai");
-var aiProvider = aiSection["Provider"] ?? string.Empty;
-var aiEndpoint = aiSection["ChatEndpoint"] ?? string.Empty;
-var aiApiKey = aiSection["ApiKey"] ?? string.Empty;
-var aiModel = aiSection["Model"] ?? string.Empty;
-var aiSystemPrompt = aiSection["SystemPrompt"] ?? string.Empty;
-var aiTimeout = aiSection["TimeoutSeconds"] ?? string.Empty;
-var aiMaxTokens = aiSection["MaxTokens"] ?? string.Empty;
-var aiOrganization = aiSection["Organization"] ?? string.Empty;
+
+
+// dotnet user-secrets set Parameters:openai-openai-apikey sk-your-api-key
+
+var openai = builder.AddOpenAI("openai")
+                    .WithEndpoint("https://my-gateway.example.com/v1");
+
+var chat = openai.AddModel("chat", "gpt-4o-mini").WithHealthCheck();;
 
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress(config => config.WithLifetime(ContainerLifetime.Persistent))
@@ -38,14 +37,7 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WithReplicas(1)
         .WithHttpHealthCheck("/health")
         .WithEnvironment("Jwt__SecretKey", jwtSecretKey.Value)
-        .WithEnvironment("Ai__Provider", aiProvider)
-        .WithEnvironment("Ai__ChatEndpoint", aiEndpoint)
-        .WithEnvironment("Ai__ApiKey", aiApiKey)
-        .WithEnvironment("Ai__Model", aiModel)
-        .WithEnvironment("Ai__SystemPrompt", aiSystemPrompt)
-        .WithEnvironment("Ai__TimeoutSeconds", aiTimeout)
-        .WithEnvironment("Ai__MaxTokens", aiMaxTokens)
-        .WithEnvironment("Ai__Organization", aiOrganization)
+        .WithReference(chat)
 };
 
 var yarp = builder.AddYarp("apigateway")

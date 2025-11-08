@@ -1,5 +1,6 @@
-using Platform.ApiService.Services;
 using Platform.ApiService.Models;
+using Platform.ApiService.Services;
+using Platform.ApiService.Hubs;
 using MongoDB.Driver;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -137,12 +138,11 @@ builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Pla
 // ✅ 注册数据库操作工厂（必须在业务服务之前注册）
 builder.Services.AddDatabaseFactory();
 
+// ✅ 注册聊天服务依赖项聚合
+builder.Services.AddScoped<ChatService.ChatServiceDependencies>();
+
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
-
-builder.Services.Configure<AiCompletionOptions>(builder.Configuration.GetSection(AiCompletionOptions.SectionName));
-builder.Services.AddHttpClient<IAiCompletionService, AiCompletionService>();
-
 
 
 // 数据库初始化服务已迁移到 Platform.DataInitializer 微服务

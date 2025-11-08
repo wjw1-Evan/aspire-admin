@@ -1,16 +1,18 @@
 import { ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import type { Href } from 'expo-router';
+
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { IconSymbol, type IconSymbolName } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface ExploreTile {
-  title: string;
-  description: string;
-  icon: string;
-  route: string;
+  readonly title: string;
+  readonly description: string;
+  readonly icon: IconSymbolName;
+  readonly route: Href;
 }
 
 const tiles: ExploreTile[] = [
@@ -40,20 +42,21 @@ export default function ExploreScreen() {
   const heroText = useThemeColor({ light: '#0f172a', dark: '#e2e8f0' }, 'text');
   const tileBackground = useThemeColor({ light: '#f8fafc', dark: '#1f2937' }, 'card');
   const accent = useThemeColor({ light: '#0ea5e9', dark: '#38bdf8' }, 'tint');
+  const backgroundColor = useThemeColor({}, 'background');
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ThemedView style={[styles.hero, { backgroundColor: heroBackground }] }>
+    <ScrollView style={[styles.scrollView, { backgroundColor }]} contentContainerStyle={styles.container}>
+      <ThemedView style={[styles.hero, { backgroundColor: heroBackground }]}>
         <IconSymbol name="safari.fill" size={64} color={accent} />
         <ThemedText type="title" style={[styles.heroTitle, { color: heroText }]}>发现更多精彩</ThemedText>
-        <ThemedText style={[styles.heroSubtitle, { color: heroText, opacity: 0.75 }] }>
+        <ThemedText style={[styles.heroSubtitle, { color: heroText, opacity: 0.75 }]}>
           打开社交通道，快速拓展人脉、寻找灵感，让工作与交流更高效。
         </ThemedText>
       </ThemedView>
 
       {tiles.map(tile => (
-        <ThemedView key={tile.route} style={[styles.tile, { backgroundColor: tileBackground }] }>
-          <IconSymbol name={tile.icon as any} size={28} color={accent} />
+        <ThemedView key={tile.title} style={[styles.tile, { backgroundColor: tileBackground }]}>
+          <IconSymbol name={tile.icon} size={28} color={accent} />
           <ThemedText type="subtitle" style={styles.tileTitle}>
             {tile.title}
           </ThemedText>
@@ -68,6 +71,9 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
   container: {
     padding: 16,
     gap: 16,

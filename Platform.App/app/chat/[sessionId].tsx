@@ -23,9 +23,11 @@ export default function ChatSessionScreen() {
   const { user } = useAuth();
   const {
     sessions,
+    sessionsLoading,
     messages,
     messageState,
     loadMessages,
+    loadSessions,
     sendMessage,
     uploadAttachment,
     setActiveSession,
@@ -35,11 +37,11 @@ export default function ChatSessionScreen() {
   const session = sessionId ? sessions[sessionId] : undefined;
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!sessionId || !session) {
       return;
     }
     loadMessages(sessionId).catch(error => console.error('Failed to load messages:', error));
-  }, [loadMessages, sessionId]);
+  }, [loadMessages, sessionId, session]);
 
   useEffect(() => {
     if (sessionId) {
@@ -50,7 +52,7 @@ export default function ChatSessionScreen() {
   }, [sessionId, setActiveSession]);
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!sessionId || !session) {
       return;
     }
 
@@ -63,14 +65,44 @@ export default function ChatSessionScreen() {
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [connectionState, loadMessages, sessionId]);
+  }, [connectionState, loadMessages, session, sessionId]);
 
   const currentUserId = useMemo(() => user?.id ?? user?.username ?? '', [user]);
+
+  const remoteParticipants = useMemo(() => {
+    if (!session) {
+      return [];
+    }
+    return session.participants
+      .filter(participant => participant !== currentUserId)
+      .map(participant => session.participantNames?.[participant] ?? participant)
+      .filter((name, index, array): name is string => Boolean(name) && array.indexOf(name) === index);
+  }, [currentUserId, session]);
+
+  const headerTitle = useMemo(() => {
+    if (remoteParticipants.length === 0) {
+      return session?.topicTags?.[0] ?? session?.id?.slice(0, 6) ?? '';
+    }
+    if (remoteParticipants.length === 1) {
+      return remoteParticipants[0];
+    }
+    if (remoteParticipants.length <= 3) {
+      return remoteParticipants.join('、');
+    }
+    return `${remoteParticipants.slice(0, 3).join('、')} 等${remoteParticipants.length}人`;
+  }, [remoteParticipants, session?.id, session?.topicTags]);
+
+  const headerSubtitle = useMemo(() => {
+    if (remoteParticipants.length === 0) {
+      return undefined;
+    }
+    return `参与者：${remoteParticipants.join('、')}`;
+  }, [remoteParticipants]);
 
   const { suggestions, loading: suggestionLoading, requestSuggestions } = useAiAssistant(sessionId ?? '');
 
   const handleSendText = useCallback(async (content: string) => {
-    if (!sessionId) {
+    if (!sessionId || !session) {
       return;
     }
 
@@ -81,10 +113,12 @@ export default function ChatSessionScreen() {
       metadata: {},
     });
 
-      requestSuggestions([content]).catch(error => console.error('AI suggestion error:', error));
-  }, [requestSuggestions, sendMessage, sessionId]);
+    requestSuggestions([content]).catch(error => console.error('AI suggestion error:', error));
+  }, [requestSuggestions, sendMessage, session, sessionId]);
 
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
+  const [sessionRetrying, setSessionRetrying] = useState(false);
+  const sessionRefreshAttemptedRef = useRef(false);
 
   const toggleAttachmentPicker = useCallback(() => {
     setShowAttachmentPicker(prev => !prev);
@@ -147,7 +181,36 @@ export default function ChatSessionScreen() {
     }
   }, [requestSuggestions, sessionId, sessionMessages]);
 
+  useEffect(() => {
+    sessionRefreshAttemptedRef.current = false;
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || session || sessionsLoading || sessionRetrying) {
+      return;
+    }
+
+    if (sessionRefreshAttemptedRef.current) {
+      return;
+    }
+
+    sessionRefreshAttemptedRef.current = true;
+    setSessionRetrying(true);
+    loadSessions()
+      .catch(error => console.error('Failed to refresh session info:', error))
+      .finally(() => setSessionRetrying(false));
+  }, [loadSessions, session, sessionId, sessionRetrying, sessionsLoading]);
+
   if (!sessionId || !session) {
+    if (sessionsLoading || sessionRetrying) {
+      return (
+        <ThemedView style={styles.centered}>
+          <ActivityIndicator />
+          <ThemedText style={styles.centeredText}>正在加载会话信息…</ThemedText>
+        </ThemedView>
+      );
+    }
+
     return (
       <ThemedView style={styles.centered}>
         <ThemedText>找不到会话</ThemedText>
@@ -161,7 +224,8 @@ export default function ChatSessionScreen() {
         session={session}
         connectionState={connectionState}
         onBack={() => router.back()}
-        title={session.topicTags?.[0]}
+        title={headerTitle}
+        subtitle={headerSubtitle}
       />
       <View style={styles.content}>
         <AiSuggestionBar
@@ -214,6 +278,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  centeredText: {
+    marginTop: 12,
   },
 });
 

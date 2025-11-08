@@ -15,6 +15,7 @@ interface ConversationHeaderProps {
   readonly onMore?: () => void;
   readonly onBack?: () => void;
   readonly title?: string;
+  readonly subtitle?: string;
 }
 
 const connectionStateText: Record<HubConnectionState, string> = {
@@ -32,6 +33,7 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
   onMore,
   onBack,
   title,
+  subtitle,
 }) => {
   const router = useRouter();
 
@@ -44,7 +46,11 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
   };
 
   const displayTitle = title || session.topicTags?.[0] || `会话 ${session.id.slice(0, 6)}`;
-  const peersDescription = session.participants.join('、');
+  const peersDescription =
+    subtitle ||
+    session.participants
+      .map(participant => session.participantNames?.[participant] ?? participant)
+      .join('、');
   const stateLabel =
     connectionState !== undefined ? connectionStateText[connectionState] : undefined;
 
@@ -57,9 +63,11 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
         <ThemedText type="subtitle" style={styles.title} numberOfLines={1}>
           {displayTitle}
         </ThemedText>
-        <ThemedText style={styles.subtitle} numberOfLines={1}>
-          {peersDescription}
-        </ThemedText>
+        {peersDescription ? (
+          <ThemedText style={styles.subtitle} numberOfLines={1}>
+            {peersDescription}
+          </ThemedText>
+        ) : null}
         {stateLabel && (
           <ThemedText style={styles.connection} numberOfLines={1}>
             {stateLabel}

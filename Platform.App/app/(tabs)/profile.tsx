@@ -28,32 +28,51 @@ const ProfileItem = ({
   value,
   onPress,
   showArrow = true,
-  borderColor
+  borderColor,
 }: {
-  icon: 'person.fill' | 'envelope.fill' | 'phone.fill' | 'location.fill' | 'calendar.fill' | 'lock.fill' | 'gear' | 'questionmark.circle.fill' | 'info.circle.fill' | 'arrow.clockwise';
+  icon:
+    | 'person.fill'
+    | 'envelope.fill'
+    | 'phone.fill'
+    | 'location.fill'
+    | 'calendar.fill'
+    | 'lock.fill'
+    | 'gear'
+    | 'questionmark.circle.fill'
+    | 'info.circle.fill'
+    | 'arrow.clockwise';
   title: string;
   value?: string;
   onPress?: () => void;
   showArrow?: boolean;
   borderColor?: string;
-}) => (
-  <TouchableOpacity 
-    style={[styles.profileItem, { borderBottomColor: borderColor }]} 
-    onPress={onPress}
-    disabled={!onPress}
-  >
-    <View style={styles.profileItemLeft}>
-      <IconSymbol name={icon as any} size={24} color="#666" />
-      <ThemedText style={styles.profileItemTitle}>{title}</ThemedText>
-    </View>
-    <View style={styles.profileItemRight}>
-      {value && <ThemedText style={styles.profileItemValue}>{value}</ThemedText>}
-      {showArrow && onPress && (
-        <IconSymbol name="chevron.right" size={16} color="#999" />
-      )}
-    </View>
-  </TouchableOpacity>
-);
+}) => {
+  const iconColor = useThemeColor({}, 'icon');
+  const mutedColor = useThemeColor({}, 'tabIconDefault');
+
+  return (
+    <TouchableOpacity
+      style={[styles.profileItem, { borderBottomColor: borderColor }]}
+      onPress={onPress}
+      disabled={!onPress}
+    >
+      <View style={styles.profileItemLeft}>
+        <IconSymbol name={icon as any} size={24} color={iconColor} />
+        <ThemedText style={styles.profileItemTitle}>{title}</ThemedText>
+      </View>
+      <View style={styles.profileItemRight}>
+        {value ? (
+          <ThemedText style={[styles.profileItemValue, { color: mutedColor }]} numberOfLines={1}>
+            {value}
+          </ThemedText>
+        ) : null}
+        {showArrow && onPress ? (
+          <IconSymbol name="chevron.right" size={16} color={mutedColor} />
+        ) : null}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const SettingItem = ({
   icon,
@@ -61,7 +80,7 @@ const SettingItem = ({
   value,
   onValueChange,
   type = 'switch',
-  borderColor
+  borderColor,
 }: {
   icon: 'paintbrush.fill' | 'bell.fill';
   title: string;
@@ -69,26 +88,35 @@ const SettingItem = ({
   onValueChange?: (value: boolean) => void;
   type?: 'switch' | 'text';
   borderColor?: string;
-}) => (
-  <View style={[styles.settingItem, { borderBottomColor: borderColor }]}>
-    <View style={styles.settingItemLeft}>
-      <IconSymbol name={icon as any} size={24} color="#666" />
-      <ThemedText style={styles.settingItemTitle}>{title}</ThemedText>
+}) => {
+  const iconColor = useThemeColor({}, 'icon');
+  const accentColor = useThemeColor({}, 'tint');
+  const mutedColor = useThemeColor({}, 'tabIconDefault');
+  const inactiveTrackColor = useThemeColor({ light: '#d1d5db', dark: '#334155' }, 'border');
+  const thumbInactiveColor = useThemeColor({ light: '#f4f3f4', dark: '#1f2937' }, 'card');
+
+  return (
+    <View style={[styles.settingItem, { borderBottomColor: borderColor }]}>
+      <View style={styles.settingItemLeft}>
+        <IconSymbol name={icon as any} size={24} color={iconColor} />
+        <ThemedText style={styles.settingItemTitle}>{title}</ThemedText>
+      </View>
+      <View style={styles.settingItemRight}>
+        {type === 'switch' ? (
+          <Switch
+            value={value}
+            onValueChange={onValueChange}
+            trackColor={{ false: inactiveTrackColor, true: `${accentColor}80` }}
+            thumbColor={value ? accentColor : thumbInactiveColor}
+            ios_backgroundColor={inactiveTrackColor}
+          />
+        ) : (
+          <ThemedText style={[styles.settingItemValue, { color: mutedColor }]}>{value}</ThemedText>
+        )}
+      </View>
     </View>
-    <View style={styles.settingItemRight}>
-      {type === 'switch' ? (
-        <Switch
-          value={value}
-          onValueChange={onValueChange}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={value ? '#f5dd4b' : '#f4f3f4'}
-        />
-      ) : (
-        <ThemedText style={styles.settingItemValue}>{value}</ThemedText>
-      )}
-    </View>
-  </View>
-);
+  );
+};
 
 const ThemeSettingItem = ({ 
   icon, 
@@ -101,6 +129,9 @@ const ThemeSettingItem = ({
   themeMode: string;
   borderColor?: string;
 }) => {
+  const iconColor = useThemeColor({}, 'icon');
+  const mutedColor = useThemeColor({}, 'tabIconDefault');
+
   const getThemeInfo = (mode: string) => {
     switch (mode) {
       case 'light':
@@ -119,13 +150,13 @@ const ThemeSettingItem = ({
   return (
     <View style={[styles.settingItem, { borderBottomColor: borderColor }]}>
       <View style={styles.settingItemLeft}>
-        <IconSymbol name={icon as any} size={24} color={useThemeColor({}, 'icon')} />
+        <IconSymbol name={icon as any} size={24} color={iconColor} />
         <ThemedText style={styles.settingItemTitle}>{title}</ThemedText>
       </View>
       <View style={styles.settingItemRight}>
         <View style={styles.themeInfo}>
-          <IconSymbol name={currentTheme.icon as any} size={16} color={useThemeColor({}, 'icon')} />
-          <ThemedText style={styles.settingItemValue}>{currentTheme.label}</ThemedText>
+          <IconSymbol name={currentTheme.icon as any} size={16} color={iconColor} />
+          <ThemedText style={[styles.settingItemValue, { color: mutedColor }]}>{currentTheme.label}</ThemedText>
         </View>
         <ThemeSelector />
       </View>
@@ -147,6 +178,13 @@ export default function ProfileScreen() {
   );
   const borderColor = useThemeColor({}, 'border');
   const tintColor = useThemeColor({}, 'tint');
+  const iconColor = useThemeColor({}, 'icon');
+  const mutedColor = useThemeColor({}, 'tabIconDefault');
+  const placeholderColor = useThemeColor({}, 'placeholder');
+  const inputBackground = useThemeColor({ light: '#F9FAFB', dark: '#111827' }, 'card');
+  const disabledInputBackground = useThemeColor({ light: '#ECEFF5', dark: '#1F2937' }, 'card');
+  const avatarPlaceholder = useThemeColor({ light: '#f0f0f0', dark: '#1f2937' }, 'card');
+  const textColor = useThemeColor({}, 'text');
 
   // 编辑状态下的表单数据
   const [editData, setEditData] = useState({
@@ -201,9 +239,9 @@ export default function ProfileScreen() {
         <View style={styles.avatarContainer}>
           <Image
             source={{ uri: user?.avatar || 'https://via.placeholder.com/100' }}
-            style={styles.avatar}
+            style={[styles.avatar, { backgroundColor: avatarPlaceholder }]}
           />
-          <TouchableOpacity style={styles.editAvatarButton}>
+          <TouchableOpacity style={[styles.editAvatarButton, { backgroundColor: tintColor }]}>
             <IconSymbol name="camera.fill" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -225,32 +263,57 @@ export default function ProfileScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.inputLabel}>姓名</ThemedText>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  borderColor,
+                  backgroundColor: inputBackground,
+                  color: textColor,
+                },
+              ]}
               value={editData.name}
               onChangeText={(text) => setEditData({ ...editData, name: text })}
               placeholder="请输入姓名"
+              placeholderTextColor={placeholderColor}
+              selectionColor={tintColor}
             />
           </View>
 
           <View style={styles.inputGroup}>
             <ThemedText style={styles.inputLabel}>邮箱</ThemedText>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  borderColor,
+                  backgroundColor: inputBackground,
+                  color: textColor,
+                },
+              ]}
               value={editData.email}
               onChangeText={(text) => setEditData({ ...editData, email: text })}
               placeholder="请输入邮箱"
               keyboardType="email-address"
+              placeholderTextColor={placeholderColor}
+              selectionColor={tintColor}
             />
           </View>
 
           <View style={styles.inputGroup}>
             <ThemedText style={styles.inputLabel}>用户名</ThemedText>
             <TextInput
-              style={[styles.input, { backgroundColor: '#f5f5f5' }]}
+              style={[
+                styles.input,
+                {
+                  borderColor,
+                  backgroundColor: disabledInputBackground,
+                  color: mutedColor,
+                },
+              ]}
               value={editData.phone}
               editable={false}
               placeholder="用户名不可修改"
-              placeholderTextColor="#999"
+              placeholderTextColor={placeholderColor}
             />
           </View>
 
@@ -392,13 +455,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#f0f0f0',
   },
   editAvatarButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#007AFF',
     borderRadius: 15,
     width: 30,
     height: 30,

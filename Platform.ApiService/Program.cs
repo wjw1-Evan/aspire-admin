@@ -178,7 +178,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RequireExpirationTime = true,
             RequireSignedTokens = true
         };
-        
+
+        // 允许 SignalR 通过 query string access_token 进行认证
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/apiservice/hubs")))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();

@@ -9,6 +9,7 @@ import { aiService } from '@/services/ai';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MatchSuggestion } from '@/types/ai';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function RecommendScreen() {
   const { user } = useAuth();
@@ -17,6 +18,13 @@ export default function RecommendScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<MatchSuggestion[]>([]);
+  const cardColor = useThemeColor({}, 'card');
+  const accentColor = useThemeColor({}, 'tint');
+  const avatarBackground = useThemeColor({ light: '#e0f2fe', dark: '#1f4d88' }, 'card');
+  const badgeTextColor = useThemeColor({ light: '#fff', dark: '#fff' }, 'text');
+  const mutedColor = useThemeColor({}, 'tabIconDefault');
+  const retryBackground = useThemeColor({ light: '#e0e7ff', dark: '#1e293b' }, 'card');
+  const backgroundColor = useThemeColor({}, 'background');
 
   const loadSuggestions = useCallback(async () => {
     if (!user?.id && !user?.username) {
@@ -51,44 +59,44 @@ export default function RecommendScreen() {
   }, [router, setActiveSession]);
 
   const renderItem = useCallback(({ item }: { item: MatchSuggestion }) => (
-    <Pressable style={styles.card} onPress={() => handleStartChat(item)}>
-      <View style={styles.avatarPlaceholder}>
-        <IconSymbol name="person.crop.circle" size={36} />
+    <Pressable style={[styles.card, { backgroundColor: cardColor }]} onPress={() => handleStartChat(item)}>
+      <View style={[styles.avatarPlaceholder, { backgroundColor: avatarBackground }]}>
+        <IconSymbol name="person.crop.circle" size={36} color={accentColor} />
       </View>
       <View style={styles.cardContent}>
         <ThemedText type="subtitle" style={styles.cardTitle} numberOfLines={1}>
           {item.displayName}
         </ThemedText>
         {item.bio && (
-          <ThemedText style={styles.cardSubtitle} numberOfLines={2}>
+          <ThemedText style={[styles.cardSubtitle, { color: mutedColor }]} numberOfLines={2}>
             {item.bio}
           </ThemedText>
         )}
         {item.sharedInterests && item.sharedInterests.length > 0 && (
-          <ThemedText style={styles.cardTag} numberOfLines={1}>
+          <ThemedText style={[styles.cardTag, { color: accentColor }]} numberOfLines={1}>
             共同兴趣：{item.sharedInterests.join('、')}
           </ThemedText>
         )}
       </View>
-      <View style={styles.scoreBadge}>
-        <ThemedText style={styles.scoreText}>{Math.round(item.matchScore * 100)}%</ThemedText>
+      <View style={[styles.scoreBadge, { backgroundColor: accentColor }]}>
+        <ThemedText style={[styles.scoreText, { color: badgeTextColor }]}>{Math.round(item.matchScore * 100)}%</ThemedText>
       </View>
     </Pressable>
-  ), [handleStartChat]);
+  ), [accentColor, avatarBackground, badgeTextColor, cardColor, handleStartChat, mutedColor]);
 
   if (loading && suggestions.length === 0) {
     return (
-      <ThemedView style={styles.centered}>
-        <ActivityIndicator />
+      <ThemedView style={[styles.centered, { backgroundColor }]}>
+        <ActivityIndicator color={accentColor} />
       </ThemedView>
     );
   }
 
   if (error) {
     return (
-      <ThemedView style={styles.centered}>
-        <ThemedText style={styles.errorText}>{error}</ThemedText>
-        <Pressable style={styles.retryButton} onPress={() => loadSuggestions()}>
+      <ThemedView style={[styles.centered, { backgroundColor }]}>
+        <ThemedText style={[styles.errorText, { color: mutedColor }]}>{error}</ThemedText>
+        <Pressable style={[styles.retryButton, { backgroundColor: retryBackground }]} onPress={() => loadSuggestions()}>
           <ThemedText>重试</ThemedText>
         </Pressable>
       </ThemedView>
@@ -96,7 +104,7 @@ export default function RecommendScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor }]}>
       <FlatList
         data={suggestions}
         keyExtractor={item => item.userId}
@@ -104,9 +112,9 @@ export default function RecommendScreen() {
         contentContainerStyle={suggestions.length === 0 ? styles.emptyContainer : undefined}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <IconSymbol name="sparkles" size={48} />
+            <IconSymbol name="sparkles" size={48} color={accentColor} />
             <ThemedText style={styles.emptyTitle}>暂无推荐</ThemedText>
-            <ThemedText style={styles.emptySubtitle}>稍后再试，或完善个人信息提高匹配度。</ThemedText>
+            <ThemedText style={[styles.emptySubtitle, { color: mutedColor }]}>稍后再试，或完善个人信息提高匹配度。</ThemedText>
           </View>
         }
         refreshing={loading}
@@ -123,7 +131,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
     marginHorizontal: 16,
     marginVertical: 8,
     padding: 16,
@@ -133,7 +140,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#e0f2fe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -153,17 +159,14 @@ const styles = StyleSheet.create({
   cardTag: {
     marginTop: 6,
     fontSize: 12,
-    color: '#2563eb',
   },
   scoreBadge: {
-    backgroundColor: '#2563eb',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginLeft: 12,
   },
   scoreText: {
-    color: '#fff',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -179,7 +182,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#e0e7ff',
   },
   emptyContainer: {
     flexGrow: 1,

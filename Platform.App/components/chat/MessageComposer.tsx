@@ -19,7 +19,14 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 }) => {
   const [value, setValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const backgroundColor = useThemeColor({ light: '#f3f4f6', dark: '#1f2937' }, 'background');
+  const containerBackground = useThemeColor({ light: '#f3f4f6', dark: '#1f2937' }, 'background');
+  const borderColor = useThemeColor({}, 'border');
+  const inputBackground = useThemeColor({}, 'card');
+  const textColor = useThemeColor({}, 'text');
+  const placeholderColor = useThemeColor({}, 'placeholder');
+  const iconColor = useThemeColor({}, 'icon');
+  const accentColor = useThemeColor({}, 'tint');
+  const disabledIconColor = useThemeColor({ light: '#9ca3af', dark: '#4b5563' }, 'tabIconDefault');
 
   const handleSend = useCallback(async () => {
     if (!value.trim() || submitting || disabled) {
@@ -46,16 +53,23 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-      <View style={[styles.container, { backgroundColor }]}>
+      <View style={[styles.container, { backgroundColor: containerBackground, borderTopColor: borderColor }]}>
         {onPickAttachment && (
           <Pressable style={styles.iconButton} onPress={handlePickAttachment} hitSlop={12}>
-            <IconSymbol name="paperclip" size={22} />
+            <IconSymbol name="paperclip" size={22} color={iconColor} />
           </Pressable>
         )}
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: inputBackground,
+              color: textColor,
+              borderColor,
+            },
+          ]}
           placeholder={placeholder}
-          placeholderTextColor="#878a96"
+          placeholderTextColor={placeholderColor}
           value={value}
           onChangeText={setValue}
           multiline
@@ -67,7 +81,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           hitSlop={12}
           disabled={disabled || submitting || !value.trim()}
         >
-          <IconSymbol name="paperplane.fill" size={22} color={disabled || submitting || !value.trim() ? '#9ca3af' : undefined} />
+          <IconSymbol
+            name="paperplane.fill"
+            size={22}
+            color={disabled || submitting || !value.trim() ? disabledIconColor : accentColor}
+          />
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -81,7 +99,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e5e7eb',
   },
   input: {
     flex: 1,
@@ -89,7 +106,7 @@ const styles = StyleSheet.create({
     maxHeight: 120,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#fff',
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 16,
     marginHorizontal: 8,
   },

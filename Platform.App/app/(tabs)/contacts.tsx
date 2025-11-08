@@ -120,9 +120,20 @@ function FriendSearchCard({
           <IconSymbol name="person.crop.circle" size={32} color={accentColor} />
         </View>
         <View style={styles.searchCardInfo}>
-          <ThemedText style={styles.friendName} numberOfLines={1}>
-            {result.displayName ?? result.username}
-          </ThemedText>
+          <Pressable
+            disabled={loading}
+            hitSlop={8}
+            onPress={() => {
+              if (result.isFriend) {
+                onStartChat(result.userId);
+              } else if (!result.hasPendingRequest) {
+                onSendRequest(result.userId);
+              }
+            }}>
+            <ThemedText style={styles.friendName} numberOfLines={1}>
+              {result.displayName ?? result.username}
+            </ThemedText>
+          </Pressable>
           {result.phoneNumber ? (
             <ThemedText style={[styles.friendMeta, { color: mutedColor }]}>{result.phoneNumber}</ThemedText>
           ) : null}
@@ -185,7 +196,7 @@ export default function ContactsScreen(): JSX.Element {
   const [refreshing, setRefreshing] = useState(false);
 
   const router = useRouter();
-  const { sessions, loadSessions, setActiveSession } = useChat();
+  const { sessions, loadSessions, setActiveSession, upsertSession } = useChat();
   const { isDark } = useTheme();
   const { user } = useAuth();
   const colors = Colors[isDark ? 'dark' : 'light'];
@@ -294,6 +305,24 @@ export default function ContactsScreen(): JSX.Element {
         }
 
         if (!sessions[targetSessionId]) {
+          const now = new Date().toISOString();
+          const participantNames: Record<string, string> = {};
+          if (currentUserId) {
+            participantNames[currentUserId] = user?.displayName ?? user?.username ?? currentUserId;
+          }
+          participantNames[friend.userId] = friend.displayName ?? friend.username;
+
+          upsertSession({
+            id: targetSessionId,
+            participants: [currentUserId, friend.userId].filter((id): id is string => Boolean(id)),
+            participantNames,
+            unreadCounts: currentUserId ? { [currentUserId]: 0 } : {},
+            topicTags: friend.displayName ? [friend.displayName] : undefined,
+            lastMessageExcerpt: '',
+            createdAt: now,
+            updatedAt: now,
+          });
+
           await loadSessions();
         }
 
@@ -303,7 +332,7 @@ export default function ContactsScreen(): JSX.Element {
         Alert.alert('打开聊天失败', errorMessage(error, '无法打开聊天，请稍后重试'));
       }
     },
-    [ensureSession, loadSessions, router, sessionLookup, sessions, setActiveSession]
+    [currentUserId, ensureSession, loadSessions, router, sessionLookup, sessions, setActiveSession, upsertSession, user?.displayName, user?.username]
   );
 
   const sortedFriends = useMemo(() => {

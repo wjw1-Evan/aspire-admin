@@ -11,6 +11,7 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { useTokenValidation } from '@/hooks/useTokenValidation';
 import { AuthErrorHandler, NetworkStatusIndicator } from '@/components/AuthErrorHandler';
 import { RouteGuard } from '@/components/RouteGuard';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -18,11 +19,12 @@ export const unstable_settings = {
 
 // 加载组件
 function LoadingScreen() {
-  const { isDark } = useTheme();
+  const backgroundColor = useThemeColor({}, 'background');
+  const indicatorColor = useThemeColor({}, 'tint');
   
   return (
-    <View style={[styles.loadingContainer, { backgroundColor: isDark ? '#000' : '#fff' }]}>
-      <ActivityIndicator size="large" color={isDark ? '#fff' : '#1890ff'} />
+    <View style={[styles.loadingContainer, { backgroundColor }]}>
+      <ActivityIndicator size="large" color={indicatorColor} />
     </View>
   );
 }
@@ -31,6 +33,7 @@ function LoadingScreen() {
 function AuthRouter() {
   const { isAuthenticated, loading } = useAuth();
   const { isDark } = useTheme();
+  const backgroundColor = useThemeColor({}, 'background');
   
   // 启用token验证和自动刷新
   useTokenValidation();
@@ -47,7 +50,7 @@ function AuthRouter() {
         publicRoutes={['/auth']}
         redirectTo="/auth"
       >
-        <View style={{ flex: 1 }}>
+        <View style={[styles.routerContainer, { backgroundColor }]}>
           {/* 网络状态指示器 */}
           <NetworkStatusIndicator />
           
@@ -91,5 +94,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  routerContainer: {
+    flex: 1,
   },
 });

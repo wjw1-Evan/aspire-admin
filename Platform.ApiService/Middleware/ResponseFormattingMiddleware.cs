@@ -145,6 +145,12 @@ public class ResponseFormattingMiddleware
             return true;
         }
         
+        // 跳过 SignalR Hub 相关端点（协商与 WebSocket）
+        if (path.StartsWith("/hubs/"))
+        {
+            return true;
+        }
+        
         return false;
     }
 

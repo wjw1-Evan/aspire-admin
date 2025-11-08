@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 const formatTimestamp = (timestamp?: string) => {
   if (!timestamp) {
@@ -26,6 +27,14 @@ export default function ChatTabScreen() {
   } = useChat();
   const { user } = useAuth();
   const router = useRouter();
+  const borderColor = useThemeColor({}, 'border');
+  const avatarBackground = useThemeColor({ light: '#e0f2fe', dark: '#1f4d88' }, 'card');
+  const accentColor = useThemeColor({}, 'tint');
+  const iconColor = useThemeColor({}, 'icon');
+  const mutedColor = useThemeColor({}, 'tabIconDefault');
+  const badgeBackground = useThemeColor({}, 'error');
+  const badgeTextColor = useThemeColor({ light: '#fff', dark: '#fff' }, 'text');
+  const backgroundColor = useThemeColor({}, 'background');
 
   useFocusEffect(
     useCallback(() => {
@@ -45,60 +54,106 @@ export default function ChatTabScreen() {
     }
 
     const lastMessage = session.lastMessage;
-    const preview =
-      lastMessage?.content ??
-      (lastMessage?.attachment
-        ? `[附件] ${lastMessage.attachment.name}`
-        : session.lastMessageExcerpt ?? '暂无消息');
     const unreadBadge = session.unreadCount > 0;
-    const remotePeers = session.participants
-      .filter(participant => participant !== (user?.id ?? user?.username))
-      .map(participant => session.participantNames?.[participant] ?? participant);
+    const currentUserKey = user?.id ?? user?.username;
+
+    const participants = session.participants
+      .map(participant => ({
+        id: participant,
+        name: session.participantNames?.[participant] ?? participant,
+      }))
+      .filter(participant => participant.name);
+
+    const remoteParticipants = participants
+      .filter(participant => participant.id !== currentUserKey)
+      .map(participant => participant.name)
+      .filter((name, index, array) => array.indexOf(name) === index);
+
+    const sessionTitle =
+      remoteParticipants.length === 0
+        ? session.topicTags?.[0] ?? session.id
+        : remoteParticipants.length === 1
+          ? remoteParticipants[0]
+          : remoteParticipants.length <= 3
+            ? remoteParticipants.join('、')
+            : `${remoteParticipants.slice(0, 3).join('、')} 等${remoteParticipants.length}人`;
+
+    const groupSubtitle =
+      remoteParticipants.length > 1 ? `成员：${remoteParticipants.join('、')}` : undefined;
+
+    const lastSenderId = lastMessage?.senderId ?? session.lastMessageSenderId;
+    const lastSenderName =
+      lastSenderId === currentUserKey
+        ? '我'
+        : (lastSenderId ? session.participantNames?.[lastSenderId] ?? lastSenderId : undefined);
+
+    let preview: string;
+    if (lastMessage?.attachment) {
+      preview = lastMessage.attachment.mimeType?.startsWith('image/')
+        ? '[图片]'
+        : `[附件] ${lastMessage.attachment.name}`;
+    } else if (lastMessage?.type === 'system') {
+      preview = lastMessage.content ?? '[系统消息]';
+    } else if (lastMessage?.content) {
+      preview = lastMessage.content;
+    } else if (session.lastMessageExcerpt) {
+      preview = session.lastMessageExcerpt;
+    } else {
+      preview = '暂无消息';
+    }
+
+    const previewText = lastSenderName ? `${lastSenderName}: ${preview}` : preview;
 
     return (
       <Pressable style={styles.sessionItem} onPress={() => handlePressSession(session.id)}>
-        <View style={styles.sessionAvatar}>
-          <IconSymbol name="person.2.fill" size={28} />
+        <View style={[styles.sessionAvatar, { backgroundColor: avatarBackground }]}>
+          <IconSymbol name="person.2.fill" size={28} color={accentColor} />
         </View>
         <View style={styles.sessionContent}>
           <View style={styles.sessionHeader}>
             <ThemedText type="subtitle" style={styles.sessionTitle} numberOfLines={1}>
-              {remotePeers[0] ?? session.topicTags?.[0] ?? session.id}
+              {sessionTitle}
             </ThemedText>
-            <ThemedText style={styles.sessionTime}>
+            <ThemedText style={[styles.sessionTime, { color: mutedColor }]}>
               {formatTimestamp(lastMessage?.createdAt ?? session.lastMessageAt ?? session.updatedAt)}
             </ThemedText>
           </View>
-          <ThemedText style={styles.sessionPreview} numberOfLines={1}>
-            {preview}
+          {groupSubtitle ? (
+            <ThemedText style={[styles.sessionSubtitle, { color: mutedColor }]} numberOfLines={1}>
+              {groupSubtitle}
+            </ThemedText>
+          ) : null}
+          <ThemedText style={[styles.sessionPreview, { color: mutedColor }]} numberOfLines={1}>
+            {previewText}
           </ThemedText>
         </View>
         {unreadBadge && (
-          <View style={styles.unreadBadge}>
-            <ThemedText style={styles.unreadText}>{session.unreadCount}</ThemedText>
+          <View style={[styles.unreadBadge, { backgroundColor: badgeBackground }]}>
+            <ThemedText style={[styles.unreadText, { color: badgeTextColor }]}>{session.unreadCount}</ThemedText>
           </View>
         )}
       </Pressable>
     );
-  }, [handlePressSession, sessions, user?.id, user?.username]);
+  }, [accentColor, avatarBackground, badgeBackground, badgeTextColor, handlePressSession, mutedColor, sessions, user?.id, user?.username]);
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor }]}>
       <FlatList
         data={sessionOrder}
         keyExtractor={item => item}
         renderItem={renderItem}
         refreshControl={
-          <RefreshControl refreshing={sessionsLoading} onRefresh={() => loadSessions()} />
+          <RefreshControl refreshing={sessionsLoading} onRefresh={() => loadSessions()} tintColor={accentColor} />
         }
         contentContainerStyle={sessionOrder.length === 0 ? styles.emptyContainer : undefined}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <IconSymbol name="bubble.left.and.bubble.right" size={48} />
+            <IconSymbol name="bubble.left.and.bubble.right" size={48} color={iconColor} />
             <ThemedText style={styles.emptyTitle}>暂无会话</ThemedText>
-            <ThemedText style={styles.emptySubtitle}>去附近或推荐页面寻找新朋友吧</ThemedText>
+            <ThemedText style={[styles.emptySubtitle, { color: mutedColor }]}>去附近或推荐页面寻找新朋友吧</ThemedText>
           </View>
         }
+        ItemSeparatorComponent={() => <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: borderColor }} />}
       />
     </ThemedView>
   );
@@ -113,14 +168,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
   },
   sessionAvatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#e0f2fe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -133,6 +185,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  sessionSubtitle: {
+    fontSize: 12,
+    marginBottom: 2,
   },
   sessionTitle: {
     fontSize: 16,
@@ -152,7 +208,6 @@ const styles = StyleSheet.create({
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#ef4444',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,

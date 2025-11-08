@@ -33,7 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="chat"
         options={{
-          title: '微信',
+          title: '对话',
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="bubble.left.and.text.bubble.fill" color={color} />
           ),

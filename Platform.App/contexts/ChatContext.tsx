@@ -14,6 +14,7 @@ import {
   HubConnection,
   HubConnectionBuilder,
   HubConnectionState,
+  HttpTransportType,
   LogLevel,
 } from '@microsoft/signalr';
 
@@ -64,6 +65,7 @@ interface ChatContextValue extends ChatState {
   clearError: () => void;
   resetChat: () => void;
   connectionState: HubConnectionState;
+  upsertSession: (session: ServerChatSession | ChatSession) => void;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -207,6 +209,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
     []
   );
 
+  const upsertSession = useCallback(
+    (session: ServerChatSession | ChatSession) => {
+      const normalized = normalizeSession(session);
+      dispatch({ type: 'CHAT_SESSIONS_SUCCESS', payload: { sessions: [normalized] } });
+    },
+    [normalizeSession]
+  );
+
   const handleRealtimeMessage = useCallback(
     (payload: ChatMessageRealtimePayload) => {
       if (!payload?.sessionId || !payload.message) {
@@ -307,6 +317,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
       const connection = new HubConnectionBuilder()
         .withUrl(`${getApiGatewayUrlDynamic()}/apiservice/hubs/chat`, {
           accessTokenFactory: async () => (await apiService.getToken()) ?? '',
+          transport: HttpTransportType.WebSockets,
+          skipNegotiation: true,
         })
         .withAutomaticReconnect()
         .configureLogging(__DEV__ ? LogLevel.Information : LogLevel.Warning)
@@ -393,6 +405,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     clearError,
     resetChat,
     connectionState,
+    upsertSession,
   }), [
     state,
     loadSessions,
@@ -408,6 +421,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     clearError,
     resetChat,
     connectionState,
+    upsertSession,
   ]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

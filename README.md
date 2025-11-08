@@ -23,7 +23,7 @@ Platform/
 
 ### 服务编排
 
-`Platform.AppHost` 会拉起 MongoDB、数据初始化服务、API 服务以及前端应用，并通过 YARP 将 `http://localhost:15000/{service}/**` 重写到后端 `/api/**`。示例配置：
+`Platform.AppHost` 会拉起 MongoDB、数据初始化服务、API 服务以及前端应用，并通过 YARP 将 `http://localhost:15000/{service}/**` 重写到后端 `/**`。示例配置：
 
 ```34:62:Platform.AppHost/AppHost.cs
 var yarp = builder.AddYarp("apigateway")

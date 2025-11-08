@@ -10,6 +10,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Aspire.MongoDB.Driver" Version="9.5.2" />
+    <PackageReference Include="Aspire.OpenAI" Version="9.5.2-preview.1.25522.3" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
     <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="9.5.2" />

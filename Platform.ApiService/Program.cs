@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
@@ -124,6 +125,9 @@ builder.Services.AddOpenApi(options =>
 // Register MongoDB services 
 // 添加MongoDB服务  
 builder.AddMongoDBClient(connectionName: "mongodb");
+
+// 添加OpenAI服务
+builder.AddOpenAIClient(connectionName: "chat");
 
 // Add HTTP context accessor
 builder.Services.AddHttpContextAccessor();

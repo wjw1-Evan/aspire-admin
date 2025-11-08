@@ -27,7 +27,7 @@
   - `POST /api/friends/{friendId}/session`：获取或创建私聊会话
 - **索引与检查**：在数据初始化脚本中新增 AppUser(Phone)、Friendship、FriendRequest 等集合的索引创建。
 - **聊天集成**：`ChatService` 新增 `GetOrCreateDirectSessionAsync`，用于快速复用或创建双人会话。
-- **AI 助手架构**：引入 `AiAssistantCoordinator` 与 `AiCompletionService`，无需真实 AppUser 账号即可为每位用户创建虚拟好友；助手回复通过后端 HttpClient 调用配置的大模型接口，并将用户与助手的全部对话记录存入 `ChatMessage`。
+- **AI 助手架构**：引入 `AiAssistantCoordinator` 并直接使用 `OpenAIClient`，无需真实 AppUser 账号即可为每位用户创建虚拟好友；助手回复通过统一配置的 `AiCompletionOptions` 调用大模型接口，并将用户与助手的全部对话记录存入 `ChatMessage`。
 
 ## 📱 前端实现（Platform.App）
 
@@ -118,7 +118,7 @@ Authorization: Bearer {token}
 
 - **内置小科 AI 助手**
   - 助手作为虚拟联系人存在，不占用真实账户资源；首次访问聊天即会自动生成专属会话
-  - 后端通过 `IAiCompletionService` 统一调用大模型接口，所有双方消息均写入 `ChatMessage` 集合便于审计
+  - 后端通过 `OpenAIClient` 统一调用大模型接口，并结合 `AiCompletionOptions` 管理配置，所有双方消息均写入 `ChatMessage` 集合便于审计
   - 在聊天窗口中，助手可以实时回复文本问题；当模型不可用时会返回友好的降级提示
   - 通讯录中以与普通好友一致的样式置顶展示，并由系统固定保留不可删除
 

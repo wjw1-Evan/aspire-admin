@@ -132,9 +132,9 @@ builder.AddOpenAIClient(connectionName: "chat");
 // Add HTTP context accessor
 builder.Services.AddHttpContextAccessor();
 
-// Register services
-// 使用 Scoped 生命周期以支持 MongoDB 操作和请求范围
-// 使用接口注册以提高可测试性和解耦
+// 配置 AI 选项
+builder.Services.Configure<AiCompletionOptions>(
+    builder.Configuration.GetSection(AiCompletionOptions.SectionName));
 
 // 多租户上下文（v3.0 新增）
 builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Platform.ServiceDefaults.Services.TenantContext>();
@@ -147,9 +147,6 @@ builder.Services.AddScoped<ChatService.ChatServiceDependencies>();
 
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
-
-
-// 数据库初始化服务已迁移到 Platform.DataInitializer 微服务
 
 // Configure JWT authentication
 // JWT SecretKey 必须配置，不提供默认值以确保安全

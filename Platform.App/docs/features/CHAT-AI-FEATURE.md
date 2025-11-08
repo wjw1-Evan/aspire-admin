@@ -63,7 +63,7 @@
 ```
 
   - 通过 `dotnet user-secrets set "Ai:ApiKey" "sk-xxxxx"` 或 Aspire 环境变量 `Ai__ApiKey` 注入敏感令牌，禁止将 token 写入仓库。
-  - 可根据需要定制 `SystemPrompt`、`TimeoutSeconds` 与 `MaxTokens` 等高级参数，ApiService 会自动读取并注入到 `AiCompletionOptions`。
+  - 可根据需要定制 `SystemPrompt`、`TimeoutSeconds` 与 `MaxTokens` 等高级参数，ApiService 会自动读取这些配置并通过 `AiCompletionOptions` 在 `OpenAIClient` 调用时生效。
 - **设备权限**：
   - 相册/文件：附件选择需在系统设置中允许访问。
   - 定位：附近的人功能需前台定位权限。

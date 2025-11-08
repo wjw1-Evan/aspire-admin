@@ -148,7 +148,7 @@ builder.Services.AddOpenApi(options =>
 
 - **SignalR 实时通道**：`/hubs/chat` 支持自动重连、会话房间、消息/会话摘要/撤回/已读推送，网络受限场景可回退到 REST 轮询。
 - **附件能力**：移动端通过统一 `apiService` 上传附件，后端使用 MongoDB GridFS 存储并提供 `/api/chat/messages/{sessionId}/attachments/{storageObjectId}` 下载流，确保链接可直接预览。
-- **AI 协同**：整合智能回复、匹配推荐、话题引导 API，可在聊天界面一键插入推荐内容，底层通过 `AiCompletionService` 对接模型服务。
+- **AI 协同**：整合智能回复、匹配推荐、话题引导 API，可在聊天界面一键插入推荐内容，后端直接使用 `OpenAIClient` 调用大模型，并通过 `AiCompletionOptions` 统一配置模型、系统提示词与输出长度。
 - **附近的人**：内置位置权限检测、地理围栏更新与附近用户列表刷新，支持实时 Beacon 上传。
 - 详细文档见：
   - [实时聊天集成说明](docs/features/CHAT-REALTIME-SIGNALR.md)

@@ -9,7 +9,6 @@ var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey");
 
 // dotnet user-secrets set Parameters:openai-openai-apikey sk-nsLu8sMDWwZM1sJm2d1e3dD8Ca6f48Cf9f4eB5D4CcBf4b51
 
-
 var openAiSection = builder.Configuration.GetSection("OpenAI");
 var openAiEndpoint = openAiSection["Endpoint"];
 

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Bson;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using Platform.ApiService.Models;
@@ -7,6 +8,11 @@ using Platform.ApiService.Hubs;
 using Platform.ServiceDefaults.Services;
 using System.Security.Cryptography;
 using Platform.ApiService.Constants;
+using OpenAI;
+using OpenAI.Chat;
+using System.ClientModel;
+using ChatMessage = Platform.ApiService.Models.ChatMessage;
+using OpenAIChatMessage = OpenAI.Chat.ChatMessage;
 
 namespace Platform.ApiService.Services;
 
@@ -25,7 +31,9 @@ public class ChatService : IChatService
     private readonly IHubContext<ChatHub> _hubContext;
     private readonly GridFSBucket _gridFsBucket;
     private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
-    private readonly IAiCompletionService _aiCompletionService;
+    private readonly OpenAIClient _openAiClient;
+    private readonly AiCompletionOptions _aiOptions;
+
 
     /// <summary>
     /// 初始化聊天服务。
@@ -42,8 +50,9 @@ public class ChatService : IChatService
         _hubContext = dependencies.HubContext;
         _userFactory = dependencies.UserFactory;
         _aiAssistantCoordinator = dependencies.AiAssistantCoordinator;
-        _aiCompletionService = dependencies.AiCompletionService;
         _gridFsBucket = dependencies.GridFsBucket;
+        _openAiClient = dependencies.OpenAiClient;
+        _aiOptions = dependencies.AiOptions.Value;
         _logger = logger;
     }
 
@@ -715,7 +724,7 @@ public class ChatService : IChatService
         string replyContent;
         if (triggerMessage.Type == ChatMessageType.Text)
         {
-            replyContent = await _aiCompletionService.GenerateReplyAsync(
+            replyContent = await GenerateAssistantReplyAsync(
                 triggerMessage.SenderId,
                 session.Id,
                 triggerMessage.Content ?? string.Empty);
@@ -753,6 +762,87 @@ public class ChatService : IChatService
         await NotifyMessageCreatedAsync(refreshedSession, assistantMessage);
     }
 
+    private async Task<string?> GenerateAssistantReplyAsync(string userId, string sessionId, string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return null;
+        }
+
+        var model = string.IsNullOrWhiteSpace(_aiOptions.Model)
+            ? "gpt-4o-mini"
+            : _aiOptions.Model;
+
+        ChatClient chatClient;
+        try
+        {
+            chatClient = _openAiClient.GetChatClient(model);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "初始化 OpenAI ChatClient 失败，模型：{Model}", model);
+            return null;
+        }
+
+        var systemPrompt = string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
+            ? "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
+            : _aiOptions.SystemPrompt;
+
+        var messages = new List<OpenAIChatMessage>
+        {
+            new SystemChatMessage(systemPrompt),
+            new UserChatMessage(message)
+        };
+
+        var completionOptions = new ChatCompletionOptions
+        {
+            EndUserId = userId
+        };
+
+        if (_aiOptions.MaxTokens > 0)
+        {
+            completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
+        }
+
+        try
+        {
+            var completionResult = await chatClient.CompleteChatAsync(messages, completionOptions);
+            var completion = completionResult.Value;
+            if (completion == null || completion.Content == null || completion.Content.Count == 0)
+            {
+                return null;
+            }
+
+            foreach (var part in completion.Content)
+            {
+                if (part.Kind == ChatMessageContentPartKind.Text && !string.IsNullOrWhiteSpace(part.Text))
+                {
+                    return part.Text.Trim();
+                }
+            }
+
+            return completion.Content[0].Text?.Trim();
+        }
+        catch (ClientResultException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "OpenAI Chat 完成请求失败，模型：{Model}，会话：{SessionId}",
+                model,
+                sessionId);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "调用 OpenAI Chat 完成接口时发生未预期的异常，模型：{Model}，会话：{SessionId}",
+                model,
+                sessionId);
+            return null;
+        }
+    }
+
     /// <summary>
     /// 聊天服务的依赖项聚合。
     /// </summary>
@@ -768,7 +858,8 @@ public class ChatService : IChatService
         /// <param name="database">MongoDB 数据库实例。</param>
         /// <param name="hubContext">SignalR Hub 上下文。</param>
         /// <param name="aiAssistantCoordinator">AI 助手协调器。</param>
-        /// <param name="aiCompletionService">AI 生成回复服务。</param>
+        /// <param name="openAiClient">OpenAI 客户端实例。</param>
+        /// <param name="aiOptions">AI 配置项。</param>
         public ChatServiceDependencies(
             IDatabaseOperationFactory<ChatSession> sessionFactory,
             IDatabaseOperationFactory<ChatMessage> messageFactory,
@@ -777,7 +868,8 @@ public class ChatService : IChatService
             IMongoDatabase database,
             IHubContext<ChatHub> hubContext,
             IAiAssistantCoordinator aiAssistantCoordinator,
-            IAiCompletionService aiCompletionService)
+            OpenAIClient openAiClient,
+            IOptions<AiCompletionOptions> aiOptions)
         {
             SessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
             MessageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
@@ -785,7 +877,8 @@ public class ChatService : IChatService
             UserFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
             HubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
             AiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
-            AiCompletionService = aiCompletionService ?? throw new ArgumentNullException(nameof(aiCompletionService));
+            OpenAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
+            AiOptions = aiOptions ?? throw new ArgumentNullException(nameof(aiOptions));
 
             var mongoDatabase = database ?? throw new ArgumentNullException(nameof(database));
             GridFsBucket = new GridFSBucket(mongoDatabase, new GridFSBucketOptions
@@ -827,7 +920,12 @@ public class ChatService : IChatService
         /// <summary>
         /// 获取 AI 生成回复服务。
         /// </summary>
-        public IAiCompletionService AiCompletionService { get; }
+        public OpenAIClient OpenAiClient { get; }
+
+        /// <summary>
+        /// 获取 AI 完成配置。
+        /// </summary>
+        public IOptions<AiCompletionOptions> AiOptions { get; }
 
         /// <summary>
         /// 获取附件使用的 GridFS 存储桶。

@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Platform.ApiService.Models;
+using System.Collections.Generic;
 using Platform.ServiceDefaults.Services;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -155,7 +156,18 @@ public class FriendService : IFriendService
 
         if (!string.IsNullOrWhiteSpace(phoneNumber))
         {
-            builder.Equal(u => u.PhoneNumber, phoneNumber);
+            var phoneFilters = new List<FilterDefinition<AppUser>>();
+            var escapedPhone = RegexEscape(phoneNumber);
+            phoneFilters.Add(Builders<AppUser>.Filter.Regex("phone", new BsonRegularExpression(escapedPhone, "i")));
+
+            var digitsOnly = ExtractDigits(phoneNumber);
+            if (!string.IsNullOrEmpty(digitsOnly))
+            {
+                var flexiblePattern = BuildFlexibleDigitPattern(digitsOnly);
+                phoneFilters.Add(Builders<AppUser>.Filter.Regex("phone", new BsonRegularExpression(flexiblePattern, "i")));
+            }
+
+            builder.Custom(Builders<AppUser>.Filter.Or(phoneFilters));
         }
 
         if (!string.IsNullOrWhiteSpace(keyword))
@@ -185,7 +197,7 @@ public class FriendService : IFriendService
 
         var pendingRequests = await _friendRequestFactory.FindAsync(pendingFilter);
 
-        return users.Where(u => u.Id != currentUserId)
+        return users.Where(u => u.Id != currentUserId && u.Id != AiAssistantConstants.AssistantUserId)
             .Select(user =>
             {
                 var pending = pendingRequests.FirstOrDefault(r =>
@@ -506,6 +518,22 @@ public class FriendService : IFriendService
     private static string RegexEscape(string input)
     {
         return Regex.Escape(input ?? string.Empty);
+    }
+
+    private static string ExtractDigits(string input)
+    {
+        return Regex.Replace(input ?? string.Empty, @"\D", string.Empty);
+    }
+
+    private static string BuildFlexibleDigitPattern(string digits)
+    {
+        if (string.IsNullOrEmpty(digits))
+        {
+            return string.Empty;
+        }
+
+        var escapedDigits = digits.Select(c => Regex.Escape(c.ToString()));
+        return string.Join(@"[\s\-\_\.]*", escapedDigits);
     }
 }
 

@@ -424,45 +424,6 @@ export default function ContactsScreen(): JSX.Element {
 
   const listHeader = useMemo(() => (
     <View>
-      {hasSearched ? (
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <ThemedText style={styles.sectionTitle}>搜索结果</ThemedText>
-            {searchLoading ? <ActivityIndicator size="small" color={colors.accent} /> : null}
-          </View>
-          {searchResults.length > 0 ? (
-            <View style={styles.searchResults}>
-              {searchResults.map(result => (
-                <FriendSearchCard
-                  key={result.userId}
-                  result={result}
-                  loading={submitting}
-                  onStartChat={userId => handleOpenChat({
-                    userId,
-                    username: result.username,
-                    displayName: result.displayName,
-                    phoneNumber: result.phoneNumber,
-                    friendshipId: userId,
-                  })}
-                  onSendRequest={handleSendRequest}
-                  accentColor={colors.accent}
-                  cardColor={colors.card}
-                  mutedColor={colors.tabIconDefault}
-                  accentSoftColor={accentSoftColor}
-                />
-              ))}
-            </View>
-          ) : (
-            <ThemedText style={[styles.searchEmptyText, { color: colors.tabIconDefault }]}>
-              未找到符合条件的用户
-            </ThemedText>
-          )}
-          <Pressable style={styles.clearSearchButton} onPress={handleClearSearch}>
-            <ThemedText style={[styles.clearSearchText, { color: colors.accent }]}>清除搜索结果</ThemedText>
-          </Pressable>
-        </View>
-      ) : null}
-
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <ThemedText style={styles.sectionTitle}>新的好友</ThemedText>
@@ -506,19 +467,12 @@ export default function ContactsScreen(): JSX.Element {
     </View>
   ), [
     accentSoftColor,
-    hasSearched,
     colors,
     handleApprove,
-    handleClearSearch,
-    handleOpenChat,
     handleReject,
-    handleSendRequest,
     incomingRequests,
     outgoingRequests,
     requestsLoading,
-    searchLoading,
-    searchResults,
-    submitting,
   ]);
 
   const menuPositionStyle = useMemo(
@@ -662,6 +616,11 @@ export default function ContactsScreen(): JSX.Element {
                     未找到符合条件的用户
                   </ThemedText>
                 )}
+                <Pressable style={styles.clearSearchButton} onPress={handleClearSearch}>
+                  <ThemedText style={[styles.clearSearchText, { color: colors.accent }]}>
+                    清除搜索结果
+                  </ThemedText>
+                </Pressable>
               </View>
             ) : null}
           </Pressable>

@@ -238,6 +238,8 @@ public class AuthService : IAuthService
 
         // 获取用户角色信息
         var roleNames = new List<string>();
+        UserCompany? firstUserCompany = null;
+
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
             // 使用工厂查询 UserCompany 记录
@@ -247,7 +249,7 @@ public class AuthService : IAuthService
                 .Build();
             
             var userCompany = await _userCompanyFactory.FindAsync(userCompanyFilter);
-            var firstUserCompany = userCompany.FirstOrDefault();
+            firstUserCompany = userCompany.FirstOrDefault();
             if (firstUserCompany?.RoleIds != null && firstUserCompany.RoleIds.Any())
             {
                 // 使用工厂查询角色信息
@@ -264,32 +266,12 @@ public class AuthService : IAuthService
         {
             Id = user.Id,
             Username = user.Username,
-            DisplayName = user.Name ?? user.Username,  // 如果 Name 为空，使用 Username
-            Avatar = "https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png",
+            DisplayName = string.IsNullOrWhiteSpace(user.Name) ? user.Username : user.Name,
+            Avatar = string.IsNullOrWhiteSpace(user.Avatar) ? null : user.Avatar,
             Email = user.Email,
-            Signature = "海纳百川，有容乃大",
-            Title = "平台用户",
-            Group = "平台管理团队",
-            Tags = new List<UserTag>
-            {
-                new() { Key = "0", Label = "很有想法的" },
-                new() { Key = "1", Label = "专注设计" },
-                new() { Key = "2", Label = "技术达人" },
-                new() { Key = "3", Label = "团队协作" },
-                new() { Key = "4", Label = "创新思维" },
-                new() { Key = "5", Label = "海纳百川" }
-            },
-            NotifyCount = 12,
-            UnreadCount = 11,
-            Country = "China",
+            Tags = user.Tags ?? new List<UserTag>(),
             Roles = roleNames,
-            Geographic = new GeographicInfo
-            {
-                Province = new LocationInfo { Label = "浙江省", Key = "330000" },
-                City = new LocationInfo { Label = "杭州市", Key = "330100" }
-            },
-            Address = "西湖区工专路 77 号",
-            Phone = "0752-268888888",
+            Phone = user.PhoneNumber,
             IsLogin = true,
             CurrentCompanyId = user.CurrentCompanyId,
             CreatedAt = user.CreatedAt,

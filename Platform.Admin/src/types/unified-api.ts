@@ -37,17 +37,9 @@ export interface CurrentUser {
   displayName?: string; // 显示名称（对应后端 Name）
   avatar?: string;
   email?: string;
-  signature?: string;
-  title?: string;
-  group?: string;
   tags?: UserTag[];
-  notifyCount?: number;
-  unreadCount?: number;
-  country?: string;
   roles?: string[]; // 角色列表（简化权限系统）
   permissions?: string[]; // 权限列表（简化权限系统）
-  geographic?: GeographicInfo;
-  address?: string;
   phone?: string;
   isLogin?: boolean;
   currentCompanyId?: string; // 当前企业ID
@@ -58,16 +50,6 @@ export interface CurrentUser {
 export interface UserTag {
   key?: string;
   label?: string;
-}
-
-export interface GeographicInfo {
-  province?: LocationInfo;
-  city?: LocationInfo;
-}
-
-export interface LocationInfo {
-  label?: string;
-  key?: string;
 }
 
 // 注册请求

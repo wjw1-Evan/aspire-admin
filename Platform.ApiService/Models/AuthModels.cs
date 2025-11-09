@@ -44,46 +44,10 @@ public class CurrentUser
     public string? Email { get; set; }
 
     /// <summary>
-    /// 个人签名
-    /// </summary>
-    [BsonElement("signature")]
-    public string? Signature { get; set; }
-
-    /// <summary>
-    /// 职位
-    /// </summary>
-    [BsonElement("title")]
-    public string? Title { get; set; }
-
-    /// <summary>
-    /// 组织
-    /// </summary>
-    [BsonElement("group")]
-    public string? Group { get; set; }
-
-    /// <summary>
     /// 标签
     /// </summary>
     [BsonElement("tags")]
     public List<UserTag>? Tags { get; set; }
-
-    /// <summary>
-    /// 通知数量
-    /// </summary>
-    [BsonElement("notifyCount")]
-    public int NotifyCount { get; set; }
-
-    /// <summary>
-    /// 未读数量
-    /// </summary>
-    [BsonElement("unreadCount")]
-    public int UnreadCount { get; set; }
-
-    /// <summary>
-    /// 国家
-    /// </summary>
-    [BsonElement("country")]
-    public string? Country { get; set; }
 
     /// <summary>
     /// 角色列表
@@ -92,19 +56,7 @@ public class CurrentUser
     public List<string> Roles { get; set; } = new();
 
     /// <summary>
-    /// 地理信息
-    /// </summary>
-    [BsonElement("geographic")]
-    public GeographicInfo? Geographic { get; set; }
-
-    /// <summary>
-    /// 地址
-    /// </summary>
-    [BsonElement("address")]
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// 电话
+    /// 电话号码
     /// </summary>
     [BsonElement("phone")]
     public string? Phone { get; set; }
@@ -150,42 +102,6 @@ public class UserTag
     /// </summary>
     [BsonElement("label")]
     public string? Label { get; set; }
-}
-
-/// <summary>
-/// 地理信息
-/// </summary>
-public class GeographicInfo
-{
-    /// <summary>
-    /// 省份信息
-    /// </summary>
-    [BsonElement("province")]
-    public LocationInfo? Province { get; set; }
-
-    /// <summary>
-    /// 城市信息
-    /// </summary>
-    [BsonElement("city")]
-    public LocationInfo? City { get; set; }
-}
-
-/// <summary>
-/// 位置信息
-/// </summary>
-public class LocationInfo
-{
-    /// <summary>
-    /// 位置显示名称
-    /// </summary>
-    [BsonElement("label")]
-    public string? Label { get; set; }
-
-    /// <summary>
-    /// 位置键
-    /// </summary>
-    [BsonElement("key")]
-    public string? Key { get; set; }
 }
 
 /// <summary>

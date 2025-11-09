@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import dayjs from 'dayjs';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { HubConnectionState } from '@microsoft/signalr';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,16 +6,13 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ConversationHeader } from '@/components/chat/ConversationHeader';
 import MessageList, { type MessageListHandle } from '@/components/chat/MessageList';
 import { MessageComposer } from '@/components/chat/MessageComposer';
-import AiSuggestionBar from '@/components/chat/AiSuggestionBar';
 import AttachmentPicker from '@/components/chat/AttachmentPicker';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
-import { useAiAssistant } from '@/hooks/useAiAssistant';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ChatMessage } from '@/types/chat';
-import type { AiConversationMessage } from '@/types/ai';
 import { AI_ASSISTANT_ID } from '@/constants/ai';
 
 const POLL_INTERVAL_MS = 5000;
@@ -118,15 +114,6 @@ export default function ChatSessionScreen() {
     return `参与者：${remoteParticipants.join('、')}`;
   }, [remoteParticipants]);
 
-  const {
-    suggestions,
-    loading: suggestionLoading,
-    notice: suggestionNotice,
-    requestSuggestions,
-  } = useAiAssistant(sessionId ?? '');
-  const [suggestionCollapsed, setSuggestionCollapsed] = useState(false);
-  const [suggestionRefreshNonce, setSuggestionRefreshNonce] = useState(0);
-
   const sessionMessages = useMemo(
     () => (sessionId ? messages[sessionId] ?? [] : []),
     [messages, sessionId]
@@ -205,65 +192,6 @@ export default function ChatSessionScreen() {
     }
   }, [sendMessage, session, sessionId, streamAssistantReply]);
 
-  const handleRefreshSuggestions = useCallback(() => {
-    if (!sessionId) {
-      return;
-    }
-
-    const nextNonce = suggestionRefreshNonce + 1;
-    setSuggestionRefreshNonce(nextNonce);
-
-    const refreshInstruction = `系统提示（刷新 #${nextNonce} 于 ${dayjs().format('HH:mm:ss')}）：请基于完整对话重新生成与此前不同的两条智能推荐。`;
-
-    const instructionMessage: AiConversationMessage = {
-      role: 'system',
-      content: refreshInstruction,
-    };
-
-    const supplementalLines: string[] = [];
-    if (remoteParticipants.length > 0) {
-      supplementalLines.push(`系统: 参与者：${remoteParticipants.join('、')}`);
-    }
-    if (session?.topicTags?.length) {
-      supplementalLines.push(`系统: 主题标签：${session.topicTags.join('、')}`);
-    }
-
-    const payload = {
-      lines: [...supplementalLines, `系统: ${refreshInstruction}`],
-      messages: [instructionMessage],
-    };
-
-    const lastMessage = sessionMessages[sessionMessages.length - 1];
-    requestSuggestions(payload, {
-      lastMessageId: lastMessage?.id,
-      force: true,
-    }).catch(error => console.error('手动刷新智能推荐失败:', error));
-  }, [
-    remoteParticipants,
-    requestSuggestions,
-    sessionId,
-    sessionMessages,
-    suggestionRefreshNonce,
-    topicTagsKey,
-  ]);
-
-  const canRefreshSuggestions = useMemo(() => {
-    if (!sessionId) {
-      return false;
-    }
-    if (sessionMessages.length > 0) {
-      return true;
-    }
-    if (remoteParticipants.length > 0) {
-      return true;
-    }
-    return (session?.topicTags?.length ?? 0) > 0;
-  }, [remoteParticipants.length, sessionId, sessionMessages.length, topicTagsKey]);
-
-  const handleToggleSuggestionCollapse = useCallback(() => {
-    setSuggestionCollapsed(prev => !prev);
-  }, []);
-
   const handleResendMessage = useCallback(
     async (message: ChatMessage) => {
       if (!sessionId) {
@@ -328,35 +256,6 @@ export default function ChatSessionScreen() {
   const previousMessageCountRef = useRef<number>(0);
   const previousLastMessageIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!sessionId) {
-      return;
-    }
-
-    if (sessionMessages.length === 0 || sessionMessages.length === previousMessageCountRef.current) {
-      return;
-    }
-
-    previousMessageCountRef.current = sessionMessages.length;
-    const lastMessage = sessionMessages[sessionMessages.length - 1];
-    const lastMessageId = lastMessage?.id;
-
-    if (!lastMessageId || lastMessageId === previousLastMessageIdRef.current) {
-      return;
-    }
-
-    previousLastMessageIdRef.current = lastMessageId;
-
-    if (lastMessage?.senderId === currentUserId) {
-      return;
-    }
-
-    requestSuggestions([], {
-      lastMessageId,
-      force: true,
-    }).catch(error => console.error('加载智能建议失败:', error));
-  }, [currentUserId, requestSuggestions, sessionId, sessionMessages]);
-
-  useEffect(() => {
     sessionRefreshAttemptedRef.current = false;
   }, [sessionId]);
 
@@ -403,15 +302,6 @@ export default function ChatSessionScreen() {
         subtitle={headerSubtitle}
       />
       <View style={[styles.content, { backgroundColor: conversationSurface }]}>
-        <AiSuggestionBar
-          suggestions={suggestions}
-          loading={suggestionLoading}
-          notice={suggestionNotice}
-          onRefresh={canRefreshSuggestions ? handleRefreshSuggestions : undefined}
-          collapsed={suggestionCollapsed}
-          onToggleCollapse={handleToggleSuggestionCollapse}
-          onSelect={suggestion => handleSendText(suggestion.content)}
-        />
         {timelineState?.loading && sessionMessages.length === 0 ? (
           <ActivityIndicator style={styles.loader} color={theme.colors.accent} />
         ) : (

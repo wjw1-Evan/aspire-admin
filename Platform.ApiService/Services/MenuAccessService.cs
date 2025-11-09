@@ -159,7 +159,7 @@ public class MenuAccessService : IMenuAccessService
 
             // 返回菜单名称列表（小写）
             var menuNames = menus.Select(m => m.Name.ToLower()).Distinct().ToList();
-            _logger.LogInformation("用户 {UserId} 在企业 {CompanyId} 拥有 {MenuCount} 个菜单权限: {MenuNames}", 
+            _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {MenuCount} 个菜单权限: {MenuNames}", 
                 userId, companyId, menuNames.Count, string.Join(", ", menuNames));
             return menuNames;
         }

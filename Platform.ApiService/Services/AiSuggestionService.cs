@@ -552,7 +552,7 @@ public class AiSuggestionService : IAiSuggestionService
         var finalText = completion?.Content?.FirstOrDefault()?.Text ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(finalText))
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "AI 原始智能推荐结果（模型: {Model}, 长度: {Length}）: {Preview}",
                 model,
                 finalText.Length,
@@ -619,7 +619,7 @@ public class AiSuggestionService : IAiSuggestionService
         }
         else
         {
-            _logger.LogInformation("智能推荐生成成功，共 {Count} 条", suggestions.Count);
+            _logger.LogDebug("智能推荐生成成功，共 {Count} 条", suggestions.Count);
         }
     }
 

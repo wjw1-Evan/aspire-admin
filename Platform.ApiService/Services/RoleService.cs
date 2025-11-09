@@ -283,7 +283,7 @@ public class RoleService : IRoleService
                 await _userCompanyFactory.FindOneAndUpdateAsync(filter, update, options);
             }
             
-            _logger.LogInformation("删除角色 {RoleName} 时，自动从 {UserCompanyCount} 个 UserCompany 记录中移除", 
+            _logger.LogDebug("删除角色 {RoleName} 时，自动从 {UserCompanyCount} 个 UserCompany 记录中移除", 
                 role.Name!, userCompaniesWithRole.Count);
         }
 
@@ -316,7 +316,7 @@ public class RoleService : IRoleService
                 .Build();
             var allMenus = await _menuFactory.FindAsync(allMenusFilter);
             
-            _logger.LogInformation("角色 {RoleId} 菜单权限验证：提交 {SubmittedCount} 个菜单ID，数据库中找到 {FoundCount} 个", 
+            _logger.LogDebug("角色 {RoleId} 菜单权限验证：提交 {SubmittedCount} 个菜单ID，数据库中找到 {FoundCount} 个", 
                 roleId, menuIds.Count, allMenus.Count);
             
             // 找出无效的菜单ID并记录
@@ -350,7 +350,7 @@ public class RoleService : IRoleService
                     string.Join(", ", disabledOrDeletedMenuIds.Select(m => $"{m.Name}(Id:{m.Id}, IsDeleted:{m.IsDeleted}, IsEnabled:{m.IsEnabled})")));
             }
             
-            _logger.LogInformation("角色 {RoleId} 菜单权限验证：提交 {SubmittedCount} 个菜单ID，验证后有效 {ValidCount} 个", 
+            _logger.LogDebug("角色 {RoleId} 菜单权限验证：提交 {SubmittedCount} 个菜单ID，验证后有效 {ValidCount} 个", 
                 roleId, menuIds.Count, validMenuIds.Count);
         }
         
@@ -405,7 +405,7 @@ public class RoleService : IRoleService
         
         if (result)
         {
-            _logger.LogInformation("成功为角色 {RoleId} 分配 {MenuCount} 个菜单权限", roleId, validMenuIds.Count);
+        _logger.LogDebug("成功为角色 {RoleId} 分配 {MenuCount} 个菜单权限", roleId, validMenuIds.Count);
         }
         
         return result;

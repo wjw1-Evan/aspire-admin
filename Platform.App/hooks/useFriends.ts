@@ -24,6 +24,7 @@ export interface UseFriendsResult {
   searchLoading: boolean;
   searchByPhone: (phoneNumber: string) => Promise<FriendSearchResult[]>;
   searchByKeyword: (keyword: string) => Promise<FriendSearchResult[]>;
+  searchByQuery: (query: string) => Promise<FriendSearchResult[]>;
   clearSearch: () => void;
   sendFriendRequest: (payload: CreateFriendRequestPayload) => Promise<FriendRequestItem>;
   ensureSession: (friendUserId: string) => Promise<FriendSessionResponse>;
@@ -112,6 +113,23 @@ export function useFriends(): UseFriendsResult {
     }
   }, []);
 
+  const searchByQuery = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      return [];
+    }
+
+    setSearchLoading(true);
+    try {
+      const results = await friendService.searchByQuery(trimmed);
+      setSearchResults(results);
+      return results;
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
   const clearSearch = useCallback(() => {
     setSearchResults([]);
   }, []);
@@ -144,6 +162,7 @@ export function useFriends(): UseFriendsResult {
     searchLoading,
     searchByPhone,
     searchByKeyword,
+    searchByQuery,
     clearSearch,
     sendFriendRequest,
     ensureSession,

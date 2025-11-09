@@ -6,12 +6,15 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -33,6 +36,8 @@ const errorMessage = (error: unknown, fallback: string): string => {
   }
   return fallback;
 };
+
+const NAV_BAR_HEIGHT = 52;
 
 function FriendRequestItemRow({
   item,
@@ -184,22 +189,24 @@ export default function ContactsScreen(): JSX.Element {
     rejectRequest,
     searchResults,
     searchLoading,
-    searchByPhone,
-    searchByKeyword,
+    searchByQuery,
     clearSearch,
     sendFriendRequest,
     ensureSession,
   } = useFriends();
 
-  const [phoneInput, setPhoneInput] = useState('');
-  const [keywordInput, setKeywordInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [addFriendVisible, setAddFriendVisible] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const router = useRouter();
   const { sessions, loadSessions, setActiveSession, upsertSession } = useChat();
   const { theme } = useTheme();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const colors = theme.colors;
   const accentSoftColor = colors.accentMuted;
   const currentUserId = useMemo(() => user?.id ?? user?.username ?? '', [user?.id, user?.username]);
@@ -230,35 +237,41 @@ export default function ContactsScreen(): JSX.Element {
     }
   }, [refreshFriends, loadRequests]);
 
-  const handlePhoneSearch = useCallback(async () => {
-    const phone = phoneInput.trim();
-    if (!phone) {
-      Alert.alert('提示', '请输入手机号');
-      return;
-    }
-    try {
-      await searchByPhone(phone);
-    } catch (error) {
-      Alert.alert('搜索失败', errorMessage(error, '搜索用户失败，请稍后再试'));
-    }
-  }, [phoneInput, searchByPhone]);
+  const toggleMenu = useCallback(() => {
+    setMenuVisible(prev => !prev);
+  }, []);
 
-  const handleKeywordSearch = useCallback(async () => {
-    const keyword = keywordInput.trim();
-    if (!keyword) {
-      Alert.alert('提示', '请输入姓名或用户名');
+  const closeMenu = useCallback(() => {
+    setMenuVisible(false);
+  }, []);
+
+  const handleOpenAddFriendModal = useCallback(() => {
+    setSearchQuery('');
+    setAddFriendVisible(true);
+    closeMenu();
+  }, [closeMenu]);
+
+  const handleCloseAddFriendModal = useCallback(() => {
+    setAddFriendVisible(false);
+  }, []);
+
+  const handleQuerySearch = useCallback(async () => {
+    const query = searchQuery.trim();
+    if (!query) {
+      Alert.alert('提示', '请输入手机号或姓名/用户名');
       return;
     }
     try {
-      await searchByKeyword(keyword);
+      setHasSearched(true);
+      await searchByQuery(query);
     } catch (error) {
       Alert.alert('搜索失败', errorMessage(error, '搜索用户失败，请稍后再试'));
     }
-  }, [keywordInput, searchByKeyword]);
+  }, [searchByQuery, searchQuery]);
 
   const handleClearSearch = useCallback(() => {
-    setPhoneInput('');
-    setKeywordInput('');
+    setSearchQuery('');
+    setHasSearched(false);
     clearSearch();
   }, [clearSearch]);
 
@@ -411,79 +424,44 @@ export default function ContactsScreen(): JSX.Element {
 
   const listHeader = useMemo(() => (
     <View>
-      <View style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>添加好友</ThemedText>
-        <View style={styles.searchRow}>
-          <TextInput
-            style={[styles.searchInput, { borderColor: colors.border, color: colors.text }]}
-            placeholder="请输入手机号"
-            placeholderTextColor={colors.tabIconDefault}
-            keyboardType="phone-pad"
-            value={phoneInput}
-            onChangeText={text => setPhoneInput(text)}
-            returnKeyType="search"
-            onSubmitEditing={handlePhoneSearch}
-          />
-          <Pressable
-            style={[styles.searchButton, { backgroundColor: colors.accent }, (submitting || searchLoading) && styles.buttonDisabled]}
-            onPress={handlePhoneSearch}
-            disabled={submitting || searchLoading}>
-            {searchLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <ThemedText style={styles.searchButtonText}>搜索</ThemedText>
-            )}
-          </Pressable>
-        </View>
-        <View style={[styles.searchRow, styles.searchRowSecondary]}>
-          <TextInput
-            style={[styles.searchInput, { borderColor: colors.border, color: colors.text }]}
-            placeholder="请输入姓名或用户名"
-            placeholderTextColor={colors.tabIconDefault}
-            autoCapitalize="none"
-            value={keywordInput}
-            onChangeText={text => setKeywordInput(text)}
-            returnKeyType="search"
-            onSubmitEditing={handleKeywordSearch}
-          />
-          <Pressable
-            style={[styles.searchButton, { backgroundColor: colors.accent }, (submitting || searchLoading) && styles.buttonDisabled]}
-            onPress={handleKeywordSearch}
-            disabled={submitting || searchLoading}>
-            {searchLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <ThemedText style={styles.searchButtonText}>搜索</ThemedText>
-            )}
-          </Pressable>
-        </View>
-        {searchResults.length > 0 ? (
-          <View style={styles.searchResults}>
-            {searchResults.map(result => (
-              <FriendSearchCard
-                key={result.userId}
-                result={result}
-                loading={submitting}
-                onStartChat={userId => handleOpenChat({
-                  userId,
-                  username: result.username,
-                  displayName: result.displayName,
-                  phoneNumber: result.phoneNumber,
-                  friendshipId: userId,
-                })}
-                onSendRequest={handleSendRequest}
-                accentColor={colors.accent}
-                cardColor={colors.card}
-                mutedColor={colors.tabIconDefault}
-                accentSoftColor={accentSoftColor}
-              />
-            ))}
-            <Pressable style={styles.clearSearchButton} onPress={handleClearSearch}>
-              <ThemedText style={[styles.clearSearchText, { color: colors.accent }]}>清除搜索结果</ThemedText>
-            </Pressable>
+      {hasSearched ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <ThemedText style={styles.sectionTitle}>搜索结果</ThemedText>
+            {searchLoading ? <ActivityIndicator size="small" color={colors.accent} /> : null}
           </View>
-        ) : null}
-      </View>
+          {searchResults.length > 0 ? (
+            <View style={styles.searchResults}>
+              {searchResults.map(result => (
+                <FriendSearchCard
+                  key={result.userId}
+                  result={result}
+                  loading={submitting}
+                  onStartChat={userId => handleOpenChat({
+                    userId,
+                    username: result.username,
+                    displayName: result.displayName,
+                    phoneNumber: result.phoneNumber,
+                    friendshipId: userId,
+                  })}
+                  onSendRequest={handleSendRequest}
+                  accentColor={colors.accent}
+                  cardColor={colors.card}
+                  mutedColor={colors.tabIconDefault}
+                  accentSoftColor={accentSoftColor}
+                />
+              ))}
+            </View>
+          ) : (
+            <ThemedText style={[styles.searchEmptyText, { color: colors.tabIconDefault }]}>
+              未找到符合条件的用户
+            </ThemedText>
+          )}
+          <Pressable style={styles.clearSearchButton} onPress={handleClearSearch}>
+            <ThemedText style={[styles.clearSearchText, { color: colors.accent }]}>清除搜索结果</ThemedText>
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
@@ -527,27 +505,40 @@ export default function ContactsScreen(): JSX.Element {
       </View>
     </View>
   ), [
-    handleClearSearch,
+    accentSoftColor,
+    hasSearched,
     colors,
     handleApprove,
+    handleClearSearch,
     handleOpenChat,
     handleReject,
-    handleKeywordSearch,
-    handlePhoneSearch,
     handleSendRequest,
     incomingRequests,
     outgoingRequests,
-    phoneInput,
-    keywordInput,
     requestsLoading,
     searchLoading,
     searchResults,
     submitting,
-    accentSoftColor,
   ]);
 
+  const menuPositionStyle = useMemo(
+    () => ({ top: insets.top + NAV_BAR_HEIGHT + 4, right: 16 }),
+    [insets.top]
+  );
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={[styles.navBar, { backgroundColor: colors.navBar, borderBottomColor: colors.navBorder }]}>
+        <ThemedText type="headline" style={styles.navTitle}>
+          通讯录
+        </ThemedText>
+        <View style={styles.navActions}>
+          <Pressable onPress={toggleMenu} hitSlop={8}>
+            <IconSymbol name="plus.circle" size={22} color={colors.accent} />
+          </Pressable>
+        </View>
+      </View>
+
       <FlatList
         data={sortedFriends}
         keyExtractor={item => item.friendshipId || item.userId}
@@ -563,7 +554,119 @@ export default function ContactsScreen(): JSX.Element {
           )
         }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
+        onScrollBeginDrag={closeMenu}
+        keyboardShouldPersistTaps="handled"
       />
+
+      {menuVisible ? (
+        <Pressable style={styles.menuOverlay} onPress={closeMenu}>
+          <Pressable
+            style={[
+              styles.menuContainer,
+              menuPositionStyle,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+            onPress={event => event.stopPropagation()}
+          >
+            <Pressable style={styles.menuItem} onPress={handleOpenAddFriendModal}>
+              <IconSymbol name="person.badge.plus" size={18} color={colors.accent} />
+              <ThemedText style={[styles.menuItemText, { color: colors.text }]}>添加好友</ThemedText>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      ) : null}
+
+      <Modal
+        visible={addFriendVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseAddFriendModal}
+      >
+        <Pressable style={styles.modalOverlay} onPress={handleCloseAddFriendModal}>
+          <Pressable
+            style={[
+              styles.addFriendModal,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+            onPress={event => event.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <ThemedText style={styles.modalTitle}>添加好友</ThemedText>
+              <Pressable onPress={handleCloseAddFriendModal} hitSlop={8}>
+                <IconSymbol name="xmark" size={18} color={colors.tabIconDefault} />
+              </Pressable>
+            </View>
+            <ThemedText style={[styles.modalSubtitle, { color: colors.tabIconDefault }]}>
+              请输入手机号或姓名/用户名
+            </ThemedText>
+            <TextInput
+              style={[styles.modalInput, { borderColor: colors.border, color: colors.text }]}
+              placeholder="手机 / 姓名 / 用户名"
+              placeholderTextColor={colors.tabIconDefault}
+              autoCapitalize="none"
+              value={searchQuery}
+              onChangeText={text => setSearchQuery(text)}
+              returnKeyType="search"
+              onSubmitEditing={handleQuerySearch}
+            />
+            <Pressable
+              style={[
+                styles.modalActionButton,
+                { backgroundColor: colors.accent },
+                (searchLoading || submitting) && styles.buttonDisabled,
+              ]}
+              disabled={searchLoading || submitting}
+              onPress={handleQuerySearch}
+            >
+              {searchLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <ThemedText style={styles.modalActionButtonText}>搜索</ThemedText>
+              )}
+            </Pressable>
+            {hasSearched ? (
+              <View style={styles.modalResults}>
+                <ThemedText style={[styles.modalResultsTitle, { color: colors.text }]}>
+                  搜索结果
+                </ThemedText>
+                {searchResults.length > 0 ? (
+                  <ScrollView
+                    style={[styles.modalResultsList, { borderColor: colors.border }]}
+                    contentContainerStyle={styles.modalResultsContent}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {searchResults.map(result => (
+                      <FriendSearchCard
+                        key={`modal-${result.userId}`}
+                        result={result}
+                        loading={submitting}
+                        onStartChat={userId =>
+                          handleOpenChat({
+                            userId,
+                            username: result.username,
+                            displayName: result.displayName,
+                            phoneNumber: result.phoneNumber,
+                            friendshipId: userId,
+                          })
+                        }
+                        onSendRequest={handleSendRequest}
+                        accentColor={colors.accent}
+                        cardColor={colors.card}
+                        mutedColor={colors.tabIconDefault}
+                        accentSoftColor={accentSoftColor}
+                      />
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <ThemedText style={[styles.modalEmptyText, { color: colors.tabIconDefault }]}>
+                    未找到符合条件的用户
+                  </ThemedText>
+                )}
+              </View>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ThemedView>
   );
 }
@@ -571,6 +674,23 @@ export default function ContactsScreen(): JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  navBar: {
+    height: NAV_BAR_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  navTitle: {
+    fontWeight: '700',
+    fontSize: 20,
+  },
+  navActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   listContent: {
     paddingBottom: 32,
@@ -590,35 +710,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  searchRowSecondary: {
-    marginTop: 12,
-  },
-  searchInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-  },
-  searchButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    minWidth: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
   },
   searchResults: {
     marginTop: 16,
@@ -646,6 +737,11 @@ const styles = StyleSheet.create({
   },
   clearSearchText: {
     fontSize: 14,
+  },
+  searchEmptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 16,
   },
   pendingText: {
     fontSize: 14,
@@ -743,6 +839,101 @@ const styles = StyleSheet.create({
   outgoingText: {
     fontSize: 14,
     flex: 1,
+  },
+  menuOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  menuContainer: {
+    position: 'absolute',
+    minWidth: 160,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  addFriendModal: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 20,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  modalActionButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalActionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalResults: {
+    gap: 12,
+  },
+  modalResultsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalResultsList: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    padding: 12,
+    maxHeight: 280,
+  },
+  modalResultsContent: {
+    gap: 12,
+  },
+  modalEmptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 16,
   },
   primaryButton: {
     paddingVertical: 10,

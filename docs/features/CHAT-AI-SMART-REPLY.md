@@ -2,7 +2,7 @@
 
 ## 📋 概述
 
-小科助手提供的智能推荐已从 SSE 流式改为标准 HTTP 接口。调用方可以通过 `/api/chat/ai/smart-replies` 端点一次性获取模型生成的推荐列表与提示信息，接口语义更加简单稳定。
+小科助手提供的智能推荐已从 SSE 流式改为标准 HTTP 接口。调用方可以通过 `/api/chat/ai/smart-replies` 端点一次性获取模型生成的推荐列表与提示信息，接口语义更加简单稳定。当前移动端聊天界面已隐藏智能推荐入口，如需展示可参考本文档接入方式。
 
 ## 🔌 新增 API
 
@@ -32,7 +32,7 @@
 ## 📱 客户端对接建议
 
 1. 直接使用 `fetch` 或任意 HTTP 客户端请求 `/api/chat/ai/smart-replies`。
-2. 根据响应中的 `suggestions` 渲染候选按钮。
+2. 根据响应中的 `suggestions` 渲染候选按钮（若需要恢复 UI，可将结果绑定到自定义组件）。
 3. 如果 `notice` 不为空或 `suggestions` 为空，可展示提示文案并提供刷新按钮。
 4. 重复请求时可以主动取消上一次尚未完成的调用，避免浪费模型配额。
 
@@ -47,10 +47,8 @@
 ## ✅ 验证步骤
 
 1. `dotnet run --project Platform.AppHost` 启动全套服务，确保配置了合法的 OpenAI Endpoint 与 ApiKey。
-2. 在移动端聊天界面发送消息，观察智能回复区域：
-   - 请求完成后一次性得到推荐列表。
-   - 没有推荐时显示提示文案，并可点击刷新。
-3. 断开外网或清空 OpenAI 配置，再次触发智能回复，应该迅速收到 notice 提示。
+2. 在移动端聊天界面发送消息，确认不会再出现智能推荐区域。
+3. 断开外网或清空 OpenAI 配置后，通过 API 调用仍应返回 notice 提示。
 4. 通过 `curl` 验证：
 
    ```bash
@@ -65,7 +63,6 @@
 - `Platform.ApiService/Controllers/ChatAiController.cs`
 - `Platform.ApiService/Services/AiSuggestionService.cs`
 - `Platform.ApiService/Models/AiModels.cs`
-- `Platform.App/components/chat/AiSuggestionBar.tsx`
 - `Platform.ApiService/Services/ChatService.cs`
 - `Platform.App/contexts/chatActions.ts`
 - `Platform.App/services/chat.ts`

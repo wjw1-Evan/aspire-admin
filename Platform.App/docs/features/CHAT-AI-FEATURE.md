@@ -2,7 +2,7 @@
 
 ## 📋 概述
 
-`Platform.App` 新增移动端聊天与社交体验，整合服务器存储的即时消息、AI 智能建议、附件上传与附近的人搜索能力，所有数据统一由后端 API 托管。
+`Platform.App` 新增移动端聊天与社交体验，整合服务器存储的即时消息、AI 能力（目前仅在后台生效，移动端 UI 已隐藏智能推荐）、附件上传与附近的人搜索能力，所有数据统一由后端 API 托管。
 
 ## 🏗️ 系统结构
 
@@ -13,7 +13,7 @@
   - `services/location.ts`：定位权限、位置上报与附近用户检索。
 - **全局状态**：`ChatContext`（会话、消息、AI 建议、附近人、服务器附件引用）。
 - **Hooks**：
-  - `useAiAssistant`：节流调用智能建议。
+  - `useAiAssistant`：节流调用智能建议（当前聊天页面未直接使用，保留以备后续恢复 UI）。
   - `useNearbyUsers`：定位授权、附近人刷新与上报。
 
 ## 🔌 消息同步策略
@@ -28,14 +28,14 @@
 - **会话窗口**：`app/chat/[sessionId].tsx`
   - `ConversationHeader` 展示会话信息与导航。
   - `MessageList` + `AttachmentPreview` 呈现文本与富媒体。
-  - `MessageComposer` + `AiSuggestionBar` 支持文本发送、智能候选、附件选择。
+  - `MessageComposer` 支持文本发送与附件选择（智能推荐 UI 已移除）。
 - **消息处理**：
   - 发送文本：调用 `sendMessage` 后自动刷新列表并触发 AI 推荐。
   - 上传附件：`AttachmentPicker` 选取文件 → `chatService.uploadAttachment` 返回资源 → 再调用 `sendMessage` 携带 `attachmentId` 完成消息发送。
 
 ## 🤖 AI 增益能力
 
-- **智能回复**：`useAiAssistant` 在发送或加载消息时拉取上下文建议（节流 3 秒）。
+- **智能回复**：`useAiAssistant` 仍可在需要时拉取上下文建议（节流 3 秒），当前前端不再展示推荐气泡。
 - **好友推荐**：`app/people/recommend.tsx` 调用 `aiService.getMatchSuggestions`，按匹配度排序并跳转聊天。
 - **话题引导**：后续可通过 `aiService.getTopicGuides` 扩展 UI。
 

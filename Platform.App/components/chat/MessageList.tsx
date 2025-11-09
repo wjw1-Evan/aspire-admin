@@ -64,6 +64,9 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
   const statusTextColor = theme.colors.tertiaryText;
   const statusErrorColor = theme.colors.danger;
   const statusSendingColor = theme.colors.accent;
+  const incomingTextColor = theme.colors.messageIncomingText;
+  const outgoingTextColor = theme.colors.messageOutgoingText;
+  const avatarInitialColor = theme.colors.text;
   const isGroupChat = (participants?.length ?? 0) > 2;
 
   const listRef = useRef<FlatList<ChatMessage>>(null);
@@ -185,11 +188,11 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
       const avatarUri = participantAvatars?.[senderId];
 
       return (
-        <View style={[styles.avatar, { backgroundColor: avatarBackground, borderColor: avatarBorderColor }]}> 
+        <View style={[styles.avatar, { backgroundColor: avatarBackground, borderColor: avatarBorderColor }]}>
           {avatarUri ? (
             <Image source={{ uri: avatarUri }} style={styles.avatarImage} cachePolicy="memory-disk" />
           ) : (
-            <ThemedText style={styles.avatarInitial}>{initial}</ThemedText>
+            <ThemedText style={[styles.avatarInitial, { color: avatarInitialColor }]}>{initial}</ThemedText>
           )}
         </View>
       );
@@ -251,7 +254,16 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
                   },
                 ]}
               >
-                {item.content ? <ThemedText style={styles.messageText}>{item.content}</ThemedText> : null}
+                {item.content ? (
+                  <ThemedText
+                    style={[
+                      styles.messageText,
+                      { color: isOutgoing ? outgoingTextColor : incomingTextColor },
+                    ]}
+                  >
+                    {item.content}
+                  </ThemedText>
+                ) : null}
                 {item.attachment ? <AttachmentPreview attachment={item.attachment} /> : null}
               </View>
               <View
@@ -394,7 +406,6 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#111111',
   },
   footerLoading: {
     paddingVertical: 16,
@@ -446,7 +457,6 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333333',
   },
   senderName: {
     fontSize: 12,

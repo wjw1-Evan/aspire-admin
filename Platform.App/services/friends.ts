@@ -62,6 +62,39 @@ export const friendService = {
     return this.search({ keyword });
   },
 
+  async searchByQuery(query: string): Promise<FriendSearchResult[]> {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      return [];
+    }
+
+    const normalizedPhone = trimmed.replace(/[\s-]/g, '');
+    const digitsOnly = normalizedPhone.startsWith('+') ? normalizedPhone.slice(1) : normalizedPhone;
+    const isPhoneCandidate = /^\d{5,}$/.test(digitsOnly);
+
+    const searchTasks: Array<Promise<FriendSearchResult[]>> = [];
+    searchTasks.push(this.search({ keyword: trimmed }));
+
+    if (isPhoneCandidate) {
+      searchTasks.push(this.search({ phone: normalizedPhone }));
+    }
+
+    const resultSets = await Promise.all(searchTasks);
+    const merged: FriendSearchResult[] = [];
+    const seen = new Set<string>();
+
+    for (const results of resultSets) {
+      for (const item of results) {
+        if (!seen.has(item.userId)) {
+          seen.add(item.userId);
+          merged.push(item);
+        }
+      }
+    }
+
+    return merged;
+  },
+
   async sendFriendRequest(payload: CreateFriendRequestPayload): Promise<FriendRequestItem> {
     const rawResponse = await apiService.post<ApiResponse<FriendRequestItem>>(
       `${FRIENDS_ENDPOINT}/requests`,

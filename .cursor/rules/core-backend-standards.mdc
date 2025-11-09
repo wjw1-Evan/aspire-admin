@@ -1,0 +1,155 @@
+---
+alwaysApply: true
+description: 后端核心开发规范（控制器、数据访问、多租户、全局菜单、数据初始化）
+globs: Platform.ApiService/**/*.cs,Platform.DataInitializer/**/*.cs,Platform.ServiceDefaults/**/*.cs
+---
+
+# 后端核心开发规范
+
+本规则整合了原有的 `baseapicontroller-standard`、`backend-data-access`、`multi-tenant-development`、`no-global-data`、`global-menu-architecture`、`database-initialization` 等文件的内容，用于统一指导后端代码的编写。所有内容均适用于 `Platform.ApiService`、`Platform.DataInitializer` 与 `Platform.ServiceDefaults` 目录内的 C# 代码。
+
+> ✅ **若需要更详细的背景说明或历史记录，请参阅** `docs/features/` 与 `docs/reports/` 中对应文档。
+
+---
+
+## 1. 控制器规范（BaseApiController）
+
+- **所有 API 控制器必须继承 `BaseApiController`**，禁止直接继承 `ControllerBase`。
+- 统一通过基类方法处理响应：`Success()`、`SuccessResponse()`、`Error()` 等。
+- 必须使用 `GetRequiredUserId()` 等安全方法访问当前用户信息；不要手动解析 `HttpContext` 或 `User.Claims`。
+- 遵循异常即逻辑：业务校验失败直接抛出异常，由 `GlobalExceptionMiddleware` 统一处理，禁止在控制器中手动 `try-catch` 返回错误。
+- 合理使用 `[Authorize]`、`[AllowAnonymous]`、`[Authorize(Roles = "...")]` 控制访问；基类已提供 `IsAdmin`、`CurrentUserId` 等属性。
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class UserController : BaseApiController
+{
+    private readonly IUserService _userService;
+
+    public UserController(IUserService userService)
+    {
+        _userService = userService;
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var user = await _userService.GetUserByIdAsync(id)
+            ?? throw new KeyNotFoundException($"用户 {id} 不存在");
+
+        return Success(user);
+    }
+}
+```
+
+---
+
+## 2. 数据访问层规范（DatabaseOperationFactory）
+
+- **所有数据库操作必须通过 `IDatabaseOperationFactory<T>` 完成**，禁止直接使用 `IMongoCollection<T>` 或旧的 `BaseRepository<T>`。
+- 使用 `CreateFilterBuilder()` / `CreateSortBuilder()` / `CreateUpdateBuilder()` 构建查询，保持类型安全。
+- 工厂会自动处理：
+  - 多租户过滤（针对实现 `IMultiTenant` 的实体）。
+  - 软删除标记与查询排除。
+  - 审计字段（`CreatedAt/By`、`UpdatedAt/By`、`DeletedAt/By`）。
+- 更新操作只设置业务字段，**不要**手动调用 `SetCurrentTimestamp()` 或设置审计字段。
+- 批量操作使用 `CreateManyAsync`、`UpdateManyAsync`、`SoftDeleteManyAsync` 等方法。
+
+```csharp
+var filter = _userFactory.CreateFilterBuilder()
+    .Regex(u => u.Username, request.Keyword)
+    .EqualIfHasValue(u => u.IsActive, request.IsActive)
+    .Build();
+
+var sort = _userFactory.CreateSortBuilder()
+    .Descending(u => u.CreatedAt)
+    .Build();
+
+var (items, total) = await _userFactory.FindPagedAsync(filter, sort, request.Page, request.PageSize);
+```
+
+---
+
+## 3. 多租户数据隔离
+
+- `IDatabaseOperationFactory` 会对实现 `IMultiTenant` 的实体自动追加企业过滤，**禁止手动添加 `CompanyId` 条件**。
+- 对于未实现 `IMultiTenant` 的实体（如 `AppUser`），必须手动按照规范过滤：
+  - 通过 `_factory.GetRequiredUserId()` 和 `_factory.GetByIdAsync()` 获取当前用户与 `CurrentCompanyId`。
+  - 创建实体时使用 `_factory.GetRequiredCompanyId()` 设置 `CompanyId`。
+- 跨租户场景使用 `FindWithoutTenantFilterAsync` / `GetByIdWithoutTenantFilterAsync`，并记录使用原因。
+- 后台线程（如队列、定时任务）不可依赖 `HttpContext`，需要通过用户记录查询企业信息。
+- 开发新实体时遵循 `docs/features/NEW-ENTITY-CHECKLIST.md`：继承正确的基类、设置 `CompanyId`、提供索引与审计。
+
+### 禁止的做法
+
+- 在多租户实体查询中手写 `CompanyId == ...`。
+- 在后台线程中使用 `ITenantContext` 或 `IHttpContextAccessor` 获取租户信息。
+- 创建缺少 `CompanyId` 的业务数据（菜单除外）。
+
+---
+
+## 4. 全局菜单架构
+
+- `Menu` 是全局系统资源，不实现 `IMultiTenant`，也 **没有 `CompanyId` 字段**。
+- 菜单在 `Platform.DataInitializer` 中统一创建，用户不能新增/修改/删除菜单；业务侧只在角色中引用菜单 ID。
+- 前端 100% 从 API 返回的菜单树渲染，禁止回退到 `routes.ts` 静态菜单。静态路由仅用于 `path -> component` 映射，应设置 `hideInMenu: true`。
+- API 层不提供菜单 CRUD 端点，仅提供查询当前用户可见菜单。
+- `Role.MenuIds` 存储可访问菜单，`PermissionIds` 控制按钮级权限；角色等实体必须包含 `CompanyId`。
+
+---
+
+## 5. 数据初始化微服务
+
+- `Platform.DataInitializer` 是单实例运行的微服务：负责索引创建、全局菜单生成、系统级数据初始化，完成后自动停止。
+- **禁止** 在 `Platform.ApiService` 启动流程中再初始化数据库或创建全局数据。
+- 初始化逻辑必须具备幂等性：重复执行不会产生冲突或重复数据。
+- 需要时可以提供手动触发端点（如 `/initialize`）、健康检查 `/health`，并在 Aspire Dashboard 中观察执行结果。
+- 所有初始化操作应使用 `IDatabaseOperationFactory` 或官方 Mongo 原子操作，避免“查询后判断再写入”的竞态。
+
+---
+
+## 6. 审计与时间戳
+
+- `CreateAsync` / `UpdateAsync` / `SoftDeleteAsync` 等方法会自动填充 `CreatedAt/By`、`UpdatedAt/By`、`DeletedAt/By` 字段。
+- 更新操作**仅**设置业务字段，例如 `IsActive`、`RoleIds`，不要手动设置时间戳或审计信息。
+- 如果需要在后台记录操作上下文，请使用 `CreateOperationContext()` 构造审计上下文。
+
+---
+
+## 7. 常见检查清单
+
+| 场景 | 必须遵循的规范 |
+|------|----------------|
+| 创建控制器 | 继承 `BaseApiController`，抛异常交给中间件，使用基类响应方法 |
+| 业务服务 | 通过 `IDatabaseOperationFactory` 访问数据库，写单元测试覆盖多租户过滤 |
+| 新实体设计 | 选择合适基类，确保 `CompanyId`/`CurrentCompanyId` 设置正确，编写索引，补充前端/文档 |
+| 菜单/权限 | 仅修改角色与权限集合，不提供菜单 CRUD；前端从 API 渲染动态菜单 |
+| 初始化逻辑 | 放在 `Platform.DataInitializer`，保证幂等且自动停止，禁止多实例运行 |
+
+---
+
+## 8. 禁止事项速查
+
+- ❌ 直接操作 `IMongoCollection<T>` 或遗留的 `BaseRepository<T>`。
+- ❌ 在实现 `IMultiTenant` 的查询中手写 `CompanyId` 条件。
+- ❌ 在后台线程使用 `HttpContext`/`ITenantContext` 获取租户。
+- ❌ 控制器手动解析用户信息、手写 `Ok()`/`BadRequest()` 响应或包裹 `try-catch`。
+- ❌ 在 API 服务启动时创建菜单、角色、权限等全局数据。
+- ❌ 手动设置 `CreatedAt`、`UpdatedAt`、`DeletedAt`、`CreatedBy` 等审计字段。
+- ❌ 为菜单添加 `CompanyId`，或提供修改菜单的 API/管理界面。
+
+---
+
+## 📚 相关文档
+
+- `docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md`
+- `docs/features/DATABASE-FACTORY-MIGRATION.md`
+- `docs/features/GLOBAL-MENU-ARCHITECTURE.md`
+- `docs/features/DATA-INITIALIZER-MICROSERVICE.md`
+- `docs/features/HOW-TO-VIEW-API-DOCS.md`
+- `docs/INDEX.md`（获取所有规则与说明文档索引）
+
+> 🧪 请为关键流程（多租户过滤、数据初始化、菜单加载等）编写或更新单元测试与集成测试，确保上述规范落地。
+

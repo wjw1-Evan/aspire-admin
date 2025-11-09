@@ -82,6 +82,13 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
             [AiAssistantConstants.AssistantUserId] = AiAssistantConstants.AssistantDisplayName
         };
 
+        var participantAvatars = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(user.Avatar))
+        {
+            participantAvatars[user.Id] = user.Avatar;
+        }
+        participantAvatars[AiAssistantConstants.AssistantUserId] = AiAssistantConstants.AssistantAvatarUrl;
+
         var unreadCounts = new Dictionary<string, int>
         {
             [user.Id] = 0,
@@ -93,6 +100,7 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
             CompanyId = companyId,
             Participants = new List<string> { user.Id, AiAssistantConstants.AssistantUserId },
             ParticipantNames = participantNames,
+            ParticipantAvatars = participantAvatars,
             UnreadCounts = unreadCounts,
             TopicTags = new List<string> { "assistant", "direct" },
             CreatedAt = DateTime.UtcNow,

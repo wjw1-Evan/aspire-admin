@@ -38,12 +38,28 @@ export const friendService = {
     return response.data ?? [];
   },
 
-  async searchByPhone(phoneNumber: string): Promise<FriendSearchResult[]> {
-    const query = new URLSearchParams({ phone: phoneNumber }).toString();
+  async search(params: { phone?: string; keyword?: string }): Promise<FriendSearchResult[]> {
+    const searchParams = new URLSearchParams();
+    if (params.phone?.trim()) {
+      searchParams.append('phone', params.phone.trim());
+    }
+    if (params.keyword?.trim()) {
+      searchParams.append('keyword', params.keyword.trim());
+    }
+
+    const query = searchParams.toString();
     const endpoint = `${FRIENDS_ENDPOINT}/search${query ? `?${query}` : ''}`;
     const rawResponse = await apiService.get<ApiResponse<FriendSearchResult[]>>(endpoint);
     const response = ensureApiSuccess(rawResponse, '搜索用户失败');
     return response.data ?? [];
+  },
+
+  async searchByPhone(phoneNumber: string): Promise<FriendSearchResult[]> {
+    return this.search({ phone: phoneNumber });
+  },
+
+  async searchByKeyword(keyword: string): Promise<FriendSearchResult[]> {
+    return this.search({ keyword });
   },
 
   async sendFriendRequest(payload: CreateFriendRequestPayload): Promise<FriendRequestItem> {

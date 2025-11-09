@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { WeChatCard } from '@/components/ui/wx-card';
 import { useNearbyUsers } from '@/hooks/useNearbyUsers';
 import { useChat } from '@/contexts/ChatContext';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/contexts/ThemeContext';
 import { NEARBY_SEARCH_DEFAULT_RADIUS } from '@/services/apiConfig';
 
 const formatDistance = (distance: number) => {
@@ -48,6 +50,8 @@ const formatRelativeTime = (input?: string | Date | null) => {
 
 export default function NearbyScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const { setActiveSession } = useChat();
   const { nearbyUsers, loading, refresh } = useNearbyUsers();
 
@@ -55,14 +59,15 @@ export default function NearbyScreen() {
   const [radius, setRadius] = useState(radiusRef.current);
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
 
-  const backgroundColor = useThemeColor({}, 'background');
-  const headerBackground = useThemeColor({ light: '#f1f5f9', dark: '#111827' }, 'card');
-  const cardBackground = useThemeColor({ light: '#f8fafc', dark: '#1f2937' }, 'card');
-  const cardBorder = useThemeColor({ light: '#e2e8f0', dark: '#334155' }, 'border');
-  const avatarBackground = useThemeColor({ light: '#fee2e2', dark: '#3f3f46' }, 'card');
-  const accentColor = useThemeColor({ light: '#0ea5e9', dark: '#38bdf8' }, 'tint');
-  const mutedColor = useThemeColor({ light: '#64748b', dark: '#94a3b8' }, 'text');
-  const chipBackground = useThemeColor({ light: '#e2e8f0', dark: '#334155' }, 'card');
+  const screenBackground = theme.colors.background;
+  const cardBackground = theme.colors.card;
+  const borderColor = theme.colors.divider;
+  const avatarBackground = theme.colors.accentMuted;
+  const accentColor = theme.colors.accent;
+  const mutedColor = theme.colors.secondaryText;
+  const chipInactiveBackground = theme.colors.cardMuted;
+  const chipInactiveBorder = 'transparent';
+  const chipInactiveText = theme.colors.secondaryText;
 
   const handleStartChat = useCallback(
     (sessionId?: string) => {
@@ -112,19 +117,17 @@ export default function NearbyScreen() {
 
   const renderHeader = useMemo(() => {
     return (
-      <View style={[styles.headerContainer, { backgroundColor: headerBackground }]}>
+      <WeChatCard style={styles.headerCard}>
         <View style={styles.headerRow}>
-          <ThemedText type="subtitle" style={styles.headerTitle}>
-            发现附近的人
-          </ThemedText>
+          <ThemedText type="headline">发现附近的人</ThemedText>
           <Pressable style={styles.refreshButton} onPress={() => void handleRefresh()} disabled={loading}>
             <IconSymbol name="arrow.clockwise" size={18} color={accentColor} />
-            <ThemedText style={[styles.refreshText, { color: accentColor }]}>
+            <ThemedText type="footnote" style={{ color: accentColor }}>
               {loading ? '刷新中…' : '刷新'}
             </ThemedText>
           </Pressable>
         </View>
-        <ThemedText style={[styles.headerSubtitle, { color: mutedColor }]}>
+        <ThemedText type="caption" style={{ color: mutedColor }}>
           {lastRefreshAt ? `上次刷新 ${formatRelativeTime(lastRefreshAt)}` : '首次加载定位后可查看附近的人'}
         </ThemedText>
         <View style={styles.radiusRow}>
@@ -136,28 +139,23 @@ export default function NearbyScreen() {
                 style={[
                   styles.radiusChip,
                   {
-                    backgroundColor: isActive ? accentColor : chipBackground,
-                    borderColor: isActive ? accentColor : 'transparent',
+                    backgroundColor: isActive ? accentColor : chipInactiveBackground,
+                    borderColor: isActive ? accentColor : chipInactiveBorder,
                   },
                 ]}
                 onPress={() => void handleRefresh(option.value)}
                 disabled={loading && isActive}
               >
-                <ThemedText
-                  style={[
-                    styles.radiusChipText,
-                    { color: isActive ? '#fff' : mutedColor },
-                  ]}
-                >
+                <ThemedText type="caption" style={{ color: isActive ? theme.colors.accentContrastText : chipInactiveText }}>
                   {option.label}
                 </ThemedText>
               </Pressable>
             );
           })}
         </View>
-      </View>
+      </WeChatCard>
     );
-  }, [accentColor, chipBackground, handleRefresh, headerBackground, lastRefreshAt, loading, mutedColor, radius, radiusOptions]);
+  }, [accentColor, chipInactiveBackground, chipInactiveBorder, chipInactiveText, handleRefresh, lastRefreshAt, loading, mutedColor, radius, radiusOptions, theme.colors.accentContrastText]);
 
   const renderItem = useCallback(
     ({ item }: { item: typeof nearbyUsers[number] }) => {
@@ -165,11 +163,11 @@ export default function NearbyScreen() {
       const interests = item.interests?.length ? item.interests.join('、') : undefined;
       return (
         <Pressable
-          style={[
+          style={({ pressed }) => [
             styles.card,
             {
-              backgroundColor: cardBackground,
-              borderColor: cardBorder,
+              backgroundColor: pressed ? theme.colors.highlight : cardBackground,
+              borderColor: borderColor,
             },
           ]}
           onPress={() => handleStartChat(item.sessionId)}
@@ -178,14 +176,14 @@ export default function NearbyScreen() {
             <IconSymbol name="mappin.and.ellipse" size={24} color={accentColor} />
           </View>
           <View style={styles.cardContent}>
-            <ThemedText type="subtitle" style={styles.cardTitle} numberOfLines={1}>
+            <ThemedText type="bodyStrong" style={styles.cardTitle} numberOfLines={1}>
               {item.displayName}
             </ThemedText>
-            <ThemedText style={[styles.cardSubtitle, { color: mutedColor }]} numberOfLines={1}>
+            <ThemedText type="caption" style={[styles.cardSubtitle, { color: mutedColor }]} numberOfLines={1}>
               距离你 {formatDistance(item.distanceMeters)} · {lastActiveLabel}
             </ThemedText>
             {interests ? (
-              <ThemedText style={[styles.cardTag, { color: accentColor }]} numberOfLines={1}>
+              <ThemedText type="footnote" style={[styles.cardTag, { color: accentColor }]} numberOfLines={1}>
                 兴趣：{interests}
               </ThemedText>
             ) : null}
@@ -193,12 +191,24 @@ export default function NearbyScreen() {
           <IconSymbol name="chevron.right" size={18} color={mutedColor} />
         </Pressable>
       );
-    },
-    [accentColor, avatarBackground, cardBackground, cardBorder, handleStartChat, mutedColor]
-  );
+    }, [accentColor, avatarBackground, borderColor, cardBackground, handleStartChat, mutedColor, theme.colors.highlight]);
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
+    <ThemedView style={[styles.container, { backgroundColor: screenBackground, paddingTop: insets.top }]}>
+      <View style={[styles.navBar, { backgroundColor: theme.colors.navBar, borderBottomColor: theme.colors.navBorder }]}>
+        <Pressable
+          style={styles.navButton}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/explore')}
+          accessibilityRole="button"
+          accessibilityLabel="返回"
+        >
+          <IconSymbol name="chevron.left" size={20} color={theme.colors.icon} />
+        </Pressable>
+        <ThemedText type="headline" style={styles.navTitle}>
+          附近的人
+        </ThemedText>
+        <View style={styles.navPlaceholder} />
+      </View>
       <FlatList
         data={nearbyUsers}
         keyExtractor={item => item.userId}
@@ -211,9 +221,7 @@ export default function NearbyScreen() {
             <View style={styles.emptyState}>
               <IconSymbol name="location.slash" size={48} color={mutedColor} />
               <ThemedText style={styles.emptyTitle}>附近暂时没有活跃用户</ThemedText>
-              <ThemedText style={[styles.emptySubtitle, { color: mutedColor }]}>
-                稍后再刷新或扩大搜索范围
-              </ThemedText>
+              <ThemedText style={[styles.emptySubtitle, { color: mutedColor }]}>稍后再刷新或扩大搜索范围</ThemedText>
             </View>
           )
         }
@@ -224,6 +232,7 @@ export default function NearbyScreen() {
             ? [styles.listContent, styles.emptyContainer]
             : styles.listContent
         }
+        style={{ backgroundColor: screenBackground }}
       />
     </ThemedView>
   );
@@ -233,15 +242,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  navBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  navButton: {
+    padding: 8,
+  },
+  navTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  navPlaceholder: {
+    width: 32,
+  },
   listContent: {
     paddingBottom: 24,
   },
-  headerContainer: {
+  headerCard: {
     marginHorizontal: 16,
     marginTop: 16,
-    padding: 16,
-    borderRadius: 16,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 10,
   },
   headerRow: {
     flexDirection: 'row',
@@ -286,7 +313,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   avatar: {
     width: 44,

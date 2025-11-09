@@ -18,7 +18,7 @@ import {
   LogLevel,
 } from '@microsoft/signalr';
 
-import type { AiSuggestionRequest } from '@/types/ai';
+import type { AiSuggestionRequest, AssistantReplyStreamRequest } from '@/types/ai';
 import type {
   AttachmentMetadata,
   ChatMessage,
@@ -45,6 +45,7 @@ import {
   setActiveSessionAction,
   updateNearbyUsersAction,
   updateLocationBeaconAction,
+  streamAssistantReplyAction,
 } from './chatActions';
 import { chatService } from '@/services/chat';
 import { apiService } from '@/services/api';
@@ -55,7 +56,7 @@ import { useAuth } from './AuthContext';
 interface ChatContextValue extends ChatState {
   loadSessions: (params?: SessionQueryParams) => Promise<void>;
   loadMessages: (sessionId: string, params?: MessageQueryParams) => Promise<void>;
-  sendMessage: (payload: MessageSendRequest) => Promise<ChatMessage | undefined>;
+  sendMessage: (payload: MessageSendRequest, options?: SendMessageOptions) => Promise<ChatMessage | undefined>;
   receiveMessage: (sessionId: string, message: ChatMessage) => void;
   setActiveSession: (sessionId: string | undefined) => void;
   updateMessage: (sessionId: string, messageId: string, updates: Partial<ChatMessage>) => void;
@@ -63,10 +64,16 @@ interface ChatContextValue extends ChatState {
   refreshNearbyUsers: (request?: NearbySearchRequest) => Promise<NearbyUser[] | undefined>;
   updateLocationBeacon: (payload: { latitude: number; longitude: number; accuracy?: number }) => Promise<void>;
   fetchAiSuggestions: (sessionId: string, request: AiSuggestionRequest) => Promise<void>;
+  streamAssistantReply: (request: AssistantReplyStreamRequest) => Promise<void>;
   clearError: () => void;
   resetChat: () => void;
   connectionState: HubConnectionState;
   upsertSession: (session: ServerChatSession | ChatSession) => void;
+}
+
+interface SendMessageOptions {
+  localId?: string;
+  reuseLocal?: boolean;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -80,6 +87,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const { isAuthenticated, user } = useAuth();
   const [connectionState, setConnectionState] = useState<HubConnectionState>(HubConnectionState.Disconnected);
   const connectionRef = useRef<HubConnection | null>(null);
+  const connectionStartPromiseRef = useRef<Promise<void> | null>(null);
   const activeSessionRef = useRef<string | undefined>(undefined);
   const sessionsRef = useRef(state.sessions);
 
@@ -134,21 +142,76 @@ export function ChatProvider({ children }: ChatProviderProps) {
   );
 
   const sendMessage = useCallback(
-    async (payload: MessageSendRequest) => {
-      const connection = connectionRef.current;
+    async (payload: MessageSendRequest, options: SendMessageOptions = {}) => {
+      if (!currentUserId) {
+        throw new Error('未找到当前用户信息，无法发送消息');
+      }
 
-      if (connection?.state === HubConnectionState.Connected) {
+      const connection = connectionRef.current;
+      const assistantStreaming =
+        (payload.metadata as { assistantStreaming?: unknown } | undefined)?.assistantStreaming;
+      const preferHttp = assistantStreaming === true;
+
+      const localId = options.localId ?? `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const createdAt = new Date().toISOString();
+
+      if (!options.reuseLocal) {
+        const optimisticMessage: ChatMessage = {
+          id: localId,
+          localId,
+          sessionId: payload.sessionId,
+          senderId: currentUserId,
+          recipientId: payload.recipientId,
+          type: payload.type,
+          content: payload.content,
+          createdAt,
+          updatedAt: createdAt,
+          metadata: { ...payload.metadata, clientMessageId: localId },
+          status: 'sending',
+          isLocal: true,
+        };
+
+        dispatch({
+          type: 'CHAT_APPEND_MESSAGE',
+          payload: { sessionId: payload.sessionId, message: optimisticMessage },
+        });
+      } else if (options.localId) {
+        dispatch({
+          type: 'CHAT_UPDATE_MESSAGE',
+          payload: {
+            sessionId: payload.sessionId,
+            messageId: options.localId,
+            updates: { status: 'sending', isLocal: true },
+          },
+        });
+      }
+
+      const sendPayload: MessageSendRequest = {
+        ...payload,
+        clientMessageId: localId,
+        metadata: { ...payload.metadata, clientMessageId: localId },
+      };
+
+      if (connection?.state === HubConnectionState.Connected && !preferHttp) {
         try {
-          await connection.invoke('SendMessageAsync', payload);
+          await connection.invoke('SendMessageAsync', sendPayload);
+          dispatch({
+            type: 'CHAT_UPDATE_MESSAGE',
+            payload: {
+              sessionId: payload.sessionId,
+              messageId: localId,
+              updates: { status: 'sent', isLocal: false },
+            },
+          });
           return undefined;
         } catch (error) {
           console.warn('通过 SignalR 发送消息失败，回退到 REST 调用:', error);
         }
       }
 
-      return sendMessageAction(dispatch, payload);
+      return sendMessageAction(dispatch, sendPayload, { localId });
     },
-    []
+    [currentUserId, dispatch]
   );
 
   const receiveMessage = useCallback(
@@ -208,7 +271,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
     async (sessionId: string, request: AiSuggestionRequest) => {
       await fetchAiSuggestionsAction(dispatch, sessionId, request);
     },
-    []
+    [dispatch]
+  );
+
+  const streamAssistantReply = useCallback(
+    async (request: AssistantReplyStreamRequest) => {
+      await streamAssistantReplyAction(dispatch, request);
+    },
+    [dispatch]
   );
 
   const upsertSession = useCallback(
@@ -287,6 +357,19 @@ export function ChatProvider({ children }: ChatProviderProps) {
       const existing = connectionRef.current;
       if (existing) {
         connectionRef.current = null;
+        const startPromise = connectionStartPromiseRef.current;
+        if (startPromise) {
+          try {
+            await startPromise;
+          } catch {
+            // ignore
+          }
+          if (connectionRef.current && connectionRef.current !== existing) {
+            // 已被新连接替换，交由新连接处理
+            return;
+          }
+        }
+        connectionStartPromiseRef.current = null;
         try {
           await existing.stop();
         } catch (error) {
@@ -358,7 +441,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
       setConnectionState(connection.state);
 
       try {
-        await connection.start();
+        const startPromise = connection.start();
+        connectionStartPromiseRef.current = startPromise;
+        await startPromise;
+        if (connectionRef.current !== connection) {
+          return;
+        }
         if (cancelled) {
           await connection.stop().catch(() => undefined);
           return;
@@ -374,6 +462,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
       } catch (error) {
         console.error('建立聊天实时连接失败:', error);
         setConnectionState(HubConnectionState.Disconnected);
+      } finally {
+        if (connectionRef.current === connection) {
+          connectionStartPromiseRef.current = null;
+        }
       }
     };
 
@@ -381,6 +473,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     return () => {
       cancelled = true;
+      void stopExistingConnection();
     };
   }, [handleMessageDeleted, handleRealtimeMessage, handleSessionRead, handleSessionUpdate, isAuthenticated]);
 
@@ -388,7 +481,15 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const existing = connectionRef.current;
     if (existing) {
       connectionRef.current = null;
-      existing.stop().catch(() => undefined);
+      const startPromise = connectionStartPromiseRef.current;
+      connectionStartPromiseRef.current = null;
+      if (startPromise) {
+        startPromise
+          .catch(() => undefined)
+          .finally(() => existing.stop().catch(() => undefined));
+      } else {
+        existing.stop().catch(() => undefined);
+      }
     }
   }, []);
 
@@ -404,6 +505,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     refreshNearbyUsers,
     updateLocationBeacon,
     fetchAiSuggestions,
+    streamAssistantReply,
     clearError,
     resetChat,
     connectionState,
@@ -420,6 +522,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     refreshNearbyUsers,
     updateLocationBeacon,
     fetchAiSuggestions,
+    streamAssistantReply,
     clearError,
     resetChat,
     connectionState,

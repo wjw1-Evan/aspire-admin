@@ -493,6 +493,7 @@ public class UserController : BaseApiController
             Name = request.Name,
             Email = request.Email,
             Age = request.Age,
+            Avatar = request.Avatar,
             // Username 字段被过滤掉，不允许修改
         };
 

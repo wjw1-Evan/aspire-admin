@@ -20,7 +20,7 @@ export interface ChatState {
   nearbyLoading: boolean;
   aiSuggestions: Record<string, AiSuggestion[]>;
   aiLoading: Record<string, boolean>;
-  aiStreamText: Record<string, string>;
+  aiSuggestionNotice: Record<string, string | undefined>;
   error?: string;
 }
 
@@ -34,7 +34,7 @@ export const initialChatState: ChatState = {
   nearbyLoading: false,
   aiSuggestions: {},
   aiLoading: {},
-  aiStreamText: {},
+  aiSuggestionNotice: {},
 };
 
 type ChatReducerAction =
@@ -59,12 +59,15 @@ type ChatReducerAction =
       type: 'CHAT_UPDATE_MESSAGE';
       payload: { sessionId: string; messageId: string; updates: Partial<ChatMessage> };
     }
+  | {
+      type: 'CHAT_REPLACE_MESSAGE';
+      payload: { sessionId: string; localId?: string; message: ChatMessage };
+    }
   | { type: 'CHAT_SET_NEARBY_USERS'; payload: NearbyUser[] }
   | { type: 'CHAT_SET_NEARBY_LOADING'; payload: boolean }
   | { type: 'CHAT_SET_AI_SUGGESTIONS'; payload: { sessionId: string; suggestions: AiSuggestion[] } }
   | { type: 'CHAT_SET_AI_LOADING'; payload: { sessionId: string; loading: boolean } }
-  | { type: 'CHAT_SET_AI_STREAM_TEXT'; payload: { sessionId: string; text: string } }
-  | { type: 'CHAT_APPEND_AI_STREAM_TEXT'; payload: { sessionId: string; text: string } }
+  | { type: 'CHAT_SET_AI_NOTICE'; payload: { sessionId: string; notice?: string } }
   | { type: 'CHAT_SET_ERROR'; payload: string }
   | { type: 'CHAT_CLEAR_ERROR' }
   | { type: 'CHAT_RESET' };
@@ -100,16 +103,91 @@ const mergeSessions = (state: ChatState, sessions: ChatSession[]): ChatState => 
   };
 };
 
+const normalizeMessage = (message: ChatMessage): ChatMessage => {
+  const metadataClientMessageId = (() => {
+    const raw = message.metadata?.['clientMessageId'];
+    return typeof raw === 'string' ? raw : undefined;
+  })();
+
+  return {
+    ...message,
+    status: message.status ?? 'sent',
+    clientMessageId: message.clientMessageId ?? metadataClientMessageId,
+  };
+};
+
 const appendMessage = (existing: ChatMessage[], message: ChatMessage): ChatMessage[] => {
-  const hasExisting = existing.some(item => item.id === message.id);
+  const normalized = normalizeMessage(message);
+  const targetLocalId = normalized.clientMessageId ?? normalized.localId;
+
+  if (targetLocalId) {
+    let replaced = false;
+    const next = existing.map(item => {
+      if (item.localId === targetLocalId || item.id === targetLocalId) {
+        replaced = true;
+        return {
+          ...item,
+          ...normalized,
+          id: normalized.id,
+          localId: undefined,
+          isLocal: false,
+          status: normalized.status ?? 'sent',
+        };
+      }
+      return item;
+    });
+
+    if (replaced) {
+      return next.sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    }
+  }
+
+  const hasExisting = existing.some(item => item.id === normalized.id);
   if (hasExisting) {
     return existing
-      .map(item => (item.id === message.id ? { ...item, ...message } : item))
+      .map(item => (item.id === normalized.id ? { ...item, ...normalized } : item))
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
-  return [...existing, message].sort(
+  return [...existing, normalized].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
+};
+
+const replaceMessage = (
+  existing: ChatMessage[],
+  localId: string | undefined,
+  message: ChatMessage
+): ChatMessage[] => {
+  const normalized = normalizeMessage(message);
+  const targetLocalId = localId ?? normalized.clientMessageId ?? normalized.localId;
+
+  if (!targetLocalId) {
+    return appendMessage(existing, normalized);
+  }
+
+  let replaced = false;
+  const next = existing.map(item => {
+    if (item.id === targetLocalId || item.localId === targetLocalId) {
+      replaced = true;
+      return {
+        ...item,
+        ...normalized,
+        id: normalized.id,
+        localId: undefined,
+        isLocal: false,
+        status: normalized.status ?? 'sent',
+      };
+    }
+    return item;
+  });
+
+  if (!replaced) {
+    next.push({ ...normalized, status: normalized.status ?? 'sent' });
+  }
+
+  return next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 };
 
 export function chatReducer(state: ChatState, action: ChatReducerAction): ChatState {
@@ -215,6 +293,17 @@ export function chatReducer(state: ChatState, action: ChatReducerAction): ChatSt
         },
       };
     }
+    case 'CHAT_REPLACE_MESSAGE': {
+      const { sessionId, localId, message } = action.payload;
+      const existing = state.messages[sessionId] ?? [];
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [sessionId]: replaceMessage(existing, localId, message),
+        },
+      };
+    }
     case 'CHAT_SET_NEARBY_USERS':
       return {
         ...state,
@@ -237,10 +326,6 @@ export function chatReducer(state: ChatState, action: ChatReducerAction): ChatSt
           ...state.aiLoading,
           [action.payload.sessionId]: false,
         },
-        aiStreamText: {
-          ...state.aiStreamText,
-          [action.payload.sessionId]: '',
-        },
       };
     case 'CHAT_SET_AI_LOADING':
       return {
@@ -250,24 +335,14 @@ export function chatReducer(state: ChatState, action: ChatReducerAction): ChatSt
           [action.payload.sessionId]: action.payload.loading,
         },
       };
-    case 'CHAT_SET_AI_STREAM_TEXT':
+    case 'CHAT_SET_AI_NOTICE':
       return {
         ...state,
-        aiStreamText: {
-          ...state.aiStreamText,
-          [action.payload.sessionId]: action.payload.text,
+        aiSuggestionNotice: {
+          ...state.aiSuggestionNotice,
+          [action.payload.sessionId]: action.payload.notice,
         },
       };
-    case 'CHAT_APPEND_AI_STREAM_TEXT': {
-      const currentText = state.aiStreamText[action.payload.sessionId] ?? '';
-      return {
-        ...state,
-        aiStreamText: {
-          ...state.aiStreamText,
-          [action.payload.sessionId]: `${currentText}${action.payload.text}`,
-        },
-      };
-    }
     case 'CHAT_SET_ERROR':
       return {
         ...state,

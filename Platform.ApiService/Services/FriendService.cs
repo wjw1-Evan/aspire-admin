@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Platform.ApiService.Constants;
 
 namespace Platform.ApiService.Services;
@@ -18,10 +19,11 @@ public interface IFriendService
     Task<List<FriendSummaryResponse>> GetFriendsAsync();
 
     /// <summary>
-    /// 依据手机号搜索用户
+    /// 搜索可添加的用户（支持手机号、姓名或用户名）
     /// </summary>
-    /// <param name="phoneNumber">手机号</param>
-    Task<List<FriendSearchResult>> SearchAsync(string phoneNumber);
+    /// <param name="phoneNumber">手机号（可选）</param>
+    /// <param name="keyword">姓名或用户名关键字（可选）</param>
+    Task<List<FriendSearchResult>> SearchAsync(string? phoneNumber, string? keyword);
 
     /// <summary>
     /// 发送好友请求
@@ -136,21 +138,40 @@ public class FriendService : IFriendService
     }
 
     /// <inheritdoc />
-    public async Task<List<FriendSearchResult>> SearchAsync(string phoneNumber)
+    public async Task<List<FriendSearchResult>> SearchAsync(string? phoneNumber, string? keyword)
     {
-        phoneNumber = phoneNumber?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(phoneNumber))
+        phoneNumber = phoneNumber?.Trim();
+        keyword = keyword?.Trim();
+
+        if (string.IsNullOrWhiteSpace(phoneNumber) && string.IsNullOrWhiteSpace(keyword))
         {
-            throw new ArgumentException("手机号不能为空", nameof(phoneNumber));
+            throw new ArgumentException("手机号或关键字至少提供一个");
         }
 
         var currentUserId = _friendshipFactory.GetRequiredUserId();
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
 
-        var filter = _userFactory.CreateFilterBuilder()
-            .Equal(u => u.PhoneNumber, phoneNumber)
-            .Build();
+        var builder = _userFactory.CreateFilterBuilder();
 
-        var users = await _userFactory.FindAsync(filter);
+        if (!string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            builder.Equal(u => u.PhoneNumber, phoneNumber);
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var escaped = RegexEscape(keyword);
+            var nameRegex = Builders<AppUser>.Filter.Regex("name", new BsonRegularExpression(escaped, "i"));
+            var usernameRegex = Builders<AppUser>.Filter.Regex("username", new BsonRegularExpression(escaped, "i"));
+            builder.Custom(Builders<AppUser>.Filter.Or(nameRegex, usernameRegex));
+
+            if (!string.IsNullOrWhiteSpace(currentUser?.CurrentCompanyId))
+            {
+                builder.Equal(u => u.CurrentCompanyId, currentUser.CurrentCompanyId);
+            }
+        }
+
+        var users = await _userFactory.FindAsync(builder.Build());
 
         var friends = await GetFriendsAsync();
         var friendIdSet = friends.Select(f => f.UserId).ToHashSet();
@@ -480,6 +501,11 @@ public class FriendService : IFriendService
             CreatedAt = request.CreatedAt,
             ProcessedAt = request.ProcessedAt
         };
+    }
+
+    private static string RegexEscape(string input)
+    {
+        return Regex.Escape(input ?? string.Empty);
     }
 }
 

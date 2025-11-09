@@ -2,8 +2,16 @@ import { useCallback, useMemo, useRef } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
+import type { AiConversationMessage } from '@/types/ai';
 
 const MIN_REQUEST_INTERVAL_MS = 3000;
+
+type ConversationPayload =
+  | string[]
+  | {
+      lines: string[];
+      messages: AiConversationMessage[];
+    };
 
 export interface UseAiAssistantOptions {
   lastMessageId?: string;
@@ -13,15 +21,16 @@ export interface UseAiAssistantOptions {
 
 export const useAiAssistant = (sessionId: string) => {
   const { user } = useAuth();
-  const { aiSuggestions, aiLoading, aiStreamText, fetchAiSuggestions } = useChat();
+  const { aiSuggestions, aiLoading, aiSuggestionNotice, fetchAiSuggestions } = useChat();
   const lastRequestedAtRef = useRef<number>(0);
 
   const suggestions = useMemo(() => aiSuggestions[sessionId] ?? [], [aiSuggestions, sessionId]);
   const loading = useMemo(() => aiLoading[sessionId] ?? false, [aiLoading, sessionId]);
-  const streamingText = useMemo(() => aiStreamText[sessionId] ?? '', [aiStreamText, sessionId]);
+
+  const notice = useMemo(() => aiSuggestionNotice[sessionId], [aiSuggestionNotice, sessionId]);
 
   const requestSuggestions = useCallback(
-    async (conversationContext: string[], options: UseAiAssistantOptions = {}) => {
+    async (conversation: ConversationPayload, options: UseAiAssistantOptions = {}) => {
       if (!user?.id) {
         return;
       }
@@ -33,10 +42,23 @@ export const useAiAssistant = (sessionId: string) => {
 
       lastRequestedAtRef.current = now;
 
+      const lines = Array.isArray(conversation)
+        ? conversation
+        : conversation.lines;
+
+      const messages = Array.isArray(conversation)
+        ? []
+        : conversation.messages;
+
+      if (lines.length === 0 && messages.length === 0 && !options.lastMessageId) {
+        return;
+      }
+
       await fetchAiSuggestions(sessionId, {
         sessionId,
         userId: user.id,
-        conversationContext,
+        conversationContext: lines,
+        conversationMessages: messages,
         lastMessageId: options.lastMessageId,
         locale: options.locale,
       });
@@ -47,7 +69,7 @@ export const useAiAssistant = (sessionId: string) => {
   return {
     suggestions,
     loading,
-    streamingText,
+    notice,
     requestSuggestions,
   };
 };

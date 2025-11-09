@@ -1,13 +1,27 @@
 import dayjs from 'dayjs';
-import React, { useCallback, useMemo } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useEffect, useImperativeHandle } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
+import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import type { ChatMessage } from '@/types/chat';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/contexts/ThemeContext';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 import AttachmentPreview from './AttachmentPreview';
+
+export interface MessageListHandle {
+  scrollToBottom: (options?: { animated?: boolean; attempts?: number }) => void;
+}
 
 interface MessageListProps {
   readonly messages: ChatMessage[];
@@ -19,11 +33,13 @@ interface MessageListProps {
   readonly hasMore?: boolean;
   readonly participantNames?: Record<string, string>;
   readonly participants?: string[];
+  readonly onResendMessage?: (message: ChatMessage) => void;
+  readonly participantAvatars?: Record<string, string>;
 }
 
 const TIMESTAMP_INTERVAL = 5 * 60 * 1000;
 
-const MessageList: React.FC<MessageListProps> = ({
+const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
   messages,
   sessionId,
   currentUserId,
@@ -33,20 +49,132 @@ const MessageList: React.FC<MessageListProps> = ({
   hasMore,
   participantNames,
   participants,
-}) => {
-  const outgoingBackground = useThemeColor({ light: '#95ec69', dark: '#1f4d88' }, 'tint');
-  const incomingBackground = useThemeColor({ light: '#ffffff', dark: '#1f2937' }, 'card');
-  const bubbleShadow = useThemeColor({ light: '#00000018', dark: '#00000055' }, 'shadow');
-  const bubbleBorderColor = useThemeColor({ light: '#00000012', dark: '#ffffff22' }, 'border');
-  const nameColor = useThemeColor({ light: '#667085', dark: '#94a3b8' }, 'tabIconDefault');
-  const timestampBackground = useThemeColor({ light: '#d8d8d8cc', dark: '#1f2937cc' }, 'border');
-  const timestampColor = useThemeColor({ light: '#ffffff', dark: '#f8fafc' }, 'text');
-  const listBackground = useThemeColor({ light: '#f5f5f5', dark: '#0b1120' }, 'background');
-  const avatarBackground = useThemeColor({ light: '#d9d9d9', dark: '#1f2937' }, 'card');
-  const avatarBorderColor = useThemeColor({ light: '#cbd5f5', dark: '#1e2535' }, 'border');
+  onResendMessage,
+  participantAvatars,
+}, ref) => {
+  const { theme } = useTheme();
+  const outgoingBackground = theme.colors.messageOutgoing;
+  const incomingBackground = theme.colors.messageIncoming;
+  const nameColor = theme.colors.secondaryText;
+  const timestampBackground = theme.mode === 'light' ? 'rgba(0, 0, 0, 0.07)' : 'rgba(255, 255, 255, 0.12)';
+  const timestampColor = theme.mode === 'light' ? '#4A4A4A' : '#E9E9E9';
+  const listBackground = theme.colors.background;
+  const avatarBackground = theme.colors.accentMuted;
+  const avatarBorderColor = theme.colors.border;
+  const statusTextColor = theme.colors.tertiaryText;
+  const statusErrorColor = theme.colors.danger;
+  const statusSendingColor = theme.colors.accent;
   const isGroupChat = (participants?.length ?? 0) > 2;
 
-  const memoizedMessages = useMemo(() => messages, [messages]);
+  const listRef = useRef<FlatList<ChatMessage>>(null);
+  const lastMessageIdRef = useRef<string | undefined>(undefined);
+  const isManualRefreshRef = useRef(false);
+  const initialScrollDoneRef = useRef(false);
+  const nearBottomRef = useRef(true);
+
+  const orderedMessages = useMemo(
+    () => {
+      const cloned = [...messages];
+      return cloned.sort((a, b) => {
+        const diff = dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf();
+        if (diff !== 0) {
+          return diff;
+        }
+
+        const aId = a.id ?? '';
+        const bId = b.id ?? '';
+        return aId.localeCompare(bId);
+      });
+    },
+    [messages]
+  );
+
+  const scrollToBottom = useCallback(
+    ({ animated = true, attempts = 2, onComplete }: { animated?: boolean; attempts?: number; onComplete?: () => void } = {}) => {
+      let remaining = Math.max(0, attempts);
+
+      const attemptScroll = () => {
+        requestAnimationFrame(() => {
+          const list = listRef.current;
+          if (list) {
+            try {
+              list.scrollToEnd({ animated });
+            } catch (error) {
+              if (__DEV__) {
+                console.warn('scrollToEnd 失败，将重试', error);
+              }
+            }
+          }
+
+          if (remaining > 0) {
+            remaining -= 1;
+            setTimeout(attemptScroll, 32);
+          } else {
+            onComplete?.();
+          }
+        });
+      };
+
+      attemptScroll();
+    },
+    []
+  );
+
+  useEffect(() => {
+    initialScrollDoneRef.current = false;
+    lastMessageIdRef.current = undefined;
+    nearBottomRef.current = true;
+  }, [sessionId]);
+
+  useEffect(() => {
+    const latestMessage = orderedMessages[orderedMessages.length - 1];
+    if (!latestMessage) {
+      lastMessageIdRef.current = undefined;
+      return;
+    }
+
+    const isNewMessage = lastMessageIdRef.current !== latestMessage.id;
+    lastMessageIdRef.current = latestMessage.id;
+
+    if (isManualRefreshRef.current) {
+      isManualRefreshRef.current = false;
+      return;
+    }
+
+    if (isNewMessage && nearBottomRef.current) {
+      scrollToBottom();
+    }
+  }, [orderedMessages, scrollToBottom]);
+
+  useEffect(() => {
+    if (!initialScrollDoneRef.current && orderedMessages.length > 0 && !loading) {
+      scrollToBottom({
+        animated: false,
+        attempts: 3,
+        onComplete: () => {
+          initialScrollDoneRef.current = true;
+        },
+      });
+    }
+  }, [orderedMessages.length, loading, scrollToBottom]);
+
+  const handleContentSizeChange = useCallback(() => {
+    if (!initialScrollDoneRef.current && orderedMessages.length > 0 && !loading) {
+      scrollToBottom({
+        animated: false,
+        attempts: 2,
+        onComplete: () => {
+          initialScrollDoneRef.current = true;
+        },
+      });
+    }
+  }, [loading, orderedMessages.length, scrollToBottom]);
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    nearBottomRef.current = distanceFromBottom <= 120;
+  }, []);
 
   const renderAvatar = useCallback(
     (senderId: string, isSelf: boolean) => {
@@ -54,20 +182,25 @@ const MessageList: React.FC<MessageListProps> = ({
         ? '我'
         : participantNames?.[senderId] ?? senderId;
       const initial = displayName?.trim().charAt(0) ?? '?';
+      const avatarUri = participantAvatars?.[senderId];
 
       return (
-        <View style={[styles.avatar, { backgroundColor: avatarBackground, borderColor: avatarBorderColor }]}>
-          <ThemedText style={styles.avatarInitial}>{initial}</ThemedText>
+        <View style={[styles.avatar, { backgroundColor: avatarBackground, borderColor: avatarBorderColor }]}> 
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatarImage} cachePolicy="memory-disk" />
+          ) : (
+            <ThemedText style={styles.avatarInitial}>{initial}</ThemedText>
+          )}
         </View>
       );
     },
-    [avatarBackground, avatarBorderColor, participantNames]
+    [avatarBackground, avatarBorderColor, participantAvatars, participantNames]
   );
 
   const renderMessage = useCallback(
     ({ item, index }: { item: ChatMessage; index: number }) => {
       const isOutgoing = item.senderId === currentUserId;
-      const previous = index > 0 ? memoizedMessages[index - 1] : undefined;
+      const previous = index > 0 ? orderedMessages[index - 1] : undefined;
       const shouldShowTimestamp =
         index === 0 ||
         (previous &&
@@ -75,46 +208,80 @@ const MessageList: React.FC<MessageListProps> = ({
 
       const senderName = participantNames?.[item.senderId] ?? item.senderId;
       const formattedTimestamp = dayjs(item.createdAt).format('YYYY-MM-DD HH:mm');
+      const messageTime = dayjs(item.createdAt).format('HH:mm');
+
+      const handleResend = () => {
+        if (item.status === 'failed') {
+          onResendMessage?.(item);
+        }
+      };
 
       return (
         <>
-        {shouldShowTimestamp ? (
-          <View style={[styles.timestampContainer, styles.invertedElement]}>
+          {shouldShowTimestamp ? (
+            <View style={styles.timestampContainer}>
               <View style={[styles.timestampBadge, { backgroundColor: timestampBackground }]}>
-                <ThemedText style={[styles.timestampLabel, { color: timestampColor }]}>
+                <ThemedText type="footnote" style={[styles.timestampLabel, { color: timestampColor }]}>
                   {formattedTimestamp}
                 </ThemedText>
               </View>
             </View>
           ) : null}
-        <View
-          style={[
-            styles.messageRow,
-            isOutgoing ? styles.outgoingRow : styles.incomingRow,
-            styles.invertedElement,
-          ]}
-        >
+          <View
+            style={[
+              styles.messageRow,
+              isOutgoing ? styles.outgoingRow : styles.incomingRow,
+            ]}
+          >
             {!isOutgoing && renderAvatar(item.senderId, false)}
             <View style={styles.messageContent}>
               {!isOutgoing && isGroupChat ? (
-                <ThemedText style={[styles.senderName, { color: nameColor }]} numberOfLines={1}>
+                <ThemedText type="caption" style={[styles.senderName, { color: nameColor }]} numberOfLines={1}>
                   {senderName}
                 </ThemedText>
               ) : null}
-              <ThemedView
+              <View
                 style={[
                   styles.messageBubble,
                   {
                     backgroundColor: isOutgoing ? outgoingBackground : incomingBackground,
-                    shadowColor: bubbleShadow,
-                    borderColor: bubbleBorderColor,
                     alignSelf: isOutgoing ? 'flex-end' : 'flex-start',
+                    borderTopLeftRadius: isOutgoing ? 18 : 6,
+                    borderTopRightRadius: isOutgoing ? 6 : 18,
                   },
                 ]}
               >
                 {item.content ? <ThemedText style={styles.messageText}>{item.content}</ThemedText> : null}
                 {item.attachment ? <AttachmentPreview attachment={item.attachment} /> : null}
-              </ThemedView>
+              </View>
+              <View
+                style={[
+                  styles.statusRow,
+                  isOutgoing ? styles.statusRowOutgoing : styles.statusRowIncoming,
+                ]}
+              >
+                {isOutgoing ? (
+                  <>
+                    {item.status === 'sending' ? (
+                      <ActivityIndicator size="small" color={statusSendingColor} style={styles.statusIndicator} />
+                    ) : item.status === 'failed' ? (
+                      <TouchableOpacity
+                        style={styles.statusIndicator}
+                        onPress={handleResend}
+                        accessibilityRole="button"
+                        accessibilityLabel="重新发送"
+                      >
+                        <IconSymbol name="exclamationmark.circle.fill" size={16} color={statusErrorColor} />
+                      </TouchableOpacity>
+                    ) : (
+                      <ThemedText style={[styles.statusText, { color: statusTextColor }]}>已发送</ThemedText>
+                    )}
+                    <ThemedText style={[styles.statusText, { color: statusTextColor }]}>{messageTime}</ThemedText>
+                  </>
+                ) : (
+                  <ThemedText style={[styles.statusText, { color: statusTextColor }]}>{messageTime}</ThemedText>
+                )}
+              </View>
             </View>
             {isOutgoing ? renderAvatar(item.senderId, true) : null}
           </View>
@@ -122,18 +289,20 @@ const MessageList: React.FC<MessageListProps> = ({
       );
     },
     [
-      bubbleShadow,
-      bubbleBorderColor,
       currentUserId,
       incomingBackground,
       isGroupChat,
-      memoizedMessages,
+      orderedMessages,
       nameColor,
       outgoingBackground,
       participantNames,
       renderAvatar,
       timestampBackground,
       timestampColor,
+      statusTextColor,
+      statusErrorColor,
+      statusSendingColor,
+      onResendMessage,
     ]
   );
 
@@ -142,44 +311,67 @@ const MessageList: React.FC<MessageListProps> = ({
     [sessionId]
   );
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToBottom: (options) => {
+        scrollToBottom({
+          ...options,
+        });
+      },
+    }),
+    [scrollToBottom]
+  );
+
   return (
     <FlatList
-      data={memoizedMessages}
+      ref={listRef}
+      data={orderedMessages}
       keyExtractor={keyExtractor}
       renderItem={renderMessage}
       style={[styles.list, { backgroundColor: listBackground }]}
       contentContainerStyle={styles.contentContainer}
-      inverted
+      onContentSizeChange={handleContentSizeChange}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
       onEndReachedThreshold={0.2}
       onEndReached={() => {
         if (!loading && hasMore) {
           onLoadMore?.();
         }
       }}
-      ListFooterComponent={loading ? <ActivityIndicator style={styles.footerLoading} /> : null}
       refreshControl={
         onRefresh
           ? (
-              <RefreshControl refreshing={loading} onRefresh={onRefresh} />
+              <RefreshControl
+                refreshing={loading}
+                onRefresh={async () => {
+                  isManualRefreshRef.current = true;
+                  await onRefresh();
+                }}
+                tintColor={theme.colors.accent}
+                colors={[theme.colors.accent]}
+              />
             )
           : undefined
       }
     />
   );
-};
+});
 
 const styles = StyleSheet.create({
   list: {
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     paddingVertical: 12,
   },
   messageRow: {
-    marginBottom: 18,
+    marginBottom: 10,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
+    gap: 6,
   },
   outgoingRow: {
     justifyContent: 'flex-end',
@@ -189,31 +381,27 @@ const styles = StyleSheet.create({
   },
   messageContent: {
     flexShrink: 1,
-    maxWidth: '82%',
+    maxWidth: '78%',
+    gap: 4,
   },
   messageBubble: {
     maxWidth: '100%',
     borderRadius: 18,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    marginBottom: 2,
   },
   messageText: {
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
+    color: '#111111',
   },
   footerLoading: {
     paddingVertical: 16,
   },
   timestampContainer: {
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  invertedElement: {
-    transform: [{ scaleY: -1 }],
+    marginBottom: 8,
   },
   timestampBadge: {
     paddingHorizontal: 12,
@@ -222,6 +410,24 @@ const styles = StyleSheet.create({
   },
   timestampLabel: {
     fontSize: 12,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 4,
+  },
+  statusRowOutgoing: {
+    justifyContent: 'flex-end',
+  },
+  statusRowIncoming: {
+    justifyContent: 'flex-start',
+  },
+  statusText: {
+    fontSize: 11,
+  },
+  statusIndicator: {
+    marginRight: 2,
   },
   avatar: {
     width: 36,
@@ -232,15 +438,23 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+  },
   avatarInitial: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#333333',
   },
   senderName: {
     fontSize: 12,
     marginBottom: 4,
   },
 });
+
+MessageList.displayName = 'MessageList';
 
 export default MessageList;
 

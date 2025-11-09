@@ -1,9 +1,11 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolViewProps } from 'expo-symbols';
+import { SymbolView, SymbolViewProps } from 'expo-symbols';
 import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
+import { OpaqueColorValue, Platform, type StyleProp, type TextStyle } from 'react-native';
+
+const DEFAULT_FALLBACK_ICON: ComponentProps<typeof MaterialIcons>['name'] = 'help';
 
 type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
 export type IconSymbolName = keyof typeof MAPPING;
@@ -27,15 +29,17 @@ const MAPPING = {
   'location.fill': 'location-on',
   'mappin.and.ellipse': 'place',
   'calendar.fill': 'event',
-  'bubble.left.and.text.bubble.fill': 'chat',
+  'bubble.left.and.text.bubble.fill': 'chat-bubble',
   'bubble.left.and.bubble.right.fill': 'forum',
   'person.2.fill': 'group',
   'safari.fill': 'explore',
   'sparkles': 'auto-awesome',
+  'lightbulb': 'lightbulb-outline',
   'ellipsis': 'more-horiz',
   'plus': 'add',
   'face.smiling': 'insert-emoticon',
   'waveform': 'keyboard-voice',
+  'exclamationmark.circle.fill': 'error',
   'sun.max.fill': 'light-mode',
   'moon.fill': 'dark-mode',
   'bell.fill': 'notifications',
@@ -54,6 +58,17 @@ const MAPPING = {
   'eye.slash.fill': 'visibility-off',
 } as unknown as IconMapping;
 
+function resolveMaterialIcon(name: IconSymbolName): ComponentProps<typeof MaterialIcons>['name'] {
+  const materialName = MAPPING[name];
+  if (!materialName) {
+    if (__DEV__) {
+      console.warn(`[IconSymbol] 未找到图标映射: ${name}，已使用默认图标`);
+    }
+    return DEFAULT_FALLBACK_ICON;
+  }
+  return materialName;
+}
+
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
  * This ensures a consistent look across platforms, and optimal resource usage.
@@ -70,5 +85,16 @@ export function IconSymbol({
   readonly color: string | OpaqueColorValue;
   readonly style?: StyleProp<TextStyle>;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  if (Platform.OS === 'ios') {
+    return (
+      <SymbolView
+        name={name}
+        size={size}
+        style={style}
+        tintColor={typeof color === 'string' ? color : undefined}
+      />
+    );
+  }
+
+  return <MaterialIcons color={color} size={size} name={resolveMaterialIcon(name)} style={style} />;
 }

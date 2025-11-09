@@ -177,6 +177,13 @@ public class ChatSession : MultiTenantEntity, IEntity, ISoftDeletable, ITimestam
     public Dictionary<string, string> ParticipantNames { get; set; } = new();
 
     /// <summary>
+    /// 参与人头像映射（可选）。
+    /// </summary>
+    [BsonElement("participantAvatars")]
+    public Dictionary<string, string>? ParticipantAvatars { get; set; }
+        = new();
+
+    /// <summary>
     /// 最后一条消息内容摘要
     /// </summary>
     [BsonElement("lastMessageExcerpt")]
@@ -287,6 +294,13 @@ public class ChatMessage : MultiTenantEntity, IEntity, ISoftDeletable, ITimestam
     public bool IsRecalled { get; set; }
         = false;
 
+    /// <summary>
+    /// 客户端生成的消息标识，用于去重和状态同步。
+    /// </summary>
+    [BsonElement("clientMessageId")]
+    public string? ClientMessageId { get; set; }
+        = default;
+
     // 时间戳和软删除字段继承自 MultiTenantEntity，无需重复定义
 }
 
@@ -366,6 +380,24 @@ public class SendChatMessageRequest
     /// </summary>
     public string? RecipientId { get; set; }
         = default;
+
+    /// <summary>
+    /// 客户端生成的消息标识。
+    /// </summary>
+    public string? ClientMessageId { get; set; }
+        = default;
+
+    /// <summary>
+    /// 附加元数据（可选）。
+    /// </summary>
+    public Dictionary<string, object>? Metadata { get; set; }
+        = new();
+
+    /// <summary>
+    /// 指示是否由客户端发起助手流式回复。
+    /// </summary>
+    public bool AssistantStreaming { get; set; }
+        = false;
 }
 
 /// <summary>

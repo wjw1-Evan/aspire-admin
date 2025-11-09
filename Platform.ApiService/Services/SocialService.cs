@@ -74,37 +74,27 @@ public class SocialService : ISocialService
             Builders<UserLocationBeacon>.Filter.Eq(beacon => beacon.UserId, currentUserId),
             Builders<UserLocationBeacon>.Filter.Eq(beacon => beacon.CompanyId, companyId));
 
-        var existing = await _beaconFactory.FindAsync(filter, limit: 1);
-        if (existing.Count > 0)
-        {
-            var update = _beaconFactory.CreateUpdateBuilder()
-                .Set(beacon => beacon.Latitude, request.Latitude)
-                .Set(beacon => beacon.Longitude, request.Longitude)
-                .Set(beacon => beacon.Accuracy, request.Accuracy)
-                .Set(beacon => beacon.Altitude, request.Altitude)
-                .Set(beacon => beacon.Heading, request.Heading)
-                .Set(beacon => beacon.Speed, request.Speed)
-                .Set(beacon => beacon.LastSeenAt, now)
-                .Build();
+        var update = Builders<UserLocationBeacon>.Update
+            .Set(beacon => beacon.Latitude, request.Latitude)
+            .Set(beacon => beacon.Longitude, request.Longitude)
+            .Set(beacon => beacon.Accuracy, request.Accuracy)
+            .Set(beacon => beacon.Altitude, request.Altitude)
+            .Set(beacon => beacon.Heading, request.Heading)
+            .Set(beacon => beacon.Speed, request.Speed)
+            .Set(beacon => beacon.LastSeenAt, now)
+            .SetOnInsert(beacon => beacon.UserId, currentUserId)
+            .SetOnInsert(beacon => beacon.CompanyId, companyId)
+            .SetOnInsert(beacon => beacon.CreatedAt, now)
+            .SetOnInsert(beacon => beacon.UpdatedAt, now)
+            .SetOnInsert(beacon => beacon.IsDeleted, false);
 
-            await _beaconFactory.FindOneAndUpdateAsync(filter, update);
-            return;
-        }
-
-        var beacon = new UserLocationBeacon
+        var options = new FindOneAndUpdateOptions<UserLocationBeacon>
         {
-            UserId = currentUserId,
-            CompanyId = companyId,
-            Latitude = request.Latitude,
-            Longitude = request.Longitude,
-            Accuracy = request.Accuracy,
-            Altitude = request.Altitude,
-            Heading = request.Heading,
-            Speed = request.Speed,
-            LastSeenAt = now
+            IsUpsert = true,
+            ReturnDocument = ReturnDocument.After
         };
 
-        await _beaconFactory.CreateAsync(beacon);
+        await _beaconFactory.FindOneAndUpdateAsync(filter, update, options);
     }
 
     /// <inheritdoc />

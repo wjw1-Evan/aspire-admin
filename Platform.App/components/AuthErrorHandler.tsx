@@ -1,10 +1,11 @@
 // 重新设计的认证错误处理组件
 
 import React, { ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { usePathname } from 'expo-router';
 import { useAuthError } from '@/hooks/useAuthError';
 import { AuthErrorType } from '@/types/unified-api';
+import NetInfo from '@react-native-community/netinfo';
 
 interface AuthErrorHandlerProps {
   children: ReactNode;
@@ -181,18 +182,38 @@ export function ErrorBanner({ error, onDismiss, onRetry }: Readonly<ErrorBannerP
 // 网络状态指示器
 export function NetworkStatusIndicator() {
   const { error, getErrorType } = useAuthError();
-  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+  const [isOnline, setIsOnline] = React.useState(getInitialOnlineState);
 
   React.useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    if (Platform.OS === 'web') {
+      if (typeof window === 'undefined') {
+        return undefined;
+      }
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+      const handleOnline = () => setIsOnline(true);
+      const handleOffline = () => setIsOnline(false);
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const online = Boolean(state.isConnected && state.isInternetReachable !== false);
+      setIsOnline(online);
+    });
+
+    NetInfo.fetch().then((state) => {
+      const online = Boolean(state.isConnected && state.isInternetReachable !== false);
+      setIsOnline(online);
+    });
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      unsubscribe();
     };
   }, []);
 
@@ -209,6 +230,17 @@ export function NetworkStatusIndicator() {
       </Text>
     </View>
   );
+}
+
+function getInitialOnlineState(): boolean {
+  if (Platform.OS === 'web') {
+    if (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') {
+      return navigator.onLine;
+    }
+    return true;
+  }
+
+  return true;
 }
 
 const styles = StyleSheet.create({

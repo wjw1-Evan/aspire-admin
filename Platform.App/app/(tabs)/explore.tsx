@@ -1,12 +1,15 @@
 import { ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Href } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol, type IconSymbolName } from '@/components/ui/icon-symbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { WeChatCard } from '@/components/ui/wx-card';
+import { WeChatListItem } from '@/components/ui/wx-list-item';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ExploreTile {
   readonly title: string;
@@ -38,76 +41,66 @@ const tiles: ExploreTile[] = [
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const heroBackground = useThemeColor({ light: '#e0f2ff', dark: '#0f172a' }, 'card');
-  const heroText = useThemeColor({ light: '#0f172a', dark: '#e2e8f0' }, 'text');
-  const tileBackground = useThemeColor({ light: '#f8fafc', dark: '#1f2937' }, 'card');
-  const accent = useThemeColor({ light: '#0ea5e9', dark: '#38bdf8' }, 'tint');
-  const backgroundColor = useThemeColor({}, 'background');
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
 
   return (
-    <ScrollView style={[styles.scrollView, { backgroundColor }]} contentContainerStyle={styles.container}>
-      <ThemedView style={[styles.hero, { backgroundColor: heroBackground }]}>
-        <IconSymbol name="safari.fill" size={64} color={accent} />
-        <ThemedText type="title" style={[styles.heroTitle, { color: heroText }]}>发现更多精彩</ThemedText>
-        <ThemedText style={[styles.heroSubtitle, { color: heroText, opacity: 0.75 }]}>
-          打开社交通道，快速拓展人脉、寻找灵感，让工作与交流更高效。
-        </ThemedText>
-      </ThemedView>
+    <ThemedView style={[styles.container, { backgroundColor: theme.colors.background, paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.content, { gap: theme.spacing.lg }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <WeChatCard
+          padding="lg"
+          bordered={false}
+          style={{
+            backgroundColor: theme.colors.accentMuted,
+            gap: theme.spacing.sm,
+          }}
+        >
+          <IconSymbol name="safari.fill" size={56} color={theme.colors.accent} />
+          <ThemedText type="display" style={styles.heroTitle}>发现更多精彩</ThemedText>
+          <ThemedText type="caption" style={[styles.heroSubtitle, { color: theme.colors.secondaryText }]}> 
+            打开社交通道，快速拓展人脉、寻找灵感，让工作与交流更高效。
+          </ThemedText>
+        </WeChatCard>
 
-      {tiles.map(tile => (
-        <ThemedView key={tile.title} style={[styles.tile, { backgroundColor: tileBackground }]}>
-          <IconSymbol name={tile.icon} size={28} color={accent} />
-          <ThemedText type="subtitle" style={styles.tileTitle}>
-            {tile.title}
-          </ThemedText>
-          <ThemedText style={styles.tileDescription}>{tile.description}</ThemedText>
-          <ThemedText style={[styles.tileAction, { color: accent }]} onPress={() => router.push(tile.route)}>
-            立即前往 →
-          </ThemedText>
-        </ThemedView>
-      ))}
-    </ScrollView>
+        <WeChatCard style={styles.listCard}>
+          {tiles.map(tile => (
+            <WeChatListItem
+              key={tile.title}
+              title={tile.title}
+              description={tile.description}
+              icon={tile.icon}
+              onPress={() => router.push(tile.route)}
+            />
+          ))}
+        </WeChatCard>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
-  container: {
-    padding: 16,
-    gap: 16,
-  },
-  hero: {
-    padding: 24,
-    borderRadius: 20,
-    alignItems: 'center',
-    gap: 12,
+  content: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   heroTitle: {
-    fontSize: 24,
-    fontWeight: '700',
+    textAlign: 'left',
   },
   heroSubtitle: {
-    fontSize: 14,
     lineHeight: 20,
-    textAlign: 'center',
   },
-  tile: {
-    borderRadius: 16,
-    padding: 20,
-    gap: 8,
-  },
-  tileTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  tileDescription: {
-    fontSize: 14,
-    opacity: 0.75,
-  },
-  tileAction: {
-    marginTop: 12,
-    fontSize: 14,
+  listCard: {
+    paddingVertical: 0,
+    overflow: 'hidden',
   },
 });

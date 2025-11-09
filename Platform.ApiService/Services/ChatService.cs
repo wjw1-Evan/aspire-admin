@@ -1,16 +1,21 @@
 using Microsoft.AspNetCore.SignalR;
-using MongoDB.Bson;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
-using Platform.ApiService.Models;
-using Platform.ApiService.Hubs;
-using Platform.ServiceDefaults.Services;
-using System.Security.Cryptography;
-using Platform.ApiService.Constants;
 using OpenAI;
 using OpenAI.Chat;
+using Platform.ApiService.Constants;
+using Platform.ApiService.Hubs;
+using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 using System.ClientModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 using ChatMessage = Platform.ApiService.Models.ChatMessage;
 using OpenAIChatMessage = OpenAI.Chat.ChatMessage;
 
@@ -22,6 +27,7 @@ namespace Platform.ApiService.Services;
 public class ChatService : IChatService
 {
     private const int MaxPageSize = 200;
+    private const int AssistantContextMessageLimit = 24;
 
     private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
     private readonly IDatabaseOperationFactory<ChatMessage> _messageFactory;
@@ -83,7 +89,9 @@ public class ChatService : IChatService
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Min(Math.Max(request.PageSize, 1), MaxPageSize);
 
-        return await _sessionFactory.FindPagedAsync(filter, sort, page, pageSize);
+        var (sessions, total) = await _sessionFactory.FindPagedAsync(filter, sort, page, pageSize);
+        await EnrichParticipantMetadataAsync(sessions);
+        return (sessions, total);
     }
 
     /// <inheritdoc />
@@ -197,6 +205,18 @@ public class ChatService : IChatService
                 UploadedAt = attachment.CreatedAt
             };
 
+        var metadata = NormalizeMetadata(request.Metadata);
+
+        if (request.AssistantStreaming)
+        {
+            metadata["assistantStreaming"] = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ClientMessageId))
+        {
+            metadata["clientMessageId"] = request.ClientMessageId!;
+        }
+
         var message = new ChatMessage
         {
             SessionId = session.Id,
@@ -209,7 +229,8 @@ public class ChatService : IChatService
             Attachment = attachmentInfo,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            Metadata = new Dictionary<string, object>()
+            Metadata = metadata,
+            ClientMessageId = request.ClientMessageId
         };
 
         if (!string.IsNullOrWhiteSpace(request.RecipientId) && !session.Participants.Contains(request.RecipientId))
@@ -534,6 +555,16 @@ public class ChatService : IChatService
                 return user?.Name ?? user?.Username ?? id;
             });
 
+        var participantAvatars = participants
+            .Select(id =>
+            {
+                var user = participantUsers.FirstOrDefault(u => u.Id == id);
+                var avatarUrl = user?.Avatar;
+                return (id, avatarUrl);
+            })
+            .Where(tuple => !string.IsNullOrWhiteSpace(tuple.avatarUrl))
+            .ToDictionary(tuple => tuple.id, tuple => tuple.avatarUrl!);
+
         var unreadCounts = participants.ToDictionary(id => id, _ => 0);
 
         var session = new ChatSession
@@ -541,6 +572,7 @@ public class ChatService : IChatService
             CompanyId = companyId,
             Participants = participants.ToList(),
             ParticipantNames = participantNames,
+            ParticipantAvatars = participantAvatars,
             UnreadCounts = unreadCounts,
             TopicTags = new List<string> { "direct" }
         };
@@ -722,22 +754,310 @@ public class ChatService : IChatService
             return;
         }
 
-        string? replyContent;
+        if (ShouldSkipAutomaticAssistantReply(triggerMessage))
+        {
+            return;
+        }
+
+        string replyContent;
         if (triggerMessage.Type == ChatMessageType.Text)
         {
-            replyContent = await GenerateAssistantReplyAsync(
-                triggerMessage.SenderId,
-                session.Id,
-                triggerMessage.Content ?? string.Empty);
+            var generated = await GenerateAssistantReplyAsync(session, triggerMessage, null);
+
+            if (string.IsNullOrWhiteSpace(generated))
+            {
+                return;
+            }
+
+            replyContent = generated.Trim();
         }
         else
         {
             replyContent = "我已收到您的附件，目前仅支持文本对话，欢迎告诉我想要讨论的内容。";
         }
+
         if (string.IsNullOrWhiteSpace(replyContent))
         {
             return;
         }
+
+        await CreateAssistantMessageAsync(
+            session,
+            replyContent,
+            triggerMessage.SenderId,
+            clientMessageId: null,
+            CancellationToken.None);
+    }
+
+    private static bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage)
+    {
+        if (triggerMessage.Metadata == null)
+        {
+            return false;
+        }
+
+        if (!triggerMessage.Metadata.TryGetValue("assistantStreaming", out var value))
+        {
+            return false;
+        }
+
+        return value switch
+        {
+            bool boolValue => boolValue,
+            JsonElement json when json.ValueKind == JsonValueKind.True => true,
+            _ => false
+        };
+    }
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<AssistantReplyStreamChunk> StreamAssistantReplyAsync(
+        AssistantReplyStreamRequest request,
+        string currentUserId,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.SessionId))
+        {
+            throw new ArgumentException("会话标识不能为空", nameof(request.SessionId));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ClientMessageId))
+        {
+            throw new ArgumentException("客户端消息标识不能为空", nameof(request.ClientMessageId));
+        }
+
+        ChatSession? session = null;
+        AssistantReplyStreamChunk? errorChunk = null;
+        try
+        {
+            session = await EnsureSessionAccessibleAsync(request.SessionId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "校验助手回复请求会话失败：{SessionId}", request.SessionId);
+            errorChunk = new AssistantReplyStreamChunk
+            {
+                Type = "error",
+                Error = "无法访问指定的会话，请稍后重试。"
+            };
+        }
+
+        if (errorChunk != null)
+        {
+            yield return errorChunk;
+            yield break;
+        }
+
+
+        if (session == null || !session.Participants.Contains(AiAssistantConstants.AssistantUserId))
+        {
+            yield return new AssistantReplyStreamChunk
+            {
+                Type = "error",
+                Error = "该会话未启用小科助手。"
+            };
+            yield break;
+        }
+
+        var resolvedSession = session;
+        if (resolvedSession == null)
+        {
+            yield return new AssistantReplyStreamChunk
+            {
+                Type = "error",
+                Error = "会话信息缺失，请稍后重试。"
+            };
+            yield break;
+        }
+
+        ChatMessage? triggerMessage = null;
+        errorChunk = null;
+        try
+        {
+            triggerMessage = await ResolveTriggerMessageAsync(session, request, currentUserId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "解析助手触发消息失败：{SessionId}", request.SessionId);
+            errorChunk = new AssistantReplyStreamChunk
+            {
+                Type = "error",
+                Error = ex is UnauthorizedAccessException
+                    ? "仅允许对自己发送的消息请求小科回复。"
+                    : "未能定位触发消息，请稍后重试。"
+            };
+        }
+
+        if (errorChunk != null)
+        {
+            yield return errorChunk;
+            yield break;
+        }
+
+        if (triggerMessage == null)
+        {
+            yield return new AssistantReplyStreamChunk
+            {
+                Type = "error",
+                Error = "未找到触发消息，请稍后重试。"
+            };
+            yield break;
+        }
+
+        string replyContent;
+        if (triggerMessage.Type == ChatMessageType.Text)
+        {
+            replyContent = await GenerateAssistantReplyAsync(
+                resolvedSession,
+                triggerMessage,
+                request.Locale,
+                cancellationToken) ?? string.Empty;
+        }
+        else
+        {
+            replyContent = "我已收到您的附件，目前仅支持文本对话，欢迎告诉我想要讨论的内容。";
+        }
+
+        if (string.IsNullOrWhiteSpace(replyContent))
+        {
+            yield return new AssistantReplyStreamChunk
+            {
+                Type = "error",
+                Error = "小科暂时没有合适的回复，请稍后再试。"
+            };
+            yield break;
+        }
+
+        var trimmedReply = replyContent.Trim();
+        var aggregated = new StringBuilder();
+
+        foreach (var segment in ChunkAssistantReply(trimmedReply))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            aggregated.Append(segment);
+            yield return new AssistantReplyStreamChunk
+            {
+                Type = "delta",
+                Text = segment,
+                Timestamp = DateTime.UtcNow
+            };
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(35), cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+        }
+
+        var finalContent = aggregated.ToString().Trim();
+
+        ChatMessage? assistantMessage = null;
+        errorChunk = null;
+        try
+        {
+            assistantMessage = await CreateAssistantMessageAsync(
+                resolvedSession,
+                finalContent,
+                triggerMessage.SenderId,
+                request.ClientMessageId,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "持久化助手回复失败：Session={SessionId}, Trigger={TriggerMessageId}",
+                session.Id,
+                triggerMessage.Id);
+
+            errorChunk = new AssistantReplyStreamChunk
+            {
+                Type = "error",
+                Error = "助手回复保存失败，请稍后重试。"
+            };
+        }
+
+        if (errorChunk != null)
+        {
+            yield return errorChunk;
+            yield break;
+        }
+
+        if (assistantMessage == null)
+        {
+            yield return new AssistantReplyStreamChunk
+            {
+                Type = "error",
+                Error = "助手回复生成失败，请稍后重试。"
+            };
+            yield break;
+        }
+
+        yield return new AssistantReplyStreamChunk
+        {
+            Type = "complete",
+            Message = assistantMessage,
+            Timestamp = DateTime.UtcNow
+        };
+    }
+
+    private async Task<ChatMessage?> ResolveTriggerMessageAsync(
+        ChatSession session,
+        AssistantReplyStreamRequest request,
+        string currentUserId)
+    {
+        ChatMessage? triggerMessage = null;
+
+        if (!string.IsNullOrWhiteSpace(request.TriggerMessageId))
+        {
+            triggerMessage = await _messageFactory.GetByIdAsync(request.TriggerMessageId);
+        }
+
+        if (triggerMessage == null && !string.IsNullOrWhiteSpace(request.TriggerClientMessageId))
+        {
+            var filter = _messageFactory.CreateFilterBuilder()
+                .Equal(message => message.SessionId, session.Id)
+                .Equal(message => message.ClientMessageId, request.TriggerClientMessageId!)
+                .Build();
+
+            var matches = await _messageFactory.FindAsync(filter, limit: 1);
+            triggerMessage = matches.FirstOrDefault();
+        }
+
+        if (triggerMessage == null)
+        {
+            return null;
+        }
+
+        if (!string.Equals(triggerMessage.SessionId, session.Id, StringComparison.Ordinal))
+        {
+            throw new UnauthorizedAccessException("消息不属于当前会话。");
+        }
+
+        if (!string.Equals(triggerMessage.SenderId, currentUserId, StringComparison.Ordinal))
+        {
+            throw new UnauthorizedAccessException("仅允许对自己发送的消息请求小科回复。");
+        }
+
+        return triggerMessage;
+    }
+
+    private async Task<ChatMessage> CreateAssistantMessageAsync(
+        ChatSession session,
+        string content,
+        string recipientUserId,
+        string? clientMessageId,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
 
         var assistantMessage = new ChatMessage
         {
@@ -745,31 +1065,72 @@ public class ChatService : IChatService
             CompanyId = session.CompanyId,
             SenderId = AiAssistantConstants.AssistantUserId,
             SenderName = AiAssistantConstants.AssistantDisplayName,
-            RecipientId = triggerMessage.SenderId,
+            RecipientId = recipientUserId,
             Type = ChatMessageType.Text,
-            Content = replyContent!,
+            Content = content,
             Metadata = new Dictionary<string, object>
             {
                 ["isAssistant"] = true
             },
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            ClientMessageId = clientMessageId
         };
+
+        if (!string.IsNullOrWhiteSpace(clientMessageId))
+        {
+            assistantMessage.Metadata["clientMessageId"] = clientMessageId!;
+        }
 
         assistantMessage = await _messageFactory.CreateAsync(assistantMessage);
 
         var refreshedSession = await _sessionFactory.GetByIdAsync(session.Id) ?? session;
         await UpdateSessionAfterMessageAsync(refreshedSession, assistantMessage, AiAssistantConstants.AssistantUserId);
         await NotifyMessageCreatedAsync(refreshedSession, assistantMessage);
+
+        return assistantMessage;
     }
 
-    private async Task<string?> GenerateAssistantReplyAsync(string userId, string sessionId, string message)
+    private static IEnumerable<string> ChunkAssistantReply(string content)
     {
-        if (string.IsNullOrWhiteSpace(message))
+        if (string.IsNullOrEmpty(content))
         {
-            return null;
+            yield break;
         }
 
+        var buffer = new StringBuilder();
+        const int minChunkLength = 12;
+        const int maxChunkLength = 48;
+
+        foreach (var ch in content)
+        {
+            buffer.Append(ch);
+
+            if (buffer.Length >= maxChunkLength ||
+                (buffer.Length >= minChunkLength && IsSentenceBoundary(ch)))
+            {
+                yield return buffer.ToString();
+                buffer.Clear();
+            }
+        }
+
+        if (buffer.Length > 0)
+        {
+            yield return buffer.ToString();
+        }
+    }
+
+    private static bool IsSentenceBoundary(char ch)
+    {
+        return ch is '。' or '！' or '？' or '!' or '?' or '.' or '；' or ';' or '…' or '\n' or '\r';
+    }
+
+    private async Task<string?> GenerateAssistantReplyAsync(
+        ChatSession session,
+        ChatMessage triggerMessage,
+        string? locale,
+        CancellationToken cancellationToken = default)
+    {
         var model = string.IsNullOrWhiteSpace(_aiOptions.Model)
             ? "gpt-4o-mini"
             : _aiOptions.Model;
@@ -785,19 +1146,36 @@ public class ChatService : IChatService
             return null;
         }
 
+        var effectiveLocale = string.IsNullOrWhiteSpace(locale) ? "zh-CN" : locale!;
+
         var systemPrompt = string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
             ? "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
             : _aiOptions.SystemPrompt;
 
+        var conversationMessages = await BuildAssistantConversationMessagesAsync(
+            session,
+            triggerMessage,
+            cancellationToken);
+
+        if (conversationMessages.Count == 0)
+        {
+            return null;
+        }
+
+        var instructionBuilder = new StringBuilder();
+        instructionBuilder.AppendLine(systemPrompt.Trim());
+        instructionBuilder.AppendLine($"当前用户语言标识：{effectiveLocale}");
+        instructionBuilder.Append("请结合完整的历史聊天记录，使用自然、真诚且有温度的语气回复对方。");
+
         var messages = new List<OpenAIChatMessage>
         {
-            new SystemChatMessage(systemPrompt),
-            new UserChatMessage(message)
+            new SystemChatMessage(instructionBuilder.ToString())
         };
+        messages.AddRange(conversationMessages);
 
         var completionOptions = new ChatCompletionOptions
         {
-            EndUserId = userId
+            EndUserId = triggerMessage.SenderId
         };
 
         if (_aiOptions.MaxTokens > 0)
@@ -830,7 +1208,7 @@ public class ChatService : IChatService
                 ex,
                 "OpenAI Chat 完成请求失败，模型：{Model}，会话：{SessionId}",
                 model,
-                sessionId);
+                session.Id);
             return null;
         }
         catch (Exception ex)
@@ -839,8 +1217,266 @@ public class ChatService : IChatService
                 ex,
                 "调用 OpenAI Chat 完成接口时发生未预期的异常，模型：{Model}，会话：{SessionId}",
                 model,
-                sessionId);
+                session.Id);
             return null;
+        }
+    }
+
+    private async Task<List<OpenAIChatMessage>> BuildAssistantConversationMessagesAsync(
+        ChatSession session,
+        ChatMessage triggerMessage,
+        CancellationToken cancellationToken)
+    {
+        var conversation = new List<OpenAIChatMessage>();
+
+        try
+        {
+            var filter = _messageFactory.CreateFilterBuilder()
+                .Equal(message => message.SessionId, session.Id)
+                .Build();
+
+            var sort = _messageFactory.CreateSortBuilder()
+                .Descending(message => message.CreatedAt)
+                .Build();
+
+            var history = await _messageFactory.FindAsync(filter, sort, AssistantContextMessageLimit);
+            history.Reverse();
+
+            foreach (var message in history)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (message.IsDeleted || message.IsRecalled)
+                {
+                    continue;
+                }
+
+                var normalized = NormalizeAssistantMessageContent(message);
+                if (string.IsNullOrWhiteSpace(normalized))
+                {
+                    continue;
+                }
+
+                if (string.Equals(message.SenderId, AiAssistantConstants.AssistantUserId, StringComparison.Ordinal))
+                {
+                    conversation.Add(new AssistantChatMessage(normalized));
+                    continue;
+                }
+
+                var content = normalized;
+                if (!string.Equals(message.SenderId, triggerMessage.SenderId, StringComparison.Ordinal))
+                {
+                    var displayName = GetParticipantDisplayName(session, message);
+                    content = $"{displayName}：{normalized}";
+                }
+
+                conversation.Add(new UserChatMessage(content));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "构建会话 {SessionId} 的助手上下文失败", session.Id);
+        }
+
+        if (conversation.Count == 0)
+        {
+            var fallbackContent = NormalizeAssistantMessageContent(triggerMessage);
+            if (!string.IsNullOrWhiteSpace(fallbackContent))
+            {
+                conversation.Add(new UserChatMessage(fallbackContent));
+            }
+        }
+
+        return conversation;
+    }
+
+    private static string GetParticipantDisplayName(ChatSession session, ChatMessage message)
+    {
+        if (string.Equals(message.SenderId, AiAssistantConstants.AssistantUserId, StringComparison.Ordinal))
+        {
+            return AiAssistantConstants.AssistantDisplayName;
+        }
+
+        if (session.ParticipantNames != null &&
+            session.ParticipantNames.TryGetValue(message.SenderId, out var namedParticipant) &&
+            !string.IsNullOrWhiteSpace(namedParticipant))
+        {
+            return namedParticipant;
+        }
+
+        if (!string.IsNullOrWhiteSpace(message.SenderName))
+        {
+            return message.SenderName;
+        }
+
+        return "对方";
+    }
+
+    private static string? NormalizeAssistantMessageContent(ChatMessage message)
+    {
+        var text = message.Content?.Trim();
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            return text;
+        }
+
+        if (message.Attachment != null)
+        {
+            var mimeType = message.Attachment.MimeType ?? string.Empty;
+            if (mimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return "[图片]";
+            }
+
+            if (!string.IsNullOrWhiteSpace(message.Attachment.Name))
+            {
+                return $"[附件: {message.Attachment.Name}]";
+            }
+
+            return "[附件]";
+        }
+
+        return null;
+    }
+
+    private static Dictionary<string, object> NormalizeMetadata(Dictionary<string, object>? metadata)
+    {
+        if (metadata == null || metadata.Count == 0)
+        {
+            return new Dictionary<string, object>();
+        }
+
+        var normalized = new Dictionary<string, object>();
+        foreach (var kvp in metadata)
+        {
+            var value = NormalizeMetadataValue(kvp.Value);
+            if (value is null)
+            {
+                continue;
+            }
+
+            normalized[kvp.Key] = value;
+        }
+
+        return normalized;
+    }
+
+    private static object? NormalizeMetadataValue(object? value)
+    {
+        if (value is JsonElement element)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.String:
+                    return element.GetString() ?? string.Empty;
+                case JsonValueKind.Number:
+                    if (element.TryGetInt64(out var longValue))
+                    {
+                        return longValue;
+                    }
+
+                    if (element.TryGetDouble(out var doubleValue))
+                    {
+                        return doubleValue;
+                    }
+
+                    return element.GetDouble();
+                case JsonValueKind.True:
+                    return true;
+                case JsonValueKind.False:
+                    return false;
+                case JsonValueKind.Array:
+                {
+                    var list = new List<object>();
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        var normalizedItem = NormalizeMetadataValue(item);
+                        if (normalizedItem is not null)
+                        {
+                            list.Add(normalizedItem);
+                        }
+                    }
+
+                    return list;
+                }
+                case JsonValueKind.Object:
+                {
+                    var dictionary = new Dictionary<string, object>();
+                    foreach (var property in element.EnumerateObject())
+                    {
+                        var normalizedProperty = NormalizeMetadataValue(property.Value);
+                        if (normalizedProperty is not null)
+                        {
+                            dictionary[property.Name] = normalizedProperty;
+                        }
+                    }
+
+                    return dictionary;
+                }
+                case JsonValueKind.Null:
+                case JsonValueKind.Undefined:
+                    return null;
+            }
+        }
+
+        return value;
+    }
+
+    private async Task EnrichParticipantMetadataAsync(IReadOnlyCollection<ChatSession> sessions)
+    {
+        if (sessions.Count == 0)
+        {
+            return;
+        }
+
+        var participantIds = sessions
+            .SelectMany(session => session.Participants ?? Enumerable.Empty<string>())
+            .Where(id => !string.IsNullOrWhiteSpace(id) && id != AiAssistantConstants.AssistantUserId)
+            .Distinct()
+            .ToList();
+
+        Dictionary<string, AppUser> participantMap = new();
+        if (participantIds.Count > 0)
+        {
+            var filter = _userFactory.CreateFilterBuilder()
+                .In(user => user.Id, participantIds)
+                .Build();
+
+            var users = await _userFactory.FindAsync(filter);
+            participantMap = users.ToDictionary(user => user.Id, user => user);
+        }
+
+        foreach (var session in sessions)
+        {
+            if (session.Participants == null || session.Participants.Count == 0)
+            {
+                continue;
+            }
+
+            session.ParticipantAvatars ??= new Dictionary<string, string>();
+
+            foreach (var participantId in session.Participants)
+            {
+                string? avatarUrl = null;
+
+                if (participantId == AiAssistantConstants.AssistantUserId)
+                {
+                    avatarUrl = AiAssistantConstants.AssistantAvatarUrl;
+                }
+                else if (participantMap.TryGetValue(participantId, out var user) && !string.IsNullOrWhiteSpace(user.Avatar))
+                {
+                    avatarUrl = user.Avatar;
+                }
+
+                if (!string.IsNullOrWhiteSpace(avatarUrl))
+                {
+                    session.ParticipantAvatars[participantId] = avatarUrl;
+                }
+                else if (session.ParticipantAvatars.ContainsKey(participantId))
+                {
+                    session.ParticipantAvatars.Remove(participantId);
+                }
+            }
         }
     }
 

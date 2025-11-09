@@ -3,23 +3,20 @@ import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
-  const { isDark } = useTheme();
-  const colorScheme = isDark ? 'dark' : 'light';
-  const colors = Colors[colorScheme];
+  const { theme } = useTheme();
 
   return (
     <Tabs
       initialRouteName="chat"
       screenOptions={{
-        tabBarActiveTintColor: colors.tabIconSelected,
-        tabBarInactiveTintColor: colors.tabIconDefault,
+        tabBarActiveTintColor: theme.colors.tabIconSelected,
+        tabBarInactiveTintColor: theme.colors.tabIconDefault,
         tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: isDark ? '#2c2c2e' : '#e0e0e0',
+          backgroundColor: theme.colors.navBar,
+          borderTopColor: theme.colors.navBorder,
         },
         headerShown: false,
         tabBarButton: HapticTab,

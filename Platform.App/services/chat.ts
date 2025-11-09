@@ -1,5 +1,6 @@
 import { apiService } from './api';
 import { API_ENDPOINTS } from './apiConfig';
+import { getApiBaseUrl } from '@/constants/apiConfig';
 import type { ApiResponse } from '@/types/unified-api';
 import type {
   AttachmentMetadata,
@@ -10,6 +11,7 @@ import type {
   UploadAttachmentResponse,
   ServerChatSession,
 } from '@/types/chat';
+import type { AssistantReplyStreamChunk, AssistantReplyStreamRequest } from '@/types/ai';
 
 export interface SessionQueryParams {
   page?: number;
@@ -58,6 +60,153 @@ interface PaginatedSessionApiResponse {
   hasPreviousPage?: boolean;
   hasNextPage?: boolean;
 }
+
+type AssistantReplyStreamHandlers = {
+  onDelta?: (text: string) => void;
+  onComplete?: (chunk: AssistantReplyStreamChunk) => void;
+  onError?: (message: string) => void;
+};
+
+interface AssistantReplyStreamOptions {
+  signal?: AbortSignal;
+}
+
+const parseAssistantStreamEvent = (rawEvent: string): AssistantReplyStreamChunk | null => {
+  if (!rawEvent) {
+    return null;
+  }
+
+  const dataLines = rawEvent
+    .split('\n')
+    .filter(line => line.startsWith('data:'))
+    .map(line => line.slice(5).trim());
+
+  if (dataLines.length === 0) {
+    return null;
+  }
+
+  const jsonPayload = dataLines.join('');
+  if (!jsonPayload) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(jsonPayload) as AssistantReplyStreamChunk;
+  } catch {
+    return null;
+  }
+};
+
+const handleAssistantStreamChunk = (
+  chunk: AssistantReplyStreamChunk,
+  handlers: AssistantReplyStreamHandlers
+): boolean => {
+  switch (chunk.type) {
+    case 'delta':
+      if (chunk.text) {
+        handlers.onDelta?.(chunk.text);
+      }
+      return false;
+    case 'complete':
+      handlers.onComplete?.(chunk);
+      return true;
+    case 'error':
+      handlers.onError?.(chunk.error ?? '助手回复失败');
+      return true;
+    default:
+      return false;
+  }
+};
+
+const drainAssistantSseBuffer = (
+  buffer: string,
+  handlers: AssistantReplyStreamHandlers
+): { buffer: string; completed: boolean } => {
+  let remaining = buffer;
+  let completed = false;
+  let boundaryIndex = remaining.indexOf('\n\n');
+
+  while (!completed && boundaryIndex !== -1) {
+    const rawEvent = remaining.slice(0, boundaryIndex);
+    remaining = remaining.slice(boundaryIndex + 2);
+    boundaryIndex = remaining.indexOf('\n\n');
+
+    const chunk = parseAssistantStreamEvent(rawEvent);
+    if (chunk) {
+      completed = handleAssistantStreamChunk(chunk, handlers);
+    }
+  }
+
+  return { buffer: remaining, completed };
+};
+
+const fetchAssistantReplyResponse = async (
+  url: string,
+  payload: AssistantReplyStreamRequest,
+  signal: AbortSignal
+): Promise<Response> => {
+  const token = await apiService.getToken();
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    await apiService.clearAllTokens();
+    throw new Error('登录已过期，请重新登录后重试');
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(errorText || `助手回复请求失败 (${response.status})`);
+  }
+
+  return response;
+};
+
+const consumeAssistantReplyStream = async (
+  response: Response,
+  handlers: AssistantReplyStreamHandlers,
+  abortController: AbortController
+): Promise<void> => {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error('当前环境不支持流式响应');
+  }
+
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let completed = false;
+
+  while (!completed) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const drained = drainAssistantSseBuffer(buffer, handlers);
+    buffer = drained.buffer;
+
+    if (drained.completed) {
+      completed = true;
+      abortController.abort();
+    }
+  }
+
+  if (!completed && buffer.trim().length > 0) {
+    const trailingChunk = parseAssistantStreamEvent(buffer.trim());
+    if (trailingChunk) {
+      handleAssistantStreamChunk(trailingChunk, handlers);
+    }
+  }
+};
 
 export const chatService = {
   getSessions: async (params: SessionQueryParams = {}): Promise<SessionListResponse> => {
@@ -136,6 +285,43 @@ export const chatService = {
     }
 
     return response.data.attachment;
+  },
+
+  async streamAssistantReply(
+    payload: AssistantReplyStreamRequest,
+    handlers: AssistantReplyStreamHandlers = {},
+    options: AssistantReplyStreamOptions = {}
+  ): Promise<void> {
+    const baseUrl = getApiBaseUrl();
+    const url = `${baseUrl}${API_ENDPOINTS.aiAssistantReplyStream}`;
+    const abortController = new AbortController();
+    let externalAbortHandler: (() => void) | undefined;
+
+    if (options.signal) {
+      if (options.signal.aborted) {
+        abortController.abort(options.signal.reason);
+      } else {
+        externalAbortHandler = () => abortController.abort(options.signal?.reason);
+        options.signal.addEventListener('abort', externalAbortHandler);
+      }
+    }
+
+    try {
+      const response = await fetchAssistantReplyResponse(url, payload, abortController.signal);
+      await consumeAssistantReplyStream(response, handlers, abortController);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+
+      const message = error instanceof Error ? error.message : '助手回复失败';
+      handlers.onError?.(message);
+      throw error;
+    } finally {
+      if (options.signal && externalAbortHandler) {
+        options.signal.removeEventListener('abort', externalAbortHandler);
+      }
+    }
   },
 };
 

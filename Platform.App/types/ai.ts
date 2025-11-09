@@ -2,6 +2,8 @@
  * AI 能力相关类型定义
  */
 
+import type { ChatMessage } from './chat';
+
 export type AiSuggestionSource = 'smart-reply' | 'topic' | 'ice-breaker' | 'follow-up';
 
 export interface AiSuggestion {
@@ -10,6 +12,10 @@ export interface AiSuggestion {
   source: AiSuggestionSource;
   confidence?: number;
   generatedAt: string;
+  category?: string;
+  style?: string;
+  quickTip?: string;
+  insight?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -17,19 +23,21 @@ export interface AiSuggestionRequest {
   sessionId: string;
   userId: string;
   conversationContext?: string[];
+  conversationMessages?: AiConversationMessage[];
   lastMessageId?: string;
   locale?: string;
 }
 
-export type AiSuggestionStreamChunkType = 'delta' | 'complete' | 'fallback' | 'error';
+export interface AiConversationMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
 
-export interface AiSuggestionStreamChunk {
-  type: AiSuggestionStreamChunkType;
-  text?: string;
-  suggestions?: AiSuggestion[];
+export interface AiSuggestionResponse {
+  suggestions: AiSuggestion[];
+  generatedAt: string;
   latencyMs?: number;
-  timestamp?: string;
-  error?: string;
+  notice?: string;
 }
 
 export interface MatchSuggestion {
@@ -64,6 +72,24 @@ export interface AiTopicGuide {
 
 export interface AiTopicGuideResponse {
   guides: AiTopicGuide[];
+}
+
+export type AssistantReplyStreamChunkType = 'delta' | 'complete' | 'error';
+
+export interface AssistantReplyStreamChunk {
+  type: AssistantReplyStreamChunkType;
+  text?: string;
+  message?: ChatMessage;
+  error?: string;
+  timestamp?: string;
+}
+
+export interface AssistantReplyStreamRequest {
+  sessionId: string;
+  triggerMessageId?: string;
+  triggerClientMessageId?: string;
+  clientMessageId: string;
+  locale?: string;
 }
 
 

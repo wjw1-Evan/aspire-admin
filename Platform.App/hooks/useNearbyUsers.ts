@@ -16,7 +16,7 @@ export const useNearbyUsers = () => {
   }, []);
 
   const refresh = useCallback(
-    async (request?: NearbySearchRequest): Promise<NearbyUser[] | undefined> => {
+    async (request?: Partial<NearbySearchRequest>): Promise<NearbyUser[] | undefined> => {
       const granted =
         permissionStatus === Location.PermissionStatus.GRANTED || (await ensurePermission());
       if (!granted) {
@@ -31,10 +31,14 @@ export const useNearbyUsers = () => {
         accuracy: position.accuracy,
       });
 
-      const items = await refreshNearbyUsers({
-        ...request,
+      const payload: NearbySearchRequest = {
         center: position,
-      });
+        radiusMeters: request?.radiusMeters,
+        limit: request?.limit,
+        interests: request?.interests,
+      };
+
+      const items = await refreshNearbyUsers(payload);
       return items;
     },
     [ensurePermission, permissionStatus, refreshNearbyUsers, updateLocationBeacon]

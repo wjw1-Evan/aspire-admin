@@ -33,17 +33,22 @@ export interface UploadAttachmentResponse {
   attachment: AttachmentMetadata;
 }
 
+export type ChatMessageStatus = 'sending' | 'sent' | 'failed';
+
 export interface ChatMessage {
   id: string;
   sessionId: string;
   senderId: string;
-  recipientId: string;
+  recipientId?: string;
   type: ChatMessageType;
   content?: string;
   attachment?: AttachmentMetadata;
   createdAt: string;
   updatedAt?: string;
   isLocal?: boolean;
+  localId?: string;
+  clientMessageId?: string;
+  status?: ChatMessageStatus;
   /**
    * 任意扩展字段，例如 AI 生成标记、撤回状态等。
    */
@@ -54,6 +59,7 @@ export interface ServerChatSession {
   id: string;
   participants: string[];
   participantNames?: Record<string, string>;
+  participantAvatars?: Record<string, string>;
   lastMessageId?: string;
   lastMessageExcerpt?: string;
   lastMessageAt?: string;
@@ -74,6 +80,7 @@ export interface ChatSession extends ServerChatSession {
    * 最近一条消息（可选）
    */
   lastMessage?: ChatMessage;
+  participantAvatars?: Record<string, string>;
 }
 
 export interface SessionListResponse {
@@ -98,6 +105,8 @@ export interface MessageSendRequest {
   content?: string;
   attachmentId?: string;
   metadata?: Record<string, unknown>;
+  recipientId?: string;
+  clientMessageId?: string;
 }
 
 export interface ChatMessageRealtimePayload {

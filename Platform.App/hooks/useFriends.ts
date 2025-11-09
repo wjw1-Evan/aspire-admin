@@ -23,6 +23,7 @@ export interface UseFriendsResult {
   searchResults: FriendSearchResult[];
   searchLoading: boolean;
   searchByPhone: (phoneNumber: string) => Promise<FriendSearchResult[]>;
+  searchByKeyword: (keyword: string) => Promise<FriendSearchResult[]>;
   clearSearch: () => void;
   sendFriendRequest: (payload: CreateFriendRequestPayload) => Promise<FriendRequestItem>;
   ensureSession: (friendUserId: string) => Promise<FriendSessionResponse>;
@@ -100,6 +101,17 @@ export function useFriends(): UseFriendsResult {
     }
   }, []);
 
+  const searchByKeyword = useCallback(async (keyword: string) => {
+    setSearchLoading(true);
+    try {
+      const results = await friendService.searchByKeyword(keyword);
+      setSearchResults(results);
+      return results;
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
   const clearSearch = useCallback(() => {
     setSearchResults([]);
   }, []);
@@ -131,6 +143,7 @@ export function useFriends(): UseFriendsResult {
     searchResults,
     searchLoading,
     searchByPhone,
+    searchByKeyword,
     clearSearch,
     sendFriendRequest,
     ensureSession,

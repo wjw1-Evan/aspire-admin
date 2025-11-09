@@ -1,9 +1,10 @@
 import type { Dispatch } from 'react';
 
+import { AI_ASSISTANT_ID } from '@/constants/ai';
 import { aiService } from '@/services/ai';
 import { chatService, type MessageQueryParams, type SessionQueryParams } from '@/services/chat';
 import { fetchNearbyUsers, getCurrentPosition, type LocationUpdatePayload, updateLocationBeacon } from '@/services/location';
-import type { AiSuggestionRequest } from '@/types/ai';
+import type { AiSuggestionRequest, AssistantReplyStreamChunk, AssistantReplyStreamRequest } from '@/types/ai';
 import type {
   ChatMessage,
   ChatSession,
@@ -25,7 +26,8 @@ const toErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-const aiStreamControllers = new Map<string, AbortController>();
+const aiRequestControllers = new Map<string, AbortController>();
+const assistantStreamControllers = new Map<string, AbortController>();
 
 export const loadSessionsAction = async (
   dispatch: Dispatch<ChatAction>,
@@ -77,13 +79,31 @@ export const loadMessagesAction = async (
 
 export const sendMessageAction = async (
   dispatch: Dispatch<ChatAction>,
-  payload: MessageSendRequest
+  payload: MessageSendRequest,
+  options: { localId?: string } = {}
 ): Promise<ChatMessage | undefined> => {
   try {
     const message = await chatService.sendMessage(payload);
-    dispatch({ type: 'CHAT_APPEND_MESSAGE', payload: { sessionId: payload.sessionId, message } });
+    dispatch({
+      type: 'CHAT_REPLACE_MESSAGE',
+      payload: {
+        sessionId: payload.sessionId,
+        localId: options.localId,
+        message: { ...message, status: 'sent' },
+      },
+    });
     return message;
   } catch (error) {
+    if (options.localId) {
+      dispatch({
+        type: 'CHAT_UPDATE_MESSAGE',
+        payload: {
+          sessionId: payload.sessionId,
+          messageId: options.localId,
+          updates: { status: 'failed' },
+        },
+      });
+    }
     dispatch({ type: 'CHAT_SET_ERROR', payload: toErrorMessage(error, '发送消息失败') });
     return undefined;
   }
@@ -94,7 +114,27 @@ export const receiveMessageAction = (
   sessionId: string,
   message: ChatMessage
 ): void => {
-  dispatch({ type: 'CHAT_APPEND_MESSAGE', payload: { sessionId, message } });
+  const metadataClientMessageId = (() => {
+    const raw = message.metadata?.['clientMessageId'];
+    return typeof raw === 'string' ? raw : undefined;
+  })();
+
+  if (message.clientMessageId || metadataClientMessageId) {
+    dispatch({
+      type: 'CHAT_REPLACE_MESSAGE',
+      payload: {
+        sessionId,
+        localId: message.clientMessageId ?? metadataClientMessageId,
+        message: { ...message, status: 'sent' },
+      },
+    });
+    return;
+  }
+
+  dispatch({
+    type: 'CHAT_APPEND_MESSAGE',
+    payload: { sessionId, message: { ...message, status: 'sent' } },
+  });
 };
 
 export const updateMessageAction = (
@@ -144,42 +184,155 @@ export const fetchAiSuggestionsAction = async (
   sessionId: string,
   request: AiSuggestionRequest
 ): Promise<void> => {
-  const previousController = aiStreamControllers.get(sessionId);
+  const previousController = aiRequestControllers.get(sessionId);
   if (previousController) {
     previousController.abort();
   }
 
   const controller = new AbortController();
-  aiStreamControllers.set(sessionId, controller);
+  aiRequestControllers.set(sessionId, controller);
 
   dispatch({ type: 'CHAT_SET_AI_LOADING', payload: { sessionId, loading: true } });
-  dispatch({ type: 'CHAT_SET_AI_STREAM_TEXT', payload: { sessionId, text: '' } });
+  dispatch({ type: 'CHAT_SET_AI_NOTICE', payload: { sessionId, notice: undefined } });
 
+  try {
+    const result = await aiService.getSmartReplies(request, { signal: controller.signal });
+    if (controller.signal.aborted) {
+      return;
+    }
+
+    dispatch({
+      type: 'CHAT_SET_AI_SUGGESTIONS',
+      payload: { sessionId, suggestions: result.suggestions ?? [] },
+    });
+
+    dispatch({
+      type: 'CHAT_SET_AI_NOTICE',
+      payload: { sessionId, notice: result.notice },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return;
+    }
+    const message = toErrorMessage(error, '获取智能回复失败');
+    dispatch({ type: 'CHAT_SET_ERROR', payload: message });
+    dispatch({
+      type: 'CHAT_SET_AI_NOTICE',
+      payload: { sessionId, notice: message },
+    });
+  } finally {
+    const activeController = aiRequestControllers.get(sessionId);
+    if (activeController === controller) {
+      aiRequestControllers.delete(sessionId);
+      dispatch({ type: 'CHAT_SET_AI_LOADING', payload: { sessionId, loading: false } });
+    }
+  }
+};
+
+export const streamAssistantReplyAction = async (
+  dispatch: Dispatch<ChatAction>,
+  request: AssistantReplyStreamRequest
+): Promise<void> => {
+  const previousController = assistantStreamControllers.get(request.sessionId);
+  if (previousController) {
+    previousController.abort();
+  }
+
+  const controller = new AbortController();
+  assistantStreamControllers.set(request.sessionId, controller);
+
+  const createdAt = new Date().toISOString();
+  const baseMetadata: Record<string, unknown> = {
+    isAssistant: true,
+    streaming: true,
+    clientMessageId: request.clientMessageId,
+  };
+
+  const placeholder: ChatMessage = {
+    id: request.clientMessageId,
+    sessionId: request.sessionId,
+    senderId: AI_ASSISTANT_ID,
+    type: 'text',
+    content: '',
+    createdAt,
+    updatedAt: createdAt,
+    status: 'sending',
+    metadata: baseMetadata,
+    localId: request.clientMessageId,
+    isLocal: true,
+  };
+
+  dispatch({
+    type: 'CHAT_APPEND_MESSAGE',
+    payload: { sessionId: request.sessionId, message: placeholder },
+  });
+
+  let aggregated = '';
   let handledStreamError = false;
 
   try {
-    await aiService.streamSmartReplies(
+    await chatService.streamAssistantReply(
       request,
       {
         onDelta: text => {
-          if (text) {
-            dispatch({ type: 'CHAT_APPEND_AI_STREAM_TEXT', payload: { sessionId, text } });
+          aggregated += text;
+          dispatch({
+            type: 'CHAT_UPDATE_MESSAGE',
+            payload: {
+              sessionId: request.sessionId,
+              messageId: request.clientMessageId,
+              updates: {
+                content: aggregated,
+                updatedAt: new Date().toISOString(),
+                metadata: {
+                  ...baseMetadata,
+                  streaming: true,
+                  streamLength: aggregated.length,
+                },
+              },
+            },
+          });
+        },
+        onComplete: chunk => {
+          const finalContent = chunk.message?.content ?? aggregated;
+          dispatch({
+            type: 'CHAT_UPDATE_MESSAGE',
+            payload: {
+              sessionId: request.sessionId,
+              messageId: request.clientMessageId,
+              updates: {
+                content: finalContent,
+                status: 'sent',
+                isLocal: false,
+                metadata: {
+                  ...baseMetadata,
+                  streaming: false,
+                },
+              },
+            },
+          });
+
+          if (chunk.message) {
+            receiveMessageAction(dispatch, request.sessionId, chunk.message);
           }
-        },
-        onComplete: suggestions => {
-          dispatch({
-            type: 'CHAT_SET_AI_SUGGESTIONS',
-            payload: { sessionId, suggestions },
-          });
-        },
-        onFallback: suggestions => {
-          dispatch({
-            type: 'CHAT_SET_AI_SUGGESTIONS',
-            payload: { sessionId, suggestions },
-          });
         },
         onError: message => {
           handledStreamError = true;
+          dispatch({
+            type: 'CHAT_UPDATE_MESSAGE',
+            payload: {
+              sessionId: request.sessionId,
+              messageId: request.clientMessageId,
+              updates: {
+                status: 'failed',
+                metadata: {
+                  ...baseMetadata,
+                  streaming: false,
+                  streamError: message,
+                },
+              },
+            },
+          });
           dispatch({ type: 'CHAT_SET_ERROR', payload: message });
         },
       },
@@ -187,16 +340,44 @@ export const fetchAiSuggestionsAction = async (
     );
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      // Request was superseded by a newer streaming call.
+      dispatch({
+        type: 'CHAT_UPDATE_MESSAGE',
+        payload: {
+          sessionId: request.sessionId,
+          messageId: request.clientMessageId,
+          updates: {
+            status: 'failed',
+            metadata: {
+              ...baseMetadata,
+              streaming: false,
+              streamError: '助手回复已取消',
+            },
+          },
+        },
+      });
     } else if (!handledStreamError) {
-      dispatch({ type: 'CHAT_SET_ERROR', payload: toErrorMessage(error, '获取智能回复失败') });
+      const message = toErrorMessage(error, '助手回复失败');
+      dispatch({
+        type: 'CHAT_UPDATE_MESSAGE',
+        payload: {
+          sessionId: request.sessionId,
+          messageId: request.clientMessageId,
+          updates: {
+            status: 'failed',
+            metadata: {
+              ...baseMetadata,
+              streaming: false,
+              streamError: message,
+            },
+          },
+        },
+      });
+      dispatch({ type: 'CHAT_SET_ERROR', payload: message });
     }
   } finally {
-    const activeController = aiStreamControllers.get(sessionId);
+    const activeController = assistantStreamControllers.get(request.sessionId);
     if (activeController === controller) {
-      aiStreamControllers.delete(sessionId);
-      dispatch({ type: 'CHAT_SET_AI_LOADING', payload: { sessionId, loading: false } });
-      dispatch({ type: 'CHAT_SET_AI_STREAM_TEXT', payload: { sessionId, text: '' } });
+      assistantStreamControllers.delete(request.sessionId);
     }
   }
 };

@@ -4,6 +4,7 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ChatProvider } from '@/contexts/ChatContext';
@@ -50,27 +51,29 @@ function AuthRouter() {
         publicRoutes={['/auth']}
         redirectTo="/auth"
       >
-        <View style={[styles.routerContainer, { backgroundColor }]}>
-          {/* 网络状态指示器 */}
-          <NetworkStatusIndicator />
-          
-          {/* 路由栈 */}
-          <Stack screenOptions={{ headerShown: false }}>
-            {isAuthenticated ? (
-              [
-                <Stack.Screen key="(tabs)" name="(tabs)" />,
-                <Stack.Screen key="modal" name="modal" options={{ presentation: 'modal' }} />,
-                <Stack.Screen key="profile" name="profile" />,
-                <Stack.Screen key="about" name="about/index" />
-              ]
-            ) : (
-              <Stack.Screen name="auth" />
-            )}
-          </Stack>
-          
-          {/* 状态栏 */}
-          <StatusBar style={isDark ? 'light' : 'dark'} />
-        </View>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor }]} edges={['top', 'left', 'right']}>
+          <View style={[styles.routerContainer, { backgroundColor }]}>
+            {/* 网络状态指示器 */}
+            <NetworkStatusIndicator />
+            
+            {/* 路由栈 */}
+            <Stack screenOptions={{ headerShown: false }}>
+              {isAuthenticated ? (
+                [
+                  <Stack.Screen key="(tabs)" name="(tabs)" />,
+                  <Stack.Screen key="modal" name="modal" options={{ presentation: 'modal' }} />,
+                  <Stack.Screen key="profile" name="profile" />,
+                  <Stack.Screen key="about" name="about/index" />
+                ]
+              ) : (
+                <Stack.Screen name="auth" />
+              )}
+            </Stack>
+            
+            {/* 状态栏 */}
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+          </View>
+        </SafeAreaView>
       </RouteGuard>
     </AuthErrorHandler>
   );
@@ -79,13 +82,15 @@ function AuthRouter() {
 // 根布局组件
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <ChatProvider>
-          <AuthRouter />
-        </ChatProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ChatProvider>
+            <AuthRouter />
+          </ChatProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -96,6 +101,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   routerContainer: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
 });

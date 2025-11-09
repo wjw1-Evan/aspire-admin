@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { AppTheme, Fonts, ThemeTokens, type ThemeTokensKey, Spacing, Typography } from '@/constants/theme';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -9,6 +11,7 @@ interface ThemeContextType {
   setThemeMode: (mode: ThemeMode) => void;
   isDark: boolean;
   toggleTheme: () => void;
+  theme: AppTheme;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -24,10 +27,15 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // 计算当前是否为深色模式
-  const isDark = themeMode === 'dark' || (themeMode === 'system' && systemColorScheme === 'dark');
+  const effectiveMode: ThemeTokensKey = useMemo(() => {
+    if (themeMode === 'system') {
+      return systemColorScheme === 'dark' ? 'dark' : 'light';
+    }
+    return themeMode;
+  }, [themeMode, systemColorScheme]);
 
-  // 加载保存的主题设置
+  const isDark = effectiveMode === 'dark';
+
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -45,39 +53,42 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     loadTheme();
   }, []);
 
-  // 保存主题设置
-  const setThemeMode = async (mode: ThemeMode) => {
+  const setThemeMode = useCallback(async (mode: ThemeMode) => {
     try {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
       setThemeModeState(mode);
     } catch (error) {
       console.warn('Failed to save theme preference:', error);
     }
-  };
+  }, []);
 
-  // 切换主题（在 light 和 dark 之间切换）
-  const toggleTheme = () => {
-    const newMode = isDark ? 'light' : 'dark';
-    setThemeMode(newMode);
-  };
+  const toggleTheme = useCallback(() => {
+    const nextMode = isDark ? 'light' : 'dark';
+    setThemeMode(nextMode);
+  }, [isDark, setThemeMode]);
+
+  const theme = useMemo<AppTheme>(() => ({
+    mode: effectiveMode,
+    colors: ThemeTokens[effectiveMode].colors,
+    spacing: Spacing,
+    typography: Typography,
+    effects: ThemeTokens[effectiveMode].effects,
+    fonts: Fonts,
+  }), [effectiveMode]);
 
   const value: ThemeContextType = useMemo(() => ({
     themeMode,
     setThemeMode,
     isDark,
     toggleTheme,
-  }), [themeMode, isDark]);
+    theme,
+  }), [themeMode, setThemeMode, isDark, toggleTheme, theme]);
 
-  // 在主题加载完成前显示加载状态
   if (!isLoaded) {
     return null;
   }
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

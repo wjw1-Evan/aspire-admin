@@ -38,14 +38,15 @@ public class FriendsController : BaseApiController
     }
 
     /// <summary>
-    /// 根据手机号搜索用户
+    /// 根据手机号或关键字搜索用户
     /// </summary>
-    /// <param name="phone">手机号</param>
+    /// <param name="phone">手机号（可选）</param>
+    /// <param name="keyword">姓名或用户名关键字（可选）</param>
     [HttpGet("search")]
     [ProducesResponseType(typeof(ApiResponse<List<FriendSearchResult>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Search([FromQuery] string phone)
+    public async Task<IActionResult> Search([FromQuery] string? phone, [FromQuery] string? keyword)
     {
-        var results = await _friendService.SearchAsync(phone);
+        var results = await _friendService.SearchAsync(phone, keyword);
         return Success(results);
     }
 

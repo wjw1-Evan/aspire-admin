@@ -1,59 +1,62 @@
-# AI 智能回复（SSE 流式输出）
+# AI 智能回复（同步接口）
 
 ## 📋 概述
 
-本次更新在后端新增对 OpenAI Chat 完整的 Server-Sent Events（SSE）转发能力，移动端或其他调用方可以通过 `/api/chat/ai/smart-replies/stream` 端点实时获取模型输出的增量文本及最终建议集合，显著缩短用户等待时间。
+小科助手提供的智能推荐已从 SSE 流式改为标准 HTTP 接口。调用方可以通过 `/api/chat/ai/smart-replies` 端点一次性获取模型生成的推荐列表与提示信息，接口语义更加简单稳定。
 
 ## 🔌 新增 API
 
 | 接口 | 方法 | 路径 | 说明 |
 | --- | --- | --- | --- |
-| 获取智能回复（流式） | `POST` | `/api/chat/ai/smart-replies/stream` | 返回 `text/event-stream`，每条事件包含增量文本或最终候选列表 |
-
-> ⚠️ 旧的非流式端点 `/api/chat/ai/smart-replies` 已移除，所有调用方需要切换至流式接口。
-
-### 事件格式
-
-```text
-data: {"type":"delta","text":"正在为你准备..."}
-
-data: {"type":"delta","text":"建议 1：我们下午再跟进"}
-
-data: {"type":"complete","latencyMs":842,"suggestions":[{"content":"好的，我再确认一下具体时间。","source":"smart-reply"}]}
-```
-
-- `type = delta`：模型增量输出，`text` 为原始文本片段。
-- `type = complete`：模型完成并成功解析为候选列表。
-- `type = fallback`：调用失败或配置缺失，返回本地兜底候选。
-- `type = error`：非预期异常（不会终止 SSE，建议前端提示）。
+| 获取智能回复 | `POST` | `/api/chat/ai/smart-replies` | 返回 JSON，包含推荐列表、生成耗时和提示信息 |
+| 小科助手回复（流式） | `POST` | `/api/chat/ai/assistant-reply/stream` | 生成助手回复增量文本，并在完成后写入会话消息 |
 
 ## 🧠 实现细节
 
-- `AiSuggestionService.StreamSmartRepliesAsync` 使用 `OpenAIClient.GetChatClient(...).CompleteChatStreamingAsync(...)` 调用官方流式接口，将所有文本增量逐条 `yield`。
-- 移除原有非流式实现，后端仅保留流式生成能力，避免重复维护。
-- 流式完成后尝试将最终文本解析成 JSON，成功时输出 `complete` 事件；否则退化为本地 `BuildFallbackSuggestions`。
-- 未配置 OpenAI 相关参数（`AiCompletionOptions.Endpoint/ApiKey`）时直接返回 `fallback` 事件，避免客户端长时间等待。
+- `AiSuggestionService.GetSmartRepliesAsync` 使用 `OpenAIClient.GetChatClient(...).CompleteChatAsync(...)` 调用模型并一次性返回结果。
+- 若 OpenAI 未配置或调用失败，将回退至本地兜底建议，并附带提示信息。
+- 响应结构：
+  ```json
+  {
+    "suggestions": [
+      { "content": "好的，我再确认一下具体时间。", "source": "smart-reply" }
+    ],
+    "generatedAt": "2025-11-09T03:20:00Z",
+    "latencyMs": 842,
+    "notice": null
+  }
+  ```
+- `notice` 字段用于提示“暂无推荐”或错误信息，前端可直接展示；存在有效推荐时该字段为空。
+- `ChatService.StreamAssistantReplyAsync` 仍保留 SSE 能力，用于助手回复的实时输出。
 
 ## 📱 客户端对接建议
 
-1. 使用 `EventSource` 或任意支持 SSE 的库监听事件。
-2. `delta` 事件可用于即时更新占位文案或“思考中”提示。
-3. 接收 `complete` 或 `fallback` 后，渲染最终的候选按钮并关闭流。
-4. 若出现 `error` 事件，可提示用户稍后再试，同时保留 `fallback` 文案作为兜底。
+1. 直接使用 `fetch` 或任意 HTTP 客户端请求 `/api/chat/ai/smart-replies`。
+2. 根据响应中的 `suggestions` 渲染候选按钮。
+3. 如果 `notice` 不为空或 `suggestions` 为空，可展示提示文案并提供刷新按钮。
+4. 重复请求时可以主动取消上一次尚未完成的调用，避免浪费模型配额。
+
+## 🤖 小科助手对话体验
+
+- 前端在向包含 `AI_ASSISTANT_ID` 的会话发送消息时，附带 `metadata.assistantStreaming = true`，服务端会跳过默认的同步回复逻辑。
+- 发送成功后调用 `POST /api/chat/ai/assistant-reply/stream`，Stream API 先增量输出文本，再返回最终 `ChatMessage` 对象供前端替换占位消息。
+- `Platform.App/contexts/chatActions.ts` 新增 `streamAssistantReplyAction`，会在本地插入一个“助手输入中”占位消息，实时更新内容并在完成后使用 SignalR 推送的正式消息进行替换。
+- 失败或取消时会在占位消息上标记 `metadata.streamError`，同时弹出统一的错误提示。
+- 后端调用小科助手前，会从 MongoDB 中读取最近 24 条会话消息（按时间正序），并将其按照用户/助手角色构造成上下文发送给大模型，确保回复具有连续性的语境理解。
 
 ## ✅ 验证步骤
 
 1. `dotnet run --project Platform.AppHost` 启动全套服务，确保配置了合法的 OpenAI Endpoint 与 ApiKey。
 2. 在移动端聊天界面发送消息，观察智能回复区域：
-   - 短时间内即可看到流式文字逐条输出。
-   - 完成后渲染 3 条候选。
-3. 断开外网或清空 OpenAI 配置，再次触发智能回复，应该迅速收到 `fallback` 事件。
-4. 通过浏览器 `curl` 验证：
+   - 请求完成后一次性得到推荐列表。
+   - 没有推荐时显示提示文案，并可点击刷新。
+3. 断开外网或清空 OpenAI 配置，再次触发智能回复，应该迅速收到 notice 提示。
+4. 通过 `curl` 验证：
 
    ```bash
-   curl -N -H "Authorization: Bearer <token>" \
+   curl -H "Authorization: Bearer <token>" \
         -H "Content-Type: application/json" \
-        -X POST http://localhost:15000/apiservice/api/chat/ai/smart-replies/stream \
+        -X POST http://localhost:15000/apiservice/api/chat/ai/smart-replies \
         -d '{"sessionId":"...","userId":"..."}'
    ```
 
@@ -62,6 +65,10 @@ data: {"type":"complete","latencyMs":842,"suggestions":[{"content":"好的，我
 - `Platform.ApiService/Controllers/ChatAiController.cs`
 - `Platform.ApiService/Services/AiSuggestionService.cs`
 - `Platform.ApiService/Models/AiModels.cs`
-- `Platform.App/components/chat/AiSuggestionBar.tsx`（前端消费 SSE 的理想位置）
+- `Platform.App/components/chat/AiSuggestionBar.tsx`
+- `Platform.ApiService/Services/ChatService.cs`
+- `Platform.App/contexts/chatActions.ts`
+- `Platform.App/services/chat.ts`
+- `Platform.App/app/chat/[sessionId].tsx`
 
 

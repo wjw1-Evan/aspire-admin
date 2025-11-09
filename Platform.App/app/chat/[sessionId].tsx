@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dayjs from 'dayjs';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { HubConnectionState } from '@microsoft/signalr';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ConversationHeader } from '@/components/chat/ConversationHeader';
-import MessageList from '@/components/chat/MessageList';
+import MessageList, { type MessageListHandle } from '@/components/chat/MessageList';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import AiSuggestionBar from '@/components/chat/AiSuggestionBar';
 import AttachmentPicker from '@/components/chat/AttachmentPicker';
@@ -13,10 +14,12 @@ import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useAiAssistant } from '@/hooks/useAiAssistant';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ChatMessage } from '@/types/chat';
+import type { AiConversationMessage } from '@/types/ai';
+import { AI_ASSISTANT_ID } from '@/constants/ai';
 
 const POLL_INTERVAL_MS = 5000;
-
 export default function ChatSessionScreen() {
   const params = useLocalSearchParams<{ sessionId: string }>();
   const router = useRouter();
@@ -30,14 +33,18 @@ export default function ChatSessionScreen() {
     loadMessages,
     loadSessions,
     sendMessage,
+    streamAssistantReply,
     uploadAttachment,
     setActiveSession,
     connectionState,
   } = useChat();
 
   const session = sessionId ? sessions[sessionId] : undefined;
-  const screenBackground = useThemeColor({ light: '#e5e5e5', dark: '#0b1120' }, 'background');
-  const conversationSurface = useThemeColor({ light: '#f8fafc', dark: '#0f172a' }, 'card');
+  const { theme } = useTheme();
+  const screenBackground = theme.colors.background;
+  const conversationSurface = theme.colors.listBackground;
+  const messageListRef = useRef<MessageListHandle>(null);
+  const initialScrollRequestedRef = useRef(false);
 
   useEffect(() => {
     if (!sessionId || !session) {
@@ -53,6 +60,15 @@ export default function ChatSessionScreen() {
     }
     return undefined;
   }, [sessionId, setActiveSession]);
+
+  useEffect(() => {
+    initialScrollRequestedRef.current = false;
+  }, [sessionId]);
+
+  useEffect(() => {
+    previousMessageCountRef.current = 0;
+    previousLastMessageIdRef.current = undefined;
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId || !session) {
@@ -105,24 +121,174 @@ export default function ChatSessionScreen() {
   const {
     suggestions,
     loading: suggestionLoading,
-    streamingText,
+    notice: suggestionNotice,
     requestSuggestions,
   } = useAiAssistant(sessionId ?? '');
+  const [suggestionCollapsed, setSuggestionCollapsed] = useState(false);
+  const [suggestionRefreshNonce, setSuggestionRefreshNonce] = useState(0);
+
+  const sessionMessages = useMemo(
+    () => (sessionId ? messages[sessionId] ?? [] : []),
+    [messages, sessionId]
+  );
+
+  const topicTagsKey = useMemo(
+    () => (session?.topicTags ?? []).join('|'),
+    [session?.topicTags]
+  );
+
+  const timelineState = useMemo(
+    () => (sessionId ? messageState[sessionId] : undefined),
+    [messageState, sessionId]
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      initialScrollRequestedRef.current = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+
+      if (!timelineState?.loading && sessionMessages.length > 0) {
+        timer = setTimeout(() => {
+          messageListRef.current?.scrollToBottom({ animated: false, attempts: 3 });
+          initialScrollRequestedRef.current = true;
+        }, 80);
+      }
+
+      return () => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      };
+    }, [sessionMessages.length, timelineState?.loading])
+  );
+
+  useEffect(() => {
+    if (initialScrollRequestedRef.current) {
+      return;
+    }
+
+    if (!timelineState?.loading && sessionMessages.length > 0) {
+      messageListRef.current?.scrollToBottom({ animated: false, attempts: 3 });
+      initialScrollRequestedRef.current = true;
+    }
+  }, [sessionMessages.length, timelineState?.loading]);
 
   const handleSendText = useCallback(async (content: string) => {
     if (!sessionId || !session) {
       return;
     }
 
-    await sendMessage({
+    const trimmedContent = content.trim();
+    if (!trimmedContent) {
+      return;
+    }
+
+    const hasAssistant = session.participants.includes(AI_ASSISTANT_ID);
+
+    const payload = {
       sessionId,
       type: 'text',
-      content,
-      metadata: {},
-    });
+      content: trimmedContent,
+      metadata: hasAssistant ? { assistantStreaming: true } : undefined,
+    } as const;
 
-    requestSuggestions([content]).catch(error => console.error('AI suggestion error:', error));
-  }, [requestSuggestions, sendMessage, session, sessionId]);
+    const sendResult = await sendMessage(payload);
+
+    if (hasAssistant && sendResult?.id) {
+      const assistantClientMessageId = `assistant-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      void streamAssistantReply({
+        sessionId,
+        triggerMessageId: sendResult.id,
+        triggerClientMessageId: sendResult.clientMessageId,
+        clientMessageId: assistantClientMessageId,
+      });
+    }
+  }, [sendMessage, session, sessionId, streamAssistantReply]);
+
+  const handleRefreshSuggestions = useCallback(() => {
+    if (!sessionId) {
+      return;
+    }
+
+    const nextNonce = suggestionRefreshNonce + 1;
+    setSuggestionRefreshNonce(nextNonce);
+
+    const refreshInstruction = `系统提示（刷新 #${nextNonce} 于 ${dayjs().format('HH:mm:ss')}）：请基于完整对话重新生成与此前不同的两条智能推荐。`;
+
+    const instructionMessage: AiConversationMessage = {
+      role: 'system',
+      content: refreshInstruction,
+    };
+
+    const supplementalLines: string[] = [];
+    if (remoteParticipants.length > 0) {
+      supplementalLines.push(`系统: 参与者：${remoteParticipants.join('、')}`);
+    }
+    if (session?.topicTags?.length) {
+      supplementalLines.push(`系统: 主题标签：${session.topicTags.join('、')}`);
+    }
+
+    const payload = {
+      lines: [...supplementalLines, `系统: ${refreshInstruction}`],
+      messages: [instructionMessage],
+    };
+
+    const lastMessage = sessionMessages[sessionMessages.length - 1];
+    requestSuggestions(payload, {
+      lastMessageId: lastMessage?.id,
+      force: true,
+    }).catch(error => console.error('手动刷新智能推荐失败:', error));
+  }, [
+    remoteParticipants,
+    requestSuggestions,
+    sessionId,
+    sessionMessages,
+    suggestionRefreshNonce,
+    topicTagsKey,
+  ]);
+
+  const canRefreshSuggestions = useMemo(() => {
+    if (!sessionId) {
+      return false;
+    }
+    if (sessionMessages.length > 0) {
+      return true;
+    }
+    if (remoteParticipants.length > 0) {
+      return true;
+    }
+    return (session?.topicTags?.length ?? 0) > 0;
+  }, [remoteParticipants.length, sessionId, sessionMessages.length, topicTagsKey]);
+
+  const handleToggleSuggestionCollapse = useCallback(() => {
+    setSuggestionCollapsed(prev => !prev);
+  }, []);
+
+  const handleResendMessage = useCallback(
+    async (message: ChatMessage) => {
+      if (!sessionId) {
+        return;
+      }
+
+      const localId = message.localId ?? message.id;
+      try {
+        await sendMessage(
+          {
+            sessionId,
+            type: message.type,
+            content: message.content,
+            attachmentId: message.attachment?.id,
+            metadata: message.metadata ? { ...message.metadata } : undefined,
+            recipientId: message.recipientId,
+          },
+          { localId, reuseLocal: true }
+        );
+      } catch (error) {
+        console.error('消息重发失败:', error);
+      }
+    },
+    [sendMessage, sessionId]
+  );
 
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
   const [sessionRetrying, setSessionRetrying] = useState(false);
@@ -159,13 +325,8 @@ export default function ChatSessionScreen() {
     [sendMessage, sessionId, uploadAttachment]
   );
 
-  const timelineState = sessionId ? messageState[sessionId] : undefined;
-  const sessionMessages = useMemo(
-    () => (sessionId ? messages[sessionId] ?? [] : []),
-    [messages, sessionId]
-  );
-
   const previousMessageCountRef = useRef<number>(0);
+  const previousLastMessageIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!sessionId) {
       return;
@@ -176,18 +337,24 @@ export default function ChatSessionScreen() {
     }
 
     previousMessageCountRef.current = sessionMessages.length;
+    const lastMessage = sessionMessages[sessionMessages.length - 1];
+    const lastMessageId = lastMessage?.id;
 
-    const recentTexts = sessionMessages
-      .slice(-5)
-      .map(message => message.content)
-      .filter((content): content is string => typeof content === 'string' && content.length > 0);
-
-    if (recentTexts.length > 0) {
-      requestSuggestions(recentTexts, {
-        lastMessageId: sessionMessages[sessionMessages.length - 1].id,
-      }).catch(error => console.error('加载智能建议失败:', error));
+    if (!lastMessageId || lastMessageId === previousLastMessageIdRef.current) {
+      return;
     }
-  }, [requestSuggestions, sessionId, sessionMessages]);
+
+    previousLastMessageIdRef.current = lastMessageId;
+
+    if (lastMessage?.senderId === currentUserId) {
+      return;
+    }
+
+    requestSuggestions([], {
+      lastMessageId,
+      force: true,
+    }).catch(error => console.error('加载智能建议失败:', error));
+  }, [currentUserId, requestSuggestions, sessionId, sessionMessages]);
 
   useEffect(() => {
     sessionRefreshAttemptedRef.current = false;
@@ -213,7 +380,7 @@ export default function ChatSessionScreen() {
     if (sessionsLoading || sessionRetrying) {
       return (
         <ThemedView style={styles.centered}>
-          <ActivityIndicator />
+          <ActivityIndicator color={theme.colors.accent} />
           <ThemedText style={styles.centeredText}>正在加载会话信息…</ThemedText>
         </ThemedView>
       );
@@ -239,13 +406,17 @@ export default function ChatSessionScreen() {
         <AiSuggestionBar
           suggestions={suggestions}
           loading={suggestionLoading}
-          streamingText={streamingText}
+          notice={suggestionNotice}
+          onRefresh={canRefreshSuggestions ? handleRefreshSuggestions : undefined}
+          collapsed={suggestionCollapsed}
+          onToggleCollapse={handleToggleSuggestionCollapse}
           onSelect={suggestion => handleSendText(suggestion.content)}
         />
         {timelineState?.loading && sessionMessages.length === 0 ? (
-          <ActivityIndicator style={styles.loader} />
+          <ActivityIndicator style={styles.loader} color={theme.colors.accent} />
         ) : (
           <MessageList
+            ref={messageListRef}
             sessionId={sessionId}
             messages={sessionMessages}
             currentUserId={currentUserId}
@@ -253,6 +424,7 @@ export default function ChatSessionScreen() {
             hasMore={timelineState?.hasMore ?? false}
             participantNames={session.participantNames}
             participants={session.participants}
+            participantAvatars={session.participantAvatars}
             onLoadMore={() => {
               if (timelineState?.hasMore && !timelineState.loading && timelineState.nextCursor) {
                 loadMessages(sessionId, { cursor: timelineState.nextCursor }).catch(error =>
@@ -261,6 +433,7 @@ export default function ChatSessionScreen() {
               }
             }}
             onRefresh={() => loadMessages(sessionId).catch(() => undefined)}
+            onResendMessage={handleResendMessage}
           />
         )}
       </View>

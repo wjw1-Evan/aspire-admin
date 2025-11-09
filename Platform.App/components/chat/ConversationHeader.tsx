@@ -7,7 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import type { ChatSession } from '@/types/chat';
 import { HubConnectionState } from '@microsoft/signalr';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ConversationHeaderProps {
   readonly session: ChatSession;
@@ -37,9 +37,7 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
   subtitle,
 }) => {
   const router = useRouter();
-  const backgroundColor = useThemeColor({ light: '#f7f7f7', dark: '#0f172a' }, 'background');
-  const borderColor = useThemeColor({ light: '#e5e7eb', dark: '#1f2937' }, 'border');
-  const secondaryText = useThemeColor({ light: '#6b7280', dark: '#94a3b8' }, 'tabIconDefault');
+  const { theme } = useTheme();
 
   const handleBack = () => {
     if (onBack) {
@@ -61,24 +59,24 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
       : undefined;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor, borderBottomColor: borderColor }]}>
+    <ThemedView style={[styles.container, { backgroundColor: theme.colors.navBar, borderBottomColor: theme.colors.navBorder }]}>
       <View style={styles.side}>
         <Pressable onPress={handleBack} style={styles.backButton} hitSlop={12}>
-          <IconSymbol name="chevron.left" size={22} />
-          <ThemedText style={[styles.backLabel, { color: secondaryText }]}>微信</ThemedText>
+          <IconSymbol name="chevron.left" size={22} color={theme.colors.icon} />
+          <ThemedText style={[styles.backLabel, { color: theme.colors.secondaryText }]}>返回</ThemedText>
         </Pressable>
       </View>
       <View style={styles.center}>
-        <ThemedText type="subtitle" style={styles.title} numberOfLines={1}>
+        <ThemedText type="headline" style={styles.title} numberOfLines={1}>
           {displayTitle}
         </ThemedText>
         {peersDescription ? (
-          <ThemedText style={[styles.subtitle, { color: secondaryText }]} numberOfLines={1}>
+          <ThemedText type="caption" style={[styles.subtitle, { color: theme.colors.secondaryText }]} numberOfLines={1}>
             {peersDescription}
           </ThemedText>
         ) : null}
         {stateLabel ? (
-          <ThemedText style={[styles.connection, { color: secondaryText }]} numberOfLines={1}>
+          <ThemedText style={[styles.connection, { color: theme.colors.secondaryText }]} numberOfLines={1}>
             {stateLabel}
           </ThemedText>
         ) : null}
@@ -86,13 +84,13 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
       <View style={[styles.side, styles.sideRight]}>
         {onStartCall ? (
           <Pressable onPress={onStartCall} style={styles.iconButton} hitSlop={12}>
-            <IconSymbol name="phone.fill" size={20} />
+            <IconSymbol name="phone.fill" size={20} color={theme.colors.icon} />
           </Pressable>
         ) : (
           <View style={styles.placeholder} />
         )}
         <Pressable onPress={onMore} style={styles.iconButton} hitSlop={12}>
-          <IconSymbol name="ellipsis" size={20} />
+          <IconSymbol name="ellipsis" size={20} color={theme.colors.icon} />
         </Pressable>
       </View>
     </ThemedView>

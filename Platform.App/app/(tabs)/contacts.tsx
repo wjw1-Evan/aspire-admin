@@ -16,7 +16,6 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useFriends } from '@/hooks/useFriends';
@@ -186,21 +185,23 @@ export default function ContactsScreen(): JSX.Element {
     searchResults,
     searchLoading,
     searchByPhone,
+    searchByKeyword,
     clearSearch,
     sendFriendRequest,
     ensureSession,
   } = useFriends();
 
   const [phoneInput, setPhoneInput] = useState('');
+  const [keywordInput, setKeywordInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const router = useRouter();
   const { sessions, loadSessions, setActiveSession, upsertSession } = useChat();
-  const { isDark } = useTheme();
+  const { theme } = useTheme();
   const { user } = useAuth();
-  const colors = Colors[isDark ? 'dark' : 'light'];
-  const accentSoftColor = isDark ? 'rgba(74, 144, 226, 0.2)' : 'rgba(0, 58, 107, 0.12)';
+  const colors = theme.colors;
+  const accentSoftColor = colors.accentMuted;
   const currentUserId = useMemo(() => user?.id ?? user?.username ?? '', [user?.id, user?.username]);
 
   const handleInitialLoad = useCallback(async () => {
@@ -229,7 +230,7 @@ export default function ContactsScreen(): JSX.Element {
     }
   }, [refreshFriends, loadRequests]);
 
-  const handleSearch = useCallback(async () => {
+  const handlePhoneSearch = useCallback(async () => {
     const phone = phoneInput.trim();
     if (!phone) {
       Alert.alert('提示', '请输入手机号');
@@ -241,6 +242,25 @@ export default function ContactsScreen(): JSX.Element {
       Alert.alert('搜索失败', errorMessage(error, '搜索用户失败，请稍后再试'));
     }
   }, [phoneInput, searchByPhone]);
+
+  const handleKeywordSearch = useCallback(async () => {
+    const keyword = keywordInput.trim();
+    if (!keyword) {
+      Alert.alert('提示', '请输入姓名或用户名');
+      return;
+    }
+    try {
+      await searchByKeyword(keyword);
+    } catch (error) {
+      Alert.alert('搜索失败', errorMessage(error, '搜索用户失败，请稍后再试'));
+    }
+  }, [keywordInput, searchByKeyword]);
+
+  const handleClearSearch = useCallback(() => {
+    setPhoneInput('');
+    setKeywordInput('');
+    clearSearch();
+  }, [clearSearch]);
 
   const handleSendRequest = useCallback(
     async (targetUserId: string) => {
@@ -366,7 +386,7 @@ export default function ContactsScreen(): JSX.Element {
           {isAssistant ? (
             <Image source={{ uri: AI_ASSISTANT_AVATAR }} style={styles.avatarImage} resizeMode="cover" />
           ) : (
-            <IconSymbol name="person.circle.fill" size={32} color={colors.tint} />
+            <IconSymbol name="person.circle.fill" size={32} color={colors.accent} />
           )}
         </View>
         <View style={styles.friendInfo}>
@@ -402,12 +422,34 @@ export default function ContactsScreen(): JSX.Element {
             value={phoneInput}
             onChangeText={text => setPhoneInput(text)}
             returnKeyType="search"
-            onSubmitEditing={handleSearch}
+            onSubmitEditing={handlePhoneSearch}
           />
           <Pressable
-            style={[styles.searchButton, { backgroundColor: colors.tint }, submitting && styles.buttonDisabled]}
-            onPress={handleSearch}
-            disabled={submitting}>
+            style={[styles.searchButton, { backgroundColor: colors.accent }, (submitting || searchLoading) && styles.buttonDisabled]}
+            onPress={handlePhoneSearch}
+            disabled={submitting || searchLoading}>
+            {searchLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <ThemedText style={styles.searchButtonText}>搜索</ThemedText>
+            )}
+          </Pressable>
+        </View>
+        <View style={[styles.searchRow, styles.searchRowSecondary]}>
+          <TextInput
+            style={[styles.searchInput, { borderColor: colors.border, color: colors.text }]}
+            placeholder="请输入姓名或用户名"
+            placeholderTextColor={colors.tabIconDefault}
+            autoCapitalize="none"
+            value={keywordInput}
+            onChangeText={text => setKeywordInput(text)}
+            returnKeyType="search"
+            onSubmitEditing={handleKeywordSearch}
+          />
+          <Pressable
+            style={[styles.searchButton, { backgroundColor: colors.accent }, (submitting || searchLoading) && styles.buttonDisabled]}
+            onPress={handleKeywordSearch}
+            disabled={submitting || searchLoading}>
             {searchLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
@@ -430,14 +472,14 @@ export default function ContactsScreen(): JSX.Element {
                   friendshipId: userId,
                 })}
                 onSendRequest={handleSendRequest}
-                accentColor={colors.tint}
+                accentColor={colors.accent}
                 cardColor={colors.card}
                 mutedColor={colors.tabIconDefault}
                 accentSoftColor={accentSoftColor}
               />
             ))}
-            <Pressable style={styles.clearSearchButton} onPress={clearSearch}>
-              <ThemedText style={[styles.clearSearchText, { color: colors.tint }]}>清除搜索结果</ThemedText>
+            <Pressable style={styles.clearSearchButton} onPress={handleClearSearch}>
+              <ThemedText style={[styles.clearSearchText, { color: colors.accent }]}>清除搜索结果</ThemedText>
             </Pressable>
           </View>
         ) : null}
@@ -446,7 +488,7 @@ export default function ContactsScreen(): JSX.Element {
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <ThemedText style={styles.sectionTitle}>新的好友</ThemedText>
-          {requestsLoading ? <ActivityIndicator size="small" color={colors.tint} /> : null}
+          {requestsLoading ? <ActivityIndicator size="small" color={colors.accent} /> : null}
         </View>
         {incomingRequests.length === 0 && outgoingRequests.length === 0 ? (
           <ThemedText style={styles.emptyText}>暂无新的好友请求</ThemedText>
@@ -485,16 +527,18 @@ export default function ContactsScreen(): JSX.Element {
       </View>
     </View>
   ), [
-    clearSearch,
+    handleClearSearch,
     colors,
     handleApprove,
     handleOpenChat,
     handleReject,
-    handleSearch,
+    handleKeywordSearch,
+    handlePhoneSearch,
     handleSendRequest,
     incomingRequests,
     outgoingRequests,
     phoneInput,
+    keywordInput,
     requestsLoading,
     searchLoading,
     searchResults,
@@ -513,12 +557,12 @@ export default function ContactsScreen(): JSX.Element {
         ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: colors.border }]} />}
         ListEmptyComponent={
           friendsLoading ? (
-            <ActivityIndicator style={styles.loadingIndicator} size="small" color={colors.tint} />
+            <ActivityIndicator style={styles.loadingIndicator} size="small" color={colors.accent} />
           ) : (
             <ThemedText style={[styles.emptyText, { color: colors.tabIconDefault }]}>还没有好友，快去添加吧～</ThemedText>
           )
         }
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.tint} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
       />
     </ThemedView>
   );
@@ -551,6 +595,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  searchRowSecondary: {
+    marginTop: 12,
   },
   searchInput: {
     flex: 1,

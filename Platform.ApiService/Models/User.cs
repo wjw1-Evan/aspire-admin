@@ -672,4 +672,10 @@ public class UpdateProfileRequest
     /// </summary>
     [Range(0, 150, ErrorMessage = "年龄必须在0-150之间")]
     public int? Age { get; set; }
+
+    /// <summary>
+    /// 头像（Base64 数据或图片链接）。
+    /// </summary>
+    [StringLength(2_500_000, ErrorMessage = "头像数据过大，请选择更小的图片")]
+    public string? Avatar { get; set; }
 }

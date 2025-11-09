@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View 
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface MessageComposerProps {
   readonly disabled?: boolean;
@@ -20,20 +20,26 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 }) => {
   const [value, setValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const containerBackground = useThemeColor({ light: '#ededed', dark: '#0f172a' }, 'background');
-  const panelBackground = useThemeColor({ light: '#ffffff', dark: '#1f2937' }, 'card');
-  const textColor = useThemeColor({}, 'text');
-  const placeholderColor = useThemeColor({}, 'placeholder');
-  const iconColor = useThemeColor({ light: '#4b5563', dark: '#cbd5f5' }, 'icon');
-  const accentColor = useThemeColor({ light: '#07c160', dark: '#22c55e' }, 'tint');
-  const disabledIconColor = useThemeColor({ light: '#9ca3af', dark: '#4b5563' }, 'tabIconDefault');
-  const dividerColor = useThemeColor({ light: '#e5e7eb', dark: '#111827' }, 'border');
+  const { theme } = useTheme();
+  const containerBackground = theme.mode === 'light' ? '#F4F4F4' : '#121212';
+  const panelBackground = theme.colors.listBackground;
+  const textColor = theme.colors.text;
+  const placeholderColor = theme.colors.placeholder;
+  const iconColor = theme.colors.icon;
+  const accentColor = theme.colors.accent;
+  const disabledIconColor = theme.colors.secondaryText;
+  const dividerColor = theme.colors.border;
+  const sendActiveColor = theme.colors.accent;
+  const sendInactiveColor = theme.mode === 'light' ? '#B8B8B8' : '#2F2F2F';
+  const sendTextActiveColor = theme.colors.accentContrastText;
+  const sendTextInactiveColor = theme.colors.tertiaryText;
 
   const trimmedValue = useMemo(() => value.trim(), [value]);
-  const canSend = trimmedValue.length > 0 && !disabled;
+  const showSendChip = trimmedValue.length > 0;
+  const sendDisabled = disabled || submitting || trimmedValue.length === 0;
 
   const handleSend = useCallback(async () => {
-    if (!canSend || submitting) {
+    if (sendDisabled) {
       return;
     }
     try {
@@ -43,7 +49,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     } finally {
       setSubmitting(false);
     }
-  }, [canSend, onSend, trimmedValue, submitting]);
+  }, [onSend, sendDisabled, trimmedValue]);
 
   const handlePickAttachment = useCallback(async () => {
     if (!onPickAttachment || submitting || disabled) {
@@ -85,14 +91,25 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         <Pressable style={styles.iconButton} onPress={handleEmojiPress} hitSlop={12}>
           <IconSymbol name="face.smiling" size={22} color={iconColor} />
         </Pressable>
-        {canSend ? (
+        {showSendChip ? (
           <Pressable
-            style={[styles.sendChip, { backgroundColor: accentColor }]}
+            style={[
+              styles.sendChip,
+              { backgroundColor: sendDisabled ? sendInactiveColor : sendActiveColor },
+            ]}
             onPress={handleSend}
             hitSlop={12}
-            disabled={submitting}
+            disabled={sendDisabled}
           >
-            <ThemedText style={styles.sendLabel}>发送</ThemedText>
+            <ThemedText
+              type="bodyStrong"
+              style={{
+                color: sendDisabled ? sendTextInactiveColor : sendTextActiveColor,
+                fontSize: 14,
+              }}
+            >
+              {submitting ? '发送中…' : '发送'}
+            </ThemedText>
           </Pressable>
         ) : (
           <Pressable
@@ -148,11 +165,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  sendLabel: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
 

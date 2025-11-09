@@ -1,11 +1,13 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using OpenAI;
 using OpenAI.Chat;
+using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
@@ -20,16 +22,27 @@ namespace Platform.ApiService.Services;
 public interface IAiSuggestionService
 {
     /// <summary>
-    /// 以流式方式生成智能回复候选。
+    /// 生成智能回复候选列表。
     /// </summary>
     /// <param name="request">请求参数。</param>
     /// <param name="currentUserId">当前用户标识。</param>
     /// <param name="cancellationToken">取消标识。</param>
-    /// <returns>流式片段序列。</returns>
-    IAsyncEnumerable<AiSuggestionStreamChunk> StreamSmartRepliesAsync(
+    /// <returns>智能回复结果。</returns>
+    Task<AiSuggestionResponse> GetSmartRepliesAsync(
         AiSmartReplyRequest request,
         string currentUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 获取 AI 匹配推荐列表。
+    /// </summary>
+    /// <param name="request">匹配请求参数。</param>
+    /// <param name="currentUserId">当前用户标识。</param>
+    /// <returns>推荐结果。</returns>
+    /// <exception cref="UnauthorizedAccessException">当尝试为其他用户获取推荐时抛出。</exception>
+    Task<MatchSuggestionResponse> GetMatchSuggestionsAsync(
+        MatchSuggestionRequest request,
+        string currentUserId);
 }
 
 /// <summary>
@@ -37,14 +50,14 @@ public interface IAiSuggestionService
 /// </summary>
 public class AiSuggestionService : IAiSuggestionService
 {
-    private const int DefaultSuggestionCount = 3;
-    private const int MaxContextMessages = 6;
+    private const int DefaultSuggestionCount = 2;
     private const string SmartReplySource = "smart-reply";
-    private const string ChunkTypeFallback = "fallback";
-    private const string ChunkTypeComplete = "complete";
+    private const string DefaultSuggestionNotice = "小科暂时没有生成推荐，请稍后再试或尝试调整话题。";
+    private const string DefaultSystemPrompt = "你是小科，担任微信风格的对话助理，请使用简体中文，提供自然、真诚且有温度的建议。";
 
     private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
     private readonly IDatabaseOperationFactory<DomainChatMessage> _messageFactory;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
     private readonly ILogger<AiSuggestionService> _logger;
@@ -55,22 +68,186 @@ public class AiSuggestionService : IAiSuggestionService
     public AiSuggestionService(
         IDatabaseOperationFactory<ChatSession> sessionFactory,
         IDatabaseOperationFactory<DomainChatMessage> messageFactory,
+        IDatabaseOperationFactory<AppUser> userFactory,
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
         ILogger<AiSuggestionService> logger)
     {
         _sessionFactory = sessionFactory;
         _messageFactory = messageFactory;
+        _userFactory = userFactory;
         _openAiClient = openAiClient;
         _aiOptions = aiOptions.Value;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<AiSuggestionStreamChunk> StreamSmartRepliesAsync(
+    public async Task<AiSuggestionResponse> GetSmartRepliesAsync(
         AiSmartReplyRequest request,
         string currentUserId,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
+    {
+        var context = await PrepareSmartReplyContextAsync(request, currentUserId);
+        var response = new AiSuggestionResponse();
+
+        if (!TryResolveChatClient(context, response, out var model, out var chatClient))
+        {
+            return response;
+        }
+
+        var languageTag = ResolveLanguageTag(context.Request.Locale);
+        var instruction = BuildInstruction(ResolveSystemPrompt(), languageTag);
+        var userContent = context.ContextLines.Count == 0
+            ? "（上下文为空）"
+            : string.Join("\n", context.ContextLines);
+        var messages = BuildChatMessages(instruction, context.ConversationMessages, userContent);
+        var completionOptions = BuildCompletionOptions(currentUserId);
+
+        var (completion, latencyMs, fallbackSuggestions) = await TryCompleteChatAsync(
+            chatClient!,
+            messages,
+            completionOptions,
+            context.ContextLines,
+            cancellationToken);
+
+        response.LatencyMs = latencyMs;
+
+        if (fallbackSuggestions != null)
+        {
+            AssignSuggestions(response, fallbackSuggestions);
+            return response;
+        }
+
+        HandleCompletionResponse(response, completion, model, context.ContextLines);
+        return response;
+    }
+
+    /// <summary>
+    /// 基于兴趣偏好和历史会话生成匹配推荐列表。
+    /// </summary>
+    /// <param name="request">匹配请求参数。</param>
+    /// <param name="currentUserId">当前用户标识。</param>
+    /// <returns>匹配推荐结果。</returns>
+    /// <exception cref="UnauthorizedAccessException">当尝试为其他用户获取推荐时抛出。</exception>
+    public async Task<MatchSuggestionResponse> GetMatchSuggestionsAsync(
+        MatchSuggestionRequest request,
+        string currentUserId)
+    {
+        request = NormalizeMatchRequest(request, currentUserId);
+
+        var tenantCompanyId = _sessionFactory.GetRequiredCompanyId();
+        var interestKeywords = BuildInterestKeywords(request);
+        var limit = NormalizeLimit(request.Limit);
+
+        var sessionMap = await BuildSessionMapAsync(currentUserId, tenantCompanyId);
+
+        var userFilter = _userFactory.CreateFilterBuilder()
+            .Equal(user => user.IsActive, true)
+            .Equal(user => user.CurrentCompanyId, tenantCompanyId)
+            .Build();
+
+        var candidateUsers = await _userFactory.FindAsync(userFilter);
+        var suggestions = BuildMatchSuggestions(candidateUsers, currentUserId, interestKeywords, sessionMap, limit);
+
+        return new MatchSuggestionResponse
+        {
+            Items = suggestions,
+            GeneratedAt = DateTime.UtcNow
+        };
+    }
+
+    private MatchSuggestionRequest NormalizeMatchRequest(MatchSuggestionRequest request, string currentUserId)
+    {
+        request = request.EnsureNotNull(nameof(request));
+        if (string.IsNullOrWhiteSpace(request.UserId))
+        {
+            request.UserId = currentUserId;
+        }
+
+        if (!string.Equals(request.UserId, currentUserId, StringComparison.Ordinal))
+        {
+            _logger.LogWarning("用户 {UserId} 尝试为 {TargetUserId} 请求匹配推荐，被拒绝", currentUserId, request.UserId);
+            throw new UnauthorizedAccessException("禁止为其他用户请求匹配推荐");
+        }
+
+        return request;
+    }
+
+    private static HashSet<string> BuildInterestKeywords(MatchSuggestionRequest request)
+    {
+        return (request.Interests ?? new List<string>())
+            .Where(tag => !string.IsNullOrWhiteSpace(tag))
+            .Select(tag => tag.Trim().ToLowerInvariant())
+            .Where(tag => tag.Length > 0)
+            .Distinct()
+            .ToHashSet();
+    }
+
+    private static int NormalizeLimit(int? limit) => Math.Clamp(limit ?? 10, 1, 50);
+
+    private async Task<Dictionary<string, string>> BuildSessionMapAsync(string currentUserId, string tenantCompanyId)
+    {
+        var sessionFilter = Builders<ChatSession>.Filter.And(
+            Builders<ChatSession>.Filter.AnyEq(session => session.Participants, currentUserId),
+            Builders<ChatSession>.Filter.Eq(session => session.CompanyId, tenantCompanyId));
+
+        var sessionSort = _sessionFactory.CreateSortBuilder()
+            .Descending(session => session.UpdatedAt)
+            .Build();
+
+        var sessions = await _sessionFactory.FindAsync(sessionFilter, sessionSort, limit: 50);
+
+        var sessionMap = new Dictionary<string, string>();
+        foreach (var session in sessions)
+        {
+            if (session.Participants == null)
+            {
+                continue;
+            }
+
+            foreach (var participant in session.Participants)
+            {
+                if (IsCurrentOrAssistant(participant, currentUserId))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(session.Id) && !sessionMap.ContainsKey(participant))
+                {
+                    sessionMap[participant] = session.Id;
+                }
+            }
+        }
+
+        return sessionMap;
+    }
+
+    private static bool IsCurrentOrAssistant(string participant, string currentUserId) =>
+        string.Equals(participant, currentUserId, StringComparison.Ordinal) ||
+        string.Equals(participant, AiAssistantConstants.AssistantUserId, StringComparison.Ordinal);
+
+    private List<MatchSuggestionItem> BuildMatchSuggestions(
+        IEnumerable<AppUser> candidateUsers,
+        string currentUserId,
+        IReadOnlySet<string> interestKeywords,
+        IReadOnlyDictionary<string, string> sessionMap,
+        int limit)
+    {
+        return candidateUsers
+            .Where(user => !string.Equals(user.Id, currentUserId, StringComparison.Ordinal))
+            .Where(user => !string.Equals(user.Id, AiAssistantConstants.AssistantUserId, StringComparison.Ordinal))
+            .Select(user => BuildMatchSuggestion(user, sessionMap, interestKeywords))
+            .Where(suggestion => suggestion is not null)
+            .Select(suggestion => suggestion!)
+            .OrderByDescending(suggestion => suggestion.MatchScore)
+            .ThenBy(suggestion => suggestion.DisplayName)
+            .Take(limit)
+            .ToList();
+    }
+
+    private async Task<SmartReplyContext> PrepareSmartReplyContextAsync(
+        AiSmartReplyRequest request,
+        string currentUserId)
     {
         request = request.EnsureNotNull(nameof(request));
         request.SessionId.EnsureNotEmpty("会话标识");
@@ -79,7 +256,7 @@ public class AiSuggestionService : IAiSuggestionService
         if (!string.Equals(request.UserId, currentUserId, StringComparison.Ordinal))
         {
             _logger.LogWarning(
-                "用户 {UserId} 尝试为 {TargetUserId} 请求流式智能回复，被拒绝",
+                "用户 {UserId} 尝试为 {TargetUserId} 请求智能回复，被拒绝",
                 currentUserId,
                 request.UserId);
             throw new UnauthorizedAccessException("禁止为其他用户请求智能回复");
@@ -93,182 +270,18 @@ public class AiSuggestionService : IAiSuggestionService
             throw new UnauthorizedAccessException("当前用户不属于该会话");
         }
 
-        var contextLines = await BuildConversationContextAsync(request, session, currentUserId);
+        var (conversationMessages, contextLines) = await LoadSessionHistoryAsync(session, currentUserId);
+        MergeRequestMessages(request, conversationMessages, contextLines);
 
-        // 如果未配置 OpenAI，直接返回本地候选
-        if (string.IsNullOrWhiteSpace(_aiOptions.Endpoint) || string.IsNullOrWhiteSpace(_aiOptions.ApiKey))
-        {
-            var fallback = BuildFallbackSuggestions(contextLines);
-            yield return new AiSuggestionStreamChunk
-            {
-                Type = fallback.Count == 0 ? ChunkTypeFallback : ChunkTypeComplete,
-                Suggestions = fallback,
-                Timestamp = DateTime.UtcNow
-            };
-            yield break;
-        }
-
-        var model = string.IsNullOrWhiteSpace(_aiOptions.Model)
-            ? "gpt-4o-mini"
-            : _aiOptions.Model;
-
-        ChatClient? chatClient = null;
-        List<AiSuggestionItem>? failureSuggestions = null;
-
-        try
-        {
-            chatClient = _openAiClient.GetChatClient(model);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "初始化 OpenAI ChatClient 失败，模型：{Model}", model);
-            failureSuggestions = BuildFallbackSuggestions(contextLines);
-        }
-
-        if (failureSuggestions != null)
-        {
-            yield return new AiSuggestionStreamChunk
-            {
-                Type = ChunkTypeFallback,
-                Suggestions = failureSuggestions,
-                Timestamp = DateTime.UtcNow
-            };
-            yield break;
-        }
-
-        var resolvedClient = chatClient!;
-
-        var languageTag = string.IsNullOrWhiteSpace(request.Locale) ? "zh-CN" : request.Locale;
-        var systemPrompt = string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
-            ? "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
-            : _aiOptions.SystemPrompt;
-
-        var instruction = $@"{systemPrompt}
-
-用户语言标识：{languageTag}
-
-请根据以下聊天历史生成 {DefaultSuggestionCount} 条适合继续对话的建议回复，要求：
-1. 单条回复不超过 60 个汉字或 120 个字符；
-2. 避免重复表达，保持语气自然、友好；
-3. 若上下文为空，输出通用的寒暄/回应语；
-4. 返回 JSON，结构为 {{""suggestions"":[{{""content"":""..."", ""confidence"":0.8}}, ...]}}。
-";
-
-        var userContent = contextLines.Count == 0
-            ? "（上下文为空）"
-            : string.Join("\n", contextLines);
-
-        var messages = new List<OpenAiChatMessage>
-        {
-            new SystemChatMessage(instruction),
-            new UserChatMessage(userContent)
-        };
-
-        var completionOptions = new ChatCompletionOptions
-        {
-            EndUserId = currentUserId
-        };
-
-        if (_aiOptions.MaxTokens > 0)
-        {
-            completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
-        }
-
-        ChatCompletion? completion = null;
-        var stopwatch = Stopwatch.StartNew();
-
-        failureSuggestions = null;
-
-        try
-        {
-            var completionResult = await resolvedClient.CompleteChatAsync(
-                messages,
-                completionOptions,
-                cancellationToken);
-            completion = completionResult.Value;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "调用 OpenAI 获取智能回复失败，将使用本地候选");
-            failureSuggestions = BuildFallbackSuggestions(contextLines);
-        }
-
-        if (failureSuggestions != null)
-        {
-            yield return new AiSuggestionStreamChunk
-            {
-                Type = ChunkTypeFallback,
-                Suggestions = failureSuggestions,
-                Timestamp = DateTime.UtcNow
-            };
-            yield break;
-        }
-
-        stopwatch.Stop();
-
-        var finalText = completion?.Content?.FirstOrDefault()?.Text ?? string.Empty;
-        List<AiSuggestionItem>? suggestions = null;
-
-        if (!string.IsNullOrWhiteSpace(finalText))
-        {
-            try
-            {
-                var parsed = JsonSerializer.Deserialize<SmartReplyPayload>(finalText);
-                if (parsed?.Suggestions != null && parsed.Suggestions.Count > 0)
-                {
-                    suggestions = parsed.Suggestions
-                        .Where(s => !string.IsNullOrWhiteSpace(s.Content))
-                        .Select(s => new AiSuggestionItem
-                        {
-                            Content = s.Content.Trim(),
-                            Confidence = s.Confidence,
-                            Source = SmartReplySource
-                        })
-                        .ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "解析 OpenAI 流式结果失败：{Result}", finalText);
-            }
-        }
-
-        if (suggestions == null || suggestions.Count == 0)
-        {
-            suggestions = BuildFallbackSuggestions(contextLines);
-            yield return new AiSuggestionStreamChunk
-            {
-                Type = ChunkTypeFallback,
-                Suggestions = suggestions,
-                LatencyMs = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds),
-                Timestamp = DateTime.UtcNow
-            };
-            yield break;
-        }
-
-        yield return new AiSuggestionStreamChunk
-        {
-            Type = ChunkTypeComplete,
-            Suggestions = suggestions,
-            LatencyMs = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds),
-            Timestamp = DateTime.UtcNow
-        };
+        return new SmartReplyContext(request, session, contextLines, conversationMessages);
     }
 
-    private async Task<List<string>> BuildConversationContextAsync(
-        AiSmartReplyRequest request,
+    private async Task<(List<AiConversationMessage> Messages, List<string> ContextLines)> LoadSessionHistoryAsync(
         ChatSession session,
         string currentUserId)
     {
-        var context = (request.ConversationContext ?? new List<string>())
-            .Where(line => !string.IsNullOrWhiteSpace(line))
-            .Select(line => line.Trim())
-            .ToList();
-
-        if (context.Count > 0)
-        {
-            return context.TakeLast(MaxContextMessages).ToList();
-        }
+        var conversationMessages = new List<AiConversationMessage>();
+        var contextLines = new List<string>();
 
         try
         {
@@ -277,58 +290,396 @@ public class AiSuggestionService : IAiSuggestionService
                 .Build();
 
             var sort = _messageFactory.CreateSortBuilder()
-                .Descending(message => message.CreatedAt)
+                .Ascending(message => message.CreatedAt)
                 .Build();
 
-            var recentMessages = await _messageFactory.FindAsync(filter, sort, MaxContextMessages);
-            return recentMessages
-                .OrderBy(m => m.CreatedAt)
-                .Select(m =>
+            var allMessages = await _messageFactory.FindAsync(filter, sort);
+
+            foreach (var message in allMessages)
+            {
+                if (message.IsDeleted || message.IsRecalled)
                 {
-                    var senderName = m.SenderId == currentUserId
-                        ? "我"
-                        : session.ParticipantNames?.GetValueOrDefault(m.SenderId) ?? m.SenderName ?? m.SenderId;
-                    return $"{senderName}: {m.Content}".Trim();
+                    continue;
+                }
+
+                var normalizedContent = NormalizeMessageContent(message);
+                if (string.IsNullOrWhiteSpace(normalizedContent))
+                {
+                    continue;
+                }
+
+                var isSelf = string.Equals(message.SenderId, currentUserId, StringComparison.Ordinal);
+                conversationMessages.Add(new AiConversationMessage
+                {
+                    Role = isSelf ? "assistant" : "user",
+                    Content = normalizedContent
+                });
+
+                var senderName = isSelf
+                    ? "我"
+                    : session.ParticipantNames?.GetValueOrDefault(message.SenderId)
+                        ?? message.SenderName
+                        ?? message.SenderId;
+
+                contextLines.Add($"{senderName}: {normalizedContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取会话 {SessionId} 的历史消息失败，尝试使用请求附带的上下文", session.Id);
+        }
+
+        return (conversationMessages, contextLines);
+    }
+
+    private static void MergeRequestMessages(
+        AiSmartReplyRequest request,
+        List<AiConversationMessage> conversationMessages,
+        List<string> contextLines)
+    {
+        var requestMessages = (request.ConversationMessages ?? new List<AiConversationMessage>())
+            .Where(message => !string.IsNullOrWhiteSpace(message.Content))
+            .Select(message => new AiConversationMessage
+            {
+                Role = string.IsNullOrWhiteSpace(message.Role)
+                    ? "user"
+                    : message.Role.Trim().ToLowerInvariant(),
+                Content = message.Content.Trim()
+            })
+            .ToList();
+
+        var systemInstructions = requestMessages
+            .Where(message => string.Equals(message.Role, "system", StringComparison.Ordinal))
+            .ToList();
+
+        var nonInstructionMessages = requestMessages
+            .Where(message => !string.Equals(message.Role, "system", StringComparison.Ordinal))
+            .ToList();
+
+        if (conversationMessages.Count == 0 && nonInstructionMessages.Count > 0)
+        {
+            foreach (var message in nonInstructionMessages)
+            {
+                conversationMessages.Add(message);
+                var label = message.Role switch
+                {
+                    "assistant" => "我",
+                    _ => "对方"
+                };
+                contextLines.Add($"{label}: {message.Content}");
+            }
+        }
+
+        foreach (var systemMessage in systemInstructions)
+        {
+            conversationMessages.Add(systemMessage);
+            contextLines.Add($"系统: {systemMessage.Content}");
+        }
+
+        var additionalLines = (request.ConversationContext ?? new List<string>())
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Select(line => line.Trim())
+            .ToList();
+
+        if (additionalLines.Count > 0)
+        {
+            contextLines.AddRange(additionalLines);
+        }
+
+        if (conversationMessages.Count == 0 && contextLines.Count > 0)
+        {
+            conversationMessages.AddRange(contextLines.Select(line => new AiConversationMessage
+            {
+                Role = "user",
+                Content = line
+            }));
+        }
+    }
+
+    private bool IsOpenAiConfigured() =>
+        !string.IsNullOrWhiteSpace(_aiOptions.Endpoint) &&
+        !string.IsNullOrWhiteSpace(_aiOptions.ApiKey);
+
+    private string ResolveSystemPrompt() =>
+        string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
+            ? DefaultSystemPrompt
+            : _aiOptions.SystemPrompt;
+
+    private static string ResolveLanguageTag(string? locale) =>
+        string.IsNullOrWhiteSpace(locale) ? "zh-CN" : locale;
+
+    private static string BuildInstruction(string systemPrompt, string languageTag) =>
+        $@"{systemPrompt}
+
+当前用户语言标识：{languageTag}
+
+请基于下方完整的聊天历史生成 {DefaultSuggestionCount} 条“智能推荐回复候选”消息，帮助用户顺畅地继续对话。必须遵循：
+1. 每条建议控制在 18 个汉字或 120 个字符以内，避免多句堆砌。
+2. 语气需贴近微信真实聊天风格，可适度加入 Emoji 或情绪词，但要自然。
+3. 如果上下文为空，输出开场寒暄或破冰建议。
+4. 严格输出 JSON，结构如下：
+{{
+  ""suggestions"": [
+    {{
+      ""content"": ""..."",
+      ""category"": ""延续话题|追问细节|共情回应|提供建议|轻松缓和"",
+      ""style"": ""语气描述，例如：真诚共情"",
+      ""quickTip"": ""一句话提示"",
+      ""insight"": ""可选补充原因，无则省略"",
+      ""confidence"": 0.82
+    }}
+  ]
+}}
+
+只返回 JSON，不要添加额外说明。";
+
+    private static List<OpenAiChatMessage> BuildChatMessages(
+        string instruction,
+        IReadOnlyList<AiConversationMessage> conversationMessages,
+        string fallbackUserContent)
+    {
+        var messages = new List<OpenAiChatMessage> { new SystemChatMessage(instruction) };
+        var hasConversationContent = false;
+
+        foreach (var conversation in conversationMessages)
+        {
+            var content = conversation.Content?.Trim();
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                continue;
+            }
+
+            var role = conversation.Role?.Trim().ToLowerInvariant();
+            switch (role)
+            {
+                case "assistant":
+                    messages.Add(new AssistantChatMessage(content));
+                    hasConversationContent = true;
+                    break;
+                case "system":
+                    messages.Add(new SystemChatMessage(content));
+                    break;
+                default:
+                    messages.Add(new UserChatMessage(content));
+                    hasConversationContent = true;
+                    break;
+            }
+        }
+
+        if (!hasConversationContent)
+        {
+            messages.Add(new UserChatMessage(fallbackUserContent));
+        }
+
+        return messages;
+    }
+
+    private ChatCompletionOptions BuildCompletionOptions(string currentUserId)
+    {
+        var options = new ChatCompletionOptions
+        {
+            EndUserId = currentUserId
+        };
+
+        if (_aiOptions.MaxTokens > 0)
+        {
+            options.MaxOutputTokenCount = _aiOptions.MaxTokens;
+        }
+
+        return options;
+    }
+
+    private bool TryResolveChatClient(
+        SmartReplyContext context,
+        AiSuggestionResponse response,
+        out string model,
+        out ChatClient? chatClient)
+    {
+        model = string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model;
+
+        if (!IsOpenAiConfigured())
+        {
+            AssignSuggestions(response, BuildFallbackSuggestions(context.ContextLines));
+            chatClient = null;
+            return false;
+        }
+
+        return TryCreateChatClient(model, context.ContextLines, response, out chatClient);
+    }
+
+    private bool TryCreateChatClient(
+        string model,
+        IReadOnlyList<string> contextLines,
+        AiSuggestionResponse response,
+        out ChatClient? chatClient)
+    {
+        try
+        {
+            chatClient = _openAiClient.GetChatClient(model);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "初始化 OpenAI ChatClient 失败，模型：{Model}", model);
+            AssignSuggestions(response, BuildFallbackSuggestions(contextLines));
+            chatClient = null;
+            return false;
+        }
+    }
+
+    private async Task<(ChatCompletion? Completion, int LatencyMs, List<AiSuggestionItem>? FallbackSuggestions)> TryCompleteChatAsync(
+        ChatClient chatClient,
+        IReadOnlyList<OpenAiChatMessage> messages,
+        ChatCompletionOptions completionOptions,
+        IReadOnlyList<string> contextLines,
+        CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var completionResult = await chatClient.CompleteChatAsync(messages, completionOptions, cancellationToken);
+            stopwatch.Stop();
+            return (completionResult.Value, (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds), null);
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _logger.LogWarning(ex, "调用 OpenAI 获取智能回复失败，将使用本地候选");
+            return (null, (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds), BuildFallbackSuggestions(contextLines));
+        }
+    }
+
+    private void HandleCompletionResponse(
+        AiSuggestionResponse response,
+        ChatCompletion? completion,
+        string model,
+        IReadOnlyList<string> contextLines)
+    {
+        var finalText = completion?.Content?.FirstOrDefault()?.Text ?? string.Empty;
+        var suggestions = TryParseSuggestions(finalText, model)
+            ?? BuildFallbackSuggestions(contextLines);
+
+        AssignSuggestions(response, suggestions);
+    }
+
+    private List<AiSuggestionItem>? TryParseSuggestions(string finalText, string model)
+    {
+        if (string.IsNullOrWhiteSpace(finalText))
+        {
+            return null;
+        }
+
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<SmartReplyPayload>(finalText);
+            if (parsed?.Suggestions == null || parsed.Suggestions.Count == 0)
+            {
+                return null;
+            }
+
+            return parsed.Suggestions
+                .Where(suggestion => !string.IsNullOrWhiteSpace(suggestion.Content))
+                .Take(DefaultSuggestionCount)
+                .Select(suggestion => new AiSuggestionItem
+                {
+                    Content = suggestion.Content.Trim(),
+                    Confidence = suggestion.Confidence,
+                    Category = NormalizeOrNull(suggestion.Category),
+                    Style = NormalizeOrNull(suggestion.Style),
+                    QuickTip = NormalizeOrNull(suggestion.QuickTip),
+                    Insight = NormalizeOrNull(suggestion.Insight),
+                    Source = SmartReplySource,
+                    Metadata = BuildSuggestionMetadata(model, suggestion)
                 })
-                .Where(line => !string.IsNullOrWhiteSpace(line))
                 .ToList();
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "获取会话 {SessionId} 的上下文失败，使用空上下文", session.Id);
-            return new List<string>();
+            _logger.LogWarning(ex, "解析 OpenAI 结果失败：{Result}", finalText);
+            return null;
         }
+    }
+
+    private static void AssignSuggestions(AiSuggestionResponse response, List<AiSuggestionItem> suggestions, string? notice = null)
+    {
+        suggestions ??= new List<AiSuggestionItem>();
+        response.Suggestions = suggestions;
+        response.Notice = notice ?? (suggestions.Count == 0 ? DefaultSuggestionNotice : null);
+    }
+
+    private sealed record SmartReplyContext(
+        AiSmartReplyRequest Request,
+        ChatSession Session,
+        List<string> ContextLines,
+        List<AiConversationMessage> ConversationMessages);
+
+    private static string? NormalizeMessageContent(DomainChatMessage message)
+    {
+        var text = message.Content?.Trim();
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            return text;
+        }
+
+        if (message.Attachment != null)
+        {
+            var mimeType = message.Attachment.MimeType ?? string.Empty;
+            if (mimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return "[图片]";
+            }
+
+            if (!string.IsNullOrWhiteSpace(mimeType))
+            {
+                return $"[附件:{mimeType}]";
+            }
+
+            return "[附件]";
+        }
+
+        return null;
     }
 
     private static List<AiSuggestionItem> BuildFallbackSuggestions(IReadOnlyList<string> contextLines)
     {
-        string? lastLine = contextLines.Count > 0 ? contextLines[^1] : null;
-        var fallback = new List<string>
+        _ = contextLines;
+        return new List<AiSuggestionItem>();
+    }
+
+    private static string? NormalizeOrNull(string? value)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
+    }
+
+    private static Dictionary<string, object> BuildSuggestionMetadata(string model, SmartReplyItem item)
+    {
+        var metadata = new Dictionary<string, object>
         {
-            "收到，我这边马上跟进。",
-            "好的，稍后我会再确认一下情况。",
-            "了解啦，如有需要随时告诉我。"
+            ["model"] = model
         };
 
-        if (!string.IsNullOrWhiteSpace(lastLine))
+        if (!string.IsNullOrWhiteSpace(item.Category))
         {
-            var segments = lastLine.Split(':');
-            var normalizedSegment = segments.Length > 0 ? segments[^1] : lastLine;
-            var normalized = normalizedSegment.Trim();
-            if (!string.IsNullOrWhiteSpace(normalized))
-            {
-                fallback[0] = $"好的，关于“{normalized}”我再确认一下。";
-            }
+            metadata["category"] = item.Category.Trim();
         }
 
-        return fallback
-            .Select(content => new AiSuggestionItem
-            {
-                Content = content.Trim(),
-                Source = SmartReplySource,
-                Confidence = null
-            })
-            .ToList();
+        if (!string.IsNullOrWhiteSpace(item.Style))
+        {
+            metadata["style"] = item.Style.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.QuickTip))
+        {
+            metadata["quickTip"] = item.QuickTip.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.Insight))
+        {
+            metadata["insight"] = item.Insight.Trim();
+        }
+
+        return metadata;
     }
 
     private sealed class SmartReplyPayload
@@ -341,6 +692,67 @@ public class AiSuggestionService : IAiSuggestionService
         public string Content { get; set; } = string.Empty;
         public double? Confidence { get; set; }
             = default;
+        public string? Category { get; set; }
+            = default;
+        public string? Style { get; set; }
+            = default;
+        public string? QuickTip { get; set; }
+            = default;
+        public string? Insight { get; set; }
+            = default;
+    }
+
+    private MatchSuggestionItem? BuildMatchSuggestion(
+        AppUser user,
+        IReadOnlyDictionary<string, string> sessionMap,
+        IReadOnlySet<string> interestKeywords)
+    {
+        var displayName = string.IsNullOrWhiteSpace(user.Name)
+            ? user.Username
+            : user.Name!;
+
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            return null;
+        }
+
+        var userTags = user.Tags?
+            .Select(tag => tag.Label ?? tag.Key)
+            .Where(label => !string.IsNullOrWhiteSpace(label))
+            .Select(label => label!.Trim())
+            .Where(label => label.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? new List<string>();
+
+        var sharedInterests = interestKeywords.Count == 0
+            ? new List<string>()
+            : userTags
+                .Where(label => interestKeywords.Contains(label.ToLowerInvariant()))
+                .Take(5)
+                .ToList();
+
+        var baseScore = user.LastLoginAt.HasValue
+            ? Math.Clamp(1d - (DateTime.UtcNow - user.LastLoginAt.Value.ToUniversalTime()).TotalDays / 30d, 0, 1)
+            : 0.5d;
+
+        var interestScore = sharedInterests.Count == 0
+            ? 0.2d
+            : Math.Min(0.6d, 0.3d + sharedInterests.Count * 0.1d);
+
+        var sessionScore = sessionMap.ContainsKey(user.Id) ? 0.2d : 0d;
+
+        var matchScore = Math.Clamp(baseScore * 0.4d + interestScore + sessionScore, 0d, 1d);
+
+        return new MatchSuggestionItem
+        {
+            UserId = user.Id,
+            DisplayName = displayName,
+            AvatarUrl = user.Avatar,
+            SharedInterests = sharedInterests,
+            MatchScore = Math.Round(matchScore, 2, MidpointRounding.AwayFromZero),
+            Bio = user.Email,
+            SessionId = sessionMap.TryGetValue(user.Id, out var sessionId) ? sessionId : null
+        };
     }
 }
 

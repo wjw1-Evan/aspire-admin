@@ -104,6 +104,7 @@ export interface UpdateProfileParams {
   name?: string;
   email?: string;
   age?: number;
+  avatar?: string;
 }
 
 // 刷新令牌请求

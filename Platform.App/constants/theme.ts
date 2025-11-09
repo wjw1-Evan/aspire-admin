@@ -1,65 +1,214 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * Using Prussian Blue color palette - deep, professional, and authoritative colors.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
-// 普鲁士蓝色系 - 浅色模式
-const tintColorLight = '#003A6B'; // 普鲁士蓝
-const tintColorDark = '#4A90E2'; // 普鲁士蓝浅色
+export type ThemeColorScheme = {
+  text: string;
+  secondaryText: string;
+  tertiaryText: string;
+  background: string;
+  listBackground: string;
+  card: string;
+  cardMuted: string;
+  accent: string;
+  accentMuted: string;
+  accentContrastText: string;
+  tint: string;
+  tintMuted: string;
+  icon: string;
+  tabIconDefault: string;
+  tabIconSelected: string;
+  border: string;
+  divider: string;
+  placeholder: string;
+  success: string;
+  warning: string;
+  danger: string;
+  error: string;
+  info: string;
+  navBar: string;
+  navBorder: string;
+  messageIncoming: string;
+  messageIncomingText: string;
+  messageOutgoing: string;
+  messageOutgoingText: string;
+  tooltip: string;
+  mask: string;
+  highlight: string;
+};
 
-export const Colors = {
+const LightColors: ThemeColorScheme = {
+  text: '#191919',
+  secondaryText: '#6B6B6B',
+  tertiaryText: '#A6A6A6',
+  background: '#F5F5F5',
+  listBackground: '#FFFFFF',
+  card: '#FFFFFF',
+  cardMuted: '#F7F7F7',
+  accent: '#07C160',
+  accentMuted: '#C6F4D6',
+  accentContrastText: '#FFFFFF',
+  tint: '#07C160',
+  tintMuted: '#C6F4D6',
+  icon: '#6F6F6F',
+  tabIconDefault: '#9B9B9B',
+  tabIconSelected: '#07C160',
+  border: '#E6E6E6',
+  divider: '#EFEFEF',
+  placeholder: '#B2B2B2',
+  success: '#07C160',
+  warning: '#FFB300',
+  danger: '#FA5151',
+  error: '#FA5151',
+  info: '#10AEFF',
+  navBar: '#FAFAFA',
+  navBorder: '#E5E5E5',
+  messageIncoming: '#FFFFFF',
+  messageIncomingText: '#191919',
+  messageOutgoing: '#95EC69',
+  messageOutgoingText: '#0A0A0A',
+  tooltip: '#4C4C4C',
+  mask: 'rgba(0, 0, 0, 0.55)',
+  highlight: '#E8F5EA',
+};
+
+const DarkColors: ThemeColorScheme = {
+  text: '#F1F1F1',
+  secondaryText: '#9C9C9C',
+  tertiaryText: '#6B6B6B',
+  background: '#111111',
+  listBackground: '#1E1E1E',
+  card: '#1F1F1F',
+  cardMuted: '#242424',
+  accent: '#07C160',
+  accentMuted: '#1F3B2B',
+  accentContrastText: '#111111',
+  tint: '#07C160',
+  tintMuted: '#1F3B2B',
+  icon: '#A5A5A5',
+  tabIconDefault: '#7D7D7D',
+  tabIconSelected: '#07C160',
+  border: '#2A2A2A',
+  divider: '#2F2F2F',
+  placeholder: '#5A5A5A',
+  success: '#1AAD19',
+  warning: '#F2C230',
+  danger: '#F56C6C',
+  error: '#F56C6C',
+  info: '#3C9BFF',
+  navBar: '#151515',
+  navBorder: '#262626',
+  messageIncoming: '#1F1F1F',
+  messageIncomingText: '#F1F1F1',
+  messageOutgoing: '#1F3F2E',
+  messageOutgoingText: '#E4FFE9',
+  tooltip: '#3A3A3A',
+  mask: 'rgba(0, 0, 0, 0.65)',
+  highlight: '#1D3324',
+};
+
+export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  gutter: 16,
+} as const;
+
+export const Typography = {
+  display: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700' as const,
+  },
+  title: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '600' as const,
+  },
+  headline: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '600' as const,
+  },
+  body: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '400' as const,
+  },
+  bodyStrong: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600' as const,
+  },
+  caption: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400' as const,
+  },
+  footnote: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '400' as const,
+  },
+} as const;
+
+const Effects = {
   light: {
-    text: '#1A1A1A', // 深黑色文字
-    background: '#F5F7FA', // 浅灰蓝背景
-    tint: tintColorLight,
-    icon: '#5A6C7D', // 普鲁士蓝中灰
-    tabIconDefault: '#8A9BA8', // 普鲁士蓝浅灰
-    tabIconSelected: tintColorLight,
-    // 扩展的普鲁士蓝色系
-    card: '#FFFFFF', // 纯白卡片
-    border: '#D1D9E0', // 普鲁士蓝浅边框
-    placeholder: '#9CA3AF', // 普鲁士蓝占位符色
-    success: '#10B981', // 翠绿色
-    warning: '#F59E0B', // 琥珀色
-    error: '#EF4444', // 红色
-    info: '#3B82F6', // 蓝色
+    shadowColor: 'rgba(0,0,0,0.05)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   dark: {
-    text: '#F1F5F9', // 浅灰白文字
-    background: '#0F172A', // 深普鲁士蓝背景
-    tint: tintColorDark,
-    icon: '#94A3B8', // 普鲁士蓝中浅色
-    tabIconDefault: '#64748B', // 普鲁士蓝中灰
-    tabIconSelected: tintColorDark,
-    // 扩展的普鲁士蓝色系
-    card: '#1E293B', // 普鲁士蓝深卡片
-    border: '#334155', // 普鲁士蓝深边框
-    placeholder: '#64748B', // 普鲁士蓝深占位符色
-    success: '#059669', // 深翠绿色
-    warning: '#D97706', // 深琥珀色
-    error: '#DC2626', // 深红色
-    info: '#2563EB', // 深蓝色
+    shadowColor: 'rgba(0,0,0,0.35)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
   },
-};
+} as const;
+
+export const ThemeTokens = {
+  light: {
+    colors: LightColors,
+    effects: Effects.light,
+  },
+  dark: {
+    colors: DarkColors,
+    effects: Effects.dark,
+  },
+} as const;
+
+export type ThemeTokensKey = keyof typeof ThemeTokens;
+
+export interface AppTheme {
+  mode: ThemeTokensKey;
+  colors: ThemeColorScheme;
+  spacing: typeof Spacing;
+  typography: typeof Typography;
+  effects: (typeof Effects)[ThemeTokensKey];
+  fonts: typeof Fonts;
+}
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
-  default: {
-    sans: 'normal',
+  android: {
+    sans: 'sans-serif',
     serif: 'serif',
-    rounded: 'normal',
+    rounded: 'sans-serif',
+    mono: 'monospace',
+  },
+  default: {
+    sans: 'system-ui',
+    serif: 'system-ui',
+    rounded: 'system-ui',
     mono: 'monospace',
   },
   web: {

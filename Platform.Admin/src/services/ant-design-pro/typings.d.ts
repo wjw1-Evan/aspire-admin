@@ -256,6 +256,7 @@ declare namespace API {
     name?: string;
     email?: string;
     age?: number;
+    avatar?: string;
   };
 
   type UserActivityLog = {

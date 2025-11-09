@@ -1182,7 +1182,32 @@ public class UserService : IUserService
         
         if (request.Age.HasValue)
             updateBuilder.Set(u => u.Age, request.Age.Value);
-        
+
+        if (request.Avatar != null)
+        {
+            var avatarPayload = request.Avatar.Trim();
+
+            if (!string.IsNullOrEmpty(avatarPayload))
+            {
+                if (avatarPayload.Length > 2_500_000)
+                {
+                    throw new ArgumentException("头像数据过大，请选择小于 2MB 的图片", nameof(request.Avatar));
+                }
+
+                if (!avatarPayload.StartsWith("data:image", StringComparison.OrdinalIgnoreCase) &&
+                    !Uri.IsWellFormedUriString(avatarPayload, UriKind.Absolute))
+                {
+                    throw new ArgumentException("头像格式不正确，请上传图片文件", nameof(request.Avatar));
+                }
+
+                updateBuilder.Set(u => u.Avatar, avatarPayload);
+            }
+            else
+            {
+                updateBuilder.Set(u => u.Avatar, string.Empty);
+            }
+        }
+ 
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<User>

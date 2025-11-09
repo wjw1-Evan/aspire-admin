@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, type ViewProps } from 'react-native';
+import { View, StyleSheet, Platform, type ViewProps } from 'react-native';
 
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -32,12 +32,22 @@ export function WeChatCard({
           borderColor: bordered ? theme.colors.border : 'transparent',
           borderWidth: bordered ? StyleSheet.hairlineWidth : 0,
           padding: paddingMap[padding],
-          shadowColor: theme.effects.shadowColor,
-          shadowOffset: theme.effects.shadowOffset,
-          shadowOpacity: theme.effects.shadowOpacity,
-          shadowRadius: theme.effects.shadowRadius,
-          elevation: theme.effects.elevation,
         },
+        Platform.select({
+          ios: {
+            shadowColor: theme.effects.shadowColor,
+            shadowOffset: theme.effects.shadowOffset,
+            shadowOpacity: theme.effects.shadowOpacity,
+            shadowRadius: theme.effects.shadowRadius,
+          },
+          android: {
+            elevation: theme.effects.elevation,
+          },
+          web: {
+            boxShadow: theme.effects.boxShadow,
+          },
+          default: {},
+        }),
         style,
       ]}
       {...rest}

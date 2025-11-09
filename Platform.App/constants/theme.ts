@@ -160,6 +160,7 @@ const Effects = {
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
+    boxShadow: '0 6px 18px rgba(15, 23, 42, 0.08)',
   },
   dark: {
     shadowColor: 'rgba(0,0,0,0.35)',
@@ -167,6 +168,7 @@ const Effects = {
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 4,
+    boxShadow: '0 10px 28px rgba(15, 23, 42, 0.45)',
   },
 } as const;
 

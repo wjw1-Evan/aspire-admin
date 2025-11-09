@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ThemedText } from '@/components/themed-text';
@@ -34,8 +34,46 @@ const AiSuggestionBar: React.FC<AiSuggestionBarProps> = ({
 
   const shouldRenderLoader = Boolean(loading);
 
+  const containerShadowStyle = Platform.select({
+    ios: {
+      shadowColor: theme.mode === 'light' ? '#00000014' : '#00000066',
+      shadowOpacity: theme.mode === 'light' ? 0.12 : 0.28,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+    },
+    android: {
+      elevation: 3,
+    },
+    web: {
+      boxShadow:
+        theme.mode === 'light'
+          ? '0 12px 32px rgba(15, 23, 42, 0.08)'
+          : '0 14px 36px rgba(15, 23, 42, 0.45)',
+    },
+    default: {},
+  });
+
+  const cardShadowStyle = Platform.select({
+    ios: {
+      shadowColor: theme.mode === 'light' ? '#0000001a' : '#00000075',
+      shadowOpacity: theme.mode === 'light' ? 0.16 : 0.32,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+    },
+    android: {
+      elevation: 4,
+    },
+    web: {
+      boxShadow:
+        theme.mode === 'light'
+          ? '0 16px 36px rgba(15, 23, 42, 0.12)'
+          : '0 18px 40px rgba(15, 23, 42, 0.5)',
+    },
+    default: {},
+  });
+
   return (
-    <View style={[styles.container, { backgroundColor: cardBackground, borderColor }]}>
+    <View style={[styles.container, { backgroundColor: cardBackground, borderColor }, containerShadowStyle]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <IconSymbol name="sparkles" size={18} color={theme.colors.icon} />
@@ -116,9 +154,12 @@ const AiSuggestionBar: React.FC<AiSuggestionBarProps> = ({
                         backgroundColor: cardBackground,
                         borderColor,
                         transform: [{ scale: pressed ? 0.98 : 1 }],
-                        shadowOpacity: theme.mode === 'light' ? 0.12 : 0.2,
                       },
+                      cardShadowStyle,
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`发送推荐回复：${suggestion.content}`}
+                    accessibilityHint="单击后将该推荐内容填入输入框"
                   >
                     <View style={[styles.categoryChip, { backgroundColor: categoryBackground }]}>
                       <IconSymbol name="sparkles" size={14} color={categoryColor} />
@@ -178,11 +219,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 4,
-    shadowColor: '#00000010',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
   },
   header: {
     flexDirection: 'row',
@@ -252,10 +288,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginRight: 10,
     gap: 8,
-    shadowColor: '#00000014',
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 8,
-    elevation: 2,
   },
   categoryChip: {
     flexDirection: 'row',

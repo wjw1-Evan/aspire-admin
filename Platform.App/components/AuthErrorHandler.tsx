@@ -21,11 +21,18 @@ export function AuthErrorHandler({
 }: Readonly<AuthErrorHandlerProps>) {
   const { error, getErrorType, getUserFriendlyMessage, isRetryable, clearError } = useAuthError();
   const pathname = usePathname();
+  const isWeb = Platform.OS === 'web';
+  const shouldSkipErrorUi = pathname?.startsWith('/auth');
 
   // 处理错误显示
   React.useEffect(() => {
+    if (isWeb) {
+      // Web 端禁用 Alert.alert，避免浏览器阻塞
+      return;
+    }
+
     // 如果在登录页面，不显示原生 Alert，让页面自己的错误处理组件处理
-    if (pathname?.startsWith('/auth')) {
+    if (shouldSkipErrorUi) {
       console.log('AuthErrorHandler: Skipping error display on auth page, pathname:', pathname);
       return;
     }
@@ -126,7 +133,7 @@ export function AuthErrorHandler({
           break;
       }
     }
-  }, [error, showErrorModal, getErrorType, getUserFriendlyMessage, isRetryable, clearError, pathname]);
+  }, [error, showErrorModal, getErrorType, getUserFriendlyMessage, isRetryable, clearError, pathname, isWeb, shouldSkipErrorUi]);
 
   // 如果有自定义错误组件，使用它
   if (error && customErrorComponent) {
@@ -138,7 +145,18 @@ export function AuthErrorHandler({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {isWeb && error && !shouldSkipErrorUi ? (
+        <ErrorBanner
+          error={error}
+          onDismiss={clearError}
+          onRetry={isRetryable() ? clearError : undefined}
+        />
+      ) : null}
+      {children}
+    </>
+  );
 }
 
 // 错误提示组件

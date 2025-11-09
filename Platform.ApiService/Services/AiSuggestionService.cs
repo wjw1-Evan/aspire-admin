@@ -90,7 +90,8 @@ public class AiSuggestionService : IAiSuggestionService
         var context = await PrepareSmartReplyContextAsync(request, currentUserId);
         var response = new AiSuggestionResponse();
 
-        if (!TryResolveChatClient(context, response, out var model, out var chatClient))
+        var chatClient = ResolveChatClient(context, response, out var model);
+        if (chatClient is null)
         {
             return response;
         }
@@ -103,22 +104,22 @@ public class AiSuggestionService : IAiSuggestionService
         var messages = BuildChatMessages(instruction, context.ConversationMessages, userContent);
         var completionOptions = BuildCompletionOptions(currentUserId);
 
-        var (completion, latencyMs, fallbackSuggestions) = await TryCompleteChatAsync(
-            chatClient!,
+        var completionAttempt = await CompleteChatAsync(
+            chatClient,
             messages,
             completionOptions,
             context.ContextLines,
             cancellationToken);
 
-        response.LatencyMs = latencyMs;
+        response.LatencyMs = completionAttempt.LatencyMs;
 
-        if (fallbackSuggestions != null)
+        if (completionAttempt.Suggestions != null)
         {
-            AssignSuggestions(response, fallbackSuggestions);
+            AssignSuggestions(response, completionAttempt.Suggestions);
             return response;
         }
 
-        HandleCompletionResponse(response, completion, model, context.ContextLines);
+        HandleCompletionResponse(response, completionAttempt.Completion, model, context.ContextLines);
         return response;
     }
 
@@ -489,45 +490,32 @@ public class AiSuggestionService : IAiSuggestionService
         return options;
     }
 
-    private bool TryResolveChatClient(
+    private ChatClient? ResolveChatClient(
         SmartReplyContext context,
         AiSuggestionResponse response,
-        out string model,
-        out ChatClient? chatClient)
+        out string model)
     {
         model = string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model;
 
         if (!IsOpenAiConfigured())
         {
             AssignSuggestions(response, BuildFallbackSuggestions(context.ContextLines));
-            chatClient = null;
-            return false;
+            return null;
         }
 
-        return TryCreateChatClient(model, context.ContextLines, response, out chatClient);
-    }
-
-    private bool TryCreateChatClient(
-        string model,
-        IReadOnlyList<string> contextLines,
-        AiSuggestionResponse response,
-        out ChatClient? chatClient)
-    {
         try
         {
-            chatClient = _openAiClient.GetChatClient(model);
-            return true;
+            return _openAiClient.GetChatClient(model);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "初始化 OpenAI ChatClient 失败，模型：{Model}", model);
-            AssignSuggestions(response, BuildFallbackSuggestions(contextLines));
-            chatClient = null;
-            return false;
+            AssignSuggestions(response, BuildFallbackSuggestions(context.ContextLines));
+            return null;
         }
     }
 
-    private async Task<(ChatCompletion? Completion, int LatencyMs, List<AiSuggestionItem>? FallbackSuggestions)> TryCompleteChatAsync(
+    private async Task<CompletionAttempt> CompleteChatAsync(
         ChatClient chatClient,
         IReadOnlyList<OpenAiChatMessage> messages,
         ChatCompletionOptions completionOptions,
@@ -539,13 +527,19 @@ public class AiSuggestionService : IAiSuggestionService
         {
             var completionResult = await chatClient.CompleteChatAsync(messages, completionOptions, cancellationToken);
             stopwatch.Stop();
-            return (completionResult.Value, (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds), null);
+            return new CompletionAttempt(
+                completionResult.Value,
+                (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds),
+                null);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
             _logger.LogWarning(ex, "调用 OpenAI 获取智能回复失败，将使用本地候选");
-            return (null, (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds), BuildFallbackSuggestions(contextLines));
+            return new CompletionAttempt(
+                null,
+                (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds),
+                BuildFallbackSuggestions(contextLines));
         }
     }
 
@@ -681,6 +675,11 @@ public class AiSuggestionService : IAiSuggestionService
 
         return metadata;
     }
+
+    private sealed record CompletionAttempt(
+        ChatCompletion? Completion,
+        int LatencyMs,
+        List<AiSuggestionItem>? Suggestions);
 
     private sealed class SmartReplyPayload
     {

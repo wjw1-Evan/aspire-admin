@@ -176,6 +176,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // 监听 token 被外部清除（如 401 时自动清理）
+  useEffect(() => {
+    const listener = () => {
+      dispatch({ type: 'AUTH_LOGOUT' });
+    };
+
+    apiService.addAuthStateChangeListener(listener);
+
+    return () => {
+      apiService.removeAuthStateChangeListener(listener);
+    };
+  }, []);
   
   // 监听应用状态变化
   useEffect(() => {

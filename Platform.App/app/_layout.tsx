@@ -6,6 +6,8 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import '@/utils/alertShim';
+
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
@@ -13,6 +15,7 @@ import { useTokenValidation } from '@/hooks/useTokenValidation';
 import { AuthErrorHandler, NetworkStatusIndicator } from '@/components/AuthErrorHandler';
 import { RouteGuard } from '@/components/RouteGuard';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { AlertHost } from '@/components/AlertHost';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -53,6 +56,7 @@ function AuthRouter() {
       >
         <SafeAreaView style={[styles.safeArea, { backgroundColor }]} edges={['top', 'left', 'right']}>
           <View style={[styles.routerContainer, { backgroundColor }]}>
+            <AlertHost />
             {/* 网络状态指示器 */}
             <NetworkStatusIndicator />
             

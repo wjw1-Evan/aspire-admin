@@ -8,6 +8,7 @@ import type {
   MessageTimelineResponse,
   SessionListResponse,
   UploadAttachmentResponse,
+  ServerChatSession,
 } from '@/types/chat';
 
 export interface SessionQueryParams {
@@ -33,21 +34,72 @@ const buildQueryString = (params: Record<string, string | number | boolean | und
   return query ? `?${query}` : '';
 };
 
+const ensureApiSuccess = <T>(
+  response: ApiResponse<T> | undefined,
+  fallbackMessage: string
+): ApiResponse<T> => {
+  if (!response) {
+    throw new Error(fallbackMessage);
+  }
+
+  if (!response.success) {
+    throw new Error(response.errorMessage ?? fallbackMessage);
+  }
+
+  return response;
+};
+
+interface PaginatedSessionApiResponse {
+  data: ServerChatSession[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages?: number;
+  hasPreviousPage?: boolean;
+  hasNextPage?: boolean;
+}
+
 export const chatService = {
   getSessions: async (params: SessionQueryParams = {}): Promise<SessionListResponse> => {
     const query = buildQueryString(params as Record<string, string | number | boolean | undefined>);
-    return apiService.get<SessionListResponse>(`${API_ENDPOINTS.chatSessions}${query}`);
+    const rawResponse = await apiService.get<ApiResponse<PaginatedSessionApiResponse>>(
+      `${API_ENDPOINTS.chatSessions}${query}`
+    );
+    const response = ensureApiSuccess(rawResponse, '加载会话列表失败');
+    const payload = response.data;
+
+    return {
+      items: payload?.data ?? [],
+      total: payload?.total ?? 0,
+      page: payload?.page ?? params.page ?? 1,
+      pageSize: payload?.pageSize ?? params.pageSize ?? (payload?.data?.length ?? 0),
+      totalPages: payload?.totalPages,
+      hasPreviousPage: payload?.hasPreviousPage,
+      hasNextPage: payload?.hasNextPage,
+    };
   },
 
   getMessages: async (sessionId: string, params: MessageQueryParams = {}): Promise<MessageTimelineResponse> => {
     const query = buildQueryString(params as Record<string, string | number | boolean | undefined>);
-    return apiService.get<MessageTimelineResponse>(
+    const rawResponse = await apiService.get<ApiResponse<MessageTimelineResponse>>(
       `${API_ENDPOINTS.chatMessages}/${encodeURIComponent(sessionId)}${query}`
+    );
+    const response = ensureApiSuccess(rawResponse, '加载消息失败');
+    return (
+      response.data ?? {
+        items: [],
+        hasMore: false,
+      }
     );
   },
 
   sendMessage: async (payload: MessageSendRequest): Promise<ChatMessage> => {
-    return apiService.post<ChatMessage>(API_ENDPOINTS.chatMessages, payload);
+    const rawResponse = await apiService.post<ApiResponse<ChatMessage>>(API_ENDPOINTS.chatMessages, payload);
+    const response = ensureApiSuccess(rawResponse, '发送消息失败');
+    if (!response.data) {
+      throw new Error('发送消息失败：服务器未返回消息内容');
+    }
+    return response.data;
   },
 
   markSessionRead: async (sessionId: string, lastReadMessageId: string): Promise<void> => {

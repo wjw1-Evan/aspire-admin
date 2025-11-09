@@ -25,6 +25,8 @@ const toErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
+const aiStreamControllers = new Map<string, AbortController>();
+
 export const loadSessionsAction = async (
   dispatch: Dispatch<ChatAction>,
   params: SessionQueryParams = {},
@@ -142,16 +144,60 @@ export const fetchAiSuggestionsAction = async (
   sessionId: string,
   request: AiSuggestionRequest
 ): Promise<void> => {
+  const previousController = aiStreamControllers.get(sessionId);
+  if (previousController) {
+    previousController.abort();
+  }
+
+  const controller = new AbortController();
+  aiStreamControllers.set(sessionId, controller);
+
   dispatch({ type: 'CHAT_SET_AI_LOADING', payload: { sessionId, loading: true } });
+  dispatch({ type: 'CHAT_SET_AI_STREAM_TEXT', payload: { sessionId, text: '' } });
+
+  let handledStreamError = false;
+
   try {
-    const response = await aiService.getSmartReplies(request);
-    dispatch({
-      type: 'CHAT_SET_AI_SUGGESTIONS',
-      payload: { sessionId, suggestions: response.suggestions },
-    });
+    await aiService.streamSmartReplies(
+      request,
+      {
+        onDelta: text => {
+          if (text) {
+            dispatch({ type: 'CHAT_APPEND_AI_STREAM_TEXT', payload: { sessionId, text } });
+          }
+        },
+        onComplete: suggestions => {
+          dispatch({
+            type: 'CHAT_SET_AI_SUGGESTIONS',
+            payload: { sessionId, suggestions },
+          });
+        },
+        onFallback: suggestions => {
+          dispatch({
+            type: 'CHAT_SET_AI_SUGGESTIONS',
+            payload: { sessionId, suggestions },
+          });
+        },
+        onError: message => {
+          handledStreamError = true;
+          dispatch({ type: 'CHAT_SET_ERROR', payload: message });
+        },
+      },
+      { signal: controller.signal }
+    );
   } catch (error) {
-    dispatch({ type: 'CHAT_SET_AI_LOADING', payload: { sessionId, loading: false } });
-    dispatch({ type: 'CHAT_SET_ERROR', payload: toErrorMessage(error, '获取智能回复失败') });
+    if (error instanceof Error && error.name === 'AbortError') {
+      // Request was superseded by a newer streaming call.
+    } else if (!handledStreamError) {
+      dispatch({ type: 'CHAT_SET_ERROR', payload: toErrorMessage(error, '获取智能回复失败') });
+    }
+  } finally {
+    const activeController = aiStreamControllers.get(sessionId);
+    if (activeController === controller) {
+      aiStreamControllers.delete(sessionId);
+      dispatch({ type: 'CHAT_SET_AI_LOADING', payload: { sessionId, loading: false } });
+      dispatch({ type: 'CHAT_SET_AI_STREAM_TEXT', payload: { sessionId, text: '' } });
+    }
   }
 };
 

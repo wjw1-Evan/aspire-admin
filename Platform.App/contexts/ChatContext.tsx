@@ -28,6 +28,7 @@ import type {
   ChatSessionReadPayload,
   ChatSessionRealtimePayload,
   MessageSendRequest,
+  NearbyUser,
   NearbySearchRequest,
   ServerChatSession,
 } from '@/types/chat';
@@ -59,7 +60,7 @@ interface ChatContextValue extends ChatState {
   setActiveSession: (sessionId: string | undefined) => void;
   updateMessage: (sessionId: string, messageId: string, updates: Partial<ChatMessage>) => void;
   uploadAttachment: (sessionId: string, file: { uri: string; name: string; type: string }) => Promise<AttachmentMetadata>;
-  refreshNearbyUsers: (request?: NearbySearchRequest) => Promise<void>;
+  refreshNearbyUsers: (request?: NearbySearchRequest) => Promise<NearbyUser[] | undefined>;
   updateLocationBeacon: (payload: { latitude: number; longitude: number; accuracy?: number }) => Promise<void>;
   fetchAiSuggestions: (sessionId: string, request: AiSuggestionRequest) => Promise<void>;
   clearError: () => void;
@@ -194,9 +195,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
     []
   );
 
-  const refreshNearbyUsers = useCallback(async (request?: NearbySearchRequest) => {
-    await updateNearbyUsersAction(dispatch, request);
-  }, []);
+  const refreshNearbyUsers = useCallback(
+    (request?: NearbySearchRequest) => updateNearbyUsersAction(dispatch, request),
+    []
+  );
 
   const updateLocationBeacon = useCallback(async (payload: { latitude: number; longitude: number; accuracy?: number }) => {
     await updateLocationBeaconAction(dispatch, payload);

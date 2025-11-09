@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,12 +20,16 @@ namespace Platform.ApiService.Services;
 public interface IAiSuggestionService
 {
     /// <summary>
-    /// 生成智能回复候选。
+    /// 以流式方式生成智能回复候选。
     /// </summary>
     /// <param name="request">请求参数。</param>
     /// <param name="currentUserId">当前用户标识。</param>
-    /// <returns>建议响应。</returns>
-    Task<AiSuggestionResponse> GenerateSmartRepliesAsync(AiSmartReplyRequest request, string currentUserId);
+    /// <param name="cancellationToken">取消标识。</param>
+    /// <returns>流式片段序列。</returns>
+    IAsyncEnumerable<AiSuggestionStreamChunk> StreamSmartRepliesAsync(
+        AiSmartReplyRequest request,
+        string currentUserId,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -35,6 +40,8 @@ public class AiSuggestionService : IAiSuggestionService
     private const int DefaultSuggestionCount = 3;
     private const int MaxContextMessages = 6;
     private const string SmartReplySource = "smart-reply";
+    private const string ChunkTypeFallback = "fallback";
+    private const string ChunkTypeComplete = "complete";
 
     private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
     private readonly IDatabaseOperationFactory<DomainChatMessage> _messageFactory;
@@ -60,7 +67,10 @@ public class AiSuggestionService : IAiSuggestionService
     }
 
     /// <inheritdoc />
-    public async Task<AiSuggestionResponse> GenerateSmartRepliesAsync(AiSmartReplyRequest request, string currentUserId)
+    public async IAsyncEnumerable<AiSuggestionStreamChunk> StreamSmartRepliesAsync(
+        AiSmartReplyRequest request,
+        string currentUserId,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         request = request.EnsureNotNull(nameof(request));
         request.SessionId.EnsureNotEmpty("会话标识");
@@ -68,8 +78,11 @@ public class AiSuggestionService : IAiSuggestionService
 
         if (!string.Equals(request.UserId, currentUserId, StringComparison.Ordinal))
         {
-          _logger.LogWarning("用户 {UserId} 尝试为 {TargetUserId} 请求智能回复，被拒绝", currentUserId, request.UserId);
-          throw new UnauthorizedAccessException("禁止为其他用户请求智能回复");
+            _logger.LogWarning(
+                "用户 {UserId} 尝试为 {TargetUserId} 请求流式智能回复，被拒绝",
+                currentUserId,
+                request.UserId);
+            throw new UnauthorizedAccessException("禁止为其他用户请求智能回复");
         }
 
         var session = await _sessionFactory.GetByIdAsync(request.SessionId)
@@ -82,31 +95,163 @@ public class AiSuggestionService : IAiSuggestionService
 
         var contextLines = await BuildConversationContextAsync(request, session, currentUserId);
 
-        var stopwatch = Stopwatch.StartNew();
-        List<AiSuggestionItem> suggestions;
+        // 如果未配置 OpenAI，直接返回本地候选
+        if (string.IsNullOrWhiteSpace(_aiOptions.Endpoint) || string.IsNullOrWhiteSpace(_aiOptions.ApiKey))
+        {
+            var fallback = BuildFallbackSuggestions(contextLines);
+            yield return new AiSuggestionStreamChunk
+            {
+                Type = fallback.Count == 0 ? ChunkTypeFallback : ChunkTypeComplete,
+                Suggestions = fallback,
+                Timestamp = DateTime.UtcNow
+            };
+            yield break;
+        }
+
+        var model = string.IsNullOrWhiteSpace(_aiOptions.Model)
+            ? "gpt-4o-mini"
+            : _aiOptions.Model;
+
+        ChatClient? chatClient = null;
+        List<AiSuggestionItem>? failureSuggestions = null;
+
         try
         {
-            suggestions = await TryGenerateViaOpenAiAsync(contextLines, request.Locale, currentUserId)
-                ?? BuildFallbackSuggestions(contextLines);
+            chatClient = _openAiClient.GetChatClient(model);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "调用 OpenAI 生成智能回复失败，使用本地默认候选");
-            suggestions = BuildFallbackSuggestions(contextLines);
+            _logger.LogWarning(ex, "初始化 OpenAI ChatClient 失败，模型：{Model}", model);
+            failureSuggestions = BuildFallbackSuggestions(contextLines);
         }
 
-        if (suggestions.Count == 0)
+        if (failureSuggestions != null)
         {
-            suggestions = BuildFallbackSuggestions(contextLines);
+            yield return new AiSuggestionStreamChunk
+            {
+                Type = ChunkTypeFallback,
+                Suggestions = failureSuggestions,
+                Timestamp = DateTime.UtcNow
+            };
+            yield break;
+        }
+
+        var resolvedClient = chatClient!;
+
+        var languageTag = string.IsNullOrWhiteSpace(request.Locale) ? "zh-CN" : request.Locale;
+        var systemPrompt = string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
+            ? "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
+            : _aiOptions.SystemPrompt;
+
+        var instruction = $@"{systemPrompt}
+
+用户语言标识：{languageTag}
+
+请根据以下聊天历史生成 {DefaultSuggestionCount} 条适合继续对话的建议回复，要求：
+1. 单条回复不超过 60 个汉字或 120 个字符；
+2. 避免重复表达，保持语气自然、友好；
+3. 若上下文为空，输出通用的寒暄/回应语；
+4. 返回 JSON，结构为 {{""suggestions"":[{{""content"":""..."", ""confidence"":0.8}}, ...]}}。
+";
+
+        var userContent = contextLines.Count == 0
+            ? "（上下文为空）"
+            : string.Join("\n", contextLines);
+
+        var messages = new List<OpenAiChatMessage>
+        {
+            new SystemChatMessage(instruction),
+            new UserChatMessage(userContent)
+        };
+
+        var completionOptions = new ChatCompletionOptions
+        {
+            EndUserId = currentUserId
+        };
+
+        if (_aiOptions.MaxTokens > 0)
+        {
+            completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
+        }
+
+        ChatCompletion? completion = null;
+        var stopwatch = Stopwatch.StartNew();
+
+        failureSuggestions = null;
+
+        try
+        {
+            var completionResult = await resolvedClient.CompleteChatAsync(
+                messages,
+                completionOptions,
+                cancellationToken);
+            completion = completionResult.Value;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "调用 OpenAI 获取智能回复失败，将使用本地候选");
+            failureSuggestions = BuildFallbackSuggestions(contextLines);
+        }
+
+        if (failureSuggestions != null)
+        {
+            yield return new AiSuggestionStreamChunk
+            {
+                Type = ChunkTypeFallback,
+                Suggestions = failureSuggestions,
+                Timestamp = DateTime.UtcNow
+            };
+            yield break;
         }
 
         stopwatch.Stop();
 
-        return new AiSuggestionResponse
+        var finalText = completion?.Content?.FirstOrDefault()?.Text ?? string.Empty;
+        List<AiSuggestionItem>? suggestions = null;
+
+        if (!string.IsNullOrWhiteSpace(finalText))
         {
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<SmartReplyPayload>(finalText);
+                if (parsed?.Suggestions != null && parsed.Suggestions.Count > 0)
+                {
+                    suggestions = parsed.Suggestions
+                        .Where(s => !string.IsNullOrWhiteSpace(s.Content))
+                        .Select(s => new AiSuggestionItem
+                        {
+                            Content = s.Content.Trim(),
+                            Confidence = s.Confidence,
+                            Source = SmartReplySource
+                        })
+                        .ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "解析 OpenAI 流式结果失败：{Result}", finalText);
+            }
+        }
+
+        if (suggestions == null || suggestions.Count == 0)
+        {
+            suggestions = BuildFallbackSuggestions(contextLines);
+            yield return new AiSuggestionStreamChunk
+            {
+                Type = ChunkTypeFallback,
+                Suggestions = suggestions,
+                LatencyMs = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds),
+                Timestamp = DateTime.UtcNow
+            };
+            yield break;
+        }
+
+        yield return new AiSuggestionStreamChunk
+        {
+            Type = ChunkTypeComplete,
             Suggestions = suggestions,
-            GeneratedAt = DateTime.UtcNow,
-            LatencyMs = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds)
+            LatencyMs = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds),
+            Timestamp = DateTime.UtcNow
         };
     }
 
@@ -152,129 +297,6 @@ public class AiSuggestionService : IAiSuggestionService
         {
             _logger.LogWarning(ex, "获取会话 {SessionId} 的上下文失败，使用空上下文", session.Id);
             return new List<string>();
-        }
-    }
-
-    private async Task<List<AiSuggestionItem>?> TryGenerateViaOpenAiAsync(
-        List<string> contextLines,
-        string? locale,
-        string currentUserId)
-    {
-        if (string.IsNullOrWhiteSpace(_aiOptions.Endpoint) || string.IsNullOrWhiteSpace(_aiOptions.ApiKey))
-        {
-            _logger.LogDebug("未配置 AI Endpoint 或 ApiKey，跳过 OpenAI 调用");
-            return null;
-        }
-
-        var model = string.IsNullOrWhiteSpace(_aiOptions.Model)
-            ? "gpt-4o-mini"
-            : _aiOptions.Model;
-
-        ChatClient chatClient;
-        try
-        {
-            chatClient = _openAiClient.GetChatClient(model);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "初始化 OpenAI ChatClient 失败，模型：{Model}", model);
-            return null;
-        }
-
-        var systemPrompt = string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
-            ? "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
-            : _aiOptions.SystemPrompt;
-
-        var languageTag = string.IsNullOrWhiteSpace(locale) ? "zh-CN" : locale;
-
-        var instruction = $"""
-{systemPrompt}
-
-用户语言标识：{languageTag}
-
-请根据以下聊天历史生成 {DefaultSuggestionCount} 条适合继续对话的建议回复，要求：
-1. 单条回复不超过 60 个汉字或 120 个字符；
-2. 避免重复表达，保持语气自然、友好；
-3. 若上下文为空，输出通用的寒暄/回应语；
-4. 使用 JSON 数组返回，每个元素包含 content 与 confidence 字段，confidence 范围 0-1。
-""";
-
-        var userContent = contextLines.Count == 0
-            ? "（上下文为空）"
-            : string.Join("\n", contextLines);
-
-        var messages = new List<OpenAiChatMessage>
-        {
-            new SystemChatMessage(instruction),
-            new UserChatMessage(userContent)
-        };
-
-        var completionOptions = new ChatCompletionOptions
-        {
-            ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(
-                "smart_replies",
-                BinaryData.FromObjectAsJson(new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        suggestions = new
-                        {
-                            type = "array",
-                            minItems = 1,
-                            maxItems = DefaultSuggestionCount,
-                            items = new
-                            {
-                                type = "object",
-                                properties = new
-                                {
-                                    content = new { type = "string" },
-                                    confidence = new { type = "number" }
-                                },
-                                required = new[] { "content" }
-                            }
-                        }
-                    },
-                    required = new[] { "suggestions" }
-                }),
-                jsonSchemaIsStrict: false),
-            EndUserId = currentUserId
-        };
-
-        if (_aiOptions.MaxTokens > 0)
-        {
-            completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
-        }
-
-        try
-        {
-            var response = await chatClient.CompleteChatAsync(messages, completionOptions);
-            var content = response.Value?.Content?.FirstOrDefault()?.Text;
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                return null;
-            }
-
-            var parsed = JsonSerializer.Deserialize<SmartReplyPayload>(content);
-            if (parsed?.Suggestions == null || parsed.Suggestions.Count == 0)
-            {
-                return null;
-            }
-
-            return parsed.Suggestions
-                .Where(s => !string.IsNullOrWhiteSpace(s.Content))
-                .Select(s => new AiSuggestionItem
-                {
-                    Content = s.Content.Trim(),
-                    Confidence = s.Confidence,
-                    Source = SmartReplySource
-                })
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "调用 OpenAI 生成智能回复失败");
-            return null;
         }
     }
 

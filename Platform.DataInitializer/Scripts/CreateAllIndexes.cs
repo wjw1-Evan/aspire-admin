@@ -33,8 +33,57 @@ public class CreateAllIndexes
         await CreateChatIndexesAsync();
         await CreateFriendshipIndexesAsync();
         await CreateFriendRequestIndexesAsync();
+        await CreateLocationBeaconIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
+    }
+
+    /// <summary>
+    /// 创建用户定位信标索引。
+    /// </summary>
+    private async Task CreateLocationBeaconIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("userlocationbeacons");
+
+        try
+        {
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("companyId")
+                    .Ascending("userId"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_beacon_company_user",
+                    Unique = true,
+                    Background = true
+                },
+                "userlocationbeacons.companyId + userId (唯一)");
+
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("companyId")
+                    .Descending("lastSeenAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_beacon_company_lastSeenAt",
+                    Background = true
+                },
+                "userlocationbeacons.companyId + lastSeenAt");
+
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("lastSeenAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_beacon_lastSeenAt_ttl",
+                    ExpireAfter = TimeSpan.FromHours(2),
+                    Background = true
+                },
+                "userlocationbeacons.lastSeenAt (TTL)");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建用户定位信标索引失败");
+        }
     }
 
     /// <summary>

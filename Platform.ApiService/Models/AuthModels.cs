@@ -350,6 +350,12 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     public string? Email { get; set; }
 
     /// <summary>
+    /// 头像地址。
+    /// </summary>
+    [BsonElement("avatar")]
+    public string? Avatar { get; set; }
+
+    /// <summary>
     /// 手机号码
     /// </summary>
     [BsonElement("phone")]
@@ -379,6 +385,11 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     [BsonElement("lastLoginAt")]
     public DateTime? LastLoginAt { get; set; }
 
+    /// <summary>
+    /// 兴趣标签列表。
+    /// </summary>
+    [BsonElement("tags")]
+    public List<UserTag>? Tags { get; set; }
 }
 
 /// <summary>

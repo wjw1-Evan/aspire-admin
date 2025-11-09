@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 
 import { useChat } from '@/contexts/ChatContext';
 import { getCurrentPosition, requestForegroundPermissions } from '@/services/location';
-import type { NearbySearchRequest } from '@/types/chat';
+import type { NearbySearchRequest, NearbyUser } from '@/types/chat';
 
 export const useNearbyUsers = () => {
   const { nearbyUsers, nearbyLoading, refreshNearbyUsers, updateLocationBeacon } = useChat();
@@ -16,11 +16,11 @@ export const useNearbyUsers = () => {
   }, []);
 
   const refresh = useCallback(
-    async (request?: NearbySearchRequest) => {
+    async (request?: NearbySearchRequest): Promise<NearbyUser[] | undefined> => {
       const granted =
         permissionStatus === Location.PermissionStatus.GRANTED || (await ensurePermission());
       if (!granted) {
-        return;
+        return undefined;
       }
 
       const position = request?.center ?? (await getCurrentPosition());
@@ -31,10 +31,11 @@ export const useNearbyUsers = () => {
         accuracy: position.accuracy,
       });
 
-      await refreshNearbyUsers({
+      const items = await refreshNearbyUsers({
         ...request,
         center: position,
       });
+      return items;
     },
     [ensurePermission, permissionStatus, refreshNearbyUsers, updateLocationBeacon]
   );

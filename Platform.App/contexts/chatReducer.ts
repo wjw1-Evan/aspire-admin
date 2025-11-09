@@ -20,6 +20,7 @@ export interface ChatState {
   nearbyLoading: boolean;
   aiSuggestions: Record<string, AiSuggestion[]>;
   aiLoading: Record<string, boolean>;
+  aiStreamText: Record<string, string>;
   error?: string;
 }
 
@@ -33,6 +34,7 @@ export const initialChatState: ChatState = {
   nearbyLoading: false,
   aiSuggestions: {},
   aiLoading: {},
+  aiStreamText: {},
 };
 
 type ChatReducerAction =
@@ -61,6 +63,8 @@ type ChatReducerAction =
   | { type: 'CHAT_SET_NEARBY_LOADING'; payload: boolean }
   | { type: 'CHAT_SET_AI_SUGGESTIONS'; payload: { sessionId: string; suggestions: AiSuggestion[] } }
   | { type: 'CHAT_SET_AI_LOADING'; payload: { sessionId: string; loading: boolean } }
+  | { type: 'CHAT_SET_AI_STREAM_TEXT'; payload: { sessionId: string; text: string } }
+  | { type: 'CHAT_APPEND_AI_STREAM_TEXT'; payload: { sessionId: string; text: string } }
   | { type: 'CHAT_SET_ERROR'; payload: string }
   | { type: 'CHAT_CLEAR_ERROR' }
   | { type: 'CHAT_RESET' };
@@ -99,9 +103,13 @@ const mergeSessions = (state: ChatState, sessions: ChatSession[]): ChatState => 
 const appendMessage = (existing: ChatMessage[], message: ChatMessage): ChatMessage[] => {
   const hasExisting = existing.some(item => item.id === message.id);
   if (hasExisting) {
-    return existing.map(item => (item.id === message.id ? { ...item, ...message } : item));
+    return existing
+      .map(item => (item.id === message.id ? { ...item, ...message } : item))
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
-  return [...existing, message].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  return [...existing, message].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 };
 
 export function chatReducer(state: ChatState, action: ChatReducerAction): ChatState {
@@ -150,8 +158,9 @@ export function chatReducer(state: ChatState, action: ChatReducerAction): ChatSt
               result.push(item);
             }
             return result;
-          }, [])
-          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          }, []).sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
 
       return {
         ...state,
@@ -228,6 +237,10 @@ export function chatReducer(state: ChatState, action: ChatReducerAction): ChatSt
           ...state.aiLoading,
           [action.payload.sessionId]: false,
         },
+        aiStreamText: {
+          ...state.aiStreamText,
+          [action.payload.sessionId]: '',
+        },
       };
     case 'CHAT_SET_AI_LOADING':
       return {
@@ -237,6 +250,24 @@ export function chatReducer(state: ChatState, action: ChatReducerAction): ChatSt
           [action.payload.sessionId]: action.payload.loading,
         },
       };
+    case 'CHAT_SET_AI_STREAM_TEXT':
+      return {
+        ...state,
+        aiStreamText: {
+          ...state.aiStreamText,
+          [action.payload.sessionId]: action.payload.text,
+        },
+      };
+    case 'CHAT_APPEND_AI_STREAM_TEXT': {
+      const currentText = state.aiStreamText[action.payload.sessionId] ?? '';
+      return {
+        ...state,
+        aiStreamText: {
+          ...state.aiStreamText,
+          [action.payload.sessionId]: `${currentText}${action.payload.text}`,
+        },
+      };
+    }
     case 'CHAT_SET_ERROR':
       return {
         ...state,

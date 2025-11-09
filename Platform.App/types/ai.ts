@@ -9,7 +9,7 @@ export interface AiSuggestion {
   content: string;
   source: AiSuggestionSource;
   confidence?: number;
-  createdAt: string;
+  generatedAt: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -21,10 +21,15 @@ export interface AiSuggestionRequest {
   locale?: string;
 }
 
-export interface AiSuggestionResponse {
-  suggestions: AiSuggestion[];
-  generatedAt: string;
+export type AiSuggestionStreamChunkType = 'delta' | 'complete' | 'fallback' | 'error';
+
+export interface AiSuggestionStreamChunk {
+  type: AiSuggestionStreamChunkType;
+  text?: string;
+  suggestions?: AiSuggestion[];
   latencyMs?: number;
+  timestamp?: string;
+  error?: string;
 }
 
 export interface MatchSuggestion {

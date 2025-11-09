@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Platform.ApiService.Middleware;
 
@@ -18,8 +19,14 @@ public class ResponseFormattingMiddleware
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    static ResponseFormattingMiddleware()
+    {
+        // 确保输出的枚举值为 camelCase 字符串
+        JsonOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    }
 
     /// <summary>
     /// 初始化响应格式化中间件

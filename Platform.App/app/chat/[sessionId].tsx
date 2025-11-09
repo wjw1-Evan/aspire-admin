@@ -13,6 +13,7 @@ import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useAiAssistant } from '@/hooks/useAiAssistant';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -35,6 +36,8 @@ export default function ChatSessionScreen() {
   } = useChat();
 
   const session = sessionId ? sessions[sessionId] : undefined;
+  const screenBackground = useThemeColor({ light: '#e5e5e5', dark: '#0b1120' }, 'background');
+  const conversationSurface = useThemeColor({ light: '#f8fafc', dark: '#0f172a' }, 'card');
 
   useEffect(() => {
     if (!sessionId || !session) {
@@ -99,7 +102,12 @@ export default function ChatSessionScreen() {
     return `参与者：${remoteParticipants.join('、')}`;
   }, [remoteParticipants]);
 
-  const { suggestions, loading: suggestionLoading, requestSuggestions } = useAiAssistant(sessionId ?? '');
+  const {
+    suggestions,
+    loading: suggestionLoading,
+    streamingText,
+    requestSuggestions,
+  } = useAiAssistant(sessionId ?? '');
 
   const handleSendText = useCallback(async (content: string) => {
     if (!sessionId || !session) {
@@ -219,7 +227,7 @@ export default function ChatSessionScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: screenBackground }]}>
       <ConversationHeader
         session={session}
         connectionState={connectionState}
@@ -227,10 +235,11 @@ export default function ChatSessionScreen() {
         title={headerTitle}
         subtitle={headerSubtitle}
       />
-      <View style={styles.content}>
+      <View style={[styles.content, { backgroundColor: conversationSurface }]}>
         <AiSuggestionBar
           suggestions={suggestions}
           loading={suggestionLoading}
+          streamingText={streamingText}
           onSelect={suggestion => handleSendText(suggestion.content)}
         />
         {timelineState?.loading && sessionMessages.length === 0 ? (
@@ -242,6 +251,8 @@ export default function ChatSessionScreen() {
             currentUserId={currentUserId}
             loading={timelineState?.loading ?? false}
             hasMore={timelineState?.hasMore ?? false}
+            participantNames={session.participantNames}
+            participants={session.participants}
             onLoadMore={() => {
               if (timelineState?.hasMore && !timelineState.loading && timelineState.nextCursor) {
                 loadMessages(sessionId, { cursor: timelineState.nextCursor }).catch(error =>
@@ -270,6 +281,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingTop: 4,
   },
   loader: {
     marginTop: 32,

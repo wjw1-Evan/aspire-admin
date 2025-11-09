@@ -16,6 +16,7 @@ export type IconSymbolName = keyof typeof MAPPING;
 const MAPPING = {
   'house.fill': 'home',
   'paperplane.fill': 'send',
+  'chevron.left': 'chevron-left',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'person.fill': 'person',
@@ -31,6 +32,10 @@ const MAPPING = {
   'person.2.fill': 'group',
   'safari.fill': 'explore',
   'sparkles': 'auto-awesome',
+  'ellipsis': 'more-horiz',
+  'plus': 'add',
+  'face.smiling': 'insert-emoticon',
+  'waveform': 'keyboard-voice',
   'sun.max.fill': 'light-mode',
   'moon.fill': 'dark-mode',
   'bell.fill': 'notifications',

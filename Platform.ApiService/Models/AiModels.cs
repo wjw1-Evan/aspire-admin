@@ -79,22 +79,40 @@ public class AiSuggestionItem
 /// <summary>
 /// 智能回复响应。
 /// </summary>
-public class AiSuggestionResponse
+/// <summary>
+/// 描述 AI 智能回复的流式片段。
+/// </summary>
+public class AiSuggestionStreamChunk
 {
     /// <summary>
-    /// 建议列表。
+    /// 片段类型，delta/complete/fallback/error。
     /// </summary>
-    public List<AiSuggestionItem> Suggestions { get; set; } = new();
+    public string Type { get; set; } = string.Empty;
 
     /// <summary>
-    /// 生成时间。
+    /// 文本增量内容（仅 delta 时可用）。
     /// </summary>
-    public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+    public string? Text { get; set; }
 
     /// <summary>
-    /// 生成耗时（毫秒，可选）。
+    /// 完整建议列表（complete 或 fallback 时可用）。
+    /// </summary>
+    public List<AiSuggestionItem>? Suggestions { get; set; }
+
+    /// <summary>
+    /// 服务器时间戳。
+    /// </summary>
+    public DateTime? Timestamp { get; set; }
+        = DateTime.UtcNow;
+
+    /// <summary>
+    /// 耗时（毫秒）。
     /// </summary>
     public int? LatencyMs { get; set; }
-        = default;
+
+    /// <summary>
+    /// 错误信息（error 时可用）。
+    /// </summary>
+    public string? Error { get; set; }
 }
 

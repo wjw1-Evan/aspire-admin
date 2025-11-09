@@ -13,11 +13,12 @@ export interface UseAiAssistantOptions {
 
 export const useAiAssistant = (sessionId: string) => {
   const { user } = useAuth();
-  const { aiSuggestions, aiLoading, fetchAiSuggestions } = useChat();
+  const { aiSuggestions, aiLoading, aiStreamText, fetchAiSuggestions } = useChat();
   const lastRequestedAtRef = useRef<number>(0);
 
   const suggestions = useMemo(() => aiSuggestions[sessionId] ?? [], [aiSuggestions, sessionId]);
   const loading = useMemo(() => aiLoading[sessionId] ?? false, [aiLoading, sessionId]);
+  const streamingText = useMemo(() => aiStreamText[sessionId] ?? '', [aiStreamText, sessionId]);
 
   const requestSuggestions = useCallback(
     async (conversationContext: string[], options: UseAiAssistantOptions = {}) => {
@@ -46,6 +47,7 @@ export const useAiAssistant = (sessionId: string) => {
   return {
     suggestions,
     loading,
+    streamingText,
     requestSuggestions,
   };
 };

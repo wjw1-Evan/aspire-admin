@@ -81,6 +81,9 @@ export interface SessionListResponse {
   total: number;
   page: number;
   pageSize: number;
+  totalPages?: number;
+  hasPreviousPage?: boolean;
+  hasNextPage?: boolean;
 }
 
 export interface MessageTimelineResponse {

@@ -200,6 +200,7 @@ public class ChatService : IChatService
         var message = new ChatMessage
         {
             SessionId = session.Id,
+            CompanyId = session.CompanyId,
             SenderId = currentUserId,
             SenderName = sender?.Username,
             RecipientId = request.RecipientId,
@@ -721,7 +722,7 @@ public class ChatService : IChatService
             return;
         }
 
-        string replyContent;
+        string? replyContent;
         if (triggerMessage.Type == ChatMessageType.Text)
         {
             replyContent = await GenerateAssistantReplyAsync(
@@ -746,7 +747,7 @@ public class ChatService : IChatService
             SenderName = AiAssistantConstants.AssistantDisplayName,
             RecipientId = triggerMessage.SenderId,
             Type = ChatMessageType.Text,
-            Content = replyContent,
+            Content = replyContent!,
             Metadata = new Dictionary<string, object>
             {
                 ["isAssistant"] = true

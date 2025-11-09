@@ -4,6 +4,7 @@ using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using System.Text.Json;
 
 namespace Platform.ApiService.Controllers;
 
@@ -27,18 +28,33 @@ public class ChatAiController : BaseApiController
     }
 
     /// <summary>
-    /// 获取智能回复候选。
+    /// 以 SSE（Server-Sent Events）流式获取智能回复候选。
     /// </summary>
     /// <param name="request">请求参数。</param>
-    /// <returns>智能回复建议列表。</returns>
-    [HttpPost("smart-replies")]
-    [ProducesResponseType(typeof(Platform.ServiceDefaults.Models.ApiResponse<AiSuggestionResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSmartReplies([FromBody] AiSmartReplyRequest request)
+    /// <param name="cancellationToken">取消标识。</param>
+    /// <returns>异步任务。</returns>
+    [HttpPost("smart-replies/stream")]
+    public async Task StreamSmartReplies([FromBody] AiSmartReplyRequest request, CancellationToken cancellationToken)
     {
         request.EnsureNotNull(nameof(request));
         var currentUserId = GetRequiredUserId();
-        var response = await _aiSuggestionService.GenerateSmartRepliesAsync(request, currentUserId);
-        return Success(response);
+
+        Response.StatusCode = StatusCodes.Status200OK;
+        Response.Headers.CacheControl = "no-cache";
+        Response.Headers["Content-Type"] = "text/event-stream; charset=utf-8";
+        Response.Headers["X-Accel-Buffering"] = "no"; // 禁用 Nginx 缓冲
+
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+        await foreach (var chunk in _aiSuggestionService.StreamSmartRepliesAsync(request, currentUserId, cancellationToken)
+            .WithCancellation(cancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var payload = JsonSerializer.Serialize(chunk, options);
+            await Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+        }
     }
 }
 

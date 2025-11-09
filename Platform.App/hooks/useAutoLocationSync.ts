@@ -26,7 +26,7 @@ export function useAutoLocationSync(enabled: boolean): void {
   const startingRef = useRef(false);
   const permissionStatusRef = useRef<Location.PermissionStatus | null>(null);
 
-  const stopWatcher = useCallback(() => {
+  const stopWatcher = useCallback(async () => {
     const watcher = watcherRef.current;
     if (!watcher) {
       return;
@@ -36,7 +36,7 @@ export function useAutoLocationSync(enabled: boolean): void {
 
     try {
       if (typeof watcher.remove === 'function') {
-        watcher.remove();
+        await watcher.remove();
         return;
       }
     } catch (error) {
@@ -47,9 +47,18 @@ export function useAutoLocationSync(enabled: boolean): void {
       // Web 端或部分平台可能提供 unsubscribe
       if (typeof (watcher as { unsubscribe?: () => void }).unsubscribe === 'function') {
         (watcher as { unsubscribe: () => void }).unsubscribe();
+        return;
       }
     } catch (error) {
       console.warn('[LocationSync] 备用方式取消定位监听失败:', error);
+    }
+
+    try {
+      if (typeof Location.removeWatchAsync === 'function') {
+        await Location.removeWatchAsync(watcher);
+      }
+    } catch (error) {
+      console.warn('[LocationSync] removeWatchAsync 取消定位监听失败:', error);
     }
   }, []);
 
@@ -123,7 +132,7 @@ export function useAutoLocationSync(enabled: boolean): void {
       lastUpdateRef.current = Date.now();
 
       // 启动持续监听
-      stopWatcher();
+      await stopWatcher();
       watcherRef.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.Balanced,
@@ -143,7 +152,7 @@ export function useAutoLocationSync(enabled: boolean): void {
 
   useEffect(() => {
     if (!enabled) {
-      stopWatcher();
+      void stopWatcher();
       return;
     }
 
@@ -159,7 +168,7 @@ export function useAutoLocationSync(enabled: boolean): void {
       if (status === 'active') {
         void startWatcher();
       } else if (status === 'background' || status === 'inactive') {
-        stopWatcher();
+        void stopWatcher();
       }
     };
 
@@ -168,7 +177,7 @@ export function useAutoLocationSync(enabled: boolean): void {
     return () => {
       isMounted = false;
       subscription.remove();
-      stopWatcher();
+      void stopWatcher();
     };
   }, [enabled, startWatcher, stopWatcher]);
 }

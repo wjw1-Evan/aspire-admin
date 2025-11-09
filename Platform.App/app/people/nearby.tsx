@@ -83,6 +83,10 @@ export default function NearbyScreen() {
 
   const handleRefresh = useCallback(
     async (nextRadius?: number) => {
+      if (loading && nextRadius === undefined) {
+        return;
+      }
+
       const effectiveRadius = nextRadius ?? radiusRef.current;
       if (nextRadius != null) {
         radiusRef.current = nextRadius;
@@ -98,7 +102,7 @@ export default function NearbyScreen() {
         console.error('Failed to refresh nearby users:', error);
       }
     },
-    [refresh]
+    [loading, refresh]
   );
 
   useEffect(() => {

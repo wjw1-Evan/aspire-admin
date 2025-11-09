@@ -163,8 +163,9 @@ export const updateNearbyUsersAction = async (
       center: await getCurrentPosition(),
     };
     const response = await fetchNearbyUsers(searchRequest);
-    dispatch({ type: 'CHAT_SET_NEARBY_USERS', payload: response.items });
-    return response.items;
+    const items = Array.isArray(response.items) ? response.items : [];
+    dispatch({ type: 'CHAT_SET_NEARBY_USERS', payload: items });
+    return items;
   } catch (error) {
     dispatch({ type: 'CHAT_SET_NEARBY_LOADING', payload: false });
     dispatch({ type: 'CHAT_SET_ERROR', payload: toErrorMessage(error, '获取附近的人失败') });

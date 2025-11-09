@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import * as Location from 'expo-location';
 
 import { useChat } from '@/contexts/ChatContext';
@@ -43,12 +43,6 @@ export const useNearbyUsers = () => {
     },
     [ensurePermission, permissionStatus, refreshNearbyUsers, updateLocationBeacon]
   );
-
-  useEffect(() => {
-    if (nearbyUsers.length === 0 && !nearbyLoading) {
-      refresh().catch(error => console.error('Failed to load nearby users:', error));
-    }
-  }, [nearbyLoading, nearbyUsers.length, refresh]);
 
   return useMemo(
     () => ({

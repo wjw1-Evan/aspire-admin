@@ -1,5 +1,8 @@
 // API 配置常量
 
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
 // 获取环境变量中的 API 网关地址
 const getApiGatewayUrl = (): string => {
   // 优先从 EXPO_PUBLIC_ 前缀的环境变量读取（推荐）
@@ -28,9 +31,9 @@ const getApiGatewayUrl = (): string => {
   
   // 开发环境默认值
   if (__DEV__) {
-    const defaultUrl = "http://localhost:15000";
+    const defaultUrl = resolveDevGatewayUrl();
     console.warn(
-      "⚠️ 环境变量未找到，使用默认开发环境地址:",
+      "⚠️ 环境变量未找到，使用推断的开发环境地址:",
       defaultUrl
     );
     return defaultUrl;
@@ -67,3 +70,43 @@ export const isDevelopment = (): boolean => {
 export const isProduction = (): boolean => {
   return !__DEV__;
 };
+
+function resolveDevGatewayUrl(): string {
+  if (Platform.OS === 'web') {
+    const protocol = window?.location?.protocol ?? 'http:';
+    const hostname = window?.location?.hostname ?? 'localhost';
+    return `${protocol}//${hostname}:15000`;
+  }
+
+  const expoHost = extractExpoHost();
+  const host = expoHost ?? '127.0.0.1';
+  return `http://${host}:15000`;
+}
+
+function extractExpoHost(): string | undefined {
+  const expoConfigHost = Constants?.expoConfig?.hostUri;
+  if (expoConfigHost) {
+    return expoConfigHost.split(':')[0];
+  }
+
+  const debuggerHost =
+    (Constants as unknown as Record<string, any>)?.expoGoConfig?.debuggerHost ??
+    (Constants as unknown as Record<string, any>)?.manifest2?.extra?.expoGo?.debuggerHost ??
+    (Constants as unknown as Record<string, any>)?.manifest?.debuggerHost;
+
+  if (typeof debuggerHost === 'string') {
+    return debuggerHost.split(':')[0];
+  }
+
+  const scriptURL = (global as unknown as Record<string, any>)?.nativeExtensions?.NativeModules?.SourceCode?.scriptURL;
+  if (typeof scriptURL === 'string') {
+    try {
+      const { hostname } = new URL(scriptURL);
+      return hostname;
+    } catch {
+      return undefined;
+    }
+  }
+
+  return undefined;
+}

@@ -24,7 +24,10 @@ export class AuthService {
    */
   async login(credentials: LoginRequest): Promise<ApiResponse<LoginData>> {
     try {
-      const response = await apiService.post<ApiResponse<LoginData>>('/login/account', credentials);
+      const response = await apiService.post<ApiResponse<LoginData>>('/login/account', credentials, {
+        timeout: 8000,
+        retries: 0,
+      });
 
       const loginData = response.data;
 
@@ -54,7 +57,10 @@ export class AuthService {
    */
   async register(userData: RegisterRequest): Promise<ApiResponse<AppUser>> {
     try {
-      const response = await apiService.post<ApiResponse<AppUser>>('/register', userData);
+      const response = await apiService.post<ApiResponse<AppUser>>('/register', userData, {
+        timeout: 8000,
+        retries: 0,
+      });
       
       if (response.success && response.data) {
         return {
@@ -75,7 +81,10 @@ export class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await apiService.post('/login/outLogin');
+      await apiService.post('/login/outLogin', undefined, {
+        timeout: 5000,
+        retries: 0,
+      });
     } catch (error) {
       console.error('Logout API error:', error);
     } finally {
@@ -88,7 +97,10 @@ export class AuthService {
    */
   async getCurrentUser(): Promise<ApiResponse<CurrentUser>> {
     try {
-      const response = await apiService.get<ApiResponse<CurrentUser>>('/currentUser');
+      const response = await apiService.get<ApiResponse<CurrentUser>>('/currentUser', {
+        timeout: 5000,
+        retries: 0,
+      });
       
       if (response.success && response.data) {
         return {
@@ -109,7 +121,10 @@ export class AuthService {
    */
   async updateProfile(profileData: UpdateProfileParams): Promise<ApiResponse<CurrentUser>> {
     try {
-      return await apiService.put<ApiResponse<CurrentUser>>('/user/profile', profileData);
+      return await apiService.put<ApiResponse<CurrentUser>>('/user/profile', profileData, {
+        timeout: 8000,
+        retries: 0,
+      });
     } catch (error) {
       console.error('Update profile error:', error);
       throw error;
@@ -134,7 +149,10 @@ export class AuthService {
    */
   async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<boolean>> {
     try {
-      const response = await apiService.post<ApiResponse<boolean>>('/change-password', request);
+      const response = await apiService.post<ApiResponse<boolean>>('/change-password', request, {
+        timeout: 8000,
+        retries: 0,
+      });
       
       if (response.success && response.data !== undefined) {
         return {
@@ -155,7 +173,10 @@ export class AuthService {
    */
   async getCaptcha(): Promise<string> {
     try {
-      return await apiService.get<string>('/login/captcha');
+      return await apiService.get<string>('/login/captcha', {
+        timeout: 8000,
+        retries: 0,
+      });
     } catch (error) {
       console.error('Get captcha error:', error);
       throw error;
@@ -168,7 +189,10 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<ApiResponse<RefreshTokenResult>> {
     try {
       const request: RefreshTokenRequest = { refreshToken };
-      const response = await apiService.post<RefreshTokenResult>('/refresh-token', request);
+      const response = await apiService.post<RefreshTokenResult>('/refresh-token', request, {
+        timeout: 6000,
+        retries: 0,
+      });
       
       if (response.status === 'ok' && response.token && response.refreshToken) {
         // 保存新的token和刷新token

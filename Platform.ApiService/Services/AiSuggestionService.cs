@@ -550,6 +550,19 @@ public class AiSuggestionService : IAiSuggestionService
         IReadOnlyList<string> contextLines)
     {
         var finalText = completion?.Content?.FirstOrDefault()?.Text ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(finalText))
+        {
+            _logger.LogInformation(
+                "AI 原始智能推荐结果（模型: {Model}, 长度: {Length}）: {Preview}",
+                model,
+                finalText.Length,
+                TruncateForLogging(finalText));
+        }
+        else
+        {
+            _logger.LogWarning("AI 返回空的智能推荐结果，模型: {Model}", model);
+        }
+
         var suggestions = TryParseSuggestions(finalText, model)
             ?? BuildFallbackSuggestions(contextLines);
 
@@ -594,11 +607,20 @@ public class AiSuggestionService : IAiSuggestionService
         }
     }
 
-    private static void AssignSuggestions(AiSuggestionResponse response, List<AiSuggestionItem> suggestions, string? notice = null)
+    private void AssignSuggestions(AiSuggestionResponse response, List<AiSuggestionItem> suggestions, string? notice = null)
     {
         suggestions ??= new List<AiSuggestionItem>();
         response.Suggestions = suggestions;
         response.Notice = notice ?? (suggestions.Count == 0 ? DefaultSuggestionNotice : null);
+
+        if (suggestions.Count == 0)
+        {
+            _logger.LogWarning("智能推荐为空，已返回默认提示信息");
+        }
+        else
+        {
+            _logger.LogInformation("智能推荐生成成功，共 {Count} 条", suggestions.Count);
+        }
     }
 
     private sealed record SmartReplyContext(
@@ -636,8 +658,143 @@ public class AiSuggestionService : IAiSuggestionService
 
     private static List<AiSuggestionItem> BuildFallbackSuggestions(IReadOnlyList<string> contextLines)
     {
-        _ = contextLines;
-        return new List<AiSuggestionItem>();
+        static string StripSpeakerPrefix(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                return string.Empty;
+            }
+
+            var trimmed = line.Trim();
+            var separatorIndex = trimmed.IndexOf(':');
+            if (separatorIndex < 0 || separatorIndex >= trimmed.Length - 1)
+            {
+                return trimmed;
+            }
+
+            return trimmed[(separatorIndex + 1)..].Trim();
+        }
+
+        static string BuildTopicSnippet(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return string.Empty;
+            }
+
+            const int maxLength = 14;
+            var sanitized = content
+                .Replace("\r", string.Empty, StringComparison.Ordinal)
+                .Replace("\n", string.Empty, StringComparison.Ordinal)
+                .Trim();
+
+            if (sanitized.Length <= maxLength)
+            {
+                return sanitized;
+            }
+
+            return $"{sanitized[..maxLength]}…";
+        }
+
+        static AiSuggestionItem CreateSuggestion(string content, string category, string style, string quickTip, string? insight = null, double? confidence = null)
+        {
+            return new AiSuggestionItem
+            {
+                Content = content,
+                Category = category,
+                Style = style,
+                QuickTip = quickTip,
+                Insight = insight,
+                Confidence = confidence ?? 0.35d,
+                Source = "fallback",
+                Metadata = new Dictionary<string, object>
+                {
+                    ["origin"] = "local-fallback",
+                },
+            };
+        }
+
+        var suggestions = new List<AiSuggestionItem>();
+        var latestLine = contextLines.Count > 0 ? contextLines[^1] : string.Empty;
+        var latestContent = StripSpeakerPrefix(latestLine);
+        var topicSnippet = BuildTopicSnippet(latestContent);
+
+        if (!string.IsNullOrWhiteSpace(topicSnippet))
+        {
+            suggestions.Add(
+                CreateSuggestion(
+                    $"想听听你对{topicSnippet}的看法～",
+                    "追问细节",
+                    "好奇探询",
+                    "围绕对方提到的点继续交流"));
+
+            suggestions.Add(
+                CreateSuggestion(
+                    "听起来挺有意思，也让我很共鸣！",
+                    "共情回应",
+                    "真诚陪伴",
+                    "表达理解与支持，让对方继续分享",
+                    confidence: 0.32d));
+        }
+
+        var genericFallbacks = new (string content, string category, string style, string quickTip, string? insight, double confidence)[]
+        {
+            ("最近在忙些什么呀？", "轻松缓和", "自然开场", "用轻松话题热身", "换个轻松的话题试试", 0.28d),
+            ("这一周有没有什么小确幸？", "轻松缓和", "温暖关心", "聊聊让人开心的小事", null, 0.3d),
+            ("要不要分享下你的兴趣爱好？", "延续话题", "好奇探询", "引导了解更多彼此信息", null, 0.33d),
+        };
+
+        foreach (var (content, category, style, quickTip, insight, confidence) in genericFallbacks)
+        {
+            if (suggestions.Count >= DefaultSuggestionCount)
+            {
+                break;
+            }
+
+            suggestions.Add(CreateSuggestion(content, category, style, quickTip, insight, confidence));
+        }
+
+        if (suggestions.Count == 0)
+        {
+            suggestions.Add(
+                CreateSuggestion(
+                    "你好呀～最近有什么有趣的事吗？",
+                    "轻松缓和",
+                    "友好开场",
+                    "用轻松暖场拉近距离",
+                    confidence: 0.25d));
+        }
+
+        if (suggestions.Count < DefaultSuggestionCount)
+        {
+            suggestions.Add(
+                CreateSuggestion(
+                    "我们是不是还没互相介绍呢？",
+                    "延续话题",
+                    "真诚好奇",
+                    "邀请对方继续自我介绍",
+                    confidence: 0.27d));
+        }
+
+        return suggestions
+            .Take(DefaultSuggestionCount)
+            .ToList();
+    }
+
+    private static string TruncateForLogging(string content, int maxLength = 200)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return string.Empty;
+        }
+
+        var normalized = content.ReplaceLineEndings(" ").Trim();
+        if (normalized.Length <= maxLength)
+        {
+            return normalized;
+        }
+
+        return $"{normalized[..maxLength]}…";
     }
 
     private static string? NormalizeOrNull(string? value)

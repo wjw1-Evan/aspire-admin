@@ -51,7 +51,10 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
   const fetchCaptcha = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiService.get<CaptchaResponse>(`/api/captcha/image?type=${type}`);
+      const response = await apiService.get<CaptchaResponse>(`/api/captcha/image?type=${type}`, {
+        timeout: 5000,
+        retries: 0,
+      });
       
       if (response.success && response.data) {
         setImageData(response.data.imageData);
@@ -94,34 +97,44 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
       </View>
       
       <View style={[styles.captchaContainer, { borderColor }]}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={tintColor} />
-          </View>
-        ) : imageData ? (
-          <TouchableOpacity
-            onPress={fetchCaptcha}
-            style={styles.imageContainer}
-            activeOpacity={0.7}
-          >
-            <Image
-              source={{ uri: `data:image/png;base64,${imageData}` }}
-              style={styles.captchaImage}
-              contentFit="contain"
-            />
-            <View style={styles.refreshOverlay}>
-              <IconSymbol name="arrow.clockwise" size={16} color="#fff" />
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={fetchCaptcha}
-            style={[styles.refreshButton, { backgroundColor: tintColor }]}
-            activeOpacity={0.7}
-          >
-            <IconSymbol name="arrow.clockwise" size={20} color="#fff" />
-          </TouchableOpacity>
-        )}
+        {(() => {
+          if (loading) {
+            return (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={tintColor} />
+              </View>
+            );
+          }
+
+          if (imageData) {
+            return (
+              <TouchableOpacity
+                onPress={fetchCaptcha}
+                style={styles.imageContainer}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={{ uri: `data:image/png;base64,${imageData}` }}
+                  style={styles.captchaImage}
+                  contentFit="contain"
+                />
+                <View style={styles.refreshOverlay}>
+                  <IconSymbol name="arrow.clockwise" size={16} color="#fff" />
+                </View>
+              </TouchableOpacity>
+            );
+          }
+
+          return (
+            <TouchableOpacity
+              onPress={fetchCaptcha}
+              style={[styles.refreshButton, { backgroundColor: tintColor }]}
+              activeOpacity={0.7}
+            >
+              <IconSymbol name="arrow.clockwise" size={20} color="#fff" />
+            </TouchableOpacity>
+          );
+        })()}
       </View>
     </View>
   );

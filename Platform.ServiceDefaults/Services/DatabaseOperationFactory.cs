@@ -1,5 +1,4 @@
 using System.Reflection;
-using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
@@ -14,12 +13,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 {
     private readonly IMongoCollection<T> _collection;
     private readonly ITenantContext _tenantContext;
-    private readonly ILogger<DatabaseOperationFactory<T>> _logger;
 
     public DatabaseOperationFactory(
         IMongoDatabase database,
-        ITenantContext tenantContext,
-        ILogger<DatabaseOperationFactory<T>> logger)
+        ITenantContext tenantContext)
     {
         // 支持自定义集合名称，优先使用 BsonCollectionName 特性
         var collectionNameAttribute = typeof(T).GetCustomAttribute<BsonCollectionNameAttribute>();
@@ -27,7 +24,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         
         _collection = database.GetCollection<T>(collectionName);
         _tenantContext = tenantContext;
-        _logger = logger;
         
     }
 
@@ -36,13 +32,13 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     private (string? userId, string? username) GetActor()
     {
         // 临时方案：审计字段使用同步等待（审计字段不影响业务逻辑）
-        // TODO: 考虑将审计字段获取改为可选或延迟异步加载
+        // 后续可评估将审计字段获取改为可选或延迟异步加载
         var usernameTask = _tenantContext.GetCurrentUsernameAsync();
         var username = usernameTask.IsCompletedSuccessfully ? usernameTask.Result : null;
         return (_tenantContext.GetCurrentUserId(), username);
     }
 
-    private void TrySetProperty(object target, string propertyName, object? value)
+    private static void TrySetProperty(object target, string propertyName, object? value)
     {
         if (target == null || value == null)
             return;
@@ -53,7 +49,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             // 检查值类型是否兼容
             var propType = prop.PropertyType;
             if (propType.IsInstanceOfType(value) || 
-                (value is string strValue && propType == typeof(string)))
+                (value is string && propType == typeof(string)))
             {
                 prop.SetValue(target, value);
             }
@@ -129,12 +125,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<T> CreateAsync(T entity)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        var entityId = entity.Id ?? "new";
-        
-        _logger.LogDebug("开始创建 {EntityType} 实体: {EntityId}", entityType, entityId);
-        
         // 设置时间戳
         entity.CreatedAt = DateTime.UtcNow;
         entity.UpdatedAt = DateTime.UtcNow;
@@ -153,9 +143,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 
         await _collection.InsertOneAsync(entity);
         
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        _logger.LogInformation("✅ 成功创建 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
-            entityType, entity.Id, elapsed);
+  
         
         return entity;
     }
@@ -165,8 +153,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<List<T>> CreateManyAsync(IEnumerable<T> entities)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
+       
         var entityList = entities.ToList();
         var count = entityList.Count;
         
@@ -197,9 +184,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 
         await _collection.InsertManyAsync(entityList);
         
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        _logger.LogInformation("✅ 成功批量创建 {EntityType} 实体: {Count} 个, 耗时: {ElapsedMs}ms", 
-            entityType, count, elapsed);
+   
         
         return entityList;
     }
@@ -209,12 +194,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<T?> FindOneAndReplaceAsync(FilterDefinition<T> filter, T replacement, FindOneAndReplaceOptions<T>? options = null)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        var replacementId = replacement.Id ?? "unknown";
-        
-        _logger.LogDebug("开始查找并替换 {EntityType} 实体: {ReplacementId}", entityType, replacementId);
-        
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
@@ -230,21 +209,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             TrySetProperty(replacement, "UpdatedByUsername", username);
         }
 
-        var result = await _collection.FindOneAndReplaceAsync(tenantFilter, replacement, options);
-        
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        if (result != null)
-        {
-            _logger.LogInformation("✅ 成功查找并替换 {EntityType} 实体: {ReplacementId}, 耗时: {ElapsedMs}ms", 
-                entityType, replacementId, elapsed);
-        }
-        else
-        {
-            _logger.LogWarning("⚠️ 查找并替换 {EntityType} 实体未找到匹配记录: {ReplacementId}, 耗时: {ElapsedMs}ms", 
-                entityType, replacementId, elapsed);
-        }
-        
-        return result;
+        return await _collection.FindOneAndReplaceAsync(tenantFilter, replacement, options);
     }
 
     /// <summary>
@@ -252,32 +217,13 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<T?> FindOneAndUpdateAsync(FilterDefinition<T> filter, UpdateDefinition<T> update, FindOneAndUpdateOptions<T>? options = null)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
-        _logger.LogDebug("开始查找并更新 {EntityType} 实体", entityType);
-        
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
         // 确保更新时间戳与更新人
         var updateWithTimestamp = WithUpdateAudit(update);
 
-        var result = await _collection.FindOneAndUpdateAsync(tenantFilter, updateWithTimestamp, options);
-        
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        if (result != null)
-        {
-            _logger.LogInformation("✅ 成功查找并更新 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
-                entityType, result.Id, elapsed);
-        }
-        else
-        {
-            _logger.LogWarning("⚠️ 查找并更新 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
-                entityType, elapsed);
-        }
-        
-        return result;
+        return await _collection.FindOneAndUpdateAsync(tenantFilter, updateWithTimestamp, options);
     }
 
     /// <summary>
@@ -285,31 +231,12 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<T?> FindOneAndSoftDeleteAsync(FilterDefinition<T> filter, FindOneAndUpdateOptions<T>? options = null)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
-        _logger.LogDebug("开始查找并软删除 {EntityType} 实体", entityType);
-        
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
         var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
-        var result = await _collection.FindOneAndUpdateAsync(tenantFilter, update, options);
-        
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        if (result != null)
-        {
-            _logger.LogInformation("✅ 成功查找并软删除 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
-                entityType, result.Id, elapsed);
-        }
-        else
-        {
-            _logger.LogWarning("⚠️ 查找并软删除 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
-                entityType, elapsed);
-        }
-        
-        return result;
+        return await _collection.FindOneAndUpdateAsync(tenantFilter, update, options);
     }
 
     /// <summary>
@@ -317,29 +244,10 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<T?> FindOneAndDeleteAsync(FilterDefinition<T> filter, FindOneAndDeleteOptions<T>? options = null)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
-        _logger.LogDebug("开始查找并硬删除 {EntityType} 实体", entityType);
-        
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
-        
-        var result = await _collection.FindOneAndDeleteAsync(tenantFilter, options);
-        
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        if (result != null)
-        {
-            _logger.LogInformation("✅ 成功查找并硬删除 {EntityType} 实体: {EntityId}, 耗时: {ElapsedMs}ms", 
-                entityType, result.Id, elapsed);
-        }
-        else
-        {
-            _logger.LogWarning("⚠️ 查找并硬删除 {EntityType} 实体未找到匹配记录, 耗时: {ElapsedMs}ms", 
-                entityType, elapsed);
-        }
-        
-        return result;
+
+        return await _collection.FindOneAndDeleteAsync(tenantFilter, options);
     }
 
     /// <summary>
@@ -347,11 +255,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<long> UpdateManyAsync(FilterDefinition<T> filter, UpdateDefinition<T> update)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
-        
-        _logger.LogDebug("开始批量更新 {EntityType} 实体", entityType);
-        
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
@@ -359,11 +262,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var updateWithTimestamp = WithUpdateAudit(update);
 
         var result = await _collection.UpdateManyAsync(tenantFilter, updateWithTimestamp);
-        
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        _logger.LogInformation("✅ 成功批量更新 {EntityType} 实体: {ModifiedCount} 个, 耗时: {ElapsedMs}ms", 
-            entityType, result.ModifiedCount, elapsed);
-        
         return result.ModifiedCount;
     }
 
@@ -372,12 +270,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<long> SoftDeleteManyAsync(IEnumerable<string> ids)
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var entityType = typeof(T).Name;
         var idList = ids.ToList();
-        var count = idList.Count;
-        
-        _logger.LogDebug("开始批量软删除 {EntityType} 实体: {Count} 个", entityType, count);
         
         // ✅ 使用表达式构建过滤器
         var filter = CreateFilterBuilder()
@@ -386,11 +279,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
         var result = await _collection.UpdateManyAsync(filter, update);
-        
-        var elapsed = stopwatch.ElapsedMilliseconds;
-        _logger.LogInformation("✅ 成功批量软删除 {EntityType} 实体: {ModifiedCount} 个, 耗时: {ElapsedMs}ms", 
-            entityType, result.ModifiedCount, elapsed);
-        
         return result.ModifiedCount;
     }
 
@@ -415,15 +303,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             Limit = limit
         });
         
-        var results = await cursor.ToListAsync();
-        
-        // 只在慢查询或Debug级别记录日志
-        if (_logger.IsEnabled(LogLevel.Debug))
-        {
-            _logger.LogDebug("查询 {EntityType}: {Count} 个", typeof(T).Name, results.Count);
-        }
-        
-        return results;
+        return await cursor.ToListAsync();
     }
 
     /// <summary>
@@ -455,13 +335,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var cursor = await findTask;
         var items = await cursor.ToListAsync();
         var total = await countTask;
-        
-        // 只在Debug级别记录详细信息
-        if (_logger.IsEnabled(LogLevel.Debug))
-        {
-            _logger.LogDebug("分页查询 {EntityType}: {Count} 个/共 {Total} 个, 页码: {Page}", 
-                typeof(T).Name, items.Count, total, page);
-        }
 
         return (items, total);
     }
@@ -480,15 +353,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
         
-        var result = await _collection.Find(tenantFilter).FirstOrDefaultAsync();
-        
-        // 只在未找到时记录警告，减少日志开销
-        if (result == null && _logger.IsEnabled(LogLevel.Warning))
-        {
-            _logger.LogWarning("根据ID获取 {EntityType} 实体未找到: {Id}", typeof(T).Name, id);
-        }
-        
-        return result;
+        return await _collection.Find(tenantFilter).FirstOrDefaultAsync();
     }
 
     /// <summary>
@@ -518,15 +383,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤和软删除过滤
         var finalFilter = ApplyDefaultFilters(filter);
         
-        var count = await _collection.CountDocumentsAsync(finalFilter);
-        
-        // 只在Debug级别记录详细信息
-        if (_logger.IsEnabled(LogLevel.Debug))
-        {
-            _logger.LogDebug("获取 {EntityType} 实体数量: {Count}", typeof(T).Name, count);
-        }
-        
-        return count;
+        return await _collection.CountDocumentsAsync(finalFilter);
     }
 
     // ========== 不带租户过滤的操作 ==========
@@ -768,8 +625,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var companyId = ResolveCurrentCompanyId();
         if (string.IsNullOrEmpty(companyId))
         {
-            // 只在警告级别记录，避免过多日志
-            _logger.LogWarning("实体 {EntityType} 实现了 IMultiTenant 但无法获取当前企业ID", typeof(T).Name);
             return filter;
         }
 
@@ -822,44 +677,4 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         return ApplySoftDeleteFilter(tenantFilter);
     }
 
-    /// <summary>
-    /// 构建查询信息字符串（仅在Debug级别需要时调用）
-    /// </summary>
-    private string BuildQueryInfo(FilterDefinition<T> filter, SortDefinition<T>? sort = null, int? limit = null)
-    {
-        if (!_logger.IsEnabled(LogLevel.Debug))
-        {
-            return string.Empty;  // Debug未启用时跳过构建
-        }
-        
-        var queryInfo = new List<string>();
-        
-        // 添加过滤条件
-        if (filter != null)
-        {
-            var registry = MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry;
-            var serializer = registry.GetSerializer<T>();
-            var args = new MongoDB.Driver.RenderArgs<T>(serializer, registry);
-            var filterJson = filter.Render(args);
-            queryInfo.Add($"Filter: {filterJson}");
-        }
-        
-        // 添加排序条件
-        if (sort != null)
-        {
-            var registry = MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry;
-            var serializer = registry.GetSerializer<T>();
-            var args = new MongoDB.Driver.RenderArgs<T>(serializer, registry);
-            var sortJson = sort.Render(args);
-            queryInfo.Add($"Sort: {sortJson}");
-        }
-        
-        // 添加限制条件
-        if (limit.HasValue)
-        {
-            queryInfo.Add($"Limit: {limit.Value}");
-        }
-        
-        return string.Join(", ", queryInfo);
-    }
 }

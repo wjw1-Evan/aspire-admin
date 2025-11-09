@@ -16,6 +16,7 @@ import { AuthErrorHandler, NetworkStatusIndicator } from '@/components/AuthError
 import { RouteGuard } from '@/components/RouteGuard';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { AlertHost } from '@/components/AlertHost';
+import { useAutoLocationSync } from '@/hooks/useAutoLocationSync';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -56,6 +57,7 @@ function AuthRouter() {
       >
         <SafeAreaView style={[styles.safeArea, { backgroundColor }]} edges={['top', 'left', 'right']}>
           <View style={[styles.routerContainer, { backgroundColor }]}>
+            <LocationSyncManager enabled={isAuthenticated} />
             <AlertHost />
             {/* 网络状态指示器 */}
             <NetworkStatusIndicator />
@@ -111,3 +113,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+function LocationSyncManager({ enabled }: { enabled: boolean }): null {
+  useAutoLocationSync(enabled);
+  return null;
+}

@@ -69,32 +69,22 @@ public class SocialService : ISocialService
         var currentUserId = _beaconFactory.GetRequiredUserId();
         var companyId = _beaconFactory.GetRequiredCompanyId();
         var now = DateTime.UtcNow;
+        var lastSeenAt = ResolveLastSeenAt(request, now);
 
-        var filter = Builders<UserLocationBeacon>.Filter.And(
-            Builders<UserLocationBeacon>.Filter.Eq(beacon => beacon.UserId, currentUserId),
-            Builders<UserLocationBeacon>.Filter.Eq(beacon => beacon.CompanyId, companyId));
-
-        var update = Builders<UserLocationBeacon>.Update
-            .Set(beacon => beacon.Latitude, request.Latitude)
-            .Set(beacon => beacon.Longitude, request.Longitude)
-            .Set(beacon => beacon.Accuracy, request.Accuracy)
-            .Set(beacon => beacon.Altitude, request.Altitude)
-            .Set(beacon => beacon.Heading, request.Heading)
-            .Set(beacon => beacon.Speed, request.Speed)
-            .Set(beacon => beacon.LastSeenAt, now)
-            .SetOnInsert(beacon => beacon.UserId, currentUserId)
-            .SetOnInsert(beacon => beacon.CompanyId, companyId)
-            .SetOnInsert(beacon => beacon.CreatedAt, now)
-            .SetOnInsert(beacon => beacon.UpdatedAt, now)
-            .SetOnInsert(beacon => beacon.IsDeleted, false);
-
-        var options = new FindOneAndUpdateOptions<UserLocationBeacon>
+        var beacon = new UserLocationBeacon
         {
-            IsUpsert = true,
-            ReturnDocument = ReturnDocument.After
+            UserId = currentUserId,
+            CompanyId = companyId,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            Accuracy = request.Accuracy,
+            Altitude = request.Altitude,
+            Heading = request.Heading,
+            Speed = request.Speed,
+            LastSeenAt = lastSeenAt
         };
 
-        await _beaconFactory.FindOneAndUpdateAsync(filter, update, options);
+        await _beaconFactory.CreateAsync(beacon);
     }
 
     /// <inheritdoc />
@@ -130,15 +120,38 @@ public class SocialService : ISocialService
             Builders<UserLocationBeacon>.Filter.Gte(beacon => beacon.Longitude, minLon),
             Builders<UserLocationBeacon>.Filter.Lte(beacon => beacon.Longitude, maxLon));
 
-        var rawBeacons = await _beaconFactory.FindAsync(filter, limit: 200);
+        var sort = _beaconFactory.CreateSortBuilder()
+            .Descending(beacon => beacon.LastSeenAt)
+            .Build();
+
+        var rawBeacons = await _beaconFactory.FindAsync(filter, sort, limit: 500);
         if (rawBeacons.Count == 0)
+        {
+            return new NearbyUsersResponse();
+        }
+
+        var uniqueBeacons = new Dictionary<string, UserLocationBeacon>();
+        foreach (var beacon in rawBeacons)
+        {
+            if (string.IsNullOrEmpty(beacon.UserId))
+            {
+                continue;
+            }
+
+            if (!uniqueBeacons.ContainsKey(beacon.UserId))
+            {
+                uniqueBeacons[beacon.UserId] = beacon;
+            }
+        }
+
+        if (uniqueBeacons.Count == 0)
         {
             return new NearbyUsersResponse();
         }
 
         var centerLat = request.Center.Latitude;
         var centerLon = request.Center.Longitude;
-        var beaconDistances = rawBeacons
+        var beaconDistances = uniqueBeacons.Values
             .Select(beacon => new
             {
                 Beacon = beacon,
@@ -284,5 +297,29 @@ public class SocialService : ISocialService
     }
 
     private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180d;
+
+    private DateTime ResolveLastSeenAt(UpdateLocationBeaconRequest request, DateTime fallback)
+    {
+        if (!request.Timestamp.HasValue)
+        {
+            return fallback;
+        }
+
+        try
+        {
+            var candidate = DateTimeOffset.FromUnixTimeMilliseconds(request.Timestamp.Value).UtcDateTime;
+            if (candidate > DateTime.UtcNow.AddMinutes(5))
+            {
+                return fallback;
+            }
+
+            return candidate;
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            _logger.LogWarning(ex, "定位上报时间戳无效，使用服务器时间作为 LastSeenAt。");
+            return fallback;
+        }
+    }
 }
 

@@ -44,9 +44,9 @@ public class FriendsController : BaseApiController
     /// <param name="keyword">姓名或用户名关键字（可选）</param>
     [HttpGet("search")]
     [ProducesResponseType(typeof(ApiResponse<List<FriendSearchResult>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Search([FromQuery] string? phone, [FromQuery] string? keyword)
+    public async Task<IActionResult> Search([FromQuery] string? phone, [FromQuery] string? keyword, [FromQuery] bool includeAllTenants = false)
     {
-        var results = await _friendService.SearchAsync(phone, keyword);
+        var results = await _friendService.SearchAsync(phone, keyword, includeAllTenants);
         return Success(results);
     }
 

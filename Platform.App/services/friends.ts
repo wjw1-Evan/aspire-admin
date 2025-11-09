@@ -46,6 +46,7 @@ export const friendService = {
     if (params.keyword?.trim()) {
       searchParams.append('keyword', params.keyword.trim());
     }
+    searchParams.append('includeAllTenants', 'true');
 
     const query = searchParams.toString();
     const endpoint = `${FRIENDS_ENDPOINT}/search${query ? `?${query}` : ''}`;

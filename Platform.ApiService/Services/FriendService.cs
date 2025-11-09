@@ -24,7 +24,7 @@ public interface IFriendService
     /// </summary>
     /// <param name="phoneNumber">手机号（可选）</param>
     /// <param name="keyword">姓名或用户名关键字（可选）</param>
-    Task<List<FriendSearchResult>> SearchAsync(string? phoneNumber, string? keyword);
+    Task<List<FriendSearchResult>> SearchAsync(string? phoneNumber, string? keyword, bool includeAllTenants = false);
 
     /// <summary>
     /// 发送好友请求
@@ -139,7 +139,7 @@ public class FriendService : IFriendService
     }
 
     /// <inheritdoc />
-    public async Task<List<FriendSearchResult>> SearchAsync(string? phoneNumber, string? keyword)
+    public async Task<List<FriendSearchResult>> SearchAsync(string? phoneNumber, string? keyword, bool includeAllTenants = false)
     {
         phoneNumber = phoneNumber?.Trim();
         keyword = keyword?.Trim();
@@ -176,11 +176,11 @@ public class FriendService : IFriendService
             var nameRegex = Builders<AppUser>.Filter.Regex("name", new BsonRegularExpression(escaped, "i"));
             var usernameRegex = Builders<AppUser>.Filter.Regex("username", new BsonRegularExpression(escaped, "i"));
             builder.Custom(Builders<AppUser>.Filter.Or(nameRegex, usernameRegex));
+        }
 
-            if (!string.IsNullOrWhiteSpace(currentUser?.CurrentCompanyId))
-            {
-                builder.Equal(u => u.CurrentCompanyId, currentUser.CurrentCompanyId);
-            }
+        if (!includeAllTenants && !string.IsNullOrWhiteSpace(currentUser?.CurrentCompanyId))
+        {
+            builder.Equal(u => u.CurrentCompanyId, currentUser.CurrentCompanyId);
         }
 
         var users = await _userFactory.FindAsync(builder.Build());

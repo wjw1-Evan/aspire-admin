@@ -12,6 +12,8 @@ public class CreateAllIndexes
 {
     private readonly IMongoDatabase _database;
     private readonly ILogger<CreateAllIndexes> _logger;
+    private const string CompanyIdFieldName = "companyId";
+    private const string CreatedAtFieldName = "createdAt";
 
     public CreateAllIndexes(IMongoDatabase database, ILogger<CreateAllIndexes> logger)
     {
@@ -47,21 +49,22 @@ public class CreateAllIndexes
 
         try
         {
+            await DropIndexIfExistsAsync(collection, "idx_beacon_company_user", "userlocationbeacons.companyId + userId (移除唯一约束)");
+
             await CreateIndexAsync(collection,
                 Builders<BsonDocument>.IndexKeys
-                    .Ascending("companyId")
+                    .Ascending(CompanyIdFieldName)
                     .Ascending("userId"),
                 new CreateIndexOptions
                 {
                     Name = "idx_beacon_company_user",
-                    Unique = true,
                     Background = true
                 },
-                "userlocationbeacons.companyId + userId (唯一)");
+                "userlocationbeacons.companyId + userId");
 
             await CreateIndexAsync(collection,
                 Builders<BsonDocument>.IndexKeys
-                    .Ascending("companyId")
+                    .Ascending(CompanyIdFieldName)
                     .Descending("lastSeenAt"),
                 new CreateIndexOptions
                 {
@@ -248,7 +251,7 @@ public class CreateAllIndexes
         {
             await CreateIndexAsync(sessions,
                 Builders<BsonDocument>.IndexKeys
-                    .Ascending("companyId")
+                    .Ascending(CompanyIdFieldName)
                     .Descending("updatedAt"),
                 new CreateIndexOptions
                 {
@@ -258,7 +261,7 @@ public class CreateAllIndexes
 
             await CreateIndexAsync(sessions,
                 Builders<BsonDocument>.IndexKeys
-                    .Ascending("companyId")
+                    .Ascending(CompanyIdFieldName)
                     .Ascending("participants"),
                 new CreateIndexOptions
                 {
@@ -268,9 +271,9 @@ public class CreateAllIndexes
 
             await CreateIndexAsync(messages,
                 Builders<BsonDocument>.IndexKeys
-                    .Ascending("companyId")
+                    .Ascending(CompanyIdFieldName)
                     .Ascending("sessionId")
-                    .Descending("createdAt"),
+                    .Descending(CreatedAtFieldName),
                 new CreateIndexOptions
                 {
                     Name = "idx_chat_messages_company_session_createdAt"
@@ -279,9 +282,9 @@ public class CreateAllIndexes
 
             await CreateIndexAsync(messages,
                 Builders<BsonDocument>.IndexKeys
-                    .Ascending("companyId")
+                    .Ascending(CompanyIdFieldName)
                     .Ascending("senderId")
-                    .Descending("createdAt"),
+                    .Descending(CreatedAtFieldName),
                 new CreateIndexOptions
                 {
                     Name = "idx_chat_messages_company_sender_createdAt"
@@ -317,7 +320,7 @@ public class CreateAllIndexes
             await CreateIndexAsync(collection,
                 Builders<BsonDocument>.IndexKeys
                     .Ascending("userId")
-                    .Descending("createdAt"),
+                    .Descending(CreatedAtFieldName),
                 new CreateIndexOptions
                 {
                     Name = "idx_friendships_user_createdAt"
@@ -354,7 +357,7 @@ public class CreateAllIndexes
                 Builders<BsonDocument>.IndexKeys
                     .Ascending("targetUserId")
                     .Ascending("status")
-                    .Descending("createdAt"),
+                    .Descending(CreatedAtFieldName),
                 new CreateIndexOptions
                 {
                     Name = "idx_friendrequests_target_status"
@@ -365,7 +368,7 @@ public class CreateAllIndexes
                 Builders<BsonDocument>.IndexKeys
                     .Ascending("requesterId")
                     .Ascending("status")
-                    .Descending("createdAt"),
+                    .Descending(CreatedAtFieldName),
                 new CreateIndexOptions
                 {
                     Name = "idx_friendrequests_requester_status"
@@ -375,6 +378,26 @@ public class CreateAllIndexes
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建好友请求索引失败");
+        }
+    }
+
+    private async Task DropIndexIfExistsAsync<T>(
+        IMongoCollection<T> collection,
+        string indexName,
+        string description)
+    {
+        try
+        {
+            await collection.Indexes.DropOneAsync(indexName);
+            _logger.LogInformation("删除索引: {Description}", description);
+        }
+        catch (MongoCommandException ex) when (ex.CodeName == "IndexNotFound")
+        {
+            _logger.LogDebug(ex, "索引不存在，无需删除: {Description}", description);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "删除索引失败: {Description}", description);
         }
     }
     private async Task CreateIndexAsync<T>(
@@ -392,11 +415,11 @@ public class CreateAllIndexes
                                                ex.CodeName == "IndexKeySpecsConflict" || 
                                                ex.Code == 85)
         {
-            _logger.LogDebug("⚠️  索引已存在: {Description}", description);
+            _logger.LogDebug(ex, "⚠️  索引已存在: {Description}", description);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning("创建索引失败: {Description}, 错误: {Error}", description, ex.Message);
+            _logger.LogWarning(ex, "创建索引失败: {Description}", description);
         }
     }
 

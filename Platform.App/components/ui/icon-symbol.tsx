@@ -37,6 +37,7 @@ const MAPPING = {
   'lightbulb': 'lightbulb-outline',
   'ellipsis': 'more-horiz',
   'plus': 'add',
+  'plus.circle': 'add-circle',
   'face.smiling': 'insert-emoticon',
   'waveform': 'keyboard-voice',
   'exclamationmark.circle.fill': 'error',

@@ -41,7 +41,8 @@
 
 ## 📍 附近的人
 
-- `useNearbyUsers` 请求定位权限、上报 `locationBeacon` 并调用 `fetchNearbyUsers`。
+- App 登录后由 `LocationSyncManager` 自动申请前台定位权限、定期调用 `/social/location/beacon` 上报经纬度（每次位置上报都会追加新记录，保留历史轨迹）。
+- `useNearbyUsers` 请求定位权限、上报 `locationBeacon` 并调用 `fetchNearbyUsers`（作为主动刷新补充）。
 - `app/people/nearby.tsx` 展示距离、兴趣标签，支持一键跳转聊天。
 
 ## ⚙️ 配置与依赖

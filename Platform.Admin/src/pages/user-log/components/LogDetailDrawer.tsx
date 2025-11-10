@@ -37,6 +37,23 @@ export default function LogDetailDrawer({
   onClose,
 }: LogDetailDrawerProps) {
   const intl = useIntl();
+  const formattedResponseBody = React.useMemo(() => {
+    if (!log?.responseBody) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(log.responseBody);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return log.responseBody;
+    }
+  }, [log?.responseBody]);
+
+  const isResponseTruncated = React.useMemo(
+    () => Boolean(log?.responseBody && log.responseBody.endsWith('...(truncated)')),
+    [log?.responseBody],
+  );
   
   if (!log) return null;
 
@@ -162,6 +179,33 @@ export default function LogDetailDrawer({
                   </Space>
                 </Descriptions.Item>
               )}
+            </Descriptions>
+          </>
+        )}
+
+        {formattedResponseBody && (
+          <>
+            <Divider />
+            <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.responseBody' })} bordered column={1}>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.responsePreview' })}>
+                <Paragraph
+                  copyable={{ text: log.responseBody ?? '' }}
+                  style={{
+                    maxHeight: 320,
+                    overflow: 'auto',
+                    fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace',
+                    whiteSpace: 'pre-wrap',
+                    marginBottom: isResponseTruncated ? 8 : 0,
+                  }}
+                >
+                  {formattedResponseBody}
+                </Paragraph>
+                {isResponseTruncated && (
+                  <Text type="secondary">
+                    {intl.formatMessage({ id: 'pages.logDetail.responseTruncated' })}
+                  </Text>
+                )}
+              </Descriptions.Item>
             </Descriptions>
           </>
         )}

@@ -195,6 +195,7 @@ public class UserActivityLogService : IUserActivityLogService
             Duration = request.DurationMs,
             IpAddress = request.IpAddress,
             UserAgent = request.UserAgent,
+            ResponseBody = request.ResponseBody,
             CompanyId = companyId ?? string.Empty
             // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };

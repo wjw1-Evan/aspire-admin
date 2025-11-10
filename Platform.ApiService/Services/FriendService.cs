@@ -24,6 +24,7 @@ public interface IFriendService
     /// </summary>
     /// <param name="phoneNumber">手机号（可选）</param>
     /// <param name="keyword">姓名或用户名关键字（可选）</param>
+    /// <param name="includeAllTenants">是否跨租户搜索（仅限具有跨租户权限的管理员使用）</param>
     Task<List<FriendSearchResult>> SearchAsync(string? phoneNumber, string? keyword, bool includeAllTenants = false);
 
     /// <summary>

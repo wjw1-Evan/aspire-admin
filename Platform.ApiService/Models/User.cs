@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Platform.ApiService.Models;
 
@@ -475,6 +476,13 @@ public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, P
     public long? Duration { get; set; }
 
     /// <summary>
+    /// 响应内容（JSON字符串，已截断）
+    /// </summary>
+    [BsonElement("responseBody")]
+    [JsonPropertyName("responseBody")]
+    public string? ResponseBody { get; set; }
+
+    /// <summary>
     /// 企业ID
     /// </summary>
     [BsonElement("companyId")]
@@ -643,6 +651,11 @@ public class LogHttpRequestRequest
     /// 用户代理（User Agent）
     /// </summary>
     public string? UserAgent { get; set; }
+
+    /// <summary>
+    /// 响应内容（JSON字符串，已截断）
+    /// </summary>
+    public string? ResponseBody { get; set; }
 }
 
 /// <summary>

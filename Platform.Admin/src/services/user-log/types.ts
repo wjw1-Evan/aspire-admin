@@ -15,6 +15,7 @@ export interface UserActivityLog {
   fullUrl?: string;           // 完整URL (path + queryString)
   statusCode?: number;        // HTTP 状态码
   duration?: number;          // 请求耗时 (毫秒)
+  responseBody?: string;      // 响应内容（JSON 字符串，可能被截断）
   createdAt: string;
 }
 

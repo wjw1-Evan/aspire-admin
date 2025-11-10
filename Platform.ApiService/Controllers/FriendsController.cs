@@ -42,6 +42,7 @@ public class FriendsController : BaseApiController
     /// </summary>
     /// <param name="phone">手机号（可选）</param>
     /// <param name="keyword">姓名或用户名关键字（可选）</param>
+    /// <param name="includeAllTenants">是否跨租户搜索（仅限具有跨租户权限的管理员使用）</param>
     [HttpGet("search")]
     [ProducesResponseType(typeof(ApiResponse<List<FriendSearchResult>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Search([FromQuery] string? phone, [FromQuery] string? keyword, [FromQuery] bool includeAllTenants = false)

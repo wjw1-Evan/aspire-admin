@@ -1,5 +1,6 @@
-using Platform.ApiService.Services;
+using System;
 using Platform.ApiService.Models;
+using Platform.ApiService.Services;
 using System.Diagnostics;
 
 namespace Platform.ApiService.Middleware;
@@ -129,7 +130,7 @@ public class ActivityLogMiddleware
     /// <summary>
     /// 在请求线程中提取日志数据（避免后台线程访问 HttpContext）
     /// </summary>
-    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent)? ExtractLogData(HttpContext context, long durationMs)
+    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody)? ExtractLogData(HttpContext context, long durationMs)
     {
         // 提取用户信息
         string? userId = null;
@@ -182,17 +183,19 @@ public class ActivityLogMiddleware
         // 响应状态码
         var statusCode = context.Response.StatusCode;
 
-        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent);
+        var responseBody = ExtractResponseBody(context);
+
+        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, responseBody);
     }
 
     /// <summary>
     /// 记录请求信息（使用已提取的数据，不访问 HttpContext）
     /// </summary>
     private static async Task LogRequestAsync(
-        (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent) logData,
+        (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody) logData,
         IUserActivityLogService logService)
     {
-        var (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent) = logData;
+        var (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, responseBody) = logData;
 
         // 构建请求对象
         var request = new LogHttpRequestRequest
@@ -207,10 +210,26 @@ public class ActivityLogMiddleware
             StatusCode = statusCode,
             DurationMs = durationMs,
             IpAddress = ipAddress,
-            UserAgent = userAgent
+            UserAgent = userAgent,
+            ResponseBody = responseBody
         };
 
         // 调用日志服务记录
         await logService.LogHttpRequestAsync(request);
+    }
+
+    private static string? ExtractResponseBody(HttpContext context)
+    {
+        if (!context.Items.TryGetValue(ResponseFormattingMiddleware.ResponseBodyContextItemKey, out var value))
+        {
+            return null;
+        }
+
+        if (value is not string body || string.IsNullOrWhiteSpace(body))
+        {
+            return null;
+        }
+
+        return body;
     }
 }

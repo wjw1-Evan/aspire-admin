@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,7 +12,8 @@ public class ResponseFormattingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ResponseFormattingMiddleware> _logger;
-    
+
+    internal const string ResponseBodyContextItemKey = "__FormattedResponseBody";
     /// <summary>
     /// JSON 序列化选项 - 使用 camelCase 命名策略
     /// </summary>
@@ -64,34 +66,38 @@ public class ResponseFormattingMiddleware
             {
                 await _next(context);
 
-                // 只处理成功的 JSON 响应
-                if (context.Response.StatusCode == 200 &&
-                    context.Response.ContentType?.Contains("application/json") == true)
+                var isJsonResponse = context.Response.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true;
+                string? responseBodyText = null;
+
+                if (isJsonResponse)
                 {
                     responseBody.Seek(0, SeekOrigin.Begin);
-                    var bodyText = await new StreamReader(responseBody).ReadToEndAsync();
+                    responseBodyText = await new StreamReader(responseBody).ReadToEndAsync();
 
-                    // 检查是否已经是标准格式
-                    if (!string.IsNullOrEmpty(bodyText) && !IsAlreadyFormatted(bodyText))
+                    StoreResponseBody(context, responseBodyText);
+                    responseBody.Seek(0, SeekOrigin.Begin);
+                }
+
+                if (context.Response.StatusCode == 200 &&
+                    isJsonResponse &&
+                    !string.IsNullOrEmpty(responseBodyText) &&
+                    !IsAlreadyFormatted(responseBodyText))
+                {
+                    var wrappedResponse = new
                     {
-                        // 包装响应
-                        var wrappedResponse = new
-                        {
-                            success = true,
-                            data = JsonSerializer.Deserialize<object>(bodyText, JsonOptions),
-                            timestamp = DateTime.UtcNow
-                        };
+                        success = true,
+                        data = JsonSerializer.Deserialize<object>(responseBodyText, JsonOptions),
+                        timestamp = DateTime.UtcNow
+                    };
 
-                        bodyText = JsonSerializer.Serialize(wrappedResponse, JsonOptions);
-                        
-                        // 更新 Content-Length
-                        var bytes = Encoding.UTF8.GetBytes(bodyText);
-                        context.Response.ContentLength = bytes.Length;
+                    responseBodyText = JsonSerializer.Serialize(wrappedResponse, JsonOptions);
+                    StoreResponseBody(context, responseBodyText);
 
-                        // 写入格式化后的响应
-                        responseBody.SetLength(0);
-                        await responseBody.WriteAsync(bytes);
-                    }
+                    var bytes = Encoding.UTF8.GetBytes(responseBodyText);
+                    context.Response.ContentLength = bytes.Length;
+
+                    responseBody.SetLength(0);
+                    await responseBody.WriteAsync(bytes);
                 }
 
                 // 复制响应到原始流
@@ -175,6 +181,17 @@ public class ResponseFormattingMiddleware
         {
             return false;
         }
+    }
+
+    private static void StoreResponseBody(HttpContext context, string? bodyText)
+    {
+        if (string.IsNullOrWhiteSpace(bodyText))
+        {
+            context.Items.Remove(ResponseBodyContextItemKey);
+            return;
+        }
+
+        context.Items[ResponseBodyContextItemKey] = bodyText;
     }
 }
 

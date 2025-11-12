@@ -7,7 +7,7 @@ description: C# 后端开发规范和最佳实践
 
 ## 🎯 核心原则
 
-**遵循 .NET 9 和 C# 12 最佳实践，确保代码质量、性能和可维护性**
+**遵循 .NET 10 和 C# 13 最佳实践，确保代码质量、性能和可维护性**
 
 ## 📝 XML 文档注释规范（强制要求）
 
@@ -15,7 +15,7 @@ description: C# 后端开发规范和最佳实践
 
 **所有公共类型和成员必须包含完整的 XML 文档注释，这是强制要求，不允许例外。**
 
-**⚠️ 重要提示**：XML 文档注释是 .NET 9 OpenAPI + Scalar API 文档生成的基础，缺失注释会导致：
+**⚠️ 重要提示**：XML 文档注释是 .NET 10 OpenAPI + Scalar API 文档生成的基础，缺失注释会导致：
 
 - Scalar API 文档中缺少接口说明
 - 无法正确生成 OpenAPI Schema
@@ -316,14 +316,15 @@ dotnet build
 
 ```xml
 <PropertyGroup>
-  <TargetFramework>net9.0</TargetFramework>
+  <TargetFramework>net10.0</TargetFramework>
+  <ImplicitUsings>enable</ImplicitUsings>
+  <Nullable>enable</Nullable>
   <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  <!-- 注意：不要禁用警告，必须修复所有缺失的注释 -->
-  <!-- <NoWarn>$(NoWarn);1591</NoWarn> -->
+  <NoWarn>$(NoWarn);1591</NoWarn>
 </PropertyGroup>
 ```
 
-**⚠️ 重要提示**：虽然可以在项目文件中使用 `<NoWarn>$(NoWarn);1591</NoWarn>` 来禁用警告，但**强烈建议不要这样做**。应该修复所有缺失的注释，而不是隐藏警告。
+**⚠️ 重要提示**：项目统一在 `.csproj` 中包含 `<NoWarn>$(NoWarn);1591</NoWarn>`，用于屏蔽第三方依赖带来的噪声警告。这并不意味着可以忽略注释编写，新增或修改公共成员时仍必须补齐 XML 注释；提交前务必自查并在代码审查中验证无遗漏。
 
 ## 📁 项目结构规范
 
@@ -534,7 +535,7 @@ catch (Exception ex)
     return StatusCode(500, new { success = false, error = ex.Message });
 }
 
-// ✅ 正确：抛出异常，由 GlobalExceptionMiddleware 处理
+// ✅ 正确：抛出异常，由 UseExceptionHandler() + ProblemDetails 管道统一处理
 var result = await _service.DoSomething();
 return Success(result);
 ```
@@ -806,40 +807,28 @@ builder.Services.AddBusinessServices(); // 自动注册所有业务服务
 // ... 更多服务
 ```
 
-### MongoDB 集合注册
+### MongoDB 数据访问工厂注册
 
 ```csharp
-// Platform.ApiService/Extensions/MongoDbExtensions.cs
-public static class MongoDbExtensions
+// Platform.ServiceDefaults/Extensions/ServiceExtensions.cs
+public static class ServiceExtensions
 {
     /// <summary>
-    /// 注册 MongoDB 集合
+    /// 注册数据库操作工厂（自动处理多租户、软删除、审计字段）
     /// </summary>
-    public static IServiceCollection AddMongoCollections(this IServiceCollection services)
+    public static IServiceCollection AddDatabaseFactory(this IServiceCollection services)
     {
-        services.AddSingleton<IMongoCollection<AppUser>>(provider =>
-        {
-            var database = provider.GetRequiredService<IMongoDatabase>();
-            return database.GetCollection<AppUser>("users");
-        });
-
-        services.AddSingleton<IMongoCollection<Company>>(provider =>
-        {
-            var database = provider.GetRequiredService<IMongoDatabase>();
-            return database.GetCollection<Company>("companies");
-        });
-
-        services.AddSingleton<IMongoCollection<Role>>(provider =>
-        {
-            var database = provider.GetRequiredService<IMongoDatabase>();
-            return database.GetCollection<Role>("roles");
-        });
-
-        // ... 其他集合注册
+        services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped(typeof(IDatabaseOperationFactory<>), typeof(DatabaseOperationFactory<>));
         return services;
     }
 }
+
+// Program.cs
+builder.Services.AddDatabaseFactory();
 ```
+
+> `IDatabaseOperationFactory<T>` 会注入租户过滤、软删除过滤与审计字段填充；禁止直接注入 `IMongoCollection<T>`。
 
 ### 配置管理
 
@@ -1075,16 +1064,16 @@ builder.Services.AddOptions<JwtSettings>()
 
 ## 📚 相关文档
 
-- [API控制器开发规范](mdc:.cursor/rules/api-controllers.mdc)
-- [后端数据访问层规范](mdc:.cursor/rules/backend-data-access.mdc)
-- [异常处理中间件](mdc:Platform.ApiService/Middleware/GlobalExceptionMiddleware.cs)
-- [服务扩展方法](mdc:Platform.ServiceDefaults/Extensions/ServiceExtensions.cs)
-- [自动服务注册](mdc:Platform.ApiService/Extensions/ServiceRegistrationExtensions.cs)
-- [MongoDB 集合注册](mdc:Platform.ApiService/Extensions/MongoDbExtensions.cs)
-- [配置管理服务](mdc:Platform.ApiService/Configuration/)
-- [Program.cs 配置](mdc:Platform.ApiService/Program.cs)
-- [.NET 依赖注入文档](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection)
-- [配置选项模式](https://docs.microsoft.com/aspnet/core/fundamentals/configuration/options)
+- [C# 后端开发规范](mdc:.cursor/rules/csharp-backend.mdc)
+- [后端核心开发规范](mdc:.cursor/rules/core-backend-standards.mdc)
+- [OpenAPI + Scalar API 文档规范](mdc:.cursor/rules/openapi-scalar-standard.mdc)
+- [错误处理与统一响应规范](mdc:.cursor/rules/error-handling.mdc)
+- [自动服务注册实现](mdc:Platform.ApiService/Extensions/ServiceRegistrationExtensions.cs)
+- [统一响应中间件](mdc:Platform.ApiService/Middleware/ResponseFormattingMiddleware.cs)
+- [服务默认配置扩展方法](mdc:Platform.ServiceDefaults/Extensions/ServiceExtensions.cs)
+- [Platform.ApiService Program](mdc:Platform.ApiService/Program.cs)
+- [.NET 依赖注入文档](https://learn.microsoft.com/aspnet/core/fundamentals/dependency-injection)
+- [配置选项模式](https://learn.microsoft.com/aspnet/core/fundamentals/configuration/options)
 
 ## 🎯 记住
 

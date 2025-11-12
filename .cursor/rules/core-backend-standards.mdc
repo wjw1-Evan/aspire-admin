@@ -17,7 +17,7 @@ globs: Platform.ApiService/**/*.cs,Platform.DataInitializer/**/*.cs,Platform.Ser
 - **所有 API 控制器必须继承 `BaseApiController`**，禁止直接继承 `ControllerBase`。
 - 统一通过基类方法处理响应：`Success()`、`SuccessResponse()`、`Error()` 等。
 - 必须使用 `GetRequiredUserId()` 等安全方法访问当前用户信息；不要手动解析 `HttpContext` 或 `User.Claims`。
-- 遵循异常即逻辑：业务校验失败直接抛出异常，由 `GlobalExceptionMiddleware` 统一处理，禁止在控制器中手动 `try-catch` 返回错误。
+- 遵循异常即逻辑：业务校验失败直接抛出异常，由 `UseExceptionHandler()` + `ProblemDetails` 管道统一处理，禁止在控制器中手动 `try-catch` 返回错误。
 - 合理使用 `[Authorize]`、`[AllowAnonymous]`、`[Authorize(Roles = "...")]` 控制访问；基类已提供 `IsAdmin`、`CurrentUserId` 等属性。
 
 ```csharp

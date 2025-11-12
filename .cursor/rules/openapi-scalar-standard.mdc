@@ -1,13 +1,13 @@
 ---
 alwaysApply: true
-description: OpenAPI + Scalar API 文档规范 - 移除全部 Swagger，使用 .NET 9 原生 OpenAPI 和 Scalar
+description: OpenAPI + Scalar API 文档规范 - 移除全部 Swagger，使用 .NET 10 原生 OpenAPI 和 Scalar
 ---
 
 # OpenAPI + Scalar API 文档规范
 
 ## 🚫 禁止使用 Swagger
 
-**项目已完全移除 Swagger/Swashbuckle，统一使用 .NET 9 原生 OpenAPI + Scalar**
+**项目已完全移除 Swagger/Swashbuckle，统一使用 .NET 10 原生 OpenAPI + Scalar**
 
 ## ❌ 禁止的做法
 
@@ -54,7 +54,7 @@ app.UseSwaggerGen();
 ```xml
 <!-- ✅ 正确：在 .csproj 中启用 XML 文档 -->
 <PropertyGroup>
-  <TargetFramework>net9.0</TargetFramework>
+  <TargetFramework>net10.0</TargetFramework>
   <ImplicitUsings>enable</ImplicitUsings>
   <Nullable>enable</Nullable>
   <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -62,10 +62,10 @@ app.UseSwaggerGen();
 </PropertyGroup>
 ```
 
-### 2. 在 Program.cs 中配置 .NET 9 原生 OpenAPI
+### 2. 在 Program.cs 中配置 .NET 10 原生 OpenAPI
 
 ```csharp
-// ✅ 正确：使用 .NET 9 原生 OpenAPI
+// ✅ 正确：使用 .NET 10 原生 OpenAPI
 builder.Services.AddOpenApi(options =>
 {
     // 文档转换器 - 配置 API 信息和安全方案
@@ -132,7 +132,7 @@ builder.Services.AddOpenApi(options =>
 
 // 在管道中映射 OpenAPI 端点
 app.MapControllers();
-app.MapOpenApi();  // ✅ 使用 .NET 9 原生 OpenAPI
+app.MapOpenApi();  // ✅ 使用 .NET 10 原生 OpenAPI
 app.MapDefaultEndpoints();
 ```
 
@@ -364,13 +364,13 @@ INVALID_REFERENCE: Can't resolve reference: #/components/schemas/LoginRequest
 
 - [如何查看 API 文档](mdc:docs/features/HOW-TO-VIEW-API-DOCS.md)
 - [Scalar API 文档修复](mdc:docs/bugfixes/SCALAR-API-REFERENCE-FIX.md)
-- [.NET 9 OpenAPI 官方文档](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview)
+- [.NET 10 OpenAPI 官方文档](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview)
 - [Scalar 官方网站](https://github.com/scalar/scalar)
 
 ## 🎯 核心原则
 
 1. **禁止 Swagger** - 永不使用 Swagger/Swashbuckle
-2. **原生 OpenAPI** - 只使用 .NET 9 原生 OpenAPI
+2. **原生 OpenAPI** - 只使用 .NET 10 原生 OpenAPI
 3. **完整注释（强制要求）** - 所有 API 元素都必须有 XML 注释，这是强制要求，不允许例外
 4. **Scalar 优先** - 主要通过 Aspire Dashboard 访问 Scalar
 5. **及时更新** - 代码和文档同步更新
@@ -386,7 +386,7 @@ INVALID_REFERENCE: Can't resolve reference: #/components/schemas/LoginRequest
 
 **所有公共类型和成员必须包含完整的 XML 文档注释，这是强制要求，不允许例外。**
 
-**⚠️ 重要提示**：XML 文档注释是 .NET 9 OpenAPI + Scalar API 文档生成的基础，缺失注释会导致：
+**⚠️ 重要提示**：XML 文档注释是 .NET 10 OpenAPI + Scalar API 文档生成的基础，缺失注释会导致：
 - Scalar API 文档中缺少接口说明和参数描述
 - 无法正确生成 OpenAPI Schema 和示例
 - 降低 API 文档的可读性和可用性

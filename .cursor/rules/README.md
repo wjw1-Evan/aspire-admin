@@ -11,6 +11,7 @@
 | `project-structure.mdc` | 所有目录 | 项目整体架构、服务依赖、启动方式与默认账户信息。 |
 | `core-backend-standards.mdc` | `Platform.ApiService/`, `Platform.DataInitializer/`, `Platform.ServiceDefaults/` | 控制器继承、数据库操作工厂、多租户隔离、全局菜单与数据初始化等后端必备规范（原 `baseapicontroller-standard`、`backend-data-access`、`multi-tenant-development`、`no-global-data`、`global-menu-architecture`、`database-initialization` 已合并于此）。 |
 | `documentation-standards.mdc` | 所有目录 | 文档存放、命名规则以及代码变更后的帮助文档同步要求（原 `documentation-organization`、`sync-help-documentation` 已合并）。 |
+| `openapi-scalar-standard.mdc` | 所有目录 | 移除 Swagger，统一使用 .NET 10 原生 OpenAPI + Scalar，并对 XML 注释提出强制要求。 |
 
 > 其余规则根据 `globs` 自动匹配到对应文件类型；需要时也可在对话中手动提及具体规则名称。
 

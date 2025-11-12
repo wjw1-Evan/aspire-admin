@@ -20,7 +20,7 @@ description: 项目结构和架构指南
 
 ### 技术栈
 
-- **后端**: .NET 9.0, .NET Aspire, MongoDB, YARP, Scalar API 文档
+- **后端**: .NET 10.0, .NET Aspire, MongoDB, YARP, Scalar API 文档
 - **前端**: React 19, Ant Design Pro, UmiJS, TypeScript, Biome
 - **移动端**: React Native, Expo, Expo Router, TypeScript
 

@@ -1,9 +1,10 @@
-using Platform.ApiService.Models;
+
 using Platform.ApiService.Services;
-using Platform.ApiService.Hubs;
-using MongoDB.Driver;
+using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -81,22 +82,30 @@ builder.Services.AddOpenApi(options =>
         };
         
         // 添加 JWT 认证配置
-        document.Components ??= new();
-        document.Components.SecuritySchemes ??= new Dictionary<string, Microsoft.OpenApi.Models.OpenApiSecurityScheme>();
-        document.Components.SecuritySchemes["Bearer"] = new()
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        if (!document.Components.SecuritySchemes.ContainsKey("Bearer"))
         {
-            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT",
-            Description = "JWT Authorization header using the Bearer scheme."
-        };
-        
-        // 添加全局安全要求
-        document.SecurityRequirements ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
-        document.SecurityRequirements.Add(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "JWT Authorization header using the Bearer scheme."
+            };
+        }
+
+        var bearerSchemeReference = new OpenApiSecuritySchemeReference("Bearer", document, externalResource: null);
+
+        document.Security ??= [];
+        if (!document.Security.Any(requirement => requirement.ContainsKey(bearerSchemeReference)))
         {
-            [document.Components.SecuritySchemes["Bearer"]] = new string[0]
-        });
+            var securityRequirement = new OpenApiSecurityRequirement
+            {
+                { bearerSchemeReference, new List<string>() }
+            };
+            document.Security.Add(securityRequirement);
+        }
         
         return Task.CompletedTask;
     });
@@ -106,23 +115,22 @@ builder.Services.AddOpenApi(options =>
         // 为需要认证的端点添加安全要求
         var authorizeAttributes = context.Description.ActionDescriptor.EndpointMetadata
             .OfType<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>();
-        
+
         if (authorizeAttributes.Any())
         {
-            operation.Security ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
-            operation.Security.Add(new()
+            var bearerSchemeReference = new OpenApiSecuritySchemeReference("Bearer", context.Document, externalResource: null);
+
+            operation.Security ??= [];
+            if (!operation.Security.Any(requirement => requirement.ContainsKey(bearerSchemeReference)))
             {
-                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                var securityRequirement = new OpenApiSecurityRequirement
                 {
-                    Reference = new()
-                    {
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                }] = Array.Empty<string>()
-            });
+                    { bearerSchemeReference, new List<string>() }
+                };
+                operation.Security.Add(securityRequirement);
+            }
         }
-        
+
         return Task.CompletedTask;
     });
 });

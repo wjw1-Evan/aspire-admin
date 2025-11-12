@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.2" />
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.0.0" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>32dca561-57e0-43ca-8fa6-2ecc6a9a5c73</UserSecretsId>
@@ -16,13 +16,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.2" />
-    <PackageReference Include="Aspire.Hosting.MongoDB" Version="9.5.2" />
-    <PackageReference Include="Aspire.Hosting.Yarp" Version="9.5.2-preview.1.25522.3" />
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="13.0.0" />
+    <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.0.0" />
+    <PackageReference Include="Aspire.Hosting.Yarp" Version="13.0.0" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.9.0" />
     <PackageReference Include="Scalar.Aspire" Version="0.7.3" />
     <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
-    <PackageReference Include="Aspire.Hosting.OpenAI" Version="9.5.2-preview.1.25522.3" />
+    <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.0.0" />
 
   </ItemGroup>
 

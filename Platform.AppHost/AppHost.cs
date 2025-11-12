@@ -22,7 +22,7 @@ if (!string.IsNullOrWhiteSpace(openAiEndpoint))
 var chat = openai.AddModel("chat", "gpt-4o-mini").WithHealthCheck();
 
 var mongo = builder.AddMongoDB("mongo")
-    .WithMongoExpress(config => config.WithLifetime(ContainerLifetime.Persistent))
+    .WithMongoExpress()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 

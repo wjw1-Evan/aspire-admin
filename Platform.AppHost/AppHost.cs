@@ -1,12 +1,15 @@
 using Aspire.Hosting.Yarp.Transforms;
+using Microsoft.Extensions.Configuration;
 using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
-var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey")?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");
 
-var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"] ?? throw new InvalidOperationException("缺少 OpenAI 终端配置项 'Parameters:openai-openai-endpoint'。");
+var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"]
+    ?? throw new InvalidOperationException("缺少 OpenAI 终端配置项 'Parameters:openai-openai-endpoint'。");
 
 var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 
@@ -34,7 +37,7 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WithHttpEndpoint()
         .WithReplicas(1)
         .WithHttpHealthCheck("/health")
-        .WithEnvironment("Jwt__SecretKey", jwtSecretKey.Value)
+        .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
         .WithReference(chat)
 };
 

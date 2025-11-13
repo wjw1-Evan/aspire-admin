@@ -4,9 +4,11 @@ using Scalar.Aspire;
 var builder = DistributedApplication.CreateBuilder(args);
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
-var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey");
+var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey")?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");
 
-var openai = builder.AddOpenAI("openai").WithEndpoint(builder.Configuration.GetSection("Parameters:openai-openai-endpoint").Value);
+var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"] ?? throw new InvalidOperationException("缺少 OpenAI 终端配置项 'Parameters:openai-openai-endpoint'。");
+
+var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 
 var chat = openai.AddModel("chat", "gpt-4o-mini");
 

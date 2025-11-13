@@ -1,0 +1,47 @@
+---
+apiVersion: "apps/v1"
+kind: "StatefulSet"
+metadata:
+  name: "mongo-statefulset"
+  labels:
+    app.kubernetes.io/name: "platform-apphost"
+    app.kubernetes.io/component: "mongo"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "platform-apphost"
+        app.kubernetes.io/component: "mongo"
+        app.kubernetes.io/instance: "{{.Release.Name}}"
+    spec:
+      containers:
+        - image: "docker.io/library/mongo:8.2"
+          name: "mongo"
+          envFrom:
+            - configMapRef:
+                name: "mongo-config"
+            - secretRef:
+                name: "mongo-secrets"
+          ports:
+            - name: "tcp"
+              protocol: "TCP"
+              containerPort: 27017
+          volumeMounts:
+            - name: "platform.apphost-04e9402f01-mongo-data"
+              mountPath: "/data/db"
+          imagePullPolicy: "IfNotPresent"
+      volumes:
+        - name: "platform.apphost-04e9402f01-mongo-data"
+          emptyDir: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "platform-apphost"
+      app.kubernetes.io/component: "mongo"
+      app.kubernetes.io/instance: "{{.Release.Name}}"
+  replicas: 1
+  persistentVolumeClaimRetentionPolicy: {}
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 0
+    type: "RollingUpdate"

@@ -1,0 +1,17 @@
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "apigateway-config"
+  labels:
+    app.kubernetes.io/name: "platform-apphost"
+    app.kubernetes.io/component: "apigateway"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+data:
+  ASPNETCORE_ENVIRONMENT: "{{ .Values.config.apigateway.ASPNETCORE_ENVIRONMENT }}"
+  APISERVICE_HTTP: "{{ .Values.config.apigateway.APISERVICE_HTTP }}"
+  REVERSEPROXY__ROUTES__route0__MATCH__PATH: "{{ .Values.config.apigateway.REVERSEPROXY__ROUTES__route0__MATCH__PATH }}"
+  REVERSEPROXY__ROUTES__route0__CLUSTERID: "{{ .Values.config.apigateway.REVERSEPROXY__ROUTES__route0__CLUSTERID }}"
+  REVERSEPROXY__ROUTES__route0__TRANSFORMS__0__PathPattern: "{{ .Values.config.apigateway.REVERSEPROXY__ROUTES__route0__TRANSFORMS__0__PathPattern }}"
+  REVERSEPROXY__CLUSTERS__cluster_apiservice__DESTINATIONS__destination1__ADDRESS: "{{ .Values.config.apigateway.REVERSEPROXY__CLUSTERS__cluster_apiservice__DESTINATIONS__destination1__ADDRESS }}"
+  services__apiservice__http__0: "{{ .Values.config.apigateway.services__apiservice__http__0 }}"

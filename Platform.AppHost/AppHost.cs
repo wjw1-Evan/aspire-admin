@@ -1,4 +1,5 @@
 using Aspire.Hosting.Yarp.Transforms;
+using Microsoft.Extensions.Hosting;
 using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -6,8 +7,6 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Add Kubernetes environment
 var k8s = builder.AddKubernetesEnvironment("k8s");
 
-// Add a Docker Compose environment
-var compose = builder.AddDockerComposeEnvironment("compose");
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
@@ -78,16 +77,14 @@ builder.AddNpmApp("app", "../Platform.App")
 // 配置 Scalar API 文档
 // 使用 .NET 10 原生 OpenAPI 支持
 // 默认端点是 /openapi/v1.json
-// var scalar = builder.AddScalarApiReference(options =>
-// {
-//     options
-//         .PreferHttpsEndpoint() // Use HTTPS endpoints when available
-//         .AllowSelfSignedCertificates(); // Trust self-signed certificates
-// });
-// foreach (var service in services.Values)
-// {
-//     scalar.WithApiReference(service);
-// }
+if (builder.Environment.IsDevelopment())
+{
+    var scalar = builder.AddScalarApiReference();
+    foreach (var service in services.Values)
+    {
+        scalar.WithApiReference(service);
+    }
+}
 
 var app = builder.Build();
 await app.RunAsync();

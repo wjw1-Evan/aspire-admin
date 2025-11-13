@@ -1,0 +1,63 @@
+parameters:
+  datainitializer:
+    port_http: "8080"
+    datainitializer_image: "datainitializer:latest"
+  apiservice:
+    port_http: "8080"
+    apiservice_image: "apiservice:latest"
+  admin:
+    admin_image: "admin:latest"
+  app:
+    app_image: "app:latest"
+secrets:
+  mongo:
+    MONGO_INITDB_ROOT_PASSWORD: ""
+config:
+  mongo:
+    MONGO_INITDB_ROOT_USERNAME: "admin"
+  datainitializer:
+    ASPNETCORE_URLS: "http://+:$8080"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+    ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+    MONGODB_HOST: "mongo-service"
+    MONGODB_PORT: "27017"
+    MONGODB_USERNAME: "admin"
+    MONGODB_AUTHENTICATIONDATABASE: "admin"
+    MONGODB_AUTHENTICATIONMECHANISM: "SCRAM-SHA-256"
+    MONGODB_DATABASE: "aspire-admin-db"
+  apiservice:
+    ASPNETCORE_URLS: "http://+:$8080"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+    ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+    MONGODB_HOST: "mongo-service"
+    MONGODB_PORT: "27017"
+    MONGODB_USERNAME: "admin"
+    MONGODB_AUTHENTICATIONDATABASE: "admin"
+    MONGODB_AUTHENTICATIONMECHANISM: "SCRAM-SHA-256"
+    MONGODB_DATABASE: "aspire-admin-db"
+    Jwt__SecretKey: "w9G2xN7pR6qV3zL1s8F0bH5dT4jK2uM3"
+    CHAT_ENDPOINT: "https://free.v36.cm/v1"
+    CHAT_URI: "https://free.v36.cm/v1"
+    CHAT_MODEL: "gpt-4o-mini"
+  apigateway:
+    ASPNETCORE_ENVIRONMENT: "Production"
+    REVERSEPROXY__ROUTES__route0__MATCH__PATH: "/apiservice/{**catch-all}"
+    REVERSEPROXY__ROUTES__route0__CLUSTERID: "cluster_apiservice"
+    REVERSEPROXY__ROUTES__route0__TRANSFORMS__0__PathPattern: "/{**catch-all}"
+    REVERSEPROXY__CLUSTERS__cluster_apiservice__DESTINATIONS__destination1__ADDRESS: "http://apiservice"
+  admin:
+    NODE_ENV: "production"
+    APIGATEWAY_HTTP: "http://apigateway-service:5000"
+    services__apigateway__http__0: "http://apigateway-service:5000"
+    BROWSER: "none"
+    PORT: "8080"
+  app:
+    NODE_ENV: "production"
+    APIGATEWAY_HTTP: "http://apigateway-service:5000"
+    services__apigateway__http__0: "http://apigateway-service:5000"
+    BROWSER: "none"
+    PORT: "8081"

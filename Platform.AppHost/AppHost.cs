@@ -3,6 +3,12 @@ using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// Add Kubernetes environment
+var k8s = builder.AddKubernetesEnvironment("k8s");
+
+// Add a Docker Compose environment
+var compose = builder.AddDockerComposeEnvironment("compose");
+
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
     ?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");
@@ -57,7 +63,7 @@ builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
-    .WithHttpEndpoint(env: "PORT", port: 15001)
+    .WithHttpEndpoint(env: "PORT", port: 15001,targetPort: 8080)
     .WithNpmPackageInstallation()
     .PublishAsDockerFile();
 
@@ -65,18 +71,23 @@ builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
-    .WithHttpEndpoint(env: "PORT", port: 15002)
+    .WithHttpEndpoint(env: "PORT", port: 15002,targetPort: 8081)
     .WithNpmPackageInstallation()
     .PublishAsDockerFile();
 
 // 配置 Scalar API 文档
 // 使用 .NET 10 原生 OpenAPI 支持
 // 默认端点是 /openapi/v1.json
-var scalar = builder.AddScalarApiReference();
-foreach (var service in services.Values)
-{
-    scalar.WithApiReference(service);
-}
+// var scalar = builder.AddScalarApiReference(options =>
+// {
+//     options
+//         .PreferHttpsEndpoint() // Use HTTPS endpoints when available
+//         .AllowSelfSignedCertificates(); // Trust self-signed certificates
+// });
+// foreach (var service in services.Values)
+// {
+//     scalar.WithApiReference(service);
+// }
 
 var app = builder.Build();
 await app.RunAsync();

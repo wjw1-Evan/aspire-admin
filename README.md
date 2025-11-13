@@ -158,7 +158,7 @@ builder.Services.AddOpenApi(options =>
 ## 🚀 快速开始
 
 1. **安装依赖**
-   - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+   - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
    - [Node.js 20+](https://nodejs.org/)
    - [Docker Desktop](https://www.docker.com/products/docker-desktop)
    - （移动端调试）[Expo CLI](https://docs.expo.dev/get-started/installation/)

@@ -6,20 +6,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration.GetSection("Jwt:SecretKey");
 
+var openai = builder.AddOpenAI("openai").WithEndpoint(builder.Configuration.GetSection("Parameters:openai-openai-endpoint").Value);
 
-// dotnet user-secrets set Parameters:openai-openai-apikey sk-nsLu8sMDWwZM1sJm2d1e3dD8Ca6f48Cf9f4eB5D4CcBf4b51
-
-var openAiSection = builder.Configuration.GetSection("OpenAI");
-var openAiEndpoint = openAiSection["Endpoint"];
-
-var openai = builder.AddOpenAI("openai");
-
-if (!string.IsNullOrWhiteSpace(openAiEndpoint))
-{
-    openai.WithEndpoint(openAiEndpoint);
-}
-
-var chat = openai.AddModel("chat", "gpt-4o-mini").WithHealthCheck();
+var chat = openai.AddModel("chat", "gpt-4o-mini");
 
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()

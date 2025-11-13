@@ -1,5 +1,4 @@
 using Aspire.Hosting.Yarp.Transforms;
-using Microsoft.Extensions.Configuration;
 using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -71,7 +70,7 @@ builder.AddNpmApp("app", "../Platform.App")
     .PublishAsDockerFile();
 
 // 配置 Scalar API 文档
-// 使用 .NET 9 原生 OpenAPI 支持
+// 使用 .NET 10 原生 OpenAPI 支持
 // 默认端点是 /openapi/v1.json
 var scalar = builder.AddScalarApiReference();
 foreach (var service in services.Values)

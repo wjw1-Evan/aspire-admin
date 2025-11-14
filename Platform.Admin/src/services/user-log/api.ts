@@ -23,6 +23,9 @@ export async function getCurrentUserActivityLogs(
     page?: number;
     pageSize?: number;
     action?: string;
+    httpMethod?: string;
+    statusCode?: number;
+    ipAddress?: string;
     startDate?: string;
     endDate?: string;
     sortBy?: string;

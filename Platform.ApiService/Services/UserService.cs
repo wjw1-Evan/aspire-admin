@@ -914,6 +914,9 @@ public class UserService : IUserService
         int page = 1,
         int pageSize = 20,
         string? action = null,
+        string? httpMethod = null,
+        int? statusCode = null,
+        string? ipAddress = null,
         DateTime? startDate = null,
         DateTime? endDate = null,
         string? sortBy = null,
@@ -927,10 +930,30 @@ public class UserService : IUserService
         // 固定过滤当前用户
         filterBuilder.Equal(log => log.UserId, currentUserId);
         
-        // 按操作类型过滤
+        // 按操作类型过滤（支持模糊搜索）
         if (!string.IsNullOrEmpty(action))
         {
-            filterBuilder.Equal(log => log.Action, action);
+            // 使用正则表达式进行模糊匹配，不区分大小写
+            filterBuilder.Regex(log => log.Action, action, "i");
+        }
+        
+        // 按 HTTP 方法过滤
+        if (!string.IsNullOrEmpty(httpMethod))
+        {
+            filterBuilder.Equal(log => log.HttpMethod, httpMethod);
+        }
+        
+        // 按状态码过滤
+        if (statusCode.HasValue)
+        {
+            filterBuilder.Equal(log => log.StatusCode, statusCode.Value);
+        }
+        
+        // 按 IP 地址过滤（支持模糊搜索）
+        if (!string.IsNullOrEmpty(ipAddress))
+        {
+            // 使用正则表达式进行模糊匹配，不区分大小写
+            filterBuilder.Regex(log => log.IpAddress, ipAddress, "i");
         }
         
         // 按日期范围过滤

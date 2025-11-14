@@ -538,13 +538,16 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
-    /// <param name="action">操作类型（可选）</param>
+    /// <param name="action">操作类型（可选，支持模糊搜索，如：login、view_user等）</param>
+    /// <param name="httpMethod">HTTP 请求方法（可选，如：GET、POST、PUT、DELETE、PATCH）</param>
+    /// <param name="statusCode">HTTP 状态码（可选，如：200、404、500）</param>
+    /// <param name="ipAddress">IP 地址（可选，支持模糊搜索）</param>
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     /// <param name="sortBy">排序字段（可选，默认：createdAt，支持：createdAt、action）</param>
     /// <param name="sortOrder">排序方向（可选，默认：desc，支持：asc、desc）</param>
     /// <remarks>
-    /// 获取当前登录用户的活动日志，支持分页、操作类型筛选、日期范围筛选和排序。
+    /// 获取当前登录用户的活动日志，支持分页、操作类型筛选（模糊搜索）、HTTP 方法筛选、状态码筛选、IP 地址筛选（模糊搜索）、日期范围筛选和排序。
     /// 
     /// 权限要求：用户必须已登录
     /// 
@@ -580,6 +583,9 @@ public class UserController : BaseApiController
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? action = null,
+        [FromQuery] string? httpMethod = null,
+        [FromQuery] int? statusCode = null,
+        [FromQuery] string? ipAddress = null,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] string? sortBy = null,
@@ -614,7 +620,10 @@ public class UserController : BaseApiController
         var (logs, total) = await _userService.GetCurrentUserActivityLogsAsync(
             page, 
             pageSize, 
-            action, 
+            action,
+            httpMethod,
+            statusCode,
+            ipAddress,
             startDate, 
             endDate,
             sortBy,

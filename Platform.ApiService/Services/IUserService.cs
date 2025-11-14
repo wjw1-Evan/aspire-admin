@@ -136,13 +136,16 @@ public interface IUserService
     /// </summary>
     /// <param name="page">页码（默认1）</param>
     /// <param name="pageSize">每页大小（默认20）</param>
-    /// <param name="action">操作类型（可选）</param>
+    /// <param name="action">操作类型（可选，支持模糊搜索）</param>
+    /// <param name="httpMethod">HTTP 请求方法（可选）</param>
+    /// <param name="statusCode">HTTP 状态码（可选）</param>
+    /// <param name="ipAddress">IP 地址（可选，支持模糊搜索）</param>
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     /// <param name="sortBy">排序字段（可选）</param>
     /// <param name="sortOrder">排序方向（可选）</param>
     /// <returns>活动日志列表和总数</returns>
-    Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(int page = 1, int pageSize = 20, string? action = null, DateTime? startDate = null, DateTime? endDate = null, string? sortBy = null, string? sortOrder = null);
+    Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(int page = 1, int pageSize = 20, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null, string? sortBy = null, string? sortOrder = null);
     
     /// <summary>
     /// 获取所有活动日志（分页，管理员功能）

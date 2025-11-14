@@ -225,12 +225,12 @@ export default function ProfileScreen() {
       return;
     }
     
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
+    if (passwordData.newPassword.trim() !== passwordData.confirmPassword.trim()) {
       Alert.alert('错误', '两次输入的新密码不一致');
       return;
     }
     
-    if (passwordData.currentPassword === passwordData.newPassword) {
+    if (passwordData.currentPassword.trim() === passwordData.newPassword.trim()) {
       Alert.alert('错误', '新密码不能与当前密码相同');
       return;
     }
@@ -640,7 +640,7 @@ export default function ProfileScreen() {
                       />
                     </TouchableOpacity>
                   </View>
-                  {passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
+                  {passwordData.confirmPassword && passwordData.newPassword.trim() !== passwordData.confirmPassword.trim() && (
                     <ThemedText style={[styles.inputError, { color: errorColor }]}>
                       两次输入的密码不一致
                     </ThemedText>

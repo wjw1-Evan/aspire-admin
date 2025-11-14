@@ -18,31 +18,18 @@ import { AuthErrorType } from '@/types/unified-api';
 class ApiService {
   private authStateChangeListeners: (() => void)[] = [];
   private isHandlingAuthFailure = false;
+  private isClearingTokens = false;
 
-  /**
-   * 获取 API 基础 URL
-   */
-  private getBaseURL(): string {
-    return getApiBaseUrl();
-  }
+  private getBaseURL = (): string => getApiBaseUrl();
 
-  /**
-   * 添加认证状态变化监听器
-   */
   addAuthStateChangeListener(listener: () => void): void {
     this.authStateChangeListeners.push(listener);
   }
 
-  /**
-   * 移除认证状态变化监听器
-   */
   removeAuthStateChangeListener(listener: () => void): void {
     this.authStateChangeListeners = this.authStateChangeListeners.filter(l => l !== listener);
   }
 
-  /**
-   * 触发认证状态变化事件
-   */
   private triggerAuthStateChange(): void {
     this.authStateChangeListeners.forEach(listener => {
       try {
@@ -53,26 +40,16 @@ class ApiService {
     });
   }
 
-  /**
-   * 处理认证失败（防止重复调用）
-   */
   private handleAuthFailure(): void {
-    // 如果正在处理，直接返回，避免重复处理
-    if (this.isHandlingAuthFailure) {
-      return;
-    }
+    if (this.isHandlingAuthFailure) return;
 
     this.isHandlingAuthFailure = true;
-
-    // 异步执行，不阻塞调用者
     void (async () => {
       try {
-        console.log('API: Authentication failed, clearing tokens');
         await this.clearAllTokens();
       } catch (error) {
         console.error('Failed to handle auth failure:', error);
       } finally {
-        // 延迟重置标志，防止短时间内重复触发
         setTimeout(() => {
           this.isHandlingAuthFailure = false;
         }, 500);
@@ -166,9 +143,6 @@ class ApiService {
     }
   }
 
-  /**
-   * 解析错误响应
-   */
   private async parseErrorResponse(response: Response): Promise<{
     message: string;
     errorCode?: string;
@@ -180,9 +154,7 @@ class ApiService {
         errorCode: errorData.errorCode || errorData.type,
       };
     } catch {
-      return {
-        message: `HTTP ${response.status}: ${response.statusText}`,
-      };
+      return { message: `HTTP ${response.status}: ${response.statusText}` };
     }
   }
 
@@ -192,10 +164,7 @@ class ApiService {
     }
 
     const contentLength = response.headers.get('content-length');
-    const isEmptyContentLength = contentLength !== null && Number(contentLength) === 0;
-    const contentType = response.headers.get('content-type') ?? '';
-
-    if (isEmptyContentLength) {
+    if (contentLength === '0') {
       return undefined as T;
     }
 
@@ -204,13 +173,14 @@ class ApiService {
       return undefined as T;
     }
 
+    const contentType = response.headers.get('content-type') ?? '';
     if (contentType.includes('application/json') || contentType === '') {
       try {
         return JSON.parse(rawText) as T;
-      } catch (error) {
+      } catch {
         const parseError = new Error('无效的 JSON 响应') as ApiError;
         parseError.code = 'INVALID_JSON_RESPONSE';
-        (parseError as ApiError).response = {
+        parseError.response = {
           status: response.status,
           statusText: response.statusText,
           data: { message: rawText },
@@ -222,16 +192,12 @@ class ApiService {
     return rawText as unknown as T;
   }
 
-  /**
-   * 带重试的请求方法
-   */
   private async requestWithRetry<T>(
     endpoint: string,
     options: RequestInit = {},
     config: RequestConfig = {}
   ): Promise<T> {
     const { timeout, retries } = { ...DEFAULT_REQUEST_CONFIG, ...config };
-    
     let lastError: any;
     
     for (let attempt = 0; attempt <= retries; attempt++) {
@@ -239,18 +205,18 @@ class ApiService {
         return await this.request<T>(endpoint, options, timeout);
       } catch (error) {
         lastError = error;
-        
-        // 如果是认证错误，不重试
         const authError = handleError(error);
+        
+        // 认证错误不重试
         if (authError.type === AuthErrorType.TOKEN_EXPIRED || 
             authError.type === AuthErrorType.PERMISSION_DENIED) {
           throw authError;
         }
         
-        // 如果不是最后一次尝试且可以重试，等待后重试
+        // 可重试的错误，等待后重试
         if (attempt < retries && shouldRetryError(error)) {
           await new Promise(resolve => setTimeout(resolve, calculateRetryDelay(attempt)));
-        } else if (attempt >= retries) {
+        } else {
           break;
         }
       }
@@ -259,16 +225,10 @@ class ApiService {
     throw handleError(lastError);
   }
 
-  /**
-   * GET 请求
-   */
   async get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, { method: 'GET' }, config);
   }
 
-  /**
-   * POST 请求
-   */
   async post<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: 'POST',
@@ -276,9 +236,6 @@ class ApiService {
     }, config);
   }
 
-  /**
-   * POST 表单请求（multipart/form-data）
-   */
   async postForm<T>(endpoint: string, formData: FormData, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: 'POST',
@@ -286,9 +243,6 @@ class ApiService {
     }, config);
   }
 
-  /**
-   * PUT 请求
-   */
   async put<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: 'PUT',
@@ -296,90 +250,73 @@ class ApiService {
     }, config);
   }
 
-  /**
-   * DELETE 请求
-   */
   async delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
     return this.requestWithRetry<T>(endpoint, { method: 'DELETE' }, config);
   }
 
   // ==================== Token 管理 ====================
 
-  async getToken(): Promise<string | null> {
+  private async getStorageItem(key: string): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+      return await AsyncStorage.getItem(key);
     } catch (error) {
-      console.error('Failed to get token:', error);
+      console.error(`Failed to get ${key}:`, error);
       return null;
     }
+  }
+
+  private async setStorageItem(key: string, value: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (error) {
+      console.error(`Failed to set ${key}:`, error);
+    }
+  }
+
+  private async removeStorageItem(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch (error) {
+      console.error(`Failed to remove ${key}:`, error);
+    }
+  }
+
+  async getToken(): Promise<string | null> {
+    return this.getStorageItem(STORAGE_KEYS.TOKEN);
   }
 
   async setToken(token: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, token);
-    } catch (error) {
-      console.error('Failed to set token:', error);
-    }
+    return this.setStorageItem(STORAGE_KEYS.TOKEN, token);
   }
 
   async removeToken(): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
-      this.triggerAuthStateChange();
-    } catch (error) {
-      console.error('Failed to remove token:', error);
-    }
+    await this.removeStorageItem(STORAGE_KEYS.TOKEN);
+    this.triggerAuthStateChange();
   }
 
   async getRefreshToken(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    } catch (error) {
-      console.error('Failed to get refresh token:', error);
-      return null;
-    }
+    return this.getStorageItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
   async setRefreshToken(refreshToken: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-    } catch (error) {
-      console.error('Failed to set refresh token:', error);
-    }
+    return this.setStorageItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
   }
 
   async removeRefreshToken(): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    } catch (error) {
-      console.error('Failed to remove refresh token:', error);
-    }
+    return this.removeStorageItem(STORAGE_KEYS.REFRESH_TOKEN);
   }
 
   async getTokenExpiresAt(): Promise<number | null> {
-    try {
-      const expiresAt = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES);
-      return expiresAt ? parseInt(expiresAt, 10) : null;
-    } catch (error) {
-      console.error('Failed to get token expires at:', error);
-      return null;
-    }
+    const expiresAt = await this.getStorageItem(STORAGE_KEYS.TOKEN_EXPIRES);
+    return expiresAt ? parseInt(expiresAt, 10) : null;
   }
 
   async setTokenExpiresAt(expiresAt: number): Promise<void> {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString());
-    } catch (error) {
-      console.error('Failed to set token expires at:', error);
-    }
+    return this.setStorageItem(STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString());
   }
 
   async removeTokenExpiresAt(): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES);
-    } catch (error) {
-      console.error('Failed to remove token expires at:', error);
-    }
+    return this.removeStorageItem(STORAGE_KEYS.TOKEN_EXPIRES);
   }
 
   async setTokens(token: string, refreshToken: string, expiresAt?: number): Promise<void> {
@@ -398,6 +335,9 @@ class ApiService {
   }
 
   async clearAllTokens(): Promise<void> {
+    if (this.isClearingTokens) return;
+
+    this.isClearingTokens = true;
     try {
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.TOKEN,
@@ -407,18 +347,17 @@ class ApiService {
       this.triggerAuthStateChange();
     } catch (error) {
       console.error('Failed to clear all tokens:', error);
+    } finally {
+      setTimeout(() => {
+        this.isClearingTokens = false;
+      }, 100);
     }
   }
 
-  /**
-   * 验证 token 有效性
-   */
   async validateToken(): Promise<boolean> {
     try {
       const token = await this.getToken();
-      if (!token) {
-        return false;
-      }
+      if (!token) return false;
 
       const response = await fetch(`${this.getBaseURL()}/currentUser`, {
         method: 'GET',
@@ -429,37 +368,26 @@ class ApiService {
       });
 
       if (response.status === 401 || response.status === 403) {
-        // handleAuthFailure 内部已经防止重复调用，并且是异步非阻塞的
         this.handleAuthFailure();
         return false;
       }
 
-      if (!response.ok) {
-        return false;
-      }
+      if (!response.ok) return false;
 
       try {
         const data = await response.json();
-        if (data && typeof data === 'object') {
-          if (data.success === false || (data.data && data.data.isLogin === false)) {
-            return false;
-          }
-          return true;
-        }
+        return data && typeof data === 'object' && 
+               data.success !== false && 
+               !(data.data?.isLogin === false);
       } catch {
         return false;
       }
-
-      return true;
     } catch (error) {
       console.error('API: Token validation error:', error);
       return false;
     }
   }
 
-  /**
-   * 检查网络连接状态
-   */
   async isOnline(): Promise<boolean> {
     try {
       const controller = new AbortController();

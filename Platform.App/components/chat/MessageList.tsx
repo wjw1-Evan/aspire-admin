@@ -75,6 +75,16 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
   const initialScrollDoneRef = useRef(false);
   const nearBottomRef = useRef(true);
 
+  // 辅助函数：安全地获取消息时间戳，如果 createdAt 不存在则返回 0
+  const getMessageTimestamp = useCallback((msg: ChatMessage): number => {
+    if (!msg.createdAt) {
+      return 0;
+    }
+    const timestamp = dayjs(msg.createdAt).valueOf();
+    // 检查是否为有效数字，如果 dayjs 返回 NaN 则使用 0
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  }, []);
+
   // 优化：预计算时间戳，避免在排序时重复创建 dayjs 对象
   const orderedMessages = useMemo(
     () => {
@@ -85,7 +95,7 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
       // 为每个消息预计算时间戳，避免在排序比较时重复创建 dayjs 对象
       const messagesWithTimestamps = messages.map(msg => ({
         msg,
-        timestamp: dayjs(msg.createdAt).valueOf(),
+        timestamp: getMessageTimestamp(msg),
       }));
       
       // 排序
@@ -103,7 +113,7 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
       // 返回排序后的消息数组
       return messagesWithTimestamps.map(item => item.msg);
     },
-    [messages]
+    [messages, getMessageTimestamp]
   );
 
   const scrollToBottom = useCallback(
@@ -218,14 +228,23 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
     ({ item, index }: { item: ChatMessage; index: number }) => {
       const isOutgoing = item.senderId === currentUserId;
       const previous = index > 0 ? orderedMessages[index - 1] : undefined;
+      
+      // 安全地计算时间戳差值，处理 createdAt 可能不存在的情况
+      const itemTimestamp = getMessageTimestamp(item);
+      const previousTimestamp = previous ? getMessageTimestamp(previous) : 0;
       const shouldShowTimestamp =
         index === 0 ||
         (previous &&
-          Math.abs(dayjs(item.createdAt).valueOf() - dayjs(previous.createdAt).valueOf()) > TIMESTAMP_INTERVAL);
+          Math.abs(itemTimestamp - previousTimestamp) > TIMESTAMP_INTERVAL);
 
       const senderName = participantNames?.[item.senderId] ?? item.senderId;
-      const formattedTimestamp = dayjs(item.createdAt).format('YYYY-MM-DD HH:mm');
-      const messageTime = dayjs(item.createdAt).format('HH:mm');
+      // 安全地格式化时间戳，如果 createdAt 不存在则显示占位符
+      const formattedTimestamp = item.createdAt && dayjs(item.createdAt).isValid()
+        ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
+        : '--';
+      const messageTime = item.createdAt && dayjs(item.createdAt).isValid()
+        ? dayjs(item.createdAt).format('HH:mm')
+        : '--';
 
       const handleResend = () => {
         if (item.status === 'failed') {
@@ -316,18 +335,21 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
     },
     [
       currentUserId,
+      getMessageTimestamp,
       incomingBackground,
+      incomingTextColor,
       isGroupChat,
-      orderedMessages,
       nameColor,
+      orderedMessages,
       outgoingBackground,
+      outgoingTextColor,
       participantNames,
       renderAvatar,
-      timestampBackground,
-      timestampColor,
-      statusTextColor,
       statusErrorColor,
       statusSendingColor,
+      statusTextColor,
+      timestampBackground,
+      timestampColor,
       onResendMessage,
     ]
   );

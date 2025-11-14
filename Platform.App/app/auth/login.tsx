@@ -31,6 +31,7 @@ export default function LoginScreen() {
   const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
+  const [loading, setLoading] = useState(false);
   const captchaRef = useRef<ImageCaptchaRef>(null);
   const { login } = useAuth();
   const { 
@@ -50,6 +51,11 @@ export default function LoginScreen() {
   const borderColor = useThemeColor({}, 'border');
 
   const handleLogin = async () => {
+    // 防止重复提交
+    if (loading) {
+      return;
+    }
+
     if (!username.trim() || !password.trim()) {
       setError({
         type: AuthErrorType.LOGIN_FAILED,
@@ -75,6 +81,7 @@ export default function LoginScreen() {
     }
 
     try {
+      setLoading(true);
       setError(null);
       setShowError(false);
       
@@ -115,14 +122,18 @@ export default function LoginScreen() {
       const errorCode = error?.errorCode || error?.info?.errorCode;
       if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
         setShowCaptcha(true);
-        // 自动刷新验证码
+        // 非阻塞方式刷新验证码，避免阻塞错误处理
         if (captchaRef.current) {
-          await captchaRef.current.refresh();
+          void captchaRef.current.refresh().catch(err => {
+            console.warn('刷新验证码失败:', err);
+          });
         }
       }
       
       setError(authError);
       setShowError(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -235,9 +246,10 @@ export default function LoginScreen() {
             )}
 
             <ThemedButton
-              title="登录"
+              title={loading ? '登录中...' : '登录'}
               onPress={handleLogin}
               style={styles.loginButton}
+              disabled={loading}
             />
 
 

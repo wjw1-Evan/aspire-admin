@@ -49,7 +49,8 @@ export default function ChatSessionScreen() {
       return;
     }
     loadMessages(sessionId).catch(error => console.error('Failed to load messages:', error));
-  }, [loadMessages, sessionId, session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadMessages, sessionId]); // 移除 session 依赖，避免 session 对象引用变化导致重复执行
 
   useEffect(() => {
     if (sessionId) {
@@ -82,7 +83,8 @@ export default function ChatSessionScreen() {
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [connectionState, loadMessages, session, sessionId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionState, loadMessages, sessionId]); // 移除 session 依赖，避免 session 对象引用变化导致频繁创建 interval
 
   const currentUserId = useMemo(() => user?.id ?? user?.username ?? undefined, [user?.id, user?.username]);
 

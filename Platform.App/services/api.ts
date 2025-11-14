@@ -56,7 +56,7 @@ class ApiService {
   /**
    * 处理认证失败（防止重复调用）
    */
-  private async handleAuthFailure(): Promise<void> {
+  private handleAuthFailure(): void {
     // 如果正在处理，直接返回，避免重复处理
     if (this.isHandlingAuthFailure) {
       return;
@@ -64,12 +64,20 @@ class ApiService {
 
     this.isHandlingAuthFailure = true;
 
-    try {
-      console.log('API: Authentication failed, clearing tokens');
-      await this.clearAllTokens();
-    } finally {
-      this.isHandlingAuthFailure = false;
-    }
+    // 异步执行，不阻塞调用者
+    void (async () => {
+      try {
+        console.log('API: Authentication failed, clearing tokens');
+        await this.clearAllTokens();
+      } catch (error) {
+        console.error('Failed to handle auth failure:', error);
+      } finally {
+        // 延迟重置标志，防止短时间内重复触发
+        setTimeout(() => {
+          this.isHandlingAuthFailure = false;
+        }, 500);
+      }
+    })();
   }
 
   /**
@@ -112,9 +120,8 @@ class ApiService {
       
       // 处理认证错误
       if (response.status === 401 || response.status === 403) {
-        // 不等待 handleAuthFailure，避免阻塞和死锁
-        // handleAuthFailure 内部已经防止重复调用
-        void this.handleAuthFailure();
+        // handleAuthFailure 内部已经防止重复调用，并且是异步非阻塞的
+        this.handleAuthFailure();
         throw createAuthError(
           response.status === 401 ? AuthErrorType.TOKEN_EXPIRED : AuthErrorType.PERMISSION_DENIED,
           response.status === 401 ? '登录已过期，请重新登录' : '权限不足',
@@ -422,8 +429,8 @@ class ApiService {
       });
 
       if (response.status === 401 || response.status === 403) {
-        // 不等待 handleAuthFailure，避免阻塞
-        void this.handleAuthFailure();
+        // handleAuthFailure 内部已经防止重复调用，并且是异步非阻塞的
+        this.handleAuthFailure();
         return false;
       }
 

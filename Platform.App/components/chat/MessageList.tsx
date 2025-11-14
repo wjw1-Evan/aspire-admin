@@ -75,19 +75,33 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
   const initialScrollDoneRef = useRef(false);
   const nearBottomRef = useRef(true);
 
+  // 优化：预计算时间戳，避免在排序时重复创建 dayjs 对象
   const orderedMessages = useMemo(
     () => {
-      const cloned = [...messages];
-      return cloned.sort((a, b) => {
-        const diff = dayjs(a.createdAt).valueOf() - dayjs(b.createdAt).valueOf();
+      if (messages.length === 0) {
+        return [];
+      }
+      
+      // 为每个消息预计算时间戳，避免在排序比较时重复创建 dayjs 对象
+      const messagesWithTimestamps = messages.map(msg => ({
+        msg,
+        timestamp: dayjs(msg.createdAt).valueOf(),
+      }));
+      
+      // 排序
+      messagesWithTimestamps.sort((a, b) => {
+        const diff = a.timestamp - b.timestamp;
         if (diff !== 0) {
           return diff;
         }
 
-        const aId = a.id ?? '';
-        const bId = b.id ?? '';
+        const aId = a.msg.id ?? '';
+        const bId = b.msg.id ?? '';
         return aId.localeCompare(bId);
       });
+      
+      // 返回排序后的消息数组
+      return messagesWithTimestamps.map(item => item.msg);
     },
     [messages]
   );

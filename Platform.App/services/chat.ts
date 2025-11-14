@@ -158,7 +158,8 @@ const fetchAssistantReplyResponse = async (
   });
 
   if (response.status === 401 || response.status === 403) {
-    await apiService.clearAllTokens();
+    // 非阻塞方式清除 token，避免阻塞流式响应
+    void apiService.clearAllTokens();
     throw new Error('登录已过期，请重新登录后重试');
   }
 

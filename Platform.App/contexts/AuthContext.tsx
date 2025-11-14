@@ -3,7 +3,7 @@
  * 提供全局认证状态和操作方法
  */
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, ReactNode, useMemo, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { authReducer, initialAuthState } from './authReducer';
 import {
@@ -148,11 +148,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [hasPermission]);
 
   // 应用状态变化处理
+  // 使用 ref 存储最新的认证状态，避免频繁重新创建回调
+  const isAuthenticatedRef = useRef(state.isAuthenticated);
+  useEffect(() => {
+    isAuthenticatedRef.current = state.isAuthenticated;
+  }, [state.isAuthenticated]);
+
   const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
-    if (nextAppState === 'active' && state.isAuthenticated) {
-      refreshAuth();
+    if (nextAppState === 'active' && isAuthenticatedRef.current) {
+      // 非阻塞方式刷新认证，避免阻塞应用状态切换
+      void refreshAuth();
     }
-  }, [state.isAuthenticated, refreshAuth]);
+  }, [refreshAuth]);
 
   // 清除错误
   const clearError = useCallback(() => {

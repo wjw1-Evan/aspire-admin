@@ -270,6 +270,11 @@ export const streamAssistantReplyAction = async (
 
   let aggregated = '';
   let handledStreamError = false;
+  
+  // 节流机制：限制 dispatch 频率，避免频繁更新导致页面卡顿
+  let lastUpdateTime = 0;
+  const THROTTLE_MS = 100; // 最多每 100ms 更新一次
+  let pendingUpdate: ReturnType<typeof setTimeout> | null = null;
 
   try {
     await chatService.streamAssistantReply(
@@ -277,6 +282,41 @@ export const streamAssistantReplyAction = async (
       {
         onDelta: text => {
           aggregated += text;
+          
+          // 节流：如果距离上次更新时间太短，延迟更新
+          const now = Date.now();
+          if (now - lastUpdateTime < THROTTLE_MS) {
+            // 取消之前的延迟更新
+            if (pendingUpdate !== null) {
+              clearTimeout(pendingUpdate);
+            }
+            
+            // 设置新的延迟更新
+            pendingUpdate = setTimeout(() => {
+              lastUpdateTime = Date.now();
+              pendingUpdate = null;
+              dispatch({
+                type: 'CHAT_UPDATE_MESSAGE',
+                payload: {
+                  sessionId: request.sessionId,
+                  messageId: request.clientMessageId,
+                  updates: {
+                    content: aggregated,
+                    updatedAt: new Date().toISOString(),
+                    metadata: {
+                      ...baseMetadata,
+                      streaming: true,
+                      streamLength: aggregated.length,
+                    },
+                  },
+                },
+              });
+            }, THROTTLE_MS - (now - lastUpdateTime));
+            return;
+          }
+          
+          // 立即更新
+          lastUpdateTime = now;
           dispatch({
             type: 'CHAT_UPDATE_MESSAGE',
             payload: {
@@ -295,6 +335,12 @@ export const streamAssistantReplyAction = async (
           });
         },
         onComplete: chunk => {
+          // 清除待处理的延迟更新
+          if (pendingUpdate !== null) {
+            clearTimeout(pendingUpdate);
+            pendingUpdate = null;
+          }
+          
           const finalContent = chunk.message?.content ?? aggregated;
           dispatch({
             type: 'CHAT_UPDATE_MESSAGE',
@@ -318,6 +364,12 @@ export const streamAssistantReplyAction = async (
           }
         },
         onError: message => {
+          // 清除待处理的延迟更新
+          if (pendingUpdate !== null) {
+            clearTimeout(pendingUpdate);
+            pendingUpdate = null;
+          }
+          
           handledStreamError = true;
           dispatch({
             type: 'CHAT_UPDATE_MESSAGE',
@@ -340,6 +392,12 @@ export const streamAssistantReplyAction = async (
       { signal: controller.signal }
     );
   } catch (error) {
+    // 清除待处理的延迟更新
+    if (pendingUpdate !== null) {
+      clearTimeout(pendingUpdate);
+      pendingUpdate = null;
+    }
+    
     if (error instanceof Error && error.name === 'AbortError') {
       dispatch({
         type: 'CHAT_UPDATE_MESSAGE',
@@ -376,6 +434,12 @@ export const streamAssistantReplyAction = async (
       dispatch({ type: 'CHAT_SET_ERROR', payload: message });
     }
   } finally {
+    // 确保清除待处理的延迟更新
+    if (pendingUpdate !== null) {
+      clearTimeout(pendingUpdate);
+      pendingUpdate = null;
+    }
+    
     const activeController = assistantStreamControllers.get(request.sessionId);
     if (activeController === controller) {
       assistantStreamControllers.delete(request.sessionId);

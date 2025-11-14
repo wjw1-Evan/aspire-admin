@@ -81,6 +81,7 @@ const mergeSessions = (state: ChatState, sessions: ChatSession[]): ChatState => 
     nextOrder.add(session.id);
   });
 
+  // 优化：预计算时间戳，避免在排序时重复创建 Date 对象
   const sortedOrder = Array.from(nextOrder).sort((a, b) => {
     const sessionA = nextSessions[a];
     const sessionB = nextSessions[b];
@@ -88,10 +89,13 @@ const mergeSessions = (state: ChatState, sessions: ChatSession[]): ChatState => 
     const timestampA = sessionA?.updatedAt ?? sessionA?.lastMessageAt ?? sessionA?.createdAt;
     const timestampB = sessionB?.updatedAt ?? sessionB?.lastMessageAt ?? sessionB?.createdAt;
 
-    const timeA = timestampA ? new Date(timestampA).getTime() : 0;
-    const timeB = timestampB ? new Date(timestampB).getTime() : 0;
-
-    return timeB - timeA;
+    // 直接比较时间戳字符串（ISO 8601 格式可以直接字符串比较），避免创建 Date 对象
+    if (!timestampA && !timestampB) return 0;
+    if (!timestampA) return 1;
+    if (!timestampB) return -1;
+    
+    // ISO 8601 格式的字符串可以直接比较，性能更好
+    return timestampB.localeCompare(timestampA);
   });
 
   return {
@@ -116,6 +120,11 @@ const normalizeMessage = (message: ChatMessage): ChatMessage => {
   };
 };
 
+// 优化：预计算时间戳，避免在排序时重复创建 Date 对象
+const getMessageTimestamp = (message: ChatMessage): number => {
+  return message.createdAt ? new Date(message.createdAt).getTime() : 0;
+};
+
 const appendMessage = (existing: ChatMessage[], message: ChatMessage): ChatMessage[] => {
   const normalized = normalizeMessage(message);
   const targetLocalId = normalized.clientMessageId ?? normalized.localId;
@@ -138,9 +147,8 @@ const appendMessage = (existing: ChatMessage[], message: ChatMessage): ChatMessa
     });
 
     if (replaced) {
-      return next.sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
+      // 使用预计算的时间戳进行比较，避免重复创建 Date 对象
+      return next.sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b));
     }
   }
 
@@ -148,11 +156,9 @@ const appendMessage = (existing: ChatMessage[], message: ChatMessage): ChatMessa
   if (hasExisting) {
     return existing
       .map(item => (item.id === normalized.id ? { ...item, ...normalized } : item))
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      .sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b));
   }
-  return [...existing, normalized].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  return [...existing, normalized].sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b));
 };
 
 const replaceMessage = (
@@ -187,7 +193,8 @@ const replaceMessage = (
     next.push({ ...normalized, status: normalized.status ?? 'sent' });
   }
 
-  return next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  // 使用预计算的时间戳进行比较，避免重复创建 Date 对象
+  return next.sort((a, b) => getMessageTimestamp(a) - getMessageTimestamp(b));
 };
 
 export function chatReducer(state: ChatState, action: ChatReducerAction): ChatState {
@@ -228,17 +235,29 @@ export function chatReducer(state: ChatState, action: ChatReducerAction): ChatSt
       const currentMessages = state.messages[sessionId] ?? [];
       const nextMessages = replace
         ? messages
-        : [...currentMessages, ...messages].reduce<ChatMessage[]>((result, item) => {
-            const exists = result.find(existing => existing.id === item.id);
-            if (exists) {
-              Object.assign(exists, item);
-            } else {
-              result.push(item);
+        : (() => {
+            // 使用 Map 优化去重，避免 O(n²) 复杂度
+            const messageMap = new Map<string, ChatMessage>();
+            
+            // 先添加现有消息
+            for (const msg of currentMessages) {
+              if (msg.id) {
+                messageMap.set(msg.id, msg);
+              }
             }
-            return result;
-          }, []).sort(
-            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
+            
+            // 合并新消息（新消息优先）
+            for (const msg of messages) {
+              if (msg.id) {
+                messageMap.set(msg.id, msg);
+              }
+            }
+            
+            // 转换为数组并排序（使用预计算的时间戳，避免重复创建 Date 对象）
+            return Array.from(messageMap.values()).sort(
+              (a, b) => getMessageTimestamp(a) - getMessageTimestamp(b)
+            );
+          })();
 
       return {
         ...state,

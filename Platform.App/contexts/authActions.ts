@@ -105,12 +105,16 @@ export async function registerAction(
  */
 export async function logoutAction(dispatch: Dispatch<AuthAction>): Promise<void> {
   try {
+    // authService.logout() 内部已经会清理 token，这里不需要再次清理
     await authService.logout();
   } catch (error) {
     console.error('AuthContext: Logout service call failed:', error);
+    // 如果 logout API 调用失败，仍然需要清理本地 token
+    void apiService.clearAllTokens();
   } finally {
     dispatch({ type: 'AUTH_LOGOUT' });
-    await apiService.clearAllTokens();
+    // authService.logout() 的 finally 块已经清理了 token，这里不需要再次清理
+    // 但如果 logout API 调用失败，上面的 catch 块已经清理了
   }
 }
 
@@ -131,11 +135,17 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
     
     if (currentToken && !isExpired) {
       // 尝试获取最新用户信息
-      const userResponse = await authService.getCurrentUser();
-      const currentUser = userResponse.data;
-      if (isAuthResponseValid(userResponse) && currentUser) {
-        dispatch({ type: 'AUTH_UPDATE_USER', payload: currentUser });
-        return;
+      try {
+        const userResponse = await authService.getCurrentUser();
+        const currentUser = userResponse.data;
+        if (isAuthResponseValid(userResponse) && currentUser) {
+          dispatch({ type: 'AUTH_UPDATE_USER', payload: currentUser });
+          return;
+        }
+      } catch (error) {
+        // 如果 getCurrentUser 返回 401，handleAuthFailure 已经处理了 token 清理
+        // 这里只需要继续执行后续的刷新逻辑或登出
+        console.warn('AuthContext: Get current user failed, will try refresh token:', error);
       }
     }
     
@@ -151,10 +161,16 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
         });
         
         // 获取用户信息
-        const userResponse = await authService.getCurrentUser();
-        const currentUser = userResponse.data;
-        if (isAuthResponseValid(userResponse) && currentUser) {
-          dispatch({ type: 'AUTH_UPDATE_USER', payload: currentUser });
+        try {
+          const userResponse = await authService.getCurrentUser();
+          const currentUser = userResponse.data;
+          if (isAuthResponseValid(userResponse) && currentUser) {
+            dispatch({ type: 'AUTH_UPDATE_USER', payload: currentUser });
+          }
+        } catch (error) {
+          // 如果 getCurrentUser 返回 401，handleAuthFailure 已经处理了 token 清理
+          // 这里记录错误但不影响整体流程
+          console.warn('AuthContext: Get current user after refresh failed:', error);
         }
         return;
       }
@@ -162,11 +178,13 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
     
     // 如果刷新失败，执行登出
     dispatch({ type: 'AUTH_LOGOUT' });
-    await apiService.clearAllTokens();
+    // 非阻塞方式清除 token，避免阻塞（handleAuthFailure 可能已经清理过了）
+    void apiService.clearAllTokens();
   } catch (error) {
     console.error('AuthContext: Refresh auth failed:', error);
     dispatch({ type: 'AUTH_LOGOUT' });
-    await apiService.clearAllTokens();
+    // 非阻塞方式清除 token，避免阻塞（handleAuthFailure 可能已经清理过了）
+    void apiService.clearAllTokens();
   }
 }
 
@@ -186,19 +204,26 @@ export async function checkAuthAction(dispatch: Dispatch<AuthAction>): Promise<v
       return;
     }
     
-    const userResponse = await authService.getCurrentUser();
-    const currentUser = userResponse.data;
-    if (isAuthResponseValid(userResponse) && currentUser) {
-      dispatch({
-        type: 'AUTH_SUCCESS',
-        payload: {
-          user: currentUser,
-          token,
-          refreshToken: refreshToken || undefined,
-          tokenExpiresAt: tokenExpiresAt || undefined,
-        },
-      });
-    } else {
+    try {
+      const userResponse = await authService.getCurrentUser();
+      const currentUser = userResponse.data;
+      if (isAuthResponseValid(userResponse) && currentUser) {
+        dispatch({
+          type: 'AUTH_SUCCESS',
+          payload: {
+            user: currentUser,
+            token,
+            refreshToken: refreshToken || undefined,
+            tokenExpiresAt: tokenExpiresAt || undefined,
+          },
+        });
+      } else {
+        dispatch({ type: 'AUTH_LOGOUT' });
+      }
+    } catch (error) {
+      // 如果 getCurrentUser 返回 401，handleAuthFailure 已经处理了 token 清理
+      // 这里只需要 dispatch AUTH_LOGOUT
+      console.warn('AuthContext: Get current user failed during check auth:', error);
       dispatch({ type: 'AUTH_LOGOUT' });
     }
   } catch (error) {

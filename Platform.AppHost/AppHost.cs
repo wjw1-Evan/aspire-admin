@@ -28,6 +28,7 @@ var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
+    .WaitFor(mongodb)
     .WithReference(mongodb)
     .WithHttpEndpoint();
 

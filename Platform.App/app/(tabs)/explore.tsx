@@ -31,12 +31,6 @@ const tiles: ExploreTile[] = [
     icon: 'sparkles',
     route: '/people/recommend',
   },
-  {
-    title: '消息中心',
-    description: '集中查看所有会话，一键返回聊天列表开始沟通。',
-    icon: 'bubble.left.and.bubble.right.fill',
-    route: '/(tabs)/chat',
-  },
 ];
 
 export default function ExploreScreen() {

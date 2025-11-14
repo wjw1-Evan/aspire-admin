@@ -62,12 +62,25 @@ export function useFriends(): UseFriendsResult {
   const loadRequests = useCallback(async () => {
     setRequestsLoading(true);
     try {
-      const [incoming, outgoing] = await Promise.all([
+      // 使用 Promise.allSettled 允许部分请求失败
+      const [incomingResult, outgoingResult] = await Promise.allSettled([
         loadRequestsByDirection('Incoming'),
         loadRequestsByDirection('Outgoing'),
       ]);
-      setIncomingRequests(incoming);
-      setOutgoingRequests(outgoing);
+      
+      if (incomingResult.status === 'fulfilled') {
+        setIncomingRequests(incomingResult.value);
+      } else {
+        console.warn('加载 incoming 请求失败:', incomingResult.reason);
+        setIncomingRequests([]);
+      }
+      
+      if (outgoingResult.status === 'fulfilled') {
+        setOutgoingRequests(outgoingResult.value);
+      } else {
+        console.warn('加载 outgoing 请求失败:', outgoingResult.reason);
+        setOutgoingRequests([]);
+      }
     } finally {
       setRequestsLoading(false);
     }
@@ -76,7 +89,19 @@ export function useFriends(): UseFriendsResult {
   const approveRequest = useCallback(
     async (requestId: string) => {
       const result = await friendService.approveRequest(requestId);
-      await Promise.all([loadFriends(), loadRequests()]);
+      // 使用 Promise.allSettled 允许部分刷新失败
+      const [friendsResult, requestsResult] = await Promise.allSettled([
+        loadFriends(),
+        loadRequests(),
+      ]);
+      
+      if (friendsResult.status === 'rejected') {
+        console.warn('刷新好友列表失败:', friendsResult.reason);
+      }
+      if (requestsResult.status === 'rejected') {
+        console.warn('刷新好友请求失败:', requestsResult.reason);
+      }
+      
       return result;
     },
     [loadFriends, loadRequests]

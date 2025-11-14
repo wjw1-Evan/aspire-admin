@@ -80,16 +80,22 @@ export const friendService = {
       searchTasks.push(this.search({ phone: normalizedPhone }));
     }
 
-    const resultSets = await Promise.all(searchTasks);
+    // 使用 Promise.allSettled 允许部分搜索失败
+    const resultSets = await Promise.allSettled(searchTasks);
     const merged: FriendSearchResult[] = [];
     const seen = new Set<string>();
 
-    for (const results of resultSets) {
-      for (const item of results) {
-        if (!seen.has(item.userId)) {
-          seen.add(item.userId);
-          merged.push(item);
+    for (const result of resultSets) {
+      if (result.status === 'fulfilled') {
+        for (const item of result.value) {
+          if (!seen.has(item.userId)) {
+            seen.add(item.userId);
+            merged.push(item);
+          }
         }
+      } else {
+        // 记录搜索失败但不影响其他搜索结果
+        console.warn('搜索部分失败:', result.reason);
       }
     }
 

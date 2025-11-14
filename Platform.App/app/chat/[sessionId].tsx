@@ -41,6 +41,8 @@ export default function ChatSessionScreen() {
   const conversationSurface = theme.colors.listBackground;
   const messageListRef = useRef<MessageListHandle>(null);
   const initialScrollRequestedRef = useRef(false);
+  const previousMessageCountRef = useRef<number>(0);
+  const previousLastMessageIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!sessionId || !session) {
@@ -82,7 +84,7 @@ export default function ChatSessionScreen() {
     return () => clearInterval(intervalId);
   }, [connectionState, loadMessages, session, sessionId]);
 
-  const currentUserId = useMemo(() => user?.id ?? user?.username ?? '', [user]);
+  const currentUserId = useMemo(() => user?.id ?? user?.username ?? undefined, [user?.id, user?.username]);
 
   const remoteParticipants = useMemo(() => {
     if (!session) {
@@ -253,8 +255,6 @@ export default function ChatSessionScreen() {
     [sendMessage, sessionId, uploadAttachment]
   );
 
-  const previousMessageCountRef = useRef<number>(0);
-  const previousLastMessageIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     sessionRefreshAttemptedRef.current = false;
   }, [sessionId]);

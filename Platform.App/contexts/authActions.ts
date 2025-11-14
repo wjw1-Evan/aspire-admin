@@ -33,10 +33,15 @@ export async function loginAction(
     dispatch({ type: 'AUTH_START' });
     
     const loginResponse = await authService.login(credentials);
+    
+    if (!loginResponse.success || !loginResponse.data) {
+      throw new Error(loginResponse.errorMessage || '登录失败');
+    }
+    
     const loginData = loginResponse.data;
 
-    if (!loginData?.token || !loginData.refreshToken) {
-      throw new Error('登录失败');
+    if (!loginData.token || !loginData.refreshToken) {
+      throw new Error('登录失败：缺少必要的认证信息');
     }
 
     // 获取用户信息
@@ -173,6 +178,9 @@ export async function checkAuthAction(dispatch: Dispatch<AuthAction>): Promise<v
     dispatch({ type: 'AUTH_START' });
     
     const token = await apiService.getToken();
+    const refreshToken = await apiService.getRefreshToken();
+    const tokenExpiresAt = await apiService.getTokenExpiresAt();
+    
     if (!token) {
       dispatch({ type: 'AUTH_LOGOUT' });
       return;
@@ -186,6 +194,8 @@ export async function checkAuthAction(dispatch: Dispatch<AuthAction>): Promise<v
         payload: {
           user: currentUser,
           token,
+          refreshToken: refreshToken || undefined,
+          tokenExpiresAt: tokenExpiresAt || undefined,
         },
       });
     } else {

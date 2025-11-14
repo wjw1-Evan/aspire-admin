@@ -192,18 +192,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   
   // 监听应用状态变化
   useEffect(() => {
-    const handleAppStateChangeInternal = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active' && state.isAuthenticated) {
-        refreshAuth();
-      }
-    };
-    
-    const subscription = AppState.addEventListener('change', handleAppStateChangeInternal);
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
     
     return () => {
       subscription?.remove();
     };
-  }, [state.isAuthenticated, refreshAuth]);
+  }, [handleAppStateChange]);
 
   const value: AuthContextType = useMemo(() => ({
     ...state,

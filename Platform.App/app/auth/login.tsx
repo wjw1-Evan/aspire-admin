@@ -115,16 +115,9 @@ export default function LoginScreen() {
       const errorCode = error?.errorCode || error?.info?.errorCode;
       if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
         setShowCaptcha(true);
-        // 如果是验证码错误，自动刷新验证码
-        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        } else {
-          // 第一次失败，获取新的验证码
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
+        // 自动刷新验证码
+        if (captchaRef.current) {
+          await captchaRef.current.refresh();
         }
       }
       

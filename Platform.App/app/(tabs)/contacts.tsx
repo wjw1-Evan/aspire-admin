@@ -213,7 +213,23 @@ export default function ContactsScreen(): JSX.Element {
 
   const handleInitialLoad = useCallback(async () => {
     try {
-      await Promise.all([loadFriends(), loadRequests()]);
+      // 使用 Promise.allSettled 允许部分操作失败
+      const [friendsResult, requestsResult] = await Promise.allSettled([
+        loadFriends(),
+        loadRequests(),
+      ]);
+      
+      if (friendsResult.status === 'rejected') {
+        console.error('加载好友列表失败', friendsResult.reason);
+      }
+      if (requestsResult.status === 'rejected') {
+        console.error('加载好友请求失败', requestsResult.reason);
+      }
+      
+      // 如果两个都失败，才显示错误提示
+      if (friendsResult.status === 'rejected' && requestsResult.status === 'rejected') {
+        Alert.alert('加载失败', errorMessage(friendsResult.reason, '加载通讯录失败，请稍后再试'));
+      }
     } catch (error) {
       console.error('加载通讯录失败', error);
       Alert.alert('加载失败', errorMessage(error, '加载通讯录失败，请稍后再试'));
@@ -229,7 +245,23 @@ export default function ContactsScreen(): JSX.Element {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refreshFriends(), loadRequests()]);
+      // 使用 Promise.allSettled 允许部分操作失败
+      const [friendsResult, requestsResult] = await Promise.allSettled([
+        refreshFriends(),
+        loadRequests(),
+      ]);
+      
+      if (friendsResult.status === 'rejected') {
+        console.error('刷新好友列表失败', friendsResult.reason);
+      }
+      if (requestsResult.status === 'rejected') {
+        console.error('刷新好友请求失败', requestsResult.reason);
+      }
+      
+      // 如果两个都失败，才显示错误提示
+      if (friendsResult.status === 'rejected' && requestsResult.status === 'rejected') {
+        Alert.alert('刷新失败', errorMessage(friendsResult.reason, '刷新通讯录失败，请稍后再试'));
+      }
     } catch (error) {
       Alert.alert('刷新失败', errorMessage(error, '刷新通讯录失败，请稍后再试'));
     } finally {

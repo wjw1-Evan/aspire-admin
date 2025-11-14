@@ -189,27 +189,27 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<ApiResponse<RefreshTokenResult>> {
     try {
       const request: RefreshTokenRequest = { refreshToken };
-      const response = await apiService.post<RefreshTokenResult>('/refresh-token', request, {
+      const response = await apiService.post<ApiResponse<RefreshTokenResult>>('/refresh-token', request, {
         timeout: 6000,
         retries: 0,
       });
       
-      if (response.status === 'ok' && response.token && response.refreshToken) {
+      if (response.success && response.data?.status === 'ok' && response.data.token && response.data.refreshToken) {
         // 保存新的token和刷新token
-        const expiresAt = response.expiresAt 
-          ? new Date(response.expiresAt).getTime() 
+        const expiresAt = response.data.expiresAt 
+          ? new Date(response.data.expiresAt).getTime() 
           : undefined;
-        await apiService.setTokens(response.token, response.refreshToken, expiresAt);
+        await apiService.setTokens(response.data.token, response.data.refreshToken, expiresAt);
         
         return {
           success: true,
-          data: response,
+          data: response.data,
         };
       }
       
       return {
         success: false,
-        errorMessage: response.errorMessage || '刷新token失败',
+        errorMessage: response.data?.errorMessage || response.errorMessage || '刷新token失败',
       };
     } catch (error) {
       console.error('Refresh token error:', error);

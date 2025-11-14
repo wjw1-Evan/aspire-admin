@@ -953,7 +953,12 @@ public class UserService : IUserService
         if (!string.IsNullOrEmpty(ipAddress))
         {
             // 使用正则表达式进行模糊匹配，不区分大小写
-            filterBuilder.Regex(log => log.IpAddress, ipAddress, "i");
+            // 只查询 IP 地址不为空的记录，然后进行正则匹配
+            var ipFilter = Builders<UserActivityLog>.Filter.And(
+                Builders<UserActivityLog>.Filter.Ne(log => log.IpAddress, null),
+                Builders<UserActivityLog>.Filter.Regex(log => log.IpAddress!, new MongoDB.Bson.BsonRegularExpression(ipAddress, "i"))
+            );
+            filterBuilder.Custom(ipFilter);
         }
         
         // 按日期范围过滤

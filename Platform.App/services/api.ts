@@ -17,6 +17,7 @@ import { AuthErrorType } from '@/types/unified-api';
 
 class ApiService {
   private authStateChangeListeners: (() => void)[] = [];
+  private isHandlingAuthFailure = false;
 
   /**
    * 获取 API 基础 URL
@@ -53,12 +54,22 @@ class ApiService {
   }
 
   /**
-   * 处理认证失败
+   * 处理认证失败（防止重复调用）
    */
   private async handleAuthFailure(): Promise<void> {
-    console.log('API: Authentication failed, clearing tokens');
-    await this.clearAllTokens();
-    this.triggerAuthStateChange();
+    // 如果正在处理，直接返回，避免重复处理
+    if (this.isHandlingAuthFailure) {
+      return;
+    }
+
+    this.isHandlingAuthFailure = true;
+
+    try {
+      console.log('API: Authentication failed, clearing tokens');
+      await this.clearAllTokens();
+    } finally {
+      this.isHandlingAuthFailure = false;
+    }
   }
 
   /**
@@ -101,7 +112,9 @@ class ApiService {
       
       // 处理认证错误
       if (response.status === 401 || response.status === 403) {
-        await this.handleAuthFailure();
+        // 不等待 handleAuthFailure，避免阻塞和死锁
+        // handleAuthFailure 内部已经防止重复调用
+        void this.handleAuthFailure();
         throw createAuthError(
           response.status === 401 ? AuthErrorType.TOKEN_EXPIRED : AuthErrorType.PERMISSION_DENIED,
           response.status === 401 ? '登录已过期，请重新登录' : '权限不足',
@@ -409,7 +422,8 @@ class ApiService {
       });
 
       if (response.status === 401 || response.status === 403) {
-        await this.handleAuthFailure();
+        // 不等待 handleAuthFailure，避免阻塞
+        void this.handleAuthFailure();
         return false;
       }
 

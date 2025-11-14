@@ -301,7 +301,8 @@ export default function ProfileScreen() {
       >
         <WeChatCard style={[styles.heroCard, { backgroundColor: heroBackground }]}> 
           <View style={styles.heroContent}>
-            <View style={styles.heroHeader}>
+            {/* 头像和编辑按钮区域 */}
+            <View style={styles.heroTopRow}>
               <View style={styles.heroAvatarWrapper}>
                 <Image
                   source={{ uri: (isEditing ? editData.avatar : user?.avatar) || 'https://via.placeholder.com/120' }}
@@ -313,56 +314,55 @@ export default function ProfileScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="更换头像"
                 >
-                  <IconSymbol name="camera.fill" size={16} color="#fff" />
+                  <IconSymbol name="camera.fill" size={14} color="#fff" />
                 </TouchableOpacity>
               </View>
               {!isEditing && (
                 <TouchableOpacity
-                  style={styles.heroEditButton}
+                  style={[styles.heroEditButton, { borderColor: heroText }]}
                   onPress={handleEdit}
                   accessibilityRole="button"
                   accessibilityLabel="编辑个人信息"
                 >
-                  <IconSymbol name="pencil" size={16} color={heroText} />
+                  <IconSymbol name="pencil" size={14} color={heroText} />
                   <ThemedText style={[styles.heroEditButtonText, { color: heroText }]}>编辑</ThemedText>
                 </TouchableOpacity>
               )}
             </View>
-            <ThemedText type="title" style={[styles.heroTitle, { color: heroText }]}>
-              {user?.name || '未设置昵称'}
-            </ThemedText>
-            {user?.username ? (
-              <ThemedText style={[styles.heroUsername, { color: heroText, opacity: 0.7 }]} numberOfLines={1}>
-                @{user.username}
+
+            {/* 用户信息区域 */}
+            <View style={styles.heroInfoSection}>
+              <ThemedText type="title" style={[styles.heroTitle, { color: heroText }]}>
+                {user?.name || '未设置昵称'}
               </ThemedText>
-            ) : null}
-            {user?.email ? (
-              <ThemedText style={[styles.heroEmail, { color: heroText, opacity: 0.8 }]} numberOfLines={1}>
-                {user.email}
-              </ThemedText>
-            ) : (
-              <ThemedText style={[styles.heroSubtitle, { color: heroText, opacity: 0.75 }]} numberOfLines={2}>
-                {user?.title || '欢迎来到 Aspire'}
-              </ThemedText>
-            )}
-            <View style={styles.heroStatsRow}>
-              <View style={styles.heroStatItem}>
-                <ThemedText style={[styles.heroStatValue, { color: heroText }]}>
-                  {user?.createdAt ? new Date(user.createdAt).getFullYear() : '--'}
+              {user?.username ? (
+                <ThemedText style={[styles.heroUsername, { color: heroText, opacity: 0.7 }]} numberOfLines={1}>
+                  @{user.username}
                 </ThemedText>
-                <ThemedText style={[styles.heroStatLabel, { color: heroText, opacity: 0.7 }]}>加入年份</ThemedText>
-              </View>
-              <View style={[styles.heroDivider, { backgroundColor: heroDividerColor }]} />
-              <View style={styles.heroStatItem}>
-                <ThemedText style={[styles.heroStatValue, { color: heroText }]}>
-                  {user?.email ? '已绑定' : '待完善'}
-                </ThemedText>
-                <ThemedText style={[styles.heroStatLabel, { color: heroText, opacity: 0.7 }]}>邮箱状态</ThemedText>
-              </View>
+              ) : null}
+              {user?.email ? (
+                <View style={styles.heroEmailRow}>
+                  <IconSymbol name="envelope.fill" size={14} color={heroText} style={{ opacity: 0.7 }} />
+                  <ThemedText style={[styles.heroEmail, { color: heroText, opacity: 0.8 }]} numberOfLines={1}>
+                    {user.email}
+                  </ThemedText>
+                </View>
+              ) : null}
             </View>
+
+            {/* 统计信息 */}
+            {user?.createdAt && (
+              <View style={styles.heroStatsRow}>
+                <View style={styles.heroStatBadge}>
+                  <IconSymbol name="calendar.fill" size={14} color={heroText} style={{ opacity: 0.7 }} />
+                  <ThemedText style={[styles.heroStatText, { color: heroText, opacity: 0.8 }]}>
+                    {new Date(user.createdAt).getFullYear()} 年加入
+                  </ThemedText>
+                </View>
+              </View>
+            )}
           </View>
         </WeChatCard>
-
 
         <WeChatCard>
           <ThemedText style={styles.sectionTitle}>偏好设置</ThemedText>
@@ -677,94 +677,100 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 12,
     paddingBottom: 32,
-    gap: 12,
+    gap: 16,
   },
   heroCard: {
-    paddingVertical: 24,
+    paddingVertical: 28,
     paddingHorizontal: 20,
     borderWidth: 0,
+    marginBottom: 4,
   },
   heroContent: {
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
-  heroHeader: {
+  heroTopRow: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 4,
   },
   heroAvatarWrapper: {
     position: 'relative',
   },
   heroAvatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   editAvatarButton: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
+    bottom: 0,
+    right: 0,
     width: 32,
     height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  heroInfoSection: {
+    alignItems: 'center',
+    gap: 6,
+    width: '100%',
   },
   heroTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
+    letterSpacing: -0.5,
   },
   heroUsername: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  heroEmail: {
     fontSize: 15,
     lineHeight: 20,
-    textAlign: 'center',
-    marginTop: 4,
+    fontWeight: '500',
+    marginTop: 2,
   },
-  heroStatsRow: {
+  heroEmailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 6,
+    marginTop: 4,
   },
-  heroStatItem: {
+  heroEmail: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  heroStatsRow: {
+    marginTop: 4,
+  },
+  heroStatBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    minWidth: 80,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  heroStatValue: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  heroStatLabel: {
-    fontSize: 12,
-  },
-  heroDivider: {
-    width: 1,
-    height: 34,
+  heroStatText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   heroEditButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   heroEditButtonText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -773,8 +779,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
+    marginBottom: 12,
+    letterSpacing: -0.2,
   },
   editButton: {
     flexDirection: 'row',

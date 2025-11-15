@@ -46,15 +46,30 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     if (sendDisabled) {
       return;
     }
+    
+    // 防止重复发送：在发送过程中禁用按钮
+    if (submitting) {
+      return;
+    }
+    
     try {
       setSubmitting(true);
       await onSend(trimmedValue);
+      // 只有在成功发送后才清空输入框
       setValue('');
       setSelection({ start: 0, end: 0 });
+    } catch (error) {
+      // 发送失败时不清空输入框，让用户可以重试
+      if (__DEV__) {
+        console.error('MessageComposer: 发送消息失败', error);
+      }
+      // 重新抛出错误，让调用方知道发送失败
+      throw error;
     } finally {
+      // 确保无论成功还是失败，都要重置 submitting 状态
       setSubmitting(false);
     }
-  }, [onSend, sendDisabled, trimmedValue]);
+  }, [onSend, sendDisabled, submitting, trimmedValue]);
 
   const handlePickAttachment = useCallback(async () => {
     if (!onPickAttachment || submitting || disabled) {

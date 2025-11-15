@@ -214,13 +214,17 @@ export default function ChatSessionScreen() {
       metadata: undefined,
     } as const;
 
-    // 即使 session 还未加载，也尝试发送消息（发送消息只需要 sessionId）
-    await sendMessage(payload).catch(error => {
+    try {
+      // 即使 session 还未加载，也尝试发送消息（发送消息只需要 sessionId）
+      await sendMessage(payload);
+    } catch (error) {
+      // 错误会在 sendMessage 内部处理并更新消息状态
+      // 这里重新抛出错误，确保 MessageComposer 能正确处理
       if (__DEV__) {
         console.error('发送消息失败:', error);
       }
-      // 错误会在 sendMessage 内部处理并更新消息状态
-    });
+      throw error;
+    }
 
     // 不再调用流式回复，后端会自动发送完整回复
   }, [sendMessage, sessionId]);

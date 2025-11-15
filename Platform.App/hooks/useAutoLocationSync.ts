@@ -34,31 +34,44 @@ export function useAutoLocationSync(enabled: boolean): void {
 
     watcherRef.current = null;
 
+    // 尝试多种方式移除订阅，确保至少一种方式成功
+    let removed = false;
+
+    // 方式 1: 使用 remove() 方法（标准方式）
+    if (!removed) {
     try {
       if (typeof watcher.remove === 'function') {
-        await watcher.remove();
-        return;
+          // 使用 Promise.resolve 确保即使 remove() 不是异步也能正确处理
+          await Promise.resolve(watcher.remove());
+          removed = true;
       }
     } catch (error) {
-      console.warn('[LocationSync] 停止定位监听失败:', error);
+        // 捕获错误但不阻止继续尝试其他方式
+        if (__DEV__) {
+          console.warn('[LocationSync] remove() 方法失败:', error);
+    }
+      }
     }
 
-    try {
-      // Web 端或部分平台可能提供 unsubscribe
-      if (typeof (watcher as { unsubscribe?: () => void }).unsubscribe === 'function') {
-        (watcher as { unsubscribe: () => void }).unsubscribe();
-        return;
+    // 方式 2: 尝试 unsubscribe（Web 端或部分平台）
+    if (!removed) {
+      try {
+        const watcherWithUnsubscribe = watcher as { unsubscribe?: () => void };
+        if (typeof watcherWithUnsubscribe.unsubscribe === 'function') {
+          watcherWithUnsubscribe.unsubscribe();
+          removed = true;
       }
     } catch (error) {
-      console.warn('[LocationSync] 备用方式取消定位监听失败:', error);
+        if (__DEV__) {
+          console.warn('[LocationSync] unsubscribe 失败:', error);
+        }
+      }
     }
 
-    try {
-      if (typeof Location.removeWatchAsync === 'function') {
-        await Location.removeWatchAsync(watcher);
-      }
-    } catch (error) {
-      console.warn('[LocationSync] removeWatchAsync 取消定位监听失败:', error);
+    // 如果所有方式都失败，记录警告但继续执行
+    // 因为 watcherRef.current 已经被设置为 null，不会导致内存泄漏
+    if (!removed && __DEV__) {
+      console.warn('[LocationSync] 所有移除订阅的方式都失败了，但已清除引用');
     }
   }, []);
 

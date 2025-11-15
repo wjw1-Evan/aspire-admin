@@ -31,6 +31,8 @@
 - [聊天页面刷新后无法发送消息修复](bugfixes/CHAT-CANNOT-SEND-AFTER-REFRESH-FIX.md)
 - [聊天已读状态功能漏洞分析](bugfixes/CHAT-READ-RECEIPT-VULNERABILITIES.md)
 - [聊天已读状态功能修复总结](bugfixes/CHAT-READ-RECEIPT-FIXES-SUMMARY.md)
+- [定位订阅移除错误修复](bugfixes/LOCATION-SUBSCRIPTION-REMOVE-ERROR-FIX.md)
+- [认证上下文初始化超时问题修复](bugfixes/AUTH-CONTEXT-TIMEOUT-FIX.md)
 
 ## 🔄 重构文档
 

@@ -184,7 +184,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // 初始化时检查认证状态（非阻塞，避免阻塞页面渲染）
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout | null = null;
     
     // 快速检查是否有 token，如果没有则立即完成
     const quickCheck = async () => {
@@ -207,27 +206,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       
       // 有 token，执行完整的认证检查
+      // checkAuthAction 内部已经有超时保护（15秒），不需要外部再设置超时
+      // 这样可以避免双重超时导致的状态不一致问题
       void checkAuth();
-      
-      // 添加超时保护：如果 12 秒后还在加载，强制设置为 false
-      timeoutId = setTimeout(() => {
-        if (mounted) {
-          // 只在开发环境显示警告
-          if (__DEV__) {
-            console.warn('AuthContext: Initial check auth timeout, forcing loading to false');
-          }
-          dispatch({ type: 'AUTH_SET_LOADING', payload: false });
-        }
-      }, 12000); // 减少到12秒，因为已经快速检查了 token
     };
     
     void quickCheck();
     
     return () => {
       mounted = false;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
     };
   }, [checkAuth]);
 

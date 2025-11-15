@@ -33,6 +33,7 @@ import type {
   ServerChatSession,
 } from '@/types/chat';
 import type { MessageQueryParams, SessionQueryParams } from '@/services/chat';
+import type { LocationUpdatePayload } from '@/services/location';
 import {
   clearChatErrorAction,
   fetchAiSuggestionsAction,
@@ -61,7 +62,7 @@ interface ChatContextValue extends ChatState {
   updateMessage: (sessionId: string, messageId: string, updates: Partial<ChatMessage>) => void;
   uploadAttachment: (sessionId: string, file: { uri: string; name: string; type: string }) => Promise<AttachmentMetadata>;
   refreshNearbyUsers: (request?: NearbySearchRequest) => Promise<NearbyUser[] | undefined>;
-  updateLocationBeacon: (payload: { latitude: number; longitude: number; accuracy?: number }) => Promise<void>;
+  updateLocationBeacon: (payload: LocationUpdatePayload) => Promise<void>;
   fetchAiSuggestions: (sessionId: string, request: AiSuggestionRequest) => Promise<void>;
   markSessionRead: (sessionId: string, lastReadMessageId: string) => Promise<void>;
   clearError: () => void;
@@ -193,7 +194,26 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       if (connection?.state === HubConnectionState.Connected && !preferHttp) {
         try {
-          await connection.invoke('SendMessageAsync', sendPayload);
+          // SignalR 发送：立即返回，不等待响应
+          connection.invoke('SendMessageAsync', sendPayload).catch((error) => {
+            console.warn('通过 SignalR 发送消息失败:', error);
+            // 发送失败时，回退到 REST 调用
+            void sendMessageAction(dispatch, sendPayload, { localId }).catch((restError) => {
+              console.error('REST 发送消息也失败:', restError);
+              // 更新消息状态为失败
+              dispatch({
+                type: 'CHAT_UPDATE_MESSAGE',
+                payload: {
+                  sessionId: payload.sessionId,
+                  messageId: localId,
+                  updates: { status: 'failed' },
+                },
+              });
+            });
+          });
+          
+          // 立即更新状态为已发送，不等待响应
+          // 注意：使用 localId 作为 messageId，因为此时消息还没有服务器返回的 id
           dispatch({
             type: 'CHAT_UPDATE_MESSAGE',
             payload: {
@@ -208,7 +228,53 @@ export function ChatProvider({ children }: ChatProviderProps) {
         }
       }
 
-      return sendMessageAction(dispatch, sendPayload, { localId });
+      // REST API 发送：使用 fire-and-forget 方式，不等待响应
+      sendMessageAction(dispatch, sendPayload, { localId })
+        .then((result) => {
+          // 发送成功，消息状态已在 sendMessageAction 中更新
+          if (__DEV__ && result) {
+            console.log('消息发送成功:', result.id);
+          }
+        })
+        .catch((error) => {
+          console.error('发送消息失败:', error);
+          // 更新消息状态为失败
+          dispatch({
+            type: 'CHAT_UPDATE_MESSAGE',
+            payload: {
+              sessionId: payload.sessionId,
+              messageId: localId,
+              updates: { status: 'failed' },
+            },
+          });
+        });
+      
+      // 立即更新状态为已发送，不等待 API 响应
+      // 注意：使用 localId 作为 messageId，因为此时消息还没有服务器返回的 id
+      dispatch({
+        type: 'CHAT_UPDATE_MESSAGE',
+        payload: {
+          sessionId: payload.sessionId,
+          messageId: localId,
+          updates: { status: 'sent', isLocal: false },
+        },
+      });
+      
+      // 返回一个乐观的消息对象，表示发送成功
+      return {
+        id: localId,
+        localId,
+        sessionId: payload.sessionId,
+        senderId: currentUserId,
+        recipientId: payload.recipientId,
+        type: payload.type,
+        content: payload.content,
+        createdAt,
+        updatedAt: createdAt,
+        metadata: { ...payload.metadata, clientMessageId: localId },
+        status: 'sent',
+        isLocal: false,
+      } as ChatMessage;
     },
     [currentUserId, dispatch]
   );
@@ -262,7 +328,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     []
   );
 
-  const updateLocationBeacon = useCallback(async (payload: { latitude: number; longitude: number; accuracy?: number }) => {
+  const updateLocationBeacon = useCallback(async (payload: LocationUpdatePayload) => {
     await updateLocationBeaconAction(dispatch, payload);
   }, []);
 

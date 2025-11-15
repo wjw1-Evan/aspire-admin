@@ -28,7 +28,23 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
     });
 
-builder.Services.AddSignalR();
+// 配置 SignalR（与控制器使用相同的 JSON 序列化选项）
+builder.Services.AddSignalR(options =>
+{
+    // 启用详细错误消息（开发环境）
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableDetailedErrors = true;
+    }
+}).AddJsonProtocol(options =>
+{
+    // 使用与控制器相同的 JSON 序列化配置
+    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.PayloadSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.PayloadSerializerOptions.WriteIndented = false;
+    // 序列化枚举为 camelCase 字符串
+    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+});
 
 // 配置 CORS - 严格的安全策略
 builder.Services.AddCors(options =>

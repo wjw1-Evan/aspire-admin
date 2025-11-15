@@ -303,7 +303,17 @@ public class ChatService : IChatService
                 UploadedAt = attachment.CreatedAt
             };
 
-        var metadata = NormalizeMetadata(request.Metadata);
+        // 规范化元数据（失败不应影响消息发送，使用空字典作为后备）
+        Dictionary<string, object> metadata;
+        try
+        {
+            metadata = NormalizeMetadata(request.Metadata);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "规范化元数据失败，使用空元数据: 会话 {SessionId}", request.SessionId);
+            metadata = new Dictionary<string, object>();
+        }
 
         if (request.AssistantStreaming)
         {
@@ -331,31 +341,99 @@ public class ChatService : IChatService
             ClientMessageId = request.ClientMessageId
         };
 
+        // 检查接收方（必须在消息保存之前进行，避免无效消息）
         if (!string.IsNullOrWhiteSpace(request.RecipientId) && !session.Participants.Contains(request.RecipientId))
         {
             throw new InvalidOperationException("接收方不属于该会话");
         }
 
-        message = await _messageFactory.CreateAsync(message);
-
-        if (attachment != null)
+        // 保存消息到数据库（这是关键操作，成功后应该返回成功）
+        ChatMessage savedMessage;
+        try
         {
-            var attachmentUpdate = _attachmentFactory.CreateUpdateBuilder()
-                .Set(a => a.MessageId, message.Id)
-                .SetCurrentTimestamp();
-
-            var attachmentFilter = _attachmentFactory.CreateFilterBuilder()
-                .Equal(a => a.Id, attachment.Id)
-                .Build();
-
-            await _attachmentFactory.FindOneAndUpdateAsync(attachmentFilter, attachmentUpdate.Build());
+            savedMessage = await _messageFactory.CreateAsync(message);
+        }
+        catch (Exception ex)
+        {
+            // 消息保存失败，记录详细错误并重新抛出异常
+            _logger.LogError(
+                ex,
+                "保存消息失败: 会话 {SessionId}, 发送者 {SenderId}, 类型 {Type}, 内容长度 {ContentLength}",
+                request.SessionId,
+                currentUserId,
+                request.Type,
+                request.Content?.Length ?? 0);
+            throw;
         }
 
-        await UpdateSessionAfterMessageAsync(session, message, currentUserId);
+        message = savedMessage;
 
-        await NotifyMessageCreatedAsync(session, message);
+        // 更新附件关联（失败不应影响消息发送成功）
+        if (attachment != null)
+        {
+            try
+            {
+                var attachmentUpdate = _attachmentFactory.CreateUpdateBuilder()
+                    .Set(a => a.MessageId, message.Id)
+                    .SetCurrentTimestamp();
 
-        await RespondAsAssistantAsync(session, message);
+                var attachmentFilter = _attachmentFactory.CreateFilterBuilder()
+                    .Equal(a => a.Id, attachment.Id)
+                    .Build();
+
+                await _attachmentFactory.FindOneAndUpdateAsync(attachmentFilter, attachmentUpdate.Build());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新附件关联失败: 附件 {AttachmentId} 消息 {MessageId}", attachment.Id, message.Id);
+                // 附件更新失败不影响消息发送成功，继续执行
+            }
+        }
+
+        // 更新会话（失败不应影响消息发送成功）
+        try
+        {
+            await UpdateSessionAfterMessageAsync(session, message, currentUserId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "更新会话失败: 会话 {SessionId} 消息 {MessageId}", session.Id, message.Id);
+        }
+
+        // 通知消息创建（失败不应影响消息发送成功，NotifyMessageCreatedAsync 内部已有 try-catch）
+        try
+        {
+            await NotifyMessageCreatedAsync(session, message);
+        }
+        catch (Exception ex)
+        {
+            // 即使通知失败也不影响消息发送成功（NotifyMessageCreatedAsync 内部已有 try-catch，这里是双重保护）
+            _logger.LogWarning(ex, "通知消息创建失败: 会话 {SessionId} 消息 {MessageId}", session.Id, message.Id);
+        }
+
+        // AI 响应不阻塞消息发送的返回，错误不应影响消息发送成功
+        // 使用 fire-and-forget 模式，捕获异常但不抛出，确保消息发送成功返回
+        try
+        {
+            _ = RespondAsAssistantAsync(session, message).ContinueWith(
+                task =>
+                {
+                    if (task.IsFaulted && task.Exception != null)
+                    {
+                        _logger.LogError(
+                            task.Exception.GetBaseException(),
+                            "AI 助手响应失败: 会话 {SessionId} 消息 {MessageId}",
+                            session.Id,
+                            message.Id);
+                    }
+                },
+                TaskContinuationOptions.OnlyOnFaulted);
+        }
+        catch (Exception ex)
+        {
+            // 启动 AI 响应任务失败不应影响消息发送成功
+            _logger.LogWarning(ex, "启动 AI 助手响应任务失败: 会话 {SessionId} 消息 {MessageId}", session.Id, message.Id);
+        }
 
         return message;
     }

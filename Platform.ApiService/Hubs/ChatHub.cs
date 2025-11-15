@@ -98,9 +98,94 @@ public class ChatHub : Hub
     /// 通过 SignalR 发送消息（持久化后由服务广播）
     /// </summary>
     /// <param name="request">发送请求</param>
-    public Task SendMessageAsync(SendChatMessageRequest request)
+    public async Task SendMessageAsync(SendChatMessageRequest request)
     {
-        return _chatService.SendMessageAsync(request ?? throw new ArgumentNullException(nameof(request)));
+        if (request == null)
+        {
+            _logger.LogError("SendMessageAsync 收到 null 请求: 连接ID {ConnectionId}", Context.ConnectionId);
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        // 记录请求信息，便于调试
+        _logger.LogInformation(
+            "SendMessageAsync 收到请求: 连接ID {ConnectionId}, 会话 {SessionId}, 类型 {Type}, 内容长度 {ContentLength}, 附件 {AttachmentId}, 客户端消息ID {ClientMessageId}",
+            Context.ConnectionId,
+            request.SessionId,
+            request.Type,
+            request.Content?.Length ?? 0,
+            request.AttachmentId ?? "无",
+            request.ClientMessageId ?? "无");
+
+        string? userId = null;
+        try
+        {
+            // 提前验证用户上下文，提供更详细的错误信息
+            try
+            {
+                userId = _sessionFactory.GetRequiredUserId();
+                _logger.LogDebug("SendMessageAsync 获取用户ID成功: {UserId}, 连接ID {ConnectionId}", userId, Context.ConnectionId);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "SendMessageAsync 无法获取用户ID: 连接ID {ConnectionId}, 会话 {SessionId}", 
+                    Context.ConnectionId, request.SessionId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SendMessageAsync 获取用户ID时发生未预期的错误: 连接ID {ConnectionId}, 会话 {SessionId}, 错误: {ErrorMessage}",
+                    Context.ConnectionId, request.SessionId, ex.Message);
+                throw;
+            }
+
+            // 验证请求数据
+            if (string.IsNullOrWhiteSpace(request.SessionId))
+            {
+                _logger.LogWarning("SendMessageAsync 会话ID为空: 用户 {UserId}, 连接ID {ConnectionId}", userId, Context.ConnectionId);
+                throw new ArgumentException("会话标识不能为空", nameof(request.SessionId));
+            }
+
+            // 调用聊天服务发送消息
+            var message = await _chatService.SendMessageAsync(request);
+            _logger.LogInformation("通过 SignalR 成功发送消息: 用户 {UserId}, 会话 {SessionId}, 消息ID {MessageId}", 
+                userId, request.SessionId, message.Id);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "SendMessageAsync 参数验证失败: 用户 {UserId}, 会话 {SessionId}", userId, request.SessionId);
+            throw;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "SendMessageAsync 权限验证失败: 用户 {UserId}, 会话 {SessionId}", userId, request.SessionId);
+            throw;
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "SendMessageAsync 资源不存在: 用户 {UserId}, 会话 {SessionId}", userId, request.SessionId);
+            throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "SendMessageAsync 操作无效: 用户 {UserId}, 会话 {SessionId}", userId, request.SessionId);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // 记录详细的错误信息，包括堆栈跟踪和上下文信息
+            _logger.LogError(
+                ex,
+                "SendMessageAsync 发生未预期的错误: 用户 {UserId}, 会话 {SessionId}, 消息类型 {Type}, 内容长度 {ContentLength}, 连接ID {ConnectionId}, 错误类型: {ExceptionType}, 错误消息: {ErrorMessage}, 堆栈跟踪: {StackTrace}",
+                userId,
+                request?.SessionId ?? "未知",
+                request?.Type.ToString() ?? "未知",
+                request?.Content?.Length ?? 0,
+                Context.ConnectionId,
+                ex.GetType().Name,
+                ex.Message,
+                ex.StackTrace);
+            throw;
+        }
     }
 
     /// <summary>

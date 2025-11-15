@@ -196,7 +196,26 @@ export function ChatProvider({ children }: ChatProviderProps) {
         try {
           // SignalR 发送：立即返回，不等待响应
           connection.invoke('SendMessageAsync', sendPayload).catch((error) => {
-            console.warn('通过 SignalR 发送消息失败:', error);
+            // 记录详细的错误信息，便于调试
+            const errorInfo = {
+              error: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined,
+              payload: {
+                sessionId: sendPayload.sessionId,
+                type: sendPayload.type,
+                contentLength: sendPayload.content?.length ?? 0,
+                hasAttachment: !!sendPayload.attachmentId,
+                hasMetadata: !!sendPayload.metadata,
+                clientMessageId: sendPayload.clientMessageId,
+              },
+            };
+            
+            if (__DEV__) {
+              console.error('通过 SignalR 发送消息失败:', errorInfo);
+            } else {
+              console.warn('通过 SignalR 发送消息失败:', errorInfo.error);
+            }
+            
             // 发送失败时，回退到 REST 调用
             void sendMessageAction(dispatch, sendPayload, { localId }).catch((restError) => {
               console.error('REST 发送消息也失败:', restError);

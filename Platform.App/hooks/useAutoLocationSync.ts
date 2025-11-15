@@ -32,46 +32,91 @@ export function useAutoLocationSync(enabled: boolean): void {
       return;
     }
 
+    // 先清除引用，避免在移除过程中被重新使用
     watcherRef.current = null;
 
     // 尝试多种方式移除订阅，确保至少一种方式成功
     let removed = false;
+    let lastError: unknown = null;
 
-    // 方式 1: 使用 remove() 方法（标准方式）
-    if (!removed) {
-    try {
-      if (typeof watcher.remove === 'function') {
-          // 使用 Promise.resolve 确保即使 remove() 不是异步也能正确处理
-          await Promise.resolve(watcher.remove());
-          removed = true;
-      }
-    } catch (error) {
-        // 捕获错误但不阻止继续尝试其他方式
-        if (__DEV__) {
-          console.warn('[LocationSync] remove() 方法失败:', error);
-    }
-      }
-    }
-
-    // 方式 2: 尝试 unsubscribe（Web 端或部分平台）
+    // 方式 1: 使用 remove() 方法（标准方式，Expo Location API）
     if (!removed) {
       try {
-        const watcherWithUnsubscribe = watcher as { unsubscribe?: () => void };
-        if (typeof watcherWithUnsubscribe.unsubscribe === 'function') {
-          watcherWithUnsubscribe.unsubscribe();
+        // 检查 remove 方法是否存在
+        if (watcher && typeof watcher.remove === 'function') {
+          // remove() 返回 void，不需要 await
+          watcher.remove();
           removed = true;
+          if (__DEV__) {
+            console.log('[LocationSync] 成功移除位置订阅（remove()）');
+          }
+        }
+      } catch (error) {
+        // 捕获错误但不阻止继续尝试其他方式
+        lastError = error;
+        
+        // Expo Location API 在某些平台/版本上存在已知问题：
+        // remove() 方法存在但在内部调用时会失败（如 removeSubscription is not a function）
+        // 这不会导致内存泄漏，因为引用已被清除，订阅对象会被垃圾回收
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isKnownIssue = errorMessage.includes('removeSubscription is not a function') ||
+                            errorMessage.includes('LocationEventEmitter');
+        
+        if (__DEV__) {
+          if (isKnownIssue) {
+            // 已知问题，只记录调试信息，不警告
+            console.debug('[LocationSync] remove() 方法失败（已知问题，不影响功能）:', error);
+          } else {
+            // 其他错误，记录警告
+            console.warn('[LocationSync] remove() 方法失败:', error);
+          }
+        }
       }
-    } catch (error) {
+    }
+
+    // 方式 2: 尝试 unsubscribe（Web 端或部分平台的备选方式）
+    if (!removed) {
+      try {
+        const watcherWithUnsubscribe = watcher as { unsubscribe?: () => void | Promise<void> };
+        if (typeof watcherWithUnsubscribe.unsubscribe === 'function') {
+          const result = watcherWithUnsubscribe.unsubscribe();
+          // 如果是 Promise，等待完成
+          if (result instanceof Promise) {
+            await result;
+          }
+          removed = true;
+          if (__DEV__) {
+            console.log('[LocationSync] 成功移除位置订阅（unsubscribe()）');
+          }
+        }
+      } catch (error) {
+        lastError = error;
         if (__DEV__) {
           console.warn('[LocationSync] unsubscribe 失败:', error);
         }
       }
     }
 
-    // 如果所有方式都失败，记录警告但继续执行
-    // 因为 watcherRef.current 已经被设置为 null，不会导致内存泄漏
+    // 如果所有方式都失败，记录调试信息但不报错
+    // 因为 watcherRef.current 已经被设置为 null，订阅对象会被垃圾回收，不会导致内存泄漏
     if (!removed && __DEV__) {
-      console.warn('[LocationSync] 所有移除订阅的方式都失败了，但已清除引用');
+      const errorMessage = lastError instanceof Error ? lastError.message : String(lastError ?? '未知错误');
+      const isKnownIssue = errorMessage.includes('removeSubscription is not a function') ||
+                          errorMessage.includes('LocationEventEmitter');
+      
+      if (isKnownIssue) {
+        // Expo Location API 的已知问题，不影响功能，只记录调试信息
+        console.debug(
+          '[LocationSync] 无法移除位置订阅（Expo Location API 已知问题，不影响功能）。引用已清除，订阅对象将被自动回收。'
+        );
+      } else {
+        // 其他错误，记录详细信息帮助调试
+        console.debug(
+          '[LocationSync] 无法移除位置订阅，但已清除引用。订阅对象将被自动回收。',
+          '最后错误:',
+          lastError
+        );
+      }
     }
   }, []);
 

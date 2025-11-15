@@ -47,6 +47,7 @@ const MAPPING = {
   'bell.fill': 'notifications',
   'lock.fill': 'lock',
   'gear': 'settings',
+  'gearshape.fill': 'settings',
   'questionmark.circle.fill': 'help',
   'info.circle.fill': 'info',
   'arrow.clockwise': 'refresh',

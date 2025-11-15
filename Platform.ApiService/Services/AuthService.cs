@@ -121,40 +121,27 @@ public class AuthService : IAuthService
             .Equal(r => r.Type, type)
             .Build();
         
-        var existingRecords = await _failureRecordFactory.FindWithoutTenantFilterAsync(filter);
-        var existingRecord = existingRecords.FirstOrDefault();
+        // 使用 UpdateOneAsync 配合 IsUpsert，避免 Id 为 null 的问题
+        // 这样可以原子性地更新现有记录或插入新记录
+        // Inc 在 upsert 时，如果字段不存在会将字段设置为指定值（1），如果存在则增加
+        // 注意：updatedAt 由 FindOneAndUpdateWithoutTenantFilterAsync 内部的 WithUpdateAudit 自动设置，不需要手动设置
+        var update = _failureRecordFactory.CreateUpdateBuilder()
+            .Inc(r => r.FailureCount, 1) // 增加失败次数（新记录时设置为1，现有记录时增加1）
+            .Set(r => r.LastFailureAt, DateTime.UtcNow)
+            .Set(r => r.ExpiresAt, DateTime.UtcNow.AddMinutes(30)) // 重置过期时间
+            .SetOnInsert(r => r.ClientId, clientId) // 仅在插入时设置
+            .SetOnInsert(r => r.Type, type) // 仅在插入时设置
+            .SetOnInsert(r => r.CreatedAt, DateTime.UtcNow) // 仅在插入时设置
+            .SetOnInsert(r => r.IsDeleted, false) // 仅在插入时设置
+            .Build();
         
-        if (existingRecord != null)
+        var options = new MongoDB.Driver.FindOneAndUpdateOptions<LoginFailureRecord>
         {
-            // 更新现有记录
-            var update = _failureRecordFactory.CreateUpdateBuilder()
-                .Set(r => r.FailureCount, existingRecord.FailureCount + 1)
-                .Set(r => r.LastFailureAt, DateTime.UtcNow)
-                .Set(r => r.ExpiresAt, DateTime.UtcNow.AddMinutes(30)) // 重置过期时间
-                .Build();
-            
-            await _failureRecordFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update);
-        }
-        else
-        {
-            // 创建新记录（使用 FindOneAndReplace 配合 IsUpsert）
-            var newRecord = new LoginFailureRecord
-            {
-                ClientId = clientId,
-                Type = type,
-                FailureCount = 1,
-                LastFailureAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(30)
-            };
-            
-            var options = new FindOneAndReplaceOptions<LoginFailureRecord>
-            {
-                IsUpsert = true,  // 如果不存在则插入
-                ReturnDocument = ReturnDocument.After
-            };
-            
-            await _failureRecordFactory.FindOneAndReplaceWithoutTenantFilterAsync(filter, newRecord, options);
-        }
+            IsUpsert = true, // 如果不存在则插入
+            ReturnDocument = MongoDB.Driver.ReturnDocument.After
+        };
+        
+        await _failureRecordFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update, options);
     }
 
     /// <summary>

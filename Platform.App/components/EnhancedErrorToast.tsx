@@ -273,6 +273,18 @@ export function EnhancedErrorToast({
 
   const currentColor = lockInfo?.isLocked ? warningColor : errorColor;
 
+  // 调试日志
+  useEffect(() => {
+    console.log('[EnhancedErrorToast] 渲染检查 - visible:', visible, 'error:', error);
+    if (visible && error) {
+      const title = getErrorTitle();
+      const description = getErrorDescription();
+      console.log('[EnhancedErrorToast] ✅ 应该显示错误提示 - 标题:', title, '描述:', description);
+    } else {
+      console.log('[EnhancedErrorToast] ❌ 不显示错误提示 - visible:', visible, 'error:', error);
+    }
+  }, [visible, error, lockInfo, remainingAttempts]);
+
   if (!visible || !error) {
     return null;
   }

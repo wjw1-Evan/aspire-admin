@@ -197,9 +197,17 @@ class UnifiedErrorInterceptor {
     };
 
     // 添加额外信息
-    if (error.response) {
+    // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置）
+    if (error.info?.errorCode) {
+      errorInfo.code = error.info.errorCode;
+      errorInfo.details = error.info;
+    } else if (error.response) {
       errorInfo.code = error.response.data?.errorCode;
       errorInfo.details = error.response.data;
+    } else if (error.errorCode) {
+      // 如果错误对象直接包含 errorCode
+      errorInfo.code = error.errorCode;
+      errorInfo.details = error;
     }
 
     if (context) {
@@ -256,6 +264,10 @@ class UnifiedErrorInterceptor {
    * 提取错误消息
    */
   private extractErrorMessage(error: any): string {
+    // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置）
+    if (error.info?.errorMessage) {
+      return error.info.errorMessage;
+    }
     if (error.response?.data?.errorMessage) {
       return error.response.data.errorMessage;
     }

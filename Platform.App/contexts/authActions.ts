@@ -39,70 +39,49 @@ export async function loginAction(
   });
 
   const loginPromise = (async () => {
-    try {
-      dispatch({ type: 'AUTH_START' });
-      
-      // 登录并获取 token（authService.login 内部已经保存了 token）
-      const loginResponse = await authService.login(credentials);
-      
-      if (!loginResponse.success || !loginResponse.data) {
-        throw new Error(loginResponse.errorMessage || '登录失败');
-      }
-      
-      const loginData = loginResponse.data;
+    dispatch({ type: 'AUTH_START' });
+    
+    // 登录并获取 token（authService.login 内部已经保存了 token 并验证了数据）
+    const loginResponse = await authService.login(credentials);
+    const loginData = loginResponse.data!; // authService.login 已确保 data 存在
 
-      if (!loginData.token || !loginData.refreshToken) {
-        throw new Error('登录失败：缺少必要的认证信息');
-      }
+    // 获取用户信息（使用已保存的 token）
+    const userResponse = await authService.getCurrentUser();
+    
+    if (!isAuthResponseValid(userResponse) || !userResponse.data) {
+      throw new Error('获取用户信息失败');
+    }
 
-      // 获取用户信息（使用已保存的 token）
-      const userResponse = await authService.getCurrentUser();
-      
-      if (isAuthResponseValid(userResponse)) {
-        const currentUser = userResponse.data;
-        if (!currentUser) {
-          throw new Error('获取用户信息失败');
-        }
-
-        const tokenExpiresAt = loginData.expiresAt 
-          ? new Date(loginData.expiresAt).getTime() 
-          : undefined;
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: {
-            user: currentUser,
-            token: loginData.token,
-            refreshToken: loginData.refreshToken,
-            tokenExpiresAt,
-          },
-        });
-      } else {
-        throw new Error('获取用户信息失败');
-      }
-    } catch (error) {
-      console.error('AuthContext: Login error:', error);
+    const tokenExpiresAt = loginData.expiresAt 
+      ? new Date(loginData.expiresAt).getTime() 
+      : undefined;
+    
+    dispatch({
+      type: 'AUTH_SUCCESS',
+      payload: {
+        user: userResponse.data,
+        token: loginData.token,
+        refreshToken: loginData.refreshToken,
+        tokenExpiresAt,
+      },
+    });
+  })()
+    .catch((error) => {
       const authError = handleError(error);
       dispatch({ type: 'AUTH_FAILURE', payload: authError });
       // 登录失败时清理可能已保存的 token
       void tokenManager.clearAllTokens();
       throw authError;
-    } finally {
+    })
+    .finally(() => {
       // 清理超时定时器，避免在 Promise 完成后仍然执行超时回调
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-    }
-  })();
+    });
 
-  try {
-    // 等待第一个完成的 Promise（超时或登录完成）
-    await Promise.race([loginPromise, timeoutPromise]);
-  } finally {
-    // 确保在函数返回前清理超时定时器（防止竞态条件）
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
+  // 等待第一个完成的 Promise（超时或登录完成）
+  await Promise.race([loginPromise, timeoutPromise]);
 }
 
 /**
@@ -174,7 +153,6 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
       } catch (error) {
         // 如果 getCurrentUser 返回 401，handleAuthFailure 已经处理了 token 清理
         // 这里只需要继续执行后续的刷新逻辑或登出
-        console.warn('AuthContext: Get current user failed, will try refresh token:', error);
       }
     }
     
@@ -199,7 +177,6 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
         } catch (error) {
           // 如果 getCurrentUser 返回 401，handleAuthFailure 已经处理了 token 清理
           // 这里记录错误但不影响整体流程
-          console.warn('AuthContext: Get current user after refresh failed:', error);
         }
         return;
       }
@@ -349,7 +326,6 @@ export async function changePasswordAction(
  */
 export function createErrorHandler(dispatch: Dispatch<AuthAction>) {
   return (error: any): AuthError => {
-    console.log('AuthContext: Handling error:', error);
     
     // 使用统一错误处理器
     const authError = handleError(error);

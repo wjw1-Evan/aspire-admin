@@ -87,6 +87,8 @@ export function getErrorType(errorCode?: string): AuthErrorType {
     USER_NOT_FOUND: AuthErrorType.LOGIN_FAILED,
     INVALID_CURRENT_PASSWORD: AuthErrorType.LOGIN_FAILED,
     LOGIN_FAILED: AuthErrorType.LOGIN_FAILED,
+    CAPTCHA_REQUIRED: AuthErrorType.LOGIN_FAILED, // 需要验证码，属于登录失败
+    CAPTCHA_INVALID: AuthErrorType.LOGIN_FAILED, // 验证码错误，属于登录失败
     UNAUTHORIZED: AuthErrorType.TOKEN_EXPIRED,
     PERMISSION_DENIED: AuthErrorType.PERMISSION_DENIED,
     NETWORK_ERROR: AuthErrorType.NETWORK_ERROR,
@@ -127,9 +129,13 @@ export function handleHttpError(status: number, errorData?: any): AuthError {
     }
   }
   
+  // 保存错误代码（从 errorData 中提取 errorCode）
+  const errorCode = errorData?.errorCode || errorData?.type;
+  
   return {
     type: errorType,
     message,
+    code: errorCode, // 保存错误代码，用于前端判断是否需要显示验证码
     retryable: status >= 500 || status === 408 || status === 429,
   };
 }
@@ -176,16 +182,81 @@ export function handleNetworkError(error: any): AuthError {
  * 统一的错误处理函数
  */
 export function handleError(error: any): AuthError {
-  // 如果已经是 AuthError，直接返回
-  if (error?.type && error?.message) {
-    return error as AuthError;
+  // 提取错误代码（尝试多个可能的字段）
+  // 1. 直接从 error 对象提取
+  // 2. 从 error.response.data 提取（可能是 ApiResponse 格式）
+  // 3. 从 error.response.data.data 提取（嵌套结构）
+  let errorCode = error?.code || error?.errorCode;
+  
+  // 如果还没有找到，尝试从 response.data 中提取
+  if (!errorCode && error?.response?.data) {
+    const errorData = error.response.data;
+    
+    // 如果 errorData 是 ApiResponse 格式（有 success 字段）
+    if (typeof errorData === 'object' && 'errorCode' in errorData) {
+      errorCode = errorData.errorCode;
+    }
+    // 如果 errorData 是嵌套结构（error.response.data.data.errorCode）
+    else if (typeof errorData === 'object' && errorData.data && typeof errorData.data === 'object' && 'errorCode' in errorData.data) {
+      errorCode = errorData.data.errorCode;
+    }
   }
   
-  // 处理 HTTP 错误
-  if (error?.response?.status) {
+  // 如果已经是 AuthError，直接返回（但保留原始 errorCode）
+  if (error?.type && error?.message) {
+    const authError = error as AuthError;
+    // 如果原始错误有 errorCode 但 AuthError 没有，则添加
+    if (errorCode && !authError.code) {
+      return {
+        ...authError,
+        code: errorCode,
+      };
+    }
+    return authError;
+  }
+  
+  // 处理 HTTP 错误（包括 status 200 但 success 为 false 的情况）
+  if (error?.response?.status !== undefined) {
     const status = error.response.status;
     const errorData = error.response.data;
+    
+    // 如果 status 是 200 但 success 为 false，优先使用 errorCode 而不是 HTTP 状态码
+    if (status === 200 && errorData) {
+      // 再次尝试从 errorData 中提取 errorCode（如果之前没有找到）
+      if (!errorCode && typeof errorData === 'object') {
+        if ('errorCode' in errorData) {
+          errorCode = errorData.errorCode;
+        } else if (errorData.data && typeof errorData.data === 'object' && 'errorCode' in errorData.data) {
+          errorCode = errorData.data.errorCode;
+        }
+      }
+      
+      if (errorCode) {
+        const errorType = getErrorType(errorCode);
+        const errorMessage = error.message || 
+                           (typeof errorData === 'object' && 'errorMessage' in errorData ? errorData.errorMessage : undefined) ||
+                           getErrorMessage(errorCode);
+        return {
+          type: errorType,
+          message: errorMessage,
+          code: errorCode,
+          retryable: isRetryableError(errorCode),
+        };
+      }
+    }
+    
     return handleHttpError(status, errorData);
+  }
+  
+  // 处理从 api.ts 传递的错误（有 errorCode 但没有 response）
+  if (errorCode) {
+    const errorType = getErrorType(errorCode);
+    return {
+      type: errorType,
+      message: error.message || getErrorMessage(errorCode),
+      code: errorCode,
+      retryable: isRetryableError(errorCode),
+    };
   }
   
   // 处理网络错误

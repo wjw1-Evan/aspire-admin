@@ -68,6 +68,12 @@ public class UserLocationBeacon : MultiTenantEntity, IEntity, ISoftDeletable, IT
     /// </summary>
     [BsonElement("city")]
     public string? City { get; set; }
+
+    /// <summary>
+    /// 所在国家（通过逆地理编码获取）。
+    /// </summary>
+    [BsonElement("country")]
+    public string? Country { get; set; }
 }
 
 /// <summary>
@@ -161,7 +167,23 @@ public class UpdateLocationBeaconRequest
 }
 
 /// <summary>
-/// 用户位置信息响应（仅包含城市，不包含详细坐标）
+/// 逆地理编码结果（包含城市和国家信息）
+/// </summary>
+public class GeocodeResult
+{
+    /// <summary>
+    /// 所在城市
+    /// </summary>
+    public string? City { get; set; }
+
+    /// <summary>
+    /// 所在国家
+    /// </summary>
+    public string? Country { get; set; }
+}
+
+/// <summary>
+/// 用户位置信息响应（仅包含城市和国家，不包含详细坐标）
 /// </summary>
 public class UserLocationInfo
 {
@@ -169,6 +191,11 @@ public class UserLocationInfo
     /// 所在城市
     /// </summary>
     public string? City { get; set; }
+
+    /// <summary>
+    /// 所在国家
+    /// </summary>
+    public string? Country { get; set; }
 }
 
 /// <summary>

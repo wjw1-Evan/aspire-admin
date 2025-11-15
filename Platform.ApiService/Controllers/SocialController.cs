@@ -87,10 +87,10 @@ public class SocialController : BaseApiController
     }
 
     /// <summary>
-    /// 获取当前用户的位置信息（仅包含城市，不包含详细坐标）。
-    /// 返回最后一次保存位置时解析的城市信息，无需实时解析。
+    /// 获取当前用户的位置信息（仅包含城市和国家，不包含详细坐标）。
+    /// 返回最后一次保存位置时解析的城市和国家信息，无需实时解析。
     /// </summary>
-    /// <returns>用户位置信息（包含最后一次保存的城市名称）。</returns>
+    /// <returns>用户位置信息（包含最后一次保存的城市名称和国家名称）。</returns>
     [HttpGet("location/info")]
     [ProducesResponseType(typeof(ApiResponse<UserLocationInfo>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCurrentUserLocationInfo()

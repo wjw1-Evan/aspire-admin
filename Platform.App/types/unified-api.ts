@@ -238,7 +238,8 @@ export enum AuthErrorType {
 export interface AuthError {
   type: AuthErrorType;
   message: string;
-  code?: string;
+  code?: string; // 错误代码（如 CAPTCHA_REQUIRED, LOGIN_FAILED 等）
+  errorCode?: string; // 向后兼容：也支持 errorCode 字段
   retryable?: boolean;
 }
 

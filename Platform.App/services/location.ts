@@ -82,10 +82,13 @@ export interface UserLocationBeacon {
   heading?: number | null;
   speed?: number | null;
   lastSeenAt: string;
+  city?: string | null;
+  country?: string | null;
 }
 
 export interface UserLocationInfo {
   city?: string | null;
+  country?: string | null;
 }
 
 export const getCurrentUserLocation = async (): Promise<UserLocationBeacon | null> => {

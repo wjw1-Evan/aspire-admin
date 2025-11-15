@@ -19,38 +19,57 @@ import {
   LoginData,
 } from '@/types/unified-api';
 
+// 创建登录错误对象
+const createLoginError = (errorCode: string, errorMessage: string, data?: any): any => {
+  const error = new Error(errorMessage) as any;
+  error.errorCode = errorCode;
+  error.code = errorCode;
+  error.message = errorMessage;
+  error.response = {
+    status: 200,
+    statusText: 'OK',
+    data: {
+      success: false,
+      errorCode,
+      errorMessage,
+      data,
+    },
+  };
+  return error;
+};
+
 export class AuthService {
   /**
    * 用户登录
    */
   async login(credentials: LoginRequest): Promise<ApiResponse<LoginData>> {
-    try {
-      const response = await apiService.post<ApiResponse<LoginData>>('/login/account', credentials, {
-        timeout: 8000,
-        retries: 0,
-      });
+    const response = await apiService.post<ApiResponse<LoginData>>('/login/account', credentials, {
+      timeout: 8000,
+      retries: 0,
+    });
 
-      const loginData = response.data;
-
-      if (!response.success || !loginData?.token || !loginData.refreshToken) {
-        throw new Error(getErrorMessage(response.errorCode, response.errorMessage || '登录失败'));
-      }
-
-      // 保存 token 和刷新 token 到本地存储
-      const expiresAt = loginData.expiresAt ? new Date(loginData.expiresAt).getTime() : undefined;
-      await tokenManager.setTokens(loginData.token, loginData.refreshToken, expiresAt);
-
-      return {
-        ...response,
-        success: true,
-        data: {
-          ...loginData,
-        },
-      };
-    } catch (error: any) {
-      console.error('Login error:', error);
-      throw error;
+    // 检查响应是否成功
+    if (!response.success) {
+      const errorCode = response.errorCode || 'LOGIN_FAILED';
+      const errorMessage = response.errorMessage || getErrorMessage(errorCode, '登录失败');
+      throw createLoginError(errorCode, errorMessage, response.data);
     }
+
+    // 验证必要的数据
+    const loginData = response.data;
+    if (!loginData?.token || !loginData.refreshToken) {
+      throw createLoginError('LOGIN_FAILED', '登录失败：缺少必要的认证信息', loginData);
+    }
+
+    // 保存 token 和刷新 token 到本地存储
+    const expiresAt = loginData.expiresAt ? new Date(loginData.expiresAt).getTime() : undefined;
+    await tokenManager.setTokens(loginData.token, loginData.refreshToken, expiresAt);
+
+    return {
+      ...response,
+      success: true,
+      data: loginData,
+    };
   }
 
   /**

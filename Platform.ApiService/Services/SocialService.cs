@@ -93,7 +93,7 @@ public class SocialService : ISocialService
         var now = DateTime.UtcNow;
         var lastSeenAt = ResolveLastSeenAt(request, now);
 
-        // ✅ 先保存位置（city 为 null），立即返回响应，不等待地理编码
+        // ✅ 先保存位置（city 和 country 为 null），立即返回响应，不等待地理编码
         // 这样可以避免地理编码 API 慢导致请求超时
         var beacon = new UserLocationBeacon
         {
@@ -106,7 +106,8 @@ public class SocialService : ISocialService
             Heading = request.Heading,
             Speed = request.Speed,
             LastSeenAt = lastSeenAt,
-            City = null // 先不设置城市，在后台任务中更新
+            City = null, // 先不设置城市，在后台任务中更新
+            Country = null // 先不设置国家，在后台任务中更新
         };
 
         var createdBeacon = await _beaconFactory.CreateAsync(beacon);
@@ -114,7 +115,7 @@ public class SocialService : ISocialService
         // ✅ 保存关键信息，供后台任务使用（后台任务无法访问 HttpContext）
         var beaconId = createdBeacon.Id;
 
-        // ✅ 在后台异步执行地理编码，完成后更新 city 字段
+        // ✅ 在后台异步执行地理编码，完成后更新 city 和 country 字段
         // 使用 Task.Run 在后台线程执行，不阻塞当前请求
         _ = Task.Run(async () =>
         {
@@ -125,30 +126,37 @@ public class SocialService : ISocialService
                 var scopedBeaconFactory = scope.ServiceProvider.GetRequiredService<IDatabaseOperationFactory<UserLocationBeacon>>();
                 
                 // 执行地理编码（设置超时，避免无限等待）
-                var city = await ReverseGeocodeAsync(request.Latitude, request.Longitude);
+                var geocodeResult = await ReverseGeocodeAsync(request.Latitude, request.Longitude);
                 
-                if (!string.IsNullOrEmpty(city))
+                if (geocodeResult != null && (!string.IsNullOrEmpty(geocodeResult.City) || !string.IsNullOrEmpty(geocodeResult.Country)))
                 {
                     // ✅ 使用 beacon 的 Id 直接更新，避免在后台任务中无法获取用户信息
                     var filter = scopedBeaconFactory.CreateFilterBuilder()
                         .Equal(b => b.Id, beaconId) // 直接使用 Id 匹配，不依赖 HttpContext
                         .Build();
 
-                    var update = scopedBeaconFactory.CreateUpdateBuilder()
-                        .Set(b => b.City, city)
-                        .Build();
+                    var updateBuilder = scopedBeaconFactory.CreateUpdateBuilder();
+                    if (!string.IsNullOrEmpty(geocodeResult.City))
+                    {
+                        updateBuilder = updateBuilder.Set(b => b.City, geocodeResult.City);
+                    }
+                    if (!string.IsNullOrEmpty(geocodeResult.Country))
+                    {
+                        updateBuilder = updateBuilder.Set(b => b.Country, geocodeResult.Country);
+                    }
+                    var update = updateBuilder.Build();
 
                     var updatedCount = await scopedBeaconFactory.UpdateManyAsync(filter, update);
                     
 #if DEBUG
                     if (updatedCount > 0)
                     {
-                        _logger.LogInformation("位置上报：后台更新城市信息成功 {City}，坐标 ({Latitude}, {Longitude})，BeaconId: {BeaconId}", 
-                            city, request.Latitude, request.Longitude, beaconId);
+                        _logger.LogInformation("位置上报：后台更新位置信息成功 City: {City}, Country: {Country}，坐标 ({Latitude}, {Longitude})，BeaconId: {BeaconId}", 
+                            geocodeResult.City, geocodeResult.Country, request.Latitude, request.Longitude, beaconId);
                     }
                     else
                     {
-                        _logger.LogWarning("位置上报：后台更新城市信息失败，未找到匹配的记录，BeaconId: {BeaconId}", beaconId);
+                        _logger.LogWarning("位置上报：后台更新位置信息失败，未找到匹配的记录，BeaconId: {BeaconId}", beaconId);
                     }
 #endif
                 }
@@ -434,24 +442,29 @@ public class SocialService : ISocialService
             return null;
         }
 
-        // 直接返回数据库中最后一次保存的城市信息，无需实时解析
-        // 城市信息在保存位置时已通过 ReverseGeocodeAsync 自动解析并保存
+        // 直接返回数据库中最后一次保存的城市和国家信息，无需实时解析
+        // 城市和国家信息在保存位置时已通过 ReverseGeocodeAsync 自动解析并保存
         return new UserLocationInfo
         {
-            City = beacon.City
+            City = beacon.City,
+            Country = beacon.Country
         };
     }
 
     /// <summary>
-    /// 逆地理编码：将经纬度转换为城市名称
+    /// 逆地理编码：将经纬度转换为城市和国家名称
     /// 使用免费的 BigDataCloud Reverse Geocoding API（不需要 API Key，全球支持）
     /// </summary>
-    private async Task<string?> ReverseGeocodeAsync(double latitude, double longitude)
+    private async Task<GeocodeResult?> ReverseGeocodeAsync(double latitude, double longitude)
     {
         // 优先尝试 BigDataCloud API（免费，不需要 API Key，全球支持）
         try
         {
-            return await ReverseGeocodeWithBigDataCloudAsync(latitude, longitude);
+            var result = await ReverseGeocodeWithBigDataCloudAsync(latitude, longitude);
+            if (result != null)
+            {
+                return result;
+            }
         }
         catch (Exception ex)
         {
@@ -463,7 +476,11 @@ public class SocialService : ISocialService
         // 回退方案：尝试使用 GeoNames（免费，不需要 API Key，但需要注册）
         try
         {
-            return await ReverseGeocodeWithGeoNamesAsync(latitude, longitude);
+            var result = await ReverseGeocodeWithGeoNamesAsync(latitude, longitude);
+            if (result != null)
+            {
+                return result;
+            }
         }
         catch (Exception ex)
         {
@@ -477,7 +494,7 @@ public class SocialService : ISocialService
     /// <summary>
     /// 使用 BigDataCloud Reverse Geocoding API 进行逆地理编码（免费，不需要 API Key）
     /// </summary>
-    private async Task<string?> ReverseGeocodeWithBigDataCloudAsync(double latitude, double longitude)
+    private async Task<GeocodeResult?> ReverseGeocodeWithBigDataCloudAsync(double latitude, double longitude)
     {
         try
         {
@@ -492,25 +509,32 @@ public class SocialService : ISocialService
             var response = await httpClient.GetStringAsync(url);
             var json = JsonSerializer.Deserialize<JsonElement>(response);
             
-            // 优先获取城市（locality）
+            var result = new GeocodeResult();
+            
+            // 获取城市（locality）
             if (json.TryGetProperty("locality", out var locality) && !string.IsNullOrEmpty(locality.GetString()))
             {
-                return locality.GetString();
+                result.City = locality.GetString();
             }
-            
-            // 如果没有城市，尝试使用区县（principalSubdivision）
-            if (json.TryGetProperty("principalSubdivision", out var subdivision) && !string.IsNullOrEmpty(subdivision.GetString()))
+            // 如果没有城市，尝试使用区县（principalSubdivision）作为城市
+            else if (json.TryGetProperty("principalSubdivision", out var subdivision) && !string.IsNullOrEmpty(subdivision.GetString()))
             {
-                return subdivision.GetString();
+                result.City = subdivision.GetString();
             }
             
-            // 最后尝试省份（countryName）
+            // 获取国家（countryName）
             if (json.TryGetProperty("countryName", out var countryName) && !string.IsNullOrEmpty(countryName.GetString()))
             {
-                return countryName.GetString();
+                result.Country = countryName.GetString();
             }
             
-            return null;
+            // 如果城市和国家都为空，返回 null
+            if (string.IsNullOrEmpty(result.City) && string.IsNullOrEmpty(result.Country))
+            {
+                return null;
+            }
+            
+            return result;
         }
         catch (TaskCanceledException ex)
         {
@@ -532,7 +556,7 @@ public class SocialService : ISocialService
     /// <summary>
     /// 使用 GeoNames API 进行逆地理编码（免费，不需要 API Key，但需要注册用户名）
     /// </summary>
-    private async Task<string?> ReverseGeocodeWithGeoNamesAsync(double latitude, double longitude)
+    private async Task<GeocodeResult?> ReverseGeocodeWithGeoNamesAsync(double latitude, double longitude)
     {
         try
         {
@@ -549,24 +573,37 @@ public class SocialService : ISocialService
             var response = await httpClient.GetStringAsync(url);
             var json = JsonSerializer.Deserialize<JsonElement>(response);
             
+            var result = new GeocodeResult();
+            
             if (json.TryGetProperty("geonames", out var geonames) && geonames.ValueKind == JsonValueKind.Array && geonames.GetArrayLength() > 0)
             {
                 var firstPlace = geonames[0];
                 
-                // 优先获取城市名称（name）
+                // 获取城市名称（name）
                 if (firstPlace.TryGetProperty("name", out var name) && !string.IsNullOrEmpty(name.GetString()))
                 {
-                    return name.GetString();
+                    result.City = name.GetString();
+                }
+                // 如果没有名称，尝试使用行政区划名称（adminName1）作为城市
+                else if (firstPlace.TryGetProperty("adminName1", out var adminName1) && !string.IsNullOrEmpty(adminName1.GetString()))
+                {
+                    result.City = adminName1.GetString();
                 }
                 
-                // 如果没有名称，尝试使用行政区划名称（adminName1）
-                if (firstPlace.TryGetProperty("adminName1", out var adminName1) && !string.IsNullOrEmpty(adminName1.GetString()))
+                // 获取国家名称（countryName）
+                if (firstPlace.TryGetProperty("countryName", out var countryName) && !string.IsNullOrEmpty(countryName.GetString()))
                 {
-                    return adminName1.GetString();
+                    result.Country = countryName.GetString();
                 }
             }
             
-            return null;
+            // 如果城市和国家都为空，返回 null
+            if (string.IsNullOrEmpty(result.City) && string.IsNullOrEmpty(result.Country))
+            {
+                return null;
+            }
+            
+            return result;
         }
         catch (TaskCanceledException ex)
         {

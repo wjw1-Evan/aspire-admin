@@ -168,12 +168,22 @@ const Login: React.FC = () => {
         defaultMessage: '登录失败，请重试！',
       });
       
-      const errorMsg = error?.message || defaultLoginFailureMessage;
+      // 从错误对象中提取 errorCode 和 errorMessage
+      // UmiJS 的 errorThrower 会将 errorCode 存储在 error.info 中
+      // 错误拦截器也可能将 errorCode 存储在 error.response?.data?.errorCode 中
+      const errorCode = 
+        error?.info?.errorCode || 
+        error?.errorCode || 
+        error?.response?.data?.errorCode;
+      
+      const errorMsg = 
+        error?.info?.errorMessage || 
+        error?.response?.data?.errorMessage || 
+        error?.message || 
+        defaultLoginFailureMessage;
+      
       setUserLoginState({ status: 'error', errorMessage: errorMsg });
       message.error(errorMsg);
-      
-      // 从错误对象中提取 errorCode（错误拦截器会在 error.info 中存储）
-      const errorCode = error?.info?.errorCode || error?.errorCode;
       
       // 登录失败后显示验证码
       if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {

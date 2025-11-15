@@ -494,6 +494,15 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     }
 
     /// <summary>
+    /// 仅在插入时设置字段值（用于 Upsert 操作）
+    /// </summary>
+    public UpdateBuilder<T> SetOnInsert<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field, TField value)
+    {
+        _updates.Add(_builder.SetOnInsert(field, value));
+        return this;
+    }
+
+    /// <summary>
     /// 向数组字段添加元素
     /// </summary>
     public UpdateBuilder<T> AddToSet<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field, TField value)

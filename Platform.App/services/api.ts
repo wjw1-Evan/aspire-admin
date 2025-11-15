@@ -93,7 +93,7 @@ class ApiService {
         );
       }
       
-      // 处理其他错误
+      // 处理其他 HTTP 错误（非 200 状态码）
       if (!response.ok) {
         const errorData = await this.parseErrorResponse(response);
         const error = new Error(errorData.message) as ApiError;
@@ -102,12 +102,17 @@ class ApiService {
           statusText: response.statusText,
           data: errorData,
         };
+        // 保存错误代码到错误对象，确保 errorHandler 可以访问
         if (errorData.errorCode) {
           (error as any).errorCode = errorData.errorCode;
+          (error as any).code = errorData.errorCode; // 同时保存到 code 字段
         }
         throw error;
       }
 
+      // HTTP 200 状态码，解析响应
+      // 注意：即使 HTTP 状态码是 200，响应体中的 success 字段可能为 false
+      // 这种情况由业务逻辑层（如 AuthService）处理
       return await this.parseSuccessResponse<T>(response);
     } catch (error: unknown) {
       clearTimeout(timeoutId);

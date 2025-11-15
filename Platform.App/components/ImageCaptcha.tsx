@@ -51,25 +51,49 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
   const fetchCaptcha = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('[ImageCaptcha] 开始获取验证码，类型:', type);
       const response = await apiService.get<CaptchaResponse>(`/api/captcha/image?type=${type}`, {
         timeout: 5000,
         retries: 0,
       });
       
+      console.log('[ImageCaptcha] API 响应:', {
+        success: response.success,
+        hasData: !!response.data,
+        captchaId: response.data?.captchaId,
+        hasImageData: !!response.data?.imageData,
+        imageDataLength: response.data?.imageData?.length,
+      });
+      
       if (response.success && response.data) {
         setImageData(response.data.imageData);
         onCaptchaIdChange?.(response.data.captchaId);
+        console.log('[ImageCaptcha] 验证码获取成功，ID:', response.data.captchaId, '图片数据长度:', response.data.imageData?.length);
         
         // 清空输入框
         onChange?.('');
       } else {
-        Alert.alert('错误', response.errorMessage || '获取验证码失败，请重试');
+        const errorMsg = response.errorMessage || '获取验证码失败，请重试';
+        console.error('[ImageCaptcha] 验证码获取失败:', errorMsg, '响应:', response);
+        // 在 Web 环境中，Alert.alert 可能不工作，使用 console.error 代替
+        if (typeof window !== 'undefined' && window.alert) {
+          window.alert(errorMsg);
+        } else {
+          Alert.alert('错误', errorMsg);
+        }
       }
     } catch (error) {
-      console.error('获取图形验证码失败:', error);
-      Alert.alert('错误', '获取验证码失败，请重试');
+      console.error('[ImageCaptcha] 获取图形验证码异常:', error);
+      const errorMsg = error instanceof Error ? error.message : '获取验证码失败，请重试';
+      // 在 Web 环境中，Alert.alert 可能不工作，使用 console.error 代替
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert(errorMsg);
+      } else {
+        Alert.alert('错误', errorMsg);
+      }
     } finally {
       setLoading(false);
+      console.log('[ImageCaptcha] 验证码获取完成，loading:', false);
     }
   }, [onCaptchaIdChange, onChange, type]);
 
@@ -80,8 +104,9 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
 
   // 组件挂载时获取验证码
   useEffect(() => {
+    console.log('[ImageCaptcha] 组件挂载，开始获取验证码，type:', type);
     void fetchCaptcha();
-  }, [fetchCaptcha]);
+  }, [fetchCaptcha, type]);
 
   return (
     <View style={styles.container}>

@@ -1,6 +1,6 @@
 // 登录页面
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
@@ -9,165 +9,169 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
 import { Image } from 'expo-image';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedButton } from '@/components/themed-button';
-import { EnhancedErrorToast } from '@/components/EnhancedErrorToast';
 import { InputWithValidation } from '@/components/InputWithValidation';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useLoginAttempts } from '@/hooks/useLoginAttempts';
-import { AuthError, AuthErrorType } from '@/types/unified-api';
-import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
+import ImageCaptcha from '@/components/ImageCaptcha';
+import { Toast } from '@/components/Toast';
+
+// 需要显示验证码的错误代码
+const CAPTCHA_ERROR_CODES = ['LOGIN_FAILED', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED'] as const;
+
+// 错误消息映射
+const ERROR_MESSAGES: Record<string, { title: string; message: string }> = {
+  CAPTCHA_REQUIRED: {
+    title: '需要验证码',
+    message: '登录失败后需要输入验证码，请在下方的验证码输入框中输入验证码后重试',
+  },
+  CAPTCHA_INVALID: {
+    title: '验证码错误',
+    message: '验证码错误，请重新输入验证码',
+  },
+  LOGIN_FAILED: {
+    title: '登录失败',
+    message: '用户名或密码错误，请检查后重试',
+  },
+};
+
+// 提取错误代码
+const getErrorCode = (error: any): string | undefined => {
+  return error?.code || error?.errorCode || error?.response?.data?.errorCode;
+};
+
+// 提取错误消息
+const getErrorMessage = (error: any): string => {
+  return (
+    error?.response?.data?.errorMessage ||
+    error?.info?.errorMessage ||
+    error?.errorMessage ||
+    error?.message ||
+    '登录失败，请重试'
+  );
+};
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<AuthError | null>(null);
-  const [showError, setShowError] = useState(false);
-  const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
-  const [captchaId, setCaptchaId] = useState<string>('');
-  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaId, setCaptchaId] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [loading, setLoading] = useState(false);
-  const captchaRef = useRef<ImageCaptchaRef>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [toast, setToast] = useState<{
+    visible: boolean;
+    title?: string;
+    message: string;
+    type?: 'info' | 'success' | 'error' | 'warning';
+  }>({
+    visible: false,
+    message: '',
+  });
+
   const { login } = useAuth();
-  const { 
-    recordAttempt, 
-    canAttemptLogin, 
-    getRemainingAttempts, 
-    getLockInfo,
-    clearAttempts 
-  } = useLoginAttempts();
+  const { recordAttempt, canAttemptLogin, getLockInfo, clearAttempts } = useLoginAttempts();
   
   const backgroundColor = useThemeColor({}, 'background');
-  const cardBackgroundColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#1E293B' },
-    'card'
-  );
+  const cardBackgroundColor = useThemeColor({ light: '#FFFFFF', dark: '#1E293B' }, 'card');
   const tintColor = useThemeColor({}, 'tint');
   const borderColor = useThemeColor({}, 'border');
 
-  const handleLogin = async () => {
-    // 防止重复提交
-    if (loading) {
-      return;
+  // 显示验证码
+  const enableCaptcha = () => {
+    setShowCaptcha(true);
+    setCaptchaKey(prev => prev + 1);
+    setCaptchaAnswer('');
+    setCaptchaId('');
+  };
+
+ 
+
+  // 显示错误提示
+  const showError = (title: string, message: string) => {
+    console.log('showError', title, message);
+    setToast({
+      visible: true,
+      title,
+      message,
+      type: 'error',
+    });
+  };
+
+  // 处理登录错误
+  const handleLoginError = (error: any) => {
+    const errorCode = getErrorCode(error);
+    const errorMessage = getErrorMessage(error);
+    
+    // 如果需要显示验证码
+    if (errorCode && CAPTCHA_ERROR_CODES.includes(errorCode as any)) {
+      enableCaptcha();
     }
 
+    // 获取错误消息
+    const errorInfo = ERROR_MESSAGES[errorCode || ''] || {
+      title: '登录失败',
+      message: errorMessage,
+    };
+
+    showError(errorInfo.title, errorInfo.message);
+  };
+
+  // 登录处理
+  const handleLogin = () => {
+    if (loading) return;
+
+    // 输入验证
     if (!username.trim() || !password.trim()) {
-      setError({
-        type: AuthErrorType.LOGIN_FAILED,
-        message: '请输入用户名和密码',
-        retryable: false,
-      });
-      setShowError(true);
+      showError('输入错误', '请输入用户名和密码');
       return;
     }
 
-    // 检查是否可以尝试登录
+    if (showCaptcha && (!captchaId || !captchaAnswer?.trim())) {
+      showError('验证码错误', '请输入图形验证码');
+      return;
+    }
+
+    // 检查登录尝试限制
     if (!canAttemptLogin(username.trim())) {
       const lockInfo = getLockInfo();
       if (lockInfo) {
-        setError({
-          type: AuthErrorType.LOGIN_FAILED,
-          message: lockInfo.reason,
-          retryable: false,
-        });
-        setShowError(true);
+        showError('账户已锁定', lockInfo.reason);
         return;
       }
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-      setShowError(false);
-      
-      await login({
-        username: username.trim(),
-        password: password.trim(),
-        autoLogin: true,
-        type: 'account',
-        captchaId: showCaptcha ? captchaId : undefined,
-        captchaAnswer: showCaptcha ? captchaAnswer : undefined,
+    setLoading(true);
+    
+    login({
+      username: username.trim(),
+      password: password.trim(),
+      autoLogin: true,
+      type: 'account',
+      captchaId: showCaptcha ? captchaId : undefined,
+      captchaAnswer: showCaptcha ? captchaAnswer : undefined,
+    })
+      .then((response) => {
+        console.log('response', response);
+        setLoading(false);
+      })
+      .catch((error: any) => {
+        handleLoginError(error);
+        setLoading(false);
       });
-      
-      // 登录成功，清除尝试记录（非阻塞，避免阻塞跳转）
-      void clearAttempts().catch(err => {
-        console.warn('清除登录尝试记录失败:', err);
-      });
-      
-      // 登录成功后跳转到主页（使用 setTimeout 确保状态更新完成）
-      setTimeout(() => {
-        router.replace('/(tabs)');
-      }, 100);
-    } catch (error: any) {
-      // 记录失败的登录尝试
-      await recordAttempt(username.trim(), false);
-      
-      // 检查错误是否是 AuthError 类型
-      let authError: AuthError;
-      if (error && typeof error === 'object' && 'type' in error && 'message' in error) {
-        // 如果已经是 AuthError 类型，直接使用
-        authError = error as AuthError;
-      } else {
-        // 如果不是，创建一个新的 AuthError
-        const errorMessage = error instanceof Error ? error.message : '登录失败，请稍后重试';
-        authError = {
-          type: AuthErrorType.LOGIN_FAILED,
-          message: errorMessage,
-          retryable: true,
-        };
-      }
-      
-      // 登录失败后显示验证码
-      const errorCode = error?.errorCode || error?.info?.errorCode;
-      if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
-        setShowCaptcha(true);
-        // 非阻塞方式刷新验证码，避免阻塞错误处理
-        if (captchaRef.current) {
-          void captchaRef.current.refresh().catch(err => {
-            console.warn('刷新验证码失败:', err);
-          });
-        }
-      }
-      
-      setError(authError);
-      setShowError(true);
-    } finally {
-      setLoading(false);
-    }
   };
-
-  const handleDismissError = () => {
-    setShowError(false);
-    setError(null);
-  };
-
-  const handleRetryLogin = () => {
-    setShowError(false);
-    setError(null);
-    handleLogin();
-  };
-
 
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* 增强错误提示组件 */}
-      <EnhancedErrorToast
-        error={error}
-        visible={showError}
-        onDismiss={handleDismissError}
-        onRetry={error?.retryable ? handleRetryLogin : undefined}
-        remainingAttempts={username.trim() ? getRemainingAttempts(username.trim()) : undefined}
-        lockInfo={getLockInfo()}
-      />
-      
       <ScrollView 
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -206,12 +210,7 @@ export default function LoginScreen() {
               leftIcon="person.fill"
               autoCapitalize="none"
               autoCorrect={false}
-              editable={true}
-              validation={{
-                required: true,
-                minLength: 2,
-                maxLength: 50,
-              }}
+              validation={{ required: true, minLength: 2, maxLength: 50 }}
               showValidation={true}
             />
 
@@ -226,20 +225,16 @@ export default function LoginScreen() {
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoCorrect={false}
-              editable={true}
-              validation={{
-                required: true,
-                minLength: 6,
-                maxLength: 100,
-              }}
+              validation={{ required: true, minLength: 6, maxLength: 100 }}
               showValidation={true}
             />
 
+            {/* 验证码组件 */}
             {showCaptcha && (
               <View style={styles.captchaContainer}>
                 <ThemedText style={styles.captchaLabel}>图形验证码</ThemedText>
                 <ImageCaptcha
-                  ref={captchaRef}
+                  key={`captcha-${captchaKey}`}
                   value={captchaAnswer}
                   onChange={setCaptchaAnswer}
                   onCaptchaIdChange={setCaptchaId}
@@ -255,7 +250,6 @@ export default function LoginScreen() {
               style={styles.loginButton}
               disabled={loading}
             />
-
 
             {/* 忘记密码链接 */}
             <TouchableOpacity style={styles.forgotPassword}>
@@ -290,6 +284,15 @@ export default function LoginScreen() {
           <View style={[styles.circle, styles.circle3, { backgroundColor: tintColor + '15' }]} />
         </View>
       </ScrollView>
+
+      {/* Toast 提示 */}
+      <Toast
+        visible={toast.visible}
+        title={toast.title}
+        message={toast.message}
+        type={toast.type}
+        onDismiss={() => setToast(prev => ({ ...prev, visible: false }))}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -411,6 +414,8 @@ const styles = StyleSheet.create({
   captchaContainer: {
     marginTop: 16,
     marginBottom: 8,
+    width: '100%',
+    minHeight: 80,
   },
   captchaLabel: {
     fontSize: 16,

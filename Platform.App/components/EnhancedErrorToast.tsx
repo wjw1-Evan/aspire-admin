@@ -7,6 +7,7 @@ import {
   Animated,
   TouchableOpacity,
   Linking,
+  Platform,
 } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -63,18 +64,21 @@ export function EnhancedErrorToast({
   }, [onDismiss]);
 
   useEffect(() => {
+    // Web 平台不支持原生驱动，使用 JS 动画
+    const useNativeDriver = Platform.OS !== 'web';
+    
     if (visible && error) {
       // 显示动画
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(slideAnim, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ]).start();
 
@@ -94,12 +98,12 @@ export function EnhancedErrorToast({
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(slideAnim, {
           toValue: -100,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ]).start();
       
@@ -122,10 +126,6 @@ export function EnhancedErrorToast({
     // 可以打开邮件应用或跳转到支持页面
     Linking.openURL('mailto:support@example.com?subject=登录问题&body=我遇到了登录问题，请帮助我解决。');
   };
-
-  if (!visible || !error) {
-    return null;
-  }
 
   const getErrorIcon = () => {
     if (lockInfo?.isLocked) {
@@ -273,6 +273,10 @@ export function EnhancedErrorToast({
 
   const currentColor = lockInfo?.isLocked ? warningColor : errorColor;
 
+  if (!visible || !error) {
+    return null;
+  }
+
   return (
     <Animated.View
       style={[
@@ -282,6 +286,7 @@ export function EnhancedErrorToast({
           transform: [{ translateY: slideAnim }],
         },
       ]}
+      pointerEvents="box-none" // 允许事件穿透到背景，但子元素可以接收事件
     >
       <ThemedView style={[styles.toast, { backgroundColor: cardBackgroundColor, borderColor }]}>
         <View style={styles.content}>

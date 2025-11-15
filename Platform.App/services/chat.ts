@@ -1,4 +1,5 @@
 import { apiService } from './api';
+import { tokenManager } from './tokenManager';
 import { API_ENDPOINTS } from './apiConfig';
 import { getApiBaseUrl } from '@/constants/apiConfig';
 import type { ApiResponse } from '@/types/unified-api';
@@ -145,7 +146,7 @@ const fetchAssistantReplyResponse = async (
   payload: AssistantReplyStreamRequest,
   signal: AbortSignal
 ): Promise<Response> => {
-  const token = await apiService.getToken();
+  const token = await tokenManager.getToken();
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -159,7 +160,7 @@ const fetchAssistantReplyResponse = async (
 
   if (response.status === 401 || response.status === 403) {
     // 非阻塞方式清除 token，避免阻塞流式响应
-    void apiService.clearAllTokens();
+    void tokenManager.clearAllTokens();
     throw new Error('登录已过期，请重新登录后重试');
   }
 
@@ -253,8 +254,13 @@ export const chatService = {
   },
 
   markSessionRead: async (sessionId: string, lastReadMessageId: string): Promise<void> => {
+    if (!lastReadMessageId || !lastReadMessageId.trim()) {
+      throw new Error('消息ID不能为空');
+    }
+
+    // 使用后端期望的参数名 LastMessageId（虽然 .NET 模型绑定大小写不敏感，但保持一致更好）
     await apiService.post<void>(`${API_ENDPOINTS.chatMessages}/${encodeURIComponent(sessionId)}/read`, {
-      lastReadMessageId,
+      LastMessageId: lastReadMessageId.trim(),
     });
   },
 

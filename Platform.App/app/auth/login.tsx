@@ -94,11 +94,15 @@ export default function LoginScreen() {
         captchaAnswer: showCaptcha ? captchaAnswer : undefined,
       });
       
-      // 登录成功，清除尝试记录
-      await clearAttempts();
+      // 登录成功，清除尝试记录（非阻塞，避免阻塞跳转）
+      void clearAttempts().catch(err => {
+        console.warn('清除登录尝试记录失败:', err);
+      });
       
-      // 登录成功后跳转到主页
-      router.replace('/(tabs)');
+      // 登录成功后跳转到主页（使用 setTimeout 确保状态更新完成）
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 100);
     } catch (error: any) {
       // 记录失败的登录尝试
       await recordAttempt(username.trim(), false);
@@ -160,7 +164,7 @@ export default function LoginScreen() {
         visible={showError}
         onDismiss={handleDismissError}
         onRetry={error?.retryable ? handleRetryLogin : undefined}
-        remainingAttempts={getRemainingAttempts(username.trim())}
+        remainingAttempts={username.trim() ? getRemainingAttempts(username.trim()) : undefined}
         lockInfo={getLockInfo()}
       />
       

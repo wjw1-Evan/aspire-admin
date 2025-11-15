@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -32,9 +32,24 @@ export default function ChatTabScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
+  // 会话列表最后刷新时间
+  const lastRefreshTimeRef = useRef<number>(0);
+  const REFRESH_COOLDOWN_MS = 5000; // 5秒内不重复刷新
+
   useFocusEffect(
     useCallback(() => {
-      loadSessions().catch(error => console.error('Failed to load sessions:', error));
+      const now = Date.now();
+      // 避免频繁刷新：如果距离上次刷新不足 5 秒，跳过
+      if (now - lastRefreshTimeRef.current < REFRESH_COOLDOWN_MS) {
+        return;
+      }
+      
+      lastRefreshTimeRef.current = now;
+      loadSessions().catch(error => {
+        if (__DEV__) {
+          console.error('Failed to load sessions:', error);
+        }
+      });
     }, [loadSessions])
   );
 
@@ -167,7 +182,11 @@ export default function ChatTabScreen() {
         refreshControl={
           <RefreshControl
             refreshing={sessionsLoading}
-            onRefresh={() => loadSessions()}
+            onRefresh={() => {
+              // 手动刷新时重置时间戳，允许立即刷新
+              lastRefreshTimeRef.current = 0;
+              loadSessions();
+            }}
             tintColor={theme.colors.accent}
             colors={[theme.colors.accent]}
           />

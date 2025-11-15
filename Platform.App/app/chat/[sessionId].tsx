@@ -15,7 +15,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { ChatMessage } from '@/types/chat';
 import { AI_ASSISTANT_ID } from '@/constants/ai';
 
-const POLL_INTERVAL_MS = 5000;
+// 轮询间隔：SignalR 未连接时使用（增加到 15 秒，减少服务器压力）
+const POLL_INTERVAL_MS = 15000;
 export default function ChatSessionScreen() {
   const params = useLocalSearchParams<{ sessionId: string }>();
   const router = useRouter();
@@ -44,13 +45,32 @@ export default function ChatSessionScreen() {
   const previousMessageCountRef = useRef<number>(0);
   const previousLastMessageIdRef = useRef<string | undefined>(undefined);
 
+  // 消息加载时间戳，避免重复加载
+  const lastLoadTimeRef = useRef<number>(0);
+  const LOAD_COOLDOWN_MS = 2000; // 2秒内不重复加载
+
   useEffect(() => {
     if (!sessionId || !session) {
       return;
     }
-    loadMessages(sessionId).catch(error => console.error('Failed to load messages:', error));
+    
+    const now = Date.now();
+    // 避免频繁加载：如果距离上次加载不足 2 秒，跳过
+    if (now - lastLoadTimeRef.current < LOAD_COOLDOWN_MS) {
+      return;
+    }
+    
+    lastLoadTimeRef.current = now;
+    loadMessages(sessionId).catch(error => {
+      if (__DEV__) {
+        console.error('Failed to load messages:', error);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadMessages, sessionId]); // 移除 session 依赖，避免 session 对象引用变化导致重复执行
+
+  // 注意：标记已读现在由后端自动处理（在获取消息时自动标记）
+  // 不再需要前端手动调用 markSessionRead
 
   useEffect(() => {
     if (sessionId) {
@@ -69,22 +89,34 @@ export default function ChatSessionScreen() {
     previousLastMessageIdRef.current = undefined;
   }, [sessionId]);
 
+  // 轮询消息（仅在 SignalR 未连接时，且页面可见时）
   useEffect(() => {
     if (!sessionId || !session) {
       return;
     }
 
+    // SignalR 已连接，不需要轮询
     if (connectionState === HubConnectionState.Connected) {
       return undefined;
     }
 
+    // 使用更长的轮询间隔，减少服务器压力
     const intervalId = setInterval(() => {
-      loadMessages(sessionId).catch(error => console.error('Polling messages failed:', error));
+      // 只在 SignalR 未连接时轮询
+      if (connectionState !== HubConnectionState.Connected) {
+        loadMessages(sessionId).catch(error => {
+          if (__DEV__) {
+            console.error('Polling messages failed:', error);
+          }
+        });
+      }
     }, POLL_INTERVAL_MS);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionState, loadMessages, sessionId]); // 移除 session 依赖，避免 session 对象引用变化导致频繁创建 interval
+  }, [connectionState, loadMessages, sessionId]);
 
   const currentUserId = useMemo(() => user?.id ?? user?.username ?? undefined, [user?.id, user?.username]);
 
@@ -261,6 +293,10 @@ export default function ChatSessionScreen() {
     sessionRefreshAttemptedRef.current = false;
   }, [sessionId]);
 
+  // 会话刷新时间戳，避免频繁刷新
+  const lastSessionRefreshTimeRef = useRef<number>(0);
+  const SESSION_REFRESH_COOLDOWN_MS = 3000; // 3秒内不重复刷新
+
   useEffect(() => {
     if (!sessionId || session || sessionsLoading || sessionRetrying) {
       return;
@@ -270,10 +306,21 @@ export default function ChatSessionScreen() {
       return;
     }
 
+    const now = Date.now();
+    // 避免频繁刷新会话信息
+    if (now - lastSessionRefreshTimeRef.current < SESSION_REFRESH_COOLDOWN_MS) {
+      return;
+    }
+
+    lastSessionRefreshTimeRef.current = now;
     sessionRefreshAttemptedRef.current = true;
     setSessionRetrying(true);
     loadSessions()
-      .catch(error => console.error('Failed to refresh session info:', error))
+      .catch(error => {
+        if (__DEV__) {
+          console.error('Failed to refresh session info:', error);
+        }
+      })
       .finally(() => setSessionRetrying(false));
   }, [loadSessions, session, sessionId, sessionRetrying, sessionsLoading]);
 
@@ -324,7 +371,11 @@ export default function ChatSessionScreen() {
                 );
               }
             }}
-            onRefresh={() => loadMessages(sessionId).catch(() => undefined)}
+            onRefresh={() => {
+              // 手动刷新时重置时间戳，允许立即刷新
+              lastLoadTimeRef.current = 0;
+              loadMessages(sessionId).catch(() => undefined);
+            }}
             onResendMessage={handleResendMessage}
           />
         )}

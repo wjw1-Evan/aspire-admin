@@ -3,41 +3,28 @@
  * 提供统一的网络请求接口和 token 管理
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiBaseUrl } from '@/constants/apiConfig';
 import {
   DEFAULT_REQUEST_CONFIG,
-  STORAGE_KEYS,
   RequestConfig,
   calculateRetryDelay,
   shouldRetryError,
 } from './apiConfig';
 import { handleError, ApiError, createAuthError } from './errorHandler';
 import { AuthErrorType } from '@/types/unified-api';
+import { tokenManager } from './tokenManager';
 
 class ApiService {
-  private authStateChangeListeners: (() => void)[] = [];
   private isHandlingAuthFailure = false;
-  private isClearingTokens = false;
 
   private getBaseURL = (): string => getApiBaseUrl();
 
   addAuthStateChangeListener(listener: () => void): void {
-    this.authStateChangeListeners.push(listener);
+    tokenManager.addAuthStateChangeListener(listener);
   }
 
   removeAuthStateChangeListener(listener: () => void): void {
-    this.authStateChangeListeners = this.authStateChangeListeners.filter(l => l !== listener);
-  }
-
-  private triggerAuthStateChange(): void {
-    this.authStateChangeListeners.forEach(listener => {
-      try {
-        listener();
-      } catch (error) {
-        console.error('Error in auth state change listener:', error);
-      }
-    });
+    tokenManager.removeAuthStateChangeListener(listener);
   }
 
   private handleAuthFailure(): void {
@@ -46,7 +33,7 @@ class ApiService {
     this.isHandlingAuthFailure = true;
     void (async () => {
       try {
-        await this.clearAllTokens();
+        await tokenManager.clearAllTokens();
       } catch (error) {
         console.error('Failed to handle auth failure:', error);
       } finally {
@@ -77,7 +64,7 @@ class ApiService {
     }
 
     // 添加认证头
-    const token = await this.getToken();
+    const token = await tokenManager.getToken();
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
@@ -254,109 +241,55 @@ class ApiService {
     return this.requestWithRetry<T>(endpoint, { method: 'DELETE' }, config);
   }
 
-  // ==================== Token 管理 ====================
-
-  private async getStorageItem(key: string): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem(key);
-    } catch (error) {
-      console.error(`Failed to get ${key}:`, error);
-      return null;
-    }
-  }
-
-  private async setStorageItem(key: string, value: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem(key, value);
-    } catch (error) {
-      console.error(`Failed to set ${key}:`, error);
-    }
-  }
-
-  private async removeStorageItem(key: string): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(key);
-    } catch (error) {
-      console.error(`Failed to remove ${key}:`, error);
-    }
-  }
+  // ==================== Token 管理（委托给 TokenManager）====================
 
   async getToken(): Promise<string | null> {
-    return this.getStorageItem(STORAGE_KEYS.TOKEN);
+    return tokenManager.getToken();
   }
 
   async setToken(token: string): Promise<void> {
-    return this.setStorageItem(STORAGE_KEYS.TOKEN, token);
+    return tokenManager.setToken(token);
   }
 
   async removeToken(): Promise<void> {
-    await this.removeStorageItem(STORAGE_KEYS.TOKEN);
-    this.triggerAuthStateChange();
+    return tokenManager.removeToken();
   }
 
   async getRefreshToken(): Promise<string | null> {
-    return this.getStorageItem(STORAGE_KEYS.REFRESH_TOKEN);
+    return tokenManager.getRefreshToken();
   }
 
   async setRefreshToken(refreshToken: string): Promise<void> {
-    return this.setStorageItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    return tokenManager.setRefreshToken(refreshToken);
   }
 
   async removeRefreshToken(): Promise<void> {
-    return this.removeStorageItem(STORAGE_KEYS.REFRESH_TOKEN);
+    return tokenManager.removeRefreshToken();
   }
 
   async getTokenExpiresAt(): Promise<number | null> {
-    const expiresAt = await this.getStorageItem(STORAGE_KEYS.TOKEN_EXPIRES);
-    return expiresAt ? parseInt(expiresAt, 10) : null;
+    return tokenManager.getTokenExpiresAt();
   }
 
   async setTokenExpiresAt(expiresAt: number): Promise<void> {
-    return this.setStorageItem(STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString());
+    return tokenManager.setTokenExpiresAt(expiresAt);
   }
 
   async removeTokenExpiresAt(): Promise<void> {
-    return this.removeStorageItem(STORAGE_KEYS.TOKEN_EXPIRES);
+    return tokenManager.removeTokenExpiresAt();
   }
 
   async setTokens(token: string, refreshToken: string, expiresAt?: number): Promise<void> {
-    try {
-      const items: [string, string][] = [
-        [STORAGE_KEYS.TOKEN, token],
-        [STORAGE_KEYS.REFRESH_TOKEN, refreshToken],
-      ];
-      if (expiresAt) {
-        items.push([STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString()]);
-      }
-      await AsyncStorage.multiSet(items);
-    } catch (error) {
-      console.error('Failed to set tokens:', error);
-    }
+    return tokenManager.setTokens(token, refreshToken, expiresAt);
   }
 
   async clearAllTokens(): Promise<void> {
-    if (this.isClearingTokens) return;
-
-    this.isClearingTokens = true;
-    try {
-      await AsyncStorage.multiRemove([
-        STORAGE_KEYS.TOKEN,
-        STORAGE_KEYS.REFRESH_TOKEN,
-        STORAGE_KEYS.TOKEN_EXPIRES,
-      ]);
-      this.triggerAuthStateChange();
-    } catch (error) {
-      console.error('Failed to clear all tokens:', error);
-    } finally {
-      setTimeout(() => {
-        this.isClearingTokens = false;
-      }, 100);
-    }
+    return tokenManager.clearAllTokens();
   }
 
   async validateToken(): Promise<boolean> {
     try {
-      const token = await this.getToken();
+      const token = await tokenManager.getToken();
       if (!token) return false;
 
       const response = await fetch(`${this.getBaseURL()}/currentUser`, {

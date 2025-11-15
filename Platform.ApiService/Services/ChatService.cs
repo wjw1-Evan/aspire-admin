@@ -149,6 +149,31 @@ public class ChatService : IChatService
         // 将结果按时间正序返回给调用者
         messages.Reverse();
 
+        // 如果获取的是最新消息（没有cursor），自动标记为已读
+        if (string.IsNullOrWhiteSpace(request.Cursor) && messages.Count > 0)
+        {
+            try
+            {
+                var lastMessage = messages[^1]; // 最后一条消息（最新的）
+                var currentUserId = _sessionFactory.GetRequiredUserId();
+                
+                // 检查会话的未读数量，如果已经有未读数，才标记为已读
+                var unreadCounts = session.UnreadCounts ?? new Dictionary<string, int>();
+                var currentUnreadCount = unreadCounts.GetValueOrDefault(currentUserId, 0);
+                
+                // 只有当有未读消息时才标记为已读（避免不必要的更新）
+                if (currentUnreadCount > 0)
+                {
+                    await MarkSessionReadAsync(sessionId, lastMessage.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 标记已读失败不影响获取消息，只记录日志
+                _logger.LogWarning(ex, "自动标记会话已读失败: 会话 {SessionId}", sessionId);
+            }
+        }
+
         return (messages, hasMore, nextCursor);
     }
 

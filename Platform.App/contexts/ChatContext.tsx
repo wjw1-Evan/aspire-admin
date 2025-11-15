@@ -65,6 +65,7 @@ interface ChatContextValue extends ChatState {
   updateLocationBeacon: (payload: { latitude: number; longitude: number; accuracy?: number }) => Promise<void>;
   fetchAiSuggestions: (sessionId: string, request: AiSuggestionRequest) => Promise<void>;
   streamAssistantReply: (request: AssistantReplyStreamRequest) => Promise<void>;
+  markSessionRead: (sessionId: string, lastReadMessageId: string) => Promise<void>;
   clearError: () => void;
   resetChat: () => void;
   connectionState: HubConnectionState;
@@ -346,6 +347,41 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [normalizeSession]
   );
 
+  const markSessionRead = useCallback(
+    async (sessionId: string, lastReadMessageId: string): Promise<void> => {
+      if (!currentUserId) {
+        return;
+      }
+
+      try {
+        // 调用 API 标记已读
+        await chatService.markSessionRead(sessionId, lastReadMessageId);
+
+        // 立即更新本地状态，清除未读徽章
+        const existing = sessionsRef.current[sessionId];
+        if (existing) {
+          const unreadCounts = { ...(existing.unreadCounts ?? {}) };
+          unreadCounts[currentUserId] = 0;
+
+          const normalized = normalizeSession({ ...existing, unreadCounts });
+          dispatch({ type: 'CHAT_SESSIONS_SUCCESS', payload: { sessions: [normalized] } });
+        }
+      } catch (error) {
+        console.error('标记会话已读失败:', error);
+        // 即使 API 调用失败，也尝试更新本地状态（乐观更新）
+        const existing = sessionsRef.current[sessionId];
+        if (existing) {
+          const unreadCounts = { ...(existing.unreadCounts ?? {}) };
+          unreadCounts[currentUserId] = 0;
+
+          const normalized = normalizeSession({ ...existing, unreadCounts });
+          dispatch({ type: 'CHAT_SESSIONS_SUCCESS', payload: { sessions: [normalized] } });
+        }
+      }
+    },
+    [currentUserId, normalizeSession]
+  );
+
   const clearError = useCallback(() => {
     clearChatErrorAction(dispatch);
   }, []);
@@ -401,7 +437,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       const connection = new HubConnectionBuilder()
         .withUrl(`${getApiGatewayUrlDynamic()}/apiservice/hubs/chat`, {
-          accessTokenFactory: async () => (await apiService.getToken()) ?? '',
+          accessTokenFactory: async () => {
+            const { tokenManager } = await import('@/services/tokenManager');
+            return (await tokenManager.getToken()) ?? '';
+          },
           transport: HttpTransportType.WebSockets,
           skipNegotiation: true,
         })
@@ -506,6 +545,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     updateLocationBeacon,
     fetchAiSuggestions,
     streamAssistantReply,
+    markSessionRead,
     clearError,
     resetChat,
     connectionState,
@@ -523,6 +563,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     updateLocationBeacon,
     fetchAiSuggestions,
     streamAssistantReply,
+    markSessionRead,
     clearError,
     resetChat,
     connectionState,

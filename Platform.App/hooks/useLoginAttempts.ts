@@ -3,7 +3,7 @@
  * 防止暴力破解，限制登录尝试次数
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface LoginAttempt {
@@ -33,7 +33,16 @@ const DEFAULT_CONFIG: LoginAttemptsConfig = {
 };
 
 export function useLoginAttempts(config: Partial<LoginAttemptsConfig> = {}) {
-  const finalConfig = { ...DEFAULT_CONFIG, ...config };
+  // 使用 useMemo 确保 finalConfig 引用稳定，避免无限循环
+  // 注意：config 对象本身可能每次都是新的引用，所以我们需要比较其属性值
+  const finalConfig = useMemo(() => ({ ...DEFAULT_CONFIG, ...config }), [
+    // 使用 JSON.stringify 来比较对象，但只在值变化时更新
+    JSON.stringify({
+      maxAttempts: config.maxAttempts,
+      lockDuration: config.lockDuration,
+      attemptWindow: config.attemptWindow,
+    }),
+  ]);
   
   const [state, setState] = useState<LoginAttemptsState>({
     attempts: [],
@@ -177,10 +186,11 @@ export function useLoginAttempts(config: Partial<LoginAttemptsConfig> = {}) {
     };
   }, [state.isLocked, state.lockTimeRemaining, formatLockTime]);
 
-  // 初始化时加载数据
+  // 初始化时加载数据（只在组件挂载时执行一次）
   useEffect(() => {
-    loadAttempts();
-  }, [loadAttempts]);
+    void loadAttempts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在组件挂载时执行一次，避免无限循环
 
   // 定期更新锁定状态
   useEffect(() => {
@@ -212,6 +222,5 @@ export function useLoginAttempts(config: Partial<LoginAttemptsConfig> = {}) {
     formatLockTime,
     canAttemptLogin,
     getLockInfo,
-    loadAttempts,
   };
 }

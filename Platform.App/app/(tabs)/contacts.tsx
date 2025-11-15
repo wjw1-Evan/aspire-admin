@@ -7,6 +7,7 @@ import {
   FlatList,
   Image,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -840,11 +841,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    elevation: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.12,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+      web: {
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
+      },
+    }),
   },
   menuItem: {
     flexDirection: 'row',
@@ -868,11 +878,20 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: 20,
     gap: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 24,
-    elevation: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.12,
+        shadowOffset: { width: 0, height: 12 },
+        shadowRadius: 24,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: '0 12px 24px rgba(0, 0, 0, 0.12)',
+      },
+    }),
   },
   modalHeader: {
     flexDirection: 'row',

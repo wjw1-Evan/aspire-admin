@@ -7,6 +7,7 @@ import { Dispatch } from 'react';
 import { AuthAction } from './authReducer';
 import { authService } from '@/services/auth';
 import { apiService } from '@/services/api';
+import { tokenManager } from '@/services/tokenManager';
 import { isAuthResponseValid } from '@/utils/apiResponse';
 import { handleError } from '@/services/errorHandler';
 import {
@@ -29,51 +30,66 @@ export async function loginAction(
   credentials: LoginRequest,
   dispatch: Dispatch<AuthAction>
 ): Promise<void> {
-  try {
-    dispatch({ type: 'AUTH_START' });
-    
-    const loginResponse = await authService.login(credentials);
-    
-    if (!loginResponse.success || !loginResponse.data) {
-      throw new Error(loginResponse.errorMessage || '登录失败');
-    }
-    
-    const loginData = loginResponse.data;
+  // 添加超时保护，避免长时间阻塞
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => {
+      reject(new Error('登录超时，请检查网络连接后重试'));
+    }, 30000); // 30秒超时
+  });
 
-    if (!loginData.token || !loginData.refreshToken) {
-      throw new Error('登录失败：缺少必要的认证信息');
-    }
+  const loginPromise = (async () => {
+    try {
+      dispatch({ type: 'AUTH_START' });
+      
+      // 登录并获取 token（authService.login 内部已经保存了 token）
+      const loginResponse = await authService.login(credentials);
+      
+      if (!loginResponse.success || !loginResponse.data) {
+        throw new Error(loginResponse.errorMessage || '登录失败');
+      }
+      
+      const loginData = loginResponse.data;
 
-    // 获取用户信息
-    const userResponse = await authService.getCurrentUser();
-    
-    if (isAuthResponseValid(userResponse)) {
-      const currentUser = userResponse.data;
-      if (!currentUser) {
-        throw new Error('获取用户信息失败');
+      if (!loginData.token || !loginData.refreshToken) {
+        throw new Error('登录失败：缺少必要的认证信息');
       }
 
-      const tokenExpiresAt = loginData.expiresAt 
-        ? new Date(loginData.expiresAt).getTime() 
-        : undefined;
-      dispatch({
-        type: 'AUTH_SUCCESS',
-        payload: {
-          user: currentUser,
-          token: loginData.token,
-          refreshToken: loginData.refreshToken,
-          tokenExpiresAt,
-        },
-      });
-    } else {
-      throw new Error('获取用户信息失败');
+      // 获取用户信息（使用已保存的 token）
+      const userResponse = await authService.getCurrentUser();
+      
+      if (isAuthResponseValid(userResponse)) {
+        const currentUser = userResponse.data;
+        if (!currentUser) {
+          throw new Error('获取用户信息失败');
+        }
+
+        const tokenExpiresAt = loginData.expiresAt 
+          ? new Date(loginData.expiresAt).getTime() 
+          : undefined;
+        dispatch({
+          type: 'AUTH_SUCCESS',
+          payload: {
+            user: currentUser,
+            token: loginData.token,
+            refreshToken: loginData.refreshToken,
+            tokenExpiresAt,
+          },
+        });
+      } else {
+        throw new Error('获取用户信息失败');
+      }
+    } catch (error) {
+      console.error('AuthContext: Login error:', error);
+      const authError = handleError(error);
+      dispatch({ type: 'AUTH_FAILURE', payload: authError });
+      // 登录失败时清理可能已保存的 token
+      void tokenManager.clearAllTokens();
+      throw authError;
     }
-  } catch (error) {
-    console.error('AuthContext: Login error:', error);
-    const authError = handleError(error);
-    dispatch({ type: 'AUTH_FAILURE', payload: authError });
-    throw authError;
-  }
+  })();
+
+  // 等待第一个完成的 Promise（超时或登录完成）
+  await Promise.race([loginPromise, timeoutPromise]);
 }
 
 /**
@@ -110,7 +126,7 @@ export async function logoutAction(dispatch: Dispatch<AuthAction>): Promise<void
   } catch (error) {
     console.error('AuthContext: Logout service call failed:', error);
     // 如果 logout API 调用失败，仍然需要清理本地 token
-    void apiService.clearAllTokens();
+    void tokenManager.clearAllTokens();
   } finally {
     dispatch({ type: 'AUTH_LOGOUT' });
     // authService.logout() 的 finally 块已经清理了 token，这里不需要再次清理
@@ -124,9 +140,9 @@ export async function logoutAction(dispatch: Dispatch<AuthAction>): Promise<void
 export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise<void> {
   try {
     // 从本地存储获取最新的 token 信息
-    const currentToken = await apiService.getToken();
-    const currentRefreshToken = await apiService.getRefreshToken();
-    const currentExpiresAt = await apiService.getTokenExpiresAt();
+    const currentToken = await tokenManager.getToken();
+    const currentRefreshToken = await tokenManager.getRefreshToken();
+    const currentExpiresAt = await tokenManager.getTokenExpiresAt();
     
     // 检查 token 是否存在且未过期
     const isExpired = currentExpiresAt 
@@ -179,12 +195,12 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
     // 如果刷新失败，执行登出
     dispatch({ type: 'AUTH_LOGOUT' });
     // 非阻塞方式清除 token，避免阻塞（handleAuthFailure 可能已经清理过了）
-    void apiService.clearAllTokens();
+    void tokenManager.clearAllTokens();
   } catch (error) {
     console.error('AuthContext: Refresh auth failed:', error);
     dispatch({ type: 'AUTH_LOGOUT' });
     // 非阻塞方式清除 token，避免阻塞（handleAuthFailure 可能已经清理过了）
-    void apiService.clearAllTokens();
+    void tokenManager.clearAllTokens();
   }
 }
 
@@ -192,44 +208,69 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
  * 检查认证状态
  */
 export async function checkAuthAction(dispatch: Dispatch<AuthAction>): Promise<void> {
-  try {
-    dispatch({ type: 'AUTH_START' });
-    
-    const token = await apiService.getToken();
-    const refreshToken = await apiService.getRefreshToken();
-    const tokenExpiresAt = await apiService.getTokenExpiresAt();
-    
-    if (!token) {
-      dispatch({ type: 'AUTH_LOGOUT' });
-      return;
-    }
-    
+  // 添加超时保护，避免长时间阻塞
+  const timeoutPromise = new Promise<void>((resolve) => {
+    setTimeout(() => {
+      // 只在开发环境显示警告，避免生产环境噪音
+      if (__DEV__) {
+        console.warn('AuthContext: Check auth timeout, setting loading to false');
+      }
+      dispatch({ type: 'AUTH_SET_LOADING', payload: false });
+      resolve();
+    }, 15000); // 增加到15秒，与初始化超时保持一致
+  });
+
+  const checkAuthPromise = (async () => {
     try {
-      const userResponse = await authService.getCurrentUser();
-      const currentUser = userResponse.data;
-      if (isAuthResponseValid(userResponse) && currentUser) {
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: {
-            user: currentUser,
-            token,
-            refreshToken: refreshToken || undefined,
-            tokenExpiresAt: tokenExpiresAt || undefined,
-          },
-        });
-      } else {
+      dispatch({ type: 'AUTH_START' });
+      
+      // 快速检查 token 是否存在，如果不存在则立即返回
+      const token = await tokenManager.getToken();
+      if (!token) {
+        dispatch({ type: 'AUTH_LOGOUT' });
+        return;
+      }
+      
+      // 只有在有 token 的情况下才调用 API
+      const refreshToken = await tokenManager.getRefreshToken();
+      const tokenExpiresAt = await tokenManager.getTokenExpiresAt();
+      
+      try {
+        const userResponse = await authService.getCurrentUser();
+        const currentUser = userResponse.data;
+        if (isAuthResponseValid(userResponse) && currentUser) {
+          dispatch({
+            type: 'AUTH_SUCCESS',
+            payload: {
+              user: currentUser,
+              token,
+              refreshToken: refreshToken || undefined,
+              tokenExpiresAt: tokenExpiresAt || undefined,
+            },
+          });
+        } else {
+          dispatch({ type: 'AUTH_LOGOUT' });
+        }
+      } catch (error) {
+        // 如果 getCurrentUser 返回 401，handleAuthFailure 已经处理了 token 清理
+        // 这里只需要 dispatch AUTH_LOGOUT
+        // 网络错误或超时是正常情况，只在开发环境记录
+        if (__DEV__) {
+          console.warn('AuthContext: Get current user failed during check auth:', error);
+        }
         dispatch({ type: 'AUTH_LOGOUT' });
       }
     } catch (error) {
-      // 如果 getCurrentUser 返回 401，handleAuthFailure 已经处理了 token 清理
-      // 这里只需要 dispatch AUTH_LOGOUT
-      console.warn('AuthContext: Get current user failed during check auth:', error);
+      // 只在开发环境记录错误
+      if (__DEV__) {
+        console.error('AuthContext: Check auth error:', error);
+      }
       dispatch({ type: 'AUTH_LOGOUT' });
     }
-  } catch (error) {
-    console.error('AuthContext: Check auth error:', error);
-    dispatch({ type: 'AUTH_LOGOUT' });
-  }
+  })();
+
+  // 等待第一个完成的 Promise（超时或检查完成）
+  await Promise.race([checkAuthPromise, timeoutPromise]);
 }
 
 /**

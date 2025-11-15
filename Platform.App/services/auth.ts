@@ -4,6 +4,7 @@
  */
 
 import { apiService } from './api';
+import { tokenManager } from './tokenManager';
 import { getErrorMessage } from './errorHandler';
 import {
   LoginRequest,
@@ -37,7 +38,7 @@ export class AuthService {
 
       // 保存 token 和刷新 token 到本地存储
       const expiresAt = loginData.expiresAt ? new Date(loginData.expiresAt).getTime() : undefined;
-      await apiService.setTokens(loginData.token, loginData.refreshToken, expiresAt);
+      await tokenManager.setTokens(loginData.token, loginData.refreshToken, expiresAt);
 
       return {
         ...response,
@@ -88,7 +89,7 @@ export class AuthService {
     } catch (error) {
       console.error('Logout API error:', error);
     } finally {
-      await apiService.clearAllTokens();
+      await tokenManager.clearAllTokens();
     }
   }
 
@@ -98,8 +99,8 @@ export class AuthService {
   async getCurrentUser(): Promise<ApiResponse<CurrentUser>> {
     try {
       const response = await apiService.get<ApiResponse<CurrentUser>>('/currentUser', {
-        timeout: 5000,
-        retries: 0,
+        timeout: 10000, // 增加到10秒，避免超时
+        retries: 1, // 允许重试一次
       });
       
       if (response.success && response.data) {
@@ -199,7 +200,7 @@ export class AuthService {
         const expiresAt = response.data.expiresAt 
           ? new Date(response.data.expiresAt).getTime() 
           : undefined;
-        await apiService.setTokens(response.data.token, response.data.refreshToken, expiresAt);
+        await tokenManager.setTokens(response.data.token, response.data.refreshToken, expiresAt);
         
         return {
           success: true,

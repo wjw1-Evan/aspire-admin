@@ -17,6 +17,7 @@ import {
   createErrorHandler,
 } from './authActions';
 import { apiService } from '@/services/api';
+import { tokenManager } from '@/services/tokenManager';
 import { TOKEN_EXPIRY_BUFFER } from '@/services/apiConfig';
 import {
   AuthState,
@@ -150,9 +151,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // 应用状态变化处理
   // 使用 ref 存储最新的认证状态，避免频繁重新创建回调
   const isAuthenticatedRef = useRef(state.isAuthenticated);
+  const tokenRef = useRef(state.token);
+  
   useEffect(() => {
     isAuthenticatedRef.current = state.isAuthenticated;
-  }, [state.isAuthenticated]);
+    tokenRef.current = state.token;
+  }, [state.isAuthenticated, state.token]);
 
   const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
     if (nextAppState === 'active' && isAuthenticatedRef.current) {
@@ -179,15 +183,64 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return Date.now() >= (state.tokenExpiresAt - TOKEN_EXPIRY_BUFFER);
   }, [state.tokenExpiresAt]);
 
-  // 初始化时检查认证状态
+  // 初始化时检查认证状态（非阻塞，避免阻塞页面渲染）
   useEffect(() => {
-    checkAuth();
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    // 快速检查是否有 token，如果没有则立即完成
+    const quickCheck = async () => {
+      try {
+        const token = await tokenManager.getToken();
+        if (!token) {
+          // 没有 token，立即设置为未认证状态
+          dispatch({ type: 'AUTH_LOGOUT' });
+          dispatch({ type: 'AUTH_SET_LOADING', payload: false });
+          return;
+        }
+      } catch (error) {
+        // token 检查失败，也立即完成
+        if (__DEV__) {
+          console.warn('AuthContext: Token check failed:', error);
+        }
+        dispatch({ type: 'AUTH_LOGOUT' });
+        dispatch({ type: 'AUTH_SET_LOADING', payload: false });
+        return;
+      }
+      
+      // 有 token，执行完整的认证检查
+      void checkAuth();
+      
+      // 添加超时保护：如果 12 秒后还在加载，强制设置为 false
+      timeoutId = setTimeout(() => {
+        if (mounted) {
+          // 只在开发环境显示警告
+          if (__DEV__) {
+            console.warn('AuthContext: Initial check auth timeout, forcing loading to false');
+          }
+          dispatch({ type: 'AUTH_SET_LOADING', payload: false });
+        }
+      }, 12000); // 减少到12秒，因为已经快速检查了 token
+    };
+    
+    void quickCheck();
+    
+    return () => {
+      mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [checkAuth]);
 
   // 监听 token 被外部清除（如 401 时自动清理）
   useEffect(() => {
     const listener = () => {
-      dispatch({ type: 'AUTH_LOGOUT' });
+      // 只有在未认证状态或 token 被清除时才执行登出
+      // 避免在登录过程中触发登出导致状态冲突
+      if (!isAuthenticatedRef.current || !tokenRef.current) {
+        dispatch({ type: 'AUTH_LOGOUT' });
+      }
     };
 
     apiService.addAuthStateChangeListener(listener);

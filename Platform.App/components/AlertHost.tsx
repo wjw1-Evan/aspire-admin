@@ -57,7 +57,7 @@ export function AlertHost() {
   }
 
   return (
-    <View pointerEvents="box-none" style={styles.container}>
+    <View style={[styles.container, { pointerEvents: 'box-none' }]}>
       <View style={[styles.alertBox, { backgroundColor, borderColor }]}>
         {activeAlert.title ? (
           <Text style={[styles.title, { color: textColor }]}>{activeAlert.title}</Text>
@@ -116,11 +116,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    shadowColor: '#000',
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.16,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 12 },
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        boxShadow: '0 12px 24px rgba(0, 0, 0, 0.16)',
+      },
+    }),
   },
   title: {
     fontSize: 18,

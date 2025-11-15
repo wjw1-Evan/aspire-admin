@@ -1,4 +1,5 @@
 import { apiService } from './api';
+import { tokenManager } from './tokenManager';
 import { API_ENDPOINTS } from './apiConfig';
 import { getApiBaseUrl } from '@/constants/apiConfig';
 import type {
@@ -19,7 +20,7 @@ const getSmartReplies = async (
 ): Promise<AiSuggestionResponse> => {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}${API_ENDPOINTS.aiSmartReplies}`;
-  const token = await apiService.getToken();
+  const token = await tokenManager.getToken();
 
   const response = await fetch(url, {
     method: 'POST',
@@ -34,7 +35,7 @@ const getSmartReplies = async (
 
   if (response.status === 401 || response.status === 403) {
     // 非阻塞方式清除 token，避免阻塞请求处理
-    void apiService.clearAllTokens();
+    void tokenManager.clearAllTokens();
     throw new Error('登录已过期，请重新登录后重试');
   }
 

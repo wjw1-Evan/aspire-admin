@@ -30,6 +30,7 @@ const MAPPING = {
   'mappin.and.ellipse': 'place',
   'calendar.fill': 'event',
   'bubble.left.and.text.bubble.fill': 'chat-bubble',
+  'bubble.left.and.bubble.right': 'forum',
   'bubble.left.and.bubble.right.fill': 'forum',
   'person.2.fill': 'group',
   'safari.fill': 'explore',

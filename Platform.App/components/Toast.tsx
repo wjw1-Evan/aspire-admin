@@ -113,9 +113,9 @@ export function Toast({
         {
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
+          pointerEvents: 'box-none',
         },
       ]}
-      pointerEvents="box-none"
     >
       <ThemedView
         style={[

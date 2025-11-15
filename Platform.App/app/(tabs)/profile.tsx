@@ -25,6 +25,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { PageHeader } from '@/components/PageHeader';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ThemeSelector } from '@/components/theme-selector';
 import { LogoutButton } from '@/components/logout-button';
@@ -33,6 +34,7 @@ import { WeChatListItem } from '@/components/ui/wx-list-item';
 import { WeChatButton } from '@/components/ui/wx-button';
 import { isValidEmail } from '@/utils/validationUtils';
 import type { UpdateProfileParams } from '@/types/unified-api';
+import { PLACEHOLDER_IMAGE_URI } from '@/constants/placeholders';
 
 export default function ProfileScreen() {
   const { user, updateProfile, changePassword } = useAuth();
@@ -304,7 +306,8 @@ export default function ProfileScreen() {
   }, [themeMode]);
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor, paddingTop: insets.top }]}> 
+    <ThemedView style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
+      <PageHeader title="我" />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -316,8 +319,9 @@ export default function ProfileScreen() {
             <View style={styles.heroTopRow}>
               <View style={styles.heroAvatarWrapper}>
                 <Image
-                  source={{ uri: (isEditing ? editData.avatar : user?.avatar) || 'https://via.placeholder.com/120' }}
+                  source={{ uri: (isEditing ? editData.avatar : user?.avatar) || PLACEHOLDER_IMAGE_URI }}
                   style={[styles.heroAvatar, { backgroundColor: avatarPlaceholder }]}
+                  placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
                 />
                 <TouchableOpacity
                   style={[styles.editAvatarButton, { backgroundColor: tintColor }]}
@@ -474,8 +478,9 @@ export default function ProfileScreen() {
               >
                 <View style={styles.avatarEditRow}>
                   <Image
-                    source={{ uri: editData.avatar || user?.avatar || 'https://via.placeholder.com/120' }}
+                    source={{ uri: editData.avatar || user?.avatar || PLACEHOLDER_IMAGE_URI }}
                     style={[styles.editAvatarPreview, { backgroundColor: avatarPlaceholder }]}
+                    placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
                   />
                   <View style={styles.avatarEditActions}>
                     <WeChatButton
@@ -718,6 +723,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 12,
+    paddingTop: 16,
     paddingBottom: 32,
     gap: 16,
   },

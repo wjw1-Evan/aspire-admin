@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { PageHeader } from '@/components/PageHeader';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useChat } from '@/contexts/ChatContext';
@@ -515,16 +516,15 @@ export default function ContactsScreen(): JSX.Element {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <View style={[styles.navBar, { backgroundColor: colors.navBar, borderBottomColor: colors.navBorder }]}>
-        <ThemedText type="headline" style={styles.navTitle}>
-          通讯录
-        </ThemedText>
-        <View style={styles.navActions}>
-          <Pressable onPress={toggleMenu} hitSlop={8}>
-            <IconSymbol name="plus.circle" size={22} color={colors.accent} />
-          </Pressable>
-        </View>
-      </View>
+      <PageHeader
+        title="通讯录"
+        actions={[
+          {
+            icon: 'plus.circle',
+            onPress: toggleMenu,
+          },
+        ]}
+      />
 
       <FlatList
         data={sortedFriends}
@@ -666,23 +666,6 @@ export default function ContactsScreen(): JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  navBar: {
-    height: NAV_BAR_HEIGHT,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  navTitle: {
-    fontWeight: '700',
-    fontSize: 20,
-  },
-  navActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
   },
   listContent: {
     paddingBottom: 32,

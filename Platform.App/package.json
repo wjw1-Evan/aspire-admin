@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "prestart": "node ./scripts/inject-env.js",
     "start": "expo start --port $PORT",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",

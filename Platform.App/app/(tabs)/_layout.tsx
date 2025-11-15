@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-import { HapticTab } from '@/components/haptic-tab';
+import { CustomTabBar } from '@/components/CustomTabBar';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -19,12 +19,12 @@ export default function TabLayout() {
           borderTopColor: theme.colors.navBorder,
         },
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+      }}
+      tabBar={(props) => <CustomTabBar {...props} />}>
       <Tabs.Screen
         name="index"
         options={{
-          href: null,
+          href: null, // 隐藏 index 路由，不在 tab bar 中显示
         }}
       />
       <Tabs.Screen
@@ -32,7 +32,7 @@ export default function TabLayout() {
         options={{
           title: '对话',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="bubble.left.and.text.bubble.fill" color={color} />
+            <IconSymbol size={28} name="bubble.left.and.text.bubble.right.fill" color={color} />
           ),
         }}
       />

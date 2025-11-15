@@ -296,9 +296,9 @@ export function EnhancedErrorToast({
         {
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
+          pointerEvents: 'box-none', // 允许事件穿透到背景，但子元素可以接收事件
         },
       ]}
-      pointerEvents="box-none" // 允许事件穿透到背景，但子元素可以接收事件
     >
       <ThemedView style={[styles.toast, { backgroundColor: cardBackgroundColor, borderColor }]}>
         <View style={styles.content}>

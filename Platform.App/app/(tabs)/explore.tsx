@@ -6,6 +6,7 @@ import type { Href } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { PageHeader } from '@/components/PageHeader';
 import { IconSymbol, type IconSymbolName } from '@/components/ui/icon-symbol';
 import { WeChatCard } from '@/components/ui/wx-card';
 import { WeChatListItem } from '@/components/ui/wx-list-item';
@@ -40,6 +41,7 @@ export default function ExploreScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: theme.colors.background, paddingTop: insets.top }]}>
+      <PageHeader title="发现" />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.content, { gap: theme.spacing.lg }]}
@@ -85,6 +87,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   heroTitle: {

@@ -20,6 +20,7 @@ import { ThemedButton } from '@/components/themed-button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
+import { PLACEHOLDER_IMAGE_URI } from '@/constants/placeholders';
 
 export default function RegisterScreen() {
   const [username, setUsername] = useState('');
@@ -149,8 +150,9 @@ export default function RegisterScreen() {
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <Image
-                source={{ uri: 'https://via.placeholder.com/80x80/007AFF/FFFFFF?text=A' }}
+                source={{ uri: PLACEHOLDER_IMAGE_URI }}
                 style={styles.logo}
+                placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
               />
             </View>
             <ThemedText type="title" style={styles.title}>

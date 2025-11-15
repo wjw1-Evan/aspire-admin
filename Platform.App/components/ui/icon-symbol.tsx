@@ -29,7 +29,7 @@ const MAPPING = {
   'location.fill': 'location-on',
   'mappin.and.ellipse': 'place',
   'calendar.fill': 'event',
-  'bubble.left.and.text.bubble.fill': 'chat-bubble',
+  'bubble.left.and.text.bubble.right.fill': 'chat-bubble',
   'bubble.left.and.bubble.right': 'forum',
   'bubble.left.and.bubble.right.fill': 'forum',
   'person.2.fill': 'group',
@@ -58,6 +58,8 @@ const MAPPING = {
   'checkmark': 'check',
   'eye.fill': 'visibility',
   'eye.slash.fill': 'visibility-off',
+  'pencil': 'edit',
+  'paintbrush.fill': 'palette',
 } as unknown as IconMapping;
 
 function resolveMaterialIcon(name: IconSymbolName): ComponentProps<typeof MaterialIcons>['name'] {

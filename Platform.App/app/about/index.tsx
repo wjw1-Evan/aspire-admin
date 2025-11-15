@@ -119,7 +119,7 @@ export default function AboutScreen(): JSX.Element {
         </ThemedText>
         <View style={styles.featureList}>
           <View style={styles.featureItem}>
-            <IconSymbol name="bubble.left.and.text.bubble.fill" size={18} color={accent} />
+            <IconSymbol name="bubble.left.and.text.bubble.right.fill" size={18} color={accent} />
             <ThemedText style={[styles.featureText, { color: secondaryText }] }>
               SignalR 实时通信，移动端与后台同步更新
             </ThemedText>

@@ -33,6 +33,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# generated environment config (injected by scripts/inject-env.js)
+constants/env-config.ts
+
 # typescript
 *.tsbuildinfo
 

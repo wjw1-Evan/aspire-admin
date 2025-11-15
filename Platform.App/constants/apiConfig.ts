@@ -1,47 +1,40 @@
+
 // API 配置常量
 
-import { Platform } from 'react-native';
-import Constants from 'expo-constants';
+// 尝试导入由启动脚本注入的环境变量配置
+let injectedConfig: { APIGATEWAY_URL?: string } | null = null;
+try {
+  // 动态导入，如果文件不存在也不会报错
+  injectedConfig = require('./env-config');
+} catch {
+  // 文件不存在，忽略
+}
 
 // 获取环境变量中的 API 网关地址
+// 仅从环境变量 services__apigateway__http__0 读取，不可从其他地方读取
+// 注意：在 React Native 中，process.env 无法访问运行时环境变量
+// 因此需要通过启动脚本注入到配置文件中
 const getApiGatewayUrl = (): string => {
-  // 优先从 EXPO_PUBLIC_ 前缀的环境变量读取（推荐）
-  if (
-    typeof process !== "undefined" &&
-    process.env?.EXPO_PUBLIC_SERVICES__APIGATEWAY__HTTP__0
-  ) {
-    console.log(
-      "✅ 找到环境变量 EXPO_PUBLIC_SERVICES__APIGATEWAY__HTTP__0:",
-      process.env.EXPO_PUBLIC_SERVICES__APIGATEWAY__HTTP__0
-    );
-    return process.env.EXPO_PUBLIC_SERVICES__APIGATEWAY__HTTP__0;
+  const envKey = 'services__apigateway__http__0';
+  
+  // 方法1: 优先从启动脚本注入的配置文件读取（适用于所有平台）
+  // 这是最可靠的方式，因为启动脚本在 Node.js 环境中运行，可以访问环境变量
+  if (injectedConfig?.APIGATEWAY_URL) {
+    return injectedConfig.APIGATEWAY_URL;
   }
   
-  // 兼容原始环境变量名
-  if (
-    typeof process !== "undefined" &&
-    process.env?.services__apigateway__http__0
-  ) {
-    console.log(
-      "✅ 找到环境变量 services__apigateway__http__0:",
-      process.env.services__apigateway__http__0
-    );
-    return process.env.services__apigateway__http__0;
+  // 方法2: 尝试从 process.env 读取（仅 Web 平台，且需要构建时注入）
+  // 注意：在 React Native 原生平台，process.env 不可用
+  if (typeof process !== "undefined" && process.env) {
+    const gatewayUrl = process.env[envKey];
+    if (gatewayUrl) {
+      return gatewayUrl;
+    }
   }
   
-  // 开发环境默认值
-  if (__DEV__) {
-    const defaultUrl = resolveDevGatewayUrl();
-    console.warn(
-      "⚠️ 环境变量未找到，使用推断的开发环境地址:",
-      defaultUrl
-    );
-    return defaultUrl;
-  }
-  
-  console.error("❌ 环境变量未找到且非开发环境");
   throw new Error(
-    "API网关地址未配置，请设置环境变量 EXPO_PUBLIC_SERVICES__APIGATEWAY__HTTP__0 或 services__apigateway__http__0"
+    "API网关地址未配置，请设置环境变量 services__apigateway__http__0。\n" +
+    "启动脚本应该会自动注入，如果未找到，请检查启动日志。"
   );
 };
 
@@ -70,43 +63,3 @@ export const isDevelopment = (): boolean => {
 export const isProduction = (): boolean => {
   return !__DEV__;
 };
-
-function resolveDevGatewayUrl(): string {
-  if (Platform.OS === 'web') {
-    const protocol = window?.location?.protocol ?? 'http:';
-    const hostname = window?.location?.hostname ?? 'localhost';
-    return `${protocol}//${hostname}:15000`;
-  }
-
-  const expoHost = extractExpoHost();
-  const host = expoHost ?? '127.0.0.1';
-  return `http://${host}:15000`;
-}
-
-function extractExpoHost(): string | undefined {
-  const expoConfigHost = Constants?.expoConfig?.hostUri;
-  if (expoConfigHost) {
-    return expoConfigHost.split(':')[0];
-  }
-
-  const debuggerHost =
-    (Constants as unknown as Record<string, any>)?.expoGoConfig?.debuggerHost ??
-    (Constants as unknown as Record<string, any>)?.manifest2?.extra?.expoGo?.debuggerHost ??
-    (Constants as unknown as Record<string, any>)?.manifest?.debuggerHost;
-
-  if (typeof debuggerHost === 'string') {
-    return debuggerHost.split(':')[0];
-  }
-
-  const scriptURL = (global as unknown as Record<string, any>)?.nativeExtensions?.NativeModules?.SourceCode?.scriptURL;
-  if (typeof scriptURL === 'string') {
-    try {
-      const { hostname } = new URL(scriptURL);
-      return hostname;
-    } catch {
-      return undefined;
-    }
-  }
-
-  return undefined;
-}

@@ -20,6 +20,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useLoginAttempts } from '@/hooks/useLoginAttempts';
 import ImageCaptcha from '@/components/ImageCaptcha';
 import { Toast } from '@/components/Toast';
+import { PLACEHOLDER_IMAGE_URI } from '@/constants/placeholders';
 
 // 需要显示验证码的错误代码
 const CAPTCHA_ERROR_CODES = ['LOGIN_FAILED', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED'] as const;
@@ -188,8 +189,9 @@ export default function LoginScreen() {
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <Image
-                source={{ uri: 'https://via.placeholder.com/80x80/007AFF/FFFFFF?text=A' }}
+                source={{ uri: PLACEHOLDER_IMAGE_URI }}
                 style={styles.logo}
+                placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
               />
             </View>
             <ThemedText type="title" style={styles.title}>

@@ -6,6 +6,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { PageHeader } from '@/components/PageHeader';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -165,16 +166,15 @@ export default function ChatTabScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: theme.colors.background, paddingTop: insets.top }]}>
-      <View style={[styles.navBar, { backgroundColor: theme.colors.navBar, borderBottomColor: theme.colors.navBorder }]}>
-        <ThemedText type="headline" style={styles.navTitle}>
-          对话
-        </ThemedText>
-        <View style={styles.navActions}>
-          <Pressable onPress={() => router.push('/(tabs)/contacts')} hitSlop={8}>
-            <IconSymbol name="plus.circle" size={22} color={theme.colors.accent} />
-          </Pressable>
-        </View>
-      </View>
+      <PageHeader
+        title="对话"
+        actions={[
+          {
+            icon: 'plus.circle',
+            onPress: () => router.push('/(tabs)/contacts'),
+          },
+        ]}
+      />
       <FlatList
         data={sessionOrder}
         keyExtractor={item => item}
@@ -208,22 +208,6 @@ export default function ChatTabScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  navBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 52,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  navTitle: {
-    fontWeight: '700',
-  },
-  navActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
   },
   sessionItem: {
     flexDirection: 'row',

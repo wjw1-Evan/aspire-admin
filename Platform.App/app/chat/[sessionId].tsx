@@ -7,13 +7,13 @@ import { ConversationHeader } from '@/components/chat/ConversationHeader';
 import MessageList, { type MessageListHandle } from '@/components/chat/MessageList';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import AttachmentPicker from '@/components/chat/AttachmentPicker';
+import { RoleDefinitionModal } from '@/components/chat/RoleDefinitionModal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ChatMessage } from '@/types/chat';
-import { AI_ASSISTANT_ID } from '@/constants/ai';
 
 // 轮询间隔：SignalR 未连接时使用（增加到 15 秒，减少服务器压力）
 const POLL_INTERVAL_MS = 15000;
@@ -30,7 +30,6 @@ export default function ChatSessionScreen() {
     loadMessages,
     loadSessions,
     sendMessage,
-    streamAssistantReply,
     uploadAttachment,
     setActiveSession,
     connectionState,
@@ -50,7 +49,7 @@ export default function ChatSessionScreen() {
   const LOAD_COOLDOWN_MS = 2000; // 2秒内不重复加载
 
   useEffect(() => {
-    if (!sessionId || !session) {
+    if (!sessionId) {
       return;
     }
     
@@ -61,13 +60,14 @@ export default function ChatSessionScreen() {
     }
     
     lastLoadTimeRef.current = now;
+    // 即使 session 还未加载，也尝试加载消息（消息加载只需要 sessionId）
     loadMessages(sessionId).catch(error => {
       if (__DEV__) {
         console.error('Failed to load messages:', error);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadMessages, sessionId]); // 移除 session 依赖，避免 session 对象引用变化导致重复执行
+  }, [loadMessages, sessionId]);
 
   // 注意：标记已读现在由后端自动处理（在获取消息时自动标记）
   // 不再需要前端手动调用 markSessionRead
@@ -197,7 +197,7 @@ export default function ChatSessionScreen() {
   }, [sessionMessages.length, timelineState?.loading]);
 
   const handleSendText = useCallback(async (content: string) => {
-    if (!sessionId || !session) {
+    if (!sessionId) {
       return;
     }
 
@@ -206,27 +206,24 @@ export default function ChatSessionScreen() {
       return;
     }
 
-    const hasAssistant = session.participants.includes(AI_ASSISTANT_ID);
-
+    // 移除 assistantStreaming 标记，让后端自动处理AI回复（非流式）
     const payload = {
       sessionId,
       type: 'text',
       content: trimmedContent,
-      metadata: hasAssistant ? { assistantStreaming: true } : undefined,
+      metadata: undefined,
     } as const;
 
-    const sendResult = await sendMessage(payload);
+    // 即使 session 还未加载，也尝试发送消息（发送消息只需要 sessionId）
+    await sendMessage(payload).catch(error => {
+      if (__DEV__) {
+        console.error('发送消息失败:', error);
+      }
+      // 错误会在 sendMessage 内部处理并更新消息状态
+    });
 
-    if (hasAssistant && sendResult?.id) {
-      const assistantClientMessageId = `assistant-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      void streamAssistantReply({
-        sessionId,
-        triggerMessageId: sendResult.id,
-        triggerClientMessageId: sendResult.clientMessageId,
-        clientMessageId: assistantClientMessageId,
-      });
-    }
-  }, [sendMessage, session, sessionId, streamAssistantReply]);
+    // 不再调用流式回复，后端会自动发送完整回复
+  }, [sendMessage, sessionId]);
 
   const handleResendMessage = useCallback(
     async (message: ChatMessage) => {
@@ -255,6 +252,7 @@ export default function ChatSessionScreen() {
   );
 
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
+  const [showRoleDefinitionModal, setShowRoleDefinitionModal] = useState(false);
   const [sessionRetrying, setSessionRetrying] = useState(false);
   const sessionRefreshAttemptedRef = useRef(false);
 
@@ -347,6 +345,7 @@ export default function ChatSessionScreen() {
         session={session}
         connectionState={connectionState}
         onBack={() => router.back()}
+        onSettings={() => setShowRoleDefinitionModal(true)}
         title={headerTitle}
         subtitle={headerSubtitle}
       />
@@ -387,6 +386,20 @@ export default function ChatSessionScreen() {
         onSend={handleSendText}
         onPickAttachment={toggleAttachmentPicker}
       />
+      {showRoleDefinitionModal && (
+        <RoleDefinitionModal
+          visible={showRoleDefinitionModal}
+          sessionId={sessionId}
+          onClose={() => setShowRoleDefinitionModal(false)}
+          onSuccess={() => {
+            // 角色定义更新成功后，可以在这里触发相关更新
+            // 例如：刷新消息、更新UI等
+            if (__DEV__) {
+              console.log('角色定义已更新');
+            }
+          }}
+        />
+      )}
     </ThemedView>
   );
 }

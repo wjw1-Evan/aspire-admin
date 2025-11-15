@@ -257,6 +257,74 @@ export class AuthService {
       };
     }
   }
+
+  /**
+   * 获取当前用户的 AI 角色定义
+   */
+  async getAiRoleDefinition(): Promise<string> {
+    try {
+      const response = await apiService.get<ApiResponse<string>>('/user/profile/ai-role-definition', {
+        timeout: 5000,
+        retries: 2,
+      });
+
+      // 记录响应以便调试
+      if (__DEV__) {
+        console.log('Get AI role definition response:', {
+          success: response.success,
+          data: response.data,
+          errorMessage: response.errorMessage,
+        });
+      }
+
+      if (!response.success) {
+        const errorMsg = response.errorMessage || '获取角色定义失败';
+        console.error('Get AI role definition failed:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // 如果 data 为 null、undefined 或空字符串，使用默认值
+      const roleDefinition = response.data;
+      if (!roleDefinition || (typeof roleDefinition === 'string' && roleDefinition.trim() === '')) {
+        if (__DEV__) {
+          console.log('Get AI role definition: data is empty, using default value');
+        }
+        return '你是小科，请使用简体中文提供简洁、专业且友好的回复。';
+      }
+
+      return roleDefinition;
+    } catch (error) {
+      console.error('Get AI role definition error:', error);
+      // 如果是网络错误或其他错误，提供更详细的错误信息
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('获取角色定义失败：未知错误');
+    }
+  }
+
+  /**
+   * 更新当前用户的 AI 角色定义
+   */
+  async updateAiRoleDefinition(roleDefinition: string): Promise<void> {
+    try {
+      const response = await apiService.put<ApiResponse<string>>(
+        '/user/profile/ai-role-definition',
+        { roleDefinition },
+        {
+          timeout: 8000,
+          retries: 2,
+        }
+      );
+
+      if (!response.success) {
+        throw new Error(response.errorMessage || '更新角色定义失败');
+      }
+    } catch (error) {
+      console.error('Update AI role definition error:', error);
+      throw error;
+    }
+  }
 }
 
 export const authService = new AuthService();

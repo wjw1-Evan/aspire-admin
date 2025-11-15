@@ -8,6 +8,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import type { ChatSession } from '@/types/chat';
 import { HubConnectionState } from '@microsoft/signalr';
 import { useTheme } from '@/contexts/ThemeContext';
+import { AI_ASSISTANT_ID } from '@/constants/ai';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ConversationHeaderProps {
   readonly session: ChatSession;
@@ -15,6 +17,7 @@ interface ConversationHeaderProps {
   readonly onStartCall?: () => void;
   readonly onMore?: () => void;
   readonly onBack?: () => void;
+  readonly onSettings?: () => void;
   readonly title?: string;
   readonly subtitle?: string;
 }
@@ -33,11 +36,19 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
   onStartCall,
   onMore,
   onBack,
+  onSettings,
   title,
   subtitle,
 }) => {
   const router = useRouter();
   const { theme } = useTheme();
+  const { user } = useAuth();
+
+  // 判断是否是与小科的对话
+  const isAiAssistantSession = React.useMemo(() => {
+    if (!user?.id) return false;
+    return session.participants.includes(AI_ASSISTANT_ID) && session.participants.includes(user.id) && session.participants.length === 2;
+  }, [session.participants, user?.id]);
 
   const handleBack = () => {
     if (onBack) {
@@ -82,7 +93,11 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
         ) : null}
       </View>
       <View style={[styles.side, styles.sideRight]}>
-        {onStartCall ? (
+        {isAiAssistantSession && onSettings ? (
+          <Pressable onPress={onSettings} style={styles.iconButton} hitSlop={12}>
+            <IconSymbol name="gearshape.fill" size={20} color={theme.colors.icon} />
+          </Pressable>
+        ) : onStartCall ? (
           <Pressable onPress={onStartCall} style={styles.iconButton} hitSlop={12}>
             <IconSymbol name="phone.fill" size={20} color={theme.colors.icon} />
           </Pressable>

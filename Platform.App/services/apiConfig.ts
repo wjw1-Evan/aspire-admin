@@ -89,7 +89,6 @@ export const API_ENDPOINTS = {
   chatMessages: '/chat/messages',
   chatAttachments: '/chat/messages',
   aiSmartReplies: '/chat/ai/smart-replies',
-  aiAssistantReplyStream: '/chat/ai/assistant-reply/stream',
   aiMatchSuggestions: '/chat/ai/match-suggestions',
   aiTopicGuides: '/chat/ai/topic-guides',
   nearbyUsers: '/social/nearby-users',

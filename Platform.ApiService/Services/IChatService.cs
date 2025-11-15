@@ -69,16 +69,5 @@ public interface IChatService
     /// <returns>会话实体</returns>
     Task<ChatSession> GetOrCreateDirectSessionAsync(string participantUserId);
 
-    /// <summary>
-    /// 以 SSE 形式流式生成内置助手的回复。
-    /// </summary>
-    /// <param name="request">流式请求参数。</param>
-    /// <param name="currentUserId">当前用户标识。</param>
-    /// <param name="cancellationToken">取消令牌。</param>
-    /// <returns>助手回复片段序列。</returns>
-    IAsyncEnumerable<AssistantReplyStreamChunk> StreamAssistantReplyAsync(
-        AssistantReplyStreamRequest request,
-        string currentUserId,
-        CancellationToken cancellationToken = default);
 }
 

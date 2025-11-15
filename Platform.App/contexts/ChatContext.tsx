@@ -18,7 +18,7 @@ import {
   LogLevel,
 } from '@microsoft/signalr';
 
-import type { AiSuggestionRequest, AssistantReplyStreamRequest } from '@/types/ai';
+import type { AiSuggestionRequest } from '@/types/ai';
 import type {
   AttachmentMetadata,
   ChatMessage,
@@ -45,7 +45,6 @@ import {
   setActiveSessionAction,
   updateNearbyUsersAction,
   updateLocationBeaconAction,
-  streamAssistantReplyAction,
 } from './chatActions';
 import { chatService } from '@/services/chat';
 import { apiService } from '@/services/api';
@@ -64,7 +63,6 @@ interface ChatContextValue extends ChatState {
   refreshNearbyUsers: (request?: NearbySearchRequest) => Promise<NearbyUser[] | undefined>;
   updateLocationBeacon: (payload: { latitude: number; longitude: number; accuracy?: number }) => Promise<void>;
   fetchAiSuggestions: (sessionId: string, request: AiSuggestionRequest) => Promise<void>;
-  streamAssistantReply: (request: AssistantReplyStreamRequest) => Promise<void>;
   markSessionRead: (sessionId: string, lastReadMessageId: string) => Promise<void>;
   clearError: () => void;
   resetChat: () => void;
@@ -275,12 +273,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [dispatch]
   );
 
-  const streamAssistantReply = useCallback(
-    async (request: AssistantReplyStreamRequest) => {
-      await streamAssistantReplyAction(dispatch, request);
-    },
-    [dispatch]
-  );
 
   const upsertSession = useCallback(
     (session: ServerChatSession | ChatSession) => {
@@ -329,7 +321,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   const handleSessionRead = useCallback(
     (payload: ChatSessionReadPayload) => {
-      if (!payload?.sessionId || !payload.userId) {
+      if (!payload?.sessionId || !payload.userId || !payload.lastMessageId) {
+        return;
+      }
+
+      // 如果 currentUserId 为空，不处理已读状态更新（避免空字符串导致的错误）
+      if (!currentUserId) {
         return;
       }
 
@@ -343,8 +340,22 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       const normalized = normalizeSession({ ...existing, unreadCounts });
       dispatch({ type: 'CHAT_SESSIONS_SUCCESS', payload: { sessions: [normalized] } });
+      
+      // 更新消息状态为已读（只更新当前用户发送的消息）
+      // 注意：payload.userId 是读取消息的用户，我们需要更新该用户读取的消息
+      // 但消息的 senderId 是发送者，所以如果 payload.userId 不是 currentUserId，说明是对方读取了我的消息
+      if (payload.userId !== currentUserId) {
+        dispatch({
+          type: 'CHAT_MARK_MESSAGES_READ',
+          payload: {
+            sessionId: payload.sessionId,
+            lastMessageId: payload.lastMessageId,
+            userId: currentUserId, // 更新当前用户发送的消息
+          },
+        });
+      }
     },
-    [normalizeSession]
+    [normalizeSession, currentUserId]
   );
 
   const markSessionRead = useCallback(
@@ -544,7 +555,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
     refreshNearbyUsers,
     updateLocationBeacon,
     fetchAiSuggestions,
-    streamAssistantReply,
     markSessionRead,
     clearError,
     resetChat,
@@ -562,7 +572,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
     refreshNearbyUsers,
     updateLocationBeacon,
     fetchAiSuggestions,
-    streamAssistantReply,
     markSessionRead,
     clearError,
     resetChat,

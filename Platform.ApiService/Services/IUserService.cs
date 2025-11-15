@@ -219,5 +219,20 @@ public interface IUserService
     /// <param name="userId">用户ID</param>
     /// <returns>用户权限信息</returns>
     Task<object> GetUserPermissionsAsync(string userId);
+
+    /// <summary>
+    /// 获取用户的 AI 角色定义
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <returns>AI 角色定义，如果不存在则返回默认值</returns>
+    Task<string> GetAiRoleDefinitionAsync(string userId);
+
+    /// <summary>
+    /// 更新用户的 AI 角色定义
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="roleDefinition">角色定义</param>
+    /// <returns>是否成功更新</returns>
+    Task<bool> UpdateAiRoleDefinitionAsync(string userId, string roleDefinition);
 }
 

@@ -4,7 +4,7 @@ import { AI_ASSISTANT_ID } from '@/constants/ai';
 import { aiService } from '@/services/ai';
 import { chatService, type MessageQueryParams, type SessionQueryParams } from '@/services/chat';
 import { fetchNearbyUsers, getCurrentPosition, type LocationUpdatePayload, updateLocationBeacon } from '@/services/location';
-import type { AiSuggestionRequest, AssistantReplyStreamChunk, AssistantReplyStreamRequest } from '@/types/ai';
+import type { AiSuggestionRequest } from '@/types/ai';
 import type {
   ChatMessage,
   ChatSession,
@@ -27,7 +27,6 @@ const toErrorMessage = (error: unknown, fallback: string): string => {
 };
 
 const aiRequestControllers = new Map<string, AbortController>();
-const assistantStreamControllers = new Map<string, AbortController>();
 
 export const loadSessionsAction = async (
   dispatch: Dispatch<ChatAction>,
@@ -84,12 +83,14 @@ export const sendMessageAction = async (
 ): Promise<ChatMessage | undefined> => {
   try {
     const message = await chatService.sendMessage(payload);
+    // 注意：不要硬编码 status 为 'sent'，让 normalizeMessage 从 metadata.isRead 读取
+    // 这样可以正确处理后端返回的已读状态（虽然发送消息通常不会立即已读）
     dispatch({
       type: 'CHAT_REPLACE_MESSAGE',
       payload: {
         sessionId: payload.sessionId,
         localId: options.localId,
-        message: { ...message, status: 'sent' },
+        message, // 不设置 status，让 normalizeMessage 处理
       },
     });
     return message;
@@ -119,13 +120,15 @@ export const receiveMessageAction = (
     return typeof raw === 'string' ? raw : undefined;
   })();
 
+  // 注意：不要硬编码 status 为 'sent'，让 normalizeMessage 从 metadata.isRead 读取
+  // 这样可以正确处理后端返回的已读状态
   if (message.clientMessageId || metadataClientMessageId) {
     dispatch({
       type: 'CHAT_REPLACE_MESSAGE',
       payload: {
         sessionId,
         localId: message.clientMessageId ?? metadataClientMessageId,
-        message: { ...message, status: 'sent' },
+        message, // 不设置 status，让 normalizeMessage 处理
       },
     });
     return;
@@ -133,7 +136,7 @@ export const receiveMessageAction = (
 
   dispatch({
     type: 'CHAT_APPEND_MESSAGE',
-    payload: { sessionId, message: { ...message, status: 'sent' } },
+    payload: { sessionId, message }, // 不设置 status，让 normalizeMessage 处理
   });
 };
 
@@ -230,222 +233,6 @@ export const fetchAiSuggestionsAction = async (
   }
 };
 
-export const streamAssistantReplyAction = async (
-  dispatch: Dispatch<ChatAction>,
-  request: AssistantReplyStreamRequest
-): Promise<void> => {
-  const previousController = assistantStreamControllers.get(request.sessionId);
-  if (previousController) {
-    previousController.abort();
-  }
-
-  const controller = new AbortController();
-  assistantStreamControllers.set(request.sessionId, controller);
-
-  const createdAt = new Date().toISOString();
-  const baseMetadata: Record<string, unknown> = {
-    isAssistant: true,
-    streaming: true,
-    clientMessageId: request.clientMessageId,
-  };
-
-  const placeholder: ChatMessage = {
-    id: request.clientMessageId,
-    sessionId: request.sessionId,
-    senderId: AI_ASSISTANT_ID,
-    type: 'text',
-    content: '',
-    createdAt,
-    updatedAt: createdAt,
-    status: 'sending',
-    metadata: baseMetadata,
-    localId: request.clientMessageId,
-    isLocal: true,
-  };
-
-  dispatch({
-    type: 'CHAT_APPEND_MESSAGE',
-    payload: { sessionId: request.sessionId, message: placeholder },
-  });
-
-  let aggregated = '';
-  let handledStreamError = false;
-  
-  // 节流机制：限制 dispatch 频率，避免频繁更新导致页面卡顿
-  let lastUpdateTime = 0;
-  const THROTTLE_MS = 100; // 最多每 100ms 更新一次
-  let pendingUpdate: ReturnType<typeof setTimeout> | null = null;
-
-  try {
-    await chatService.streamAssistantReply(
-      request,
-      {
-        onDelta: text => {
-          aggregated += text;
-          
-          // 节流：如果距离上次更新时间太短，延迟更新
-          const now = Date.now();
-          if (now - lastUpdateTime < THROTTLE_MS) {
-            // 取消之前的延迟更新
-            if (pendingUpdate !== null) {
-              clearTimeout(pendingUpdate);
-            }
-            
-            // 设置新的延迟更新
-            pendingUpdate = setTimeout(() => {
-              lastUpdateTime = Date.now();
-              pendingUpdate = null;
-              dispatch({
-                type: 'CHAT_UPDATE_MESSAGE',
-                payload: {
-                  sessionId: request.sessionId,
-                  messageId: request.clientMessageId,
-                  updates: {
-                    content: aggregated,
-                    updatedAt: new Date().toISOString(),
-                    metadata: {
-                      ...baseMetadata,
-                      streaming: true,
-                      streamLength: aggregated.length,
-                    },
-                  },
-                },
-              });
-            }, THROTTLE_MS - (now - lastUpdateTime));
-            return;
-          }
-          
-          // 立即更新
-          lastUpdateTime = now;
-          dispatch({
-            type: 'CHAT_UPDATE_MESSAGE',
-            payload: {
-              sessionId: request.sessionId,
-              messageId: request.clientMessageId,
-              updates: {
-                content: aggregated,
-                updatedAt: new Date().toISOString(),
-                metadata: {
-                  ...baseMetadata,
-                  streaming: true,
-                  streamLength: aggregated.length,
-                },
-              },
-            },
-          });
-        },
-        onComplete: chunk => {
-          // 清除待处理的延迟更新
-          if (pendingUpdate !== null) {
-            clearTimeout(pendingUpdate);
-            pendingUpdate = null;
-          }
-          
-          const finalContent = chunk.message?.content ?? aggregated;
-          dispatch({
-            type: 'CHAT_UPDATE_MESSAGE',
-            payload: {
-              sessionId: request.sessionId,
-              messageId: request.clientMessageId,
-              updates: {
-                content: finalContent,
-                status: 'sent',
-                isLocal: false,
-                metadata: {
-                  ...baseMetadata,
-                  streaming: false,
-                },
-              },
-            },
-          });
-
-          if (chunk.message) {
-            receiveMessageAction(dispatch, request.sessionId, chunk.message);
-          }
-        },
-        onError: message => {
-          // 清除待处理的延迟更新
-          if (pendingUpdate !== null) {
-            clearTimeout(pendingUpdate);
-            pendingUpdate = null;
-          }
-          
-          handledStreamError = true;
-          dispatch({
-            type: 'CHAT_UPDATE_MESSAGE',
-            payload: {
-              sessionId: request.sessionId,
-              messageId: request.clientMessageId,
-              updates: {
-                status: 'failed',
-                metadata: {
-                  ...baseMetadata,
-                  streaming: false,
-                  streamError: message,
-                },
-              },
-            },
-          });
-          dispatch({ type: 'CHAT_SET_ERROR', payload: message });
-        },
-      },
-      { signal: controller.signal }
-    );
-  } catch (error) {
-    // 清除待处理的延迟更新
-    if (pendingUpdate !== null) {
-      clearTimeout(pendingUpdate);
-      pendingUpdate = null;
-    }
-    
-    if (error instanceof Error && error.name === 'AbortError') {
-      dispatch({
-        type: 'CHAT_UPDATE_MESSAGE',
-        payload: {
-          sessionId: request.sessionId,
-          messageId: request.clientMessageId,
-          updates: {
-            status: 'failed',
-            metadata: {
-              ...baseMetadata,
-              streaming: false,
-              streamError: '助手回复已取消',
-            },
-          },
-        },
-      });
-    } else if (!handledStreamError) {
-      const message = toErrorMessage(error, '助手回复失败');
-      dispatch({
-        type: 'CHAT_UPDATE_MESSAGE',
-        payload: {
-          sessionId: request.sessionId,
-          messageId: request.clientMessageId,
-          updates: {
-            status: 'failed',
-            metadata: {
-              ...baseMetadata,
-              streaming: false,
-              streamError: message,
-            },
-          },
-        },
-      });
-      dispatch({ type: 'CHAT_SET_ERROR', payload: message });
-    }
-  } finally {
-    // 确保清除待处理的延迟更新
-    if (pendingUpdate !== null) {
-      clearTimeout(pendingUpdate);
-      pendingUpdate = null;
-    }
-    
-    const activeController = assistantStreamControllers.get(request.sessionId);
-    if (activeController === controller) {
-      assistantStreamControllers.delete(request.sessionId);
-    }
-  }
-};
 
 export const clearChatErrorAction = (dispatch: Dispatch<ChatAction>): void => {
   dispatch({ type: 'CHAT_CLEAR_ERROR' });

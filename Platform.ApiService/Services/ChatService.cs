@@ -33,6 +33,7 @@ public class ChatService : IChatService
     private readonly IDatabaseOperationFactory<ChatMessage> _messageFactory;
     private readonly IDatabaseOperationFactory<ChatAttachment> _attachmentFactory;
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IUserService _userService;
     private readonly ILogger<ChatService> _logger;
     private readonly IHubContext<ChatHub> _hubContext;
     private readonly GridFSBucket _gridFsBucket;
@@ -55,6 +56,7 @@ public class ChatService : IChatService
         _attachmentFactory = dependencies.AttachmentFactory;
         _hubContext = dependencies.HubContext;
         _userFactory = dependencies.UserFactory;
+        _userService = dependencies.UserService;
         _aiAssistantCoordinator = dependencies.AiAssistantCoordinator;
         _gridFsBucket = dependencies.GridFsBucket;
         _openAiClient = dependencies.OpenAiClient;
@@ -149,13 +151,84 @@ public class ChatService : IChatService
         // 将结果按时间正序返回给调用者
         messages.Reverse();
 
+        // 计算每条消息的已读状态并添加到 metadata
+        var currentUserId = _sessionFactory.GetRequiredUserId();
+        var lastReadMessageIds = session.LastReadMessageIds ?? new Dictionary<string, string>();
+        
+        // 批量查询所有最后已读消息，避免在循环中逐个查询（性能优化）
+        var lastReadMessages = new Dictionary<string, ChatMessage>();
+        var uniqueLastReadIds = lastReadMessageIds.Values
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+        
+        if (uniqueLastReadIds.Count > 0)
+        {
+            var lastReadFilter = _messageFactory.CreateFilterBuilder()
+                .In(message => message.Id, uniqueLastReadIds)
+                .Build();
+            
+            var lastReadMessagesList = await _messageFactory.FindAsync(lastReadFilter, null, uniqueLastReadIds.Count);
+            foreach (var msg in lastReadMessagesList)
+            {
+                lastReadMessages[msg.Id] = msg;
+            }
+        }
+        
+        // 为每条消息添加已读状态信息
+        foreach (var message in messages)
+        {
+            // 只处理当前用户发送的消息
+            if (message.SenderId == currentUserId)
+            {
+                // 检查每个参与者的已读状态
+                var readStatuses = new Dictionary<string, bool>();
+                var messageTimestamp = message.CreatedAt;
+                
+                foreach (var participant in session.Participants)
+                {
+                    // 跳过发送者自己
+                    if (participant == currentUserId)
+                    {
+                        continue;
+                    }
+                    
+                    // 检查该参与者是否已读此消息
+                    if (lastReadMessageIds.TryGetValue(participant, out var lastReadId) && 
+                        lastReadMessages.TryGetValue(lastReadId, out var lastReadMessage))
+                    {
+                        // 如果消息时间戳小于等于最后已读消息的时间戳，则已读
+                        readStatuses[participant] = messageTimestamp <= lastReadMessage.CreatedAt;
+                    }
+                    else
+                    {
+                        // 如果没有最后已读消息ID或找不到消息，默认为未读
+                        readStatuses[participant] = false;
+                    }
+                }
+                
+                // 将已读状态添加到消息的 metadata 中
+                if (!message.Metadata.ContainsKey("readStatuses"))
+                {
+                    message.Metadata["readStatuses"] = readStatuses;
+                }
+                
+                // 计算是否所有参与者都已读（用于前端显示"对方已读"）
+                // 注意：群聊场景下，需要所有参与者都已读；私聊场景下，只需要对方已读
+                var allRead = readStatuses.Count > 0 && readStatuses.Values.All(r => r);
+                if (allRead)
+                {
+                    message.Metadata["isRead"] = true;
+                }
+            }
+        }
+
         // 如果获取的是最新消息（没有cursor），自动标记为已读
         if (string.IsNullOrWhiteSpace(request.Cursor) && messages.Count > 0)
         {
             try
             {
                 var lastMessage = messages[^1]; // 最后一条消息（最新的）
-                var currentUserId = _sessionFactory.GetRequiredUserId();
                 
                 // 检查会话的未读数量，如果已经有未读数，才标记为已读
                 var unreadCounts = session.UnreadCounts ?? new Dictionary<string, int>();
@@ -476,8 +549,12 @@ public class ChatService : IChatService
         var unreadCounts = session.UnreadCounts ?? new Dictionary<string, int>();
         unreadCounts[currentUserId] = 0;
 
+        var lastReadMessageIds = session.LastReadMessageIds ?? new Dictionary<string, string>();
+        lastReadMessageIds[currentUserId] = lastMessageId;
+
         var update = _sessionFactory.CreateUpdateBuilder()
             .Set(session => session.UnreadCounts, unreadCounts)
+            .Set(session => session.LastReadMessageIds, lastReadMessageIds)
             .SetCurrentTimestamp();
 
         var filter = _sessionFactory.CreateFilterBuilder()
@@ -834,246 +911,6 @@ public class ChatService : IChatService
         };
     }
 
-    /// <inheritdoc />
-    public async IAsyncEnumerable<AssistantReplyStreamChunk> StreamAssistantReplyAsync(
-        AssistantReplyStreamRequest request,
-        string currentUserId,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        if (request == null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.SessionId))
-        {
-            throw new ArgumentException("会话标识不能为空", nameof(request.SessionId));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.ClientMessageId))
-        {
-            throw new ArgumentException("客户端消息标识不能为空", nameof(request.ClientMessageId));
-        }
-
-        ChatSession? session = null;
-        AssistantReplyStreamChunk? errorChunk = null;
-        try
-        {
-            session = await EnsureSessionAccessibleAsync(request.SessionId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "校验助手回复请求会话失败：{SessionId}", request.SessionId);
-            errorChunk = new AssistantReplyStreamChunk
-            {
-                Type = "error",
-                Error = "无法访问指定的会话，请稍后重试。"
-            };
-        }
-
-        if (errorChunk != null)
-        {
-            yield return errorChunk;
-            yield break;
-        }
-
-
-        if (session == null || !session.Participants.Contains(AiAssistantConstants.AssistantUserId))
-        {
-            yield return new AssistantReplyStreamChunk
-            {
-                Type = "error",
-                Error = "该会话未启用小科助手。"
-            };
-            yield break;
-        }
-
-        var resolvedSession = session;
-        if (resolvedSession == null)
-        {
-            yield return new AssistantReplyStreamChunk
-            {
-                Type = "error",
-                Error = "会话信息缺失，请稍后重试。"
-            };
-            yield break;
-        }
-
-        ChatMessage? triggerMessage = null;
-        errorChunk = null;
-        try
-        {
-            triggerMessage = await ResolveTriggerMessageAsync(session, request, currentUserId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "解析助手触发消息失败：{SessionId}", request.SessionId);
-            errorChunk = new AssistantReplyStreamChunk
-            {
-                Type = "error",
-                Error = ex is UnauthorizedAccessException
-                    ? "仅允许对自己发送的消息请求小科回复。"
-                    : "未能定位触发消息，请稍后重试。"
-            };
-        }
-
-        if (errorChunk != null)
-        {
-            yield return errorChunk;
-            yield break;
-        }
-
-        if (triggerMessage == null)
-        {
-            yield return new AssistantReplyStreamChunk
-            {
-                Type = "error",
-                Error = "未找到触发消息，请稍后重试。"
-            };
-            yield break;
-        }
-
-        string replyContent;
-        if (triggerMessage.Type == ChatMessageType.Text)
-        {
-            replyContent = await GenerateAssistantReplyAsync(
-                resolvedSession,
-                triggerMessage,
-                request.Locale,
-                cancellationToken) ?? string.Empty;
-        }
-        else
-        {
-            replyContent = "我已收到您的附件，目前仅支持文本对话，欢迎告诉我想要讨论的内容。";
-        }
-
-        if (string.IsNullOrWhiteSpace(replyContent))
-        {
-            yield return new AssistantReplyStreamChunk
-            {
-                Type = "error",
-                Error = "小科暂时没有合适的回复，请稍后再试。"
-            };
-            yield break;
-        }
-
-        var trimmedReply = replyContent.Trim();
-        var aggregated = new StringBuilder();
-
-        foreach (var segment in ChunkAssistantReply(trimmedReply))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            aggregated.Append(segment);
-            yield return new AssistantReplyStreamChunk
-            {
-                Type = "delta",
-                Text = segment,
-                Timestamp = DateTime.UtcNow
-            };
-
-            try
-            {
-                await Task.Delay(TimeSpan.FromMilliseconds(35), cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-        }
-
-        var finalContent = aggregated.ToString().Trim();
-
-        ChatMessage? assistantMessage = null;
-        errorChunk = null;
-        try
-        {
-            assistantMessage = await CreateAssistantMessageAsync(
-                resolvedSession,
-                finalContent,
-                triggerMessage.SenderId,
-                request.ClientMessageId,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex,
-                "持久化助手回复失败：Session={SessionId}, Trigger={TriggerMessageId}",
-                session.Id,
-                triggerMessage.Id);
-
-            errorChunk = new AssistantReplyStreamChunk
-            {
-                Type = "error",
-                Error = "助手回复保存失败，请稍后重试。"
-            };
-        }
-
-        if (errorChunk != null)
-        {
-            yield return errorChunk;
-            yield break;
-        }
-
-        if (assistantMessage == null)
-        {
-            yield return new AssistantReplyStreamChunk
-            {
-                Type = "error",
-                Error = "助手回复生成失败，请稍后重试。"
-            };
-            yield break;
-        }
-
-        yield return new AssistantReplyStreamChunk
-        {
-            Type = "complete",
-            Message = assistantMessage,
-            Timestamp = DateTime.UtcNow
-        };
-    }
-
-    private async Task<ChatMessage?> ResolveTriggerMessageAsync(
-        ChatSession session,
-        AssistantReplyStreamRequest request,
-        string currentUserId)
-    {
-        ChatMessage? triggerMessage = null;
-
-        if (!string.IsNullOrWhiteSpace(request.TriggerMessageId))
-        {
-            triggerMessage = await _messageFactory.GetByIdAsync(request.TriggerMessageId);
-        }
-
-        if (triggerMessage == null && !string.IsNullOrWhiteSpace(request.TriggerClientMessageId))
-        {
-            var filter = _messageFactory.CreateFilterBuilder()
-                .Equal(message => message.SessionId, session.Id)
-                .Equal(message => message.ClientMessageId, request.TriggerClientMessageId!)
-                .Build();
-
-            var matches = await _messageFactory.FindAsync(filter, limit: 1);
-            triggerMessage = matches.FirstOrDefault();
-        }
-
-        if (triggerMessage == null)
-        {
-            return null;
-        }
-
-        if (!string.Equals(triggerMessage.SessionId, session.Id, StringComparison.Ordinal))
-        {
-            throw new UnauthorizedAccessException("消息不属于当前会话。");
-        }
-
-        if (!string.Equals(triggerMessage.SenderId, currentUserId, StringComparison.Ordinal))
-        {
-            throw new UnauthorizedAccessException("仅允许对自己发送的消息请求小科回复。");
-        }
-
-        return triggerMessage;
-    }
 
     private async Task<ChatMessage> CreateAssistantMessageAsync(
         ChatSession session,
@@ -1116,40 +953,6 @@ public class ChatService : IChatService
         return assistantMessage;
     }
 
-    private static IEnumerable<string> ChunkAssistantReply(string content)
-    {
-        if (string.IsNullOrEmpty(content))
-        {
-            yield break;
-        }
-
-        var buffer = new StringBuilder();
-        const int minChunkLength = 12;
-        const int maxChunkLength = 48;
-
-        foreach (var ch in content)
-        {
-            buffer.Append(ch);
-
-            if (buffer.Length >= maxChunkLength ||
-                (buffer.Length >= minChunkLength && IsSentenceBoundary(ch)))
-            {
-                yield return buffer.ToString();
-                buffer.Clear();
-            }
-        }
-
-        if (buffer.Length > 0)
-        {
-            yield return buffer.ToString();
-        }
-    }
-
-    private static bool IsSentenceBoundary(char ch)
-    {
-        return ch is '。' or '！' or '？' or '!' or '?' or '.' or '；' or ';' or '…' or '\n' or '\r';
-    }
-
     private async Task<string?> GenerateAssistantReplyAsync(
         ChatSession session,
         ChatMessage triggerMessage,
@@ -1173,9 +976,20 @@ public class ChatService : IChatService
 
         var effectiveLocale = string.IsNullOrWhiteSpace(locale) ? "zh-CN" : locale!;
 
-        var systemPrompt = string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
-            ? "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
-            : _aiOptions.SystemPrompt;
+        // 优先使用用户自定义的角色定义，其次使用配置的系统提示词，最后使用默认值
+        string systemPrompt;
+        try
+        {
+            var currentUserId = triggerMessage.SenderId;
+            systemPrompt = await _userService.GetAiRoleDefinitionAsync(currentUserId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取用户角色定义失败，使用配置的默认值");
+            systemPrompt = string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
+                ? "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
+                : _aiOptions.SystemPrompt;
+        }
 
         var conversationMessages = await BuildAssistantConversationMessagesAsync(
             session,
@@ -1517,6 +1331,7 @@ public class ChatService : IChatService
         /// <param name="messageFactory">消息数据操作工厂。</param>
         /// <param name="attachmentFactory">附件数据操作工厂。</param>
         /// <param name="userFactory">用户数据操作工厂。</param>
+        /// <param name="userService">用户服务。</param>
         /// <param name="database">MongoDB 数据库实例。</param>
         /// <param name="hubContext">SignalR Hub 上下文。</param>
         /// <param name="aiAssistantCoordinator">AI 助手协调器。</param>
@@ -1527,6 +1342,7 @@ public class ChatService : IChatService
             IDatabaseOperationFactory<ChatMessage> messageFactory,
             IDatabaseOperationFactory<ChatAttachment> attachmentFactory,
             IDatabaseOperationFactory<AppUser> userFactory,
+            IUserService userService,
             IMongoDatabase database,
             IHubContext<ChatHub> hubContext,
             IAiAssistantCoordinator aiAssistantCoordinator,
@@ -1537,6 +1353,7 @@ public class ChatService : IChatService
             MessageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
             AttachmentFactory = attachmentFactory ?? throw new ArgumentNullException(nameof(attachmentFactory));
             UserFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
+            UserService = userService ?? throw new ArgumentNullException(nameof(userService));
             HubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
             AiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
             OpenAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
@@ -1568,6 +1385,11 @@ public class ChatService : IChatService
         /// 获取用户数据操作工厂。
         /// </summary>
         public IDatabaseOperationFactory<AppUser> UserFactory { get; }
+
+        /// <summary>
+        /// 获取用户服务。
+        /// </summary>
+        public IUserService UserService { get; }
 
         /// <summary>
         /// 获取 SignalR Hub 上下文。

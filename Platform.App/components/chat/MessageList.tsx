@@ -287,7 +287,7 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
                   },
                 ]}
               >
-                {item.content ? (
+                {item.content && item.content.trim() !== '' ? (
                   <ThemedText
                     style={[
                       styles.messageText,
@@ -318,6 +318,8 @@ const MessageList = React.forwardRef<MessageListHandle, MessageListProps>(({
                       >
                         <IconSymbol name="exclamationmark.circle.fill" size={16} color={statusErrorColor} />
                       </TouchableOpacity>
+                    ) : item.status === 'read' ? (
+                      <ThemedText style={[styles.statusText, { color: statusTextColor }]}>对方已读</ThemedText>
                     ) : (
                       <ThemedText style={[styles.statusText, { color: statusTextColor }]}>已发送</ThemedText>
                     )}

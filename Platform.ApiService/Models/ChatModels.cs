@@ -211,6 +211,12 @@ public class ChatSession : MultiTenantEntity, IEntity, ISoftDeletable, ITimestam
     public Dictionary<string, int> UnreadCounts { get; set; } = new();
 
     /// <summary>
+    /// 每位参与者的最后已读消息标识
+    /// </summary>
+    [BsonElement("lastReadMessageIds")]
+    public Dictionary<string, string> LastReadMessageIds { get; set; } = new();
+
+    /// <summary>
     /// 会话标签/主题
     /// </summary>
     [BsonElement("topicTags")]

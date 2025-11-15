@@ -713,3 +713,16 @@ public class UpdateProfileRequest
     /// </remarks>
     public string? PhoneNumber { get; set; }
 }
+
+/// <summary>
+/// 更新 AI 角色定义请求
+/// </summary>
+public class UpdateAiRoleDefinitionRequest
+{
+    /// <summary>
+    /// AI 角色定义（最多 2000 个字符）
+    /// </summary>
+    [Required(ErrorMessage = "角色定义不能为空")]
+    [StringLength(2000, MinimumLength = 1, ErrorMessage = "角色定义长度必须在 1-2000 个字符之间")]
+    public string RoleDefinition { get; set; } = string.Empty;
+}

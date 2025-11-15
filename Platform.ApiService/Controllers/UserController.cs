@@ -7,6 +7,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
@@ -674,6 +675,99 @@ public class UserController : BaseApiController
         var userId = GetRequiredUserId();
         var permissions = await _userService.GetUserPermissionsAsync(userId);
         return Success(permissions);
+    }
+
+    /// <summary>
+    /// 获取当前用户的 AI 角色定义
+    /// </summary>
+    /// <remarks>
+    /// 获取当前登录用户为 AI 助手"小科"设置的角色定义。
+    /// 
+    /// 如果用户未设置过角色定义，将返回默认值："你是小科，请使用简体中文提供简洁、专业且友好的回复。"
+    /// 
+    /// 示例请求：
+    /// ```
+    /// GET /api/user/profile/ai-role-definition
+    /// Authorization: Bearer {token}
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>AI 角色定义</returns>
+    /// <response code="200">成功返回角色定义</response>
+    /// <response code="401">未授权，需要登录</response>
+    [HttpGet("profile/ai-role-definition")]
+    [Authorize]
+    public async Task<IActionResult> GetAiRoleDefinition()
+    {
+        var userId = GetRequiredUserId();
+        var roleDefinition = await _userService.GetAiRoleDefinitionAsync(userId);
+        
+        // 确保返回的角色定义不为空（应该总是有值，要么是用户自定义的，要么是默认值）
+        // 双重保障：即使服务层返回了空值，这里也会设置默认值
+        if (string.IsNullOrWhiteSpace(roleDefinition))
+        {
+            roleDefinition = "你是小科，请使用简体中文提供简洁、专业且友好的回复。";
+        }
+        
+        // 确保返回的字符串不为 null（JSON 序列化配置会忽略 null 值）
+        var response = ApiResponse<string>.SuccessResult(roleDefinition, HttpContext.TraceIdentifier);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// 更新当前用户的 AI 角色定义
+    /// </summary>
+    /// <param name="request">更新角色定义请求</param>
+    /// <remarks>
+    /// 更新当前登录用户为 AI 助手"小科"设置的角色定义。
+    /// 
+    /// 角色定义长度限制：最多 2000 个字符。
+    /// 
+    /// 示例请求：
+    /// ```json
+    /// PUT /api/user/profile/ai-role-definition
+    /// Authorization: Bearer {token}
+    /// Content-Type: application/json
+    /// 
+    /// {
+    ///   "roleDefinition": "你是小科，一个专业的AI助手。请使用简体中文，提供简洁、专业且友好的回复。"
+    /// }
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "message": "角色定义更新成功"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>操作结果</returns>
+    /// <response code="200">角色定义更新成功</response>
+    /// <response code="400">参数验证失败（角色定义为空或超过长度限制）</response>
+    /// <response code="401">未授权，需要登录</response>
+    [HttpPut("profile/ai-role-definition")]
+    [Authorize]
+    public async Task<IActionResult> UpdateAiRoleDefinition([FromBody] UpdateAiRoleDefinitionRequest request)
+    {
+        var validationResult = ValidateModelState();
+        if (validationResult != null)
+            return validationResult;
+
+        var userId = GetRequiredUserId();
+        var success = await _userService.UpdateAiRoleDefinitionAsync(userId, request.RoleDefinition);
+        
+        if (!success)
+            throw new InvalidOperationException("更新角色定义失败");
+
+        return Success("角色定义更新成功");
     }
 
 }

@@ -64,32 +64,5 @@ public class ChatAiController : BaseApiController
         return Success(response);
     }
 
-    /// <summary>
-    /// 以 SSE (Server-Sent Events) 形式获取小科助手的流式回复。
-    /// </summary>
-    /// <param name="request">请求参数。</param>
-    /// <param name="cancellationToken">取消标识。</param>
-    /// <returns>异步任务。</returns>
-    [HttpPost("assistant-reply/stream")]
-    public async Task StreamAssistantReply([FromBody] AssistantReplyStreamRequest request, CancellationToken cancellationToken)
-    {
-        request.EnsureNotNull(nameof(request));
-        var currentUserId = GetRequiredUserId();
-
-        Response.StatusCode = StatusCodes.Status200OK;
-        Response.Headers.CacheControl = "no-cache";
-        Response.Headers["Content-Type"] = "text/event-stream; charset=utf-8";
-        Response.Headers["X-Accel-Buffering"] = "no";
-
-        await foreach (var chunk in _chatService.StreamAssistantReplyAsync(request, currentUserId, cancellationToken)
-            .WithCancellation(cancellationToken))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var payload = JsonSerializer.Serialize(chunk, _jsonOptions);
-            await Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
-            await Response.Body.FlushAsync(cancellationToken);
-        }
-    }
 }
 

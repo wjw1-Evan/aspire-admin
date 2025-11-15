@@ -1413,5 +1413,58 @@ public class UserService : IUserService
             customPermissions = new string[0] // 当前版本暂不支持自定义权限
         };
     }
+
+    /// <summary>
+    /// 获取用户的 AI 角色定义
+    /// </summary>
+    public async Task<string> GetAiRoleDefinitionAsync(string userId)
+    {
+        var user = await GetUserByIdWithoutTenantFilterAsync(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"用户 {userId} 不存在");
+        }
+
+        // 如果用户有自定义的角色定义，返回它；否则返回默认值
+        return !string.IsNullOrWhiteSpace(user.AiRoleDefinition)
+            ? user.AiRoleDefinition
+            : "你是小科，请使用简体中文提供简洁、专业且友好的回复。";
+    }
+
+    /// <summary>
+    /// 更新用户的 AI 角色定义
+    /// </summary>
+    public async Task<bool> UpdateAiRoleDefinitionAsync(string userId, string roleDefinition)
+    {
+        if (string.IsNullOrWhiteSpace(roleDefinition))
+        {
+            throw new ArgumentException("角色定义不能为空", nameof(roleDefinition));
+        }
+
+        // 限制长度，避免存储过大的文本
+        const int MaxLength = 2000;
+        if (roleDefinition.Length > MaxLength)
+        {
+            throw new ArgumentException($"角色定义长度不能超过 {MaxLength} 个字符", nameof(roleDefinition));
+        }
+
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.Id, userId)
+            .Build();
+
+        var update = _userFactory.CreateUpdateBuilder()
+            .Set(u => u.AiRoleDefinition, roleDefinition.Trim())
+            .SetCurrentTimestamp()
+            .Build();
+
+        var options = new FindOneAndUpdateOptions<User>
+        {
+            ReturnDocument = ReturnDocument.After,
+            IsUpsert = false
+        };
+
+        var updatedUser = await _userFactory.FindOneAndUpdateAsync(filter, update, options);
+        return updatedUser != null;
+    }
 }
 

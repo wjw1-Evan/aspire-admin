@@ -1,9 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/contexts/ThemeContext';
+import EmojiPicker from './EmojiPicker';
 
 interface MessageComposerProps {
   readonly disabled?: boolean;
@@ -20,6 +21,9 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 }) => {
   const [value, setValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
+  const inputRef = useRef<TextInput>(null);
   const { theme } = useTheme();
   const containerBackground = theme.mode === 'light' ? '#F4F4F4' : '#121212';
   const panelBackground = theme.colors.listBackground;
@@ -46,6 +50,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       setSubmitting(true);
       await onSend(trimmedValue);
       setValue('');
+      setSelection({ start: 0, end: 0 });
     } finally {
       setSubmitting(false);
     }
@@ -63,8 +68,34 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   }, []);
 
   const handleEmojiPress = useCallback(() => {
-    // 预留表情面板入口
-  }, []);
+    // 切换表情面板显示
+    setShowEmojiPicker(prev => !prev);
+    // 隐藏键盘
+    if (showEmojiPicker) {
+      inputRef.current?.focus();
+    } else {
+      inputRef.current?.blur();
+    }
+  }, [showEmojiPicker]);
+
+  const handleEmojiSelected = useCallback((emoji: string) => {
+    // 在光标位置插入表情，如果没有光标则在末尾插入
+    setValue(prev => {
+      const start = selection.start;
+      const end = selection.end;
+      const before = prev.slice(0, start);
+      const after = prev.slice(end);
+      const newValue = before + emoji + after;
+      // 设置新的光标位置（在插入的表情之后）
+      const newPosition = start + emoji.length;
+      setSelection({ start: newPosition, end: newPosition });
+      return newValue;
+    });
+    // 延迟聚焦输入框，确保表情已插入
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+  }, [selection]);
 
   return (
     <KeyboardAvoidingView
@@ -77,19 +108,37 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         </Pressable>
         <View style={[styles.inputWrapper, { backgroundColor: panelBackground, borderColor: dividerColor }]}>
           <TextInput
+            ref={inputRef}
             style={[styles.input, { color: textColor }]}
             placeholder={placeholder}
             placeholderTextColor={placeholderColor}
             value={value}
             onChangeText={setValue}
+            onSelectionChange={(e) => {
+              setSelection(e.nativeEvent.selection);
+            }}
+            selection={selection}
             multiline
             editable={!disabled && !submitting}
             returnKeyType="send"
             onSubmitEditing={handleSend}
+            onFocus={() => {
+              // 聚焦时隐藏表情面板
+              if (showEmojiPicker) {
+                setShowEmojiPicker(false);
+              }
+            }}
           />
         </View>
-        <Pressable style={styles.iconButton} onPress={handleEmojiPress} hitSlop={12}>
-          <IconSymbol name="face.smiling" size={22} color={iconColor} />
+        <Pressable
+          style={[
+            styles.iconButton,
+            showEmojiPicker && { backgroundColor: theme.colors.highlight, borderRadius: 20 },
+          ]}
+          onPress={handleEmojiPress}
+          hitSlop={12}
+        >
+          <IconSymbol name="face.smiling" size={22} color={showEmojiPicker ? theme.colors.accent : iconColor} />
         </Pressable>
         {showSendChip ? (
           <Pressable
@@ -126,6 +175,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           </Pressable>
         )}
       </View>
+      {showEmojiPicker && <EmojiPicker onEmojiSelected={handleEmojiSelected} />}
     </KeyboardAvoidingView>
   );
 };

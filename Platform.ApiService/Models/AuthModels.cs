@@ -314,6 +314,12 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     /// </summary>
     [BsonElement("tags")]
     public List<UserTag>? Tags { get; set; }
+
+    /// <summary>
+    /// AI 助手"小科"的角色定义（用户自定义）
+    /// </summary>
+    [BsonElement("aiRoleDefinition")]
+    public string? AiRoleDefinition { get; set; }
 }
 
 /// <summary>

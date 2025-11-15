@@ -33,7 +33,7 @@ export interface UploadAttachmentResponse {
   attachment: AttachmentMetadata;
 }
 
-export type ChatMessageStatus = 'sending' | 'sent' | 'failed';
+export type ChatMessageStatus = 'sending' | 'sent' | 'read' | 'failed';
 
 export interface ChatMessage {
   id: string;

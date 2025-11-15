@@ -31,8 +31,9 @@ export async function loginAction(
   dispatch: Dispatch<AuthAction>
 ): Promise<void> {
   // 添加超时保护，避免长时间阻塞
+  let timeoutId: NodeJS.Timeout | null = null;
   const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       reject(new Error('登录超时，请检查网络连接后重试'));
     }, 30000); // 30秒超时
   });
@@ -85,11 +86,23 @@ export async function loginAction(
       // 登录失败时清理可能已保存的 token
       void tokenManager.clearAllTokens();
       throw authError;
+    } finally {
+      // 清理超时定时器，避免在 Promise 完成后仍然执行超时回调
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   })();
 
-  // 等待第一个完成的 Promise（超时或登录完成）
-  await Promise.race([loginPromise, timeoutPromise]);
+  try {
+    // 等待第一个完成的 Promise（超时或登录完成）
+    await Promise.race([loginPromise, timeoutPromise]);
+  } finally {
+    // 确保在函数返回前清理超时定时器（防止竞态条件）
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 
 /**
@@ -209,8 +222,9 @@ export async function refreshAuthAction(dispatch: Dispatch<AuthAction>): Promise
  */
 export async function checkAuthAction(dispatch: Dispatch<AuthAction>): Promise<void> {
   // 添加超时保护，避免长时间阻塞
+  let timeoutId: NodeJS.Timeout | null = null;
   const timeoutPromise = new Promise<void>((resolve) => {
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       // 只在开发环境显示警告，避免生产环境噪音
       if (__DEV__) {
         console.warn('AuthContext: Check auth timeout, setting loading to false');
@@ -266,11 +280,23 @@ export async function checkAuthAction(dispatch: Dispatch<AuthAction>): Promise<v
         console.error('AuthContext: Check auth error:', error);
       }
       dispatch({ type: 'AUTH_LOGOUT' });
+    } finally {
+      // 清理超时定时器，避免在 Promise 完成后仍然执行超时回调
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   })();
 
-  // 等待第一个完成的 Promise（超时或检查完成）
-  await Promise.race([checkAuthPromise, timeoutPromise]);
+  try {
+    // 等待第一个完成的 Promise（超时或检查完成）
+    await Promise.race([checkAuthPromise, timeoutPromise]);
+  } finally {
+    // 确保在函数返回前清理超时定时器（防止竞态条件）
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 
 /**

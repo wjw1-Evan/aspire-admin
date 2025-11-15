@@ -151,12 +151,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // 应用状态变化处理
   // 使用 ref 存储最新的认证状态，避免频繁重新创建回调
   const isAuthenticatedRef = useRef(state.isAuthenticated);
-  const tokenRef = useRef(state.token);
   
   useEffect(() => {
     isAuthenticatedRef.current = state.isAuthenticated;
-    tokenRef.current = state.token;
-  }, [state.isAuthenticated, state.token]);
+  }, [state.isAuthenticated]);
 
   const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
     if (nextAppState === 'active' && isAuthenticatedRef.current) {
@@ -235,10 +233,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // 监听 token 被外部清除（如 401 时自动清理）
   useEffect(() => {
-    const listener = () => {
-      // 只有在未认证状态或 token 被清除时才执行登出
-      // 避免在登录过程中触发登出导致状态冲突
-      if (!isAuthenticatedRef.current || !tokenRef.current) {
+    const listener = async () => {
+      // 直接从存储检查 token，而不是依赖可能不同步的 Redux 状态
+      // 问题：tokenManager.clearAllTokens() 会先清除 AsyncStorage，然后触发此事件
+      // 此时 Redux 状态可能还没有更新，如果使用 state.token 或 tokenRef.current
+      // 可能仍然有旧值，导致条件判断错误，阻止登出操作
+      // 解决方案：直接从 tokenManager 读取实际的存储状态，确保判断准确
+      const actualToken = await tokenManager.getToken();
+      
+      // 如果存储中确实没有 token，或者当前未认证，则执行登出
+      // 注意：检查 isAuthenticatedRef 避免在登录过程中触发登出导致状态冲突
+      if (!actualToken || !isAuthenticatedRef.current) {
         dispatch({ type: 'AUTH_LOGOUT' });
       }
     };

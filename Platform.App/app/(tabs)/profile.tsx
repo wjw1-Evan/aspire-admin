@@ -95,6 +95,7 @@ export default function ProfileScreen() {
     }
   }, [isEditing, user?.avatar, user?.email, user?.name, user?.phone]);
 
+
   const handleEdit = useCallback(() => {
     setIsEditing(true);
     setEditData({
@@ -179,10 +180,20 @@ export default function ProfileScreen() {
         return;
       }
       
-      // 只发送可以修改的字段：name和email，不包含username（用户名不可修改）
+      // 只发送可以修改的字段：name、email和phone，不包含username（用户名不可修改）
+      const phoneValue = editData.phone.trim();
+      
+      // 调试日志：检查手机号值
+      if (__DEV__) {
+        console.log('Profile save - phone value:', phoneValue, 'original:', editData.phone);
+      }
+      
       const dataToSend = {
         name: editData.name.trim(),
         email: editData.email.trim() || undefined,
+        // 手机号：如果为空字符串，发送 undefined（不发送字段），否则发送实际值
+        // 注意：只有在有值时才发送，空字符串不发送（避免后端 Unset 清空字段）
+        phone: phoneValue || undefined,
       } as UpdateProfileParams;
 
       if (editData.avatar !== user?.avatar) {
@@ -196,7 +207,7 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [editData.avatar, editData.email, editData.name, updateProfile, user?.avatar]);
+  }, [editData.avatar, editData.email, editData.name, editData.phone, updateProfile, user?.avatar]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
@@ -345,6 +356,22 @@ export default function ProfileScreen() {
                   <IconSymbol name="envelope.fill" size={14} color={heroText} style={{ opacity: 0.7 }} />
                   <ThemedText style={[styles.heroEmail, { color: heroText, opacity: 0.8 }]} numberOfLines={1}>
                     {user.email}
+                  </ThemedText>
+                </View>
+              ) : null}
+              {user?.phone ? (
+                <View style={styles.heroEmailRow}>
+                  <IconSymbol name="phone.fill" size={14} color={heroText} style={{ opacity: 0.7 }} />
+                  <ThemedText style={[styles.heroEmail, { color: heroText, opacity: 0.8 }]} numberOfLines={1}>
+                    {user.phone}
+                  </ThemedText>
+                </View>
+              ) : null}
+              {user?.city ? (
+                <View style={styles.heroEmailRow}>
+                  <IconSymbol name="location.fill" size={14} color={heroText} style={{ opacity: 0.7 }} />
+                  <ThemedText style={[styles.heroEmail, { color: heroText, opacity: 0.8 }]} numberOfLines={1}>
+                    {user.city}
                   </ThemedText>
                 </View>
               ) : null}
@@ -501,6 +528,21 @@ export default function ProfileScreen() {
                       邮箱格式不正确
                     </ThemedText>
                   )}
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <ThemedText style={styles.inputLabel}>手机号</ThemedText>
+                  <TextInput
+                    style={[styles.input, { borderColor, backgroundColor: inputBackground, color: textColor }]}
+                    value={editData.phone}
+                    onChangeText={text => setEditData({ ...editData, phone: text })}
+                    placeholder="请输入手机号（可选）"
+                    keyboardType="phone-pad"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    placeholderTextColor={placeholderColor}
+                    selectionColor={tintColor}
+                  />
                 </View>
               </ScrollView>
 

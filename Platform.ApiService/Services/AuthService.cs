@@ -29,6 +29,7 @@ public class AuthService : IAuthService
     private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IDatabaseOperationFactory<LoginFailureRecord> _failureRecordFactory;
     private readonly IPhoneValidationService _phoneValidationService;
+    private readonly ISocialService _socialService;
 
     /// <summary>
     /// 初始化认证服务
@@ -48,6 +49,7 @@ public class AuthService : IAuthService
     /// <param name="imageCaptchaService">图形验证码服务</param>
     /// <param name="phoneValidationService">手机号校验服务</param>
     /// <param name="failureRecordFactory">登录失败记录数据操作工厂</param>
+    /// <param name="socialService">社交服务（用于获取用户位置信息）</param>
     public AuthService(
         IDatabaseOperationFactory<User> userFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
@@ -63,7 +65,8 @@ public class AuthService : IAuthService
         IPasswordHasher passwordHasher,
         IImageCaptchaService imageCaptchaService,
         IPhoneValidationService phoneValidationService,
-        IDatabaseOperationFactory<LoginFailureRecord> failureRecordFactory)
+        IDatabaseOperationFactory<LoginFailureRecord> failureRecordFactory,
+        ISocialService socialService)
     {
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
@@ -80,6 +83,7 @@ public class AuthService : IAuthService
         _imageCaptchaService = imageCaptchaService;
         _failureRecordFactory = failureRecordFactory;
         _phoneValidationService = phoneValidationService;
+        _socialService = socialService;
     }
 
     // 🔒 安全修复：移除静态密码哈希方法，统一使用注入的 IPasswordHasher
@@ -261,6 +265,19 @@ public class AuthService : IAuthService
             }
         }
         
+        // 获取用户最后一次保存的城市信息（从位置信标中获取）
+        string? city = null;
+        try
+        {
+            var locationInfo = await _socialService.GetCurrentUserLocationInfoAsync();
+            city = locationInfo?.City;
+        }
+        catch (Exception ex)
+        {
+            // 获取城市信息失败不影响用户信息返回，只记录警告
+            _logger.LogWarning(ex, "获取用户城市信息失败，用户ID: {UserId}", userId);
+        }
+
         // 构建统一的用户信息
         return new CurrentUser
         {
@@ -275,7 +292,8 @@ public class AuthService : IAuthService
             IsLogin = true,
             CurrentCompanyId = user.CurrentCompanyId,
             CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt
+            UpdatedAt = user.UpdatedAt,
+            City = city
         };
     }
 

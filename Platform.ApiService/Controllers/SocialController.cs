@@ -73,5 +73,30 @@ public class SocialController : BaseApiController
         var response = await _socialService.GetNearbyUsersAsync(request);
         return Success(response);
     }
+
+    /// <summary>
+    /// 获取当前用户的位置信标（包含详细坐标，仅用于内部使用）。
+    /// </summary>
+    /// <returns>当前用户的位置信标信息。</returns>
+    [HttpGet("location/beacon")]
+    [ProducesResponseType(typeof(ApiResponse<UserLocationBeacon>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCurrentUserLocation()
+    {
+        var location = await _socialService.GetCurrentUserLocationAsync();
+        return Success(location);
+    }
+
+    /// <summary>
+    /// 获取当前用户的位置信息（仅包含城市，不包含详细坐标）。
+    /// 返回最后一次保存位置时解析的城市信息，无需实时解析。
+    /// </summary>
+    /// <returns>用户位置信息（包含最后一次保存的城市名称）。</returns>
+    [HttpGet("location/info")]
+    [ProducesResponseType(typeof(ApiResponse<UserLocationInfo>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCurrentUserLocationInfo()
+    {
+        var locationInfo = await _socialService.GetCurrentUserLocationInfoAsync();
+        return Success(locationInfo);
+    }
 }
 

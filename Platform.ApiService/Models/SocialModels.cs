@@ -62,6 +62,12 @@ public class UserLocationBeacon : MultiTenantEntity, IEntity, ISoftDeletable, IT
     /// </summary>
     [BsonElement("lastSeenAt")]
     public DateTime LastSeenAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 所在城市（通过逆地理编码获取）。
+    /// </summary>
+    [BsonElement("city")]
+    public string? City { get; set; }
 }
 
 /// <summary>
@@ -152,6 +158,17 @@ public class UpdateLocationBeaconRequest
     /// 原始时间戳（毫秒）。
     /// </summary>
     public long? Timestamp { get; set; }
+}
+
+/// <summary>
+/// 用户位置信息响应（仅包含城市，不包含详细坐标）
+/// </summary>
+public class UserLocationInfo
+{
+    /// <summary>
+    /// 所在城市
+    /// </summary>
+    public string? City { get; set; }
 }
 
 /// <summary>

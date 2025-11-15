@@ -223,15 +223,19 @@ public class CreateAllIndexes
 
         try
         {
+            // 先删除旧索引（如果存在），确保重新创建为稀疏索引
+            await DropIndexIfExistsAsync(collection, "idx_appusers_phone_unique", "appusers.phone (重新创建为稀疏索引)");
+            
+            // 创建稀疏唯一索引：只索引非空值，允许多个 null 值
             await CreateIndexAsync(collection,
                 Builders<BsonDocument>.IndexKeys.Ascending("phone"),
                 new CreateIndexOptions
                 {
                     Name = "idx_appusers_phone_unique",
                     Unique = true,
-                    Sparse = true
+                    Sparse = true  // 稀疏索引：只索引存在且非 null 的字段值
                 },
-                "appusers.phone (唯一，忽略空值)");
+                "appusers.phone (唯一，稀疏索引，忽略 null 值)");
         }
         catch (Exception ex)
         {

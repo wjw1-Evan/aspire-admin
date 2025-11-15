@@ -1235,6 +1235,22 @@ public class UserService : IUserService
                 updateBuilder.Set(u => u.Avatar, string.Empty);
             }
         }
+
+        if (request.PhoneNumber != null)
+        {
+            var phoneNumber = request.PhoneNumber.Trim();
+            if (phoneNumber == string.Empty)
+            {
+                // 如果手机号为空字符串，使用 Unset 移除字段，而不是设置为 null
+                // 这样可以避免稀疏索引的 null 值冲突问题
+                updateBuilder.Unset(u => u.PhoneNumber);
+            }
+            else
+            {
+                // 有值则设置
+                updateBuilder.Set(u => u.PhoneNumber, phoneNumber);
+            }
+        }
  
         var update = updateBuilder.Build();
 

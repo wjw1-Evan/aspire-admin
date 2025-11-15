@@ -25,9 +25,12 @@ public class CreateUserRequest
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// 手机号码
+    /// 手机号码（中国标准：11位数字，符合中国手机号号段规则）
     /// </summary>
-    [Phone(ErrorMessage = "手机号格式不正确")]
+    /// <remarks>
+    /// 验证规则：如果提供了手机号，必须符合中国手机号标准（11位数字，以1开头，第二位为3-9）
+    /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
+    /// </remarks>
     public string? PhoneNumber { get; set; }
     
     /// <summary>
@@ -56,9 +59,12 @@ public class CreateUserManagementRequest
     public string? Email { get; set; }
 
     /// <summary>
-    /// 手机号码
+    /// 手机号码（中国标准：11位数字，符合中国手机号号段规则）
     /// </summary>
-    [Phone(ErrorMessage = "手机号格式不正确")]
+    /// <remarks>
+    /// 验证规则：如果提供了手机号，必须符合中国手机号标准（11位数字，以1开头，第二位为3-9）
+    /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
+    /// </remarks>
     public string? PhoneNumber { get; set; }
     
     /// <summary>
@@ -95,9 +101,12 @@ public class UpdateUserRequest
     public string? Email { get; set; }
 
     /// <summary>
-    /// 手机号码
+    /// 手机号码（中国标准：11位数字，符合中国手机号号段规则）
     /// </summary>
-    [Phone(ErrorMessage = "手机号格式不正确")]
+    /// <remarks>
+    /// 验证规则：如果提供了手机号，必须符合中国手机号标准（11位数字，以1开头，第二位为3-9）
+    /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
+    /// </remarks>
     public string? PhoneNumber { get; set; }
     
     /// <summary>
@@ -122,9 +131,12 @@ public class UpdateUserManagementRequest
     public string? Email { get; set; }
 
     /// <summary>
-    /// 手机号码
+    /// 手机号码（中国标准：11位数字，符合中国手机号号段规则）
     /// </summary>
-    [Phone(ErrorMessage = "手机号格式不正确")]
+    /// <remarks>
+    /// 验证规则：如果提供了手机号，必须符合中国手机号标准（11位数字，以1开头，第二位为3-9）
+    /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
+    /// </remarks>
     public string? PhoneNumber { get; set; }
     
     /// <summary>
@@ -691,4 +703,13 @@ public class UpdateProfileRequest
     /// </summary>
     [StringLength(2_500_000, ErrorMessage = "头像数据过大，请选择更小的图片")]
     public string? Avatar { get; set; }
+
+    /// <summary>
+    /// 手机号码（中国标准：11位数字，符合中国手机号号段规则）
+    /// </summary>
+    /// <remarks>
+    /// 验证规则：如果提供了手机号，必须符合中国手机号标准（11位数字，以1开头，第二位为3-9）
+    /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
+    /// </remarks>
+    public string? PhoneNumber { get; set; }
 }

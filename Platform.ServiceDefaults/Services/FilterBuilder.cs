@@ -423,6 +423,17 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     }
 
     /// <summary>
+    /// 移除字段（Unset）
+    /// </summary>
+    public UpdateBuilder<T> Unset<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
+    {
+        // 获取字段名（考虑 BsonElement 特性）
+        var fieldName = GetBsonFieldNameForUpdate(field);
+        _updates.Add(_builder.Unset(fieldName));
+        return this;
+    }
+
+    /// <summary>
     /// 设置当前时间戳
     /// </summary>
     public UpdateBuilder<T> SetCurrentTimestamp()
@@ -527,6 +538,34 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
         if (field.Body is System.Linq.Expressions.MemberExpression memberExpression)
         {
             return memberExpression.Member.Name.ToLowerInvariant();
+        }
+        throw new ArgumentException("Invalid field expression");
+    }
+
+    /// <summary>
+    /// 获取 BSON 字段名称（考虑 BsonElement 特性）
+    /// </summary>
+    private static string GetBsonFieldNameForUpdate<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
+    {
+        if (field.Body is System.Linq.Expressions.MemberExpression memberExpression)
+        {
+            var property = memberExpression.Member as System.Reflection.PropertyInfo;
+            if (property != null)
+            {
+                // ✅ 优先使用 BsonElement 特性的 ElementName
+                var bsonElementAttr = property.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
+                if (bsonElementAttr != null && !string.IsNullOrEmpty(bsonElementAttr.ElementName))
+                {
+                    return bsonElementAttr.ElementName;
+                }
+                
+                // ✅ 如果没有 BsonElement 特性，使用属性名的 camelCase
+                var propertyName = property.Name;
+                if (propertyName.Length > 0)
+                {
+                    return char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
+                }
+            }
         }
         throw new ArgumentException("Invalid field expression");
     }

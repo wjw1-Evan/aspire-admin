@@ -94,6 +94,7 @@ export const API_ENDPOINTS = {
   aiTopicGuides: '/chat/ai/topic-guides',
   nearbyUsers: '/social/nearby-users',
   locationBeacon: '/social/location/beacon',
+  currentUserLocation: '/social/location/beacon',
   friends: '/friends',
   friendRequests: '/friends/requests',
 } as const;

@@ -4,6 +4,8 @@ using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace Platform.ApiService.Services;
 
@@ -24,6 +26,18 @@ public interface ISocialService
     /// <param name="request">搜索条件。</param>
     /// <returns>符合条件的附近用户。</returns>
     Task<NearbyUsersResponse> GetNearbyUsersAsync(NearbyUsersRequest request);
+
+    /// <summary>
+    /// 获取当前用户的位置信标。
+    /// </summary>
+    /// <returns>当前用户的位置信标，如果不存在则返回 null。</returns>
+    Task<UserLocationBeacon?> GetCurrentUserLocationAsync();
+
+    /// <summary>
+    /// 获取当前用户的位置信息（仅包含城市，不包含详细坐标）。
+    /// </summary>
+    /// <returns>用户位置信息，如果不存在则返回 null。</returns>
+    Task<UserLocationInfo?> GetCurrentUserLocationInfoAsync();
 }
 
 /// <summary>
@@ -40,6 +54,8 @@ public class SocialService : ISocialService
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
     private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
     private readonly ILogger<SocialService> _logger;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IConfiguration _configuration;
 
     /// <summary>
     /// 初始化社交服务。
@@ -48,16 +64,22 @@ public class SocialService : ISocialService
     /// <param name="userFactory">用户数据工厂。</param>
     /// <param name="sessionFactory">会话数据工厂。</param>
     /// <param name="logger">日志记录器。</param>
+    /// <param name="serviceProvider">服务提供者（用于创建后台任务的作用域）。</param>
+    /// <param name="configuration">配置对象（用于读取地理编码 API Key）。</param>
     public SocialService(
         IDatabaseOperationFactory<UserLocationBeacon> beaconFactory,
         IDatabaseOperationFactory<AppUser> userFactory,
         IDatabaseOperationFactory<ChatSession> sessionFactory,
-        ILogger<SocialService> logger)
+        ILogger<SocialService> logger,
+        IServiceProvider serviceProvider,
+        IConfiguration configuration)
     {
         _beaconFactory = beaconFactory;
         _userFactory = userFactory;
         _sessionFactory = sessionFactory;
         _logger = logger;
+        _serviceProvider = serviceProvider;
+        _configuration = configuration;
     }
 
     /// <inheritdoc />
@@ -71,6 +93,8 @@ public class SocialService : ISocialService
         var now = DateTime.UtcNow;
         var lastSeenAt = ResolveLastSeenAt(request, now);
 
+        // ✅ 先保存位置（city 为 null），立即返回响应，不等待地理编码
+        // 这样可以避免地理编码 API 慢导致请求超时
         var beacon = new UserLocationBeacon
         {
             UserId = currentUserId,
@@ -81,10 +105,68 @@ public class SocialService : ISocialService
             Altitude = request.Altitude,
             Heading = request.Heading,
             Speed = request.Speed,
-            LastSeenAt = lastSeenAt
+            LastSeenAt = lastSeenAt,
+            City = null // 先不设置城市，在后台任务中更新
         };
 
-        await _beaconFactory.CreateAsync(beacon);
+        var createdBeacon = await _beaconFactory.CreateAsync(beacon);
+        
+        // ✅ 保存关键信息，供后台任务使用（后台任务无法访问 HttpContext）
+        var beaconId = createdBeacon.Id;
+
+        // ✅ 在后台异步执行地理编码，完成后更新 city 字段
+        // 使用 Task.Run 在后台线程执行，不阻塞当前请求
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // 创建新的 Scope，确保 Scoped 服务正常工作
+                using var scope = _serviceProvider.CreateScope();
+                var scopedBeaconFactory = scope.ServiceProvider.GetRequiredService<IDatabaseOperationFactory<UserLocationBeacon>>();
+                
+                // 执行地理编码（设置超时，避免无限等待）
+                var city = await ReverseGeocodeAsync(request.Latitude, request.Longitude);
+                
+                if (!string.IsNullOrEmpty(city))
+                {
+                    // ✅ 使用 beacon 的 Id 直接更新，避免在后台任务中无法获取用户信息
+                    var filter = scopedBeaconFactory.CreateFilterBuilder()
+                        .Equal(b => b.Id, beaconId) // 直接使用 Id 匹配，不依赖 HttpContext
+                        .Build();
+
+                    var update = scopedBeaconFactory.CreateUpdateBuilder()
+                        .Set(b => b.City, city)
+                        .Build();
+
+                    var updatedCount = await scopedBeaconFactory.UpdateManyAsync(filter, update);
+                    
+#if DEBUG
+                    if (updatedCount > 0)
+                    {
+                        _logger.LogInformation("位置上报：后台更新城市信息成功 {City}，坐标 ({Latitude}, {Longitude})，BeaconId: {BeaconId}", 
+                            city, request.Latitude, request.Longitude, beaconId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("位置上报：后台更新城市信息失败，未找到匹配的记录，BeaconId: {BeaconId}", beaconId);
+                    }
+#endif
+                }
+                else
+                {
+#if DEBUG
+                    _logger.LogWarning("位置上报：地理编码返回空值，坐标 ({Latitude}, {Longitude})", 
+                        request.Latitude, request.Longitude);
+#endif
+                }
+            }
+            catch (Exception ex)
+            {
+                // 地理编码失败不影响位置保存，只记录警告
+                _logger.LogWarning(ex, "位置上报：后台逆地理编码失败，坐标 ({Latitude}, {Longitude})，BeaconId: {BeaconId}", 
+                    request.Latitude, request.Longitude, beaconId);
+            }
+        });
     }
 
     /// <inheritdoc />
@@ -319,6 +401,187 @@ public class SocialService : ISocialService
         {
             _logger.LogWarning(ex, "定位上报时间戳无效，使用服务器时间作为 LastSeenAt。");
             return fallback;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<UserLocationBeacon?> GetCurrentUserLocationAsync()
+    {
+        var currentUserId = _beaconFactory.GetRequiredUserId();
+        var companyId = _beaconFactory.GetRequiredCompanyId();
+
+        var filter = _beaconFactory.CreateFilterBuilder()
+            .Equal(b => b.UserId, currentUserId)
+            .Equal(b => b.CompanyId, companyId)
+            .Build();
+
+        // 按最后上报时间降序排序，获取最后一次保存的位置信息
+        var sort = _beaconFactory.CreateSortBuilder()
+            .Descending(b => b.LastSeenAt)
+            .Build();
+
+        var beacons = await _beaconFactory.FindAsync(filter, sort, limit: 1);
+        return beacons.FirstOrDefault();
+    }
+
+    /// <inheritdoc />
+    public async Task<UserLocationInfo?> GetCurrentUserLocationInfoAsync()
+    {
+        // 获取最后一次保存的位置信标（按 LastSeenAt 降序排序）
+        var beacon = await GetCurrentUserLocationAsync();
+        if (beacon == null)
+        {
+            return null;
+        }
+
+        // 直接返回数据库中最后一次保存的城市信息，无需实时解析
+        // 城市信息在保存位置时已通过 ReverseGeocodeAsync 自动解析并保存
+        return new UserLocationInfo
+        {
+            City = beacon.City
+        };
+    }
+
+    /// <summary>
+    /// 逆地理编码：将经纬度转换为城市名称
+    /// 使用免费的 BigDataCloud Reverse Geocoding API（不需要 API Key，全球支持）
+    /// </summary>
+    private async Task<string?> ReverseGeocodeAsync(double latitude, double longitude)
+    {
+        // 优先尝试 BigDataCloud API（免费，不需要 API Key，全球支持）
+        try
+        {
+            return await ReverseGeocodeWithBigDataCloudAsync(latitude, longitude);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "BigDataCloud 逆地理编码失败，尝试 GeoNames，坐标 ({Latitude}, {Longitude})", 
+                latitude, longitude);
+            // 继续尝试 GeoNames
+        }
+
+        // 回退方案：尝试使用 GeoNames（免费，不需要 API Key，但需要注册）
+        try
+        {
+            return await ReverseGeocodeWithGeoNamesAsync(latitude, longitude);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "GeoNames 逆地理编码失败，坐标 ({Latitude}, {Longitude})", 
+                latitude, longitude);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 使用 BigDataCloud Reverse Geocoding API 进行逆地理编码（免费，不需要 API Key）
+    /// </summary>
+    private async Task<string?> ReverseGeocodeWithBigDataCloudAsync(double latitude, double longitude)
+    {
+        try
+        {
+            // BigDataCloud Reverse Geocoding API
+            // 文档：https://www.bigdatacloud.com/docs/api/reverse-geocoding-api
+            // 免费额度：每天 10,000 次，不需要 API Key
+            var url = $"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={latitude}&longitude={longitude}&localityLanguage=zh";
+            
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(5);
+            
+            var response = await httpClient.GetStringAsync(url);
+            var json = JsonSerializer.Deserialize<JsonElement>(response);
+            
+            // 优先获取城市（locality）
+            if (json.TryGetProperty("locality", out var locality) && !string.IsNullOrEmpty(locality.GetString()))
+            {
+                return locality.GetString();
+            }
+            
+            // 如果没有城市，尝试使用区县（principalSubdivision）
+            if (json.TryGetProperty("principalSubdivision", out var subdivision) && !string.IsNullOrEmpty(subdivision.GetString()))
+            {
+                return subdivision.GetString();
+            }
+            
+            // 最后尝试省份（countryName）
+            if (json.TryGetProperty("countryName", out var countryName) && !string.IsNullOrEmpty(countryName.GetString()))
+            {
+                return countryName.GetString();
+            }
+            
+            return null;
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "BigDataCloud 逆地理编码超时，坐标 ({Latitude}, {Longitude})", latitude, longitude);
+            return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "BigDataCloud 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})", latitude, longitude);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "BigDataCloud 逆地理编码失败，坐标 ({Latitude}, {Longitude})", latitude, longitude);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 使用 GeoNames API 进行逆地理编码（免费，不需要 API Key，但需要注册用户名）
+    /// </summary>
+    private async Task<string?> ReverseGeocodeWithGeoNamesAsync(double latitude, double longitude)
+    {
+        try
+        {
+            // GeoNames Reverse Geocoding API
+            // 文档：http://www.geonames.org/export/web-services.html#findNearbyPlaceName
+            // 免费额度：每天 20,000 次，需要注册用户名（但不需要 API Key）
+            // 注意：使用默认用户名 "demo"，但建议注册自己的用户名
+            var username = _configuration["Geocoding:GeoNamesUsername"] ?? "demo";
+            var url = $"http://api.geonames.org/findNearbyPlaceNameJSON?lat={latitude}&lng={longitude}&username={username}&lang=zh";
+            
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(5);
+            
+            var response = await httpClient.GetStringAsync(url);
+            var json = JsonSerializer.Deserialize<JsonElement>(response);
+            
+            if (json.TryGetProperty("geonames", out var geonames) && geonames.ValueKind == JsonValueKind.Array && geonames.GetArrayLength() > 0)
+            {
+                var firstPlace = geonames[0];
+                
+                // 优先获取城市名称（name）
+                if (firstPlace.TryGetProperty("name", out var name) && !string.IsNullOrEmpty(name.GetString()))
+                {
+                    return name.GetString();
+                }
+                
+                // 如果没有名称，尝试使用行政区划名称（adminName1）
+                if (firstPlace.TryGetProperty("adminName1", out var adminName1) && !string.IsNullOrEmpty(adminName1.GetString()))
+                {
+                    return adminName1.GetString();
+                }
+            }
+            
+            return null;
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "GeoNames 逆地理编码超时，坐标 ({Latitude}, {Longitude})", latitude, longitude);
+            return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "GeoNames 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})", latitude, longitude);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "GeoNames 逆地理编码失败，坐标 ({Latitude}, {Longitude})", latitude, longitude);
+            return null;
         }
     }
 }

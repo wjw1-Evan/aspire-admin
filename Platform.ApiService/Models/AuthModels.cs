@@ -59,6 +59,7 @@ public class CurrentUser
     /// 电话号码
     /// </summary>
     [BsonElement("phone")]
+    [System.Text.Json.Serialization.JsonPropertyName("phone")]
     public string? Phone { get; set; }
 
     /// <summary>
@@ -84,6 +85,13 @@ public class CurrentUser
     /// </summary>
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 所在城市（从最后一次保存的位置信标中获取）
+    /// </summary>
+    [BsonElement("city")]
+    [System.Text.Json.Serialization.JsonPropertyName("city")]
+    public string? City { get; set; }
 }
 
 /// <summary>
@@ -334,9 +342,13 @@ public class RegisterRequest
     public string? Email { get; set; }
 
     /// <summary>
-    /// 手机号码（可选）
+    /// 手机号码（可选，中国标准：11位数字，符合中国手机号号段规则）
     /// </summary>
-    [Phone(ErrorMessage = "手机号格式不正确")]
+    /// <remarks>
+    /// 验证规则：如果提供了手机号，必须符合中国手机号标准（11位数字，以1开头，第二位为3-9）
+    /// 空字符串或 null 值将被视为未提供手机号，不会触发验证错误
+    /// 注意：验证在服务层手动进行，避免 [RegularExpression] 特性对空字符串的验证问题
+    /// </remarks>
     public string? PhoneNumber { get; set; }
 
     /// <summary>

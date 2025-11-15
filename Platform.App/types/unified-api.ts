@@ -45,6 +45,7 @@ export interface CurrentUser {
   phone?: string;
   isLogin?: boolean;
   currentCompanyId?: string; // 当前企业ID
+  city?: string | null; // 所在城市（从最后一次保存的位置信标中获取）
   createdAt?: string;
   updatedAt?: string;
 }
@@ -92,6 +93,7 @@ export interface UpdateProfileParams {
   email?: string;
   age?: number;
   avatar?: string;
+  phone?: string;
 }
 
 // 刷新令牌请求

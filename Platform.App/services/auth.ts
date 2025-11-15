@@ -122,7 +122,25 @@ export class AuthService {
    */
   async updateProfile(profileData: UpdateProfileParams): Promise<ApiResponse<CurrentUser>> {
     try {
-      return await apiService.put<ApiResponse<CurrentUser>>('/user/profile', profileData, {
+      // 后端使用 camelCase 命名策略，所以字段名需要使用 camelCase
+      // 将前端的 phone 字段映射为后端的 phoneNumber 字段（camelCase）
+      const requestData: Record<string, any> = {
+        name: profileData.name,
+        email: profileData.email,
+        age: profileData.age,
+        avatar: profileData.avatar,
+      };
+      
+      // 注意：后端配置了 JsonNamingPolicy.CamelCase，所以 PhoneNumber 会被序列化为 phoneNumber
+      // 但模型绑定是大小写不敏感的，所以可以直接使用 phoneNumber
+      // 只有在有值时才发送 phoneNumber 字段
+      // 如果 phone 是 undefined 或空字符串，不发送该字段（保持原值不变）
+      // 如果 phone 有值，发送实际值
+      if (profileData.phone !== undefined && profileData.phone.trim() !== '') {
+        requestData.phoneNumber = profileData.phone.trim();
+      }
+      
+      return await apiService.put<ApiResponse<CurrentUser>>('/user/profile', requestData, {
         timeout: 8000,
         retries: 0,
       });

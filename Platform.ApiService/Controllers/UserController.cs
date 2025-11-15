@@ -18,14 +18,17 @@ namespace Platform.ApiService.Controllers;
 public class UserController : BaseApiController
 {
     private readonly IUserService _userService;
+    private readonly IAuthService _authService;
 
     /// <summary>
     /// 初始化用户控制器
     /// </summary>
     /// <param name="userService">用户服务</param>
-    public UserController(IUserService userService)
+    /// <param name="authService">认证服务</param>
+    public UserController(IUserService userService, IAuthService authService)
     {
         _userService = userService;
+        _authService = authService;
     }
 
     /// <summary>
@@ -485,6 +488,22 @@ public class UserController : BaseApiController
     [Authorize]
     public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UpdateProfileRequest request)
     {
+        // 验证模型状态（邮箱、姓名、年龄等）
+        var validationResult = ValidateModelState();
+        if (validationResult != null)
+            return validationResult;
+
+        // 手动验证手机号（只在有值且不为空时验证）
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var phoneNumber = request.PhoneNumber.Trim();
+            // 简化的中国手机号验证：11位数字，以1开头，第二位为3-9
+            if (phoneNumber.Length != 11 || !phoneNumber.StartsWith("1") || phoneNumber[1] < '3' || phoneNumber[1] > '9' || !phoneNumber.All(char.IsDigit))
+            {
+                return ValidationError("手机号格式不正确，请输入符合中国手机号标准的11位数字");
+            }
+        }
+
         var userId = GetRequiredUserId();
 
         // 禁止修改用户名 - 过滤掉Username字段
@@ -494,6 +513,7 @@ public class UserController : BaseApiController
             Email = request.Email,
             Age = request.Age,
             Avatar = request.Avatar,
+            PhoneNumber = request.PhoneNumber,
             // Username 字段被过滤掉，不允许修改
         };
 
@@ -501,7 +521,13 @@ public class UserController : BaseApiController
         if (user == null)
             throw new KeyNotFoundException("用户不存在");
 
-        return Success(user);
+        // 返回 CurrentUser 格式，确保前端能正确接收手机号等字段
+        // 使用 AuthService 的 GetCurrentUserAsync 方法获取转换后的用户信息
+        var currentUser = await _authService.GetCurrentUserAsync();
+        if (currentUser == null)
+            throw new KeyNotFoundException("获取用户信息失败");
+
+        return Success(currentUser);
     }
 
     /// <summary>

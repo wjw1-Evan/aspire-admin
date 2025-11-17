@@ -5,8 +5,9 @@ using Scalar.Aspire;
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Add Kubernetes environment
-var k8s = builder.AddKubernetesEnvironment("k8s");
-
+//var k8s = builder.AddKubernetesEnvironment("k8s");
+// Add a Docker Compose environment 发布：aspire publish
+var compose = builder.AddDockerComposeEnvironment("compose");
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
@@ -30,7 +31,10 @@ var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WaitFor(mongodb)
     .WithReference(mongodb)
-    .WithHttpEndpoint();
+    .WithHttpEndpoint().PublishAsDockerComposeService((resource, service) =>
+                   {
+                       service.Name = "datainitializer";
+                   });
 
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {

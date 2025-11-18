@@ -54,11 +54,7 @@ builder.Services.AddCors(options =>
         if (builder.Environment.IsDevelopment())
         {
             // ✅ 开发环境：明确列出允许的源
-            policy.WithOrigins(
-                    "http://localhost:15001",  // Admin frontend
-                    "http://localhost:15002",  // Mobile app
-                    "http://localhost:19006"   // Expo web (development)
-                )
+            policy
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();  // ✅ 支持凭证

@@ -99,6 +99,8 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "apigateway"
+    ports:
+      - "15000:15000"
     expose:
       - "5000"
     networks:
@@ -114,6 +116,8 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "admin"
+    ports:
+      - "15001:8080"
     expose:
       - "8080"
     depends_on:

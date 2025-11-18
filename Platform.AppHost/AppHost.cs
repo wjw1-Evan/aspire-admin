@@ -54,7 +54,11 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
 };
 
 var yarp = builder.AddYarp("apigateway")
-    .WithHostPort(15000)
+    .WithHostPort(15000).PublishAsDockerComposeService((resource, service) =>
+                   {
+                       service.Ports = new List<string> { "15000:15000" };
+                       
+                   })
     .WithConfiguration(config =>
     {
         // 微服务路由配置 - 统一通过/{service}路径访问
@@ -72,7 +76,10 @@ builder.AddNpmApp("admin", "../Platform.Admin")
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
     .WithHttpEndpoint(env: "PORT", port: 15001,targetPort: 8080)
     .WithNpmPackageInstallation()
-    .PublishAsDockerFile();
+    .PublishAsDockerFile().PublishAsDockerComposeService((resource, service) =>
+                   {
+                       service.Ports = new List<string> { "15001:8080" };
+                   });
 
 builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)

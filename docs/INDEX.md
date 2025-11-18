@@ -33,6 +33,7 @@
 - [聊天已读状态功能修复总结](bugfixes/CHAT-READ-RECEIPT-FIXES-SUMMARY.md)
 - [定位订阅移除错误修复](bugfixes/LOCATION-SUBSCRIPTION-REMOVE-ERROR-FIX.md)
 - [认证上下文初始化超时问题修复](bugfixes/AUTH-CONTEXT-TIMEOUT-FIX.md)
+- [管理后台 API 代理配置修复](bugfixes/ADMIN-API-PROXY-FIX.md)
 
 ## 🔄 重构文档
 

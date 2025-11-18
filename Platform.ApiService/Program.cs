@@ -157,6 +157,9 @@ builder.AddOpenAIClient(connectionName: "chat");
 // Add HTTP context accessor
 builder.Services.AddHttpContextAccessor();
 
+// Add HTTP client factory (for downloading fonts from network)
+builder.Services.AddHttpClient();
+
 // 配置 AI 选项
 builder.Services.Configure<AiCompletionOptions>(
     builder.Configuration.GetSection(AiCompletionOptions.SectionName));

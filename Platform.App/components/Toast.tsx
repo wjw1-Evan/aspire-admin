@@ -32,6 +32,7 @@ export function Toast({
 }: ToastProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-100)).current;
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const backgroundColor = useThemeColor({ light: '#FFFFFF', dark: '#1E293B' }, 'card');
   const textColor = useThemeColor({}, 'text');
@@ -42,7 +43,17 @@ export function Toast({
   const warningColor = useThemeColor({ light: '#FF9500', dark: '#FF9F0A' }, 'warning');
 
   useEffect(() => {
+    // 清理之前的定时器
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
     if (visible) {
+      // 重置动画值（确保从初始状态开始）
+      fadeAnim.setValue(0);
+      slideAnim.setValue(-100);
+
       // 显示动画
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -60,10 +71,9 @@ export function Toast({
 
       // 自动隐藏
       if (duration > 0) {
-        const timer = setTimeout(() => {
+        timerRef.current = setTimeout(() => {
           handleDismiss();
         }, duration);
-        return () => clearTimeout(timer);
       }
     } else {
       // 隐藏动画
@@ -80,13 +90,27 @@ export function Toast({
         }),
       ]).start();
     }
+
+    // 清理函数
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [visible, duration]);
 
   const handleDismiss = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     onDismiss();
   };
 
-  if (!visible) {
+  // 在 Web 平台上，即使 visible 为 false 也渲染，以便动画可以执行
+  // 但在移动平台上，为了性能，可以提前返回
+  if (!visible && Platform.OS !== 'web') {
     return null;
   }
 
@@ -113,7 +137,9 @@ export function Toast({
         {
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
-          pointerEvents: 'box-none',
+          // 在 Web 平台上，如果不可见，使用 'none' 禁用交互
+          // 如果可见，使用 'auto' 允许交互
+          pointerEvents: visible ? (Platform.OS === 'web' ? 'auto' : 'box-none') : 'none',
         },
       ]}
     >
@@ -157,8 +183,14 @@ const styles = StyleSheet.create({
     top: Platform.OS === 'web' ? 20 : 60,
     left: 16,
     right: 16,
-    zIndex: 1000,
+    zIndex: 9999, // 提高 z-index，确保在最上层
     alignItems: 'center',
+    // 在 Web 平台上确保 Toast 可见
+    ...Platform.select({
+      web: {
+        pointerEvents: 'auto' as const,
+      },
+    }),
   },
   toast: {
     width: '100%',

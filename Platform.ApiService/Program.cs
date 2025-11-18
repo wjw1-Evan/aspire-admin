@@ -54,10 +54,18 @@ builder.Services.AddCors(options =>
         if (builder.Environment.IsDevelopment())
         {
             // ✅ 开发环境：明确列出允许的源
-            policy
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials();  // ✅ 支持凭证
+            // 注意：使用 AllowCredentials() 时不能使用 AllowAnyOrigin()，必须明确指定源
+            var allowedOrigins = new[]
+            {
+                "http://localhost:15000",  // API网关
+                "http://localhost:15001",  // 管理后台
+                "http://localhost:15002",  // 移动应用
+            };
+            
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();  // ✅ 支持凭证
         }
         else
         {

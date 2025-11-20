@@ -11,6 +11,7 @@ import { AvatarDropdown, AvatarName } from './RightContent/AvatarDropdown';
 import NoticeIcon from './NoticeIcon';
 import { CompanySwitcher } from './CompanySwitcher';
 import { JoinCompanyModal } from './JoinCompanyModal';
+import AiAssistant from './AiAssistant';
 
 export {
   AvatarDropdown,
@@ -21,4 +22,5 @@ export {
   Question,
   SelectLang,
   CompanySwitcher, // v3.1: 企业切换器
+  AiAssistant, // AI 助手组件
 };

@@ -13,6 +13,7 @@ import {
   Question,
   SelectLang,
 } from '@/components';
+import AiAssistant from '@/components/AiAssistant';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
 import { getMyPermissions } from '@/services/permission';
@@ -308,6 +309,8 @@ export const layout: RunTimeLayoutConfig = ({
               }}
             />
           )}
+          {/* AI 助手组件 - 仅在用户登录后显示 */}
+          {initialState?.currentUser && <AiAssistant />}
         </>
       );
     },

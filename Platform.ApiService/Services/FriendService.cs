@@ -17,6 +17,7 @@ public interface IFriendService
     /// <summary>
     /// 获取好友列表
     /// </summary>
+    /// <returns>好友摘要响应列表</returns>
     Task<List<FriendSummaryResponse>> GetFriendsAsync();
 
     /// <summary>
@@ -25,36 +26,42 @@ public interface IFriendService
     /// <param name="phoneNumber">手机号（可选）</param>
     /// <param name="keyword">姓名或用户名关键字（可选）</param>
     /// <param name="includeAllTenants">是否跨租户搜索（仅限具有跨租户权限的管理员使用）</param>
+    /// <returns>好友搜索结果列表</returns>
     Task<List<FriendSearchResult>> SearchAsync(string? phoneNumber, string? keyword, bool includeAllTenants = false);
 
     /// <summary>
     /// 发送好友请求
     /// </summary>
     /// <param name="request">好友请求参数</param>
+    /// <returns>好友请求响应</returns>
     Task<FriendRequestResponse> SendFriendRequestAsync(CreateFriendRequestRequest request);
 
     /// <summary>
     /// 获取待处理好友请求
     /// </summary>
     /// <param name="direction">请求方向</param>
+    /// <returns>好友请求响应列表</returns>
     Task<List<FriendRequestResponse>> GetFriendRequestsAsync(FriendRequestDirection direction);
 
     /// <summary>
     /// 接受好友请求
     /// </summary>
     /// <param name="requestId">请求标识</param>
+    /// <returns>好友请求响应</returns>
     Task<FriendRequestResponse> ApproveRequestAsync(string requestId);
 
     /// <summary>
     /// 拒绝好友请求
     /// </summary>
     /// <param name="requestId">请求标识</param>
+    /// <returns>好友请求响应</returns>
     Task<FriendRequestResponse> RejectRequestAsync(string requestId);
 
     /// <summary>
     /// 获取或创建与好友的私聊会话
     /// </summary>
     /// <param name="friendUserId">好友用户标识</param>
+    /// <returns>好友会话响应</returns>
     Task<FriendSessionResponse> EnsureDirectSessionAsync(string friendUserId);
 }
 
@@ -73,6 +80,12 @@ public class FriendService : IFriendService
     /// <summary>
     /// 初始化好友服务
     /// </summary>
+    /// <param name="friendshipFactory">好友关系数据操作工厂</param>
+    /// <param name="friendRequestFactory">好友请求数据操作工厂</param>
+    /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="aiAssistantCoordinator">AI 助手协调器</param>
+    /// <param name="chatService">聊天服务</param>
+    /// <param name="logger">日志记录器</param>
     public FriendService(
         IDatabaseOperationFactory<Friendship> friendshipFactory,
         IDatabaseOperationFactory<FriendRequest> friendRequestFactory,

@@ -9,6 +9,11 @@ namespace Platform.DataInitializer.Services;
 /// </summary>
 public interface IDataInitializerService
 {
+    /// <summary>
+    /// 执行数据初始化
+    /// 包括创建数据库索引和初始化系统菜单
+    /// </summary>
+    /// <returns>表示异步操作的 Task</returns>
     Task InitializeAsync();
 }
 
@@ -23,6 +28,12 @@ public class DataInitializerService : IDataInitializerService
     private readonly ILogger<DataInitializerService> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
+    /// <summary>
+    /// 初始化数据初始化服务
+    /// </summary>
+    /// <param name="database">MongoDB 数据库实例</param>
+    /// <param name="logger">日志记录器</param>
+    /// <param name="loggerFactory">日志工厂，用于创建子日志记录器</param>
     public DataInitializerService(
         IMongoDatabase database,
         ILogger<DataInitializerService> logger,

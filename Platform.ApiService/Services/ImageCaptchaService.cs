@@ -19,7 +19,7 @@ public interface IImageCaptchaService
     /// </summary>
     /// <param name="type">验证码类型（login, register）</param>
     /// <param name="clientIp">客户端IP</param>
-    /// <returns>验证码结果</returns>
+    /// <returns>验证码结果，包含验证码ID和图片数据</returns>
     Task<CaptchaImageResult> GenerateCaptchaAsync(string type = "login", string? clientIp = null);
 
     /// <summary>
@@ -28,7 +28,7 @@ public interface IImageCaptchaService
     /// <param name="captchaId">验证码ID</param>
     /// <param name="answer">用户输入的答案</param>
     /// <param name="type">验证码类型</param>
-    /// <returns>验证是否成功</returns>
+    /// <returns>如果验证成功返回 true，否则返回 false</returns>
     Task<bool> ValidateCaptchaAsync(string captchaId, string answer, string type = "login");
 }
 

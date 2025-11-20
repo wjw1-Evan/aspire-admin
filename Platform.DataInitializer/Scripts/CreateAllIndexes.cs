@@ -15,6 +15,11 @@ public class CreateAllIndexes
     private const string CompanyIdFieldName = "companyId";
     private const string CreatedAtFieldName = "createdAt";
 
+    /// <summary>
+    /// 初始化索引创建器
+    /// </summary>
+    /// <param name="database">MongoDB 数据库实例</param>
+    /// <param name="logger">日志记录器</param>
     public CreateAllIndexes(IMongoDatabase database, ILogger<CreateAllIndexes> logger)
     {
         _database = database;
@@ -49,7 +54,7 @@ public class CreateAllIndexes
 
         try
         {
-            await DropIndexIfExistsAsync(collection, "idx_beacon_company_user", "userlocationbeacons.companyId + userId (移除唯一约束)");
+           
 
             await CreateIndexAsync(collection,
                 Builders<BsonDocument>.IndexKeys
@@ -223,8 +228,7 @@ public class CreateAllIndexes
 
         try
         {
-            // 先删除旧索引（如果存在），确保重新创建为稀疏索引
-            await DropIndexIfExistsAsync(collection, "idx_appusers_phone_unique", "appusers.phone (重新创建为稀疏索引)");
+           
             
             // 创建稀疏唯一索引：只索引非空值，允许多个 null 值
             await CreateIndexAsync(collection,
@@ -385,25 +389,7 @@ public class CreateAllIndexes
         }
     }
 
-    private async Task DropIndexIfExistsAsync<T>(
-        IMongoCollection<T> collection,
-        string indexName,
-        string description)
-    {
-        try
-        {
-            await collection.Indexes.DropOneAsync(indexName);
-            _logger.LogInformation("删除索引: {Description}", description);
-        }
-        catch (MongoCommandException ex) when (ex.CodeName == "IndexNotFound")
-        {
-            _logger.LogDebug(ex, "索引不存在，无需删除: {Description}", description);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "删除索引失败: {Description}", description);
-        }
-    }
+
     private async Task CreateIndexAsync<T>(
         IMongoCollection<T> collection,
         IndexKeysDefinition<T> keys,

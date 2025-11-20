@@ -15,14 +15,17 @@
     "start:dev": "cross-env REACT_APP_ENV=dev UMI_ENV=dev max dev",
     "start:pre": "cross-env REACT_APP_ENV=pre UMI_ENV=dev max dev",
     "start:test": "cross-env REACT_APP_ENV=test UMI_ENV=dev max dev",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "update:deps": "npm update",
+    "outdated": "npm outdated"
+    
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@ant-design/pro-components": "^2.8.10",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "antd": "^5.29.1",
-    "antd-style": "^3.7.0",
+    "antd-style": "^3.7.1",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",
     "react": "^19.2.0",

@@ -1,6 +1,6 @@
 import { LockOutlined } from '@ant-design/icons';
 import { ProForm, ProFormText } from '@ant-design/pro-components';
-import { FormattedMessage, Helmet, useIntl } from '@umijs/max';
+import { FormattedMessage, useIntl } from '@umijs/max';
 import { Alert, App, Card } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
@@ -72,19 +72,16 @@ const ChangePassword: React.FC = () => {
 
   const { errorCode, errorMessage } = changePasswordState;
 
-  return (
-    <div className={styles.container}>
-      <Helmet>
-        <title>
-          {intl.formatMessage({
-            id: 'menu.changePassword',
-            defaultMessage: '修改密码',
-          })}
-          {Settings.title && ` - ${Settings.title}`}
-        </title>
-      </Helmet>
+  const pageTitle = intl.formatMessage({
+    id: 'menu.changePassword',
+    defaultMessage: '修改密码',
+  }) + (Settings.title ? ` - ${Settings.title}` : '');
 
-      <Card
+  return (
+    <>
+      <title>{pageTitle}</title>
+      <div className={styles.container}>
+        <Card
         title={intl.formatMessage({
           id: 'menu.changePassword',
           defaultMessage: '修改密码',
@@ -195,7 +192,8 @@ const ChangePassword: React.FC = () => {
           />
         </ProForm>
       </Card>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -21,7 +21,7 @@
     "@ant-design/icons": "^6.1.0",
     "@ant-design/pro-components": "^2.8.10",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
-    "antd": "^5.28.1",
+    "antd": "^5.29.1",
     "antd-style": "^3.7.0",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",
@@ -31,7 +31,7 @@
   "devDependencies": {
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
+    "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "@types/react-helmet": "^6.1.11",
     "@umijs/max": "^4.5.3",
@@ -42,5 +42,12 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "overrides": {
+    "react-helmet-async": {
+      "react": "^19.2.0",
+      "react-dom": "^19.2.0"
+    },
+    "use-sync-external-store": "^1.6.0"
   }
 }

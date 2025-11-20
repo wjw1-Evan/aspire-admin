@@ -12,7 +12,7 @@ import {
   ProFormText,
   ProFormDigit,
 } from '@ant-design/pro-components';
-import { FormattedMessage, Helmet, useIntl } from '@umijs/max';
+import { FormattedMessage, useIntl } from '@umijs/max';
 import {
   Avatar,
   Button,
@@ -307,19 +307,16 @@ const UserCenter: React.FC = () => {
     );
   }
 
-  return (
-    <div className={styles.container}>
-      <Helmet>
-        <title>
-          {intl.formatMessage({
-            id: 'menu.account.center',
-            defaultMessage: '个人中心',
-          })}
-          {Settings.title && ` - ${Settings.title}`}
-        </title>
-      </Helmet>
+  const pageTitle = intl.formatMessage({
+    id: 'menu.account.center',
+    defaultMessage: '个人中心',
+  }) + (Settings.title ? ` - ${Settings.title}` : '');
 
-      <Title level={2}>
+  return (
+    <>
+      <title>{pageTitle}</title>
+      <div className={styles.container}>
+        <Title level={2}>
         <UserOutlined style={{ marginRight: '8px' }} />
         <FormattedMessage
           id="pages.account.center.title"
@@ -635,7 +632,8 @@ const UserCenter: React.FC = () => {
           }}
         />
       </ProCard>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -11,7 +11,6 @@ import {
 } from '@ant-design/pro-components';
 import {
   FormattedMessage,
-  Helmet,
   Link,
   SelectLang,
   useIntl,
@@ -204,18 +203,16 @@ const Login: React.FC = () => {
   };
   const { status, type: loginType } = userLoginState;
 
+  const pageTitle = intl.formatMessage({
+    id: 'menu.login',
+    defaultMessage: '登录页',
+  }) + (Settings.title ? ` - ${Settings.title}` : '');
+
   return (
-    <div className={styles.container}>
-      <Helmet>
-        <title>
-          {intl.formatMessage({
-            id: 'menu.login',
-            defaultMessage: '登录页',
-          })}
-          {Settings.title && ` - ${Settings.title}`}
-        </title>
-      </Helmet>
-      <Lang />
+    <>
+      <title>{pageTitle}</title>
+      <div className={styles.container}>
+        <Lang />
       <div
         style={{
           flex: '1',
@@ -469,7 +466,8 @@ const Login: React.FC = () => {
         </LoginForm>
       </div>
       <Footer />
-    </div>
+      </div>
+    </>
   );
 };
 

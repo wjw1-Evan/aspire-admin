@@ -120,11 +120,18 @@ public class FriendService : IFriendService
 
         var friendIds = friendships.Select(f => f.FriendUserId).Distinct().ToList();
 
-        var users = await _userFactory.FindAsync(
-            _userFactory.CreateFilterBuilder()
-                .In(u => u.Id, friendIds)
-                .Build());
-
+        // ✅ 优化：使用字段投影，只返回好友列表需要的字段
+        var userFilter = _userFactory.CreateFilterBuilder()
+            .In(u => u.Id, friendIds)
+            .Build();
+        var userProjection = _userFactory.CreateProjectionBuilder()
+            .Include(u => u.Id)
+            .Include(u => u.Username)
+            .Include(u => u.Name)
+            .Include(u => u.PhoneNumber)
+            .Build();
+        
+        var users = await _userFactory.FindAsync(userFilter, projection: userProjection);
         var usersMap = users.ToDictionary(u => u.Id, u => u);
 
         var response = new List<FriendSummaryResponse>();
@@ -197,7 +204,16 @@ public class FriendService : IFriendService
             builder.Equal(u => u.CurrentCompanyId, currentUser.CurrentCompanyId);
         }
 
-        var users = await _userFactory.FindAsync(builder.Build());
+        // ✅ 优化：使用字段投影，只返回搜索需要的字段
+        var userFilter = builder.Build();
+        var userProjection = _userFactory.CreateProjectionBuilder()
+            .Include(u => u.Id)
+            .Include(u => u.Username)
+            .Include(u => u.Name)
+            .Include(u => u.PhoneNumber)
+            .Build();
+        
+        var users = await _userFactory.FindAsync(userFilter, projection: userProjection);
 
         var friends = await GetFriendsAsync();
         var friendIdSet = friends.Select(f => f.UserId).ToHashSet();

@@ -666,6 +666,66 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
+    /// 获取当前用户的活动日志详情
+    /// </summary>
+    /// <remarks>
+    /// 根据日志ID获取当前用户的单条活动日志详情，返回完整的日志数据（包括 ResponseBody 等所有字段）。
+    /// 
+    /// 权限要求：用户必须已登录，且只能查看自己的日志
+    /// 
+    /// 示例请求：
+    /// ```
+    /// GET /api/user/my-activity-logs/{logId}
+    /// Authorization: Bearer {token}
+    /// ```
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "id": "507f1f77bcf86cd799439011",
+    ///     "userId": "507f191e810c19729de860ea",
+    ///     "username": "admin",
+    ///     "action": "get_user",
+    ///     "description": "获取用户信息",
+    ///     "ipAddress": "192.168.1.1",
+    ///     "userAgent": "Mozilla/5.0...",
+    ///     "httpMethod": "GET",
+    ///     "path": "/api/user/123",
+    ///     "queryString": "?page=1",
+    ///     "fullUrl": "https://example.com/api/user/123?page=1",
+    ///     "statusCode": 200,
+    ///     "duration": 45,
+    ///     "responseBody": "{...}",
+    ///     "createdAt": "2024-01-01T00:00:00Z"
+    ///   }
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="logId">日志ID（MongoDB ObjectId）</param>
+    /// <returns>活动日志详情</returns>
+    /// <response code="200">成功返回日志详情</response>
+    /// <response code="404">日志不存在或不属于当前用户</response>
+    /// <response code="401">未授权，需要登录</response>
+    [HttpGet("my-activity-logs/{logId}")]
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUserActivityLogById(string logId)
+    {
+        // ✅ 验证日志ID格式
+        if (string.IsNullOrEmpty(logId) || !MongoDB.Bson.ObjectId.TryParse(logId, out _))
+            throw new ArgumentException("日志ID格式不正确");
+
+        // ✅ 获取日志详情（返回完整数据，包括 ResponseBody 等所有字段）
+        var log = await _userService.GetCurrentUserActivityLogByIdAsync(logId);
+        
+        if (log == null)
+            throw new KeyNotFoundException("日志不存在或不属于当前用户");
+
+        return Success(log);
+    }
+
+    /// <summary>
     /// 获取当前用户的所有权限
     /// </summary>
     [HttpGet("my-permissions")]

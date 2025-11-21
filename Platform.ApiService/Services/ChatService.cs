@@ -1355,11 +1355,18 @@ public class ChatService : IChatService
         Dictionary<string, AppUser> participantMap = new();
         if (participantIds.Count > 0)
         {
+            // ✅ 优化：使用字段投影，只返回参与者元数据需要的字段
             var filter = _userFactory.CreateFilterBuilder()
                 .In(user => user.Id, participantIds)
                 .Build();
+            var userProjection = _userFactory.CreateProjectionBuilder()
+                .Include(u => u.Id)
+                .Include(u => u.Username)
+                .Include(u => u.Name)
+                .Include(u => u.Avatar)  // 用于头像显示
+                .Build();
 
-            var users = await _userFactory.FindAsync(filter);
+            var users = await _userFactory.FindAsync(filter, projection: userProjection);
             participantMap = users.ToDictionary(user => user.Id, user => user);
         }
 

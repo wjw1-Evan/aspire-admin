@@ -406,13 +406,28 @@ public async Task<UserProfile> GetUserProfileAsync(string userId)
 
 ```csharp
 // ✅ 使用分页查询
-var users = await _userFactory.FindPagedAsync(filter, skip: 0, limit: 20);
+var (users, total) = await _userFactory.FindPagedAsync(filter, sort, page: 1, pageSize: 20);
 
-// ✅ 只查询需要的字段
-var projection = Builders<User>.Projection
+// ✅ 使用字段投影，只返回需要的字段（性能优化关键）
+var projection = _userFactory.CreateProjectionBuilder()
     .Include(u => u.Id)
     .Include(u => u.Username)
-    .Include(u => u.Email);
+    .Include(u => u.Email)
+    .Include(u => u.IsActive)
+    .Include(u => u.CreatedAt)
+    .Build();
+
+// ✅ 在查询中使用投影
+var (users, total) = await _userFactory.FindPagedAsync(
+    filter, sort, page: 1, pageSize: 20, projection);
+
+// ✅ 批量查询时使用投影
+var userProjection = _userFactory.CreateProjectionBuilder()
+    .Include(u => u.Id)
+    .Include(u => u.Username)
+    .Include(u => u.Name)
+    .Build();
+var users = await _userFactory.FindAsync(userFilter, projection: userProjection);
 
 // ✅ 使用索引优化查询
 var filter = _userFactory.CreateFilterBuilder()
@@ -420,6 +435,15 @@ var filter = _userFactory.CreateFilterBuilder()
     .Equal(u => u.CompanyId, companyId)  // 确保有复合索引
     .Build();
 ```
+
+**字段投影使用原则**：
+
+1. **列表查询必须使用投影** - 只返回列表显示需要的字段
+2. **批量查询必须使用投影** - 减少大量数据传输
+3. **关联查询使用投影** - 只返回关联对象的关键字段
+4. **详情查询不使用投影** - 需要返回完整对象
+5. **投影字段必须包含 Id** - MongoDB 查询总是返回 `_id` 字段
+6. **投影字段必须包含排序和过滤字段** - 确保查询能正常工作
 
 ## 🔧 依赖注入和配置管理
 

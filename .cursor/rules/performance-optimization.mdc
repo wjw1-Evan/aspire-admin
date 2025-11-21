@@ -10,6 +10,121 @@ description: 性能优化和监控规范
 
 ## ✅ 数据库性能优化
 
+### 字段投影优化
+
+**重要原则**：在列表查询、批量查询、关联查询等场景中，必须使用字段投影只返回需要的字段，减少网络传输量和内存使用。
+
+```csharp
+// ✅ 正确 - 使用字段投影优化查询
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _userFactory;
+
+    public async Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request)
+    {
+        var filter = _userFactory.CreateFilterBuilder()
+            .Equal(u => u.CurrentCompanyId, currentCompanyId)
+            .Build();
+
+        // ✅ 使用字段投影，只返回列表需要的字段
+        var projection = _userFactory.CreateProjectionBuilder()
+            .Include(u => u.Id)
+            .Include(u => u.Username)
+            .Include(u => u.Name)
+            .Include(u => u.Email)
+            .Include(u => u.PhoneNumber)
+            .Include(u => u.Age)
+            .Include(u => u.IsActive)
+            .Include(u => u.LastLoginAt)
+            .Include(u => u.CreatedAt)
+            .Include(u => u.UpdatedAt)
+            .Include(u => u.CurrentCompanyId)  // 用于后续过滤
+            .Build();
+
+        // 分页查询用户（使用投影）
+        var (users, total) = await _userFactory.FindPagedAsync(
+            filter, sortBuilder.Build(), request.Page, request.PageSize, projection);
+
+        // 批量加载用户角色信息
+        var usersWithRoles = await EnrichUsersWithRolesAsync(users, currentCompanyId);
+        return new UserListWithRolesResponse { Users = usersWithRoles, Total = (int)total };
+    }
+
+    // ✅ 批量查询时使用投影
+    private async Task<Dictionary<string, string>> GetRoleNameMapAsync(List<string> roleIds, string companyId)
+    {
+        if (!roleIds.Any()) return new Dictionary<string, string>();
+
+        var roleFilter = _roleFactory.CreateFilterBuilder()
+            .In(r => r.Id, roleIds)
+            .Equal(r => r.CompanyId, companyId)
+            .Build();
+        
+        // ✅ 只返回 Id 和 Name
+        var roleProjection = _roleFactory.CreateProjectionBuilder()
+            .Include(r => r.Id)
+            .Include(r => r.Name)
+            .Build();
+        
+        var roles = await _roleFactory.FindAsync(roleFilter, projection: roleProjection);
+        return roles.ToDictionary(r => r.Id!, r => r.Name);
+    }
+}
+
+// ❌ 错误 - 不使用投影，返回所有字段
+public class UserService : IUserService
+{
+    public async Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request)
+    {
+        // ❌ 返回所有字段，包括不需要的 PasswordHash、Avatar 等大字段
+        var (users, total) = await _userFactory.FindPagedAsync(
+            filter, sortBuilder.Build(), request.Page, request.PageSize);
+        // 浪费网络带宽和内存
+    }
+}
+```
+
+**投影使用场景**：
+
+1. **列表查询** - 只返回列表显示需要的字段
+2. **批量查询** - 减少大量数据传输
+3. **关联查询** - 只返回关联对象的关键字段
+4. **统计查询** - 只返回统计需要的字段
+
+**不使用投影的场景**：
+
+1. **详情查询** - 需要返回完整对象
+2. **更新查询** - 需要完整对象进行更新
+3. **创建查询** - 需要返回完整对象
+4. **复杂业务逻辑** - 可能需要访问所有字段
+
+**投影字段选择原则**：
+
+1. **只包含需要的字段** - 不要包含"可能用到"的字段
+2. **包含关联字段** - 如果后续需要关联查询，包含必要的关联字段（如 CompanyId）
+3. **包含排序字段** - 如果查询需要排序，确保排序字段在投影中
+4. **包含过滤字段** - 如果查询需要过滤，确保过滤字段在投影中
+
+```csharp
+// ✅ 正确 - 投影字段选择
+var projection = _userFactory.CreateProjectionBuilder()
+    .Include(u => u.Id)              // 必需：用于标识
+    .Include(u => u.Username)         // 需要：列表显示
+    .Include(u => u.Email)            // 需要：列表显示
+    .Include(u => u.IsActive)         // 需要：列表显示和过滤
+    .Include(u => u.CreatedAt)        // 需要：列表显示和排序
+    .Include(u => u.CurrentCompanyId) // 需要：后续过滤
+    .Build();
+
+// ❌ 错误 - 包含不需要的字段
+var projection = _userFactory.CreateProjectionBuilder()
+    .Include(u => u.Id)
+    .Include(u => u.Username)
+    .Include(u => u.PasswordHash)     // ❌ 不需要：安全风险
+    .Include(u => u.Avatar)           // ❌ 不需要：大字段
+    .Build();
+```
+
 ### 查询优化
 
 ```csharp
@@ -782,6 +897,7 @@ public class UserService : IUserService
 
 创建或修改代码时检查：
 
+- [ ] **字段投影优化** - 列表查询、批量查询使用投影
 - [ ] 数据库查询优化
 - [ ] 索引使用正确
 - [ ] 批量操作实现
@@ -793,8 +909,19 @@ public class UserService : IUserService
 - [ ] 日志记录详细
 - [ ] 性能测试通过
 
+### 字段投影检查清单
+
+- [ ] 列表查询是否使用了字段投影？
+- [ ] 批量查询是否使用了字段投影？
+- [ ] 关联查询是否使用了字段投影？
+- [ ] 投影字段是否只包含需要的字段？
+- [ ] 投影字段是否包含必要的关联字段（如 CompanyId）？
+- [ ] 投影字段是否包含排序和过滤字段？
+- [ ] 是否排除了不需要的大字段（如 PasswordHash、Avatar）？
+
 ## 📚 相关文档
 
+- [数据库查询字段投影优化文档](mdc:docs/optimization/DATABASE-QUERY-PROJECTION-OPTIMIZATION.md)
 - [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
 - [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
 - [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)

@@ -64,6 +64,7 @@ public class RoleService : IRoleService
     /// <summary>
     /// 获取所有角色（带统计信息）
     /// ✅ 使用数据工厂的自动企业过滤（Role 和 UserCompany 都实现了 IMultiTenant）
+    /// ✅ 优化：使用字段投影，只返回需要的字段
     /// </summary>
     public async Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync()
     {
@@ -71,8 +72,19 @@ public class RoleService : IRoleService
             .Ascending(r => r.CreatedAt)
             .Build();
 
+        // ✅ 优化：使用字段投影，只返回构建 RoleWithStats 需要的字段
+        var roleProjection = _roleFactory.CreateProjectionBuilder()
+            .Include(r => r.Id)
+            .Include(r => r.Name)
+            .Include(r => r.Description)
+            .Include(r => r.MenuIds)
+            .Include(r => r.IsActive)
+            .Include(r => r.CreatedAt)
+            .Include(r => r.UpdatedAt)
+            .Build();
+
         // ✅ 数据工厂会自动添加企业过滤（因为 Role 实现了 IMultiTenant）
-        var roles = await _roleFactory.FindAsync(sort: sort);
+        var roles = await _roleFactory.FindAsync(sort: sort, projection: roleProjection);
         
         var rolesWithStats = new List<RoleWithStats>();
         

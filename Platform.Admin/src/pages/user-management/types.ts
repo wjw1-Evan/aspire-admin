@@ -1,11 +1,20 @@
 // 用户相关类型定义
 
+/**
+ * 用户信息（包含角色信息）
+ * 与后端 UserWithRolesResponse 对应
+ */
 export interface AppUser {
   id?: string;
   username: string;
+  name?: string;
   email?: string;
+  phoneNumber?: string;
+  age?: number;
   roleIds: string[];
+  roleNames?: string[];
   isActive: boolean;
+  isAdmin?: boolean;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
@@ -23,12 +32,16 @@ export interface UserListRequest {
   EndDate?: string;
 }
 
+/**
+ * 用户列表响应
+ * 与后端 UserListWithRolesResponse 对应
+ */
 export interface UserListResponse {
   users: AppUser[];
   total: number;
   page: number;
   pageSize: number;
-  totalPages: number;
+  totalPages?: number;
 }
 
 export interface UserStatisticsResponse {

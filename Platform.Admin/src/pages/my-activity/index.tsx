@@ -17,16 +17,17 @@ const MyActivity: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<UserActivityLog | null>(null);
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
 
   const handleViewDetail = (record: UserActivityLog) => {
-    setSelectedLog(record);
+    // ✅ 只传递 logId，让 LogDetailDrawer 从 API 获取完整数据
+    setSelectedLogId(record.id);
     setDetailDrawerOpen(true);
   };
 
   const handleCloseDetail = () => {
     setDetailDrawerOpen(false);
-    setSelectedLog(null);
+    setSelectedLogId(null);
   };
 
   /**
@@ -560,7 +561,8 @@ const MyActivity: React.FC = () => {
 
       <LogDetailDrawer
         open={detailDrawerOpen}
-        log={selectedLog}
+        logId={selectedLogId || undefined}
+        fetchFromApi={true}
         onClose={handleCloseDetail}
       />
     </PageContainer>

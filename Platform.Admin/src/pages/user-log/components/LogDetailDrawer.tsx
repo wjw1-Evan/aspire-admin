@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Drawer,
   Descriptions,
@@ -7,6 +7,8 @@ import {
   Space,
   Typography,
   Divider,
+  Spin,
+  message,
 } from 'antd';
 import {
   ClockCircleOutlined,
@@ -19,6 +21,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
 import type { UserActivityLog } from '@/services/user-log/types';
+import { getCurrentUserActivityLogById } from '@/services/user-log/api';
 
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
@@ -28,15 +31,53 @@ const { Text, Paragraph } = Typography;
 interface LogDetailDrawerProps {
   readonly open: boolean;
   readonly log: UserActivityLog | null;
+  readonly logId?: string; // 可选：如果提供 logId，将从 API 获取完整数据
   readonly onClose: () => void;
+  readonly fetchFromApi?: boolean; // 是否从 API 获取完整数据（默认：如果提供了 logId 则自动获取）
 }
 
 export default function LogDetailDrawer({
   open,
-  log,
+  log: initialLog,
+  logId,
   onClose,
+  fetchFromApi,
 }: LogDetailDrawerProps) {
   const intl = useIntl();
+  const [log, setLog] = useState<UserActivityLog | null>(initialLog);
+  const [loading, setLoading] = useState(false);
+
+  // 当打开抽屉且提供了 logId 时，从 API 获取完整数据
+  useEffect(() => {
+    const shouldFetch = fetchFromApi !== false && logId && open;
+    
+    if (shouldFetch) {
+      setLoading(true);
+      getCurrentUserActivityLogById(logId)
+        .then((response) => {
+          if (response.success && response.data) {
+            setLog(response.data);
+          } else {
+            message.error(intl.formatMessage({ id: 'pages.logDetail.fetchFailed' }) || '获取日志详情失败');
+            setLog(null);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to fetch log detail:', error);
+          message.error(intl.formatMessage({ id: 'pages.logDetail.fetchFailed' }) || '获取日志详情失败');
+          setLog(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else if (open && initialLog) {
+      // 如果没有 logId，使用传入的 log 数据
+      setLog(initialLog);
+    } else if (!open) {
+      // 关闭时重置状态
+      setLog(null);
+    }
+  }, [open, logId, initialLog, fetchFromApi, intl]);
   const formattedResponseBody = React.useMemo(() => {
     if (!log?.responseBody) {
       return null;
@@ -55,7 +96,7 @@ export default function LogDetailDrawer({
     [log?.responseBody],
   );
   
-  if (!log) return null;
+  if (!log && !loading) return null;
 
   // 根据状态码获取显示样式
   const getStatusBadge = (statusCode?: number) => {
@@ -96,7 +137,9 @@ export default function LogDetailDrawer({
 
   return (
     <Drawer title={intl.formatMessage({ id: 'pages.logDetail.title' })} width={720} open={open} onClose={onClose}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Spin spinning={loading}>
+        {log ? (
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {/* 基本信息 */}
         <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.basicInfo' })} bordered column={1}>
           <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.logId' })}>
@@ -237,7 +280,15 @@ export default function LogDetailDrawer({
             </Descriptions>
           </>
         )}
-      </Space>
+          </Space>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Text type="secondary">
+              {intl.formatMessage({ id: 'pages.logDetail.noData' }) || '暂无数据'}
+            </Text>
+          </div>
+        )}
+      </Spin>
     </Drawer>
   );
 }

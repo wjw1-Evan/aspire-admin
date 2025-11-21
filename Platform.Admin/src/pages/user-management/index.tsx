@@ -127,18 +127,25 @@ const UserManagement: React.FC = () => {
     };
 
     try {
+      // ✅ 后端返回 UserListWithRolesResponse，包含 Users 和 Total
       const response = await request<ApiResponse<{
         users: AppUser[];
         total: number;
+        page?: number;
+        pageSize?: number;
       }>>('/api/user/list', {
         method: 'POST',
         data: requestData,
       });
 
+      // ✅ 兼容后端返回的数据结构（Users 或 users）
+      const users = response.data?.users || (response.data as any)?.Users || [];
+      const total = response.data?.total || (response.data as any)?.Total || 0;
+
       return {
-        data: response.data?.users || [],
+        data: users,
         success: response.success,
-        total: response.data?.total || 0,
+        total: total,
       };
     } catch (error) {
       console.error('获取用户列表失败:', error);

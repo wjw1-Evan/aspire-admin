@@ -243,11 +243,15 @@ public class AuthService : IAuthService
             firstUserCompany = userCompany.FirstOrDefault();
             if (firstUserCompany?.RoleIds != null && firstUserCompany.RoleIds.Any())
             {
-                // 使用工厂查询角色信息
+                // ✅ 优化：使用字段投影，只返回 Name
                 var roleFilter = _roleFactory.CreateFilterBuilder()
                     .In(r => r.Id, firstUserCompany.RoleIds)
                     .Build();
-                var userRoles = await _roleFactory.FindAsync(roleFilter);
+                var roleProjection = _roleFactory.CreateProjectionBuilder()
+                    .Include(r => r.Id)
+                    .Include(r => r.Name)
+                    .Build();
+                var userRoles = await _roleFactory.FindAsync(roleFilter, projection: roleProjection);
                 roleNames = userRoles.Select(r => r.Name).ToList();
             }
         }

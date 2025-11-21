@@ -148,6 +148,14 @@ public interface IUserService
     Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(int page = 1, int pageSize = 20, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null, string? sortBy = null, string? sortOrder = null);
     
     /// <summary>
+    /// 获取当前用户的活动日志详情（根据日志ID）
+    /// ✅ 返回完整的日志数据，包括 ResponseBody 等所有字段
+    /// </summary>
+    /// <param name="logId">日志ID</param>
+    /// <returns>活动日志详情，如果不存在或不属于当前用户则返回 null</returns>
+    Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId);
+    
+    /// <summary>
     /// 获取所有活动日志（分页，管理员功能）
     /// </summary>
     /// <param name="page">页码（默认1）</param>

@@ -474,28 +474,42 @@ public class JoinRequestService : IJoinRequestService
                                  .Distinct()
                                  .ToList();
         
-        // 批量查询用户信息
+        // ✅ 优化：使用字段投影，只返回需要的字段
+        // 批量查询用户信息（只需要 Username 和 Email）
         var userFilter = _userFactory.CreateFilterBuilder()
             .In(u => u.Id, userIds)
             .Build();
-        var users = await _userFactory.FindAsync(userFilter);
+        var userProjection = _userFactory.CreateProjectionBuilder()
+            .Include(u => u.Id)
+            .Include(u => u.Username)
+            .Include(u => u.Email)
+            .Build();
+        var users = await _userFactory.FindAsync(userFilter, projection: userProjection);
         var userDict = users.ToDictionary(u => u.Id!, u => u);
         
-        // 批量查询企业信息
+        // 批量查询企业信息（只需要 Name）
         var companyFilter = _companyFactory.CreateFilterBuilder()
             .In(c => c.Id, companyIds)
             .Build();
-        var companies = await _companyFactory.FindAsync(companyFilter);
+        var companyProjection = _companyFactory.CreateProjectionBuilder()
+            .Include(c => c.Id)
+            .Include(c => c.Name)
+            .Build();
+        var companies = await _companyFactory.FindAsync(companyFilter, projection: companyProjection);
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
         
-        // 批量查询审核人信息
+        // 批量查询审核人信息（只需要 Username）
         var reviewerDict = new Dictionary<string, AppUser>();
         if (reviewerIds.Any())
         {
             var reviewerFilter = _userFactory.CreateFilterBuilder()
                 .In(u => u.Id, reviewerIds)
                 .Build();
-            var reviewers = await _userFactory.FindAsync(reviewerFilter);
+            var reviewerProjection = _userFactory.CreateProjectionBuilder()
+                .Include(u => u.Id)
+                .Include(u => u.Username)
+                .Build();
+            var reviewers = await _userFactory.FindAsync(reviewerFilter, projection: reviewerProjection);
             reviewerDict = reviewers.ToDictionary(r => r.Id!, r => r);
         }
         

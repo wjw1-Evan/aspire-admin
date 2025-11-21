@@ -146,17 +146,25 @@ public class UserCompanyService : IUserCompanyService
         var companyIds = memberships.Select(m => m.CompanyId).Distinct().ToList();
         var allRoleIds = memberships.SelectMany(m => m.RoleIds).Distinct().ToList();
         
+        // ✅ 优化：使用字段投影，只返回需要的字段
         // 批量查询企业信息（跨企业查询，需要查询多个企业的信息）
+        // 只需要 Name 和 Code
         var companyFilter = _companyFactory.CreateFilterBuilder()
             .In(c => c.Id, companyIds)
             .Build();
+        var companyProjection = _companyFactory.CreateProjectionBuilder()
+            .Include(c => c.Id)
+            .Include(c => c.Name)
+            .Include(c => c.Code)
+            .Build();
         // ✅ Company 通常不实现 IMultiTenant，但为安全起见，如果需要跨企业查询可使用 FindWithoutTenantFilterAsync
-        var companies = await _companyFactory.FindAsync(companyFilter);
+        var companies = await _companyFactory.FindAsync(companyFilter, projection: companyProjection);
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
         
         // 批量查询角色信息（跨企业查询，需要按企业分组）
         // 注意：由于 Role 实现了 IMultiTenant，会自动过滤当前企业，但这里需要查询多个企业的角色
         // 解决方案：使用 FindWithoutTenantFilterAsync 并手动按企业分组查询
+        // ✅ 优化：只需要角色 Name
         var roleDict = new Dictionary<string, Role>();
         if (allRoleIds.Any())
         {
@@ -178,6 +186,10 @@ public class UserCompanyService : IUserCompanyService
             }
             
             // 为每个企业查询角色（明确指定企业ID）
+            var roleProjection = _roleFactory.CreateProjectionBuilder()
+                .Include(r => r.Id)
+                .Include(r => r.Name)
+                .Build();
             foreach (var (companyId, roleIds) in companyRoleMap)
             {
                 if (roleIds.Any())
@@ -188,7 +200,7 @@ public class UserCompanyService : IUserCompanyService
                         .Equal(r => r.IsActive, true)
                         .Build();
                     // 使用 FindWithoutTenantFilterAsync 因为我们已手动添加了 CompanyId 过滤
-                    var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
+                    var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter, projection: roleProjection);
                     foreach (var role in roles)
                     {
                         if (role.Id != null && !roleDict.ContainsKey(role.Id))

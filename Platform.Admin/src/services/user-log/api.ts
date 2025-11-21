@@ -45,3 +45,17 @@ export async function getCurrentUserActivityLogs(
   });
 }
 
+/**
+ * 获取当前用户的活动日志详情（根据日志ID）
+ * ✅ 返回完整的日志数据，包括 ResponseBody 等所有字段
+ */
+export async function getCurrentUserActivityLogById(
+  logId: string,
+  options?: Record<string, any>,
+) {
+  return request<API.ApiResponse<UserActivityLog>>(`/api/user/my-activity-logs/${logId}`, {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+

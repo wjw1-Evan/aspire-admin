@@ -519,8 +519,23 @@ public class UserService : IUserService
                 break;
         }
 
-        // 分页查询用户
-        var (users, total) = await _userFactory.FindPagedAsync(filter, sortBuilder.Build(), request.Page, request.PageSize);
+        // ✅ 优化：使用字段投影，只返回列表需要的字段，减少数据传输量
+        var projection = _userFactory.CreateProjectionBuilder()
+            .Include(u => u.Id)
+            .Include(u => u.Username)
+            .Include(u => u.Name)
+            .Include(u => u.Email)
+            .Include(u => u.PhoneNumber)
+            .Include(u => u.Age)
+            .Include(u => u.IsActive)
+            .Include(u => u.LastLoginAt)
+            .Include(u => u.CreatedAt)
+            .Include(u => u.UpdatedAt)
+            .Include(u => u.CurrentCompanyId)  // 用于后续过滤
+            .Build();
+
+        // 分页查询用户（使用投影）
+        var (users, total) = await _userFactory.FindPagedAsync(filter, sortBuilder.Build(), request.Page, request.PageSize, projection);
 
         // 批量加载用户角色信息
         var usersWithRoles = await EnrichUsersWithRolesAsync(users, currentCompanyId);
@@ -661,6 +676,9 @@ public class UserService : IUserService
     /// <summary>
     /// 获取角色ID到角色名称的映射
     /// </summary>
+    /// <summary>
+    /// 获取角色名称映射（优化：使用字段投影，只返回 Id 和 Name）
+    /// </summary>
     private async Task<Dictionary<string, string>> GetRoleNameMapAsync(List<string> roleIds, string companyId)
     {
         if (!roleIds.Any()) return new Dictionary<string, string>();
@@ -670,7 +688,13 @@ public class UserService : IUserService
             .Equal(r => r.CompanyId, companyId)
             .Build();
         
-        var roles = await _roleFactory.FindAsync(roleFilter);
+        // ✅ 优化：使用字段投影，只返回 Id 和 Name
+        var roleProjection = _roleFactory.CreateProjectionBuilder()
+            .Include(r => r.Id)
+            .Include(r => r.Name)
+            .Build();
+        
+        var roles = await _roleFactory.FindAsync(roleFilter, projection: roleProjection);
         return roles.ToDictionary(r => r.Id!, r => r.Name);
     }
 
@@ -1013,10 +1037,49 @@ public class UserService : IUserService
         
         var sort = sortBuilder.Build();
         
-        // 获取分页数据
-        var (logs, totalFromPaged) = await _activityLogFactory.FindPagedAsync(filter, sort, page, pageSize);
+        // ✅ 使用字段投影，只返回必要的字段，减少数据传输量
+        // 排除大字段：ResponseBody、UserAgent、QueryString、FullUrl 等
+        var projection = _activityLogFactory.CreateProjectionBuilder()
+            .Include(log => log.Id)
+            .Include(log => log.UserId)
+            .Include(log => log.Username)
+            .Include(log => log.Action)
+            .Include(log => log.Description)
+            .Include(log => log.IpAddress)
+            .Include(log => log.HttpMethod)
+            .Include(log => log.Path)
+            .Include(log => log.StatusCode)
+            .Include(log => log.Duration)
+            .Include(log => log.CreatedAt)
+            .Build();
+        
+        // 获取分页数据（使用投影）
+        var (logs, totalFromPaged) = await _activityLogFactory.FindPagedAsync(filter, sort, page, pageSize, projection);
         
         return (logs, total);
+    }
+
+    /// <summary>
+    /// 获取当前用户的活动日志详情（根据日志ID）
+    /// ✅ 返回完整的日志数据，包括 ResponseBody 等所有字段
+    /// ✅ 使用数据工厂的自动企业过滤（UserActivityLog 实现了 IMultiTenant）
+    /// </summary>
+    public async Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId)
+    {
+        // 获取当前用户ID
+        var currentUserId = _userFactory.GetRequiredUserId();
+        
+        // ✅ 使用 GetByIdAsync 获取完整日志数据（不使用投影，返回所有字段）
+        // ✅ 数据工厂会自动添加企业过滤（因为 UserActivityLog 实现了 IMultiTenant）
+        var log = await _activityLogFactory.GetByIdAsync(logId);
+        
+        // 验证日志是否存在且属于当前用户
+        if (log == null || log.UserId != currentUserId)
+        {
+            return null;
+        }
+        
+        return log;
     }
 
     /// <summary>

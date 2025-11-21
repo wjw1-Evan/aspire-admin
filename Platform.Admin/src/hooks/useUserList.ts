@@ -48,10 +48,14 @@ export function useUserList() {
           },
         );
 
+        // ✅ 兼容后端返回的数据结构（Users 或 users）
+        const users = response.data?.users || response.data?.Users || [];
+        const total = response.data?.total || response.data?.Total || 0;
+
         return {
-          data: response.data.users || [],
+          data: users,
           success: true,
-          total: response.data.total || 0,
+          total: total,
         };
       } catch (error) {
         console.error('获取用户列表失败:', error);

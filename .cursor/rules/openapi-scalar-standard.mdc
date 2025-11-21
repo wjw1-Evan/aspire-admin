@@ -362,8 +362,7 @@ INVALID_REFERENCE: Can't resolve reference: #/components/schemas/LoginRequest
 
 ## 📚 相关文档
 
-- [如何查看 API 文档](mdc:docs/features/HOW-TO-VIEW-API-DOCS.md)
-- [Scalar API 文档修复](mdc:docs/bugfixes/SCALAR-API-REFERENCE-FIX.md)
+- [项目结构指南](mdc:.cursor/rules/project-structure.mdc) - 包含 API 文档访问方式
 - [.NET 10 OpenAPI 官方文档](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview)
 - [Scalar 官方网站](https://github.com/scalar/scalar)
 

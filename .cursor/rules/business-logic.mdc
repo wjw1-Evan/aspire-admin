@@ -8,6 +8,10 @@ description: 业务逻辑和服务层开发规范
 
 ### 服务层负责业务逻辑实现，保持单一职责，确保业务规则的一致性和可维护性
 
+> **相关规范**：
+> - 参数验证和资源检查请使用统一的扩展方法，详见 [扩展方法使用规范](mdc:.cursor/rules/extension-methods-usage.mdc)
+> - 数据库操作必须使用 `IDatabaseOperationFactory<T>`，详见 [后端核心开发规范](mdc:.cursor/rules/core-backend-standards.mdc)
+
 ## ✅ 服务层架构规范
 
 ### 服务接口定义
@@ -45,24 +49,24 @@ public interface IUserService
 public class UserService : IUserService
 {
     private readonly IDatabaseOperationFactory<User> _userFactory;
-    private readonly IMongoCollection<UserActivityLog> _activityLogs;
-    private readonly IMongoCollection<Role> _roles;
-    private readonly IMongoCollection<UserCompany> _userCompanies;
+    private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
+    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
 
     public UserService(
         IDatabaseOperationFactory<User> userFactory,
-        IMongoCollection<UserActivityLog> activityLogs,
-        IMongoCollection<Role> roles,
-        IMongoCollection<UserCompany> userCompanies,
+        IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
+        IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService)
     {
         _userFactory = userFactory;
-        _activityLogs = activityLogs;
-        _roles = roles;
-        _userCompanies = userCompanies;
+        _activityLogFactory = activityLogFactory;
+        _roleFactory = roleFactory;
+        _userCompanyFactory = userCompanyFactory;
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
     }
@@ -430,9 +434,10 @@ public class UserService : IUserService
     private async Task ValidateUserDeletionAsync(User user)
     {
         // 检查用户是否有关联数据
-        var hasActivityLogs = await _activityLogs.CountDocumentsAsync(
-            Builders<UserActivityLog>.Filter.Eq(al => al.UserId, user.Id)
-        ) > 0;
+        var activityLogFilter = _activityLogFactory.CreateFilterBuilder()
+            .Equal(al => al.UserId, user.Id)
+            .Build();
+        var hasActivityLogs = await _activityLogFactory.CountAsync(activityLogFilter) > 0;
 
         if (hasActivityLogs)
         {
@@ -440,12 +445,11 @@ public class UserService : IUserService
         }
 
         // 检查用户是否是企业管理员
-        var isAdmin = await _userCompanies.CountDocumentsAsync(
-            Builders<UserCompany>.Filter.And(
-                Builders<UserCompany>.Filter.Eq(uc => uc.UserId, user.Id),
-                Builders<UserCompany>.Filter.Eq(uc => uc.IsAdmin, true)
-            )
-        ) > 0;
+        var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, user.Id)
+            .Equal(uc => uc.IsAdmin, true)
+            .Build();
+        var isAdmin = await _userCompanyFactory.CountAsync(userCompanyFilter) > 0;
 
         if (isAdmin)
         {
@@ -831,8 +835,8 @@ public async Task<User> GetUserByIdAsync(string id)
 
 - [ ] **定义清晰的接口** - 实现对应的服务接口（IUserService 等）
 - [ ] **实现单一职责原则** - 每个服务只负责一个业务领域
-- [ ] **添加业务规则验证** - 使用验证服务和唯一性检查器
-- [ ] **使用数据库操作工厂** - 使用 IDatabaseOperationFactory，禁止直接使用 IMongoCollection
+- [ ] **添加业务规则验证** - 使用验证服务和唯一性检查器，参数验证使用扩展方法（详见 [扩展方法使用规范](mdc:.cursor/rules/extension-methods-usage.mdc)）
+- [ ] **使用数据库操作工厂** - 使用 `IDatabaseOperationFactory<T>`，禁止直接使用 `IMongoCollection<T>`（详见 [后端核心开发规范](mdc:.cursor/rules/core-backend-standards.mdc)）
 - [ ] **添加适当的异常处理** - 使用标准异常类型，记录错误日志
 - [ ] **记录操作日志** - 使用工厂的日志方法记录关键操作
 - [ ] **使用事务处理** - 复杂操作使用 MongoDB 事务保证数据一致性
@@ -873,4 +877,5 @@ public class UserService : IUserService
 - [用户服务实现](mdc:Platform.ApiService/Services/UserService.cs)
 - [角色服务实现](mdc:Platform.ApiService/Services/RoleService.cs)
 - [企业服务实现](mdc:Platform.ApiService/Services/CompanyService.cs)
-- [数据库操作工厂使用指南](mdc:docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md)
+- [后端核心开发规范](mdc:.cursor/rules/core-backend-standards.mdc) - 数据库操作工厂使用规范
+- [后端核心开发规范](mdc:.cursor/rules/core-backend-standards.mdc) - 数据库操作工厂使用规范

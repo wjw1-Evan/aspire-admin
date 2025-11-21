@@ -80,7 +80,7 @@ var (items, total) = await _userFactory.FindPagedAsync(filter, sort, request.Pag
   - 创建实体时使用 `_factory.GetRequiredCompanyId()` 设置 `CompanyId`。
 - 跨租户场景使用 `FindWithoutTenantFilterAsync` / `GetByIdWithoutTenantFilterAsync`，并记录使用原因。
 - 后台线程（如队列、定时任务）不可依赖 `HttpContext`，需要通过用户记录查询企业信息。
-- 开发新实体时遵循 `docs/features/NEW-ENTITY-CHECKLIST.md`：继承正确的基类、设置 `CompanyId`、提供索引与审计。
+- 开发新实体时遵循 [新增业务实体开发清单](mdc:.cursor/rules/new-entity-checklist.mdc)：继承正确的基类、设置 `CompanyId`、提供索引与审计。
 
 ### 禁止的做法
 

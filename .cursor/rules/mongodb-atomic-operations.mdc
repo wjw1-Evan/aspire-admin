@@ -317,7 +317,7 @@ public async Task InsertOne_Should_Be_Atomic_Under_Concurrency()
 ## 📚 相关文档
 
 - [MongoDB 原子操作文档](https://docs.mongodb.com/manual/core/write-operations-atomicity/)
-- [数据初始化微服务架构](mdc:docs/features/DATA-INITIALIZER-MICROSERVICE.md)
+- [后端核心开发规范](mdc:.cursor/rules/core-backend-standards.mdc) - 数据初始化微服务规范
 - [DataInitializerService 实现](mdc:Platform.DataInitializer/Services/DataInitializerService.cs)
 
 ## 🎯 最佳实践总结

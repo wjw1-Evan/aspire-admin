@@ -35,7 +35,7 @@ description: 文档组织与同步规范（docs 目录、命名、帮助内容�
   4. 使用说明或步骤
   5. 测试验证
   6. 相关链接或参考资料
-- 更新或新增文档时，请同步维护 `docs/INDEX.md` 索引。
+- 更新或新增文档时，建议创建或维护文档索引（如 `docs/INDEX.md`）以便检索。
 
 ---
 
@@ -70,7 +70,7 @@ description: 文档组织与同步规范（docs 目录、命名、帮助内容�
 | 命名规范 | 文件名含主题信息，避免 `doc1.md`、`fix.md` 等无意义命名 |
 | 内容更新 | 所有变更点在文档中有所体现，步骤、截图与代码一致 |
 | 帮助同步 | 管理后台/移动端帮助中心与文档信息一致，无过期描述 |
-| 索引维护 | `docs/INDEX.md` 已更新，方便检索 |
+| 索引维护 | 文档索引已更新（如存在），方便检索 |
 | 提交一致 | 提交信息提及文档更新，便于代码审查 |
 
 ---
@@ -86,8 +86,7 @@ description: 文档组织与同步规范（docs 目录、命名、帮助内容�
 
 ## 📚 相关参考
 
-- `docs/INDEX.md` – 文档总目录
-- `docs/features/HOW-TO-VIEW-API-DOCS.md`
-- `docs/reports/DOCUMENTATION-ORGANIZED.md`
+- `docs/` – 文档目录（按分类存放）
 - `Platform.Admin/src/components/HelpModal/` – 帮助中心组件示例
+- `README.md` – 项目主文档
 

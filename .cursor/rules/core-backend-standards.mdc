@@ -144,12 +144,9 @@ var (items, total) = await _userFactory.FindPagedAsync(filter, sort, request.Pag
 
 ## 📚 相关文档
 
-- `docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md`
-- `docs/features/DATABASE-FACTORY-MIGRATION.md`
-- `docs/features/GLOBAL-MENU-ARCHITECTURE.md`
-- `docs/features/DATA-INITIALIZER-MICROSERVICE.md`
-- `docs/features/HOW-TO-VIEW-API-DOCS.md`
-- `docs/INDEX.md`（获取所有规则与说明文档索引）
+- `docs/features/` – 功能说明文档目录
+- `README.md` – 项目主文档
+- 详细的功能说明和架构文档请参考 `docs/` 目录下的相关文档
 
 > 🧪 请为关键流程（多租户过滤、数据初始化、菜单加载等）编写或更新单元测试与集成测试，确保上述规范落地。
 

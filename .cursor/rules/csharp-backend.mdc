@@ -9,322 +9,13 @@ description: C# 后端开发规范和最佳实践
 
 **遵循 .NET 10 和 C# 13 最佳实践，确保代码质量、性能和可维护性**
 
-## 📝 XML 文档注释规范（强制要求）
+## 📝 XML 文档注释规范
 
-### 🚨 强制要求
+> **重要**：XML 文档注释的详细规范、格式要求、示例和检查清单请参考 [OpenAPI + Scalar API 文档规范](mdc:.cursor/rules/openapi-scalar-standard.mdc)。
 
-**所有公共类型和成员必须包含完整的 XML 文档注释，这是强制要求，不允许例外。**
-
-**⚠️ 重要提示**：XML 文档注释是 .NET 10 OpenAPI + Scalar API 文档生成的基础，缺失注释会导致：
-
-- Scalar API 文档中缺少接口说明
-- 无法正确生成 OpenAPI Schema
-- 降低代码可读性和可维护性
-- 违反项目代码质量标准
+**所有公共类型和成员必须包含完整的 XML 文档注释，这是强制要求，不允许例外。** 这是 .NET 10 OpenAPI + Scalar API 文档生成的基础。
 
 **✅ 项目已实现**：所有 C# 代码文件（1082+ 个公共成员）已添加完整的 XML 文档注释，编译时无 CS1591 警告。
-
-### 必须添加 XML 注释的元素
-
-以下所有公共元素**必须**包含 XML 注释：
-
-1. **公共类（public class）**
-2. **公共接口（public interface）**
-3. **公共枚举（public enum）**
-4. **公共结构体（public struct）**
-5. **公共方法（public method）**
-6. **公共属性（public property）**
-7. **公共字段（public field）**
-8. **公共事件（public event）**
-9. **构造函数（constructor）**
-10. **泛型类型参数（type parameters）**
-
-### XML 注释格式规范
-
-```csharp
-/// <summary>
-/// 类的简要描述
-/// </summary>
-public class MyClass
-{
-    /// <summary>
-    /// 属性的描述
-    /// </summary>
-    public string MyProperty { get; set; }
-    
-    /// <summary>
-    /// 方法的描述
-    /// </summary>
-    /// <param name="param1">参数1的描述</param>
-    /// <param name="param2">参数2的描述</param>
-    /// <returns>返回值的描述</returns>
-    /// <exception cref="ArgumentException">当参数无效时抛出</exception>
-    public string MyMethod(string param1, int param2)
-    {
-        // 实现
-    }
-}
-```
-
-### 控制器方法注释
-
-```csharp
-/// <summary>
-/// 获取用户信息
-/// </summary>
-/// <param name="id">用户ID</param>
-/// <returns>用户详细信息</returns>
-/// <remarks>
-/// 示例请求：
-/// GET /api/user/123
-///
-/// 示例响应：
-/// ```json
-/// {
-///   "id": "123",
-///   "username": "admin"
-/// }
-/// ```
-/// </remarks>
-[HttpGet("{id}")]
-public async Task<IActionResult> GetUser(string id)
-{
-    // 实现
-}
-```
-
-### 服务接口和实现注释
-
-```csharp
-/// <summary>
-/// 用户服务接口
-/// </summary>
-public interface IUserService
-{
-    /// <summary>
-    /// 根据ID获取用户
-    /// </summary>
-    /// <param name="id">用户ID</param>
-    /// <returns>用户信息，如果不存在则返回 null</returns>
-    Task<User?> GetUserByIdAsync(string id);
-}
-
-/// <summary>
-/// 用户服务实现
-/// </summary>
-public class UserService : IUserService
-{
-    /// <summary>
-    /// 初始化用户服务
-    /// </summary>
-    /// <param name="userFactory">用户数据操作工厂</param>
-    /// <param name="logger">日志记录器</param>
-    public UserService(
-        IDatabaseOperationFactory<User> userFactory,
-        ILogger<UserService> logger)
-    {
-        // 实现
-    }
-    
-    /// <summary>
-    /// 根据ID获取用户
-    /// </summary>
-    /// <param name="id">用户ID</param>
-    /// <returns>用户信息，如果不存在则返回 null</returns>
-    public async Task<User?> GetUserByIdAsync(string id)
-    {
-        // 实现
-    }
-}
-```
-
-### 模型类注释
-
-```csharp
-/// <summary>
-/// 用户实体
-/// </summary>
-public class User : BaseEntity
-{
-    /// <summary>
-    /// 用户名（3-50个字符，支持字母、数字、下划线）
-    /// </summary>
-    public string Username { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 邮箱地址（必须是有效的邮箱格式）
-    /// </summary>
-    public string Email { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// 创建用户请求
-/// </summary>
-public class CreateUserRequest
-{
-    /// <summary>
-    /// 用户名（3-50个字符，支持字母、数字、下划线）
-    /// </summary>
-    /// <example>admin</example>
-    [Required]
-    public string Username { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// 邮箱地址（必须是有效的邮箱格式）
-    /// </summary>
-    /// <example>admin@example.com</example>
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; } = string.Empty;
-}
-```
-
-### 枚举注释
-
-```csharp
-/// <summary>
-/// 用户状态枚举
-/// </summary>
-public enum UserStatus
-{
-    /// <summary>
-    /// 活跃状态
-    /// </summary>
-    Active,
-    
-    /// <summary>
-    /// 停用状态
-    /// </summary>
-    Inactive,
-    
-    /// <summary>
-    /// 待审核状态
-    /// </summary>
-    Pending
-}
-```
-
-### 泛型类型注释
-
-```csharp
-/// <summary>
-/// 分页结果模型
-/// </summary>
-/// <typeparam name="T">数据类型</typeparam>
-public class PagedResult<T>
-{
-    /// <summary>
-    /// 数据列表
-    /// </summary>
-    public List<T> Items { get; set; } = new();
-    
-    /// <summary>
-    /// 总记录数
-    /// </summary>
-    public long Total { get; set; }
-}
-```
-
-### ❌ 禁止的做法
-
-```csharp
-// ❌ 错误：公共类缺少 XML 注释
-public class UserService : IUserService
-{
-    // 没有注释
-}
-
-// ❌ 错误：公共方法缺少 XML 注释
-public async Task<User> GetUserAsync(string id)
-{
-    // 没有注释
-}
-
-// ❌ 错误：公共属性缺少 XML 注释
-public string Username { get; set; }
-
-// ❌ 错误：构造函数缺少 XML 注释
-public UserService(IUserFactory factory)
-{
-    // 没有注释
-}
-```
-
-### ✅ 正确做法
-
-```csharp
-/// <summary>
-/// 用户服务实现
-/// </summary>
-public class UserService : IUserService
-{
-    /// <summary>
-    /// 初始化用户服务
-    /// </summary>
-    /// <param name="factory">用户数据操作工厂</param>
-    public UserService(IDatabaseOperationFactory<User> factory)
-    {
-        // 实现
-    }
-    
-    /// <summary>
-    /// 根据ID获取用户
-    /// </summary>
-    /// <param name="id">用户ID</param>
-    /// <returns>用户信息，如果不存在则返回 null</returns>
-    public async Task<User?> GetUserAsync(string id)
-    {
-        // 实现
-    }
-    
-    /// <summary>
-    /// 用户名（3-50个字符）
-    /// </summary>
-    public string Username { get; set; }
-}
-```
-
-### 代码审查检查清单
-
-在提交代码前，必须检查：
-
-- [ ] **所有公共类都有 `<summary>` 注释**
-- [ ] **所有公共接口都有 `<summary>` 注释**
-- [ ] **所有公共枚举都有 `<summary>` 注释，每个枚举值也有注释**
-- [ ] **所有公共方法都有 `<summary>` 注释**
-- [ ] **所有方法参数都有 `<param>` 注释**
-- [ ] **所有有返回值的方法都有 `<returns>` 注释**
-- [ ] **所有可能抛出异常的方法都有 `<exception>` 注释**
-- [ ] **所有公共属性都有 `<summary>` 注释**
-- [ ] **所有构造函数都有 `<summary>` 和 `<param>` 注释**
-- [ ] **所有泛型类型都有 `<typeparam>` 注释**
-- [ ] **编译时没有 XML 注释警告（CS1591）**
-
-### 验证方法
-
-```bash
-# 编译项目，检查是否有 XML 注释警告
-dotnet build
-
-# 应该看到类似警告（如果有缺失的注释）：
-# warning CS1591: 缺少对公共可见类型或成员"XXX"的 XML 注释
-```
-
-### 项目配置要求
-
-确保项目文件中启用了 XML 文档生成：
-
-```xml
-<PropertyGroup>
-  <TargetFramework>net10.0</TargetFramework>
-  <ImplicitUsings>enable</ImplicitUsings>
-  <Nullable>enable</Nullable>
-  <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  <NoWarn>$(NoWarn);1591</NoWarn>
-</PropertyGroup>
-```
-
-**⚠️ 重要提示**：项目统一在 `.csproj` 中包含 `<NoWarn>$(NoWarn);1591</NoWarn>`，用于屏蔽第三方依赖带来的噪声警告。这并不意味着可以忽略注释编写，新增或修改公共成员时仍必须补齐 XML 注释；提交前务必自查并在代码审查中验证无遗漏。
 
 ## 📁 项目结构规范
 
@@ -370,6 +61,10 @@ public static class UserConstants
 ## 🔧 代码规范
 
 ### 1. 控制器规范
+
+> **重要**：控制器规范的详细要求请参考 [后端核心开发规范](mdc:.cursor/rules/core-backend-standards.mdc)。
+
+所有 API 控制器必须继承 `BaseApiController`，使用基类方法处理响应，遵循异常即逻辑原则。
 
 ```csharp
 /// <summary>
@@ -522,6 +217,8 @@ private readonly IDatabaseOperationFactory<User> _userFactory;
 ```
 
 ### 2. 不要手动处理异常
+
+> **重要**：错误处理的详细规范请参考 [错误处理与统一响应规范](mdc:.cursor/rules/error-handling.mdc)。
 
 ```csharp
 // ❌ 禁止：手动 try-catch
@@ -1032,13 +729,8 @@ builder.Services.AddOptions<JwtSettings>()
 在提交代码前，检查：
 
 ### XML 文档注释（强制要求）
-- [ ] **所有公共类都有完整的 XML 注释**
-- [ ] **所有公共接口都有完整的 XML 注释**
-- [ ] **所有公共枚举都有完整的 XML 注释（包括每个枚举值）**
-- [ ] **所有公共方法都有完整的 XML 注释（包括参数和返回值）**
-- [ ] **所有公共属性都有 XML 注释**
-- [ ] **所有构造函数都有 XML 注释（包括参数）**
-- [ ] **所有泛型类型都有 `<typeparam>` 注释**
+> 详细检查清单请参考 [OpenAPI + Scalar API 文档规范](mdc:.cursor/rules/openapi-scalar-standard.mdc)
+- [ ] **所有公共类型和成员都有完整的 XML 注释**
 - [ ] **编译时没有 XML 注释警告（CS1591）**
 
 ### 代码质量
@@ -1077,18 +769,12 @@ builder.Services.AddOptions<JwtSettings>()
 
 ## 🎯 记住
 
-1. **XML 注释强制要求** - 所有公共类型和成员必须有完整的 XML 文档注释，这是强制要求，不允许例外
-2. **统一架构** - 遵循项目既定的架构模式
+1. **XML 注释强制要求** - 所有公共类型和成员必须有完整的 XML 文档注释（详见 [OpenAPI + Scalar API 文档规范](mdc:.cursor/rules/openapi-scalar-standard.mdc)）
+2. **统一架构** - 遵循项目既定的架构模式（详见 [后端核心开发规范](mdc:.cursor/rules/core-backend-standards.mdc)）
 3. **安全第一** - 始终验证输入和检查权限
 4. **性能优化** - 使用异步操作和查询优化
-5. **错误处理** - 使用统一的异常处理机制
+5. **错误处理** - 使用统一的异常处理机制（详见 [错误处理规范](mdc:.cursor/rules/error-handling.mdc)）
 6. **日志记录** - 记录关键操作和错误信息
 7. **代码质量** - 保持代码简洁、可读和可维护
-
-**✅ 项目状态**：
-- 所有 C# 代码文件（1082+ 个公共成员）已添加完整的 XML 文档注释
-- 编译时无 CS1591 警告
-- 提升了代码的可读性和可维护性
-- Scalar API 文档可以正确显示所有接口说明
 
 遵循这些规范，确保代码的一致性、安全性和可维护性！

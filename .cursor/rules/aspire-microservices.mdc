@@ -7,7 +7,7 @@ description: .NET Aspire 微服务架构和编排规范
 ## 🎯 核心原则
 
 - 统一通过 .NET Aspire 编排所有服务，集中处理依赖、服务发现、配置和监控
-- MongoDB → DataInitializer → ApiService → 前端/移动端的依赖链必须完整，禁用绕过
+- OpenAI → MongoDB → DataInitializer → ApiService → 前端/移动端的依赖链必须完整，禁用绕过
 - YARP 作为统一网关入口，禁止前端硬编码后端地址
 
 ## ✅ AppHost 关键配置要点
@@ -16,36 +16,58 @@ description: .NET Aspire 微服务架构和编排规范
 // Platform.AppHost/AppHost.cs（核心骨架）
 var builder = DistributedApplication.CreateBuilder(args);
 
-var mongodb = builder.AddMongoDB("mongo")
+// 1. 添加 OpenAI 服务（AI 能力）
+var openai = builder.AddOpenAI("openai")
+    .WithEndpoint(openAiEndpoint);
+var chat = openai.AddModel("chat", "gpt-4o-mini");
+
+// 2. 添加 MongoDB 数据库
+var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
     .WithLifetime(ContainerLifetime.Persistent)
-    .AddDatabase("mongodb");
+    .WithDataVolume();
+var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
+// 3. 添加数据初始化微服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
+    .WaitFor(mongodb)
     .WithReference(mongodb)
-    .WithHttpEndpoint()
-    .WithHttpHealthCheck("/health");
+    .WithHttpEndpoint();
 
+// 4. 添加 API 服务（依赖数据初始化服务和 OpenAI）
 var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(mongodb)
-    .WithReference(datainitializer)
-    .WithHttpHealthCheck("/health");
+    .WaitForCompletion(datainitializer)
+    .WithReference(chat)
+    .WithHttpEndpoint()
+    .WithReplicas(1)
+    .WithHttpHealthCheck("/health")
+    .WithEnvironment("Jwt__SecretKey", jwtSecretKey);
 
+// 5. 配置 YARP 网关
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
     .WithConfiguration(config =>
-        config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
+        config.AddRoute("/apiservice/{**catch-all}", config.AddCluster(apiservice))
               .WithTransformPathRouteValues("/{**catch-all}"));
 
+// 6. 添加前端应用
 builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WithHttpEndpoint(env: "PORT", port: 15001);
+    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8080);
 
 builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WithHttpEndpoint(env: "PORT", port: 15002);
+    .WithHttpEndpoint(env: "PORT", port: 15002, targetPort: 8081);
+
+// 7. 配置 Scalar API 文档（开发环境）
+if (builder.Environment.IsDevelopment())
+{
+    var scalar = builder.AddScalarApiReference();
+    scalar.WithApiReference(apiservice);
+}
 
 builder.Build().Run();
 ```
@@ -105,7 +127,9 @@ app.Run();
 
 ## ✅ 开发检查清单
 
-- [ ] AppHost 中服务引用、依赖、健康检查齐全
+- [ ] AppHost 中服务引用、依赖、健康检查齐全（包括 OpenAI、MongoDB、DataInitializer、ApiService）
+- [ ] 开发环境已配置 Scalar API 文档
+- [ ] JWT 密钥通过环境变量正确传递
 - [ ] Program.cs 仅保留必要的服务注册，逻辑移至扩展方法
 - [ ] 新增 HttpClient 均通过 `AddServiceDiscovery()` 获得地址
 - [ ] 关键服务接入健康检查与 OpenTelemetry

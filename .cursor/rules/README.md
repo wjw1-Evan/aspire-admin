@@ -28,16 +28,16 @@
 - `theme-system.mdc`
 
 ### 后端与服务
-- `csharp-backend.mdc`
-- `business-logic.mdc`
-- `auth-system.mdc`
-- `api-integration.mdc`
-- `error-handling.mdc`
-- `performance-optimization.mdc`
-- `security-best-practices.mdc`
-- `design-patterns-architecture.mdc`
-- `aspire-microservices.mdc`
-- `deployment.mdc`
+- `csharp-backend.mdc` - C# 编码规范、依赖注入、性能优化（XML 注释规范已合并到 `openapi-scalar-standard.mdc`）
+- `business-logic.mdc` - 业务逻辑和服务层开发规范
+- `auth-system.mdc` - 认证系统开发规范
+- `api-integration.mdc` - API 集成和网络请求规范
+- `error-handling.mdc` - 统一错误处理与响应格式规范
+- `performance-optimization.mdc` - 性能优化和监控规范
+- `security-best-practices.mdc` - 安全最佳实践和漏洞防护规范
+- `design-patterns-architecture.mdc` - 设计模式和架构原则规范
+- `aspire-microservices.mdc` - .NET Aspire 微服务架构和编排规范
+- `deployment.mdc` - 部署和运维规范
 
 ### 工程与协作
 - `code-review-quality.mdc`
@@ -60,10 +60,19 @@
 ## 🛠️ 维护与新增规则
 
 1. **确定目的**：明确规则希望约束或提醒的场景，避免与现有文件重复。
-2. **创建文件**：在 `.cursor/rules/` 下新建 `*.mdc` 文件，使用 frontmatter 声明 `globs`、`alwaysApply`、`description`。
-3. **编写内容**：遵循“概述 → 推荐做法 → 禁止事项 → 示例 → 参考”结构，使用中英文混排时尽量保持 ASCII。
-4. **更新 README**：将新规则加入合适的分类，并在需要时更新 `docs/INDEX.md`。
-5. **验证效果**：在对应类型的文件中进行一次编辑，确认 Cursor 能自动引用规则。
+2. **检查重复**：在创建新规则前，检查是否有重复内容，优先合并到现有规则中。
+3. **创建文件**：在 `.cursor/rules/` 下新建 `*.mdc` 文件，使用 frontmatter 声明 `globs`、`alwaysApply`、`description`。
+4. **编写内容**：遵循"概述 → 推荐做法 → 禁止事项 → 示例 → 参考"结构，使用中英文混排时尽量保持 ASCII。
+5. **引用其他规则**：如果内容与其他规则相关，使用 `mdc:` 链接引用，避免重复。
+6. **更新 README**：将新规则加入合适的分类，并在需要时更新 `docs/INDEX.md`。
+7. **验证效果**：在对应类型的文件中进行一次编辑，确认 Cursor 能自动引用规则。
+
+### 规则合并原则
+
+- **避免重复**：相同主题的规则应该合并到一个文件中
+- **引用优先**：使用 `mdc:` 链接引用其他规则，而不是复制内容
+- **核心规则优先**：`alwaysApply: true` 的规则应该包含最核心的规范
+- **保持简洁**：每个规则文件应该专注于一个主题领域
 
 ---
 

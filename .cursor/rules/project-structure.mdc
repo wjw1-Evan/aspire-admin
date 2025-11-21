@@ -37,9 +37,27 @@ Platform/
 │   ├── Scripts/             # 索引创建脚本
 │   └── Program.cs           # 服务入口
 ├── Platform.ApiService/       # API 服务 (C#)
-│   ├── Controllers/          # API 控制器
-│   ├── Models/              # 数据模型
-│   ├── Services/            # 业务逻辑服务
+│   ├── Controllers/          # API 控制器（15个）
+│   │   ├── AuthController.cs          # 认证：登录、注册、密码管理、验证码
+│   │   ├── UserController.cs          # 用户管理：CRUD、角色分配、状态管理
+│   │   ├── CompanyController.cs       # 企业管理：注册、成员管理、设置
+│   │   ├── RoleController.cs          # 角色管理：角色 CRUD、权限分配
+│   │   ├── MenuController.cs          # 菜单管理：查询用户可见菜单树
+│   │   ├── RuleController.cs          # 规则管理：业务规则 CRUD
+│   │   ├── NoticeController.cs        # 通知管理：系统通知 CRUD
+│   │   ├── JoinRequestController.cs    # 加入申请：企业加入审批流程
+│   │   ├── FriendsController.cs       # 好友管理：好友列表、搜索、请求
+│   │   ├── ChatSessionsController.cs   # 聊天会话：会话 CRUD、列表查询
+│   │   ├── ChatMessagesController.cs  # 聊天消息：消息 CRUD、分页查询
+│   │   ├── ChatAiController.cs        # AI 聊天：智能回复、匹配推荐
+│   │   ├── SocialController.cs        # 社交功能：附近的人、位置上报
+│   │   ├── SystemMonitorController.cs # 系统监控：资源监控、健康检查
+│   │   └── MaintenanceController.cs  # 维护脚本：数据修复、清理任务
+│   ├── Services/            # 业务逻辑服务（31个）
+│   ├── Models/              # 数据模型和 DTO
+│   ├── Extensions/          # 扩展方法
+│   ├── Middleware/          # 中间件
+│   ├── Hubs/                # SignalR Hub
 │   └── Program.cs           # 服务入口
 ├── Platform.Admin/            # 管理后台 (React + Ant Design Pro)
 │   ├── config/              # UmiJS 配置
@@ -116,51 +134,71 @@ Platform.AppHost 负责整个应用的服务编排：
 // AppHost.cs 核心配置
 var builder = DistributedApplication.CreateBuilder(args);
 
-// 1. 添加 MongoDB 数据库
+// 1. 添加 OpenAI 服务（AI 能力）
+var openai = builder.AddOpenAI("openai")
+    .WithEndpoint(openAiEndpoint);
+var chat = openai.AddModel("chat", "gpt-4o-mini");
+
+// 2. 添加 MongoDB 数据库
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
-    .WithLifetime(ContainerLifetime.Persistent);
-var mongodb = mongo.AddDatabase("mongodb");
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithDataVolume();
+var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
-// 2. 添加数据初始化微服务
+// 3. 添加数据初始化微服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
+    .WaitFor(mongodb)
     .WithReference(mongodb)
-    .WithHttpEndpoint()
-    .WithHttpHealthCheck("/health");
+    .WithHttpEndpoint();
 
-// 3. 添加 API 服务（依赖数据初始化服务）
+// 4. 添加 API 服务（依赖数据初始化服务和 OpenAI）
 var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(mongodb)
-    .WithReference(datainitializer)
-    .WithHttpHealthCheck("/health");
+    .WaitForCompletion(datainitializer)
+    .WithReference(chat)
+    .WithHttpEndpoint()
+    .WithReplicas(1)
+    .WithHttpHealthCheck("/health")
+    .WithEnvironment("Jwt__SecretKey", jwtSecretKey);
 
-// 4. 配置 YARP 网关
+// 5. 配置 YARP 网关
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
     .WithConfiguration(config => {
-        // 自动路由配置
-        config.AddRoute("/{service}/{**catch-all}", config.AddCluster(apiservice))
+        // 微服务路由配置 - 统一通过/{service}路径访问
+        config.AddRoute("/apiservice/{**catch-all}", config.AddCluster(apiservice))
             .WithTransformPathRouteValues("/{**catch-all}");
     });
 
-// 5. 添加前端应用
+// 6. 添加前端应用
 builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WithHttpEndpoint(env: "PORT", port: 15001);
+    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8080);
 
 builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WithHttpEndpoint(env: "PORT", port: 15002);
+    .WithHttpEndpoint(env: "PORT", port: 15002, targetPort: 8081);
+
+// 7. 配置 Scalar API 文档（开发环境）
+if (builder.Environment.IsDevelopment())
+{
+    var scalar = builder.AddScalarApiReference();
+    scalar.WithApiReference(apiservice);
+}
 ```
 
 ### 服务依赖关系
 
 ```
-MongoDB → DataInitializer → ApiService
-                ↓
-            Admin/App (前端应用)
+OpenAI → Chat Model
+MongoDB → DataInitializer → ApiService → YARP Gateway
+                                    ↓
+                            Admin/App (前端应用)
+                                    ↓
+                            Scalar API Docs (开发环境)
 ```
 
 ### 服务发现

@@ -579,3 +579,163 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
         throw new ArgumentException("Invalid field expression");
     }
 }
+
+/// <summary>
+/// 投影构建器 - 提供链式API构建MongoDB字段投影
+/// </summary>
+/// <typeparam name="T">实体类型</typeparam>
+public class ProjectionBuilder<T> where T : class, IEntity, ISoftDeletable, ITimestamped
+{
+    private readonly List<ProjectionDefinition<T>> _projections = new();
+    private readonly ProjectionDefinitionBuilder<T> _builder = Builders<T>.Projection;
+
+    /// <summary>
+    /// 包含字段（只返回指定字段）
+    /// </summary>
+    public ProjectionBuilder<T> Include<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
+    {
+        // MongoDB 的 Include 方法需要使用字段名
+        var fieldName = GetBsonFieldName(field);
+        _projections.Add(_builder.Include(fieldName));
+        return this;
+    }
+
+    /// <summary>
+    /// 包含多个字段（只返回指定字段）
+    /// </summary>
+    public ProjectionBuilder<T> Include(params System.Linq.Expressions.Expression<Func<T, object>>[] fields)
+    {
+        foreach (var field in fields)
+        {
+            _projections.Add(_builder.Include(field));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// 排除字段（返回除指定字段外的所有字段）
+    /// </summary>
+    public ProjectionBuilder<T> Exclude<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
+    {
+        // MongoDB 的 Exclude 方法需要使用字段名
+        var fieldName = GetBsonFieldName(field);
+        _projections.Add(_builder.Exclude(fieldName));
+        return this;
+    }
+
+    /// <summary>
+    /// 排除多个字段（返回除指定字段外的所有字段）
+    /// </summary>
+    public ProjectionBuilder<T> Exclude(params System.Linq.Expressions.Expression<Func<T, object>>[] fields)
+    {
+        foreach (var field in fields)
+        {
+            _projections.Add(_builder.Exclude(field));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// 使用字符串字段名包含字段
+    /// </summary>
+    public ProjectionBuilder<T> IncludeField(string fieldName)
+    {
+        if (!string.IsNullOrEmpty(fieldName))
+        {
+            _projections.Add(_builder.Include(fieldName));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// 使用字符串字段名排除字段
+    /// </summary>
+    public ProjectionBuilder<T> ExcludeField(string fieldName)
+    {
+        if (!string.IsNullOrEmpty(fieldName))
+        {
+            _projections.Add(_builder.Exclude(fieldName));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// 包含常用字段（Id、CreatedAt、UpdatedAt）
+    /// </summary>
+    public ProjectionBuilder<T> IncludeCommonFields()
+    {
+        _projections.Add(_builder.Include(e => e.Id));
+        if (typeof(ITimestamped).IsAssignableFrom(typeof(T)))
+        {
+            _projections.Add(_builder.Include(e => e.CreatedAt));
+            _projections.Add(_builder.Include(e => e.UpdatedAt));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// 排除审计字段（CreatedBy、UpdatedBy、DeletedBy 等）
+    /// </summary>
+    public ProjectionBuilder<T> ExcludeAuditFields()
+    {
+        if (typeof(IOperationTrackable).IsAssignableFrom(typeof(T)))
+        {
+            _projections.Add(_builder.Exclude("createdBy"));
+            _projections.Add(_builder.Exclude("updatedBy"));
+            _projections.Add(_builder.Exclude("deletedBy"));
+            _projections.Add(_builder.Exclude("createdByUsername"));
+            _projections.Add(_builder.Exclude("updatedByUsername"));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// 构建投影定义
+    /// </summary>
+    public ProjectionDefinition<T>? Build()
+    {
+        return _projections.Count > 0 ? _builder.Combine(_projections) : null;
+    }
+
+    /// <summary>
+    /// 清空投影
+    /// </summary>
+    public ProjectionBuilder<T> Clear()
+    {
+        _projections.Clear();
+        return this;
+    }
+
+    /// <summary>
+    /// 获取当前投影数量
+    /// </summary>
+    public int Count => _projections.Count;
+
+    /// <summary>
+    /// 获取 BSON 字段名（优先使用 BsonElement 特性，否则使用属性名的 camelCase）
+    /// </summary>
+    private static string GetBsonFieldName<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
+    {
+        if (field.Body is System.Linq.Expressions.MemberExpression memberExpression)
+        {
+            var property = memberExpression.Member as System.Reflection.PropertyInfo;
+            if (property != null)
+            {
+                // ✅ 优先使用 BsonElement 特性的 ElementName
+                var bsonElementAttr = property.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
+                if (bsonElementAttr != null && !string.IsNullOrEmpty(bsonElementAttr.ElementName))
+                {
+                    return bsonElementAttr.ElementName;
+                }
+                
+                // ✅ 如果没有 BsonElement 特性，使用属性名的 camelCase
+                var propertyName = property.Name;
+                if (propertyName.Length > 0)
+                {
+                    return char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
+                }
+            }
+        }
+        throw new ArgumentException("Invalid field expression");
+    }
+}

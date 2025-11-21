@@ -118,6 +118,14 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         return new UpdateBuilder<T>();
     }
 
+    /// <summary>
+    /// 创建投影构建器
+    /// </summary>
+    public ProjectionBuilder<T> CreateProjectionBuilder()
+    {
+        return new ProjectionBuilder<T>();
+    }
+
     // ========== 核心原子操作 ==========
 
     /// <summary>
@@ -287,7 +295,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// <summary>
     /// 执行查询操作
     /// </summary>
-    public async Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null)
+    public async Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null, ProjectionDefinition<T>? projection = null)
     {
         // 应用多租户过滤和软删除过滤
         var finalFilter = ApplyDefaultFilters(filter);
@@ -297,11 +305,18 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             .Descending(e => e.CreatedAt)
             .Build();
         
-        var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
+        var findOptions = new FindOptions<T>
         {
             Sort = finalSort,
             Limit = limit
-        });
+        };
+        
+        if (projection != null)
+        {
+            findOptions.Projection = projection;
+        }
+        
+        var cursor = await _collection.FindAsync(finalFilter, findOptions);
         
         return await cursor.ToListAsync();
     }
@@ -309,7 +324,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// <summary>
     /// 执行分页查询操作
     /// </summary>
-    public async Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10)
+    public async Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10, ProjectionDefinition<T>? projection = null)
     {
         // 应用多租户过滤和软删除过滤
         var finalFilter = ApplyDefaultFilters(filter);
@@ -322,12 +337,19 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var skip = (page - 1) * pageSize;
         
         // 并行执行查询和计数（优化性能）
-        var findTask = _collection.FindAsync(finalFilter, new FindOptions<T>
+        var findOptions = new FindOptions<T>
         {
             Sort = finalSort,
             Skip = skip,
             Limit = pageSize
-        });
+        };
+        
+        if (projection != null)
+        {
+            findOptions.Projection = projection;
+        }
+        
+        var findTask = _collection.FindAsync(finalFilter, findOptions);
         var countTask = _collection.CountDocumentsAsync(finalFilter);
         
         await Task.WhenAll(findTask, countTask);
@@ -342,7 +364,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// <summary>
     /// 根据ID获取实体
     /// </summary>
-    public async Task<T?> GetByIdAsync(string id)
+    public async Task<T?> GetByIdAsync(string id, ProjectionDefinition<T>? projection = null)
     {
         // ✅ 使用表达式构建过滤器
         var filter = CreateFilterBuilder()
@@ -352,6 +374,12 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         
         // 应用多租户过滤
         var tenantFilter = ApplyTenantFilter(filter);
+        
+        if (projection != null)
+        {
+            var projectedFluent = _collection.Find(tenantFilter).Project(projection);
+            return await projectedFluent.As<T>().FirstOrDefaultAsync();
+        }
         
         return await _collection.Find(tenantFilter).FirstOrDefaultAsync();
     }
@@ -391,7 +419,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// <summary>
     /// 执行查询操作（不带租户过滤）
     /// </summary>
-    public async Task<List<T>> FindWithoutTenantFilterAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null)
+    public async Task<List<T>> FindWithoutTenantFilterAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null, ProjectionDefinition<T>? projection = null)
     {
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
@@ -401,11 +429,18 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             .Descending(e => e.CreatedAt)
             .Build();
         
-        var cursor = await _collection.FindAsync(finalFilter, new FindOptions<T>
+        var findOptions = new FindOptions<T>
         {
             Sort = finalSort,
             Limit = limit
-        });
+        };
+        
+        if (projection != null)
+        {
+            findOptions.Projection = projection;
+        }
+        
+        var cursor = await _collection.FindAsync(finalFilter, findOptions);
         
         return await cursor.ToListAsync();
     }
@@ -413,13 +448,19 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// <summary>
     /// 根据ID获取实体（不带租户过滤）
     /// </summary>
-    public async Task<T?> GetByIdWithoutTenantFilterAsync(string id)
+    public async Task<T?> GetByIdWithoutTenantFilterAsync(string id, ProjectionDefinition<T>? projection = null)
     {
         // ✅ 使用表达式构建过滤器
         var filter = CreateFilterBuilder()
             .Equal(e => e.Id, id)
             .Equal(e => e.IsDeleted, false)
             .Build();
+        
+        if (projection != null)
+        {
+            var projectedFluent = _collection.Find(filter).Project(projection);
+            return await projectedFluent.As<T>().FirstOrDefaultAsync();
+        }
         
         return await _collection.Find(filter).FirstOrDefaultAsync();
     }

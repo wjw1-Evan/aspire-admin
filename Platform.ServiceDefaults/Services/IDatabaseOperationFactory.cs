@@ -24,6 +24,11 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     /// </summary>
     UpdateBuilder<T> CreateUpdateBuilder();
 
+    /// <summary>
+    /// 创建投影构建器
+    /// </summary>
+    ProjectionBuilder<T> CreateProjectionBuilder();
+
     // ========== 核心原子操作 ==========
 
     /// <summary>
@@ -71,17 +76,17 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     /// <summary>
     /// 执行查询操作
     /// </summary>
-    Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null);
+    Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null, ProjectionDefinition<T>? projection = null);
 
     /// <summary>
     /// 执行分页查询操作
     /// </summary>
-    Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10);
+    Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10, ProjectionDefinition<T>? projection = null);
 
     /// <summary>
     /// 根据ID获取实体
     /// </summary>
-    Task<T?> GetByIdAsync(string id);
+    Task<T?> GetByIdAsync(string id, ProjectionDefinition<T>? projection = null);
 
     /// <summary>
     /// 检查实体是否存在
@@ -98,12 +103,12 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     /// <summary>
     /// 执行查询操作（不带租户过滤）
     /// </summary>
-    Task<List<T>> FindWithoutTenantFilterAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null);
+    Task<List<T>> FindWithoutTenantFilterAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null, ProjectionDefinition<T>? projection = null);
 
     /// <summary>
     /// 根据ID获取实体（不带租户过滤）
     /// </summary>
-    Task<T?> GetByIdWithoutTenantFilterAsync(string id);
+    Task<T?> GetByIdWithoutTenantFilterAsync(string id, ProjectionDefinition<T>? projection = null);
 
     /// <summary>
     /// 查找并替换（原子操作，不带租户过滤）

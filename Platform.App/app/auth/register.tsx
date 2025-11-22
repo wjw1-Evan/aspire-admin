@@ -1,26 +1,59 @@
-// 注册页面
+// 注册页面 - 简化版，使用原生组件
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  TouchableOpacity,
+  View,
+  Text,
+  Pressable,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  View,
+  ActivityIndicator,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Image } from 'expo-image';
 import { useAuth } from '@/contexts/AuthContext';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedInput } from '@/components/themed-input';
-import { ThemedButton } from '@/components/themed-button';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
+import { ErrorMessageBanner } from '@/components/ErrorMessageBanner';
+import { FormInput } from '@/components/FormInput';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
+import { useCaptcha } from '@/hooks/useCaptcha';
+import { getErrorCode, getErrorMessage } from '@/utils/errorUtils';
+import ImageCaptcha from '@/components/ImageCaptcha';
 import { PLACEHOLDER_IMAGE_URI } from '@/constants/placeholders';
+
+const CAPTCHA_ERROR_CODES = [
+  'USER_EXISTS',
+  'EMAIL_EXISTS',
+  'CAPTCHA_INVALID',
+  'CAPTCHA_REQUIRED',
+  'SERVER_ERROR',
+] as const;
+
+const ERROR_MESSAGES: Record<string, { title: string; message: string }> = {
+  USER_EXISTS: {
+    title: '注册失败',
+    message: '用户名已存在，请使用其他用户名',
+  },
+  EMAIL_EXISTS: {
+    title: '注册失败',
+    message: '邮箱已被注册，请使用其他邮箱',
+  },
+  CAPTCHA_REQUIRED: {
+    title: '需要验证码',
+    message: '注册失败后需要输入验证码，请在下方的验证码输入框中输入验证码后重试',
+  },
+  CAPTCHA_INVALID: {
+    title: '验证码错误',
+    message: '验证码错误，请重新输入验证码',
+  },
+  SERVER_ERROR: {
+    title: '服务器错误',
+    message: '服务器异常，请稍后重试或联系管理员',
+  },
+};
 
 export default function RegisterScreen() {
   const [username, setUsername] = useState('');
@@ -31,63 +64,105 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
-  const [captchaId, setCaptchaId] = useState<string>('');
-  const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
-  const captchaRef = useRef<ImageCaptchaRef>(null);
-  const { register } = useAuth();
-  
+
+  const { register, clearError: clearAuthError } = useAuth();
+  const { errorMessage, showError, clearError } = useErrorMessage();
+  const {
+    showCaptcha,
+    captchaId,
+    captchaAnswer,
+    captchaKey,
+    captchaRef,
+    setCaptchaId,
+    setCaptchaAnswer,
+    enableCaptcha,
+    refreshCaptcha,
+  } = useCaptcha();
+
   const backgroundColor = useThemeColor({}, 'background');
-  const cardBackgroundColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#1E293B' },
-    'card'
-  );
+  const cardBackgroundColor = useThemeColor({ light: '#FFFFFF', dark: '#1E293B' }, 'card');
+  const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const borderColor = useThemeColor({}, 'border');
+  const subtextColor = useThemeColor({}, 'icon');
 
-  const validateForm = () => {
+  const handleRegisterError = useCallback(
+    async (error: any) => {
+      if (__DEV__) {
+        console.log('handleRegisterError called with error:', error);
+      }
+
+      const errorCode = getErrorCode(error);
+      const errorMessage = getErrorMessage(error, '注册失败，请检查输入信息后重试');
+
+      if (errorCode && CAPTCHA_ERROR_CODES.includes(errorCode as any)) {
+        enableCaptcha();
+        await refreshCaptcha();
+      }
+
+      const errorInfo = ERROR_MESSAGES[errorCode || ''] || {
+        title: '注册失败',
+        message: errorMessage,
+      };
+
+      showError(errorInfo.title, errorInfo.message);
+    },
+    [enableCaptcha, refreshCaptcha, showError]
+  );
+
+  const validateForm = useCallback(() => {
     if (!username.trim()) {
-      Alert.alert('错误', '请输入用户名');
+      showError('输入错误', '请输入用户名');
       return false;
     }
-    
+
     if (username.trim().length < 3) {
-      Alert.alert('错误', '用户名至少需要3个字符');
+      showError('输入错误', '用户名至少需要3个字符');
       return false;
     }
-    
+
     if (!password.trim()) {
-      Alert.alert('错误', '请输入密码');
+      showError('输入错误', '请输入密码');
       return false;
     }
-    
+
     if (password.trim().length < 6) {
-      Alert.alert('错误', '密码至少需要6个字符');
+      showError('输入错误', '密码至少需要6个字符');
       return false;
     }
-    
+
     if (password !== confirmPassword) {
-      Alert.alert('错误', '两次输入的密码不一致');
+      showError('输入错误', '两次输入的密码不一致');
       return false;
     }
-    
+
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      Alert.alert('错误', '请输入有效的邮箱地址');
+      showError('输入错误', '请输入有效的邮箱地址');
       return false;
     }
 
     if (!agreeToTerms) {
-      Alert.alert('错误', '请同意用户协议和隐私政策');
+      showError('输入错误', '请同意用户协议和隐私政策');
       return false;
     }
-    
-    return true;
-  };
 
-  const handleRegister = async () => {
+    return true;
+  }, [username, password, confirmPassword, email, agreeToTerms, showError]);
+
+  const handleRegister = useCallback(async () => {
+    if (loading) return;
+
     if (!validateForm()) {
       return;
     }
+
+    if (showCaptcha && (!captchaId || !captchaAnswer?.trim())) {
+      showError('验证码错误', '请输入图形验证码');
+      return;
+    }
+
+    clearError();
+    clearAuthError();
 
     try {
       setLoading(true);
@@ -98,7 +173,7 @@ export default function RegisterScreen() {
         captchaId: showCaptcha ? captchaId : undefined,
         captchaAnswer: showCaptcha ? captchaAnswer : undefined,
       });
-      
+
       Alert.alert(
         '注册成功',
         '账户创建成功，请登录',
@@ -110,221 +185,178 @@ export default function RegisterScreen() {
         ]
       );
     } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : '注册失败，请重试';
-      Alert.alert('注册失败', errorMessage);
-      
-      // 注册失败后显示验证码
-      const errorCode = error?.errorCode || error?.info?.errorCode;
-      if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' || 
-          errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' ||
-          errorCode === 'SERVER_ERROR') {
-        setShowCaptcha(true);
-        // 自动刷新验证码
-        if (captchaRef.current) {
-          await captchaRef.current.refresh();
-        }
+      if (__DEV__) {
+        console.log('Register error caught:', error);
       }
+      await handleRegisterError(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    loading,
+    validateForm,
+    showCaptcha,
+    captchaId,
+    captchaAnswer,
+    clearError,
+    clearAuthError,
+    register,
+    username,
+    email,
+    password,
+    showError,
+    handleRegisterError,
+  ]);
 
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* 顶部装饰区域 */}
-        <View style={styles.decorativeTop}>
-          <View style={[styles.circle, styles.circle1, { backgroundColor: tintColor + '20' }]} />
-          <View style={[styles.circle, styles.circle2, { backgroundColor: tintColor + '10' }]} />
+        {/* 头部区域 */}
+        <View style={styles.header}>
+          <Image
+            source={{ uri: PLACEHOLDER_IMAGE_URI }}
+            style={styles.logo}
+            placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
+          />
+          <Text style={[styles.title, { color: textColor }]}>创建账户</Text>
+          <Text style={[styles.subtitle, { color: subtextColor }]}>
+            注册新账户以开始使用
+          </Text>
         </View>
 
-        {/* 主要内容区域 */}
-        <ThemedView style={[styles.content, { backgroundColor: cardBackgroundColor }]}>
-          {/* Logo 和标题区域 */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={{ uri: PLACEHOLDER_IMAGE_URI }}
-                style={styles.logo}
-                placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
+        {/* 表单卡片 */}
+        <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
+          <ErrorMessageBanner message={errorMessage} onClose={clearError} />
+
+          <FormInput
+            label="用户名 *"
+            value={username}
+            onChangeText={setUsername}
+            placeholder="请输入用户名（至少3个字符）"
+            disabled={loading}
+            hasError={!!errorMessage}
+            onClearError={clearError}
+          />
+
+          <FormInput
+            label="邮箱"
+            type="email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="请输入邮箱地址（可选）"
+            disabled={loading}
+            hasError={!!errorMessage}
+            onClearError={clearError}
+          />
+
+          <FormInput
+            label="密码 *"
+            type="password"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="请输入密码（至少6个字符）"
+            showPassword={showPassword}
+            onTogglePassword={() => setShowPassword(!showPassword)}
+            disabled={loading}
+            hasError={!!errorMessage}
+            onClearError={clearError}
+          />
+
+          <FormInput
+            label="确认密码 *"
+            type="password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="请再次输入密码"
+            showPassword={showConfirmPassword}
+            onTogglePassword={() => setShowConfirmPassword(!showConfirmPassword)}
+            disabled={loading}
+            hasError={!!errorMessage}
+            onClearError={clearError}
+          />
+
+          {showCaptcha && (
+            <View style={styles.captchaContainer}>
+              <Text style={[styles.captchaLabel, { color: textColor }]}>图形验证码</Text>
+              <ImageCaptcha
+                ref={captchaRef}
+                key={`captcha-${captchaKey}`}
+                value={captchaAnswer}
+                onChange={(text) => {
+                  setCaptchaAnswer(text);
+                  if (errorMessage) {
+                    clearError();
+                  }
+                }}
+                onCaptchaIdChange={setCaptchaId}
+                type="register"
+                placeholder="请输入图形验证码"
               />
             </View>
-            <ThemedText type="title" style={styles.title}>
-              创建账户
-            </ThemedText>
-            <ThemedText style={styles.subtitle}>
-              注册新账户以开始使用 Aspire Admin Platform
-            </ThemedText>
-          </View>
+          )}
 
-          {/* 表单区域 */}
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <View style={styles.inputLabelContainer}>
-                <IconSymbol name="person.fill" size={16} color={useThemeColor({}, 'icon')} />
-                <ThemedText style={styles.label}>用户名 *</ThemedText>
-              </View>
-              <ThemedInput
-                value={username}
-                onChangeText={setUsername}
-                placeholder="请输入用户名（至少3个字符）"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!loading}
-                style={styles.input}
-              />
+          {/* 用户协议同意 */}
+          <Pressable
+            style={styles.checkboxContainer}
+            onPress={() => setAgreeToTerms(!agreeToTerms)}
+          >
+            <View
+              style={[
+                styles.checkbox,
+                { borderColor: agreeToTerms ? tintColor : borderColor },
+                agreeToTerms && { backgroundColor: tintColor },
+              ]}
+            >
+              {agreeToTerms && <Text style={styles.checkmark}>✓</Text>}
             </View>
+            <Text style={[styles.termsText, { color: textColor }]}>
+              我已阅读并同意{' '}
+              <Text style={{ color: tintColor }}>用户协议</Text>
+              {' '}和{' '}
+              <Text style={{ color: tintColor }}>隐私政策</Text>
+            </Text>
+          </Pressable>
 
-            <View style={styles.inputContainer}>
-              <View style={styles.inputLabelContainer}>
-                <IconSymbol name="envelope.fill" size={16} color={useThemeColor({}, 'icon')} />
-                <ThemedText style={styles.label}>邮箱</ThemedText>
-              </View>
-              <ThemedInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="请输入邮箱地址（可选）"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!loading}
-                style={styles.input}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <View style={styles.inputLabelContainer}>
-                <IconSymbol name="lock.fill" size={16} color={useThemeColor({}, 'icon')} />
-                <ThemedText style={styles.label}>密码 *</ThemedText>
-              </View>
-              <View style={styles.passwordContainer}>
-                <ThemedInput
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="请输入密码（至少6个字符）"
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                  style={[styles.input, styles.passwordInput]}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <IconSymbol
-                    name={showPassword ? "eye.slash.fill" : "eye.fill"}
-                    size={20}
-                    color={useThemeColor({}, 'icon')}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <View style={styles.inputLabelContainer}>
-                <IconSymbol name="lock.fill" size={16} color={useThemeColor({}, 'icon')} />
-                <ThemedText style={styles.label}>确认密码 *</ThemedText>
-              </View>
-              <View style={styles.passwordContainer}>
-                <ThemedInput
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="请再次输入密码"
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                  style={[styles.input, styles.passwordInput]}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  <IconSymbol
-                    name={showConfirmPassword ? "eye.slash.fill" : "eye.fill"}
-                    size={20}
-                    color={useThemeColor({}, 'icon')}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {showCaptcha && (
-              <View style={styles.captchaContainer}>
-                <ThemedText style={styles.captchaLabel}>图形验证码</ThemedText>
-                <ImageCaptcha
-                  ref={captchaRef}
-                  value={captchaAnswer}
-                  onChange={setCaptchaAnswer}
-                  onCaptchaIdChange={setCaptchaId}
-                  type="register"
-                  placeholder="请输入图形验证码"
-                />
-              </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: tintColor },
+              pressed && styles.buttonPressed,
+              (loading || !agreeToTerms) && styles.buttonDisabled,
+            ]}
+            onPress={handleRegister}
+            disabled={loading || !agreeToTerms}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>创建账户</Text>
             )}
+          </Pressable>
 
-            {/* 用户协议同意 */}
-            <View style={styles.termsContainer}>
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => setAgreeToTerms(!agreeToTerms)}
-              >
-                <View style={[styles.checkbox, agreeToTerms && { backgroundColor: tintColor }]}>
-                  {agreeToTerms && (
-                    <IconSymbol name="checkmark" size={16} color="#fff" />
-                  )}
-                </View>
-                <ThemedText style={styles.termsText}>
-                  我已阅读并同意{' '}
-                  <ThemedText style={[styles.termsText, { color: tintColor }]}>
-                    用户协议
-                  </ThemedText>
-                  {' '}和{' '}
-                  <ThemedText style={[styles.termsText, { color: tintColor }]}>
-                    隐私政策
-                  </ThemedText>
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-
-            <ThemedButton
-              title={loading ? "注册中..." : "创建账户"}
-              onPress={handleRegister}
-              disabled={loading || !agreeToTerms}
-              style={styles.registerButton}
-            />
-
-            {/* 分割线 */}
-            <View style={styles.divider}>
-              <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
-              <ThemedText style={styles.dividerText}>或</ThemedText>
-              <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
-            </View>
-
-            {/* 登录链接 */}
-            <View style={styles.footer}>
-              <ThemedText style={styles.footerText}>
-                已有账户？{' '}
-              </ThemedText>
-              <Link href="/auth/login" asChild>
-                <TouchableOpacity>
-                  <ThemedText type="link" style={styles.linkText}>立即登录</ThemedText>
-                </TouchableOpacity>
-              </Link>
-            </View>
+          {/* 分割线 */}
+          <View style={styles.divider}>
+            <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
+            <Text style={[styles.dividerText, { color: subtextColor }]}>或</Text>
+            <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
           </View>
-        </ThemedView>
 
-        {/* 底部装饰区域 */}
-        <View style={styles.decorativeBottom}>
-          <View style={[styles.circle, styles.circle3, { backgroundColor: tintColor + '15' }]} />
+          {/* 登录链接 */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: subtextColor }]}>已有账户？</Text>
+            <Link href="/auth/login" asChild>
+              <Pressable>
+                <Text style={[styles.linkText, { color: tintColor }]}>立即登录</Text>
+              </Pressable>
+            </Link>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -337,131 +369,98 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 20,
-  },
-  decorativeTop: {
-    height: 120,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  decorativeBottom: {
-    height: 80,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  circle: {
-    position: 'absolute',
-    borderRadius: 1000,
-  },
-  circle1: {
-    width: 120,
-    height: 120,
-    top: -60,
-    right: -30,
-  },
-  circle2: {
-    width: 80,
-    height: 80,
-    top: 20,
-    left: -20,
-  },
-  circle3: {
-    width: 100,
-    height: 100,
-    bottom: -50,
-    right: -25,
-  },
-  content: {
-    marginHorizontal: 20,
-    marginTop: -40,
-    borderRadius: 24,
-    padding: 32,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-    elevation: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 40,
   },
   header: {
     alignItems: 'center',
     marginBottom: 32,
   },
-  logoContainer: {
-    marginBottom: 16,
-  },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 8,
-    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    opacity: 0.7,
-    textAlign: 'center',
-    lineHeight: 22,
   },
-  form: {
-    width: '100%',
+  card: {
+    borderRadius: 20,
+    padding: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+      web: {
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+      },
+    }),
   },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  captchaContainer: {
+    marginTop: 8,
     marginBottom: 8,
   },
-  label: {
-    fontSize: 16,
+  captchaLabel: {
+    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 8,
-  },
-  input: {
-    borderRadius: 12,
-  },
-  passwordContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    paddingRight: 50,
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 15,
-    top: '50%',
-    transform: [{ translateY: -10 }],
-    padding: 5,
-  },
-  termsContainer: {
-    marginBottom: 20,
+    marginBottom: 8,
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    marginTop: 8,
+    marginBottom: 16,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#9CA3AF',
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   termsText: {
     fontSize: 14,
     lineHeight: 20,
     flex: 1,
   },
-  registerButton: {
-    marginTop: 8,
+  button: {
     borderRadius: 12,
-    height: 50,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    minHeight: 52,
+  },
+  buttonPressed: {
+    opacity: 0.8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   divider: {
     flexDirection: 'row',
@@ -475,7 +474,6 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: 16,
     fontSize: 14,
-    opacity: 0.6,
   },
   footer: {
     flexDirection: 'row',
@@ -488,14 +486,6 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  captchaContainer: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  captchaLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+    marginLeft: 4,
   },
 });

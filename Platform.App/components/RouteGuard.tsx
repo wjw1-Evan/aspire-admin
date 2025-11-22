@@ -51,7 +51,6 @@ export function RouteGuard({
 
     // 如果用户未认证且访问受保护路由，重定向到登录页
     if (isProtected && !isAuthenticated) {
-      console.log('用户未认证，重定向到登录页');
       router.replace(redirectTo as any);
       return;
     }
@@ -66,10 +65,7 @@ export function RouteGuard({
         // 再次检查认证状态和加载状态，确保登录成功且不在加载中
         // 如果登录失败，isAuthenticated 会被设置为 false，所以不会跳转
         if (isAuthenticated && !loading) {
-          console.log('登录成功，重定向到主页');
           router.replace('/(tabs)');
-        } else {
-          console.log('登录状态检查：未通过，不跳转', { isAuthenticated, loading });
         }
       }, 150);
       
@@ -78,7 +74,6 @@ export function RouteGuard({
 
     // 检查权限
     if (isProtected && isAuthenticated && !canAccess) {
-      console.log('权限不足，重定向');
       router.replace(unauthorizedRedirect as any);
     }
   }, [
@@ -116,7 +111,7 @@ interface AdvancedRouteGuardProps {
 export function AdvancedRouteGuard({
   children,
   routePermissions = [],
-  defaultRedirect = '/auth',
+  defaultRedirect = '/auth/login',
   unauthorizedRedirect = '/(tabs)',
 }: Readonly<AdvancedRouteGuardProps>) {
   const { isAuthenticated, loading } = useAuth();

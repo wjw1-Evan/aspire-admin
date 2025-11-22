@@ -51,9 +51,9 @@ function AuthRouter() {
   return (
     <AuthErrorHandler>
       <RouteGuard
-        protectedRoutes={['/(tabs)', '/profile', '/about/index', '/modal']}
-        publicRoutes={['/auth']}
-        redirectTo="/auth"
+        protectedRoutes={['/(tabs)', '/profile', '/about/index', '/chat', '/people']}
+        publicRoutes={['/auth', '/auth/login', '/auth/register']}
+        redirectTo="/auth/login"
       >
         <SafeAreaView style={[styles.safeArea, { backgroundColor }]} edges={['top', 'left', 'right']}>
           <View style={[styles.routerContainer, { backgroundColor }]}>
@@ -63,13 +63,13 @@ function AuthRouter() {
             <NetworkStatusIndicator />
             
             {/* 路由栈 */}
+            {/* Expo Router 会根据文件系统自动注册所有路由（包括嵌套路由） */}
             <Stack screenOptions={{ headerShown: false }}>
               {isAuthenticated ? (
                 [
                   <Stack.Screen key="(tabs)" name="(tabs)" />,
-                  <Stack.Screen key="modal" name="modal" options={{ presentation: 'modal' }} />,
                   <Stack.Screen key="profile" name="profile" />,
-                  <Stack.Screen key="about" name="about/index" />
+                  <Stack.Screen key="about" name="about" />,
                 ]
               ) : (
                 <Stack.Screen name="auth" />

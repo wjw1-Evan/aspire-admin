@@ -1,382 +1,280 @@
-// 登录页面
+// 登录页面 - 简化版
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
-  TouchableOpacity,
+  View,
+  Text,
+  Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  View,
+  ActivityIndicator,
 } from 'react-native';
 import { Link } from 'expo-router';
 import { Image } from 'expo-image';
 import { useAuth } from '@/contexts/AuthContext';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedInput } from '@/components/themed-input';
-import { ThemedButton } from '@/components/themed-button';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
+import { ErrorMessageBanner } from '@/components/ErrorMessageBanner';
+import { Toast } from '@/components/Toast';
+import { FormInput } from '@/components/FormInput';
+import { useCaptcha } from '@/hooks/useCaptcha';
+import { getErrorCode, getErrorMessage } from '@/utils/errorUtils';
+import ImageCaptcha from '@/components/ImageCaptcha';
 import { PLACEHOLDER_IMAGE_URI } from '@/constants/placeholders';
 
-// 需要显示验证码的错误代码
 const CAPTCHA_ERROR_CODES = ['LOGIN_FAILED', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED'] as const;
 
-// 错误消息映射
-const ERROR_MESSAGES: Record<string, { title: string; message: string }> = {
-  CAPTCHA_REQUIRED: {
-    title: '需要验证码',
-    message: '登录失败后需要输入验证码，请在下方的验证码输入框中输入验证码后重试',
-  },
-  CAPTCHA_INVALID: {
-    title: '验证码错误',
-    message: '验证码错误，请重新输入验证码',
-  },
-  LOGIN_FAILED: {
-    title: '登录失败',
-    message: '用户名或密码错误，请检查后重试',
-  },
-};
-
-// 提取错误代码
-const getErrorCode = (error: any): string | undefined => {
-  if (error?.code) {
-    return error.code;
-  }
-  if (error?.errorCode) {
-    return error.errorCode;
-  }
-  if (error?.response?.data?.errorCode) {
-    return error.response.data.errorCode;
-  }
-  if (error?.response?.data?.data?.errorCode) {
-    return error.response.data.data.errorCode;
-  }
-  return undefined;
-};
-
-// 提取错误消息
-const getErrorMessage = (error: any): string => {
-  if (error?.message) {
-    return error.message;
-  }
-  if (error?.response?.data?.errorMessage) {
-    return error.response.data.errorMessage;
-  }
-  if (error?.response?.data?.data?.errorMessage) {
-    return error.response.data.data.errorMessage;
-  }
-  if (error?.errorMessage) {
-    return error.errorMessage;
-  }
-  if (error?.info?.errorMessage) {
-    return error.info.errorMessage;
-  }
-  return '登录失败，请重试';
+const ERROR_MESSAGES: Record<string, string> = {
+  CAPTCHA_REQUIRED: '登录失败后需要输入验证码，请在下方的验证码输入框中输入验证码后重试',
+  CAPTCHA_INVALID: '验证码错误，请重新输入验证码',
+  LOGIN_FAILED: '用户名或密码错误，请检查后重试',
 };
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showCaptcha, setShowCaptcha] = useState(false);
-  const [captchaId, setCaptchaId] = useState('');
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [captchaKey, setCaptchaKey] = useState(0);
-  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const captchaRef = useRef<ImageCaptchaRef>(null);
-
-  const { login, loading: authLoading } = useAuth();
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
   
+  const scrollViewRef = useRef<ScrollView>(null);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { login, loading: authLoading, clearError: clearAuthError } = useAuth();
+  const {
+    showCaptcha,
+    captchaId,
+    captchaAnswer,
+    captchaKey,
+    captchaRef,
+    setCaptchaId,
+    setCaptchaAnswer,
+    enableCaptcha,
+  } = useCaptcha();
+
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useThemeColor({ light: '#FFFFFF', dark: '#1E293B' }, 'card');
+  const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const borderColor = useThemeColor({}, 'border');
-  const errorColor = useThemeColor({ light: '#FF3B30', dark: '#FF6B6B' }, 'error');
+  const subtextColor = useThemeColor({}, 'icon');
 
-  // 显示验证码
-  const enableCaptcha = () => {
-    setShowCaptcha(true);
-    setCaptchaKey(prev => prev + 1);
-    setCaptchaAnswer('');
-    setCaptchaId('');
-  };
+  // 显示错误消息
+  const showError = useCallback((message: string) => {
+    // 直接设置错误消息（React 会确保在下一个渲染周期更新）
+    setErrorMessage(message);
+    
+    // 使用 requestAnimationFrame 确保在 DOM 更新后滚动
+    // 在 React Native 中，这会在下一个渲染帧执行
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      }, 100);
+    });
+  }, []);
 
   // 清除错误消息
-  const clearError = () => {
-    if (errorTimerRef.current) {
-      clearTimeout(errorTimerRef.current);
-      errorTimerRef.current = null;
-    }
+  const clearError = useCallback(() => {
     setErrorMessage('');
-  };
-
-  // 显示错误提示
-  const showError = (title: string, message: string) => {
-    if (errorTimerRef.current) {
-      clearTimeout(errorTimerRef.current);
-      errorTimerRef.current = null;
-    }
-    
-    const fullMessage = title ? `${title}: ${message}` : message;
-    
-    setTimeout(() => {
-      setErrorMessage(fullMessage);
-      
-      // 5秒后自动清除错误消息
-      errorTimerRef.current = setTimeout(() => {
-        setErrorMessage('');
-        errorTimerRef.current = null;
-      }, 5000);
-    }, 0);
-  };
-
-  // 组件卸载时清理定时器
-  useEffect(() => {
-    return () => {
-      if (errorTimerRef.current) {
-        clearTimeout(errorTimerRef.current);
-        errorTimerRef.current = null;
-      }
-    };
   }, []);
 
   // 处理登录错误
-  const handleLoginError = (error: any) => {
-    const errorCode = getErrorCode(error);
-    const errorMessage = getErrorMessage(error);
-    
-    // 如果需要显示验证码
-    if (errorCode && CAPTCHA_ERROR_CODES.includes(errorCode as any)) {
-      enableCaptcha();
-    }
+  const handleLoginError = useCallback(
+    (error: any) => {
+      // 提取错误信息
+      const errorCode = error?.code || error?.errorCode || getErrorCode(error);
+      const defaultMessage = getErrorMessage(error, '登录失败，请检查用户名和密码后重试');
+      
+      // 如果需要显示验证码
+      if (errorCode && (CAPTCHA_ERROR_CODES as readonly string[]).includes(errorCode)) {
+        enableCaptcha();
+      }
 
-    // 获取错误消息
-    const errorInfo = ERROR_MESSAGES[errorCode || ''] || {
-      title: '登录失败',
-      message: errorMessage,
-    };
-
-    showError(errorInfo.title, errorInfo.message);
-  };
+      // 获取错误消息
+      const message = ERROR_MESSAGES[errorCode || ''] || defaultMessage;
+      showError(message);
+    },
+    [enableCaptcha, showError]
+  );
 
   // 登录处理
-  const handleLogin = () => {
+  const handleLogin = useCallback(async () => {
+    // 防止重复提交
     if (authLoading) return;
 
     // 输入验证
     if (!username.trim() || !password.trim()) {
-      showError('输入错误', '请输入用户名和密码');
+      showError('请输入用户名和密码');
       return;
     }
 
     if (showCaptcha && (!captchaId || !captchaAnswer?.trim())) {
-      showError('验证码错误', '请输入图形验证码');
+      showError('请输入图形验证码');
       return;
     }
 
-    // 清除之前的错误消息
+    // 清除之前的错误（同步执行，确保立即生效）
     clearError();
-    
-    login({
-      username: username.trim(),
-      password: password.trim(),
-      autoLogin: true,
-      type: 'account',
-      captchaId: showCaptcha ? captchaId : undefined,
-      captchaAnswer: showCaptcha ? captchaAnswer : undefined,
-    })
-      .then((response) => {
-        console.log('Login success response:', response);
-        // 登录成功，loading 状态会由 authReducer 自动设置为 false
-        // RouteGuard 会检测到 isAuthenticated: true，然后跳转到主页
-      })
-      .catch((error: any) => {
-        console.log('Login error caught:', error);
-        // 登录失败，显示错误提示
-        // AUTH_FAILURE action 会设置 isAuthenticated: false 和 loading: false
-        // RouteGuard 会检测到 isAuthenticated: false，不会跳转
-        handleLoginError(error);
+    clearAuthError();
+
+    try {
+      // 执行登录（使用 async/await 确保错误能正确捕获）
+      await login({
+        username: username.trim(),
+        password: password.trim(),
+        autoLogin: true,
+        type: 'account',
+        captchaId: showCaptcha ? captchaId : undefined,
+        captchaAnswer: showCaptcha ? captchaAnswer : undefined,
       });
-  };
+
+      // 登录成功，显示成功提示
+      setShowSuccess(true);
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+      }
+      successTimerRef.current = setTimeout(() => {
+        setShowSuccess(false);
+        successTimerRef.current = null;
+      }, 2000);
+    } catch (error: any) {
+      // 处理登录错误（同步调用，React 会确保状态更新）
+      handleLoginError(error);
+    }
+  }, [
+    authLoading,
+    username,
+    password,
+    showCaptcha,
+    captchaId,
+    captchaAnswer,
+    clearError,
+    clearAuthError,
+    login,
+    showError,
+    handleLoginError,
+  ]);
 
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView 
+      {/* 成功提示 */}
+      <Toast
+        visible={showSuccess}
+        message="登录成功，正在跳转..."
+        type="success"
+        duration={2000}
+        onDismiss={() => setShowSuccess(false)}
+      />
+
+      <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* 顶部装饰区域 */}
-        <View style={styles.decorativeTop}>
-          <View style={[styles.circle, styles.circle1, { backgroundColor: tintColor + '20' }]} />
-          <View style={[styles.circle, styles.circle2, { backgroundColor: tintColor + '10' }]} />
+        {/* 头部区域 */}
+        <View style={styles.header}>
+          <Image
+            source={{ uri: PLACEHOLDER_IMAGE_URI }}
+            style={styles.logo}
+            placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
+          />
+          <Text style={[styles.title, { color: textColor }]}>欢迎回来</Text>
+          <Text style={[styles.subtitle, { color: subtextColor }]}>
+            登录您的账户以继续使用
+          </Text>
         </View>
 
-        {/* 主要内容区域 */}
-        <ThemedView style={[styles.content, { backgroundColor: cardBackgroundColor }]}>
-          {/* Logo 和标题区域 */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={{ uri: PLACEHOLDER_IMAGE_URI }}
-                style={styles.logo}
-                placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
-              />
-            </View>
-            <ThemedText type="title" style={styles.title}>
-              欢迎回来
-            </ThemedText>
-            <ThemedText style={styles.subtitle}>
-              登录您的账户以继续使用 Aspire Admin Platform
-            </ThemedText>
-          </View>
+        {/* 表单卡片 */}
+        <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
+          {/* 错误提示 */}
+          <ErrorMessageBanner message={errorMessage} onClose={clearError} />
 
-          {/* 表单区域 */}
-          <View style={styles.form}>
-            {/* 错误提示区域 */}
-            {errorMessage ? (
-              <View 
-                style={[
-                  styles.errorContainer, 
-                  { 
-                    backgroundColor: errorColor + '15', 
-                    borderColor: errorColor,
-                  }
-                ]}
-              >
-                <ThemedText 
-                  style={[styles.errorText, { color: errorColor }]}
-                  numberOfLines={3}
-                >
-                  {errorMessage}
-                </ThemedText>
-                <TouchableOpacity 
-                  onPress={clearError} 
-                  style={styles.errorCloseButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <ThemedText style={[styles.errorCloseText, { color: errorColor }]}>✕</ThemedText>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={{ height: 0, marginBottom: 0 }} />
-            )}
+          <FormInput
+            label="用户名"
+            value={username}
+            onChangeText={setUsername}
+            placeholder="请输入用户名"
+            disabled={authLoading}
+            hasError={!!errorMessage}
+            onClearError={clearError}
+          />
 
-            <View style={styles.inputContainer}>
-              <View style={styles.inputLabelContainer}>
-                <IconSymbol name="person.fill" size={16} color={useThemeColor({}, 'icon')} />
-                <ThemedText style={styles.label}>用户名</ThemedText>
-              </View>
-              <ThemedInput
-                value={username}
-                onChangeText={(text) => {
-                  setUsername(text);
+          <FormInput
+            label="密码"
+            type="password"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="请输入密码"
+            showPassword={showPassword}
+            onTogglePassword={() => setShowPassword(!showPassword)}
+            disabled={authLoading}
+            hasError={!!errorMessage}
+            onClearError={clearError}
+          />
+
+          {/* 验证码组件 */}
+          {showCaptcha && (
+            <View style={styles.captchaContainer}>
+              <Text style={[styles.captchaLabel, { color: textColor }]}>图形验证码</Text>
+              <ImageCaptcha
+                ref={captchaRef}
+                key={`captcha-${captchaKey}`}
+                value={captchaAnswer}
+                onChange={(text) => {
+                  setCaptchaAnswer(text);
                   if (errorMessage) {
                     clearError();
                   }
                 }}
-                placeholder="请输入用户名"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!authLoading}
-                style={styles.input}
+                onCaptchaIdChange={setCaptchaId}
+                type="login"
+                placeholder="请输入图形验证码"
               />
             </View>
+          )}
 
-            <View style={styles.inputContainer}>
-              <View style={styles.inputLabelContainer}>
-                <IconSymbol name="lock.fill" size={16} color={useThemeColor({}, 'icon')} />
-                <ThemedText style={styles.label}>密码</ThemedText>
-              </View>
-              <View style={styles.passwordContainer}>
-                <ThemedInput
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    if (errorMessage) {
-                      clearError();
-                    }
-                  }}
-                  placeholder="请输入密码"
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!authLoading}
-                  style={[styles.input, styles.passwordInput]}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <IconSymbol
-                    name={showPassword ? "eye.slash.fill" : "eye.fill"}
-                    size={20}
-                    color={useThemeColor({}, 'icon')}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* 验证码组件 */}
-            {showCaptcha && (
-              <View style={styles.captchaContainer}>
-                <ThemedText style={styles.captchaLabel}>图形验证码</ThemedText>
-                <ImageCaptcha
-                  ref={captchaRef}
-                  key={`captcha-${captchaKey}`}
-                  value={captchaAnswer}
-                  onChange={setCaptchaAnswer}
-                  onCaptchaIdChange={setCaptchaId}
-                  type="login"
-                  placeholder="请输入图形验证码"
-                />
-              </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: tintColor },
+              pressed && styles.buttonPressed,
+              authLoading && styles.buttonDisabled,
+            ]}
+            onPress={handleLogin}
+            disabled={authLoading}
+          >
+            {authLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>登录</Text>
             )}
+          </Pressable>
 
-            <ThemedButton
-              title={authLoading ? '登录中...' : '登录'}
-              onPress={handleLogin}
-              style={styles.loginButton}
-              disabled={authLoading}
-            />
+          <Pressable style={styles.forgotPassword}>
+            <Text style={[styles.forgotPasswordText, { color: tintColor }]}>忘记密码？</Text>
+          </Pressable>
 
-            {/* 忘记密码链接 */}
-            <TouchableOpacity style={styles.forgotPassword}>
-              <ThemedText style={[styles.forgotPasswordText, { color: tintColor }]}>
-                忘记密码？
-              </ThemedText>
-            </TouchableOpacity>
-
-            {/* 分割线 */}
-            <View style={styles.divider}>
-              <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
-              <ThemedText style={styles.dividerText}>或</ThemedText>
-              <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
-            </View>
-
-            {/* 注册链接 */}
-            <View style={styles.footer}>
-              <ThemedText style={styles.footerText}>
-                还没有账户？{' '}
-              </ThemedText>
-              <Link href="/auth/register" asChild>
-                <TouchableOpacity>
-                  <ThemedText type="link" style={styles.linkText}>立即注册</ThemedText>
-                </TouchableOpacity>
-              </Link>
-            </View>
+          {/* 分割线 */}
+          <View style={styles.divider}>
+            <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
+            <Text style={[styles.dividerText, { color: subtextColor }]}>或</Text>
+            <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
           </View>
-        </ThemedView>
 
-        {/* 底部装饰区域 */}
-        <View style={styles.decorativeBottom}>
-          <View style={[styles.circle, styles.circle3, { backgroundColor: tintColor + '15' }]} />
+          {/* 注册链接 */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: subtextColor }]}>还没有账户？</Text>
+            <Link href="/auth/register" asChild>
+              <Pressable>
+                <Text style={[styles.linkText, { color: tintColor }]}>立即注册</Text>
+              </Pressable>
+            </Link>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -389,170 +287,77 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 20,
-  },
-  decorativeTop: {
-    height: 120,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  decorativeBottom: {
-    height: 80,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  circle: {
-    position: 'absolute',
-    borderRadius: 1000,
-  },
-  circle1: {
-    width: 120,
-    height: 120,
-    top: -60,
-    right: -30,
-  },
-  circle2: {
-    width: 80,
-    height: 80,
-    top: 20,
-    left: -20,
-  },
-  circle3: {
-    width: 100,
-    height: 100,
-    bottom: -50,
-    right: -25,
-  },
-  content: {
-    marginHorizontal: 20,
-    marginTop: -40,
-    borderRadius: 24,
-    padding: 32,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-      web: {
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-      },
-    }),
+    paddingHorizontal: 20,
+    paddingVertical: 40,
   },
   header: {
     alignItems: 'center',
     marginBottom: 32,
   },
-  logoContainer: {
-    marginBottom: 16,
-  },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 8,
-    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    opacity: 0.7,
-    textAlign: 'center',
-    lineHeight: 22,
   },
-  form: {
-    width: '100%',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 16,
-    minHeight: 48,
-    width: '100%',
+  card: {
+    borderRadius: 20,
+    padding: 24,
     ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
       web: {
-        display: 'flex',
-        visibility: 'visible',
-        opacity: 1,
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
       },
     }),
   },
-  errorText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-    marginRight: 8,
-  },
-  errorCloseButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  errorCloseText: {
-    fontSize: 18,
-    fontWeight: '300',
-    opacity: 0.8,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  input: {
-    width: '100%',
-  },
-  passwordContainer: {
-    position: 'relative',
-    width: '100%',
-  },
-  passwordInput: {
-    paddingRight: 50,
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: [{ translateY: -10 }],
-    padding: 4,
-    zIndex: 1,
-  },
   captchaContainer: {
-    marginTop: 16,
+    marginTop: 8,
     marginBottom: 8,
-    width: '100%',
-    minHeight: 80,
   },
   captchaLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
   },
-  loginButton: {
-    marginTop: 8,
+  button: {
     borderRadius: 12,
-    height: 50,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    minHeight: 52,
+  },
+  buttonPressed: {
+    opacity: 0.8,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   forgotPassword: {
     alignItems: 'center',
     marginTop: 16,
+    padding: 8,
   },
   forgotPasswordText: {
     fontSize: 14,
@@ -570,7 +375,6 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: 16,
     fontSize: 14,
-    opacity: 0.6,
   },
   footer: {
     flexDirection: 'row',
@@ -583,6 +387,6 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontWeight: '600',
+    marginLeft: 4,
   },
 });
-

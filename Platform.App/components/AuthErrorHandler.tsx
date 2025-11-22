@@ -1,11 +1,12 @@
 // 重新设计的认证错误处理组件
 
-import React, { ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import React, { ReactNode, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { usePathname } from 'expo-router';
 import { useAuthError } from '@/hooks/useAuthError';
 import { AuthErrorType } from '@/types/unified-api';
 import NetInfo from '@react-native-community/netinfo';
+import { ErrorToast } from './ErrorToast';
 
 interface AuthErrorHandlerProps {
   children: ReactNode;
@@ -21,119 +22,30 @@ export function AuthErrorHandler({
 }: Readonly<AuthErrorHandlerProps>) {
   const { error, getErrorType, getUserFriendlyMessage, isRetryable, clearError } = useAuthError();
   const pathname = usePathname();
-  const isWeb = Platform.OS === 'web';
   const shouldSkipErrorUi = pathname?.startsWith('/auth');
+  const [toastVisible, setToastVisible] = useState(false);
 
-  // 处理错误显示
-  React.useEffect(() => {
-    if (isWeb) {
-      // Web 端禁用 Alert.alert，避免浏览器阻塞
-      return;
-    }
-
-    // 如果在登录页面，不显示原生 Alert，让页面自己的错误处理组件处理
-    if (shouldSkipErrorUi) {
-      console.log('AuthErrorHandler: Skipping error display on auth page, pathname:', pathname);
-      return;
-    }
-    
-    if (error && showErrorModal) {
+  // 控制错误 Toast 显示
+  useEffect(() => {
+    if (error && !shouldSkipErrorUi && showErrorModal) {
       const errorType = getErrorType();
-      const message = getUserFriendlyMessage();
-      const retryable = isRetryable();
-
-      // 根据错误类型显示不同的处理方式
-      switch (errorType) {
-        case AuthErrorType.TOKEN_EXPIRED:
-        case AuthErrorType.TOKEN_INVALID:
-        case AuthErrorType.UNAUTHORIZED:
-          // 这些错误通常会自动处理，不需要用户手动操作
-          console.log('Auth error handled automatically:', message);
-          break;
-          
-        case AuthErrorType.NETWORK_ERROR:
-          Alert.alert(
-            '网络错误',
-            message || '认证出错',
-            [
-              {
-                text: '重试',
-                onPress: () => {
-                  clearError();
-                  // 这里可以触发重试逻辑
-                },
-              },
-              {
-                text: '取消',
-                style: 'cancel',
-                onPress: clearError,
-              },
-            ]
-          );
-          break;
-          
-        case AuthErrorType.PERMISSION_DENIED:
-          Alert.alert(
-            '权限不足',
-            message || '认证出错',
-            [
-              {
-                text: '确定',
-                onPress: clearError,
-              },
-            ]
-          );
-          break;
-          
-        case AuthErrorType.LOGIN_FAILED:
-          Alert.alert(
-            '登录失败',
-            message || '认证出错',
-            [
-              {
-                text: '确定',
-                onPress: clearError,
-              },
-            ]
-          );
-          break;
-          
-        default:
-          if (retryable) {
-            Alert.alert(
-              '操作失败',
-              message || '认证出错',
-              [
-                {
-                  text: '重试',
-                  onPress: () => {
-                    clearError();
-                    // 这里可以触发重试逻辑
-                  },
-                },
-                {
-                  text: '取消',
-                  style: 'cancel',
-                  onPress: clearError,
-                },
-              ]
-            );
-          } else {
-            Alert.alert(
-              '错误',
-              message || '认证出错',
-              [
-                {
-                  text: '确定',
-                  onPress: clearError,
-                },
-              ]
-            );
-          }
-          break;
+      
+      // 某些错误类型不显示 Toast（自动处理）
+      if (
+        errorType === AuthErrorType.TOKEN_EXPIRED ||
+        errorType === AuthErrorType.TOKEN_INVALID ||
+        errorType === AuthErrorType.UNAUTHORIZED
+      ) {
+        // 这些错误通常会自动处理，不需要用户手动操作
+        return;
       }
+      
+      // 显示 Toast
+      setToastVisible(true);
+    } else {
+      setToastVisible(false);
     }
-  }, [error, showErrorModal, getErrorType, getUserFriendlyMessage, isRetryable, clearError, pathname, isWeb, shouldSkipErrorUi]);
+  }, [error, shouldSkipErrorUi, showErrorModal, getErrorType, getUserFriendlyMessage]);
 
   // 如果有自定义错误组件，使用它
   if (error && customErrorComponent) {
@@ -145,57 +57,49 @@ export function AuthErrorHandler({
     );
   }
 
+  // 获取错误标题
+  const getErrorTitle = (): string | undefined => {
+    const errorType = getErrorType();
+    switch (errorType) {
+      case AuthErrorType.NETWORK_ERROR:
+        return '网络错误';
+      case AuthErrorType.PERMISSION_DENIED:
+        return '权限不足';
+      case AuthErrorType.LOGIN_FAILED:
+        return '登录失败';
+      default:
+        return '操作失败';
+    }
+  };
+
   return (
     <>
-      {isWeb && error && !shouldSkipErrorUi ? (
-        <ErrorBanner
-          error={error}
-          onDismiss={clearError}
-          onRetry={isRetryable() ? clearError : undefined}
-        />
-      ) : null}
+      <ErrorToast
+        visible={toastVisible}
+        title={getErrorTitle()}
+        message={getUserFriendlyMessage() || '操作失败，请稍后重试'}
+        mode="toast"
+        retryable={isRetryable()}
+        autoHideDuration={isRetryable() ? 8000 : 5000}
+        onDismiss={() => {
+          setToastVisible(false);
+          clearError();
+        }}
+        onRetry={
+          isRetryable()
+            ? () => {
+                setToastVisible(false);
+                clearError();
+                // 这里可以触发重试逻辑
+              }
+            : undefined
+        }
+      />
       {children}
     </>
   );
 }
 
-// 错误提示组件
-interface ErrorBannerProps {
-  error: any;
-  onDismiss?: () => void;
-  onRetry?: () => void;
-}
-
-export function ErrorBanner({ error, onDismiss, onRetry }: Readonly<ErrorBannerProps>) {
-  const { getUserFriendlyMessage, isRetryable } = useAuthError();
-
-  if (!error) {
-    return null;
-  }
-
-  const message = getUserFriendlyMessage();
-  const retryable = isRetryable();
-
-  return (
-    <View style={styles.errorBanner}>
-      <View style={styles.errorContent}>
-        <Text style={styles.errorText}>{message}</Text>
-        <View style={styles.errorActions}>
-          {retryable && onRetry && (
-            <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-              <Text style={styles.retryButtonText}>重试</Text>
-            </TouchableOpacity>
-          )}
-          {onDismiss && (
-            <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
-              <Text style={styles.dismissButtonText}>×</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-}
 
 // 网络状态指示器
 export function NetworkStatusIndicator() {
@@ -262,49 +166,6 @@ function getInitialOnlineState(): boolean {
 }
 
 const styles = StyleSheet.create({
-  errorBanner: {
-    backgroundColor: '#fff2f0',
-    borderLeftWidth: 4,
-    borderLeftColor: '#ff4d4f',
-    padding: 12,
-    margin: 8,
-    borderRadius: 4,
-  },
-  errorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  errorText: {
-    flex: 1,
-    color: '#ff4d4f',
-    fontSize: 14,
-    marginRight: 8,
-  },
-  errorActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#ff4d4f',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  dismissButton: {
-    padding: 4,
-  },
-  dismissButtonText: {
-    color: '#ff4d4f',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   networkIndicator: {
     backgroundColor: '#f6ffed',
     borderBottomWidth: 1,

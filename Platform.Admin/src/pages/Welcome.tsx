@@ -190,6 +190,8 @@ const Welcome: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch system resources:', error);
+      // 错误由全局错误处理统一处理，这里重新抛出确保全局处理能够捕获
+      throw error;
     }
   }, []);
 
@@ -217,8 +219,11 @@ const Welcome: React.FC = () => {
 
       // 获取初始系统资源数据
       await fetchSystemResources();
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error) {
       console.error('Failed to fetch statistics:', error);
+      // 重新抛出错误，确保全局错误处理能够处理
+      throw error;
     } finally {
       setLoading(false);
     }

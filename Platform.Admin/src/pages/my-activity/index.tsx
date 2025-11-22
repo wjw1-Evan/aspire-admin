@@ -543,6 +543,9 @@ const MyActivity: React.FC = () => {
             };
           } catch (error) {
             console.error('Failed to load activity logs:', error);
+            // 注意：这是 ProTable request 函数的特殊处理模式
+            // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
+            // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
             return {
               data: [],
               total: 0,

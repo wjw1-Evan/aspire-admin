@@ -21,7 +21,7 @@ export default function ChatSessionScreen() {
   const params = useLocalSearchParams<{ sessionId: string }>();
   const router = useRouter();
   const sessionId = params.sessionId;
-  const { user } = useAuth();
+  const { user, reportError } = useAuth();
   const {
     sessions,
     sessionsLoading,
@@ -62,9 +62,9 @@ export default function ChatSessionScreen() {
     lastLoadTimeRef.current = now;
     // 即使 session 还未加载，也尝试加载消息（消息加载只需要 sessionId）
     loadMessages(sessionId).catch(error => {
-      if (__DEV__) {
-        console.error('Failed to load messages:', error);
-      }
+      console.error('Failed to load messages:', error);
+      // 错误由全局错误处理统一处理，这里报告错误
+      reportError(error);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadMessages, sessionId]);
@@ -105,9 +105,9 @@ export default function ChatSessionScreen() {
       // 只在 SignalR 未连接时轮询
       if (connectionState !== HubConnectionState.Connected) {
         loadMessages(sessionId).catch(error => {
-          if (__DEV__) {
-            console.error('Polling messages failed:', error);
-          }
+          console.error('Polling messages failed:', error);
+          // 错误由全局错误处理统一处理，这里报告错误
+          reportError(error);
         });
       }
     }, POLL_INTERVAL_MS);
@@ -285,10 +285,12 @@ export default function ChatSessionScreen() {
 
         setShowAttachmentPicker(false);
       } catch (error) {
-        Alert.alert('发送失败', error instanceof Error ? error.message : '附件发送失败');
+        console.error('附件发送失败', error);
+        // 错误由全局错误处理统一处理，这里报告错误
+        reportError(error);
       }
     },
-    [sendMessage, sessionId, uploadAttachment]
+    [sendMessage, sessionId, uploadAttachment, reportError]
   );
 
   useEffect(() => {

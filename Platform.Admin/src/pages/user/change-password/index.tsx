@@ -58,15 +58,22 @@ const ChangePassword: React.FC = () => {
         return;
       }
 
-      // 如果失败去设置用户错误信息
+      // 如果失败，设置用户错误信息（用于表单显示）并抛出错误
       setChangePasswordState(result);
-    } catch (error) {
-      const defaultChangePasswordFailureMessage = intl.formatMessage({
+      throw new Error(result.errorMessage || intl.formatMessage({
         id: 'pages.changePassword.failure',
         defaultMessage: '密码修改失败，请重试！',
-      });
-      console.error('修改密码失败:', error);
-      message.error(defaultChangePasswordFailureMessage);
+      }));
+    } catch (error: any) {
+      // 设置错误状态用于表单显示
+      if (error?.info?.errorCode || error?.errorCode) {
+        setChangePasswordState({
+          errorCode: error.info?.errorCode || error.errorCode,
+          errorMessage: error.info?.errorMessage || error.message,
+        });
+      }
+      // 错误提示由全局错误处理统一处理，这里重新抛出确保全局处理能够捕获
+      throw error;
     }
   };
 

@@ -10,6 +10,7 @@ import { WeChatCard } from '@/components/ui/wx-card';
 import { useNearbyUsers } from '@/hooks/useNearbyUsers';
 import { useChat } from '@/contexts/ChatContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { NEARBY_SEARCH_DEFAULT_RADIUS } from '@/services/apiConfig';
 
 const formatDistance = (distance: number) => {
@@ -127,6 +128,7 @@ export default function NearbyScreen() {
   const { theme } = useTheme();
   const { setActiveSession } = useChat();
   const { nearbyUsers, loading, refresh } = useNearbyUsers();
+  const { reportError } = useAuth();
 
   const radiusRef = useRef<number>(NEARBY_SEARCH_DEFAULT_RADIUS);
   const [radius, setRadius] = useState(radiusRef.current);
@@ -173,9 +175,11 @@ export default function NearbyScreen() {
         }
       } catch (error) {
         console.error('Failed to refresh nearby users:', error);
+        // 错误由全局错误处理统一处理，这里报告错误
+        reportError(error);
       }
     },
-    [loading, refresh]
+    [loading, refresh, reportError]
   );
 
   // 只在组件挂载时执行一次初始刷新

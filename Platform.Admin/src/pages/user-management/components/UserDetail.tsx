@@ -57,8 +57,11 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
         });
         setRoleMap(map);
       }
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error) {
       console.error('加载角色列表失败:', error);
+      // 重新抛出错误，确保全局错误处理能够处理
+      throw error;
     }
   };
 
@@ -79,9 +82,12 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       } else {
         setActivityLogs([]);
       }
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error) {
       console.error('获取活动日志失败:', error);
       setActivityLogs([]);
+      // 重新抛出错误，确保全局错误处理能够处理
+      throw error;
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,8 @@
 ﻿import type { RequestConfig } from '@umijs/max';
+import { history } from '@umijs/max';
 import { errorInterceptor } from '@/utils/errorInterceptor';
+import AuthenticationService from '@/utils/authService';
+import { tokenUtils } from '@/utils/token';
 
 // 错误处理方案： 错误类型
 enum ErrorShowType {
@@ -16,9 +19,19 @@ interface ResponseStructure {
   data?: any;
   errorCode?: string;
   errorMessage?: string;
-  timestamp: string;
+  timestamp?: string;
   traceId?: string;
   showType?: ErrorShowType;
+}
+
+// .NET ProblemDetails 错误响应格式
+interface ProblemDetailsResponse {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  errors?: Record<string, string[]>;
+  traceId?: string;
 }
 
 /**
@@ -29,29 +42,79 @@ interface ResponseStructure {
 export const errorConfig: RequestConfig = {
   // 错误处理： umi@3 的错误处理方案。
   errorConfig: {
-    // 错误抛出
+    // 错误抛出 - 支持多种响应格式
     errorThrower: (res) => {
+      // 1. 检查是否是成功响应（有 success 字段且为 true）
+      if (res.success === true) {
+        return; // 成功响应，不抛出错误
+      }
+
+      // 2. 检查是否是 ProblemDetails 格式（后端错误响应）
+      // .NET 后端使用 ProblemDetails 中间件返回标准错误格式
+      if (res.status && (res.title || res.detail)) {
+        const problemDetails = res as unknown as ProblemDetailsResponse;
+        const error: any = new Error(problemDetails.title || problemDetails.detail || '请求失败');
+        error.name = 'BizError';
+        error.info = {
+          errorCode: problemDetails.type || `HTTP_${problemDetails.status}`,
+          errorMessage: problemDetails.title || problemDetails.detail || '请求失败',
+          showType: ErrorShowType.ERROR_MESSAGE,
+          data: problemDetails,
+          errors: problemDetails.errors, // 验证错误字段（用于表单验证）
+        };
+        throw error;
+      }
+
+      // 3. 检查是否是标准错误响应格式（有 success 字段但为 false）
       const { success, data, errorCode, errorMessage, showType } =
         res as unknown as ResponseStructure;
-      if (!success) {
-        const error: any = new Error(errorMessage);
+      if (success === false) {
+        const error: any = new Error(errorMessage || '请求失败');
         error.name = 'BizError';
         error.info = { errorCode, errorMessage, showType, data };
-        throw error; // 抛出自制的错误
+        throw error;
       }
+
+      // 4. 如果都不匹配，可能是网络错误或其他未知错误，不在这里处理
+      // 由响应拦截器的错误处理逻辑处理
     },
     
     // 统一错误处理
     errorHandler: (error: any, opts: any) => {
       if (opts?.skipErrorHandler) throw error;
 
-      // 使用统一错误拦截器处理错误
       const context = {
         url: error.config?.url,
         method: error.config?.method,
         requestId: error.config?.requestId,
       };
 
+      // 1. 统一处理认证错误（401/404）- 清除 token 并跳转登录
+      const isAuthError = error.response?.status === 401 || error.response?.status === 404;
+      // 检查是否是认证相关的错误消息（避免已处理的认证错误重复处理）
+      const isAuthErrorMessage = 
+        error.message === 'Authentication handled silently' ||
+        error.message === 'Authentication handled';
+
+      if (isAuthError || isAuthErrorMessage) {
+        // 清除 token
+        tokenUtils.clearAllTokens();
+
+        // 检查是否是当前用户请求失败（需要跳转登录）
+        const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
+        if (isCurrentUserRequest || isAuthError) {
+          // 使用 AuthenticationService 统一跳转
+          AuthenticationService.redirectToLogin(
+            isAuthError ? `HTTP ${error.response?.status}` : 'Token refresh failed'
+          );
+        }
+
+        // 使用 errorInterceptor 静默处理（不显示错误提示给用户）
+        errorInterceptor.handleError(error, context);
+        return; // 不再抛出错误，避免重复处理
+      }
+
+      // 2. 其他错误使用统一拦截器处理
       errorInterceptor.handleError(error, context);
     },
   },

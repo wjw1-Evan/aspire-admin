@@ -40,10 +40,11 @@ interface AuthContextType extends AuthState {
   // 状态管理
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  reportError: (error: any) => void; // 报告错误到全局错误处理
   
   // 用户管理
   updateProfile: (profileData: UpdateProfileParams) => Promise<void>;
-  changePassword: (request: ChangePasswordRequest) => Promise<ApiResponse<boolean>>;
+  changePassword: (request: ChangePasswordRequest) => Promise<void>;
   
   // 权限检查
   hasPermission: (permissionCode: string) => boolean;
@@ -111,18 +112,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   // 更新用户资料
+  // 注意：updateProfileAction 内部已经处理错误并分发到全局状态，这里不需要再次处理
   const updateProfile = useCallback(async (profileData: UpdateProfileParams) => {
-    try {
-      await updateProfileAction(profileData, dispatch);
-    } catch (error) {
-      const authError = handleAuthError(error);
-      throw authError;
-    }
-  }, [handleAuthError]);
+    await updateProfileAction(profileData, dispatch);
+  }, []);
 
   // 修改密码
-  const changePassword = useCallback(async (request: ChangePasswordRequest): Promise<ApiResponse<boolean>> => {
-    return await changePasswordAction(request);
+  const changePassword = useCallback(async (request: ChangePasswordRequest): Promise<void> => {
+    await changePasswordAction(request, dispatch);
   }, []);
 
   // 权限检查
@@ -167,6 +164,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const clearError = useCallback(() => {
     dispatch({ type: 'AUTH_CLEAR_ERROR' });
   }, []);
+
+  // 报告错误到全局错误处理
+  // 用于页面将非认证相关的 API 错误报告到全局错误处理
+  const reportError = useCallback((error: any) => {
+    const authError = handleAuthError(error);
+    // 分发错误到全局状态，让 AuthErrorHandler 显示错误
+    dispatch({ type: 'AUTH_FAILURE', payload: authError });
+  }, [handleAuthError]);
 
   // 设置加载状态
   const setLoading = useCallback((loading: boolean) => {
@@ -267,6 +272,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     validateToken,
     isTokenExpired,
     handleAppStateChange,
+    reportError,
   }), [
     state,
     login,
@@ -283,6 +289,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     validateToken,
     isTokenExpired,
     handleAppStateChange,
+    reportError,
   ]);
 
   return (

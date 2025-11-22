@@ -207,7 +207,7 @@ export default function ContactsScreen(): JSX.Element {
   const router = useRouter();
   const { sessions, loadSessions, setActiveSession, upsertSession } = useChat();
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user, reportError } = useAuth();
   const insets = useSafeAreaInsets();
   const colors = theme.colors;
   const accentSoftColor = colors.accentMuted;
@@ -228,15 +228,16 @@ export default function ContactsScreen(): JSX.Element {
         console.error('加载好友请求失败', requestsResult.reason);
       }
       
-      // 如果两个都失败，才显示错误提示
+      // 如果两个都失败，将错误报告到全局错误处理
       if (friendsResult.status === 'rejected' && requestsResult.status === 'rejected') {
-        Alert.alert('加载失败', errorMessage(friendsResult.reason, '加载通讯录失败，请稍后再试'));
+        reportError(friendsResult.reason);
       }
     } catch (error) {
       console.error('加载通讯录失败', error);
-      Alert.alert('加载失败', errorMessage(error, '加载通讯录失败，请稍后再试'));
+      // 错误由全局错误处理统一处理，这里报告错误
+      reportError(error);
     }
-  }, [loadFriends, loadRequests]);
+  }, [loadFriends, loadRequests, reportError]);
 
   useFocusEffect(
     useCallback(() => {
@@ -260,16 +261,18 @@ export default function ContactsScreen(): JSX.Element {
         console.error('刷新好友请求失败', requestsResult.reason);
       }
       
-      // 如果两个都失败，才显示错误提示
+      // 如果两个都失败，将错误报告到全局错误处理
       if (friendsResult.status === 'rejected' && requestsResult.status === 'rejected') {
-        Alert.alert('刷新失败', errorMessage(friendsResult.reason, '刷新通讯录失败，请稍后再试'));
+        reportError(friendsResult.reason);
       }
     } catch (error) {
-      Alert.alert('刷新失败', errorMessage(error, '刷新通讯录失败，请稍后再试'));
+      console.error('刷新通讯录失败', error);
+      // 错误由全局错误处理统一处理，这里报告错误
+      reportError(error);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshFriends, loadRequests]);
+  }, [refreshFriends, loadRequests, reportError]);
 
   const toggleMenu = useCallback(() => {
     setMenuVisible(prev => !prev);
@@ -292,6 +295,7 @@ export default function ContactsScreen(): JSX.Element {
   const handleQuerySearch = useCallback(async () => {
     const query = searchQuery.trim();
     if (!query) {
+      // 这是客户端验证错误，可以保留本地处理
       Alert.alert('提示', '请输入手机号或姓名/用户名');
       return;
     }
@@ -299,9 +303,11 @@ export default function ContactsScreen(): JSX.Element {
       setHasSearched(true);
       await searchByQuery(query);
     } catch (error) {
-      Alert.alert('搜索失败', errorMessage(error, '搜索用户失败，请稍后再试'));
+      console.error('搜索用户失败', error);
+      // 错误由全局错误处理统一处理，这里报告错误
+      reportError(error);
     }
-  }, [searchByQuery, searchQuery]);
+  }, [searchByQuery, searchQuery, reportError]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
@@ -314,38 +320,47 @@ export default function ContactsScreen(): JSX.Element {
       setSubmitting(true);
       try {
         await sendFriendRequest({ targetUserId });
+        // 成功提示可以保留（这是成功消息，不是错误）
         Alert.alert('好友请求已发送', '等待对方确认即可开始聊天');
       } catch (error) {
-        Alert.alert('发送失败', errorMessage(error, '发送好友请求失败'));
+        console.error('发送好友请求失败', error);
+        // 错误由全局错误处理统一处理，这里报告错误
+        reportError(error);
       } finally {
         setSubmitting(false);
       }
     },
-    [sendFriendRequest]
+    [sendFriendRequest, reportError]
   );
 
   const handleApprove = useCallback(
     async (requestId: string) => {
       try {
         await approveRequest(requestId);
+        // 成功提示可以保留（这是成功消息，不是错误）
         Alert.alert('已添加好友', '可以开始聊天啦');
       } catch (error) {
-        Alert.alert('操作失败', errorMessage(error, '接受好友请求失败'));
+        console.error('接受好友请求失败', error);
+        // 错误由全局错误处理统一处理，这里报告错误
+        reportError(error);
       }
     },
-    [approveRequest]
+    [approveRequest, reportError]
   );
 
   const handleReject = useCallback(
     async (requestId: string) => {
       try {
         await rejectRequest(requestId);
+        // 成功提示可以保留（这是成功消息，不是错误）
         Alert.alert('已处理', '已拒绝该好友请求');
       } catch (error) {
-        Alert.alert('操作失败', errorMessage(error, '拒绝好友请求失败'));
+        console.error('拒绝好友请求失败', error);
+        // 错误由全局错误处理统一处理，这里报告错误
+        reportError(error);
       }
     },
-    [rejectRequest]
+    [rejectRequest, reportError]
   );
 
   const sessionLookup = useMemo(() => {
@@ -396,10 +411,12 @@ export default function ContactsScreen(): JSX.Element {
         setActiveSession(targetSessionId);
         router.push({ pathname: '/chat/[sessionId]', params: { sessionId: targetSessionId } });
       } catch (error) {
-        Alert.alert('打开聊天失败', errorMessage(error, '无法打开聊天，请稍后重试'));
+        console.error('打开聊天失败', error);
+        // 错误由全局错误处理统一处理，这里报告错误
+        reportError(error);
       }
     },
-    [currentUserId, ensureSession, loadSessions, router, sessionLookup, sessions, setActiveSession, upsertSession, user?.displayName, user?.username]
+    [currentUserId, ensureSession, loadSessions, router, sessionLookup, sessions, setActiveSession, upsertSession, user?.displayName, user?.username, reportError]
   );
 
   const sortedFriends = useMemo(() => {

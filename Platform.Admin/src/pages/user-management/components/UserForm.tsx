@@ -37,9 +37,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         if (response.success && response.data) {
           setRoles(response.data.roles.filter((r) => r.isActive));
         }
-      } catch (error) {
-        console.error('加载角色列表失败:', error);
-        message.error(intl.formatMessage({ id: 'pages.message.loadFailed' }));
+        // 错误由全局错误处理统一处理
       } finally {
         setLoadingRoles(false);
       }
@@ -80,11 +78,10 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           },
         );
 
-        if (response.success) {
-          message.success(intl.formatMessage({ id: 'pages.message.updateSuccess' }));
-        } else {
+        if (!response.success) {
           throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.updateFailed' }));
         }
+        // 成功提示由 onSuccess 回调处理
       } else {
         // 创建用户
         const createData: CreateUserRequest = {
@@ -103,17 +100,14 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           },
         );
 
-        if (response.success) {
-          message.success(intl.formatMessage({ id: 'pages.message.createSuccess' }));
-        } else {
+        if (!response.success) {
           throw new Error(intl.formatMessage({ id: 'pages.message.createFailed' }));
         }
+        // 成功提示由 onSuccess 回调处理
       }
 
       onSuccess();
-    } catch (error: any) {
-      console.error('用户操作失败:', error);
-      message.error(error.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } finally {
       setLoading(false);
     }

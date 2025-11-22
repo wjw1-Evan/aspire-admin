@@ -166,9 +166,8 @@ const RoleForm: React.FC<RoleFormProps> = ({
 
       if (current) {
         if (!current.id) {
-          message.error('当前角色缺少唯一标识，无法更新');
-          setLoading(false);
-          return;
+          // 数据校验失败，抛出错误
+          throw new Error('当前角色缺少唯一标识，无法更新');
         }
         // 更新角色
         const updateData: UpdateRoleRequest = {
@@ -183,7 +182,8 @@ const RoleForm: React.FC<RoleFormProps> = ({
           message.success(intl.formatMessage({ id: 'pages.roleForm.updateSuccess' }));
           onSuccess();
         } else {
-          message.error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.updateFailed' }));
+          // 失败时抛出错误，由全局错误处理统一处理
+          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.updateFailed' }));
         }
       } else {
         // 创建角色
@@ -199,11 +199,11 @@ const RoleForm: React.FC<RoleFormProps> = ({
           message.success(intl.formatMessage({ id: 'pages.roleForm.createSuccess' }));
           onSuccess();
         } else {
-          message.error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.createFailed' }));
+          // 失败时抛出错误，由全局错误处理统一处理
+          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.createFailed' }));
         }
       }
-    } catch (error: any) {
-      message.error(error.message || intl.formatMessage({ id: 'pages.roleForm.operationFailed' }));
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } finally {
       setLoading(false);
     }

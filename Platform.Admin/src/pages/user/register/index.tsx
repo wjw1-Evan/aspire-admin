@@ -42,35 +42,11 @@ export default function Register() {
         return;
       }
 
-      // 注册失败
+      // 注册失败，处理业务逻辑（显示验证码），然后抛出错误让全局错误处理显示错误提示
+      const errorCode = response.errorCode;
       const errorMsg = response.errorMessage || '注册失败';
-      setRegisterError(errorMsg);
       
-      // 注册失败后显示验证码
-      if (response.errorCode === 'USER_EXISTS' || response.errorCode === 'EMAIL_EXISTS' || 
-          response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED' ||
-          response.errorCode === 'SERVER_ERROR') {
-        setShowCaptcha(true);
-        // 如果是验证码错误，自动刷新验证码
-        if (response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        } else {
-          // 第一次失败，获取新的验证码
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        }
-      }
-    } catch (error: any) {
-      const errorMsg = error.message || '注册失败，请重试';
-      setRegisterError(errorMsg);
-      
-      // 从错误对象中提取 errorCode（错误拦截器会在 error.info 中存储）
-      const errorCode = error?.info?.errorCode || error?.errorCode;
-      
-      // 注册失败后显示验证码
+      // 注册失败后显示验证码（业务逻辑）
       if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' || 
           errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' ||
           errorCode === 'SERVER_ERROR') {
@@ -87,6 +63,44 @@ export default function Register() {
           }
         }
       }
+      
+      // 抛出错误，由全局错误处理统一显示错误提示
+      throw new Error(errorMsg);
+    } catch (error: any) {
+      // 从错误对象中提取 errorCode
+      const errorCode = 
+        error?.info?.errorCode || 
+        error?.errorCode || 
+        error?.response?.data?.errorCode;
+      
+      // 设置错误状态（用于表单显示）
+      const errorMsg = 
+        error?.info?.errorMessage || 
+        error?.response?.data?.errorMessage || 
+        error?.message || 
+        '注册失败，请重试';
+      setRegisterError(errorMsg);
+      
+      // 注册失败后显示验证码（业务逻辑）
+      if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' || 
+          errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' ||
+          errorCode === 'SERVER_ERROR') {
+        setShowCaptcha(true);
+        // 如果是验证码错误，自动刷新验证码
+        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        } else {
+          // 第一次失败，获取新的验证码
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        }
+      }
+      
+      // 重新抛出错误，确保全局错误处理能够处理
+      throw error;
     }
   };
 

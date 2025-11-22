@@ -53,10 +53,10 @@ const CompanySearch: React.FC = () => {
           message.info(intl.formatMessage({ id: 'pages.placeholder.noCompaniesFound' }));
         }
       } else {
-        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.searchFailed' }));
+        // 失败时抛出错误，由全局错误处理统一处理
+        throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.searchFailed' }));
       }
-    } catch (error: any) {
-      message.error(error.message || intl.formatMessage({ id: 'pages.message.searchFailed' }));
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } finally {
       setLoading(false);
     }
@@ -95,10 +95,13 @@ const CompanySearch: React.FC = () => {
             // 刷新搜索结果
             await handleSearch();
           } else {
-            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.applicationFailed' }));
+            // 失败时抛出错误，由全局错误处理统一处理
+            throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.applicationFailed' }));
           }
-        } catch (error: any) {
-          message.error(error.message || intl.formatMessage({ id: 'pages.message.applicationFailed' }));
+        } catch (error) {
+          // 错误已被全局错误处理捕获并显示
+          // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
+          throw error;
         } finally {
           setApplyingId('');
         }

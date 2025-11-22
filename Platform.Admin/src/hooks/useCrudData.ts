@@ -74,6 +74,8 @@ export function useCrudData<T = any>(
   const [itemLoading, setItemLoading] = useState(false);
 
   // 错误处理
+  // 注意：这个函数只设置错误状态和调用 onError 回调
+  // 错误应该被重新抛出，以便全局错误处理能够捕获
   const handleError = useCallback(
     (err: any) => {
       const error = err instanceof Error ? err : new Error(String(err));
@@ -84,18 +86,9 @@ export function useCrudData<T = any>(
 
       if (onError) {
         onError(error);
-      } else {
-        // 提供更友好的错误消息
-        const friendlyMessage = error.message.includes('网络')
-          ? '网络连接失败，请检查网络后重试'
-          : error.message.includes('权限')
-            ? '权限不足，请联系管理员'
-            : error.message || '操作失败，请重试';
-
-        // 不在这里显示错误消息，让全局错误处理器统一处理
-        // 这样可以避免重复显示错误提示
-        console.error('CRUD操作失败:', friendlyMessage);
       }
+      // 不在这里显示错误消息，让全局错误处理器统一处理
+      // 错误应该被重新抛出，以便全局错误处理能够捕获
     },
     [onError],
   );
@@ -109,6 +102,8 @@ export function useCrudData<T = any>(
       setData(result);
     } catch (err) {
       handleError(err);
+      // 重新抛出错误，确保全局错误处理能够捕获
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -125,6 +120,8 @@ export function useCrudData<T = any>(
         setCurrentItem(result);
       } catch (err) {
         handleError(err);
+        // 重新抛出错误，确保全局错误处理能够捕获
+        throw err;
       } finally {
         setItemLoading(false);
       }
@@ -144,6 +141,8 @@ export function useCrudData<T = any>(
         await refresh();
       } catch (err) {
         handleError(err);
+        // 重新抛出错误，确保全局错误处理能够捕获
+        throw err;
       } finally {
         setLoading(false);
       }
@@ -164,6 +163,8 @@ export function useCrudData<T = any>(
         setCurrentItem(null);
       } catch (err) {
         handleError(err);
+        // 重新抛出错误，确保全局错误处理能够捕获
+        throw err;
       } finally {
         setItemLoading(false);
       }
@@ -183,6 +184,8 @@ export function useCrudData<T = any>(
         await refresh();
       } catch (err) {
         handleError(err);
+        // 重新抛出错误，确保全局错误处理能够捕获
+        throw err;
       } finally {
         setLoading(false);
       }
@@ -202,6 +205,8 @@ export function useCrudData<T = any>(
         await refresh();
       } catch (err) {
         handleError(err);
+        // 重新抛出错误，确保全局错误处理能够捕获
+        throw err;
       } finally {
         setLoading(false);
       }

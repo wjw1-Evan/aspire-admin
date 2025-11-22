@@ -142,12 +142,7 @@ const UserCenter: React.FC = () => {
       }
     } catch (error) {
       console.error('获取用户信息失败:', error);
-      message.error(
-        intl.formatMessage({
-          id: 'pages.account.center.fetchFailed',
-          defaultMessage: '获取用户信息失败',
-        }),
-      );
+      // 错误由全局错误处理统一处理
     } finally {
       setLoading(false);
     }
@@ -171,12 +166,7 @@ const UserCenter: React.FC = () => {
       }
     } catch (error) {
       console.error('获取活动日志失败:', error);
-      message.error(
-        intl.formatMessage({
-          id: 'pages.account.center.activityFailed',
-          defaultMessage: '获取活动日志失败',
-        }),
-      );
+      // 错误由全局错误处理统一处理
     }
   };
 
@@ -220,18 +210,22 @@ const UserCenter: React.FC = () => {
         setEditing(false);
         fetchUserProfile(); // 重新获取用户信息
       } else {
-        // 处理业务错误
-        const errorMsg = response.errorMessage ||
-          intl.formatMessage({
-            id: 'pages.account.center.updateFailed',
-            defaultMessage: '更新失败',
-          });
-        message.error(errorMsg);
+        // 失败时抛出错误，由全局错误处理统一处理
+        throw new Error(
+          response.errorMessage ||
+            intl.formatMessage({
+              id: 'pages.account.center.updateFailed',
+              defaultMessage: '更新失败',
+            })
+        );
       }
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error: any) {
-      // 错误由全局错误处理自动处理，这里只记录日志
+      // 如果确实需要特殊处理（如显示验证错误），可以在这里处理业务逻辑
+      // 但错误提示已由全局错误处理统一显示
       console.error('更新用户信息失败:', error);
-      // 全局错误处理会自动显示详细的验证错误信息
+      // 重新抛出错误，确保全局错误处理能够处理
+      throw error;
     }
   };
 
@@ -425,6 +419,8 @@ const UserCenter: React.FC = () => {
                       form.setFieldsValue({ avatar: base64 });
                     } catch (error) {
                       console.error('头像转换失败:', error);
+                      // 这是一个本地文件处理错误，不涉及 API 调用，所以可以在这里显示错误
+                      // 但为了统一，也可以使用全局错误处理
                       message.error('头像处理失败，请重试');
                       e.target.value = ''; // 清空选择
                     }

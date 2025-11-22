@@ -38,9 +38,8 @@ const RoleManagement: FC = () => {
         success: false,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : '加载角色失败';
-      message.error(errorMessage);
+      // 错误由全局错误处理统一处理
+      // 这里返回空数据，避免表格显示错误
       return {
         data: [],
         total: 0,
@@ -87,16 +86,16 @@ const RoleManagement: FC = () => {
             );
             actionRef.current?.reload();
           } else {
-            message.error(
+            // 失败时抛出错误，由全局错误处理统一处理
+            throw new Error(
               response.errorMessage ||
                 intl.formatMessage({ id: 'pages.message.deleteFailed' }),
             );
           }
-        } catch (error: any) {
-          message.error(
-            error.message ||
-              intl.formatMessage({ id: 'pages.message.deleteFailed' }),
-          );
+        } catch (error) {
+          // 错误已被全局错误处理捕获并显示
+          // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
+          throw error;
         }
       },
     });
@@ -344,7 +343,8 @@ const RoleManagement: FC = () => {
                 if (record.id) {
                   handleDelete(record.id, record.name);
                 } else {
-                  message.error('角色缺少唯一标识，无法删除');
+                  // 数据校验失败，抛出错误
+                  throw new Error('角色缺少唯一标识，无法删除');
                 }
               }}
             >

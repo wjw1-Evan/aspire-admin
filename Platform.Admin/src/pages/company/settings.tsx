@@ -4,7 +4,7 @@ import {
   ProCard,
   ProDescriptions,
 } from '@ant-design/pro-components';
-import { Card, message, Spin, Row, Col, Statistic, Progress, Tag } from 'antd';
+import { Card, Spin, Row, Col, Statistic, Progress, Tag } from 'antd';
 import {
   UserOutlined,
   TeamOutlined,
@@ -44,8 +44,7 @@ export default function CompanySettings() {
       if (statsRes.success && statsRes.data) {
         setStatistics(statsRes.data);
       }
-    } catch (error: any) {
-      message.error(error.message || intl.formatMessage({ id: 'pages.companySettings.loadFailed' }));
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } finally {
       setLoading(false);
     }

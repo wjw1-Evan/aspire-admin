@@ -283,12 +283,18 @@ export async function updateProfileAction(
   profileData: UpdateProfileParams,
   dispatch: Dispatch<AuthAction>
 ): Promise<void> {
-  const response = await authService.updateProfile(profileData);
-  
-  if (response.success && response.data) {
-    dispatch({ type: 'AUTH_UPDATE_USER', payload: response.data });
-  } else {
-    throw new Error(response.errorMessage || '更新失败');
+  try {
+    const response = await authService.updateProfile(profileData);
+    
+    if (response.success && response.data) {
+      dispatch({ type: 'AUTH_UPDATE_USER', payload: response.data });
+    } else {
+      throw new Error(response.errorMessage || '更新失败');
+    }
+  } catch (error) {
+    const authError = handleError(error);
+    dispatch({ type: 'AUTH_FAILURE', payload: authError });
+    throw authError;
   }
 }
 
@@ -296,37 +302,28 @@ export async function updateProfileAction(
  * 修改密码
  */
 export async function changePasswordAction(
-  request: ChangePasswordRequest
-): Promise<ApiResponse<boolean>> {
+  request: ChangePasswordRequest,
+  dispatch: Dispatch<AuthAction>
+): Promise<void> {
   try {
     const response = await authService.changePassword(request);
 
     if (!response.success) {
-      return {
-        success: false,
-        errorMessage: response.errorMessage || '修改密码失败',
-      };
+      throw new Error(response.errorMessage || '修改密码失败');
     }
-
-    return {
-      success: true,
-      data: true,
-    };
   } catch (error) {
     const authError = handleError(error);
-    return {
-      success: false,
-      errorMessage: authError.message,
-    };
+    dispatch({ type: 'AUTH_FAILURE', payload: authError });
+    throw authError;
   }
 }
 
 /**
  * 创建错误处理器
+ * 用于处理错误并返回 AuthError（不自动分发，由调用者决定是否分发）
  */
 export function createErrorHandler(dispatch: Dispatch<AuthAction>) {
   return (error: any): AuthError => {
-    
     // 使用统一错误处理器
     const authError = handleError(error);
     

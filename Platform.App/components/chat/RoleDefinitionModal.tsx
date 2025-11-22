@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Pressable, StyleSheet, TextInput, View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { Modal, Pressable, StyleSheet, TextInput, View, KeyboardAvoidingView, Platform } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { authService } from '@/services/auth';
 
 interface RoleDefinitionModalProps {
@@ -18,6 +19,7 @@ const DEFAULT_ROLE_DEFINITION = '你是小科，请使用简体中文提供简�
 
 export function RoleDefinitionModal({ visible, sessionId, onClose, onSuccess }: RoleDefinitionModalProps) {
   const { theme } = useTheme();
+  const { reportError } = useAuth();
   const [roleDefinition, setRoleDefinition] = useState(DEFAULT_ROLE_DEFINITION);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -62,7 +64,9 @@ export function RoleDefinitionModal({ visible, sessionId, onClose, onSuccess }: 
       onClose();
     } catch (error) {
       console.error('保存角色定义失败:', error);
-      Alert.alert('保存失败', error instanceof Error ? error.message : '保存角色定义失败，请稍后重试');
+      // 错误由全局错误处理统一处理，这里报告错误
+      reportError(error);
+      // 不关闭弹窗，让用户可以重试
     } finally {
       setLoading(false);
     }

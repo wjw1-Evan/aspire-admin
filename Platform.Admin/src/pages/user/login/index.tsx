@@ -142,49 +142,11 @@ const Login: React.FC = () => {
         return;
       }
 
-      // 如果失败，处理错误信息
+      // 如果失败，处理业务逻辑（显示验证码），然后抛出错误让全局错误处理显示错误提示
+      const errorCode = response.errorCode;
       const errorMsg = response.errorMessage || '登录失败，请重试！';
-      setUserLoginState({ status: 'error', errorMessage: errorMsg });
       
-      // 登录失败后显示验证码
-      if (response.errorCode === 'LOGIN_FAILED' || response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
-        setShowCaptcha(true);
-        // 如果是验证码错误，自动刷新验证码
-        if (response.errorCode === 'CAPTCHA_INVALID' || response.errorCode === 'CAPTCHA_REQUIRED') {
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        } else {
-          // 第一次失败，获取新的验证码
-          if (captchaRef.current) {
-            await captchaRef.current.refresh();
-          }
-        }
-      }
-    } catch (error: any) {
-      const defaultLoginFailureMessage = intl.formatMessage({
-        id: 'pages.login.failure',
-        defaultMessage: '登录失败，请重试！',
-      });
-      
-      // 从错误对象中提取 errorCode 和 errorMessage
-      // UmiJS 的 errorThrower 会将 errorCode 存储在 error.info 中
-      // 错误拦截器也可能将 errorCode 存储在 error.response?.data?.errorCode 中
-      const errorCode = 
-        error?.info?.errorCode || 
-        error?.errorCode || 
-        error?.response?.data?.errorCode;
-      
-      const errorMsg = 
-        error?.info?.errorMessage || 
-        error?.response?.data?.errorMessage || 
-        error?.message || 
-        defaultLoginFailureMessage;
-      
-      setUserLoginState({ status: 'error', errorMessage: errorMsg });
-      message.error(errorMsg);
-      
-      // 登录失败后显示验证码
+      // 登录失败后显示验证码（业务逻辑）
       if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
         setShowCaptcha(true);
         // 如果是验证码错误，自动刷新验证码
@@ -199,6 +161,47 @@ const Login: React.FC = () => {
           }
         }
       }
+      
+      // 抛出错误，由全局错误处理统一显示错误提示
+      throw new Error(errorMsg);
+    } catch (error: any) {
+      // 从错误对象中提取 errorCode
+      // UmiJS 的 errorThrower 会将 errorCode 存储在 error.info 中
+      const errorCode = 
+        error?.info?.errorCode || 
+        error?.errorCode || 
+        error?.response?.data?.errorCode;
+      
+      // 设置错误状态（用于表单显示）
+      const errorMsg = 
+        error?.info?.errorMessage || 
+        error?.response?.data?.errorMessage || 
+        error?.message || 
+        intl.formatMessage({
+          id: 'pages.login.failure',
+          defaultMessage: '登录失败，请重试！',
+        });
+      setUserLoginState({ status: 'error', errorMessage: errorMsg });
+      
+      // 登录失败后显示验证码（业务逻辑）
+      if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+        setShowCaptcha(true);
+        // 如果是验证码错误，自动刷新验证码
+        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        } else {
+          // 第一次失败，获取新的验证码
+          if (captchaRef.current) {
+            await captchaRef.current.refresh();
+          }
+        }
+      }
+      
+      // 不再调用 message.error，错误提示已由全局错误处理统一显示
+      // 重新抛出错误，确保全局错误处理能够处理
+      throw error;
     }
   };
   const { status, type: loginType } = userLoginState;
@@ -416,10 +419,12 @@ const Login: React.FC = () => {
                         5,
                       );
                     } else {
-                      message.error('获取验证码失败');
+                      // 失败时抛出错误，由全局错误处理统一处理
+                      throw new Error(result.message || '获取验证码失败');
                     }
-                  } catch (_error) {
-                    message.error('获取验证码失败，请稍后重试');
+                  } catch (error) {
+                    // 错误由全局错误处理统一处理，重新抛出确保全局处理能够捕获
+                    throw error;
                   }
                 }}
               />

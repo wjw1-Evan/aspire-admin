@@ -149,8 +149,10 @@ const UserManagement: React.FC = () => {
       };
     } catch (error) {
       console.error('获取用户列表失败:', error);
-      // 不在这里显示错误消息，让全局错误处理器统一处理
-      // 这样可以避免重复显示错误提示
+      // 注意：这是 ProTable request 函数的特殊处理模式
+      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
+      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
+      // 如果需要让错误传播到 ProTable，可以删除 catch，但这样表格会显示错误状态
       return {
         data: [],
         success: false,
@@ -225,8 +227,9 @@ const UserManagement: React.FC = () => {
           fetchStatistics();
         } catch (error) {
           console.error('删除用户失败:', error);
-          // 不在这里显示错误消息，让全局错误处理器统一处理
-          // 这样可以避免重复显示错误提示
+          // 错误已被全局错误处理捕获并显示
+          // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
+          throw error;
         }
       },
     });
@@ -277,8 +280,9 @@ const UserManagement: React.FC = () => {
             fetchStatistics();
           } catch (error) {
             console.error('批量删除失败:', error);
-            // 不在这里显示错误消息，让全局错误处理器统一处理
-            // 这样可以避免重复显示错误提示
+            // 错误已被全局错误处理捕获并显示
+            // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
+            throw error;
           }
         },
       });

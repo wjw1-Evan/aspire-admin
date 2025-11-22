@@ -8,7 +8,6 @@ import {
   Typography,
   Divider,
   Spin,
-  message,
 } from 'antd';
 import {
   ClockCircleOutlined,
@@ -53,23 +52,21 @@ export default function LogDetailDrawer({
     
     if (shouldFetch) {
       setLoading(true);
-      getCurrentUserActivityLogById(logId)
-        .then((response) => {
-          if (response.success && response.data) {
-            setLog(response.data);
-          } else {
-            message.error(intl.formatMessage({ id: 'pages.logDetail.fetchFailed' }) || '获取日志详情失败');
-            setLog(null);
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to fetch log detail:', error);
-          message.error(intl.formatMessage({ id: 'pages.logDetail.fetchFailed' }) || '获取日志详情失败');
+      try {
+        const response = await getCurrentUserActivityLogById(logId);
+        if (response.success && response.data) {
+          setLog(response.data);
+        } else {
           setLog(null);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+          // 错误由全局错误处理统一处理
+        }
+      } catch (error) {
+        console.error('Failed to fetch log detail:', error);
+        setLog(null);
+        // 错误由全局错误处理统一处理
+      } finally {
+        setLoading(false);
+      }
     } else if (open && initialLog) {
       // 如果没有 logId，使用传入的 log 数据
       setLog(initialLog);

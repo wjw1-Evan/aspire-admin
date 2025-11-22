@@ -112,36 +112,35 @@ export default function ChangePasswordScreen() {
 
     try {
       setLoading(true);
-      const response = await changePassword({
+      await changePassword({
         currentPassword: currentPassword.trim(),
         newPassword: newPassword.trim(),
         confirmPassword: confirmPassword.trim(),
       });
       
-      if (response.success) {
-        Alert.alert(
-          '成功',
-          '密码修改成功，请重新登录',
-          [
-            {
-              text: '确定',
-              onPress: () => {
-                // 清空表单
-                setCurrentPassword('');
-                setNewPassword('');
-                setConfirmPassword('');
-                // 返回上一页
-                router.back();
-              },
+      // 密码修改成功，显示成功提示并返回
+      Alert.alert(
+        '成功',
+        '密码修改成功，请重新登录',
+        [
+          {
+            text: '确定',
+            onPress: () => {
+              // 清空表单
+              setCurrentPassword('');
+              setNewPassword('');
+              setConfirmPassword('');
+              // 返回上一页
+              router.back();
             },
-          ]
-        );
-      } else {
-        throw new Error(response.errorMessage || '密码修改失败');
-      }
+          },
+        ]
+      );
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error) {
       console.error('Change password error:', error);
-      Alert.alert('错误', error instanceof Error ? error.message : '密码修改失败，请重试');
+      // 错误已被全局错误处理捕获并显示，这里重新抛出确保全局处理能够捕获
+      throw error;
     } finally {
       setLoading(false);
     }

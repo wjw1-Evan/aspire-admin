@@ -3,7 +3,7 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
-import { message } from 'antd';
+// 移除 message 导入，错误由全局错误处理统一处理
 import { useIntl } from '@umijs/max';
 import { updateCurrentCompany } from '@/services/company';
 
@@ -23,21 +23,16 @@ export default function EditCompanyModal({
   const intl = useIntl();
 
   const handleSubmit = async (values: API.UpdateCompanyRequest) => {
-    try {
-      const response = await updateCurrentCompany(values);
+    const response = await updateCurrentCompany(values);
 
-      if (response.success) {
-        message.success(intl.formatMessage({ id: 'pages.companySettings.edit.updateSuccess' }));
-        onSuccess();
-        return true;
-      }
-
-      message.error(response.errorMessage || intl.formatMessage({ id: 'pages.companySettings.edit.updateFailed' }));
-      return false;
-    } catch (error: any) {
-      message.error(error.message || intl.formatMessage({ id: 'pages.companySettings.edit.updateFailed' }));
-      return false;
+    if (response.success) {
+      // 成功时调用回调，由父组件处理成功提示
+      onSuccess();
+      return true;
     }
+
+    // 失败时抛出错误，由全局错误处理统一处理
+    throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.companySettings.edit.updateFailed' }));
   };
 
   return (

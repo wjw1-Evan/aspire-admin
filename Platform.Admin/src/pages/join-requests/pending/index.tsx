@@ -43,10 +43,13 @@ const PendingJoinRequests: React.FC = () => {
             message.success(intl.formatMessage({ id: 'pages.message.applicationApproved' }));
             actionRef.current?.reload();
           } else {
-            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
+            // 失败时抛出错误，由全局错误处理统一处理
+            throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
           }
-        } catch (error: any) {
-          message.error(error.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
+        } catch (error) {
+          // 错误已被全局错误处理捕获并显示
+          // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
+          throw error;
         } finally {
           setLoading(false);
         }
@@ -91,10 +94,13 @@ const PendingJoinRequests: React.FC = () => {
             message.success(intl.formatMessage({ id: 'pages.message.applicationRejected' }));
             actionRef.current?.reload();
           } else {
-            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
+            // 失败时抛出错误，由全局错误处理统一处理
+            throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
           }
-        } catch (error: any) {
-          message.error(error.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
+        } catch (error) {
+          // 错误已被全局错误处理捕获并显示
+          // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
+          throw error;
         } finally {
           setLoading(false);
         }
@@ -337,6 +343,9 @@ const PendingJoinRequests: React.FC = () => {
             };
           } catch (error) {
             console.error('获取待审核申请失败:', error);
+            // 注意：这是 ProTable request 函数的特殊处理模式
+            // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
+            // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
             return {
               data: [],
               success: false,

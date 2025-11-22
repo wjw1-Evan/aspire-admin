@@ -18,6 +18,7 @@ import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
 import { getMyPermissions } from '@/services/permission';
 import { tokenUtils } from '@/utils/token';
+import TokenRefreshManager from '@/utils/tokenRefreshManager';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
 import '@ant-design/v5-patch-for-react-19';
@@ -48,7 +49,9 @@ export async function getInitialState(): Promise<{
     // 这样可以避免不必要的初始化延迟，提升用户体验
     try {
       const msg = await queryCurrentUser({
-        skipErrorHandler: true, // 跳过全局错误处理，由这里自己处理
+        // ✅ 特殊场景：初始化时需要静默失败，不显示错误提示
+        // 如果 token 过期或用户不存在，应该静默失败，让 onPageChange 处理跳转
+        skipErrorHandler: true,
       });
 
       const userInfo = msg.data;
@@ -62,7 +65,8 @@ export async function getInitialState(): Promise<{
       // 获取用户菜单
       try {
         const menuResponse = await getUserMenus({
-          skipErrorHandler: true, // 跳过全局错误处理
+          // ✅ 特殊场景：初始化时需要静默失败，菜单获取失败不影响登录
+          skipErrorHandler: true,
         } as any);
         if (menuResponse.success && menuResponse.data) {
           (userInfo as any).menus = menuResponse.data;
@@ -341,82 +345,8 @@ function handleCurrentUserResponse(response: any): any {
 }
 
 /**
- * 处理404错误 - 用户不存在
- */
-function handle404Error(error: any): Promise<never> | null {
-  const is404Error = error.response?.status === 404;
-  if (!is404Error) {
-    return null;
-  }
-
-  const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
-  const isNotFoundError = error.response?.data?.errorCode === 'NOT_FOUND';
-
-  if (isCurrentUserRequest && isNotFoundError) {
-    tokenUtils.clearAllTokens();
-    // 不在这里跳转，让响应拦截器的统一错误处理来处理
-    throw new Error('User not found');
-  }
-
-  return null;
-}
-
-/**
- * 保存刷新后的token
- */
-function saveRefreshedTokens(refreshResult: any) {
-  const expiresAt = refreshResult.expiresAt
-    ? new Date(refreshResult.expiresAt).getTime()
-    : undefined;
-  tokenUtils.setTokens(
-    refreshResult.token,
-    refreshResult.refreshToken,
-    expiresAt,
-  );
-}
-
-/**
- * 重试原始请求
- */
-function retryOriginalRequest(originalRequest: any, newToken: string) {
-  originalRequest._retry = true;
-  originalRequest.headers.Authorization = `Bearer ${newToken}`;
-  return requestClient(originalRequest);
-}
-
-/**
- * 尝试刷新token
- */
-async function attemptTokenRefresh(refreshToken: string, originalRequest: any) {
-  try {
-    const { refreshToken: refreshTokenAPI } = await import(
-      '@/services/ant-design-pro/api'
-    );
-    const refreshResponse = await refreshTokenAPI({ refreshToken });
-
-    if (!refreshResponse.success || !refreshResponse.data) {
-      return null;
-    }
-
-    const refreshResult = refreshResponse.data;
-    const hasValidTokens =
-      refreshResult.status === 'ok' &&
-      refreshResult.token &&
-      refreshResult.refreshToken;
-
-    if (hasValidTokens && refreshResult.token) {
-      saveRefreshedTokens(refreshResult);
-      return retryOriginalRequest(originalRequest, refreshResult.token);
-    }
-
-    return null;
-  } catch (_refreshError) {
-    return null;
-  }
-}
-
-/**
  * 处理401错误 - Token过期或无效
+ * 只负责 token 刷新，其他错误交给 errorHandler 处理
  */
 async function handle401Error(error: any): Promise<any> {
   const is401Error = error.response?.status === 401;
@@ -426,28 +356,31 @@ async function handle401Error(error: any): Promise<any> {
 
   const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
   const isRetryRequest = error.config?._retry;
-  const shouldNotRetry = isRefreshTokenRequest || isRetryRequest;
 
-  // 避免刷新token递归和重试循环
-  if (shouldNotRetry) {
-    tokenUtils.clearAllTokens();
-    // 返回特殊值表示认证失败，不抛出错误
-    return { __authFailed: true };
+  // 避免刷新 token 递归和重试循环
+  // 如果是刷新 token 请求本身失败，或已经是重试请求，不再尝试刷新
+  if (isRefreshTokenRequest || isRetryRequest) {
+    // 刷新失败，交给 errorHandler 统一处理认证错误
+    return null;
   }
 
-  // 尝试刷新token
+  // 尝试刷新 token
   const refreshToken = tokenUtils.getRefreshToken();
-  if (refreshToken) {
-    const result = await attemptTokenRefresh(refreshToken, error.config);
-    if (result) {
-      return result;
-    }
+  if (!refreshToken) {
+    // 没有 refresh token，交给 errorHandler 统一处理
+    return null;
   }
 
-  // 刷新失败，清除token
-  tokenUtils.clearAllTokens();
-  // 返回特殊值表示认证失败，不抛出错误
-  return { __authFailed: true };
+  // 使用 TokenRefreshManager 刷新 token（防止并发刷新）
+  const refreshResult = await TokenRefreshManager.refresh(refreshToken);
+
+  if (refreshResult?.success && refreshResult.token) {
+    // token 刷新成功，重试原始请求
+    return TokenRefreshManager.retryRequest(error.config, refreshResult.token);
+  }
+
+  // token 刷新失败，交给 errorHandler 统一处理
+  return null;
 }
 
 /**
@@ -478,7 +411,7 @@ export const request: RequestConfig = {
     },
   ],
 
-  // 响应拦截器，处理 token 过期和用户不存在
+  // 响应拦截器 - 只处理 token 刷新，其他错误交给 errorHandler 统一处理
   responseInterceptors: [
     (response) => {
       // ✅ 移除响应日志，避免敏感信息泄露
@@ -490,52 +423,16 @@ export const request: RequestConfig = {
         console.error('Request failed:', error.config?.url, error.response?.status);
       }
 
-      // 处理404错误（用户不存在）
-      const notFoundResult = handle404Error(error);
-      if (notFoundResult !== null) {
-        // 如果是认证相关的404错误，跳转到登录页面
-        const isCurrentUserRequest =
-          error.config?.url?.includes('/api/currentUser');
-        if (isCurrentUserRequest) {
-          // 使用 setTimeout 确保错误处理完成后再跳转，避免循环
-          setTimeout(() => {
-            history.push('/user/login');
-          }, 100);
-        }
-        return notFoundResult;
+      // 只处理 401 错误，尝试刷新 token
+      // 其他错误（包括 404、500 等）都交给 errorHandler 统一处理
+      const tokenRefreshResult = await handle401Error(error);
+      if (tokenRefreshResult) {
+        // token 刷新成功，返回重试结果
+        return tokenRefreshResult;
       }
 
-      // 处理401错误（Token过期或无效）
-      const unauthorizedResult = await handle401Error(error);
-      if (unauthorizedResult !== null) {
-        // 检查是否是认证失败的特殊标记
-        if (unauthorizedResult.__authFailed) {
-          // 认证失败，跳转到登录页面，不抛出错误
-          setTimeout(() => {
-            history.push('/user/login');
-          }, 100);
-          // 返回一个静默的错误，不显示给用户
-          throw new Error('Authentication handled silently');
-        }
-        // 如果是token刷新成功的结果，直接返回
-        return unauthorizedResult;
-      }
-
-      // 检查是否是认证相关的错误，如果是则不抛出错误（避免显示401提示）
-      const isAuthError = error.response?.status === 401 || error.response?.status === 404;
-      if (isAuthError) {
-        // 认证错误已经在上面处理过了，不抛出错误避免显示401提示
-        throw new Error('Authentication handled');
-      }
-
-      // 对于其他错误，检查错误消息是否包含敏感信息
-      const errorMessage = error.message || 'Request failed';
-      if (errorMessage.includes('status code 401') || errorMessage.includes('status code 404')) {
-        // 如果是包含状态码的错误消息，使用通用消息
-        throw new Error('Request failed');
-      }
-
-      throw new Error(errorMessage);
+      // 其他错误直接抛出，让 errorHandler 统一处理
+      throw error;
     },
   ],
 

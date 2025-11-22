@@ -15,20 +15,18 @@ import type { MatchSuggestion } from '@/types/ai';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function RecommendScreen() {
-  const { user } = useAuth();
+  const { user, reportError } = useAuth();
   const { setActiveSession } = useChat();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<MatchSuggestion[]>([]);
   const cardColor = theme.colors.card;
   const accentColor = theme.colors.accent;
   const avatarBackground = theme.colors.accentMuted;
   const badgeTextColor = theme.colors.accentContrastText;
   const mutedColor = theme.colors.secondaryText;
-  const retryBackground = theme.colors.cardMuted;
   const backgroundColor = theme.colors.background;
 
   const loadSuggestions = useCallback(async () => {
@@ -36,7 +34,6 @@ export default function RecommendScreen() {
       return;
     }
     setLoading(true);
-    setError(null);
     try {
       const response = await aiService.getMatchSuggestions({
         userId: user?.id ?? user?.username ?? '',
@@ -44,11 +41,13 @@ export default function RecommendScreen() {
       });
       setSuggestions(response.items ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取推荐失败');
+      console.error('获取推荐失败', err);
+      // 错误由全局错误处理统一处理，这里报告错误
+      reportError(err);
     } finally {
       setLoading(false);
     }
-  }, [user?.id, user?.username]);
+  }, [user?.id, user?.username, reportError]);
 
   useEffect(() => {
     loadSuggestions().catch(() => undefined);
@@ -119,16 +118,7 @@ export default function RecommendScreen() {
         </View>
       ) : null}
 
-      {error ? (
-        <View style={styles.centered}>
-          <ThemedText style={[styles.errorText, { color: mutedColor }]}>{error}</ThemedText>
-          <Pressable style={[styles.retryButton, { backgroundColor: retryBackground }]} onPress={() => loadSuggestions()}>
-            <ThemedText>重试</ThemedText>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {!error ? (
+      {!loading || suggestions.length > 0 ? (
         <FlatList
           data={suggestions}
           keyExtractor={item => item.userId}

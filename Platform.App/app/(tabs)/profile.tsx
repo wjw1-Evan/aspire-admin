@@ -203,9 +203,11 @@ export default function ProfileScreen() {
       }
       await updateProfile(dataToSend);
       setIsEditing(false);
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error) {
       console.error('Update profile error:', error);
-      Alert.alert('错误', error instanceof Error ? error.message : '更新失败，请重试');
+      // 错误已被全局错误处理捕获并显示，这里重新抛出确保全局处理能够捕获
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -250,36 +252,35 @@ export default function ProfileScreen() {
 
     try {
       setPasswordLoading(true);
-      const response = await changePassword({
+      await changePassword({
         currentPassword: passwordData.currentPassword.trim(),
         newPassword: passwordData.newPassword.trim(),
         confirmPassword: passwordData.confirmPassword.trim(),
       });
       
-      if (response.success) {
-        Alert.alert(
-          '成功',
-          '密码修改成功，请重新登录',
-          [
-            {
-              text: '确定',
-              onPress: () => {
-                setIsChangingPassword(false);
-                setPasswordData({
-                  currentPassword: '',
-                  newPassword: '',
-                  confirmPassword: '',
-                });
-              },
+      // 密码修改成功，显示成功提示
+      Alert.alert(
+        '成功',
+        '密码修改成功，请重新登录',
+        [
+          {
+            text: '确定',
+            onPress: () => {
+              setIsChangingPassword(false);
+              setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+              });
             },
-          ]
-        );
-      } else {
-        throw new Error(response.errorMessage || '密码修改失败');
-      }
+          },
+        ]
+      );
+      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error) {
       console.error('Change password error:', error);
-      Alert.alert('错误', error instanceof Error ? error.message : '密码修改失败，请重试');
+      // 错误已被全局错误处理捕获并显示，这里重新抛出确保全局处理能够捕获
+      throw error;
     } finally {
       setPasswordLoading(false);
     }

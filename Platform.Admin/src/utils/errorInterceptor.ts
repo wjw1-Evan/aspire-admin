@@ -172,9 +172,9 @@ class UnifiedErrorInterceptor {
       this.sendToMonitoring(errorInfo);
     }
 
-    // 显示给用户
+    // 显示给用户（传递原始错误对象，用于提取所有验证错误）
     if (config.showToUser) {
-      this.displayError(errorInfo, config);
+      this.displayError(errorInfo, config, error);
     }
 
     // 自定义处理
@@ -264,10 +264,39 @@ class UnifiedErrorInterceptor {
    * 提取错误消息
    */
   private extractErrorMessage(error: any): string {
+    // 优先处理 ProblemDetails 格式的验证错误（.NET 标准错误格式）
+    if (error?.response?.data?.errors) {
+      const validationErrors = error.response.data.errors;
+      const errorMessages: string[] = [];
+      
+      // 遍历所有字段的错误
+      Object.keys(validationErrors).forEach((field) => {
+        const fieldErrors = validationErrors[field];
+        if (Array.isArray(fieldErrors)) {
+          fieldErrors.forEach((err: string) => {
+            errorMessages.push(err);
+          });
+        } else if (typeof fieldErrors === 'string') {
+          errorMessages.push(fieldErrors);
+        }
+      });
+      
+      // 如果有验证错误，返回第一个（最重要的）错误
+      if (errorMessages.length > 0) {
+        return errorMessages[0];
+      }
+    }
+    
     // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置）
     if (error.info?.errorMessage) {
       return error.info.errorMessage;
     }
+    
+    // 尝试从 error.response.data.title 获取（ProblemDetails 格式）
+    if (error?.response?.data?.title) {
+      return error.response.data.title;
+    }
+    
     if (error.response?.data?.errorMessage) {
       return error.response.data.errorMessage;
     }
@@ -278,6 +307,51 @@ class UnifiedErrorInterceptor {
       return `HTTP ${error.response.status} 错误`;
     }
     return '未知错误';
+  }
+
+  /**
+   * 提取所有验证错误消息（用于需要显示多个错误的场景）
+   */
+  extractValidationErrors(error: any): string[] {
+    const errors: string[] = [];
+    
+    // 检查是否是 ProblemDetails 格式（.NET 标准错误格式）
+    if (error?.response?.data?.errors) {
+      const validationErrors = error.response.data.errors;
+      // 遍历所有字段的错误
+      Object.keys(validationErrors).forEach((field) => {
+        const fieldErrors = validationErrors[field];
+        if (Array.isArray(fieldErrors)) {
+          fieldErrors.forEach((err: string) => {
+            errors.push(err);
+          });
+        } else if (typeof fieldErrors === 'string') {
+          errors.push(fieldErrors);
+        }
+      });
+    }
+    
+    // 如果没有提取到验证错误，尝试从其他位置获取错误信息
+    if (errors.length === 0) {
+      // 尝试从 error.response.data.title 获取
+      if (error?.response?.data?.title) {
+        errors.push(error.response.data.title);
+      }
+      // 尝试从 error.info.errorMessage 获取（UmiJS errorThrower）
+      if (error?.info?.errorMessage) {
+        errors.push(error.info.errorMessage);
+      }
+      // 尝试从 error.response.data.errorMessage 获取
+      if (error?.response?.data?.errorMessage) {
+        errors.push(error.response.data.errorMessage);
+      }
+      // 尝试从 error.message 获取
+      if (error?.message) {
+        errors.push(error.message);
+      }
+    }
+    
+    return errors;
   }
 
   /**
@@ -341,7 +415,32 @@ class UnifiedErrorInterceptor {
   /**
    * 显示错误给用户
    */
-  private displayError(errorInfo: ErrorInfo, config: ErrorHandlerConfig) {
+  private displayError(errorInfo: ErrorInfo, config: ErrorHandlerConfig, originalError?: any) {
+    // 如果是验证错误（400状态码），尝试显示所有验证错误
+    if (errorInfo.type === ErrorType.VALIDATION && originalError) {
+      const validationErrors = this.extractValidationErrors(originalError);
+      if (validationErrors.length > 1) {
+        // 多个验证错误，依次显示所有错误
+        validationErrors.forEach((msg, index) => {
+          setTimeout(() => {
+            if (config.displayType === ErrorDisplayType.MESSAGE) {
+              message.error(msg, 3);
+            } else if (config.displayType === ErrorDisplayType.NOTIFICATION) {
+              notification.error({
+                message: `验证错误 ${index + 1}`,
+                description: msg,
+                duration: 3,
+              });
+            }
+          }, index * 500);
+        });
+        return;
+      } else if (validationErrors.length === 1) {
+        // 单个验证错误，使用提取的错误消息
+        errorInfo.message = validationErrors[0];
+      }
+    }
+
     switch (config.displayType) {
       case ErrorDisplayType.MESSAGE:
         message.error(errorInfo.message);
@@ -363,6 +462,52 @@ class UnifiedErrorInterceptor {
       case ErrorDisplayType.SILENT:
         // 静默处理，不显示
         break;
+    }
+  }
+
+  /**
+   * 显示多个验证错误（用于需要显示所有字段错误的场景）
+   */
+  displayValidationErrors(error: any, displayType: ErrorDisplayType = ErrorDisplayType.MESSAGE) {
+    const errors = this.extractValidationErrors(error);
+    
+    if (errors.length === 0) {
+      // 如果没有提取到错误，使用默认错误处理
+      const errorInfo = this.parseError(error);
+      this.displayError(errorInfo, {
+        displayType,
+        showToUser: true,
+        logToConsole: true,
+      });
+      return;
+    }
+    
+    if (errors.length === 1) {
+      // 单个错误，直接显示
+      if (displayType === ErrorDisplayType.MESSAGE) {
+        message.error(errors[0]);
+      } else if (displayType === ErrorDisplayType.NOTIFICATION) {
+        notification.error({
+          message: '验证错误',
+          description: errors[0],
+          duration: 4.5,
+        });
+      }
+    } else {
+      // 多个错误，依次显示所有错误（每个错误显示3秒，间隔0.5秒）
+      errors.forEach((msg, index) => {
+        setTimeout(() => {
+          if (displayType === ErrorDisplayType.MESSAGE) {
+            message.error(msg, 3);
+          } else if (displayType === ErrorDisplayType.NOTIFICATION) {
+            notification.error({
+              message: `验证错误 ${index + 1}`,
+              description: msg,
+              duration: 3,
+            });
+          }
+        }, index * 500);
+      });
     }
   }
 
@@ -410,4 +555,18 @@ export const addErrorRule = (rule: ErrorRule) => {
 
 export const setErrorConfig = (config: Partial<ErrorHandlerConfig>) => {
   errorInterceptor.setDefaultConfig(config);
+};
+
+/**
+ * 提取所有验证错误消息（用于需要显示多个错误的场景）
+ */
+export const extractValidationErrors = (error: any): string[] => {
+  return errorInterceptor.extractValidationErrors(error);
+};
+
+/**
+ * 显示多个验证错误（用于需要显示所有字段错误的场景）
+ */
+export const displayValidationErrors = (error: any, displayType: ErrorDisplayType = ErrorDisplayType.MESSAGE) => {
+  return errorInterceptor.displayValidationErrors(error, displayType);
 };

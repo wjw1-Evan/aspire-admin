@@ -5,6 +5,8 @@ import {
   CalendarOutlined,
   SafetyOutlined,
   HistoryOutlined,
+  CameraOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import {
   ProCard,
@@ -66,6 +68,7 @@ interface UserProfile {
   name?: string;
   email?: string;
   age?: number;
+  avatar?: string;
   role: string;
   isActive: boolean;
   createdAt: string;
@@ -82,11 +85,25 @@ interface ActivityLog {
   createdAt: string;
 }
 
+// 将文件转换为 base64 格式
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result);
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+};
+
 const UserCenter: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
   const [form] = ProForm.useForm();
   const { styles } = useStyles();
   const intl = useIntl();
@@ -105,6 +122,7 @@ const UserCenter: React.FC = () => {
           name: apiUser.name || apiUser.username || '', // name 可选，降级到 username
           email: apiUser.email,
           age: apiUser.age || 18,
+          avatar: apiUser.avatar, // ✅ 保存头像字段
           role: apiUser.access || 'user',
           isActive: apiUser.isActive || apiUser.isLogin || false,
           createdAt: apiUser.createdAt || '',
@@ -117,7 +135,10 @@ const UserCenter: React.FC = () => {
           name: apiUser.name || apiUser.username, // 表单使用 name，如果没有则用 username
           email: apiUser.email,
           age: apiUser.age || 18,
+          avatar: apiUser.avatar, // ✅ 设置头像字段
         });
+        // 设置头像预览
+        setAvatarPreview(apiUser.avatar);
       }
     } catch (error) {
       console.error('获取用户信息失败:', error);
@@ -172,9 +193,15 @@ const UserCenter: React.FC = () => {
         name: userProfile.name,
         email: userProfile.email,
         age: userProfile.age,
+        avatar: userProfile.avatar,
       });
+      setAvatarPreview(userProfile.avatar);
+    } else {
+      // 退出编辑模式时重置
+      setAvatarPreview(userProfile?.avatar);
     }
   }, [editing, userProfile, form]);
+
 
   // 更新用户信息
   const handleUpdateProfile = async (values: any) => {
@@ -193,28 +220,25 @@ const UserCenter: React.FC = () => {
         setEditing(false);
         fetchUserProfile(); // 重新获取用户信息
       } else {
-        message.error(
-          response.errorMessage ||
-            intl.formatMessage({
-              id: 'pages.account.center.updateFailed',
-              defaultMessage: '更新失败',
-            }),
-        );
+        // 处理业务错误
+        const errorMsg = response.errorMessage ||
+          intl.formatMessage({
+            id: 'pages.account.center.updateFailed',
+            defaultMessage: '更新失败',
+          });
+        message.error(errorMsg);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // 错误由全局错误处理自动处理，这里只记录日志
       console.error('更新用户信息失败:', error);
-      message.error(
-        intl.formatMessage({
-          id: 'pages.account.center.updateFailed',
-          defaultMessage: '个人信息更新失败',
-        }),
-      );
+      // 全局错误处理会自动显示详细的验证错误信息
     }
   };
 
   // 取消编辑
   const handleCancelEdit = () => {
     setEditing(false);
+    setAvatarPreview(userProfile?.avatar);
     form.resetFields();
   };
 
@@ -348,7 +372,96 @@ const UserCenter: React.FC = () => {
         }
       >
         <div className={styles.avatarSection}>
-          <Avatar size={80} icon={<UserOutlined />} />
+          {editing ? (
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <Avatar 
+                size={80} 
+                src={avatarPreview || userProfile.avatar} 
+                icon={<UserOutlined />}
+              />
+              <label
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  backgroundColor: '#1890ff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  border: '2px solid #fff',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                  zIndex: 10,
+                }}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    // 检查文件大小（2MB）
+                    if (file.size > 2 * 1024 * 1024) {
+                      message.error('图片大小不能超过 2MB');
+                      e.target.value = ''; // 清空选择
+                      return;
+                    }
+
+                    // 检查文件类型
+                    if (!file.type.startsWith('image/')) {
+                      message.error('只能上传图片文件');
+                      e.target.value = ''; // 清空选择
+                      return;
+                    }
+
+                    try {
+                      const base64 = await fileToBase64(file);
+                      setAvatarPreview(base64);
+                      form.setFieldsValue({ avatar: base64 });
+                    } catch (error) {
+                      console.error('头像转换失败:', error);
+                      message.error('头像处理失败，请重试');
+                      e.target.value = ''; // 清空选择
+                    }
+                  }}
+                />
+                <CameraOutlined style={{ color: '#fff', fontSize: 14 }} />
+              </label>
+              {avatarPreview && (
+                <Button
+                  type="text"
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  onClick={() => {
+                    setAvatarPreview(undefined);
+                    form.setFieldsValue({ avatar: '' });
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    minWidth: 24,
+                    height: 24,
+                    padding: 0,
+                    zIndex: 10,
+                  }}
+                  title="删除头像"
+                />
+              )}
+            </div>
+          ) : (
+            <Avatar 
+              size={80} 
+              src={userProfile.avatar} 
+              icon={<UserOutlined />}
+            />
+          )}
           <div style={{ marginTop: '16px' }}>
             <Title level={4}>{userProfile.name || userProfile.username}</Title>
             <Tag color={getRoleTagColor(userProfile.role)}>
@@ -444,6 +557,8 @@ const UserCenter: React.FC = () => {
               max={150}
               placeholder="请输入年龄"
             />
+            {/* 隐藏的头像字段，用于表单提交 */}
+            <ProFormText name="avatar" hidden />
           </ProForm>
         ) : (
           <Descriptions column={2} bordered>

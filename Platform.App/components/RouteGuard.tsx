@@ -31,7 +31,6 @@ export function RouteGuard({
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-  
   const { canAccess } = useAuthGuard();
 
   // 获取当前路由路径
@@ -44,7 +43,6 @@ export function RouteGuard({
 
   useEffect(() => {
     // 如果正在加载，不执行任何跳转
-    // 这确保在登录过程中不会跳转
     if (loading) {
       return;
     }
@@ -56,20 +54,11 @@ export function RouteGuard({
     }
 
     // 如果用户已认证且访问公共路由（如登录页），重定向到主页
-    // 重要：只有在 loading 为 false 且 isAuthenticated 为 true 时才跳转
-    // 这确保只有在登录完全成功后才跳转，登录失败时不会跳转
-    // 因为登录失败时，AUTH_FAILURE action 会设置 isAuthenticated: false
-    if (isAuthenticated && !loading && publicRoutes.some(route => currentPath.startsWith(route))) {
-      // 添加一个小的延迟，确保登录状态已经完全更新，避免在状态更新过程中跳转
-      const timer = setTimeout(() => {
-        // 再次检查认证状态和加载状态，确保登录成功且不在加载中
-        // 如果登录失败，isAuthenticated 会被设置为 false，所以不会跳转
-        if (isAuthenticated && !loading) {
-          router.replace('/(tabs)');
-        }
-      }, 150);
-      
-      return () => clearTimeout(timer);
+    // 注意：只有在确认用户已认证时才跳转，防止登录失败时误跳转
+    const isOnPublicRoute = publicRoutes.some(route => currentPath.startsWith(route));
+    if (isAuthenticated && isOnPublicRoute) {
+      router.replace(unauthorizedRedirect as any);
+      return;
     }
 
     // 检查权限

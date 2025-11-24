@@ -39,6 +39,12 @@ export default function ChatTabScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // 只有在用户已认证时才加载会话
+      // 这防止在登录失败后误触发 API 请求
+      if (!user) {
+        return;
+      }
+
       const now = Date.now();
       // 避免频繁刷新：如果距离上次刷新不足 5 秒，跳过
       if (now - lastRefreshTimeRef.current < REFRESH_COOLDOWN_MS) {
@@ -51,7 +57,7 @@ export default function ChatTabScreen() {
           console.error('Failed to load sessions:', error);
         }
       });
-    }, [loadSessions])
+    }, [loadSessions, user])
   );
 
   const handlePressSession = useCallback((sessionId: string) => {

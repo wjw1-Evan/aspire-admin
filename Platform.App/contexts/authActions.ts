@@ -25,33 +25,29 @@ const TOKEN_EXPIRY_BUFFER = 5 * 60 * 1000; // 5 分钟
 
 /**
  * 登录
+ * 同步等待 API 返回结果，确保登录流程完整执行
  */
 export async function loginAction(
   credentials: LoginRequest,
   dispatch: Dispatch<AuthAction>
 ): Promise<void> {
-  // 添加超时保护，避免长时间阻塞
-  let timeoutId: NodeJS.Timeout | null = null;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error('登录超时，请检查网络连接后重试'));
-    }, 30000); // 30秒超时
-  });
-
-  const loginPromise = (async () => {
-    dispatch({ type: 'AUTH_START' });
-    
-    // 登录并获取 token（authService.login 内部已经保存了 token 并验证了数据）
+  dispatch({ type: 'AUTH_START' });
+  
+  try {
+    // 第一步：登录并获取 token（同步等待 API 返回）
+    // authService.login 内部已经保存了 token 并验证了数据
     const loginResponse = await authService.login(credentials);
     const loginData = loginResponse.data!; // authService.login 已确保 data 存在
 
-    // 获取用户信息（使用已保存的 token）
+    // 第二步：获取用户信息（同步等待 API 返回）
+    // 使用已保存的 token 获取用户信息
     const userResponse = await authService.getCurrentUser();
     
     if (!isAuthResponseValid(userResponse) || !userResponse.data) {
       throw new Error('获取用户信息失败');
     }
 
+    // 第三步：更新状态（同步执行）
     const tokenExpiresAt = loginData.expiresAt 
       ? new Date(loginData.expiresAt).getTime() 
       : undefined;
@@ -65,23 +61,18 @@ export async function loginAction(
         tokenExpiresAt,
       },
     });
-  })()
-    .catch((error) => {
-      const authError = handleError(error);
-      dispatch({ type: 'AUTH_FAILURE', payload: authError });
-      // 登录失败时清理可能已保存的 token
-      void tokenManager.clearAllTokens();
-      throw authError;
-    })
-    .finally(() => {
-      // 清理超时定时器，避免在 Promise 完成后仍然执行超时回调
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    });
-
-  // 等待第一个完成的 Promise（超时或登录完成）
-  await Promise.race([loginPromise, timeoutPromise]);
+    
+    // 登录成功，函数返回，等待状态更新完成后再执行下一步
+    // RouteGuard 会检测到 isAuthenticated 变为 true 后自动跳转
+  } catch (error) {
+    // 登录失败，同步处理错误
+    const authError = handleError(error);
+    dispatch({ type: 'AUTH_FAILURE', payload: authError });
+    // 登录失败时清理可能已保存的 token
+    await tokenManager.clearAllTokens();
+    // 抛出错误，让调用者知道登录失败
+    throw authError;
+  }
 }
 
 /**

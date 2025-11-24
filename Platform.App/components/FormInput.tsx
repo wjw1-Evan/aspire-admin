@@ -7,18 +7,18 @@ import { View, TextInput, Text, StyleSheet, TouchableOpacity, Platform } from 'r
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface FormInputProps {
-  label: string;
-  icon?: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-  type?: 'text' | 'password' | 'email';
-  showPassword?: boolean;
-  onTogglePassword?: () => void;
-  disabled?: boolean;
-  autoFocus?: boolean;
-  hasError?: boolean;
-  onClearError?: () => void;
+  readonly label: string;
+  readonly value: string;
+  readonly onChangeText: (text: string) => void;
+  readonly placeholder?: string;
+  readonly type?: 'text' | 'password' | 'email';
+  readonly showPassword?: boolean;
+  readonly onTogglePassword?: () => void;
+  readonly disabled?: boolean;
+  readonly autoFocus?: boolean;
+  readonly hasError?: boolean;
+  readonly onClearError?: () => void;
+  readonly onSubmitEditing?: () => void;
 }
 
 export function FormInput({
@@ -33,6 +33,7 @@ export function FormInput({
   autoFocus = false,
   hasError = false,
   onClearError,
+  onSubmitEditing,
 }: FormInputProps) {
   const textColor = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor({ light: '#FFFFFF', dark: '#1E293B' }, 'card');
@@ -62,6 +63,8 @@ export function FormInput({
             autoCorrect={false}
             editable={!disabled}
             autoFocus={autoFocus}
+            onSubmitEditing={onSubmitEditing}
+            returnKeyType={onSubmitEditing ? 'next' : 'done'}
             style={[
               styles.input,
               {
@@ -94,6 +97,8 @@ export function FormInput({
           autoCorrect={false}
           editable={!disabled}
           autoFocus={autoFocus}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={onSubmitEditing ? 'next' : 'done'}
           style={[
             styles.input,
             {

@@ -64,16 +64,14 @@ function AuthRouter() {
             
             {/* 路由栈 */}
             {/* Expo Router 会根据文件系统自动注册所有路由（包括嵌套路由） */}
+            {/* 注意：所有路由都应该注册，由 RouteGuard 控制访问权限和跳转 */}
             <Stack screenOptions={{ headerShown: false }}>
-              {isAuthenticated ? (
-                [
-                  <Stack.Screen key="(tabs)" name="(tabs)" />,
-                  <Stack.Screen key="profile" name="profile" />,
-                  <Stack.Screen key="about" name="about" />,
-                ]
-              ) : (
-                <Stack.Screen name="auth" />
-              )}
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="auth" />
+              <Stack.Screen name="profile" />
+              <Stack.Screen name="about" />
+              <Stack.Screen name="chat" />
+              <Stack.Screen name="people" />
             </Stack>
             
             {/* 状态栏 */}

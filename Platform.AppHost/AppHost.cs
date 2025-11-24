@@ -80,14 +80,7 @@ builder.AddNpmApp("admin", "../Platform.Admin")
                    {
                        service.Ports = new List<string> { "15001:8080" };
                    });
-
-builder.AddNpmApp("app", "../Platform.App")
-    .WithReference(yarp)
-    .WaitFor(yarp)
-    .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
-    .WithHttpEndpoint(env: "PORT", port: 15002,targetPort: 8081)
-    .WithNpmPackageInstallation()
-    .PublishAsDockerFile();
+ 
 
 // 配置 Scalar API 文档
 // 使用 .NET 10 原生 OpenAPI 支持

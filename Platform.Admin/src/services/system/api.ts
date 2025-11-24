@@ -66,7 +66,7 @@ export async function getSystemStatus(): Promise<ApiResponse<SystemStatus>> {
  * 获取系统资源使用情况
  */
 export async function getSystemResources(): Promise<ApiResponse<SystemResources>> {
-  return request<ApiResponse<SystemResources>>('/api/systemmonitor/resources', {
+  return request<ApiResponse<SystemResources>>('/api/system-monitor/resources', {
     method: 'GET',
   });
 }

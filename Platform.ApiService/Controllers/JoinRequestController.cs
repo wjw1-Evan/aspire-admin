@@ -10,7 +10,7 @@ namespace Platform.ApiService.Controllers;
 /// v3.1: 企业加入申请管理控制器
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/join-request")]
 [Authorize]
 public class JoinRequestController : BaseApiController
 {

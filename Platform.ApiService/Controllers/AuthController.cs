@@ -11,7 +11,7 @@ namespace Platform.ApiService.Controllers;
 /// 认证控制器 - 处理用户登录、注册、密码管理等认证相关操作
 /// </summary>
 [ApiController]
-[Route("api")]
+[Route("api/auth")]
 public class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;
@@ -46,7 +46,7 @@ public class AuthController : BaseApiController
     /// 
     /// 示例请求：
     /// ```
-    /// GET /api/currentUser
+    /// GET /api/auth/current-user
     /// Authorization: Bearer {token}
     /// ```
     /// 
@@ -68,7 +68,7 @@ public class AuthController : BaseApiController
     /// <returns>当前用户信息</returns>
     /// <response code="200">成功返回用户信息</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpGet("currentUser")]
+    [HttpGet("current-user")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
@@ -89,7 +89,7 @@ public class AuthController : BaseApiController
     /// 
     /// 示例请求：
     /// ```json
-    /// POST /api/login/account
+    /// POST /api/auth/login
     /// Content-Type: application/json
     /// 
     /// {
@@ -116,7 +116,7 @@ public class AuthController : BaseApiController
     /// <returns>登录结果，包含访问令牌</returns>
     /// <response code="200">登录成功</response>
     /// <response code="400">用户名或密码错误</response>
-    [HttpPost("login/account")]
+    [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var result = await _authService.LoginAsync(request);
@@ -131,7 +131,7 @@ public class AuthController : BaseApiController
     /// 
     /// 示例请求：
     /// ```
-    /// POST /api/login/outLogin
+    /// POST /api/auth/logout
     /// Authorization: Bearer {token}
     /// ```
     /// 
@@ -146,7 +146,7 @@ public class AuthController : BaseApiController
     /// <returns>登出结果</returns>
     /// <response code="200">登出成功</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpPost("login/outLogin")]
+    [HttpPost("logout")]
     [Authorize]
     public async Task<IActionResult> Logout()
     {
@@ -163,7 +163,7 @@ public class AuthController : BaseApiController
     /// 
     /// 示例请求：
     /// ```
-    /// GET /api/login/captcha?phone=13800138000
+    /// GET /api/auth/captcha?phone=13800138000
     /// ```
     /// 
     /// 示例响应：
@@ -180,7 +180,7 @@ public class AuthController : BaseApiController
     /// <returns>验证码信息</returns>
     /// <response code="200">验证码生成成功</response>
     /// <response code="400">手机号格式不正确</response>
-    [HttpGet("login/captcha")]
+    [HttpGet("captcha")]
     public async Task<IActionResult> GetCaptcha([FromQuery] string phone)
     {
         _phoneValidationService.ValidatePhone(phone);
@@ -291,7 +291,7 @@ public class AuthController : BaseApiController
     /// 
     /// 示例请求：
     /// ```json
-    /// POST /api/login/verify-captcha
+    /// POST /api/auth/verify-captcha
     /// Content-Type: application/json
     /// 
     /// {
@@ -313,7 +313,7 @@ public class AuthController : BaseApiController
     /// <returns>验证结果</returns>
     /// <response code="200">验证完成</response>
     /// <response code="400">手机号或验证码格式不正确</response>
-    [HttpPost("login/verify-captcha")]
+    [HttpPost("verify-captcha")]
     public async Task<IActionResult> VerifyCaptcha([FromBody] VerifyCaptchaRequest request)
     {
         _phoneValidationService.ValidatePhone(request.Phone);

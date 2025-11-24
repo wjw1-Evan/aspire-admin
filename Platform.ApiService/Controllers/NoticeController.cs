@@ -17,7 +17,7 @@ namespace Platform.ApiService.Controllers;
 /// - 创建通知：需要 'notice' 菜单权限（管理员功能）
 /// </summary>
 [ApiController]
-[Route("api")]
+[Route("api/notice")]
 [Authorize] // 所有接口默认需要登录
 public class NoticeController : BaseApiController
 {
@@ -67,7 +67,7 @@ public class NoticeController : BaseApiController
     /// <returns>通知列表</returns>
     /// <response code="200">成功返回通知列表</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpGet("notices")]
+    [HttpGet]
     public async Task<IActionResult> GetNotices()
     {
         var result = await _noticeService.GetNoticesAsync();
@@ -80,7 +80,7 @@ public class NoticeController : BaseApiController
     /// </summary>
     /// <param name="id">通知ID</param>
     /// <returns>通知详情</returns>
-    [HttpGet("notices/{id}")]
+    [HttpGet("{id}")]
     public async Task<IActionResult> GetNoticeById(string id)
     {
         var notice = await _noticeService.GetNoticeByIdAsync(id);
@@ -94,7 +94,7 @@ public class NoticeController : BaseApiController
     /// <param name="id">通知ID</param>
     /// <param name="request">更新请求</param>
     /// <returns>更新后的通知信息</returns>
-    [HttpPut("notices/{id}")]
+    [HttpPut("{id}")]
     public async Task<IActionResult> UpdateNotice(string id, [FromBody] UpdateNoticeRequest request)
     {
         // 权限检查：普通用户只能修改 Read 状态（已读/未读），不能修改通知内容
@@ -126,7 +126,7 @@ public class NoticeController : BaseApiController
     /// </summary>
     /// <param name="request">创建通知请求</param>
     /// <returns>创建的通知信息</returns>
-    [HttpPost("notices")]
+    [HttpPost]
     [RequireMenu("notice")]
     public async Task<IActionResult> CreateNotice([FromBody] CreateNoticeRequest request)
     {
@@ -140,7 +140,7 @@ public class NoticeController : BaseApiController
     /// </summary>
     /// <param name="id">通知ID</param>
     /// <returns>删除结果</returns>
-    [HttpDelete("notices/{id}")]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteNotice(string id)
     {
         var deleted = await _noticeService.DeleteNoticeAsync(id);

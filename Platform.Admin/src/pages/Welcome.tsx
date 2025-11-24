@@ -1,12 +1,12 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { useModel, history, useIntl } from '@umijs/max';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Avatar, 
-  Typography, 
-  Space, 
+import {
+  Card,
+  Row,
+  Col,
+  Avatar,
+  Typography,
+  Space,
   Tag,
   Alert,
   Timeline,
@@ -50,9 +50,9 @@ const StatCard: React.FC<{
   loading?: boolean;
   token?: any;
 }> = ({ title, value, icon, color = '#1890ff', suffix = '', loading = false, token }) => (
-  <Card 
-    size="small" 
-      style={{
+  <Card
+    size="small"
+    style={{
       textAlign: 'center',
       borderRadius: '12px',
       boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',
@@ -64,20 +64,20 @@ const StatCard: React.FC<{
     <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>
       {icon}
     </div>
-    <div style={{ 
-      fontSize: '28px', 
-            fontWeight: 'bold',
-      color: token?.colorText || '#262626', 
-      marginBottom: '4px' 
+    <div style={{
+      fontSize: '28px',
+      fontWeight: 'bold',
+      color: token?.colorText || '#262626',
+      marginBottom: '4px'
     }}>
       {value}{suffix}
-        </div>
-    <div style={{ 
-      fontSize: '14px', 
-      color: token?.colorTextSecondary || '#8c8c8c' 
+    </div>
+    <div style={{
+      fontSize: '14px',
+      color: token?.colorTextSecondary || '#8c8c8c'
     }}>
-          {title}
-        </div>
+      {title}
+    </div>
   </Card>
 );
 
@@ -93,7 +93,7 @@ const QuickAction: React.FC<{
   <Card
     hoverable={!disabled}
     size="small"
-        style={{
+    style={{
       textAlign: 'center',
       borderRadius: '12px',
       cursor: disabled ? 'not-allowed' : 'pointer',
@@ -108,7 +108,7 @@ const QuickAction: React.FC<{
     </div>
     <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>
       {title}
-      </div>
+    </div>
     <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
       {description}
     </div>
@@ -124,8 +124,8 @@ const ResourceCard: React.FC<{
   loading?: boolean;
   token?: any;
 }> = ({ title, value, icon, color = '#1890ff', loading = false, token }) => (
-  <Card 
-    size="small" 
+  <Card
+    size="small"
     style={{
       textAlign: 'center',
       borderRadius: '12px',
@@ -138,17 +138,17 @@ const ResourceCard: React.FC<{
     <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>
       {icon}
     </div>
-    <div style={{ 
-      fontSize: '20px', 
+    <div style={{
+      fontSize: '20px',
       fontWeight: 'bold',
-      color: token?.colorText || '#262626', 
-      marginBottom: '4px' 
+      color: token?.colorText || '#262626',
+      marginBottom: '4px'
     }}>
       {value}
     </div>
-    <div style={{ 
-      fontSize: '12px', 
-      color: token?.colorTextSecondary || '#8c8c8c' 
+    <div style={{
+      fontSize: '12px',
+      color: token?.colorTextSecondary || '#8c8c8c'
     }}>
       {title}
     </div>
@@ -160,14 +160,14 @@ const Welcome: React.FC = () => {
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser as CurrentUser;
-  
+
   const [statistics, setStatistics] = useState<any>(null);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   // 扩展类型以包含 fullUrl 字段（后端实际返回的字段）
   const [recentActivities, setRecentActivities] = useState<(API.UserActivityLog & { fullUrl?: string; path?: string; queryString?: string; httpMethod?: string })[]>([]);
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // 定时器引用
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -175,11 +175,11 @@ const Welcome: React.FC = () => {
   const fetchSystemResources = useCallback(async () => {
     try {
       const resourcesRes = await getSystemResources();
-      
+
       if (resourcesRes.success && resourcesRes.data) {
         const resources = resourcesRes.data;
         const memoryUsage = resources.memory?.usagePercent || 0;
-        
+
         // 更新系统资源状态（只在数据变化时更新）
         setSystemResources(prevResources => {
           if (prevResources?.memory?.usagePercent === memoryUsage) {
@@ -204,11 +204,11 @@ const Welcome: React.FC = () => {
         getCurrentCompany(),
         getUserActivityLogs({ limit: 5 })
       ]);
-      
+
       if (statsRes.success) {
         setStatistics(statsRes.data);
       }
-      
+
       if (companyRes.success) {
         setCompanyInfo(companyRes.data);
       }
@@ -240,7 +240,7 @@ const Welcome: React.FC = () => {
     intervalRef.current = setInterval(() => {
       fetchSystemResources();
     }, 5000);
-    
+
     // 清理函数
     return () => {
       if (intervalRef.current) {
@@ -253,7 +253,7 @@ const Welcome: React.FC = () => {
   // 获取活动类型对应的颜色
   const getActivityColor = (action?: string): string => {
     if (!action) return 'blue';
-    
+
     const colorMap: Record<string, string> = {
       'login': 'green',
       'logout': 'red',
@@ -266,7 +266,7 @@ const Welcome: React.FC = () => {
       'change_password': 'orange',
       'refresh_token': 'blue'
     };
-    
+
     return colorMap[action.toLowerCase()] || 'blue';
   };
 
@@ -291,16 +291,16 @@ const Welcome: React.FC = () => {
   // 获取用户角色标签
   const getUserRoleTags = () => {
     if (!currentUser?.roles) return [];
-    
+
     return currentUser.roles.map(role => {
       const isAdmin = role === 'admin' || role === '管理员';
       const tagColor = isAdmin ? 'red' : 'blue';
       const tagIcon = isAdmin ? <CrownOutlined /> : <UserOutlined />;
-      
+
       return (
-        <Tag 
-          key={role} 
-          color={tagColor} 
+        <Tag
+          key={role}
+          color={tagColor}
           icon={tagIcon}
         >
           {role}
@@ -336,11 +336,11 @@ const Welcome: React.FC = () => {
     >
       <div style={{ padding: '0 24px' }}>
         {/* 个性化欢迎区域 */}
-      <Card
-        style={{
+        <Card
+          style={{
             marginBottom: '24px',
             borderRadius: '16px',
-            background: token.colorBgContainer === '#ffffff' 
+            background: token.colorBgContainer === '#ffffff'
               ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
               : 'linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%)',
             border: 'none',
@@ -351,11 +351,11 @@ const Welcome: React.FC = () => {
         >
           <Row align="middle" gutter={24}>
             <Col>
-              <Avatar 
-                size={80} 
-                icon={<UserOutlined />} 
+              <Avatar
+                size={80}
+                icon={<UserOutlined />}
                 src={currentUser?.avatar}
-            style={{
+                style={{
                   backgroundColor: 'rgba(255,255,255,0.2)',
                   border: '3px solid rgba(255,255,255,0.3)'
                 }}
@@ -380,16 +380,16 @@ const Welcome: React.FC = () => {
               <Space direction="vertical" size="large">
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                    {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
+                    {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
                     })}
                   </div>
                   <div style={{ fontSize: '14px', opacity: 0.8 }}>
                     {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', { weekday: 'long' })}
                   </div>
-          </div>
+                </div>
               </Space>
             </Col>
           </Row>
@@ -398,7 +398,7 @@ const Welcome: React.FC = () => {
         <div style={{ margin: '24px 0' }} />
 
         {/* 统计概览 */}
-        <Card 
+        <Card
           title={
             <Space>
               <BarChartOutlined />
@@ -454,7 +454,7 @@ const Welcome: React.FC = () => {
         <Row gutter={[24, 24]}>
           {/* 快速操作 */}
           <Col xs={24} lg={12}>
-            <Card 
+            <Card
               title={
                 <Space>
                   <RocketOutlined />
@@ -526,7 +526,7 @@ const Welcome: React.FC = () => {
 
           {/* 最近活动 */}
           <Col xs={24} lg={12}>
-            <Card 
+            <Card
               title={
                 <Space>
                   <ClockCircleOutlined />
@@ -538,13 +538,13 @@ const Welcome: React.FC = () => {
               <Timeline
                 items={recentActivities.length > 0 ? recentActivities.map(activity => {
                   const locale = intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US';
-                  const formattedDate = activity.createdAt 
+                  const formattedDate = activity.createdAt
                     ? new Date(activity.createdAt).toLocaleString(locale)
                     : intl.formatMessage({ id: 'pages.welcome.recentActivities.unknownTime' });
-                  
-                  const urlDisplay = activity.fullUrl 
+
+                  const urlDisplay = activity.fullUrl
                     || (activity.path && activity.queryString ? `${activity.path}${activity.queryString}` : activity.path);
-                  
+
                   return {
                     color: getActivityColor(activity.action),
                     children: (
@@ -554,10 +554,10 @@ const Welcome: React.FC = () => {
                           <div style={{ marginTop: '4px', fontSize: '12px' }}>
                             <Space size={4}>
                               <LinkOutlined style={{ fontSize: '11px', color: '#8c8c8c' }} />
-                              <Text 
-                                type="secondary" 
-                                style={{ 
-                                  fontFamily: 'monospace', 
+                              <Text
+                                type="secondary"
+                                style={{
+                                  fontFamily: 'monospace',
                                   fontSize: '11px',
                                   wordBreak: 'break-all',
                                   maxWidth: '100%'
@@ -623,55 +623,11 @@ const Welcome: React.FC = () => {
           </Col>
         </Row>
 
-        {/* 系统信息 */}
-        <Card 
-          title={
-            <Space>
-              <MonitorOutlined />
-              <span>{intl.formatMessage({ id: 'pages.welcome.systemInfo' })}</span>
-            </Space>
-          }
-          style={{ marginTop: '24px', borderRadius: '12px' }}
-        >
-          <Row gutter={[24, 16]}>
-            <Col xs={24} sm={12} md={6}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1890ff' }}>                                                                        
-                  .NET 9
-                </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>{intl.formatMessage({ id: 'pages.welcome.systemInfo.backendFramework' })}</div>                                                                              
-              </div>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>                                                                        
-                  React 19
-                </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>{intl.formatMessage({ id: 'pages.welcome.systemInfo.frontendFramework' })}</div>                                                                              
-              </div>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>                                                                        
-                  MongoDB
-                </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>{intl.formatMessage({ id: 'pages.welcome.systemInfo.database' })}</div>
-              </div>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#722ed1' }}>                                                                        
-                  Aspire
-                </div>
-                <div style={{ fontSize: '14px', color: '#8c8c8c' }}>{intl.formatMessage({ id: 'pages.welcome.systemInfo.orchestration' })}</div>                                                                            
-              </div>
-            </Col>
-          </Row>
-        </Card>
+
 
         {/* 系统资源监控 */}
         {systemResources ? (
-          <Card 
+          <Card
             title={
               <Space>
                 <DatabaseOutlined />
@@ -732,7 +688,7 @@ const Welcome: React.FC = () => {
                   </div>
                 </Col>
               )}
-              
+
               {/* 磁盘使用率 */}
               {systemResources.disk && (
                 <Col xs={24} sm={12} md={8}>
@@ -756,7 +712,7 @@ const Welcome: React.FC = () => {
                 </Col>
               )}
             </Row>
-            
+
             {/* 系统详细信息 */}
             {systemResources?.system && (
               <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
@@ -782,7 +738,7 @@ const Welcome: React.FC = () => {
             )}
           </Card>
         ) : (
-          <Card 
+          <Card
             title={
               <Space>
                 <DatabaseOutlined />

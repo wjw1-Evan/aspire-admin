@@ -468,7 +468,10 @@ public class UserController : BaseApiController
     /// <summary>
     /// 获取当前用户信息（个人中心）
     /// </summary>
-    [HttpGet("profile")]
+    /// <remarks>
+    /// RESTful 路径: /api/user/me 表示当前用户
+    /// </remarks>
+    [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUserProfile()
     {
@@ -484,8 +487,11 @@ public class UserController : BaseApiController
     /// <summary>
     /// 更新当前用户信息（个人中心）
     /// </summary>
+    /// <remarks>
+    /// RESTful 路径: PUT /api/user/me 更新当前用户
+    /// </remarks>
     /// <param name="request">更新用户信息请求</param>
-    [HttpPut("profile")]
+    [HttpPut("me")]
     [Authorize]
     public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UpdateProfileRequest request)
     {
@@ -534,8 +540,11 @@ public class UserController : BaseApiController
     /// <summary>
     /// 修改当前用户密码
     /// </summary>
+    /// <remarks>
+    /// RESTful 路径: PUT /api/user/me/password 更新当前用户密码
+    /// </remarks>
     /// <param name="request">修改密码请求</param>
-    [HttpPut("profile/password")]
+    [HttpPut("me/password")]
     [Authorize]
     public async Task<IActionResult> ChangeCurrentUserPassword([FromBody] ChangePasswordRequest request)
     {
@@ -550,8 +559,11 @@ public class UserController : BaseApiController
     /// <summary>
     /// 获取当前用户活动日志
     /// </summary>
+    /// <remarks>
+    /// RESTful 路径: GET /api/user/me/activity-logs 获取当前用户的活动日志
+    /// </remarks>
     /// <param name="limit">限制数量</param>
-    [HttpGet("profile/activity-logs")]
+    [HttpGet("me/activity-logs")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUserActivityLogs([FromQuery] int limit = 20)
     {
@@ -604,7 +616,7 @@ public class UserController : BaseApiController
     /// <returns>当前用户的活动日志（分页）</returns>
     /// <response code="200">成功返回活动日志</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpGet("my-activity-logs-paged")]
+    [HttpGet("me/activity-logs-paged")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUserActivityLogsPaged(
         [FromQuery] int page = 1,
@@ -708,7 +720,7 @@ public class UserController : BaseApiController
     /// <response code="200">成功返回日志详情</response>
     /// <response code="404">日志不存在或不属于当前用户</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpGet("my-activity-logs/{logId}")]
+    [HttpGet("me/activity-logs/{logId}")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUserActivityLogById(string logId)
     {
@@ -728,7 +740,10 @@ public class UserController : BaseApiController
     /// <summary>
     /// 获取当前用户的所有权限
     /// </summary>
-    [HttpGet("my-permissions")]
+    /// <remarks>
+    /// RESTful 路径: GET /api/user/me/permissions 获取当前用户的权限列表
+    /// </remarks>
+    [HttpGet("me/permissions")]
     [Authorize]
     public async Task<IActionResult> GetMyPermissions()
     {
@@ -762,7 +777,7 @@ public class UserController : BaseApiController
     /// <returns>AI 角色定义</returns>
     /// <response code="200">成功返回角色定义</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpGet("profile/ai-role-definition")]
+    [HttpGet("me/ai-role-definition")]
     [Authorize]
     public async Task<IActionResult> GetAiRoleDefinition()
     {
@@ -792,7 +807,7 @@ public class UserController : BaseApiController
     /// 
     /// 示例请求：
     /// ```json
-    /// PUT /api/user/profile/ai-role-definition
+    /// PUT /api/user/me/ai-role-definition
     /// Authorization: Bearer {token}
     /// Content-Type: application/json
     /// 
@@ -813,7 +828,7 @@ public class UserController : BaseApiController
     /// <response code="200">角色定义更新成功</response>
     /// <response code="400">参数验证失败（角色定义为空或超过长度限制）</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpPut("profile/ai-role-definition")]
+    [HttpPut("me/ai-role-definition")]
     [Authorize]
     public async Task<IActionResult> UpdateAiRoleDefinition([FromBody] UpdateAiRoleDefinitionRequest request)
     {

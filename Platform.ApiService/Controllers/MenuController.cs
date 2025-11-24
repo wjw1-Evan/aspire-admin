@@ -11,7 +11,7 @@ namespace Platform.ApiService.Controllers;
 /// 菜单是全局系统资源，不允许用户修改
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/menu")]
 [Authorize]
 public class MenuController : BaseApiController
 {

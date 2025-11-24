@@ -78,7 +78,7 @@ export const errorConfig: RequestConfig = {
       // 4. 如果都不匹配，可能是网络错误或其他未知错误，不在这里处理
       // 由响应拦截器的错误处理逻辑处理
     },
-    
+
     // 统一错误处理
     errorHandler: (error: any, opts: any) => {
       if (opts?.skipErrorHandler) throw error;
@@ -92,7 +92,7 @@ export const errorConfig: RequestConfig = {
       // 1. 统一处理认证错误（401/404）- 清除 token 并跳转登录
       const isAuthError = error.response?.status === 401 || error.response?.status === 404;
       // 检查是否是认证相关的错误消息（避免已处理的认证错误重复处理）
-      const isAuthErrorMessage = 
+      const isAuthErrorMessage =
         error.message === 'Authentication handled silently' ||
         error.message === 'Authentication handled';
 
@@ -100,8 +100,9 @@ export const errorConfig: RequestConfig = {
         // 清除 token
         tokenUtils.clearAllTokens();
 
-        // 检查是否是当前用户请求失败（需要跳转登录）
-        const isCurrentUserRequest = error.config?.url?.includes('/api/currentUser');
+        // 如果是获取当前用户的请求，不显示错误提示（因为可能是未登录状态）
+        const isCurrentUserRequest = error.config?.url?.includes('/api/auth/current-user') ||
+          error.config?.url?.includes('/api/currentUser');
         if (isCurrentUserRequest || isAuthError) {
           // 使用 AuthenticationService 统一跳转
           AuthenticationService.redirectToLogin(

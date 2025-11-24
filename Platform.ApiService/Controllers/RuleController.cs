@@ -10,7 +10,7 @@ namespace Platform.ApiService.Controllers;
 /// 规则管理控制器 - 处理规则相关的 CRUD 操作
 /// </summary>
 [ApiController]
-[Route("api")]
+[Route("api/rule")]
 public class RuleController : BaseApiController
 {
     private readonly IRuleService _ruleService;
@@ -32,7 +32,7 @@ public class RuleController : BaseApiController
     /// <param name="name">规则名称</param>
     /// <param name="sorter">排序字段</param>
     /// <param name="filter">过滤条件</param>
-    [HttpGet("rule")]
+    [HttpGet]
     public async Task<IActionResult> GetRules(
         [FromQuery] int current = 1,
         [FromQuery] int pageSize = 10,
@@ -68,7 +68,7 @@ public class RuleController : BaseApiController
     /// 创建规则
     /// </summary>
     /// <param name="request">创建规则请求</param>
-    [HttpPost("rule")]
+    [HttpPost]
     public async Task<IActionResult> CreateRule([FromBody] CreateRuleRequest request)
     {
         var newRule = await _ruleService.CreateRuleAsync(request);
@@ -79,7 +79,7 @@ public class RuleController : BaseApiController
     /// 更新规则
     /// </summary>
     /// <param name="request">更新规则请求</param>
-    [HttpPut("rule")]
+    [HttpPut]
     public async Task<IActionResult> UpdateRule([FromBody] UpdateRuleRequest request)
     {
         if (!request.Key.HasValue)
@@ -94,7 +94,7 @@ public class RuleController : BaseApiController
     /// 删除规则
     /// </summary>
     /// <param name="request">删除规则请求</param>
-    [HttpDelete("rule")]
+    [HttpDelete]
     public async Task<IActionResult> DeleteRule([FromBody] DeleteRuleRequest request)
     {
         if (!request.Key.HasValue)

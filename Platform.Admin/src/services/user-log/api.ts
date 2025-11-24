@@ -38,7 +38,7 @@ export async function getCurrentUserActivityLogs(
     total: number;
     page: number;
     pageSize: number;
-  }>>('/api/user/my-activity-logs-paged', {
+  }>>('/api/user/me/activity-logs-paged', {
     method: 'GET',
     params,
     ...(options || {}),
@@ -53,7 +53,7 @@ export async function getCurrentUserActivityLogById(
   logId: string,
   options?: Record<string, any>,
 ) {
-  return request<API.ApiResponse<UserActivityLog>>(`/api/user/my-activity-logs/${logId}`, {
+  return request<API.ApiResponse<UserActivityLog>>(`/api/user/me/activity-logs/${logId}`, {
     method: 'GET',
     ...(options || {}),
   });

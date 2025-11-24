@@ -10,7 +10,7 @@ namespace Platform.ApiService.Controllers;
 /// 系统维护控制器
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/maintenance")]
 [Authorize] // 需要登录
 public class MaintenanceController : BaseApiController
 {

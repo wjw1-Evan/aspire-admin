@@ -11,7 +11,7 @@ namespace Platform.ApiService.Controllers;
 /// 系统监控控制器
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/system-monitor")]
 public class SystemMonitorController : BaseApiController
 {
     private readonly ILogger<SystemMonitorController> _logger;

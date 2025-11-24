@@ -1,5 +1,4 @@
 import { request } from '@umijs/max';
-import type { API } from '@/services/ant-design-pro/typings';
 
 /**
  * 用户权限信息
@@ -13,7 +12,7 @@ interface UserPermissions {
  * 获取当前用户的权限信息
  */
 export async function getMyPermissions(options?: Record<string, any>) {
-  return request<API.ApiResponse<UserPermissions>>('/api/user/my-permissions', {
+  return request<API.ApiResponse<UserPermissions>>('/api/user/me/permissions', {
     method: 'GET',
     ...(options || {}),
   });

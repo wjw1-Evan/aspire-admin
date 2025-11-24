@@ -13,7 +13,7 @@ namespace Platform.ApiService.Controllers;
 /// 角色管理控制器 - 处理角色相关的 CRUD 操作和权限管理
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/role")]
 [Authorize]
 public class RoleController : BaseApiController
 {

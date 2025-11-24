@@ -64,7 +64,7 @@ const AiAssistant: React.FC = () => {
     try {
       const response = await getMessages(sessionId, { limit: 50 });
       setMessages(response.items);
-      
+
       // 记录最后一条消息ID
       if (response.items.length > 0) {
         const lastMessage = response.items[response.items.length - 1];
@@ -130,17 +130,18 @@ const AiAssistant: React.FC = () => {
     setInputValue('');
     setSending(true);
 
+    // 先添加用户消息到界面（乐观更新）
+    const optimisticMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      sessionId: currentSession.id,
+      senderId: currentUser?.userid || '',
+      recipientId: AI_ASSISTANT_ID,
+      type: 'Text',
+      content: userMessage,
+      createdAt: new Date().toISOString(),
+    };
+
     try {
-      // 先添加用户消息到界面（乐观更新）
-      const optimisticMessage: ChatMessage = {
-        id: `temp-${Date.now()}`,
-        sessionId: currentSession.id,
-        senderId: currentUser?.id || '',
-        recipientId: AI_ASSISTANT_ID,
-        type: 'Text',
-        content: userMessage,
-        createdAt: new Date().toISOString(),
-      };
       setMessages((prev) => [...prev, optimisticMessage]);
 
       // 发送消息到后端
@@ -251,7 +252,7 @@ const AiAssistant: React.FC = () => {
         position: 'fixed',
         bottom: 24,
         right: 24,
-        zIndex: 1000,
+        zIndex: 900,
       }}
     >
       {open ? (
@@ -308,7 +309,7 @@ const AiAssistant: React.FC = () => {
               <>
                 {messages.map((msg) => {
                   const isAssistant = msg.senderId === AI_ASSISTANT_ID;
-                  const isUser = msg.senderId === currentUser.id;
+                  const isUser = msg.senderId === currentUser.userid;
 
                   return (
                     <div

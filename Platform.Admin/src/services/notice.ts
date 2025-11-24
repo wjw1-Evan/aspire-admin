@@ -18,14 +18,14 @@ export interface NoticeIconItem {
 
 /** 获取所有通知 */
 export async function getNotices() {
-  return request<ApiResponse<NoticeIconItem[]>>('/api/notices', {
+  return request<ApiResponse<NoticeIconItem[]>>('/api/notice', {
     method: 'GET',
   });
 }
 
 /** 标记为已读 */
 export async function markNoticeAsRead(id: string) {
-  return request<ApiResponse<boolean>>(`/api/notices/${id}`, {
+  return request<ApiResponse<boolean>>(`/api/notice/${id}`, {
     method: 'PUT',
     data: { read: true },
   });
@@ -33,7 +33,7 @@ export async function markNoticeAsRead(id: string) {
 
 /** 标记为未读 */
 export async function markNoticeAsUnread(id: string) {
-  return request<ApiResponse<boolean>>(`/api/notices/${id}`, {
+  return request<ApiResponse<boolean>>(`/api/notice/${id}`, {
     method: 'PUT',
     data: { read: false },
   });
@@ -51,7 +51,7 @@ export async function markAllAsUnread(ids: string[]) {
 
 /** 删除通知 */
 export async function deleteNotice(id: string) {
-  return request<ApiResponse<boolean>>(`/api/notices/${id}`, {
+  return request<ApiResponse<boolean>>(`/api/notice/${id}`, {
     method: 'DELETE',
   });
 }

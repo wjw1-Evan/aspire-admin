@@ -93,3 +93,10 @@ ol {
     }
   }
 }
+
+// 修复移动端 Drawer 打开时背景滚动的问题
+// 当 body 被锁定滚动时，确保 #root 也被锁定
+body[style*="overflow: hidden"] #root,
+body.ant-scrolling-effect #root {
+  overflow: hidden !important;
+}

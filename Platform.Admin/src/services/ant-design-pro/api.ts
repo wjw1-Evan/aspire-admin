@@ -3,25 +3,25 @@
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/types/unified-api';
 
-/** 获取当前的用户 GET /api/currentUser */
+/** 获取当前的用户 GET /api/auth/current-user */
 export async function currentUser(options?: { [key: string]: any }) {
-  return request<ApiResponse<API.CurrentUser>>('/api/currentUser', {
+  return request<ApiResponse<API.CurrentUser>>('/api/auth/current-user', {
     method: 'GET',
     ...(options || {}),
   });
 }
 
-/** 退出登录接口 POST /api/login/outLogin */
+/** 退出登录接口 POST /api/auth/logout */
 export async function outLogin(options?: { [key: string]: any }) {
-  return request<Record<string, any>>('/api/login/outLogin', {
+  return request<Record<string, any>>('/api/auth/logout', {
     method: 'POST',
     ...(options || {}),
   });
 }
 
-/** 登录接口 POST /api/login/account */
+/** 登录接口 POST /api/auth/login */
 export async function login(body: API.LoginParams, options?: { [key: string]: any }) {
-  return request<ApiResponse<API.LoginData>>('/api/login/account', {
+  return request<ApiResponse<API.LoginData>>('/api/auth/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -31,9 +31,9 @@ export async function login(body: API.LoginParams, options?: { [key: string]: an
   });
 }
 
-/** 注册接口 POST /api/register */
+/** 注册接口 POST /api/auth/register */
 export async function register(body: API.RegisterParams, options?: { [key: string]: any }) {
-  return request<ApiResponse<API.AppUser>>('/api/register', {
+  return request<ApiResponse<API.AppUser>>('/api/auth/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -43,9 +43,9 @@ export async function register(body: API.RegisterParams, options?: { [key: strin
   });
 }
 
-/** 刷新token接口 POST /api/refresh-token */
+/** 刷新token接口 POST /api/auth/refresh-token */
 export async function refreshToken(body: API.POST_API_REFRESH_TOKEN_PAYLOAD, options?: { [key: string]: any }) {
-  return request<API.ApiResponse<API.POST_API_REFRESH_TOKEN_RES>>('/api/refresh-token', {
+  return request<API.ApiResponse<API.POST_API_REFRESH_TOKEN_RES>>('/api/auth/refresh-token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -55,9 +55,9 @@ export async function refreshToken(body: API.POST_API_REFRESH_TOKEN_PAYLOAD, opt
   });
 }
 
-/** 修改密码接口 POST /api/change-password */
+/** 修改密码接口 POST /api/auth/change-password */
 export async function changePassword(body: API.ChangePasswordParams, options?: { [key: string]: any }) {
-  return request<ApiResponse<boolean>>('/api/change-password', {
+  return request<ApiResponse<boolean>>('/api/auth/change-password', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -67,17 +67,17 @@ export async function changePassword(body: API.ChangePasswordParams, options?: {
   });
 }
 
-/** 获取当前用户信息（个人中心） GET /api/user/profile */
+/** 获取当前用户信息（个人中心） GET /api/user/me */
 export async function getCurrentUserProfile(options?: { [key: string]: any }) {
-  return request<ApiResponse<API.CurrentUser>>('/api/user/profile', {
+  return request<ApiResponse<API.CurrentUser>>('/api/user/me', {
     method: 'GET',
     ...(options || {}),
   });
 }
 
-/** 更新当前用户信息（个人中心） PUT /api/user/profile */
+/** 更新当前用户信息（个人中心） PUT /api/user/me */
 export async function updateUserProfile(body: API.UpdateProfileParams, options?: { [key: string]: any }) {
-  return request<ApiResponse<API.CurrentUser>>('/api/user/profile', {
+  return request<ApiResponse<API.CurrentUser>>('/api/user/me', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -87,9 +87,9 @@ export async function updateUserProfile(body: API.UpdateProfileParams, options?:
   });
 }
 
-/** 修改当前用户密码 PUT /api/user/profile/password */
+/** 修改当前用户密码 PUT /api/user/me/password */
 export async function changeCurrentUserPassword(body: API.ChangePasswordParams, options?: { [key: string]: any }) {
-  return request<ApiResponse<{ message: string }>>('/api/user/profile/password', {
+  return request<ApiResponse<{ message: string }>>('/api/user/me/password', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -99,18 +99,18 @@ export async function changeCurrentUserPassword(body: API.ChangePasswordParams, 
   });
 }
 
-/** 获取当前用户活动日志 GET /api/user/profile/activity-logs */
+/** 获取当前用户活动日志 GET /api/user/me/activity-logs */
 export async function getUserActivityLogs(params?: { limit?: number }, options?: { [key: string]: any }) {
-  return request<ApiResponse<API.UserActivityLog[]>>('/api/user/profile/activity-logs', {
+  return request<ApiResponse<API.UserActivityLog[]>>('/api/user/me/activity-logs', {
     method: 'GET',
     params,
     ...(options || {}),
   });
 }
 
-/** 此处后端没有提供注释 GET /api/notices */
+/** 此处后端没有提供注释 GET /api/notice */
 export async function getNotices(options?: { [key: string]: any }) {
-  return request<API.NoticeIconList>('/api/notices', {
+  return request<API.NoticeIconList>('/api/notice', {
     method: 'GET',
     ...(options || {}),
   });
@@ -177,17 +177,17 @@ export async function getUserStatistics(options?: { [key: string]: any }) {
   });
 }
 
-/** 获取图形验证码 GET /api/captcha/image */
+/** 获取图形验证码 GET /api/auth/captcha/image */
 export async function getImageCaptcha(type: 'login' | 'register' = 'login', options?: { [key: string]: any }) {
-  return request<ApiResponse<API.ImageCaptchaResult>>(`/api/captcha/image?type=${type}`, {
+  return request<ApiResponse<API.ImageCaptchaResult>>(`/api/auth/captcha/image?type=${type}`, {
     method: 'GET',
     ...(options || {}),
   });
 }
 
-/** 验证图形验证码 POST /api/captcha/verify-image */
+/** 验证图形验证码 POST /api/auth/captcha/verify-image */
 export async function verifyImageCaptcha(body: API.VerifyImageCaptchaRequest, options?: { [key: string]: any }) {
-  return request<ApiResponse<API.VerifyImageCaptchaResponse>>('/api/captcha/verify-image', {
+  return request<ApiResponse<API.VerifyImageCaptchaResponse>>('/api/auth/captcha/verify-image', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -99,13 +99,13 @@ export async function getInitialState(): Promise<{
   // 如果不是登录页面，执行
   const { location } = history;
   const whiteListPages = [loginPath, '/user/register', '/user/register-result'];
-  
+
   // 合并默认设置和主题设置
   const settings = {
     ...defaultSettings,
     navTheme: initialTheme,
   } as Partial<LayoutSettings>;
-  
+
   if (!whiteListPages.includes(location.pathname)) {
     const currentUser = await fetchUserInfo();
     return {
@@ -319,6 +319,34 @@ export const layout: RunTimeLayoutConfig = ({
       );
     },
     ...initialState?.settings,
+    onCollapse: (collapsed) => {
+      setInitialState((preInitialState) => ({
+        ...preInitialState,
+        settings: {
+          ...preInitialState?.settings,
+          collapsed,
+        },
+      }));
+
+      // 移动端菜单打开时锁定滚动
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        const root = document.getElementById('root');
+        if (root) {
+          if (!collapsed) {
+            // 菜单展开（打开），锁定滚动
+            root.style.overflow = 'hidden';
+            root.style.height = '100vh'; // 确保高度限制
+            document.body.style.overflow = 'hidden';
+          } else {
+            // 菜单折叠（关闭），恢复滚动
+            root.style.overflow = '';
+            root.style.height = '';
+            document.body.style.overflow = '';
+          }
+        }
+      }
+    },
   };
 };
 
@@ -326,8 +354,10 @@ export const layout: RunTimeLayoutConfig = ({
  * 检查当前用户响应是否有效
  */
 function handleCurrentUserResponse(response: any): any {
+  // 如果是获取当前用户的请求，不显示错误提示（因为可能是未登录状态）
   const isCurrentUserRequest =
-    response.config.url?.includes('/api/currentUser');
+    response.config.url?.includes('/api/auth/current-user') ||
+    response.config.url?.includes('/api/currentUser'); // 兼容旧路径
   if (!isCurrentUserRequest) {
     return response;
   }

@@ -2,7 +2,7 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 获取验证码 GET /api/login/captcha */
+/** 获取验证码 GET /api/auth/captcha */
 export async function getFakeCaptcha(
   params: {
     // query
@@ -18,7 +18,7 @@ export async function getFakeCaptcha(
       expiresIn: number;
     };
     message?: string;
-  }>('/api/login/captcha', {
+  }>('/api/auth/captcha', {
     method: 'GET',
     params: {
       ...params,
@@ -27,7 +27,7 @@ export async function getFakeCaptcha(
   });
 }
 
-/** 验证验证码 POST /api/login/verify-captcha */
+/** 验证验证码 POST /api/auth/verify-captcha */
 export async function verifyCaptcha(
   body: {
     phone: string;
@@ -41,7 +41,7 @@ export async function verifyCaptcha(
       valid: boolean;
     };
     message?: string;
-  }>('/api/login/verify-captcha', {
+  }>('/api/auth/verify-captcha', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

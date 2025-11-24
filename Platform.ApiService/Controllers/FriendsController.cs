@@ -11,7 +11,7 @@ namespace Platform.ApiService.Controllers;
 /// 好友管理接口
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/friends")]
 [Authorize]
 public class FriendsController : BaseApiController
 {

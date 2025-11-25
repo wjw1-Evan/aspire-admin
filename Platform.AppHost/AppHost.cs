@@ -80,7 +80,20 @@ builder.AddNpmApp("admin", "../Platform.Admin")
                    {
                        service.Ports = new List<string> { "15001:8080" };
                    });
+
+// 添加移动端应用 (Expo)
+builder.AddNpmApp("app", "../Platform.App")
+    .WithReference(yarp)
+    .WaitFor(yarp)
+    .WithEnvironment("BROWSER", "none")
+    .WithHttpEndpoint(env: "PORT", port: 15002, targetPort: 8081)
+    .WithNpmPackageInstallation()
+    .PublishAsDockerFile().PublishAsDockerComposeService((resource, service) =>
+                   {
+                       service.Ports = new List<string> { "15002:8081" };
+                   });
  
+
 
 // 配置 Scalar API 文档
 // 使用 .NET 10 原生 OpenAPI 支持

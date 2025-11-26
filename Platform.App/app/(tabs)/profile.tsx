@@ -10,6 +10,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     SafeAreaView,
+    View as RNView,
+    Text as RNText,
 } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { router } from 'expo-router';
@@ -41,7 +43,7 @@ export default function ProfileScreen() {
                 const userData = userResponse.data;
                 setUser(userData);
                 setEditForm({
-                    realName: userData.realName || '',
+                    realName: userData.realName || userData.name || '',
                     email: userData.email || '',
                     phone: userData.phone || '',
                 });
@@ -114,7 +116,6 @@ export default function ProfileScreen() {
         try {
             const response = await userService.updateProfile(editForm);
             if (response.success) {
-                alert('个人信息更新成功');
                 setEditModalVisible(false);
                 loadData();
             } else {
@@ -139,37 +140,37 @@ export default function ProfileScreen() {
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
                 {/* Header Section */}
-                <View style={styles.headerCard}>
-                    <View style={styles.headerTop}>
-                        <View style={styles.avatarContainer}>
-                            <Text style={styles.avatarText}>
-                                {user?.realName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                            </Text>
-                        </View>
-                        <View style={styles.userInfo}>
-                            <Text style={styles.userName}>{user?.realName || user?.username}</Text>
-                            <Text style={styles.userRole}>{user?.username}</Text>
-                        </View>
+                <RNView style={styles.headerCard}>
+                    <RNView style={styles.headerTop}>
+                        <RNView style={styles.avatarContainer}>
+                            <RNText style={styles.avatarText}>
+                                {user?.realName?.charAt(0) || user?.name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                            </RNText>
+                        </RNView>
+                        <RNView style={styles.userInfo}>
+                            <RNText style={styles.userName}>{user?.realName || user?.name || user?.username}</RNText>
+                            <RNText style={styles.userRole}>{user?.username}</RNText>
+                        </RNView>
                         <TouchableOpacity
                             style={styles.editButton}
                             onPress={() => setEditModalVisible(true)}
                         >
                             <Ionicons name="pencil" size={20} color="#fff" />
                         </TouchableOpacity>
-                    </View>
+                    </RNView>
 
-                    <View style={styles.statsContainer}>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>邮箱</Text>
-                            <Text style={styles.statValue}>{user?.email || '未设置'}</Text>
-                        </View>
-                        <View style={styles.statDivider} />
-                        <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>手机号</Text>
-                            <Text style={styles.statValue}>{user?.phone || '未设置'}</Text>
-                        </View>
-                    </View>
-                </View>
+                    <RNView style={styles.statsContainer}>
+                        <RNView style={styles.statItem}>
+                            <RNText style={styles.statLabel}>邮箱</RNText>
+                            <RNText style={styles.statValue}>{user?.email || '未设置'}</RNText>
+                        </RNView>
+                        <RNView style={styles.statDivider} />
+                        <RNView style={styles.statItem}>
+                            <RNText style={styles.statLabel}>手机号</RNText>
+                            <RNText style={styles.statValue}>{user?.phone || '未设置'}</RNText>
+                        </RNView>
+                    </RNView>
+                </RNView>
 
                 {/* Current Company Section */}
                 <View style={styles.section}>
@@ -349,11 +350,11 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     headerCard: {
-        backgroundColor: Colors.light.tint,
+        backgroundColor: '#667eea',
         borderRadius: 20,
         padding: 24,
         marginBottom: 24,
-        shadowColor: Colors.light.tint,
+        shadowColor: '#667eea',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -452,7 +453,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 12,
-        backgroundColor: '#e6f7ff',
+        backgroundColor: '#f5f7ff',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 16,
@@ -495,8 +496,8 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     companyItemActive: {
-        borderColor: Colors.light.tint,
-        backgroundColor: '#f0f9ff',
+        borderColor: '#667eea',
+        backgroundColor: '#f5f7ff',
     },
     companyItemLeft: {
         flexDirection: 'row',
@@ -513,7 +514,7 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     companyItemIconActive: {
-        backgroundColor: Colors.light.tint,
+        backgroundColor: '#667eea',
     },
     companyItemIconText: {
         fontSize: 18,
@@ -530,14 +531,14 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     companyItemNameActive: {
-        color: Colors.light.tint,
+        color: '#667eea',
     },
     companyItemCode: {
         fontSize: 12,
         color: '#999',
     },
     activeTag: {
-        backgroundColor: Colors.light.tint,
+        backgroundColor: '#667eea',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
@@ -623,7 +624,7 @@ const styles = StyleSheet.create({
     },
     saveButton: {
         flex: 1,
-        backgroundColor: Colors.light.tint,
+        backgroundColor: '#667eea',
         borderRadius: 12,
         padding: 16,
         alignItems: 'center',

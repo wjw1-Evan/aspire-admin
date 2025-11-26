@@ -33,6 +33,7 @@ export interface User {
     email: string;
     phone?: string;
     realName?: string;
+    name?: string; // Backend returns 'name'
     avatar?: string;
     isActive: boolean;
     isEmailVerified: boolean;

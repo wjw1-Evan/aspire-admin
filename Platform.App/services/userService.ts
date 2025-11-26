@@ -19,8 +19,13 @@ export const userService = {
      */
     async updateProfile(request: UpdateProfileRequest): Promise<ApiResponse<User>> {
         return await apiClient.put<any, ApiResponse<User>>(
-            '/api/user/update-profile',
-            request
+            '/api/user/me',
+            {
+                Name: request.realName,
+                Email: request.email,
+                PhoneNumber: request.phone,
+                Avatar: request.avatar,
+            },
         );
     },
 

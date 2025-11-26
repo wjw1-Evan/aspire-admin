@@ -8,7 +8,6 @@ import {
     TextInput,
     KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     View as RNView,
     Text as RNText,
 } from 'react-native';
@@ -138,7 +137,7 @@ export default function ProfileScreen() {
         <View style={commonStyles.pageContainer}>
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
                 <LinearGradient
-                    colors={AppStyles.gradients.primary}
+                    colors={AppStyles.gradients.primary as unknown as readonly [string, string, ...string[]]}
                     style={commonStyles.gradientHeader}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -362,17 +361,11 @@ const styles = StyleSheet.create({
     contentContainer: {
         flexGrow: 1,
         width: '100%',
-        paddingBottom: AppStyles.spacing.xl * 2,
-        ...Platform.select({
-            web: {
-                maxWidth: '100%',
-            },
-            default: {},
-        }),
+       
     },
     contentSection: {
         padding: AppStyles.spacing.lg,
-        paddingTop: 0,
+        paddingTop: AppStyles.spacing.lg,
     },
     headerTop: {
         flexDirection: 'row',

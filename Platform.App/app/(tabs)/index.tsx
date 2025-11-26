@@ -62,7 +62,7 @@ export default function HomeScreen() {
         }
       >
         <LinearGradient
-          colors={AppStyles.gradients.primary}
+          colors={AppStyles.gradients.primary as unknown as readonly [string, string, ...string[]]}
           style={commonStyles.gradientHeader}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -196,15 +196,10 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
     width: '100%',
-    ...Platform.select({
-      web: {
-        maxWidth: '100%',
-      },
-      default: {},
-    }),
+   
   },
   contentSection: {
     padding: AppStyles.spacing.lg,
-    paddingTop: 0,
+    paddingTop: AppStyles.spacing.lg,
   },
 });

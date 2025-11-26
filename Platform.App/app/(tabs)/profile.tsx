@@ -15,6 +15,7 @@ import { Text, View } from '@/components/Themed';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Toast from 'react-native-toast-message';
 import { AppStyles, commonStyles } from '../../constants/AppStyles';
 import { authService } from '../../services/authService';
 import { companyService } from '../../services/companyService';
@@ -33,6 +34,9 @@ export default function ProfileScreen() {
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [editForm, setEditForm] = useState<UpdateProfileRequest>({});
     const [saving, setSaving] = useState(false);
+    
+    // Logout Confirmation Modal State
+    const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
     const loadData = async () => {
         try {
@@ -85,27 +89,46 @@ export default function ProfileScreen() {
                 await authService.getCurrentUser();
                 await loadData();
             } else {
-                alert(response?.errorMessage || '切换企业失败');
+                Toast.show({
+                    type: 'error',
+                    text1: '切换企业失败',
+                    text2: response?.errorMessage || '请稍后重试',
+                    position: 'top',
+                    visibilityTime: 3000,
+                });
             }
         } catch (error: any) {
             console.error('SwitchCompany error:', error);
-            alert(error?.errorMessage || error?.message || '切换企业时发生错误');
+            Toast.show({
+                type: 'error',
+                text1: '切换企业失败',
+                text2: error?.errorMessage || error?.message || '切换企业时发生错误',
+                position: 'top',
+                visibilityTime: 3000,
+            });
         } finally {
             setSwitchingCompany(false);
         }
     };
 
     const handleLogout = () => {
-        if (confirm('确定要退出登录吗？')) {
-            (async () => {
-                await authService.logout();
-            })();
-        }
+        setLogoutModalVisible(true);
+    };
+
+    const confirmLogout = async () => {
+        setLogoutModalVisible(false);
+        await authService.logout();
     };
 
     const handleUpdateProfile = async () => {
         if (!editForm.realName) {
-            alert('请输入真实姓名');
+            Toast.show({
+                type: 'error',
+                text1: '验证失败',
+                text2: '请输入真实姓名',
+                position: 'top',
+                visibilityTime: 3000,
+            });
             return;
         }
 
@@ -115,11 +138,30 @@ export default function ProfileScreen() {
             if (response.success) {
                 setEditModalVisible(false);
                 loadData();
+                Toast.show({
+                    type: 'success',
+                    text1: '更新成功',
+                    text2: '个人信息已更新',
+                    position: 'top',
+                    visibilityTime: 2000,
+                });
             } else {
-                alert(response.errorMessage || '更新失败');
+                Toast.show({
+                    type: 'error',
+                    text1: '更新失败',
+                    text2: response.errorMessage || '请稍后重试',
+                    position: 'top',
+                    visibilityTime: 3000,
+                });
             }
         } catch (error: any) {
-            alert(error.errorMessage || '更新时发生错误');
+            Toast.show({
+                type: 'error',
+                text1: '更新失败',
+                text2: error.errorMessage || '更新时发生错误',
+                position: 'top',
+                visibilityTime: 3000,
+            });
         } finally {
             setSaving(false);
         }
@@ -338,6 +380,38 @@ export default function ProfileScreen() {
                         </View>
                     </View>
                 </KeyboardAvoidingView>
+            </Modal>
+
+            {/* Logout Confirmation Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={logoutModalVisible}
+                onRequestClose={() => setLogoutModalVisible(false)}
+            >
+                <RNView style={styles.logoutModalOverlay}>
+                    <RNView style={styles.logoutModalContent}>
+                        <RNView style={styles.logoutModalIcon}>
+                            <Ionicons name="log-out-outline" size={48} color="#ff4d4f" />
+                        </RNView>
+                        <RNText style={styles.logoutModalTitle}>退出登录</RNText>
+                        <RNText style={styles.logoutModalMessage}>确定要退出登录吗？</RNText>
+                        <RNView style={styles.logoutModalActions}>
+                            <TouchableOpacity
+                                style={styles.logoutModalCancelButton}
+                                onPress={() => setLogoutModalVisible(false)}
+                            >
+                                <RNText style={styles.logoutModalCancelText}>取消</RNText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.logoutModalConfirmButton}
+                                onPress={confirmLogout}
+                            >
+                                <RNText style={styles.logoutModalConfirmText}>确定</RNText>
+                            </TouchableOpacity>
+                        </RNView>
+                    </RNView>
+                </RNView>
             </Modal>
     </View>
     );
@@ -633,6 +707,65 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     saveButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    // Logout Modal Styles
+    logoutModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    logoutModalContent: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 24,
+        width: '85%',
+        maxWidth: 400,
+        alignItems: 'center',
+    },
+    logoutModalIcon: {
+        marginBottom: 16,
+    },
+    logoutModalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 8,
+    },
+    logoutModalMessage: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 24,
+    },
+    logoutModalActions: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    logoutModalCancelButton: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 12,
+        padding: 14,
+        alignItems: 'center',
+    },
+    logoutModalCancelText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#666',
+    },
+    logoutModalConfirmButton: {
+        flex: 1,
+        backgroundColor: '#ff4d4f',
+        borderRadius: 12,
+        padding: 14,
+        alignItems: 'center',
+    },
+    logoutModalConfirmText: {
         fontSize: 16,
         fontWeight: '600',
         color: '#fff',

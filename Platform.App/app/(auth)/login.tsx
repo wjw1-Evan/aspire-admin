@@ -31,14 +31,15 @@ export default function LoginScreen() {
     const [passwordFocused, setPasswordFocused] = useState(false);
     const [captchaFocused, setCaptchaFocused] = useState(false);
 
-    // 显示错误消息
+    // 显示错误消息（参考退出登录 Modal 的样式设计）
     const showErrorToast = (message: string) => {
         Toast.show({
             type: 'error',
-            text1: '错误',
+            text1: '登录失败',
             text2: message,
             position: 'top',
             visibilityTime: 3000,
+            topOffset: 60,
         });
     };
 

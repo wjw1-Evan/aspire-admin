@@ -4,8 +4,11 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
+import { Ionicons } from '@expo/vector-icons';
+import { AppStyles } from '../constants/AppStyles';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { authService } from '../services/authService';
@@ -95,8 +98,104 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
-      <Toast />
+      <Toast 
+        config={{
+          success: ({ text1, text2 }) => (
+            <View style={toastStyles.successContainer}>
+              <View style={toastStyles.iconContainer}>
+                <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+              </View>
+              <View style={toastStyles.textContainer}>
+                <Text style={toastStyles.text1}>{text1}</Text>
+                {text2 && <Text style={toastStyles.text2}>{text2}</Text>}
+              </View>
+            </View>
+          ),
+          error: ({ text1, text2 }) => (
+            <View style={toastStyles.errorContainer}>
+              <View style={toastStyles.iconContainer}>
+                <Ionicons name="close-circle" size={24} color="#ff4d4f" />
+              </View>
+              <View style={toastStyles.textContainer}>
+                <Text style={toastStyles.text1}>{text1}</Text>
+                {text2 && <Text style={toastStyles.text2}>{text2}</Text>}
+              </View>
+            </View>
+          ),
+          info: ({ text1, text2 }) => (
+            <View style={toastStyles.infoContainer}>
+              <View style={toastStyles.iconContainer}>
+                <Ionicons name="information-circle" size={24} color="#667eea" />
+              </View>
+              <View style={toastStyles.textContainer}>
+                <Text style={toastStyles.text1}>{text1}</Text>
+                {text2 && <Text style={toastStyles.text2}>{text2}</Text>}
+              </View>
+            </View>
+          ),
+        }}
+      />
     </ThemeProvider>
   );
 }
+
+// Toast 自定义样式（参考退出登录 Modal 的设计风格）
+const toastStyles = StyleSheet.create({
+  successContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: AppStyles.borderRadius.lg,
+    padding: AppStyles.spacing.md,
+    minHeight: 60,
+    width: '90%',
+    maxWidth: 400,
+    borderLeftWidth: 4,
+    borderLeftColor: AppStyles.colors.success,
+    ...AppStyles.shadows.lg,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: AppStyles.borderRadius.lg,
+    padding: AppStyles.spacing.md,
+    minHeight: 60,
+    width: '90%',
+    maxWidth: 400,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ff4d4f',
+    ...AppStyles.shadows.lg,
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: AppStyles.borderRadius.lg,
+    padding: AppStyles.spacing.md,
+    minHeight: 60,
+    width: '90%',
+    maxWidth: 400,
+    borderLeftWidth: 4,
+    borderLeftColor: AppStyles.colors.primary,
+    ...AppStyles.shadows.lg,
+  },
+  iconContainer: {
+    marginRight: AppStyles.spacing.md,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  text1: {
+    fontSize: AppStyles.fontSize.md,
+    fontWeight: '600',
+    color: AppStyles.colors.text,
+    marginBottom: 2,
+  },
+  text2: {
+    fontSize: AppStyles.fontSize.sm,
+    color: AppStyles.colors.textSecondary,
+    lineHeight: 18,
+  },
+});
 

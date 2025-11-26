@@ -26,6 +26,10 @@ export default function LoginScreen() {
     const [captchaImage, setCaptchaImage] = useState('');
     const [captchaAnswer, setCaptchaAnswer] = useState('');
     const [needCaptcha, setNeedCaptcha] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [usernameFocused, setUsernameFocused] = useState(false);
+    const [passwordFocused, setPasswordFocused] = useState(false);
+    const [captchaFocused, setCaptchaFocused] = useState(false);
 
     // Fetch captcha image
     const fetchCaptcha = async () => {
@@ -135,10 +139,11 @@ export default function LoginScreen() {
             >
                 {/* Gradient Header */}
                 <LinearGradient
-                    colors={['#667eea', '#764ba2']}
+                    colors={['#667eea', '#764ba2', '#f093fb']}
                     style={styles.header}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
+                    locations={[0, 0.5, 1]}
                 >
                     <View style={styles.logoContainer}>
                         <Ionicons name="shield-checkmark" size={60} color="#fff" />
@@ -150,14 +155,24 @@ export default function LoginScreen() {
                 <View style={styles.formContainer}>
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>用户名</Text>
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="person-outline" size={20} color="#999" style={styles.inputIcon} />
+                        <View style={[
+                            styles.inputWrapper,
+                            usernameFocused && styles.inputWrapperFocused
+                        ]}>
+                            <Ionicons 
+                                name="person-outline" 
+                                size={20} 
+                                color={usernameFocused ? '#667eea' : '#999'} 
+                                style={styles.inputIcon} 
+                            />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入用户名"
                                 placeholderTextColor="#999"
                                 value={username}
                                 onChangeText={setUsername}
+                                onFocus={() => setUsernameFocused(true)}
+                                onBlur={() => setUsernameFocused(false)}
                                 autoCapitalize="none"
                                 autoCorrect={false}
                                 editable={!loading}
@@ -167,18 +182,39 @@ export default function LoginScreen() {
 
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>密码</Text>
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="lock-closed-outline" size={20} color="#999" style={styles.inputIcon} />
+                        <View style={[
+                            styles.inputWrapper,
+                            passwordFocused && styles.inputWrapperFocused
+                        ]}>
+                            <Ionicons 
+                                name="lock-closed-outline" 
+                                size={20} 
+                                color={passwordFocused ? '#667eea' : '#999'} 
+                                style={styles.inputIcon} 
+                            />
                             <TextInput
                                 style={styles.input}
                                 placeholder="请输入密码"
                                 placeholderTextColor="#999"
                                 value={password}
                                 onChangeText={setPassword}
-                                secureTextEntry
+                                onFocus={() => setPasswordFocused(true)}
+                                onBlur={() => setPasswordFocused(false)}
+                                secureTextEntry={!showPassword}
                                 autoCapitalize="none"
                                 editable={!loading}
                             />
+                            <TouchableOpacity
+                                onPress={() => setShowPassword(!showPassword)}
+                                style={styles.eyeIcon}
+                                disabled={loading}
+                            >
+                                <Ionicons 
+                                    name={showPassword ? 'eye-outline' : 'eye-off-outline'} 
+                                    size={20} 
+                                    color="#999" 
+                                />
+                            </TouchableOpacity>
                         </View>
                     </View>
 
@@ -186,14 +222,25 @@ export default function LoginScreen() {
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>验证码</Text>
                             <View style={styles.captchaContainer}>
-                                <View style={[styles.inputWrapper, { flex: 1 }]}>
-                                    <Ionicons name="shield-outline" size={20} color="#999" style={styles.inputIcon} />
+                                <View style={[
+                                    styles.inputWrapper, 
+                                    { flex: 1 },
+                                    captchaFocused && styles.inputWrapperFocused
+                                ]}>
+                                    <Ionicons 
+                                        name="shield-outline" 
+                                        size={20} 
+                                        color={captchaFocused ? '#667eea' : '#999'} 
+                                        style={styles.inputIcon} 
+                                    />
                                     <TextInput
                                         style={styles.input}
                                         placeholder="请输入验证码"
                                         placeholderTextColor="#999"
                                         value={captchaAnswer}
                                         onChangeText={setCaptchaAnswer}
+                                        onFocus={() => setCaptchaFocused(true)}
+                                        onBlur={() => setCaptchaFocused(false)}
                                         autoCapitalize="characters"
                                         autoCorrect={false}
                                         editable={!loading}
@@ -204,19 +251,19 @@ export default function LoginScreen() {
                                     style={styles.captchaImageContainer}
                                     onPress={fetchCaptcha}
                                     disabled={loading}
+                                    activeOpacity={0.7}
                                 >
                                     {captchaImage ? (
-                                        <img
-                                            src={`data:image/png;base64,${captchaImage}`}
-                                            alt="验证码"
-                                            style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'contain',
-                                            }}
+                                        <Image
+                                            source={{ uri: `data:image/png;base64,${captchaImage}` }}
+                                            style={styles.captchaImage}
+                                            resizeMode="contain"
                                         />
                                     ) : (
-                                        <Text style={styles.captchaPlaceholder}>点击刷新</Text>
+                                        <View style={styles.captchaPlaceholderContainer}>
+                                            <Ionicons name="refresh-outline" size={20} color="#999" />
+                                            <Text style={styles.captchaPlaceholder}>点击刷新</Text>
+                                        </View>
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -230,10 +277,11 @@ export default function LoginScreen() {
                         disabled={loading}
                     >
                         <LinearGradient
-                            colors={loading ? ['#999', '#999'] : ['#667eea', '#764ba2']}
+                            colors={loading ? ['#cbd5e0', '#a0aec0'] : ['#667eea', '#764ba2', '#f093fb']}
                             style={styles.button}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
+                            locations={loading ? undefined : [0, 0.5, 1]}
                         >
                             {loading ? (
                                 <ActivityIndicator color="#fff" />
@@ -261,136 +309,190 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f5f7fa',
     },
     scrollContent: {
         flexGrow: 1,
     },
     header: {
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
-        paddingBottom: 40,
+        paddingTop: Platform.OS === 'ios' ? 70 : 50,
+        paddingBottom: 50,
         paddingHorizontal: 20,
         alignItems: 'center',
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
+        borderBottomLeftRadius: 35,
+        borderBottomRightRadius: 35,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 8,
     },
     logoContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: 'rgba(255,255,255,0.25)',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 20,
-        borderWidth: 3,
-        borderColor: 'rgba(255,255,255,0.3)',
+        marginBottom: 24,
+        borderWidth: 4,
+        borderColor: 'rgba(255,255,255,0.4)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
     },
     title: {
-        fontSize: 32,
-        fontWeight: 'bold',
+        fontSize: 36,
+        fontWeight: '800',
         color: '#fff',
-        marginBottom: 8,
+        marginBottom: 10,
         textAlign: 'center',
+        letterSpacing: 0.5,
     },
     subtitle: {
         fontSize: 16,
-        color: 'rgba(255,255,255,0.9)',
+        color: 'rgba(255,255,255,0.95)',
         textAlign: 'center',
+        fontWeight: '400',
     },
     formContainer: {
-        padding: 24,
-        marginTop: -20,
+        padding: 28,
+        paddingTop: 48,
+        marginTop: -25,
     },
     inputContainer: {
-        marginBottom: 20,
+        marginBottom: 22,
     },
     label: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '600',
-        color: '#333',
-        marginBottom: 8,
+        color: '#2d3748',
+        marginBottom: 10,
+        letterSpacing: 0.3,
     },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e1e8ed',
-        paddingHorizontal: 16,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: '#e2e8f0',
+        paddingHorizontal: 18,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
         elevation: 2,
+        minHeight: 56,
+    },
+    inputWrapperFocused: {
+        borderColor: '#667eea',
+        borderWidth: 2,
+        shadowColor: '#667eea',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
     },
     inputIcon: {
-        marginRight: 12,
+        marginRight: 14,
     },
     input: {
         flex: 1,
-        padding: 16,
+        paddingVertical: 16,
+        paddingHorizontal: 4,
         fontSize: 16,
-        color: '#333',
+        color: '#1a202c',
+        fontWeight: '400',
+    },
+    eyeIcon: {
+        padding: 4,
+        marginLeft: 8,
     },
     button: {
-        borderRadius: 12,
+        borderRadius: 14,
         padding: 18,
         alignItems: 'center',
-        marginTop: 12,
+        marginTop: 16,
         shadowColor: '#667eea',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        elevation: 8,
     },
     buttonContent: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
     },
     buttonText: {
         color: '#fff',
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
     registerContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 24,
+        alignItems: 'center',
+        marginTop: 28,
+        paddingVertical: 8,
     },
     registerText: {
-        fontSize: 14,
-        color: '#666',
+        fontSize: 15,
+        color: '#64748b',
+        fontWeight: '400',
     },
     registerLink: {
-        fontSize: 14,
+        fontSize: 15,
         color: '#667eea',
-        fontWeight: '600',
-        marginLeft: 4,
+        fontWeight: '700',
+        marginLeft: 6,
+        textDecorationLine: 'underline',
     },
     captchaContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 14,
     },
     captchaImageContainer: {
-        width: 120,
+        width: 130,
         height: 56,
-        borderWidth: 1,
-        borderColor: '#e1e8ed',
-        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: '#e2e8f0',
+        borderRadius: 14,
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    captchaImage: {
+        width: '100%',
+        height: '100%',
+    },
+    captchaPlaceholderContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
     },
     captchaPlaceholder: {
-        fontSize: 12,
-        color: '#999',
+        fontSize: 11,
+        color: '#94a3b8',
+        fontWeight: '500',
+        marginTop: 2,
     },
     captchaHint: {
         fontSize: 12,
-        color: '#999',
-        marginTop: 4,
+        color: '#94a3b8',
+        marginTop: 6,
+        textAlign: 'center',
+        fontStyle: 'italic',
     },
 });

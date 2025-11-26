@@ -196,7 +196,12 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
     width: '100%',
-   
+    ...Platform.select({
+      web: {
+        maxWidth: '100%',
+      },
+      default: {},
+    }),
   },
   contentSection: {
     padding: AppStyles.spacing.lg,

@@ -91,7 +91,7 @@ export const commonStyles = StyleSheet.create({
     // 页面容器
     pageContainer: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: AppStyles.colors.background,
     },
 
     // 渐变头部

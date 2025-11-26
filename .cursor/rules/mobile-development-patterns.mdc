@@ -90,40 +90,88 @@ export default function TabLayout() {
 
 ### 导航守卫模式
 
+#### 根布局认证守卫实现
+
 ```typescript
-// ✅ 导航守卫实现
-export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+// ✅ 实际实现：在 app/_layout.tsx 中实现认证守卫
+function RootLayoutNav() {
   const router = useRouter();
+  const segments = useSegments();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+  // 检查认证状态
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/(auth)/login');
+    const checkAuth = async () => {
+      const authenticated = await authService.isAuthenticated();
+      setIsAuthenticated(authenticated);
+    };
+
+    checkAuth();
+
+    // 订阅认证状态变化
+    const listener = (authenticated: boolean) => {
+      setIsAuthenticated(authenticated);
+    };
+    authService.addAuthListener(listener);
+
+    return () => {
+      authService.removeAuthListener(listener);
+    };
+  }, []);
+
+  // 根据认证状态重定向
+  useEffect(() => {
+    if (isAuthenticated === null) return; // 还在检查中
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      // 未认证且不在认证页面，重定向到登录
+      router.replace('/login');
+    } else if (isAuthenticated && inAuthGroup) {
+      // 已认证且在认证页面，重定向到主页
+      router.replace('/');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, segments]);
 
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  return <>{children}</>;
-}
-
-// 使用示例
-export default function TabLayout() {
   return (
-    <AuthGuard>
-      <Tabs>
-        <Tabs.Screen name="index" options={{ title: '首页' }} />
-        <Tabs.Screen name="profile" options={{ title: '个人中心' }} />
-      </Tabs>
-    </AuthGuard>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+      <Toast /> {/* 必须在根布局中添加 Toast */}
+    </ThemeProvider>
   );
 }
+```
+
+#### 认证服务监听机制
+
+```typescript
+// ✅ 认证服务提供监听机制
+// Platform.App/services/authService.ts
+
+type AuthListener = (isAuthenticated: boolean) => void;
+const listeners: AuthListener[] = [];
+
+const notifyListeners = (isAuthenticated: boolean) => {
+  listeners.forEach(listener => listener(isAuthenticated));
+};
+
+export const authService = {
+  addAuthListener: (listener: AuthListener) => {
+    listeners.push(listener);
+  },
+  removeAuthListener: (listener: AuthListener) => {
+    const index = listeners.indexOf(listener);
+    if (index > -1) listeners.splice(index, 1);
+  },
+  notifyLoginSuccess: () => {
+    notifyListeners(true);
+  },
+  // ... 其他方法
+};
 ```
 
 ## 🎨 组件开发规范
@@ -497,6 +545,25 @@ const useUserList = () => {
 ### 使用 Expo Toast（react-native-toast-message）
 
 **禁止使用 `Alert.alert()` 和 `window.alert()`，统一使用 `react-native-toast-message` 显示错误提示和消息通知。**
+
+#### 根布局配置
+
+```typescript
+// ✅ 实际实现：在 app/_layout.tsx 根布局中配置 Toast
+import Toast from 'react-native-toast-message';
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      </Stack>
+      <Toast /> {/* 必须在根布局中添加 Toast 组件 */}
+    </ThemeProvider>
+  );
+}
+```
 
 #### 1. 根布局配置
 

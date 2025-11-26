@@ -274,20 +274,20 @@ export const errorConfig: RequestConfig = {
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/types/unified-api';
 
-/** 获取当前用户 GET /api/currentUser */
+/** 获取当前用户 GET /api/auth/current-user */
 export async function currentUser(options?: { [key: string]: any }) {
-  return request<ApiResponse<API.CurrentUser>>('/api/currentUser', {
+  return request<ApiResponse<API.CurrentUser>>('/api/auth/current-user', {
     method: 'GET',
     ...(options || {}),
   });
 }
 
-/** 登录接口 POST /api/login/account */
+/** 登录接口 POST /api/auth/login */
 export async function login(
   body: API.LoginParams, 
   options?: { [key: string]: any }
 ) {
-  return request<ApiResponse<API.LoginData>>('/api/login/account', {
+  return request<ApiResponse<API.LoginData>>('/api/auth/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -297,12 +297,12 @@ export async function login(
   });
 }
 
-/** 刷新token接口 POST /api/refresh-token */
+/** 刷新token接口 POST /api/auth/refresh-token */
 export async function refreshToken(
   body: API.RefreshTokenRequest, 
   options?: { [key: string]: any }
 ) {
-  return request<API.ApiResponse<API.RefreshTokenResult>>('/api/refresh-token', {
+  return request<API.ApiResponse<API.RefreshTokenResult>>('/api/auth/refresh-token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -312,9 +312,9 @@ export async function refreshToken(
   });
 }
 
-/** 退出登录 POST /api/login/outLogin */
+/** 退出登录 POST /api/auth/logout */
 export async function outLogin(options?: { [key: string]: any }) {
-  return request<Record<string, any>>('/api/login/outLogin', {
+  return request<Record<string, any>>('/api/auth/logout', {
     method: 'POST',
     ...(options || {}),
   });

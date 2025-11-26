@@ -32,12 +32,13 @@ description: 认证系统开发规范和最佳实践
 ```typescript
 // ✅ 推荐：统一的认证接口
 interface AuthEndpoints {
-  login: 'POST /login/account';           // 用户登录
-  logout: 'POST /login/outLogin';         // 用户登出
-  currentUser: 'GET /currentUser';        // 获取当前用户
-  register: 'POST /register';             // 用户注册
-  changePassword: 'POST /change-password'; // 修改密码
-  captcha: 'GET /login/captcha';          // 获取验证码
+  login: 'POST /api/auth/login';           // 用户登录
+  logout: 'POST /api/auth/logout';         // 用户登出
+  currentUser: 'GET /api/auth/current-user'; // 获取当前用户
+  register: 'POST /api/auth/register';     // 用户注册
+  changePassword: 'POST /api/auth/change-password'; // 修改密码
+  captcha: 'GET /api/auth/captcha';        // 获取验证码
+  refreshToken: 'POST /api/auth/refresh-token'; // 刷新令牌
 }
 ```
 
@@ -50,11 +51,17 @@ export class AuthService {
   
   static async login(credentials: LoginRequest): Promise<LoginResult> {
     try {
-      const response = await apiClient.post(`${this.BASE_URL}/login/account`, credentials);
-      const { token, currentAuthority } = response.data;
+      const response = await apiClient.post(`${this.BASE_URL}/auth/login`, credentials);
+      const { token, refreshToken, expiresAt } = response.data;
       
-      // 存储 token
+      // 存储 token 和 refreshToken
       await AsyncStorage.setItem('auth_token', token);
+      if (refreshToken) {
+        await AsyncStorage.setItem('auth_refresh_token', refreshToken);
+      }
+      if (expiresAt) {
+        await AsyncStorage.setItem('auth_token_expires', expiresAt.toString());
+      }
       
       return response.data;
     } catch (error) {
@@ -66,10 +73,12 @@ export class AuthService {
   static async logout(): Promise<void> {
     try {
       // 调用后端登出接口
-      await apiClient.post(`${this.BASE_URL}/login/outLogin`);
+      await apiClient.post(`${this.BASE_URL}/auth/logout`);
       
       // 清除本地存储
       await AsyncStorage.removeItem('auth_token');
+      await AsyncStorage.removeItem('auth_refresh_token');
+      await AsyncStorage.removeItem('auth_token_expires');
       await AsyncStorage.removeItem('user_info');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -78,7 +87,7 @@ export class AuthService {
   
   static async getCurrentUser(): Promise<CurrentUser> {
     try {
-      const response = await apiClient.get(`${this.BASE_URL}/currentUser`);
+      const response = await apiClient.get(`${this.BASE_URL}/auth/current-user`);
       return response.data;
     } catch (error) {
       console.error('Failed to get current user:', error);
@@ -321,11 +330,209 @@ LoginResult → 保存token → 获取用户信息 → 更新状态
 验证响应 → 更新用户状态
 ```
 
-## 🔄 使用token刷新功能
+## 🔄 Token 刷新机制
 
-### 刷新Token机制
+### 刷新 Token 机制
 
-项目已实现完整的token刷新功能，提升用户体验和安全性：
+项目已实现完整的 token 刷新功能，提升用户体验和安全性。前后端使用统一的刷新流程：
+
+#### 后端实现
+
+```csharp
+// ✅ 后端 JWT 服务实现
+// Platform.ApiService/Services/JwtService.cs
+
+public class JwtService : IJwtService
+{
+    // 生成访问 Token
+    public string GenerateToken(AppUser user)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
+            new(ClaimTypes.Name, user.Username),
+            new(ClaimTypes.Email, user.Email ?? string.Empty),
+            new("userId", user.Id ?? string.Empty),
+            new("username", user.Username)
+        };
+        
+        // ⚠️ 不再在 JWT token 中包含 CurrentCompanyId
+        // 所有企业ID相关的逻辑应从数据库的 user.CurrentCompanyId 获取
+    }
+
+    // 生成刷新 Token
+    public string GenerateRefreshToken(AppUser user)
+    {
+        var claims = new List<Claim>
+        {
+            new("type", "refresh"),  // 标记为刷新 token
+            new("userId", user.Id ?? string.Empty),
+            new("username", user.Username),
+            // ⚠️ 不再在 RefreshToken 中包含 companyId
+        };
+    }
+
+    // 验证刷新 Token
+    public ClaimsPrincipal? ValidateRefreshToken(string refreshToken)
+    {
+        // 验证 token 类型为 "refresh"
+        var tokenType = principal.FindFirst("type")?.Value;
+        if (tokenType != "refresh")
+        {
+            return null;
+        }
+        return principal;
+    }
+}
+```
+
+```csharp
+// ✅ 后端认证服务实现
+// Platform.ApiService/Services/AuthService.cs
+
+public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
+{
+    // 1. 验证刷新 token
+    var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
+    if (principal == null)
+    {
+        return new RefreshTokenResult { Status = "error", ErrorMessage = "无效的刷新token" };
+    }
+
+    // 2. 从刷新 token 中获取用户ID
+    var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
+    
+    // 3. 从数据库获取用户信息
+    var user = await _userFactory.GetByIdAsync(userId);
+    if (user == null || !user.IsActive)
+    {
+        return new RefreshTokenResult { Status = "error", ErrorMessage = "用户不存在或已被禁用" };
+    }
+
+    // 4. 生成新的访问 token 和刷新 token
+    var newToken = _jwtService.GenerateToken(user);
+    var newRefreshToken = _jwtService.GenerateRefreshToken(user);
+
+    // 5. 返回新的 token 信息
+    return new RefreshTokenResult
+    {
+        Status = "ok",
+        Token = newToken,
+        RefreshToken = newRefreshToken,
+        ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtService.ExpirationMinutes)
+    };
+}
+```
+
+#### 前端 Token 刷新管理器（防止并发刷新）
+
+```typescript
+// ✅ 管理后台 Token 刷新管理器实现
+// Platform.Admin/src/utils/tokenRefreshManager.ts
+
+class TokenRefreshManager {
+  private static refreshPromise: Promise<TokenRefreshResult | null> | null = null;
+
+  /**
+   * 刷新 token
+   * 如果已经有刷新请求在进行，等待其完成并返回相同的结果
+   */
+  static async refresh(refreshToken: string): Promise<TokenRefreshResult | null> {
+    // 如果已经有刷新请求在进行，等待其完成
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    // 创建新的刷新请求
+    this.refreshPromise = this.doRefresh(refreshToken);
+
+    try {
+      const result = await this.refreshPromise;
+      return result;
+    } finally {
+      // 清除刷新 Promise，允许下次刷新
+      this.refreshPromise = null;
+    }
+  }
+
+  /**
+   * 使用新的 token 重试原始请求
+   */
+  static retryRequest(originalRequest: any, newToken: string): Promise<any> {
+    originalRequest._retry = true;
+    originalRequest.headers = {
+      ...originalRequest.headers,
+      Authorization: `Bearer ${newToken}`,
+    };
+    return requestClient(originalRequest);
+  }
+}
+```
+
+#### 前端自动刷新流程
+
+```typescript
+// ✅ 管理后台响应拦截器中的 token 刷新
+// Platform.Admin/src/app.tsx
+
+async function handle401Error(error: any): Promise<any> {
+  const is401Error = error.response?.status === 401;
+  if (!is401Error) return null;
+
+  const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
+  const isRetryRequest = error.config?._retry;
+
+  // 避免刷新 token 递归和重试循环
+  if (isRefreshTokenRequest || isRetryRequest) {
+    return null;
+  }
+
+  // 尝试刷新 token
+  const refreshToken = tokenUtils.getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+
+  // 使用 TokenRefreshManager 刷新 token（防止并发刷新）
+  const refreshResult = await TokenRefreshManager.refresh(refreshToken);
+
+  if (refreshResult?.success && refreshResult.token) {
+    // token 刷新成功，重试原始请求
+    return TokenRefreshManager.retryRequest(error.config, refreshResult.token);
+  }
+
+  // token 刷新失败，交给 errorHandler 统一处理
+  return null;
+}
+```
+
+#### 移动端 Token 刷新
+
+```typescript
+// ✅ 移动端 Token 刷新实现
+// Platform.App/services/authService.ts
+
+async refreshToken(): Promise<ApiResponse<LoginResponse>> {
+  const refreshToken = await storage.get<string>(STORAGE_KEYS.REFRESH_TOKEN);
+  
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await apiClient.post<any, ApiResponse<LoginResponse>>(
+    '/api/auth/refresh-token',
+    { refreshToken } as RefreshTokenRequest
+  );
+
+  // 更新存储的 token
+  if (response.success && response.data) {
+    await setToken(response.data.token);
+    await storage.set(STORAGE_KEYS.REFRESH_TOKEN, response.data.refreshToken);
+  }
+
+  return response;
+}
+```
 
 #### 后端实现
 
@@ -396,120 +603,76 @@ public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest requ
 }
 ```
 
-#### 移动端实现
-```typescript
-// ✅ 推荐：认证服务中的刷新token方法
-async refreshToken(refreshToken: string): Promise<ApiResponse<RefreshTokenResult>> {
-  try {
-    const request: RefreshTokenRequest = { refreshToken };
-    const response = await apiService.post<RefreshTokenResult>('/refresh-token', request);
-    
-    if (response.status === 'ok' && response.token && response.refreshToken) {
-      // 保存新的token和刷新token
-      const expiresAt = response.expiresAt ? new Date(response.expiresAt).getTime() : undefined;
-      await apiService.setTokens(response.token, response.refreshToken, expiresAt);
-      
-      return {
-        success: true,
-        data: response
-      };
-    } else {
-      return {
-        success: false,
-        errorMessage: response.errorMessage || '刷新token失败'
-      };
-    }
-  } catch (error) {
-    console.error('Refresh token error:', error);
-    return {
-      success: false,
-      errorMessage: '刷新token失败'
-    };
-  }
-}
+### Token 存储和管理
 
-// ✅ 推荐：认证上下文中的自动刷新逻辑
-const refreshAuth = useCallback(async () => {
-  try {
-    // 检查 token 是否存在且未过期
-    if (state.token && !isTokenExpired()) {
-      // 尝试获取最新用户信息
-      const userResponse = await authService.getCurrentUser();
-      if (userResponse.success && userResponse.data) {
-        dispatch({ type: 'AUTH_UPDATE_USER', payload: userResponse.data });
-        return;
-      }
+#### 管理后台 Token 工具
+
+```typescript
+// ✅ 管理后台 Token 工具实现
+// Platform.Admin/src/utils/token.ts
+
+export const tokenUtils = {
+  // 保存 token
+  setToken: (token: string) => {
+    localStorage.setItem(TOKEN_KEY, token);
+  },
+
+  // 获取 token
+  getToken: (): string | null => {
+    return localStorage.getItem(TOKEN_KEY);
+  },
+
+  // 设置所有 token 信息
+  setTokens: (token: string, refreshToken: string, expiresAt?: number) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    if (expiresAt) {
+      localStorage.setItem(TOKEN_EXPIRES_KEY, expiresAt.toString());
     }
-    
-    // 如果 token 无效或过期，尝试刷新 token
-    if (state.refreshToken) {
-      const refreshResult = await authService.refreshToken(state.refreshToken);
-      if (refreshResult.success && refreshResult.data) {
-        const { token, refreshToken, expiresAt } = refreshResult.data;
-        const tokenExpiresAt = expiresAt ? new Date(expiresAt).getTime() : undefined;
-        dispatch({
-          type: 'AUTH_REFRESH_TOKEN',
-          payload: { token, refreshToken, expiresAt: tokenExpiresAt },
-        });
-        
-        // 获取用户信息
-        const userResponse = await authService.getCurrentUser();
-        if (userResponse.success && userResponse.data) {
-          dispatch({ type: 'AUTH_UPDATE_USER', payload: userResponse.data });
-        }
-        return;
-      }
+  },
+
+  // 清除所有 token
+  clearAllTokens: () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(TOKEN_EXPIRES_KEY);
+  },
+
+  // 检查 token 是否过期（带缓冲时间）
+  isTokenExpired: (): boolean => {
+    const expiresAt = tokenUtils.getTokenExpiresAt();
+    if (!expiresAt) {
+      return false;
     }
-    
-    // 如果刷新失败，执行登出
-    await logout();
-  } catch (error) {
-    console.error('AuthContext: Refresh auth failed:', error);
-    await logout();
-  }
-}, [state.token, state.refreshToken, state.tokenExpiresAt, logout]);
+    // 提前 5 分钟认为 token 过期，以便有时间刷新
+    return Date.now() >= expiresAt - TOKEN_EXPIRY_BUFFER;
+  },
+};
 ```
 
-#### 管理后台实现
+#### 移动端 Token 缓存机制
+
 ```typescript
-// ✅ 推荐：自动token刷新拦截器
-const responseInterceptors = [
-  {
-    onFulfilled: (response: any) => response,
-    onRejected: async (error: any) => {
-      const { response } = error;
-      
-      if (response?.status === 401) {
-        console.log('401 Unauthorized - attempting to refresh token');
-        
-        const refreshToken = tokenUtils.getRefreshToken();
-        if (refreshToken) {
-          try {
-            const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
-            const refreshResult = await refreshTokenAPI({ refreshToken });
-            
-            if (refreshResult.status === 'ok' && refreshResult.token && refreshResult.refreshToken) {
-              const expiresAt = refreshResult.expiresAt ? new Date(refreshResult.expiresAt).getTime() : undefined;
-              tokenUtils.setTokens(refreshResult.token, refreshResult.refreshToken, expiresAt);
-              
-              // 重试原始请求
-              const originalRequest = error.config;
-              originalRequest.headers.Authorization = `Bearer ${refreshResult.token}`;
-              return request(originalRequest);
-            }
-          } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-          }
-        }
-        
-        // 刷新失败，跳转到登录页
-        window.location.href = '/user/login';
-      }
-      
-      return Promise.reject(error);
-    },
-  },
-];
+// ✅ 移动端 Token 缓存实现（避免 AsyncStorage 时序问题）
+// Platform.App/services/api.ts
+
+let tokenCache: string | null = null;
+
+export const setToken = async (token: string): Promise<void> => {
+  tokenCache = token;  // 先更新内存缓存
+  await storage.set(STORAGE_KEYS.ACCESS_TOKEN, token);  // 再更新持久化存储
+};
+
+export const getToken = async (): Promise<string | null> => {
+  if (tokenCache) {
+    return tokenCache;  // 优先从内存缓存读取
+  }
+  const token = await storage.get<string>(STORAGE_KEYS.ACCESS_TOKEN);
+  if (token) {
+    tokenCache = token;  // 从存储读取后更新缓存
+  }
+  return token;
+};
 ```
 
 ### 刷新Token配置

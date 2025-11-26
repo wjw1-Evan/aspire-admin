@@ -554,7 +554,7 @@ curl http://localhost:15000/apiservice/openapi/v1.json | jq '.paths | length'
 curl http://localhost:15000/apiservice/openapi/v1.json | jq '.components.securitySchemes'
 
 # 4. 测试认证
-curl -H "Authorization: Bearer <your-token>" http://localhost:15000/apiservice/api/currentUser
+curl -H "Authorization: Bearer <your-token>" http://localhost:15000/apiservice/api/auth/current-user
 ```
 
 ## 🎯 记住

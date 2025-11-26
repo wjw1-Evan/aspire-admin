@@ -81,7 +81,29 @@
 - `docs/INDEX.md` — 文档索引与跳转
 - `docs/features/` — 功能说明、数据初始化、菜单架构等专题
 - `docs/reports/` — 架构演进与优化总结
+  - [Rules 更新总结报告](mdc:docs/reports/RULES-UPDATE-SUMMARY.md) — 最新的规则更新记录
 - Cursor 官方文档：[https://docs.cursor.com/context/rules-for-ai](https://docs.cursor.com/context/rules-for-ai)
+
+## 📝 最近更新
+
+**2024-12-19**: 根据当前代码库全面更新和清理了所有规则文件，确保规则与实际实现保持一致。
+
+### 更新内容
+- ✅ 更新项目结构规范（访问地址、服务编排）
+- ✅ 更新前端开发规范（错误处理、API 集成、token 刷新）
+- ✅ 更新移动端开发规范（认证守卫、API 集成、token 缓存）
+- ✅ 更新 API 集成规范（错误处理、token 刷新实现）
+- ✅ 更新认证系统规范（前后端统一认证流程）
+- ✅ 更新后端开发规范（JSON 序列化、SignalR 配置）
+
+### 清理内容
+- ✅ 清理过时的 API 端点示例（`/api/login/account` → `/api/auth/login` 等）
+- ✅ 更新所有规则文件中的 API 端点引用，确保与代码库一致
+- ✅ 验证并保留已废弃内容的正确标记（BaseService、BaseRepository、PermissionControl 等）
+
+详细内容请参阅：
+- [Rules 更新总结报告](mdc:docs/reports/RULES-UPDATE-SUMMARY.md) - 更新内容详情
+- [Rules 清理总结报告](mdc:docs/reports/RULES-CLEANUP-SUMMARY.md) - 清理内容详情
 
 如需扩展或调整规则，请在 PR 中一并说明，确保团队成员了解最新规范。祝编码顺利！
 

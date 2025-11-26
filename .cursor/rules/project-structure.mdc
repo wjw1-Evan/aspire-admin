@@ -110,13 +110,13 @@ cd Platform.App && npm start
 
 ### 访问地址
 
-- **Aspire Dashboard**: <http://localhost:15003> (服务监控面板)
+- **Aspire Dashboard**: <http://localhost:15003> (服务监控面板，包含 Scalar API 文档链接)
 - **管理后台**: <http://localhost:15001>
 - **移动应用**: <http://localhost:15002>
 - **API 网关**: <http://localhost:15000>
-- **API 文档**: <http://localhost:15000/scalar/v1>
-- **数据初始化服务**: <http://localhost:15000/datainitializer> (内部服务)
-- **MongoDB Express**: <http://localhost:8081> (数据库管理)
+- **API 文档**: 通过 Aspire Dashboard → Resources → Scalar API Reference 访问（开发环境）
+- **OpenAPI JSON**: <http://localhost:15000/apiservice/openapi/v1.json>
+- **MongoDB Express**: 通过网关访问 <http://localhost:15000/mongo-express> 或直接访问 <http://localhost:8081>
 
 ### 默认账户
 
@@ -186,7 +186,10 @@ builder.AddNpmApp("app", "../Platform.App")
 if (builder.Environment.IsDevelopment())
 {
     var scalar = builder.AddScalarApiReference();
-    scalar.WithApiReference(apiservice);
+    foreach (var service in services.Values)
+    {
+        scalar.WithApiReference(service);
+    }
 }
 ```
 

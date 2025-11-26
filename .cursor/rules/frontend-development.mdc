@@ -222,6 +222,21 @@ export const useUserList = (options: UseUserListOptions = {}): UseUserListReturn
 
 ## 🔧 API 服务规范
 
+### 请求配置
+
+项目使用 UmiJS 的 `request` 方法，统一配置在 `src/app.tsx` 中：
+
+```typescript
+// ✅ 推荐：使用 UmiJS request 方法
+import { request } from '@umijs/max';
+
+// 请求会自动添加 Authorization 头（通过请求拦截器）
+// 自动处理 token 刷新（通过响应拦截器）
+// 统一错误处理（通过 errorConfig）
+```
+
+### API 服务封装
+
 ```typescript
 import { request } from '@umijs/max';
 import type { 
@@ -284,6 +299,59 @@ export const userService = {
     });
   },
 };
+```
+
+### 错误处理规范
+
+项目使用统一的错误处理系统，支持多种错误格式：
+
+```typescript
+// ✅ 统一错误处理配置
+// src/request-error-config.ts
+
+// 1. 支持标准错误响应格式
+interface ResponseStructure {
+  success: boolean;
+  data?: any;
+  errorCode?: string;
+  errorMessage?: string;
+  showType?: ErrorShowType;
+}
+
+// 2. 支持 .NET ProblemDetails 格式
+interface ProblemDetailsResponse {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  errors?: Record<string, string[]>;
+  traceId?: string;
+}
+
+// 3. 统一错误拦截器
+import { errorInterceptor } from '@/utils/errorInterceptor';
+
+// 错误会自动：
+// - 解析错误信息（支持多种格式）
+// - 根据错误类型选择显示方式（消息、通知、静默等）
+// - 记录错误日志
+// - 处理验证错误（显示所有字段错误）
+```
+
+### Token 自动刷新
+
+```typescript
+// ✅ 自动 token 刷新机制
+// src/app.tsx
+
+// 响应拦截器自动处理 401 错误
+// 1. 检测到 401 错误
+// 2. 尝试使用 refreshToken 刷新 token
+// 3. 刷新成功后重试原始请求
+// 4. 刷新失败则跳转登录页
+
+// 使用 TokenRefreshManager 防止并发刷新
+import { TokenRefreshManager } from '@/utils/tokenRefreshManager';
 ```
 
 ## 🎨 样式规范

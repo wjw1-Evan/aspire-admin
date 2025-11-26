@@ -283,22 +283,130 @@ export function usePermissions() {
 ## 🔄 错误处理
 
 ### 统一错误处理
+
+项目使用统一的错误处理系统，支持多种错误响应格式：
+
+#### 管理后台错误处理
+
 ```typescript
-// ✅ 推荐：错误处理拦截器
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token 过期，清除本地存储并跳转到登录页
-      AuthService.logout();
-      router.replace('/auth/login');
+// ✅ 统一错误处理配置
+// Platform.Admin/src/request-error-config.ts
+
+// 支持多种错误响应格式：
+// 1. 标准错误响应格式（success: false）
+interface ResponseStructure {
+  success: boolean;
+  data?: any;
+  errorCode?: string;
+  errorMessage?: string;
+  showType?: ErrorShowType;
+}
+
+// 2. .NET ProblemDetails 格式（后端统一错误格式）
+interface ProblemDetailsResponse {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  errors?: Record<string, string[]>;
+  traceId?: string;
+}
+
+// 错误处理流程：
+// 1. 响应拦截器捕获 401 错误，尝试刷新 token
+// 2. errorThrower 解析错误响应格式
+// 3. errorHandler 统一处理错误显示
+// 4. errorInterceptor 处理验证错误（显示所有字段错误）
+
+// 使用统一错误拦截器
+import { errorInterceptor } from '@/utils/errorInterceptor';
+
+// 自动处理：
+// - 认证错误（401/404）- 清除 token 并跳转登录
+// - 网络错误 - 显示网络错误提示
+// - 服务器错误（500+）- 显示服务器错误提示
+// - 业务错误 - 显示业务错误提示
+// - 验证错误 - 显示所有字段的验证错误
+```
+
+#### 移动端错误处理
+
+```typescript
+// ✅ 移动端错误处理
+// Platform.App/services/api.ts
+
+// 响应拦截器处理错误
+instance.interceptors.response.use(
+  (response) => response.data,
+  async (error: AxiosError<ErrorResponse>) => {
+    if (error.response) {
+      const { status, data } = error.response;
+
+      // 处理 401 Unauthorized
+      if (status === 401) {
+        await clearToken();
+        await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
+        await storage.remove(STORAGE_KEYS.USER_INFO);
+      }
+
+      // 返回统一错误格式
+      return Promise.reject({
+        success: false,
+        errorCode: data?.errorCode || 'UNKNOWN_ERROR',
+        errorMessage: data?.errorMessage || error.message || 'An error occurred',
+        showType: data?.showType || 2,
+        traceId: data?.traceId,
+      } as ErrorResponse);
     }
-    
-    // 统一错误格式
-    const errorMessage = error.response?.data?.message || error.message || '请求失败';
-    throw new Error(errorMessage);
+
+    // 网络错误
+    return Promise.reject({
+      success: false,
+      errorCode: 'NETWORK_ERROR',
+      errorMessage: 'Network error. Please check your connection.',
+      showType: 2,
+    } as ErrorResponse);
   }
 );
+```
+
+### Token 自动刷新
+
+#### 管理后台 Token 刷新
+
+```typescript
+// ✅ 自动 token 刷新机制
+// Platform.Admin/src/app.tsx
+
+async function handle401Error(error: any): Promise<any> {
+  const is401Error = error.response?.status === 401;
+  if (!is401Error) return null;
+
+  const isRefreshTokenRequest = error.config?.url?.includes('/refresh-token');
+  const isRetryRequest = error.config?._retry;
+
+  // 避免刷新 token 递归和重试循环
+  if (isRefreshTokenRequest || isRetryRequest) {
+    return null;
+  }
+
+  // 尝试刷新 token
+  const refreshToken = tokenUtils.getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+
+  // 使用 TokenRefreshManager 刷新 token（防止并发刷新）
+  const refreshResult = await TokenRefreshManager.refresh(refreshToken);
+
+  if (refreshResult?.success && refreshResult.token) {
+    // token 刷新成功，重试原始请求
+    return TokenRefreshManager.retryRequest(error.config, refreshResult.token);
+  }
+
+  // token 刷新失败，交给 errorHandler 统一处理
+  return null;
+}
 ```
 
 ### 组件错误处理

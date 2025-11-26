@@ -5,7 +5,6 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -15,6 +14,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Toast from 'react-native-toast-message';
 import { authService } from '../../services/authService';
 import { LoginRequest } from '../../types/auth';
 
@@ -30,6 +30,17 @@ export default function LoginScreen() {
     const [usernameFocused, setUsernameFocused] = useState(false);
     const [passwordFocused, setPasswordFocused] = useState(false);
     const [captchaFocused, setCaptchaFocused] = useState(false);
+
+    // 显示错误消息
+    const showErrorToast = (message: string) => {
+        Toast.show({
+            type: 'error',
+            text1: '错误',
+            text2: message,
+            position: 'top',
+            visibilityTime: 3000,
+        });
+    };
 
     // Fetch captcha image
     const fetchCaptcha = async () => {
@@ -48,20 +59,12 @@ export default function LoginScreen() {
     const handleLogin = async () => {
         // Basic validation
         if (!username.trim() || !password.trim()) {
-            if (Platform.OS === 'web') {
-                window.alert('错误\n\n请输入用户名和密码');
-            } else {
-                Alert.alert('错误', '请输入用户名和密码');
-            }
+            showErrorToast('请输入用户名和密码');
             return;
         }
 
         if (needCaptcha && !captchaAnswer.trim()) {
-            if (Platform.OS === 'web') {
-                window.alert('错误\n\n请输入验证码');
-            } else {
-                Alert.alert('错误', '请输入验证码');
-            }
+            showErrorToast('请输入验证码');
             return;
         }
 
@@ -96,12 +99,8 @@ export default function LoginScreen() {
                 // Clear captcha answer
                 setCaptchaAnswer('');
 
-                // Use window.alert for Web compatibility
-                if (Platform.OS === 'web') {
-                    window.alert(`登录失败\n\n${errorMsg}`);
-                } else {
-                    Alert.alert('登录失败', errorMsg);
-                }
+                // Show error message using Toast
+                showErrorToast(errorMsg);
             }
         } catch (error: any) {
             console.error('Login error:', error);
@@ -113,12 +112,8 @@ export default function LoginScreen() {
             // Fetch captcha on error
             await fetchCaptcha();
 
-            // Use window.alert for Web compatibility
-            if (Platform.OS === 'web') {
-                window.alert(`登录失败\n\n${errorMsg}`);
-            } else {
-                Alert.alert('登录失败', errorMsg);
-            }
+            // Show error message using Toast
+            showErrorToast(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -310,9 +305,23 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f5f7fa',
+        width: '100%',
+        ...Platform.select({
+            web: {
+                maxWidth: '100%',
+            },
+            default: {},
+        }),
     },
     scrollContent: {
         flexGrow: 1,
+        width: '100%',
+        ...Platform.select({
+            web: {
+                maxWidth: '100%',
+            },
+            default: {},
+        }),
     },
     header: {
         paddingTop: Platform.OS === 'ios' ? 70 : 50,
@@ -321,11 +330,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomLeftRadius: 35,
         borderBottomRightRadius: 35,
+        marginBottom: 30,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 8,
+        shadowRadius: 8,
+        elevation: 5,
     },
     logoContainer: {
         width: 110,
@@ -334,14 +344,14 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.25)',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 24,
-        borderWidth: 4,
+        marginBottom: 20,
+        borderWidth: 3,
         borderColor: 'rgba(255,255,255,0.4)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 5,
+        shadowRadius: 4,
+        elevation: 3,
     },
     title: {
         fontSize: 36,

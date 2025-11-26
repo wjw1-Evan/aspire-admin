@@ -3,7 +3,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    // Alert, // Removed for web compatibility
     ActivityIndicator,
     Modal,
     TextInput,
@@ -16,12 +15,13 @@ import {
 import { Text, View } from '@/components/Themed';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AppStyles, commonStyles } from '../../constants/AppStyles';
 import { authService } from '../../services/authService';
 import { companyService } from '../../services/companyService';
 import { userService } from '../../services/userService';
 import { User, UpdateProfileRequest } from '../../types/auth';
 import { Company, UserCompany } from '../../types/company';
-import Colors from '@/constants/Colors';
 
 export default function ProfileScreen() {
     const [user, setUser] = useState<User | null>(null);
@@ -128,64 +128,74 @@ export default function ProfileScreen() {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.light.tint} />
+            <View style={commonStyles.pageContainer}>
+                <ActivityIndicator size="large" color={AppStyles.colors.primary} />
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={commonStyles.pageContainer}>
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-                {/* Header Section */}
-                <RNView style={styles.headerCard}>
-                    <RNView style={styles.headerTop}>
-                        <RNView style={styles.avatarContainer}>
-                            <RNText style={styles.avatarText}>
-                                {user?.realName?.charAt(0) || user?.name?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                            </RNText>
+                <LinearGradient
+                    colors={AppStyles.gradients.primary}
+                    style={commonStyles.gradientHeader}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    locations={[0, 0.5, 1]}
+                >
+                    <RNView style={styles.headerContent}>
+                        <RNView style={styles.headerTop}>
+                            <RNView style={styles.avatarContainer}>
+                                <RNText style={styles.avatarText}>
+                                    {user?.realName?.charAt(0) || user?.name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                                </RNText>
+                            </RNView>
+                            <RNView style={styles.userInfo}>
+                                <RNText style={styles.userName}>{user?.realName || user?.name || user?.username}</RNText>
+                                <RNText style={styles.userRole}>{user?.username}</RNText>
+                            </RNView>
+                            <TouchableOpacity
+                                style={styles.editButton}
+                                onPress={() => setEditModalVisible(true)}
+                            >
+                                <Ionicons name="pencil" size={20} color="#fff" />
+                            </TouchableOpacity>
                         </RNView>
-                        <RNView style={styles.userInfo}>
-                            <RNText style={styles.userName}>{user?.realName || user?.name || user?.username}</RNText>
-                            <RNText style={styles.userRole}>{user?.username}</RNText>
-                        </RNView>
-                        <TouchableOpacity
-                            style={styles.editButton}
-                            onPress={() => setEditModalVisible(true)}
-                        >
-                            <Ionicons name="pencil" size={20} color="#fff" />
-                        </TouchableOpacity>
-                    </RNView>
 
-                    <RNView style={styles.statsContainer}>
-                        <RNView style={styles.statItem}>
-                            <RNText style={styles.statLabel}>邮箱</RNText>
-                            <RNText style={styles.statValue}>{user?.email || '未设置'}</RNText>
-                        </RNView>
-                        <RNView style={styles.statDivider} />
-                        <RNView style={styles.statItem}>
-                            <RNText style={styles.statLabel}>手机号</RNText>
-                            <RNText style={styles.statValue}>{user?.phone || '未设置'}</RNText>
+                        <RNView style={styles.statsContainer}>
+                            <RNView style={styles.statItem}>
+                                <RNText style={styles.statLabel}>邮箱</RNText>
+                                <RNText style={styles.statValue}>{user?.email || '未设置'}</RNText>
+                            </RNView>
+                            <RNView style={styles.statDivider} />
+                            <RNView style={styles.statItem}>
+                                <RNText style={styles.statLabel}>手机号</RNText>
+                                <RNText style={styles.statValue}>{user?.phone || '未设置'}</RNText>
+                            </RNView>
                         </RNView>
                     </RNView>
-                </RNView>
-
+                </LinearGradient>
+                {/* Content Section */}
+                <View style={styles.contentSection}>
                 {/* Current Company Section */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>当前企业</Text>
                     {currentCompany ? (
-                        <View style={styles.companyCard}>
-                            <View style={styles.companyIcon}>
-                                <Ionicons name="business" size={24} color={Colors.light.tint} />
+                        <View style={commonStyles.card}>
+                            <View style={styles.companyCardContent}>
+                                <View style={styles.companyIcon}>
+                                    <Ionicons name="business" size={24} color={AppStyles.colors.primary} />
+                                </View>
+                                <View style={styles.companyInfo}>
+                                    <Text style={styles.companyName}>{currentCompany.name}</Text>
+                                    <Text style={styles.companyCode}>编码: {currentCompany.code}</Text>
+                                </View>
+                                <Ionicons name="checkmark-circle" size={24} color={AppStyles.colors.primary} />
                             </View>
-                            <View style={styles.companyInfo}>
-                                <Text style={styles.companyName}>{currentCompany.name}</Text>
-                                <Text style={styles.companyCode}>编码: {currentCompany.code}</Text>
-                            </View>
-                            <Ionicons name="checkmark-circle" size={24} color={Colors.light.tint} />
                         </View>
                     ) : (
-                        <View style={styles.emptyCard}>
+                        <View style={[commonStyles.card, styles.emptyCard]}>
                             <Text style={styles.emptyText}>未加入任何企业</Text>
                         </View>
                     )}
@@ -201,6 +211,7 @@ export default function ProfileScreen() {
                                 <TouchableOpacity
                                     key={`${company.companyId || 'company'}-${index}`}
                                     style={[
+                                        commonStyles.card,
                                         styles.companyItem,
                                         company.companyId === currentCompany?.id && styles.companyItemActive,
                                     ]}
@@ -249,6 +260,7 @@ export default function ProfileScreen() {
                         <Ionicons name="log-out-outline" size={20} color="#ff4d4f" style={{ marginRight: 8 }} />
                         <Text style={styles.logoutButtonText}>退出登录</Text>
                     </TouchableOpacity>
+                </View>
                 </View>
             </ScrollView>
 
@@ -328,37 +340,39 @@ export default function ProfileScreen() {
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
-        </SafeAreaView>
+    </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f5f7fa',
-    },
-    loadingContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
+    headerContent: {
+        backgroundColor: 'transparent',
     },
     scrollView: {
         flex: 1,
+        width: '100%',
+        ...Platform.select({
+            web: {
+                overflowY: 'auto',
+                maxWidth: '100%',
+            },
+            default: {},
+        }),
     },
     contentContainer: {
-        padding: 16,
-        paddingBottom: 40,
+        flexGrow: 1,
+        width: '100%',
+        paddingBottom: AppStyles.spacing.xl * 2,
+        ...Platform.select({
+            web: {
+                maxWidth: '100%',
+            },
+            default: {},
+        }),
     },
-    headerCard: {
-        backgroundColor: '#667eea',
-        borderRadius: 20,
-        padding: 24,
-        marginBottom: 24,
-        shadowColor: '#667eea',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+    contentSection: {
+        padding: AppStyles.spacing.lg,
+        paddingTop: 0,
     },
     headerTop: {
         flexDirection: 'row',
@@ -428,67 +442,53 @@ const styles = StyleSheet.create({
         color: '#fff',
     },
     section: {
-        marginBottom: 24,
+        marginBottom: AppStyles.spacing.lg,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: AppStyles.fontSize.lg,
         fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 16,
-        marginLeft: 4,
+        color: AppStyles.colors.text,
+        marginBottom: AppStyles.spacing.md,
+        marginLeft: AppStyles.spacing.xs,
     },
-    companyCard: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 20,
+    companyCardContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
     },
     companyIcon: {
         width: 48,
         height: 48,
-        borderRadius: 12,
+        borderRadius: AppStyles.borderRadius.md,
         backgroundColor: '#f5f7ff',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
+        marginRight: AppStyles.spacing.md,
     },
     companyInfo: {
         flex: 1,
     },
     companyName: {
-        fontSize: 18,
+        fontSize: AppStyles.fontSize.lg,
         fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 4,
+        color: AppStyles.colors.text,
+        marginBottom: AppStyles.spacing.xs,
     },
     companyCode: {
-        fontSize: 14,
-        color: '#666',
+        fontSize: AppStyles.fontSize.sm,
+        color: AppStyles.colors.textSecondary,
     },
     emptyCard: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 24,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#eee',
+        borderColor: AppStyles.colors.border,
         borderStyle: 'dashed',
     },
     emptyText: {
-        color: '#999',
-        fontSize: 14,
+        color: AppStyles.colors.textTertiary,
+        fontSize: AppStyles.fontSize.sm,
     },
     companyItem: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 12,
+        marginBottom: AppStyles.spacing.md,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     companyItemActive: {
-        borderColor: '#667eea',
+        borderColor: AppStyles.colors.primary,
         backgroundColor: '#f5f7ff',
     },
     companyItemLeft: {
@@ -538,29 +538,30 @@ const styles = StyleSheet.create({
         color: '#999',
     },
     activeTag: {
-        backgroundColor: '#667eea',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
+        backgroundColor: AppStyles.colors.primary,
+        paddingHorizontal: AppStyles.spacing.sm,
+        paddingVertical: AppStyles.spacing.xs,
+        borderRadius: AppStyles.borderRadius.sm,
     },
     activeTagText: {
         color: '#fff',
-        fontSize: 10,
+        fontSize: AppStyles.fontSize.xs,
         fontWeight: 'bold',
     },
     logoutButton: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
+        backgroundColor: AppStyles.colors.cardBackground,
+        borderRadius: AppStyles.borderRadius.lg,
+        padding: AppStyles.spacing.md,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: '#ff4d4f',
+        borderColor: AppStyles.colors.error,
+        ...AppStyles.shadows.md,
     },
     logoutButtonText: {
-        color: '#ff4d4f',
-        fontSize: 16,
+        color: AppStyles.colors.error,
+        fontSize: AppStyles.fontSize.md,
         fontWeight: '600',
     },
     // Modal Styles

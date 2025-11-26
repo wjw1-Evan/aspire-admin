@@ -5,7 +5,6 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -14,6 +13,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Toast from 'react-native-toast-message';
 import { authService } from '../../services/authService';
 import { RegisterRequest } from '../../types/auth';
 
@@ -40,7 +40,13 @@ export default function RegisterScreen() {
     const handleRegister = async () => {
         const error = validateForm();
         if (error) {
-            Alert.alert('验证失败', error);
+            Toast.show({
+                type: 'error',
+                text1: '验证失败',
+                text2: error,
+                position: 'top',
+                visibilityTime: 3000,
+            });
             return;
         }
 
@@ -58,25 +64,34 @@ export default function RegisterScreen() {
             const response = await authService.register(request);
 
             if (response.success) {
-                Alert.alert(
-                    '注册成功',
-                    '您的账户已创建，请登录',
-                    [
-                        {
-                            text: '确定',
-                            onPress: () => router.replace('/(auth)/login'),
-                        },
-                    ]
-                );
+                Toast.show({
+                    type: 'success',
+                    text1: '注册成功',
+                    text2: '您的账户已创建，请登录',
+                    position: 'top',
+                    visibilityTime: 2000,
+                    onHide: () => {
+                        router.replace('/(auth)/login');
+                    },
+                });
             } else {
-                Alert.alert('注册失败', response.errorMessage || '注册失败，请稍后重试');
+                Toast.show({
+                    type: 'error',
+                    text1: '注册失败',
+                    text2: response.errorMessage || '注册失败，请稍后重试',
+                    position: 'top',
+                    visibilityTime: 3000,
+                });
             }
         } catch (error: any) {
             console.error('Register error:', error);
-            Alert.alert(
-                '注册失败',
-                error.errorMessage || '注册过程中发生错误，请稍后重试'
-            );
+            Toast.show({
+                type: 'error',
+                text1: '注册失败',
+                text2: error.errorMessage || '注册过程中发生错误，请稍后重试',
+                position: 'top',
+                visibilityTime: 3000,
+            });
         } finally {
             setLoading(false);
         }
@@ -256,9 +271,23 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
+        width: '100%',
+        ...Platform.select({
+            web: {
+                maxWidth: '100%',
+            },
+            default: {},
+        }),
     },
     scrollContent: {
         flexGrow: 1,
+        width: '100%',
+        ...Platform.select({
+            web: {
+                maxWidth: '100%',
+            },
+            default: {},
+        }),
     },
     header: {
         paddingTop: Platform.OS === 'ios' ? 60 : 40,
@@ -267,6 +296,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
+        marginBottom: 30,
     },
     logoContainer: {
         width: 100,

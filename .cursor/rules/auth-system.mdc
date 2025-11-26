@@ -342,11 +342,33 @@ LoginResult → 保存token → 获取用户信息 → 更新状态
 // ✅ 后端 JWT 服务实现
 // Platform.ApiService/Services/JwtService.cs
 
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
 public class JwtService : IJwtService
 {
+    private readonly string _secretKey;
+    private readonly string _issuer;
+    private readonly string _audience;
+    private readonly int _expirationMinutes;
+    private readonly int _refreshTokenExpirationDays;
+
+    public JwtService(IConfiguration configuration)
+    {
+        _secretKey = configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey must be configured");
+        _issuer = configuration["Jwt:Issuer"] ?? "Platform.ApiService";
+        _audience = configuration["Jwt:Audience"] ?? "Platform.Web";
+        _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "1440");
+        _refreshTokenExpirationDays = int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+    }
     // 生成访问 Token
     public string GenerateToken(AppUser user)
     {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(_secretKey);
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
@@ -358,30 +380,91 @@ public class JwtService : IJwtService
         
         // ⚠️ 不再在 JWT token 中包含 CurrentCompanyId
         // 所有企业ID相关的逻辑应从数据库的 user.CurrentCompanyId 获取
+        // 这样可以避免切换企业后 JWT token 延迟更新的问题
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(_expirationMinutes),
+            Issuer = _issuer,
+            Audience = _audience,
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key), 
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 
     // 生成刷新 Token
     public string GenerateRefreshToken(AppUser user)
     {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(_secretKey);
+
         var claims = new List<Claim>
         {
             new("type", "refresh"),  // 标记为刷新 token
             new("userId", user.Id ?? string.Empty),
             new("username", user.Username),
             // ⚠️ 不再在 RefreshToken 中包含 companyId
+            // 企业ID应从数据库获取，而非 JWT token
+            new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays),
+            Issuer = _issuer,
+            Audience = _audience,
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key), 
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 
     // 验证刷新 Token
     public ClaimsPrincipal? ValidateRefreshToken(string refreshToken)
     {
-        // 验证 token 类型为 "refresh"
-        var tokenType = principal.FindFirst("type")?.Value;
-        if (tokenType != "refresh")
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_secretKey);
+            
+            // 创建 token 验证参数（包括密钥、发行者、受众等）
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = _issuer,
+                ValidateAudience = true,
+                ValidAudience = _audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            // 先验证 token 的有效性（签名、过期时间等）
+            var principal = tokenHandler.ValidateToken(refreshToken, validationParameters, out _);
+            
+            // 然后验证 token 类型为 "refresh"
+            var tokenType = principal.FindFirst("type")?.Value;
+            if (tokenType != "refresh")
+            {
+                return null;
+            }
+            
+            return principal;
+        }
+        catch
         {
             return null;
         }
-        return principal;
     }
 }
 ```
@@ -430,6 +513,13 @@ public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest requ
 // ✅ 管理后台 Token 刷新管理器实现
 // Platform.Admin/src/utils/tokenRefreshManager.ts
 
+interface TokenRefreshResult {
+  success: boolean;
+  token?: string;
+  refreshToken?: string;
+  expiresAt?: number;
+}
+
 class TokenRefreshManager {
   private static refreshPromise: Promise<TokenRefreshResult | null> | null = null;
 
@@ -452,6 +542,54 @@ class TokenRefreshManager {
     } finally {
       // 清除刷新 Promise，允许下次刷新
       this.refreshPromise = null;
+    }
+  }
+
+  /**
+   * 执行实际的 token 刷新逻辑
+   */
+  private static async doRefresh(refreshToken: string): Promise<TokenRefreshResult | null> {
+    try {
+      const { refreshToken: refreshTokenAPI } = await import('@/services/ant-design-pro/api');
+      const refreshResponse = await refreshTokenAPI({ refreshToken });
+
+      // 检查 API 响应是否成功
+      if (!refreshResponse.success || !refreshResponse.data) {
+        return { success: false };
+      }
+
+      const refreshResult = refreshResponse.data;
+      
+      // ✅ 正确：检查后端返回的 Status 属性（不是 success）
+      const hasValidTokens =
+        refreshResult.status === 'ok' &&
+        refreshResult.token &&
+        refreshResult.refreshToken;
+
+      if (hasValidTokens) {
+        const expiresAt = refreshResult.expiresAt
+          ? new Date(refreshResult.expiresAt).getTime()
+          : undefined;
+
+        // 保存新的 token
+        tokenUtils.setTokens(
+          refreshResult.token,
+          refreshResult.refreshToken,
+          expiresAt
+        );
+
+        return {
+          success: true,
+          token: refreshResult.token,
+          refreshToken: refreshResult.refreshToken,
+          expiresAt,
+        };
+      }
+
+      return { success: false };
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return { success: false };
     }
   }
 

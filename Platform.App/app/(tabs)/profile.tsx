@@ -100,7 +100,6 @@ export default function ProfileScreen() {
         if (confirm('确定要退出登录吗？')) {
             (async () => {
                 await authService.logout();
-                router.replace('/(auth)/login');
             })();
         }
     };

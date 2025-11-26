@@ -17,7 +17,21 @@ import { ApiResponse } from '../types/api';
  * Authentication Service
  * Handles user authentication, registration, and session management
  */
+type AuthListener = (isAuthenticated: boolean) => void;
+const listeners: AuthListener[] = [];
+
+const notifyListeners = (isAuthenticated: boolean) => {
+    listeners.forEach(listener => listener(isAuthenticated));
+};
+
 export const authService = {
+    addAuthListener: (listener: AuthListener) => {
+        listeners.push(listener);
+    },
+    removeAuthListener: (listener: AuthListener) => {
+        const index = listeners.indexOf(listener);
+        if (index > -1) listeners.splice(index, 1);
+    },
     /**
      * Login with username and password
      */
@@ -32,9 +46,17 @@ export const authService = {
             // Use setToken to update both cache and storage
             await setToken(response.data.token);  // Backend returns 'token' not 'accessToken'
             await storage.set(STORAGE_KEYS.REFRESH_TOKEN, response.data.refreshToken);
+            // Don't notify here, let the caller decide when to notify (e.g. after fetching user info)
         }
 
         return response;
+    },
+
+    /**
+     * Notify listeners that login was successful
+     */
+    notifyLoginSuccess: () => {
+        notifyListeners(true);
     },
 
     /**
@@ -78,6 +100,7 @@ export const authService = {
             await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
             await storage.remove(STORAGE_KEYS.USER_INFO);
             await storage.remove(STORAGE_KEYS.CURRENT_COMPANY_ID);
+            notifyListeners(false);
         }
     },
 

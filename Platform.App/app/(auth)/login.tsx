@@ -79,8 +79,8 @@ export default function LoginScreen() {
                 // Fetch user info after successful login
                 await authService.getCurrentUser();
 
-                // Navigate to main app
-                router.replace('/(tabs)');
+                // Notify auth listeners to trigger redirect in _layout
+                authService.notifyLoginSuccess();
             } else {
                 // Display error message from backend
                 const errorMsg = response.errorMessage || '用户名或密码错误，请检查后重试';

@@ -60,6 +60,16 @@ function RootLayoutNav() {
     };
 
     checkAuth();
+
+    // Subscribe to auth state changes
+    const listener = (authenticated: boolean) => {
+      setIsAuthenticated(authenticated);
+    };
+    authService.addAuthListener(listener);
+
+    return () => {
+      authService.removeAuthListener(listener);
+    };
   }, []);
 
   // Redirect based on authentication status
@@ -70,10 +80,10 @@ function RootLayoutNav() {
 
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect to login if not authenticated
-      router.replace('/(auth)/login');
+      router.replace('/login');
     } else if (isAuthenticated && inAuthGroup) {
       // Redirect to main app if authenticated
-      router.replace('/(tabs)');
+      router.replace('/');
     }
   }, [isAuthenticated, segments]);
 

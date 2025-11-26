@@ -91,7 +91,7 @@
 ### 更新内容
 - ✅ 更新项目结构规范（访问地址、服务编排）
 - ✅ 更新前端开发规范（错误处理、API 集成、token 刷新）
-- ✅ 更新移动端开发规范（认证守卫、API 集成、token 缓存）
+- ✅ 更新移动端开发规范（认证守卫、API 集成、token 缓存、Toast 自定义配置）
 - ✅ 更新 API 集成规范（错误处理、token 刷新实现）
 - ✅ 更新认证系统规范（前后端统一认证流程）
 - ✅ 更新后端开发规范（JSON 序列化、SignalR 配置）
@@ -100,6 +100,12 @@
 - ✅ 清理过时的 API 端点示例（`/api/login/account` → `/api/auth/login` 等）
 - ✅ 更新所有规则文件中的 API 端点引用，确保与代码库一致
 - ✅ 验证并保留已废弃内容的正确标记（BaseService、BaseRepository、PermissionControl 等）
+
+### 最新更新（2024-12-19）
+- ✅ **移动端 Toast 自定义配置**：添加了完整的 Toast 自定义样式配置说明
+  - Toast 样式参考退出登录 Modal 的设计风格
+  - 统一使用 `AppStyles` 常量保持设计一致性
+  - 包含完整的样式规范和配置示例
 
 详细内容请参阅：
 - [Rules 更新总结报告](mdc:docs/reports/RULES-UPDATE-SUMMARY.md) - 更新内容详情

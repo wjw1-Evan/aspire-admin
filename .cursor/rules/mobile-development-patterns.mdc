@@ -549,8 +549,11 @@ const useUserList = () => {
 #### 根布局配置
 
 ```typescript
-// ✅ 实际实现：在 app/_layout.tsx 根布局中配置 Toast
+// ✅ 实际实现：在 app/_layout.tsx 根布局中配置 Toast（带自定义样式）
 import Toast from 'react-native-toast-message';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { AppStyles } from '../constants/AppStyles';
 
 export default function RootLayout() {
   return (
@@ -559,18 +562,124 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack>
-      <Toast /> {/* 必须在根布局中添加 Toast 组件 */}
+      <Toast 
+        config={{
+          success: ({ text1, text2 }) => (
+            <View style={toastStyles.successContainer}>
+              <View style={toastStyles.iconContainer}>
+                <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+              </View>
+              <View style={toastStyles.textContainer}>
+                <Text style={toastStyles.text1}>{text1}</Text>
+                {text2 && <Text style={toastStyles.text2}>{text2}</Text>}
+              </View>
+            </View>
+          ),
+          error: ({ text1, text2 }) => (
+            <View style={toastStyles.errorContainer}>
+              <View style={toastStyles.iconContainer}>
+                <Ionicons name="close-circle" size={24} color="#ff4d4f" />
+              </View>
+              <View style={toastStyles.textContainer}>
+                <Text style={toastStyles.text1}>{text1}</Text>
+                {text2 && <Text style={toastStyles.text2}>{text2}</Text>}
+              </View>
+            </View>
+          ),
+          info: ({ text1, text2 }) => (
+            <View style={toastStyles.infoContainer}>
+              <View style={toastStyles.iconContainer}>
+                <Ionicons name="information-circle" size={24} color="#667eea" />
+              </View>
+              <View style={toastStyles.textContainer}>
+                <Text style={toastStyles.text1}>{text1}</Text>
+                {text2 && <Text style={toastStyles.text2}>{text2}</Text>}
+              </View>
+            </View>
+          ),
+        }}
+      />
     </ThemeProvider>
   );
 }
+
+// Toast 自定义样式（参考退出登录 Modal 的设计风格）
+const toastStyles = StyleSheet.create({
+  successContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: AppStyles.borderRadius.lg,
+    padding: AppStyles.spacing.md,
+    minHeight: 60,
+    width: '90%',
+    maxWidth: 400,
+    borderLeftWidth: 4,
+    borderLeftColor: AppStyles.colors.success,
+    ...AppStyles.shadows.lg,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: AppStyles.borderRadius.lg,
+    padding: AppStyles.spacing.md,
+    minHeight: 60,
+    width: '90%',
+    maxWidth: 400,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ff4d4f',
+    ...AppStyles.shadows.lg,
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: AppStyles.borderRadius.lg,
+    padding: AppStyles.spacing.md,
+    minHeight: 60,
+    width: '90%',
+    maxWidth: 400,
+    borderLeftWidth: 4,
+    borderLeftColor: AppStyles.colors.primary,
+    ...AppStyles.shadows.lg,
+  },
+  iconContainer: {
+    marginRight: AppStyles.spacing.md,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  text1: {
+    fontSize: AppStyles.fontSize.md,
+    fontWeight: '600',
+    color: AppStyles.colors.text,
+    marginBottom: 2,
+  },
+  text2: {
+    fontSize: AppStyles.fontSize.sm,
+    color: AppStyles.colors.textSecondary,
+    lineHeight: 18,
+  },
+});
 ```
 
-#### 1. 根布局配置
+#### 1. 根布局配置（带自定义样式）
+
+**Toast 自定义配置说明**：
+- ✅ **统一设计风格**：Toast 样式参考退出登录 Modal 的设计（圆角 16px、阴影、左侧彩色边框）
+- ✅ **类型区分**：通过左侧彩色边框和图标区分成功（绿色）、错误（红色）、信息（蓝色）
+- ✅ **图标支持**：每种类型都有对应的 Ionicons 图标
+- ✅ **响应式宽度**：宽度 90%，最大 400px，与 Modal 保持一致
+- ✅ **使用 AppStyles**：所有样式值都使用 `AppStyles` 常量，保持设计一致性
 
 ```tsx
-// ✅ 正确：在根布局中配置 Toast
+// ✅ 正确：在根布局中配置 Toast 并添加自定义样式
 // app/_layout.tsx
 import Toast from 'react-native-toast-message';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { AppStyles } from '../constants/AppStyles';
 
 export default function RootLayout() {
   return (
@@ -579,7 +688,32 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack>
-      <Toast /> {/* 必须在根布局中添加 Toast 组件 */}
+      <Toast 
+        config={{
+          success: ({ text1, text2 }) => (
+            <View style={toastStyles.successContainer}>
+              <View style={toastStyles.iconContainer}>
+                <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+              </View>
+              <View style={toastStyles.textContainer}>
+                <Text style={toastStyles.text1}>{text1}</Text>
+                {text2 && <Text style={toastStyles.text2}>{text2}</Text>}
+              </View>
+            </View>
+          ),
+          error: ({ text1, text2 }) => (
+            <View style={toastStyles.errorContainer}>
+              <View style={toastStyles.iconContainer}>
+                <Ionicons name="close-circle" size={24} color="#ff4d4f" />
+              </View>
+              <View style={toastStyles.textContainer}>
+                <Text style={toastStyles.text1}>{text1}</Text>
+                {text2 && <Text style={toastStyles.text2}>{text2}</Text>}
+              </View>
+            </View>
+          ),
+        }}
+      />
     </ThemeProvider>
   );
 }
@@ -588,7 +722,7 @@ export default function RootLayout() {
 #### 2. 显示错误提示
 
 ```tsx
-// ✅ 正确：使用 Toast 显示错误
+// ✅ 正确：使用 Toast 显示错误（统一格式）
 import Toast from 'react-native-toast-message';
 
 const handleLogin = async () => {
@@ -597,10 +731,11 @@ const handleLogin = async () => {
     if (!response.success) {
       Toast.show({
         type: 'error',
-        text1: '登录失败',
+        text1: '登录失败', // 统一的标题格式：操作 + 结果
         text2: response.errorMessage || '用户名或密码错误',
         position: 'top',
         visibilityTime: 3000,
+        topOffset: 60, // 从顶部偏移，避免与状态栏重叠
       });
       return;
     }
@@ -608,14 +743,20 @@ const handleLogin = async () => {
   } catch (error: any) {
     Toast.show({
       type: 'error',
-      text1: '错误',
+      text1: '登录失败', // 统一的标题格式
       text2: error.message || '登录过程中发生错误，请稍后重试',
       position: 'top',
       visibilityTime: 3000,
+      topOffset: 60,
     });
   }
 };
 ```
+
+**Toast 标题命名规范**：
+- ✅ 成功：`'操作成功'` 或 `'注册成功'`、`'更新成功'` 等具体操作
+- ✅ 错误：`'操作失败'` 或 `'登录失败'`、`'更新失败'`、`'验证失败'` 等具体操作
+- ✅ 信息：`'提示'` 或具体说明
 
 #### 3. 显示成功提示
 
@@ -731,17 +872,47 @@ if (Platform.OS === 'web') {
 ```tsx
 Toast.show({
   type: 'error' | 'success' | 'info',  // Toast 类型
-  text1: string,                        // 主标题
-  text2?: string,                       // 副标题（可选）
+  text1: string,                        // 主标题（统一格式：操作 + 结果）
+  text2?: string,                       // 副标题（可选，详细错误信息）
   position?: 'top' | 'bottom',          // 显示位置，默认 'top'
-  visibilityTime?: number,              // 显示时长（毫秒），默认 4000
-  topOffset?: number,                   // 距离顶部的偏移量
+  visibilityTime?: number,              // 显示时长（毫秒）
+                                        // - 成功提示：2000ms
+                                        // - 错误提示：3000ms
+                                        // - 信息提示：3000ms
+  topOffset?: number,                   // 距离顶部的偏移量（推荐 60px）
   bottomOffset?: number,                // 距离底部的偏移量
   onShow?: () => void,                  // 显示时的回调
   onHide?: () => void,                  // 隐藏时的回调
   onPress?: () => void,                 // 点击时的回调
 });
 ```
+
+### Toast 自定义样式规范
+
+**✅ 项目已实现自定义 Toast 配置**（在 `app/_layout.tsx` 中）：
+- 参考退出登录 Modal 的设计风格
+- 使用 `AppStyles` 常量保持设计一致性
+- 所有样式值统一使用设计系统规范
+
+**样式特性**：
+- ✅ **圆角**：`borderRadius: 16px`（与 Modal 一致）
+- ✅ **内边距**：`padding: 16px`（使用 `AppStyles.spacing.md`）
+- ✅ **阴影**：使用 `AppStyles.shadows.lg`
+- ✅ **左侧边框**：4px 彩色边框，用于类型区分
+  - 成功：绿色 `#10b981`
+  - 错误：红色 `#ff4d4f`（与退出登录按钮颜色一致）
+  - 信息：蓝色 `#667eea`（主题色）
+- ✅ **图标**：使用 Ionicons，大小 24px
+  - 成功：`checkmark-circle`
+  - 错误：`close-circle`
+  - 信息：`information-circle`
+- ✅ **文字样式**：
+  - `text1`：16px，加粗（`fontWeight: '600'`），深色文字
+  - `text2`：14px，灰色文字，行高 18px
+- ✅ **宽度**：90%，最大 400px（与 Modal 保持一致）
+- ✅ **最小高度**：60px
+
+**所有样式值必须使用 `AppStyles` 常量**，确保设计一致性。
 
 ## ✅ 推荐做法
 

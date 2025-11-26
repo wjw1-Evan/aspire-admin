@@ -84,7 +84,6 @@ export default function ProfileScreen() {
             if (response && response.success) {
                 // Refresh user info (including currentCompanyId)
                 await authService.getCurrentUser();
-                alert('企业切换成功');
                 await loadData();
             } else {
                 alert(response?.errorMessage || '切换企业失败');
@@ -197,49 +196,51 @@ export default function ProfileScreen() {
                 {companies.length > 1 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>切换企业</Text>
-                        {companies.map((company, index) => (
-                            <TouchableOpacity
-                                key={`${company.companyId || 'company'}-${index}`}
-                                style={[
-                                    styles.companyItem,
-                                    company.companyId === currentCompany?.id && styles.companyItemActive,
-                                ]}
-                                onPress={() => {
-                                    console.log('调试', `点击了 ${company.companyName}`);
-                                    console.log('Company item pressed:', company.companyId, company.companyName);
-                                    handleSwitchCompany(company.companyId, company.companyName);
-                                }}
-                                disabled={switchingCompany || company.companyId === currentCompany?.id}
-                            >
-                                <View style={styles.companyItemLeft}>
-                                    <View style={[
-                                        styles.companyItemIcon,
-                                        company.companyId === currentCompany?.id && styles.companyItemIconActive
-                                    ]}>
-                                        <Text style={[
-                                            styles.companyItemIconText,
-                                            company.companyId === currentCompany?.id && styles.companyItemIconTextActive
+                        {companies
+                            .filter(company => company.companyId !== currentCompany?.id)
+                            .map((company, index) => (
+                                <TouchableOpacity
+                                    key={`${company.companyId || 'company'}-${index}`}
+                                    style={[
+                                        styles.companyItem,
+                                        company.companyId === currentCompany?.id && styles.companyItemActive,
+                                    ]}
+                                    onPress={() => {
+                                        console.log('调试', `点击了 ${company.companyName}`);
+                                        console.log('Company item pressed:', company.companyId, company.companyName);
+                                        handleSwitchCompany(company.companyId, company.companyName);
+                                    }}
+                                    disabled={switchingCompany || company.companyId === currentCompany?.id}
+                                >
+                                    <View style={styles.companyItemLeft}>
+                                        <View style={[
+                                            styles.companyItemIcon,
+                                            company.companyId === currentCompany?.id && styles.companyItemIconActive
                                         ]}>
-                                            {company.companyName?.charAt(0) || '?'}
-                                        </Text>
+                                            <Text style={[
+                                                styles.companyItemIconText,
+                                                company.companyId === currentCompany?.id && styles.companyItemIconTextActive
+                                            ]}>
+                                                {company.companyName?.charAt(0) || '?'}
+                                            </Text>
+                                        </View>
+                                        <View>
+                                            <Text style={[
+                                                styles.companyItemName,
+                                                company.companyId === currentCompany?.id && styles.companyItemNameActive
+                                            ]}>
+                                                {company.companyName}
+                                            </Text>
+                                            <Text style={styles.companyItemCode}>{company.companyCode}</Text>
+                                        </View>
                                     </View>
-                                    <View>
-                                        <Text style={[
-                                            styles.companyItemName,
-                                            company.companyId === currentCompany?.id && styles.companyItemNameActive
-                                        ]}>
-                                            {company.companyName}
-                                        </Text>
-                                        <Text style={styles.companyItemCode}>{company.companyCode}</Text>
-                                    </View>
-                                </View>
-                                {company.companyId === currentCompany?.id && (
-                                    <View style={styles.activeTag}>
-                                        <Text style={styles.activeTagText}>当前</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        ))}
+                                    {company.companyId === currentCompany?.id && (
+                                        <View style={styles.activeTag}>
+                                            <Text style={styles.activeTagText}>当前</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            ))}
                     </View>
                 )}
 

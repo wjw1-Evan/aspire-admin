@@ -89,7 +89,7 @@ public class SocialService : ISocialService
         ValidateCoordinates(request.Latitude, request.Longitude);
 
         var currentUserId = _beaconFactory.GetRequiredUserId();
-        var companyId = _beaconFactory.GetRequiredCompanyId();
+        var companyId = await _beaconFactory.GetRequiredCompanyIdAsync();
         var now = DateTime.UtcNow;
         var lastSeenAt = ResolveLastSeenAt(request, now);
 
@@ -416,7 +416,7 @@ public class SocialService : ISocialService
     public async Task<UserLocationBeacon?> GetCurrentUserLocationAsync()
     {
         var currentUserId = _beaconFactory.GetRequiredUserId();
-        var companyId = _beaconFactory.GetRequiredCompanyId();
+        var companyId = await _beaconFactory.GetRequiredCompanyIdAsync();
 
         var filter = _beaconFactory.CreateFilterBuilder()
             .Equal(b => b.UserId, currentUserId)

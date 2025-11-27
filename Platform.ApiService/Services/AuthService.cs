@@ -30,6 +30,8 @@ public class AuthService : IAuthService
     private readonly IDatabaseOperationFactory<LoginFailureRecord> _failureRecordFactory;
     private readonly IPhoneValidationService _phoneValidationService;
     private readonly ISocialService _socialService;
+    private readonly IDatabaseOperationFactory<RefreshToken> _refreshTokenFactory;
+    private readonly IConfiguration _configuration;
 
     /// <summary>
     /// 初始化认证服务
@@ -50,6 +52,8 @@ public class AuthService : IAuthService
     /// <param name="phoneValidationService">手机号校验服务</param>
     /// <param name="failureRecordFactory">登录失败记录数据操作工厂</param>
     /// <param name="socialService">社交服务（用于获取用户位置信息）</param>
+    /// <param name="refreshTokenFactory">刷新令牌数据操作工厂</param>
+    /// <param name="configuration">配置对象</param>
     public AuthService(
         IDatabaseOperationFactory<User> userFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
@@ -66,7 +70,9 @@ public class AuthService : IAuthService
         IImageCaptchaService imageCaptchaService,
         IPhoneValidationService phoneValidationService,
         IDatabaseOperationFactory<LoginFailureRecord> failureRecordFactory,
-        ISocialService socialService)
+        ISocialService socialService,
+        IDatabaseOperationFactory<RefreshToken> refreshTokenFactory,
+        IConfiguration configuration)
     {
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
@@ -84,6 +90,8 @@ public class AuthService : IAuthService
         _failureRecordFactory = failureRecordFactory;
         _phoneValidationService = phoneValidationService;
         _socialService = socialService;
+        _refreshTokenFactory = refreshTokenFactory;
+        _configuration = configuration;
     }
 
     // 🔒 安全修复：移除静态密码哈希方法，统一使用注入的 IPasswordHasher
@@ -400,13 +408,27 @@ public class AuthService : IAuthService
         var token = _jwtService.GenerateToken(user);
         var refreshToken = _jwtService.GenerateRefreshToken(user);
 
+        // 保存刷新token到数据库
+        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "1440");
+        var refreshTokenExpirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+        var refreshTokenEntity = new RefreshToken
+        {
+            UserId = user.Id!,
+            Token = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            IsRevoked = false
+        };
+        await _refreshTokenFactory.CreateAsync(refreshTokenEntity);
+
         var loginData = new LoginData
         {
             Type = request.Type,
             CurrentAuthority = "user", // 默认权限，实际权限由角色系统决定
             Token = token,
             RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(60) // 访问token过期时间
+            ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes) // 从配置读取访问token过期时间
         };
 
         return ApiResponse<LoginData>.SuccessResult(loginData);
@@ -976,57 +998,151 @@ public class AuthService : IAuthService
             };
         }
 
-            // 验证刷新token
-            var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
-            if (principal == null)
+        // 验证刷新token（JWT格式）
+        var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
+        if (principal == null)
+        {
+            return new RefreshTokenResult
             {
-                return new RefreshTokenResult
-                {
-                    Status = "error",
-                    ErrorMessage = "无效的刷新token"
-                };
-            }
+                Status = "error",
+                ErrorMessage = "无效的刷新token"
+            };
+        }
 
-            // 从刷新token中获取用户ID
-            var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
-            if (string.IsNullOrEmpty(userId))
+        // 从刷新token中获取用户ID
+        var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return new RefreshTokenResult
             {
-                return new RefreshTokenResult
-                {
-                    Status = "error",
-                    ErrorMessage = "无法从刷新token中获取用户信息"
-                };
-            }
+                Status = "error",
+                ErrorMessage = "无法从刷新token中获取用户信息"
+            };
+        }
 
-            // 从数据库获取用户信息
-            var users = await _userFactory.FindAsync(_userFactory.CreateFilterBuilder().Equal(u => u.Id, userId).Equal(u => u.IsActive, true).Build());
-            var user = users.FirstOrDefault();
-            if (user == null)
+        // 从数据库查找刷新token记录
+        var refreshTokenFilter = _refreshTokenFactory.CreateFilterBuilder()
+            .Equal(rt => rt.Token, request.RefreshToken)
+            .Equal(rt => rt.UserId, userId)
+            .Equal(rt => rt.IsRevoked, false)
+            .Build();
+
+        var existingTokens = await _refreshTokenFactory.FindWithoutTenantFilterAsync(refreshTokenFilter);
+        var existingToken = existingTokens.FirstOrDefault();
+
+        // 检查token是否在数据库中存在且有效
+        if (existingToken == null)
+        {
+            // Token不在数据库中，可能是旧token重用攻击
+            // 检查是否有其他有效的token（可能已经被轮换）
+            var userTokensFilter = _refreshTokenFactory.CreateFilterBuilder()
+                .Equal(rt => rt.UserId, userId)
+                .Equal(rt => rt.IsRevoked, false)
+                .Build();
+
+            var userTokens = await _refreshTokenFactory.FindWithoutTenantFilterAsync(userTokensFilter);
+            if (userTokens.Any())
             {
-                return new RefreshTokenResult
-                {
-                    Status = "error",
-                    ErrorMessage = "用户不存在或已被禁用"
-                };
+                // 检测到旧token重用，撤销该用户所有token（安全措施）
+                var revokeFilter = _refreshTokenFactory.CreateFilterBuilder()
+                    .Equal(rt => rt.UserId, userId)
+                    .Build();
+
+                var revokeUpdate = _refreshTokenFactory.CreateUpdateBuilder()
+                    .Set(rt => rt.IsRevoked, true)
+                    .Set(rt => rt.RevokedAt, DateTime.UtcNow)
+                    .Set(rt => rt.RevokedReason, "检测到旧token重用攻击")
+                    .Build();
+
+                await _refreshTokenFactory.UpdateManyAsync(revokeFilter, revokeUpdate);
+
+                _logger.LogWarning("检测到用户 {UserId} 的旧token重用攻击，已撤销所有token", userId);
             }
-
-            // 生成新的访问token和刷新token
-            var newToken = _jwtService.GenerateToken(user);
-            var newRefreshToken = _jwtService.GenerateRefreshToken(user);
-
-            // 记录刷新token活动日志
-            var httpContext = _httpContextAccessor.HttpContext;
-            var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
-            var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
-            await _userService.LogUserActivityAsync(userId, "refresh_token", "刷新访问token", ipAddress, userAgent);
 
             return new RefreshTokenResult
             {
-                Status = "ok",
-                Token = newToken,
-                RefreshToken = newRefreshToken,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(60) // 访问token过期时间
+                Status = "error",
+                ErrorMessage = "刷新token无效或已被撤销"
             };
+        }
+
+        // 检查token是否已过期
+        if (existingToken.ExpiresAt < DateTime.UtcNow)
+        {
+            // 标记为已撤销
+            var expireUpdate = _refreshTokenFactory.CreateUpdateBuilder()
+                .Set(rt => rt.IsRevoked, true)
+                .Set(rt => rt.RevokedAt, DateTime.UtcNow)
+                .Set(rt => rt.RevokedReason, "Token已过期")
+                .Build();
+
+            await _refreshTokenFactory.FindOneAndUpdateAsync(refreshTokenFilter, expireUpdate);
+
+            return new RefreshTokenResult
+            {
+                Status = "error",
+                ErrorMessage = "刷新token已过期"
+            };
+        }
+
+        // 从数据库获取用户信息
+        var users = await _userFactory.FindAsync(_userFactory.CreateFilterBuilder().Equal(u => u.Id, userId).Equal(u => u.IsActive, true).Build());
+        var user = users.FirstOrDefault();
+        if (user == null)
+        {
+            return new RefreshTokenResult
+            {
+                Status = "error",
+                ErrorMessage = "用户不存在或已被禁用"
+            };
+        }
+
+        // 生成新的访问token和刷新token
+        var newToken = _jwtService.GenerateToken(user);
+        var newRefreshToken = _jwtService.GenerateRefreshToken(user);
+
+        // 获取HTTP上下文信息
+        var httpContext = _httpContextAccessor.HttpContext;
+        var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
+        var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
+
+        // 撤销旧token（标记为已撤销）
+        var oldTokenUpdate = _refreshTokenFactory.CreateUpdateBuilder()
+            .Set(rt => rt.IsRevoked, true)
+            .Set(rt => rt.RevokedAt, DateTime.UtcNow)
+            .Set(rt => rt.RevokedReason, "Token轮换")
+            .Build();
+
+        await _refreshTokenFactory.FindOneAndUpdateAsync(refreshTokenFilter, oldTokenUpdate);
+
+        // 保存新token到数据库
+        var refreshTokenExpirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+        var newRefreshTokenEntity = new RefreshToken
+        {
+            UserId = userId,
+            Token = newRefreshToken,
+            PreviousToken = existingToken.Token, // 记录上一个token用于追踪
+            ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            LastUsedAt = DateTime.UtcNow,
+            IsRevoked = false
+        };
+        await _refreshTokenFactory.CreateAsync(newRefreshTokenEntity);
+
+        // 记录刷新token活动日志
+        await _userService.LogUserActivityAsync(userId, "refresh_token", "刷新访问token", ipAddress, userAgent);
+
+        // 从配置读取过期时间
+        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "1440");
+
+        return new RefreshTokenResult
+        {
+            Status = "ok",
+            Token = newToken,
+            RefreshToken = newRefreshToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes) // 从配置读取访问token过期时间
+        };
     }
 
 }

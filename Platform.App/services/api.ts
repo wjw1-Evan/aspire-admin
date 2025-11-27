@@ -2,6 +2,8 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { API_BASE_URL, APP_CONFIG, STORAGE_KEYS } from '../utils/constants';
 import { storage } from '../utils/storage';
 import { ApiResponse, ErrorResponse } from '../types/api';
+import { tokenUtils } from '../utils/token';
+import TokenRefreshManager from '../utils/tokenRefreshManager';
 
 /**
  * In-memory token cache to prevent AsyncStorage timing issues
@@ -51,9 +53,23 @@ const createApiInstance = (): AxiosInstance => {
         },
     });
 
-    // Request interceptor - add auth token
+    // Request interceptor - add auth token and proactive refresh
     instance.interceptors.request.use(
         async (config: InternalAxiosRequestConfig) => {
+            // 检查 token 是否即将过期，如果是则主动刷新
+            const isExpired = await tokenUtils.isTokenExpired();
+            if (isExpired) {
+                const refreshToken = await tokenUtils.getRefreshToken();
+                if (refreshToken) {
+                    const refreshResult = await TokenRefreshManager.refresh(refreshToken);
+                    if (refreshResult?.success && refreshResult.token) {
+                        // 使用新的 token
+                        config.headers.Authorization = `Bearer ${refreshResult.token}`;
+                        return config;
+                    }
+                }
+            }
+
             const token = await getToken();
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
@@ -75,13 +91,43 @@ const createApiInstance = (): AxiosInstance => {
 
                 // Handle 401 Unauthorized - token expired or invalid
                 if (status === 401) {
-                    // Clear stored tokens and cache
-                    await clearToken();
-                    await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
-                    await storage.remove(STORAGE_KEYS.USER_INFO);
+                    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+                    
+                    // 避免刷新 token 递归和重试循环
+                    const isRefreshTokenRequest = originalRequest?.url?.includes('/refresh-token');
+                    const isRetryRequest = originalRequest?._retry;
 
-                    // Optionally trigger navigation to login
-                    // You can implement a navigation callback here
+                    // 如果是刷新 token 请求本身失败，或已经是重试请求，不再尝试刷新
+                    if (isRefreshTokenRequest || isRetryRequest) {
+                        // 刷新失败，清除 token 并跳转登录
+                        await clearToken();
+                        await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
+                        await storage.remove(STORAGE_KEYS.USER_INFO);
+
+                        // Optionally trigger navigation to login
+                        // You can implement a navigation callback here
+                    } else {
+                        // 尝试刷新 token
+                        const refreshToken = await tokenUtils.getRefreshToken();
+                        if (refreshToken) {
+                            // 使用 TokenRefreshManager 刷新 token（防止并发刷新）
+                            const refreshResult = await TokenRefreshManager.refresh(refreshToken);
+
+                            if (refreshResult?.success && refreshResult.token && originalRequest) {
+                                // token 刷新成功，重试原始请求
+                                try {
+                                    return await TokenRefreshManager.retryRequest(originalRequest, refreshResult.token);
+                                } catch (retryError) {
+                                    // 重试失败，继续执行错误处理
+                                }
+                            }
+                        }
+
+                        // token 刷新失败，清除 token 并跳转登录
+                        await clearToken();
+                        await storage.remove(STORAGE_KEYS.REFRESH_TOKEN);
+                        await storage.remove(STORAGE_KEYS.USER_INFO);
+                    }
                 }
 
                 // Return formatted error

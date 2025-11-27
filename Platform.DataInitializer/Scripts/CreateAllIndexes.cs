@@ -41,6 +41,7 @@ public class CreateAllIndexes
         await CreateFriendshipIndexesAsync();
         await CreateFriendRequestIndexesAsync();
         await CreateLocationBeaconIndexesAsync();
+        await CreateRefreshTokenIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
     }
@@ -386,6 +387,67 @@ public class CreateAllIndexes
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建好友请求索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建刷新 Token 索引（RefreshToken 是全局资源，无 CompanyId）
+    /// </summary>
+    private async Task CreateRefreshTokenIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("refreshtokens");
+
+        try
+        {
+            // Token 唯一索引（用于快速查找和验证）
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("token"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_refreshtokens_token_unique",
+                    Unique = true,
+                    Background = true
+                },
+                "refreshtokens.token (唯一)");
+
+            // UserId 索引（用于查询用户的所有token）
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("userId"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_refreshtokens_userId",
+                    Background = true
+                },
+                "refreshtokens.userId");
+
+            // IsRevoked + ExpiresAt 复合索引（用于查询有效token）
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending("isRevoked")
+                    .Ascending("expiresAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_refreshtokens_isRevoked_expiresAt",
+                    Background = true
+                },
+                "refreshtokens.isRevoked + expiresAt");
+
+            // ExpiresAt TTL 索引（自动删除过期记录）
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys.Ascending("expiresAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_refreshtokens_expiresAt_ttl",
+                    ExpireAfter = TimeSpan.Zero,
+                    Background = true
+                },
+                "refreshtokens.expiresAt (TTL)");
+
+            _logger.LogInformation("✅ RefreshTokens 集合索引创建完成");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建 RefreshToken 索引失败");
         }
     }
 

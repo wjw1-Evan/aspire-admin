@@ -454,3 +454,74 @@ public class VerifyCaptchaRequest
     [Required(ErrorMessage = "验证码不能为空")]
     public string Code { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// 刷新 Token 实体
+/// 用于存储和管理刷新令牌，支持 Token 轮换检测和安全撤销
+/// </summary>
+[BsonIgnoreExtraElements]
+public class RefreshToken : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
+{
+    /// <summary>
+    /// 用户ID
+    /// </summary>
+    [BsonElement("userId")]
+    [Required]
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 当前有效的刷新 Token
+    /// </summary>
+    [BsonElement("token")]
+    [Required]
+    public string Token { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 上一次的刷新 Token（用于轮换检测）
+    /// </summary>
+    [BsonElement("previousToken")]
+    public string? PreviousToken { get; set; }
+
+    /// <summary>
+    /// Token 过期时间
+    /// </summary>
+    [BsonElement("expiresAt")]
+    [Required]
+    public DateTime ExpiresAt { get; set; }
+
+    /// <summary>
+    /// 最后使用时间
+    /// </summary>
+    [BsonElement("lastUsedAt")]
+    public DateTime? LastUsedAt { get; set; }
+
+    /// <summary>
+    /// 创建时的 IP 地址
+    /// </summary>
+    [BsonElement("ipAddress")]
+    public string? IpAddress { get; set; }
+
+    /// <summary>
+    /// 创建时的 User-Agent
+    /// </summary>
+    [BsonElement("userAgent")]
+    public string? UserAgent { get; set; }
+
+    /// <summary>
+    /// 是否已被撤销
+    /// </summary>
+    [BsonElement("isRevoked")]
+    public bool IsRevoked { get; set; } = false;
+
+    /// <summary>
+    /// 撤销时间
+    /// </summary>
+    [BsonElement("revokedAt")]
+    public DateTime? RevokedAt { get; set; }
+
+    /// <summary>
+    /// 撤销原因
+    /// </summary>
+    [BsonElement("revokedReason")]
+    public string? RevokedReason { get; set; }
+}

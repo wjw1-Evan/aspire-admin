@@ -60,6 +60,7 @@ public interface IJwtService
 public class JwtService : IJwtService
 {
     private readonly string _secretKey;
+    private readonly string _refreshTokenSecret;
     private readonly string _issuer;
     private readonly string _audience;
     private readonly int _expirationMinutes;
@@ -81,6 +82,16 @@ public class JwtService : IJwtService
                 "Never commit secrets to source control!");
         }
         _secretKey = secretKey;
+
+        // 🔒 安全修复：使用独立的 Refresh Token 密钥
+        var refreshTokenSecret = configuration["Jwt:RefreshTokenSecret"];
+        if (string.IsNullOrWhiteSpace(refreshTokenSecret))
+        {
+            // 如果未配置，使用 SecretKey 作为后备（向后兼容，但不推荐）
+            refreshTokenSecret = secretKey;
+        }
+        _refreshTokenSecret = refreshTokenSecret;
+
         _issuer = configuration["Jwt:Issuer"] ?? "Platform.ApiService";
         _audience = configuration["Jwt:Audience"] ?? "Platform.Web";
         _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "1440");
@@ -152,7 +163,7 @@ public class JwtService : IJwtService
     public string GenerateRefreshToken(AppUser user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_secretKey);
+        var key = Encoding.ASCII.GetBytes(_refreshTokenSecret);
 
         var claims = new List<Claim>
         {
@@ -187,7 +198,7 @@ public class JwtService : IJwtService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var validationParameters = CreateTokenValidationParameters();
+            var validationParameters = CreateRefreshTokenValidationParameters();
 
             var principal = tokenHandler.ValidateToken(refreshToken, validationParameters, out _);
             
@@ -234,6 +245,25 @@ public class JwtService : IJwtService
     private TokenValidationParameters CreateTokenValidationParameters()
     {
         var key = Encoding.ASCII.GetBytes(_secretKey);
+        return new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = true,
+            ValidIssuer = _issuer,
+            ValidateAudience = true,
+            ValidAudience = _audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    }
+
+    /// <summary>
+    /// 创建 Refresh Token 验证参数（使用独立的密钥）
+    /// </summary>
+    private TokenValidationParameters CreateRefreshTokenValidationParameters()
+    {
+        var key = Encoding.ASCII.GetBytes(_refreshTokenSecret);
         return new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,

@@ -10,12 +10,14 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+    status?: string;  // 'ok' or 'error'
     token: string;  // Backend returns 'token' not 'accessToken'
     refreshToken: string;
     expiresIn?: number;
     expiresAt?: string;
     currentAuthority?: string;
     tokenType?: string;
+    errorMessage?: string;
 }
 
 export interface RegisterRequest {

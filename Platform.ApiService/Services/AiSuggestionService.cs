@@ -136,7 +136,7 @@ public class AiSuggestionService : IAiSuggestionService
     {
         request = NormalizeMatchRequest(request, currentUserId);
 
-        var tenantCompanyId = _sessionFactory.GetRequiredCompanyId();
+        var tenantCompanyId = await _sessionFactory.GetRequiredCompanyIdAsync();
         var interestKeywords = BuildInterestKeywords(request);
         var limit = NormalizeLimit(request.Limit);
 

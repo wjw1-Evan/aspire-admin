@@ -706,7 +706,7 @@ public class ChatService : IChatService
             throw new InvalidOperationException("无法与自己创建会话");
         }
 
-        var companyId = _sessionFactory.GetRequiredCompanyId();
+        var companyId = await _sessionFactory.GetRequiredCompanyIdAsync();
 
         var participants = new[] { currentUserId, participantUserId };
 

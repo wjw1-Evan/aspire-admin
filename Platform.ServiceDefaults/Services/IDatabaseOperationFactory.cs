@@ -133,19 +133,9 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     // ========== 上下文方法 ==========
 
     /// <summary>
-    /// 获取当前用户ID
+    /// 获取当前用户ID（从 JWT token 读取，同步方法）
     /// </summary>
     string? GetCurrentUserId();
-
-    /// <summary>
-    /// 获取当前用户名
-    /// </summary>
-    string? GetCurrentUsername();
-
-    /// <summary>
-    /// 获取当前企业ID
-    /// </summary>
-    string? GetCurrentCompanyId();
 
     /// <summary>
     /// 获取必需的用户ID（为空则抛异常）
@@ -153,7 +143,7 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     string GetRequiredUserId();
 
     /// <summary>
-    /// 获取必需的企业ID（为空则抛异常）
+    /// 获取必需的企业ID（统一从数据库读取，为空则抛异常）
     /// </summary>
-    string GetRequiredCompanyId();
+    Task<string> GetRequiredCompanyIdAsync();
 }

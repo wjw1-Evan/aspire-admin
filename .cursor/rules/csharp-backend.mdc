@@ -129,20 +129,12 @@ public class UserService : IUserService
 
     public async Task<List<User>> GetUsersAsync(UserListRequest request)
     {
-        try
-        {
-            var filter = _userFactory.CreateFilterBuilder()
-                .Equal(u => u.IsActive, true)
-                .Build();
-            
-            var users = await _userFactory.FindAsync(filter);
-            return users.ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取用户列表失败");
-            throw;
-        }
+        // ✅ 简单查询：直接使用 Builders<T>.Filter
+        var filter = Builders<User>.Filter.Eq(u => u.IsActive, true);
+        var sort = Builders<User>.Sort.Descending(u => u.CreatedAt);
+        
+        var users = await _userFactory.FindAsync(filter, sort);
+        return users;
     }
 }
 ```
@@ -405,8 +397,16 @@ public async Task<UserProfile> GetUserProfileAsync(string userId)
 ### 2. 查询优化
 
 ```csharp
-// ✅ 使用分页查询
+// ✅ 简单查询：直接使用 Builders<T>
+var filter = Builders<User>.Filter.Eq(u => u.IsActive, true);
+var sort = Builders<User>.Sort.Descending(u => u.CreatedAt);
 var (users, total) = await _userFactory.FindPagedAsync(filter, sort, page: 1, pageSize: 20);
+
+// ✅ 复杂查询：使用 CreateFilterBuilder() 提供更好的可读性
+var complexFilter = _userFactory.CreateFilterBuilder()
+    .Regex(u => u.Username, keyword)
+    .EqualIfHasValue(u => u.IsActive, isActive)
+    .Build();
 
 // ✅ 使用字段投影，只返回需要的字段（性能优化关键）
 var projection = _userFactory.CreateProjectionBuilder()
@@ -429,11 +429,11 @@ var userProjection = _userFactory.CreateProjectionBuilder()
     .Build();
 var users = await _userFactory.FindAsync(userFilter, projection: userProjection);
 
-// ✅ 使用索引优化查询
-var filter = _userFactory.CreateFilterBuilder()
-    .Equal(u => u.IsActive, true)  // 确保有索引
-    .Equal(u => u.CompanyId, companyId)  // 确保有复合索引
-    .Build();
+// ✅ 使用索引优化查询（确保有对应的索引）
+var filter = Builders<User>.Filter.And(
+    Builders<User>.Filter.Eq(u => u.IsActive, true),  // 确保有索引
+    Builders<User>.Filter.Eq(u => u.CompanyId, companyId)  // 确保有复合索引
+);
 ```
 
 **字段投影使用原则**：

@@ -49,7 +49,10 @@ public class UserController : BaseApiController
 ## 2. 数据访问层规范（DatabaseOperationFactory）
 
 - **所有数据库操作必须通过 `IDatabaseOperationFactory<T>` 完成**，禁止直接使用 `IMongoCollection<T>` 或旧的 `BaseRepository<T>`。
-- 使用 `CreateFilterBuilder()` / `CreateSortBuilder()` / `CreateUpdateBuilder()` 构建查询，保持类型安全。
+- **过滤器构建**：对于简单查询，直接使用 `Builders<T>.Filter`；对于复杂查询，使用 `CreateFilterBuilder()` 保持类型安全和可读性。
+- **排序构建**：对于简单排序，直接使用 `Builders<T>.Sort`；对于复杂排序，使用 `CreateSortBuilder()`。
+- **更新构建**：使用 `CreateUpdateBuilder()` 构建更新操作，保持类型安全。
+- **投影构建**：使用 `CreateProjectionBuilder()` 构建字段投影，优化查询性能。
 - 工厂会自动处理：
   - 多租户过滤（针对实现 `IMultiTenant` 的实体）。
   - 软删除标记与查询排除。
@@ -57,18 +60,44 @@ public class UserController : BaseApiController
 - 更新操作只设置业务字段，**不要**手动调用 `SetCurrentTimestamp()` 或设置审计字段。
 - 批量操作使用 `CreateManyAsync`、`UpdateManyAsync`、`SoftDeleteManyAsync` 等方法。
 
+### 简单查询示例（推荐）
+
 ```csharp
+// ✅ 简单过滤器：直接使用 Builders<T>.Filter
+var filter = Builders<T>.Filter.And(
+    Builders<T>.Filter.Eq(u => u.Id, id),
+    Builders<T>.Filter.Eq(u => u.IsDeleted, false)
+);
+
+// ✅ 简单排序：直接使用 Builders<T>.Sort
+var sort = Builders<T>.Sort.Descending(u => u.CreatedAt);
+
+var (items, total) = await _userFactory.FindPagedAsync(filter, sort, request.Page, request.PageSize);
+```
+
+### 复杂查询示例（使用构建器）
+
+```csharp
+// ✅ 复杂过滤器：使用 CreateFilterBuilder() 提供更好的可读性和类型安全
 var filter = _userFactory.CreateFilterBuilder()
     .Regex(u => u.Username, request.Keyword)
     .EqualIfHasValue(u => u.IsActive, request.IsActive)
     .Build();
 
+// ✅ 复杂排序：使用 CreateSortBuilder()
 var sort = _userFactory.CreateSortBuilder()
     .Descending(u => u.CreatedAt)
+    .ThenAscending(u => u.Username)
     .Build();
 
 var (items, total) = await _userFactory.FindPagedAsync(filter, sort, request.Page, request.PageSize);
 ```
+
+### 设计原则
+
+- **简洁优先**：对于简单查询，直接使用 `Builders<T>` 方法，减少不必要的抽象层。
+- **类型安全**：对于复杂查询，使用构建器方法保持类型安全和可读性。
+- **性能优化**：使用投影减少数据传输，使用索引优化查询性能。
 
 ---
 

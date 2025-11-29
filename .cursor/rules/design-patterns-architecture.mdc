@@ -326,30 +326,14 @@ public class UserService : IUserReader, IUserWriter, IUserValidator
 
         var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.Username, request.Username)
-            .SetCurrentTimestamp()
-            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
             .Build();
 
-        return await _userFactory.UpdateAsync(user, new OperationContext
-        {
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
-            OperationType = OperationType.Update,
-            Description = "更新用户信息"
-        });
+        return await _userFactory.UpdateAsync(user, update);
     }
 
     public async Task<bool> DeleteUserAsync(string id)
     {
-        return await _userFactory.SoftDeleteAsync(id, new OperationContext
-        {
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
-            OperationType = OperationType.Delete,
-            Description = "删除用户"
-        });
+        return await _userFactory.SoftDeleteAsync(id);
     }
 
     // IUserValidator 实现

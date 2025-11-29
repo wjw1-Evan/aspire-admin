@@ -338,18 +338,169 @@ LoginResult → 保存token → 获取用户信息 → 更新状态
 
 #### 后端实现
 
+**重要：Refresh Token 端点安全设计**
+
+Refresh Token 端点**必须**使用 `[AllowAnonymous]` 特性，这是 OAuth 2.0 和 JWT refresh token 的标准做法：
+
+```csharp
+// ✅ 正确：Refresh Token 端点允许匿名访问
+// Platform.ApiService/Controllers/AuthController.cs
+
+/// <summary>
+/// 刷新访问令牌
+/// </summary>
+/// <param name="request">刷新令牌请求</param>
+[HttpPost("refresh-token")]
+[AllowAnonymous]  // ✅ 必须：允许匿名访问，因为 access token 已过期
+public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+{
+    var result = await _authService.RefreshTokenAsync(request);
+    return Ok(result);
+}
+```
+
+**为什么需要 `[AllowAnonymous]`？**
+
+1. **符合 OAuth 2.0 标准** - Refresh token 端点设计就是允许匿名访问
+2. **实际使用场景** - 当 access token 过期时，用户无法提供有效的 access token
+3. **安全不依赖端点权限** - 安全依赖于 refresh token 的验证机制，而非端点权限
+
+**后端安全验证机制（多层防护）**
+
+虽然端点允许匿名访问，但后端会进行严格的多层验证：
+
+```csharp
+// ✅ 后端认证服务实现
+// Platform.ApiService/Services/AuthService.cs
+
+public async Task<ApiResponse<RefreshTokenResult>> RefreshTokenAsync(RefreshTokenRequest request)
+{
+    // 1. ✅ JWT 签名验证（使用独立的 refresh token 密钥）
+    var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
+    if (principal == null)
+    {
+        return ApiResponse<RefreshTokenResult>.ErrorResult(
+            "REFRESH_TOKEN_INVALID",
+            "无效的刷新token"
+        );
+    }
+
+    // 2. ✅ Token 类型验证（必须是 "refresh"）
+    // 在 ValidateRefreshToken 中已验证
+
+    // 3. ✅ 从刷新 token 中获取用户ID
+    var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return ApiResponse<RefreshTokenResult>.ErrorResult(
+            "REFRESH_TOKEN_USER_NOT_FOUND",
+            "无法从刷新token中获取用户信息"
+        );
+    }
+
+    // 4. ✅ 数据库验证（检查 token 是否存在、是否被撤销）
+    var refreshTokenFilter = _refreshTokenFactory.CreateFilterBuilder()
+        .Equal(rt => rt.Token, request.RefreshToken)
+        .Equal(rt => rt.UserId, userId)
+        .Equal(rt => rt.IsRevoked, false)
+        .Build();
+
+    var existingToken = await _refreshTokenFactory.FindWithoutTenantFilterAsync(refreshTokenFilter)
+        .FirstOrDefaultAsync();
+
+    if (existingToken == null)
+    {
+        // ✅ 检测旧 token 重用攻击（安全措施）
+        var userTokens = await _refreshTokenFactory.FindWithoutTenantFilterAsync(
+            _refreshTokenFactory.CreateFilterBuilder()
+                .Equal(rt => rt.UserId, userId)
+                .Equal(rt => rt.IsRevoked, false)
+                .Build()
+        );
+
+        if (userTokens.Any())
+        {
+            // 检测到旧 token 重用，撤销该用户所有 token
+            await _refreshTokenFactory.UpdateManyAsync(
+                _refreshTokenFactory.CreateFilterBuilder().Equal(rt => rt.UserId, userId).Build(),
+                _refreshTokenFactory.CreateUpdateBuilder()
+                    .Set(rt => rt.IsRevoked, true)
+                    .Set(rt => rt.RevokedAt, DateTime.UtcNow)
+                    .Set(rt => rt.RevokedReason, "检测到旧token重用攻击")
+                    .Build()
+            );
+        }
+
+        return ApiResponse<RefreshTokenResult>.ErrorResult(
+            "REFRESH_TOKEN_REVOKED",
+            "刷新token无效或已被撤销"
+        );
+    }
+
+    // 5. ✅ 过期时间验证
+    if (existingToken.ExpiresAt < DateTime.UtcNow)
+    {
+        return ApiResponse<RefreshTokenResult>.ErrorResult(
+            "REFRESH_TOKEN_EXPIRED",
+            "刷新token已过期"
+        );
+    }
+
+    // 6. ✅ 用户状态验证（检查用户是否存在、是否激活）
+    var user = await _userFactory.GetByIdAsync(userId);
+    if (user == null || !user.IsActive)
+    {
+        return ApiResponse<RefreshTokenResult>.ErrorResult(
+            "USER_NOT_FOUND",
+            "用户不存在或已被禁用"
+        );
+    }
+
+    // 7. ✅ 生成新的访问 token 和刷新 token
+    var newToken = _jwtService.GenerateToken(user);
+    var newRefreshToken = _jwtService.GenerateRefreshToken(user);
+
+    // 8. ✅ Token 轮换（撤销旧 token，保存新 token）
+    await _refreshTokenFactory.FindOneAndUpdateAsync(
+        refreshTokenFilter,
+        _refreshTokenFactory.CreateUpdateBuilder()
+            .Set(rt => rt.IsRevoked, true)
+            .Set(rt => rt.RevokedAt, DateTime.UtcNow)
+            .Set(rt => rt.RevokedReason, "Token轮换")
+            .Build()
+    );
+
+    // 保存新 token 到数据库
+    await _refreshTokenFactory.CreateAsync(new RefreshToken
+    {
+        UserId = userId,
+        Token = newRefreshToken,
+        PreviousToken = existingToken.Token,
+        ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+        IsRevoked = false
+    });
+
+    // 9. ✅ 返回新的 token 信息（使用 ApiResponse 包装）
+    return ApiResponse<RefreshTokenResult>.SuccessResult(new RefreshTokenResult
+    {
+        Status = "ok",
+        Token = newToken,
+        RefreshToken = newRefreshToken,
+        ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes)
+    });
+}
+```
+
+**后端 JWT 服务实现**
+
 ```csharp
 // ✅ 后端 JWT 服务实现
 // Platform.ApiService/Services/JwtService.cs
 
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-
 public class JwtService : IJwtService
 {
     private readonly string _secretKey;
+    private readonly string _refreshTokenSecret;  // ✅ 独立的 refresh token 密钥
     private readonly string _issuer;
     private readonly string _audience;
     private readonly int _expirationMinutes;
@@ -357,12 +508,18 @@ public class JwtService : IJwtService
 
     public JwtService(IConfiguration configuration)
     {
-        _secretKey = configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey must be configured");
+        _secretKey = configuration["Jwt:SecretKey"] 
+            ?? throw new InvalidOperationException("JWT SecretKey must be configured");
+        
+        // ✅ 使用独立的 Refresh Token 密钥（安全最佳实践）
+        _refreshTokenSecret = configuration["Jwt:RefreshTokenSecret"] ?? _secretKey;
+        
         _issuer = configuration["Jwt:Issuer"] ?? "Platform.ApiService";
         _audience = configuration["Jwt:Audience"] ?? "Platform.Web";
         _expirationMinutes = int.Parse(configuration["Jwt:ExpirationMinutes"] ?? "1440");
         _refreshTokenExpirationDays = int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
     }
+
     // 生成访问 Token
     public string GenerateToken(AppUser user)
     {
@@ -371,16 +528,11 @@ public class JwtService : IJwtService
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Email, user.Email ?? string.Empty),
             new("userId", user.Id ?? string.Empty),
-            new("username", user.Username)
+            new("username", user.Username),
+            // ⚠️ 不再在 JWT token 中包含 CurrentCompanyId
+            // 所有企业ID相关的逻辑应从数据库的 user.CurrentCompanyId 获取
         };
-        
-        // ⚠️ 不再在 JWT token 中包含 CurrentCompanyId
-        // 所有企业ID相关的逻辑应从数据库的 user.CurrentCompanyId 获取
-        // 这样可以避免切换企业后 JWT token 延迟更新的问题
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -393,23 +545,21 @@ public class JwtService : IJwtService
                 SecurityAlgorithms.HmacSha256Signature)
         };
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
+        return tokenHandler.CreateToken(tokenDescriptor).WriteToken(tokenHandler);
     }
 
-    // 生成刷新 Token
+    // 生成刷新 Token（使用独立的密钥）
     public string GenerateRefreshToken(AppUser user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_secretKey);
+        var key = Encoding.ASCII.GetBytes(_refreshTokenSecret);  // ✅ 使用独立密钥
 
         var claims = new List<Claim>
         {
-            new("type", "refresh"),  // 标记为刷新 token
+            new("type", "refresh"),  // ✅ 标记为刷新 token
             new("userId", user.Id ?? string.Empty),
             new("username", user.Username),
             // ⚠️ 不再在 RefreshToken 中包含 companyId
-            // 企业ID应从数据库获取，而非 JWT token
             new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 
@@ -424,19 +574,17 @@ public class JwtService : IJwtService
                 SecurityAlgorithms.HmacSha256Signature)
         };
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
+        return tokenHandler.CreateToken(tokenDescriptor).WriteToken(tokenHandler);
     }
 
-    // 验证刷新 Token
+    // 验证刷新 Token（使用独立的密钥）
     public ClaimsPrincipal? ValidateRefreshToken(string refreshToken)
     {
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_secretKey);
+            var key = Encoding.ASCII.GetBytes(_refreshTokenSecret);  // ✅ 使用独立密钥
             
-            // 创建 token 验证参数（包括密钥、发行者、受众等）
             var validationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -449,10 +597,9 @@ public class JwtService : IJwtService
                 ClockSkew = TimeSpan.Zero
             };
 
-            // 先验证 token 的有效性（签名、过期时间等）
             var principal = tokenHandler.ValidateToken(refreshToken, validationParameters, out _);
             
-            // 然后验证 token 类型为 "refresh"
+            // ✅ 验证 token 类型为 "refresh"
             var tokenType = principal.FindFirst("type")?.Value;
             if (tokenType != "refresh")
             {
@@ -466,44 +613,6 @@ public class JwtService : IJwtService
             return null;
         }
     }
-}
-```
-
-```csharp
-// ✅ 后端认证服务实现
-// Platform.ApiService/Services/AuthService.cs
-
-public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
-{
-    // 1. 验证刷新 token
-    var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
-    if (principal == null)
-    {
-        return new RefreshTokenResult { Status = "error", ErrorMessage = "无效的刷新token" };
-    }
-
-    // 2. 从刷新 token 中获取用户ID
-    var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
-    
-    // 3. 从数据库获取用户信息
-    var user = await _userFactory.GetByIdAsync(userId);
-    if (user == null || !user.IsActive)
-    {
-        return new RefreshTokenResult { Status = "error", ErrorMessage = "用户不存在或已被禁用" };
-    }
-
-    // 4. 生成新的访问 token 和刷新 token
-    var newToken = _jwtService.GenerateToken(user);
-    var newRefreshToken = _jwtService.GenerateRefreshToken(user);
-
-    // 5. 返回新的 token 信息
-    return new RefreshTokenResult
-    {
-        Status = "ok",
-        Token = newToken,
-        RefreshToken = newRefreshToken,
-        ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtService.ExpirationMinutes)
-    };
 }
 ```
 
@@ -830,21 +939,30 @@ export const getToken = async (): Promise<string | null> => {
 
 ### 刷新Token最佳实践
 
-1. **自动刷新机制** - 在token即将过期时自动刷新
-2. **失败处理** - 刷新失败时自动登出用户
-3. **安全存储** - 分别存储访问token和刷新token
-4. **活动日志** - 记录token刷新活动
-5. **错误重试** - 网络请求失败时自动重试
-6. **用户体验** - 无感知的token刷新
+1. **端点权限** - Refresh Token 端点**必须**使用 `[AllowAnonymous]` 特性
+2. **多层安全验证** - 后端必须进行 JWT 签名、数据库、用户状态等多层验证
+3. **独立密钥** - Refresh Token 使用独立的密钥（`Jwt:RefreshTokenSecret`）
+4. **Token 轮换** - 每次刷新时撤销旧 token，生成新 token（防止 token 重用攻击）
+5. **自动刷新机制** - 在 token 即将过期时自动刷新
+6. **失败处理** - 刷新失败时自动登出用户
+7. **安全存储** - 分别存储访问 token 和刷新 token
+8. **活动日志** - 记录 token 刷新活动
+9. **错误重试** - 网络请求失败时自动重试
+10. **用户体验** - 无感知的 token 刷新
+11. **响应格式** - 使用 `ApiResponse<RefreshTokenResult>` 统一响应格式
 
 ## 🚫 避免的做法
 
-- 不要忽略token过期处理，实现自动刷新机制
-- 不要硬编码权限逻辑，使用统一的权限系统
-- 不要忘记处理认证错误，提供用户友好的错误提示
-- 不要在生产环境中暴露敏感信息
-- 不要使用不安全的token存储方式
-- 不要在刷新token失败时不进行登出处理
+- ❌ **不要**在 Refresh Token 端点使用 `[Authorize]` - 必须使用 `[AllowAnonymous]`
+- ❌ **不要**忽略 token 过期处理，实现自动刷新机制
+- ❌ **不要**硬编码权限逻辑，使用统一的权限系统
+- ❌ **不要**忘记处理认证错误，提供用户友好的错误提示
+- ❌ **不要**在生产环境中暴露敏感信息
+- ❌ **不要**使用不安全的 token 存储方式
+- ❌ **不要**在刷新 token 失败时不进行登出处理
+- ❌ **不要**直接返回 `RefreshTokenResult` - 必须使用 `ApiResponse<RefreshTokenResult>` 包装
+- ❌ **不要**使用相同的密钥生成 access token 和 refresh token - 使用独立密钥
+- ❌ **不要**允许旧 token 重用 - 必须实现 token 轮换机制
 
 ## 🔧 最佳实践
 

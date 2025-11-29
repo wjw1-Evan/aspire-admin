@@ -130,12 +130,11 @@ public class MyEntityService : IMyEntityService
         var filter = filterBuilder.Equal(e => e.Id, id).Build();
         
         var updateBuilder = _entityFactory.CreateUpdateBuilder();
-        var updates = new List<UpdateDefinition<MyEntity>>();
         
         if (request.Name != null)
-            updates.Add(updateBuilder.Set(e => e.Name, request.Name));
+            updateBuilder.Set(e => e.Name, request.Name);
         
-        var update = updateBuilder.SetCurrentTimestamp().Combine(updates).Build();
+        var update = updateBuilder.Build();
         var result = await _entityFactory.UpdateManyAsync(filter, update);
         return result > 0;
     }

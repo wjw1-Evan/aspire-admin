@@ -95,11 +95,8 @@ public class UserService : IUserService
             CreatedAt = DateTime.UtcNow
         };
         
-        // 4. 保存到数据库
+        // 4. 保存到数据库（审计字段会自动填充）
         var createdUser = await _userFactory.CreateAsync(user);
-        
-        // 5. 记录操作日志
-        _userFactory.LogOperation("创建用户", createdUser.Id, new { Username = request.Username });
         
         return createdUser;
     }
@@ -178,49 +175,20 @@ public class UserService : IUserService
             await _uniquenessChecker.EnsureUniqueAsync<User>(u => u.Email, request.Email);
         }
 
-        // 4. 更新用户信息
-        var update = _userFactory.CreateUpdateBuilder()
-            .SetCurrentTimestamp()
-            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
-            .Build();
-
+        // 4. 更新用户信息（只设置业务字段，审计字段自动填充）
+        var updateBuilder = _userFactory.CreateUpdateBuilder();
+        
         if (!string.IsNullOrEmpty(request.Username))
-        {
-            update = _userFactory.CreateUpdateBuilder()
-                .Set(u => u.Username, request.Username)
-                .SetCurrentTimestamp()
-                .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
-                .Build();
-        }
-
+            updateBuilder.Set(u => u.Username, request.Username);
+        
         if (!string.IsNullOrEmpty(request.Email))
-        {
-            update = _userFactory.CreateUpdateBuilder()
-                .Set(u => u.Email, request.Email)
-                .SetCurrentTimestamp()
-                .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
-                .Build();
-        }
+            updateBuilder.Set(u => u.Email, request.Email);
+        
+        var update = updateBuilder.Build();
 
-        // 5. 执行更新
-        var result = await _userFactory.UpdateAsync(existingUser, new OperationContext
-        {
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
-            OperationType = OperationType.Update,
-            Description = "更新用户信息"
-        });
-
-        // 6. 记录操作日志
-        if (result)
-        {
-            _userFactory.LogOperation("更新用户", request.Id, new { 
-                Username = request.Username,
-                Email = request.Email 
-            });
-        }
-
+        // 5. 执行更新（审计字段会自动填充）
+        var result = await _userFactory.UpdateAsync(existingUser, update);
+        
         return result;
     }
 
@@ -239,22 +207,9 @@ public class UserService : IUserService
         // 2. 业务规则检查
         await ValidateUserDeletionAsync(user);
 
-        // 3. 执行软删除
-        var result = await _userFactory.SoftDeleteAsync(id, new OperationContext
-        {
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
-            OperationType = OperationType.Delete,
-            Description = "删除用户"
-        });
-
-        // 4. 记录操作日志
-        if (result)
-        {
-            _userFactory.LogOperation("删除用户", id, new { Username = user.Username });
-        }
-
+        // 3. 执行软删除（审计字段会自动填充）
+        var result = await _userFactory.SoftDeleteAsync(id);
+        
         return result;
     }
 
@@ -276,24 +231,10 @@ public class UserService : IUserService
 
         var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.IsActive, true)
-            .SetCurrentTimestamp()
-            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
             .Build();
 
-        var result = await _userFactory.UpdateAsync(user, new OperationContext
-        {
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
-            OperationType = OperationType.Update,
-            Description = "激活用户"
-        });
-
-        if (result)
-        {
-            _userFactory.LogOperation("激活用户", id, new { Username = user.Username });
-        }
-
+        var result = await _userFactory.UpdateAsync(user, update);
+        
         return result;
     }
 
@@ -315,24 +256,10 @@ public class UserService : IUserService
 
         var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.IsActive, false)
-            .SetCurrentTimestamp()
-            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
             .Build();
 
-        var result = await _userFactory.UpdateAsync(user, new OperationContext
-        {
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
-            OperationType = OperationType.Update,
-            Description = "停用用户"
-        });
-
-        if (result)
-        {
-            _userFactory.LogOperation("停用用户", id, new { Username = user.Username });
-        }
-
+        var result = await _userFactory.UpdateAsync(user, update);
+        
         return result;
     }
 
@@ -352,24 +279,10 @@ public class UserService : IUserService
 
         var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.PasswordHash, _passwordHasher.HashPassword(newPassword))
-            .SetCurrentTimestamp()
-            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
             .Build();
 
-        var result = await _userFactory.UpdateAsync(user, new OperationContext
-        {
-            UserId = _userFactory.GetCurrentUserId(),
-            Username = _userFactory.GetCurrentUsername(),
-            CompanyId = _userFactory.GetCurrentCompanyId(),
-            OperationType = OperationType.Update,
-            Description = "重置密码"
-        });
-
-        if (result)
-        {
-            _userFactory.LogOperation("重置密码", id, new { Username = user.Username });
-        }
-
+        var result = await _userFactory.UpdateAsync(user, update);
+        
         return result;
     }
 
@@ -621,10 +534,9 @@ public async Task<User> CreateUserWithRoleAsync(CreateUserWithRoleRequest reques
 
             var userUpdate = _userFactory.CreateUpdateBuilder()
                 .Set(u => u.RoleId, request.RoleId)
-                .SetCurrentTimestamp()
                 .Build();
 
-            await _userFactory.UpdateAsync(createdUser);
+            await _userFactory.UpdateAsync(createdUser, userUpdate);
             createdUser.RoleId = request.RoleId;
         }
 

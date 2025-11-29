@@ -439,6 +439,7 @@ public class AuthController : BaseApiController
     /// <response code="200">令牌刷新成功</response>
     /// <response code="400">刷新令牌无效或已过期</response>
     [HttpPost("refresh-token")]
+    [AllowAnonymous]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
         var result = await _authService.RefreshTokenAsync(request);

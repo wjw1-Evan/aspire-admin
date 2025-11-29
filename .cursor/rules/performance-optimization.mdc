@@ -355,9 +355,10 @@ public class UserService : IUserService
             .In(u => u.Id, userIds)
             .Build();
 
+        // 注意：如果批量更新需要设置业务字段，应该在这里添加
+        // 例如：.Set(u => u.Status, "updated")
+        // 审计字段会自动填充，不需要手动设置
         var update = _userFactory.CreateUpdateBuilder()
-            .SetCurrentTimestamp()
-            .SetOperationTracking(_userFactory.GetCurrentUserId(), _userFactory.GetCurrentUsername())
             .Build();
 
         return await _userFactory.UpdateManyAsync(filter, update);

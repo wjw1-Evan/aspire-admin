@@ -23,12 +23,15 @@ namespace Platform.AppHost.Tests
         {
             _originalEnv[JwtSecretKeyEnv] = Environment.GetEnvironmentVariable(JwtSecretKeyEnv);
             _originalEnv[OpenAiEndpointEnv] = Environment.GetEnvironmentVariable(OpenAiEndpointEnv);
-
-            Environment.SetEnvironmentVariable(JwtSecretKeyEnv, "unit-test-secret-key");
-            Environment.SetEnvironmentVariable(OpenAiEndpointEnv, "https://unit-test-openai-endpoint");
         }
 
-        public Task InitializeAsync() => Task.CompletedTask;
+        public Task InitializeAsync()
+        {
+            Environment.SetEnvironmentVariable(JwtSecretKeyEnv, "unit-test-secret-key");
+            Environment.SetEnvironmentVariable(OpenAiEndpointEnv, "https://unit-test-openai-endpoint");
+
+            return Task.CompletedTask;
+        }
 
         public Task DisposeAsync()
         {

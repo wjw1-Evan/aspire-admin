@@ -86,30 +86,17 @@
 
 ## 📝 最近更新
 
-**2024-12-19**: 根据当前代码库全面更新和清理了所有规则文件，确保规则与实际实现保持一致。
+**2025-11-29**: 同步最新 `AppHost.cs` 与 `Program.cs` 的实现，确保规则中关于 Aspire 编排与部署的示例与真实代码一致。
 
 ### 更新内容
-- ✅ 更新项目结构规范（访问地址、服务编排）
-- ✅ 更新前端开发规范（错误处理、API 集成、token 刷新）
-- ✅ 更新移动端开发规范（认证守卫、API 集成、token 缓存、Toast 自定义配置）
-- ✅ 更新 API 集成规范（错误处理、token 刷新实现）
-- ✅ 更新认证系统规范（前后端统一认证流程）
-- ✅ 更新后端开发规范（JSON 序列化、SignalR 配置）
+- ✅ `project-structure.mdc`：新增 Docker Compose 环境、Dashboard 18888 端口、`services` 字典、Npm 应用发布流程
+- ✅ `aspire-microservices.mdc`：完整对齐当前 AppHost 骨架，强调 `services` 字典是 YARP/Scalar 的单一真相
+- ✅ `deployment.mdc`：更新严格 CORS 策略与根级 `AllowedOrigins` 配置，补充 Dashboard 端口说明
 
-### 清理内容
-- ✅ 清理过时的 API 端点示例（`/api/login/account` → `/api/auth/login` 等）
-- ✅ 更新所有规则文件中的 API 端点引用，确保与代码库一致
-- ✅ 验证并保留已废弃内容的正确标记（BaseService、BaseRepository、PermissionControl 等）
-
-### 最新更新（2024-12-19）
-- ✅ **移动端 Toast 自定义配置**：添加了完整的 Toast 自定义样式配置说明
-  - Toast 样式参考退出登录 Modal 的设计风格
-  - 统一使用 `AppStyles` 常量保持设计一致性
-  - 包含完整的样式规范和配置示例
-
-详细内容请参阅：
-- [Rules 更新总结报告](mdc:docs/reports/RULES-UPDATE-SUMMARY.md) - 更新内容详情
-- [Rules 清理总结报告](mdc:docs/reports/RULES-CLEANUP-SUMMARY.md) - 清理内容详情
+### 参考文档
+- [Rules 更新记录（2025-11-29）](mdc:docs/reports/RULES-UPDATE-2025-11.md)
+- [Rules 更新总结报告（2024-12-19）](mdc:docs/reports/RULES-UPDATE-SUMMARY.md)
+- [Rules 清理总结报告（2024-12-19）](mdc:docs/reports/RULES-CLEANUP-SUMMARY.md)
 
 如需扩展或调整规则，请在 PR 中一并说明，确保团队成员了解最新规范。祝编码顺利！
 

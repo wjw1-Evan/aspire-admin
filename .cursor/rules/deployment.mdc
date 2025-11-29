@@ -26,14 +26,15 @@ docker --version
 dotnet run --project Platform.AppHost
 
 # 3. 访问 Aspire Dashboard 查看服务状态
-open http://localhost:15003
+open http://localhost:15003   # dotnet run 默认端口
+# Docker Compose 仪表盘（aspire publish）请访问 http://localhost:18888
 ```
 
 ### 服务端口分配
 
 | 服务 | 端口 | 用途 |
 |------|------|------|
-| Aspire Dashboard | 15003 | 服务监控面板 |
+| Aspire Dashboard | 15003（dotnet run） / 18888（compose dashboard） | 服务监控面板 |
 | API 网关 (YARP) | 15000 | 统一 API 入口 |
 | 管理后台 | 15001 | Web 管理界面 |
 | 移动应用 | 15002 | 移动端开发服务器 |
@@ -270,9 +271,10 @@ server {
     "RefreshTokenExpirationDays": 7
   },
   "AllowedHosts": "*",
-  "Cors": {
-    "AllowedOrigins": ["https://your-domain.com"]
-  }
+  "AllowedOrigins": [
+    "https://your-domain.com",
+    "https://admin.your-domain.com"
+  ]
 }
 ```
 
@@ -343,20 +345,34 @@ if (!app.Environment.IsDevelopment())
 ### CORS 配置
 
 ```csharp
-// ✅ 推荐：生产环境 CORS
+// ✅ 推荐：严格 CORS（与 Platform.ApiService/Program.cs 保持一致）
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            policy.AllowAnyOrigin()
+            // AllowCredentials() 与 AllowAnyOrigin() 互斥，开发环境也必须显式列出
+            var allowedOrigins = new[]
+            {
+                "http://localhost:15000", // API 网关
+                "http://localhost:15001", // 管理后台
+                "http://localhost:15002", // 移动端
+            };
+
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
-                  .AllowAnyHeader();
+                  .AllowAnyHeader()
+                  .AllowCredentials();
         }
         else
         {
-            policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()!)
+            var allowedOrigins = builder.Configuration
+                .GetSection("AllowedOrigins")
+                .Get<string[]>()
+                ?? throw new InvalidOperationException("AllowedOrigins must be configured in production");
+
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();

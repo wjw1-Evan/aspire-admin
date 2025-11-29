@@ -110,7 +110,7 @@ cd Platform.App && npm start
 
 ### 访问地址
 
-- **Aspire Dashboard**: <http://localhost:15003> (服务监控面板，包含 Scalar API 文档链接)
+- **Aspire Dashboard**: <http://localhost:15003>（本地 `dotnet run`） / <http://localhost:18888>（`aspire publish` + Docker Compose 仪表盘）
 - **管理后台**: <http://localhost:15001>
 - **移动应用**: <http://localhost:15002>
 - **API 网关**: <http://localhost:15000>
@@ -128,61 +128,80 @@ cd Platform.App && npm start
 
 ### 服务编排
 
-Platform.AppHost 负责整个应用的服务编排：
+Platform.AppHost 负责整个应用的服务编排，并且在 `aspire publish`（Docker Compose）模式下会把 Dashboard 固定在 18888 端口：
 
 ```csharp
-// AppHost.cs 核心配置
 var builder = DistributedApplication.CreateBuilder(args);
 
-// 1. 添加 OpenAI 服务（AI 能力）
-var openai = builder.AddOpenAI("openai")
-    .WithEndpoint(openAiEndpoint);
+// Docker Compose 环境（aspire publish 时启用），保证 Dashboard 暴露在 18888 端口
+builder.AddDockerComposeEnvironment("compose")
+    .WithDashboard(dashboard => dashboard.WithHostPort(18888));
+
+// 强制从配置读取密钥，禁止硬编码
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");
+var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"]
+    ?? throw new InvalidOperationException("缺少 OpenAI 终端配置项 'Parameters:openai-openai-endpoint'。");
+
+var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 var chat = openai.AddModel("chat", "gpt-4o-mini");
 
-// 2. 添加 MongoDB 数据库
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
-// 3. 添加数据初始化微服务（一次性任务，完成后自动停止）
+// 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WaitFor(mongodb)
     .WithReference(mongodb)
-    .WithHttpEndpoint();
-
-// 4. 添加 API 服务（依赖数据初始化服务和 OpenAI）
-var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
-    .WithReference(mongodb)
-    .WaitForCompletion(datainitializer)
-    .WithReference(chat)
     .WithHttpEndpoint()
-    .WithReplicas(1)
-    .WithHttpHealthCheck("/health")
-    .WithEnvironment("Jwt__SecretKey", jwtSecretKey);
+    .PublishAsDockerComposeService((_, service) => service.Name = "datainitializer");
 
-// 5. 配置 YARP 网关
+// 核心业务服务统一放在字典中，方便路由与 Scalar 共享配置
+var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
+{
+    ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+        .WithReference(mongodb)
+        .WaitForCompletion(datainitializer)
+        .WithHttpEndpoint()
+        .WithReplicas(1)
+        .WithHttpHealthCheck("/health")
+        .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+        .WithReference(chat)
+};
+
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
-    .WithConfiguration(config => {
-        // 微服务路由配置 - 统一通过/{service}路径访问
-        config.AddRoute("/apiservice/{**catch-all}", config.AddCluster(apiservice))
-            .WithTransformPathRouteValues("/{**catch-all}");
+    .PublishAsDockerComposeService((_, service) => service.Ports = new List<string> { "15000:15000" })
+    .WithConfiguration(config =>
+    {
+        foreach (var service in services)
+        {
+            config.AddRoute($"/{service.Key}/{{**catch-all}}", config.AddCluster(service.Value))
+                .WithTransformPathRouteValues("/{**catch-all}");
+        }
     });
 
-// 6. 添加前端应用
 builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8080);
+    .WithEnvironment("BROWSER", "none")
+    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8080)
+    .WithNpmPackageInstallation()
+    .PublishAsDockerFile()
+    .PublishAsDockerComposeService((_, service) => service.Ports = new List<string> { "15001:8080" });
 
 builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WithHttpEndpoint(env: "PORT", port: 15002, targetPort: 8081);
+    .WithEnvironment("BROWSER", "none")
+    .WithHttpEndpoint(env: "PORT", port: 15002, targetPort: 8081)
+    .WithNpmPackageInstallation()
+    .PublishAsDockerFile()
+    .PublishAsDockerComposeService((_, service) => service.Ports = new List<string> { "15002:8081" });
 
-// 7. 配置 Scalar API 文档（开发环境）
 if (builder.Environment.IsDevelopment())
 {
     var scalar = builder.AddScalarApiReference();
@@ -191,6 +210,8 @@ if (builder.Environment.IsDevelopment())
         scalar.WithApiReference(service);
     }
 }
+
+await builder.Build().RunAsync();
 ```
 
 ### 服务依赖关系

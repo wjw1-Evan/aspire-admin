@@ -13,66 +13,90 @@ description: .NET Aspire 微服务架构和编排规范
 ## ✅ AppHost 关键配置要点
 
 ```csharp
-// Platform.AppHost/AppHost.cs（核心骨架）
 var builder = DistributedApplication.CreateBuilder(args);
 
-// 1. 添加 OpenAI 服务（AI 能力）
-var openai = builder.AddOpenAI("openai")
-    .WithEndpoint(openAiEndpoint);
+// Docker Compose 环境（aspire publish 使用），把 Dashboard 固定在 18888
+builder.AddDockerComposeEnvironment("compose")
+    .WithDashboard(dashboard => dashboard.WithHostPort(18888));
+
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");
+var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"]
+    ?? throw new InvalidOperationException("缺少 OpenAI 终端配置项 'Parameters:openai-openai-endpoint'。");
+
+var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 var chat = openai.AddModel("chat", "gpt-4o-mini");
 
-// 2. 添加 MongoDB 数据库
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
-// 3. 添加数据初始化微服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WaitFor(mongodb)
     .WithReference(mongodb)
-    .WithHttpEndpoint();
-
-// 4. 添加 API 服务（依赖数据初始化服务和 OpenAI）
-var apiservice = builder.AddProject<Projects.Platform_ApiService>("apiservice")
-    .WithReference(mongodb)
-    .WaitForCompletion(datainitializer)
-    .WithReference(chat)
     .WithHttpEndpoint()
-    .WithReplicas(1)
-    .WithHttpHealthCheck("/health")
-    .WithEnvironment("Jwt__SecretKey", jwtSecretKey);
+    .PublishAsDockerComposeService((_, service) => service.Name = "datainitializer");
 
-// 5. 配置 YARP 网关
+var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
+{
+    ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
+        .WithReference(mongodb)
+        .WaitForCompletion(datainitializer)
+        .WithHttpEndpoint()
+        .WithReplicas(1)
+        .WithHttpHealthCheck("/health")
+        .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+        .WithReference(chat)
+};
+
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000)
+    .PublishAsDockerComposeService((_, service) => service.Ports = new List<string> { "15000:15000" })
     .WithConfiguration(config =>
-        config.AddRoute("/apiservice/{**catch-all}", config.AddCluster(apiservice))
-              .WithTransformPathRouteValues("/{**catch-all}"));
+    {
+        foreach (var service in services)
+        {
+            config.AddRoute($"/{service.Key}/{{**catch-all}}", config.AddCluster(service.Value))
+                  .WithTransformPathRouteValues("/{**catch-all}");
+        }
+    });
 
-// 6. 添加前端应用
 builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8080);
+    .WithEnvironment("BROWSER", "none")
+    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8080)
+    .WithNpmPackageInstallation()
+    .PublishAsDockerFile()
+    .PublishAsDockerComposeService((_, service) => service.Ports = new List<string> { "15001:8080" });
 
 builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
-    .WithHttpEndpoint(env: "PORT", port: 15002, targetPort: 8081);
+    .WithEnvironment("BROWSER", "none")
+    .WithHttpEndpoint(env: "PORT", port: 15002, targetPort: 8081)
+    .WithNpmPackageInstallation()
+    .PublishAsDockerFile()
+    .PublishAsDockerComposeService((_, service) => service.Ports = new List<string> { "15002:8081" });
 
-// 7. 配置 Scalar API 文档（开发环境）
 if (builder.Environment.IsDevelopment())
 {
     var scalar = builder.AddScalarApiReference();
-    scalar.WithApiReference(apiservice);
+    foreach (var service in services.Values)
+    {
+        scalar.WithApiReference(service);
+    }
 }
 
-builder.Build().Run();
+await builder.Build().RunAsync();
 ```
 
-> 📌 提示：如需扩容，可对 `datainitializer` 保持单实例，对 `apiservice` 调整 `WithReplicas(n)`。
+> 📌 提示：
+> - `services` 字典是 YARP 路由和 Scalar API 文档共享的单一真相，新增微服务时必须同时更新该字典。
+> - Compose 环境下的 Aspire Dashboard 固定暴露在 18888 端口；本地调试 `dotnet run` 仍使用默认端口 15003。
+> - 如需扩容，可对 `datainitializer` 保持单实例，对 `apiservice` 调整 `WithReplicas(n)`。
 
 ## ⚙️ 微服务 Program.cs 最小清单
 

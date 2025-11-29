@@ -118,13 +118,13 @@ namespace Platform.AppHost.Tests
         }
 
         [Fact]
-        public async Task Chat_Model_Should_Reference_OpenAi_Service()
+        public async Task OpenAi_Service_Should_Reference_Chat_Model()
         {
             var builder = await CreateBuilderAsync();
 
-            var relationships = GetResourceRelationships(builder, "chat");
+            var relationships = GetResourceRelationships(builder, "openai");
 
-            Assert.Contains(relationships, relation => relation.Resource.Name == "openai");
+            Assert.Contains(relationships, relation => relation.Resource.Name == "chat");
         }
     }
 }

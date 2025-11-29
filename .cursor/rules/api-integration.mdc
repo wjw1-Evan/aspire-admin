@@ -11,7 +11,7 @@ description: API 集成和网络请求规范
 - **API 网关**: http://localhost:15000
 - **API 服务（直连）**: http://localhost:15000/apiservice
 - **管理后台代理前缀**: `/api/**`（Umi 代理到网关的 `/apiservice/**`）
-- **API 文档**: 通过 Aspire Dashboard (http://localhost:15003) → **Scalar API Reference**
+- **API 文档**: 通过 Aspire Dashboard (http://localhost:15003 开发 / http://localhost:18888 compose 仪表盘) → **Scalar API Reference**
 
 ### 认证方式
 所有 API 请求使用 JWT Token 认证：

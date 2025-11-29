@@ -214,7 +214,7 @@ dotnet run --project Platform.AppHost
 
 ### 2. 打开 Aspire Dashboard
 
-访问: **http://localhost:15003**
+访问: **http://localhost:15003**（本地 `dotnet run`） / **http://localhost:18888**（`aspire publish` + Docker Compose 仪表盘）
 
 ### 3. 查看 Scalar API 文档
 

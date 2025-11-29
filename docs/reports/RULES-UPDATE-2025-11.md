@@ -30,6 +30,10 @@
    - CI Pipeline 统一使用 .NET 10 SDK。
    - Node.js 步骤升级至 20.x，以满足 Ant Design Pro 对 Node 20 的引擎要求。
 
+5. `openapi-scalar-standard.mdc` & `api-integration.mdc`
+   - Aspire Dashboard 访问地址统一描述为“15003（dotnet run）/18888（aspire publish）”，避免 Compose 环境下文档入口指示错误。
+   - API 集成规则引用相同的仪表盘说明，确保前后端同一入口。
+
 ## 🔍 代码参考
 
 - `Platform.AppHost/AppHost.cs`（Docker Compose 环境、YARP 路由、Scalar 配置）

@@ -93,6 +93,7 @@
 - ✅ `aspire-microservices.mdc`：完整对齐 AppHost + ApiService + DataInitializer 的真实代码，覆盖 ProblemDetails、JSON/SignalR 配置、严格 CORS、OpenAPI、Mongo/OpenAI 客户端、JWT、安全中间件及自动退出流程
 - ✅ `deployment.mdc`：更新严格 CORS 策略、根级 `AllowedOrigins`、.NET 10 Docker 镜像与 CI SDK、Dashboard 端口说明
 - ✅ `code-review-quality.mdc` & `git-workflow-version-control.mdc`：CI/CD 工作流统一切换到 .NET 10 + Node 20，匹配当前项目运行环境
+- ✅ `openapi-scalar-standard.mdc` & `api-integration.mdc`：Aspire Dashboard 访问地址统一说明“15003 开发 / 18888 Compose”，避免 Compose 场景无法找到 Scalar 文档
 
 ### 参考文档
 - [Rules 更新记录（2025-11-29）](mdc:docs/reports/RULES-UPDATE-2025-11.md)

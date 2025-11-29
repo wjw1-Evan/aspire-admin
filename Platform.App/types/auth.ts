@@ -62,6 +62,14 @@ export interface RefreshTokenRequest {
     refreshToken: string;
 }
 
+export interface RefreshTokenResult {
+    status?: string;  // 'ok' or 'error'
+    token?: string;
+    refreshToken?: string;
+    expiresAt?: string;
+    errorMessage?: string;
+}
+
 export interface UpdatePasswordRequest {
     oldPassword: string;
     newPassword: string;

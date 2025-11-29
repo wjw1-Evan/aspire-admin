@@ -986,38 +986,35 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="request">刷新 Token 请求</param>
     /// <returns>新的 Token 信息</returns>
-    public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
+    public async Task<ApiResponse<RefreshTokenResult>> RefreshTokenAsync(RefreshTokenRequest request)
     {
         // 验证输入参数
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
         {
-            return new RefreshTokenResult
-            {
-                Status = "error",
-                ErrorMessage = "刷新token不能为空"
-            };
+            return ApiResponse<RefreshTokenResult>.ErrorResult(
+                "REFRESH_TOKEN_EMPTY",
+                "刷新token不能为空"
+            );
         }
 
         // 验证刷新token（JWT格式）
         var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
         if (principal == null)
         {
-            return new RefreshTokenResult
-            {
-                Status = "error",
-                ErrorMessage = "无效的刷新token"
-            };
+            return ApiResponse<RefreshTokenResult>.ErrorResult(
+                "REFRESH_TOKEN_INVALID",
+                "无效的刷新token"
+            );
         }
 
         // 从刷新token中获取用户ID
         var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
         if (string.IsNullOrEmpty(userId))
         {
-            return new RefreshTokenResult
-            {
-                Status = "error",
-                ErrorMessage = "无法从刷新token中获取用户信息"
-            };
+            return ApiResponse<RefreshTokenResult>.ErrorResult(
+                "REFRESH_TOKEN_USER_NOT_FOUND",
+                "无法从刷新token中获取用户信息"
+            );
         }
 
         // 从数据库查找刷新token记录
@@ -1059,11 +1056,10 @@ public class AuthService : IAuthService
                 _logger.LogWarning("检测到用户 {UserId} 的旧token重用攻击，已撤销所有token", userId);
             }
 
-            return new RefreshTokenResult
-            {
-                Status = "error",
-                ErrorMessage = "刷新token无效或已被撤销"
-            };
+            return ApiResponse<RefreshTokenResult>.ErrorResult(
+                "REFRESH_TOKEN_REVOKED",
+                "刷新token无效或已被撤销"
+            );
         }
 
         // 检查token是否已过期
@@ -1078,11 +1074,10 @@ public class AuthService : IAuthService
 
             await _refreshTokenFactory.FindOneAndUpdateAsync(refreshTokenFilter, expireUpdate);
 
-            return new RefreshTokenResult
-            {
-                Status = "error",
-                ErrorMessage = "刷新token已过期"
-            };
+            return ApiResponse<RefreshTokenResult>.ErrorResult(
+                "REFRESH_TOKEN_EXPIRED",
+                "刷新token已过期"
+            );
         }
 
         // 从数据库获取用户信息
@@ -1090,11 +1085,10 @@ public class AuthService : IAuthService
         var user = users.FirstOrDefault();
         if (user == null)
         {
-            return new RefreshTokenResult
-            {
-                Status = "error",
-                ErrorMessage = "用户不存在或已被禁用"
-            };
+            return ApiResponse<RefreshTokenResult>.ErrorResult(
+                "USER_NOT_FOUND",
+                "用户不存在或已被禁用"
+            );
         }
 
         // 生成新的访问token和刷新token
@@ -1136,13 +1130,15 @@ public class AuthService : IAuthService
         // 从配置读取过期时间
         var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "1440");
 
-        return new RefreshTokenResult
+        var refreshTokenResult = new RefreshTokenResult
         {
             Status = "ok",
             Token = newToken,
             RefreshToken = newRefreshToken,
             ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes) // 从配置读取访问token过期时间
         };
+
+        return ApiResponse<RefreshTokenResult>.SuccessResult(refreshTokenResult);
     }
 
 }

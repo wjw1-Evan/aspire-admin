@@ -5,8 +5,8 @@
 
 import { apiClient } from '../services/api';
 import { tokenUtils } from './token';
-import { RefreshTokenRequest } from '../types/auth';
-import { ApiResponse, LoginResponse } from '../types/api';
+import { RefreshTokenRequest, RefreshTokenResult } from '../types/auth';
+import { ApiResponse } from '../types/api';
 
 /**
  * Token 刷新结果
@@ -55,7 +55,7 @@ class TokenRefreshManager {
    */
   private static async doRefresh(refreshToken: string): Promise<TokenRefreshResult | null> {
     try {
-      const response = await apiClient.post<RefreshTokenRequest, ApiResponse<LoginResponse>>(
+      const response = await apiClient.post<RefreshTokenRequest, ApiResponse<RefreshTokenResult>>(
         '/api/auth/refresh-token',
         { refreshToken } as RefreshTokenRequest
       );

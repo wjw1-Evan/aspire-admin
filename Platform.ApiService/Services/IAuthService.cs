@@ -47,6 +47,6 @@ public interface IAuthService
     /// </summary>
     /// <param name="request">刷新 Token 请求</param>
     /// <returns>新的 Token 信息</returns>
-    Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request);
+    Task<ApiResponse<RefreshTokenResult>> RefreshTokenAsync(RefreshTokenRequest request);
 }
 

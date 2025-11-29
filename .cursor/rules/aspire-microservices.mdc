@@ -105,15 +105,191 @@ await builder.Build().RunAsync();
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
-builder.Services
-    .AddMongoDb(builder.Configuration)
-    .AddBusinessServices()
-    .AddJwtAuthentication(builder.Configuration)
-    .AddMiddlewareServices();
+
+builder.Services.AddProblemDetails();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.WriteIndented = false;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    });
+
+builder.Services.AddSignalR(options =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            options.EnableDetailedErrors = true;
+        }
+    })
+    .AddJsonProtocol(options =>
+    {
+        options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.PayloadSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.PayloadSerializerOptions.WriteIndented = false;
+        options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    });
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            var allowedOrigins = new[]
+            {
+                "http://localhost:15000",
+                "http://localhost:15001",
+                "http://localhost:15002",
+            };
+
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+                ?? throw new InvalidOperationException("AllowedOrigins must be configured in production");
+
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+    });
+});
+
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, _, _) =>
+    {
+        document.Info = new()
+        {
+            Title = "Platform API",
+            Version = "v1",
+            Description = "Aspire Admin Platform API - 企业级管理平台后端服务",
+            Contact = new() { Name = "Platform Team", Email = "support@platform.com" }
+        };
+
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "JWT Authorization header using the Bearer scheme."
+        };
+
+        document.Security ??= [];
+        document.Security.Add(new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document, null)] = Array.Empty<string>()
+        });
+
+        return Task.CompletedTask;
+    });
+
+    options.AddOperationTransformer((operation, context, _) =>
+    {
+        var authorizeAttributes = context.Description.ActionDescriptor.EndpointMetadata
+            .OfType<AuthorizeAttribute>();
+
+        if (authorizeAttributes.Any())
+        {
+            var scheme = new OpenApiSecuritySchemeReference("Bearer", context.Document, null);
+            operation.Security ??= [];
+            operation.Security.Add(new OpenApiSecurityRequirement { [scheme] = Array.Empty<string>() });
+        }
+
+        return Task.CompletedTask;
+    });
+});
+
+builder.AddMongoDBClient("mongodb");
+builder.AddOpenAIClient("chat");
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
+builder.Services.Configure<AiCompletionOptions>(builder.Configuration.GetSection(AiCompletionOptions.SectionName));
+builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddDatabaseFactory();
+builder.Services.AddScoped<ChatService.ChatServiceDependencies>();
+builder.Services.AddBusinessServices();
+
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("JWT SecretKey must be configured.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Platform.Web";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecretKey)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+            RequireExpirationTime = true,
+            RequireSignedTokens = true
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/apiservice/hubs")))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
+builder.Services.AddHsts(options =>
+{
+    options.Preload = true;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(365);
+});
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
-app.ConfigureMiddlewarePipeline();
-app.Run();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
+app.UseExceptionHandler();
+app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseMiddleware<ActivityLogMiddleware>();
+app.UseMiddleware<ResponseFormattingMiddleware>();
+app.UseWebSockets();
+app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat").RequireAuthorization();
+app.MapOpenApi();
+app.MapDefaultEndpoints();
+
+await app.RunAsync();
 ```
 
 ### DataInitializer
@@ -121,13 +297,49 @@ app.Run();
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
-builder.Services
-    .AddMongoDb(builder.Configuration)
-    .AddScoped<IDataInitializerService, DataInitializerService>();
+
+builder.Services.AddProblemDetails();
+builder.AddMongoDBClient("mongodb");
+builder.Services.AddScoped<IDataInitializerService, DataInitializerService>();
 
 var app = builder.Build();
-app.ConfigureDataInitialization();
-app.Run();
+app.UseExceptionHandler();
+
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "DataInitializer" }));
+app.MapPost("/initialize", async (IDataInitializerService initializer) =>
+{
+    try
+    {
+        await initializer.InitializeAsync();
+        return Results.Ok(new { message = "数据初始化完成" });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"数据初始化失败: {ex.Message}");
+    }
+});
+
+app.MapDefaultEndpoints();
+
+using (var scope = app.Services.CreateScope())
+{
+    var initializer = scope.ServiceProvider.GetRequiredService<IDataInitializerService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("🚀 DataInitializer 微服务启动，开始执行数据初始化...");
+        await initializer.InitializeAsync();
+        logger.LogInformation("✅ 数据初始化完成");
+        logger.LogInformation("🛑 DataInitializer 微服务已完成任务，正在退出...");
+        Environment.Exit(0);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "❌ 数据初始化失败");
+        Environment.Exit(1);
+    }
+}
 ```
 
 ## 🌐 服务发现、配置与监控

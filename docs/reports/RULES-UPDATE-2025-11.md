@@ -18,12 +18,17 @@
      - Compose 环境和 Dashboard 端口
      - `services` 字典是 YARP 与 Scalar 共享的单一真相
      - 所有服务（含前端）均显式禁止自动打开浏览器、安装依赖、发布 Docker 镜像/Compose 服务
-   - 新增提示：新增微服务时必须同步更新 `services` 字典。
+   - 用当前 `Platform.ApiService/Program.cs`、`Platform.DataInitializer/Program.cs` 的真实代码替换旧版“伪最小清单”，涵盖 ProblemDetails、JSON 配置、SignalR、严格 CORS、OpenAPI、Mongo/OpenAI 客户端、JWT、HSTS、健康检查、统一中间件顺序及初始化自动退出逻辑。
 
 3. `deployment.mdc`
    - 同步最新 CORS 实现：开发环境也使用白名单 + `AllowCredentials()`，生产环境从根级 `AllowedOrigins` 节读取，禁止 `AllowAnyOrigin() + AllowCredentials()` 组合。
    - 更新 `appsettings.Production.json` 示例，将 `AllowedOrigins` 提到根级配置并列出多个域名。
+   - Dockerfile 与 CI/CD 示例全部切换到 .NET 10 基础镜像/SDK，保持与解决方案目标框架一致。
    - 补充 Aspire Dashboard 端口说明（15003 / 18888）。
+
+4. `code-review-quality.mdc` & `git-workflow-version-control.mdc`
+   - CI Pipeline 统一使用 .NET 10 SDK。
+   - Node.js 步骤升级至 20.x，以满足 Ant Design Pro 对 Node 20 的引擎要求。
 
 ## 🔍 代码参考
 

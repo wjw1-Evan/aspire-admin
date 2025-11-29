@@ -58,12 +58,12 @@ ASPNETCORE_URLS=http://localhost:5000
 ### Dockerfile - API 服务
 
 ```dockerfile
-# ✅ 推荐：Platform.ApiService/Dockerfile
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+# ✅ 推荐：Platform.ApiService/Dockerfile（基于 .NET 10）
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 EXPOSE 8080
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["Platform.ApiService/Platform.ApiService.csproj", "Platform.ApiService/"]
 COPY ["Platform.ServiceDefaults/Platform.ServiceDefaults.csproj", "Platform.ServiceDefaults/"]
@@ -420,7 +420,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Setup Node.js
         uses: actions/setup-node@v3

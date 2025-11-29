@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { authService } from '../../services/authService';
 import { LoginRequest } from '../../types/auth';
+import { reportUserLocation } from '../../utils/locationReporter';
 
 export default function LoginScreen() {
     const [username, setUsername] = useState('');
@@ -86,6 +87,11 @@ export default function LoginScreen() {
             if (response.success) {
                 // Fetch user info after successful login
                 await authService.getCurrentUser();
+
+                // Request location permission and report location (silently, don't block login)
+                reportUserLocation().catch((error) => {
+                    console.warn('位置上报失败，不影响登录:', error);
+                });
 
                 // Notify auth listeners to trigger redirect in _layout
                 authService.notifyLoginSuccess();

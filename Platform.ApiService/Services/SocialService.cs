@@ -93,8 +93,9 @@ public class SocialService : ISocialService
         var now = DateTime.UtcNow;
         var lastSeenAt = ResolveLastSeenAt(request, now);
 
-        // ✅ 先保存位置（city 和 country 为 null），立即返回响应，不等待地理编码
-        // 这样可以避免地理编码 API 慢导致请求超时
+        // ✅ 每次上报位置都创建新记录，保留历史位置数据
+        // ID 由 MongoDB 自动生成（BaseEntity 的默认值 ObjectId.GenerateNewId().ToString()）
+        // 这样可以保留用户的位置历史记录，用于轨迹分析等功能
         var beacon = new UserLocationBeacon
         {
             UserId = currentUserId,
@@ -110,10 +111,11 @@ public class SocialService : ISocialService
             Country = null // 先不设置国家，在后台任务中更新
         };
 
+        // 创建新记录（ID 会自动生成）
         var createdBeacon = await _beaconFactory.CreateAsync(beacon);
         
         // ✅ 保存关键信息，供后台任务使用（后台任务无法访问 HttpContext）
-        var beaconId = createdBeacon.Id;
+        var beaconId = createdBeacon?.Id ?? throw new InvalidOperationException("位置信标创建失败：无法获取信标ID");
 
         // ✅ 在后台异步执行地理编码，完成后更新 city 和 country 字段
         // 使用 Task.Run 在后台线程执行，不阻塞当前请求
@@ -511,28 +513,77 @@ public class SocialService : ISocialService
             
             var result = new GeocodeResult();
             
-            // 获取城市（locality）
-            if (json.TryGetProperty("locality", out var locality) && !string.IsNullOrEmpty(locality.GetString()))
+            // ✅ 改进城市解析逻辑：按优先级尝试多个字段
+            // 1. 优先使用 locality（城市/地区）
+            if (json.TryGetProperty("locality", out var locality) && !string.IsNullOrWhiteSpace(locality.GetString()))
             {
-                result.City = locality.GetString();
+                result.City = locality.GetString()!.Trim();
             }
-            // 如果没有城市，尝试使用区县（principalSubdivision）作为城市
-            else if (json.TryGetProperty("principalSubdivision", out var subdivision) && !string.IsNullOrEmpty(subdivision.GetString()))
+            // 2. 如果没有 locality，尝试使用 city（城市）
+            else if (json.TryGetProperty("city", out var city) && !string.IsNullOrWhiteSpace(city.GetString()))
             {
-                result.City = subdivision.GetString();
+                result.City = city.GetString()!.Trim();
+            }
+            // 3. 如果没有 city，尝试使用 principalSubdivision（省/州）
+            else if (json.TryGetProperty("principalSubdivision", out var subdivision) && !string.IsNullOrWhiteSpace(subdivision.GetString()))
+            {
+                result.City = subdivision.GetString()!.Trim();
+            }
+            // 4. 如果没有 principalSubdivision，尝试使用 localityInfo.administrative[0].name（行政区划）
+            else if (json.TryGetProperty("localityInfo", out var localityInfo) && 
+                     localityInfo.TryGetProperty("administrative", out var administrative) &&
+                     administrative.ValueKind == JsonValueKind.Array && 
+                     administrative.GetArrayLength() > 0)
+            {
+                var firstAdmin = administrative[0];
+                if (firstAdmin.TryGetProperty("name", out var adminName) && !string.IsNullOrWhiteSpace(adminName.GetString()))
+                {
+                    result.City = adminName.GetString()!.Trim();
+                }
             }
             
-            // 获取国家（countryName）
-            if (json.TryGetProperty("countryName", out var countryName) && !string.IsNullOrEmpty(countryName.GetString()))
+            // ✅ 改进国家解析逻辑：按优先级尝试多个字段
+            // 1. 优先使用 countryName（国家名称）
+            if (json.TryGetProperty("countryName", out var countryName) && !string.IsNullOrWhiteSpace(countryName.GetString()))
             {
-                result.Country = countryName.GetString();
+                result.Country = countryName.GetString()!.Trim();
+            }
+            // 2. 如果没有 countryName，尝试使用 countryCode（国家代码，如 CN、US）
+            else if (json.TryGetProperty("countryCode", out var countryCode) && !string.IsNullOrWhiteSpace(countryCode.GetString()))
+            {
+                // 将国家代码转换为国家名称（简化处理，实际可以使用映射表）
+                result.Country = countryCode.GetString()!.Trim().ToUpper();
+            }
+            // 3. 如果没有 countryCode，尝试使用 localityInfo.administrative 中的国家信息
+            else if (json.TryGetProperty("localityInfo", out var localityInfo2) && 
+                     localityInfo2.TryGetProperty("administrative", out var administrative2) &&
+                     administrative2.ValueKind == JsonValueKind.Array)
+            {
+                // 查找最后一个 administrative 元素（通常是国家级别）
+                var adminArray = administrative2.EnumerateArray().ToList();
+                if (adminArray.Count > 0)
+                {
+                    var lastAdmin = adminArray[adminArray.Count - 1];
+                    if (lastAdmin.TryGetProperty("name", out var countryName2) && !string.IsNullOrWhiteSpace(countryName2.GetString()))
+                    {
+                        result.Country = countryName2.GetString()!.Trim();
+                    }
+                }
             }
             
-            // 如果城市和国家都为空，返回 null
+            // 如果城市和国家都为空，记录警告并返回 null
             if (string.IsNullOrEmpty(result.City) && string.IsNullOrEmpty(result.Country))
             {
+                _logger.LogWarning("BigDataCloud 逆地理编码返回空结果，坐标 ({Latitude}, {Longitude})，响应: {Response}", 
+                    latitude, longitude, response);
                 return null;
             }
+            
+            // 记录解析结果（仅在开发环境）
+#if DEBUG
+            _logger.LogInformation("BigDataCloud 逆地理编码成功，坐标 ({Latitude}, {Longitude})，City: {City}, Country: {Country}", 
+                latitude, longitude, result.City, result.Country);
+#endif
             
             return result;
         }
@@ -543,7 +594,13 @@ public class SocialService : ISocialService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning(ex, "BigDataCloud 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})", latitude, longitude);
+            _logger.LogWarning(ex, "BigDataCloud 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})，状态码: {StatusCode}", 
+                latitude, longitude, ex.Data.Contains("StatusCode") ? ex.Data["StatusCode"] : "未知");
+            return null;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "BigDataCloud 逆地理编码 JSON 解析失败，坐标 ({Latitude}, {Longitude})", latitude, longitude);
             return null;
         }
         catch (Exception ex)
@@ -573,35 +630,85 @@ public class SocialService : ISocialService
             var response = await httpClient.GetStringAsync(url);
             var json = JsonSerializer.Deserialize<JsonElement>(response);
             
+            // 检查是否有错误
+            if (json.TryGetProperty("status", out var status))
+            {
+                var statusObj = status.GetProperty("message");
+                _logger.LogWarning("GeoNames API 返回错误，坐标 ({Latitude}, {Longitude})，错误: {Error}", 
+                    latitude, longitude, statusObj.GetString());
+                return null;
+            }
+            
             var result = new GeocodeResult();
             
             if (json.TryGetProperty("geonames", out var geonames) && geonames.ValueKind == JsonValueKind.Array && geonames.GetArrayLength() > 0)
             {
-                var firstPlace = geonames[0];
+                // ✅ 改进：遍历所有结果，寻找最合适的城市信息
+                var places = geonames.EnumerateArray().ToList();
                 
-                // 获取城市名称（name）
-                if (firstPlace.TryGetProperty("name", out var name) && !string.IsNullOrEmpty(name.GetString()))
+                foreach (var place in places)
                 {
-                    result.City = name.GetString();
-                }
-                // 如果没有名称，尝试使用行政区划名称（adminName1）作为城市
-                else if (firstPlace.TryGetProperty("adminName1", out var adminName1) && !string.IsNullOrEmpty(adminName1.GetString()))
-                {
-                    result.City = adminName1.GetString();
-                }
-                
-                // 获取国家名称（countryName）
-                if (firstPlace.TryGetProperty("countryName", out var countryName) && !string.IsNullOrEmpty(countryName.GetString()))
-                {
-                    result.Country = countryName.GetString();
+                    // 获取 fcode（特征代码），优先选择城市类型的地点
+                    var fcode = place.TryGetProperty("fcode", out var fcodeProp) ? fcodeProp.GetString() : null;
+                    var isCity = fcode != null && (fcode.StartsWith("PPL") || fcode.StartsWith("ADM")); // PPL=人口聚集地, ADM=行政区划
+                    
+                    // ✅ 改进城市解析逻辑：按优先级尝试多个字段
+                    if (string.IsNullOrEmpty(result.City))
+                    {
+                        // 1. 优先使用 name（地点名称）
+                        if (place.TryGetProperty("name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                        {
+                            result.City = name.GetString()!.Trim();
+                            if (isCity) break; // 如果是城市类型，直接使用
+                        }
+                        // 2. 如果没有 name，尝试使用 adminName1（省/州）
+                        else if (place.TryGetProperty("adminName1", out var adminName1) && !string.IsNullOrWhiteSpace(adminName1.GetString()))
+                        {
+                            result.City = adminName1.GetString()!.Trim();
+                        }
+                        // 3. 如果没有 adminName1，尝试使用 adminName2（市/县）
+                        else if (place.TryGetProperty("adminName2", out var adminName2) && !string.IsNullOrWhiteSpace(adminName2.GetString()))
+                        {
+                            result.City = adminName2.GetString()!.Trim();
+                        }
+                    }
+                    
+                    // ✅ 改进国家解析逻辑
+                    if (string.IsNullOrEmpty(result.Country))
+                    {
+                        // 1. 优先使用 countryName（国家名称）
+                        if (place.TryGetProperty("countryName", out var countryName) && !string.IsNullOrWhiteSpace(countryName.GetString()))
+                        {
+                            result.Country = countryName.GetString()!.Trim();
+                        }
+                        // 2. 如果没有 countryName，尝试使用 countryCode（国家代码）
+                        else if (place.TryGetProperty("countryCode", out var countryCode) && !string.IsNullOrWhiteSpace(countryCode.GetString()))
+                        {
+                            result.Country = countryCode.GetString()!.Trim().ToUpper();
+                        }
+                    }
+                    
+                    // 如果已经获取到城市和国家，可以提前退出
+                    if (!string.IsNullOrEmpty(result.City) && !string.IsNullOrEmpty(result.Country))
+                    {
+                        break;
+                    }
                 }
             }
             
-            // 如果城市和国家都为空，返回 null
+            // 如果城市和国家都为空，记录警告并返回 null
             if (string.IsNullOrEmpty(result.City) && string.IsNullOrEmpty(result.Country))
             {
+                _logger.LogWarning("GeoNames 逆地理编码返回空结果，坐标 ({Latitude}, {Longitude})，响应: {Response}", 
+                    latitude, longitude, response);
                 return null;
             }
+            
+            // 记录解析结果（仅在开发环境）
+#if DEBUG
+            _logger.LogInformation("GeoNames 逆地理编码成功，坐标 ({Latitude}, {Longitude})，City: {City}, Country: {Country}", 
+                latitude, longitude, result.City, result.Country);
+#endif
             
             return result;
         }
@@ -612,7 +719,13 @@ public class SocialService : ISocialService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning(ex, "GeoNames 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})", latitude, longitude);
+            _logger.LogWarning(ex, "GeoNames 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})，状态码: {StatusCode}", 
+                latitude, longitude, ex.Data.Contains("StatusCode") ? ex.Data["StatusCode"] : "未知");
+            return null;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "GeoNames 逆地理编码 JSON 解析失败，坐标 ({Latitude}, {Longitude})", latitude, longitude);
             return null;
         }
         catch (Exception ex)

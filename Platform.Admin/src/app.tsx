@@ -3,7 +3,7 @@ import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { history, request as requestClient } from '@umijs/max';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   AvatarDropdown,
   AvatarName,
@@ -17,6 +17,7 @@ import AiAssistant from '@/components/AiAssistant';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
 import { getMyPermissions } from '@/services/permission';
+import LocationService from '@/services/social/locationService';
 import { tokenUtils } from '@/utils/token';
 import TokenRefreshManager from '@/utils/tokenRefreshManager';
 import defaultSettings from '../config/defaultSettings';
@@ -85,6 +86,8 @@ export async function getInitialState(): Promise<{
       } catch (_permissionsError) {
         // 权限获取失败，使用空权限
       }
+
+      // ❌ 移除登录时的立即上报，改为只在特定页面访问时才上报
 
       return userInfo;
     } catch (_error) {
@@ -297,6 +300,36 @@ export const layout: RunTimeLayoutConfig = ({
     links: [],
     menuHeaderRender: undefined,
     childrenRender: (children) => {
+      // ✅ 位置上报组件：只在特定页面访问时才启动定期上报
+      const LocationReporter = () => {
+        const hasStartedRef = useRef(false);
+        const { location } = history;
+
+        useEffect(() => {
+          // 只在特定页面访问时才启动上报
+          const shouldReportPages = ['/welcome'];
+          const shouldReport = shouldReportPages.some(page => location.pathname === page || location.pathname.startsWith(page));
+          
+          // 仅在用户登录后、且在特定页面时启动定期上报
+          if (initialState?.currentUser && shouldReport && !hasStartedRef.current) {
+            hasStartedRef.current = true;
+            LocationService.startPeriodicReporting();
+            if (process.env.NODE_ENV === 'development') {
+              console.log('位置上报：在页面', location.pathname, '启动定期上报');
+            }
+          } else if ((!shouldReport || !initialState?.currentUser) && hasStartedRef.current) {
+            // 离开特定页面或用户登出时停止上报
+            LocationService.stopPeriodicReporting();
+            hasStartedRef.current = false;
+            if (process.env.NODE_ENV === 'development') {
+              console.log('位置上报：停止定期上报');
+            }
+          }
+        }, [initialState?.currentUser, location.pathname]);
+
+        return null;
+      };
+
       return (
         <>
           {children}
@@ -315,6 +348,8 @@ export const layout: RunTimeLayoutConfig = ({
           )}
           {/* AI 助手组件 - 仅在用户登录后显示 */}
           {initialState?.currentUser && <AiAssistant />}
+          {/* 位置上报组件 - 仅在用户登录后启动 */}
+          {initialState?.currentUser && <LocationReporter />}
         </>
       );
     },

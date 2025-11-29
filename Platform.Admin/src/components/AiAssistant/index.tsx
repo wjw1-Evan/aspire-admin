@@ -282,7 +282,7 @@ const AiAssistant: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Avatar src={AI_ASSISTANT_AVATAR} size="small" />
+              <Avatar src={AI_ASSISTANT_AVATAR} size={32} />
               <div style={{ fontWeight: 600, fontSize: 16 }}>{AI_ASSISTANT_NAME}</div>
             </div>
             <CloseOutlined
@@ -330,7 +330,11 @@ const AiAssistant: React.FC = () => {
                         }}
                       >
                         {isAssistant && (
-                          <Avatar src={AI_ASSISTANT_AVATAR} size="small" />
+                          <Avatar
+                            src={AI_ASSISTANT_AVATAR}
+                            size={32}
+                            style={{ flexShrink: 0, width: 32, height: 32 }}
+                          />
                         )}
                         <div
                           style={{
@@ -340,12 +344,18 @@ const AiAssistant: React.FC = () => {
                             color: isAssistant ? '#000' : '#fff',
                             boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
                             wordBreak: 'break-word',
+                            flex: 1,
+                            minWidth: 0,
                           }}
                         >
                           {msg.content}
                         </div>
                         {isUser && (
-                          <Avatar src={currentUser.avatar} size="small" />
+                          <Avatar
+                            src={currentUser.avatar}
+                            size={32}
+                            style={{ flexShrink: 0, width: 32, height: 32 }}
+                          />
                         )}
                       </div>
                     </div>

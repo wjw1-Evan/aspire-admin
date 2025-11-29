@@ -230,11 +230,11 @@ MongoDB → DataInitializer → ApiService → YARP Gateway
 
 ### 认证流程
 
-1. **登录**: `POST /login/account` → 获取 JWT token 和 refresh token
+1. **登录**: `POST /api/auth/login` → 获取 JWT token 和 refresh token
 2. **权限检查**: 基于 `user.access` 字段进行权限验证
-3. **Token 刷新**: Token 过期时自动调用 `/refresh-token` 刷新
-4. **Token 验证**: 定期调用 `/currentUser` 验证 token 有效性
-5. **登出**: `POST /login/outLogin` → 清除本地 token
+3. **Token 刷新**: Token 过期时自动调用 `POST /api/auth/refresh-token`
+4. **Token 验证**: 定期调用 `GET /api/auth/current-user` 验证 token 有效性
+5. **登出**: `POST /api/auth/logout` → 清除本地 token
 
 ### 权限系统
 

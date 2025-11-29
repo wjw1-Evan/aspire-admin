@@ -227,7 +227,7 @@ dotnet run --project Platform.AppHost
 
 #### 获取 Token
 ```bash
-curl -X POST http://localhost:15000/apiservice/login/account \
+curl -X POST http://localhost:15000/apiservice/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",

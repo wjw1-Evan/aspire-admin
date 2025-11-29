@@ -9,15 +9,18 @@ description: API 集成和网络请求规范
 
 ### 服务端点
 - **API 网关**: http://localhost:15000
-- **API 服务**: http://localhost:15000/apiservice/
-- **API 文档**: http://localhost:15000/scalar/v1
+- **API 服务（直连）**: http://localhost:15000/apiservice
+- **管理后台代理前缀**: `/api/**`（Umi 代理到网关的 `/apiservice/**`）
+- **API 文档**: 通过 Aspire Dashboard (http://localhost:15003) → **Scalar API Reference**
 
 ### 认证方式
 所有 API 请求使用 JWT Token 认证：
 ```typescript
 // ✅ 推荐：API 请求配置
 const apiClient = axios.create({
-  baseURL: 'http://localhost:15000/apiservice',
+  baseURL: process.env.NODE_ENV === 'development'
+    ? 'http://localhost:15000/apiservice'
+    : 'https://api.your-production.com',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -33,13 +36,15 @@ apiClient.interceptors.request.use((config) => {
 });
 ```
 
+> 管理后台使用 Umi 代理直接调用 `/api/**`，而移动端与独立脚本需要显式指向 `http://localhost:15000/apiservice`。无论采用哪种方式，最终都会通过网关访问同一个 API 服务。
+
 ## 🔧 服务层设计
 
 ### API 服务封装
 ```typescript
 // ✅ 推荐：API 服务类
 export class UserService {
-  private static readonly BASE_URL = '/apiservice/api/users';
+  private static readonly BASE_URL = '/api/user';
   
   static async getUsers(): Promise<User[]> {
     try {
@@ -86,11 +91,11 @@ export class UserService {
 ```typescript
 // ✅ 推荐：统一的认证服务（与Admin端完全一致）
 export class AuthService {
-  private static readonly BASE_URL = '/apiservice/api';
+  private static readonly BASE_URL = '/api/auth';
   
   static async login(credentials: LoginRequest): Promise<LoginResult> {
     try {
-      const response = await apiClient.post(`${this.BASE_URL}/login/account`, credentials);
+      const response = await apiClient.post(`${this.BASE_URL}/login`, credentials);
       const { token, currentAuthority } = response.data;
       
       // 存储 token
@@ -106,7 +111,7 @@ export class AuthService {
   static async logout(): Promise<void> {
     try {
       // 调用后端登出接口
-      await apiClient.post(`${this.BASE_URL}/login/outLogin`);
+      await apiClient.post(`${this.BASE_URL}/logout`);
       
       // 清除本地存储
       await AsyncStorage.removeItem('auth_token');
@@ -118,7 +123,7 @@ export class AuthService {
   
   static async getCurrentUser(): Promise<CurrentUser> {
     try {
-      const response = await apiClient.get(`${this.BASE_URL}/currentUser`);
+      const response = await apiClient.get(`${this.BASE_URL}/current-user`);
       return response.data;
     } catch (error) {
       console.error('Failed to get current user:', error);

@@ -16,6 +16,13 @@ public interface IUserActivityLogService
     Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);
     
     /// <summary>
+    /// 获取用户活动日志（分页）
+    /// </summary>
+    /// <param name="request">查询请求</param>
+    /// <returns>分页的活动日志响应</returns>
+    Task<UserActivityLogPagedResponse> GetActivityLogsAsync(GetUserActivityLogsRequest request);
+    
+    /// <summary>
     /// 记录HTTP请求日志
     /// </summary>
     /// <param name="request">HTTP请求日志请求</param>

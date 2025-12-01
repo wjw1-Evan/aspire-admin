@@ -117,6 +117,90 @@ public class RuleListItem : Platform.ServiceDefaults.Models.ISoftDeletable, Plat
     /// </summary>
     [BsonElement("deletedReason")]
     public string? DeletedReason { get; set; }
+
+    /// <summary>
+    /// MCP 相关配置
+    /// </summary>
+    [BsonElement("mcpConfig")]
+    public McpRuleConfig? McpConfig { get; set; }
+}
+
+/// <summary>
+/// MCP 规则配置
+/// </summary>
+public class McpRuleConfig
+{
+    /// <summary>
+    /// 是否启用 MCP 集成
+    /// </summary>
+    [BsonElement("enabled")]
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// MCP 工具名称
+    /// </summary>
+    [BsonElement("toolName")]
+    public string? ToolName { get; set; }
+
+    /// <summary>
+    /// MCP 工具描述
+    /// </summary>
+    [BsonElement("toolDescription")]
+    public string? ToolDescription { get; set; }
+
+    /// <summary>
+    /// MCP 工具参数模式（JSON Schema）
+    /// </summary>
+    [BsonElement("inputSchema")]
+    public Dictionary<string, object>? InputSchema { get; set; }
+
+    /// <summary>
+    /// 是否为 MCP 资源
+    /// </summary>
+    [BsonElement("isResource")]
+    public bool IsResource { get; set; } = false;
+
+    /// <summary>
+    /// MCP 资源 URI
+    /// </summary>
+    [BsonElement("resourceUri")]
+    public string? ResourceUri { get; set; }
+
+    /// <summary>
+    /// MCP 资源 MIME 类型
+    /// </summary>
+    [BsonElement("resourceMimeType")]
+    public string? ResourceMimeType { get; set; }
+
+    /// <summary>
+    /// 是否为 MCP 提示词
+    /// </summary>
+    [BsonElement("isPrompt")]
+    public bool IsPrompt { get; set; } = false;
+
+    /// <summary>
+    /// MCP 提示词参数定义
+    /// </summary>
+    [BsonElement("promptArguments")]
+    public Dictionary<string, object>? PromptArguments { get; set; }
+
+    /// <summary>
+    /// MCP 提示词内容模板
+    /// </summary>
+    [BsonElement("promptTemplate")]
+    public string? PromptTemplate { get; set; }
+
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 更新时间
+    /// </summary>
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
@@ -168,6 +252,11 @@ public class CreateRuleRequest
     /// 是否禁用
     /// </summary>
     public bool Disabled { get; set; }
+
+    /// <summary>
+    /// MCP 配置
+    /// </summary>
+    public CreateMcpRuleConfigRequest? McpConfig { get; set; }
 }
 
 /// <summary>
@@ -224,6 +313,11 @@ public class UpdateRuleRequest
     /// 是否禁用
     /// </summary>
     public bool? Disabled { get; set; }
+
+    /// <summary>
+    /// MCP 配置
+    /// </summary>
+    public UpdateMcpRuleConfigRequest? McpConfig { get; set; }
 }
 
 /// <summary>
@@ -313,4 +407,209 @@ public class DeleteRuleRequest
     /// 规则键
     /// </summary>
     public int? Key { get; set; }
+}
+
+/// <summary>
+/// 创建 MCP 规则配置请求
+/// </summary>
+public class CreateMcpRuleConfigRequest
+{
+    /// <summary>
+    /// 是否启用 MCP 集成
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// MCP 工具名称
+    /// </summary>
+    public string? ToolName { get; set; }
+
+    /// <summary>
+    /// MCP 工具描述
+    /// </summary>
+    public string? ToolDescription { get; set; }
+
+    /// <summary>
+    /// MCP 工具参数模式（JSON Schema）
+    /// </summary>
+    public Dictionary<string, object>? InputSchema { get; set; }
+
+    /// <summary>
+    /// 是否为 MCP 资源
+    /// </summary>
+    public bool IsResource { get; set; } = false;
+
+    /// <summary>
+    /// MCP 资源 URI
+    /// </summary>
+    public string? ResourceUri { get; set; }
+
+    /// <summary>
+    /// MCP 资源 MIME 类型
+    /// </summary>
+    public string? ResourceMimeType { get; set; }
+
+    /// <summary>
+    /// 是否为 MCP 提示词
+    /// </summary>
+    public bool IsPrompt { get; set; } = false;
+
+    /// <summary>
+    /// MCP 提示词参数定义
+    /// </summary>
+    public Dictionary<string, object>? PromptArguments { get; set; }
+
+    /// <summary>
+    /// MCP 提示词内容模板
+    /// </summary>
+    public string? PromptTemplate { get; set; }
+}
+
+/// <summary>
+/// 更新 MCP 规则配置请求
+/// </summary>
+public class UpdateMcpRuleConfigRequest
+{
+    /// <summary>
+    /// 是否启用 MCP 集成
+    /// </summary>
+    public bool? Enabled { get; set; }
+
+    /// <summary>
+    /// MCP 工具名称
+    /// </summary>
+    public string? ToolName { get; set; }
+
+    /// <summary>
+    /// MCP 工具描述
+    /// </summary>
+    public string? ToolDescription { get; set; }
+
+    /// <summary>
+    /// MCP 工具参数模式（JSON Schema）
+    /// </summary>
+    public Dictionary<string, object>? InputSchema { get; set; }
+
+    /// <summary>
+    /// 是否为 MCP 资源
+    /// </summary>
+    public bool? IsResource { get; set; }
+
+    /// <summary>
+    /// MCP 资源 URI
+    /// </summary>
+    public string? ResourceUri { get; set; }
+
+    /// <summary>
+    /// MCP 资源 MIME 类型
+    /// </summary>
+    public string? ResourceMimeType { get; set; }
+
+    /// <summary>
+    /// 是否为 MCP 提示词
+    /// </summary>
+    public bool? IsPrompt { get; set; }
+
+    /// <summary>
+    /// MCP 提示词参数定义
+    /// </summary>
+    public Dictionary<string, object>? PromptArguments { get; set; }
+
+    /// <summary>
+    /// MCP 提示词内容模板
+    /// </summary>
+    public string? PromptTemplate { get; set; }
+}
+
+/// <summary>
+/// 规则 MCP 工具响应
+/// </summary>
+public class RuleMcpToolResponse
+{
+    /// <summary>
+    /// 工具名称
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 工具描述
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 工具参数模式
+    /// </summary>
+    public Dictionary<string, object>? InputSchema { get; set; }
+
+    /// <summary>
+    /// 关联的规则 ID
+    /// </summary>
+    public string RuleId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 关联的规则名称
+    /// </summary>
+    public string RuleName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 规则 MCP 资源响应
+/// </summary>
+public class RuleMcpResourceResponse
+{
+    /// <summary>
+    /// 资源 URI
+    /// </summary>
+    public string Uri { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 资源名称
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 资源描述
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// MIME 类型
+    /// </summary>
+    public string? MimeType { get; set; }
+
+    /// <summary>
+    /// 关联的规则 ID
+    /// </summary>
+    public string RuleId { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 规则 MCP 提示词响应
+/// </summary>
+public class RuleMcpPromptResponse
+{
+    /// <summary>
+    /// 提示词名称
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 提示词描述
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// 提示词参数定义
+    /// </summary>
+    public Dictionary<string, object>? Arguments { get; set; }
+
+    /// <summary>
+    /// 提示词内容模板
+    /// </summary>
+    public string? Template { get; set; }
+
+    /// <summary>
+    /// 关联的规则 ID
+    /// </summary>
+    public string RuleId { get; set; } = string.Empty;
 }

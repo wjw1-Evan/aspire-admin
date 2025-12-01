@@ -229,6 +229,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 }
 
                 return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                // Token 格式错误（没有点）通常是客户端没有提供有效的 token
+                // 这种情况在未认证请求中是正常的，由 OnChallenge 处理
+                // 这里只处理真正的认证错误（如 token 过期、签名无效等）
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                // 自定义挑战响应，提供更友好的错误信息
+                context.HandleResponse();
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                
+                var errorMessage = "未提供有效的认证令牌或令牌格式错误。请确保在请求头中包含 'Authorization: Bearer {token}'。";
+                var response = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    error = "UNAUTHORIZED",
+                    message = errorMessage,
+                    traceId = context.HttpContext.TraceIdentifier
+                });
+                
+                return context.Response.WriteAsync(response);
             }
         };
     });

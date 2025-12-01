@@ -40,6 +40,7 @@ public class ChatService : IChatService
     private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
+    private readonly IMcpService? _mcpService;
 
 
     /// <summary>
@@ -61,6 +62,7 @@ public class ChatService : IChatService
         _gridFsBucket = dependencies.GridFsBucket;
         _openAiClient = dependencies.OpenAiClient;
         _aiOptions = dependencies.AiOptions.Value;
+        _mcpService = dependencies.McpService;
         _logger = logger;
     }
 
@@ -1053,12 +1055,12 @@ public class ChatService : IChatService
         }
 
         var effectiveLocale = string.IsNullOrWhiteSpace(locale) ? "zh-CN" : locale!;
+        var currentUserId = triggerMessage.SenderId;
 
         // 优先使用用户自定义的角色定义，其次使用配置的系统提示词，最后使用默认值
         string systemPrompt;
         try
         {
-            var currentUserId = triggerMessage.SenderId;
             systemPrompt = await _userService.GetAiRoleDefinitionAsync(currentUserId);
         }
         catch (Exception ex)
@@ -1079,10 +1081,62 @@ public class ChatService : IChatService
             return null;
         }
 
+        // 如果启用了 MCP 服务，先检测用户意图并主动调用工具
+        string? toolResultContext = null;
+        if (_mcpService != null)
+        {
+            toolResultContext = await DetectAndCallMcpToolsAsync(triggerMessage, currentUserId, cancellationToken);
+        }
+
         var instructionBuilder = new StringBuilder();
         instructionBuilder.AppendLine(systemPrompt.Trim());
         instructionBuilder.AppendLine($"当前用户语言标识：{effectiveLocale}");
         instructionBuilder.Append("请结合完整的历史聊天记录，使用自然、真诚且有温度的语气回复对方。");
+        
+        // 如果启用了 MCP 服务，告知 AI 可以使用工具，并添加工具调用结果
+        if (_mcpService != null)
+        {
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("你可以通过以下工具查询系统数据：");
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【用户管理模块】");
+            instructionBuilder.AppendLine("- get_user_info: 获取用户信息（通过用户ID、用户名或邮箱）");
+            instructionBuilder.AppendLine("- search_users: 搜索用户列表（支持关键词、状态筛选、分页）");
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【角色管理模块】");
+            instructionBuilder.AppendLine("- get_all_roles: 获取所有角色列表（可选包含统计信息：用户数量、菜单数量）");
+            instructionBuilder.AppendLine("- get_role_info: 获取角色详细信息（包括权限、菜单等）");
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【企业管理模块】");
+            instructionBuilder.AppendLine("- get_company_info: 获取企业信息（当前企业或指定企业）");
+            instructionBuilder.AppendLine("- search_companies: 搜索企业列表（按关键词搜索）");
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【我的活动模块】");
+            instructionBuilder.AppendLine("- get_my_activity_logs: 获取我的活动日志（支持按操作类型、时间范围筛选、分页）");
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【聊天模块】");
+            instructionBuilder.AppendLine("- get_chat_sessions: 获取聊天会话列表");
+            instructionBuilder.AppendLine("- get_chat_messages: 获取聊天消息列表");
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【社交模块】");
+            instructionBuilder.AppendLine("- get_nearby_users: 获取附近的用户（基于地理位置）");
+            instructionBuilder.AppendLine();
+            
+            // 如果已经调用了工具，将结果添加到上下文中
+            if (!string.IsNullOrWhiteSpace(toolResultContext))
+            {
+                instructionBuilder.AppendLine();
+                instructionBuilder.AppendLine("【已查询的数据】");
+                instructionBuilder.AppendLine(toolResultContext);
+                instructionBuilder.AppendLine();
+                instructionBuilder.AppendLine("请基于以上查询结果，用自然、友好的语言向用户回复。");
+            }
+            else
+            {
+                instructionBuilder.AppendLine();
+                instructionBuilder.AppendLine("当用户询问相关信息时，系统会自动调用相应的工具查询数据，然后基于查询结果回复用户。");
+            }
+        }
 
         var messages = new List<OpenAIChatMessage>
         {
@@ -1206,6 +1260,201 @@ public class ChatService : IChatService
 
         return conversation;
     }
+
+    /// <summary>
+    /// 检测用户意图并主动调用 MCP 工具
+    /// </summary>
+    private async Task<string?> DetectAndCallMcpToolsAsync(
+        ChatMessage triggerMessage,
+        string currentUserId,
+        CancellationToken cancellationToken)
+    {
+        if (_mcpService == null)
+        {
+            return null;
+        }
+
+        var content = NormalizeAssistantMessageContent(triggerMessage);
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return null;
+        }
+
+        var contentLower = content.ToLowerInvariant();
+        var toolResults = new List<string>();
+
+        _logger.LogInformation("检测用户意图，消息内容: {Content}", content);
+
+        try
+        {
+            // 检测用户查询意图并调用相应的工具
+            if (contentLower.Contains("用户") && (contentLower.Contains("admin") || contentLower.Contains("信息") || contentLower.Contains("查询") || contentLower.Contains("查")))
+            {
+                _logger.LogInformation("检测到用户信息查询意图");
+                
+                // 提取用户名（如果提到）
+                string? username = null;
+                if (contentLower.Contains("admin"))
+                {
+                    username = "admin";
+                }
+                else if (contentLower.Contains("用户"))
+                {
+                    // 尝试提取用户名（简单实现）
+                    var parts = content.Split(new[] { ' ', '，', ',', '：', ':' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var part in parts)
+                    {
+                        if (part.Length > 2 && part.Length < 50 && !part.Contains("@"))
+                        {
+                            username = part.Trim();
+                            break;
+                        }
+                    }
+                }
+
+                var userInfoArgs = new Dictionary<string, object>();
+                if (!string.IsNullOrWhiteSpace(username))
+                {
+                    userInfoArgs["username"] = username;
+                    _logger.LogInformation("提取到用户名: {Username}", username);
+                }
+
+                var userInfoRequest = new McpCallToolRequest
+                {
+                    Name = "get_user_info",
+                    Arguments = userInfoArgs
+                };
+
+                _logger.LogInformation("调用 MCP 工具 get_user_info，参数: {Arguments}", 
+                    System.Text.Json.JsonSerializer.Serialize(userInfoArgs));
+
+                var userInfoResponse = await _mcpService.CallToolAsync(userInfoRequest, currentUserId);
+                
+                if (userInfoResponse.IsError)
+                {
+                    var errorMessage = userInfoResponse.Content.Count > 0 
+                        ? userInfoResponse.Content[0].Text 
+                        : "未知错误";
+                    _logger.LogWarning("MCP 工具调用失败: {Error}", errorMessage);
+                    toolResults.Add($"用户信息查询失败: {errorMessage}");
+                }
+                else if (userInfoResponse.Content.Count > 0)
+                {
+                    _logger.LogInformation("MCP 工具调用成功，返回内容长度: {Length}", 
+                        userInfoResponse.Content[0].Text?.Length ?? 0);
+                    toolResults.Add($"用户信息查询结果：{userInfoResponse.Content[0].Text}");
+                }
+                else
+                {
+                    _logger.LogWarning("MCP 工具调用成功但返回内容为空");
+                    toolResults.Add("用户信息查询成功，但未找到匹配的用户");
+                }
+            }
+            else if (contentLower.Contains("用户") && (contentLower.Contains("列表") || contentLower.Contains("所有") || contentLower.Contains("搜索") || contentLower.Contains("活跃")))
+            {
+                var searchArgs = new Dictionary<string, object>();
+                if (contentLower.Contains("活跃"))
+                {
+                    searchArgs["status"] = "active";
+                }
+
+                var searchRequest = new McpCallToolRequest
+                {
+                    Name = "search_users",
+                    Arguments = searchArgs
+                };
+
+                var searchResponse = await _mcpService.CallToolAsync(searchRequest, currentUserId);
+                if (!searchResponse.IsError && searchResponse.Content.Count > 0)
+                {
+                    toolResults.Add($"用户列表查询结果：{searchResponse.Content[0].Text}");
+                }
+            }
+            else if (contentLower.Contains("角色") && (contentLower.Contains("所有") || contentLower.Contains("列表") || contentLower.Contains("哪些")))
+            {
+                var rolesRequest = new McpCallToolRequest
+                {
+                    Name = "get_all_roles",
+                    Arguments = new Dictionary<string, object>()
+                };
+
+                var rolesResponse = await _mcpService.CallToolAsync(rolesRequest, currentUserId);
+                if (!rolesResponse.IsError && rolesResponse.Content.Count > 0)
+                {
+                    toolResults.Add($"角色列表查询结果：{rolesResponse.Content[0].Text}");
+                }
+            }
+            else if (contentLower.Contains("活动") || contentLower.Contains("日志") || contentLower.Contains("记录"))
+            {
+                _logger.LogInformation("检测到活动日志查询意图");
+                
+                var activityRequest = new McpCallToolRequest
+                {
+                    Name = "get_my_activity_logs",
+                    Arguments = new Dictionary<string, object>
+                    {
+                        ["page"] = 1,
+                        ["pageSize"] = 20
+                    }
+                };
+
+                _logger.LogInformation("调用 MCP 工具 get_my_activity_logs");
+
+                var activityResponse = await _mcpService.CallToolAsync(activityRequest, currentUserId);
+                
+                if (activityResponse.IsError)
+                {
+                    var errorMessage = activityResponse.Content.Count > 0 
+                        ? activityResponse.Content[0].Text 
+                        : "未知错误";
+                    _logger.LogWarning("MCP 工具调用失败: {Error}", errorMessage);
+                    toolResults.Add($"活动日志查询失败: {errorMessage}");
+                }
+                else if (activityResponse.Content.Count > 0)
+                {
+                    _logger.LogInformation("MCP 工具调用成功，返回内容长度: {Length}", 
+                        activityResponse.Content[0].Text?.Length ?? 0);
+                    toolResults.Add($"活动日志查询结果：{activityResponse.Content[0].Text}");
+                }
+                else
+                {
+                    _logger.LogWarning("MCP 工具调用成功但返回内容为空");
+                    toolResults.Add("活动日志查询成功，但未找到活动记录");
+                }
+            }
+            else if (contentLower.Contains("企业") && (contentLower.Contains("信息") || contentLower.Contains("查询") || contentLower.Contains("搜索")))
+            {
+                var companyRequest = new McpCallToolRequest
+                {
+                    Name = "get_company_info",
+                    Arguments = new Dictionary<string, object>()
+                };
+
+                var companyResponse = await _mcpService.CallToolAsync(companyRequest, currentUserId);
+                if (!companyResponse.IsError && companyResponse.Content.Count > 0)
+                {
+                    toolResults.Add($"企业信息查询结果：{companyResponse.Content[0].Text}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "检测用户意图并调用 MCP 工具时发生错误");
+            // 不抛出异常，继续正常流程
+        }
+
+        if (toolResults.Count > 0)
+        {
+            _logger.LogInformation("MCP 工具调用完成，共 {Count} 个结果", toolResults.Count);
+            return string.Join("\n\n", toolResults);
+        }
+        else
+        {
+            _logger.LogInformation("未检测到匹配的意图或工具调用未返回结果");
+            return null;
+        }
+    }
+
 
     private static string GetParticipantDisplayName(ChatSession session, ChatMessage message)
     {
@@ -1422,6 +1671,7 @@ public class ChatService : IChatService
         /// <param name="aiAssistantCoordinator">AI 助手协调器。</param>
         /// <param name="openAiClient">OpenAI 客户端实例。</param>
         /// <param name="aiOptions">AI 配置项。</param>
+        /// <param name="mcpService">MCP 服务（可选）。</param>
         public ChatServiceDependencies(
             IDatabaseOperationFactory<ChatSession> sessionFactory,
             IDatabaseOperationFactory<ChatMessage> messageFactory,
@@ -1432,7 +1682,8 @@ public class ChatService : IChatService
             IHubContext<ChatHub> hubContext,
             IAiAssistantCoordinator aiAssistantCoordinator,
             OpenAIClient openAiClient,
-            IOptions<AiCompletionOptions> aiOptions)
+            IOptions<AiCompletionOptions> aiOptions,
+            IMcpService? mcpService = null)
         {
             SessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
             MessageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
@@ -1443,6 +1694,7 @@ public class ChatService : IChatService
             AiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
             OpenAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
             AiOptions = aiOptions ?? throw new ArgumentNullException(nameof(aiOptions));
+            McpService = mcpService;
 
             var mongoDatabase = database ?? throw new ArgumentNullException(nameof(database));
             GridFsBucket = new GridFSBucket(mongoDatabase, new GridFSBucketOptions
@@ -1500,6 +1752,11 @@ public class ChatService : IChatService
         /// 获取附件使用的 GridFS 存储桶。
         /// </summary>
         public GridFSBucket GridFsBucket { get; }
+
+        /// <summary>
+        /// 获取 MCP 服务（可选）。
+        /// </summary>
+        public IMcpService? McpService { get; }
     }
 }
 

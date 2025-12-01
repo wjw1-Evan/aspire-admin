@@ -280,6 +280,17 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
+    /// 获取当前企业的所有用户（避免 /api/user/all 命中 /api/user/{id} 导致 ObjectId 解析错误）
+    /// </summary>
+    [HttpGet("all")]
+    [Authorize]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var users = await _userService.GetAllUsersAsync();
+        return Success(new { users, total = users.Count });
+    }
+
+    /// <summary>
     /// 获取用户统计信息（需要权限）
     /// </summary>
     [HttpGet("statistics")]

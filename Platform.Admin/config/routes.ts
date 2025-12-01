@@ -101,6 +101,11 @@ export default [
     component: './my-activity',
     hideInMenu: true,
   },
+  {
+    path: '/task-management',
+    component: './task-management',
+    hideInMenu: true,
+  },
 
 
   // 默认重定向和404

@@ -1,0 +1,539 @@
+import React, { useRef, useState, useEffect } from 'react';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable, ProCard } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
+import {
+  Button,
+  Tag,
+  Space,
+  message,
+  Modal,
+  Drawer,
+  Statistic,
+  Row,
+  Col,
+  Badge,
+  Form,
+  Input,
+  Card,
+  Dropdown,
+  DatePicker,
+  Select,
+  Progress,
+} from 'antd';
+import type { MenuProps } from 'antd';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  CheckCircleOutlined,
+  EyeOutlined,
+  ReloadOutlined,
+  MoreOutlined,
+  PlayCircleOutlined,
+  StopOutlined,
+  TeamOutlined,
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+import {
+  queryTasks,
+  deleteTask,
+  cancelTask,
+  getTaskStatistics,
+  TaskStatus,
+  TaskPriority,
+  TaskExecutionResult,
+  type TaskDto,
+  type TaskStatistics,
+} from '@/services/task/api';
+import type { ApiResponse } from '@/types/unified-api';
+import TaskForm from './components/TaskForm';
+import TaskDetail from './components/TaskDetail';
+import TaskExecutionPanel from './components/TaskExecutionPanel';
+
+const TaskManagement: React.FC = () => {
+  const intl = useIntl();
+  const actionRef = useRef<ActionType>(null);
+  const [searchForm] = Form.useForm();
+  const [formVisible, setFormVisible] = useState(false);
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [executionVisible, setExecutionVisible] = useState(false);
+  const [editingTask, setEditingTask] = useState<TaskDto | null>(null);
+  const [viewingTask, setViewingTask] = useState<TaskDto | null>(null);
+  const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
+  const [selectedRows, setSelectedRows] = useState<TaskDto[]>([]);
+  const [searchParams, setSearchParams] = useState({
+    page: 1,
+    pageSize: 10,
+    sortBy: 'CreatedAt',
+    sortOrder: 'desc',
+  });
+
+  // 获取统计信息
+  const fetchStatistics = async () => {
+    try {
+      const response = await getTaskStatistics();
+      if (response.success && response.data) {
+        setStatistics(response.data);
+      }
+    } catch (error) {
+      console.error('获取统计信息失败:', error);
+    }
+  };
+
+  // 初始化时获取统计信息
+  useEffect(() => {
+    fetchStatistics();
+  }, []);
+
+  // 获取任务列表
+  const fetchTasks = async (params: any, sort?: Record<string, any>) => {
+    let sortBy = searchParams.sortBy;
+    let sortOrder = searchParams.sortOrder;
+
+    if (sort && Object.keys(sort).length > 0) {
+      const sortKey = Object.keys(sort)[0];
+      const sortValue = sort[sortKey];
+      sortBy = sortKey;
+      sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
+    }
+
+    const requestData = {
+      page: params.current || searchParams.page,
+      pageSize: params.pageSize || searchParams.pageSize,
+      search: searchParams.search,
+      status: searchParams.status,
+      priority: searchParams.priority,
+      assignedTo: searchParams.assignedTo,
+      taskType: searchParams.taskType,
+      sortBy,
+      sortOrder,
+    };
+
+    try {
+      const response = await queryTasks(requestData);
+
+      if (response.success && response.data) {
+        return {
+          data: response.data.tasks,
+          success: true,
+          total: response.data.total,
+        };
+      }
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    } catch (error) {
+      message.error('获取任务列表失败');
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    }
+  };
+
+  // 处理创建任务
+  const handleCreateTask = () => {
+    setEditingTask(null);
+    setFormVisible(true);
+  };
+
+  // 处理编辑任务
+  const handleEditTask = (task: TaskDto) => {
+    setEditingTask(task);
+    setFormVisible(true);
+  };
+
+  // 处理查看任务详情
+  const handleViewTask = (task: TaskDto) => {
+    setViewingTask(task);
+    setDetailVisible(true);
+  };
+
+  // 处理执行任务
+  const handleExecuteTask = (task: TaskDto) => {
+    setViewingTask(task);
+    setExecutionVisible(true);
+  };
+
+  // 处理删除任务
+  const handleDeleteTask = (task: TaskDto) => {
+    Modal.confirm({
+      title: '删除任务',
+      content: `确定要删除任务 "${task.taskName}" 吗？`,
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await deleteTask(task.id!);
+          message.success('任务已删除');
+          actionRef.current?.reload();
+          fetchStatistics();
+        } catch (error) {
+          message.error('删除任务失败');
+        }
+      },
+    });
+  };
+
+  // 处理取消任务
+  const handleCancelTask = (task: TaskDto) => {
+    Modal.confirm({
+      title: '取消任务',
+      content: `确定要取消任务 "${task.taskName}" 吗？`,
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await cancelTask(task.id!);
+          message.success('任务已取消');
+          actionRef.current?.reload();
+          fetchStatistics();
+        } catch (error) {
+          message.error('取消任务失败');
+        }
+      },
+    });
+  };
+
+  // 处理表单提交成功
+  const handleFormSuccess = () => {
+    setFormVisible(false);
+    setEditingTask(null);
+    actionRef.current?.reload();
+    fetchStatistics();
+  };
+
+  // 处理执行成功
+  const handleExecutionSuccess = () => {
+    setExecutionVisible(false);
+    setViewingTask(null);
+    actionRef.current?.reload();
+    fetchStatistics();
+  };
+
+  // 获取状态标签颜色
+  const getStatusColor = (status: number) => {
+    switch (status) {
+      case TaskStatus.Pending:
+        return 'default';
+      case TaskStatus.Assigned:
+        return 'processing';
+      case TaskStatus.InProgress:
+        return 'processing';
+      case TaskStatus.Completed:
+        return 'success';
+      case TaskStatus.Cancelled:
+        return 'error';
+      case TaskStatus.Failed:
+        return 'error';
+      case TaskStatus.Paused:
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
+
+  // 获取优先级标签颜色
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case TaskPriority.Low:
+        return 'blue';
+      case TaskPriority.Medium:
+        return 'cyan';
+      case TaskPriority.High:
+        return 'orange';
+      case TaskPriority.Urgent:
+        return 'red';
+      default:
+        return 'blue';
+    }
+  };
+
+  // 表格列定义
+  const columns: ProColumns<TaskDto>[] = [
+    {
+      title: '任务名称',
+      dataIndex: 'taskName',
+      key: 'taskName',
+      width: 200,
+      render: (_, record) => (
+        <a onClick={() => handleViewTask(record)}>
+          {record.taskName}
+        </a>
+      ),
+    },
+    {
+      title: '状态',
+      dataIndex: 'statusName',
+      key: 'status',
+      width: 100,
+      filters: [
+        { text: '待分配', value: TaskStatus.Pending },
+        { text: '已分配', value: TaskStatus.Assigned },
+        { text: '执行中', value: TaskStatus.InProgress },
+        { text: '已完成', value: TaskStatus.Completed },
+        { text: '已取消', value: TaskStatus.Cancelled },
+        { text: '失败', value: TaskStatus.Failed },
+        { text: '暂停', value: TaskStatus.Paused },
+      ],
+      onFilter: (value, record) => record.status === value,
+      render: (_, record) => (
+        <Tag color={getStatusColor(record.status)}>
+          {record.statusName}
+        </Tag>
+      ),
+    },
+    {
+      title: '优先级',
+      dataIndex: 'priorityName',
+      key: 'priority',
+      width: 80,
+      filters: [
+        { text: '低', value: TaskPriority.Low },
+        { text: '中', value: TaskPriority.Medium },
+        { text: '高', value: TaskPriority.High },
+        { text: '紧急', value: TaskPriority.Urgent },
+      ],
+      onFilter: (value, record) => record.priority === value,
+      render: (_, record) => (
+        <Tag color={getPriorityColor(record.priority)}>
+          {record.priorityName}
+        </Tag>
+      ),
+    },
+    {
+      title: '进度',
+      dataIndex: 'completionPercentage',
+      key: 'completionPercentage',
+      width: 120,
+      render: (_, record) => (
+        <Progress
+          percent={record.completionPercentage}
+          size="small"
+          status={
+            record.completionPercentage === 100
+              ? 'success'
+              : record.status === TaskStatus.Failed
+                ? 'exception'
+                : 'active'
+          }
+        />
+      ),
+    },
+    {
+      title: '分配给',
+      dataIndex: 'assignedToName',
+      key: 'assignedTo',
+      width: 100,
+      render: (_, record) => record.assignedToName || '-',
+    },
+    {
+      title: '创建者',
+      dataIndex: 'createdByName',
+      key: 'createdBy',
+      width: 100,
+      render: (_, record) => record.createdByName || '-',
+    },
+    {
+      title: '计划完成',
+      dataIndex: 'plannedEndTime',
+      key: 'plannedEndTime',
+      width: 150,
+      render: (_, record) =>
+        record.plannedEndTime ? dayjs(record.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-',
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 150,
+      sorter: true,
+      render: (_, record) => dayjs(record.createdAt).format('YYYY-MM-DD HH:mm'),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 150,
+      fixed: 'right',
+      render: (_, record) => {
+        const items: MenuProps['items'] = [
+          {
+            key: 'view',
+            icon: <EyeOutlined />,
+            label: '查看详情',
+            onClick: () => handleViewTask(record),
+          },
+          {
+            key: 'edit',
+            icon: <EditOutlined />,
+            label: '编辑',
+            onClick: () => handleEditTask(record),
+          },
+          {
+            key: 'execute',
+            icon: <PlayCircleOutlined />,
+            label: '执行',
+            onClick: () => handleExecuteTask(record),
+            disabled: record.status === TaskStatus.Completed || record.status === TaskStatus.Cancelled,
+          },
+          {
+            key: 'cancel',
+            icon: <StopOutlined />,
+            label: '取消',
+            onClick: () => handleCancelTask(record),
+            disabled: record.status === TaskStatus.Completed || record.status === TaskStatus.Cancelled,
+          },
+          {
+            key: 'delete',
+            icon: <DeleteOutlined />,
+            label: '删除',
+            danger: true,
+            onClick: () => handleDeleteTask(record),
+          },
+        ];
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']}>
+            <Button type="text" icon={<MoreOutlined />} />
+          </Dropdown>
+        );
+      },
+    },
+  ];
+
+  return (
+    <PageContainer>
+      {/* 统计卡片 */}
+      {statistics && (
+        <ProCard gutter={16} style={{ marginBottom: 24 }}>
+          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <Statistic
+              title="总任务数"
+              value={statistics.totalTasks}
+              prefix={<TeamOutlined />}
+            />
+          </ProCard>
+          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <Statistic
+              title="进行中"
+              value={statistics.inProgressTasks}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </ProCard>
+          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <Statistic
+              title="已完成"
+              value={statistics.completedTasks}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </ProCard>
+          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <Statistic
+              title="完成率"
+              value={statistics.completionRate}
+              suffix="%"
+              precision={1}
+              valueStyle={{ color: '#faad14' }}
+            />
+          </ProCard>
+        </ProCard>
+      )}
+
+      {/* 任务列表表格 */}
+      <ProTable<TaskDto>
+        actionRef={actionRef}
+        columns={columns}
+        request={async (params, sort) => {
+          return fetchTasks(params, sort);
+        }}
+        rowKey="id"
+        search={{
+          labelWidth: 'auto',
+          optionHeight: 40,
+          span: 6,
+        }}
+        form={{
+          initialValues: {
+            status: undefined,
+            priority: undefined,
+          },
+        }}
+        toolbar={{
+          actions: [
+            <Button
+              key="create"
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreateTask}
+            >
+              创建任务
+            </Button>,
+            <Button
+              key="refresh"
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                actionRef.current?.reload();
+                fetchStatistics();
+              }}
+            >
+              刷新
+            </Button>,
+          ],
+        }}
+        pagination={{
+          pageSize: 10,
+          pageSizeOptions: [10, 20, 50, 100],
+        }}
+        rowSelection={{
+          onChange: (_, selectedRows) => {
+            setSelectedRows(selectedRows);
+          },
+        }}
+        options={{
+          setting: {
+            listsHeight: 400,
+          },
+        }}
+      />
+
+      {/* 创建/编辑任务表单 */}
+      <TaskForm
+        visible={formVisible}
+        task={editingTask}
+        onClose={() => {
+          setFormVisible(false);
+          setEditingTask(null);
+        }}
+        onSuccess={handleFormSuccess}
+      />
+
+      {/* 任务详情抽屉 */}
+      <TaskDetail
+        visible={detailVisible}
+        task={viewingTask}
+        onClose={() => {
+          setDetailVisible(false);
+          setViewingTask(null);
+        }}
+      />
+
+      {/* 任务执行面板 */}
+      <TaskExecutionPanel
+        visible={executionVisible}
+        task={viewingTask}
+        onClose={() => {
+          setExecutionVisible(false);
+          setViewingTask(null);
+        }}
+        onSuccess={handleExecutionSuccess}
+      />
+    </PageContainer>
+  );
+};
+
+export default TaskManagement;
+

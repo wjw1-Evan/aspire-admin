@@ -12,6 +12,7 @@ export default {
   'menu.system.company-settings': '企業設置',
   'menu.system.company-management': '企業管理',
   'menu.system.my-activity': '我的活動',
+  'menu.task-management': '任務管理',
   'menu.company-search': '企業搜索',
   'menu.my-join-requests': '我的加入申請',
   'menu.pending-join-requests': '待審批申請',

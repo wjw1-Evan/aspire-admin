@@ -304,6 +304,21 @@ public class DataInitializerService : IDataInitializerService
         
         // ⭐ 在此处添加新菜单，系统会自动同步到数据库
         
+        menus.Add(new Menu
+        {
+            Name = "task-management",
+            Title = "任务管理",
+            Path = "/task-management",
+            Component = "./TaskManagement",
+            Icon = "schedule",
+            SortOrder = 3,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "task:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
         return menus;
     }
     

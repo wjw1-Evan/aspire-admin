@@ -11,6 +11,7 @@ export default {
   'menu.system.company-settings': 'Company Settings',
   'menu.system.company-management': 'Company Management',
   'menu.system.my-activity': 'My Activity',
+  'menu.task-management': 'Task Management',
   'menu.company-search': 'Company Search',
   'menu.my-join-requests': 'My Join Requests',
   'menu.pending-join-requests': 'Pending Join Requests',

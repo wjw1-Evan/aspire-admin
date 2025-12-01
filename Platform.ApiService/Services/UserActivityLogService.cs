@@ -114,8 +114,7 @@ public class UserActivityLogService : IUserActivityLogService
         var sortBuilder = _activityLogFactory.CreateSortBuilder()
             .Descending(log => log.CreatedAt);
         
-        var skip = (request.Page - 1) * request.PageSize;
-        var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, sortBuilder.Build(), skip, request.PageSize);
+        var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, sortBuilder.Build(), request.Page, request.PageSize);
 
         var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
 

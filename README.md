@@ -23,29 +23,7 @@ Platform/
 
 ### 服务编排
 
-`Platform.AppHost` 会拉起 MongoDB、数据初始化服务、API 服务以及前端应用，并通过 YARP 将 `http://localhost:15000/{service}/**` 重写到后端 `/**`。示例配置：
-
-```34:62:Platform.AppHost/AppHost.cs
-var yarp = builder.AddYarp("apigateway")
-    .WithHostPort(15000)
-    .WithConfiguration(config =>
-    {
-        foreach (var service in services)
-        {
-            var route = $"/{service.Key}/{{**catch-all}}";
-            config.AddRoute(route, config.AddCluster(service.Value))
-                .WithTransformPathRouteValues("/{**catch-all}");
-        }
-    });
-
-builder.AddNpmApp("admin", "../Platform.Admin")
-    .WithReference(yarp)
-    .WaitFor(yarp)
-    .WithEnvironment("BROWSER", "none")
-    .WithHttpEndpoint(env: "PORT", port: 15001)
-    .WithNpmPackageInstallation()
-    .PublishAsDockerFile();
-```
+`Platform.AppHost` 会拉起 MongoDB、数据初始化服务、API 服务以及前端应用，并通过 YARP 将 `http://localhost:15000/{service}/**` 重写到后端 `/**`。
 
 ## 🔙 后端服务（Platform.ApiService）
 
@@ -57,69 +35,7 @@ builder.AddNpmApp("admin", "../Platform.Admin")
 - **审计与日志**：`ActivityLogMiddleware` 捕获请求轨迹，`UserActivityLog` 记录 CRUD 审计操作，所有异常由统一响应中间件处理。
 - **OpenAPI 文档**：基于 .NET 9 原生 OpenAPI + Scalar，所有公共成员已补全 XML 注释，保证文档可读性。
 
-核心启动逻辑集中在 `Program.cs`，完成 CORS、OpenAPI、JWT、健康检查与中间件管线配置：
-
-```24:224:Platform.ApiService/Program.cs
-builder.Services.AddOpenApi(options =>
-{
-    options.AddDocumentTransformer((document, context, cancellationToken) =>
-    {
-        document.Info = new()
-        {
-            Title = "Platform API",
-            Version = "v1",
-            Description = "Aspire Admin Platform API - 企业级管理平台后端服务",
-            Contact = new()
-            {
-                Name = "Platform Team",
-                Email = "support@platform.com"
-            }
-        };
-
-        document.Components ??= new();
-        document.Components.SecuritySchemes ??= new Dictionary<string, Microsoft.OpenApi.Models.OpenApiSecurityScheme>();
-        document.Components.SecuritySchemes["Bearer"] = new()
-        {
-            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT",
-            Description = "JWT Authorization header using the Bearer scheme."
-        };
-
-        document.SecurityRequirements ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
-        document.SecurityRequirements.Add(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-        {
-            [document.Components.SecuritySchemes["Bearer"]] = new string[0]
-        });
-
-        return Task.CompletedTask;
-    });
-
-    options.AddOperationTransformer((operation, context, cancellationToken) =>
-    {
-        var authorizeAttributes = context.Description.ActionDescriptor.EndpointMetadata
-            .OfType<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>();
-
-        if (authorizeAttributes.Any())
-        {
-            operation.Security ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
-            operation.Security.Add(new()
-            {
-                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                {
-                    Reference = new()
-                    {
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                }] = Array.Empty<string>()
-            });
-        }
-
-        return Task.CompletedTask;
-    });
-});
-```
+核心启动逻辑集中在 `Program.cs`，完成 CORS、OpenAPI、JWT、健康检查与中间件管线配置。
 
 ## 🗄 数据初始化（Platform.DataInitializer）
 

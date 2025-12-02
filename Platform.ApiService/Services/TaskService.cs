@@ -17,20 +17,24 @@ public class TaskService : ITaskService
     private readonly IMongoCollection<TaskModel> _taskCollection;
     private readonly IMongoCollection<TaskExecutionLog> _executionLogCollection;
     private readonly IUserService _userService;
+    private readonly IUnifiedNotificationService _notificationService;
 
     /// <summary>
     /// 初始化 TaskService 实例
     /// </summary>
     /// <param name="mongoClient">MongoDB 客户端</param>
     /// <param name="userService">用户服务</param>
+    /// <param name="notificationService">统一通知服务，用于在任务创建、分配、状态变更时发送通知</param>
     public TaskService(
         IMongoClient mongoClient,
-        IUserService userService)
+        IUserService userService,
+        IUnifiedNotificationService notificationService)
     {
         var database = mongoClient.GetDatabase("aspire_platform");
         _taskCollection = database.GetCollection<TaskModel>("tasks");
         _executionLogCollection = database.GetCollection<TaskExecutionLog>("task_execution_logs");
         _userService = userService;
+        _notificationService = notificationService;
 
         // 创建索引
         CreateIndexes();
@@ -105,6 +109,28 @@ public class TaskService : ITaskService
         }
 
         await _taskCollection.InsertOneAsync(task);
+
+        // 如果在创建时已指派给某人，发送任务分配通知
+        try
+        {
+            if (!string.IsNullOrEmpty(task.AssignedTo))
+            {
+                await _notificationService.CreateTaskNotificationAsync(
+                    task.Id!,
+                    task.TaskName,
+                    "task_assigned",
+                    (int)task.Priority,
+                    (int)task.Status,
+                    task.AssignedTo,
+                    null,
+                    string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"创建任务后的通知发送失败: {ex.Message}");
+        }
 
         return await ConvertToTaskDtoAsync(task);
     }
@@ -316,6 +342,28 @@ public class TaskService : ITaskService
             updateDefinition,
             new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
 
+        // 发送任务分配通知
+        try
+        {
+            if (!string.IsNullOrEmpty(updatedTask.AssignedTo))
+            {
+                await _notificationService.CreateTaskNotificationAsync(
+                    updatedTask.Id!,
+                    updatedTask.TaskName,
+                    "task_assigned",
+                    (int)updatedTask.Priority,
+                    (int)updatedTask.Status,
+                    updatedTask.AssignedTo,
+                    null,
+                    string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"任务分配通知发送失败: {ex.Message}");
+        }
+
         return await ConvertToTaskDtoAsync(updatedTask);
     }
 
@@ -347,6 +395,31 @@ public class TaskService : ITaskService
             filter,
             updateDefinition,
             new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
+
+        // 分配后发送任务分配通知
+        try
+        {
+            var relatedUsers = new List<string>();
+            if (!string.IsNullOrEmpty(updatedTask.CreatedBy)) relatedUsers.Add(updatedTask.CreatedBy);
+            if (!string.IsNullOrEmpty(updatedTask.AssignedTo)) relatedUsers.Add(updatedTask.AssignedTo);
+            if (updatedTask.ParticipantIds != null && updatedTask.ParticipantIds.Count > 0)
+                relatedUsers.AddRange(updatedTask.ParticipantIds);
+
+            await _notificationService.CreateTaskNotificationAsync(
+                updatedTask.Id!,
+                updatedTask.TaskName,
+                "task_assigned",
+                (int)updatedTask.Priority,
+                (int)updatedTask.Status,
+                updatedTask.AssignedTo,
+                relatedUsers.Distinct(),
+                request.Remarks
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"任务分配通知发送失败: {ex.Message}");
+        }
 
         return await ConvertToTaskDtoAsync(updatedTask);
     }
@@ -389,6 +462,41 @@ public class TaskService : ITaskService
             request.Message,
             request.CompletionPercentage ?? 0,
             task.CompanyId);
+
+        // 发送状态变更通知（执行中等）
+        try
+        {
+            var actionType = ((TaskStatusEnum)updatedTask.Status) switch
+            {
+                TaskStatusEnum.InProgress => "task_started",
+                TaskStatusEnum.Completed => "task_completed",
+                TaskStatusEnum.Cancelled => "task_cancelled",
+                TaskStatusEnum.Failed => "task_failed",
+                TaskStatusEnum.Paused => "task_paused",
+                _ => "task_updated"
+            };
+
+            var relatedUsers = new List<string>();
+            if (!string.IsNullOrEmpty(updatedTask.CreatedBy)) relatedUsers.Add(updatedTask.CreatedBy);
+            if (!string.IsNullOrEmpty(updatedTask.AssignedTo)) relatedUsers.Add(updatedTask.AssignedTo);
+            if (updatedTask.ParticipantIds != null && updatedTask.ParticipantIds.Count > 0)
+                relatedUsers.AddRange(updatedTask.ParticipantIds);
+
+            await _notificationService.CreateTaskNotificationAsync(
+                updatedTask.Id!,
+                updatedTask.TaskName,
+                actionType,
+                (int)updatedTask.Priority,
+                (int)updatedTask.Status,
+                updatedTask.AssignedTo,
+                relatedUsers.Distinct(),
+                request.Message
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"任务状态变更通知发送失败: {ex.Message}");
+        }
 
         return await ConvertToTaskDtoAsync(updatedTask);
     }
@@ -439,6 +547,31 @@ public class TaskService : ITaskService
             100,
             task.CompanyId);
 
+        // 发送任务完成通知
+        try
+        {
+            var relatedUsers = new List<string>();
+            if (!string.IsNullOrEmpty(updatedTask.CreatedBy)) relatedUsers.Add(updatedTask.CreatedBy);
+            if (!string.IsNullOrEmpty(updatedTask.AssignedTo)) relatedUsers.Add(updatedTask.AssignedTo);
+            if (updatedTask.ParticipantIds != null && updatedTask.ParticipantIds.Count > 0)
+                relatedUsers.AddRange(updatedTask.ParticipantIds);
+
+            await _notificationService.CreateTaskNotificationAsync(
+                updatedTask.Id!,
+                updatedTask.TaskName,
+                "task_completed",
+                (int)updatedTask.Priority,
+                (int)updatedTask.Status,
+                updatedTask.AssignedTo,
+                relatedUsers.Distinct(),
+                request.Remarks
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"任务完成通知发送失败: {ex.Message}");
+        }
+
         return await ConvertToTaskDtoAsync(updatedTask);
     }
 
@@ -469,6 +602,31 @@ public class TaskService : ITaskService
             filter,
             updateDefinition,
             new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
+
+        // 发送任务取消通知
+        try
+        {
+            var relatedUsers = new List<string>();
+            if (!string.IsNullOrEmpty(updatedTask.CreatedBy)) relatedUsers.Add(updatedTask.CreatedBy);
+            if (!string.IsNullOrEmpty(updatedTask.AssignedTo)) relatedUsers.Add(updatedTask.AssignedTo);
+            if (updatedTask.ParticipantIds != null && updatedTask.ParticipantIds.Count > 0)
+                relatedUsers.AddRange(updatedTask.ParticipantIds);
+
+            await _notificationService.CreateTaskNotificationAsync(
+                updatedTask.Id!,
+                updatedTask.TaskName,
+                "task_cancelled",
+                (int)updatedTask.Priority,
+                (int)updatedTask.Status,
+                updatedTask.AssignedTo,
+                relatedUsers.Distinct(),
+                remarks
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"任务取消通知发送失败: {ex.Message}");
+        }
 
         return await ConvertToTaskDtoAsync(updatedTask);
     }

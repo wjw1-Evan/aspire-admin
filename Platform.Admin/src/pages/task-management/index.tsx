@@ -33,6 +33,7 @@ import {
   PlayCircleOutlined,
   StopOutlined,
   TeamOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
@@ -50,6 +51,7 @@ import type { ApiResponse } from '@/types/unified-api';
 import TaskForm from './components/TaskForm';
 import TaskDetail from './components/TaskDetail';
 import TaskExecutionPanel from './components/TaskExecutionPanel';
+import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 
 const TaskManagement: React.FC = () => {
   const intl = useIntl();

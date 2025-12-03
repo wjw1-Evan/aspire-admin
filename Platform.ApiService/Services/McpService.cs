@@ -20,6 +20,7 @@ public class McpService : IMcpService
     private readonly ICompanyService _companyService;
     private readonly IUserActivityLogService _activityLogService;
     private readonly ISocialService _socialService;
+    private readonly ITaskService _taskService;
     private readonly ILogger<McpService> _logger;
 
     /// <summary>
@@ -35,6 +36,7 @@ public class McpService : IMcpService
     /// <param name="companyService">企业服务</param>
     /// <param name="activityLogService">活动日志服务</param>
     /// <param name="socialService">社交服务</param>
+    /// <param name="taskService">任务服务</param>
     /// <param name="logger">日志记录器</param>
     public McpService(
         IDatabaseOperationFactory<AppUser> userFactory,
@@ -47,6 +49,7 @@ public class McpService : IMcpService
         ICompanyService companyService,
         IUserActivityLogService activityLogService,
         ISocialService socialService,
+        ITaskService taskService,
         ILogger<McpService> logger)
     {
         _userFactory = userFactory;
@@ -59,6 +62,7 @@ public class McpService : IMcpService
         _companyService = companyService;
         _activityLogService = activityLogService;
         _socialService = socialService;
+        _taskService = taskService;
         _logger = logger;
     }
 
@@ -390,6 +394,238 @@ public class McpService : IMcpService
                         }
                     }
                 }
+            },
+            new()
+            {
+                Name = "get_tasks",
+                Description = "获取任务列表。支持按状态、优先级、分配人等条件查询任务。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["status"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "任务状态（0=待分配, 1=已分配, 2=执行中, 3=已完成, 4=已取消, 5=失败, 6=暂停）"
+                        },
+                        ["priority"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "优先级（0=低, 1=中, 2=高, 3=紧急）"
+                        },
+                        ["assignedTo"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "分配给的用户ID"
+                        },
+                        ["search"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "搜索关键词（任务名称、描述等）"
+                        },
+                        ["page"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "页码（从1开始）",
+                            ["default"] = 1,
+                            ["minimum"] = 1
+                        },
+                        ["pageSize"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "每页数量",
+                            ["default"] = 20,
+                            ["minimum"] = 1,
+                            ["maximum"] = 100
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_task_detail",
+                Description = "获取任务详细信息。包括任务的完整信息、执行日志等。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "taskId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["taskId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务ID（必填）"
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "create_task",
+                Description = "创建新任务。用于创建待分配的任务。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "taskName", "taskType" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["taskName"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务名称（必填）"
+                        },
+                        ["description"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务描述（可选）"
+                        },
+                        ["taskType"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务类型（必填，如：bug、feature、maintenance等）"
+                        },
+                        ["priority"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "优先级（0=低, 1=中, 2=高, 3=紧急）",
+                            ["default"] = 1
+                        },
+                        ["assignedTo"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "分配给的用户ID（可选）"
+                        },
+                        ["estimatedDuration"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "预计耗时（分钟，可选）"
+                        },
+                        ["tags"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "array",
+                            ["items"] = new Dictionary<string, object> { ["type"] = "string" },
+                            ["description"] = "标签列表（可选）"
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "update_task",
+                Description = "更新任务信息。可以更新任务的名称、描述、状态、优先级等。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "taskId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["taskId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务ID（必填）"
+                        },
+                        ["taskName"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务名称（可选）"
+                        },
+                        ["description"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务描述（可选）"
+                        },
+                        ["status"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "任务状态（可选）"
+                        },
+                        ["priority"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "优先级（可选）"
+                        },
+                        ["completionPercentage"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "完成百分比（0-100，可选）"
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "assign_task",
+                Description = "分配任务给指定用户。将待分配的任务分配给具体的执行人。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "taskId", "assignedTo" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["taskId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务ID（必填）"
+                        },
+                        ["assignedTo"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "分配给的用户ID（必填）"
+                        },
+                        ["remarks"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "分配备注（可选）"
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "complete_task",
+                Description = "完成任务。标记任务为已完成，并记录执行结果。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "taskId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["taskId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "任务ID（必填）"
+                        },
+                        ["executionResult"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "执行结果（0=未执行, 1=成功, 2=失败, 3=超时, 4=被中断）",
+                            ["default"] = 1
+                        },
+                        ["remarks"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "完成备注（可选）"
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_task_statistics",
+                Description = "获取任务统计信息。包括各状态任务数、完成率等统计数据。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["userId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "用户ID（可选，用于获取用户相关的统计）"
+                        }
+                    }
+                }
             }
         };
 
@@ -418,6 +654,13 @@ public class McpService : IMcpService
                 "get_all_roles" => await HandleGetAllRolesAsync(arguments, currentUserId),
                 "get_role_info" => await HandleGetRoleInfoAsync(arguments, currentUserId),
                 "get_my_activity_logs" => await HandleGetMyActivityLogsAsync(arguments, currentUserId),
+                "get_tasks" => await HandleGetTasksAsync(arguments, currentUserId),
+                "get_task_detail" => await HandleGetTaskDetailAsync(arguments, currentUserId),
+                "create_task" => await HandleCreateTaskAsync(arguments, currentUserId),
+                "update_task" => await HandleUpdateTaskAsync(arguments, currentUserId),
+                "assign_task" => await HandleAssignTaskAsync(arguments, currentUserId),
+                "complete_task" => await HandleCompleteTaskAsync(arguments, currentUserId),
+                "get_task_statistics" => await HandleGetTaskStatisticsAsync(arguments, currentUserId),
                 _ => throw new ArgumentException($"未知的工具: {toolName}")
             };
 
@@ -1196,6 +1439,283 @@ public class McpService : IMcpService
             pageSize = response.PageSize,
             totalPages = response.Total > 0 ? (int)Math.Ceiling(response.Total / (double)response.PageSize) : 0,
             message = response.Total == 0 ? "未找到活动记录" : null
+        };
+    }
+
+    #endregion
+
+    #region 任务管理工具处理方法
+
+    private async Task<object> HandleGetTasksAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            return new { error = "无法确定当前企业" };
+        }
+
+        var page = 1;
+        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
+        {
+            page = p;
+        }
+
+        var pageSize = 20;
+        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
+        {
+            pageSize = Math.Min(ps, 100);
+        }
+
+        var request = new TaskQueryRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null,
+            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null,
+            Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var priority) ? priority : null,
+            AssignedTo = arguments.ContainsKey("assignedTo") ? arguments["assignedTo"]?.ToString() : null
+        };
+
+        var response = await _taskService.QueryTasksAsync(request, currentUser.CurrentCompanyId);
+
+        return new
+        {
+            tasks = response.Tasks.Select(t => new
+            {
+                id = t.Id,
+                taskName = t.TaskName,
+                description = t.Description,
+                status = t.Status,
+                statusName = t.StatusName,
+                priority = t.Priority,
+                priorityName = t.PriorityName,
+                assignedTo = t.AssignedTo,
+                assignedToName = t.AssignedToName,
+                completionPercentage = t.CompletionPercentage,
+                createdAt = t.CreatedAt,
+                updatedAt = t.UpdatedAt
+            }).ToList(),
+            total = response.Total,
+            page = response.Page,
+            pageSize = response.PageSize,
+            totalPages = (int)Math.Ceiling(response.Total / (double)response.PageSize)
+        };
+    }
+
+    private async Task<object> HandleGetTaskDetailAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("taskId") || arguments["taskId"] is not string taskId)
+        {
+            return new { error = "缺少必需的参数: taskId" };
+        }
+
+        var task = await _taskService.GetTaskByIdAsync(taskId);
+        if (task == null)
+        {
+            return new { error = "任务未找到" };
+        }
+
+        return new
+        {
+            id = task.Id,
+            taskName = task.TaskName,
+            description = task.Description,
+            taskType = task.TaskType,
+            status = task.Status,
+            statusName = task.StatusName,
+            priority = task.Priority,
+            priorityName = task.PriorityName,
+            createdBy = task.CreatedBy,
+            createdByName = task.CreatedByName,
+            assignedTo = task.AssignedTo,
+            assignedToName = task.AssignedToName,
+            assignedAt = task.AssignedAt,
+            plannedStartTime = task.PlannedStartTime,
+            plannedEndTime = task.PlannedEndTime,
+            actualStartTime = task.ActualStartTime,
+            actualEndTime = task.ActualEndTime,
+            estimatedDuration = task.EstimatedDuration,
+            actualDuration = task.ActualDuration,
+            completionPercentage = task.CompletionPercentage,
+            executionResult = task.ExecutionResult,
+            executionResultName = task.ExecutionResultName,
+            remarks = task.Remarks,
+            tags = task.Tags,
+            participants = task.Participants,
+            attachments = task.Attachments,
+            createdAt = task.CreatedAt,
+            updatedAt = task.UpdatedAt
+        };
+    }
+
+    private async Task<object> HandleCreateTaskAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("taskName") || arguments["taskName"] is not string taskName)
+        {
+            return new { error = "缺少必需的参数: taskName" };
+        }
+
+        if (!arguments.ContainsKey("taskType") || arguments["taskType"] is not string taskType)
+        {
+            return new { error = "缺少必需的参数: taskType" };
+        }
+
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            return new { error = "无法确定当前企业" };
+        }
+
+        var request = new CreateTaskRequest
+        {
+            TaskName = taskName,
+            TaskType = taskType,
+            Description = arguments.ContainsKey("description") ? arguments["description"]?.ToString() : null,
+            Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var priority) ? priority : (int)TaskPriority.Medium,
+            AssignedTo = arguments.ContainsKey("assignedTo") ? arguments["assignedTo"]?.ToString() : null,
+            EstimatedDuration = arguments.ContainsKey("estimatedDuration") && int.TryParse(arguments["estimatedDuration"]?.ToString(), out var duration) ? duration : null,
+            Tags = arguments.ContainsKey("tags") && arguments["tags"] is List<object> tags ? tags.Cast<string>().ToList() : new List<string>()
+        };
+
+        var task = await _taskService.CreateTaskAsync(request, currentUserId, currentUser.CurrentCompanyId);
+
+        return new
+        {
+            id = task.Id,
+            taskName = task.TaskName,
+            status = task.Status,
+            statusName = task.StatusName,
+            priority = task.Priority,
+            priorityName = task.PriorityName,
+            createdAt = task.CreatedAt,
+            message = "任务创建成功"
+        };
+    }
+
+    private async Task<object> HandleUpdateTaskAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("taskId") || arguments["taskId"] is not string taskId)
+        {
+            return new { error = "缺少必需的参数: taskId" };
+        }
+
+        var request = new UpdateTaskRequest
+        {
+            TaskId = taskId,
+            TaskName = arguments.ContainsKey("taskName") ? arguments["taskName"]?.ToString() : null,
+            Description = arguments.ContainsKey("description") ? arguments["description"]?.ToString() : null,
+            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null,
+            Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var priority) ? priority : null,
+            CompletionPercentage = arguments.ContainsKey("completionPercentage") && int.TryParse(arguments["completionPercentage"]?.ToString(), out var completion) ? completion : null
+        };
+
+        var task = await _taskService.UpdateTaskAsync(request, currentUserId);
+
+        return new
+        {
+            id = task.Id,
+            taskName = task.TaskName,
+            status = task.Status,
+            statusName = task.StatusName,
+            completionPercentage = task.CompletionPercentage,
+            updatedAt = task.UpdatedAt,
+            message = "任务更新成功"
+        };
+    }
+
+    private async Task<object> HandleAssignTaskAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("taskId") || arguments["taskId"] is not string taskId)
+        {
+            return new { error = "缺少必需的参数: taskId" };
+        }
+
+        if (!arguments.ContainsKey("assignedTo") || arguments["assignedTo"] is not string assignedTo)
+        {
+            return new { error = "缺少必需的参数: assignedTo" };
+        }
+
+        var request = new AssignTaskRequest
+        {
+            TaskId = taskId,
+            AssignedTo = assignedTo,
+            Remarks = arguments.ContainsKey("remarks") ? arguments["remarks"]?.ToString() : null
+        };
+
+        var task = await _taskService.AssignTaskAsync(request, currentUserId);
+
+        return new
+        {
+            id = task.Id,
+            taskName = task.TaskName,
+            assignedTo = task.AssignedTo,
+            assignedToName = task.AssignedToName,
+            assignedAt = task.AssignedAt,
+            status = task.Status,
+            statusName = task.StatusName,
+            message = "任务分配成功"
+        };
+    }
+
+    private async Task<object> HandleCompleteTaskAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("taskId") || arguments["taskId"] is not string taskId)
+        {
+            return new { error = "缺少必需的参数: taskId" };
+        }
+
+        var executionResult = (int)TaskExecutionResult.Success;
+        if (arguments.ContainsKey("executionResult") && int.TryParse(arguments["executionResult"]?.ToString(), out var result))
+        {
+            executionResult = result;
+        }
+
+        var request = new CompleteTaskRequest
+        {
+            TaskId = taskId,
+            ExecutionResult = executionResult,
+            Remarks = arguments.ContainsKey("remarks") ? arguments["remarks"]?.ToString() : null
+        };
+
+        var task = await _taskService.CompleteTaskAsync(request, currentUserId);
+
+        return new
+        {
+            id = task.Id,
+            taskName = task.TaskName,
+            status = task.Status,
+            statusName = task.StatusName,
+            executionResult = task.ExecutionResult,
+            executionResultName = task.ExecutionResultName,
+            completionPercentage = task.CompletionPercentage,
+            actualEndTime = task.ActualEndTime,
+            message = "任务完成成功"
+        };
+    }
+
+    private async Task<object> HandleGetTaskStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            return new { error = "无法确定当前企业" };
+        }
+
+        var userId = arguments.ContainsKey("userId") ? arguments["userId"]?.ToString() : null;
+
+        var statistics = await _taskService.GetTaskStatisticsAsync(currentUser.CurrentCompanyId, userId);
+
+        return new
+        {
+            totalTasks = statistics.TotalTasks,
+            pendingTasks = statistics.PendingTasks,
+            inProgressTasks = statistics.InProgressTasks,
+            completedTasks = statistics.CompletedTasks,
+            failedTasks = statistics.FailedTasks,
+            averageCompletionTime = statistics.AverageCompletionTime,
+            completionRate = statistics.CompletionRate,
+            tasksByPriority = statistics.TasksByPriority,
+            tasksByStatus = statistics.TasksByStatus
         };
     }
 

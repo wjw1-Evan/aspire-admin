@@ -12,16 +12,19 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 {
     private readonly IDatabaseOperationFactory<NoticeIconItem> _noticeFactory;
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly UnifiedNotificationBroadcaster _broadcaster;
 
     /// <summary>
     /// 初始化统一通知服务
     /// </summary>
     public UnifiedNotificationService(
         IDatabaseOperationFactory<NoticeIconItem> noticeFactory,
-        IDatabaseOperationFactory<AppUser> userFactory)
+        IDatabaseOperationFactory<AppUser> userFactory,
+        UnifiedNotificationBroadcaster broadcaster)
     {
         _noticeFactory = noticeFactory;
         _userFactory = userFactory;
+        _broadcaster = broadcaster;
     }
 
     /// <summary>
@@ -301,7 +304,17 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         };
 
         var result = await _noticeFactory.FindOneAndUpdateAsync(filter, update, options);
-        return result != null;
+        if (result != null)
+        {
+            try
+            {
+                var uid = _noticeFactory.GetRequiredUserId();
+                await _broadcaster.BroadcastReadAsync(id, new[] { uid });
+            }
+            catch { }
+            return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -374,7 +387,9 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             }
         }
 
-        return await _noticeFactory.CreateAsync(notification);
+        var created = await _noticeFactory.CreateAsync(notification);
+        try { await _broadcaster.BroadcastCreatedAsync(created); } catch { }
+        return created;
     }
 
     /// <summary>

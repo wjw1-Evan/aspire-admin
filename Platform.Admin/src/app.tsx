@@ -313,9 +313,9 @@ export const layout: RunTimeLayoutConfig = ({
           // 仅在用户登录后、且在特定页面时启动定期上报
           if (initialState?.currentUser && shouldReport && !hasStartedRef.current) {
             hasStartedRef.current = true;
-            LocationService.startPeriodicReporting();
+            LocationService.reportLocation(true);
             if (process.env.NODE_ENV === 'development') {
-              console.log('位置上报：在页面', location.pathname, '启动定期上报');
+              console.log('位置上报：在页面', location.pathname, '执行一次上报');
             }
           } else if ((!shouldReport || !initialState?.currentUser) && hasStartedRef.current) {
             // 离开特定页面或用户登出时停止上报

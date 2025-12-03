@@ -32,10 +32,10 @@ public class AuthController : BaseApiController
         IImageCaptchaService imageCaptchaService,
         IPhoneValidationService phoneValidationService)
     {
-        _authService = authService;
-        _captchaService = captchaService;
-        _imageCaptchaService = imageCaptchaService;
-        _phoneValidationService = phoneValidationService;
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _captchaService = captchaService ?? throw new ArgumentNullException(nameof(captchaService));
+        _imageCaptchaService = imageCaptchaService ?? throw new ArgumentNullException(nameof(imageCaptchaService));
+        _phoneValidationService = phoneValidationService ?? throw new ArgumentNullException(nameof(phoneValidationService));
     }
 
     /// <summary>

@@ -183,6 +183,8 @@ builder.Services.AddScoped<ChatService.ChatServiceDependencies>();
 
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
+// 显式注册无接口的推送广播器
+builder.Services.AddScoped<Platform.ApiService.Services.UnifiedNotificationBroadcaster>();
 
 // Configure JWT authentication
 // JWT SecretKey 必须配置，不提供默认值以确保安全
@@ -303,6 +305,9 @@ app.UseWebSockets();
 // Configure controllers
 app.MapControllers();
 app.MapHub<Platform.ApiService.Hubs.ChatHub>("/hubs/chat").RequireAuthorization();
+app.MapHub<Platform.ApiService.Hubs.NotificationHub>("/hubs/notification").RequireAuthorization();
+app.MapHub<Platform.ApiService.Hubs.SystemResourceHub>("/hubs/system-resource").RequireAuthorization();
+app.MapHub<Platform.ApiService.Hubs.LocationHub>("/hubs/location").RequireAuthorization();
 
 // Map OpenAPI endpoint
 app.MapOpenApi();

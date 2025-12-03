@@ -24,8 +24,8 @@ public class MaintenanceController : BaseApiController
     /// <param name="logger">日志记录器</param>
     public MaintenanceController(IMongoDatabase database, ILogger<MaintenanceController> logger)
     {
-        _database = database;
-        _logger = logger;
+        _database = database ?? throw new ArgumentNullException(nameof(database));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>

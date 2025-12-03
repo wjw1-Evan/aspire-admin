@@ -12,6 +12,8 @@ import {
   Timeline,
   theme
 } from 'antd';
+import { useSignalRConnection } from '@/hooks/useSignalRConnection';
+// import { getApiBaseUrl } from '@/utils/request';
 import {
   UserOutlined,
   TeamOutlined,
@@ -34,7 +36,7 @@ import {
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getCurrentCompany } from '@/services/company';
-import { getSystemResources } from '@/services/system/api';
+// import { getSystemResources } from '@/services/system/api';
 import type { CurrentUser } from '@/types/unified-api';
 import type { SystemResources } from '@/services/system/api';
 
@@ -168,32 +170,20 @@ const Welcome: React.FC = () => {
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 定时器引用
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 获取系统资源数据
-  const fetchSystemResources = useCallback(async () => {
-    try {
-      const resourcesRes = await getSystemResources();
-
-      if (resourcesRes.success && resourcesRes.data) {
-        const resources = resourcesRes.data;
-        const memoryUsage = resources.memory?.usagePercent || 0;
-
-        // 更新系统资源状态（只在数据变化时更新）
-        setSystemResources(prevResources => {
-          if (prevResources?.memory?.usagePercent === memoryUsage) {
-            return prevResources; // 避免不必要的更新
-          }
-          return resources;
-        });
+  // SignalR 连接管理
+  const { isConnected, on, off, invoke } = useSignalRConnection({
+    hubUrl: '/hubs/system-resource',
+    autoConnect: !!currentUser,
+    onConnected: () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('系统资源监控 SignalR 连接已建立');
       }
-    } catch (error) {
-      console.error('Failed to fetch system resources:', error);
-      // 错误由全局错误处理统一处理，这里重新抛出确保全局处理能够捕获
-      throw error;
-    }
-  }, []);
+    },
+    onError: (error) => {
+      console.error('系统资源监控 SignalR 连接错误:', error);
+    },
+  });
+
 
   // 获取统计数据
   const fetchStatistics = useCallback(async () => {
@@ -217,9 +207,7 @@ const Welcome: React.FC = () => {
         setRecentActivities(activitiesRes.data || []);
       }
 
-      // 获取初始系统资源数据
-      await fetchSystemResources();
-      // 错误由全局错误处理统一处理，这里不需要 catch
+      // 系统资源采用 SignalR 实时推送，无需额外轮询
     } catch (error) {
       console.error('Failed to fetch statistics:', error);
       // 重新抛出错误，确保全局错误处理能够处理
@@ -227,28 +215,34 @@ const Welcome: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchSystemResources]);
+  }, []);
 
   // 初始数据加载
   useEffect(() => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 定时器设置
+  // 订阅系统资源更新
   useEffect(() => {
-    // 设置定时器，每5秒更新一次系统资源数据（减少抖动）
-    intervalRef.current = setInterval(() => {
-      fetchSystemResources();
-    }, 5000);
+    if (!isConnected) return;
 
-    // 清理函数
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+    // 订阅系统资源更新（间隔 5 秒）
+    invoke('SubscribeResourceUpdatesAsync', 5000).catch((error) => {
+      console.error('订阅系统资源更新失败:', error);
+    });
+
+    // 监听资源更新事件
+    on('ResourceUpdated', (resources: SystemResources) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('收到系统资源更新:', resources);
       }
+      setSystemResources(resources);
+    });
+
+    return () => {
+      off('ResourceUpdated');
     };
-  }, [fetchSystemResources]);
+  }, [isConnected, invoke, on, off]);
 
   // 获取活动类型对应的颜色
   const getActivityColor = (action?: string): string => {

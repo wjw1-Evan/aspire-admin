@@ -29,7 +29,7 @@ public class NoticeController : BaseApiController
     /// <param name="noticeService">通知服务</param>
     public NoticeController(INoticeService noticeService)
     {
-        _noticeService = noticeService;
+        _noticeService = noticeService ?? throw new ArgumentNullException(nameof(noticeService));
     }
 
     /// <summary>

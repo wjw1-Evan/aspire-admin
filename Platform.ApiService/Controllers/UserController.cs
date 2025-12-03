@@ -28,8 +28,8 @@ public class UserController : BaseApiController
     /// <param name="authService">认证服务</param>
     public UserController(IUserService userService, IAuthService authService)
     {
-        _userService = userService;
-        _authService = authService;
+        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
     }
 
     /// <summary>

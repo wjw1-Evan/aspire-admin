@@ -45,6 +45,10 @@ export default {
   'pages.welcome.alertMessage':
     'Faster and stronger heavy-duty components have been released.',
   'pages.unifiedNotificationCenter.title': 'Notification Center',
+  'pages.unifiedNotificationCenter.priority.low': 'Low',
+  'pages.unifiedNotificationCenter.priority.medium': 'Medium',
+  'pages.unifiedNotificationCenter.priority.high': 'High',
+  'pages.unifiedNotificationCenter.priority.urgent': 'Urgent',
   'pages.unifiedNotificationCenter.all': 'All',
   'pages.unifiedNotificationCenter.todos': 'Todos',
   'pages.unifiedNotificationCenter.system': 'System Messages',

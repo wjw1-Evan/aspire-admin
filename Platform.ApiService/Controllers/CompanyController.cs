@@ -30,9 +30,9 @@ public class CompanyController : BaseApiController
         IAuthService authService,
         IUserCompanyService userCompanyService)
     {
-        _companyService = companyService;
-        _authService = authService;
-        _userCompanyService = userCompanyService;
+        _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _userCompanyService = userCompanyService ?? throw new ArgumentNullException(nameof(userCompanyService));
     }
 
     /// <summary>

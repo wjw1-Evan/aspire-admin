@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
+  App,
   Modal,
   Form,
   Input,
   Slider,
   Select,
-  message,
   Spin,
   Alert,
   Space,
@@ -40,6 +40,7 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({
   onSuccess,
 }) => {
   const [form] = Form.useForm();
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<ExecutionMode>('progress');
   const [completionPercentage, setCompletionPercentage] = useState(

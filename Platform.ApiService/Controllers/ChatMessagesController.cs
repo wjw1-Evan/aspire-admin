@@ -25,7 +25,7 @@ public class ChatMessagesController : BaseApiController
     /// <param name="chatService">聊天服务</param>
     public ChatMessagesController(IChatService chatService)
     {
-        _chatService = chatService;
+        _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
     }
 
     /// <summary>

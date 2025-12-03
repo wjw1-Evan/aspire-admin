@@ -23,7 +23,7 @@ public class SocialController : BaseApiController
     /// <param name="socialService">社交业务服务。</param>
     public SocialController(ISocialService socialService)
     {
-        _socialService = socialService;
+        _socialService = socialService ?? throw new ArgumentNullException(nameof(socialService));
     }
 
     /// <summary>

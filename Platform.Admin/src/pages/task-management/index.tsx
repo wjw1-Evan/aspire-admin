@@ -455,7 +455,7 @@ const TaskManagement: React.FC = () => {
         rowKey="id"
         search={{
           labelWidth: 'auto',
-          optionHeight: 40,
+
           span: 6,
         }}
         form={{

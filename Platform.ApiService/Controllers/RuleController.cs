@@ -21,7 +21,7 @@ public class RuleController : BaseApiController
     /// <param name="ruleService">规则服务</param>
     public RuleController(IRuleService ruleService)
     {
-        _ruleService = ruleService;
+        _ruleService = ruleService ?? throw new ArgumentNullException(nameof(ruleService));
     }
 
     /// <summary>

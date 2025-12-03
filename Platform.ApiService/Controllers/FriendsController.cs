@@ -23,7 +23,7 @@ public class FriendsController : BaseApiController
     /// <param name="friendService">好友服务</param>
     public FriendsController(IFriendService friendService)
     {
-        _friendService = friendService;
+        _friendService = friendService ?? throw new ArgumentNullException(nameof(friendService));
     }
 
     /// <summary>

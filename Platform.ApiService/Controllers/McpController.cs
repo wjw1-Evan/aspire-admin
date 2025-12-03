@@ -31,7 +31,7 @@ public class McpController : BaseApiController
     /// <param name="mcpService">MCP 服务</param>
     public McpController(IMcpService mcpService)
     {
-        _mcpService = mcpService;
+        _mcpService = mcpService ?? throw new ArgumentNullException(nameof(mcpService));
     }
 
     /// <summary>

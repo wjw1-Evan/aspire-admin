@@ -18,7 +18,7 @@ public interface ISocialService
     /// 上报或更新当前位置。
     /// </summary>
     /// <param name="request">位置上报请求。</param>
-    Task UpdateLocationAsync(UpdateLocationBeaconRequest request);
+    Task UpdateLocationAsync(UpdateLocationBeaconRequest request, string? userIdOverride = null, string? companyIdOverride = null);
 
     /// <summary>
     /// 获取附近的用户列表。
@@ -83,13 +83,31 @@ public class SocialService : ISocialService
     }
 
     /// <inheritdoc />
-    public async Task UpdateLocationAsync(UpdateLocationBeaconRequest request)
+    public async Task UpdateLocationAsync(UpdateLocationBeaconRequest request, string? userIdOverride = null, string? companyIdOverride = null)
     {
         request.EnsureNotNull(nameof(request));
         ValidateCoordinates(request.Latitude, request.Longitude);
 
-        var currentUserId = _beaconFactory.GetRequiredUserId();
-        var companyId = await _beaconFactory.GetRequiredCompanyIdAsync();
+        // 允许在无 HttpContext（如 SignalR Hub 或后台任务）时通过 override 传入
+        var currentUserId = userIdOverride ?? _beaconFactory.GetCurrentUserId() ?? throw new UnauthorizedAccessException("未找到当前用户信息");
+        string? companyId = companyIdOverride;
+        if (string.IsNullOrEmpty(companyId))
+        {
+            // 若通过 override 提供了 userId，则从数据库读取其当前企业，避免依赖 HttpContext
+            if (!string.IsNullOrEmpty(userIdOverride))
+            {
+                var user = await _userFactory.GetByIdWithoutTenantFilterAsync(currentUserId);
+                companyId = user?.CurrentCompanyId;
+                if (string.IsNullOrEmpty(companyId))
+                {
+                    throw new UnauthorizedAccessException("未找到当前企业信息");
+                }
+            }
+            else
+            {
+                companyId = await _beaconFactory.GetRequiredCompanyIdAsync();
+            }
+        }
         var now = DateTime.UtcNow;
         var lastSeenAt = ResolveLastSeenAt(request, now);
 

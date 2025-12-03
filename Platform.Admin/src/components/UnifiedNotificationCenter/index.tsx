@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Drawer, Tabs, List, Button, Tag, Space, Empty, Spin, Badge } from 'antd';
+import { useEffect, useState } from 'react';
+import { Drawer, List, Button, Tag, Space, Empty, Spin, Badge } from 'antd';
 import { BellOutlined, FileTextOutlined, AlertOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
+import { useIntl } from '@umijs/max';
 import {
   getUnifiedNotifications,
   markAsRead,
   getUnreadStatistics,
   type UnifiedNotificationItem,
 } from '@/services/unified-notification/api';
+import { notificationClient } from '@/services/signalr/notificationClient';
 import styles from './index.less';
 
 dayjs.extend(relativeTime);
@@ -24,10 +26,10 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
   visible,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState('all');
+  const intl = useIntl();
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<UnifiedNotificationItem[]>([]);
-  const [unreadStats, setUnreadStats] = useState<any>(null);
+  const [unreadTotal, setUnreadTotal] = useState<number>(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -35,19 +37,21 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
   const filterType = 'all';
   const sortBy = 'datetime';
 
-  // 获取统计信息（用于显示全部的未读数）
+  const t = (id: string, def: string) => intl.formatMessage({ id, defaultMessage: def });
+
+  // 获取未读统计（仅 total）
   const fetchUnreadStats = async () => {
     try {
       const response = await getUnreadStatistics();
       if (response.success && response.data) {
-        setUnreadStats(response.data);
+        setUnreadTotal(response.data.total ?? 0);
       }
-    } catch (error) {
+    } catch {
       // 静默失败
     }
   };
 
-  // 获取统一通知列表（仅“全部”）
+  // 获取通知列表
   const fetchUnifiedNotifications = async () => {
     setLoading(true);
     try {
@@ -56,45 +60,93 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
         setNotifications(response.data.items);
         setTotal(response.data.total);
       }
-    } catch (error) {
+    } catch {
       setNotifications([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 初始化时获取数据
   useEffect(() => {
-    if (visible) {
-      fetchUnreadStats();
-      fetchUnifiedNotifications();
-    }
+    if (!visible) return;
+    fetchUnreadStats();
+    fetchUnifiedNotifications();
+
+    // 订阅 SignalR 推送
+    const bind = async () => {
+      await notificationClient.start();
+      const offCreated = notificationClient.on('NotificationCreated', (notice: any) => {
+        // 追加到列表首位
+        setNotifications((prev) => [
+          {
+            id: notice.id,
+            title: notice.title,
+            description: notice.description,
+            avatar: notice.avatar,
+            extra: notice.extra,
+            status: notice.status,
+            datetime: notice.datetime,
+            type: notice.type,
+            read: notice.read,
+            clickClose: notice.clickClose,
+            taskId: notice.taskId,
+            taskPriority: notice.taskPriority,
+            taskStatus: notice.taskStatus,
+            isSystemMessage: notice.isSystemMessage,
+            messagePriority: notice.messagePriority,
+            actionType: notice.actionType,
+            relatedUserIds: notice.relatedUserIds,
+          },
+          ...prev,
+        ]);
+        setTotal((t) => t + 1);
+        if (!notice?.read) setUnreadTotal((c) => c + 1);
+      });
+
+      const offRead = notificationClient.on('NotificationRead', (payload: any) => {
+        const id = payload?.id;
+        if (!id) return;
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+        );
+        setUnreadTotal((c) => (c > 0 ? c - 1 : 0));
+      });
+
+      return () => {
+        offCreated();
+        offRead();
+      };
+    };
+
+    const cleanerPromise = bind();
+    return () => {
+      cleanerPromise.then((cleanup: any) => {
+        if (typeof cleanup === 'function') cleanup();
+      });
+    };
   }, [visible, page, pageSize]);
 
-  // 标记为已读
   const handleMarkAsRead = async (id: string) => {
     try {
       await markAsRead(id);
       fetchUnifiedNotifications();
       fetchUnreadStats();
-    } catch (error) {
+    } catch {
       // 静默失败
     }
   };
 
-  // 获取优先级标签（仅对任务通知显示）
   const getPriorityTag = (priority?: number) => {
-    const priorityMap: Record<number, { label: string; color: string }> = {
-      0: { label: '低', color: 'blue' },
-      1: { label: '中', color: 'orange' },
-      2: { label: '高', color: 'red' },
-      3: { label: '紧急', color: 'volcano' },
+    const map: Record<number, { label: string; color: string }> = {
+      0: { label: t('pages.unifiedNotificationCenter.priority.low', '低'), color: 'blue' },
+      1: { label: t('pages.unifiedNotificationCenter.priority.medium', '中'), color: 'orange' },
+      2: { label: t('pages.unifiedNotificationCenter.priority.high', '高'), color: 'red' },
+      3: { label: t('pages.unifiedNotificationCenter.priority.urgent', '紧急'), color: 'volcano' },
     };
     if (priority === undefined || priority === null) return null;
-    return <Tag color={priorityMap[priority]?.color}>{priorityMap[priority]?.label}</Tag>;
+    return <Tag color={map[priority]?.color}>{map[priority]?.label}</Tag>;
   };
 
-  // 获取类型图标
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'Task':
@@ -106,15 +158,14 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
     }
   };
 
-  // 渲染通知项
-  const renderNotificationItem = (item: UnifiedNotificationItem) => (
+  const renderItem = (item: UnifiedNotificationItem) => (
     <List.Item
       key={item.id}
       className={!item.read ? styles.unread : ''}
       actions={[
         !item.read && (
           <Button type="text" size="small" onClick={() => handleMarkAsRead(item.id)}>
-            标记已读
+            {t('pages.unifiedNotificationCenter.markAsRead', '标记已读')}
           </Button>
         ),
       ]}
@@ -138,46 +189,39 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
     </List.Item>
   );
 
-  const tabItems = [
-    {
-      key: 'all',
-      label: (
-        <span className={styles.tabLabel}>
-          <span>全部</span>
-          <Badge count={unreadStats?.total} size="small" />
-        </span>
-      ),
-      children: (
-        <Spin spinning={loading}>
-          <List
-            dataSource={notifications}
-            renderItem={renderNotificationItem}
-            locale={{ emptyText: <Empty description="暂无通知" /> }}
-            pagination={{
-              current: page,
-              pageSize: pageSize,
-              total: total,
-              onChange: (p, ps) => {
-                setPage(p);
-                setPageSize(ps);
-              },
-            }}
-          />
-        </Spin>
-      ),
-    },
-  ];
-
   return (
     <Drawer
-      title="通知中心"
+      title={t('pages.unifiedNotificationCenter.title', '通知中心')}
       placement="right"
       onClose={onClose}
       open={visible}
       width={500}
       styles={{ body: { padding: 0 } }}
     >
-      <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} tabBarStyle={{ paddingLeft: 16, paddingRight: 16 }} />
+      <div style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
+        <Space>
+          <span>
+            {t('pages.unifiedNotificationCenter.all', '全部')}
+          </span>
+          <Badge count={unreadTotal} size="small" />
+        </Space>
+      </div>
+      <Spin spinning={loading}>
+        <List
+          dataSource={notifications}
+          renderItem={renderItem}
+          locale={{ emptyText: <Empty description={t('pages.unifiedNotificationCenter.noNotifications', '暂无通知')} /> }}
+          pagination={{
+            current: page,
+            pageSize,
+            total,
+            onChange: (p, ps) => {
+              setPage(p);
+              setPageSize(ps);
+            },
+          }}
+        />
+      </Spin>
     </Drawer>
   );
 };

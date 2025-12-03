@@ -22,7 +22,7 @@ public class JoinRequestController : BaseApiController
     /// <param name="joinRequestService">企业加入申请服务</param>
     public JoinRequestController(IJoinRequestService joinRequestService)
     {
-        _joinRequestService = joinRequestService;
+        _joinRequestService = joinRequestService ?? throw new ArgumentNullException(nameof(joinRequestService));
     }
 
     /// <summary>

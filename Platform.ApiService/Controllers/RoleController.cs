@@ -25,7 +25,7 @@ public class RoleController : BaseApiController
     /// <param name="roleService">角色服务</param>
     public RoleController(IRoleService roleService)
     {
-        _roleService = roleService;
+        _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService));
     }
 
     /// <summary>

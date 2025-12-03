@@ -25,8 +25,8 @@ public class MenuController : BaseApiController
     /// <param name="logger">日志记录器</param>
     public MenuController(IMenuService menuService, ILogger<MenuController> logger)
     {
-        _menuService = menuService;
-        _logger = logger;
+        _menuService = menuService ?? throw new ArgumentNullException(nameof(menuService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>

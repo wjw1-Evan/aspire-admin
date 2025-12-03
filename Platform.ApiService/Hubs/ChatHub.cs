@@ -4,6 +4,7 @@ using MongoDB.Bson;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Services;
+using System.Security.Claims;
 
 namespace Platform.ApiService.Hubs;
 
@@ -48,9 +49,9 @@ public class ChatHub : Hub
         IChatService chatService,
         ILogger<ChatHub> logger)
     {
-        _sessionFactory = sessionFactory;
-        _chatService = chatService;
-        _logger = logger;
+        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
+        _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -58,7 +59,7 @@ public class ChatHub : Hub
     /// </summary>
     public override async Task OnConnectedAsync()
     {
-        var userId = _sessionFactory.GetRequiredUserId();
+        var userId = GetUserIdFromClaims() ?? throw new UnauthorizedAccessException("未找到当前用户信息");
         await Groups.AddToGroupAsync(Context.ConnectionId, GetUserGroupName(userId));
         await base.OnConnectedAsync();
     }
@@ -74,7 +75,7 @@ public class ChatHub : Hub
         var session = await _sessionFactory.GetByIdAsync(sessionId)
             ?? throw new KeyNotFoundException("会话不存在");
 
-        var userId = _sessionFactory.GetRequiredUserId();
+        var userId = GetUserIdFromClaims() ?? _sessionFactory.GetCurrentUserId() ?? throw new UnauthorizedAccessException("未找到当前用户信息");
 
         if (!session.Participants.Contains(userId))
         {
@@ -90,7 +91,12 @@ public class ChatHub : Hub
     /// <param name="sessionId">会话标识</param>
     public Task LeaveSessionAsync(string sessionId)
     {
-        ValidateSessionId(sessionId);
+        // 在清理阶段，前端可能传入空/无效的 sessionId，此时不应抛异常，直接忽略
+        if (string.IsNullOrWhiteSpace(sessionId) || !ObjectId.TryParse(sessionId, out _))
+        {
+            _logger.LogDebug("LeaveSessionAsync 忽略无效的 sessionId: '{SessionId}', 连接 {ConnectionId}", sessionId, Context.ConnectionId);
+            return Task.CompletedTask;
+        }
         return Groups.RemoveFromGroupAsync(Context.ConnectionId, GetSessionGroupName(sessionId));
     }
 
@@ -208,6 +214,15 @@ public class ChatHub : Hub
         {
             throw new ArgumentException("会话标识格式不正确", nameof(sessionId));
         }
+    }
+
+    private string? GetUserIdFromClaims()
+    {
+        var user = Context?.User;
+        if (user == null) return null;
+        return user.FindFirst("userId")?.Value
+            ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? user.FindFirst("sub")?.Value;
     }
 }
 

@@ -22,7 +22,7 @@ public class SystemMonitorController : BaseApiController
     /// <param name="logger">日志记录器</param>
     public SystemMonitorController(ILogger<SystemMonitorController> logger)
     {
-        _logger = logger;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>

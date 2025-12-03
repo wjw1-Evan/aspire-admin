@@ -31,8 +31,8 @@ public class ChatAiController : BaseApiController
     /// <param name="chatService">聊天服务。</param>
     public ChatAiController(IAiSuggestionService aiSuggestionService, IChatService chatService)
     {
-        _aiSuggestionService = aiSuggestionService;
-        _chatService = chatService;
+        _aiSuggestionService = aiSuggestionService ?? throw new ArgumentNullException(nameof(aiSuggestionService));
+        _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
     }
 
     /// <summary>

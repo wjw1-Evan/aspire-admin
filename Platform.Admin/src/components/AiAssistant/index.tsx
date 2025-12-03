@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { FloatButton, App, Input, Button, Card, Avatar, Spin } from 'antd';
 import { MessageOutlined, CloseOutlined, SendOutlined } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
+import * as signalR from '@microsoft/signalr';
 import {
   getOrCreateAssistantSession,
   sendMessage as sendChatMessage,
@@ -10,14 +11,33 @@ import {
   type ChatSession,
 } from '@/services/chat/api';
 import { AI_ASSISTANT_ID, AI_ASSISTANT_NAME, AI_ASSISTANT_AVATAR } from '@/constants/ai';
+import { useSignalRConnection } from '@/hooks/useSignalRConnection';
+import { getApiBaseUrl } from '@/utils/request';
 
 const { TextArea } = Input;
 
 /**
  * AI 助手组件
  * 固定在页面右下角，提供与小科的对话功能
+ * 使用 SignalR 实时接收消息，替代轮询
  */
 const AiAssistant: React.FC = () => {
+  // 保证 messages 中的 id 唯一，保持原有顺序（后来的覆盖先前的）
+  const dedupeById = useCallback((list: ChatMessage[]) => {
+    // 保留“最后出现”的同 id 消息（后来的覆盖先前的）
+    const seen = new Set<string>();
+    const result: ChatMessage[] = [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const m = list[i];
+      const id = m.id || `__noid__${i}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      result.push(m);
+    }
+    result.reverse();
+    return result;
+  }, []);
+
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const { message } = App.useApp();
@@ -30,10 +50,28 @@ const AiAssistant: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
 
-  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastMessageIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
+
+  // SignalR 连接管理
+  const { isConnected, on, off, invoke } = useSignalRConnection({
+    hubUrl: '/hubs/chat',
+    autoConnect: !!currentUser,
+    onConnected: () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('AI 助手 SignalR 连接已建立');
+      }
+    },
+    onDisconnected: () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('AI 助手 SignalR 连接已断开');
+      }
+    },
+    onError: (error) => {
+      console.error('AI 助手 SignalR 连接错误:', error);
+    },
+  });
 
   /**
    * 初始化会话
@@ -57,13 +95,24 @@ const AiAssistant: React.FC = () => {
     }
   }, [currentUser, initialized]);
 
+  const isValidObjectId = useCallback((id?: string) => !!id && /^[a-fA-F0-9]{24}$/.test(id), []);
+
+  // 渲染前去重，避免重复 key
+  const renderMessages = useMemo(() => dedupeById(messages), [messages, dedupeById]);
+
   /**
    * 加载消息列表
    */
   const loadMessages = useCallback(async (sessionId: string) => {
     try {
+      if (!isValidObjectId(sessionId)) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('跳过加载消息：无效的 sessionId', sessionId);
+        }
+        return;
+      }
       const response = await getMessages(sessionId, { limit: 50 });
-      setMessages(response.items);
+      setMessages(dedupeById(response.items));
 
       // 记录最后一条消息ID
       if (response.items.length > 0) {
@@ -73,32 +122,45 @@ const AiAssistant: React.FC = () => {
     } catch (error) {
       console.error('加载消息失败:', error);
     }
-  }, []);
+  }, [isValidObjectId]);
 
   /**
-   * 轮询获取新消息
+   * 加入聊天会话（SignalR）
    */
-  const pollNewMessages = useCallback(async () => {
-    if (!session || !open) return;
+  const joinSession = useCallback(async (sessionId: string) => {
+    if (!isConnected) return;
+    if (!isValidObjectId(sessionId)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('跳过加入会话：无效的 sessionId', sessionId);
+      }
+      return;
+    }
 
     try {
-      const response = await getMessages(session.id, { limit: 10 });
-      const newMessages = response.items.filter(
-        (msg) => msg.id !== lastMessageIdRef.current && msg.content
-      );
-
-      if (newMessages.length > 0) {
-        // 更新最后一条消息ID
-        const lastMessage = response.items[response.items.length - 1];
-        lastMessageIdRef.current = lastMessage.id;
-
-        // 重新加载所有消息
-        await loadMessages(session.id);
+      await invoke('JoinSessionAsync', sessionId);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('已加入聊天会话:', sessionId);
       }
     } catch (error) {
-      console.error('轮询消息失败:', error);
+      console.error('加入会话失败:', error);
     }
-  }, [session, open, loadMessages]);
+  }, [isConnected, invoke, isValidObjectId]);
+
+  /**
+   * 离开聊天会话（SignalR）
+   */
+  const leaveSession = useCallback(async (sessionId: string) => {
+    if (!isConnected) return;
+
+    try {
+      await invoke('LeaveSessionAsync', sessionId);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('已离开聊天会话:', sessionId);
+      }
+    } catch (error) {
+      console.error('离开会话失败:', error);
+    }
+  }, [isConnected, invoke]);
 
   /**
    * 发送消息
@@ -155,16 +217,13 @@ const AiAssistant: React.FC = () => {
       // 更新最后一条消息ID
       lastMessageIdRef.current = sentMessage.id;
 
-      // 移除临时消息，添加真实消息
+      // 移除临时消息，同时去掉可能由 SignalR 已经推送过的相同 id，添加真实消息
       setMessages((prev) => {
-        const filtered = prev.filter((msg) => msg.id !== optimisticMessage.id);
+        const filtered = prev.filter((msg) => msg.id !== optimisticMessage.id && msg.id !== sentMessage.id);
         return [...filtered, sentMessage];
       });
 
-      // 等待一段时间后轮询获取小科的回复
-      setTimeout(() => {
-        pollNewMessages();
-      }, 2000);
+      // SignalR 会自动推送小科的回复，无需轮询
     } catch (error) {
       console.error('发送消息失败:', error);
       message.error('发送消息失败');
@@ -173,7 +232,7 @@ const AiAssistant: React.FC = () => {
     } finally {
       setSending(false);
     }
-  }, [inputValue, sending, session, currentUser, message, pollNewMessages]);
+  }, [inputValue, sending, session, currentUser, message]);
 
   /**
    * 处理 Enter 键发送
@@ -207,13 +266,23 @@ const AiAssistant: React.FC = () => {
   }, [currentUser, initialized, initializeSession]);
 
   /**
-   * 打开对话窗口时加载消息
+   * 打开对话窗口时加载消息并加入会话
    */
   useEffect(() => {
-    if (open && session && initialized) {
-      loadMessages(session.id);
+    const sid = session?.id;
+    const valid = sid && isValidObjectId(sid);
+
+    if (open && initialized && isConnected && valid) {
+      loadMessages(sid!);
+      joinSession(sid!);
     }
-  }, [open, session, initialized, loadMessages]);
+
+    return () => {
+      if (open && isConnected && valid) {
+        leaveSession(sid!);
+      }
+    };
+  }, [open, session?.id, initialized, isConnected, loadMessages, joinSession, leaveSession, isValidObjectId]);
 
   /**
    * 消息更新时滚动到底部
@@ -223,23 +292,55 @@ const AiAssistant: React.FC = () => {
   }, [messages, scrollToBottom]);
 
   /**
-   * 启动轮询
+   * 监听 SignalR 消息事件
    */
   useEffect(() => {
-    if (session && initialized && open) {
-      // 每 3 秒轮询一次新消息
-      pollTimerRef.current = setInterval(() => {
-        pollNewMessages();
-      }, 3000);
+    if (!isConnected || !session) return;
 
-      return () => {
-        if (pollTimerRef.current) {
-          clearInterval(pollTimerRef.current);
-          pollTimerRef.current = null;
+    // 监听新消息事件
+    on('ReceiveMessage', (payload: any) => {
+      const incoming: ChatMessage = (payload && (payload as any).message) ? (payload as any).message : (payload as ChatMessage);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('收到新消息:', payload);
+      }
+      if (!incoming || !incoming.sessionId) {
+        return;
+      }
+      setMessages((prev) => {
+        // 避免重复添加消息（基于 id）
+        if (incoming.id && prev.some((m) => m.id === incoming.id)) {
+          return prev;
         }
-      };
-    }
-  }, [session, initialized, open, pollNewMessages]);
+        return [...prev, incoming];
+      });
+    });
+
+    // 监听消息删除事件
+    on('MessageDeleted', (deletedMessageId: string) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('消息已删除:', deletedMessageId);
+      }
+      setMessages((prev) => prev.filter((msg) => msg.id !== deletedMessageId));
+    });
+
+    // 监听会话更新事件
+    on('SessionUpdated', (payload: any) => {
+      const updatedSession: ChatSession = (payload && (payload as any).session) ? (payload as any).session : (payload as ChatSession);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('会话已更新:', payload);
+      }
+      if (!updatedSession || !updatedSession.id) {
+        return;
+      }
+      setSession(updatedSession);
+    });
+
+    return () => {
+      off('ReceiveMessage');
+      off('MessageDeleted');
+      off('SessionUpdated');
+    };
+  }, [isConnected, session, on, off]);
 
   // 如果用户未登录，不显示组件
   if (!currentUser) {
@@ -264,11 +365,13 @@ const AiAssistant: React.FC = () => {
             flexDirection: 'column',
             padding: 0,
           }}
-          bodyStyle={{
-            padding: 0,
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+          styles={{
+            body: {
+              padding: 0,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+            },
           }}
         >
           {/* 头部 */}
@@ -307,13 +410,13 @@ const AiAssistant: React.FC = () => {
               </div>
             ) : (
               <>
-                {messages.map((msg) => {
+                {renderMessages.map((msg, idx) => {
                   const isAssistant = msg.senderId === AI_ASSISTANT_ID;
                   const isUser = msg.senderId === currentUser.userid;
 
                   return (
                     <div
-                      key={msg.id}
+                      key={`${msg.id || 'local'}-${idx}`}
                       style={{
                         display: 'flex',
                         justifyContent: isAssistant ? 'flex-start' : 'flex-end',

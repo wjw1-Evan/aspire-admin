@@ -12,18 +12,24 @@
 export default {
   // 开发环境代理配置 - 指向Aspire网关
   dev: {
-    // localhost:8000/api/** -> http://localhost:15000/apiservice/**
+    // REST: localhost:8000/api/** -> http://localhost:15000/apiservice/api/**
     '/api/': {
-      // 要代理的地址 - Aspire网关地址
-      target: 'http://localhost:15000/apiservice/',
-      // 配置了这个可以从 http 代理到 https
-      // 依赖 origin 的功能可能需要这个，比如 cookie
+      target: 'http://localhost:15000/apiservice',
       changeOrigin: true,
-   
-      // 确保请求头正确传递
-      headers: {
-        Connection: 'keep-alive',
+      ws: true,
+      // keep /api prefix; gateway maps /apiservice/api/* -> ApiService /api/*
+    },
+    // SignalR hubs: localhost:8000/hubs/** -> http://localhost:15000/apiservice/hubs/**
+    '/hubs/': {
+      target: 'http://localhost:15000/apiservice',
+      changeOrigin: true,
+      ws: true,
       },
+    // Also match '/hubs' (without trailing slash)
+    '/hubs': {
+      target: 'http://localhost:15000/apiservice',
+      changeOrigin: true,
+      ws: true,
     },
   },
   pre: {

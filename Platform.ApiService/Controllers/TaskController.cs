@@ -29,8 +29,8 @@ public class TaskController : BaseApiController
     /// <param name="userService">用户服务</param>
     public TaskController(ITaskService taskService, IUserService userService)
     {
-        _taskService = taskService;
-        _userService = userService;
+        _taskService = taskService ?? throw new ArgumentNullException(nameof(taskService));
+        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
     }
 
     /// <summary>

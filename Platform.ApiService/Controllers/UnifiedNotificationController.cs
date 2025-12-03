@@ -22,7 +22,7 @@ public class UnifiedNotificationController : BaseApiController
     /// </summary>
     public UnifiedNotificationController(IUnifiedNotificationService unifiedNotificationService)
     {
-        _unifiedNotificationService = unifiedNotificationService;
+        _unifiedNotificationService = unifiedNotificationService ?? throw new ArgumentNullException(nameof(unifiedNotificationService));
     }
 
     /// <summary>

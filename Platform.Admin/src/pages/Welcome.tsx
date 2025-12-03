@@ -343,7 +343,7 @@ const Welcome: React.FC = () => {
       title={false}
       style={{ background: 'transparent' }}
     >
-      <div style={{ padding: '0 24px' }}>
+      <div >
         {/* 个性化欢迎区域 */}
         <Card
           style={{

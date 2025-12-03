@@ -1,5 +1,5 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { useModel, history, useIntl } from '@umijs/max';
+import { useModel, history, useIntl, useAccess } from '@umijs/max';
 import {
   Card,
   Row,
@@ -33,7 +33,11 @@ import {
   MonitorOutlined,
   LinkOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
+  FileTextOutlined,
+  CloudOutlined,
+  HistoryOutlined,
+  UnorderedListOutlined
 } from '@ant-design/icons';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
@@ -57,31 +61,49 @@ const StatCard: React.FC<{
 }> = ({ title, value, icon, color = '#1890ff', suffix = '', loading = false, token }) => (
   <Card
     size="small"
+    bodyStyle={{ padding: '10px 12px' }}
     style={{
-      textAlign: 'center',
       borderRadius: '12px',
-      boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',
       border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
       backgroundColor: token?.colorBgContainer || '#ffffff'
     }}
     loading={loading}
   >
-    <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>
-      {icon}
-    </div>
-    <div style={{
-      fontSize: '28px',
-      fontWeight: 'bold',
-      color: token?.colorText || '#262626',
-      marginBottom: '4px'
-    }}>
-      {value}{suffix}
-    </div>
-    <div style={{
-      fontSize: '14px',
-      color: token?.colorTextSecondary || '#8c8c8c'
-    }}>
-      {title}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      <div style={{ color, fontSize: '20px', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ textAlign: 'right', flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            color: token?.colorText || '#262626',
+            lineHeight: 1.2,
+          }}
+        >
+          {value}
+          {suffix}
+        </div>
+        <div
+          style={{
+            fontSize: '12px',
+            color: token?.colorTextSecondary || '#8c8c8c',
+            marginTop: 2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {title}
+        </div>
+      </div>
     </div>
   </Card>
 );
@@ -98,8 +120,8 @@ const QuickAction: React.FC<{
   <Card
     hoverable={!disabled}
     size="small"
+    bodyStyle={{ padding: '10px 12px' }}
     style={{
-      textAlign: 'center',
       borderRadius: '12px',
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.6 : 1,
@@ -108,14 +130,42 @@ const QuickAction: React.FC<{
     }}
     onClick={disabled ? undefined : onClick}
   >
-    <div style={{ color, fontSize: '32px', marginBottom: '12px' }}>
-      {icon}
-    </div>
-    <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>
-      {title}
-    </div>
-    <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-      {description}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      <div style={{ color, fontSize: 20, flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 'bold',
+            marginBottom: 2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {title}
+        </div>
+        <div
+          style={{
+            fontSize: 12,
+            color: '#8c8c8c',
+            lineHeight: 1.4,
+            maxHeight: 34,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {description}
+        </div>
+      </div>
     </div>
   </Card>
 );
@@ -131,31 +181,48 @@ const ResourceCard: React.FC<{
 }> = ({ title, value, icon, color = '#1890ff', loading = false, token }) => (
   <Card
     size="small"
+    bodyStyle={{ padding: '10px 12px' }}
     style={{
-      textAlign: 'center',
       borderRadius: '12px',
-      boxShadow: token?.boxShadow || '0 2px 8px rgba(0,0,0,0.06)',
       border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
       backgroundColor: token?.colorBgContainer || '#ffffff'
     }}
     loading={loading}
   >
-    <div style={{ color, fontSize: '24px', marginBottom: '8px' }}>
-      {icon}
-    </div>
-    <div style={{
-      fontSize: '20px',
-      fontWeight: 'bold',
-      color: token?.colorText || '#262626',
-      marginBottom: '4px'
-    }}>
-      {value}
-    </div>
-    <div style={{
-      fontSize: '12px',
-      color: token?.colorTextSecondary || '#8c8c8c'
-    }}>
-      {title}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      <div style={{ color, fontSize: '20px', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ textAlign: 'right', flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            color: token?.colorText || '#262626',
+            lineHeight: 1.2,
+          }}
+        >
+          {value}
+        </div>
+        <div
+          style={{
+            fontSize: '12px',
+            color: token?.colorTextSecondary || '#8c8c8c',
+            marginTop: 2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {title}
+        </div>
+      </div>
     </div>
   </Card>
 );
@@ -165,6 +232,7 @@ const Welcome: React.FC = () => {
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser as CurrentUser;
+  const access = useAccess();
 
   const [statistics, setStatistics] = useState<any>(null);
   const [taskStatistics, setTaskStatistics] = useState<import('@/services/task/api').TaskStatistics | null>(null);
@@ -311,6 +379,7 @@ const Welcome: React.FC = () => {
           key={role}
           color={tagColor}
           icon={tagIcon}
+          style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
         >
           {role}
         </Tag>
@@ -333,6 +402,18 @@ const Welcome: React.FC = () => {
       case 'account-center':
         history.push('/account/center');
         break;
+      case 'task-management':
+        history.push('/task-management');
+        break;
+      case 'iot-platform':
+        history.push('/iot-platform');
+        break;
+      case 'user-log':
+        history.push('/system/user-log');
+        break;
+      case 'my-activity':
+        history.push('/system/my-activity');
+        break;
       default:
         break;
     }
@@ -341,27 +422,26 @@ const Welcome: React.FC = () => {
   return (
     <PageContainer
       title={false}
-      style={{ background: 'transparent' }}
+      style={{ background: 'transparent', paddingBlock: 12 }}
     >
-      <div >
+      <div>
         {/* 个性化欢迎区域 */}
         <Card
           style={{
-            marginBottom: '24px',
+            marginBottom: '16px',
             borderRadius: '16px',
             background: token.colorBgContainer === '#ffffff'
               ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
               : 'linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%)',
             border: 'none',
             color: 'white',
-            boxShadow: token.boxShadow
           }}
-          styles={{ body: { padding: '32px' } }}
+          styles={{ body: { padding: '24px' } }}
         >
-          <Row align="middle" gutter={24}>
+          <Row align="middle" gutter={16}>
             <Col>
               <Avatar
-                size={80}
+                size={64}
                 icon={<UserOutlined />}
                 src={currentUser?.avatar}
                 style={{
@@ -380,7 +460,11 @@ const Welcome: React.FC = () => {
               </Paragraph>
               <Space wrap>
                 {getUserRoleTags()}
-                <Tag color="green" icon={<GlobalOutlined />}>
+                <Tag
+                  color="green"
+                  icon={<GlobalOutlined />}
+                  style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
+                >
                   {intl.formatMessage({ id: 'pages.welcome.online' })}
                 </Tag>
               </Space>
@@ -388,7 +472,7 @@ const Welcome: React.FC = () => {
             <Col>
               <Space direction="vertical" size="large">
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
                     {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
                       year: 'numeric',
                       month: 'long',
@@ -404,7 +488,7 @@ const Welcome: React.FC = () => {
           </Row>
         </Card>
 
-        <div style={{ margin: '24px 0' }} />
+        <div style={{ margin: '12px 0' }} />
 
         {/* 统计概览 */}
         <Card
@@ -414,9 +498,9 @@ const Welcome: React.FC = () => {
               <span>{intl.formatMessage({ id: 'pages.welcome.overview' })}</span>
             </Space>
           }
-          style={{ marginBottom: '24px', borderRadius: '12px' }}
+          style={{ marginBottom: '16px', borderRadius: '12px' }}
         >
-          <Row gutter={[16, 16]}>
+          <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.welcome.stats.totalUsers' })}
@@ -468,69 +552,101 @@ const Welcome: React.FC = () => {
               <span>{intl.formatMessage({ id: 'pages.welcome.quickActions' })}</span>
             </Space>
           }
-          style={{ borderRadius: '12px', marginBottom: '24px' }}
+          style={{ borderRadius: '12px', marginBottom: '16px' }}
         >
-          <Row gutter={[16, 16]}>
-            <Col xs={12} sm={8} md={4}>
-              <QuickAction
-                title={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.title' })}
-                description={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.desc' })}
-                icon={<TeamOutlined />}
-                onClick={() => handleQuickAction('user-management')}
-                color="#1890ff"
-              />
-            </Col>
-            <Col xs={12} sm={8} md={4}>
-              <QuickAction
-                title={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.title' })}
-                description={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.desc' })}
-                icon={<SafetyOutlined />}
-                onClick={() => handleQuickAction('role-management')}
-                color="#52c41a"
-              />
-            </Col>
-            <Col xs={12} sm={8} md={4}>
-              <QuickAction
-                title={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.title' })}
-                description={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.desc' })}
-                icon={<SettingOutlined />}
-                onClick={() => handleQuickAction('company-settings')}
-                color="#faad14"
-              />
-            </Col>
-            <Col xs={12} sm={8} md={4}>
-              <QuickAction
-                title={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.title' })}
-                description={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.desc' })}
-                icon={<UserOutlined />}
-                onClick={() => handleQuickAction('account-center')}
-                color="#722ed1"
-              />
-            </Col>
-            <Col xs={12} sm={8} md={4}>
-              <QuickAction
-                title={intl.formatMessage({ id: 'pages.welcome.quickActions.menuManagement.title' })}
-                description={intl.formatMessage({ id: 'pages.welcome.quickActions.menuManagement.desc' })}
-                icon={<MenuOutlined />}
-                onClick={() => handleQuickAction('menu-management')}
-                color="#13c2c2"
-                disabled={!currentUser?.roles?.includes('admin')}
-              />
-            </Col>
-            <Col xs={12} sm={8} md={4}>
-              <QuickAction
-                title={intl.formatMessage({ id: 'pages.welcome.quickActions.addUser.title' })}
-                description={intl.formatMessage({ id: 'pages.welcome.quickActions.addUser.desc' })}
-                icon={<PlusOutlined />}
-                onClick={() => handleQuickAction('add-user')}
-                color="#eb2f96"
-                disabled={!currentUser?.roles?.includes('admin')}
-              />
-            </Col>
+          <Row gutter={[12, 12]}>
+            {access.canAccessPath?.('/system/user-management') && (
+              <Col xs={12} sm={8} md={4}>
+                <QuickAction
+                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.title' })}
+                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.desc' })}
+                  icon={<TeamOutlined />}
+                  onClick={() => handleQuickAction('user-management')}
+                  color="#1890ff"
+                />
+              </Col>
+            )}
+            {access.canAccessPath?.('/system/role-management') && (
+              <Col xs={12} sm={8} md={4}>
+                <QuickAction
+                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.title' })}
+                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.desc' })}
+                  icon={<SafetyOutlined />}
+                  onClick={() => handleQuickAction('role-management')}
+                  color="#52c41a"
+                />
+              </Col>
+            )}
+            {access.canAccessPath?.('/system/company-settings') && (
+              <Col xs={12} sm={8} md={4}>
+                <QuickAction
+                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.title' })}
+                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.desc' })}
+                  icon={<SettingOutlined />}
+                  onClick={() => handleQuickAction('company-settings')}
+                  color="#faad14"
+                />
+              </Col>
+            )}
+            {currentUser && (
+              <Col xs={12} sm={8} md={4}>
+                <QuickAction
+                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.title' })}
+                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.desc' })}
+                  icon={<UserOutlined />}
+                  onClick={() => handleQuickAction('account-center')}
+                  color="#722ed1"
+                />
+              </Col>
+            )}
+            {access.canAccessPath?.('/task-management') && (
+              <Col xs={12} sm={8} md={4}>
+                <QuickAction
+                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.taskManagement.title' })}
+                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.taskManagement.desc' })}
+                  icon={<UnorderedListOutlined />}
+                  onClick={() => handleQuickAction('task-management')}
+                  color="#13c2c2"
+                />
+              </Col>
+            )}
+            {access.canAccessPath?.('/iot-platform') && (
+              <Col xs={12} sm={8} md={4}>
+                <QuickAction
+                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.iotPlatform.title' })}
+                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.iotPlatform.desc' })}
+                  icon={<CloudOutlined />}
+                  onClick={() => handleQuickAction('iot-platform')}
+                  color="#52c41a"
+                />
+              </Col>
+            )}
+            {access.canAccessPath?.('/system/user-log') && (
+              <Col xs={12} sm={8} md={4}>
+                <QuickAction
+                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.userLog.title' })}
+                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.userLog.desc' })}
+                  icon={<FileTextOutlined />}
+                  onClick={() => handleQuickAction('user-log')}
+                  color="#fa8c16"
+                />
+              </Col>
+            )}
+            {access.canAccessPath?.('/system/my-activity') && (
+              <Col xs={12} sm={8} md={4}>
+                <QuickAction
+                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.myActivity.title' })}
+                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.myActivity.desc' })}
+                  icon={<HistoryOutlined />}
+                  onClick={() => handleQuickAction('my-activity')}
+                  color="#eb2f96"
+                />
+              </Col>
+            )}
           </Row>
         </Card>
 
-        <Row gutter={[24, 24]}>
+        <Row gutter={[16, 16]}>
           {/* 任务概览与待办任务 */}
           <Col xs={24} lg={12}>
             <Card
@@ -542,7 +658,7 @@ const Welcome: React.FC = () => {
               }
               style={{ borderRadius: '12px', height: '100%' }}
             >
-              <Row gutter={[16, 16]}>
+              <Row gutter={[12, 12]}>
                 <Col xs={24} sm={8}>
                   <StatCard
                     title={intl.formatMessage({ id: 'pages.taskManagement.statistics.totalTasks' })}
@@ -574,7 +690,7 @@ const Welcome: React.FC = () => {
                   />
                 </Col>
               </Row>
-              <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+              <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
                 <Col xs={24} sm={8}>
                   <StatCard
                     title={intl.formatMessage({ id: 'pages.taskManagement.statistics.completedTasks' })}
@@ -607,8 +723,8 @@ const Welcome: React.FC = () => {
                   />
                 </Col>
               </Row>
-              <div style={{ marginTop: 24 }}>
-                <Space style={{ marginBottom: 12 }}>
+              <div style={{ marginTop: 16 }}>
+                <Space style={{ marginBottom: 8 }}>
                   <MenuOutlined />
                   <span>{intl.formatMessage({ id: 'pages.welcome.myTodoTasks' })}</span>
                 </Space>
@@ -624,7 +740,7 @@ const Welcome: React.FC = () => {
                       <li
                         key={task.id}
                         style={{
-                          padding: '8px 0',
+                          padding: '6px 0',
                           borderBottom: '1px solid #f0f0f0',
                           cursor: 'pointer'
                         }}
@@ -634,7 +750,10 @@ const Welcome: React.FC = () => {
                           <Space>
                             <Text strong>{task.taskName}</Text>
                             {task.priorityName && (
-                              <Tag size="small" color="processing">
+                              <Tag
+                                color="processing"
+                                style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
+                              >
                                 {task.priorityName}
                               </Tag>
                             )}
@@ -660,7 +779,7 @@ const Welcome: React.FC = () => {
                   <span>{intl.formatMessage({ id: 'pages.welcome.recentActivities' })}</span>
                 </Space>
               }
-              style={{ borderRadius: '12px' }}
+              style={{ borderRadius: '12px', height: '100%' }}
             >
               <Timeline
                 items={recentActivities.length > 0 ? recentActivities.map(activity => {
@@ -759,12 +878,17 @@ const Welcome: React.FC = () => {
               <Space>
                 <DatabaseOutlined />
                 <span>{intl.formatMessage({ id: 'pages.welcome.systemResources' })}</span>
-                <Tag color="blue">{intl.formatMessage({ id: 'pages.welcome.systemResources.updateInterval' })}</Tag>
+                <Tag
+                  color="blue"
+                  style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
+                >
+                  {intl.formatMessage({ id: 'pages.welcome.systemResources.updateInterval' })}
+                </Tag>
               </Space>
             }
-            style={{ marginTop: '24px', borderRadius: '12px' }}
+            style={{ marginTop: '16px', borderRadius: '12px' }}
           >
-            <Row gutter={[16, 16]}>
+            <Row gutter={[12, 12]}>
               {/* 系统内存使用率 */}
               {systemResources.memory && (
                 <Col xs={24} sm={12} md={8}>
@@ -776,7 +900,7 @@ const Welcome: React.FC = () => {
                     loading={loading}
                     token={token}
                   />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
                     {intl.formatMessage(
                       { id: 'pages.welcome.systemResources.systemMemory' },
                       {
@@ -785,7 +909,7 @@ const Welcome: React.FC = () => {
                       }
                     )}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#1890ff', textAlign: 'center', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: '#1890ff', textAlign: 'center', marginTop: '2px' }}>
                     {intl.formatMessage(
                       { id: 'pages.welcome.systemResources.processMemory' },
                       {
@@ -807,7 +931,7 @@ const Welcome: React.FC = () => {
                     loading={loading}
                     token={token}
                   />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
                     {intl.formatMessage(
                       { id: 'pages.welcome.systemResources.uptime' },
                       { hours: Math.round((systemResources.cpu?.uptime || 0) / 3600) }
@@ -827,7 +951,7 @@ const Welcome: React.FC = () => {
                     loading={loading}
                     token={token}
                   />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
                     {intl.formatMessage(
                       { id: 'pages.welcome.systemResources.diskSize' },
                       {
@@ -842,8 +966,8 @@ const Welcome: React.FC = () => {
 
             {/* 系统详细信息 */}
             {systemResources?.system && (
-              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
-                <Row gutter={[16, 8]}>
+              <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+                <Row gutter={[12, 8]}>
                   <Col xs={24} sm={12} md={6}>
                     <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.machineName' })} </Text>
                     <Text strong>{systemResources.system?.machineName || intl.formatMessage({ id: 'pages.welcome.systemDetails.unknown' })}</Text>
@@ -870,10 +994,15 @@ const Welcome: React.FC = () => {
               <Space>
                 <DatabaseOutlined />
                 <span>{intl.formatMessage({ id: 'pages.welcome.systemResources' })}</span>
-                <Tag color="blue">{intl.formatMessage({ id: 'pages.welcome.systemResources.updateInterval' })}</Tag>
+                <Tag
+                  color="blue"
+                  style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
+                >
+                  {intl.formatMessage({ id: 'pages.welcome.systemResources.updateInterval' })}
+                </Tag>
               </Space>
             }
-            style={{ marginTop: '24px', borderRadius: '12px' }}
+            style={{ marginTop: '16px', borderRadius: '12px' }}
           >
             <Alert
               message={intl.formatMessage({ id: 'pages.welcome.systemResources.unavailable' })}

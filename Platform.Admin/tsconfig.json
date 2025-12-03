@@ -8,7 +8,7 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "strict": true,
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": false,
     "noImplicitReturns": true,
     "declaration": true,
     "skipLibCheck": true,

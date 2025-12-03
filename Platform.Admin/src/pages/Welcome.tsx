@@ -31,10 +31,13 @@ import {
   HddOutlined,
   CiOutlined,
   MonitorOutlined,
-  LinkOutlined
+  LinkOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
+import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
 // import { getSystemResources } from '@/services/system/api';
 import type { CurrentUser } from '@/types/unified-api';
@@ -164,6 +167,8 @@ const Welcome: React.FC = () => {
   const currentUser = initialState?.currentUser as CurrentUser;
 
   const [statistics, setStatistics] = useState<any>(null);
+  const [taskStatistics, setTaskStatistics] = useState<import('@/services/task/api').TaskStatistics | null>(null);
+  const [todoTasks, setTodoTasks] = useState<import('@/services/task/api').TaskDto[]>([]);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   // 扩展类型以包含 fullUrl 字段（后端实际返回的字段）
   const [recentActivities, setRecentActivities] = useState<(API.UserActivityLog & { fullUrl?: string; path?: string; queryString?: string; httpMethod?: string })[]>([]);
@@ -189,10 +194,12 @@ const Welcome: React.FC = () => {
   const fetchStatistics = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, companyRes, activitiesRes] = await Promise.all([
+      const [statsRes, companyRes, activitiesRes, taskStatsRes, todoTasksRes] = await Promise.all([
         getUserStatistics(),
         getCurrentCompany(),
-        getUserActivityLogs({ limit: 5 })
+        getUserActivityLogs({ limit: 5 }),
+        getTaskStatistics(),
+        getMyTodoTasks()
       ]);
 
       if (statsRes.success) {
@@ -205,6 +212,14 @@ const Welcome: React.FC = () => {
 
       if (activitiesRes.success) {
         setRecentActivities(activitiesRes.data || []);
+      }
+
+      if (taskStatsRes.success) {
+        setTaskStatistics(taskStatsRes.data || null);
+      }
+
+      if (todoTasksRes.success) {
+        setTodoTasks(todoTasksRes.data || []);
       }
 
       // 系统资源采用 SignalR 实时推送，无需额外轮询
@@ -445,76 +460,194 @@ const Welcome: React.FC = () => {
           </Row>
         </Card>
 
+        {/* 快速操作 */}
+        <Card
+          title={
+            <Space>
+              <RocketOutlined />
+              <span>{intl.formatMessage({ id: 'pages.welcome.quickActions' })}</span>
+            </Space>
+          }
+          style={{ borderRadius: '12px', marginBottom: '24px' }}
+        >
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={8} md={4}>
+              <QuickAction
+                title={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.title' })}
+                description={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.desc' })}
+                icon={<TeamOutlined />}
+                onClick={() => handleQuickAction('user-management')}
+                color="#1890ff"
+              />
+            </Col>
+            <Col xs={12} sm={8} md={4}>
+              <QuickAction
+                title={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.title' })}
+                description={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.desc' })}
+                icon={<SafetyOutlined />}
+                onClick={() => handleQuickAction('role-management')}
+                color="#52c41a"
+              />
+            </Col>
+            <Col xs={12} sm={8} md={4}>
+              <QuickAction
+                title={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.title' })}
+                description={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.desc' })}
+                icon={<SettingOutlined />}
+                onClick={() => handleQuickAction('company-settings')}
+                color="#faad14"
+              />
+            </Col>
+            <Col xs={12} sm={8} md={4}>
+              <QuickAction
+                title={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.title' })}
+                description={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.desc' })}
+                icon={<UserOutlined />}
+                onClick={() => handleQuickAction('account-center')}
+                color="#722ed1"
+              />
+            </Col>
+            <Col xs={12} sm={8} md={4}>
+              <QuickAction
+                title={intl.formatMessage({ id: 'pages.welcome.quickActions.menuManagement.title' })}
+                description={intl.formatMessage({ id: 'pages.welcome.quickActions.menuManagement.desc' })}
+                icon={<MenuOutlined />}
+                onClick={() => handleQuickAction('menu-management')}
+                color="#13c2c2"
+                disabled={!currentUser?.roles?.includes('admin')}
+              />
+            </Col>
+            <Col xs={12} sm={8} md={4}>
+              <QuickAction
+                title={intl.formatMessage({ id: 'pages.welcome.quickActions.addUser.title' })}
+                description={intl.formatMessage({ id: 'pages.welcome.quickActions.addUser.desc' })}
+                icon={<PlusOutlined />}
+                onClick={() => handleQuickAction('add-user')}
+                color="#eb2f96"
+                disabled={!currentUser?.roles?.includes('admin')}
+              />
+            </Col>
+          </Row>
+        </Card>
+
         <Row gutter={[24, 24]}>
-          {/* 快速操作 */}
+          {/* 任务概览与待办任务 */}
           <Col xs={24} lg={12}>
             <Card
               title={
                 <Space>
-                  <RocketOutlined />
-                  <span>{intl.formatMessage({ id: 'pages.welcome.quickActions' })}</span>
+                  <BarChartOutlined />
+                  <span>{intl.formatMessage({ id: 'pages.welcome.taskOverview' })}</span>
                 </Space>
               }
-              style={{ borderRadius: '12px' }}
+              style={{ borderRadius: '12px', height: '100%' }}
             >
               <Row gutter={[16, 16]}>
-                <Col xs={12} sm={8}>
-                  <QuickAction
-                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.title' })}
-                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.desc' })}
-                    icon={<TeamOutlined />}
-                    onClick={() => handleQuickAction('user-management')}
-                    color="#1890ff"
+                <Col xs={24} sm={8}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.taskManagement.statistics.totalTasks' })}
+                    value={taskStatistics?.totalTasks ?? 0}
+                    icon={<BarChartOutlined />}
+                    color={token.colorPrimary}
+                    loading={loading}
+                    token={token}
                   />
                 </Col>
-                <Col xs={12} sm={8}>
-                  <QuickAction
-                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.title' })}
-                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.desc' })}
-                    icon={<SafetyOutlined />}
-                    onClick={() => handleQuickAction('role-management')}
-                    color="#52c41a"
+                <Col xs={24} sm={8}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.taskManagement.statistics.pendingTasks' })}
+                    value={taskStatistics?.pendingTasks ?? 0}
+                    icon={<ClockCircleOutlined />}
+                    color={token.colorWarning}
+                    loading={loading}
+                    token={token}
                   />
                 </Col>
-                <Col xs={12} sm={8}>
-                  <QuickAction
-                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.title' })}
-                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.desc' })}
-                    icon={<SettingOutlined />}
-                    onClick={() => handleQuickAction('company-settings')}
-                    color="#faad14"
-                  />
-                </Col>
-                <Col xs={12} sm={8}>
-                  <QuickAction
-                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.title' })}
-                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.desc' })}
-                    icon={<UserOutlined />}
-                    onClick={() => handleQuickAction('account-center')}
-                    color="#722ed1"
-                  />
-                </Col>
-                <Col xs={12} sm={8}>
-                  <QuickAction
-                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.menuManagement.title' })}
-                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.menuManagement.desc' })}
-                    icon={<MenuOutlined />}
-                    onClick={() => handleQuickAction('menu-management')}
-                    color="#13c2c2"
-                    disabled={!currentUser?.roles?.includes('admin')}
-                  />
-                </Col>
-                <Col xs={12} sm={8}>
-                  <QuickAction
-                    title={intl.formatMessage({ id: 'pages.welcome.quickActions.addUser.title' })}
-                    description={intl.formatMessage({ id: 'pages.welcome.quickActions.addUser.desc' })}
-                    icon={<PlusOutlined />}
-                    onClick={() => handleQuickAction('add-user')}
-                    color="#eb2f96"
-                    disabled={!currentUser?.roles?.includes('admin')}
+                <Col xs={24} sm={8}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.taskManagement.statistics.inProgressTasks' })}
+                    value={taskStatistics?.inProgressTasks ?? 0}
+                    icon={<RocketOutlined />}
+                    color={token.colorSuccess}
+                    loading={loading}
+                    token={token}
                   />
                 </Col>
               </Row>
+              <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col xs={24} sm={8}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.taskManagement.statistics.completedTasks' })}
+                    value={taskStatistics?.completedTasks ?? 0}
+                    icon={<CheckCircleOutlined />}
+                    color={token.colorSuccess}
+                    loading={loading}
+                    token={token}
+                  />
+                </Col>
+                <Col xs={24} sm={8}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.taskManagement.statistics.failedTasks' })}
+                    value={taskStatistics?.failedTasks ?? 0}
+                    icon={<CloseCircleOutlined />}
+                    color={token.colorError}
+                    loading={loading}
+                    token={token}
+                  />
+                </Col>
+                <Col xs={24} sm={8}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.taskManagement.statistics.completionRate' })}
+                    value={taskStatistics ? `${taskStatistics.completionRate.toFixed(1)}` : '0'}
+                    suffix="%"
+                    icon={<SafetyOutlined />}
+                    color={token.colorPrimary}
+                    loading={loading}
+                    token={token}
+                  />
+                </Col>
+              </Row>
+              <div style={{ marginTop: 24 }}>
+                <Space style={{ marginBottom: 12 }}>
+                  <MenuOutlined />
+                  <span>{intl.formatMessage({ id: 'pages.welcome.myTodoTasks' })}</span>
+                </Space>
+                {todoTasks.length === 0 ? (
+                  <Alert
+                    type="info"
+                    message={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty' })}
+                    showIcon
+                  />
+                ) : (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                    {todoTasks.slice(0, 5).map((task) => (
+                      <li
+                        key={task.id}
+                        style={{
+                          padding: '8px 0',
+                          borderBottom: '1px solid #f0f0f0',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => history.push(`/task-management?taskId=${task.id}`)}
+                      >
+                        <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                          <Space>
+                            <Text strong>{task.taskName}</Text>
+                            {task.priorityName && (
+                              <Tag size="small" color="processing">
+                                {task.priorityName}
+                              </Tag>
+                            )}
+                          </Space>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {task.statusName} · {task.assignedToName || currentUser?.displayName || currentUser?.username}
+                          </Text>
+                        </Space>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </Card>
           </Col>
 

@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,64 +15,28 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class TaskService : ITaskService
 {
-    private readonly IMongoCollection<TaskModel> _taskCollection;
-    private readonly IMongoCollection<TaskExecutionLog> _executionLogCollection;
+    private readonly IDatabaseOperationFactory<TaskModel> _taskFactory;
+    private readonly IDatabaseOperationFactory<TaskExecutionLog> _executionLogFactory;
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
 
     /// <summary>
     /// 初始化 TaskService 实例
     /// </summary>
-    /// <param name="mongoClient">MongoDB 客户端</param>
+    /// <param name="taskFactory">任务数据工厂</param>
+    /// <param name="executionLogFactory">任务执行日志数据工厂</param>
     /// <param name="userService">用户服务</param>
     /// <param name="notificationService">统一通知服务，用于在任务创建、分配、状态变更时发送通知</param>
     public TaskService(
-        IMongoClient mongoClient,
+        IDatabaseOperationFactory<TaskModel> taskFactory,
+        IDatabaseOperationFactory<TaskExecutionLog> executionLogFactory,
         IUserService userService,
         IUnifiedNotificationService notificationService)
     {
-        var database = mongoClient.GetDatabase("aspire_platform");
-        _taskCollection = database.GetCollection<TaskModel>("tasks");
-        _executionLogCollection = database.GetCollection<TaskExecutionLog>("task_execution_logs");
+        _taskFactory = taskFactory;
+        _executionLogFactory = executionLogFactory;
         _userService = userService;
         _notificationService = notificationService;
-
-        // 创建索引
-        CreateIndexes();
-    }
-
-    private void CreateIndexes()
-    {
-        try
-        {
-            // 创建复合索引
-            var indexKeysDefinition = Builders<TaskModel>.IndexKeys
-                .Ascending(t => t.CompanyId)
-                .Ascending(t => t.Status)
-                .Descending(t => t.CreatedAt);
-            
-            _taskCollection.Indexes.CreateOne(
-                new CreateIndexModel<TaskModel>(indexKeysDefinition));
-
-            // 创建分配用户索引
-            _taskCollection.Indexes.CreateOne(
-                new CreateIndexModel<TaskModel>(
-                    Builders<TaskModel>.IndexKeys.Ascending(t => t.AssignedTo)));
-
-            // 创建创建者索引
-            _taskCollection.Indexes.CreateOne(
-                new CreateIndexModel<TaskModel>(
-                    Builders<TaskModel>.IndexKeys.Ascending(t => t.CreatedBy)));
-
-            // 执行日志索引
-            _executionLogCollection.Indexes.CreateOne(
-                new CreateIndexModel<TaskExecutionLog>(
-                    Builders<TaskExecutionLog>.IndexKeys.Ascending(l => l.TaskId)));
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"创建索引失败: {ex.Message}");
-        }
     }
 
     /// <summary>
@@ -90,7 +55,6 @@ public class TaskService : ITaskService
             TaskType = request.TaskType,
             Priority = (TaskPriority)request.Priority,
             CreatedBy = userId,
-            CreatedAt = DateTime.UtcNow,
             AssignedTo = request.AssignedTo,
             PlannedStartTime = request.PlannedStartTime,
             PlannedEndTime = request.PlannedEndTime,
@@ -100,7 +64,6 @@ public class TaskService : ITaskService
             Tags = request.Tags ?? new(),
             Remarks = request.Remarks,
             Status = string.IsNullOrEmpty(request.AssignedTo) ? TaskStatusEnum.Pending : TaskStatusEnum.Assigned,
-            UpdatedAt = DateTime.UtcNow
         };
 
         if (!string.IsNullOrEmpty(request.AssignedTo))
@@ -108,7 +71,7 @@ public class TaskService : ITaskService
             task.AssignedAt = DateTime.UtcNow;
         }
 
-        await _taskCollection.InsertOneAsync(task);
+        await _taskFactory.CreateAsync(task);
 
         // 如果在创建时已指派给某人，发送任务分配通知
         try
@@ -142,8 +105,7 @@ public class TaskService : ITaskService
     /// <returns>任务信息，如果不存在则返回 null</returns>
     public async System.Threading.Tasks.Task<TaskDto?> GetTaskByIdAsync(string taskId)
     {
-        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, taskId);
-        var task = await _taskCollection.Find(filter).FirstOrDefaultAsync();
+        var task = await _taskFactory.GetByIdAsync(taskId);
         
         if (task == null)
             return null;
@@ -161,8 +123,6 @@ public class TaskService : ITaskService
     {
         var filters = new List<FilterDefinition<TaskModel>>
         {
-            Builders<TaskModel>.Filter.Eq(t => t.CompanyId, companyId),
-            Builders<TaskModel>.Filter.Eq(t => t.IsDeleted, false)
         };
 
         // 搜索关键词
@@ -231,23 +191,21 @@ public class TaskService : ITaskService
             filters.Add(Builders<TaskModel>.Filter.AnyIn("tags", request.Tags));
         }
 
-        var combinedFilter = Builders<TaskModel>.Filter.And(filters);
-
-        // 获取总数
-        var total = (int)await _taskCollection.CountDocumentsAsync(combinedFilter);
+        var combinedFilter = filters.Count > 0
+            ? Builders<TaskModel>.Filter.And(filters)
+            : Builders<TaskModel>.Filter.Empty;
 
         // 排序
         SortDefinition<TaskModel> sortDefinition = request.SortOrder.ToLower() == "asc"
             ? Builders<TaskModel>.Sort.Ascending(request.SortBy)
             : Builders<TaskModel>.Sort.Descending(request.SortBy);
 
-        // 分页查询
-        var tasks = await _taskCollection
-            .Find(combinedFilter)
-            .Sort(sortDefinition)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Limit(request.PageSize)
-            .ToListAsync();
+        // 分页查询（数据工厂会自动应用多租户与软删除过滤）
+        var (tasks, total) = await _taskFactory.FindPagedAsync(
+            combinedFilter,
+            sortDefinition,
+            request.Page,
+            request.PageSize);
 
         var taskDtos = new List<TaskDto>();
         foreach (var task in tasks)
@@ -258,7 +216,7 @@ public class TaskService : ITaskService
         return new TaskListResponse
         {
             Tasks = taskDtos,
-            Total = total,
+            Total = (int)total,
             Page = request.Page,
             PageSize = request.PageSize
         };
@@ -272,14 +230,12 @@ public class TaskService : ITaskService
     /// <returns>更新后的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId)
     {
-        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
-        var task = await _taskCollection.Find(filter).FirstOrDefaultAsync();
+        var task = await _taskFactory.GetByIdAsync(request.TaskId);
         
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
         var updateDefinition = Builders<TaskModel>.Update
-            .Set(t => t.UpdatedAt, DateTime.UtcNow)
             .Set(t => t.UpdatedBy, userId);
 
         if (!string.IsNullOrEmpty(request.TaskName))
@@ -337,10 +293,16 @@ public class TaskService : ITaskService
         if (request.Remarks != null)
             updateDefinition = updateDefinition.Set(t => t.Remarks, request.Remarks);
 
-        var updatedTask = await _taskCollection.FindOneAndUpdateAsync(
+        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
+        var updatedTask = await _taskFactory.FindOneAndUpdateAsync(
             filter,
             updateDefinition,
             new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
+
+        if (updatedTask == null)
+        {
+            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+        }
 
         // 发送任务分配通知
         try
@@ -375,8 +337,7 @@ public class TaskService : ITaskService
     /// <returns>分配后的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> AssignTaskAsync(AssignTaskRequest request, string userId)
     {
-        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
-        var task = await _taskCollection.Find(filter).FirstOrDefaultAsync();
+        var task = await _taskFactory.GetByIdAsync(request.TaskId);
         
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
@@ -385,16 +346,21 @@ public class TaskService : ITaskService
             .Set(t => t.AssignedTo, request.AssignedTo)
             .Set(t => t.AssignedAt, DateTime.UtcNow)
             .Set(t => t.Status, TaskStatusEnum.Assigned)
-            .Set(t => t.UpdatedAt, DateTime.UtcNow)
             .Set(t => t.UpdatedBy, userId);
 
         if (!string.IsNullOrEmpty(request.Remarks))
             updateDefinition = updateDefinition.Set(t => t.Remarks, request.Remarks);
 
-        var updatedTask = await _taskCollection.FindOneAndUpdateAsync(
+        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
+        var updatedTask = await _taskFactory.FindOneAndUpdateAsync(
             filter,
             updateDefinition,
             new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
+
+        if (updatedTask == null)
+        {
+            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+        }
 
         // 分配后发送任务分配通知
         try
@@ -432,15 +398,13 @@ public class TaskService : ITaskService
     /// <returns>执行后的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request, string userId)
     {
-        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
-        var task = await _taskCollection.Find(filter).FirstOrDefaultAsync();
+        var task = await _taskFactory.GetByIdAsync(request.TaskId);
         
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
         var updateDefinition = Builders<TaskModel>.Update
             .Set(t => t.Status, (TaskStatusEnum)request.Status)
-            .Set(t => t.UpdatedAt, DateTime.UtcNow)
             .Set(t => t.UpdatedBy, userId);
 
         if (request.Status == (int)TaskStatusEnum.InProgress && task.ActualStartTime == null)
@@ -449,10 +413,16 @@ public class TaskService : ITaskService
         if (request.CompletionPercentage.HasValue)
             updateDefinition = updateDefinition.Set(t => t.CompletionPercentage, request.CompletionPercentage.Value);
 
-        var updatedTask = await _taskCollection.FindOneAndUpdateAsync(
+        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
+        var updatedTask = await _taskFactory.FindOneAndUpdateAsync(
             filter,
             updateDefinition,
             new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
+
+        if (updatedTask == null)
+        {
+            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+        }
 
         // 记录执行日志
         await LogTaskExecutionAsync(
@@ -509,8 +479,7 @@ public class TaskService : ITaskService
     /// <returns>完成后的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request, string userId)
     {
-        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
-        var task = await _taskCollection.Find(filter).FirstOrDefaultAsync();
+        var task = await _taskFactory.GetByIdAsync(request.TaskId);
         
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
@@ -521,7 +490,6 @@ public class TaskService : ITaskService
             .Set(t => t.ExecutionResult, (TaskExecutionResult)request.ExecutionResult)
             .Set(t => t.ActualEndTime, now)
             .Set(t => t.CompletionPercentage, 100)
-            .Set(t => t.UpdatedAt, now)
             .Set(t => t.UpdatedBy, userId);
 
         if (task.ActualStartTime.HasValue)
@@ -533,10 +501,16 @@ public class TaskService : ITaskService
         if (!string.IsNullOrEmpty(request.Remarks))
             updateDefinition = updateDefinition.Set(t => t.Remarks, request.Remarks);
 
-        var updatedTask = await _taskCollection.FindOneAndUpdateAsync(
+        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
+        var updatedTask = await _taskFactory.FindOneAndUpdateAsync(
             filter,
             updateDefinition,
             new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
+
+        if (updatedTask == null)
+        {
+            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+        }
 
         // 记录执行日志
         await LogTaskExecutionAsync(
@@ -584,24 +558,28 @@ public class TaskService : ITaskService
     /// <returns>取消后的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> CancelTaskAsync(string taskId, string userId, string? remarks = null)
     {
-        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, taskId);
-        var task = await _taskCollection.Find(filter).FirstOrDefaultAsync();
+        var task = await _taskFactory.GetByIdAsync(taskId);
         
         if (task == null)
             throw new KeyNotFoundException($"任务 {taskId} 不存在");
 
         var updateDefinition = Builders<TaskModel>.Update
             .Set(t => t.Status, TaskStatusEnum.Cancelled)
-            .Set(t => t.UpdatedAt, DateTime.UtcNow)
             .Set(t => t.UpdatedBy, userId);
 
         if (!string.IsNullOrEmpty(remarks))
             updateDefinition = updateDefinition.Set(t => t.Remarks, remarks);
 
-        var updatedTask = await _taskCollection.FindOneAndUpdateAsync(
+        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, taskId);
+        var updatedTask = await _taskFactory.FindOneAndUpdateAsync(
             filter,
             updateDefinition,
             new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
+
+        if (updatedTask == null)
+        {
+            throw new KeyNotFoundException($"任务 {taskId} 不存在");
+        }
 
         // 发送任务取消通知
         try
@@ -640,14 +618,8 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<bool> DeleteTaskAsync(string taskId, string userId)
     {
         var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, taskId);
-        var updateDefinition = Builders<TaskModel>.Update
-            .Set(t => t.IsDeleted, true)
-            .Set(t => t.DeletedAt, DateTime.UtcNow)
-            .Set(t => t.UpdatedAt, DateTime.UtcNow)
-            .Set(t => t.UpdatedBy, userId);
-
-        var result = await _taskCollection.UpdateOneAsync(filter, updateDefinition);
-        return result.ModifiedCount > 0;
+        var result = await _taskFactory.FindOneAndSoftDeleteAsync(filter);
+        return result != null;
     }
 
     /// <summary>
@@ -658,11 +630,7 @@ public class TaskService : ITaskService
     /// <returns>任务统计信息</returns>
     public async System.Threading.Tasks.Task<TaskStatistics> GetTaskStatisticsAsync(string companyId, string? userId = null)
     {
-        var filters = new List<FilterDefinition<TaskModel>>
-        {
-            Builders<TaskModel>.Filter.Eq(t => t.CompanyId, companyId),
-            Builders<TaskModel>.Filter.Eq(t => t.IsDeleted, false)
-        };
+        var filters = new List<FilterDefinition<TaskModel>>();
 
         if (!string.IsNullOrEmpty(userId))
         {
@@ -672,8 +640,10 @@ public class TaskService : ITaskService
             ));
         }
 
-        var combinedFilter = Builders<TaskModel>.Filter.And(filters);
-        var tasks = await _taskCollection.Find(combinedFilter).ToListAsync();
+        var combinedFilter = filters.Count > 0
+            ? Builders<TaskModel>.Filter.And(filters)
+            : Builders<TaskModel>.Filter.Empty;
+        var tasks = await _taskFactory.FindAsync(combinedFilter);
 
         var statistics = new TaskStatistics
         {
@@ -731,14 +701,8 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<(List<TaskExecutionLogDto> logs, int total)> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10)
     {
         var filter = Builders<TaskExecutionLog>.Filter.Eq(l => l.TaskId, taskId);
-        var total = (int)await _executionLogCollection.CountDocumentsAsync(filter);
-
-        var logs = await _executionLogCollection
-            .Find(filter)
-            .Sort(Builders<TaskExecutionLog>.Sort.Descending(l => l.CreatedAt))
-            .Skip((page - 1) * pageSize)
-            .Limit(pageSize)
-            .ToListAsync();
+        var sort = Builders<TaskExecutionLog>.Sort.Descending(l => l.CreatedAt);
+        var (logs, total) = await _executionLogFactory.FindPagedAsync(filter, sort, page, pageSize);
 
         var logDtos = new List<TaskExecutionLogDto>();
         foreach (var log in logs)
@@ -746,7 +710,7 @@ public class TaskService : ITaskService
             logDtos.Add(await ConvertToTaskExecutionLogDtoAsync(log));
         }
 
-        return (logDtos, total);
+        return (logDtos, (int)total);
     }
 
     /// <summary>
@@ -767,6 +731,11 @@ public class TaskService : ITaskService
         int progressPercentage = 0,
         string? companyId = null)
     {
+        if (string.IsNullOrEmpty(companyId))
+        {
+            companyId = await _executionLogFactory.GetRequiredCompanyIdAsync();
+        }
+
         var log = new TaskExecutionLog
         {
             TaskId = taskId,
@@ -779,7 +748,7 @@ public class TaskService : ITaskService
             CreatedAt = DateTime.UtcNow
         };
 
-        await _executionLogCollection.InsertOneAsync(log);
+        await _executionLogFactory.CreateAsync(log);
         return await ConvertToTaskExecutionLogDtoAsync(log);
     }
 
@@ -792,16 +761,15 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<List<TaskDto>> GetUserTodoTasksAsync(string userId, string companyId)
     {
         var filter = Builders<TaskModel>.Filter.And(
-            Builders<TaskModel>.Filter.Eq(t => t.CompanyId, companyId),
             Builders<TaskModel>.Filter.Eq(t => t.AssignedTo, userId),
-            Builders<TaskModel>.Filter.In(t => t.Status, new[] { TaskStatusEnum.Assigned, TaskStatusEnum.InProgress }),
-            Builders<TaskModel>.Filter.Eq(t => t.IsDeleted, false)
+            Builders<TaskModel>.Filter.In(t => t.Status, new[] { TaskStatusEnum.Assigned, TaskStatusEnum.InProgress })
         );
 
-        var tasks = await _taskCollection
-            .Find(filter)
-            .Sort(Builders<TaskModel>.Sort.Descending(t => t.Priority).Descending(t => t.CreatedAt))
-            .ToListAsync();
+        var sort = Builders<TaskModel>.Sort
+            .Descending(t => t.Priority)
+            .Descending(t => t.CreatedAt);
+
+        var tasks = await _taskFactory.FindAsync(filter, sort);
 
         var taskDtos = new List<TaskDto>();
         foreach (var task in tasks)
@@ -822,20 +790,11 @@ public class TaskService : ITaskService
     /// <returns>创建的任务列表和总数</returns>
     public async System.Threading.Tasks.Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, string companyId, int page = 1, int pageSize = 10)
     {
-        var filter = Builders<TaskModel>.Filter.And(
-            Builders<TaskModel>.Filter.Eq(t => t.CompanyId, companyId),
-            Builders<TaskModel>.Filter.Eq(t => t.CreatedBy, userId),
-            Builders<TaskModel>.Filter.Eq(t => t.IsDeleted, false)
-        );
+        var filter = Builders<TaskModel>.Filter.Eq(t => t.CreatedBy, userId);
 
-        var total = (int)await _taskCollection.CountDocumentsAsync(filter);
+        var sort = Builders<TaskModel>.Sort.Descending(t => t.CreatedAt);
 
-        var tasks = await _taskCollection
-            .Find(filter)
-            .Sort(Builders<TaskModel>.Sort.Descending(t => t.CreatedAt))
-            .Skip((page - 1) * pageSize)
-            .Limit(pageSize)
-            .ToListAsync();
+        var (tasks, total) = await _taskFactory.FindPagedAsync(filter, sort, page, pageSize);
 
         var taskDtos = new List<TaskDto>();
         foreach (var task in tasks)
@@ -843,7 +802,7 @@ public class TaskService : ITaskService
             taskDtos.Add(await ConvertToTaskDtoAsync(task));
         }
 
-        return (taskDtos, total);
+        return (taskDtos, (int)total);
     }
 
     /// <summary>
@@ -858,11 +817,10 @@ public class TaskService : ITaskService
         var filter = Builders<TaskModel>.Filter.In(t => t.Id, taskIds);
         var updateDefinition = Builders<TaskModel>.Update
             .Set(t => t.Status, status)
-            .Set(t => t.UpdatedAt, DateTime.UtcNow)
             .Set(t => t.UpdatedBy, userId);
 
-        var result = await _taskCollection.UpdateManyAsync(filter, updateDefinition);
-        return (int)result.ModifiedCount;
+        var modifiedCount = await _taskFactory.UpdateManyAsync(filter, updateDefinition);
+        return (int)modifiedCount;
     }
 
     private async System.Threading.Tasks.Task<TaskDto> ConvertToTaskDtoAsync(TaskModel task)

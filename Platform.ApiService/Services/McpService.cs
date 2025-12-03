@@ -44,7 +44,6 @@ public class McpService : IMcpService
     /// <param name="socialService">社交服务</param>
     /// <param name="taskService">任务服务</param>
     /// <param name="unifiedNotificationService">统一通知服务</param>
-    /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public McpService(
         IDatabaseOperationFactory<AppUser> userFactory,

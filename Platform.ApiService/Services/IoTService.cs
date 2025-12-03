@@ -17,6 +17,15 @@ public class IoTService : IIoTService
     private readonly IDatabaseOperationFactory<IoTDeviceEvent> _eventFactory;
     private readonly ILogger<IoTService> _logger;
 
+    /// <summary>
+    /// 初始化物联网服务
+    /// </summary>
+    /// <param name="gatewayFactory">网关数据操作工厂</param>
+    /// <param name="deviceFactory">设备数据操作工厂</param>
+    /// <param name="dataPointFactory">数据点数据操作工厂</param>
+    /// <param name="dataRecordFactory">数据记录数据操作工厂</param>
+    /// <param name="eventFactory">设备事件数据操作工厂</param>
+    /// <param name="logger">日志记录器</param>
     public IoTService(
         IDatabaseOperationFactory<IoTGateway> gatewayFactory,
         IDatabaseOperationFactory<IoTDevice> deviceFactory,
@@ -35,6 +44,11 @@ public class IoTService : IIoTService
 
     #region Gateway Operations
 
+    /// <summary>
+    /// 创建网关
+    /// </summary>
+    /// <param name="request">创建网关请求</param>
+    /// <returns>创建的网关</returns>
     public async Task<IoTGateway> CreateGatewayAsync(CreateIoTGatewayRequest request)
     {
         var gateway = new IoTGateway
@@ -57,6 +71,12 @@ public class IoTService : IIoTService
         return result;
     }
 
+    /// <summary>
+    /// 获取网关列表
+    /// </summary>
+    /// <param name="pageIndex">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>网关列表</returns>
     public async Task<List<IoTGateway>> GetGatewaysAsync(int pageIndex = 1, int pageSize = 20)
     {
         var filter = Builders<IoTGateway>.Filter.Empty;
@@ -66,11 +86,21 @@ public class IoTService : IIoTService
         return items;
     }
 
+    /// <summary>
+    /// 获取网关详情
+    /// </summary>
+    /// <param name="id">网关ID</param>
+    /// <returns>网关信息</returns>
     public async Task<IoTGateway?> GetGatewayByIdAsync(string id)
     {
         return await _gatewayFactory.GetByIdAsync(id);
     }
 
+    /// <summary>
+    /// 根据网关ID获取网关
+    /// </summary>
+    /// <param name="gatewayId">网关唯一标识符</param>
+    /// <returns>网关信息</returns>
     public async Task<IoTGateway?> GetGatewayByGatewayIdAsync(string gatewayId)
     {
         var filter = Builders<IoTGateway>.Filter.Eq(x => x.GatewayId, gatewayId);
@@ -78,6 +108,12 @@ public class IoTService : IIoTService
         return gateways.FirstOrDefault();
     }
 
+    /// <summary>
+    /// 更新网关
+    /// </summary>
+    /// <param name="id">网关ID</param>
+    /// <param name="request">更新网关请求</param>
+    /// <returns>更新后的网关</returns>
     public async Task<IoTGateway?> UpdateGatewayAsync(string id, UpdateIoTGatewayRequest request)
     {
         var gateway = await GetGatewayByIdAsync(id);
@@ -124,6 +160,11 @@ public class IoTService : IIoTService
         return result;
     }
 
+    /// <summary>
+    /// 删除网关
+    /// </summary>
+    /// <param name="id">网关ID</param>
+    /// <returns>是否删除成功</returns>
     public async Task<bool> DeleteGatewayAsync(string id)
     {
         var gateway = await GetGatewayByIdAsync(id);
@@ -142,6 +183,12 @@ public class IoTService : IIoTService
         return false;
     }
 
+    /// <summary>
+    /// 更新网关状态
+    /// </summary>
+    /// <param name="gatewayId">网关唯一标识符</param>
+    /// <param name="status">设备状态</param>
+    /// <returns>是否更新成功</returns>
     public async Task<bool> UpdateGatewayStatusAsync(string gatewayId, IoTDeviceStatus status)
     {
         var gateway = await GetGatewayByGatewayIdAsync(gatewayId);
@@ -164,6 +211,11 @@ public class IoTService : IIoTService
         return result != null;
     }
 
+    /// <summary>
+    /// 获取网关统计信息
+    /// </summary>
+    /// <param name="gatewayId">网关唯一标识符</param>
+    /// <returns>网关统计信息</returns>
     public async Task<GatewayStatistics?> GetGatewayStatisticsAsync(string gatewayId)
     {
         var gateway = await GetGatewayByGatewayIdAsync(gatewayId);
@@ -188,6 +240,11 @@ public class IoTService : IIoTService
 
     #region Device Operations
 
+    /// <summary>
+    /// 创建设备
+    /// </summary>
+    /// <param name="request">创建设备请求</param>
+    /// <returns>创建的设备</returns>
     public async Task<IoTDevice> CreateDeviceAsync(CreateIoTDeviceRequest request)
     {
         var device = new IoTDevice
@@ -223,6 +280,13 @@ public class IoTService : IIoTService
         return result;
     }
 
+    /// <summary>
+    /// 获取设备列表
+    /// </summary>
+    /// <param name="gatewayId">网关ID（可选）</param>
+    /// <param name="pageIndex">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>设备列表</returns>
     public async Task<List<IoTDevice>> GetDevicesAsync(string? gatewayId = null, int pageIndex = 1, int pageSize = 20)
     {
         var filter = string.IsNullOrEmpty(gatewayId) 
@@ -235,11 +299,21 @@ public class IoTService : IIoTService
         return items;
     }
 
+    /// <summary>
+    /// 获取设备详情
+    /// </summary>
+    /// <param name="id">设备ID</param>
+    /// <returns>设备信息</returns>
     public async Task<IoTDevice?> GetDeviceByIdAsync(string id)
     {
         return await _deviceFactory.GetByIdAsync(id);
     }
 
+    /// <summary>
+    /// 根据设备ID获取设备
+    /// </summary>
+    /// <param name="deviceId">设备唯一标识符</param>
+    /// <returns>设备信息</returns>
     public async Task<IoTDevice?> GetDeviceByDeviceIdAsync(string deviceId)
     {
         var filter = Builders<IoTDevice>.Filter.Eq(x => x.DeviceId, deviceId);
@@ -247,6 +321,12 @@ public class IoTService : IIoTService
         return devices.FirstOrDefault();
     }
 
+    /// <summary>
+    /// 更新设备
+    /// </summary>
+    /// <param name="id">设备ID</param>
+    /// <param name="request">更新设备请求</param>
+    /// <returns>更新后的设备</returns>
     public async Task<IoTDevice?> UpdateDeviceAsync(string id, UpdateIoTDeviceRequest request)
     {
         var device = await GetDeviceByIdAsync(id);
@@ -299,6 +379,11 @@ public class IoTService : IIoTService
         return result;
     }
 
+    /// <summary>
+    /// 删除设备
+    /// </summary>
+    /// <param name="id">设备ID</param>
+    /// <returns>是否删除成功</returns>
     public async Task<bool> DeleteDeviceAsync(string id)
     {
         var device = await GetDeviceByIdAsync(id);
@@ -326,6 +411,12 @@ public class IoTService : IIoTService
         return false;
     }
 
+    /// <summary>
+    /// 更新设备状态
+    /// </summary>
+    /// <param name="deviceId">设备唯一标识符</param>
+    /// <param name="status">设备状态</param>
+    /// <returns>是否更新成功</returns>
     public async Task<bool> UpdateDeviceStatusAsync(string deviceId, IoTDeviceStatus status)
     {
         var builder = Builders<IoTDevice>.Update;
@@ -344,6 +435,11 @@ public class IoTService : IIoTService
         return result != null;
     }
 
+    /// <summary>
+    /// 处理设备连接
+    /// </summary>
+    /// <param name="request">设备连接请求</param>
+    /// <returns>是否处理成功</returns>
     public async Task<bool> HandleDeviceConnectAsync(DeviceConnectRequest request)
     {
         var builder = Builders<IoTDevice>.Update;
@@ -369,6 +465,11 @@ public class IoTService : IIoTService
         return false;
     }
 
+    /// <summary>
+    /// 处理设备断开连接
+    /// </summary>
+    /// <param name="request">设备断开连接请求</param>
+    /// <returns>是否处理成功</returns>
     public async Task<bool> HandleDeviceDisconnectAsync(DeviceDisconnectRequest request)
     {
         var builder = Builders<IoTDevice>.Update;
@@ -389,6 +490,11 @@ public class IoTService : IIoTService
         return false;
     }
 
+    /// <summary>
+    /// 获取设备统计信息
+    /// </summary>
+    /// <param name="deviceId">设备唯一标识符</param>
+    /// <returns>设备统计信息</returns>
     public async Task<DeviceStatistics?> GetDeviceStatisticsAsync(string deviceId)
     {
         var device = await GetDeviceByDeviceIdAsync(deviceId);
@@ -420,6 +526,11 @@ public class IoTService : IIoTService
 
     #region DataPoint Operations
 
+    /// <summary>
+    /// 创建数据点
+    /// </summary>
+    /// <param name="request">创建数据点请求</param>
+    /// <returns>创建的数据点</returns>
     public async Task<IoTDataPoint> CreateDataPointAsync(CreateIoTDataPointRequest request)
     {
         var dataPoint = new IoTDataPoint
@@ -455,6 +566,13 @@ public class IoTService : IIoTService
         return result;
     }
 
+    /// <summary>
+    /// 获取数据点列表
+    /// </summary>
+    /// <param name="deviceId">设备ID（可选）</param>
+    /// <param name="pageIndex">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>数据点列表</returns>
     public async Task<List<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, int pageIndex = 1, int pageSize = 20)
     {
         var filter = string.IsNullOrEmpty(deviceId) 
@@ -467,11 +585,21 @@ public class IoTService : IIoTService
         return items;
     }
 
+    /// <summary>
+    /// 获取数据点详情
+    /// </summary>
+    /// <param name="id">数据点ID</param>
+    /// <returns>数据点信息</returns>
     public async Task<IoTDataPoint?> GetDataPointByIdAsync(string id)
     {
         return await _dataPointFactory.GetByIdAsync(id);
     }
 
+    /// <summary>
+    /// 根据数据点ID获取数据点
+    /// </summary>
+    /// <param name="dataPointId">数据点唯一标识符</param>
+    /// <returns>数据点信息</returns>
     public async Task<IoTDataPoint?> GetDataPointByDataPointIdAsync(string dataPointId)
     {
         var filter = Builders<IoTDataPoint>.Filter.Eq(x => x.DataPointId, dataPointId);
@@ -479,6 +607,12 @@ public class IoTService : IIoTService
         return dataPoints.FirstOrDefault();
     }
 
+    /// <summary>
+    /// 更新数据点
+    /// </summary>
+    /// <param name="id">数据点ID</param>
+    /// <param name="request">更新数据点请求</param>
+    /// <returns>更新后的数据点</returns>
     public async Task<IoTDataPoint?> UpdateDataPointAsync(string id, UpdateIoTDataPointRequest request)
     {
         var dataPoint = await GetDataPointByIdAsync(id);
@@ -529,6 +663,11 @@ public class IoTService : IIoTService
         return result;
     }
 
+    /// <summary>
+    /// 删除数据点
+    /// </summary>
+    /// <param name="id">数据点ID</param>
+    /// <returns>是否删除成功</returns>
     public async Task<bool> DeleteDataPointAsync(string id)
     {
         var dataPoint = await GetDataPointByIdAsync(id);
@@ -560,6 +699,11 @@ public class IoTService : IIoTService
 
     #region Data Record Operations
 
+    /// <summary>
+    /// 上报数据
+    /// </summary>
+    /// <param name="request">上报数据请求</param>
+    /// <returns>创建的数据记录</returns>
     public async Task<IoTDataRecord> ReportDataAsync(ReportIoTDataRequest request)
     {
         var dataPoint = await GetDataPointByDataPointIdAsync(request.DataPointId);
@@ -612,6 +756,11 @@ public class IoTService : IIoTService
         return result;
     }
 
+    /// <summary>
+    /// 批量上报数据
+    /// </summary>
+    /// <param name="request">批量上报数据请求</param>
+    /// <returns>创建的数据记录列表</returns>
     public async Task<List<IoTDataRecord>> BatchReportDataAsync(BatchReportIoTDataRequest request)
     {
         var records = new List<IoTDataRecord>();
@@ -633,6 +782,11 @@ public class IoTService : IIoTService
         return records;
     }
 
+    /// <summary>
+    /// 查询数据记录
+    /// </summary>
+    /// <param name="request">查询数据请求</param>
+    /// <returns>数据记录列表和总数</returns>
     public async Task<(List<IoTDataRecord> Records, long Total)> QueryDataRecordsAsync(QueryIoTDataRequest request)
     {
         var filter = Builders<IoTDataRecord>.Filter.Empty;
@@ -659,6 +813,11 @@ public class IoTService : IIoTService
         return (records, total);
     }
 
+    /// <summary>
+    /// 获取最新数据
+    /// </summary>
+    /// <param name="dataPointId">数据点唯一标识符</param>
+    /// <returns>最新的数据记录</returns>
     public async Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId)
     {
         var filter = Builders<IoTDataRecord>.Filter.Eq(x => x.DataPointId, dataPointId);
@@ -668,6 +827,13 @@ public class IoTService : IIoTService
         return records.FirstOrDefault();
     }
 
+    /// <summary>
+    /// 获取数据统计
+    /// </summary>
+    /// <param name="dataPointId">数据点唯一标识符</param>
+    /// <param name="startTime">开始时间</param>
+    /// <param name="endTime">结束时间</param>
+    /// <returns>数据统计信息</returns>
     public async Task<DataStatistics?> GetDataStatisticsAsync(string dataPointId, DateTime startTime, DateTime endTime)
     {
         var filter = Builders<IoTDataRecord>.Filter.Eq(x => x.DataPointId, dataPointId) &
@@ -700,6 +866,15 @@ public class IoTService : IIoTService
 
     #region Event Operations
 
+    /// <summary>
+    /// 创建设备事件
+    /// </summary>
+    /// <param name="deviceId">设备唯一标识符</param>
+    /// <param name="eventType">事件类型</param>
+    /// <param name="level">事件级别</param>
+    /// <param name="description">事件描述</param>
+    /// <param name="eventData">事件数据</param>
+    /// <returns>创建的事件</returns>
     public async Task<IoTDeviceEvent> CreateEventAsync(string deviceId, string eventType, string level, string? description = null, Dictionary<string, object>? eventData = null)
     {
         var @event = new IoTDeviceEvent
@@ -717,6 +892,11 @@ public class IoTService : IIoTService
         return result;
     }
 
+    /// <summary>
+    /// 查询设备事件
+    /// </summary>
+    /// <param name="request">查询事件请求</param>
+    /// <returns>事件列表和总数</returns>
     public async Task<(List<IoTDeviceEvent> Events, long Total)> QueryEventsAsync(QueryIoTEventRequest request)
     {
         var filter = Builders<IoTDeviceEvent>.Filter.Empty;
@@ -749,6 +929,12 @@ public class IoTService : IIoTService
         return (events, total);
     }
 
+    /// <summary>
+    /// 处理事件
+    /// </summary>
+    /// <param name="eventId">事件ID</param>
+    /// <param name="remarks">处理备注</param>
+    /// <returns>是否处理成功</returns>
     public async Task<bool> HandleEventAsync(string eventId, string remarks)
     {
         var filter = Builders<IoTDeviceEvent>.Filter.Eq(x => x.Id, eventId);
@@ -763,6 +949,11 @@ public class IoTService : IIoTService
         return result != null;
     }
 
+    /// <summary>
+    /// 获取未处理事件数量
+    /// </summary>
+    /// <param name="deviceId">设备ID（可选）</param>
+    /// <returns>未处理事件数量</returns>
     public async Task<long> GetUnhandledEventCountAsync(string? deviceId = null)
     {
         var filter = Builders<IoTDeviceEvent>.Filter.Eq(x => x.IsHandled, false);
@@ -777,6 +968,10 @@ public class IoTService : IIoTService
 
     #region Statistics Operations
 
+    /// <summary>
+    /// 获取平台统计信息
+    /// </summary>
+    /// <returns>平台统计信息</returns>
     public async Task<PlatformStatistics> GetPlatformStatisticsAsync()
     {
         var gatewayFilter = Builders<IoTGateway>.Filter.Empty;
@@ -807,6 +1002,10 @@ public class IoTService : IIoTService
         };
     }
 
+    /// <summary>
+    /// 获取设备在线状态统计
+    /// </summary>
+    /// <returns>设备状态统计信息</returns>
     public async Task<DeviceStatusStatistics> GetDeviceStatusStatisticsAsync()
     {
         var filter = Builders<IoTDevice>.Filter.Empty;

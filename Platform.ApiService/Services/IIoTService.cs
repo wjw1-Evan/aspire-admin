@@ -213,11 +213,17 @@ public interface IIoTService
 /// </summary>
 public class GatewayStatistics
 {
+    /// <summary>网关ID</summary>
     public string GatewayId { get; set; } = string.Empty;
+    /// <summary>设备总数</summary>
     public int TotalDevices { get; set; }
+    /// <summary>在线设备数</summary>
     public int OnlineDevices { get; set; }
+    /// <summary>离线设备数</summary>
     public int OfflineDevices { get; set; }
+    /// <summary>故障设备数</summary>
     public int FaultDevices { get; set; }
+    /// <summary>最后连接时间</summary>
     public DateTime? LastConnectedAt { get; set; }
 }
 
@@ -226,11 +232,17 @@ public class GatewayStatistics
 /// </summary>
 public class DeviceStatistics
 {
+    /// <summary>设备ID</summary>
     public string DeviceId { get; set; } = string.Empty;
+    /// <summary>数据点总数</summary>
     public int TotalDataPoints { get; set; }
+    /// <summary>启用的数据点数</summary>
     public int EnabledDataPoints { get; set; }
+    /// <summary>数据记录总数</summary>
     public long TotalDataRecords { get; set; }
+    /// <summary>未处理告警数</summary>
     public long UnhandledAlarms { get; set; }
+    /// <summary>最后上报时间</summary>
     public DateTime? LastReportedAt { get; set; }
 }
 
@@ -239,12 +251,19 @@ public class DeviceStatistics
 /// </summary>
 public class DataStatistics
 {
+    /// <summary>数据点ID</summary>
     public string DataPointId { get; set; } = string.Empty;
+    /// <summary>记录数</summary>
     public long RecordCount { get; set; }
+    /// <summary>平均值</summary>
     public double? AverageValue { get; set; }
+    /// <summary>最小值</summary>
     public double? MinValue { get; set; }
+    /// <summary>最大值</summary>
     public double? MaxValue { get; set; }
+    /// <summary>开始时间</summary>
     public DateTime StartTime { get; set; }
+    /// <summary>结束时间</summary>
     public DateTime EndTime { get; set; }
 }
 
@@ -253,13 +272,21 @@ public class DataStatistics
 /// </summary>
 public class PlatformStatistics
 {
+    /// <summary>网关总数</summary>
     public int TotalGateways { get; set; }
+    /// <summary>在线网关数</summary>
     public int OnlineGateways { get; set; }
+    /// <summary>设备总数</summary>
     public int TotalDevices { get; set; }
+    /// <summary>在线设备数</summary>
     public int OnlineDevices { get; set; }
+    /// <summary>数据点总数</summary>
     public int TotalDataPoints { get; set; }
+    /// <summary>数据记录总数</summary>
     public long TotalDataRecords { get; set; }
+    /// <summary>未处理告警数</summary>
     public long UnhandledAlarms { get; set; }
+    /// <summary>最后更新时间</summary>
     public DateTime LastUpdatedAt { get; set; }
 }
 
@@ -268,9 +295,13 @@ public class PlatformStatistics
 /// </summary>
 public class DeviceStatusStatistics
 {
+    /// <summary>在线设备数</summary>
     public int Online { get; set; }
+    /// <summary>离线设备数</summary>
     public int Offline { get; set; }
+    /// <summary>故障设备数</summary>
     public int Fault { get; set; }
+    /// <summary>维护中设备数</summary>
     public int Maintenance { get; set; }
 }
 

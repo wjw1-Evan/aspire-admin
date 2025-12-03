@@ -56,12 +56,15 @@ public enum DataPointType
 /// </summary>
 public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntity, ITimestamped
 {
+    /// <summary>网关名称</summary>
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>网关标题</summary>
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
 
+    /// <summary>网关描述</summary>
     [BsonElement("description")]
     public string? Description { get; set; }
 
@@ -123,12 +126,15 @@ public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntit
 /// </summary>
 public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimestamped,IEntity
 {
+    /// <summary>设备名称</summary>
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>设备标题</summary>
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
 
+    /// <summary>设备描述</summary>
     [BsonElement("description")]
     public string? Description { get; set; }
 
@@ -202,12 +208,15 @@ public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimes
 /// </summary>
 public class IoTDataPoint : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimestamped,IEntity
 {
+    /// <summary>数据点名称</summary>
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>数据点标题</summary>
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
 
+    /// <summary>数据点描述</summary>
     [BsonElement("description")]
     public string? Description { get; set; }
 

@@ -71,6 +71,11 @@ const TaskManagement: React.FC = () => {
     pageSize: 10,
     sortBy: 'CreatedAt',
     sortOrder: 'desc',
+    search: undefined as string | undefined,
+    status: undefined as number | undefined,
+    priority: undefined as number | undefined,
+    assignedTo: undefined as string | undefined,
+    taskType: undefined as string | undefined,
   });
 
   // 获取统计信息

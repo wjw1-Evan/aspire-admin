@@ -318,6 +318,21 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
+
+        menus.Add(new Menu
+        {
+            Name = "iot-platform",
+            Title = "物联网平台",
+            Path = "/iot-platform",
+            Component = "./iot-platform",
+            Icon = "cloud-server",
+            SortOrder = 4,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "iot:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
         
         return menus;
     }

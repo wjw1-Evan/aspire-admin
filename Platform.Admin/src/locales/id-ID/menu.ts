@@ -16,6 +16,7 @@ export default {
   'menu.system.company-management': 'Manajemen Perusahaan',
   'menu.system.my-activity': 'Aktivitas Saya',
   'menu.task-management': 'Manajemen Tugas',
+  'menu.iot-platform': 'Platform IoT',
   'menu.company-search': 'Cari Perusahaan',
   'menu.my-join-requests': 'Permintaan Bergabung Saya',
   'menu.pending-join-requests': 'Permintaan Menunggu',

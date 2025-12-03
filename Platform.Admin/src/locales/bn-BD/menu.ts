@@ -16,6 +16,7 @@ export default {
   'menu.system.company-management': 'কোম্পানি ব্যবস্থাপনা',
   'menu.system.my-activity': 'আমার কার্যকলাপ',
   'menu.task-management': 'কাজের ব্যবস্থাপনা',
+  'menu.iot-platform': 'IoT প্ল্যাটফর্ম',
   'menu.company-search': 'কোম্পানি অনুসন্ধান',
   'menu.my-join-requests': 'আমার যোগদান অনুরোধ',
   'menu.pending-join-requests': 'অপেক্ষমাণ অনুরোধ',

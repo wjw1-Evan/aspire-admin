@@ -23,7 +23,6 @@ public class McpService : IMcpService
     private readonly ISocialService _socialService;
     private readonly ITaskService _taskService;
     private readonly IUnifiedNotificationService _unifiedNotificationService;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<McpService> _logger;
     private List<McpTool>? _cachedTools;
     private DateTime _toolsCacheTime = DateTime.MinValue;
@@ -61,8 +60,7 @@ public class McpService : IMcpService
         ISocialService socialService,
         ITaskService taskService,
         IUnifiedNotificationService unifiedNotificationService,
-        ITenantContext tenantContext,
-        ILogger<McpService> logger)
+         ILogger<McpService> logger)
     {
         _userFactory = userFactory;
         _sessionFactory = sessionFactory;
@@ -77,8 +75,7 @@ public class McpService : IMcpService
         _socialService = socialService;
         _taskService = taskService;
         _unifiedNotificationService = unifiedNotificationService;
-        _tenantContext = tenantContext;
-        _logger = logger;
+         _logger = logger;
     }
 
     /// <inheritdoc />

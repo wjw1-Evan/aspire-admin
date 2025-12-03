@@ -16,6 +16,7 @@ export default {
   'menu.system.company-management': '企業管理',
   'menu.system.my-activity': '私の活動',
   'menu.task-management': 'タスク管理',
+  'menu.iot-platform': 'IoTプラットフォーム',
   'menu.company-search': '企業検索',
   'menu.my-join-requests': '私の参加申請',
   'menu.pending-join-requests': '承認待ち申請',

@@ -419,6 +419,45 @@ public class McpRuleConfig
 
 ## 数据库操作指南
 
+### 0. 数据库操作工厂统一定义
+
+- **唯一入口**：所有 MongoDB 实体操作必须通过 `IDatabaseOperationFactory<T>` / `DatabaseOperationFactory<T>` 完成，禁止在服务中直接注入或使用 `IMongoCollection<T>`、`IMongoDatabase`
+- **多租户与软删除内置**：`DatabaseOperationFactory<T>` 会自动附加当前企业 `CompanyId` 过滤（针对实现 `IMultiTenant` 的实体）以及 `IsDeleted = false` 软删除过滤，调用方无需手动追加
+- **强制原子操作**：创建、更新、删除全部通过 `CreateAsync`、`FindOneAndUpdateAsync`、`FindOneAndSoftDeleteAsync` 等原子方法完成，避免先查后改的竞态条件
+- **统一审计字段**：工厂自动维护 `CreatedAt`、`UpdatedAt`、`IsDeleted` 以及 `CreatedBy`、`UpdatedBy` 等审计字段，业务代码不要手动设置
+- **跨租户操作**：仅在极少数需要跨企业运维/管理的场景下，才允许使用 `FindWithoutTenantFilterAsync`、`GetByIdWithoutTenantFilterAsync` 等 *WithoutTenantFilter* 方法，且必须有严格权限校验与审计
+
+```csharp
+// ✅ 正确做法：在服务层中只依赖 IDatabaseOperationFactory<T>
+public class UserService : IUserService
+{
+    private readonly IDatabaseOperationFactory<User> _factory;
+
+    public UserService(IDatabaseOperationFactory<User> factory)
+    {
+        _factory = factory;
+    }
+
+    public async Task<(List<User> items, long total)> GetPagedAsync(int current, int pageSize)
+    {
+        var filterBuilder = _factory.CreateFilterBuilder();
+        // 根据参数动态拼装过滤条件……
+        var filter = filterBuilder.Build();
+
+        var sort = _factory.CreateSortBuilder()
+            .Descending(x => x.CreatedAt)
+            .Build();
+
+        return await _factory.FindPagedAsync(
+            filter,
+            sort,
+            current,
+            pageSize
+        );
+    }
+}
+```
+
 ### 1. FilterBuilder 使用
 ```csharp
 var filterBuilder = _factory.CreateFilterBuilder();
@@ -471,41 +510,102 @@ var update = updateBuilder.Build();
 
 ## 通用响应格式
 
-### 1. 成功响应
-```json
+### 1. 统一 ApiResponse 模型
+
+- **统一返回类型**：所有后端 API 必须返回 `ApiResponse<T>`（位于 `Platform.ServiceDefaults.Models`），并通过 `BaseApiController` 中的 `Success` / `SuccessPaged` / `Error` 等辅助方法构造响应
+- **前后端契约**：前端只依赖 `success`、`data`、`errorCode`、`errorMessage`、`timestamp`、`traceId` 这几个字段，禁止再使用旧的 `code` / `msg` 模式
+
+```csharp
+// ApiResponse<T> 核心结构
+public class ApiResponse<T>
 {
-  "code": 0,
-  "msg": "success",
+    public bool success { get; set; }
+    public T? data { get; set; }
+    public string? errorCode { get; set; }
+    public string? errorMessage { get; set; }
+    public string timestamp { get; set; }
+    public string? traceId { get; set; }
+}
+```
+
+### 2. 成功与失败响应示例
+
+```json
+// 成功响应
+{
+  "success": true,
   "data": {
     "id": "1",
     "name": "资源名称"
-  }
+  },
+  "errorCode": null,
+  "errorMessage": null,
+  "timestamp": "2024-12-03T12:00:00.000Z",
+  "traceId": "0HMT123ABCDEF"
 }
 ```
 
-### 2. 错误响应
 ```json
+// 失败响应
 {
-  "code": 400,
-  "msg": "错误信息",
-  "data": null
+  "success": false,
+  "data": null,
+  "errorCode": "VALIDATION_ERROR",
+  "errorMessage": "名称不能为空",
+  "timestamp": "2024-12-03T12:00:01.000Z",
+  "traceId": "0HMT123ABCDEF"
 }
 ```
 
-### 3. 分页响应
+在控制器中应统一使用 `BaseApiController` 提供的辅助方法：
+
+```csharp
+public class ResourceController : BaseApiController
+{
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var resource = await _service.GetByIdAsync(id);
+        return Success(resource.EnsureFound("资源", id));
+    }
+}
+```
+
+### 3. 分页响应结构
+
+分页场景统一使用 `ApiResponse<PagedResult<T>>`：
+
 ```json
 {
-  "code": 0,
-  "msg": "success",
+  "success": true,
   "data": {
     "list": [],
     "total": 100,
+    "page": 1,
     "pageSize": 10,
-    "current": 1,
-    "success": true
-  }
+    "totalPages": 10
+  },
+  "errorCode": null,
+  "errorMessage": null,
+  "timestamp": "2024-12-03T12:00:02.000Z",
+  "traceId": "0HMT123ABCDEF"
 }
 ```
+
+对应模型为：
+
+```csharp
+public class PagedResult<T>
+{
+    public List<T> list { get; set; }
+    public long total { get; set; }
+    public int page { get; set; }
+    public int pageSize { get; set; }
+    public int totalPages { get; }
+}
+```
+
+业务代码在控制器中应使用 `SuccessPaged` 方法返回分页结果，避免手动拼装 `PagedResult<T>` 或 `ApiResponse<PagedResult<T>>`。
 
 ## 安全最佳实践
 
@@ -701,3 +801,4 @@ Platform.Admin/
 ## 更新日期
 
 - **2024-12-03**: 创建完整的 Cursor Rules 文档
+- **2024-12-04**: 补充数据库操作工厂与 ApiResponse 统一响应格式规范

@@ -106,7 +106,11 @@ export default [
     component: './task-management',
     hideInMenu: true,
   },
-
+  {
+    path: '/iot-platform',
+    component: './iot-platform',
+    hideInMenu: true,
+  },
 
   // 默认重定向和404
   {

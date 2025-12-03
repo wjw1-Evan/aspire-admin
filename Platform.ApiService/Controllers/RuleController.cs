@@ -50,7 +50,7 @@ public class RuleController : BaseApiController
         };
         
         var result = await _ruleService.GetRulesAsync(queryParams);
-        return Ok(result);
+        return Success(result);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public class RuleController : BaseApiController
     public async Task<IActionResult> CreateRule([FromBody] CreateRuleRequest request)
     {
         var newRule = await _ruleService.CreateRuleAsync(request);
-        return Ok(newRule);
+        return Success(newRule);
     }
 
     /// <summary>
@@ -87,7 +87,7 @@ public class RuleController : BaseApiController
         
         var id = request.Key.Value.ToString();
         var rule = await _ruleService.UpdateRuleAsync(id, request);
-        return Success(rule.EnsureFound("规则", id), "更新成功");
+        return Success(rule.EnsureFound("规则", id));
     }
 
     /// <summary>
@@ -102,6 +102,6 @@ public class RuleController : BaseApiController
         
         var deleted = await _ruleService.DeleteRulesAsync(new List<int> { request.Key.Value });
         deleted.EnsureSuccess("规则", request.Key.Value.ToString());
-        return Success("删除成功");
+        return Success();
     }
 }

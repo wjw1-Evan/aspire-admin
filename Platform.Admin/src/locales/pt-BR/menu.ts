@@ -16,6 +16,7 @@ export default {
   'menu.system.company-management': 'Gerenciamento de Empresas',
   'menu.system.my-activity': 'Minha Atividade',
   'menu.task-management': 'Gerenciamento de Tarefas',
+  'menu.iot-platform': 'Plataforma IoT',
   'menu.company-search': 'Buscar Empresa',
   'menu.my-join-requests': 'Minhas Solicitações',
   'menu.pending-join-requests': 'Solicitações Pendentes',

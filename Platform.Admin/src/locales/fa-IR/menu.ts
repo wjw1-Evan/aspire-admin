@@ -16,6 +16,7 @@ export default {
   'menu.system.company-management': 'مدیریت شرکت',
   'menu.system.my-activity': 'فعالیت من',
   'menu.task-management': 'مدیریت وظایف',
+  'menu.iot-platform': 'پلتفرم IoT',
   'menu.company-search': 'جستجوی شرکت',
   'menu.my-join-requests': 'درخواست‌های پیوستن من',
   'menu.pending-join-requests': 'درخواست‌های در انتظار',

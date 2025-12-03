@@ -38,6 +38,7 @@
 - `design-patterns-architecture.mdc` - 设计模式和架构原则规范
 - `aspire-microservices.mdc` - .NET Aspire 微服务架构和编排规范
 - `deployment.mdc` - 部署和运维规范
+- `rules-management-system.mdc` - 规则管理系统开发规范（支持权限控制、业务流程、数据验证、MCP 集成）
 
 ### 工程与协作
 - `code-review-quality.mdc`

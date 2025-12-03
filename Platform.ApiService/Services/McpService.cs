@@ -15,13 +15,18 @@ public class McpService : IMcpService
     private readonly IDatabaseOperationFactory<ChatMessage> _messageFactory;
     private readonly IDatabaseOperationFactory<Company> _companyFactory;
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDatabaseOperationFactory<RuleListItem> _ruleFactory;
     private readonly IUserService _userService;
     private readonly IRoleService _roleService;
     private readonly ICompanyService _companyService;
     private readonly IUserActivityLogService _activityLogService;
     private readonly ISocialService _socialService;
     private readonly ITaskService _taskService;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<McpService> _logger;
+    private List<McpTool>? _cachedTools;
+    private DateTime _toolsCacheTime = DateTime.MinValue;
+    private const int CacheDurationSeconds = 300; // 5 minutes
 
     /// <summary>
     /// 初始化 MCP 服务
@@ -31,12 +36,14 @@ public class McpService : IMcpService
     /// <param name="messageFactory">消息数据操作工厂</param>
     /// <param name="companyFactory">企业数据操作工厂</param>
     /// <param name="roleFactory">角色数据操作工厂</param>
+    /// <param name="ruleFactory">规则数据操作工厂</param>
     /// <param name="userService">用户服务</param>
     /// <param name="roleService">角色服务</param>
     /// <param name="companyService">企业服务</param>
     /// <param name="activityLogService">活动日志服务</param>
     /// <param name="socialService">社交服务</param>
     /// <param name="taskService">任务服务</param>
+    /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public McpService(
         IDatabaseOperationFactory<AppUser> userFactory,
@@ -44,12 +51,14 @@ public class McpService : IMcpService
         IDatabaseOperationFactory<ChatMessage> messageFactory,
         IDatabaseOperationFactory<Company> companyFactory,
         IDatabaseOperationFactory<Role> roleFactory,
+        IDatabaseOperationFactory<RuleListItem> ruleFactory,
         IUserService userService,
         IRoleService roleService,
         ICompanyService companyService,
         IUserActivityLogService activityLogService,
         ISocialService socialService,
         ITaskService taskService,
+        ITenantContext tenantContext,
         ILogger<McpService> logger)
     {
         _userFactory = userFactory;
@@ -57,12 +66,14 @@ public class McpService : IMcpService
         _messageFactory = messageFactory;
         _companyFactory = companyFactory;
         _roleFactory = roleFactory;
+        _ruleFactory = ruleFactory;
         _userService = userService;
         _roleService = roleService;
         _companyService = companyService;
         _activityLogService = activityLogService;
         _socialService = socialService;
         _taskService = taskService;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -102,8 +113,15 @@ public class McpService : IMcpService
     }
 
     /// <inheritdoc />
-    public Task<McpListToolsResponse> ListToolsAsync()
+    public async Task<McpListToolsResponse> ListToolsAsync()
     {
+        // 检查缓存
+        if (_cachedTools != null && DateTime.UtcNow.Subtract(_toolsCacheTime).TotalSeconds < CacheDurationSeconds)
+        {
+            _logger.LogInformation("使用缓存的 MCP 工具列表");
+            return new McpListToolsResponse { Tools = _cachedTools };
+        }
+
         var tools = new List<McpTool>
         {
             new()
@@ -700,7 +718,26 @@ public class McpService : IMcpService
             }
         };
 
-        return Task.FromResult(new McpListToolsResponse { Tools = tools });
+        // 添加规则配置的 MCP 工具
+        try
+        {
+            var ruleMcpTools = await GetRuleMcpToolsAsync();
+            if (ruleMcpTools.Any())
+            {
+                _logger.LogInformation("添加 {Count} 个规则配置的 MCP 工具", ruleMcpTools.Count);
+                tools.AddRange(ruleMcpTools);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取规则配置的 MCP 工具时发生错误，继续使用内置工具");
+        }
+
+        // 缓存工具列表
+        _cachedTools = tools;
+        _toolsCacheTime = DateTime.UtcNow;
+
+        return new McpListToolsResponse { Tools = tools };
     }
 
     /// <inheritdoc />
@@ -817,6 +854,21 @@ public class McpService : IMcpService
                 Description = $"会话ID: {session.Id}",
                 MimeType = "application/json"
             });
+        }
+
+        // 添加规则配置的 MCP 资源
+        try
+        {
+            var ruleResources = await GetRuleMcpResourcesAsync();
+            if (ruleResources.Any())
+            {
+                _logger.LogInformation("添加 {Count} 个规则配置的 MCP 资源", ruleResources.Count);
+                resources.AddRange(ruleResources);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取规则配置的 MCP 资源时发生错误，继续使用内置资源");
         }
 
         return new McpListResourcesResponse { Resources = resources };
@@ -938,7 +990,7 @@ public class McpService : IMcpService
     }
 
     /// <inheritdoc />
-    public Task<McpListPromptsResponse> ListPromptsAsync()
+    public async Task<McpListPromptsResponse> ListPromptsAsync()
     {
         var prompts = new List<McpPrompt>
         {
@@ -978,7 +1030,22 @@ public class McpService : IMcpService
             }
         };
 
-        return Task.FromResult(new McpListPromptsResponse { Prompts = prompts });
+        // 添加规则配置的 MCP 提示词
+        try
+        {
+            var rulePrompts = await GetRuleMcpPromptsAsync();
+            if (rulePrompts.Any())
+            {
+                _logger.LogInformation("添加 {Count} 个规则配置的 MCP 提示词", rulePrompts.Count);
+                prompts.AddRange(rulePrompts);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取规则配置的 MCP 提示词时发生错误，继续使用内置提示词");
+        }
+
+        return new McpListPromptsResponse { Prompts = prompts };
     }
 
     /// <inheritdoc />
@@ -1888,6 +1955,132 @@ public class McpService : IMcpService
             pageSize = response.PageSize,
             totalPages = (int)Math.Ceiling(response.Total / (double)response.PageSize)
         };
+    }
+
+    #endregion
+
+    #region 规则 MCP 集成方法
+
+    /// <summary>
+    /// 获取规则配置的 MCP 工具列表
+    /// </summary>
+    private async Task<List<McpTool>> GetRuleMcpToolsAsync()
+    {
+        try
+        {
+            var filter = _ruleFactory.CreateFilterBuilder()
+                .Custom(MongoDB.Driver.Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false))
+                .Build();
+
+            var rules = await _ruleFactory.FindAsync(filter, limit: 1000);
+
+            var mcpTools = new List<McpTool>();
+
+            foreach (var rule in rules.Where(r => r.McpConfig?.Enabled == true && !string.IsNullOrEmpty(r.McpConfig?.ToolName)))
+            {
+                var mcpConfig = rule.McpConfig;
+                if (mcpConfig != null && !mcpConfig.IsResource && !mcpConfig.IsPrompt)
+                {
+                    mcpTools.Add(new McpTool
+                    {
+                        Name = mcpConfig.ToolName ?? string.Empty,
+                        Description = mcpConfig.ToolDescription ?? rule.Desc ?? "规则配置的 MCP 工具",
+                        InputSchema = mcpConfig.InputSchema ?? new Dictionary<string, object>
+                        {
+                            ["type"] = "object",
+                            ["properties"] = new Dictionary<string, object>()
+                        }
+                    });
+                }
+            }
+
+            _logger.LogInformation("获取到 {Count} 个规则配置的 MCP 工具", mcpTools.Count);
+            return mcpTools;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取规则配置的 MCP 工具时发生错误");
+            return new List<McpTool>();
+        }
+    }
+
+    /// <summary>
+    /// 获取规则配置的 MCP 资源列表
+    /// </summary>
+    private async Task<List<McpResource>> GetRuleMcpResourcesAsync()
+    {
+        try
+        {
+            var filter = _ruleFactory.CreateFilterBuilder()
+                .Custom(MongoDB.Driver.Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false))
+                .Build();
+
+            var rules = await _ruleFactory.FindAsync(filter, limit: 1000);
+
+            var mcpResources = new List<McpResource>();
+
+            foreach (var rule in rules.Where(r => r.McpConfig?.Enabled == true && r.McpConfig?.IsResource == true))
+            {
+                var mcpConfig = rule.McpConfig;
+                if (mcpConfig != null && !string.IsNullOrEmpty(mcpConfig.ResourceUri))
+                {
+                    mcpResources.Add(new McpResource
+                    {
+                        Uri = mcpConfig.ResourceUri,
+                        Name = rule.Name ?? "规则资源",
+                        Description = rule.Desc,
+                        MimeType = mcpConfig.ResourceMimeType ?? "application/json"
+                    });
+                }
+            }
+
+            _logger.LogInformation("获取到 {Count} 个规则配置的 MCP 资源", mcpResources.Count);
+            return mcpResources;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取规则配置的 MCP 资源时发生错误");
+            return new List<McpResource>();
+        }
+    }
+
+    /// <summary>
+    /// 获取规则配置的 MCP 提示词列表
+    /// </summary>
+    private async Task<List<McpPrompt>> GetRuleMcpPromptsAsync()
+    {
+        try
+        {
+            var filter = _ruleFactory.CreateFilterBuilder()
+                .Custom(MongoDB.Driver.Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false))
+                .Build();
+
+            var rules = await _ruleFactory.FindAsync(filter, limit: 1000);
+
+            var mcpPrompts = new List<McpPrompt>();
+
+            foreach (var rule in rules.Where(r => r.McpConfig?.Enabled == true && r.McpConfig?.IsPrompt == true))
+            {
+                var mcpConfig = rule.McpConfig;
+                if (mcpConfig != null && !string.IsNullOrEmpty(mcpConfig.PromptTemplate))
+                {
+                    mcpPrompts.Add(new McpPrompt
+                    {
+                        Name = rule.Name ?? "规则提示词",
+                        Description = rule.Desc,
+                        Arguments = mcpConfig.PromptArguments
+                    });
+                }
+            }
+
+            _logger.LogInformation("获取到 {Count} 个规则配置的 MCP 提示词", mcpPrompts.Count);
+            return mcpPrompts;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取规则配置的 MCP 提示词时发生错误");
+            return new List<McpPrompt>();
+        }
     }
 
     #endregion

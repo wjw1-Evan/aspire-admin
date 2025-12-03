@@ -18,6 +18,8 @@ public interface ISocialService
     /// 上报或更新当前位置。
     /// </summary>
     /// <param name="request">位置上报请求。</param>
+    /// <param name="userIdOverride">用户ID覆盖值，用于在无HttpContext时指定用户。</param>
+    /// <param name="companyIdOverride">企业ID覆盖值，用于在无HttpContext时指定企业。</param>
     Task UpdateLocationAsync(UpdateLocationBeaconRequest request, string? userIdOverride = null, string? companyIdOverride = null);
 
     /// <summary>

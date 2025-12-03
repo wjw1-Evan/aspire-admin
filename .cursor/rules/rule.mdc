@@ -1,0 +1,703 @@
+---
+alwaysApply: true
+---
+
+# Aspire Admin Platform - Cursor Rules
+
+## 项目概述
+
+Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台，包含后端服务、管理后台与跨平台移动应用。
+
+**核心技术栈：**
+- 后端：.NET 10, ASP.NET Core, MongoDB, SignalR
+- 管理后台：React 19, Ant Design Pro, UmiJS
+- 移动应用：React Native, Expo
+- 基础设施：Docker, YARP 网关, OpenTelemetry
+
+## 架构原则
+
+### 1. 多租户数据隔离
+- **强制规则**：所有实体访问必须通过 `IDatabaseOperationFactory<T>` 进行
+- **禁止直接访问**：严禁直接使用 `IMongoCollection<T>`
+- **自动过滤**：实现 `IMultiTenant` 的实体自动附加 `CompanyId` 过滤
+- **企业上下文**：通过 `ITenantContext.GetCurrentCompanyIdAsync()` 获取当前企业ID
+
+### 2. 权限控制模型
+- **菜单级权限**：使用 `[RequireMenu("menu-name")]` 声明访问权限
+- **角色权限**：角色仅包含 `MenuIds`，获得菜单即具备对应 API 访问权限
+- **前端不隐藏**：前端不再隐藏按钮，真实权限由后端控制
+- **权限验证**：所有敏感操作需要权限验证
+
+### 3. 数据操作模式
+- **创建**：`CreateAsync()` 自动设置 `IsDeleted=false`, `CreatedAt`, `UpdatedAt`
+- **更新**：使用 `FindOneAndUpdateAsync()` 进行原子操作
+- **删除**：使用 `SoftDeleteAsync()` 进行软删除，保留审计信息
+- **查询**：使用 `FilterBuilder` 构建查询条件，支持链式调用
+
+## 后端开发规范
+
+### 1. 控制器设计
+```csharp
+// ✅ 正确做法
+[ApiController]
+[Route("api/[resource]")]
+public class ResourceController : BaseApiController
+{
+    private readonly IResourceService _service;
+    
+    public ResourceController(IResourceService service)
+    {
+        _service = service;
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> GetList([FromQuery] QueryParams query)
+    {
+        var result = await _service.GetListAsync(query);
+        return Ok(result);
+    }
+}
+
+// ❌ 错误做法
+// - 直接访问 IMongoCollection<T>
+// - 不进行权限检查
+// - 硬编码企业ID
+```
+
+### 2. 服务层实现
+```csharp
+// ✅ 正确做法
+public class ResourceService : IResourceService
+{
+    private readonly IDatabaseOperationFactory<Resource> _factory;
+    private readonly ITenantContext _tenantContext;
+    
+    public async Task<Resource> CreateAsync(CreateRequest request)
+    {
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        
+        var resource = new Resource
+        {
+            CompanyId = companyId,
+            Name = request.Name,
+            // ... 其他字段
+        };
+        
+        await _factory.CreateAsync(resource);
+        return resource;
+    }
+    
+    public async Task<List<Resource>> GetListAsync(QueryParams query)
+    {
+        var filterBuilder = _factory.CreateFilterBuilder();
+        
+        if (!string.IsNullOrEmpty(query.Name))
+        {
+            filterBuilder = filterBuilder.Regex(r => r.Name, query.Name, "i");
+        }
+        
+        var filter = filterBuilder.Build();
+        var total = await _factory.CountAsync(filter);
+        
+        var skip = (query.Current - 1) * query.PageSize;
+        var sortBuilder = _factory.CreateSortBuilder().Descending(r => r.UpdatedAt);
+        
+        var (items, _) = await _factory.FindPagedAsync(
+            filter, 
+            sortBuilder.Build(), 
+            skip, 
+            query.PageSize
+        );
+        
+        return items;
+    }
+}
+
+// ❌ 错误做法
+// - 不使用 FilterBuilder
+// - 手动添加企业过滤
+// - 不进行分页处理
+```
+
+### 3. 实体设计
+```csharp
+// ✅ 正确做法
+public class Resource : ISoftDeletable, IEntity, ITimestamped, IMultiTenant
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = string.Empty;
+    
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+    
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+    
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+    
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+}
+
+// ❌ 错误做法
+// - 不实现 IMultiTenant
+// - 缺少时间戳字段
+// - 不支持软删除
+```
+
+### 4. 错误处理
+```csharp
+// ✅ 正确做法
+try
+{
+    var resource = await _service.GetByIdAsync(id);
+    return Success(resource.EnsureFound("资源", id));
+}
+catch (UnauthorizedAccessException ex)
+{
+    return Unauthorized(ex.Message);
+}
+catch (Exception ex)
+{
+    return BadRequest(ex.Message);
+}
+
+// ❌ 错误做法
+// - 不捕获异常
+// - 返回原始异常信息
+// - 不进行权限检查
+```
+
+### 5. 数据验证
+```csharp
+// ✅ 正确做法
+public class CreateResourceRequest
+{
+    [Required(ErrorMessage = "名称不能为空")]
+    [StringLength(100, MinimumLength = 1)]
+    public string Name { get; set; }
+    
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    public string Email { get; set; }
+}
+
+// ❌ 错误做法
+// - 不进行数据验证
+// - 在服务层进行验证
+// - 验证规则不清晰
+```
+
+## 前端开发规范
+
+### 1. 页面结构
+```typescript
+// ✅ 正确做法
+import { PageContainer } from '@ant-design/pro-components';
+import { Table, Button, Space } from 'antd';
+import { useRequest } from 'ahooks';
+import { getResourceList, deleteResource } from '@/services/resource';
+
+export default function ResourcePage() {
+  const { data, loading, refresh } = useRequest(getResourceList);
+  
+  const handleDelete = async (id: string) => {
+    await deleteResource(id);
+    refresh();
+  };
+  
+  return (
+    <PageContainer>
+      <Table
+        dataSource={data?.list}
+        loading={loading}
+        columns={columns}
+        pagination={data?.pagination}
+      />
+    </PageContainer>
+  );
+}
+
+// ❌ 错误做法
+// - 直接调用 API
+// - 不使用 hooks
+// - 不处理加载状态
+```
+
+### 2. 服务层封装
+```typescript
+// ✅ 正确做法
+import { request } from '@umijs/max';
+
+export async function getResourceList(params: QueryParams) {
+  return request('/api/resource', {
+    method: 'GET',
+    params,
+  });
+}
+
+export async function createResource(data: CreateRequest) {
+  return request('/api/resource', {
+    method: 'POST',
+    data,
+  });
+}
+
+// ❌ 错误做法
+// - 在组件中直接调用 fetch
+// - 不进行错误处理
+// - 重复的 API 调用代码
+```
+
+### 3. 状态管理
+```typescript
+// ✅ 正确做法
+// 使用 UmiJS 内置的 useModel
+export const useResourceStore = () => {
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const fetchResources = async () => {
+    setLoading(true);
+    try {
+      const data = await getResourceList();
+      setResources(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return { resources, loading, fetchResources };
+};
+
+// ❌ 错误做法
+// - 使用全局状态管理工具
+// - 过度复杂的状态结构
+```
+
+### 4. 组件设计
+```typescript
+// ✅ 正确做法
+interface ResourceFormProps {
+  initialValues?: Resource;
+  onSubmit: (values: CreateRequest) => Promise<void>;
+  loading?: boolean;
+}
+
+export const ResourceForm: React.FC<ResourceFormProps> = ({
+  initialValues,
+  onSubmit,
+  loading,
+}) => {
+  const [form] = Form.useForm();
+  
+  return (
+    <Form
+      form={form}
+      initialValues={initialValues}
+      onFinish={onSubmit}
+      loading={loading}
+    >
+      {/* 表单字段 */}
+    </Form>
+  );
+};
+
+// ❌ 错误做法
+// - 组件过于复杂
+// - 混合业务逻辑和 UI 逻辑
+// - 不支持自定义
+```
+
+## 规则管理系统特定规范
+
+### 1. 规则实体设计
+```csharp
+// RuleListItem 必须实现以下接口
+public class RuleListItem : ISoftDeletable, IEntity, ITimestamped, IMultiTenant
+{
+    // 必需字段
+    public string Id { get; set; }           // MongoDB ObjectId
+    public string CompanyId { get; set; }    // 企业ID（多租户）
+    public int Key { get; set; }             // 规则键
+    public string Name { get; set; }         // 规则名称
+    public string Desc { get; set; }         // 规则描述
+    public int Status { get; set; }          // 规则状态
+    public DateTime CreatedAt { get; set; }  // 创建时间
+    public DateTime UpdatedAt { get; set; }  // 更新时间
+    public bool IsDeleted { get; set; }      // 软删除标记
+    
+    // MCP 配置
+    public McpRuleConfig? McpConfig { get; set; }
+}
+```
+
+### 2. 规则状态定义
+```csharp
+// 规则状态常量
+public static class RuleStatus
+{
+    public const int Disabled = 0;   // 禁用
+    public const int Enabled = 1;    // 启用
+    public const int Draft = 2;      // 草稿
+    public const int Expired = 3;    // 已过期
+}
+```
+
+### 3. 规则查询
+```csharp
+// ✅ 正确做法
+public async Task<RuleListResponse> GetRulesAsync(RuleQueryParams queryParams)
+{
+    var filterBuilder = _ruleFactory.CreateFilterBuilder();
+    
+    // 按名称搜索
+    if (!string.IsNullOrEmpty(queryParams.Name))
+    {
+        filterBuilder = filterBuilder.Regex(r => r.Name, queryParams.Name, "i");
+    }
+    
+    // 按状态过滤
+    if (queryParams.Status.HasValue)
+    {
+        filterBuilder = filterBuilder.Equal(r => r.Status, queryParams.Status.Value);
+    }
+    
+    var filter = filterBuilder.Build();
+    var total = await _ruleFactory.CountAsync(filter);
+    
+    var skip = (queryParams.Current - 1) * queryParams.PageSize;
+    var sortBuilder = _ruleFactory.CreateSortBuilder()
+        .Descending(r => r.UpdatedAt);
+    
+    var (rules, _) = await _ruleFactory.FindPagedAsync(
+        filter,
+        sortBuilder.Build(),
+        skip,
+        queryParams.PageSize
+    );
+    
+    return new RuleListResponse
+    {
+        Data = rules,
+        Total = (int)total,
+        Success = true,
+        PageSize = queryParams.PageSize,
+        Current = queryParams.Current
+    };
+}
+```
+
+### 4. MCP 配置管理
+```csharp
+// MCP 工具配置
+public class McpRuleConfig
+{
+    public bool Enabled { get; set; }                    // 是否启用
+    public string? ToolName { get; set; }                // 工具名称
+    public string? ToolDescription { get; set; }         // 工具描述
+    public Dictionary<string, object>? InputSchema { get; set; }  // 参数模式
+    
+    // 资源配置
+    public bool IsResource { get; set; }
+    public string? ResourceUri { get; set; }
+    public string? ResourceMimeType { get; set; }
+    
+    // 提示词配置
+    public bool IsPrompt { get; set; }
+    public Dictionary<string, object>? PromptArguments { get; set; }
+    public string? PromptTemplate { get; set; }
+}
+```
+
+## 数据库操作指南
+
+### 1. FilterBuilder 使用
+```csharp
+var filterBuilder = _factory.CreateFilterBuilder();
+
+// 相等条件
+filterBuilder.Equal(r => r.Status, 1);
+
+// 正则匹配
+filterBuilder.Regex(r => r.Name, "pattern", "i");
+
+// 范围条件
+filterBuilder.GreaterThan(r => r.CreatedAt, startDate);
+filterBuilder.LessThan(r => r.CreatedAt, endDate);
+
+// 包含条件
+filterBuilder.In(r => r.Status, new[] { 1, 2, 3 });
+
+// 构建过滤器
+var filter = filterBuilder.Build();
+```
+
+### 2. SortBuilder 使用
+```csharp
+var sortBuilder = _factory.CreateSortBuilder();
+
+// 升序
+sortBuilder.Ascending(r => r.Name);
+
+// 降序
+sortBuilder.Descending(r => r.CreatedAt);
+
+// 构建排序
+var sort = sortBuilder.Build();
+```
+
+### 3. UpdateBuilder 使用
+```csharp
+var updateBuilder = _factory.CreateUpdateBuilder();
+
+// 设置字段
+updateBuilder.Set(r => r.Name, "新名称");
+updateBuilder.Set(r => r.Status, 1);
+
+// 增加字段
+updateBuilder.Inc(r => r.CallNo, 1);
+
+// 构建更新
+var update = updateBuilder.Build();
+```
+
+## 通用响应格式
+
+### 1. 成功响应
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "id": "1",
+    "name": "资源名称"
+  }
+}
+```
+
+### 2. 错误响应
+```json
+{
+  "code": 400,
+  "msg": "错误信息",
+  "data": null
+}
+```
+
+### 3. 分页响应
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "list": [],
+    "total": 100,
+    "pageSize": 10,
+    "current": 1,
+    "success": true
+  }
+}
+```
+
+## 安全最佳实践
+
+### 1. 认证与授权
+- 所有 API 端点需要 JWT 认证
+- 使用 `[RequireMenu("menu-name")]` 进行权限检查
+- 验证用户的企业归属
+
+### 2. 数据验证
+- 对所有输入进行验证
+- 使用 DataAnnotations 进行声明式验证
+- 在服务层进行业务逻辑验证
+
+### 3. 审计日志
+- 使用 `ActivityLogMiddleware` 记录所有请求
+- 记录敏感操作（创建、更新、删除）
+- 保留删除信息（DeletedAt, DeletedBy, DeletedReason）
+
+### 4. 错误处理
+- 不暴露内部错误信息
+- 使用统一的错误响应格式
+- 记录详细的错误日志
+
+## 常见错误模式
+
+### ❌ 错误 1：直接访问 MongoDB
+```csharp
+// 错误
+var collection = _mongoClient.GetDatabase("db").GetCollection<Rule>("rules");
+var rules = collection.Find(r => r.CompanyId == companyId).ToList();
+
+// 正确
+var rules = await _ruleFactory.FindAsync(
+    _ruleFactory.CreateFilterBuilder().Equal(r => r.CompanyId, companyId).Build()
+);
+```
+
+### ❌ 错误 2：硬编码企业ID
+```csharp
+// 错误
+var companyId = "hardcoded-id";
+
+// 正确
+var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+```
+
+### ❌ 错误 3：不进行权限检查
+```csharp
+// 错误
+[HttpDelete("{id}")]
+public async Task<IActionResult> Delete(string id)
+{
+    await _service.DeleteAsync(id);
+    return Ok();
+}
+
+// 正确
+[HttpDelete("{id}")]
+[RequireMenu("rule:delete")]
+public async Task<IActionResult> Delete(string id)
+{
+    var result = await _service.DeleteAsync(id);
+    return Success(result);
+}
+```
+
+### ❌ 错误 4：同步操作
+```csharp
+// 错误
+var rules = _ruleFactory.FindAsync(filter).Result;
+
+// 正确
+var rules = await _ruleFactory.FindAsync(filter);
+```
+
+### ❌ 错误 5：不处理异常
+```csharp
+// 错误
+var rule = await _ruleFactory.GetByIdAsync(id);
+return Ok(rule);
+
+// 正确
+var rule = await _ruleFactory.GetByIdAsync(id);
+return Success(rule.EnsureFound("规则", id));
+```
+
+## 文件组织结构
+
+```
+Platform.ApiService/
+├── Controllers/          # API 控制器
+│   └── RuleController.cs
+├── Services/            # 业务服务
+│   └── RuleService.cs
+├── Models/              # 数据模型
+│   └── RuleModels.cs
+├── Middleware/          # 中间件
+├── Extensions/          # 扩展方法
+└── Program.cs           # 启动配置
+
+Platform.Admin/
+├── config/              # UmiJS 配置
+├── src/
+│   ├── pages/          # 页面
+│   ├── components/     # 组件
+│   ├── services/       # API 服务
+│   ├── utils/          # 工具函数
+│   └── types/          # TypeScript 类型
+```
+
+## 开发工作流
+
+### 1. 新增功能
+1. 在 Models 中定义实体和请求/响应类
+2. 在 Services 中实现业务逻辑
+3. 在 Controllers 中暴露 API 端点
+4. 在前端 services 中封装 API 调用
+5. 创建页面和组件
+
+### 2. 修改现有功能
+1. 更新实体模型
+2. 修改服务层逻辑
+3. 更新控制器端点
+4. 同步前端 API 调用
+5. 更新页面和组件
+
+### 3. 删除功能
+1. 确认没有其他地方依赖
+2. 删除数据库集合（如果需要）
+3. 删除服务和控制器
+4. 删除前端页面和组件
+5. 更新路由配置
+
+## 测试指南
+
+### 1. 单元测试
+- 测试服务层业务逻辑
+- 使用 Mock 对象隔离依赖
+- 覆盖正常和异常场景
+
+### 2. 集成测试
+- 测试完整的请求/响应流程
+- 验证数据库操作
+- 检查权限控制
+
+### 3. 前端测试
+- 测试组件渲染
+- 测试用户交互
+- 验证 API 调用
+
+## 性能优化
+
+### 1. 数据库优化
+- 为常用查询字段创建索引
+- 使用分页避免大量数据加载
+- 使用投影减少返回字段
+
+### 2. 缓存策略
+- 缓存频繁访问的数据
+- 设置合理的缓存过期时间
+- 在数据更新时清除缓存
+
+### 3. 前端优化
+- 使用 React.memo 避免不必要的重新渲染
+- 使用虚拟列表处理大数据集
+- 代码分割和懒加载
+
+## 文档要求
+
+### 1. 代码注释
+- 为公共方法添加 XML 注释
+- 解释复杂的业务逻辑
+- 说明参数和返回值
+
+### 2. API 文档
+- 使用 Swagger/OpenAPI 注释
+- 说明请求和响应格式
+- 提供使用示例
+
+### 3. 项目文档
+- 更新 README.md
+- 编写功能说明文档
+- 记录 API 变更
+
+## 相关文档链接
+
+- [规则管理系统文档](docs/RULES.md)
+- [MCP 集成指南](docs/features/RULES-MCP-INTEGRATION.md)
+- [数据库操作工厂指南](docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md)
+- [菜单级权限指南](docs/features/MENU-LEVEL-PERMISSION-GUIDE.md)
+- [快速开始指南](README.md)
+
+## 更新日期
+
+- **2024-12-03**: 创建完整的 Cursor Rules 文档

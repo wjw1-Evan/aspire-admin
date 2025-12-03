@@ -22,6 +22,7 @@ public class McpService : IMcpService
     private readonly IUserActivityLogService _activityLogService;
     private readonly ISocialService _socialService;
     private readonly ITaskService _taskService;
+    private readonly IUnifiedNotificationService _unifiedNotificationService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<McpService> _logger;
     private List<McpTool>? _cachedTools;
@@ -43,6 +44,7 @@ public class McpService : IMcpService
     /// <param name="activityLogService">活动日志服务</param>
     /// <param name="socialService">社交服务</param>
     /// <param name="taskService">任务服务</param>
+    /// <param name="unifiedNotificationService">统一通知服务</param>
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public McpService(
@@ -58,6 +60,7 @@ public class McpService : IMcpService
         IUserActivityLogService activityLogService,
         ISocialService socialService,
         ITaskService taskService,
+        IUnifiedNotificationService unifiedNotificationService,
         ITenantContext tenantContext,
         ILogger<McpService> logger)
     {
@@ -73,6 +76,7 @@ public class McpService : IMcpService
         _activityLogService = activityLogService;
         _socialService = socialService;
         _taskService = taskService;
+        _unifiedNotificationService = unifiedNotificationService;
         _tenantContext = tenantContext;
         _logger = logger;
     }
@@ -715,6 +719,57 @@ public class McpService : IMcpService
                         }
                     }
                 }
+            },
+            // 通知中心相关工具
+            new()
+            {
+                Name = "get_unified_notifications",
+                Description = "获取统一通知中心列表。支持 filterType: all, notification, message, task, system; sortBy: datetime, priority, dueDate",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 10, ["minimum"] = 1, ["maximum"] = 100 },
+                        ["filterType"] = new Dictionary<string, object> { ["type"] = "string", ["default"] = "all" },
+                        ["sortBy"] = new Dictionary<string, object> { ["type"] = "string", ["default"] = "datetime" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_unread_notification_stats",
+                Description = "获取未读通知统计信息（总数、系统、通知、消息、任务）",
+                InputSchema = new Dictionary<string, object> { ["type"] = "object", ["properties"] = new Dictionary<string, object>() }
+            },
+            new()
+            {
+                Name = "mark_notification_read",
+                Description = "按通知ID标记为已读",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "id" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "通知ID" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_task_notifications",
+                Description = "获取与当前用户相关的任务通知列表",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 10, ["minimum"] = 1, ["maximum"] = 100 }
+                    }
+                }
             }
         };
 
@@ -771,6 +826,11 @@ public class McpService : IMcpService
                 "get_task_statistics" => await HandleGetTaskStatisticsAsync(arguments, currentUserId),
                 "get_my_task_count" => await HandleGetMyTaskCountAsync(arguments, currentUserId),
                 "get_my_tasks" => await HandleGetMyTasksAsync(arguments, currentUserId),
+                // 通知中心相关
+                "get_unified_notifications" => await HandleGetUnifiedNotificationsAsync(arguments, currentUserId),
+                "get_unread_notification_stats" => await HandleGetUnreadNotificationStatsAsync(arguments, currentUserId),
+                "mark_notification_read" => await HandleMarkNotificationReadAsync(arguments, currentUserId),
+                "get_task_notifications" => await HandleGetTaskNotificationsAsync(arguments, currentUserId),
                 _ => throw new ArgumentException($"未知的工具: {toolName}")
             };
 
@@ -1954,6 +2014,89 @@ public class McpService : IMcpService
             page = response.Page,
             pageSize = response.PageSize,
             totalPages = (int)Math.Ceiling(response.Total / (double)response.PageSize)
+        };
+    }
+
+    #endregion
+
+    #region 通知中心工具处理方法
+
+    private async Task<object> HandleGetUnifiedNotificationsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var page = 1;
+        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
+        {
+            page = p;
+        }
+
+        var pageSize = 10;
+        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
+        {
+            pageSize = Math.Min(ps, 100);
+        }
+
+        var filterType = arguments.ContainsKey("filterType") ? (arguments["filterType"]?.ToString() ?? "all") : "all";
+        var sortBy = arguments.ContainsKey("sortBy") ? (arguments["sortBy"]?.ToString() ?? "datetime") : "datetime";
+
+        var result = await _unifiedNotificationService.GetUnifiedNotificationsAsync(page, pageSize, filterType, sortBy);
+        return new
+        {
+            items = result.Items,
+            total = result.Total,
+            page = result.Page,
+            pageSize = result.PageSize,
+            unreadCount = result.UnreadCount,
+            success = result.Success
+        };
+    }
+
+    private async Task<object> HandleGetUnreadNotificationStatsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var stats = await _unifiedNotificationService.GetUnreadCountStatisticsAsync();
+        return new
+        {
+            total = stats.Total,
+            systemMessages = stats.SystemMessages,
+            notifications = stats.Notifications,
+            messages = stats.Messages,
+            taskNotifications = stats.TaskNotifications,
+            todos = stats.Todos
+        };
+    }
+
+    private async Task<object> HandleMarkNotificationReadAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("id") || arguments["id"] is null)
+        {
+            return new { error = "缺少必需的参数: id" };
+        }
+        var id = arguments["id"]!.ToString()!;
+        var ok = await _unifiedNotificationService.MarkAsReadAsync(id);
+        return new { success = ok };
+    }
+
+    private async Task<object> HandleGetTaskNotificationsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var page = 1;
+        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
+        {
+            page = p;
+        }
+
+        var pageSize = 10;
+        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
+        {
+            pageSize = Math.Min(ps, 100);
+        }
+
+        var result = await _unifiedNotificationService.GetTaskNotificationsAsync(page, pageSize);
+        return new
+        {
+            items = result.Notifications,
+            total = result.Total,
+            page = result.Page,
+            pageSize = result.PageSize,
+            success = result.Success
         };
     }
 

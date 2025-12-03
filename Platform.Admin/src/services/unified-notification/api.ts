@@ -70,6 +70,7 @@ export async function getUnifiedNotifications(
 export async function markAsRead(id: string) {
   return request<ApiResponse<string>>(`/api/unified-notification/${id}/mark-as-read`, {
     method: 'POST',
+    data: {},
   });
 }
 

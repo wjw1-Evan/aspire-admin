@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable, ProCard } from '@ant-design/pro-components';
-import { useIntl } from '@umijs/max';
+import { useIntl, history, useLocation } from '@umijs/max';
 import {
   Button,
   Tag,
@@ -41,6 +41,7 @@ import {
   deleteTask,
   cancelTask,
   getTaskStatistics,
+  getTaskById,
   TaskStatus,
   TaskPriority,
   TaskExecutionResult,
@@ -55,6 +56,7 @@ import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 
 const TaskManagement: React.FC = () => {
   const intl = useIntl();
+  const location = useLocation();
   const actionRef = useRef<ActionType>(null);
   const [searchForm] = Form.useForm();
   const [formVisible, setFormVisible] = useState(false);
@@ -87,6 +89,39 @@ const TaskManagement: React.FC = () => {
   useEffect(() => {
     fetchStatistics();
   }, []);
+
+  // 根据 URL 中的 taskId 查询参数，实时弹出任务详情
+  useEffect(() => {
+    const search = location?.search || '';
+    const params = new URLSearchParams(search);
+    const taskId = params.get('taskId');
+
+    if (taskId) {
+      // 如果 taskId 变化，才重新加载
+      if (!viewingTask || viewingTask.id !== taskId) {
+        (async () => {
+          try {
+            const resp = await getTaskById(taskId);
+            if (resp.success && resp.data) {
+              setViewingTask(resp.data);
+              setDetailVisible(true);
+            }
+          } catch {
+            // 忽略错误
+          }
+        })();
+      } else if (!detailVisible) {
+        // 如果已有相同任务但抽屉被关闭，重新打开
+        setDetailVisible(true);
+      }
+    } else {
+      // 没有 taskId 时，关闭抽屉
+      if (detailVisible) {
+        setDetailVisible(false);
+        setViewingTask(null);
+      }
+    }
+  }, [location?.search]);
 
   // 获取任务列表
   const fetchTasks = async (params: any, sort?: Record<string, any>) => {

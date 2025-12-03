@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Drawer, List, Button, Tag, Space, Empty, Spin, Badge } from 'antd';
+import { useEffect, useState, type MouseEvent } from 'react';
+import { Drawer, List, Tag, Space, Empty, Spin, Badge, Avatar, Tooltip } from 'antd';
 import { BellOutlined, FileTextOutlined, AlertOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
-import { useIntl } from '@umijs/max';
+import { useIntl, history } from '@umijs/max';
 import {
   getUnifiedNotifications,
   markAsRead,
@@ -126,15 +126,7 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
     };
   }, [visible, page, pageSize]);
 
-  const handleMarkAsRead = async (id: string) => {
-    try {
-      await markAsRead(id);
-      fetchUnifiedNotifications();
-      fetchUnreadStats();
-    } catch {
-      // 静默失败
-    }
-  };
+
 
   const getPriorityTag = (priority?: number) => {
     const map: Record<number, { label: string; color: string }> = {
@@ -147,42 +139,91 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
     return <Tag color={map[priority]?.color}>{map[priority]?.label}</Tag>;
   };
 
-  const getTypeIcon = (type: string) => {
+  const getTypeMeta = (type: string) => {
     switch (type) {
       case 'Task':
-        return <FileTextOutlined />;
+        return { icon: <FileTextOutlined />, color: '#1890ff' };
       case 'System':
-        return <AlertOutlined />;
+        return { icon: <AlertOutlined />, color: '#faad14' };
       default:
-        return <BellOutlined />;
+        return { icon: <BellOutlined />, color: '#52c41a' };
+    }
+  };
+
+  const getTargetPath = (item: UnifiedNotificationItem) => {
+    // 依据通知类型和携带的业务ID，跳转到对应页面
+    if (item.type === 'Task' && item.taskId) {
+      return `/task-management?taskId=${encodeURIComponent(item.taskId)}`;
+    }
+    // TODO: 可扩展更多类型的跳转映射，如用户、消息、系统设置等
+    return '/';
+  };
+
+  const handleItemClick = async (item: UnifiedNotificationItem) => {
+    try {
+      if (!item.read) {
+        await markAsRead(item.id);
+        setNotifications((prev) => prev.map(n => n.id === item.id ? { ...n, read: true } : n));
+        setUnreadTotal(c => (c > 0 ? c - 1 : 0));
+      }
+    } catch {
+      // 静默失败，不阻塞跳转
+    } finally {
+      const basePath = getTargetPath(item);
+      const loc = history?.location as { pathname?: string; search?: string } | undefined;
+      const current = `${loc?.pathname ?? ''}${loc?.search ?? ''}`;
+      // 若与当前地址完全一致，附加一次性参数强制触发路由变化
+      const target = current === basePath
+        ? `${basePath}${basePath.includes('?') ? '&' : '?'}nt=${Date.now()}`
+        : basePath;
+      history.push(target);
+      onClose?.();
     }
   };
 
   const renderItem = (item: UnifiedNotificationItem) => (
     <List.Item
       key={item.id}
-      className={!item.read ? styles.unread : ''}
-      actions={[
-        !item.read && (
-          <Button type="text" size="small" onClick={() => handleMarkAsRead(item.id)}>
-            {t('pages.unifiedNotificationCenter.markAsRead', '标记已读')}
-          </Button>
-        ),
-      ]}
+      className={`${styles.notificationItem} ${!item.read ? styles.unread : ''}`}
+      onClick={() => handleItemClick(item)}
     >
       <List.Item.Meta
-        avatar={getTypeIcon(item.type)}
+        avatar={(() => {
+          const meta = getTypeMeta(item.type);
+          const avatar = (
+            <Avatar style={{ backgroundColor: meta.color }} icon={meta.icon} />
+          );
+          return (
+            <Tooltip title={item.type}>
+              {item.read ? (
+                avatar
+              ) : (
+                <Badge dot offset={[-2, 2]}>
+                  {avatar}
+                </Badge>
+              )}
+            </Tooltip>
+          );
+        })()}
         title={
-          <Space>
-            <span>{item.title}</span>
-            {!item.read && <Badge status="processing" />}
-            {item.taskPriority !== undefined && getPriorityTag(item.taskPriority)}
-          </Space>
+          <div className={styles.itemHeader}>
+              <div className={styles.itemHeaderLeft}>
+                <Space>
+                  <span className={styles.title}>{item.title}</span>
+                  {!item.read && <Badge status="processing" />}
+                  {item.taskPriority !== undefined && getPriorityTag(item.taskPriority)}
+                </Space>
+              </div>
+              <div className={styles.itemHeaderRight}>
+                <Tooltip title={dayjs(item.datetime).format('YYYY-MM-DD HH:mm:ss')}>
+                  <small className={styles.time}>{dayjs(item.datetime).fromNow()}</small>
+                </Tooltip>
+              </div>
+            </div>
         }
         description={
-          <div>
+          <div className={styles.itemDesc}>
             <p>{item.description}</p>
-            <small>{dayjs(item.datetime).fromNow()}</small>
           </div>
         }
       />
@@ -191,25 +232,18 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
 
   return (
     <Drawer
-      title={t('pages.unifiedNotificationCenter.title', '通知中心')}
+      title={<Space size="small"><span>{t('pages.unifiedNotificationCenter.title', '通知中心')}</span><Badge count={unreadTotal} size="small" /></Space>}
       placement="right"
       onClose={onClose}
       open={visible}
       width={500}
-      styles={{ body: { padding: 0 } }}
+      styles={{ body: { padding: 8, background: '#fafafa' } }}
     >
-      <div style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
-        <Space>
-          <span>
-            {t('pages.unifiedNotificationCenter.all', '全部')}
-          </span>
-          <Badge count={unreadTotal} size="small" />
-        </Space>
-      </div>
       <Spin spinning={loading}>
         <List
           dataSource={notifications}
           renderItem={renderItem}
+          split={false}
           locale={{ emptyText: <Empty description={t('pages.unifiedNotificationCenter.noNotifications', '暂无通知')} /> }}
           pagination={{
             current: page,

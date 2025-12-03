@@ -506,6 +506,27 @@ public class McpService : IMcpService
                             ["type"] = "array",
                             ["items"] = new Dictionary<string, object> { ["type"] = "string" },
                             ["description"] = "标签列表（可选）"
+                        },
+                        ["plannedStartTime"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "计划开始时间（ISO 8601，可选，如：2025-12-03T10:00:00Z）"
+                        },
+                        ["plannedEndTime"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "计划完成时间（ISO 8601，可选）"
+                        },
+                        ["participantIds"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "array",
+                            ["items"] = new Dictionary<string, object> { ["type"] = "string" },
+                            ["description"] = "参与者用户ID列表（可选）"
+                        },
+                        ["remarks"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "备注（可选）"
                         }
                     }
                 }
@@ -626,6 +647,56 @@ public class McpService : IMcpService
                         }
                     }
                 }
+            },
+            new()
+            {
+                Name = "get_my_task_count",
+                Description = "获取我的任务数量。快速查询当前用户的任务总数和各状态任务数。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["includeCompleted"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "boolean",
+                            ["description"] = "是否包含已完成的任务",
+                            ["default"] = false
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_my_tasks",
+                Description = "获取我的任务。获取当前用户分配给我的所有任务。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["status"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "任务状态（可选）"
+                        },
+                        ["page"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "页码",
+                            ["default"] = 1,
+                            ["minimum"] = 1
+                        },
+                        ["pageSize"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "每页数量",
+                            ["default"] = 20,
+                            ["minimum"] = 1,
+                            ["maximum"] = 100
+                        }
+                    }
+                }
             }
         };
 
@@ -661,6 +732,8 @@ public class McpService : IMcpService
                 "assign_task" => await HandleAssignTaskAsync(arguments, currentUserId),
                 "complete_task" => await HandleCompleteTaskAsync(arguments, currentUserId),
                 "get_task_statistics" => await HandleGetTaskStatisticsAsync(arguments, currentUserId),
+                "get_my_task_count" => await HandleGetMyTaskCountAsync(arguments, currentUserId),
+                "get_my_tasks" => await HandleGetMyTasksAsync(arguments, currentUserId),
                 _ => throw new ArgumentException($"未知的工具: {toolName}")
             };
 
@@ -1574,7 +1647,11 @@ public class McpService : IMcpService
             Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var priority) ? priority : (int)TaskPriority.Medium,
             AssignedTo = arguments.ContainsKey("assignedTo") ? arguments["assignedTo"]?.ToString() : null,
             EstimatedDuration = arguments.ContainsKey("estimatedDuration") && int.TryParse(arguments["estimatedDuration"]?.ToString(), out var duration) ? duration : null,
-            Tags = arguments.ContainsKey("tags") && arguments["tags"] is List<object> tags ? tags.Cast<string>().ToList() : new List<string>()
+            Tags = arguments.ContainsKey("tags") && arguments["tags"] is List<object> tags ? tags.Cast<string>().ToList() : new List<string>(),
+            PlannedStartTime = arguments.ContainsKey("plannedStartTime") && DateTime.TryParse(arguments["plannedStartTime"]?.ToString(), out var pst) ? pst : (DateTime?)null,
+            PlannedEndTime = arguments.ContainsKey("plannedEndTime") && DateTime.TryParse(arguments["plannedEndTime"]?.ToString(), out var pet) ? pet : (DateTime?)null,
+            ParticipantIds = arguments.ContainsKey("participantIds") && arguments["participantIds"] is List<object> participants ? participants.Cast<string>().ToList() : new List<string>(),
+            Remarks = arguments.ContainsKey("remarks") ? arguments["remarks"]?.ToString() : null
         };
 
         var task = await _taskService.CreateTaskAsync(request, currentUserId, currentUser.CurrentCompanyId);
@@ -1701,7 +1778,9 @@ public class McpService : IMcpService
             return new { error = "无法确定当前企业" };
         }
 
-        var userId = arguments.ContainsKey("userId") ? arguments["userId"]?.ToString() : null;
+        var userId = arguments.ContainsKey("userId") && !string.IsNullOrEmpty(arguments["userId"]?.ToString())
+            ? arguments["userId"]?.ToString()
+            : null;
 
         var statistics = await _taskService.GetTaskStatisticsAsync(currentUser.CurrentCompanyId, userId);
 
@@ -1716,6 +1795,98 @@ public class McpService : IMcpService
             completionRate = statistics.CompletionRate,
             tasksByPriority = statistics.TasksByPriority,
             tasksByStatus = statistics.TasksByStatus
+        };
+    }
+
+    private async Task<object> HandleGetMyTaskCountAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            return new { error = "无法确定当前企业" };
+        }
+
+        var includeCompleted = arguments.ContainsKey("includeCompleted") &&
+                              bool.TryParse(arguments["includeCompleted"]?.ToString(), out var ic) && ic;
+
+        var statistics = await _taskService.GetTaskStatisticsAsync(currentUser.CurrentCompanyId, currentUserId);
+
+        var totalCount = statistics.TotalTasks;
+        if (!includeCompleted)
+        {
+            // 不包含已完成的任务，计算待分配、已分配、执行中的任务数
+            totalCount = statistics.PendingTasks + statistics.InProgressTasks;
+            if (statistics.TasksByStatus.ContainsKey("Assigned"))
+            {
+                totalCount += statistics.TasksByStatus["Assigned"];
+            }
+        }
+
+        return new
+        {
+            totalCount = totalCount,
+            pendingCount = statistics.PendingTasks,
+            assignedCount = statistics.TasksByStatus.ContainsKey("Assigned") ? statistics.TasksByStatus["Assigned"] : 0,
+            inProgressCount = statistics.InProgressTasks,
+            completedCount = statistics.CompletedTasks,
+            failedCount = statistics.FailedTasks,
+            cancelledCount = statistics.TasksByStatus.ContainsKey("Cancelled") ? statistics.TasksByStatus["Cancelled"] : 0,
+            pausedCount = statistics.TasksByStatus.ContainsKey("Paused") ? statistics.TasksByStatus["Paused"] : 0,
+            message = $"你有 {totalCount} 个待处理任务"
+        };
+    }
+
+    private async Task<object> HandleGetMyTasksAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            return new { error = "无法确定当前企业" };
+        }
+
+        var page = 1;
+        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
+        {
+            page = p;
+        }
+
+        var pageSize = 20;
+        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
+        {
+            pageSize = Math.Min(ps, 100);
+        }
+
+        var request = new TaskQueryRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            AssignedTo = currentUserId,
+            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null
+        };
+
+        var response = await _taskService.QueryTasksAsync(request, currentUser.CurrentCompanyId);
+
+        return new
+        {
+            tasks = response.Tasks.Select(t => new
+            {
+                id = t.Id,
+                taskName = t.TaskName,
+                description = t.Description,
+                status = t.Status,
+                statusName = t.StatusName,
+                priority = t.Priority,
+                priorityName = t.PriorityName,
+                completionPercentage = t.CompletionPercentage,
+                createdBy = t.CreatedBy,
+                createdByName = t.CreatedByName,
+                createdAt = t.CreatedAt,
+                updatedAt = t.UpdatedAt
+            }).ToList(),
+            total = response.Total,
+            page = response.Page,
+            pageSize = response.PageSize,
+            totalPages = (int)Math.Ceiling(response.Total / (double)response.PageSize)
         };
     }
 

@@ -76,6 +76,10 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
   - 图标尺寸统一为 `20px`，数值字号 `20px`，标题字号 `12px`
   - 数值和标题右对齐，使用 `flex` 布局实现图标与内容的横向排列
   - 卡片之间的间距使用 `gutter={[12, 12]}`，卡片外边距统一为 `16px`
+- **业务统计区域统一规范**：
+  - 任务管理（`task-management`）、用户管理（`user-management`）、IoT 平台概览（`iot-platform`）等页面的顶部统计区必须统一使用 `src/components/StatCard` 组件
+  - 布局使用 `Card + Row + Col + StatCard` 组合，`Row` 的 `gutter` 固定为 `[12, 12]`，`Card` 外层 `marginBottom` 使用 `16`
+  - `PageContainer` 统一设置 `style={{ paddingBlock: 12 }}`，与 Welcome 页保持一致的上下留白
 - **页面整体间距**：
   - `PageContainer` 的上下内边距使用 `paddingBlock: 12`
   - 各卡片之间的间距统一为 `16px`，避免过大的空白
@@ -184,3 +188,4 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
 - **2024-12-03**: 创建完整的 Cursor Rules 文档
 - **2024-12-04**: 补充数据库操作工厂、ApiResponse 统一响应格式及中间件/权限/前端规范拆分文档结构
 - **2024-12-05**: 添加 Welcome 页面布局与 UI 组件规范，包括统计卡片横向紧凑布局和页面间距规范
+- **2024-12-06**: 抽象 `StatCard` 公共组件，并要求任务管理 / 用户管理 / IoT 概览等统计区域统一使用该组件与 Welcome 一致的紧凑布局

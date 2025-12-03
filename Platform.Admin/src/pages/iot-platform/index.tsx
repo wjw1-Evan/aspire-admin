@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Card, Row, Col, Statistic, Button, Space, message, Spin } from 'antd';
+import { Tabs, Card, Row, Col, Button, Space, message, Spin } from 'antd';
 import {
   CloudServerOutlined,
   DatabaseOutlined,
@@ -13,6 +13,7 @@ import DataPointManagement from './components/DataPointManagement';
 import EventManagement from './components/EventManagement';
 import { iotService } from '@/services/iotService';
 import styles from './index.less';
+import { StatCard } from '@/components';
 
 const IoTPlatform: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -52,88 +53,73 @@ const IoTPlatform: React.FC = () => {
       children: (
         <Spin spinning={loading}>
           <div className={styles.overviewContainer}>
-            <Row gutter={[16, 16]}>
+            <Row gutter={[12, 12]}>
               <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="网关总数"
-                    value={statistics?.totalGateways || 0}
-                    prefix={<CloudServerOutlined />}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </Card>
+                <StatCard
+                  title="网关总数"
+                  value={statistics?.totalGateways || 0}
+                  icon={<CloudServerOutlined />}
+                  color="#1890ff"
+                />
               </Col>
               <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="在线网关"
-                    value={statistics?.onlineGateways || 0}
-                    prefix={<CloudServerOutlined />}
-                    valueStyle={{ color: '#52c41a' }}
-                  />
-                </Card>
+                <StatCard
+                  title="在线网关"
+                  value={statistics?.onlineGateways || 0}
+                  icon={<CloudServerOutlined />}
+                  color="#52c41a"
+                />
               </Col>
               <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="设备总数"
-                    value={statistics?.totalDevices || 0}
-                    prefix={<DesktopOutlined />}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </Card>
+                <StatCard
+                  title="设备总数"
+                  value={statistics?.totalDevices || 0}
+                  icon={<DesktopOutlined />}
+                  color="#1890ff"
+                />
               </Col>
               <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="在线设备"
-                    value={statistics?.onlineDevices || 0}
-                    prefix={<DesktopOutlined />}
-                    valueStyle={{ color: '#52c41a' }}
-                  />
-                </Card>
+                <StatCard
+                  title="在线设备"
+                  value={statistics?.onlineDevices || 0}
+                  icon={<DesktopOutlined />}
+                  color="#52c41a"
+                />
               </Col>
             </Row>
 
-            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+            <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
               <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="数据点总数"
-                    value={statistics?.totalDataPoints || 0}
-                    prefix={<DatabaseOutlined />}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </Card>
+                <StatCard
+                  title="数据点总数"
+                  value={statistics?.totalDataPoints || 0}
+                  icon={<DatabaseOutlined />}
+                  color="#1890ff"
+                />
               </Col>
               <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="数据记录"
-                    value={statistics?.totalDataRecords || 0}
-                    prefix={<DatabaseOutlined />}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </Card>
+                <StatCard
+                  title="数据记录"
+                  value={statistics?.totalDataRecords || 0}
+                  icon={<DatabaseOutlined />}
+                  color="#1890ff"
+                />
               </Col>
               <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="未处理告警"
-                    value={statistics?.unhandledAlarms || 0}
-                    prefix={<AlertOutlined />}
-                    valueStyle={{ color: '#ff4d4f' }}
-                  />
-                </Card>
+                <StatCard
+                  title="未处理告警"
+                  value={statistics?.unhandledAlarms || 0}
+                  icon={<AlertOutlined />}
+                  color="#ff4d4f"
+                />
               </Col>
               <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="最后更新"
-                    value={statistics?.lastUpdatedAt ? new Date(statistics.lastUpdatedAt).toLocaleTimeString() : '-'}
-                    valueStyle={{ color: '#666' }}
-                  />
-                </Card>
+                <StatCard
+                  title="最后更新"
+                  value={statistics?.lastUpdatedAt ? new Date(statistics.lastUpdatedAt).toLocaleTimeString() : '-'}
+                  icon={<DatabaseOutlined />}
+                  color="#666666"
+                />
               </Col>
             </Row>
           </div>

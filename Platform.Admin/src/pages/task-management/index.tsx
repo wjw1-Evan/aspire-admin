@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable, ProCard } from '@ant-design/pro-components';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { useIntl, history, useLocation } from '@umijs/max';
 import {
   Button,
@@ -9,7 +9,6 @@ import {
   message,
   Modal,
   Drawer,
-  Statistic,
   Row,
   Col,
   Badge,
@@ -53,6 +52,7 @@ import TaskForm from './components/TaskForm';
 import TaskDetail from './components/TaskDetail';
 import TaskExecutionPanel from './components/TaskExecutionPanel';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
+import { StatCard } from '@/components';
 
 const TaskManagement: React.FC = () => {
   const intl = useIntl();
@@ -443,41 +443,46 @@ const TaskManagement: React.FC = () => {
   ];
 
   return (
-    <PageContainer>
-      {/* 统计卡片 */}
+    <PageContainer style={{ paddingBlock: 12 }}>
+      {/* 统计卡片：与 Welcome 页面保持一致的紧凑横向布局 */}
       {statistics && (
-        <ProCard gutter={16} style={{ marginBottom: 24 }}>
-          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <Statistic
-              title="总任务数"
-              value={statistics.totalTasks}
-              prefix={<TeamOutlined />}
-            />
-          </ProCard>
-          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <Statistic
-              title="进行中"
-              value={statistics.inProgressTasks}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </ProCard>
-          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <Statistic
-              title="已完成"
-              value={statistics.completedTasks}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </ProCard>
-          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <Statistic
-              title="完成率"
-              value={statistics.completionRate}
-              suffix="%"
-              precision={1}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </ProCard>
-        </ProCard>
+        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+          <Row gutter={[12, 12]}>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.taskManagement.statistics.totalTasks' })}
+                value={statistics.totalTasks}
+                icon={<TeamOutlined />}
+                color="#1890ff"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.taskManagement.statistics.inProgressTasks' })}
+                value={statistics.inProgressTasks}
+                icon={<PlayCircleOutlined />}
+                color="#1890ff"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.taskManagement.statistics.completedTasks' })}
+                value={statistics.completedTasks}
+                icon={<CheckCircleOutlined />}
+                color="#52c41a"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.taskManagement.statistics.completionRate' })}
+                value={statistics.completionRate.toFixed(1)}
+                suffix="%"
+                icon={<ReloadOutlined />}
+                color="#faad14"
+              />
+            </Col>
+          </Row>
+        </Card>
       )}
 
       {/* 任务列表表格 */}

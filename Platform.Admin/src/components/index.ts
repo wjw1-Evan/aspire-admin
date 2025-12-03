@@ -12,6 +12,7 @@ import NoticeIcon from './NoticeIcon';
 import { CompanySwitcher } from './CompanySwitcher';
 import { JoinCompanyModal } from './JoinCompanyModal';
 import AiAssistant from './AiAssistant';
+import StatCard from './StatCard';
 
 export {
   AvatarDropdown,
@@ -23,4 +24,5 @@ export {
   SelectLang,
   CompanySwitcher, // v3.1: 企业切换器
   AiAssistant, // AI 助手组件
+  StatCard, // 统一统计卡片组件
 };

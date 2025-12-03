@@ -1,4 +1,11 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  TeamOutlined,
+  UserOutlined,
+  MenuOutlined,
+} from '@ant-design/icons';
 import {
   type ActionType,
   PageContainer,
@@ -6,11 +13,12 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Input, Modal, message, Space, Tag } from 'antd';
+import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card } from 'antd';
 import { type ChangeEvent, type FC, useEffect, useRef, useState } from 'react';
 import { deleteRole, getAllRolesWithStats } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
+import { StatCard } from '@/components';
 
 const RoleManagement: FC = () => {
   const intl = useIntl();
@@ -18,6 +26,12 @@ const RoleManagement: FC = () => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRole, setCurrentRole] = useState<Role | undefined>();
+  const [statistics, setStatistics] = useState<{
+    totalRoles: number;
+    activeRoles: number;
+    totalUsers: number;
+    totalMenus: number;
+  } | null>(null);
 
   /**
    * 加载角色数据（带统计信息）
@@ -26,8 +40,29 @@ const RoleManagement: FC = () => {
     try {
       const response = await getAllRolesWithStats();
       if (response.success && response.data) {
+        const roles = response.data.roles || [];
+
+        // 计算统计信息，统一用于顶部统计卡片
+        const totalRoles = roles.length;
+        const activeRoles = roles.filter((r: any) => r.isActive).length;
+        const totalUsers = roles.reduce(
+          (sum: number, r: any) => sum + (r.userCount || 0),
+          0,
+        );
+        const totalMenus = roles.reduce(
+          (sum: number, r: any) => sum + (r.menuCount || 0),
+          0,
+        );
+
+        setStatistics({
+          totalRoles,
+          activeRoles,
+          totalUsers,
+          totalMenus,
+        });
+
         return {
-          data: response.data.roles,
+          data: roles,
           total: response.data.total,
           success: true,
         };
@@ -362,7 +397,48 @@ const RoleManagement: FC = () => {
         title: intl.formatMessage({ id: 'pages.roleManagement.title' }),
         subTitle: intl.formatMessage({ id: 'pages.roleManagement.subTitle' }),
       }}
+      style={{ paddingBlock: 12 }}
     >
+      {/* 角色统计信息：统一使用 StatCard 风格 */}
+      {statistics && (
+        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+          <Row gutter={[12, 12]}>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.roleManagement.statistics.totalRoles' })}
+                value={statistics.totalRoles}
+                icon={<TeamOutlined />}
+                color="#1890ff"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.roleManagement.statistics.activeRoles' })}
+                value={statistics.activeRoles}
+                icon={<TeamOutlined />}
+                color="#52c41a"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.roleManagement.statistics.totalUsers' })}
+                value={statistics.totalUsers}
+                icon={<UserOutlined />}
+                color="#faad14"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.roleManagement.statistics.totalMenus' })}
+                value={statistics.totalMenus}
+                icon={<MenuOutlined />}
+                color="#722ed1"
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
+
       <div ref={tableRef}>
         <ProTable<Role>
           actionRef={actionRef}

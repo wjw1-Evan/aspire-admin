@@ -645,4 +645,14 @@ export default {
   'pages.taskManagement.execution.resultFailed': '失败',
   'pages.taskManagement.execution.resultTimeout': '超时',
   'pages.taskManagement.execution.resultInterrupted': '被中断',
+  // 角色管理统计
+  'pages.roleManagement.statistics.totalRoles': '角色总数',
+  'pages.roleManagement.statistics.activeRoles': '启用角色',
+  'pages.roleManagement.statistics.totalUsers': '关联用户总数',
+  'pages.roleManagement.statistics.totalMenus': '关联菜单总数',
+  // 我的活动统计
+  'pages.myActivity.statistics.totalLogs': '总日志数',
+  'pages.myActivity.statistics.successCount': '成功请求数',
+  'pages.myActivity.statistics.errorCount': '错误请求数',
+  'pages.myActivity.statistics.actionTypes': '操作类型数',
 };

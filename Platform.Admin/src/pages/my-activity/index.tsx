@@ -4,13 +4,20 @@ import {
   type ActionType,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { Button, Tag, Badge } from 'antd';
-import { EyeOutlined } from '@ant-design/icons';
+import { Button, Tag, Badge, Row, Col, Card } from 'antd';
+import {
+  EyeOutlined,
+  HistoryOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { getCurrentUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import LogDetailDrawer from '../user-log/components/LogDetailDrawer';
+import { StatCard } from '@/components';
 
 const MyActivity: React.FC = () => {
   const intl = useIntl();
@@ -18,6 +25,12 @@ const MyActivity: React.FC = () => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  const [statistics, setStatistics] = useState<{
+    total: number;
+    successCount: number;
+    errorCount: number;
+    actionTypes: number;
+  } | null>(null);
 
   const handleViewDetail = (record: UserActivityLog) => {
     // ✅ 只传递 logId，让 LogDetailDrawer 从 API 获取完整数据
@@ -465,21 +478,62 @@ const MyActivity: React.FC = () => {
         title: intl.formatMessage({ id: 'pages.myActivity.title' }),
         subTitle: intl.formatMessage({ id: 'pages.myActivity.subTitle' }),
       }}
+      style={{ paddingBlock: 12 }}
     >
+      {/* 活动统计信息：统一使用 StatCard 风格 */}
+      {statistics && (
+        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+          <Row gutter={[12, 12]}>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.totalLogs' })}
+                value={statistics.total}
+                icon={<HistoryOutlined />}
+                color="#1890ff"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.successCount' })}
+                value={statistics.successCount}
+                icon={<CheckCircleOutlined />}
+                color="#52c41a"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.errorCount' })}
+                value={statistics.errorCount}
+                icon={<CloseCircleOutlined />}
+                color="#ff4d4f"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.actionTypes' })}
+                value={statistics.actionTypes}
+                icon={<ThunderboltOutlined />}
+                color="#faad14"
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
+
       <div ref={tableRef}>
         <ProTable<UserActivityLog>
           actionRef={actionRef}
           rowKey="id"
           scroll={{ x: 'max-content' }}
           search={{
-          labelWidth: 120,
-          optionRender: (_searchConfig, _formProps, dom) => {
-            const reversed = [...dom];
-            reversed.reverse();
-            return reversed;
-          },
-        }}
-        request={async (params, sort) => {
+            labelWidth: 120,
+            optionRender: (_searchConfig, _formProps, dom) => {
+              const reversed = [...dom];
+              reversed.reverse();
+              return reversed;
+            },
+          }}
+          request={async (params, sort) => {
           const { current = 1, pageSize = 20, action, httpMethod, statusCode, ipAddress, startDate, endDate } = params;
 
           // 处理排序参数
@@ -529,9 +583,30 @@ const MyActivity: React.FC = () => {
             if (response.success && response.data) {
               // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
               const result = response.data as any;
+              const list: UserActivityLog[] = result.data || [];
+              const total: number = result.total || 0;
+
+              // 基于当前页数据和总数计算统计信息
+              const successCount = list.filter(
+                (x) => x.statusCode && x.statusCode >= 200 && x.statusCode < 300,
+              ).length;
+              const errorCount = list.filter(
+                (x) => x.statusCode && x.statusCode >= 400,
+              ).length;
+              const actionTypes = new Set(
+                list.map((x) => x.action).filter(Boolean),
+              ).size;
+
+              setStatistics({
+                total,
+                successCount,
+                errorCount,
+                actionTypes,
+              });
+
               return {
-                data: result.data || [],
-                total: result.total || 0,
+                data: list,
+                total,
                 success: true,
               };
             }

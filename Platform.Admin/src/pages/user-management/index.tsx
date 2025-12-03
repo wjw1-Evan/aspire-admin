@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable, ProCard } from '@ant-design/pro-components';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import {
   Button,
@@ -11,7 +11,6 @@ import {
   Select,
   Switch,
   Drawer,
-  Statistic,
   Row,
   Col,
   Badge,
@@ -40,6 +39,7 @@ import type { ApiResponse } from '@/types/unified-api';
 import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
 import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
+import { StatCard } from '@/components';
 
 const UserManagement: React.FC = () => {
   const intl = useIntl();
@@ -620,6 +620,7 @@ const UserManagement: React.FC = () => {
   return (
     <PageContainer
       title={intl.formatMessage({ id: 'pages.userManagement.title' })}
+      style={{ paddingBlock: 12 }}
       extra={[
         <Button
           key="refresh"
@@ -646,43 +647,44 @@ const UserManagement: React.FC = () => {
         </Button>,
       ]}
     >
-      {/* 统计卡片 */}
+      {/* 统计卡片：参考 Welcome 页面风格 */}
       {statistics && (
-        <ProCard style={{ marginBottom: 16 }}>
-          <Row gutter={16}>
-            <Col span={6}>
-              <Statistic
+        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+          <Row gutter={[12, 12]}>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
                 title={intl.formatMessage({ id: 'pages.userManagement.statistics.totalUsers' })}
                 value={statistics.totalUsers}
-                prefix={<TeamOutlined />}
+                icon={<TeamOutlined />}
+                color="#1890ff"
               />
             </Col>
-            <Col span={6}>
-              <Statistic
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
                 title={intl.formatMessage({ id: 'pages.userManagement.statistics.activeUsers' })}
                 value={statistics.activeUsers}
-                prefix={<CheckCircleOutlined />}
-                valueStyle={{ color: '#3f8600' }}
+                icon={<CheckCircleOutlined />}
+                color="#52c41a"
               />
             </Col>
-            <Col span={6}>
-              <Statistic
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
                 title={intl.formatMessage({ id: 'pages.userManagement.statistics.adminUsers' })}
                 value={statistics.adminUsers}
-                prefix={<UserOutlined />}
-                valueStyle={{ color: '#cf1322' }}
+                icon={<UserOutlined />}
+                color="#faad14"
               />
             </Col>
-            <Col span={6}>
-              <Statistic
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
                 title={intl.formatMessage({ id: 'pages.userManagement.statistics.newUsersThisMonth' })}
                 value={statistics.newUsersThisMonth}
-                prefix={<PlusOutlined />}
-                valueStyle={{ color: '#1890ff' }}
+                icon={<PlusOutlined />}
+                color="#1890ff"
               />
             </Col>
           </Row>
-        </ProCard>
+        </Card>
       )}
 
       {/* 搜索表单 */}

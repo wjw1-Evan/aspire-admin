@@ -656,4 +656,14 @@ export default {
   'pages.taskManagement.execution.resultFailed': 'Failed',
   'pages.taskManagement.execution.resultTimeout': 'Timeout',
   'pages.taskManagement.execution.resultInterrupted': 'Interrupted',
+  // Role management statistics
+  'pages.roleManagement.statistics.totalRoles': 'Total Roles',
+  'pages.roleManagement.statistics.activeRoles': 'Active Roles',
+  'pages.roleManagement.statistics.totalUsers': 'Total Related Users',
+  'pages.roleManagement.statistics.totalMenus': 'Total Related Menus',
+  // My activity statistics
+  'pages.myActivity.statistics.totalLogs': 'Total Logs',
+  'pages.myActivity.statistics.successCount': 'Successful Requests',
+  'pages.myActivity.statistics.errorCount': 'Error Requests',
+  'pages.myActivity.statistics.actionTypes': 'Action Types',
 };

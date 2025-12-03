@@ -40,6 +40,7 @@ import {
   UnorderedListOutlined
 } from '@ant-design/icons';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { StatCard } from '@/components';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
@@ -48,65 +49,6 @@ import type { CurrentUser } from '@/types/unified-api';
 import type { SystemResources } from '@/services/system/api';
 
 const { Title, Text, Paragraph } = Typography;
-
-// 统计卡片组件
-const StatCard: React.FC<{
-  title: string;
-  value: number | string;
-  icon: React.ReactNode;
-  color?: string;
-  suffix?: string;
-  loading?: boolean;
-  token?: any;
-}> = ({ title, value, icon, color = '#1890ff', suffix = '', loading = false, token }) => (
-  <Card
-    size="small"
-    bodyStyle={{ padding: '10px 12px' }}
-    style={{
-      borderRadius: '12px',
-      border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
-      backgroundColor: token?.colorBgContainer || '#ffffff'
-    }}
-    loading={loading}
-  >
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-      }}
-    >
-      <div style={{ color, fontSize: '20px', flexShrink: 0 }}>
-        {icon}
-      </div>
-      <div style={{ textAlign: 'right', flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: token?.colorText || '#262626',
-            lineHeight: 1.2,
-          }}
-        >
-          {value}
-          {suffix}
-        </div>
-        <div
-          style={{
-            fontSize: '12px',
-            color: token?.colorTextSecondary || '#8c8c8c',
-            marginTop: 2,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {title}
-        </div>
-      </div>
-    </div>
-  </Card>
-);
 
 // 快速操作按钮组件
 const QuickAction: React.FC<{

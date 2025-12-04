@@ -62,7 +62,7 @@ const QuickAction: React.FC<{
   <Card
     hoverable={!disabled}
     size="small"
-    bodyStyle={{ padding: '10px 12px' }}
+    styles={{ body: { padding: '10px 12px' } }}
     style={{
       borderRadius: '12px',
       cursor: disabled ? 'not-allowed' : 'pointer',
@@ -123,7 +123,7 @@ const ResourceCard: React.FC<{
 }> = ({ title, value, icon, color = '#1890ff', loading = false, token }) => (
   <Card
     size="small"
-    bodyStyle={{ padding: '10px 12px' }}
+    styles={{ body: { padding: '10px 12px' } }}
     style={{
       borderRadius: '12px',
       border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,

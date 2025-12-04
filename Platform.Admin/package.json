@@ -22,25 +22,23 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@ant-design/pro-components": "^2.8.10",
-    "@ant-design/v5-patch-for-react-19": "^1.0.3",
-    "@ant-design/x": "^1.6.1",
+    "@microsoft/signalr": "^10.0.0",
     "antd": "^5.29.1",
     "antd-style": "^3.7.1",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@microsoft/signalr": "^8.0.7"
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.5",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.6",
+    "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/react-helmet": "^6.1.11",
-    "@umijs/max": "^4.5.3",
+    "@umijs/max": "^4.6.4",
     "cross-env": "^10.1.0",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "typescript": "^5.6.3",
     "umi-presets-pro": "^2.0.3"
   },

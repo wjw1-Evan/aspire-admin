@@ -154,7 +154,7 @@ export default function CompanySettings() {
             <Col xs={24} sm={12} md={6}>
               <Card
                 size="small"
-                bodyStyle={{ padding: '10px 12px' }}
+                styles={{ body: { padding: '10px 12px' } }}
                 style={{ borderRadius: 12 }}
               >
                 <div style={{ marginBottom: 8 }}>

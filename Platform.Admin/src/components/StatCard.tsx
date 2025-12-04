@@ -35,7 +35,7 @@ const StatCard: React.FC<StatCardProps> = ({
   return (
     <Card
       size="small"
-      bodyStyle={{ padding: '10px 12px' }}
+      styles={{ body: { padding: '10px 12px' } }}
       style={{
         borderRadius: '12px',
         border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,

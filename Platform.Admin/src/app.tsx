@@ -272,9 +272,45 @@ export const layout: RunTimeLayoutConfig = ({
         initialState?.currentUser?.menus &&
         initialState.currentUser.menus.length > 0
       ) {
-        const dynamicMenus = convertMenuTreeToProLayout(
-          initialState.currentUser.menus,
+        // 顶部菜单显示顺序统一为：
+        // 1. 工作台（/welcome）
+        // 2. 任务管理（/task-management）
+        // 3. 用户管理（/system/user-management 或 /user-management）
+        // 4. IoT 平台（/iot-platform）
+        // 5. 系统设置（/system 开头的其他菜单）
+        const desiredOrder = [
+          '/welcome',
+          '/task-management',
+          '/user-management',
+          '/iot-platform',
+          '/system',
+        ];
+
+        const getMenuOrder = (menu: API.MenuTreeNode) => {
+          // 根据 path 前缀匹配所属分组
+          const index = desiredOrder.findIndex((prefix) => {
+            if (prefix === '/system') {
+              // 系统设置：匹配 /system 或 /system/*
+              return menu.path === '/system' || menu.path.startsWith('/system/');
+            }
+            // 其他：精确匹配或子路径匹配
+            return (
+              menu.path === prefix || menu.path.startsWith(`${prefix}/`)
+            );
+          });
+
+          // 未匹配到的菜单排在最后，保持原有顺序（通过原数组下标兜底）
+          return index === -1
+            ? desiredOrder.length +
+                initialState.currentUser!.menus!.indexOf(menu)
+            : index;
+        };
+
+        const sortedMenus = [...initialState.currentUser.menus].sort(
+          (a, b) => getMenuOrder(a as any) - getMenuOrder(b as any),
         );
+
+        const dynamicMenus = convertMenuTreeToProLayout(sortedMenus as any);
         return dynamicMenus;
       }
 

@@ -1,4 +1,5 @@
 import {
+  ApiOutlined,
   CodeOutlined,
   QuestionCircleOutlined,
   RocketOutlined,
@@ -25,40 +26,55 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       ),
       children: (
         <div style={{ padding: '16px 0' }}>
-          <Title level={4}>欢迎使用 Aspire Admin v6.0</Title>
+          <Title level={4}>欢迎使用 Aspire Admin Platform</Title>
           <Paragraph>
             这是一个基于 .NET Aspire、React 和 Ant Design Pro
-            构建的现代化企业级管理平台。
+            构建的现代化企业级管理平台，提供统一的后端服务、管理后台与跨平台移动应用。
           </Paragraph>
 
           <Paragraph>
             <Text type="success">
-              🎉 v6.0 版本带来了菜单级权限系统的重大简化！
+              🎉 平台提供多租户数据隔离、菜单级权限控制、实时聊天、AI 助手、IoT 平台、规则管理等完整的企业级功能！
             </Text>
           </Paragraph>
 
-          <Title level={5}>主要功能</Title>
+          <Title level={5}>核心功能模块</Title>
           <ul>
             <li>
-              <strong>用户管理</strong> - 创建、编辑、删除用户，分配角色
+              <strong>用户管理</strong> - 创建、编辑、删除用户，分配角色，支持多企业隶属
             </li>
             <li>
-              <strong>角色管理</strong> - 定义角色，配置菜单权限
+              <strong>角色管理</strong> - 定义角色，配置菜单权限，简化权限控制
             </li>
             <li>
-              <strong>菜单级权限</strong> - 简化的权限控制，菜单即权限
+              <strong>企业协作</strong> - 多租户企业配置、成员管理、加入申请审批、企业切换
             </li>
             <li>
-              <strong>企业设置</strong> - 多租户企业配置管理
+              <strong>任务管理</strong> - 创建任务、分配执行人、跟踪进度、统计报表
             </li>
             <li>
-              <strong>活动日志</strong> - 记录所有用户操作，便于审计
+              <strong>IoT 平台</strong> - 设备管理、网关配置、数据流监控、设备状态追踪
             </li>
             <li>
-              <strong>API 文档</strong> - 集成 Scalar API 文档系统
+              <strong>规则管理</strong> - 配置业务规则，支持 MCP 集成，自动化工作流
             </li>
             <li>
-              <strong>多语言支持</strong> - 支持 8 种语言的完整翻译
+              <strong>实时聊天</strong> - SignalR 实时通信、会话管理、消息撤回、已读状态
+            </li>
+            <li>
+              <strong>AI 智能助手</strong> - 智能回复、匹配推荐、话题引导、附件处理
+            </li>
+            <li>
+              <strong>活动日志</strong> - 记录所有用户操作，便于审计和追溯
+            </li>
+            <li>
+              <strong>系统监控</strong> - 资源监控、性能指标、健康检查、OpenTelemetry 追踪
+            </li>
+            <li>
+              <strong>API 文档</strong> - 集成 Scalar API 文档系统，支持在线测试
+            </li>
+            <li>
+              <strong>多语言支持</strong> - 支持 8 种语言的完整界面翻译
             </li>
           </ul>
 
@@ -82,6 +98,26 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </Text>
           </Paragraph>
 
+          <Title level={5}>功能亮点</Title>
+          <Paragraph>
+            <strong>多租户架构</strong> - 所有数据通过企业 ID 自动隔离，支持用户隶属多个企业，灵活切换工作空间。
+          </Paragraph>
+          <Paragraph>
+            <strong>菜单级权限</strong> - 简化的权限模型，菜单即权限，能访问菜单就能使用功能，降低配置复杂度。
+          </Paragraph>
+          <Paragraph>
+            <strong>实时通信</strong> - 基于 SignalR 的实时聊天系统，支持自动重连、会话房间、消息撤回、已读状态推送。
+          </Paragraph>
+          <Paragraph>
+            <strong>AI 集成</strong> - 内置 AI 智能回复服务，支持智能匹配推荐、话题引导，提升沟通效率。
+          </Paragraph>
+          <Paragraph>
+            <strong>IoT 平台</strong> - 完整的物联网设备管理能力，支持设备注册、网关配置、数据流监控和状态追踪。
+          </Paragraph>
+          <Paragraph>
+            <strong>规则引擎</strong> - 灵活的规则配置系统，支持 MCP 集成，实现自动化工作流和业务规则管理。
+          </Paragraph>
+
           <Title level={5}>开始使用</Title>
           <Paragraph>
             系统采用注册制，没有默认账户。请按照以下步骤开始使用：
@@ -99,10 +135,13 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             <li>
               <strong>立即登录</strong> - 注册完成后会自动登录系统
             </li>
+            <li>
+              <strong>探索功能</strong> - 访问欢迎页面查看系统概览，或直接使用各个功能模块
+            </li>
           </ol>
           <Paragraph>
             <Text type="secondary">
-              💡 提示：每个用户注册时都会自动获得一个个人企业，您可以后续申请加入其他企业或创建新企业。
+              💡 提示：每个用户注册时都会自动获得一个个人企业，您可以后续申请加入其他企业或创建新企业。系统支持多企业切换，方便在不同工作空间间切换。
             </Text>
           </Paragraph>
         </div>
@@ -123,6 +162,56 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             平台的完整版本历史，记录了每个版本的重要更新和改进。
           </Paragraph>
 
+          {/* 最新版本 */}
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+              backgroundColor: '#f6ffed',
+            }}
+          >
+            <Title level={5} style={{ color: '#52c41a', marginBottom: 16 }}>
+              🚀 最新版本 - 功能完善与扩展
+            </Title>
+
+            <Title level={5}>新增功能模块</Title>
+            <ul>
+              <li>
+                <strong>任务管理</strong> - 完整的任务创建、分配、跟踪和统计功能
+              </li>
+              <li>
+                <strong>IoT 平台</strong> - 设备管理、网关配置、数据流监控、设备状态追踪
+              </li>
+              <li>
+                <strong>规则管理</strong> - 业务规则配置系统，支持 MCP 集成和自动化工作流
+              </li>
+              <li>
+                <strong>实时聊天</strong> - SignalR 实时通信，支持会话管理、消息撤回、已读状态
+              </li>
+              <li>
+                <strong>AI 智能助手</strong> - 智能回复、匹配推荐、话题引导、附件处理
+              </li>
+            </ul>
+
+            <Title level={5}>架构优化</Title>
+            <ul>
+              <li>
+                <strong>多租户数据隔离</strong> - 所有实体通过 IDatabaseOperationFactory 访问，自动处理企业过滤
+              </li>
+              <li>
+                <strong>统一响应格式</strong> - ApiResponse 统一响应模型，BaseApiController 简化控制器开发
+              </li>
+              <li>
+                <strong>中间件增强</strong> - ResponseFormattingMiddleware 统一响应，ActivityLogMiddleware 记录审计
+              </li>
+              <li>
+                <strong>数据库操作工厂</strong> - 自动处理软删除、审计字段、多租户过滤，禁止直接访问 MongoDB
+              </li>
+            </ul>
+          </div>
+
           {/* v6.1 版本 */}
           <div
             style={{
@@ -133,7 +222,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#1890ff', marginBottom: 16 }}>
-              🌐 v6.1.0 - 多语言支持完善 (2025-01-XX)
+              🌐 v6.1.0 - 多语言支持完善
             </Title>
 
             <Title level={5}>多语言翻译补充</Title>
@@ -552,10 +641,260 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
 
           <Title level={5}>🔮 未来规划</Title>
           <ul>
-            <li>继续优化用户体验</li>
-            <li>增强系统性能</li>
-            <li>扩展功能模块</li>
-            <li>完善文档体系</li>
+            <li>继续优化用户体验和界面交互</li>
+            <li>增强系统性能和可扩展性</li>
+            <li>扩展 IoT 平台功能（设备联动、场景自动化）</li>
+            <li>完善规则引擎和 MCP 集成能力</li>
+            <li>增强 AI 助手功能（多模型支持、自定义提示词）</li>
+            <li>完善移动端功能（React Native + Expo）</li>
+            <li>完善文档体系和开发指南</li>
+            <li>增加更多语言支持</li>
+          </ul>
+        </div>
+      ),
+    },
+    {
+      key: 'features',
+      label: (
+        <span>
+          <ApiOutlined /> 功能说明
+        </span>
+      ),
+      children: (
+        <div style={{ padding: '16px 0' }}>
+          <Title level={4}>📋 功能模块详细说明</Title>
+
+          <Title level={5}>👥 用户管理</Title>
+          <Paragraph>
+            用户管理模块提供完整的用户生命周期管理功能：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>创建用户</strong> - 支持设置用户名、邮箱、手机号、密码等基本信息
+            </li>
+            <li>
+              <strong>编辑用户</strong> - 修改用户信息、重置密码、启用/禁用账户
+            </li>
+            <li>
+              <strong>角色分配</strong> - 为用户分配一个或多个角色，控制功能访问权限
+            </li>
+            <li>
+              <strong>企业关联</strong> - 查看用户所属企业，支持多企业隶属
+            </li>
+            <li>
+              <strong>搜索筛选</strong> - 支持按用户名、邮箱、角色、企业等条件搜索
+            </li>
+          </ul>
+
+          <Title level={5}>🎭 角色管理</Title>
+          <Paragraph>
+            角色管理采用菜单级权限模型，简化权限配置：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>创建角色</strong> - 定义角色名称、描述，配置菜单权限
+            </li>
+            <li>
+              <strong>菜单权限</strong> - 通过勾选菜单项分配权限，菜单即权限
+            </li>
+            <li>
+              <strong>权限继承</strong> - 获得菜单权限即拥有对应 API 访问权限
+            </li>
+            <li>
+              <strong>角色分配</strong> - 将角色分配给用户，用户获得角色所有权限
+            </li>
+          </ul>
+          <Paragraph>
+            <Text type="secondary">
+              💡 提示：v6.0 版本简化了权限模型，移除了复杂的操作级权限，统一使用菜单级权限控制。
+            </Text>
+          </Paragraph>
+
+          <Title level={5}>🏢 企业协作</Title>
+          <Paragraph>
+            多租户企业协作功能，支持企业创建、成员管理、申请审批：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>企业设置</strong> - 查看和编辑当前企业信息（名称、描述、联系方式等）
+            </li>
+            <li>
+              <strong>成员管理</strong> - 查看企业成员列表，分配角色，移除成员
+            </li>
+            <li>
+              <strong>企业搜索</strong> - 搜索其他企业，申请加入
+            </li>
+            <li>
+              <strong>加入申请</strong> - 查看我发起的申请和待我审批的申请
+            </li>
+            <li>
+              <strong>企业切换</strong> - 在多个隶属企业间切换，数据自动隔离
+            </li>
+            <li>
+              <strong>管理员设置</strong> - 企业管理员可以设置其他成员为管理员
+            </li>
+          </ul>
+
+          <Title level={5}>✅ 任务管理</Title>
+          <Paragraph>
+            完整的任务管理功能，支持任务创建、分配、跟踪和统计：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>创建任务</strong> - 设置任务标题、描述、优先级、截止日期
+            </li>
+            <li>
+              <strong>任务分配</strong> - 将任务分配给团队成员，支持多执行人
+            </li>
+            <li>
+              <strong>状态跟踪</strong> - 任务状态（待开始、进行中、已完成、已取消）
+            </li>
+            <li>
+              <strong>进度管理</strong> - 更新任务进度，添加备注和附件
+            </li>
+            <li>
+              <strong>统计报表</strong> - 查看任务统计、完成率、工作量分析
+            </li>
+            <li>
+              <strong>筛选搜索</strong> - 按状态、执行人、优先级、日期范围筛选
+            </li>
+          </ul>
+
+          <Title level={5}>🌐 IoT 平台</Title>
+          <Paragraph>
+            物联网设备管理平台，支持设备注册、监控和数据流管理：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>设备管理</strong> - 注册设备、编辑设备信息、查看设备列表
+            </li>
+            <li>
+              <strong>网关配置</strong> - 配置设备网关，管理网关连接
+            </li>
+            <li>
+              <strong>数据流监控</strong> - 实时监控设备数据流，查看历史数据
+            </li>
+            <li>
+              <strong>设备状态</strong> - 追踪设备在线/离线状态，设备健康度
+            </li>
+            <li>
+              <strong>数据统计</strong> - 设备数据统计报表，趋势分析
+            </li>
+          </ul>
+          <Paragraph>
+            <Text type="secondary">
+              💡 提示：IoT 平台支持多租户数据隔离，每个企业只能管理自己的设备。
+            </Text>
+          </Paragraph>
+
+          <Title level={5}>⚙️ 规则管理</Title>
+          <Paragraph>
+            业务规则配置系统，支持规则创建、MCP 集成和自动化工作流：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>规则创建</strong> - 定义规则名称、描述、触发条件、执行动作
+            </li>
+            <li>
+              <strong>规则状态</strong> - 启用/禁用规则，支持草稿、启用、禁用、过期状态
+            </li>
+            <li>
+              <strong>MCP 集成</strong> - 支持 MCP 工具、资源、提示词配置
+            </li>
+            <li>
+              <strong>规则执行</strong> - 自动执行规则，支持条件判断和动作触发
+            </li>
+            <li>
+              <strong>规则版本</strong> - 支持规则版本管理和历史记录
+            </li>
+          </ul>
+
+          <Title level={5}>💬 实时聊天</Title>
+          <Paragraph>
+            基于 SignalR 的实时聊天系统，支持会话管理和消息功能：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>创建会话</strong> - 与团队成员创建聊天会话
+            </li>
+            <li>
+              <strong>实时消息</strong> - SignalR 实时推送消息，支持自动重连
+            </li>
+            <li>
+              <strong>消息管理</strong> - 发送、撤回消息，查看已读状态
+            </li>
+            <li>
+              <strong>附件支持</strong> - 上传附件，支持图片、文档等文件类型
+            </li>
+            <li>
+              <strong>会话摘要</strong> - 自动生成会话摘要，快速了解对话内容
+            </li>
+            <li>
+              <strong>消息搜索</strong> - 搜索历史消息，按关键词查找
+            </li>
+          </ul>
+
+          <Title level={5}>🤖 AI 智能助手</Title>
+          <Paragraph>
+            集成 AI 智能回复服务，提升沟通效率：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>智能回复</strong> - AI 自动生成回复建议，一键插入
+            </li>
+            <li>
+              <strong>匹配推荐</strong> - 根据对话内容推荐相关话题和回复
+            </li>
+            <li>
+              <strong>话题引导</strong> - AI 提供话题建议，引导对话方向
+            </li>
+            <li>
+              <strong>附件处理</strong> - 支持附件内容分析和智能回复
+            </li>
+            <li>
+              <strong>多模型支持</strong> - 支持配置不同的 AI 模型和参数
+            </li>
+          </ul>
+
+          <Title level={5}>📊 活动日志</Title>
+          <Paragraph>
+            完整的用户操作审计日志，记录所有关键操作：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>操作记录</strong> - 记录所有 CRUD 操作（创建、读取、更新、删除）
+            </li>
+            <li>
+              <strong>用户追踪</strong> - 记录操作人、操作时间、IP 地址等信息
+            </li>
+            <li>
+              <strong>数据变更</strong> - 记录数据变更前后的值，便于追溯
+            </li>
+            <li>
+              <strong>筛选查询</strong> - 按用户、操作类型、时间范围筛选日志
+            </li>
+            <li>
+              <strong>导出功能</strong> - 支持日志导出，便于审计和分析
+            </li>
+          </ul>
+
+          <Title level={5}>📈 系统监控</Title>
+          <Paragraph>
+            系统资源监控和性能指标查看：
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>资源监控</strong> - CPU、内存、磁盘、网络使用情况
+            </li>
+            <li>
+              <strong>性能指标</strong> - API 响应时间、请求量、错误率等
+            </li>
+            <li>
+              <strong>健康检查</strong> - 服务健康状态，依赖服务状态
+            </li>
+            <li>
+              <strong>OpenTelemetry</strong> - 分布式追踪，请求链路分析
+            </li>
           </ul>
         </div>
       ),
@@ -620,6 +959,36 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             系统正在持续完善多语言支持。如果发现某些内容未翻译，请联系技术支持。
             目前核心功能（用户管理、角色管理、企业设置等）已完整支持所有语言。
           </Paragraph>
+
+          <Title level={5}>Q: 如何使用任务管理功能？</Title>
+          <Paragraph>
+            访问"任务管理"菜单，您可以创建新任务、分配给团队成员、设置优先级和截止日期。
+            系统会自动跟踪任务进度，并提供统计报表帮助您了解任务完成情况。
+          </Paragraph>
+
+          <Title level={5}>Q: IoT 平台如何添加设备？</Title>
+          <Paragraph>
+            在"IoT 平台"页面，点击"添加设备"按钮，填写设备信息（名称、类型、网关等）。
+            设备添加后，系统会自动监控设备状态和数据流，您可以在设备列表中查看详细信息。
+          </Paragraph>
+
+          <Title level={5}>Q: 规则管理支持哪些功能？</Title>
+          <Paragraph>
+            规则管理系统支持创建业务规则、配置触发条件、设置执行动作。系统支持 MCP 集成，
+            可以实现自动化工作流。规则可以启用/禁用，支持状态管理和版本控制。
+          </Paragraph>
+
+          <Title level={5}>Q: 实时聊天功能如何使用？</Title>
+          <Paragraph>
+            系统集成了 SignalR 实时聊天功能，支持创建会话、发送消息、撤回消息、查看已读状态。
+            聊天记录会自动保存，支持附件上传和预览。AI 智能助手可以帮助您快速回复和推荐内容。
+          </Paragraph>
+
+          <Title level={5}>Q: 如何切换企业？</Title>
+          <Paragraph>
+            点击右上角头像 → 选择"切换企业"，在弹出窗口中选择要切换的企业。
+            系统支持用户隶属多个企业，切换后所有数据会自动按企业隔离显示。
+          </Paragraph>
         </div>
       ),
     },
@@ -676,13 +1045,15 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           <Title level={5}>版本信息</Title>
           <Paragraph>
             <Text type="secondary">
-              Aspire Admin v6.1.0
+              Aspire Admin Platform
               <br />
-              更新日期: 2025-01-XX
+              核心版本: v6.1.0+
               <br />
-              更新内容: 多语言支持完善，补充所有语言的完整翻译
+              更新内容: 多语言支持完善、任务管理、IoT 平台、规则管理、实时聊天、AI 助手
               <br />
               支持语言: 8 种语言（中文、英文、日语、葡萄牙语、波斯语、印尼语、孟加拉语）
+              <br />
+              技术栈: .NET 10, React 19, Ant Design Pro, MongoDB, SignalR, .NET Aspire
               <br />© 2025 All Rights Reserved
             </Text>
           </Paragraph>

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
@@ -13,6 +14,7 @@ namespace Platform.ApiService.Controllers;
 [ApiController]
 [Route("api/iot")]
 [Authorize]
+[RequireMenu("iot-platform")]
 public class IoTController : BaseApiController
 {
     private readonly IIoTService _iotService;
@@ -57,8 +59,8 @@ public class IoTController : BaseApiController
     {
         try
         {
-            var gateways = await _iotService.GetGatewaysAsync(pageIndex, pageSize);
-            return Success(gateways);
+            var (items, total) = await _iotService.GetGatewaysAsync(pageIndex, pageSize);
+            return SuccessPaged(items, total, pageIndex, pageSize);
         }
         catch (Exception ex)
         {
@@ -181,8 +183,8 @@ public class IoTController : BaseApiController
     {
         try
         {
-            var devices = await _iotService.GetDevicesAsync(gatewayId, pageIndex, pageSize);
-            return Success(devices);
+            var (items, total) = await _iotService.GetDevicesAsync(gatewayId, pageIndex, pageSize);
+            return SuccessPaged(items, total, pageIndex, pageSize);
         }
         catch (Exception ex)
         {
@@ -349,8 +351,8 @@ public class IoTController : BaseApiController
     {
         try
         {
-            var dataPoints = await _iotService.GetDataPointsAsync(deviceId, pageIndex, pageSize);
-            return Success(dataPoints);
+            var (items, total) = await _iotService.GetDataPointsAsync(deviceId, pageIndex, pageSize);
+            return SuccessPaged(items, total, pageIndex, pageSize);
         }
         catch (Exception ex)
         {

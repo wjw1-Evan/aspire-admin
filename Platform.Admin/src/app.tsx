@@ -169,6 +169,10 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
       if (menu.path.startsWith('/system/')) {
         // 系统管理子菜单
         localeKey = `menu.system.${menu.name}`;
+      } else if (menu.path.startsWith('/iot-platform/')) {
+        // IoT 平台子菜单：从菜单名称中提取子菜单名称（去掉 iot-platform- 前缀）
+        const shortName = menu.name.replace(/^iot-platform-/, '');
+        localeKey = `menu.iot-platform.${shortName}`;
       } else if (menu.path === '/welcome') {
         localeKey = 'menu.welcome';
       } else if (menu.path.startsWith('/company/')) {

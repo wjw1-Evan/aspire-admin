@@ -154,7 +154,7 @@ export const iotService = {
     }),
 
   getGateways: (pageIndex = 1, pageSize = 20) =>
-    request<{ success: boolean; data: IoTGateway[] }>(
+    request<{ success: boolean; data: { list: IoTGateway[]; total: number; page: number; pageSize: number } }>(
       `${API_PREFIX}/gateways?pageIndex=${pageIndex}&pageSize=${pageSize}`,
       { method: 'GET' }
     ),
@@ -193,7 +193,7 @@ export const iotService = {
     if (gatewayId) {
       url += `&gatewayId=${gatewayId}`;
     }
-    return request<{ success: boolean; data: IoTDevice[] }>(url, { method: 'GET' });
+    return request<{ success: boolean; data: { list: IoTDevice[]; total: number; page: number; pageSize: number } }>(url, { method: 'GET' });
   },
 
   getDevice: (id: string) =>
@@ -230,7 +230,7 @@ export const iotService = {
     if (deviceId) {
       url += `&deviceId=${deviceId}`;
     }
-    return request<{ success: boolean; data: IoTDataPoint[] }>(url, { method: 'GET' });
+    return request<{ success: boolean; data: { list: IoTDataPoint[]; total: number; page: number; pageSize: number } }>(url, { method: 'GET' });
   },
 
   getDataPoint: (id: string) =>

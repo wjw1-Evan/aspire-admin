@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { ProTable } from '@ant-design/pro-components';
 import {
-  Table,
   Button,
   Modal,
   Form,
@@ -9,73 +10,124 @@ import {
   Space,
   message,
   Tag,
-  Popconfirm,
   DatePicker,
+  Card,
+  Row,
+  Col,
 } from 'antd';
 import {
   CheckOutlined,
   ReloadOutlined,
-  DeleteOutlined,
+  AlertOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
 import dayjs from 'dayjs';
-import styles from '../index.less';
+import { StatCard } from '@/components';
 
 const EventManagement: React.FC = () => {
-  const [events, setEvents] = useState<IoTDeviceEvent[]>([]);
+  const actionRef = useRef<ActionType>();
   const [devices, setDevices] = useState<IoTDevice[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<IoTDeviceEvent | null>(null);
   const [form] = Form.useForm();
   const [searchForm] = Form.useForm();
+  const [overviewStats, setOverviewStats] = useState({
+    total: 0,
+    unhandled: 0,
+    handled: 0,
+    critical: 0,
+  });
+
+  // 确保 devices 始终是数组
+  const safeDevices = Array.isArray(devices) ? devices : [];
 
   useEffect(() => {
-    loadEvents();
     loadDevices();
+    fetchOverviewStats();
   }, []);
 
-  const loadEvents = async (filters?: any) => {
+  // 获取概览统计
+  const fetchOverviewStats = async () => {
     try {
-      setLoading(true);
-      const queryData = {
-        pageIndex: 1,
-        pageSize: 50,
-        ...filters,
-      };
-      const response = await iotService.queryEvents(queryData);
-      if (response.success) {
-        setEvents(response.data.Events);
+      const response = await iotService.queryEvents({ pageIndex: 1, pageSize: 1000 });
+      if (response.success && response.data) {
+        const eventsList = Array.isArray(response.data.Events) ? response.data.Events : [];
+        setOverviewStats({
+          total: eventsList.length,
+          unhandled: eventsList.filter((e: IoTDeviceEvent) => !e.isHandled).length,
+          handled: eventsList.filter((e: IoTDeviceEvent) => e.isHandled).length,
+          critical: eventsList.filter((e: IoTDeviceEvent) => e.level === 'Critical').length,
+        });
       }
     } catch (error) {
+      console.error('获取统计信息失败:', error);
+    }
+  };
+
+  // 获取事件列表（用于 ProTable）
+  const fetchEvents = async (params: any, sort?: Record<string, any>) => {
+    try {
+      const formValues = searchForm.getFieldsValue();
+      const filters: any = {
+        pageIndex: params.current || 1,
+        pageSize: params.pageSize || 20,
+      };
+      
+      if (formValues.deviceId) filters.deviceId = formValues.deviceId;
+      if (formValues.eventType) filters.eventType = formValues.eventType;
+      if (formValues.level) filters.level = formValues.level;
+      if (formValues.isHandled !== undefined) filters.isHandled = formValues.isHandled;
+      if (formValues.dateRange && formValues.dateRange.length === 2) {
+        filters.startTime = formValues.dateRange[0].toISOString();
+        filters.endTime = formValues.dateRange[1].toISOString();
+      }
+
+      const response = await iotService.queryEvents(filters);
+      if (response.success && response.data) {
+        const eventsList = Array.isArray(response.data.Events) ? response.data.Events : [];
+        return {
+          data: eventsList,
+          success: true,
+          total: response.data.Total || eventsList.length,
+        };
+      }
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    } catch (error) {
+      console.error('加载事件列表失败:', error);
       message.error('加载事件列表失败');
-    } finally {
-      setLoading(false);
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
     }
   };
 
   const loadDevices = async () => {
     try {
-      const response = await iotService.getDevices();
-      if (response.success) {
-        setDevices(response.data);
+      const response = await iotService.getDevices(undefined, 1, 1000); // 加载所有设备用于下拉选择
+      if (response.success && response.data) {
+        const list = Array.isArray(response.data.list) ? response.data.list : [];
+        setDevices(list);
+      } else {
+        setDevices([]);
       }
     } catch (error) {
       console.error('Failed to load devices:', error);
+      setDevices([]);
     }
   };
 
-  const handleSearch = (values: any) => {
-    const filters: any = {};
-    if (values.deviceId) filters.deviceId = values.deviceId;
-    if (values.eventType) filters.eventType = values.eventType;
-    if (values.level) filters.level = values.level;
-    if (values.isHandled !== undefined) filters.isHandled = values.isHandled;
-    if (values.dateRange && values.dateRange.length === 2) {
-      filters.startTime = values.dateRange[0].toISOString();
-      filters.endTime = values.dateRange[1].toISOString();
-    }
-    loadEvents(filters);
+  const handleSearch = () => {
+    actionRef.current?.reload();
+    fetchOverviewStats();
   };
 
   const handleHandle = (event: IoTDeviceEvent) => {
@@ -91,7 +143,8 @@ const EventManagement: React.FC = () => {
       if (response.success) {
         message.success('事件已处理');
         setIsModalVisible(false);
-        loadEvents();
+        actionRef.current?.reload();
+        fetchOverviewStats();
       }
     } catch (error) {
       message.error('处理失败');
@@ -109,14 +162,14 @@ const EventManagement: React.FC = () => {
     return <Tag color={config.color}>{config.label}</Tag>;
   };
 
-  const columns = [
+  const columns: ProColumns<IoTDeviceEvent>[] = [
     {
       title: '所属设备',
       dataIndex: 'deviceId',
       key: 'deviceId',
       width: 150,
       render: (deviceId: string) => {
-        const device = devices.find((d) => d.deviceId === deviceId);
+        const device = safeDevices.find((d) => d.deviceId === deviceId);
         return device?.title || deviceId;
       },
     },
@@ -160,7 +213,7 @@ const EventManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       width: 150,
-      fixed: 'right' as const,
+      fixed: 'right',
       render: (_: any, record: IoTDeviceEvent) => (
         <Space size="small">
           {!record.isHandled && (
@@ -179,17 +232,55 @@ const EventManagement: React.FC = () => {
   ];
 
   return (
-    <div className={styles.eventManagement}>
-      <div className={styles.toolbar}>
+    <>
+      {/* 统计卡片：与其他页面保持一致的紧凑横向布局 */}
+      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Row gutter={[12, 12]}>
+          <Col xs={24} sm={12} md={6}>
+            <StatCard
+              title="事件总数"
+              value={overviewStats.total}
+              icon={<AlertOutlined />}
+              color="#1890ff"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <StatCard
+              title="未处理"
+              value={overviewStats.unhandled}
+              icon={<CloseCircleOutlined />}
+              color="#ff4d4f"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <StatCard
+              title="已处理"
+              value={overviewStats.handled}
+              icon={<CheckCircleOutlined />}
+              color="#52c41a"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <StatCard
+              title="严重事件"
+              value={overviewStats.critical}
+              icon={<ExclamationCircleOutlined />}
+              color="#ff4d4f"
+            />
+          </Col>
+        </Row>
+      </Card>
+
+      {/* 搜索表单 */}
+      <Card style={{ marginBottom: 16 }}>
         <Form
           form={searchForm}
           layout="inline"
           onFinish={handleSearch}
-          className={styles.searchForm}
         >
           <Form.Item name="deviceId">
             <Select placeholder="选择设备" allowClear style={{ width: 150 }}>
-              {devices.map((device) => (
+              {safeDevices.map((device) => (
                 <Select.Option key={device.deviceId} value={device.deviceId}>
                   {device.title}
                 </Select.Option>
@@ -231,27 +322,46 @@ const EventManagement: React.FC = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit">
-              查询
-            </Button>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                查询
+              </Button>
+              <Button onClick={() => {
+                searchForm.resetFields();
+                handleSearch();
+              }}>
+                重置
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
+      </Card>
 
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={() => loadEvents()} loading={loading}>
-            刷新
-          </Button>
-        </Space>
-      </div>
-
-      <Table
-        className={styles.table}
+      {/* 事件列表表格 */}
+      <ProTable<IoTDeviceEvent>
+        actionRef={actionRef}
         columns={columns}
-        dataSource={events}
-        loading={loading}
+        request={fetchEvents}
         rowKey="id"
-        pagination={{ pageSize: 20 }}
-        scroll={{ x: 1200 }}
+        search={false}
+        toolbar={{
+          actions: [
+            <Button
+              key="refresh"
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                actionRef.current?.reload();
+                fetchOverviewStats();
+              }}
+            >
+              刷新
+            </Button>,
+          ],
+        }}
+        pagination={{
+          pageSize: 20,
+          pageSizeOptions: [10, 20, 50, 100],
+        }}
       />
 
       <Modal
@@ -265,7 +375,6 @@ const EventManagement: React.FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          className={styles.modal}
         >
           {selectedEvent && (
             <>
@@ -297,7 +406,7 @@ const EventManagement: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 

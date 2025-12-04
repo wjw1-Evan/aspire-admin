@@ -35,6 +35,188 @@
   - 复用较高的表单、列表操作栏等拆分为独立组件放在 `src/components/`，避免在页面中堆积过多逻辑。
   - UI 组件不直接调用后端 services，由页面或 hooks 层处理数据与副作用。
 
+### 3.1 页面风格统一规范
+
+> **强制要求**：所有列表/管理页面必须遵循以下统一风格，确保整个平台视觉和交互一致性。
+
+#### 3.1.1 页面容器规范
+
+- **PageContainer 设置**：
+  ```tsx
+  <PageContainer style={{ paddingBlock: 12 }}>
+    {/* 页面内容 */}
+  </PageContainer>
+  ```
+  - 统一使用 `paddingBlock: 12`，保持上下内边距一致
+  - 禁止使用自定义 `padding` 或 `margin` 覆盖默认样式
+
+#### 3.1.2 统计卡片区域规范
+
+- **必须使用 StatCard 组件**：
+  - 所有管理页面（任务管理、用户管理、IoT 平台子页面等）必须在页面顶部显示统计卡片
+  - 使用统一的 `StatCard` 组件（位于 `src/components/StatCard.tsx`）
+  
+- **布局规范**：
+  ```tsx
+  <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+    <Row gutter={[12, 12]}>
+      <Col xs={24} sm={12} md={6}>
+        <StatCard
+          title="统计项标题"
+          value={statistics.value}
+          icon={<IconComponent />}
+          color="#1890ff"
+        />
+      </Col>
+      {/* 更多统计卡片 */}
+    </Row>
+  </Card>
+  ```
+  - 使用 `Card` 包裹统计区域，设置 `marginBottom: 16`、`borderRadius: 12`
+  - `Row` 的 `gutter` 固定为 `[12, 12]`
+  - 每个统计卡片使用 `Col`，响应式断点：`xs={24} sm={12} md={6}`（移动端单列，平板两列，桌面四列）
+
+- **StatCard 组件特性**：
+  - 图标在左，数值和标题在右垂直排列
+  - 卡片内边距：`10px 12px`
+  - 图标尺寸：`20px`，数值字号：`20px`，标题字号：`12px`
+  - 数值和标题右对齐
+
+#### 3.1.3 表格组件规范
+
+- **统一使用 ProTable**：
+  - 所有列表页面必须使用 `ProTable`（`@ant-design/pro-components`），禁止使用普通 `Table`
+  - ProTable 提供统一的搜索、排序、分页、工具栏等功能
+
+- **ProTable 标准配置**：
+  ```tsx
+  <ProTable<T>
+    actionRef={actionRef}
+    columns={columns}
+    request={fetchData}
+    rowKey="id"
+    search={false} // 或配置搜索表单
+    toolbar={{
+      actions: [
+        <Button key="create" type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+          新建
+        </Button>,
+        <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>
+          刷新
+        </Button>,
+      ],
+    }}
+    pagination={{
+      pageSize: 20,
+      pageSizeOptions: [10, 20, 50, 100],
+    }}
+  />
+  ```
+
+- **工具栏规范**：
+  - 使用 ProTable 的 `toolbar.actions` 配置操作按钮
+  - 主要操作按钮（如"新建"）使用 `type="primary"`
+  - 刷新按钮使用 `icon={<ReloadOutlined />}`
+  - 按钮之间保持适当间距
+
+#### 3.1.4 操作列规范
+
+- **操作按钮样式**：
+  ```tsx
+  {
+    title: '操作',
+    key: 'action',
+    width: 150,
+    fixed: 'right',
+    render: (_, record) => (
+      <Space size="small">
+        <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)} />
+        <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+        <Popconfirm
+          title="确认删除"
+          description="确定要删除此项吗？"
+          onConfirm={() => handleDelete(record.id)}
+          okText="确定"
+          cancelText="取消"
+        >
+          <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+        </Popconfirm>
+      </Space>
+    ),
+  }
+  ```
+  - 操作列固定宽度 `150px`，固定在右侧（`fixed: 'right'`）
+  - 使用 `Button type="text" size="small"` 保持按钮样式一致
+  - 删除操作必须使用 `Popconfirm` 确认，并设置 `danger` 属性
+
+#### 3.1.5 页面间距规范
+
+- **统一间距标准**：
+  - `PageContainer` 上下内边距：`12px`
+  - 统计卡片区域与表格之间：`16px`（通过 Card 的 `marginBottom: 16` 实现）
+  - 卡片内部元素间距：使用 `gutter={[12, 12]}` 控制
+  - 避免使用过大的 `margin` 或 `padding`，保持紧凑但可读的布局
+
+#### 3.1.6 禁止使用的样式
+
+- **禁止自定义样式类**：
+  - 禁止在页面组件中使用自定义 CSS 类（如 `styles.table`、`styles.toolbar` 等）
+  - 统一使用 Ant Design 和 ProComponents 提供的标准组件和样式
+  - 如需自定义样式，应通过组件的 `style` 属性或 Ant Design 的 `theme` 配置实现
+
+- **禁止使用普通 Table**：
+  - 列表页面禁止使用 `Table` 组件，必须使用 `ProTable`
+  - ProTable 提供更好的功能集成和统一的用户体验
+
+#### 3.1.7 参考实现
+
+- **标准页面结构示例**：
+  ```tsx
+  import { PageContainer, ProTable } from '@ant-design/pro-components';
+  import { Card, Row, Col, Button, Space } from 'antd';
+  import { StatCard } from '@/components';
+  import type { ActionType, ProColumns } from '@ant-design/pro-components';
+
+  const ManagementPage: React.FC = () => {
+    const actionRef = useRef<ActionType>();
+
+    return (
+      <PageContainer style={{ paddingBlock: 12 }}>
+        {/* 统计卡片区域 */}
+        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+          <Row gutter={[12, 12]}>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard title="总数" value={100} icon={<Icon />} color="#1890ff" />
+            </Col>
+            {/* 更多统计卡片 */}
+          </Row>
+        </Card>
+
+        {/* 数据表格 */}
+        <ProTable
+          actionRef={actionRef}
+          columns={columns}
+          request={fetchData}
+          rowKey="id"
+          toolbar={{
+            actions: [
+              <Button key="create" type="primary" icon={<PlusOutlined />}>新建</Button>,
+              <Button key="refresh" icon={<ReloadOutlined />}>刷新</Button>,
+            ],
+          }}
+        />
+      </PageContainer>
+    );
+  };
+  ```
+
+- **已统一风格的页面**：
+  - ✅ 任务管理（`src/pages/task-management/index.tsx`）
+  - ✅ 用户管理（`src/pages/user-management/index.tsx`）
+  - ✅ IoT 平台概览（`src/pages/iot-platform/index.tsx`）
+  - ✅ 网关管理（`src/pages/iot-platform/components/GatewayManagement.tsx`）
+  - ⚠️ 待统一：设备管理、数据点管理、事件管理（需要按此规范重构）
+
 ### 4. Hooks 与状态管理
 
 - **优先使用 hooks 而非全局状态**：
@@ -58,6 +240,7 @@
   - 页面结构使用 ProComponents/Ant Design 提供的标准骨架，处理好 loading/错误；
   - 路由/菜单配置与多语言菜单文件必须同步维护；
   - 不再依赖隐藏按钮实现权限，权限控制以后端为准。
+  - **页面风格统一**：所有列表/管理页面必须使用 `ProTable`、`StatCard` 统计卡片、统一的 `PageContainer` 间距和布局规范（详见 3.1 节）。
 - 详细约定与示例请以本文件为准。
 
 

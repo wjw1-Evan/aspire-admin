@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { ProTable } from '@ant-design/pro-components';
 import {
-  Table,
   Button,
   Modal,
   Form,
@@ -12,6 +13,9 @@ import {
   Drawer,
   Tag,
   Popconfirm,
+  Card,
+  Row,
+  Col,
 } from 'antd';
 import {
   PlusOutlined,
@@ -19,34 +23,80 @@ import {
   DeleteOutlined,
   EyeOutlined,
   ReloadOutlined,
+  CloudServerOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { iotService, IoTGateway, GatewayStatistics } from '@/services/iotService';
-import styles from '../index.less';
+import { StatCard } from '@/components';
 
 const GatewayManagement: React.FC = () => {
-  const [gateways, setGateways] = useState<IoTGateway[]>([]);
-  const [loading, setLoading] = useState(false);
+  const actionRef = useRef<ActionType>();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedGateway, setSelectedGateway] = useState<IoTGateway | null>(null);
   const [statistics, setStatistics] = useState<GatewayStatistics | null>(null);
   const [form] = Form.useForm();
+  const [overviewStats, setOverviewStats] = useState({
+    total: 0,
+    online: 0,
+    offline: 0,
+    fault: 0,
+  });
 
-  useEffect(() => {
-    loadGateways();
-  }, []);
-
-  const loadGateways = async () => {
+  // 获取概览统计
+  const fetchOverviewStats = async () => {
     try {
-      setLoading(true);
-      const response = await iotService.getGateways();
-      if (response.success) {
-        setGateways(response.data);
+      const response = await iotService.getGateways(1, 1);
+      if (response.success && response.data) {
+        // 获取所有网关用于统计
+        const allResponse = await iotService.getGateways(1, 1000);
+        if (allResponse.success && allResponse.data) {
+          const list = Array.isArray(allResponse.data.list) ? allResponse.data.list : [];
+          setOverviewStats({
+            total: list.length,
+            online: list.filter((g: IoTGateway) => g.status === 'Online').length,
+            offline: list.filter((g: IoTGateway) => g.status === 'Offline').length,
+            fault: list.filter((g: IoTGateway) => g.status === 'Fault').length,
+          });
+        }
       }
     } catch (error) {
+      console.error('获取统计信息失败:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOverviewStats();
+  }, []);
+
+  // 获取网关列表（用于 ProTable）
+  const fetchGateways = async (params: any) => {
+    try {
+      const response = await iotService.getGateways(params.current || 1, params.pageSize || 20);
+      if (response.success && response.data) {
+        const data = response.data;
+        const list = Array.isArray(data.list) ? data.list : [];
+        return {
+          data: list,
+          success: true,
+          total: data.total || 0,
+        };
+      }
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    } catch (error) {
+      console.error('加载网关列表失败:', error);
       message.error('加载网关列表失败');
-    } finally {
-      setLoading(false);
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
     }
   };
 
@@ -80,7 +130,8 @@ const GatewayManagement: React.FC = () => {
       const response = await iotService.deleteGateway(id);
       if (response.success) {
         message.success('删除成功');
-        loadGateways();
+        actionRef.current?.reload();
+        fetchOverviewStats();
       }
     } catch (error) {
       message.error('删除失败');
@@ -101,7 +152,8 @@ const GatewayManagement: React.FC = () => {
         }
       }
       setIsModalVisible(false);
-      loadGateways();
+      actionRef.current?.reload();
+      fetchOverviewStats();
     } catch (error) {
       message.error('操作失败');
     }
@@ -118,7 +170,7 @@ const GatewayManagement: React.FC = () => {
     return <Tag color={config.color}>{config.label}</Tag>;
   };
 
-  const columns = [
+  const columns: ProColumns<IoTGateway>[] = [
     {
       title: '网关名称',
       dataIndex: 'title',
@@ -136,12 +188,7 @@ const GatewayManagement: React.FC = () => {
       dataIndex: 'address',
       key: 'address',
       width: 150,
-    },
-    {
-      title: '端口',
-      dataIndex: 'port',
-      key: 'port',
-      width: 80,
+      render: (_, record) => `${record.address}:${record.port}`,
     },
     {
       title: '状态',
@@ -155,7 +202,7 @@ const GatewayManagement: React.FC = () => {
       dataIndex: 'deviceCount',
       key: 'deviceCount',
       width: 80,
-      align: 'center' as const,
+      align: 'center',
     },
     {
       title: '启用',
@@ -170,7 +217,7 @@ const GatewayManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       width: 150,
-      fixed: 'right' as const,
+      fixed: 'right',
       render: (_: any, record: IoTGateway) => (
         <Space size="small">
           <Button
@@ -200,26 +247,78 @@ const GatewayManagement: React.FC = () => {
   ];
 
   return (
-    <div className={styles.gatewayManagement}>
-      <div className={styles.toolbar}>
-        <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            新建网关
-          </Button>
-          <Button icon={<ReloadOutlined />} onClick={loadGateways} loading={loading}>
-            刷新
-          </Button>
-        </Space>
-      </div>
+    <>
+      {/* 统计卡片：与其他页面保持一致的紧凑横向布局 */}
+      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Row gutter={[12, 12]}>
+          <Col xs={24} sm={12} md={6}>
+            <StatCard
+              title="网关总数"
+              value={overviewStats.total}
+              icon={<CloudServerOutlined />}
+              color="#1890ff"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <StatCard
+              title="在线网关"
+              value={overviewStats.online}
+              icon={<CheckCircleOutlined />}
+              color="#52c41a"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <StatCard
+              title="离线网关"
+              value={overviewStats.offline}
+              icon={<CloseCircleOutlined />}
+              color="#8c8c8c"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <StatCard
+              title="故障网关"
+              value={overviewStats.fault}
+              icon={<ExclamationCircleOutlined />}
+              color="#ff4d4f"
+            />
+          </Col>
+        </Row>
+      </Card>
 
-      <Table
-        className={styles.table}
+      {/* 网关列表表格 */}
+      <ProTable<IoTGateway>
+        actionRef={actionRef}
         columns={columns}
-        dataSource={gateways}
-        loading={loading}
+        request={fetchGateways}
         rowKey="id"
-        pagination={{ pageSize: 20 }}
-        scroll={{ x: 1200 }}
+        search={false}
+        toolbar={{
+          actions: [
+            <Button
+              key="create"
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleAdd}
+            >
+              新建网关
+            </Button>,
+            <Button
+              key="refresh"
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                actionRef.current?.reload();
+                fetchOverviewStats();
+              }}
+            >
+              刷新
+            </Button>,
+          ],
+        }}
+        pagination={{
+          pageSize: 20,
+          pageSizeOptions: [10, 20, 50, 100],
+        }}
       />
 
       <Modal
@@ -233,7 +332,6 @@ const GatewayManagement: React.FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          className={styles.modal}
         >
           <Form.Item
             label="网关名称"
@@ -353,7 +451,7 @@ const GatewayManagement: React.FC = () => {
           </div>
         )}
       </Drawer>
-    </div>
+    </>
   );
 };
 

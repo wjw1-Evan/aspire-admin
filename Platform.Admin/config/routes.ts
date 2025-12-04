@@ -111,6 +111,26 @@ export default [
     component: './iot-platform',
     hideInMenu: true,
   },
+  {
+    path: '/iot-platform/gateway-management',
+    component: './iot-platform/gateway-management',
+    hideInMenu: true,
+  },
+  {
+    path: '/iot-platform/device-management',
+    component: './iot-platform/device-management',
+    hideInMenu: true,
+  },
+  {
+    path: '/iot-platform/datapoint-management',
+    component: './iot-platform/datapoint-management',
+    hideInMenu: true,
+  },
+  {
+    path: '/iot-platform/event-management',
+    component: './iot-platform/event-management',
+    hideInMenu: true,
+  },
 
   // 默认重定向和404
   {

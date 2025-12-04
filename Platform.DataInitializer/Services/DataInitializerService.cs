@@ -138,12 +138,24 @@ public class DataInitializerService : IDataInitializerService
                 if (existingMenu == null)
                 {
                     await menus.InsertOneAsync(menu);
-                    _logger.LogInformation("✅ 创建菜单: {Name} ({Title})", menu.Name, menu.Title);
-                    createdCount++;
-                    if (!string.IsNullOrEmpty(menu.Id))
+                    // MongoDB 插入后，如果 Id 为空，从插入结果中获取
+                    if (string.IsNullOrEmpty(menu.Id))
+                    {
+                        // 重新查询获取插入后的菜单（包含 MongoDB 生成的 Id）
+                        var insertedMenu = await menus.Find(m => m.Name == menu.Name && !m.IsDeleted)
+                            .FirstOrDefaultAsync();
+                        if (insertedMenu != null && !string.IsNullOrEmpty(insertedMenu.Id))
+                        {
+                            menu.Id = insertedMenu.Id;
+                            parentMenuIdMap[menu.Name] = insertedMenu.Id;
+                        }
+                    }
+                    else
                     {
                         parentMenuIdMap[menu.Name] = menu.Id;
                     }
+                    _logger.LogInformation("✅ 创建菜单: {Name} ({Title})", menu.Name, menu.Title);
+                    createdCount++;
                 }
                 else
                 {
@@ -163,16 +175,21 @@ public class DataInitializerService : IDataInitializerService
             {
                 // 根据 ParentId 的名称查找父菜单的实际 ID
                 var parentMenuName = GetParentMenuNameByChildName(menu.Name);
-                if (!string.IsNullOrEmpty(parentMenuName) && parentMenuIdMap.TryGetValue(parentMenuName, out var parentId))
+                if (string.IsNullOrEmpty(parentMenuName))
                 {
-                    menu.ParentId = parentId;
+                    _logger.LogWarning("⚠️  无法确定子菜单 {Name} 的父菜单，跳过", menu.Name);
+                    skippedCount++;
+                    continue;
                 }
-                else if (!string.IsNullOrEmpty(parentMenuName))
+
+                if (!parentMenuIdMap.TryGetValue(parentMenuName, out var parentId) || string.IsNullOrEmpty(parentId))
                 {
                     _logger.LogWarning("⚠️  未找到父菜单: {ParentName}，跳过子菜单: {Name}", parentMenuName, menu.Name);
                     skippedCount++;
                     continue;
                 }
+
+                menu.ParentId = parentId;
 
                 var existingMenu = await menus.Find(m => m.Name == menu.Name && !m.IsDeleted)
                     .FirstOrDefaultAsync();
@@ -180,12 +197,36 @@ public class DataInitializerService : IDataInitializerService
                 if (existingMenu == null)
                 {
                     await menus.InsertOneAsync(menu);
-                    _logger.LogInformation("✅ 创建菜单: {Name} ({Title})", menu.Name, menu.Title);
+                    // MongoDB 插入后，如果 Id 为空，从插入结果中获取
+                    if (string.IsNullOrEmpty(menu.Id))
+                    {
+                        var insertedMenu = await menus.Find(m => m.Name == menu.Name && !m.IsDeleted)
+                            .FirstOrDefaultAsync();
+                        if (insertedMenu != null)
+                        {
+                            menu.Id = insertedMenu.Id;
+                        }
+                    }
+                    _logger.LogInformation("✅ 创建菜单: {Name} ({Title})，父菜单: {ParentName}", menu.Name, menu.Title, parentMenuName);
                     createdCount++;
                 }
                 else
                 {
-                    _logger.LogDebug("⏭️  菜单已存在: {Name} ({Title})", menu.Name, menu.Title);
+                    // 检查并更新已存在菜单的 ParentId（如果不同）
+                    if (existingMenu.ParentId != parentId)
+                    {
+                        var update = Builders<Menu>.Update
+                            .Set(m => m.ParentId, parentId)
+                            .Set(m => m.UpdatedAt, DateTime.UtcNow);
+                        await menus.UpdateOneAsync(
+                            Builders<Menu>.Filter.Eq(m => m.Id, existingMenu.Id),
+                            update);
+                        _logger.LogInformation("🔄 更新菜单 ParentId: {Name} ({Title})，父菜单: {ParentName}", menu.Name, menu.Title, parentMenuName);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("⏭️  菜单已存在: {Name} ({Title})", menu.Name, menu.Title);
+                    }
                     skippedCount++;
                 }
             }
@@ -334,6 +375,71 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
         
+        // IoT 平台子菜单
+        menus.Add(new Menu
+        {
+            Name = "iot-platform-gateway",
+            Title = "网关管理",
+            Path = "/iot-platform/gateway-management",
+            Component = "./iot-platform/gateway-management",
+            Icon = "cloud-server",
+            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "iot:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        menus.Add(new Menu
+        {
+            Name = "iot-platform-device",
+            Title = "设备管理",
+            Path = "/iot-platform/device-management",
+            Component = "./iot-platform/device-management",
+            Icon = "desktop",
+            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "iot:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        menus.Add(new Menu
+        {
+            Name = "iot-platform-datapoint",
+            Title = "数据点管理",
+            Path = "/iot-platform/datapoint-management",
+            Component = "./iot-platform/datapoint-management",
+            Icon = "database",
+            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 3,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "iot:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        menus.Add(new Menu
+        {
+            Name = "iot-platform-event",
+            Title = "事件告警",
+            Path = "/iot-platform/event-management",
+            Component = "./iot-platform/event-management",
+            Icon = "alert",
+            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 4,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "iot:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
         return menus;
     }
     
@@ -343,13 +449,18 @@ public class DataInitializerService : IDataInitializerService
     private string? GetParentMenuNameByChildName(string childMenuName)
     {
         // 根据子菜单名称返回父菜单名称
-        // 当前所有子菜单都属于 "system"
         return childMenuName switch
         {
+            // 系统管理子菜单
             "user-management" => "system",
             "role-management" => "system",
             "company-management" => "system",
             "my-activity" => "system",
+            // IoT 平台子菜单
+            "iot-platform-gateway" => "iot-platform",
+            "iot-platform-device" => "iot-platform",
+            "iot-platform-datapoint" => "iot-platform",
+            "iot-platform-event" => "iot-platform",
             _ => null
         };
     }

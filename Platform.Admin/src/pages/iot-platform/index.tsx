@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Card, Row, Col, Button, Space, message, Spin } from 'antd';
+import { PageContainer } from '@ant-design/pro-components';
+import { Card, Row, Col, Button, Space, message, Spin } from 'antd';
 import {
   CloudServerOutlined,
   DatabaseOutlined,
@@ -7,16 +8,10 @@ import {
   DesktopOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import GatewayManagement from './components/GatewayManagement';
-import DeviceManagement from './components/DeviceManagement';
-import DataPointManagement from './components/DataPointManagement';
-import EventManagement from './components/EventManagement';
 import { iotService } from '@/services/iotService';
-import styles from './index.less';
 import { StatCard } from '@/components';
 
 const IoTPlatform: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [statistics, setStatistics] = useState<any>(null);
 
@@ -46,13 +41,26 @@ const IoTPlatform: React.FC = () => {
     message.success('数据已刷新');
   };
 
-  const items = [
-    {
-      key: 'overview',
-      label: '概览',
-      children: (
+  return (
+    <PageContainer style={{ paddingBlock: 12 }}>
+      <Card
+        title="物联网平台概览"
+        extra={
+          <Space>
+            <Button
+              type="primary"
+              icon={<ReloadOutlined />}
+              onClick={handleRefresh}
+              loading={loading}
+            >
+              刷新
+            </Button>
+          </Space>
+        }
+        style={{ marginBottom: 16 }}
+      >
         <Spin spinning={loading}>
-          <div className={styles.overviewContainer}>
+          <div style={{ padding: '20px 0' }}>
             <Row gutter={[12, 12]}>
               <Col xs={24} sm={12} md={6}>
                 <StatCard
@@ -124,50 +132,8 @@ const IoTPlatform: React.FC = () => {
             </Row>
           </div>
         </Spin>
-      ),
-    },
-    {
-      key: 'gateways',
-      label: '网关管理',
-      children: <GatewayManagement />,
-    },
-    {
-      key: 'devices',
-      label: '设备管理',
-      children: <DeviceManagement />,
-    },
-    {
-      key: 'datapoints',
-      label: '数据点管理',
-      children: <DataPointManagement />,
-    },
-    {
-      key: 'events',
-      label: '事件告警',
-      children: <EventManagement />,
-    },
-  ];
-
-  return (
-    <div className={styles.iotPlatform}>
-      <Card
-        title="物联网接入平台"
-        extra={
-          <Space>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined />}
-              onClick={handleRefresh}
-              loading={loading}
-            >
-              刷新
-            </Button>
-          </Space>
-        }
-      >
-        <Tabs items={items} activeKey={activeTab} onChange={setActiveTab} />
       </Card>
-    </div>
+    </PageContainer>
   );
 };
 

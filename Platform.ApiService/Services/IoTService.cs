@@ -76,14 +76,14 @@ public class IoTService : IIoTService
     /// </summary>
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
-    /// <returns>网关列表</returns>
-    public async Task<List<IoTGateway>> GetGatewaysAsync(int pageIndex = 1, int pageSize = 20)
+    /// <returns>网关列表和总数</returns>
+    public async Task<(List<IoTGateway> Items, long Total)> GetGatewaysAsync(int pageIndex = 1, int pageSize = 20)
     {
         var filter = Builders<IoTGateway>.Filter.Empty;
         var sort = Builders<IoTGateway>.Sort.Descending(x => x.CreatedAt);
         
-        var (items, _) = await _gatewayFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
-        return items;
+        var (items, total) = await _gatewayFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
+        return (items, total);
     }
 
     /// <summary>
@@ -286,8 +286,8 @@ public class IoTService : IIoTService
     /// <param name="gatewayId">网关ID（可选）</param>
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
-    /// <returns>设备列表</returns>
-    public async Task<List<IoTDevice>> GetDevicesAsync(string? gatewayId = null, int pageIndex = 1, int pageSize = 20)
+    /// <returns>设备列表和总数</returns>
+    public async Task<(List<IoTDevice> Items, long Total)> GetDevicesAsync(string? gatewayId = null, int pageIndex = 1, int pageSize = 20)
     {
         var filter = string.IsNullOrEmpty(gatewayId) 
             ? Builders<IoTDevice>.Filter.Empty 
@@ -295,8 +295,8 @@ public class IoTService : IIoTService
 
         var sort = Builders<IoTDevice>.Sort.Descending(x => x.CreatedAt);
         
-        var (items, _) = await _deviceFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
-        return items;
+        var (items, total) = await _deviceFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
+        return (items, total);
     }
 
     /// <summary>
@@ -572,8 +572,8 @@ public class IoTService : IIoTService
     /// <param name="deviceId">设备ID（可选）</param>
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
-    /// <returns>数据点列表</returns>
-    public async Task<List<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, int pageIndex = 1, int pageSize = 20)
+    /// <returns>数据点列表和总数</returns>
+    public async Task<(List<IoTDataPoint> Items, long Total)> GetDataPointsAsync(string? deviceId = null, int pageIndex = 1, int pageSize = 20)
     {
         var filter = string.IsNullOrEmpty(deviceId) 
             ? Builders<IoTDataPoint>.Filter.Empty 
@@ -581,8 +581,8 @@ public class IoTService : IIoTService
 
         var sort = Builders<IoTDataPoint>.Sort.Descending(x => x.CreatedAt);
         
-        var (items, _) = await _dataPointFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
-        return items;
+        var (items, total) = await _dataPointFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
+        return (items, total);
     }
 
     /// <summary>

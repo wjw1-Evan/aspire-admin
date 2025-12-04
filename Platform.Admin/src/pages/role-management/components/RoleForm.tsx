@@ -88,6 +88,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
 
   /**
    * 加载角色的菜单权限
+   * 只加载角色实际拥有的菜单ID，不包含新添加的菜单
    */
   const loadRoleMenus = useCallback(async () => {
     if (!current?.id) return;
@@ -95,12 +96,26 @@ const RoleForm: React.FC<RoleFormProps> = ({
     try {
       const permissionResponse = await getRoleMenus(current.id);
       if (permissionResponse.success && permissionResponse.data) {
+        // 确保只设置角色实际拥有的菜单ID（后端应该只返回角色已有的菜单ID）
+        // 过滤掉空值和无效值，确保数据安全
+        const validMenuIds = (permissionResponse.data || [])
+          .filter((id): id is string => Boolean(id && typeof id === 'string'));
+        
         form.setFieldsValue({
-          menuIds: permissionResponse.data,
+          menuIds: validMenuIds,
+        });
+      } else {
+        // 如果后端返回失败或没有数据，确保菜单ID为空数组
+        form.setFieldsValue({
+          menuIds: [],
         });
       }
     } catch (error) {
       console.error('Failed to load role menus:', error);
+      // 出错时也确保菜单ID为空数组，避免显示错误数据
+      form.setFieldsValue({
+        menuIds: [],
+      });
     }
   }, [current, form]);
 
@@ -125,30 +140,31 @@ const RoleForm: React.FC<RoleFormProps> = ({
     if (!visible) {
       // Modal 关闭时重置表单
       form.resetFields();
+      setExpandedKeys([]);
       return;
     }
 
     // Modal 打开时初始化表单
     // 先重置表单，清除之前的状态
     form.resetFields();
-    form.setFieldsValue({
-      menuIds: [],
-      isActive: true,
-    });
     
+    // 先加载菜单树
     loadMenuTree();
     
     if (current) {
       // 编辑模式：设置基本字段，然后异步加载角色的菜单权限
+      // 重要：menuIds 先设置为空数组，只加载角色实际拥有的菜单权限
+      // 新添加的菜单不会自动选中，需要用户手动选择
       form.setFieldsValue({
         name: current.name,
         description: current.description,
         isActive: current.isActive,
-        menuIds: [], // 先设置为空数组，等待 loadRoleMenus 加载
+        menuIds: [], // 先设置为空数组，等待 loadRoleMenus 加载角色实际拥有的菜单
       });
+      // 异步加载角色已有的菜单权限（不包含新添加的菜单）
       loadRoleMenus();
     } else {
-      // 新建模式：确保所有字段都是初始值
+      // 新建模式：确保所有字段都是初始值，菜单ID为空数组
       form.setFieldsValue({
         menuIds: [],
         isActive: true,

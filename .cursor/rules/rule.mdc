@@ -23,11 +23,12 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
 - **企业上下文**：通过 `ITenantContext.GetCurrentCompanyIdAsync()` 获取当前企业ID
 
 ### 2. 权限控制模型
-- **菜单级权限**：使用 `[RequireMenu("menu-name")]` 声明访问权限
-- **角色权限**：角色仅包含 `MenuIds`，获得菜单即具备对应 API 访问权限
+- **菜单级权限**：使用 `[RequireMenu("menu-name")]` 声明访问权限，特性位于 `Platform.ApiService.Attributes.RequireMenuAttribute`，实现 `IAsyncAuthorizationFilter` 接口
+- **权限验证流程**：`RequireMenuAttribute` 从 JWT token 读取 `userId`，通过 DI 获取 `IMenuAccessService`，调用 `HasMenuAccessAsync(userId, MenuName)` 判断权限，返回 401/403 或放行
+- **角色权限**：角色仅包含 `MenuIds`，获得菜单即具备对应 API 访问权限。权限判定通过 `IMenuAccessService` 查询用户在当前企业下的角色，合并角色的菜单集合，判断目标菜单是否在集合中
 - **前端不隐藏**：前端不再隐藏按钮，真实权限由后端控制
-- **权限验证**：所有敏感操作需要权限验证
-- **统一实现**：权限校验统一使用 `Platform.ApiService.Attributes.RequireMenuAttribute`，禁止使用旧的 `RequirePermission` 风格自定义检查
+- **权限验证**：所有敏感操作需要权限验证，在控制器类或方法上使用 `[RequireMenu("menu-name")]` 特性
+- **统一实现**：权限校验统一使用 `Platform.ApiService.Attributes.RequireMenuAttribute`，禁止使用旧的 `RequirePermission` 风格自定义检查，禁止使用 `BaseApiController` 中的 `HasPermission()` / `RequirePermission()` 方法
 
 > 菜单级权限、角色与菜单关系、前后端约定等详细规范，见 `docs/features/MENU-LEVEL-PERMISSION-GUIDE.md`。
 
@@ -42,19 +43,22 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
 
 ## 中间件与审计日志规范（总纲）
 
-- **统一响应中间件**：所有 HTTP API 必须启用 `ResponseFormattingMiddleware`，统一输出 `success` / `data` / `timestamp` 格式，仅对健康检查、OpenAPI、SignalR Hub 等特殊路径白名单跳过。
-- **活动日志中间件**：必须启用 `ActivityLogMiddleware` 并通过 `IUserActivityLogService` 记录 HTTP 访问日志，禁止在业务代码中手写重复的访问审计逻辑。
-- **租户上下文唯一入口**：除 `userId` 外，企业信息、角色与权限一律通过 `ITenantContext`（如 `GetCurrentCompanyIdAsync`、`IsAdminAsync`、`HasPermissionAsync` 等）从数据库获取，禁止直接从 JWT 读取这些字段。
-- **审计字段自动维护**：创建、更新、软删除操作必须通过 `IDatabaseOperationFactory<T>` 完成，由工厂统一设置 `CreatedAt` / `UpdatedAt` / `IsDeleted` / `DeletedAt` / `CreatedBy` / `UpdatedBy` 等字段。
+- **统一响应中间件**：所有 HTTP API 必须启用 `ResponseFormattingMiddleware`，统一输出 `success` / `data` / `timestamp` 格式，仅对健康检查（`/health*`）、OpenAPI（`/openapi*`、`/scalar*`）、SignalR Hub（`/hubs/*`）等特殊路径白名单跳过。中间件会将格式化后的响应体存入 `HttpContext.Items["__FormattedResponseBody"]` 供活动日志中间件读取。
+- **活动日志中间件**：必须启用 `ActivityLogMiddleware` 并通过 `IUserActivityLogService` 记录 HTTP 访问日志，禁止在业务代码中手写重复的访问审计逻辑。中间件注册顺序：在认证之后（可获取用户信息），在响应格式化之前；但会从 `ResponseFormattingMiddleware` 写入的 `HttpContext.Items` 读取响应体。
+- **中间件注册顺序**（`Program.cs`）：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。
+- **租户上下文唯一入口**：除 `userId` 外（从 JWT token 的 `userId` claim 读取），企业信息、角色与权限一律通过 `ITenantContext`（位于 `Platform.ServiceDefaults.Services`）从数据库获取，禁止直接从 JWT 读取这些字段。`ITenantContext` 提供的方法：`GetCurrentUserId()`（同步，从 JWT 读取）、`GetCurrentUsernameAsync()`、`GetCurrentCompanyIdAsync()`、`GetCurrentCompanyNameAsync()`、`IsAdminAsync()`、`HasPermissionAsync(string permission)`、`GetUserPermissionsAsync()`。实现类 `TenantContext` 通过查询 `appusers`、`companies`、`user_companies`、`roles`、`menus` 集合获取用户完整信息。
+- **审计字段自动维护**：创建、更新、软删除操作必须通过 `IDatabaseOperationFactory<T>` 完成，由工厂统一设置 `CreatedAt` / `UpdatedAt` / `IsDeleted` / `DeletedAt` / `CreatedBy` / `UpdatedBy` / `CreatedByUsername` / `UpdatedByUsername` 等字段。
+- **JSON 序列化配置**：后端统一使用 camelCase 命名策略（`JsonNamingPolicy.CamelCase`），枚举序列化为 camelCase 字符串（`JsonStringEnumConverter`），忽略 null 字段（`DefaultIgnoreCondition.WhenWritingNull`）。
 
 > 本节仅为硬性规则摘要，详细说明与示例请参考 `docs/features/BACKEND-RULES.md`。
 
 ## 后端开发规范
 
-- **控制器**：所有业务控制器必须继承 `BaseApiController`，通过依赖注入调用服务层，不直接访问 MongoDB。
-- **服务层**：服务只依赖 `IDatabaseOperationFactory<T>` 和 `ITenantContext`，使用 Filter/Sort/Update Builder 完成查询与更新。
-- **实体设计**：业务实体实现 `IEntity`、`ISoftDeletable`、`ITimestamped`，多租户实体额外实现 `IMultiTenant` 或继承 `MultiTenantEntity`。
-- **错误处理与验证**：统一使用 `ApiResponse<T>` + `BaseApiController` 提供的辅助方法处理错误，并通过 DataAnnotations 完成输入验证。
+- **控制器**：所有业务控制器必须继承 `BaseApiController`（位于 `Platform.ServiceDefaults.Controllers`），通过依赖注入调用服务层，不直接访问 MongoDB。控制器通过基类的 `Success<T>()`、`SuccessPaged<T>()`、`Error()`、`ValidationError()` 等方法构造统一响应。
+- **权限检查**：优先使用 `[RequireMenu("menu-name")]` 特性进行权限验证，禁止使用 `BaseApiController` 中的 `HasPermission()` / `RequirePermission()` 方法（这些方法已废弃，仅用于兼容旧代码）。
+- **服务层**：服务只依赖 `IDatabaseOperationFactory<T>` 和 `ITenantContext`，使用 Filter/Sort/Update Builder 完成查询与更新。服务注册通过 `AddDatabaseFactory()` 扩展方法统一注册泛型工厂。
+- **实体设计**：业务实体实现 `IEntity`、`ISoftDeletable`、`ITimestamped`，多租户实体额外实现 `IMultiTenant` 或继承 `MultiTenantEntity`。实体基类 `BaseEntity`（位于 `Platform.ServiceDefaults.Models`）已包含所有审计字段（`Id`、`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`DeletedReason`、`CreatedBy`、`CreatedByUsername`、`UpdatedBy`、`UpdatedByUsername`）。`MultiTenantEntity` 继承 `BaseEntity` 并实现 `IMultiTenant`，包含 `CompanyId` 字段。
+- **错误处理与验证**：统一使用 `ApiResponse<T>` + `BaseApiController` 提供的辅助方法处理错误，并通过 DataAnnotations 完成输入验证。控制器中通过 `CheckModelState()` 方法验证模型状态。
 
 > 详细的后端模式（控制器/服务/实体）、错误处理与验证示例，见 `docs/features/BACKEND-RULES.md` 与 `docs/features/API-RESPONSE-RULES.md`。
 
@@ -62,12 +66,11 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
 
 ### 硬规则摘要
 
-- **路由与菜单**：统一使用 `config/routes.ts` 管理路由与菜单元数据，所有语言的菜单文案在 `src/locales/*/menu.ts` 中维护并保持同步。
-- **服务层**：所有 HTTP 调用必须通过 `src/services` + `@umijs/max` 的 `request` 完成，组件中禁止直接 `fetch`。
-- **页面结构**：列表/表单页面应使用 Ant Design Pro/Ant Design 提供的标准骨架，并正确处理 loading 和错误状态。
-- **状态管理**：优先使用 hooks（`useRequest`、`useModel` 等），避免不必要的全局状态工具。
-- **状态类型定义**：使用 `useState` 定义包含多个字段的状态对象时，必须完整定义所有可能使用的字段类型。对于可选字段，明确标注为 `T | undefined`，禁止省略字段定义，避免后续访问时出现类型错误。
-- **权限联动**：前端不再以隐藏按钮/菜单实现权限控制，只负责展示；真实权限以后端菜单级校验为准。
+- **路由与菜单**：业务菜单从数据库动态加载（通过 `app.tsx` 的 `menuDataRender` 渲染），静态路由仅保留认证相关（登录、注册）和隐藏页面（个人中心、修改密码）。所有语言的菜单文案在 `src/locales/*/menu.ts` 中维护并保持同步，菜单 key 与后端菜单标识保持一致。
+- **服务层**：所有 HTTP 调用必须通过 `src/services` + `@umijs/max` 的 `request` 完成，组件中禁止直接 `fetch`。服务方法返回类型统一为 `request<{ success: boolean; data: T }>`，与后端 `ApiResponse<T>` 格式对应。
+- **页面结构**：列表/表单页面应使用 Ant Design Pro/Ant Design 提供的标准骨架，并正确处理 loading 和错误状态。列表页面统一使用 `ProTable`，禁止使用普通 `Table` 组件。
+- **状态管理**：优先使用 hooks（`useRequest`、`useModel` 等），避免不必要的全局状态工具。使用 `useState` 定义包含多个字段的状态对象时，必须完整定义所有可能使用的字段类型。对于可选字段，明确标注为 `T | undefined`，禁止省略字段定义，避免后续访问时出现类型错误。
+- **权限联动**：前端不再以隐藏按钮/菜单实现权限控制，只负责展示；真实权限以后端菜单级校验为准。前端通过 `access.ts` 配置访问控制，但最终权限验证由后端 `RequireMenuAttribute` 决定。
 
 ### 页面布局与 UI 组件规范
 
@@ -78,9 +81,10 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
   - 数值和标题右对齐，使用 `flex` 布局实现图标与内容的横向排列
   - 卡片之间的间距使用 `gutter={[12, 12]}`，卡片外边距统一为 `16px`
 - **业务统计区域统一规范**：
-  - 任务管理（`task-management`）、用户管理（`user-management`）、IoT 平台概览（`iot-platform`）等页面的顶部统计区必须统一使用 `src/components/StatCard` 组件
-  - 布局使用 `Card + Row + Col + StatCard` 组合，`Row` 的 `gutter` 固定为 `[12, 12]`，`Card` 外层 `marginBottom` 使用 `16`
+  - 任务管理（`task-management`）、用户管理（`user-management`）、IoT 平台概览（`iot-platform`）等页面的顶部统计区必须统一使用 `src/components/StatCard` 组件（位于 `Platform.Admin/src/components/StatCard.tsx`）
+  - 布局使用 `Card + Row + Col + StatCard` 组合，`Row` 的 `gutter` 固定为 `[12, 12]`，`Card` 外层 `marginBottom` 使用 `16`，`borderRadius` 使用 `12`
   - `PageContainer` 统一设置 `style={{ paddingBlock: 12 }}`，与 Welcome 页保持一致的上下留白
+  - 统计卡片响应式布局：`Col` 使用 `xs={24} sm={12} md={6}`（移动端单列，平板两列，桌面四列）
 - **页面整体间距**：
   - `PageContainer` 的上下内边距使用 `paddingBlock: 12`
   - 各卡片之间的间距统一为 `16px`，避免过大的空白
@@ -128,12 +132,14 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
 ### 0. 数据库操作工厂统一定义
 
 - **唯一入口**：所有 MongoDB 实体操作必须通过 `IDatabaseOperationFactory<T>` / `DatabaseOperationFactory<T>` 完成，禁止在服务中直接注入或使用 `IMongoCollection<T>`、`IMongoDatabase`
+- **工厂注册**：在 `Program.cs` 中通过 `services.AddDatabaseFactory()` 扩展方法（位于 `Platform.ServiceDefaults.Extensions.ServiceExtensions`）统一注册 `IAuditService` 和开放泛型的 `IDatabaseOperationFactory<>` / `DatabaseOperationFactory<>`，业务代码通过构造函数注入使用
+- **集合名称约定**：工厂优先使用实体类型上的 `[BsonCollectionName("collectionName")]` 特性指定集合名称，否则使用 `{TypeName}s` 的复数形式（如 `User` → `users`）
 - **多租户与软删除内置**：`DatabaseOperationFactory<T>` 会自动附加当前企业 `CompanyId` 过滤（针对实现 `IMultiTenant` 的实体）以及 `IsDeleted = false` 软删除过滤，调用方无需手动追加
 - **强制原子操作**：创建、更新、删除全部通过 `CreateAsync`、`FindOneAndUpdateAsync`、`FindOneAndSoftDeleteAsync` 等原子方法完成，避免先查后改的竞态条件
-- **统一审计字段**：工厂自动维护 `CreatedAt`、`UpdatedAt`、`IsDeleted` 以及 `CreatedBy`、`UpdatedBy` 等审计字段，业务代码不要手动设置
+- **统一审计字段**：工厂自动维护 `CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt` 以及 `CreatedBy`、`CreatedByUsername`、`UpdatedBy`、`UpdatedByUsername`、`DeletedBy`、`DeletedReason` 等审计字段，业务代码不要手动设置。审计信息通过 `ITenantContext` 获取当前用户信息
 - **跨租户操作**：仅在极少数需要跨企业运维/管理的场景下，才允许使用 `FindWithoutTenantFilterAsync`、`GetByIdWithoutTenantFilterAsync` 等 *WithoutTenantFilter* 方法，且必须有严格权限校验与审计
 
-- FilterBuilder / SortBuilder / UpdateBuilder 统一由 `IDatabaseOperationFactory<T>` 提供，用于构建查询、排序与更新条件。
+- **构建器模式**：FilterBuilder / SortBuilder / UpdateBuilder / ProjectionBuilder 统一由 `IDatabaseOperationFactory<T>` 的 `CreateFilterBuilder()` / `CreateSortBuilder()` / `CreateUpdateBuilder()` / `CreateProjectionBuilder()` 方法提供，用于构建查询、排序与更新条件，支持链式调用
 
 > 过滤、排序与更新构建器的具体用法示例，请参考 `docs/features/BACKEND-RULES.md`。
 
@@ -141,10 +147,11 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
 
 ### 1. 硬规则摘要
 
-- **统一返回类型**：所有后端 API 必须返回 `ApiResponse<T>`（位于 `Platform.ServiceDefaults.Models`），禁止再使用旧的 `code` / `msg` 结构。
-- **控制器基类**：所有 API 控制器必须继承 `BaseApiController`，通过其中的 `Success` / `SuccessPaged` / `Error` / `ValidationError` 等方法构造响应。
-- **分页约定**：分页统一返回 `ApiResponse<PagedResult<T>>`，字段为 `list`、`total`、`page`、`pageSize`、`totalPages`。
-- **错误码规范**：错误码需遵循统一约定（如 `VALIDATION_ERROR`、`NOT_FOUND`、`UNAUTHORIZED`、`FORBIDDEN`、`INTERNAL_ERROR`），禁止任意自定义返回格式。
+- **统一返回类型**：所有后端 API 必须返回 `ApiResponse<T>`（位于 `Platform.ServiceDefaults.Models`），禁止再使用旧的 `code` / `msg` 结构。响应格式为 `{ success: boolean, data?: T, errorCode?: string, errorMessage?: string, timestamp: string, traceId?: string }`
+- **控制器基类**：所有 API 控制器必须继承 `BaseApiController`（位于 `Platform.ServiceDefaults.Controllers`），通过其中的 `Success<T>()` / `SuccessPaged<T>()` / `Error()` / `ValidationError()` / `NotFoundError()` / `UnauthorizedError()` / `ForbiddenError()` / `ServerError()` 等方法构造响应
+- **分页约定**：分页统一返回 `ApiResponse<PagedResult<T>>`，`PagedResult<T>` 字段为 `list: T[]`、`total: long`、`page: int`、`pageSize: int`、`totalPages: int`（自动计算）
+- **错误码规范**：错误码需遵循统一约定（如 `VALIDATION_ERROR`、`NOT_FOUND`、`UNAUTHORIZED`、`FORBIDDEN`、`INTERNAL_ERROR`），禁止任意自定义返回格式。错误响应通过 `ApiResponse<T>.ErrorResult()` / `ValidationErrorResult()` / `NotFoundResult()` 等静态方法创建
+- **模型验证**：控制器中通过 `CheckModelState()` 方法验证模型状态，验证失败返回 `ValidationError()`
 
 > 统一响应模型、分页结构与 `BaseApiController` 的详细说明与示例，见 `docs/features/API-RESPONSE-RULES.md`。
 
@@ -199,3 +206,4 @@ Aspire Admin Platform 是基于 .NET Aspire 构建的多租户企业管理平台
 - **2024-12-06**: 抽象 `StatCard` 公共组件，并要求任务管理 / 用户管理 / IoT 概览等统计区域统一使用该组件与 Welcome 一致的紧凑布局
 - **2024-12-07**: 添加前端状态管理类型定义规范，要求 `useState` 状态对象必须完整定义所有字段类型，可选字段明确标注为 `T | undefined`
 - **2024-12-08**: 添加列表页面风格统一规范，强制要求使用 ProTable、统一统计卡片布局、工具栏和操作列样式，禁止使用普通 Table 和自定义样式类
+- **2024-12-09**: 根据实际代码更新规则，补充中间件注册顺序、JSON 序列化配置、BaseApiController 权限方法说明、前端菜单动态加载、StatCard 组件位置等细节

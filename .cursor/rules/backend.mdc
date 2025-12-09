@@ -1,0 +1,47 @@
+---
+appliesTo:
+  - "Platform.ApiService/**"
+  - "Platform.ServiceDefaults/**"
+  - "Platform.DataInitializer/**"
+  - "Platform.AppHost/**"
+  - "Platform.AppHost.Tests/**"
+---
+
+# 后端规则（API / ServiceDefaults / 数据初始化）
+
+## 控制器与权限
+- 所有业务控制器必须继承 `BaseApiController`；统一使用 `Success<T>()`、`SuccessPaged<T>()`、`ValidationError()`、`NotFoundError()` 等构造 `ApiResponse<T>`。
+- 敏感操作必须添加 `[RequireMenu("menu-name")]`；禁止在控制器或服务中使用废弃的 `HasPermission()` / `RequirePermission()`。
+- 禁止从 JWT 读取 `companyId` / `roles` 等扩展字段，需通过 `ITenantContext` 获取。
+
+## 数据访问与审计
+- 仅可通过 `IDatabaseOperationFactory<T>` 访问 Mongo 集合，禁止直接注入 `IMongoCollection<T>`/`IMongoDatabase`。
+- 实体创建/更新/删除必须使用工厂提供的原子方法：`CreateAsync`、`FindOneAndUpdateAsync`、`FindOneAndSoftDeleteAsync`。
+- 审计字段与软删字段由工厂自动维护（`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`CreatedBy`、`UpdatedBy` 等），业务代码不得赋值。
+- 需要跨租户场景时，仅允许使用 `FindWithoutTenantFilterAsync`/`GetByIdWithoutTenantFilterAsync` 等 *WithoutTenantFilter* 方法且做好权限审计。
+
+## 多租户与实体设计
+- 多租户实体需实现 `IMultiTenant` 或继承 `MultiTenantEntity`，自动附加 `CompanyId` 过滤。
+- 业务实体应实现 `IEntity`、`ISoftDeletable`、`ITimestamped`，默认使用 `BaseEntity`/`MultiTenantEntity`。
+- 集合名称优先使用 `[BsonCollectionName("xxx")]`，否则使用类型名复数。
+
+## 查询/更新构建器
+- 使用工厂的 `CreateFilterBuilder` / `CreateSortBuilder` / `CreateUpdateBuilder` / `CreateProjectionBuilder` 进行查询、排序、更新、投影，避免手写 Bson。
+- 更新必须是原子操作，避免“先查后改”竞态。
+
+## 中间件与响应
+- 中间件顺序固定：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。
+- `ResponseFormattingMiddleware` 统一响应格式并写入 `HttpContext.Items["__FormattedResponseBody"]`；`ActivityLogMiddleware` 读取该内容记录访问日志。
+- JSON 序列化：camelCase、忽略 null、枚举 camelCase 字符串。
+
+## 验证与错误处理
+- 模型验证通过 `CheckModelState()`；服务层进行业务校验，错误统一包装为 `ApiResponse<T>.ErrorResult()` / `ValidationErrorResult()` 等。
+- 禁止暴露底层异常信息；记录错误日志并返回统一错误码（`VALIDATION_ERROR`、`NOT_FOUND`、`UNAUTHORIZED`、`FORBIDDEN`、`INTERNAL_ERROR`）。
+
+## 规则系统 / IoT 特殊要求
+- 规则实体需实现多租户 + 软删接口，使用 `RuleStatus` 常量管理状态；查询、分页均走工厂 + 构建器。
+- IoT 模块同样必须遵守多租户隔离与软删，API 需绑定对应 IoT 菜单（如 `iot:device:list`）。
+
+## 数据初始化与主机
+- `Platform.DataInitializer` 中的数据脚本同样使用 `IDatabaseOperationFactory<T>`，禁止裸 Mongo 操作。
+- AppHost / Tests 遵循相同的中间件顺序与响应格式约束。

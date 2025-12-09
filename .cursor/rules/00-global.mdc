@@ -1,0 +1,14 @@
+---
+alwaysApply: true
+---
+
+# Aspire Admin 平台通用规则
+
+- **多租户隔离**：所有实体访问统一走 `IDatabaseOperationFactory<T>`，禁止直接注入或使用 `IMongoCollection<T>` / `IMongoDatabase`。实现 `IMultiTenant` 自动附加 `CompanyId` 过滤。
+- **企业上下文唯一入口**：除 `userId`（JWT claim）外，企业/角色/权限信息统一通过 `ITenantContext` 读取，禁止从 JWT 直接取 `companyId`、`roles` 等。
+- **菜单级权限**：后端统一使用 `[RequireMenu("menu-name")]`（`Platform.ApiService.Attributes.RequireMenuAttribute`）做鉴权，禁止旧的 `HasPermission()` / `RequirePermission()`。前端不隐藏按钮，真实权限以后端判定。
+- **统一响应**：HTTP API 必须返回 `ApiResponse<T>`，采用 camelCase，忽略 null，枚举序列化为 camelCase 字符串。
+- **审计与软删**：创建/更新/删除统一走工厂的原子方法（`CreateAsync`、`FindOneAndUpdateAsync`、`FindOneAndSoftDeleteAsync`），审计字段由工厂自动维护，业务代码不得手填。
+- **中间件顺序**：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。健康检查、OpenAPI、SignalR Hub 可跳过格式化。
+- **常见禁用模式**：直接访问 Mongo，硬编码企业ID，同步等待异步（`.Result`/`.Wait()`），缺失权限检查，暴露底层异常。
+- **参考文档**：`docs/features/BACKEND-RULES.md`、`docs/features/API-RESPONSE-RULES.md`、`docs/features/MENU-LEVEL-PERMISSION-GUIDE.md`、`docs/features/FRONTEND-RULES.md`、`README.md`。

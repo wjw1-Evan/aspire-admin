@@ -432,61 +432,7 @@ const Welcome: React.FC = () => {
 
         <div style={{ margin: '12px 0' }} />
 
-        {/* 统计概览 */}
-        <Card
-          title={
-            <Space>
-              <BarChartOutlined />
-              <span>{intl.formatMessage({ id: 'pages.welcome.overview' })}</span>
-            </Space>
-          }
-          style={{ marginBottom: '16px', borderRadius: '12px' }}
-        >
-          <Row gutter={[12, 12]}>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.welcome.stats.totalUsers' })}
-                value={statistics?.totalUsers || 0}
-                icon={<TeamOutlined />}
-                color={token.colorPrimary}
-                loading={loading}
-                token={token}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.welcome.stats.activeUsers' })}
-                value={statistics?.activeUsers || 0}
-                icon={<ThunderboltOutlined />}
-                color={token.colorSuccess}
-                loading={loading}
-                token={token}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.welcome.stats.adminUsers' })}
-                value={statistics?.adminUsers || 0}
-                icon={<CrownOutlined />}
-                color={token.colorWarning}
-                loading={loading}
-                token={token}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.welcome.stats.newUsersToday' })}
-                value={statistics?.newUsersToday || 0}
-                icon={<RocketOutlined />}
-                color={token.colorError}
-                loading={loading}
-                token={token}
-              />
-            </Col>
-          </Row>
-        </Card>
-
-        {/* 快速操作 */}
+        {/* 快速操作 - 放在最前面，用户最常使用 */}
         <Card
           title={
             <Space>
@@ -589,7 +535,7 @@ const Welcome: React.FC = () => {
         </Card>
 
         <Row gutter={[16, 16]}>
-          {/* 任务概览与待办任务 */}
+          {/* 任务概览与待办任务 - 工作重点，放在快速操作之后 */}
           <Col xs={24} lg={12}>
             <Card
               title={
@@ -810,6 +756,60 @@ const Welcome: React.FC = () => {
             </Card>
           </Col>
         </Row>
+
+        {/* 统计概览 - 数据展示，放在任务和活动之后 */}
+        <Card
+          title={
+            <Space>
+              <BarChartOutlined />
+              <span>{intl.formatMessage({ id: 'pages.welcome.overview' })}</span>
+            </Space>
+          }
+          style={{ marginTop: '16px', marginBottom: '16px', borderRadius: '12px' }}
+        >
+          <Row gutter={[12, 12]}>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.welcome.stats.totalUsers' })}
+                value={statistics?.totalUsers || 0}
+                icon={<TeamOutlined />}
+                color={token.colorPrimary}
+                loading={loading}
+                token={token}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.welcome.stats.activeUsers' })}
+                value={statistics?.activeUsers || 0}
+                icon={<ThunderboltOutlined />}
+                color={token.colorSuccess}
+                loading={loading}
+                token={token}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.welcome.stats.adminUsers' })}
+                value={statistics?.adminUsers || 0}
+                icon={<CrownOutlined />}
+                color={token.colorWarning}
+                loading={loading}
+                token={token}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.welcome.stats.newUsersToday' })}
+                value={statistics?.newUsersToday || 0}
+                icon={<RocketOutlined />}
+                color={token.colorError}
+                loading={loading}
+                token={token}
+              />
+            </Col>
+          </Row>
+        </Card>
 
 
 

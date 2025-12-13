@@ -10,16 +10,21 @@ appliesTo:
 - 菜单文案存于 `src/locales/*/menu.ts`，各语言需保持 key 与后端菜单标识一致并同步更新。
 
 ## 服务与数据请求
-- 所有 HTTP 调用必须通过 `src/services` + `@umijs/max` 的 `request`，禁止组件内直接 `fetch`。
-- 服务返回类型统一为 `request<{ success: boolean; data: T }>`，与后端 `ApiResponse<T>` 对齐。
+- **统一请求方式**：所有 HTTP 调用必须通过 `src/services` 目录下的服务文件 + `@umijs/max` 的 `request`，禁止组件内直接 `fetch` 或创建新的 axios 实例。
+- **响应类型**：服务返回类型统一为 `request<ApiResponse<T>>`，与后端 `ApiResponse<T>` 对齐（`success`、`data`、`errorCode`、`errorMessage`、`traceId`）。
+- **错误处理**：全局错误拦截器已统一处理 `success=false` 的情况（显示 message、处理 401/403 等），业务代码主要关注成功场景的数据处理。
 
 ## 页面骨架与列表规范（强制）
-- 列表/管理页必须使用 `ProTable`，禁止使用普通 `Table`。
-- 页面容器统一 `PageContainer`，`style={{ paddingBlock: 12 }}`。
-- 顶部统计卡片：使用 `Card` 包裹，`marginBottom: 16`，`borderRadius: 12`，内部 `Row` 的 `gutter={[12, 12]}`。
-- 操作栏：使用 `toolbar.actions`，主操作 `type="primary"`，刷新按钮用 `ReloadOutlined`。
-- 操作列固定宽度 `150px`，固定在右侧，按钮用 `Button type="text" size="small"`，删除动作需 `Popconfirm`。
-- 禁止自定义样式类，优先使用 Ant Design / ProComponents 现有属性。
+- **表格组件**：列表/管理页必须使用 `ProTable`（`@ant-design/pro-components`），禁止使用普通 `Table`。ProTable 提供统一的搜索、排序、分页、工具栏等功能。
+- **ProTable request 函数**：
+  - `request` 函数需返回 `{ data: T[], success: boolean, total: number }` 格式
+  - 错误已被全局错误处理捕获并显示提示时，应返回 `{ data: [], total: 0, success: false }` 避免表格显示错误状态
+  - 从后端 `ApiResponse<PagedResult<T>>` 中提取 `data.list` 和 `data.total` 返回给 ProTable
+- **页面容器**：统一使用 `PageContainer`，设置 `style={{ paddingBlock: 12 }}`，保持上下内边距一致。
+- **统计卡片区域**：使用 `Card` 包裹，`marginBottom: 16`，`borderRadius: 12`，内部 `Row` 的 `gutter={[12, 12]}`。
+- **工具栏**：使用 `toolbar.actions`，主操作按钮 `type="primary"`，刷新按钮使用 `ReloadOutlined` 图标。
+- **操作列**：固定宽度 `150px`，固定在右侧（`fixed: 'right'`），按钮使用 `Button type="text" size="small"`，删除动作必须使用 `Popconfirm` 确认。
+- **样式规范**：禁止自定义样式类，优先使用 Ant Design / ProComponents 现有属性。如需自定义样式，通过组件的 `style` 属性或 Ant Design 的 `theme` 配置实现。
 
 ## 统计卡片布局（Welcome/各管理页面）
 - 统一使用 `src/components/StatCard`（`Platform.Admin/src/components/StatCard.tsx`）。

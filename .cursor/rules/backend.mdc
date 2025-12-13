@@ -15,19 +15,30 @@ appliesTo:
 - 禁止从 JWT 读取 `companyId` / `roles` 等扩展字段，需通过 `ITenantContext` 获取。
 
 ## 数据访问与审计
-- 仅可通过 `IDatabaseOperationFactory<T>` 访问 Mongo 集合，禁止直接注入 `IMongoCollection<T>`/`IMongoDatabase`。
-- 实体创建/更新/删除必须使用工厂提供的原子方法：`CreateAsync`、`FindOneAndUpdateAsync`、`FindOneAndSoftDeleteAsync`。
-- 审计字段与软删字段由工厂自动维护（`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`CreatedBy`、`UpdatedBy` 等），业务代码不得赋值。
-- 需要跨租户场景时，仅允许使用 `FindWithoutTenantFilterAsync`/`GetByIdWithoutTenantFilterAsync` 等 *WithoutTenantFilter* 方法且做好权限审计。
+- **工厂模式**：仅可通过 `IDatabaseOperationFactory<T>` 访问 Mongo 集合，禁止直接注入 `IMongoCollection<T>`/`IMongoDatabase`。工厂通过 `services.AddDatabaseFactory()` 统一注册。
+- **原子操作**：实体创建/更新/删除必须使用工厂提供的原子方法：
+  - `CreateAsync` / `CreateManyAsync`：创建实体（自动设置 `CreatedAt`、`CreatedBy` 等）
+  - `FindOneAndUpdateAsync`：查找并更新（自动设置 `UpdatedAt`、`UpdatedBy` 等）
+  - `FindOneAndSoftDeleteAsync` / `SoftDeleteManyAsync`：软删除（自动设置 `IsDeleted`、`DeletedAt`、`DeletedBy` 等）
+  - `FindOneAndReplaceAsync`：查找并替换（原子替换整个文档）
+- **审计字段自动维护**：`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`CreatedBy`、`CreatedByUsername`、`UpdatedBy`、`UpdatedByUsername` 等字段由工厂自动维护，业务代码不得手动赋值。
+- **跨租户访问**：仅在极少数运维/平台级场景下才允许使用 `FindWithoutTenantFilterAsync` / `GetByIdWithoutTenantFilterAsync` / `FindOneAndUpdateWithoutTenantFilterAsync` 等 *WithoutTenantFilter* 方法，且必须：
+  - 拥有明确的运维/平台级菜单权限
+  - 在上层服务中记录详细审计日志（谁、何时、对哪些企业做了什么操作）
 
 ## 多租户与实体设计
-- 多租户实体需实现 `IMultiTenant` 或继承 `MultiTenantEntity`，自动附加 `CompanyId` 过滤。
-- 业务实体应实现 `IEntity`、`ISoftDeletable`、`ITimestamped`，默认使用 `BaseEntity`/`MultiTenantEntity`。
-- 集合名称优先使用 `[BsonCollectionName("xxx")]`，否则使用类型名复数。
+- **实体基类**：
+  - `BaseEntity`：提供 `Id`、`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`CreatedBy`、`UpdatedBy` 等审计字段。
+  - `MultiTenantEntity`：继承 `BaseEntity` 并实现 `IMultiTenant`，自动包含 `CompanyId`。
+- **接口要求**：所有 MongoDB 实体必须实现 `IEntity`、`ISoftDeletable`、`ITimestamped`。多租户实体需实现 `IMultiTenant` 或继承 `MultiTenantEntity`，工厂会自动附加 `CompanyId` 过滤。
+- **集合命名**：优先使用 `[BsonCollectionName("xxx")]` 特性指定集合名，否则使用类型名的复数形式（小写）。
 
-## 查询/更新构建器
-- 使用工厂的 `CreateFilterBuilder` / `CreateSortBuilder` / `CreateUpdateBuilder` / `CreateProjectionBuilder` 进行查询、排序、更新、投影，避免手写 Bson。
-- 更新必须是原子操作，避免“先查后改”竞态。
+## 查询/更新构建器（强制使用）
+- **FilterBuilder<T>**：通过 `factory.CreateFilterBuilder()` 创建，支持链式调用（`Equal`、`NotEqual`、`In`、`Contains`、`DateRange`、`TextSearch`、`IsDeleted(false)` 等），最后调用 `Build()` 生成 `FilterDefinition<T>`。
+- **SortBuilder<T>**：通过 `factory.CreateSortBuilder()` 创建，使用 `Ascending`/`Descending` 指定排序字段，默认降序按 `Id` 排序。
+- **UpdateBuilder<T>**：通过 `factory.CreateUpdateBuilder()` 创建，支持 `Set`、`Unset`、`Inc`、`AddToSet`、`Pull` 等操作，禁止直接修改审计字段（审计字段由工厂自动维护）。
+- **ProjectionBuilder<T>**：通过 `factory.CreateProjectionBuilder()` 创建，用于字段投影以减少数据传输。
+- 所有查询条件、排序、更新必须使用构建器，禁止手写 `BsonDocument` 或直接使用 MongoDB Driver 的构建器。更新必须是原子操作，避免"先查后改"竞态。
 
 ## 中间件与响应
 - 中间件顺序固定：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。
@@ -35,8 +46,14 @@ appliesTo:
 - JSON 序列化：camelCase、忽略 null、枚举 camelCase 字符串。
 
 ## 验证与错误处理
-- 模型验证通过 `CheckModelState()`；服务层进行业务校验，错误统一包装为 `ApiResponse<T>.ErrorResult()` / `ValidationErrorResult()` 等。
-- 禁止暴露底层异常信息；记录错误日志并返回统一错误码（`VALIDATION_ERROR`、`NOT_FOUND`、`UNAUTHORIZED`、`FORBIDDEN`、`INTERNAL_ERROR`）。
+- **模型验证**：控制器中使用 `ValidateModelState()` 检查模型状态，无效时返回 `ValidationError()`。
+- **业务校验**：服务层进行业务规则校验，错误统一通过 `BaseApiController` 的方法返回：
+  - `ValidationError(string message)`：参数/模型验证错误（`VALIDATION_ERROR`）
+  - `NotFoundError(string resource, string id)`：资源未找到（`NOT_FOUND`）
+  - `UnauthorizedError(string message)`：未授权（`UNAUTHORIZED`）
+  - `ForbiddenError(string message)`：禁止访问（`FORBIDDEN`）
+  - `ServerError(string message)`：服务器错误（`INTERNAL_ERROR`）
+- **错误处理原则**：禁止暴露底层异常信息（如堆栈、数据库错误）；记录详细错误日志供运维排查；返回给前端的错误消息要可读、可本地化。
 
 ## 规则系统 / IoT 特殊要求
 - 规则实体需实现多租户 + 软删接口，使用 `RuleStatus` 常量管理状态；查询、分页均走工厂 + 构建器。

@@ -36,19 +36,105 @@ const useStyles = createStyles(({ token }) => {
       lineHeight: '42px',
       position: 'fixed',
       right: 16,
+      top: 16,
+      zIndex: 100,
       borderRadius: token.borderRadius,
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(10px)',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
       ':hover': {
-        backgroundColor: token.colorBgTextHover,
+        backgroundColor: 'rgba(255, 255, 255, 1)',
       },
     },
     container: {
       display: 'flex',
       flexDirection: 'column',
-      height: '100vh',
+      minHeight: '100vh',
       overflow: 'auto',
-      backgroundImage:
-        "url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')",
-      backgroundSize: '100% 100%',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      position: 'relative',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%)',
+        pointerEvents: 'none',
+      },
+    },
+    contentWrapper: {
+      flex: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '32px 16px',
+      position: 'relative',
+      zIndex: 1,
+    },
+    formWrapper: {
+      width: '100%',
+      maxWidth: '440px',
+      '& .ant-pro-form-login-container': {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: '16px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        padding: '40px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+      },
+      '& .ant-pro-form-login-logo': {
+        marginBottom: '24px',
+        '& img': {
+          width: '64px',
+          height: '64px',
+        },
+      },
+      '& .ant-pro-form-login-title': {
+        fontSize: '28px',
+        fontWeight: 600,
+        color: '#1a1a1a',
+        marginBottom: '8px',
+      },
+      '& .ant-pro-form-login-desc': {
+        fontSize: '14px',
+        color: '#666',
+        marginBottom: '32px',
+      },
+      '& .ant-tabs': {
+        marginBottom: '24px',
+        '& .ant-tabs-tab': {
+          fontSize: '15px',
+          fontWeight: 500,
+        },
+      },
+      '& .ant-input-affix-wrapper': {
+        borderRadius: '8px',
+        border: '1px solid #e0e0e0',
+        transition: 'all 0.3s',
+        '&:hover': {
+          borderColor: '#667eea',
+        },
+        '&.ant-input-affix-wrapper-focused': {
+          borderColor: '#667eea',
+          boxShadow: '0 0 0 2px rgba(102, 126, 234, 0.1)',
+        },
+      },
+      '& .ant-btn-primary': {
+        height: '44px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        fontWeight: 500,
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        border: 'none',
+        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+        transition: 'all 0.3s',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: '0 6px 16px rgba(102, 126, 234, 0.5)',
+        },
+      },
     },
   };
 });
@@ -216,33 +302,29 @@ const Login: React.FC = () => {
       <title>{pageTitle}</title>
       <div className={styles.container}>
         <Lang />
-      <div
-        style={{
-          flex: '1',
-          padding: '32px 0',
-        }}
-      >
-        <LoginForm
-          contentStyle={{
-            minWidth: 280,
-            maxWidth: '75vw',
-          }}
-          logo={<img alt="logo" src="/logo.svg" />}
-          title={intl.formatMessage({
-            id: 'pages.login.title',
-            defaultMessage: 'Aspire Admin Platform',
-          })}
-          subTitle={intl.formatMessage({
-            id: 'pages.login.subTitle',
-            defaultMessage: '企业级多租户微服务管理平台',
-          })}
-          initialValues={{
-            autoLogin: true,
-          }}
-          onFinish={async (values) => {
-            await handleSubmit(values as API.LoginParams);
-          }}
-        >
+        <div className={styles.contentWrapper}>
+          <div className={styles.formWrapper}>
+            <LoginForm
+              contentStyle={{
+                minWidth: 280,
+                maxWidth: '100%',
+              }}
+              logo={<img alt="logo" src="/logo.svg" />}
+              title={intl.formatMessage({
+                id: 'pages.login.title',
+                defaultMessage: 'Aspire Admin Platform',
+              })}
+              subTitle={intl.formatMessage({
+                id: 'pages.login.subTitle',
+                defaultMessage: '企业级多租户微服务管理平台',
+              })}
+              initialValues={{
+                autoLogin: true,
+              }}
+              onFinish={async (values) => {
+                await handleSubmit(values as API.LoginParams);
+              }}
+            >
           <Tabs
             activeKey={type}
             onChange={setType}
@@ -469,8 +551,9 @@ const Login: React.FC = () => {
             </div>
           </div>
         </LoginForm>
-      </div>
-      <Footer />
+          </div>
+        </div>
+        <Footer />
       </div>
     </>
   );

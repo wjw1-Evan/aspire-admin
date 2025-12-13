@@ -2,14 +2,126 @@ import { CheckCircleOutlined, CloseCircleOutlined, LockOutlined, MailOutlined, U
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { history, Link, useIntl } from '@umijs/max';
 import { Alert, App, Space } from 'antd';
+import { createStyles } from 'antd-style';
 import React, { useState, useRef } from 'react';
 import { Footer } from '@/components';
 import { register, checkUsernameExists } from '@/services/ant-design-pro/api';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 
+const useStyles = createStyles(({ token }) => {
+  return {
+    container: {
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      overflow: 'auto',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      position: 'relative',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%)',
+        pointerEvents: 'none',
+      },
+    },
+    contentWrapper: {
+      flex: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '32px 16px',
+      position: 'relative',
+      zIndex: 1,
+    },
+    formWrapper: {
+      width: '100%',
+      maxWidth: '440px',
+      '& .ant-pro-form-login-container': {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: '16px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        padding: '40px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+      },
+      '& .ant-pro-form-login-logo': {
+        marginBottom: '24px',
+        '& img': {
+          width: '64px',
+          height: '64px',
+        },
+      },
+      '& .ant-pro-form-login-title': {
+        fontSize: '28px',
+        fontWeight: 600,
+        color: '#1a1a1a',
+        marginBottom: '8px',
+      },
+      '& .ant-pro-form-login-desc': {
+        fontSize: '14px',
+        color: '#666',
+        marginBottom: '32px',
+      },
+      '& .ant-input-affix-wrapper': {
+        borderRadius: '8px',
+        border: '1px solid #e0e0e0',
+        transition: 'all 0.3s',
+        '&:hover': {
+          borderColor: '#667eea',
+        },
+        '&.ant-input-affix-wrapper-focused': {
+          borderColor: '#667eea',
+          boxShadow: '0 0 0 2px rgba(102, 126, 234, 0.1)',
+        },
+      },
+      '& .ant-btn-primary': {
+        height: '44px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        fontWeight: 500,
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        border: 'none',
+        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+        transition: 'all 0.3s',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: '0 6px 16px rgba(102, 126, 234, 0.5)',
+        },
+      },
+    },
+    infoBox: {
+      marginTop: 16,
+      textAlign: 'center',
+      background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+      padding: '16px',
+      borderRadius: '12px',
+      fontSize: '13px',
+      color: '#666',
+      border: '1px solid rgba(102, 126, 234, 0.2)',
+      '& .info-title': {
+        marginBottom: 12,
+        fontSize: '14px',
+        fontWeight: 500,
+        color: '#667eea',
+      },
+      '& .info-item': {
+        marginBottom: 6,
+        '&:last-child': {
+          marginBottom: 0,
+        },
+      },
+    },
+  };
+});
+
 export default function Register() {
   const intl = useIntl();
   const { message } = App.useApp();
+  const { styles } = useStyles();
   const [registerError, setRegisterError] = useState<string>('');
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
@@ -160,27 +272,9 @@ export default function Register() {
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        overflow: 'auto',
-        backgroundImage:
-          "url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')",
-        backgroundSize: '100% 100%',
-      }}
-    >
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '32px',
-        }}
-      >
-        <div style={{ width: '100%', maxWidth: '400px' }}>
+    <div className={styles.container}>
+      <div className={styles.contentWrapper}>
+        <div className={styles.formWrapper}>
           <LoginForm
             logo={<img alt="logo" src="/logo.svg" />}
             title="用户注册"
@@ -346,25 +440,17 @@ export default function Register() {
               />
             )}
 
-            <div
-              style={{
-                marginTop: 16,
-                textAlign: 'center',
-                background: '#f0f2f5',
-                padding: '12px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                color: '#666',
-              }}
-            >
-              <div style={{ marginBottom: 8 }}>💡 注册成功后系统将为您：</div>
-              <div>✅ 自动创建个人企业（您是管理员）</div>
-              <div>✅ 配置默认权限和菜单</div>
-              <div>✅ 您可以邀请成员或申请加入其他企业</div>
+            <div className={styles.infoBox}>
+              <div className="info-title">💡 注册成功后系统将为您：</div>
+              <div className="info-item">✅ 自动创建个人企业（您是管理员）</div>
+              <div className="info-item">✅ 配置默认权限和菜单</div>
+              <div className="info-item">✅ 您可以邀请成员或申请加入其他企业</div>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <Link to="/user/login">已有账号？立即登录</Link>
+              <Link to="/user/login" style={{ color: '#667eea', fontWeight: 500 }}>
+                已有账号？立即登录
+              </Link>
             </div>
           </LoginForm>
         </div>

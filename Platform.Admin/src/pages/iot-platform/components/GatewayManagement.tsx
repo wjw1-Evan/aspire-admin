@@ -27,7 +27,7 @@ import {
   CloseCircleOutlined,
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
-import { iotService, IoTGateway, GatewayStatistics } from '@/services/iotService';
+import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/services/iotService';
 import { StatCard } from '@/components';
 
 const GatewayManagement: React.FC = () => {
@@ -44,6 +44,14 @@ const GatewayManagement: React.FC = () => {
     fault: 0,
   });
 
+  const normalizeStatus = (status?: string) => (status || '').toLowerCase() as IoTDeviceStatus;
+  const statusMap: Record<IoTDeviceStatus, { color: string; label: string }> = {
+    online: { color: 'green', label: '在线' },
+    offline: { color: 'default', label: '离线' },
+    fault: { color: 'red', label: '故障' },
+    maintenance: { color: 'orange', label: '维护中' },
+  };
+
   // 获取概览统计
   const fetchOverviewStats = async () => {
     try {
@@ -55,9 +63,9 @@ const GatewayManagement: React.FC = () => {
           const list = Array.isArray(allResponse.data.list) ? allResponse.data.list : [];
           setOverviewStats({
             total: list.length,
-            online: list.filter((g: IoTGateway) => g.status === 'Online').length,
-            offline: list.filter((g: IoTGateway) => g.status === 'Offline').length,
-            fault: list.filter((g: IoTGateway) => g.status === 'Fault').length,
+            online: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'online').length,
+            offline: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'offline').length,
+            fault: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'fault').length,
           });
         }
       }
@@ -161,13 +169,8 @@ const GatewayManagement: React.FC = () => {
   };
 
   const getStatusTag = (status: string) => {
-    const statusMap: Record<string, { color: string; label: string }> = {
-      Online: { color: 'green', label: '在线' },
-      Offline: { color: 'default', label: '离线' },
-      Fault: { color: 'red', label: '故障' },
-      Maintenance: { color: 'orange', label: '维护中' },
-    };
-    const config = statusMap[status] || { color: 'default', label: status };
+    const normalized = normalizeStatus(status);
+    const config = statusMap[normalized] || { color: 'default', label: status || '未知' };
     return <Tag color={config.color}>{config.label}</Tag>;
   };
 

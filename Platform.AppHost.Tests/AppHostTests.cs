@@ -122,9 +122,9 @@ namespace Platform.AppHost.Tests
         {
             var builder = await CreateBuilderAsync();
 
-            var relationships = GetResourceRelationships(builder, "openai");
+        var relationships = GetResourceRelationships(builder, "chat");
 
-            Assert.Contains(relationships, relation => relation.Resource.Name == "chat");
+        Assert.Contains(relationships, relation => relation.Resource.Name == "openai");
         }
     }
 }

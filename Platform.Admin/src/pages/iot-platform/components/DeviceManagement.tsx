@@ -27,7 +27,14 @@ import {
   CloseCircleOutlined,
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
-import { iotService, IoTDevice, IoTGateway, DeviceStatistics } from '@/services/iotService';
+import {
+  iotService,
+  IoTDevice,
+  IoTGateway,
+  DeviceStatistics,
+  IoTDeviceStatus,
+  IoTDeviceType,
+} from '@/services/iotService';
 import { StatCard } from '@/components';
 
 const DeviceManagement: React.FC = () => {
@@ -44,6 +51,21 @@ const DeviceManagement: React.FC = () => {
     offline: 0,
     fault: 0,
   });
+
+  const normalizeStatus = (status?: string) => (status || '').toLowerCase() as IoTDeviceStatus;
+  const statusMap: Record<IoTDeviceStatus, { color: string; label: string }> = {
+    online: { color: 'green', label: '在线' },
+    offline: { color: 'default', label: '离线' },
+    fault: { color: 'red', label: '故障' },
+    maintenance: { color: 'orange', label: '维护中' },
+  };
+  const normalizeDeviceType = (type?: string) => (type || '').toLowerCase() as IoTDeviceType;
+  const deviceTypeMap: Record<IoTDeviceType, string> = {
+    sensor: '传感器',
+    actuator: '执行器',
+    gateway: '网关',
+    other: '其他',
+  };
 
   // 确保 gateways 始终是数组
   const safeGateways = Array.isArray(gateways) ? gateways : [];
@@ -62,9 +84,9 @@ const DeviceManagement: React.FC = () => {
         const list = Array.isArray(response.data.list) ? response.data.list : [];
         setOverviewStats({
           total: list.length,
-          online: list.filter((d: IoTDevice) => d.status === 'Online').length,
-          offline: list.filter((d: IoTDevice) => d.status === 'Offline').length,
-          fault: list.filter((d: IoTDevice) => d.status === 'Fault').length,
+          online: list.filter((d: IoTDevice) => normalizeStatus(d.status) === 'online').length,
+          offline: list.filter((d: IoTDevice) => normalizeStatus(d.status) === 'offline').length,
+          fault: list.filter((d: IoTDevice) => normalizeStatus(d.status) === 'fault').length,
         });
       }
     } catch (error) {
@@ -124,7 +146,10 @@ const DeviceManagement: React.FC = () => {
 
   const handleEdit = (device: IoTDevice) => {
     setSelectedDevice(device);
-    form.setFieldsValue(device);
+    form.setFieldsValue({
+      ...device,
+      deviceType: normalizeDeviceType(device.deviceType),
+    });
     setIsModalVisible(true);
   };
 
@@ -176,24 +201,14 @@ const DeviceManagement: React.FC = () => {
   };
 
   const getStatusTag = (status: string) => {
-    const statusMap: Record<string, { color: string; label: string }> = {
-      Online: { color: 'green', label: '在线' },
-      Offline: { color: 'default', label: '离线' },
-      Fault: { color: 'red', label: '故障' },
-      Maintenance: { color: 'orange', label: '维护中' },
-    };
-    const config = statusMap[status] || { color: 'default', label: status };
+    const normalized = normalizeStatus(status);
+    const config = statusMap[normalized] || { color: 'default', label: status || '未知' };
     return <Tag color={config.color}>{config.label}</Tag>;
   };
 
   const getDeviceTypeLabel = (type: string) => {
-    const typeMap: Record<string, string> = {
-      Sensor: '传感器',
-      Actuator: '执行器',
-      Gateway: '网关',
-      Other: '其他',
-    };
-    return typeMap[type] || type;
+    const normalized = normalizeDeviceType(type);
+    return deviceTypeMap[normalized] || type;
   };
 
   const columns: ProColumns<IoTDevice>[] = [
@@ -404,10 +419,10 @@ const DeviceManagement: React.FC = () => {
             rules={[{ required: true, message: '请选择设备类型' }]}
           >
             <Select placeholder="请选择设备类型">
-              <Select.Option value="Sensor">传感器</Select.Option>
-              <Select.Option value="Actuator">执行器</Select.Option>
-              <Select.Option value="Gateway">网关</Select.Option>
-              <Select.Option value="Other">其他</Select.Option>
+              <Select.Option value="sensor">传感器</Select.Option>
+              <Select.Option value="actuator">执行器</Select.Option>
+              <Select.Option value="gateway">网关</Select.Option>
+              <Select.Option value="other">其他</Select.Option>
             </Select>
           </Form.Item>
 

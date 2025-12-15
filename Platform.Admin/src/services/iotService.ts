@@ -2,6 +2,9 @@ import { request } from '@umijs/max';
 
 const API_PREFIX = '/api/iot';
 
+export type IoTDeviceStatus = 'online' | 'offline' | 'fault' | 'maintenance';
+export type IoTDeviceType = 'sensor' | 'actuator' | 'gateway' | 'other';
+
 export interface IoTGateway {
   id: string;
   name: string;
@@ -12,7 +15,7 @@ export interface IoTGateway {
   address: string;
   username?: string;
   isEnabled: boolean;
-  status: string;
+  status: IoTDeviceStatus;
   lastConnectedAt?: string;
   deviceCount: number;
   tags: string[];
@@ -28,11 +31,11 @@ export interface IoTDevice {
   description?: string;
   deviceId: string;
   gatewayId: string;
-  deviceType: string;
+  deviceType: IoTDeviceType;
   model?: string;
   manufacturer?: string;
   serialNumber?: string;
-  status: string;
+  status: IoTDeviceStatus;
   isEnabled: boolean;
   lastReportedAt?: string;
   location?: string;

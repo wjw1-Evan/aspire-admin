@@ -1,4 +1,5 @@
 
+using Platform.ApiService.Options;
 using Platform.ApiService.Services;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -180,6 +181,13 @@ builder.Services.AddDatabaseFactory();
 
 // ✅ 注册聊天服务依赖项聚合
 builder.Services.AddScoped<ChatService.ChatServiceDependencies>();
+
+// IoT 数据采集配置与后台任务
+builder.Services.Configure<IoTDataCollectionOptions>(
+    builder.Configuration.GetSection(IoTDataCollectionOptions.SectionName));
+builder.Services.AddSingleton<IIoTDataFetchClient, MockIoTDataFetchClient>();
+builder.Services.AddScoped<IoTDataCollector>();
+builder.Services.AddHostedService<IoTDataCollectionHostedService>();
 
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();

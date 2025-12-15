@@ -10,7 +10,6 @@ export interface IoTGateway {
   gatewayId: string;
   protocolType: string;
   address: string;
-  port: number;
   username?: string;
   isEnabled: boolean;
   status: string;
@@ -85,6 +84,7 @@ export interface IoTDataRecord {
   dataPointId: string;
   value: string;
   dataType: string;
+  samplingInterval: number;
   reportedAt: string;
   isAlarm: boolean;
   alarmLevel?: string;

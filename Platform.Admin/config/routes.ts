@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @name umi 的路由配置
  * @description v5.0: 最小化静态路由，业务菜单完全从数据库动态加载
  *
@@ -129,6 +129,11 @@ export default [
   {
     path: '/iot-platform/event-management',
     component: './iot-platform/event-management',
+    hideInMenu: true,
+  },
+  {
+    path: '/iot-platform/data-center',
+    component: './iot-platform/data-center',
     hideInMenu: true,
   },
 

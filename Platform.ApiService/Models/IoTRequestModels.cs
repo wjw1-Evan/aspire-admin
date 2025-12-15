@@ -7,9 +7,7 @@ namespace Platform.ApiService.Models;
 /// </summary>
 public class CreateIoTGatewayRequest
 {
-    /// <summary>网关名称</summary>
-    public string Name { get; set; } = string.Empty;
-    /// <summary>网关标题</summary>
+    /// <summary>网关名称（名称与标题合并）</summary>
     public string Title { get; set; } = string.Empty;
     /// <summary>网关描述</summary>
     public string? Description { get; set; }
@@ -17,8 +15,6 @@ public class CreateIoTGatewayRequest
     public string ProtocolType { get; set; } = "MQTT";
     /// <summary>网关地址/IP</summary>
     public string Address { get; set; } = string.Empty;
-    /// <summary>网关端口</summary>
-    public int Port { get; set; } = 1883;
     /// <summary>连接用户名</summary>
     public string? Username { get; set; }
     /// <summary>连接密码</summary>
@@ -36,9 +32,7 @@ public class CreateIoTGatewayRequest
 /// </summary>
 public class UpdateIoTGatewayRequest
 {
-    /// <summary>网关名称</summary>
-    public string? Name { get; set; }
-    /// <summary>网关标题</summary>
+    /// <summary>网关名称（名称与标题合并）</summary>
     public string? Title { get; set; }
     /// <summary>网关描述</summary>
     public string? Description { get; set; }
@@ -46,8 +40,6 @@ public class UpdateIoTGatewayRequest
     public string? ProtocolType { get; set; }
     /// <summary>网关地址/IP</summary>
     public string? Address { get; set; }
-    /// <summary>网关端口</summary>
-    public int? Port { get; set; }
     /// <summary>连接用户名</summary>
     public string? Username { get; set; }
     /// <summary>连接密码</summary>

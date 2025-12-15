@@ -18,6 +18,7 @@ export default {
   'menu.iot-platform.device': '设备管理',
   'menu.iot-platform.datapoint': '数据点管理',
   'menu.iot-platform.event': '事件告警',
+  'menu.iot-platform.data-center': '数据中心',
   'menu.company-search': '企业搜索',
   'menu.my-join-requests': '我的加入申请',
   'menu.pending-join-requests': '待审批申请',

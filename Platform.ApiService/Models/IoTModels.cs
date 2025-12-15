@@ -80,10 +80,6 @@ public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntit
     [BsonElement("address")]
     public string Address { get; set; } = string.Empty;
 
-    /// <summary>网关端口</summary>
-    [BsonElement("port")]
-    public int Port { get; set; } = 1883;
-
     /// <summary>连接用户名</summary>
     [BsonElement("username")]
     public string? Username { get; set; }
@@ -327,6 +323,10 @@ public class IoTDataRecord : MultiTenantEntity, ISoftDeletable, ITimestamped,IEn
     /// <summary>数据类型</summary>
     [BsonElement("dataType")]
     public DataPointType DataType { get; set; } = DataPointType.Numeric;
+
+    /// <summary>采样间隔（秒）</summary>
+    [BsonElement("samplingInterval")]
+    public int SamplingInterval { get; set; }
 
     /// <summary>数据上报时间</summary>
     [BsonElement("reportedAt")]

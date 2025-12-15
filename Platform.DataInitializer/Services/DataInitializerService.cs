@@ -439,6 +439,22 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
+
+        menus.Add(new Menu
+        {
+            Name = "iot-platform-data-center",
+            Title = "数据中心",
+            Path = "/iot-platform/data-center",
+            Component = "./iot-platform/data-center",
+            Icon = "bar-chart",
+            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 5,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "iot:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
         
         return menus;
     }
@@ -461,6 +477,7 @@ public class DataInitializerService : IDataInitializerService
             "iot-platform-device" => "iot-platform",
             "iot-platform-datapoint" => "iot-platform",
             "iot-platform-event" => "iot-platform",
+            "iot-platform-data-center" => "iot-platform",
             _ => null
         };
     }

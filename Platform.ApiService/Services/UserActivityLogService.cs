@@ -172,7 +172,8 @@ public class UserActivityLogService : IUserActivityLogService
     public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
     {
         // 获取当前企业上下文（如果有的话，从数据库获取，不使用 JWT token）
-        var companyId = await TryGetUserCompanyIdAsync(request.UserId);
+        var companyId = await TryGetUserCompanyIdAsync(request.UserId) 
+                        ?? "system"; // 登录/匿名场景无企业上下文时使用系统租户占位，避免写入失败
 
         // 构建完整URL（包含协议、主机、端口、路径和查询字符串）
         var pathWithQuery = string.IsNullOrEmpty(request.QueryString) 

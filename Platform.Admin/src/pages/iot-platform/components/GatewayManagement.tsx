@@ -6,7 +6,6 @@ import {
   Modal,
   Form,
   Input,
-  InputNumber,
   Select,
   Space,
   message,
@@ -139,14 +138,16 @@ const GatewayManagement: React.FC = () => {
   };
 
   const handleSubmit = async (values: any) => {
+    // 后端仍可能需要 name 字段，这里与 title 保持一致
+    const payload = { ...values, name: values.title };
     try {
       if (selectedGateway) {
-        const response = await iotService.updateGateway(selectedGateway.id, values);
+        const response = await iotService.updateGateway(selectedGateway.id, payload);
         if (response.success) {
           message.success('更新成功');
         }
       } else {
-        const response = await iotService.createGateway(values);
+        const response = await iotService.createGateway(payload);
         if (response.success) {
           message.success('创建成功');
         }
@@ -188,7 +189,6 @@ const GatewayManagement: React.FC = () => {
       dataIndex: 'address',
       key: 'address',
       width: 150,
-      render: (_, record) => `${record.address}:${record.port}`,
     },
     {
       title: '状态',
@@ -335,18 +335,10 @@ const GatewayManagement: React.FC = () => {
         >
           <Form.Item
             label="网关名称"
-            name="name"
+            name="title"
             rules={[{ required: true, message: '请输入网关名称' }]}
           >
             <Input placeholder="请输入网关名称" />
-          </Form.Item>
-
-          <Form.Item
-            label="网关标题"
-            name="title"
-            rules={[{ required: true, message: '请输入网关标题' }]}
-          >
-            <Input placeholder="请输入网关标题" />
           </Form.Item>
 
           <Form.Item label="描述" name="description">
@@ -372,14 +364,6 @@ const GatewayManagement: React.FC = () => {
             rules={[{ required: true, message: '请输入网关地址' }]}
           >
             <Input placeholder="请输入网关地址或IP" />
-          </Form.Item>
-
-          <Form.Item
-            label="端口"
-            name="port"
-            rules={[{ required: true, message: '请输入端口号' }]}
-          >
-            <InputNumber placeholder="请输入端口号" min={1} max={65535} />
           </Form.Item>
 
           <Form.Item label="用户名" name="username">
@@ -441,7 +425,7 @@ const GatewayManagement: React.FC = () => {
 
             <div style={{ marginBottom: 16 }}>
               <div style={{ color: '#666', marginBottom: 4 }}>地址</div>
-              <div>{selectedGateway.address}:{selectedGateway.port}</div>
+              <div>{selectedGateway.address}</div>
             </div>
 
             <div style={{ marginBottom: 16 }}>

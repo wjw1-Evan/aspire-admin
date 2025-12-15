@@ -53,12 +53,11 @@ public class IoTService : IIoTService
     {
         var gateway = new IoTGateway
         {
-            Name = request.Name,
             Title = request.Title,
+            Name = request.Title,
             Description = request.Description,
             ProtocolType = request.ProtocolType,
             Address = request.Address,
-            Port = request.Port,
             Username = request.Username,
             Password = request.Password,
             Config = request.Config,
@@ -123,18 +122,17 @@ public class IoTService : IIoTService
         var builder = Builders<IoTGateway>.Update;
         var updates = new List<UpdateDefinition<IoTGateway>>();
 
-        if (!string.IsNullOrEmpty(request.Name))
-            updates.Add(builder.Set(x => x.Name, request.Name));
         if (!string.IsNullOrEmpty(request.Title))
+        {
             updates.Add(builder.Set(x => x.Title, request.Title));
+            updates.Add(builder.Set(x => x.Name, request.Title));
+        }
         if (request.Description != null)
             updates.Add(builder.Set(x => x.Description, request.Description));
         if (!string.IsNullOrEmpty(request.ProtocolType))
             updates.Add(builder.Set(x => x.ProtocolType, request.ProtocolType));
         if (!string.IsNullOrEmpty(request.Address))
             updates.Add(builder.Set(x => x.Address, request.Address));
-        if (request.Port.HasValue)
-            updates.Add(builder.Set(x => x.Port, request.Port.Value));
         if (request.Username != null)
             updates.Add(builder.Set(x => x.Username, request.Username));
         if (request.Password != null)
@@ -716,6 +714,7 @@ public class IoTService : IIoTService
             DataPointId = request.DataPointId,
             Value = request.Value,
             DataType = dataPoint.DataType,
+            SamplingInterval = dataPoint.SamplingInterval,
             ReportedAt = request.ReportedAt ?? DateTime.UtcNow
         };
 

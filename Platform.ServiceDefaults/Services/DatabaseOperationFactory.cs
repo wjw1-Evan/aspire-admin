@@ -62,6 +62,22 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         }
     }
 
+    /// <summary>
+    /// 读取实体上已存在的企业ID（用于后台线程缺少租户上下文的场景）
+    /// </summary>
+    private static string? GetExistingCompanyId(object target)
+    {
+        if (target == null)
+            return null;
+
+        var prop = target.GetType().GetProperty("CompanyId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (prop == null || !prop.CanRead)
+            return null;
+
+        var value = prop.GetValue(target) as string;
+        return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
     private async Task<UpdateDefinition<T>> WithUpdateAuditAsync(UpdateDefinition<T> update)
     {
         var (userId, username) = await GetActorAsync().ConfigureAwait(false);
@@ -149,6 +165,17 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         SetStringProperty(entity, "CreatedBy", userId);
         SetStringProperty(entity, "CreatedByUsername", username);
 
+        // 写入企业隔离字段
+        if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+        {
+            // 优先使用当前请求上下文中的企业ID；若后台线程无法获取，则退回实体上已有的值
+            var companyId = await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
+            companyId ??= GetExistingCompanyId(entity);
+            if (string.IsNullOrEmpty(companyId))
+                throw new UnauthorizedAccessException("未找到当前企业信息");
+            SetStringProperty(entity, "CompanyId", companyId);
+        }
+
         await _collection.InsertOneAsync(entity).ConfigureAwait(false);
         return entity;
     }
@@ -172,6 +199,15 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             entity.IsDeleted = false;
             SetStringProperty(entity, "CreatedBy", uid);
             SetStringProperty(entity, "CreatedByUsername", uname);
+
+            if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+            {
+                var companyId = await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
+                companyId ??= GetExistingCompanyId(entity);
+                if (string.IsNullOrEmpty(companyId))
+                    throw new UnauthorizedAccessException("未找到当前企业信息");
+                SetStringProperty(entity, "CompanyId", companyId);
+            }
         }
 
         await _collection.InsertManyAsync(entityList).ConfigureAwait(false);

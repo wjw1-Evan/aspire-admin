@@ -31,6 +31,13 @@ public class IoTDataCollectionOptions
 
     /// <summary>HTTP 拉取设置（可选）</summary>
     public HttpFetchOptions HttpFetch { get; set; } = new();
+
+    /// <summary>是否启用网关状态检测</summary>
+    public bool GatewayStatusCheckEnabled { get; set; } = true;
+
+    /// <summary>Ping 超时时间（秒）</summary>
+    [Range(1, 60)]
+    public int GatewayPingTimeoutSeconds { get; set; } = 5;
 }
 
 /// <summary>

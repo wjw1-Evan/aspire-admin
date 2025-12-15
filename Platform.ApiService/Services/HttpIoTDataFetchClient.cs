@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -34,23 +35,44 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
         IReadOnlyList<IoTDataPoint> dataPoints,
         CancellationToken cancellationToken)
     {
-        var options = _optionsMonitor.CurrentValue.HttpFetch;
-        if (!options.Enabled || string.IsNullOrWhiteSpace(options.UrlTemplate))
+        // 优先使用网关配置（如果网关协议是HTTP且有配置）
+        HttpFetchOptions? fetchOptions = null;
+        if (gateway != null && 
+            gateway.ProtocolType?.Equals("HTTP", StringComparison.OrdinalIgnoreCase) == true)
         {
-            return Array.Empty<CollectedDataPointValue>();
+            fetchOptions = BuildFetchOptionsFromGateway(gateway);
+            // 如果网关配置的URL为空，返回空结果
+            if (string.IsNullOrWhiteSpace(fetchOptions.UrlTemplate))
+            {
+                _logger.LogWarning("Gateway {GatewayId} has HTTP protocol but no URL configured", gateway.GatewayId);
+                return Array.Empty<CollectedDataPointValue>();
+            }
+        }
+
+        // 如果没有网关配置或网关配置无效，使用全局配置
+        if (fetchOptions == null || string.IsNullOrWhiteSpace(fetchOptions.UrlTemplate))
+        {
+            var globalOptions = _optionsMonitor.CurrentValue.HttpFetch;
+            if (!globalOptions.Enabled || string.IsNullOrWhiteSpace(globalOptions.UrlTemplate))
+            {
+                _logger.LogWarning("Device {DeviceId} has no valid HTTP fetch configuration (gateway config or global config)", device.DeviceId);
+                return Array.Empty<CollectedDataPointValue>();
+            }
+            fetchOptions = globalOptions;
+            _logger.LogDebug("Using global HTTP fetch config for device {DeviceId}", device.DeviceId);
         }
 
         var httpClient = _httpClientFactory.CreateClient(nameof(HttpIoTDataFetchClient));
-        httpClient.Timeout = TimeSpan.FromSeconds(Math.Max(1, options.RequestTimeoutSeconds));
+        httpClient.Timeout = TimeSpan.FromSeconds(Math.Max(1, fetchOptions.RequestTimeoutSeconds));
 
-        var retries = ShouldRetry(options.Method) ? options.RetryCount : 0;
-        var delayMs = Math.Max(0, options.RetryDelayMs);
+        var retries = ShouldRetry(fetchOptions.Method) ? fetchOptions.RetryCount : 0;
+        var delayMs = Math.Max(0, fetchOptions.RetryDelayMs);
 
         for (var attempt = 0; attempt <= retries; attempt++)
         {
             try
             {
-                var request = BuildRequest(options, device);
+                var request = BuildRequest(fetchOptions, device);
                 using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -59,11 +81,39 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
                     return Array.Empty<CollectedDataPointValue>();
                 }
 
-                var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                var payload = await JsonSerializer.DeserializeAsync<Dictionary<string, object>>(stream, cancellationToken: cancellationToken)
+                var contentString = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                _logger.LogDebug("Raw HTTP response for device {DeviceId}: {Response}", device.DeviceId, 
+                    contentString.Length > 500 ? contentString.Substring(0, 500) + "..." : contentString);
+                
+                Dictionary<string, object> payload;
+                try
+                {
+                    payload = JsonSerializer.Deserialize<Dictionary<string, object>>(contentString)
                               ?? new Dictionary<string, object>();
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(ex, "Failed to parse JSON response for device {DeviceId}. Response: {Response}", 
+                        device.DeviceId, contentString);
+                    return Array.Empty<CollectedDataPointValue>();
+                }
 
-                return MapToDataPoints(payload, dataPoints);
+                _logger.LogInformation("Fetched data for device {DeviceId}: {KeyCount} keys in response: [{Keys}]", 
+                    device.DeviceId, payload.Count, string.Join(", ", payload.Keys));
+                
+                var mapped = MapToDataPoints(payload, dataPoints);
+                _logger.LogInformation("Mapped {MappedCount}/{TotalCount} data points for device {DeviceId}", 
+                    mapped.Count, dataPoints.Count, device.DeviceId);
+                
+                if (mapped.Count == 0 && dataPoints.Count > 0)
+                {
+                    _logger.LogWarning("No data points mapped for device {DeviceId}. Payload keys: [{Keys}], Expected data points: [{DataPoints}]", 
+                        device.DeviceId, 
+                        string.Join(", ", payload.Keys),
+                        string.Join(", ", dataPoints.Select(dp => $"{dp.DataPointId}({dp.Name})")));
+                }
+                
+                return mapped;
             }
             catch (OperationCanceledException)
             {
@@ -83,6 +133,66 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
         }
 
         return Array.Empty<CollectedDataPointValue>();
+    }
+
+    private HttpFetchOptions BuildFetchOptionsFromGateway(IoTGateway gateway)
+    {
+        var options = new HttpFetchOptions
+        {
+            Enabled = true,
+            RequestTimeoutSeconds = 30,
+            RetryCount = 1,
+            RetryDelayMs = 500
+        };
+
+        // 优先从 Config 读取 urlTemplate
+        if (gateway.Config != null && gateway.Config.TryGetValue("urlTemplate", out var urlTemplate) && !string.IsNullOrWhiteSpace(urlTemplate))
+        {
+            options.UrlTemplate = urlTemplate;
+        }
+        // 如果 Config 中没有，使用 Address
+        else if (!string.IsNullOrWhiteSpace(gateway.Address))
+        {
+            options.UrlTemplate = gateway.Address;
+        }
+        else
+        {
+            _logger.LogWarning("Gateway {GatewayId} has no URL configured (neither Config.urlTemplate nor Address)", gateway.GatewayId);
+            return options; // 返回空 URL 的 options
+        }
+
+        // 从网关配置读取HTTP方法
+        if (gateway.Config != null && gateway.Config.TryGetValue("httpMethod", out var httpMethod) && !string.IsNullOrWhiteSpace(httpMethod))
+        {
+            if (Enum.TryParse<HttpFetchMethod>(httpMethod, true, out var method))
+            {
+                options.Method = method;
+            }
+            else
+            {
+                _logger.LogWarning("Gateway {GatewayId} has invalid httpMethod: {HttpMethod}", gateway.GatewayId, httpMethod);
+            }
+        }
+
+        // 读取其他可选配置
+        if (gateway.Config != null)
+        {
+            if (gateway.Config.TryGetValue("requestTimeoutSeconds", out var timeout) && 
+                int.TryParse(timeout, out var timeoutSeconds))
+            {
+                options.RequestTimeoutSeconds = timeoutSeconds;
+            }
+
+            if (gateway.Config.TryGetValue("retryCount", out var retry) && 
+                int.TryParse(retry, out var retryCount))
+            {
+                options.RetryCount = retryCount;
+            }
+        }
+
+        _logger.LogDebug("Built fetch options for gateway {GatewayId}: Method={Method}, Url={Url}", 
+            gateway.GatewayId, options.Method, options.UrlTemplate);
+        return options;
     }
 
     private static HttpRequestMessage BuildRequest(HttpFetchOptions options, IoTDevice device)
@@ -136,11 +246,15 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
     private static bool ShouldRetry(HttpFetchMethod method) =>
         method is HttpFetchMethod.Get or HttpFetchMethod.Put or HttpFetchMethod.Delete or HttpFetchMethod.Pull;
 
-    private static IReadOnlyList<CollectedDataPointValue> MapToDataPoints(
+    private IReadOnlyList<CollectedDataPointValue> MapToDataPoints(
         Dictionary<string, object> payload,
         IReadOnlyList<IoTDataPoint> dataPoints)
     {
         var results = new List<CollectedDataPointValue>();
+        var payloadKeys = string.Join(", ", payload.Keys);
+        _logger.LogDebug("Mapping data points. Payload keys: [{Keys}], DataPoints: [{DataPointIds}]", 
+            payloadKeys, string.Join(", ", dataPoints.Select(dp => $"{dp.DataPointId}({dp.Name})")));
+        
         foreach (var dp in dataPoints)
         {
             if (payload.TryGetValue(dp.DataPointId, out var valueObj))
@@ -151,6 +265,8 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
                     Value = valueObj?.ToString() ?? string.Empty,
                     ReportedAt = DateTime.UtcNow
                 });
+                _logger.LogDebug("Mapped data point {DataPointId} by DataPointId, value: {Value}", 
+                    dp.DataPointId, valueObj?.ToString());
                 continue;
             }
 
@@ -162,6 +278,13 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
                     Value = valueObj2?.ToString() ?? string.Empty,
                     ReportedAt = DateTime.UtcNow
                 });
+                _logger.LogDebug("Mapped data point {DataPointId} by Name ({Name}), value: {Value}", 
+                    dp.DataPointId, dp.Name, valueObj2?.ToString());
+            }
+            else
+            {
+                _logger.LogDebug("Data point {DataPointId} ({Name}) not found in payload", 
+                    dp.DataPointId, dp.Name);
             }
         }
 

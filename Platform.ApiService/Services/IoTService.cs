@@ -683,7 +683,8 @@ public class IoTService : IIoTService
             if (device != null)
             {
                 var deviceFilter = Builders<IoTDevice>.Filter.Eq(x => x.Id, device.Id);
-                var update = Builders<IoTDevice>.Update.PullFilter(x => x.DataPoints, result.DataPointId);
+                // Pull 用于从字符串列表中移除值，PullFilter 用于移除匹配过滤器的元素
+                var update = Builders<IoTDevice>.Update.Pull(x => x.DataPoints, result.DataPointId);
                 await _deviceFactory.FindOneAndUpdateAsync(deviceFilter, update);
             }
 

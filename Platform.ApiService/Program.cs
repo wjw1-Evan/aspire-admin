@@ -196,8 +196,13 @@ builder.Services.AddSingleton<IIoTDataFetchClient>(sp =>
         ? sp.GetRequiredService<HttpIoTDataFetchClient>()
         : sp.GetRequiredService<HttpIoTDataFetchClient>(); // 未启用时返回空结果
 });
+builder.Services.AddScoped<SimpleHttpDataCollector>();
 builder.Services.AddScoped<IoTDataCollector>();
 builder.Services.AddHostedService<IoTDataCollectionHostedService>();
+
+// 网关状态检测服务
+builder.Services.AddScoped<IoTGatewayStatusChecker>();
+builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
 
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();

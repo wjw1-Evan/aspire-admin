@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -109,5 +111,54 @@ public class IoTDataCollectorTests
         Assert.Equal(1, result.RecordsInserted);
         Assert.Equal(0, result.RecordsSkipped);
         Assert.Empty(result.Warnings);
+    }
+}
+
+public class IoTGatewayStatusCheckerTests
+{
+    [Fact]
+    public async Task Should_Skip_Gateway_Without_Address()
+    {
+        var options = new IoTDataCollectionOptions
+        {
+            GatewayStatusCheckEnabled = true,
+            GatewayPingTimeoutSeconds = 5
+        };
+
+        var optionsMonitor = new Mock<IOptionsMonitor<IoTDataCollectionOptions>>();
+        optionsMonitor.SetupGet(m => m.CurrentValue).Returns(options);
+
+        var gateway = new IoTGateway
+        {
+            GatewayId = "gw-1",
+            CompanyId = "c1",
+            Address = string.Empty, // 无地址
+            Status = IoTDeviceStatus.Offline
+        };
+
+        var gatewayFactory = new Mock<IDatabaseOperationFactory<IoTGateway>>();
+        gatewayFactory.Setup(f => f.CreateFilterBuilder()).Returns(new FilterBuilder<IoTGateway>());
+        gatewayFactory.Setup(f => f.FindAsync(It.IsAny<FilterDefinition<IoTGateway>>(), null, null, null))
+            .ReturnsAsync(new List<IoTGateway> { gateway });
+
+        var httpClientFactory = new Mock<IHttpClientFactory>();
+        httpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(new HttpClient());
+
+        var checker = new IoTGatewayStatusChecker(
+            gatewayFactory.Object,
+            httpClientFactory.Object,
+            optionsMonitor.Object,
+            NullLogger<IoTGatewayStatusChecker>.Instance);
+
+        await checker.CheckAndUpdateGatewayStatusesAsync(CancellationToken.None);
+
+        // 应该跳过无地址的网关，不更新状态
+        gatewayFactory.Verify(
+            f => f.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<IoTGateway>>(),
+                It.IsAny<UpdateDefinition<IoTGateway>>(),
+                null),
+            Times.Never);
     }
 }

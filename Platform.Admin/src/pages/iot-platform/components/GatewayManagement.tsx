@@ -115,7 +115,12 @@ const GatewayManagement: React.FC = () => {
 
   const handleEdit = (gateway: IoTGateway) => {
     setSelectedGateway(gateway);
-    form.setFieldsValue(gateway);
+    const formValues: any = { ...gateway };
+    // 确保config字段正确设置
+    if (gateway.config) {
+      formValues.config = gateway.config;
+    }
+    form.setFieldsValue(formValues);
     setIsModalVisible(true);
   };
 
@@ -147,7 +152,23 @@ const GatewayManagement: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     // 后端仍可能需要 name 字段，这里与 title 保持一致
-    const payload = { ...values, name: values.title };
+    const payload: any = { ...values, name: values.title };
+    
+    // 如果是HTTP协议，将HTTP方法和地址保存到config中
+    if (values.protocolType === 'HTTP') {
+      payload.config = {
+        httpMethod: values.config?.httpMethod || 'GET',
+        urlTemplate: values.address || values.config?.urlTemplate || '',
+      };
+      // 确保address字段也保存（用于显示）
+      if (!payload.address && payload.config.urlTemplate) {
+        payload.address = payload.config.urlTemplate;
+      }
+    } else if (values.config) {
+      // 非HTTP协议也保留config（如果有）
+      payload.config = values.config;
+    }
+    
     try {
       if (selectedGateway) {
         const response = await iotService.updateGateway(selectedGateway.id, payload);
@@ -374,18 +395,29 @@ const GatewayManagement: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            label="请求方式"
-            name={['config', 'httpMethod']}
-            rules={[{ required: true, message: '请选择请求方式' }]}
-            initialValue="GET"
+            noStyle
+            shouldUpdate={(prevValues, currentValues) =>
+              prevValues.protocolType !== currentValues.protocolType
+            }
           >
-            <Select placeholder="请选择请求方式">
-              {httpMethods.map((m) => (
-                <Select.Option key={m} value={m}>
-                  {m}
-                </Select.Option>
-              ))}
-            </Select>
+            {({ getFieldValue }) =>
+              getFieldValue('protocolType') === 'HTTP' ? (
+                <Form.Item
+                  label="请求方式"
+                  name={['config', 'httpMethod']}
+                  rules={[{ required: true, message: '请选择请求方式' }]}
+                  initialValue="GET"
+                >
+                  <Select placeholder="请选择请求方式">
+                    {httpMethods.map((m) => (
+                      <Select.Option key={m} value={m}>
+                        {m}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              ) : null
+            }
           </Form.Item>
 
           <Form.Item

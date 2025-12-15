@@ -1,4 +1,7 @@
 using System.Collections.Concurrent;
+using System.Linq;
+using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Models;
 using Platform.ApiService.Options;
@@ -16,6 +19,7 @@ public class IoTDataCollector
     private readonly IDatabaseOperationFactory<IoTDataPoint> _dataPointFactory;
     private readonly IDatabaseOperationFactory<IoTDataRecord> _dataRecordFactory;
     private readonly IIoTDataFetchClient _fetchClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<IoTDataCollector> _logger;
 
@@ -28,6 +32,7 @@ public class IoTDataCollector
         IDatabaseOperationFactory<IoTDataPoint> dataPointFactory,
         IDatabaseOperationFactory<IoTDataRecord> dataRecordFactory,
         IIoTDataFetchClient fetchClient,
+        IHttpClientFactory httpClientFactory,
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
         ILogger<IoTDataCollector> logger)
     {
@@ -36,12 +41,13 @@ public class IoTDataCollector
         _dataPointFactory = dataPointFactory;
         _dataRecordFactory = dataRecordFactory;
         _fetchClient = fetchClient;
+        _httpClientFactory = httpClientFactory;
         _optionsMonitor = optionsMonitor;
         _logger = logger;
     }
 
     /// <summary>
-    /// 执行一次采集
+    /// 执行一次采集（统一模式：自动处理所有网关和设备）
     /// </summary>
     public async Task<IoTDataCollectionResult> RunOnceAsync(CancellationToken cancellationToken)
     {
@@ -64,68 +70,56 @@ public class IoTDataCollector
         var recordsInserted = 0;
         var recordsSkipped = 0;
 
-        var pageIndex = 1;
-        while (!token.IsCancellationRequested)
+        // 统一模式：按网关处理
+        // 1. HTTP网关：自动创建设备和数据点（如果不存在），然后采集
+        // 2. 非HTTP网关：使用手动创建的设备和数据点采集
+        var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
+            .Equal(g => g.IsEnabled, true)
+            .ExcludeDeleted()
+            .Build();
+
+        var gateways = await _gatewayFactory.FindAsync(gatewayFilter).ConfigureAwait(false);
+        
+        if (gateways.Count == 0)
         {
-            var deviceFilter = _deviceFactory.CreateFilterBuilder()
-                .Equal(d => d.IsEnabled, true)
-                .ExcludeDeleted()
-                .Build();
-            var deviceSort = _deviceFactory.CreateSortBuilder()
-                .Descending(d => d.CreatedAt)
-                .Build();
-
-            var (devices, total) = await _deviceFactory.FindPagedAsync(
-                deviceFilter,
-                deviceSort,
-                pageIndex,
-                options.PageSize).ConfigureAwait(false);
-
-            if (devices.Count == 0)
-            {
-                break;
-            }
-
-            var throttler = new SemaphoreSlim(Math.Max(1, options.MaxDegreeOfParallelism));
-            var deviceTasks = devices.Select(async device =>
-            {
-                await throttler.WaitAsync(token).ConfigureAwait(false);
-                try
-                {
-                    var deviceResult = await ProcessDeviceAsync(device, token).ConfigureAwait(false);
-                    Interlocked.Add(ref dataPointsProcessed, deviceResult.DataPointsProcessed);
-                    Interlocked.Add(ref recordsInserted, deviceResult.RecordsInserted);
-                    Interlocked.Add(ref recordsSkipped, deviceResult.RecordsSkipped);
-                    if (deviceResult.Warning != null)
-                    {
-                        warnings.Add(deviceResult.Warning);
-                    }
-                    Interlocked.Increment(ref devicesProcessed);
-                }
-                catch (OperationCanceledException)
-                {
-                    // respect cancellation
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Collect data for device {DeviceId} failed", device.DeviceId);
-                    warnings.Add($"设备 {device.DeviceId} 采集失败: {ex.Message}");
-                }
-                finally
-                {
-                    throttler.Release();
-                }
-            }).ToList();
-
-            await Task.WhenAll(deviceTasks).ConfigureAwait(false);
-
-            if (pageIndex * options.PageSize >= total)
-            {
-                break;
-            }
-
-            pageIndex++;
+            _logger.LogDebug("No enabled gateways found");
+            return result;
         }
+
+        _logger.LogInformation("Starting unified data collection for {GatewayCount} gateways", gateways.Count);
+
+        var throttler = new SemaphoreSlim(Math.Max(1, options.MaxDegreeOfParallelism));
+        var gatewayTasks = gateways.Select(async gateway =>
+        {
+            await throttler.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                var gatewayResult = await ProcessGatewayAsync(gateway, token).ConfigureAwait(false);
+                Interlocked.Add(ref devicesProcessed, gatewayResult.DevicesProcessed);
+                Interlocked.Add(ref dataPointsProcessed, gatewayResult.DataPointsProcessed);
+                Interlocked.Add(ref recordsInserted, gatewayResult.RecordsInserted);
+                Interlocked.Add(ref recordsSkipped, gatewayResult.RecordsSkipped);
+                foreach (var warning in gatewayResult.Warnings)
+                {
+                    warnings.Add(warning);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // respect cancellation
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Collect data for gateway {GatewayId} failed", gateway.GatewayId);
+                warnings.Add($"网关 {gateway.GatewayId} 采集失败: {ex.Message}");
+            }
+            finally
+            {
+                throttler.Release();
+            }
+        }).ToList();
+
+        await Task.WhenAll(gatewayTasks).ConfigureAwait(false);
 
         result.DevicesProcessed = devicesProcessed;
         result.DataPointsProcessed = dataPointsProcessed;
@@ -136,16 +130,108 @@ public class IoTDataCollector
         return result;
     }
 
+    /// <summary>
+    /// 统一处理网关：根据网关类型自动选择处理方式
+    /// </summary>
+    private async Task<IoTDataCollectionResult> ProcessGatewayAsync(
+        IoTGateway gateway,
+        CancellationToken cancellationToken)
+    {
+        var result = new IoTDataCollectionResult();
+        var warnings = new List<string>();
+
+        // HTTP网关：使用简化模式（自动创建设备和数据点）
+        if (gateway.ProtocolType?.Equals("HTTP", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var simpleCollectorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<SimpleHttpDataCollector>.Instance;
+            var simpleCollector = new SimpleHttpDataCollector(
+                _gatewayFactory,
+                _deviceFactory,
+                _dataPointFactory,
+                _dataRecordFactory,
+                _httpClientFactory,
+                _optionsMonitor,
+                simpleCollectorLogger);
+
+            var gatewayResult = await simpleCollector.CollectGatewayDataAsync(gateway, cancellationToken).ConfigureAwait(false);
+            
+            if (gatewayResult.Success)
+            {
+                result.DevicesProcessed = 1;
+                result.DataPointsProcessed = gatewayResult.DataPointsFound;
+                result.RecordsInserted = gatewayResult.RecordsInserted;
+                result.RecordsSkipped = gatewayResult.RecordsSkipped;
+            }
+            else if (!string.IsNullOrWhiteSpace(gatewayResult.Warning))
+            {
+                warnings.Add(gatewayResult.Warning);
+            }
+        }
+        else
+        {
+            // 非HTTP网关：使用传统模式（处理网关下的所有设备）
+            var deviceFilter = _deviceFactory.CreateFilterBuilder()
+                .Equal(d => d.GatewayId, gateway.GatewayId)
+                .Equal(d => d.IsEnabled, true)
+                .WithTenant(gateway.CompanyId)
+                .ExcludeDeleted()
+                .Build();
+
+            var devices = await _deviceFactory.FindAsync(deviceFilter).ConfigureAwait(false);
+            
+            if (devices.Count == 0)
+            {
+                warnings.Add($"网关 {gateway.GatewayId} 下没有启用的设备");
+            }
+            else
+            {
+                foreach (var device in devices)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    
+                    var deviceResult = await ProcessDeviceAsync(device, cancellationToken).ConfigureAwait(false);
+                    result.DataPointsProcessed += deviceResult.DataPointsProcessed;
+                    result.RecordsInserted += deviceResult.RecordsInserted;
+                    result.RecordsSkipped += deviceResult.RecordsSkipped;
+                    if (deviceResult.Warning != null)
+                    {
+                        warnings.Add(deviceResult.Warning);
+                    }
+                    result.DevicesProcessed++;
+                }
+            }
+        }
+
+        result.Warnings = warnings;
+        return result;
+    }
+
+
     private async Task<DeviceProcessResult> ProcessDeviceAsync(
         IoTDevice device,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(device.CompanyId))
         {
+            _logger.LogWarning("Device {DeviceId} missing CompanyId, skipping", device.DeviceId);
             return DeviceProcessResult.WithWarning($"设备 {device.DeviceId} 缺少企业信息，已跳过。");
         }
 
+        if (string.IsNullOrWhiteSpace(device.GatewayId))
+        {
+            _logger.LogWarning("Device {DeviceId} missing GatewayId, skipping", device.DeviceId);
+            return DeviceProcessResult.WithWarning($"设备 {device.DeviceId} 缺少网关信息，已跳过。");
+        }
+
         var gateway = await FindGatewayAsync(device.CompanyId, device.GatewayId, cancellationToken).ConfigureAwait(false);
+        if (gateway == null)
+        {
+            _logger.LogWarning("Gateway {GatewayId} not found for device {DeviceId}", device.GatewayId, device.DeviceId);
+            return DeviceProcessResult.WithWarning($"设备 {device.DeviceId} 的网关 {device.GatewayId} 不存在，已跳过。");
+        }
+
+        _logger.LogDebug("Processing device {DeviceId} with gateway {GatewayId} (Protocol: {Protocol})", 
+            device.DeviceId, gateway.GatewayId, gateway.ProtocolType);
 
         var dataPointFilter = _dataPointFactory.CreateFilterBuilder()
             .Equal(dp => dp.DeviceId, device.DeviceId)
@@ -157,14 +243,22 @@ public class IoTDataCollector
         var dataPoints = await _dataPointFactory.FindAsync(dataPointFilter).ConfigureAwait(false);
         if (dataPoints.Count == 0)
         {
+            _logger.LogWarning("Device {DeviceId} has no enabled data points configured", device.DeviceId);
             return DeviceProcessResult.WithWarning($"设备 {device.DeviceId} 未配置可用数据点，已跳过。");
         }
+
+        _logger.LogDebug("Fetching data for device {DeviceId} with {DataPointCount} data points", 
+            device.DeviceId, dataPoints.Count);
 
         var collected = await _fetchClient.FetchAsync(gateway, device, dataPoints, cancellationToken).ConfigureAwait(false);
         if (collected.Count == 0)
         {
+            _logger.LogWarning("Device {DeviceId} returned no collected data", device.DeviceId);
             return DeviceProcessResult.WithWarning($"设备 {device.DeviceId} 未返回任何采集数据。");
         }
+
+        _logger.LogInformation("Device {DeviceId} collected {CollectedCount}/{TotalDataPoints} data points", 
+            device.DeviceId, collected.Count, dataPoints.Count);
 
         var dpLookup = dataPoints.ToDictionary(dp => dp.DataPointId, dp => dp);
         var recordsInserted = 0;

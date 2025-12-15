@@ -139,11 +139,17 @@ const DataPointManagement: React.FC = () => {
       const response = await iotService.deleteDataPoint(id);
       if (response.success) {
         message.success('删除成功');
-        actionRef.current?.reload();
-        fetchOverviewStats();
+        // 确保刷新操作执行
+        setTimeout(() => {
+          actionRef.current?.reload();
+          fetchOverviewStats();
+        }, 100);
+      } else {
+        message.error(response.errorMessage || '删除失败');
       }
-    } catch (error) {
-      message.error('删除失败');
+    } catch (error: any) {
+      console.error('删除数据点失败:', error);
+      message.error(error?.message || '删除失败');
     }
   };
 
@@ -153,22 +159,34 @@ const DataPointManagement: React.FC = () => {
         const response = await iotService.updateDataPoint(selectedDataPoint.id, values);
         if (response.success) {
           message.success('更新成功');
+        } else {
+          message.error(response.errorMessage || '更新失败');
+          return;
         }
       } else {
         const response = await iotService.createDataPoint(values);
         if (response.success) {
           message.success('创建成功');
+        } else {
+          message.error(response.errorMessage || '创建失败');
+          return;
         }
       }
       setIsModalVisible(false);
-      actionRef.current?.reload();
-      fetchOverviewStats();
-    } catch (error) {
-      message.error('操作失败');
+      // 确保刷新操作执行
+      setTimeout(() => {
+        actionRef.current?.reload();
+        fetchOverviewStats();
+      }, 100);
+    } catch (error: any) {
+      console.error('操作失败:', error);
+      message.error(error?.message || '操作失败');
     }
   };
 
   const getDataTypeLabel = (type: string) => {
+    // 支持 camelCase (后端返回) 和首字母大写格式
+    const normalizedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
     const typeMap: Record<string, string> = {
       Numeric: '数值',
       Boolean: '布尔',
@@ -176,7 +194,7 @@ const DataPointManagement: React.FC = () => {
       Enum: '枚举',
       Json: 'JSON',
     };
-    return typeMap[type] || type;
+    return typeMap[normalizedType] || type;
   };
 
   const columns: ProColumns<IoTDataPoint>[] = [
@@ -185,6 +203,7 @@ const DataPointManagement: React.FC = () => {
       dataIndex: 'title',
       key: 'title',
       width: 150,
+      ellipsis: true,
     },
     {
       title: '所属设备',
@@ -210,18 +229,119 @@ const DataPointManagement: React.FC = () => {
       width: 80,
     },
     {
-      title: '最后值',
-      dataIndex: 'lastValue',
-      key: 'lastValue',
-      width: 100,
+      title: '采样间隔(秒)',
+      dataIndex: 'samplingInterval',
+      key: 'samplingInterval',
+      width: 120,
+      hideInSearch: true,
     },
     {
-      title: '启用',
+      title: '最后采集值',
+      dataIndex: 'lastValue',
+      key: 'lastValue',
+      width: 150,
+      hideInSearch: true,
+      render: (value: string, record: IoTDataPoint) => {
+        if (!value) {
+          return <span style={{ color: '#999' }}>暂无数据</span>;
+        }
+        // 如果是 JSON 类型，尝试格式化显示
+        if (record.dataType?.toLowerCase() === 'json') {
+          try {
+            const parsed = JSON.parse(value);
+            const preview = JSON.stringify(parsed).substring(0, 50);
+            return (
+              <span title={value} style={{ fontFamily: 'monospace', fontSize: '12px' }}>
+                {preview}
+                {value.length > 50 ? '...' : ''}
+              </span>
+            );
+          } catch {
+            return <span title={value}>{value.substring(0, 30)}{value.length > 30 ? '...' : ''}</span>;
+          }
+        }
+        return (
+          <span title={value}>
+            {value}
+            {record.unit && <span style={{ color: '#999', marginLeft: 4 }}>{record.unit}</span>}
+          </span>
+        );
+      },
+    },
+    {
+      title: '最后采集时间',
+      dataIndex: 'lastUpdatedAt',
+      key: 'lastUpdatedAt',
+      width: 180,
+      hideInSearch: true,
+      sorter: true,
+      render: (time: string) => {
+        if (!time) {
+          return <span style={{ color: '#999' }}>暂无</span>;
+        }
+        const date = new Date(time);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        let timeAgo = '';
+        if (diffMins < 1) {
+          timeAgo = '刚刚';
+        } else if (diffMins < 60) {
+          timeAgo = `${diffMins}分钟前`;
+        } else if (diffHours < 24) {
+          timeAgo = `${diffHours}小时前`;
+        } else if (diffDays < 7) {
+          timeAgo = `${diffDays}天前`;
+        } else {
+          timeAgo = '';
+        }
+        
+        return (
+          <div>
+            <div>{date.toLocaleString('zh-CN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}</div>
+            {timeAgo && (
+              <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>
+                {timeAgo}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: '告警配置',
+      dataIndex: 'alarmConfig',
+      key: 'alarmConfig',
+      width: 100,
+      hideInSearch: true,
+      render: (alarmConfig: any) => {
+        if (alarmConfig?.isEnabled) {
+          return <Tag color="orange">已配置</Tag>;
+        }
+        return <Tag color="default">未配置</Tag>;
+      },
+    },
+    {
+      title: '启用状态',
       dataIndex: 'isEnabled',
       key: 'isEnabled',
-      width: 80,
+      width: 100,
+      valueType: 'select',
+      valueEnum: {
+        true: { text: '启用', status: 'Success' },
+        false: { text: '禁用', status: 'Default' },
+      },
       render: (isEnabled: boolean) => (
-        <Tag color={isEnabled ? 'green' : 'red'}>{isEnabled ? '是' : '否'}</Tag>
+        <Tag color={isEnabled ? 'green' : 'default'}>{isEnabled ? '启用' : '禁用'}</Tag>
       ),
     },
     {
@@ -297,14 +417,18 @@ const DataPointManagement: React.FC = () => {
         </Row>
       </Card>
 
-      {/* 数据点列表表格 */}
+      {/* 数据点配置列表表格 */}
       <ProTable<IoTDataPoint>
         actionRef={actionRef}
         columns={columns}
         request={fetchDataPoints}
         rowKey="id"
-        search={false}
+        search={{
+          labelWidth: 90,
+        }}
         toolbar={{
+          title: '数据点管理 - 配置管理',
+          tooltip: '管理数据点的配置信息，包括数据类型、单位、告警规则等',
           actions: [
             <Button
               key="create"
@@ -451,20 +575,64 @@ const DataPointManagement: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>最后值</div>
-              <div style={{ fontSize: 16, fontWeight: 500 }}>
-                {selectedDataPoint.lastValue || '-'} {selectedDataPoint.unit}
-              </div>
+              <div style={{ color: '#666', marginBottom: 4 }}>采样间隔</div>
+              <div>{selectedDataPoint.samplingInterval} 秒</div>
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>最后更新时间</div>
-              <div>
-                {selectedDataPoint.lastUpdatedAt
-                  ? new Date(selectedDataPoint.lastUpdatedAt).toLocaleString()
-                  : '-'}
-              </div>
+              <div style={{ color: '#666', marginBottom: 4 }}>只读</div>
+              <div>{selectedDataPoint.isReadOnly ? '是' : '否'}</div>
             </div>
+
+            <div style={{ marginBottom: 16, padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+              <div style={{ color: '#666', marginBottom: 8, fontWeight: 500 }}>最后采集数据</div>
+              {selectedDataPoint.lastValue ? (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 4, wordBreak: 'break-all' }}>
+                    {selectedDataPoint.dataType?.toLowerCase() === 'json' ? (
+                      <pre style={{ margin: 0, fontSize: '12px', whiteSpace: 'pre-wrap' }}>
+                        {JSON.stringify(JSON.parse(selectedDataPoint.lastValue), null, 2)}
+                      </pre>
+                    ) : (
+                      <>
+                        {selectedDataPoint.lastValue}
+                        {selectedDataPoint.unit && (
+                          <span style={{ color: '#999', marginLeft: 4 }}>{selectedDataPoint.unit}</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  {selectedDataPoint.lastUpdatedAt && (
+                    <div style={{ fontSize: '12px', color: '#999' }}>
+                      采集时间: {new Date(selectedDataPoint.lastUpdatedAt).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ color: '#999' }}>暂无采集数据</div>
+              )}
+            </div>
+
+            {selectedDataPoint.alarmConfig?.isEnabled && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ color: '#666', marginBottom: 4 }}>告警配置</div>
+                <div>
+                  <Tag color="orange">已启用</Tag>
+                  <div style={{ marginTop: 8 }}>
+                    <div>类型: {selectedDataPoint.alarmConfig.alarmType}</div>
+                    <div>阈值: {selectedDataPoint.alarmConfig.threshold}</div>
+                    <div>级别: {selectedDataPoint.alarmConfig.level}</div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {selectedDataPoint.minValue !== undefined && (
               <div style={{ marginBottom: 16 }}>

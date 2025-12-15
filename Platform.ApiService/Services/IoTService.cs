@@ -2,6 +2,7 @@ using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace Platform.ApiService.Services;
 
@@ -60,7 +61,7 @@ public class IoTService : IIoTService
             Address = request.Address,
             Username = request.Username,
             Password = request.Password,
-            Config = request.Config,
+            Config = NormalizeConfig(request.Config),
             Tags = request.Tags ?? new(),
             Remarks = request.Remarks
         };
@@ -140,7 +141,7 @@ public class IoTService : IIoTService
         if (request.IsEnabled.HasValue)
             updates.Add(builder.Set(x => x.IsEnabled, request.IsEnabled.Value));
         if (request.Config != null)
-            updates.Add(builder.Set(x => x.Config, request.Config));
+            updates.Add(builder.Set(x => x.Config, NormalizeConfig(request.Config)));
         if (request.Tags != null)
             updates.Add(builder.Set(x => x.Tags, request.Tags));
         if (request.Remarks != null)
@@ -1032,6 +1033,17 @@ public class IoTService : IIoTService
             "RangeThreshold" => value < config.Threshold || value > (config.Threshold * 2), // Simple range check
             _ => false
         };
+    }
+
+    private static Dictionary<string, string>? NormalizeConfig(Dictionary<string, string>? config)
+    {
+        if (config == null || config.Count == 0)
+        {
+            return null;
+        }
+
+        // 仅保留可序列化的字符串键值对
+        return config.ToDictionary(kv => kv.Key, kv => kv.Value ?? string.Empty);
     }
 
     #endregion

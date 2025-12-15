@@ -174,6 +174,8 @@ const GatewayManagement: React.FC = () => {
     return <Tag color={config.color}>{config.label}</Tag>;
   };
 
+  const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'PULL'];
+
   const columns: ProColumns<IoTGateway>[] = [
     {
       title: '网关名称',
@@ -186,6 +188,16 @@ const GatewayManagement: React.FC = () => {
       dataIndex: 'protocolType',
       key: 'protocolType',
       width: 100,
+    },
+    {
+      title: '请求方式',
+      dataIndex: ['config', 'httpMethod'],
+      key: 'httpMethod',
+      width: 110,
+      render: (_, record) => {
+        const method = record?.config?.httpMethod || '-';
+        return <Tag color="blue">{method}</Tag>;
+      },
     },
     {
       title: '地址',
@@ -358,6 +370,21 @@ const GatewayManagement: React.FC = () => {
               <Select.Option value="HTTP">HTTP</Select.Option>
               <Select.Option value="Modbus">Modbus</Select.Option>
               <Select.Option value="CoAP">CoAP</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="请求方式"
+            name={['config', 'httpMethod']}
+            rules={[{ required: true, message: '请选择请求方式' }]}
+            initialValue="GET"
+          >
+            <Select placeholder="请选择请求方式">
+              {httpMethods.map((m) => (
+                <Select.Option key={m} value={m}>
+                  {m}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
 

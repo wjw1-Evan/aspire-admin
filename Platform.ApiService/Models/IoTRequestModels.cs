@@ -19,8 +19,8 @@ public class CreateIoTGatewayRequest
     public string? Username { get; set; }
     /// <summary>连接密码</summary>
     public string? Password { get; set; }
-    /// <summary>配置信息（JSON格式）</summary>
-    public Dictionary<string, object>? Config { get; set; }
+    /// <summary>配置信息（字符串键值对）</summary>
+    public Dictionary<string, string>? Config { get; set; }
     /// <summary>标签列表</summary>
     public List<string>? Tags { get; set; }
     /// <summary>备注</summary>
@@ -46,8 +46,8 @@ public class UpdateIoTGatewayRequest
     public string? Password { get; set; }
     /// <summary>是否启用</summary>
     public bool? IsEnabled { get; set; }
-    /// <summary>配置信息（JSON格式）</summary>
-    public Dictionary<string, object>? Config { get; set; }
+    /// <summary>配置信息（字符串键值对）</summary>
+    public Dictionary<string, string>? Config { get; set; }
     /// <summary>标签列表</summary>
     public List<string>? Tags { get; set; }
     /// <summary>备注</summary>

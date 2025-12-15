@@ -18,6 +18,7 @@ export interface IoTGateway {
   status: IoTDeviceStatus;
   lastConnectedAt?: string;
   deviceCount: number;
+  config?: Record<string, any>;
   tags: string[];
   remarks?: string;
   createdAt: string;

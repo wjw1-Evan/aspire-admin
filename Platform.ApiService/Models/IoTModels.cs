@@ -104,9 +104,9 @@ public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntit
     [BsonElement("deviceCount")]
     public int DeviceCount { get; set; } = 0;
 
-    /// <summary>配置信息（JSON格式）</summary>
+    /// <summary>配置信息（字符串键值对）</summary>
     [BsonElement("config")]
-    public Dictionary<string, object>? Config { get; set; }
+    public Dictionary<string, string>? Config { get; set; }
 
     /// <summary>标签</summary>
     [BsonElement("tags")]

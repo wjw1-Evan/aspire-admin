@@ -1,6 +1,4 @@
 
-using Platform.ApiService.Options;
-using Platform.ApiService.Services;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
+using Platform.ApiService.Options;
+using Platform.ApiService.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -185,7 +186,16 @@ builder.Services.AddScoped<ChatService.ChatServiceDependencies>();
 // IoT 数据采集配置与后台任务
 builder.Services.Configure<IoTDataCollectionOptions>(
     builder.Configuration.GetSection(IoTDataCollectionOptions.SectionName));
-builder.Services.AddSingleton<IIoTDataFetchClient, MockIoTDataFetchClient>();
+// 注册 HTTP 拉取客户端（未启用时不会采集）
+builder.Services.AddSingleton<HttpIoTDataFetchClient>();
+builder.Services.AddSingleton<IIoTDataFetchClient>(sp =>
+{
+    var opts = sp.GetRequiredService<IOptionsMonitor<IoTDataCollectionOptions>>();
+    var useHttp = opts.CurrentValue.HttpFetch?.Enabled == true;
+    return useHttp
+        ? sp.GetRequiredService<HttpIoTDataFetchClient>()
+        : sp.GetRequiredService<HttpIoTDataFetchClient>(); // 未启用时返回空结果
+});
 builder.Services.AddScoped<IoTDataCollector>();
 builder.Services.AddHostedService<IoTDataCollectionHostedService>();
 

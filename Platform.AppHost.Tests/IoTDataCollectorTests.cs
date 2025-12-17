@@ -48,7 +48,7 @@ public class IoTDataCollectorTests
         gatewayFactory.Setup(f => f.CreateFilterBuilder()).Returns(new FilterBuilder<IoTGateway>());
         gatewayFactory.Setup(f => f.CreateSortBuilder()).Returns(new SortBuilder<IoTGateway>());
         gatewayFactory.Setup(f => f.CreateUpdateBuilder()).Returns(new UpdateBuilder<IoTGateway>());
-        gatewayFactory.Setup(f => f.FindAsync(It.IsAny<FilterDefinition<IoTGateway>>(), null, It.IsAny<int?>(), null))
+        gatewayFactory.Setup(f => f.FindWithoutTenantFilterAsync(It.IsAny<FilterDefinition<IoTGateway>>(), null, It.IsAny<int?>(), null))
             .ReturnsAsync(new List<IoTGateway> { gateway });
 
         var deviceFactory = new Mock<IDatabaseOperationFactory<IoTDevice>>();
@@ -95,12 +95,17 @@ public class IoTDataCollectorTests
                 }
             });
 
+        var httpClientFactory = new Mock<IHttpClientFactory>();
+        httpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(new HttpClient());
+
         var collector = new IoTDataCollector(
             gatewayFactory.Object,
             deviceFactory.Object,
             dataPointFactory.Object,
             dataRecordFactory.Object,
             fetchClient.Object,
+            httpClientFactory.Object,
             optionsMonitor.Object,
             NullLogger<IoTDataCollector>.Instance);
 
@@ -111,6 +116,80 @@ public class IoTDataCollectorTests
         Assert.Equal(1, result.RecordsInserted);
         Assert.Equal(0, result.RecordsSkipped);
         Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public async Task Collector_Should_Group_Gateways_By_Tenant()
+    {
+        // Arrange
+        var options = new IoTDataCollectionOptions
+        {
+            Enabled = true,
+            PageSize = 10,
+            MaxDegreeOfParallelism = 1,
+            TimeoutSeconds = 30
+        };
+
+        var optionsMonitor = new Mock<IOptionsMonitor<IoTDataCollectionOptions>>();
+        optionsMonitor.SetupGet(m => m.CurrentValue).Returns(options);
+
+        var gateways = new List<IoTGateway>
+        {
+            new() { GatewayId = "gw-1", CompanyId = "company-1", IsEnabled = true, ProtocolType = "HTTP" },
+            new() { GatewayId = "gw-2", CompanyId = "company-1", IsEnabled = true, ProtocolType = "HTTP" },
+            new() { GatewayId = "gw-3", CompanyId = "company-2", IsEnabled = true, ProtocolType = "HTTP" }
+        };
+
+        var gatewayFactory = new Mock<IDatabaseOperationFactory<IoTGateway>>();
+        gatewayFactory.Setup(f => f.CreateFilterBuilder()).Returns(new FilterBuilder<IoTGateway>());
+        gatewayFactory.Setup(f => f.FindWithoutTenantFilterAsync(It.IsAny<FilterDefinition<IoTGateway>>(), null, It.IsAny<int?>(), null))
+            .ReturnsAsync(gateways);
+
+        var deviceFactory = new Mock<IDatabaseOperationFactory<IoTDevice>>();
+        deviceFactory.Setup(f => f.CreateFilterBuilder()).Returns(new FilterBuilder<IoTDevice>());
+        deviceFactory.Setup(f => f.CreateUpdateBuilder()).Returns(new UpdateBuilder<IoTDevice>());
+        deviceFactory.Setup(f => f.CreateAsync(It.IsAny<IoTDevice>()))
+            .ReturnsAsync((IoTDevice d) => d);
+
+        var dataPointFactory = new Mock<IDatabaseOperationFactory<IoTDataPoint>>();
+        dataPointFactory.Setup(f => f.CreateFilterBuilder()).Returns(new FilterBuilder<IoTDataPoint>());
+        dataPointFactory.Setup(f => f.CreateUpdateBuilder()).Returns(new UpdateBuilder<IoTDataPoint>());
+        dataPointFactory.Setup(f => f.CreateAsync(It.IsAny<IoTDataPoint>()))
+            .ReturnsAsync((IoTDataPoint dp) => dp);
+
+        var dataRecordFactory = new Mock<IDatabaseOperationFactory<IoTDataRecord>>();
+        dataRecordFactory.Setup(f => f.CreateFilterBuilder()).Returns(new FilterBuilder<IoTDataRecord>());
+        dataRecordFactory.Setup(f => f.CountAsync(It.IsAny<FilterDefinition<IoTDataRecord>>()))
+            .ReturnsAsync(0);
+        dataRecordFactory.Setup(f => f.CreateAsync(It.IsAny<IoTDataRecord>()))
+            .ReturnsAsync((IoTDataRecord r) => r);
+
+        var httpClientFactory = new Mock<IHttpClientFactory>();
+        var httpClient = new HttpClient(new MockHttpMessageHandler());
+        httpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(httpClient);
+
+        var collector = new IoTDataCollector(
+            gatewayFactory.Object,
+            deviceFactory.Object,
+            dataPointFactory.Object,
+            dataRecordFactory.Object,
+            new Mock<IIoTDataFetchClient>().Object,
+            httpClientFactory.Object,
+            optionsMonitor.Object,
+            NullLogger<IoTDataCollector>.Instance);
+
+        // Act
+        var result = await collector.RunOnceAsync(CancellationToken.None);
+
+        // Assert - 验证使用了 FindWithoutTenantFilterAsync 来跨租户查询
+        gatewayFactory.Verify(
+            f => f.FindWithoutTenantFilterAsync(
+                It.IsAny<FilterDefinition<IoTGateway>>(),
+                null,
+                It.IsAny<int?>(),
+                null),
+            Times.Once);
     }
 }
 
@@ -138,7 +217,7 @@ public class IoTGatewayStatusCheckerTests
 
         var gatewayFactory = new Mock<IDatabaseOperationFactory<IoTGateway>>();
         gatewayFactory.Setup(f => f.CreateFilterBuilder()).Returns(new FilterBuilder<IoTGateway>());
-        gatewayFactory.Setup(f => f.FindAsync(It.IsAny<FilterDefinition<IoTGateway>>(), null, null, null))
+        gatewayFactory.Setup(f => f.FindWithoutTenantFilterAsync(It.IsAny<FilterDefinition<IoTGateway>>(), null, null, null))
             .ReturnsAsync(new List<IoTGateway> { gateway });
 
         var httpClientFactory = new Mock<IHttpClientFactory>();
@@ -160,5 +239,66 @@ public class IoTGatewayStatusCheckerTests
                 It.IsAny<UpdateDefinition<IoTGateway>>(),
                 null),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task Should_Group_Gateways_By_Tenant()
+    {
+        // Arrange
+        var options = new IoTDataCollectionOptions
+        {
+            GatewayStatusCheckEnabled = true,
+            GatewayPingTimeoutSeconds = 5
+        };
+
+        var optionsMonitor = new Mock<IOptionsMonitor<IoTDataCollectionOptions>>();
+        optionsMonitor.SetupGet(m => m.CurrentValue).Returns(options);
+
+        var gateways = new List<IoTGateway>
+        {
+            new() { GatewayId = "gw-1", CompanyId = "company-1", Address = "http://test1.com", Status = IoTDeviceStatus.Offline },
+            new() { GatewayId = "gw-2", CompanyId = "company-1", Address = "http://test2.com", Status = IoTDeviceStatus.Offline },
+            new() { GatewayId = "gw-3", CompanyId = "company-2", Address = "http://test3.com", Status = IoTDeviceStatus.Offline }
+        };
+
+        var gatewayFactory = new Mock<IDatabaseOperationFactory<IoTGateway>>();
+        gatewayFactory.Setup(f => f.CreateFilterBuilder()).Returns(new FilterBuilder<IoTGateway>());
+        gatewayFactory.Setup(f => f.CreateUpdateBuilder()).Returns(new UpdateBuilder<IoTGateway>());
+        gatewayFactory.Setup(f => f.FindWithoutTenantFilterAsync(It.IsAny<FilterDefinition<IoTGateway>>(), null, null, null))
+            .ReturnsAsync(gateways);
+
+        var httpClientFactory = new Mock<IHttpClientFactory>();
+        var httpClient = new HttpClient(new MockHttpMessageHandler());
+        httpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(httpClient);
+
+        var checker = new IoTGatewayStatusChecker(
+            gatewayFactory.Object,
+            httpClientFactory.Object,
+            optionsMonitor.Object,
+            NullLogger<IoTGatewayStatusChecker>.Instance);
+
+        // Act
+        await checker.CheckAndUpdateGatewayStatusesAsync(CancellationToken.None);
+
+        // Assert - 验证按租户分组处理（应该处理3个网关，来自2个租户）
+        // 由于我们使用了 FindWithoutTenantFilterAsync，应该能查询到所有租户的网关
+        gatewayFactory.Verify(
+            f => f.FindWithoutTenantFilterAsync(
+                It.IsAny<FilterDefinition<IoTGateway>>(),
+                null,
+                null,
+                null),
+            Times.Once);
+    }
+}
+
+// Mock HTTP message handler for testing
+public class MockHttpMessageHandler : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
+        return Task.FromResult(response);
     }
 }

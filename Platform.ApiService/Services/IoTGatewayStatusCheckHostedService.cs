@@ -13,6 +13,12 @@ public class IoTGatewayStatusCheckHostedService : BackgroundService
     private readonly ILogger<IoTGatewayStatusCheckHostedService> _logger;
     private readonly SemaphoreSlim _runLock = new(1, 1);
 
+    /// <summary>
+    /// 初始化网关状态检测后台服务
+    /// </summary>
+    /// <param name="scopeFactory">服务作用域工厂</param>
+    /// <param name="optionsMonitor">数据采集配置选项监视器</param>
+    /// <param name="logger">日志记录器</param>
     public IoTGatewayStatusCheckHostedService(
         IServiceScopeFactory scopeFactory,
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
@@ -23,6 +29,10 @@ public class IoTGatewayStatusCheckHostedService : BackgroundService
         _logger = logger;
     }
 
+    /// <summary>
+    /// 执行后台服务的主循环（每分钟检查一次网关状态）
+    /// </summary>
+    /// <param name="stoppingToken">停止令牌</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)

@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Linq;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Models;
@@ -18,6 +19,13 @@ public class IoTGatewayStatusChecker
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<IoTGatewayStatusChecker> _logger;
 
+    /// <summary>
+    /// 初始化网关状态检测服务
+    /// </summary>
+    /// <param name="gatewayFactory">网关数据操作工厂</param>
+    /// <param name="httpClientFactory">HTTP 客户端工厂</param>
+    /// <param name="optionsMonitor">数据采集配置选项监视器</param>
+    /// <param name="logger">日志记录器</param>
     public IoTGatewayStatusChecker(
         IDatabaseOperationFactory<IoTGateway> gatewayFactory,
         IHttpClientFactory httpClientFactory,
@@ -31,7 +39,7 @@ public class IoTGatewayStatusChecker
     }
 
     /// <summary>
-    /// 检查并更新所有网关的状态
+    /// 检查并更新所有网关的状态（跨租户处理）
     /// </summary>
     public async Task CheckAndUpdateGatewayStatusesAsync(CancellationToken cancellationToken)
     {
@@ -41,39 +49,53 @@ public class IoTGatewayStatusChecker
             return;
         }
 
+        // 后台服务需要跨租户查询所有网关
         var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
             .ExcludeDeleted()
             .Build();
-        var gateways = await _gatewayFactory.FindAsync(gatewayFilter).ConfigureAwait(false);
+        var gateways = await _gatewayFactory.FindWithoutTenantFilterAsync(gatewayFilter).ConfigureAwait(false);
+
+        // 按租户分组处理，确保数据隔离
+        var gatewaysByTenant = gateways
+            .Where(g => !string.IsNullOrWhiteSpace(g.CompanyId))
+            .GroupBy(g => g.CompanyId)
+            .ToList();
 
         int updatedCount = 0;
-        foreach (var gateway in gateways)
+        foreach (var tenantGroup in gatewaysByTenant)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            var companyId = tenantGroup.Key;
+            _logger.LogDebug("Processing {Count} gateways for company {CompanyId}", tenantGroup.Count(), companyId);
 
-            if (string.IsNullOrWhiteSpace(gateway.Address))
+            foreach (var gateway in tenantGroup)
             {
-                _logger.LogDebug("Gateway {GatewayId} has no address, skipping ping check", gateway.GatewayId);
-                continue;
-            }
+                cancellationToken.ThrowIfCancellationRequested();
 
-            var newStatus = await PingGatewayAsync(gateway, cancellationToken).ConfigureAwait(false);
-            if (newStatus != gateway.Status)
-            {
-                await UpdateGatewayStatusAsync(gateway, newStatus, cancellationToken).ConfigureAwait(false);
-                updatedCount++;
-                _logger.LogInformation(
-                    "Gateway {GatewayId} ({Address}) status updated: {OldStatus} -> {NewStatus}",
-                    gateway.GatewayId,
-                    gateway.Address,
-                    gateway.Status,
-                    newStatus);
+                if (string.IsNullOrWhiteSpace(gateway.Address))
+                {
+                    _logger.LogDebug("Gateway {GatewayId} has no address, skipping ping check", gateway.GatewayId);
+                    continue;
+                }
+
+                var newStatus = await PingGatewayAsync(gateway, cancellationToken).ConfigureAwait(false);
+                if (newStatus != gateway.Status)
+                {
+                    await UpdateGatewayStatusAsync(gateway, newStatus, cancellationToken).ConfigureAwait(false);
+                    updatedCount++;
+                    _logger.LogInformation(
+                        "Gateway {GatewayId} ({Address}) status updated: {OldStatus} -> {NewStatus} for company {CompanyId}",
+                        gateway.GatewayId,
+                        gateway.Address,
+                        gateway.Status,
+                        newStatus,
+                        companyId);
+                }
             }
         }
 
         if (updatedCount > 0)
         {
-            _logger.LogInformation("Updated {Count} gateway statuses", updatedCount);
+            _logger.LogInformation("Updated {Count} gateway statuses across {TenantCount} tenants", updatedCount, gatewaysByTenant.Count);
         }
     }
 

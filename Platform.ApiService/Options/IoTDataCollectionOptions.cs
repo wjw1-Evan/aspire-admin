@@ -83,10 +83,16 @@ public class HttpFetchOptions
 /// </summary>
 public enum HttpFetchMethod
 {
+    /// <summary>GET 请求方法</summary>
     Get,
+    /// <summary>POST 请求方法</summary>
     Post,
+    /// <summary>PUT 请求方法</summary>
     Put,
+    /// <summary>PATCH 请求方法</summary>
     Patch,
+    /// <summary>DELETE 请求方法</summary>
     Delete,
+    /// <summary>PULL 请求方法</summary>
     Pull
 }

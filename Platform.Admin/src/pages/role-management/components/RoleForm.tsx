@@ -1,4 +1,4 @@
-import { Modal, Form, Input, Switch, message, Button, Tree, Spin, Divider } from 'antd';
+import { Modal, Form, Input, Switch, App, Button, Tree, Spin, Divider } from 'antd';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { createRole, updateRole, getRoleMenus } from '@/services/role/api';
@@ -25,11 +25,13 @@ const RoleForm: React.FC<RoleFormProps> = ({
   onSuccess,
 }) => {
   const intl = useIntl();
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuTree, setMenuTree] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+  const [checkedKeys, setCheckedKeys] = useState<string[]>([]); // 使用独立状态管理选中项
 
   /**
    * 将菜单树转换为 Tree 组件数据格式
@@ -66,7 +68,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
   /**
    * 加载菜单树
    */
-  const loadMenuTree = useCallback(async () => {
+  const loadMenuTree = useCallback(async (): Promise<DataNode[]> => {
     setMenuLoading(true);
     try {
       const menuResponse = await getMenuTree();
@@ -77,18 +79,20 @@ const RoleForm: React.FC<RoleFormProps> = ({
         // 展开所有节点
         const allKeys = getAllKeys(menuResponse.data);
         setExpandedKeys(allKeys);
+        
+        return treeData;
       }
+      return [];
     } catch (error) {
       console.error('Failed to load menu tree:', error);
+      return [];
     } finally {
       setMenuLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
    * 加载角色的菜单权限
-   * 只加载角色实际拥有的菜单ID，不包含新添加的菜单
    */
   const loadRoleMenus = useCallback(async () => {
     if (!current?.id) return;
@@ -96,81 +100,193 @@ const RoleForm: React.FC<RoleFormProps> = ({
     try {
       const permissionResponse = await getRoleMenus(current.id);
       if (permissionResponse.success && permissionResponse.data) {
-        // 确保只设置角色实际拥有的菜单ID（后端应该只返回角色已有的菜单ID）
-        // 过滤掉空值和无效值，确保数据安全
-        const validMenuIds = (permissionResponse.data || [])
+        // 过滤掉空值和无效值
+        const roleMenuIds = (permissionResponse.data || [])
           .filter((id): id is string => Boolean(id && typeof id === 'string'));
         
-        form.setFieldsValue({
-          menuIds: validMenuIds,
-        });
+        // 获取菜单树中所有有效的菜单ID
+        const getAllMenuIdsFromTree = (nodes: DataNode[]): string[] => {
+          let ids: string[] = [];
+          nodes.forEach((node) => {
+            if (node.key) {
+              ids.push(String(node.key));
+            }
+            if (node.children && node.children.length > 0) {
+              ids = ids.concat(getAllMenuIdsFromTree(node.children));
+            }
+          });
+          return ids;
+        };
+        
+        const validMenuIdsInTree = getAllMenuIdsFromTree(menuTree);
+        
+        // 只保留在菜单树中存在的菜单ID
+        const validMenuIds = roleMenuIds.filter((id) => validMenuIdsInTree.includes(id));
+        
+        // 直接设置选中状态，不通过表单
+        setCheckedKeys(validMenuIds);
+        // 同时更新表单值，用于提交
+        form.setFieldsValue({ menuIds: validMenuIds });
+        
+        console.log(
+          `角色 ${current.id} 加载菜单权限：后端返回 ${roleMenuIds.length} 个菜单ID，` +
+          `菜单树中有 ${validMenuIdsInTree.length} 个菜单，` +
+          `最终设置 ${validMenuIds.length} 个选中菜单`
+        );
       } else {
-        // 如果后端返回失败或没有数据，确保菜单ID为空数组
-        form.setFieldsValue({
-          menuIds: [],
-        });
+        setCheckedKeys([]);
+        form.setFieldsValue({ menuIds: [] });
       }
     } catch (error) {
       console.error('Failed to load role menus:', error);
-      // 出错时也确保菜单ID为空数组，避免显示错误数据
-      form.setFieldsValue({
-        menuIds: [],
-      });
+      setCheckedKeys([]);
+      form.setFieldsValue({ menuIds: [] });
     }
-  }, [current, form]);
+  }, [current, form, menuTree]);
 
   /**
    * 全选/反选菜单
    */
   const handleSelectAll = useCallback(() => {
-    const checkedKeys = form.getFieldValue('menuIds') || [];
-    const allKeys = expandedKeys;
+    // 获取菜单树中所有菜单ID
+    const getAllMenuIdsFromTree = (nodes: DataNode[]): string[] => {
+      let ids: string[] = [];
+      nodes.forEach((node) => {
+        if (node.key) {
+          ids.push(String(node.key));
+        }
+        if (node.children && node.children.length > 0) {
+          ids = ids.concat(getAllMenuIdsFromTree(node.children));
+        }
+      });
+      return ids;
+    };
     
-    if (checkedKeys.length === allKeys.length) {
+    const allMenuIds = getAllMenuIdsFromTree(menuTree);
+    
+    if (checkedKeys.length === allMenuIds.length) {
+      setCheckedKeys([]);
       form.setFieldsValue({ menuIds: [] });
     } else {
-      form.setFieldsValue({ menuIds: allKeys });
+      setCheckedKeys(allMenuIds);
+      form.setFieldsValue({ menuIds: allMenuIds });
     }
-  }, [form, expandedKeys]);
+  }, [form, menuTree, checkedKeys]);
+
+  /**
+   * 处理 Tree 组件的选中变化
+   */
+  const handleTreeCheck = useCallback((checked: any) => {
+    const newCheckedKeys = Array.isArray(checked)
+      ? (checked as string[])
+      : (checked.checked as string[]);
+    
+    // 更新选中状态和表单值
+    setCheckedKeys(newCheckedKeys);
+    form.setFieldsValue({ menuIds: newCheckedKeys });
+  }, [form]);
 
   /**
    * 设置表单初始值
    */
   useEffect(() => {
     if (!visible) {
-      // Modal 关闭时重置表单
+      // Modal 关闭时重置
       form.resetFields();
       setExpandedKeys([]);
+      setCheckedKeys([]);
       return;
     }
 
-    // Modal 打开时初始化表单
-    // 先重置表单，清除之前的状态
+    // Modal 打开时初始化
     form.resetFields();
+    setCheckedKeys([]);
     
-    // 先加载菜单树
-    loadMenuTree();
+    const initializeForm = async () => {
+      // 先加载菜单树
+      const treeData = await loadMenuTree();
+      
+      if (current) {
+        // 编辑模式：设置基本字段
+        form.setFieldsValue({
+          name: current.name,
+          description: current.description,
+          isActive: current.isActive,
+          menuIds: [],
+        });
+        // 菜单树加载完成后，直接加载角色菜单权限
+        // 使用 treeData 而不是依赖 menuTree 状态，避免循环依赖
+        if (treeData.length > 0) {
+          // 临时设置 menuTree，以便 loadRoleMenus 可以使用
+          setMenuTree(treeData);
+          // 直接调用，传入 treeData
+          loadRoleMenusWithTreeData(treeData);
+        }
+      } else {
+        // 新建模式
+        form.setFieldsValue({
+          menuIds: [],
+          isActive: true,
+        });
+        setCheckedKeys([]);
+      }
+    };
     
-    if (current) {
-      // 编辑模式：设置基本字段，然后异步加载角色的菜单权限
-      // 重要：menuIds 先设置为空数组，只加载角色实际拥有的菜单权限
-      // 新添加的菜单不会自动选中，需要用户手动选择
-      form.setFieldsValue({
-        name: current.name,
-        description: current.description,
-        isActive: current.isActive,
-        menuIds: [], // 先设置为空数组，等待 loadRoleMenus 加载角色实际拥有的菜单
-      });
-      // 异步加载角色已有的菜单权限（不包含新添加的菜单）
-      loadRoleMenus();
-    } else {
-      // 新建模式：确保所有字段都是初始值，菜单ID为空数组
-      form.setFieldsValue({
-        menuIds: [],
-        isActive: true,
-      });
+    initializeForm();
+  }, [visible, current, loadMenuTree, form]);
+
+  /**
+   * 使用菜单树数据加载角色菜单权限（避免循环依赖）
+   */
+  const loadRoleMenusWithTreeData = useCallback(async (treeData: DataNode[]) => {
+    if (!current?.id) return;
+
+    try {
+      const permissionResponse = await getRoleMenus(current.id);
+      if (permissionResponse.success && permissionResponse.data) {
+        // 过滤掉空值和无效值
+        const roleMenuIds = (permissionResponse.data || [])
+          .filter((id): id is string => Boolean(id && typeof id === 'string'));
+        
+        // 获取菜单树中所有有效的菜单ID
+        const getAllMenuIdsFromTree = (nodes: DataNode[]): string[] => {
+          let ids: string[] = [];
+          nodes.forEach((node) => {
+            if (node.key) {
+              ids.push(String(node.key));
+            }
+            if (node.children && node.children.length > 0) {
+              ids = ids.concat(getAllMenuIdsFromTree(node.children));
+            }
+          });
+          return ids;
+        };
+        
+        const validMenuIdsInTree = getAllMenuIdsFromTree(treeData);
+        
+        // 只保留在菜单树中存在的菜单ID
+        const validMenuIds = roleMenuIds.filter((id) => validMenuIdsInTree.includes(id));
+        
+        // 直接设置选中状态，不通过表单
+        setCheckedKeys(validMenuIds);
+        // 同时更新表单值，用于提交
+        form.setFieldsValue({ menuIds: validMenuIds });
+        
+        console.log(
+          `角色 ${current.id} 加载菜单权限：后端返回 ${roleMenuIds.length} 个菜单ID，` +
+          `菜单树中有 ${validMenuIdsInTree.length} 个菜单，` +
+          `最终设置 ${validMenuIds.length} 个选中菜单`
+        );
+      } else {
+        setCheckedKeys([]);
+        form.setFieldsValue({ menuIds: [] });
+      }
+    } catch (error) {
+      console.error('Failed to load role menus:', error);
+      setCheckedKeys([]);
+      form.setFieldsValue({ menuIds: [] });
     }
-  }, [visible, current, loadMenuTree, loadRoleMenus, form]);
+  }, [current, form]);
 
   /**
    * 提交表单
@@ -182,7 +298,6 @@ const RoleForm: React.FC<RoleFormProps> = ({
 
       if (current) {
         if (!current.id) {
-          // 数据校验失败，抛出错误
           throw new Error('当前角色缺少唯一标识，无法更新');
         }
         // 更新角色
@@ -190,7 +305,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           name: values.name,
           description: values.description,
           isActive: values.isActive,
-          menuIds: values.menuIds || [],
+          menuIds: checkedKeys, // 使用 checkedKeys 状态，确保数据准确
         };
 
         const response = await updateRole(current.id, updateData);
@@ -198,7 +313,6 @@ const RoleForm: React.FC<RoleFormProps> = ({
           message.success(intl.formatMessage({ id: 'pages.roleForm.updateSuccess' }));
           onSuccess();
         } else {
-          // 失败时抛出错误，由全局错误处理统一处理
           throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.updateFailed' }));
         }
       } else {
@@ -206,7 +320,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
         const createData: CreateRoleRequest = {
           name: values.name,
           description: values.description,
-          menuIds: values.menuIds || [],
+          menuIds: checkedKeys, // 使用 checkedKeys 状态
           isActive: values.isActive !== false,
         };
 
@@ -215,11 +329,9 @@ const RoleForm: React.FC<RoleFormProps> = ({
           message.success(intl.formatMessage({ id: 'pages.roleForm.createSuccess' }));
           onSuccess();
         } else {
-          // 失败时抛出错误，由全局错误处理统一处理
           throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.createFailed' }));
         }
       }
-      // 错误由全局错误处理统一处理，这里不需要 catch
     } finally {
       setLoading(false);
     }
@@ -255,8 +367,21 @@ const RoleForm: React.FC<RoleFormProps> = ({
         <div style={{ marginBottom: 16 }}>
           <Button type="link" onClick={handleSelectAll} style={{ padding: 0 }}>
             {(() => {
-              const checkedKeys = form.getFieldValue('menuIds') || [];
-              return checkedKeys.length === expandedKeys.length
+              // 获取菜单树中所有菜单ID
+              const getAllMenuIdsFromTree = (nodes: DataNode[]): string[] => {
+                let ids: string[] = [];
+                nodes.forEach((node) => {
+                  if (node.key) {
+                    ids.push(String(node.key));
+                  }
+                  if (node.children && node.children.length > 0) {
+                    ids = ids.concat(getAllMenuIdsFromTree(node.children));
+                  }
+                });
+                return ids;
+              };
+              const allMenuIds = getAllMenuIdsFromTree(menuTree);
+              return checkedKeys.length === allMenuIds.length
                 ? intl.formatMessage({ id: 'pages.roleForm.deselectAll' })
                 : intl.formatMessage({ id: 'pages.roleForm.selectAll' });
             })()}
@@ -270,11 +395,10 @@ const RoleForm: React.FC<RoleFormProps> = ({
         ) : (
           <Form.Item
             name="menuIds"
-            initialValue={[]}
             rules={[
               {
                 validator: (_, value) => {
-                  if (!value || value.length === 0) {
+                  if (!checkedKeys || checkedKeys.length === 0) {
                     return Promise.reject(new Error(intl.formatMessage({ id: 'pages.roleForm.menuRequired' })));
                   }
                   return Promise.resolve();
@@ -282,34 +406,18 @@ const RoleForm: React.FC<RoleFormProps> = ({
               },
             ]}
           >
-            <Form.Item
-              noStyle
-              shouldUpdate={(prevValues, currentValues) =>
-                prevValues.menuIds !== currentValues.menuIds
-              }
-            >
-              {({ getFieldValue }) => {
-                const checkedKeys = getFieldValue('menuIds') || [];
-                return (
-                  <Tree
-                    checkable
-                    defaultExpandAll
-                    treeData={menuTree}
-                    checkedKeys={checkedKeys}
-                    expandedKeys={expandedKeys}
-                    onExpand={(keys) => {
-                      setExpandedKeys(keys.map(String));
-                    }}
-                    onCheck={(checked) => {
-                      const newCheckedKeys = Array.isArray(checked)
-                        ? (checked as string[])
-                        : (checked.checked as string[]);
-                      form.setFieldsValue({ menuIds: newCheckedKeys });
-                    }}
-                  />
-                );
+            <Tree
+              checkable
+              checkStrictly
+              defaultExpandAll
+              treeData={menuTree}
+              checkedKeys={checkedKeys}
+              expandedKeys={expandedKeys}
+              onExpand={(keys) => {
+                setExpandedKeys(keys.map(String));
               }}
-            </Form.Item>
+              onCheck={handleTreeCheck}
+            />
           </Form.Item>
         )}
 

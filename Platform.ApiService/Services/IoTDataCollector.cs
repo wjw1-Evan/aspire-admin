@@ -73,12 +73,13 @@ public class IoTDataCollector
         // 统一模式：按网关处理
         // 1. HTTP网关：自动创建设备和数据点（如果不存在），然后采集
         // 2. 非HTTP网关：使用手动创建的设备和数据点采集
+        // 后台服务需要跨租户查询所有启用的网关
         var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
             .Equal(g => g.IsEnabled, true)
             .ExcludeDeleted()
             .Build();
 
-        var gateways = await _gatewayFactory.FindAsync(gatewayFilter).ConfigureAwait(false);
+        var gateways = await _gatewayFactory.FindWithoutTenantFilterAsync(gatewayFilter).ConfigureAwait(false);
         
         if (gateways.Count == 0)
         {
@@ -86,7 +87,14 @@ public class IoTDataCollector
             return result;
         }
 
-        _logger.LogInformation("Starting unified data collection for {GatewayCount} gateways", gateways.Count);
+        // 按租户分组处理，确保数据隔离
+        var gatewaysByTenant = gateways
+            .Where(g => !string.IsNullOrWhiteSpace(g.CompanyId))
+            .GroupBy(g => g.CompanyId)
+            .ToList();
+
+        _logger.LogInformation("Starting unified data collection for {GatewayCount} gateways across {TenantCount} tenants", 
+            gateways.Count, gatewaysByTenant.Count);
 
         var throttler = new SemaphoreSlim(Math.Max(1, options.MaxDegreeOfParallelism));
         var gatewayTasks = gateways.Select(async gateway =>
@@ -94,6 +102,7 @@ public class IoTDataCollector
             await throttler.WaitAsync(token).ConfigureAwait(false);
             try
             {
+                _logger.LogDebug("Processing gateway {GatewayId} for company {CompanyId}", gateway.GatewayId, gateway.CompanyId);
                 var gatewayResult = await ProcessGatewayAsync(gateway, token).ConfigureAwait(false);
                 Interlocked.Add(ref devicesProcessed, gatewayResult.DevicesProcessed);
                 Interlocked.Add(ref dataPointsProcessed, gatewayResult.DataPointsProcessed);
@@ -110,8 +119,9 @@ public class IoTDataCollector
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Collect data for gateway {GatewayId} failed", gateway.GatewayId);
-                warnings.Add($"网关 {gateway.GatewayId} 采集失败: {ex.Message}");
+                _logger.LogError(ex, "Collect data for gateway {GatewayId} (company {CompanyId}) failed", 
+                    gateway.GatewayId, gateway.CompanyId);
+                warnings.Add($"网关 {gateway.GatewayId} (企业 {gateway.CompanyId}) 采集失败: {ex.Message}");
             }
             finally
             {

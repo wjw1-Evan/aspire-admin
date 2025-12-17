@@ -19,6 +19,16 @@ public class SimpleHttpDataCollector
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<SimpleHttpDataCollector> _logger;
 
+    /// <summary>
+    /// 初始化简化的 HTTP 数据采集器
+    /// </summary>
+    /// <param name="gatewayFactory">网关数据操作工厂</param>
+    /// <param name="deviceFactory">设备数据操作工厂</param>
+    /// <param name="dataPointFactory">数据点数据操作工厂</param>
+    /// <param name="dataRecordFactory">数据记录数据操作工厂</param>
+    /// <param name="httpClientFactory">HTTP 客户端工厂</param>
+    /// <param name="optionsMonitor">数据采集配置选项监视器</param>
+    /// <param name="logger">日志记录器</param>
     public SimpleHttpDataCollector(
         IDatabaseOperationFactory<IoTGateway> gatewayFactory,
         IDatabaseOperationFactory<IoTDevice> deviceFactory,
@@ -473,11 +483,17 @@ public class SimpleHttpDataCollector
     /// </summary>
     public class GatewayCollectionResult
     {
+        /// <summary>网关 ID</summary>
         public string GatewayId { get; set; } = string.Empty;
+        /// <summary>是否采集成功</summary>
         public bool Success { get; set; }
+        /// <summary>找到的数据点数量</summary>
         public int DataPointsFound { get; set; }
+        /// <summary>插入的记录数量</summary>
         public int RecordsInserted { get; set; }
+        /// <summary>跳过的记录数量（重复或无效）</summary>
         public int RecordsSkipped { get; set; }
+        /// <summary>警告信息（如果有）</summary>
         public string? Warning { get; set; }
     }
 }

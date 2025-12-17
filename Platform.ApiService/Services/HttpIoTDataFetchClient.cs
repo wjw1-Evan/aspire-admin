@@ -19,6 +19,12 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
     private readonly ILogger<HttpIoTDataFetchClient> _logger;
     private static readonly Regex PlaceholderRegex = new(@"\{deviceId\}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    /// <summary>
+    /// 初始化 HTTP 物联网数据拉取客户端
+    /// </summary>
+    /// <param name="httpClientFactory">HTTP 客户端工厂</param>
+    /// <param name="optionsMonitor">数据采集配置选项监视器</param>
+    /// <param name="logger">日志记录器</param>
     public HttpIoTDataFetchClient(
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
@@ -29,6 +35,14 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
         _logger = logger;
     }
 
+    /// <summary>
+    /// 从指定的网关或设备拉取数据点值
+    /// </summary>
+    /// <param name="gateway">网关信息（可选，如果提供则优先使用网关配置）</param>
+    /// <param name="device">设备信息</param>
+    /// <param name="dataPoints">要拉取的数据点列表</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>采集到的数据点值列表</returns>
     public async Task<IReadOnlyList<CollectedDataPointValue>> FetchAsync(
         IoTGateway? gateway,
         IoTDevice device,

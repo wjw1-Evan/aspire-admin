@@ -39,11 +39,17 @@ public class MenuService : IMenuService
     }
 
     /// <summary>
-    /// 获取菜单树结构
+    /// 获取菜单树结构（用于角色管理，只返回未删除且已启用的菜单）
     /// </summary>
     public async Task<List<MenuTreeNode>> GetMenuTreeAsync()
     {
-        var allMenus = await GetAllMenusAsync();
+        var filter = _menuFactory.CreateFilterBuilder()
+            .Equal(m => m.IsEnabled, true)
+            .ExcludeDeleted()
+            .Build();
+        var sortBuilder = _menuFactory.CreateSortBuilder()
+            .Ascending(m => m.SortOrder);
+        var allMenus = await _menuFactory.FindAsync(filter, sort: sortBuilder.Build());
         return BuildMenuTree(allMenus, null);
     }
 

@@ -523,6 +523,38 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     }
 
     /// <summary>
+    /// 向数组字段添加元素（使用字段名和元素值，适用于 List&lt;TItem&gt; 字段）
+    /// </summary>
+    public UpdateBuilder<T> AddToSetElement<TItem>(System.Linq.Expressions.Expression<Func<T, List<TItem>>> field, TItem value)
+    {
+        var fieldName = GetBsonFieldNameForUpdate(field);
+        _updates.Add(_builder.AddToSet(fieldName, value));
+        return this;
+    }
+
+    /// <summary>
+    /// 从数组字段移除元素（使用字段名和元素值，适用于 List&lt;TItem&gt; 字段）
+    /// </summary>
+    public UpdateBuilder<T> PullElement<TItem>(System.Linq.Expressions.Expression<Func<T, List<TItem>>> field, TItem value)
+    {
+        var fieldName = GetBsonFieldNameForUpdate(field);
+        _updates.Add(_builder.Pull(fieldName, value));
+        return this;
+    }
+
+    /// <summary>
+    /// 添加自定义更新定义
+    /// </summary>
+    public UpdateBuilder<T> Custom(UpdateDefinition<T> update)
+    {
+        if (update != null)
+        {
+            _updates.Add(update);
+        }
+        return this;
+    }
+
+    /// <summary>
     /// 构建更新定义
     /// </summary>
     public UpdateDefinition<T> Build()

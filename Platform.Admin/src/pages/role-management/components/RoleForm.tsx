@@ -235,7 +235,8 @@ const RoleForm: React.FC<RoleFormProps> = ({
     };
     
     initializeForm();
-  }, [visible, current, loadMenuTree, loadRoleMenusWithTreeData, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, current?.id, loadMenuTree, form]);
 
   /**
    * 使用菜单树数据加载角色菜单权限（避免循环依赖）

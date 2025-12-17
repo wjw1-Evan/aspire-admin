@@ -153,6 +153,12 @@ public class IoTService : IIoTService
         if (request.Remarks != null)
             updateBuilder.Set(g => g.Remarks, request.Remarks);
 
+        // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
+        if (updateBuilder.Count == 0)
+        {
+            return gateway;
+        }
+
         var filter = _gatewayFactory.CreateFilterBuilder()
             .Equal(g => g.Id, id)
             .ExcludeDeleted()
@@ -392,6 +398,12 @@ public class IoTService : IIoTService
             updateBuilder.Set(d => d.Tags, request.Tags);
         if (request.Remarks != null)
             updateBuilder.Set(d => d.Remarks, request.Remarks);
+
+        // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
+        if (updateBuilder.Count == 0)
+        {
+            return device;
+        }
 
         var filter = _deviceFactory.CreateFilterBuilder()
             .Equal(d => d.Id, id)
@@ -714,6 +726,12 @@ public class IoTService : IIoTService
             updateBuilder.Set(dp => dp.Tags, request.Tags);
         if (request.Remarks != null)
             updateBuilder.Set(dp => dp.Remarks, request.Remarks);
+
+        // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
+        if (updateBuilder.Count == 0)
+        {
+            return dataPoint;
+        }
 
         var filter = _dataPointFactory.CreateFilterBuilder()
             .Equal(dp => dp.Id, id)

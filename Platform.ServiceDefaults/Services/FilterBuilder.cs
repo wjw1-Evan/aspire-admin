@@ -572,6 +572,11 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     }
 
     /// <summary>
+    /// 获取当前更新数量
+    /// </summary>
+    public int Count => _updates.Count;
+
+    /// <summary>
     /// 获取字段名称
     /// </summary>
     private static string GetFieldName<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)

@@ -56,14 +56,11 @@ public class IoTService : IIoTService
         {
             Title = request.Title,
             Name = request.Title,
-            Description = request.Description,
             ProtocolType = request.ProtocolType,
             Address = request.Address,
             Username = request.Username,
             Password = request.Password,
-            Config = NormalizeConfig(request.Config),
-            Tags = request.Tags ?? new(),
-            Remarks = request.Remarks
+            Config = NormalizeConfig(request.Config)
         };
 
         var result = await _gatewayFactory.CreateAsync(gateway);
@@ -134,8 +131,6 @@ public class IoTService : IIoTService
             updateBuilder.Set(g => g.Title, request.Title);
             updateBuilder.Set(g => g.Name, request.Title);
         }
-        if (request.Description != null)
-            updateBuilder.Set(g => g.Description, request.Description);
         if (!string.IsNullOrEmpty(request.ProtocolType))
             updateBuilder.Set(g => g.ProtocolType, request.ProtocolType);
         if (!string.IsNullOrEmpty(request.Address))
@@ -148,10 +143,6 @@ public class IoTService : IIoTService
             updateBuilder.Set(g => g.IsEnabled, request.IsEnabled.Value);
         if (request.Config != null)
             updateBuilder.Set(g => g.Config, NormalizeConfig(request.Config));
-        if (request.Tags != null)
-            updateBuilder.Set(g => g.Tags, request.Tags);
-        if (request.Remarks != null)
-            updateBuilder.Set(g => g.Remarks, request.Remarks);
 
         // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
         if (updateBuilder.Count == 0)
@@ -269,18 +260,8 @@ public class IoTService : IIoTService
         {
             Name = request.Name,
             Title = request.Title,
-            Description = request.Description,
             GatewayId = request.GatewayId,
-            DeviceType = request.DeviceType,
-            Model = request.Model,
-            Manufacturer = request.Manufacturer,
-            SerialNumber = request.SerialNumber,
-            Location = request.Location,
-            Latitude = request.Latitude,
-            Longitude = request.Longitude,
-            Properties = request.Properties,
-            Tags = request.Tags ?? new(),
-            Remarks = request.Remarks
+            DeviceType = request.DeviceType
         };
 
         var result = await _deviceFactory.CreateAsync(device);
@@ -372,32 +353,12 @@ public class IoTService : IIoTService
             updateBuilder.Set(d => d.Name, request.Name);
         if (!string.IsNullOrEmpty(request.Title))
             updateBuilder.Set(d => d.Title, request.Title);
-        if (request.Description != null)
-            updateBuilder.Set(d => d.Description, request.Description);
         if (!string.IsNullOrEmpty(request.GatewayId))
             updateBuilder.Set(d => d.GatewayId, request.GatewayId);
         if (request.DeviceType.HasValue)
             updateBuilder.Set(d => d.DeviceType, request.DeviceType.Value);
-        if (request.Model != null)
-            updateBuilder.Set(d => d.Model, request.Model);
-        if (request.Manufacturer != null)
-            updateBuilder.Set(d => d.Manufacturer, request.Manufacturer);
-        if (request.SerialNumber != null)
-            updateBuilder.Set(d => d.SerialNumber, request.SerialNumber);
         if (request.IsEnabled.HasValue)
             updateBuilder.Set(d => d.IsEnabled, request.IsEnabled.Value);
-        if (request.Location != null)
-            updateBuilder.Set(d => d.Location, request.Location);
-        if (request.Latitude.HasValue)
-            updateBuilder.Set(d => d.Latitude, request.Latitude);
-        if (request.Longitude.HasValue)
-            updateBuilder.Set(d => d.Longitude, request.Longitude);
-        if (request.Properties != null)
-            updateBuilder.Set(d => d.Properties, request.Properties);
-        if (request.Tags != null)
-            updateBuilder.Set(d => d.Tags, request.Tags);
-        if (request.Remarks != null)
-            updateBuilder.Set(d => d.Remarks, request.Remarks);
 
         // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
         if (updateBuilder.Count == 0)
@@ -599,18 +560,12 @@ public class IoTService : IIoTService
         {
             Name = request.Name,
             Title = request.Title,
-            Description = request.Description,
             DeviceId = request.DeviceId,
             DataType = request.DataType,
             Unit = request.Unit,
-            MinValue = request.MinValue,
-            MaxValue = request.MaxValue,
-            Precision = request.Precision,
             IsReadOnly = request.IsReadOnly,
             SamplingInterval = request.SamplingInterval,
-            AlarmConfig = request.AlarmConfig,
-            Tags = request.Tags ?? new(),
-            Remarks = request.Remarks
+            AlarmConfig = request.AlarmConfig
         };
 
         var result = await _dataPointFactory.CreateAsync(dataPoint);
@@ -702,18 +657,10 @@ public class IoTService : IIoTService
             updateBuilder.Set(dp => dp.Name, request.Name);
         if (!string.IsNullOrEmpty(request.Title))
             updateBuilder.Set(dp => dp.Title, request.Title);
-        if (request.Description != null)
-            updateBuilder.Set(dp => dp.Description, request.Description);
         if (request.DataType.HasValue)
             updateBuilder.Set(dp => dp.DataType, request.DataType.Value);
         if (request.Unit != null)
             updateBuilder.Set(dp => dp.Unit, request.Unit);
-        if (request.MinValue.HasValue)
-            updateBuilder.Set(dp => dp.MinValue, request.MinValue);
-        if (request.MaxValue.HasValue)
-            updateBuilder.Set(dp => dp.MaxValue, request.MaxValue);
-        if (request.Precision.HasValue)
-            updateBuilder.Set(dp => dp.Precision, request.Precision.Value);
         if (request.IsReadOnly.HasValue)
             updateBuilder.Set(dp => dp.IsReadOnly, request.IsReadOnly.Value);
         if (request.SamplingInterval.HasValue)
@@ -722,10 +669,6 @@ public class IoTService : IIoTService
             updateBuilder.Set(dp => dp.IsEnabled, request.IsEnabled.Value);
         if (request.AlarmConfig != null)
             updateBuilder.Set(dp => dp.AlarmConfig, request.AlarmConfig);
-        if (request.Tags != null)
-            updateBuilder.Set(dp => dp.Tags, request.Tags);
-        if (request.Remarks != null)
-            updateBuilder.Set(dp => dp.Remarks, request.Remarks);
 
         // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
         if (updateBuilder.Count == 0)
@@ -963,8 +906,6 @@ public class IoTService : IIoTService
             DataPointId = dataPointId,
             RecordCount = records.Count,
             AverageValue = numericValues.Any() ? numericValues.Average() : null,
-            MinValue = numericValues.Any() ? numericValues.Min() : null,
-            MaxValue = numericValues.Any() ? numericValues.Max() : null,
             StartTime = startTime,
             EndTime = endTime
         };

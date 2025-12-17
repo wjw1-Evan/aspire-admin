@@ -54,6 +54,7 @@ public enum DataPointType
 /// <summary>
 /// 物联网网关 - 用于设备接入和数据收集
 /// </summary>
+[BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如已删除的 description, tags, remarks 等）
 public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntity, ITimestamped
 {
     /// <summary>网关名称</summary>
@@ -63,10 +64,6 @@ public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntit
     /// <summary>网关标题</summary>
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
-
-    /// <summary>网关描述</summary>
-    [BsonElement("description")]
-    public string? Description { get; set; }
 
     /// <summary>网关唯一标识符</summary>
     [BsonElement("gatewayId")]
@@ -107,19 +104,12 @@ public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntit
     /// <summary>配置信息（字符串键值对）</summary>
     [BsonElement("config")]
     public Dictionary<string, string>? Config { get; set; }
-
-    /// <summary>标签</summary>
-    [BsonElement("tags")]
-    public List<string> Tags { get; set; } = new();
-
-    /// <summary>备注</summary>
-    [BsonElement("remarks")]
-    public string? Remarks { get; set; }
 }
 
 /// <summary>
 /// 物联网设备 - 表示接入平台的物理设备
 /// </summary>
+[BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如已删除的 description, model, tags 等）
 public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimestamped,IEntity
 {
     /// <summary>设备名称</summary>
@@ -129,10 +119,6 @@ public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimes
     /// <summary>设备标题</summary>
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
-
-    /// <summary>设备描述</summary>
-    [BsonElement("description")]
-    public string? Description { get; set; }
 
     /// <summary>设备唯一标识符</summary>
     [BsonElement("deviceId")]
@@ -146,18 +132,6 @@ public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimes
     [BsonElement("deviceType")]
     public IoTDeviceType DeviceType { get; set; } = IoTDeviceType.Sensor;
 
-    /// <summary>设备型号</summary>
-    [BsonElement("model")]
-    public string? Model { get; set; }
-
-    /// <summary>制造商</summary>
-    [BsonElement("manufacturer")]
-    public string? Manufacturer { get; set; }
-
-    /// <summary>序列号</summary>
-    [BsonElement("serialNumber")]
-    public string? SerialNumber { get; set; }
-
     /// <summary>设备状态</summary>
     [BsonElement("status")]
     public IoTDeviceStatus Status { get; set; } = IoTDeviceStatus.Offline;
@@ -170,38 +144,15 @@ public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimes
     [BsonElement("lastReportedAt")]
     public DateTime? LastReportedAt { get; set; }
 
-    /// <summary>设备位置</summary>
-    [BsonElement("location")]
-    public string? Location { get; set; }
-
-    /// <summary>纬度</summary>
-    [BsonElement("latitude")]
-    public double? Latitude { get; set; }
-
-    /// <summary>经度</summary>
-    [BsonElement("longitude")]
-    public double? Longitude { get; set; }
-
     /// <summary>数据点列表</summary>
     [BsonElement("dataPoints")]
     public List<string> DataPoints { get; set; } = new();
-
-    /// <summary>设备属性（JSON格式）</summary>
-    [BsonElement("properties")]
-    public Dictionary<string, object>? Properties { get; set; }
-
-    /// <summary>标签</summary>
-    [BsonElement("tags")]
-    public List<string> Tags { get; set; } = new();
-
-    /// <summary>备注</summary>
-    [BsonElement("remarks")]
-    public string? Remarks { get; set; }
 }
 
 /// <summary>
 /// 数据点 - 表示设备的一个数据采集点
 /// </summary>
+[BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如已删除的 description, minValue, maxValue, tags 等）
 public class IoTDataPoint : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimestamped,IEntity
 {
     /// <summary>数据点名称</summary>
@@ -211,10 +162,6 @@ public class IoTDataPoint : MultiTenantEntity, INamedEntity, ISoftDeletable, ITi
     /// <summary>数据点标题</summary>
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
-
-    /// <summary>数据点描述</summary>
-    [BsonElement("description")]
-    public string? Description { get; set; }
 
     /// <summary>所属设备ID</summary>
     [BsonElement("deviceId")]
@@ -231,18 +178,6 @@ public class IoTDataPoint : MultiTenantEntity, INamedEntity, ISoftDeletable, ITi
     /// <summary>单位</summary>
     [BsonElement("unit")]
     public string? Unit { get; set; }
-
-    /// <summary>最小值</summary>
-    [BsonElement("minValue")]
-    public double? MinValue { get; set; }
-
-    /// <summary>最大值</summary>
-    [BsonElement("maxValue")]
-    public double? MaxValue { get; set; }
-
-    /// <summary>精度（小数位数）</summary>
-    [BsonElement("precision")]
-    public int Precision { get; set; } = 2;
 
     /// <summary>是否为只读</summary>
     [BsonElement("isReadOnly")]
@@ -267,14 +202,6 @@ public class IoTDataPoint : MultiTenantEntity, INamedEntity, ISoftDeletable, ITi
     /// <summary>告警阈值配置</summary>
     [BsonElement("alarmConfig")]
     public AlarmConfig? AlarmConfig { get; set; }
-
-    /// <summary>标签</summary>
-    [BsonElement("tags")]
-    public List<string> Tags { get; set; } = new();
-
-    /// <summary>备注</summary>
-    [BsonElement("remarks")]
-    public string? Remarks { get; set; }
 }
 
 /// <summary>
@@ -297,15 +224,12 @@ public class AlarmConfig
     /// <summary>告警级别：Info, Warning, Error, Critical</summary>
     [BsonElement("level")]
     public string Level { get; set; } = "Warning";
-
-    /// <summary>告警消息</summary>
-    [BsonElement("message")]
-    public string? Message { get; set; }
 }
 
 /// <summary>
 /// 物联网数据记录 - 存储设备上报的数据
 /// </summary>
+[BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如已删除的 remarks 等）
 public class IoTDataRecord : MultiTenantEntity, ISoftDeletable, ITimestamped,IEntity
 {
     /// <summary>所属设备ID</summary>
@@ -339,10 +263,6 @@ public class IoTDataRecord : MultiTenantEntity, ISoftDeletable, ITimestamped,IEn
     /// <summary>告警级别</summary>
     [BsonElement("alarmLevel")]
     public string? AlarmLevel { get; set; }
-
-    /// <summary>备注</summary>
-    [BsonElement("remarks")]
-    public string? Remarks { get; set; }
 }
 
 /// <summary>

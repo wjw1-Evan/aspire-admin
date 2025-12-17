@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ApiService.Options;
 using Platform.ServiceDefaults.Services;
@@ -98,10 +99,10 @@ public class SimpleHttpDataCollector
         var dataPoints = await EnsureDataPointsExistAsync(gateway, device, httpData, cancellationToken).ConfigureAwait(false);
         result.DataPointsFound = dataPoints.Count;
 
-        // 保存数据记录
-        var recordsInserted = 0;
-        var recordsSkipped = 0;
+        // 构建数据记录（统一时间戳）
         var reportedAt = DateTime.UtcNow;
+        var recordsToSave = new List<IoTDataRecord>();
+        var dataPointValueMap = new Dictionary<string, (IoTDataPoint DataPoint, string Value)>();
 
         foreach (var kvp in httpData)
         {
@@ -127,24 +128,41 @@ public class SimpleHttpDataCollector
                 CompanyId = gateway.CompanyId
             };
 
-            // 检查重复
-            var exists = await CheckDuplicateAsync(gateway.CompanyId, record, cancellationToken).ConfigureAwait(false);
-            if (exists)
-            {
-                recordsSkipped++;
-                continue;
-            }
-
-            await _dataRecordFactory.CreateAsync(record).ConfigureAwait(false);
-            
-            // 更新数据点最后值
-            await UpdateDataPointLastValueAsync(gateway.CompanyId, dataPoint, value, reportedAt, cancellationToken).ConfigureAwait(false);
-            
-            recordsInserted++;
+            recordsToSave.Add(record);
+            dataPointValueMap[dataPoint.DataPointId] = (dataPoint, value);
         }
 
-        // 更新设备最后上报时间
-        await UpdateDeviceLastReportedAsync(gateway.CompanyId, device, reportedAt, cancellationToken).ConfigureAwait(false);
+        if (recordsToSave.Count == 0)
+        {
+            result.RecordsInserted = 0;
+            result.RecordsSkipped = 0;
+            result.Success = true;
+            return result;
+        }
+
+        // 批量检查重复并保存
+        var uniqueRecords = await FilterDuplicatesAsync(gateway.CompanyId, recordsToSave, cancellationToken).ConfigureAwait(false);
+        var recordsInserted = uniqueRecords.Count;
+        var recordsSkipped = recordsToSave.Count - uniqueRecords.Count;
+
+        if (uniqueRecords.Count > 0)
+        {
+            // 批量保存所有记录
+            await _dataRecordFactory.CreateManyAsync(uniqueRecords).ConfigureAwait(false);
+            
+            // 按数据点分组，每个数据点只更新一次（使用最新的值）
+            foreach (var group in uniqueRecords.GroupBy(r => r.DataPointId))
+            {
+                var latestRecord = group.OrderByDescending(r => r.ReportedAt).First();
+                if (dataPointValueMap.TryGetValue(latestRecord.DataPointId, out var dpInfo))
+                {
+                    await UpdateDataPointLastValueAsync(gateway.CompanyId, dpInfo.DataPoint, latestRecord.Value, reportedAt, cancellationToken).ConfigureAwait(false);
+                }
+            }
+
+            // 更新设备最后上报时间
+            await UpdateDeviceLastReportedAsync(gateway.CompanyId, device, reportedAt, cancellationToken).ConfigureAwait(false);
+        }
 
         result.RecordsInserted = recordsInserted;
         result.RecordsSkipped = recordsSkipped;
@@ -421,21 +439,52 @@ public class SimpleHttpDataCollector
         return value.ToString() ?? string.Empty;
     }
 
-    private async Task<bool> CheckDuplicateAsync(
+    /// <summary>
+    /// 批量过滤重复记录
+    /// </summary>
+    private async Task<List<IoTDataRecord>> FilterDuplicatesAsync(
         string companyId,
-        IoTDataRecord record,
+        List<IoTDataRecord> records,
         CancellationToken cancellationToken)
     {
-        var filter = _dataRecordFactory.CreateFilterBuilder()
-            .Equal(r => r.DeviceId, record.DeviceId)
-            .Equal(r => r.DataPointId, record.DataPointId)
-            .Equal(r => r.ReportedAt, record.ReportedAt)
+        if (records.Count == 0)
+        {
+            return records;
+        }
+
+        // 使用 MongoDB 的 $or 查询检查所有记录
+        var builder = MongoDB.Driver.Builders<IoTDataRecord>.Filter;
+        var orConditions = records.Select(record =>
+            builder.And(
+                builder.Eq(r => r.DeviceId, record.DeviceId),
+                builder.Eq(r => r.DataPointId, record.DataPointId),
+                builder.Eq(r => r.ReportedAt, record.ReportedAt)
+            )
+        ).ToList();
+
+        // 构建完整查询：租户过滤 + 软删除过滤 + OR条件
+        var baseFilter = _dataRecordFactory.CreateFilterBuilder()
             .WithTenant(companyId)
             .ExcludeDeleted()
             .Build();
 
-        var count = await _dataRecordFactory.CountAsync(filter).ConfigureAwait(false);
-        return count > 0;
+        var orFilter = orConditions.Count > 0 ? builder.Or(orConditions) : builder.Empty;
+        var combinedFilter = builder.And(baseFilter, orFilter);
+
+        // 查询已存在的记录
+        var existingRecords = await _dataRecordFactory.FindAsync(combinedFilter).ConfigureAwait(false);
+
+        // 构建已存在记录的键集合（用于快速查找）
+        var existingKeys = existingRecords
+            .Select(r => (r.DeviceId, r.DataPointId, r.ReportedAt))
+            .ToHashSet();
+
+        // 过滤出不重复的记录
+        var uniqueRecords = records
+            .Where(record => !existingKeys.Contains((record.DeviceId, record.DataPointId, record.ReportedAt)))
+            .ToList();
+
+        return uniqueRecords;
     }
 
     private async Task UpdateDataPointLastValueAsync(

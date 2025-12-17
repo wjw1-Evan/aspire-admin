@@ -1,6 +1,5 @@
+using System.Linq;
 using System.Reflection;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
@@ -44,38 +43,30 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     }
 
     /// <summary>
-    /// 设置字符串属性（审计字段都是 string? 类型）
+    /// 读取实体上已存在的企业ID（用于后台线程缺少租户上下文的场景）
     /// </summary>
-    private static void SetStringProperty(object target, string propertyName, string? value)
+    private static string? GetExistingCompanyId(T entity)
     {
-        if (target == null || string.IsNullOrEmpty(value))
-            return;
-            
-        var prop = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-        if (prop != null && prop.CanWrite)
+        if (entity is IMultiTenant multiTenant)
         {
-            var propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
-            if (propType == typeof(string))
-            {
-                prop.SetValue(target, value);
-            }
+            return string.IsNullOrWhiteSpace(multiTenant.CompanyId) ? null : multiTenant.CompanyId;
         }
+        return null;
     }
 
     /// <summary>
-    /// 读取实体上已存在的企业ID（用于后台线程缺少租户上下文的场景）
+    /// 设置审计属性（使用反射，因为审计字段在不同实体中名称可能不同）
     /// </summary>
-    private static string? GetExistingCompanyId(object target)
+    private static void SetAuditProperty(T entity, string propertyName, string? value)
     {
-        if (target == null)
-            return null;
-
-        var prop = target.GetType().GetProperty("CompanyId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-        if (prop == null || !prop.CanRead)
-            return null;
-
-        var value = prop.GetValue(target) as string;
-        return string.IsNullOrWhiteSpace(value) ? null : value;
+        if (entity == null || string.IsNullOrEmpty(value))
+            return;
+            
+        var prop = typeof(T).GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (prop != null && prop.CanWrite && prop.PropertyType == typeof(string))
+        {
+            prop.SetValue(entity, value);
+        }
     }
 
     private async Task<UpdateDefinition<T>> WithUpdateAuditAsync(UpdateDefinition<T> update)
@@ -160,20 +151,19 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         entity.UpdatedAt = DateTime.UtcNow;
         entity.IsDeleted = false;
 
-        // 设置创建人
+        // 设置创建人（通过反射设置审计字段）
         var (userId, username) = await GetActorAsync().ConfigureAwait(false);
-        SetStringProperty(entity, "CreatedBy", userId);
-        SetStringProperty(entity, "CreatedByUsername", username);
+        SetAuditProperty(entity, "CreatedBy", userId);
+        SetAuditProperty(entity, "CreatedByUsername", username);
 
         // 写入企业隔离字段
-        if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+        if (entity is IMultiTenant multiTenant)
         {
-            // 优先使用当前请求上下文中的企业ID；若后台线程无法获取，则退回实体上已有的值
             var companyId = await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
-            companyId ??= GetExistingCompanyId(entity);
+            companyId ??= multiTenant.CompanyId;
             if (string.IsNullOrEmpty(companyId))
                 throw new UnauthorizedAccessException("未找到当前企业信息");
-            SetStringProperty(entity, "CompanyId", companyId);
+            multiTenant.CompanyId = companyId;
         }
 
         await _collection.InsertOneAsync(entity).ConfigureAwait(false);
@@ -197,16 +187,16 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             entity.CreatedAt = now;
             entity.UpdatedAt = now;
             entity.IsDeleted = false;
-            SetStringProperty(entity, "CreatedBy", uid);
-            SetStringProperty(entity, "CreatedByUsername", uname);
+            SetAuditProperty(entity, "CreatedBy", uid);
+            SetAuditProperty(entity, "CreatedByUsername", uname);
 
-            if (typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+            if (entity is IMultiTenant multiTenant)
             {
                 var companyId = await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
-                companyId ??= GetExistingCompanyId(entity);
+                companyId ??= multiTenant.CompanyId;
                 if (string.IsNullOrEmpty(companyId))
                     throw new UnauthorizedAccessException("未找到当前企业信息");
-                SetStringProperty(entity, "CompanyId", companyId);
+                multiTenant.CompanyId = companyId;
             }
         }
 
@@ -228,23 +218,13 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     private async Task<T?> FindOneAndReplaceInternalAsync(FilterDefinition<T> filter, T replacement, FindOneAndReplaceOptions<T>? options)
     {
-        var originalId = replacement.Id;
-        var replacementDoc = replacement.ToBsonDocument();
-        replacementDoc.Remove("_id");
-        
+        // 更新审计字段
+        replacement.UpdatedAt = DateTime.UtcNow;
         var (userId, username) = await GetActorAsync().ConfigureAwait(false);
-        replacementDoc["updatedAt"] = DateTime.UtcNow;
-        if (!string.IsNullOrEmpty(userId)) replacementDoc["updatedBy"] = userId;
-        if (!string.IsNullOrEmpty(username)) replacementDoc["updatedByUsername"] = username;
+        SetAuditProperty(replacement, "UpdatedBy", userId);
+        SetAuditProperty(replacement, "UpdatedByUsername", username);
         
-        var replacementForUpdate = BsonSerializer.Deserialize<T>(replacementDoc);
-        var result = await _collection.FindOneAndReplaceAsync(filter, replacementForUpdate, options).ConfigureAwait(false);
-        
-        if (result != null && string.IsNullOrEmpty(result.Id) && !string.IsNullOrEmpty(originalId))
-        {
-            result.Id = originalId;
-        }
-        
+        var result = await _collection.FindOneAndReplaceAsync(filter, replacement, options).ConfigureAwait(false);
         return result;
     }
 
@@ -509,35 +489,17 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         return companyId;
     }
 
-    private static readonly Lazy<string?> _companyIdFieldName = new(() =>
-    {
-        if (!typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
-            return null;
-        
-        var prop = typeof(T).GetProperty("CompanyId");
-        if (prop == null)
-            return "companyId";
-        
-        var attr = prop.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
-        return attr?.ElementName ?? "companyId";
-    });
-    
-    private static string? GetCompanyIdFieldName() => _companyIdFieldName.Value;
-    
     private async Task<FilterDefinition<T>> ApplyTenantFilterAsync(FilterDefinition<T> filter)
     {
         if (!typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
-            return filter;
-
-        var fieldName = GetCompanyIdFieldName();
-        if (string.IsNullOrEmpty(fieldName))
             return filter;
 
         var companyId = await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
         if (string.IsNullOrEmpty(companyId))
             return filter;
 
-        return Builders<T>.Filter.And(filter, Builders<T>.Filter.Eq(fieldName, companyId));
+        // 直接使用 CompanyId 属性（MongoDB 驱动会自动处理 BsonElement 特性）
+        return Builders<T>.Filter.And(filter, Builders<T>.Filter.Eq("companyId", companyId));
     }
 
     private async Task<string?> ResolveCurrentCompanyIdAsync() =>

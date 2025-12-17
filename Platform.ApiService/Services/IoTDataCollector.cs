@@ -258,12 +258,43 @@ public class IoTDataCollector
             .ExcludeDeleted()
             .Build();
 
-        var dataPoints = await _dataPointFactory.FindAsync(dataPointFilter).ConfigureAwait(false);
-        if (dataPoints.Count == 0)
+        var allDataPoints = await _dataPointFactory.FindAsync(dataPointFilter).ConfigureAwait(false);
+        if (allDataPoints.Count == 0)
         {
             _logger.LogWarning("Device {DeviceId} has no enabled data points configured", device.DeviceId);
             return DeviceProcessResult.WithWarning($"设备 {device.DeviceId} 未配置可用数据点，已跳过。");
         }
+
+        // 根据采样间隔过滤数据点：只采集需要采集的数据点
+        var now = DateTime.UtcNow;
+        var dataPoints = allDataPoints.Where(dp =>
+        {
+            // 如果从未采集过，需要采集
+            if (!dp.LastUpdatedAt.HasValue)
+            {
+                return true;
+            }
+
+            // 计算距离上次采集的时间间隔（秒）
+            var elapsedSeconds = (now - dp.LastUpdatedAt.Value).TotalSeconds;
+            
+            // 如果已超过采样间隔，需要采集
+            return elapsedSeconds >= dp.SamplingInterval;
+        }).ToList();
+
+        if (dataPoints.Count == 0)
+        {
+            _logger.LogDebug("Device {DeviceId} has no data points ready for collection (all within sampling interval)", device.DeviceId);
+            return new DeviceProcessResult
+            {
+                DataPointsProcessed = allDataPoints.Count,
+                RecordsInserted = 0,
+                RecordsSkipped = 0
+            };
+        }
+
+        _logger.LogDebug("Device {DeviceId}: {ReadyCount}/{TotalCount} data points ready for collection", 
+            device.DeviceId, dataPoints.Count, allDataPoints.Count);
 
         _logger.LogDebug("Fetching data for device {DeviceId} with {DataPointCount} data points", 
             device.DeviceId, dataPoints.Count);

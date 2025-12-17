@@ -260,27 +260,61 @@ public class IoTService : IIoTService
     /// <returns>创建的设备</returns>
     public async Task<IoTDevice> CreateDeviceAsync(CreateIoTDeviceRequest request)
     {
+        // 验证并处理 DeviceId
+        string deviceId;
+        if (!string.IsNullOrWhiteSpace(request.DeviceId))
+        {
+            // 验证 DeviceId 格式（只允许字母、数字、连字符、下划线）
+            var deviceIdPattern = @"^[a-zA-Z0-9_-]+$";
+            if (!System.Text.RegularExpressions.Regex.IsMatch(request.DeviceId, deviceIdPattern))
+            {
+                throw new ArgumentException("设备标识符只能包含字母、数字、连字符和下划线");
+            }
+            
+            // 检查是否已存在（确保企业内唯一）
+            var existingFilter = _deviceFactory.CreateFilterBuilder()
+                .Equal(d => d.DeviceId, request.DeviceId)
+                .ExcludeDeleted()
+                .Build();
+            var existing = await _deviceFactory.FindAsync(existingFilter, limit: 1);
+            if (existing.Count > 0)
+            {
+                throw new InvalidOperationException($"设备标识符 {request.DeviceId} 已存在");
+            }
+            
+            deviceId = request.DeviceId.Trim();
+        }
+        else
+        {
+            // 自动生成 DeviceId（使用无连字符格式，避免序列化问题）
+            deviceId = Guid.NewGuid().ToString("N");
+        }
+
         var device = new IoTDevice
         {
             Name = request.Name,
             Title = request.Title,
-            GatewayId = request.GatewayId
+            DeviceId = deviceId,
+            GatewayId = request.GatewayId ?? string.Empty
         };
 
         var result = await _deviceFactory.CreateAsync(device);
         
-        // Update gateway device count using atomic increment
-        var gateway = await GetGatewayByGatewayIdAsync(request.GatewayId);
-        if (gateway != null)
+        // Update gateway device count using atomic increment (if gateway is provided)
+        if (!string.IsNullOrEmpty(request.GatewayId))
         {
-            var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
-                .Equal(g => g.Id, gateway.Id)
-                .ExcludeDeleted()
-                .Build();
-            var update = _gatewayFactory.CreateUpdateBuilder()
-                .Inc(g => g.DeviceCount, 1)
-                .Build();
-            await _gatewayFactory.FindOneAndUpdateAsync(gatewayFilter, update);
+            var gateway = await GetGatewayByGatewayIdAsync(request.GatewayId);
+            if (gateway != null)
+            {
+                var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
+                    .Equal(g => g.Id, gateway.Id)
+                    .ExcludeDeleted()
+                    .Build();
+                var update = _gatewayFactory.CreateUpdateBuilder()
+                    .Inc(g => g.DeviceCount, 1)
+                    .Build();
+                await _gatewayFactory.FindOneAndUpdateAsync(gatewayFilter, update);
+            }
         }
 
         _logger.LogInformation("Device created: {DeviceId} for company {CompanyId}", result.DeviceId, result.CompanyId);
@@ -428,17 +462,23 @@ public class IoTService : IIoTService
     public async Task<bool> UpdateDeviceStatusAsync(string deviceId, IoTDeviceStatus status)
     {
         // 简化：只更新最后上报时间，不再维护 Status 字段
-        var updateBuilder = _deviceFactory.CreateUpdateBuilder();
-
-        if (status == IoTDeviceStatus.Online)
-            updateBuilder.Set(d => d.LastReportedAt, DateTime.UtcNow);
-
         var filter = _deviceFactory.CreateFilterBuilder()
             .Equal(d => d.DeviceId, deviceId)
             .ExcludeDeleted()
             .Build();
+
+        // 如果状态不是 Online，不需要更新任何字段，只需检查设备是否存在
+        if (status != IoTDeviceStatus.Online)
+        {
+            var devices = await _deviceFactory.FindAsync(filter, limit: 1);
+            return devices.Count > 0;
+        }
+
+        // 状态为 Online 时，更新最后上报时间
+        var updateBuilder = _deviceFactory.CreateUpdateBuilder()
+            .Set(d => d.LastReportedAt, DateTime.UtcNow);
+
         var update = updateBuilder.Build();
-        
         var result = await _deviceFactory.FindOneAndUpdateAsync(filter, update);
         return result != null;
     }
@@ -479,21 +519,20 @@ public class IoTService : IIoTService
     /// <returns>是否处理成功</returns>
     public async Task<bool> HandleDeviceDisconnectAsync(DeviceDisconnectRequest request)
     {
-        var updateBuilder = _deviceFactory.CreateUpdateBuilder();
-
+        // 断开连接不需要更新设备字段，只需检查设备是否存在并创建事件
         var filter = _deviceFactory.CreateFilterBuilder()
             .Equal(d => d.DeviceId, request.DeviceId)
             .ExcludeDeleted()
             .Build();
-        var update = updateBuilder.Build();
+
+        var devices = await _deviceFactory.FindAsync(filter, limit: 1);
         
-        var result = await _deviceFactory.FindOneAndUpdateAsync(filter, update);
-        
-        if (result != null)
+        if (devices.Count > 0)
         {
+            var device = devices[0];
             // Create event
             await CreateEventAsync(request.DeviceId, "Disconnected", "Warning", request.Reason ?? "Device disconnected");
-            _logger.LogInformation("Device disconnected: {DeviceId} for company {CompanyId}", request.DeviceId, result.CompanyId);
+            _logger.LogInformation("Device disconnected: {DeviceId} for company {CompanyId}", request.DeviceId, device.CompanyId);
             return true;
         }
         

@@ -336,7 +336,7 @@ public class SimpleHttpDataCollector
         // 创建默认设备（仅在网关下没有任何设备时）
         var defaultDevice = new IoTDevice
         {
-            DeviceId = Guid.NewGuid().ToString(),
+            DeviceId = Guid.NewGuid().ToString("N"), // 使用无连字符格式，避免序列化问题
             GatewayId = gateway.GatewayId,
             CompanyId = gateway.CompanyId,
             Name = $"{gateway.Title}_设备",
@@ -352,7 +352,7 @@ public class SimpleHttpDataCollector
     }
 
     /// <summary>
-    /// 获取设备下已配置的数据点（仅返回用户手动创建的数据点）
+    /// 获取设备下已配置的数据点（仅返回用户手动创建的数据点，并根据采样间隔过滤）
     /// </summary>
     private async Task<List<IoTDataPoint>> GetDataPointsForDeviceAsync(
         IoTGateway gateway,
@@ -366,10 +366,27 @@ public class SimpleHttpDataCollector
             .ExcludeDeleted()
             .Build();
 
-        var dataPoints = await _dataPointFactory.FindAsync(filter).ConfigureAwait(false);
+        var allDataPoints = await _dataPointFactory.FindAsync(filter).ConfigureAwait(false);
         
-        _logger.LogDebug("Found {Count} enabled data points for device {DeviceId}", 
-            dataPoints.Count, device.DeviceId);
+        // 根据采样间隔过滤数据点：只返回需要采集的数据点
+        var now = DateTime.UtcNow;
+        var dataPoints = allDataPoints.Where(dp =>
+        {
+            // 如果从未采集过，需要采集
+            if (!dp.LastUpdatedAt.HasValue)
+            {
+                return true;
+            }
+
+            // 计算距离上次采集的时间间隔（秒）
+            var elapsedSeconds = (now - dp.LastUpdatedAt.Value).TotalSeconds;
+            
+            // 如果已超过采样间隔，需要采集
+            return elapsedSeconds >= dp.SamplingInterval;
+        }).ToList();
+        
+        _logger.LogDebug("Found {ReadyCount}/{TotalCount} enabled data points ready for collection on device {DeviceId}", 
+            dataPoints.Count, allDataPoints.Count, device.DeviceId);
         
         return dataPoints;
     }

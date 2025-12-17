@@ -122,7 +122,7 @@ public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimes
 
     /// <summary>设备唯一标识符</summary>
     [BsonElement("deviceId")]
-    public string DeviceId { get; set; } = Guid.NewGuid().ToString();
+    public string DeviceId { get; set; } = string.Empty;
 
     /// <summary>所属网关ID</summary>
     [BsonElement("gatewayId")]

@@ -55,8 +55,10 @@ public class CreateIoTDeviceRequest
     public string Name { get; set; } = string.Empty;
     /// <summary>设备标题</summary>
     public string Title { get; set; } = string.Empty;
-    /// <summary>所属网关ID</summary>
-    public string GatewayId { get; set; } = string.Empty;
+    /// <summary>设备唯一标识符（可选，不提供则自动生成）</summary>
+    public string? DeviceId { get; set; }
+    /// <summary>所属网关ID（可选，设备可以独立存在）</summary>
+    public string? GatewayId { get; set; }
 }
 
 /// <summary>

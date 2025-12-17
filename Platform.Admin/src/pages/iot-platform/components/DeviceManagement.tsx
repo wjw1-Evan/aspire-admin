@@ -365,11 +365,19 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           </Form.Item>
 
           <Form.Item
+            label="设备标识符"
+            name="deviceId"
+            tooltip="设备的唯一标识符，不提供则自动生成"
+          >
+            <Input placeholder="留空则自动生成" />
+          </Form.Item>
+
+          <Form.Item
             label="所属网关"
             name="gatewayId"
-            rules={[{ required: true, message: '请选择所属网关' }]}
+            tooltip="设备可以独立存在，也可以关联到网关"
           >
-            <Select placeholder="请选择所属网关">
+            <Select placeholder="请选择所属网关（可选）" allowClear>
               {safeGateways.map((gateway) => (
                 <Select.Option key={gateway.gatewayId} value={gateway.gatewayId}>
                   {gateway.title}

@@ -935,12 +935,16 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
 
           <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.pageError.q' })}</Title>
           <Paragraph>
-            {intl.formatMessage({ id: 'pages.help.faq.pageError.a' }).split('\n').map((line, index) => (
-              <React.Fragment key={index}>
-                {line}
-                {index < intl.formatMessage({ id: 'pages.help.faq.pageError.a' }).split('\n').length - 1 && <br />}
-              </React.Fragment>
-            ))}
+            {(() => {
+              const pageErrorAnswer = intl.formatMessage({ id: 'pages.help.faq.pageError.a' });
+              const lines = pageErrorAnswer.split('\n');
+              return lines.map((line, index) => (
+                <React.Fragment key={index}>
+                  {line}
+                  {index < lines.length - 1 && <br />}
+                </React.Fragment>
+              ));
+            })()}
           </Paragraph>
 
           <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.switchLanguage.q' })}</Title>
@@ -1033,12 +1037,16 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           <Title level={5}>{intl.formatMessage({ id: 'pages.help.tech.version.title' })}</Title>
           <Paragraph>
             <Text type="secondary">
-              {intl.formatMessage({ id: 'pages.help.tech.version.content' }).split('\n').map((line, index) => (
-                <React.Fragment key={index}>
-                  {line}
-                  {index < intl.formatMessage({ id: 'pages.help.tech.version.content' }).split('\n').length - 1 && <br />}
-                </React.Fragment>
-              ))}
+              {(() => {
+                const versionContent = intl.formatMessage({ id: 'pages.help.tech.version.content' });
+                const lines = versionContent.split('\n');
+                return lines.map((line, index) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    {index < lines.length - 1 && <br />}
+                  </React.Fragment>
+                ));
+              })()}
             </Text>
           </Paragraph>
         </div>

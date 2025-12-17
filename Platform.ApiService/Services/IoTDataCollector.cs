@@ -97,36 +97,43 @@ public class IoTDataCollector
             gateways.Count, gatewaysByTenant.Count);
 
         var throttler = new SemaphoreSlim(Math.Max(1, options.MaxDegreeOfParallelism));
-        var gatewayTasks = gateways.Select(async gateway =>
+        // 按租户分组处理网关，确保数据隔离
+        var gatewayTasks = gatewaysByTenant.SelectMany(tenantGroup =>
         {
-            await throttler.WaitAsync(token).ConfigureAwait(false);
-            try
+            var companyId = tenantGroup.Key;
+            _logger.LogDebug("Processing {Count} gateways for company {CompanyId}", tenantGroup.Count(), companyId);
+            
+            return tenantGroup.Select(async gateway =>
             {
-                _logger.LogDebug("Processing gateway {GatewayId} for company {CompanyId}", gateway.GatewayId, gateway.CompanyId);
-                var gatewayResult = await ProcessGatewayAsync(gateway, token).ConfigureAwait(false);
-                Interlocked.Add(ref devicesProcessed, gatewayResult.DevicesProcessed);
-                Interlocked.Add(ref dataPointsProcessed, gatewayResult.DataPointsProcessed);
-                Interlocked.Add(ref recordsInserted, gatewayResult.RecordsInserted);
-                Interlocked.Add(ref recordsSkipped, gatewayResult.RecordsSkipped);
-                foreach (var warning in gatewayResult.Warnings)
+                await throttler.WaitAsync(token).ConfigureAwait(false);
+                try
                 {
-                    warnings.Add(warning);
+                    _logger.LogDebug("Processing gateway {GatewayId} for company {CompanyId}", gateway.GatewayId, companyId);
+                    var gatewayResult = await ProcessGatewayAsync(gateway, token).ConfigureAwait(false);
+                    Interlocked.Add(ref devicesProcessed, gatewayResult.DevicesProcessed);
+                    Interlocked.Add(ref dataPointsProcessed, gatewayResult.DataPointsProcessed);
+                    Interlocked.Add(ref recordsInserted, gatewayResult.RecordsInserted);
+                    Interlocked.Add(ref recordsSkipped, gatewayResult.RecordsSkipped);
+                    foreach (var warning in gatewayResult.Warnings)
+                    {
+                        warnings.Add(warning);
+                    }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                // respect cancellation
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Collect data for gateway {GatewayId} (company {CompanyId}) failed", 
-                    gateway.GatewayId, gateway.CompanyId);
-                warnings.Add($"网关 {gateway.GatewayId} (企业 {gateway.CompanyId}) 采集失败: {ex.Message}");
-            }
-            finally
-            {
-                throttler.Release();
-            }
+                catch (OperationCanceledException)
+                {
+                    // respect cancellation
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Collect data for gateway {GatewayId} (company {CompanyId}) failed", 
+                        gateway.GatewayId, companyId);
+                    warnings.Add($"网关 {gateway.GatewayId} (企业 {companyId}) 采集失败: {ex.Message}");
+                }
+                finally
+                {
+                    throttler.Release();
+                }
+            });
         }).ToList();
 
         await Task.WhenAll(gatewayTasks).ConfigureAwait(false);

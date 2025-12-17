@@ -233,7 +233,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
     };
     
     initializeForm();
-  }, [visible, current, loadMenuTree, form]);
+  }, [visible, current, loadMenuTree, loadRoleMenusWithTreeData, form]);
 
   /**
    * 使用菜单树数据加载角色菜单权限（避免循环依赖）
@@ -398,7 +398,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
             rules={[
               {
                 validator: (_, value) => {
-                  if (!checkedKeys || checkedKeys.length === 0) {
+                  if (!value || value.length === 0) {
                     return Promise.reject(new Error(intl.formatMessage({ id: 'pages.roleForm.menuRequired' })));
                   }
                   return Promise.resolve();

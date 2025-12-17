@@ -29,23 +29,10 @@ export interface IoTDevice {
   id: string;
   name: string;
   title: string;
-  description?: string;
   deviceId: string;
   gatewayId: string;
-  deviceType: IoTDeviceType;
-  model?: string;
-  manufacturer?: string;
-  serialNumber?: string;
-  status: IoTDeviceStatus;
   isEnabled: boolean;
   lastReportedAt?: string;
-  location?: string;
-  latitude?: number;
-  longitude?: number;
-  dataPoints: string[];
-  properties?: Record<string, any>;
-  tags: string[];
-  remarks?: string;
   createdAt: string;
   updatedAt: string;
 }

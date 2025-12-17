@@ -33,8 +33,6 @@ import {
   IoTDevice,
   IoTGateway,
   DeviceStatistics,
-  IoTDeviceStatus,
-  IoTDeviceType,
 } from '@/services/iotService';
 import { StatCard } from '@/components';
 
@@ -59,19 +57,13 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     fault: 0,
   });
 
-  const normalizeStatus = (status?: string) => (status || '').toLowerCase() as IoTDeviceStatus;
-  const statusMap: Record<IoTDeviceStatus, { color: string; label: string }> = {
-    online: { color: 'green', label: '在线' },
-    offline: { color: 'default', label: '离线' },
-    fault: { color: 'red', label: '故障' },
-    maintenance: { color: 'orange', label: '维护中' },
-  };
-  const normalizeDeviceType = (type?: string) => (type || '').toLowerCase() as IoTDeviceType;
-  const deviceTypeMap: Record<IoTDeviceType, string> = {
-    sensor: '传感器',
-    actuator: '执行器',
-    gateway: '网关',
-    other: '其他',
+  // 基于 lastReportedAt 判断设备是否在线（5分钟内上报过视为在线）
+  const isDeviceOnline = (device: IoTDevice) => {
+    if (!device.lastReportedAt) return false;
+    const reportedAt = new Date(device.lastReportedAt);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - reportedAt.getTime()) / (1000 * 60);
+    return diffMinutes <= 5;
   };
 
   // 确保 gateways 始终是数组
@@ -91,9 +83,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         const list = Array.isArray(response.data.list) ? response.data.list : [];
         setOverviewStats({
           total: list.length,
-          online: list.filter((d: IoTDevice) => normalizeStatus(d.status) === 'online').length,
-          offline: list.filter((d: IoTDevice) => normalizeStatus(d.status) === 'offline').length,
-          fault: list.filter((d: IoTDevice) => normalizeStatus(d.status) === 'fault').length,
+          online: list.filter((d: IoTDevice) => isDeviceOnline(d)).length,
+          offline: list.filter((d: IoTDevice) => !isDeviceOnline(d)).length,
+          fault: 0, // 不再维护故障状态
         });
       }
     } catch (error) {
@@ -166,10 +158,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
   const handleEdit = (device: IoTDevice) => {
     setSelectedDevice(device);
-    form.setFieldsValue({
-      ...device,
-      deviceType: normalizeDeviceType(device.deviceType),
-    });
+    form.setFieldsValue(device);
     setIsModalVisible(true);
   };
 
@@ -224,15 +213,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     }
   };
 
-  const getStatusTag = (status: string) => {
-    const normalized = normalizeStatus(status);
-    const config = statusMap[normalized] || { color: 'default', label: status || '未知' };
-    return <Tag color={config.color}>{config.label}</Tag>;
-  };
-
-  const getDeviceTypeLabel = (type: string) => {
-    const normalized = normalizeDeviceType(type);
-    return deviceTypeMap[normalized] || type;
+  const getStatusTag = (device: IoTDevice) => {
+    const isOnline = isDeviceOnline(device);
+    return <Tag color={isOnline ? 'green' : 'default'}>{isOnline ? '在线' : '离线'}</Tag>;
   };
 
   const columns: TableColumnsType<IoTDevice> = [
@@ -241,13 +224,6 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       dataIndex: 'title',
       key: 'title',
       width: 150,
-    },
-    {
-      title: '设备类型',
-      dataIndex: 'deviceType',
-      key: 'deviceType',
-      width: 100,
-      render: (type: string) => getDeviceTypeLabel(type),
     },
     {
       title: '所属网关',
@@ -261,18 +237,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     },
     {
       title: '状态',
-      dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: string) => getStatusTag(status),
-    },
-    {
-      title: '数据点',
-      dataIndex: 'dataPoints',
-      key: 'dataPoints',
-      width: 80,
-      align: 'center',
-      render: (dataPoints: string[]) => dataPoints?.length || 0,
+      render: (_: any, device: IoTDevice) => getStatusTag(device),
     },
     {
       title: '启用',
@@ -397,10 +364,6 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
             <Input placeholder="请输入设备标题" />
           </Form.Item>
 
-          <Form.Item label="描述" name="description">
-            <Input.TextArea placeholder="请输入描述" rows={2} />
-          </Form.Item>
-
           <Form.Item
             label="所属网关"
             name="gatewayId"
@@ -413,39 +376,6 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
                 </Select.Option>
               ))}
             </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="设备类型"
-            name="deviceType"
-            rules={[{ required: true, message: '请选择设备类型' }]}
-          >
-            <Select placeholder="请选择设备类型">
-              <Select.Option value="sensor">传感器</Select.Option>
-              <Select.Option value="actuator">执行器</Select.Option>
-              <Select.Option value="gateway">网关</Select.Option>
-              <Select.Option value="other">其他</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="型号" name="model">
-            <Input placeholder="请输入设备型号" />
-          </Form.Item>
-
-          <Form.Item label="制造商" name="manufacturer">
-            <Input placeholder="请输入制造商" />
-          </Form.Item>
-
-          <Form.Item label="序列号" name="serialNumber">
-            <Input placeholder="请输入序列号" />
-          </Form.Item>
-
-          <Form.Item label="位置" name="location">
-            <Input placeholder="请输入设备位置" />
-          </Form.Item>
-
-          <Form.Item label="备注" name="remarks">
-            <Input.TextArea placeholder="请输入备注" rows={2} />
           </Form.Item>
         </Form>
       </Modal>
@@ -471,7 +401,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
             <div style={{ marginBottom: 16 }}>
               <div style={{ color: '#666', marginBottom: 4 }}>状态</div>
-              <div>{getStatusTag(selectedDevice.status)}</div>
+              <div>{getStatusTag(selectedDevice)}</div>
             </div>
 
             {statistics && (
@@ -489,18 +419,8 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
             )}
 
             <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>设备类型</div>
-              <div>{getDeviceTypeLabel(selectedDevice.deviceType)}</div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>型号</div>
-              <div>{selectedDevice.model || '-'}</div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>制造商</div>
-              <div>{selectedDevice.manufacturer || '-'}</div>
+              <div style={{ color: '#666', marginBottom: 4 }}>最后上报时间</div>
+              <div>{selectedDevice.lastReportedAt ? new Date(selectedDevice.lastReportedAt).toLocaleString() : '-'}</div>
             </div>
 
             <div style={{ marginBottom: 16 }}>

@@ -57,8 +57,6 @@ public class CreateIoTDeviceRequest
     public string Title { get; set; } = string.Empty;
     /// <summary>所属网关ID</summary>
     public string GatewayId { get; set; } = string.Empty;
-    /// <summary>设备类型</summary>
-    public IoTDeviceType DeviceType { get; set; } = IoTDeviceType.Sensor;
 }
 
 /// <summary>
@@ -72,8 +70,6 @@ public class UpdateIoTDeviceRequest
     public string? Title { get; set; }
     /// <summary>所属网关ID</summary>
     public string? GatewayId { get; set; }
-    /// <summary>设备类型</summary>
-    public IoTDeviceType? DeviceType { get; set; }
     /// <summary>是否启用</summary>
     public bool? IsEnabled { get; set; }
 }

@@ -95,8 +95,8 @@ public class SimpleHttpDataCollector
             return result;
         }
 
-        // 自动发现并创建数据点（如果不存在）
-        var dataPoints = await EnsureDataPointsExistAsync(gateway, device, httpData, cancellationToken).ConfigureAwait(false);
+        // 查询设备下已配置的数据点（仅使用用户手动创建的数据点）
+        var dataPoints = await GetDataPointsForDeviceAsync(gateway, device, cancellationToken).ConfigureAwait(false);
         result.DataPointsFound = dataPoints.Count;
 
         // 构建数据记录（统一时间戳）
@@ -104,6 +104,8 @@ public class SimpleHttpDataCollector
         var recordsToSave = new List<IoTDataRecord>();
         var dataPointValueMap = new Dictionary<string, (IoTDataPoint DataPoint, string Value)>();
 
+        var unmatchedKeys = new List<string>();
+        
         foreach (var kvp in httpData)
         {
             var dataPoint = dataPoints.FirstOrDefault(dp => 
@@ -112,6 +114,8 @@ public class SimpleHttpDataCollector
 
             if (dataPoint == null)
             {
+                // HTTP响应中有该字段，但未配置对应的数据点，跳过
+                unmatchedKeys.Add(kvp.Key);
                 continue;
             }
 
@@ -132,8 +136,24 @@ public class SimpleHttpDataCollector
             dataPointValueMap[dataPoint.DataPointId] = (dataPoint, value);
         }
 
+        // 记录未匹配的字段（HTTP响应中有但未配置数据点）
+        if (unmatchedKeys.Count > 0)
+        {
+            _logger.LogWarning("HTTP response contains {Count} fields without configured data points for device {DeviceId}: {Fields}. " +
+                "Please create data points manually for these fields.",
+                unmatchedKeys.Count, device.DeviceId, string.Join(", ", unmatchedKeys));
+        }
+
         if (recordsToSave.Count == 0)
         {
+            if (dataPoints.Count == 0)
+            {
+                result.Warning = $"设备 {device.DeviceId} 未配置任何数据点，请先手动创建数据点";
+            }
+            else if (unmatchedKeys.Count > 0)
+            {
+                result.Warning = $"HTTP响应中的字段 [{string.Join(", ", unmatchedKeys)}] 未配置对应的数据点";
+            }
             result.RecordsInserted = 0;
             result.RecordsSkipped = 0;
             result.Success = true;
@@ -321,9 +341,7 @@ public class SimpleHttpDataCollector
             CompanyId = gateway.CompanyId,
             Name = $"{gateway.Title}_设备",
             Title = $"{gateway.Title} - 默认设备",
-            DeviceType = IoTDeviceType.Sensor,
-            IsEnabled = true,
-            Status = IoTDeviceStatus.Online
+            IsEnabled = true
         };
 
         await _deviceFactory.CreateAsync(defaultDevice).ConfigureAwait(false);
@@ -333,87 +351,29 @@ public class SimpleHttpDataCollector
         return defaultDevice;
     }
 
-    private async Task<List<IoTDataPoint>> EnsureDataPointsExistAsync(
+    /// <summary>
+    /// 获取设备下已配置的数据点（仅返回用户手动创建的数据点）
+    /// </summary>
+    private async Task<List<IoTDataPoint>> GetDataPointsForDeviceAsync(
         IoTGateway gateway,
         IoTDevice device,
-        Dictionary<string, object> httpData,
         CancellationToken cancellationToken)
     {
-        var existingFilter = _dataPointFactory.CreateFilterBuilder()
+        var filter = _dataPointFactory.CreateFilterBuilder()
             .Equal(dp => dp.DeviceId, device.DeviceId)
+            .Equal(dp => dp.IsEnabled, true)
             .WithTenant(gateway.CompanyId)
             .ExcludeDeleted()
             .Build();
 
-        var existing = await _dataPointFactory.FindAsync(existingFilter).ConfigureAwait(false);
-        var existingKeys = existing.Select(dp => dp.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var dataPoints = existing.ToList();
-
-        // 为HTTP响应中的新字段创建数据点（仅当不存在时）
-        // 这样既支持自动发现，也支持手动创建的数据点
-        foreach (var kvp in httpData)
-        {
-            // 检查是否已存在（按名称匹配）
-            if (existingKeys.Contains(kvp.Key))
-            {
-                continue;
-            }
-
-            // 检查是否已存在（按DataPointId匹配，以防名称不同但ID相同）
-            var existingByKey = existing.FirstOrDefault(dp => 
-                dp.DataPointId.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase));
-            if (existingByKey != null)
-            {
-                continue;
-            }
-
-            // 自动创建新数据点
-            var dataType = InferDataType(kvp.Value);
-            var dataPoint = new IoTDataPoint
-            {
-                DataPointId = Guid.NewGuid().ToString(),
-                DeviceId = device.DeviceId,
-                CompanyId = gateway.CompanyId,
-                Name = kvp.Key,
-                Title = kvp.Key,
-                DataType = dataType,
-                IsEnabled = true,
-                SamplingInterval = 60, // 默认60秒
-                IsReadOnly = true
-            };
-
-            await _dataPointFactory.CreateAsync(dataPoint).ConfigureAwait(false);
-            dataPoints.Add(dataPoint);
-            existingKeys.Add(kvp.Key);
-
-            _logger.LogInformation("Auto-created data point {DataPointId} ({Name}) for device {DeviceId}",
-                dataPoint.DataPointId, dataPoint.Name, device.DeviceId);
-        }
-
-        // 返回所有启用的数据点（包括手动创建和自动创建的）
-        return dataPoints.Where(dp => dp.IsEnabled).ToList();
+        var dataPoints = await _dataPointFactory.FindAsync(filter).ConfigureAwait(false);
+        
+        _logger.LogDebug("Found {Count} enabled data points for device {DeviceId}", 
+            dataPoints.Count, device.DeviceId);
+        
+        return dataPoints;
     }
 
-    private static DataPointType InferDataType(object? value)
-    {
-        if (value == null)
-        {
-            return DataPointType.String;
-        }
-
-        return value switch
-        {
-            bool => DataPointType.Boolean,
-            sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal => DataPointType.Numeric,
-            string => DataPointType.String,
-            JsonElement je when je.ValueKind == JsonValueKind.True || je.ValueKind == JsonValueKind.False => DataPointType.Boolean,
-            JsonElement je when je.ValueKind == JsonValueKind.Number => DataPointType.Numeric,
-            JsonElement je when je.ValueKind == JsonValueKind.String => DataPointType.String,
-            JsonElement je when je.ValueKind == JsonValueKind.Object || je.ValueKind == JsonValueKind.Array => DataPointType.Json,
-            _ => DataPointType.String
-        };
-    }
 
     private static string ExtractValue(object? value)
     {

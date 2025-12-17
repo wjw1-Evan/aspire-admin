@@ -72,7 +72,7 @@ public class IoTDataCollector
         var recordsSkipped = 0;
 
         // 统一模式：按网关处理
-        // 1. HTTP网关：自动创建设备和数据点（如果不存在），然后采集
+        // 1. HTTP网关：自动创建设备（如果不存在），使用用户手动创建的数据点进行采集
         // 2. 非HTTP网关：使用手动创建的设备和数据点采集
         // 后台服务需要跨租户查询所有启用的网关
         var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
@@ -158,7 +158,7 @@ public class IoTDataCollector
         var result = new IoTDataCollectionResult();
         var warnings = new List<string>();
 
-        // HTTP网关：使用简化模式（自动创建设备和数据点）
+        // HTTP网关：使用简化模式（自动创建设备，使用用户手动创建的数据点）
         if (gateway.ProtocolType?.Equals("HTTP", StringComparison.OrdinalIgnoreCase) == true)
         {
             var simpleCollectorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<SimpleHttpDataCollector>.Instance;

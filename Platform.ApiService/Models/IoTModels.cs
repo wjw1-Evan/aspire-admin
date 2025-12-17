@@ -128,14 +128,6 @@ public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimes
     [BsonElement("gatewayId")]
     public string GatewayId { get; set; } = string.Empty;
 
-    /// <summary>设备类型</summary>
-    [BsonElement("deviceType")]
-    public IoTDeviceType DeviceType { get; set; } = IoTDeviceType.Sensor;
-
-    /// <summary>设备状态</summary>
-    [BsonElement("status")]
-    public IoTDeviceStatus Status { get; set; } = IoTDeviceStatus.Offline;
-
     /// <summary>是否启用</summary>
     [BsonElement("isEnabled")]
     public bool IsEnabled { get; set; } = true;
@@ -143,10 +135,6 @@ public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimes
     /// <summary>最后上报时间</summary>
     [BsonElement("lastReportedAt")]
     public DateTime? LastReportedAt { get; set; }
-
-    /// <summary>数据点列表</summary>
-    [BsonElement("dataPoints")]
-    public List<string> DataPoints { get; set; } = new();
 }
 
 /// <summary>

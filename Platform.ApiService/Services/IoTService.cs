@@ -234,13 +234,17 @@ public class IoTService : IIoTService
             .Build();
         var devices = await _deviceFactory.FindAsync(deviceFilter);
 
+        // 基于 LastReportedAt 判断设备是否在线（5分钟内上报过视为在线）
+        var onlineThreshold = DateTime.UtcNow.AddMinutes(-5);
+        var onlineDevices = devices.Count(x => x.LastReportedAt.HasValue && x.LastReportedAt.Value >= onlineThreshold);
+        
         return new GatewayStatistics
         {
             GatewayId = gatewayId,
             TotalDevices = devices.Count,
-            OnlineDevices = devices.Count(x => x.Status == IoTDeviceStatus.Online),
-            OfflineDevices = devices.Count(x => x.Status == IoTDeviceStatus.Offline),
-            FaultDevices = devices.Count(x => x.Status == IoTDeviceStatus.Fault),
+            OnlineDevices = onlineDevices,
+            OfflineDevices = devices.Count - onlineDevices,
+            FaultDevices = 0, // 不再维护故障状态
             LastConnectedAt = gateway.LastConnectedAt
         };
     }
@@ -260,8 +264,7 @@ public class IoTService : IIoTService
         {
             Name = request.Name,
             Title = request.Title,
-            GatewayId = request.GatewayId,
-            DeviceType = request.DeviceType
+            GatewayId = request.GatewayId
         };
 
         var result = await _deviceFactory.CreateAsync(device);
@@ -355,8 +358,6 @@ public class IoTService : IIoTService
             updateBuilder.Set(d => d.Title, request.Title);
         if (!string.IsNullOrEmpty(request.GatewayId))
             updateBuilder.Set(d => d.GatewayId, request.GatewayId);
-        if (request.DeviceType.HasValue)
-            updateBuilder.Set(d => d.DeviceType, request.DeviceType.Value);
         if (request.IsEnabled.HasValue)
             updateBuilder.Set(d => d.IsEnabled, request.IsEnabled.Value);
 
@@ -426,8 +427,8 @@ public class IoTService : IIoTService
     /// <returns>是否更新成功</returns>
     public async Task<bool> UpdateDeviceStatusAsync(string deviceId, IoTDeviceStatus status)
     {
-        var updateBuilder = _deviceFactory.CreateUpdateBuilder()
-            .Set(d => d.Status, status);
+        // 简化：只更新最后上报时间，不再维护 Status 字段
+        var updateBuilder = _deviceFactory.CreateUpdateBuilder();
 
         if (status == IoTDeviceStatus.Online)
             updateBuilder.Set(d => d.LastReportedAt, DateTime.UtcNow);
@@ -450,7 +451,6 @@ public class IoTService : IIoTService
     public async Task<bool> HandleDeviceConnectAsync(DeviceConnectRequest request)
     {
         var updateBuilder = _deviceFactory.CreateUpdateBuilder()
-            .Set(d => d.Status, IoTDeviceStatus.Online)
             .Set(d => d.LastReportedAt, DateTime.UtcNow);
 
         var filter = _deviceFactory.CreateFilterBuilder()
@@ -479,8 +479,7 @@ public class IoTService : IIoTService
     /// <returns>是否处理成功</returns>
     public async Task<bool> HandleDeviceDisconnectAsync(DeviceDisconnectRequest request)
     {
-        var updateBuilder = _deviceFactory.CreateUpdateBuilder()
-            .Set(d => d.Status, IoTDeviceStatus.Offline);
+        var updateBuilder = _deviceFactory.CreateUpdateBuilder();
 
         var filter = _deviceFactory.CreateFilterBuilder()
             .Equal(d => d.DeviceId, request.DeviceId)
@@ -569,20 +568,6 @@ public class IoTService : IIoTService
         };
 
         var result = await _dataPointFactory.CreateAsync(dataPoint);
-
-        // Add data point to device
-        var device = await GetDeviceByDeviceIdAsync(request.DeviceId);
-        if (device != null && !device.DataPoints.Contains(result.DataPointId))
-        {
-            var deviceFilter = _deviceFactory.CreateFilterBuilder()
-                .Equal(d => d.Id, device.Id)
-                .ExcludeDeleted()
-                .Build();
-            var update = _deviceFactory.CreateUpdateBuilder()
-                .AddToSetElement(d => d.DataPoints, result.DataPointId)
-                .Build();
-            await _deviceFactory.FindOneAndUpdateAsync(deviceFilter, update);
-        }
 
         _logger.LogInformation("DataPoint created: {DataPointId} for company {CompanyId}", result.DataPointId, result.CompanyId);
         return result;
@@ -707,20 +692,6 @@ public class IoTService : IIoTService
         
         if (result != null)
         {
-            // Remove data point from device
-            var device = await GetDeviceByDeviceIdAsync(result.DeviceId);
-            if (device != null)
-            {
-                var deviceFilter = _deviceFactory.CreateFilterBuilder()
-                    .Equal(d => d.Id, device.Id)
-                    .ExcludeDeleted()
-                    .Build();
-                var update = _deviceFactory.CreateUpdateBuilder()
-                    .PullElement(d => d.DataPoints, result.DataPointId)
-                    .Build();
-                await _deviceFactory.FindOneAndUpdateAsync(deviceFilter, update);
-            }
-
             _logger.LogInformation("DataPoint deleted: {DataPointId} for company {CompanyId}", result.DataPointId, result.CompanyId);
             return true;
         }
@@ -1060,7 +1031,7 @@ public class IoTService : IIoTService
             TotalGateways = gateways.Count,
             OnlineGateways = gateways.Count(x => x.Status == IoTDeviceStatus.Online),
             TotalDevices = devices.Count,
-            OnlineDevices = devices.Count(x => x.Status == IoTDeviceStatus.Online),
+            OnlineDevices = devices.Count(x => x.LastReportedAt.HasValue && x.LastReportedAt.Value >= DateTime.UtcNow.AddMinutes(-5)),
             TotalDataPoints = dataPoints.Count,
             TotalDataRecords = recordCount,
             UnhandledAlarms = unhandledAlarms,
@@ -1079,12 +1050,16 @@ public class IoTService : IIoTService
             .Build();
         var devices = await _deviceFactory.FindAsync(filter);
 
+        // 基于 LastReportedAt 判断设备是否在线（5分钟内上报过视为在线）
+        var onlineThreshold = DateTime.UtcNow.AddMinutes(-5);
+        var online = devices.Count(x => x.LastReportedAt.HasValue && x.LastReportedAt.Value >= onlineThreshold);
+
         return new DeviceStatusStatistics
         {
-            Online = devices.Count(x => x.Status == IoTDeviceStatus.Online),
-            Offline = devices.Count(x => x.Status == IoTDeviceStatus.Offline),
-            Fault = devices.Count(x => x.Status == IoTDeviceStatus.Fault),
-            Maintenance = devices.Count(x => x.Status == IoTDeviceStatus.Maintenance)
+            Online = online,
+            Offline = devices.Count - online,
+            Fault = 0, // 不再维护故障状态
+            Maintenance = 0 // 不再维护维护状态
         };
     }
 

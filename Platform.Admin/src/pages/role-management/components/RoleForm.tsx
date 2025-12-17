@@ -163,15 +163,17 @@ const RoleForm: React.FC<RoleFormProps> = ({
     };
     
     const allMenuIds = getAllMenuIdsFromTree(menuTree);
+    // 从表单获取当前选中状态，而不是依赖 checkedKeys 状态
+    const currentMenuIds = form.getFieldValue('menuIds') || [];
     
-    if (checkedKeys.length === allMenuIds.length) {
+    if (currentMenuIds.length === allMenuIds.length) {
       setCheckedKeys([]);
       form.setFieldsValue({ menuIds: [] });
     } else {
       setCheckedKeys(allMenuIds);
       form.setFieldsValue({ menuIds: allMenuIds });
     }
-  }, [form, menuTree, checkedKeys]);
+  }, [form, menuTree]);
 
   /**
    * 处理 Tree 组件的选中变化

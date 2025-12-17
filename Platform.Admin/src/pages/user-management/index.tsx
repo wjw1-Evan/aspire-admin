@@ -784,7 +784,8 @@ const UserManagement: React.FC = () => {
             },
           }}
           pagination={{
-            defaultPageSize: 10,
+            pageSize: 10,
+            pageSizeOptions: [10, 20, 50, 100],
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>

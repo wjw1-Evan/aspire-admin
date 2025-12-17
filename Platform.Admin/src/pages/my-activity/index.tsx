@@ -739,7 +739,8 @@ const MyActivity: React.FC = () => {
         }}
         columns={columns}
         pagination={{
-          defaultPageSize: 20,
+          pageSize: 20,
+          pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,
         }}

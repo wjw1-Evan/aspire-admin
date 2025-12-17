@@ -35,9 +35,15 @@ function DataTable<T extends Record<string, any> = any>(
 ) {
   const [dataSource, setDataSource] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
+  // 初始化时从传入的 pagination 配置中获取 pageSize
+  // 支持 pageSize 和 defaultPageSize（兼容 antd Table 的两种写法）
+  const initialPageSize = typeof pagination === 'object' 
+    ? (pagination.pageSize ?? pagination.defaultPageSize ?? 10)
+    : 10;
+  
   const [paginationState, setPaginationState] = useState({
     current: 1,
-    pageSize: 10,
+    pageSize: initialPageSize,
     total: 0,
   });
   const [sorter, setSorter] = useState<Record<string, 'ascend' | 'descend'>>({});
@@ -59,7 +65,7 @@ function DataTable<T extends Record<string, any> = any>(
         setPaginationState(prev => ({
           ...prev,
           current: params.current || 1,
-          pageSize: params.pageSize || 10,
+          pageSize: params.pageSize || prev.pageSize, // 保持当前 pageSize，除非明确指定
           total: result.total || 0,
         }));
       }
@@ -106,26 +112,32 @@ function DataTable<T extends Record<string, any> = any>(
     }
     setSorter(newSorter);
     
+    // 当用户改变pageSize时，pag.pageSize会有值；改变页码时，pag.current会有值
     const newPagination = {
-      current: pag.current || 1,
-      pageSize: pag.pageSize || 10,
+      current: pag.current !== undefined ? pag.current : paginationState.current,
+      pageSize: pag.pageSize !== undefined ? pag.pageSize : paginationState.pageSize,
       total: paginationState.total,
     };
+    
     setPaginationState(newPagination);
     
+    // 使用新的分页参数加载数据
     loadData(newPagination.current, newPagination.pageSize);
   };
 
   const mergedPagination: TableProps<T>['pagination'] = pagination === false 
     ? false 
     : {
+        // 先合并传入的配置（包括 pageSizeOptions 等）
+        ...(typeof pagination === 'object' ? pagination : {}),
+        // 然后用 state 覆盖，确保 state 的优先级（用户操作后的状态）
         current: paginationState.current,
         pageSize: paginationState.pageSize,
         total: paginationState.total,
+        // 默认配置
         showSizeChanger: true,
         showQuickJumper: true,
         showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
-        ...(typeof pagination === 'object' ? pagination : {}),
       };
 
   return (

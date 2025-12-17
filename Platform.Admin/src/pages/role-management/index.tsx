@@ -476,6 +476,12 @@ const RoleManagement: FC = () => {
           search={false}
           request={loadRoleData}
           columns={columns}
+          pagination={{
+            pageSize: 20,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+          }}
         />
       </div>
 

@@ -1,7 +1,6 @@
 import { LockOutlined } from '@ant-design/icons';
-import { ProForm, ProFormText } from '@ant-design/pro-components';
 import { FormattedMessage, useIntl } from '@umijs/max';
-import { Alert, App, Card } from 'antd';
+import { Alert, App, Card, Form, Input, Button } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { changePassword } from '@/services/ant-design-pro/api';
@@ -95,33 +94,18 @@ const ChangePassword: React.FC = () => {
         })}
         className={styles.card}
       >
-        <ProForm
+        <Form
           onFinish={async (values) => {
             await handleSubmit(values as API.ChangePasswordParams);
           }}
-          submitter={{
-            searchConfig: {
-              submitText: intl.formatMessage({
-                id: 'pages.changePassword.submit',
-                defaultMessage: '修改密码',
-              }),
-            },
-          }}
+          layout="vertical"
         >
           {errorCode && (
             <ChangePasswordMessage content={errorMessage || '密码修改失败'} />
           )}
 
-          <ProFormText.Password
+          <Form.Item
             name="currentPassword"
-            fieldProps={{
-              size: 'large',
-              prefix: <LockOutlined />,
-            }}
-            placeholder={intl.formatMessage({
-              id: 'pages.changePassword.currentPassword.placeholder',
-              defaultMessage: '请输入当前密码',
-            })}
             rules={[
               {
                 required: true,
@@ -133,18 +117,19 @@ const ChangePassword: React.FC = () => {
                 ),
               },
             ]}
-          />
+          >
+            <Input.Password
+              size="large"
+              prefix={<LockOutlined />}
+              placeholder={intl.formatMessage({
+                id: 'pages.changePassword.currentPassword.placeholder',
+                defaultMessage: '请输入当前密码',
+              })}
+            />
+          </Form.Item>
 
-          <ProFormText.Password
+          <Form.Item
             name="newPassword"
-            fieldProps={{
-              size: 'large',
-              prefix: <LockOutlined />,
-            }}
-            placeholder={intl.formatMessage({
-              id: 'pages.changePassword.newPassword.placeholder',
-              defaultMessage: '请输入新密码',
-            })}
             rules={[
               {
                 required: true,
@@ -165,18 +150,20 @@ const ChangePassword: React.FC = () => {
                 ),
               },
             ]}
-          />
+          >
+            <Input.Password
+              size="large"
+              prefix={<LockOutlined />}
+              placeholder={intl.formatMessage({
+                id: 'pages.changePassword.newPassword.placeholder',
+                defaultMessage: '请输入新密码',
+              })}
+            />
+          </Form.Item>
 
-          <ProFormText.Password
+          <Form.Item
             name="confirmPassword"
-            fieldProps={{
-              size: 'large',
-              prefix: <LockOutlined />,
-            }}
-            placeholder={intl.formatMessage({
-              id: 'pages.changePassword.confirmPassword.placeholder',
-              defaultMessage: '请确认新密码',
-            })}
+            dependencies={['newPassword']}
             rules={[
               {
                 required: true,
@@ -196,8 +183,31 @@ const ChangePassword: React.FC = () => {
                 },
               }),
             ]}
-          />
-        </ProForm>
+          >
+            <Input.Password
+              size="large"
+              prefix={<LockOutlined />}
+              placeholder={intl.formatMessage({
+                id: 'pages.changePassword.confirmPassword.placeholder',
+                defaultMessage: '请确认新密码',
+              })}
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              block
+            >
+              {intl.formatMessage({
+                id: 'pages.changePassword.submit',
+                defaultMessage: '修改密码',
+              })}
+            </Button>
+          </Form.Item>
+        </Form>
       </Card>
       </div>
     </>

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
-import { Tag, Button, Drawer, Descriptions, Space } from 'antd';
+import type { ActionType, ProColumns } from '@/types/pro-components';
+import DataTable from '@/components/DataTable';
+import { Tag, Button, Drawer, Descriptions, Space, message, type TableColumnsType } from 'antd';
 import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import { iotService, IoTDataRecord } from '@/services/iotService';
 
@@ -27,7 +27,7 @@ const dataTypeLabels: Record<string, string> = {
 };
 
 const DataCenter: React.FC = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
 
@@ -68,11 +68,8 @@ const DataCenter: React.FC = () => {
         let records: IoTDataRecord[] = [];
         let total = 0;
         
-        // 优先检查小写格式（后端实际返回的格式）
-        if (response.data.records && Array.isArray(response.data.records)) {
-          records = response.data.records;
-          total = response.data.total || 0;
-        } else if (response.data.Records && Array.isArray(response.data.Records)) {
+        // 优先检查大写格式（后端实际返回的格式）
+        if (response.data.Records && Array.isArray(response.data.Records)) {
           // 如果是 { Records: [], Total: 0 } 格式（大写）
           records = response.data.Records;
           total = response.data.Total || 0;
@@ -80,10 +77,16 @@ const DataCenter: React.FC = () => {
           // 如果 data 直接是数组
           records = response.data;
           total = response.data.length;
-        } else if (response.data.list && Array.isArray(response.data.list)) {
-          // 如果是 { list: [], total: 0 } 格式
-          records = response.data.list;
-          total = response.data.total || 0;
+        } else {
+          // 兼容其他可能的格式
+          const data = response.data as any;
+          if (data.records && Array.isArray(data.records)) {
+            records = data.records;
+            total = data.total || 0;
+          } else if (data.list && Array.isArray(data.list)) {
+            records = data.list;
+            total = data.total || 0;
+          }
         }
         
         console.log('DataCenter parsed records:', records.length, 'total:', total, 'first record:', records[0]);
@@ -112,31 +115,46 @@ const DataCenter: React.FC = () => {
     }
   };
 
-  const columns: ProColumns<IoTDataRecord>[] = [
+  const columns: TableColumnsType<IoTDataRecord> = [
     {
       title: '设备ID',
       dataIndex: 'deviceId',
       width: 200,
-      copyable: true,
       ellipsis: true,
+      render: (text: string) => (
+        <span
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            navigator.clipboard.writeText(text);
+            message.success('已复制到剪贴板');
+          }}
+        >
+          {text}
+        </span>
+      ),
     },
     {
       title: '数据点ID',
       dataIndex: 'dataPointId',
       width: 200,
-      copyable: true,
       ellipsis: true,
+      render: (text: string) => (
+        <span
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            navigator.clipboard.writeText(text);
+            message.success('已复制到剪贴板');
+          }}
+        >
+          {text}
+        </span>
+      ),
     },
     {
       title: '数据类型',
       dataIndex: 'dataType',
       width: 100,
-      valueType: 'select',
-      valueEnum: Object.keys(dataTypeLabels).reduce(
-        (acc, key) => ({ ...acc, [key]: { text: dataTypeLabels[key] } }),
-        {}
-      ),
-      render: (_, record) => <Tag>{getDataTypeLabel(record.dataType)}</Tag>,
+      render: (_: any, record: IoTDataRecord) => <Tag>{getDataTypeLabel(record.dataType)}</Tag>,
     },
     {
       title: '数据值',
@@ -166,11 +184,9 @@ const DataCenter: React.FC = () => {
     {
       title: '上报时间',
       dataIndex: 'reportedAt',
-      valueType: 'dateTime',
       width: 180,
       sorter: true,
-      hideInSearch: true,
-      render: (_, record) => {
+      render: (_: any, record: IoTDataRecord) => {
         const time = record.reportedAt;
         if (!time) return '-';
         try {
@@ -192,34 +208,17 @@ const DataCenter: React.FC = () => {
       },
     },
     {
-      title: '时间范围',
-      dataIndex: 'reportedAtRange',
-      valueType: 'dateTimeRange',
-      hideInTable: true,
-      search: {
-        transform: (value: any) => ({
-          reportedAt: value,
-        }),
-      },
-    },
-    {
       title: '告警',
       dataIndex: 'isAlarm',
       width: 100,
-      valueType: 'select',
-      valueEnum: {
-        true: { text: '告警', status: 'Error' },
-        false: { text: '正常', status: 'Success' },
-      },
-      render: (dom, record) =>
+      render: (_: any, record: IoTDataRecord) =>
         record.isAlarm ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag>,
     },
     {
       title: '操作',
-      valueType: 'option',
       width: 100,
-      fixed: 'right',
-      render: (_, record) => (
+      fixed: 'right' as const,
+      render: (_: any, record: IoTDataRecord) => (
         <Space>
           <Button
             type="link"
@@ -239,14 +238,12 @@ const DataCenter: React.FC = () => {
 
   return (
     <>
-    <ProTable<IoTDataRecord>
+    <DataTable<IoTDataRecord>
       actionRef={actionRef}
       columns={columns}
       request={fetchRecords}
       rowKey={(record) => record.id || `${record.deviceId}-${record.dataPointId}-${record.reportedAt}`}
-      search={{
-        labelWidth: 90,
-      }}
+      search={false}
       pagination={{
         pageSize: 20,
         pageSizeOptions: [10, 20, 50, 100],
@@ -254,14 +251,14 @@ const DataCenter: React.FC = () => {
         showQuickJumper: true,
       }}
       toolbar={{
-        title: '数据中心 - 历史数据查询',
-        tooltip: '查看所有设备采集的历史数据记录',
         actions: [
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => {
-              actionRef.current?.reload();
+              if (actionRef.current?.reload) {
+                actionRef.current.reload();
+              }
             }}
           >
             刷新

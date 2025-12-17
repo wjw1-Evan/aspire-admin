@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@/types/pro-components';
+import DataTable from '@/components/DataTable';
+import { type TableColumnsType } from 'antd';
 import {
   Button,
   Modal,
@@ -28,7 +29,7 @@ import dayjs from 'dayjs';
 import { StatCard } from '@/components';
 
 const EventManagement: React.FC = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<IoTDeviceEvent | null>(null);
@@ -126,7 +127,9 @@ const EventManagement: React.FC = () => {
   };
 
   const handleSearch = () => {
-    actionRef.current?.reload();
+    if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
     fetchOverviewStats();
   };
 
@@ -143,7 +146,9 @@ const EventManagement: React.FC = () => {
       if (response.success) {
         message.success('事件已处理');
         setIsModalVisible(false);
-        actionRef.current?.reload();
+        if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
         fetchOverviewStats();
       }
     } catch (error) {
@@ -162,7 +167,7 @@ const EventManagement: React.FC = () => {
     return <Tag color={config.color}>{config.label}</Tag>;
   };
 
-  const columns: ProColumns<IoTDeviceEvent>[] = [
+  const columns: TableColumnsType<IoTDeviceEvent> = [
     {
       title: '所属设备',
       dataIndex: 'deviceId',
@@ -338,7 +343,7 @@ const EventManagement: React.FC = () => {
       </Card>
 
       {/* 事件列表表格 */}
-      <ProTable<IoTDeviceEvent>
+      <DataTable<IoTDeviceEvent>
         actionRef={actionRef}
         columns={columns}
         request={fetchEvents}
@@ -350,7 +355,9 @@ const EventManagement: React.FC = () => {
               key="refresh"
               icon={<ReloadOutlined />}
               onClick={() => {
-                actionRef.current?.reload();
+                if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
                 fetchOverviewStats();
               }}
             >

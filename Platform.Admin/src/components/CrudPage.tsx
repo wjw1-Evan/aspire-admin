@@ -160,7 +160,7 @@ function CrudPage<T extends Record<string, any>>({
 
       {/* 数据表格 */}
       <CrudTable<T>
-        columns={tableColumns}
+        columns={[...tableColumns]}
         data={data}
         loading={loading}
         showActions={canView || canEdit || canDelete}

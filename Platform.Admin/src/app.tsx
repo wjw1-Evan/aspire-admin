@@ -1,7 +1,6 @@
 import * as Icons from '@ant-design/icons';
-import type { Settings as LayoutSettings } from '@ant-design/pro-components';
-import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
+import type { LayoutSettings } from '@/types/layout';
 import { history, request as requestClient } from '@umijs/max';
 import React, { useEffect, useRef } from 'react';
 import {
@@ -223,7 +222,7 @@ export const layout: RunTimeLayoutConfig = ({
     avatarProps: {
       src: initialState?.currentUser?.avatar,
       title: <AvatarName />,
-      render: (_, avatarChildren) => {
+      render: (_: any, avatarChildren: React.ReactNode) => {
         return <AvatarDropdown menu>{avatarChildren}</AvatarDropdown>;
       },
     },
@@ -372,19 +371,8 @@ export const layout: RunTimeLayoutConfig = ({
       return (
         <>
           {children}
-          {isDev && (
-            <SettingDrawer
-              disableUrlParams
-              enableDarkTheme
-              settings={initialState?.settings}
-              onSettingChange={(settings) => {
-                setInitialState((preInitialState) => ({
-                  ...preInitialState,
-                  settings,
-                }));
-              }}
-            />
-          )}
+          {/* SettingDrawer 已移除，因为 @ant-design/pro-components 与 antd 6 不兼容 */}
+          {/* 如需主题切换功能，可以使用 antd 的 ConfigProvider 和自定义主题切换组件 */}
           {/* AI 助手组件 - 仅在用户登录后显示 */}
           {initialState?.currentUser && <AiAssistant />}
           {/* 位置上报组件 - 仅在用户登录后启动 */}
@@ -393,7 +381,7 @@ export const layout: RunTimeLayoutConfig = ({
       );
     },
     ...initialState?.settings,
-    onCollapse: (collapsed) => {
+    onCollapse: (collapsed: boolean) => {
       setInitialState((preInitialState) => ({
         ...preInitialState,
         settings: {

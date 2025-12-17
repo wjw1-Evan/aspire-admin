@@ -21,9 +21,8 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
-    "@ant-design/pro-components": "^2.8.10",
     "@microsoft/signalr": "^10.0.0",
-    "antd": "^5.29.1",
+    "antd": "^6.1.1",
     "antd-style": "^3.7.1",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",

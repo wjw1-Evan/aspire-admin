@@ -4,7 +4,7 @@ import {
   TeamOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { ProCard, PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
 import {
   Input,
   Card,
@@ -116,7 +116,7 @@ const CompanySearch: React.FC = () => {
         subTitle: intl.formatMessage({ id: 'pages.company.search.subTitle' }),
       }}
     >
-      <ProCard>
+      <Card>
         {/* 搜索框 */}
         <Space.Compact style={{ width: '100%', marginBottom: 24 }}>
           <Input
@@ -246,7 +246,7 @@ const CompanySearch: React.FC = () => {
             style={{ padding: 60 }}
           />
         )}
-      </ProCard>
+      </Card>
     </PageContainer>
   );
 };

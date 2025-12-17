@@ -11,7 +11,7 @@ import type { UserListRequest } from '@/pages/user-management/types';
  * ```tsx
  * const { searchParams, fetchUsers, updateSearchParams } = useUserList();
  *
- * <ProTable request={fetchUsers} />
+ * <DataTable request={fetchUsers} />
  * ```
  */
 export function useUserList() {

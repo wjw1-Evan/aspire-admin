@@ -1,9 +1,6 @@
-import {
-  PageContainer,
-  ProTable,
-  type ActionType,
-  type ProColumns,
-} from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
+import DataTable from '@/components/DataTable';
+import type { ActionType, ProColumns } from '@/types/pro-components';
 import { Button, Tag, Badge, Row, Col, Card } from 'antd';
 import {
   EyeOutlined,
@@ -521,7 +518,7 @@ const MyActivity: React.FC = () => {
       )}
 
       <div ref={tableRef}>
-        <ProTable<UserActivityLog>
+        <DataTable<UserActivityLog>
           actionRef={actionRef}
           rowKey="id"
           scroll={{ x: 'max-content' }}

@@ -363,7 +363,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           <Input.TextArea placeholder={intl.formatMessage({ id: 'pages.roleForm.descriptionPlaceholder' })} rows={3} />
         </Form.Item>
 
-        <Divider orientation="left" style={{ margin: '16px 0' }}>
+        <Divider style={{ margin: '16px 0' }}>
           {intl.formatMessage({ id: 'pages.roleForm.menuPermission' })}
         </Divider>
 

@@ -1,9 +1,9 @@
-import { ProTable, PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
 import { Tag, Button, App, Popconfirm } from 'antd';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { getMyRequests, cancelRequest } from '@/services/company';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@/types/pro-components';
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
@@ -293,7 +293,7 @@ const MyJoinRequests: React.FC = () => {
         subTitle: intl.formatMessage({ id: 'pages.joinRequests.my.subTitle' }),
       }}
     >
-      <ProTable<API.JoinRequestDetail>
+      <DataTable<API.JoinRequestDetail>
         columns={columns}
         actionRef={actionRef}
         request={async (_params, _sort) => {

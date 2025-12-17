@@ -6,14 +6,11 @@ import {
   UserOutlined,
   MenuOutlined,
 } from '@ant-design/icons';
-import {
-  type ActionType,
-  PageContainer,
-  type ProColumns,
-  ProTable,
-} from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
+import DataTable from '@/components/DataTable';
+import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card } from 'antd';
+import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card, type TableColumnsType } from 'antd';
 import { type ChangeEvent, type FC, useEffect, useRef, useState } from 'react';
 import { deleteRole, getAllRolesWithStats } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
@@ -119,7 +116,9 @@ const RoleManagement: FC = () => {
             message.success(
               intl.formatMessage({ id: 'pages.message.deleteSuccess' }),
             );
-            actionRef.current?.reload();
+            if (actionRef.current?.reload) {
+              actionRef.current.reload();
+            }
           } else {
             // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(
@@ -290,21 +289,21 @@ const RoleManagement: FC = () => {
   /**
    * 表格列定义
    */
-  const columns: ProColumns<Role>[] = [
+  const columns: TableColumnsType<Role> = [
     {
       title: intl.formatMessage({ id: 'pages.table.roleName' }),
       dataIndex: 'name',
       key: 'name',
-      render: (text, record: any) => (
+      render: (text: string, record: Role) => (
         <Space>
           {text}
-          {record.userCount > 0 && (
+          {(record.userCount ?? 0) > 0 && (
             <Badge
-              count={record.userCount}
+              count={record.userCount ?? 0}
               style={{ backgroundColor: '#52c41a' }}
               title={intl.formatMessage(
                 { id: 'pages.table.userCount' },
-                { count: record.userCount },
+                { count: record.userCount ?? 0 },
               )}
             />
           )}
@@ -349,7 +348,7 @@ const RoleManagement: FC = () => {
       title: intl.formatMessage({ id: 'pages.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      valueType: 'dateTime',
+      render: (value: string) => value ? new Date(value).toLocaleString() : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.table.actions' }),
@@ -440,24 +439,26 @@ const RoleManagement: FC = () => {
       )}
 
       <div ref={tableRef}>
-        <ProTable<Role>
+        <DataTable<Role>
           actionRef={actionRef}
           rowKey="id"
           scroll={{ x: 'max-content' }}
           search={false}
-          toolBarRender={() => [
-            <Button
-              key="create"
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setCurrentRole(undefined);
-                setModalVisible(true);
-              }}
-            >
-              {intl.formatMessage({ id: 'pages.button.addRole' })}
-            </Button>,
-          ]}
+          toolbar={{
+            actions: [
+              <Button
+                key="create"
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setCurrentRole(undefined);
+                  setModalVisible(true);
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.button.addRole' })}
+              </Button>,
+            ],
+          }}
           request={loadRoleData}
           columns={columns}
         />
@@ -474,7 +475,9 @@ const RoleManagement: FC = () => {
           onSuccess={() => {
             setModalVisible(false);
             setCurrentRole(undefined);
-            actionRef.current?.reload();
+            if (actionRef.current?.reload) {
+              actionRef.current.reload();
+            }
           }}
         />
       )}

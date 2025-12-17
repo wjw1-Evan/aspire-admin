@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
 import DataPointManagement from './components/DataPointManagement';
 
 const DataPointManagementPage: React.FC = () => {

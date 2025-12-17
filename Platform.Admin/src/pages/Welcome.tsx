@@ -1,4 +1,4 @@
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
 import { useModel, history, useIntl, useAccess } from '@umijs/max';
 import {
   Card,

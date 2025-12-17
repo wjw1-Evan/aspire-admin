@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@/types/pro-components';
+import DataTable from '@/components/DataTable';
+import { type TableColumnsType } from 'antd';
 import {
   Button,
   Modal,
@@ -38,7 +39,7 @@ import {
 import { StatCard } from '@/components';
 
 const DeviceManagement: React.FC = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [gateways, setGateways] = useState<IoTGateway[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -171,7 +172,9 @@ const DeviceManagement: React.FC = () => {
       const response = await iotService.deleteDevice(id);
       if (response.success) {
         message.success('删除成功');
-        actionRef.current?.reload();
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
         fetchOverviewStats();
       }
     } catch (error) {
@@ -193,7 +196,9 @@ const DeviceManagement: React.FC = () => {
         }
       }
       setIsModalVisible(false);
-      actionRef.current?.reload();
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
       fetchOverviewStats();
     } catch (error) {
       message.error('操作失败');
@@ -211,7 +216,7 @@ const DeviceManagement: React.FC = () => {
     return deviceTypeMap[normalized] || type;
   };
 
-  const columns: ProColumns<IoTDevice>[] = [
+  const columns: TableColumnsType<IoTDevice> = [
     {
       title: '设备名称',
       dataIndex: 'title',
@@ -333,7 +338,7 @@ const DeviceManagement: React.FC = () => {
       </Card>
 
       {/* 设备列表表格 */}
-      <ProTable<IoTDevice>
+      <DataTable<IoTDevice>
         actionRef={actionRef}
         columns={columns}
         request={fetchDevices}
@@ -353,7 +358,9 @@ const DeviceManagement: React.FC = () => {
               key="refresh"
               icon={<ReloadOutlined />}
               onClick={() => {
-                actionRef.current?.reload();
+                if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
                 fetchOverviewStats();
               }}
             >

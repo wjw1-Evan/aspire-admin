@@ -1,7 +1,6 @@
 import { CheckCircleOutlined, CloseCircleOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
-import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { history, Link, useIntl } from '@umijs/max';
-import { Alert, App, Space } from 'antd';
+import { Alert, App, Space, Form, Input, Button, Card } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState, useRef } from 'react';
 import { Footer } from '@/components';
@@ -271,162 +270,179 @@ export default function Register() {
     }
   };
 
+  const [form] = Form.useForm();
+
   return (
     <div className={styles.container}>
       <div className={styles.contentWrapper}>
         <div className={styles.formWrapper}>
-          <LoginForm
-            logo={<img alt="logo" src="/logo.svg" />}
-            title="用户注册"
-            subTitle="注册即自动创建您的个人企业"
-            onFinish={async (values) => {
-              await handleSubmit(values as API.RegisterParams);
-            }}
-            submitter={{
-              searchConfig: {
-                submitText: '立即注册',
-              },
+          <Card
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
             }}
           >
-            {registerError && (
-              <Alert
-                style={{ marginBottom: 24 }}
-                message={registerError}
-                type="error"
-                showIcon
-                closable
-                onClose={() => setRegisterError('')}
-              />
-            )}
-
-            <ProFormText
-              name="username"
-              fieldProps={{
-                size: 'large',
-                prefix: <UserOutlined />,
-                onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                  handleUsernameChange(e.target.value);
-                },
-                onBlur: handleUsernameBlur,
-                suffix: usernameStatus === 'checking' ? (
-                  <span style={{ color: '#1890ff' }}>检测中...</span>
-                ) : usernameStatus === 'available' ? (
-                  <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                ) : usernameStatus === 'exists' ? (
-                  <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                ) : null,
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <img alt="logo" src="/logo.svg" style={{ width: 64, height: 64, marginBottom: 16 }} />
+              <div style={{ fontSize: 28, fontWeight: 600, color: '#1a1a1a', marginBottom: 8 }}>
+                用户注册
+              </div>
+              <div style={{ fontSize: 14, color: '#666', marginBottom: 32 }}>
+                注册即自动创建您的个人企业
+              </div>
+            </div>
+            <Form
+              form={form}
+              onFinish={async (values) => {
+                await handleSubmit(values as API.RegisterParams);
               }}
-              placeholder="用户名（全局唯一）"
-              extra={
-                usernameMessage ? (
-                  <Space style={{ color: usernameStatus === 'exists' ? '#ff4d4f' : '#52c41a', fontSize: '12px', marginTop: '4px' }}>
-                    {usernameStatus === 'checking' && '⏳ 正在检测用户名...'}
-                    {usernameStatus === 'available' && '✅ 用户名可用'}
-                    {usernameStatus === 'exists' && '❌ 用户名已存在'}
-                  </Space>
-                ) : null
-              }
-              rules={[
-                {
-                  required: true,
-                  message: '请输入用户名！',
-                },
-                {
-                  min: 3,
-                  message: '用户名至少3个字符',
-                },
-                {
-                  pattern: /^\w+$/,
-                  message: '用户名只能包含字母、数字和下划线',
-                },
-                {
-                  validator: async (_: any, value: string) => {
-                    if (!value || value.length < 3) {
-                      return Promise.resolve();
-                    }
-                    
-                    // 如果用户名格式不正确，不进行检测
-                    if (!/^\w+$/.test(value)) {
-                      return Promise.resolve();
-                    }
-                    
-                    // 如果已经检测过且存在，直接拒绝
-                    if (usernameStatus === 'exists' && usernameValue === value) {
-                      return Promise.reject(new Error('用户名已存在'));
-                    }
-                    
-                    // 如果检测结果为可用，通过验证
-                    if (usernameStatus === 'available' && usernameValue === value) {
-                      return Promise.resolve();
-                    }
-                    
-                    // 如果用户名变化了或还没检测过，进行检测
-                    if (usernameValue !== value || usernameStatus === null) {
-                      try {
-                        const response = await checkUsernameExists(value);
-                        
-                        if (response.success && response.data) {
-                          if (response.data.exists) {
-                            // 更新状态
-                            setUsernameStatus('exists');
-                            setUsernameMessage('用户名已存在，请更换');
-                            setUsernameValue(value);
-                            return Promise.reject(new Error('用户名已存在'));
-                          } else {
-                            // 更新状态
-                            setUsernameStatus('available');
-                            setUsernameMessage('用户名可用');
-                            setUsernameValue(value);
-                            return Promise.resolve();
-                          }
-                        }
-                      } catch (error) {
-                        console.error('验证用户名失败:', error);
-                        // 检测失败时允许提交，后端会再次验证
+              layout="vertical"
+            >
+              {registerError && (
+                <Alert
+                  style={{ marginBottom: 24 }}
+                  message={registerError}
+                  type="error"
+                  showIcon
+                  closable
+                  onClose={() => setRegisterError('')}
+                />
+              )}
+
+              <Form.Item
+                name="username"
+                extra={
+                  usernameMessage ? (
+                    <Space style={{ color: usernameStatus === 'exists' ? '#ff4d4f' : '#52c41a', fontSize: '12px', marginTop: '4px' }}>
+                      {usernameStatus === 'checking' && '⏳ 正在检测用户名...'}
+                      {usernameStatus === 'available' && '✅ 用户名可用'}
+                      {usernameStatus === 'exists' && '❌ 用户名已存在'}
+                    </Space>
+                  ) : null
+                }
+                rules={[
+                  {
+                    required: true,
+                    message: '请输入用户名！',
+                  },
+                  {
+                    min: 3,
+                    message: '用户名至少3个字符',
+                  },
+                  {
+                    pattern: /^\w+$/,
+                    message: '用户名只能包含字母、数字和下划线',
+                  },
+                  {
+                    validator: async (_: any, value: string) => {
+                      if (!value || value.length < 3) {
                         return Promise.resolve();
                       }
-                    }
-                    
-                    // 如果检测失败或未检测，允许提交（后端会再次验证）
-                    return Promise.resolve();
+                      
+                      // 如果用户名格式不正确，不进行检测
+                      if (!/^\w+$/.test(value)) {
+                        return Promise.resolve();
+                      }
+                      
+                      // 如果已经检测过且存在，直接拒绝
+                      if (usernameStatus === 'exists' && usernameValue === value) {
+                        return Promise.reject(new Error('用户名已存在'));
+                      }
+                      
+                      // 如果检测结果为可用，通过验证
+                      if (usernameStatus === 'available' && usernameValue === value) {
+                        return Promise.resolve();
+                      }
+                      
+                      // 如果用户名变化了或还没检测过，进行检测
+                      if (usernameValue !== value || usernameStatus === null) {
+                        try {
+                          const response = await checkUsernameExists(value);
+                          
+                          if (response.success && response.data) {
+                            if (response.data.exists) {
+                              // 更新状态
+                              setUsernameStatus('exists');
+                              setUsernameMessage('用户名已存在，请更换');
+                              setUsernameValue(value);
+                              return Promise.reject(new Error('用户名已存在'));
+                            } else {
+                              // 更新状态
+                              setUsernameStatus('available');
+                              setUsernameMessage('用户名可用');
+                              setUsernameValue(value);
+                              return Promise.resolve();
+                            }
+                          }
+                        } catch (error) {
+                          console.error('验证用户名失败:', error);
+                          // 检测失败时允许提交，后端会再次验证
+                          return Promise.resolve();
+                        }
+                      }
+                      
+                      // 如果检测失败或未检测，允许提交（后端会再次验证）
+                      return Promise.resolve();
+                    },
                   },
-                },
-              ]}
-            />
+                ]}
+              >
+                <Input
+                  size="large"
+                  prefix={<UserOutlined />}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    handleUsernameChange(e.target.value);
+                  }}
+                  onBlur={handleUsernameBlur}
+                  suffix={usernameStatus === 'checking' ? (
+                    <span style={{ color: '#1890ff' }}>检测中...</span>
+                  ) : usernameStatus === 'available' ? (
+                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                  ) : usernameStatus === 'exists' ? (
+                    <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                  ) : null}
+                  placeholder="用户名（全局唯一）"
+                />
+              </Form.Item>
 
-            <ProFormText
-              name="email"
-              fieldProps={{
-                size: 'large',
-                prefix: <MailOutlined />,
-              }}
-              placeholder="邮箱地址（可选）"
-              rules={[
-                {
-                  type: 'email',
-                  message: '邮箱格式不正确',
-                },
-              ]}
-            />
+              <Form.Item
+                name="email"
+                rules={[
+                  {
+                    type: 'email',
+                    message: '邮箱格式不正确',
+                  },
+                ]}
+              >
+                <Input
+                  size="large"
+                  prefix={<MailOutlined />}
+                  placeholder="邮箱地址（可选）"
+                />
+              </Form.Item>
 
-            <ProFormText.Password
-              name="password"
-              fieldProps={{
-                size: 'large',
-                prefix: <LockOutlined />,
-              }}
-              placeholder="密码（至少6个字符）"
-              rules={[
-                {
-                  required: true,
-                  message: '请输入密码！',
-                },
-                {
-                  min: 6,
-                  message: '密码至少6个字符',
-                },
-              ]}
-            />
+              <Form.Item
+                name="password"
+                rules={[
+                  {
+                    required: true,
+                    message: '请输入密码！',
+                  },
+                  {
+                    min: 6,
+                    message: '密码至少6个字符',
+                  },
+                ]}
+              >
+                <Input.Password
+                  size="large"
+                  prefix={<LockOutlined />}
+                  placeholder="密码（至少6个字符）"
+                />
+              </Form.Item>
 
             {showCaptcha && (
               <ImageCaptcha
@@ -440,19 +456,26 @@ export default function Register() {
               />
             )}
 
-            <div className={styles.infoBox}>
-              <div className="info-title">💡 注册成功后系统将为您：</div>
-              <div className="info-item">✅ 自动创建个人企业（您是管理员）</div>
-              <div className="info-item">✅ 配置默认权限和菜单</div>
-              <div className="info-item">✅ 您可以邀请成员或申请加入其他企业</div>
-            </div>
+              <div className={styles.infoBox}>
+                <div className="info-title">💡 注册成功后系统将为您：</div>
+                <div className="info-item">✅ 自动创建个人企业（您是管理员）</div>
+                <div className="info-item">✅ 配置默认权限和菜单</div>
+                <div className="info-item">✅ 您可以邀请成员或申请加入其他企业</div>
+              </div>
 
-            <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <Link to="/user/login" style={{ color: '#667eea', fontWeight: 500 }}>
-                已有账号？立即登录
-              </Link>
-            </div>
-          </LoginForm>
+              <Form.Item>
+                <Button type="primary" htmlType="submit" size="large" block>
+                  立即注册
+                </Button>
+              </Form.Item>
+
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <Link to="/user/login" style={{ color: '#667eea', fontWeight: 500 }}>
+                  已有账号？立即登录
+                </Link>
+              </div>
+            </Form>
+          </Card>
         </div>
       </div>
       <Footer />

@@ -1,11 +1,7 @@
-import {
-  ModalForm,
-  ProFormText,
-  ProFormTextArea,
-} from '@ant-design/pro-components';
-// 移除 message 导入，错误由全局错误处理统一处理
+import { Modal, Form, Input, Tooltip } from 'antd';
 import { useIntl } from '@umijs/max';
 import { updateCurrentCompany } from '@/services/company';
+import React from 'react';
 
 interface EditCompanyModalProps {
   visible: boolean;
@@ -21,91 +17,139 @@ export default function EditCompanyModal({
   onSuccess,
 }: EditCompanyModalProps) {
   const intl = useIntl();
+  const [form] = Form.useForm();
 
-  const handleSubmit = async (values: API.UpdateCompanyRequest) => {
-    const response = await updateCurrentCompany(values);
-
-    if (response.success) {
-      // 成功时调用回调，由父组件处理成功提示
-      onSuccess();
-      return true;
+  React.useEffect(() => {
+    if (visible && company) {
+      form.setFieldsValue(company);
+    } else if (!visible) {
+      form.resetFields();
     }
+  }, [visible, company, form]);
 
-    // 失败时抛出错误，由全局错误处理统一处理
-    throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.companySettings.edit.updateFailed' }));
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      const response = await updateCurrentCompany(values);
+
+      if (response.success) {
+        // 成功时调用回调，由父组件处理成功提示
+        onSuccess();
+        form.resetFields();
+        return;
+      }
+
+      // 失败时抛出错误，由全局错误处理统一处理
+      throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.companySettings.edit.updateFailed' }));
+    } catch (error) {
+      // 表单验证失败时不关闭 Modal
+      if (error && typeof error === 'object' && 'errorFields' in error) {
+        return;
+      }
+      throw error;
+    }
   };
 
   return (
-    <ModalForm
+    <Modal
       title={intl.formatMessage({ id: 'pages.companySettings.edit.title' })}
       open={visible}
-      onFinish={handleSubmit}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-      initialValues={company || undefined}
+      onOk={handleSubmit}
+      onCancel={onCancel}
       width={600}
+      destroyOnClose={true}
     >
-      <ProFormText
-        name="name"
-        label={intl.formatMessage({ id: 'pages.companySettings.edit.nameLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.namePlaceholder' })}
-        rules={[
-          { required: true, message: intl.formatMessage({ id: 'pages.companySettings.edit.nameRequired' }) },
-          { min: 2, max: 100, message: intl.formatMessage({ id: 'pages.companySettings.edit.nameLength' }) },
-        ]}
-      />
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={company || undefined}
+      >
+        <Form.Item
+          name="name"
+          label={intl.formatMessage({ id: 'pages.companySettings.edit.nameLabel' })}
+          rules={[
+            { required: true, message: intl.formatMessage({ id: 'pages.companySettings.edit.nameRequired' }) },
+            { min: 2, max: 100, message: intl.formatMessage({ id: 'pages.companySettings.edit.nameLength' }) },
+          ]}
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.namePlaceholder' })}
+          />
+        </Form.Item>
 
-      <ProFormTextArea
-        name="description"
-        label={intl.formatMessage({ id: 'pages.companySettings.edit.descriptionLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.descriptionPlaceholder' })}
-        fieldProps={{
-          rows: 3,
-          maxLength: 500,
-          showCount: true,
-        }}
-      />
+        <Form.Item
+          name="description"
+          label={intl.formatMessage({ id: 'pages.companySettings.edit.descriptionLabel' })}
+        >
+          <Input.TextArea
+            placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.descriptionPlaceholder' })}
+            rows={3}
+            maxLength={500}
+            showCount
+          />
+        </Form.Item>
 
-      <ProFormText
-        name="industry"
-        label={intl.formatMessage({ id: 'pages.companySettings.edit.industryLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.industryPlaceholder' })}
-        rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.companySettings.edit.industryMaxLength' }) }]}
-      />
+        <Form.Item
+          name="industry"
+          label={intl.formatMessage({ id: 'pages.companySettings.edit.industryLabel' })}
+          rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.companySettings.edit.industryMaxLength' }) }]}
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.industryPlaceholder' })}
+          />
+        </Form.Item>
 
-      <ProFormText
-        name="contactName"
-        label={intl.formatMessage({ id: 'pages.companySettings.edit.contactNameLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactNamePlaceholder' })}
-        rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.companySettings.edit.contactNameMaxLength' }) }]}
-      />
+        <Form.Item
+          name="contactName"
+          label={intl.formatMessage({ id: 'pages.companySettings.edit.contactNameLabel' })}
+          rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.companySettings.edit.contactNameMaxLength' }) }]}
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactNamePlaceholder' })}
+          />
+        </Form.Item>
 
-      <ProFormText
-        name="contactEmail"
-        label={intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailPlaceholder' })}
-        rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailInvalid' }) }]}
-      />
+        <Form.Item
+          name="contactEmail"
+          label={intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailLabel' })}
+          rules={[{ type: 'email', message: intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailInvalid' }) }]}
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactEmailPlaceholder' })}
+          />
+        </Form.Item>
 
-      <ProFormText
-        name="contactPhone"
-        label={intl.formatMessage({ id: 'pages.companySettings.edit.contactPhoneLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactPhonePlaceholder' })}
-        rules={[
-          {
-            pattern: /^1[3-9]\d{9}$/,
-            message: intl.formatMessage({ id: 'pages.companySettings.edit.contactPhoneInvalid' }),
-          },
-        ]}
-      />
+        <Form.Item
+          name="contactPhone"
+          label={intl.formatMessage({ id: 'pages.companySettings.edit.contactPhoneLabel' })}
+          rules={[
+            {
+              pattern: /^1[3-9]\d{9}$/,
+              message: intl.formatMessage({ id: 'pages.companySettings.edit.contactPhoneInvalid' }),
+            },
+          ]}
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.contactPhonePlaceholder' })}
+          />
+        </Form.Item>
 
-      <ProFormText
-        name="logo"
-        label={intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.logoPlaceholder' })}
-        tooltip={intl.formatMessage({ id: 'pages.companySettings.edit.logoTooltip' })}
-      />
-    </ModalForm>
+        <Form.Item
+          name="logo"
+          label={
+            <span>
+              {intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' })}
+              <Tooltip title={intl.formatMessage({ id: 'pages.companySettings.edit.logoTooltip' })}>
+                <span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span>
+              </Tooltip>
+            </span>
+          }
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.logoPlaceholder' })}
+          />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
+import DataTable from '@/components/DataTable';
+import type { ActionType, ProColumns } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
 import {
   Button,
@@ -736,55 +737,57 @@ const UserManagement: React.FC = () => {
 
       {/* 用户列表表格 */}
       <div ref={tableRef}>
-        <ProTable<AppUser>
+        <DataTable<AppUser>
           actionRef={actionRef}
           rowKey="id"
           scroll={{ x: 'max-content' }}
           search={false}
-        toolBarRender={() => [
-          <Button
-            key="activate"
-            onClick={() => handleBulkAction('activate')}
-            disabled={selectedRows.length === 0}
-            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
-          >
-            {intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
-          </Button>,
-          <Button
-            key="deactivate"
-            onClick={() => handleBulkAction('deactivate')}
-            disabled={selectedRows.length === 0}
-            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
-          >
-            {intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
-          </Button>,
-          <Button
-            key="delete"
-            danger
-            onClick={() => handleBulkAction('delete')}
-            disabled={selectedRows.length === 0}
-            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
-          >
-            {intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
-          </Button>,
-        ]}
-        request={fetchUsers}
-        columns={columns}
-        rowSelection={{
-          onChange: (_, selectedRows) => {
-            setSelectedRows(selectedRows);
-          },
-        }}
-        pagination={{
-          defaultPageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            intl.formatMessage(
-              { id: 'pages.userManagement.pagination.total' },
-              { start: range[0], end: range[1], total },
-            ),
-        }}
+          toolbar={{
+            actions: [
+              <Button
+                key="activate"
+                onClick={() => handleBulkAction('activate')}
+                disabled={selectedRows.length === 0}
+                aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
+              >
+                {intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
+              </Button>,
+              <Button
+                key="deactivate"
+                onClick={() => handleBulkAction('deactivate')}
+                disabled={selectedRows.length === 0}
+                aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
+              >
+                {intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
+              </Button>,
+              <Button
+                key="delete"
+                danger
+                onClick={() => handleBulkAction('delete')}
+                disabled={selectedRows.length === 0}
+                aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
+              >
+                {intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
+              </Button>,
+            ],
+          }}
+          request={fetchUsers}
+          columns={columns}
+          rowSelection={{
+            onChange: (_, selectedRows) => {
+              setSelectedRows(selectedRows);
+            },
+          }}
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              intl.formatMessage(
+                { id: 'pages.userManagement.pagination.total' },
+                { start: range[0], end: range[1], total },
+              ),
+          }}
         />
       </div>
 

@@ -54,8 +54,9 @@ function createConnection(hubUrl: string): signalR.HubConnection {
       transport: signalR.HttpTransportType.LongPolling,
     })
     .withAutomaticReconnect({
-      nextRetryDelayInMilliseconds: (retryCount) => {
+      nextRetryDelayInMilliseconds: (retryContext) => {
         // 指数退避策略：1s, 2s, 4s, 8s, 16s, 30s, 30s...
+        const retryCount = retryContext.previousRetryCount ?? 0;
         if (retryCount === 0) {
           return 1000;
         }

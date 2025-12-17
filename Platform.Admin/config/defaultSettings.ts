@@ -1,13 +1,10 @@
-import type { ProLayoutProps } from '@ant-design/pro-components';
+import type { LayoutSettings } from '../src/types/layout';
 
 /**
  * @name 现代化主题配置
  * @description 支持日间/夜间模式切换的现代化企业级管理平台主题
  */
-const Settings: ProLayoutProps & {
-  pwa?: boolean;
-  logo?: string;
-} = {
+const Settings: LayoutSettings = {
   // 默认日间模式
   navTheme: 'light',
   // 现代化主题色 - 科技蓝

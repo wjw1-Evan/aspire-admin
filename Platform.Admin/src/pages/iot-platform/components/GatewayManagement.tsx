@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@/types/pro-components';
+import DataTable from '@/components/DataTable';
+import { type TableColumnsType } from 'antd';
 import {
   Button,
   Modal,
@@ -31,7 +32,7 @@ import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/se
 import { StatCard } from '@/components';
 
 const GatewayManagement: React.FC = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedGateway, setSelectedGateway] = useState<IoTGateway | null>(null);
@@ -142,7 +143,9 @@ const GatewayManagement: React.FC = () => {
       const response = await iotService.deleteGateway(id);
       if (response.success) {
         message.success('删除成功');
-        actionRef.current?.reload();
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
         fetchOverviewStats();
       }
     } catch (error) {
@@ -182,7 +185,9 @@ const GatewayManagement: React.FC = () => {
         }
       }
       setIsModalVisible(false);
-      actionRef.current?.reload();
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
       fetchOverviewStats();
     } catch (error) {
       message.error('操作失败');
@@ -197,7 +202,7 @@ const GatewayManagement: React.FC = () => {
 
   const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'PULL'];
 
-  const columns: ProColumns<IoTGateway>[] = [
+  const columns: TableColumnsType<IoTGateway> = [
     {
       title: '网关名称',
       dataIndex: 'title',
@@ -323,7 +328,7 @@ const GatewayManagement: React.FC = () => {
       </Card>
 
       {/* 网关列表表格 */}
-      <ProTable<IoTGateway>
+      <DataTable<IoTGateway>
         actionRef={actionRef}
         columns={columns}
         request={fetchGateways}
@@ -343,7 +348,9 @@ const GatewayManagement: React.FC = () => {
               key="refresh"
               icon={<ReloadOutlined />}
               onClick={() => {
-                actionRef.current?.reload();
+                if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
                 fetchOverviewStats();
               }}
             >

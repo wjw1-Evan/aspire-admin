@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@/types/pro-components';
+import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
 import { useIntl, history, useLocation } from '@umijs/max';
 import {
   Button,
@@ -491,7 +491,7 @@ const TaskManagement: React.FC = () => {
       )}
 
       {/* 任务列表表格 */}
-      <ProTable<TaskDto>
+      <DataTable<TaskDto>
         actionRef={actionRef}
         columns={columns}
         request={async (params, sort) => {

@@ -1,6 +1,5 @@
 import React from 'react';
-import { ModalForm, ProFormText } from '@ant-design/pro-components';
-import { message } from 'antd';
+import { Modal, Form, Input, message } from 'antd';
 import { useIntl } from '@umijs/max';
 import { createCompany } from '@/services/company';
 
@@ -44,55 +43,68 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
     }
   };
 
+  const [form] = Form.useForm();
+
   return (
-    <ModalForm<API.CreateCompanyRequest>
+    <Modal
       title={intl.formatMessage({ id: 'pages.company.createTitle' })}
       open={open}
-      onOpenChange={(visible) => {
-        if (!visible) {
-          onClose();
+      onCancel={onClose}
+      onOk={async () => {
+        try {
+          const values = await form.validateFields();
+          await handleSubmit(values);
+          form.resetFields();
+        } catch (error) {
+          // 表单验证失败，不关闭 Modal
         }
       }}
-      onFinish={handleSubmit}
       width={600}
-      layout="vertical"
-      modalProps={{
-        destroyOnHidden: true,
-      }}
+      destroyOnClose={true}
     >
-      <ProFormText
-        name="name"
-        label={intl.formatMessage({ id: 'pages.company.nameLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.company.namePlaceholder' })}
-        rules={[
-          { required: true, message: intl.formatMessage({ id: 'pages.company.nameRequired' }) },
-          { min: 2, max: 100, message: intl.formatMessage({ id: 'pages.company.nameLength' }) },
-        ]}
-        fieldProps={{
-          maxLength: 100,
-        }}
-      />
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+      >
+        <Form.Item
+          name="name"
+          label={intl.formatMessage({ id: 'pages.company.nameLabel' })}
+          rules={[
+            { required: true, message: intl.formatMessage({ id: 'pages.company.nameRequired' }) },
+            { min: 2, max: 100, message: intl.formatMessage({ id: 'pages.company.nameLength' }) },
+          ]}
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.company.namePlaceholder' })}
+            maxLength={100}
+          />
+        </Form.Item>
 
-      <ProFormText
-        name="description"
-        label={intl.formatMessage({ id: 'pages.company.descriptionLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.company.descriptionPlaceholder' })}
-        rules={[{ max: 500, message: intl.formatMessage({ id: 'pages.company.descriptionMaxLength' }) }]}
-        fieldProps={{
-          maxLength: 500,
-        }}
-      />
+        <Form.Item
+          name="description"
+          label={intl.formatMessage({ id: 'pages.company.descriptionLabel' })}
+          rules={[{ max: 500, message: intl.formatMessage({ id: 'pages.company.descriptionMaxLength' }) }]}
+        >
+          <Input.TextArea
+            placeholder={intl.formatMessage({ id: 'pages.company.descriptionPlaceholder' })}
+            maxLength={500}
+            rows={3}
+          />
+        </Form.Item>
 
-      <ProFormText
-        name="industry"
-        label={intl.formatMessage({ id: 'pages.company.industryLabel' })}
-        placeholder={intl.formatMessage({ id: 'pages.company.industryPlaceholder' })}
-        rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.company.industryMaxLength' }) }]}
-        fieldProps={{
-          maxLength: 50,
-        }}
-      />
-    </ModalForm>
+        <Form.Item
+          name="industry"
+          label={intl.formatMessage({ id: 'pages.company.industryLabel' })}
+          rules={[{ max: 50, message: intl.formatMessage({ id: 'pages.company.industryMaxLength' }) }]}
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.company.industryPlaceholder' })}
+            maxLength={50}
+          />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };
 

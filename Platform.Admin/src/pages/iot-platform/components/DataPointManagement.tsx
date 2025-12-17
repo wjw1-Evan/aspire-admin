@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@/types/pro-components';
+import DataTable from '@/components/DataTable';
 import {
   Button,
   Modal,
@@ -9,7 +9,7 @@ import {
   InputNumber,
   Select,
   Space,
-  message,
+  App,
   Drawer,
   Tag,
   Popconfirm,
@@ -17,6 +17,7 @@ import {
   Card,
   Row,
   Col,
+  type TableColumnsType,
 } from 'antd';
 import {
   PlusOutlined,
@@ -33,7 +34,8 @@ import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
 import { StatCard } from '@/components';
 
 const DataPointManagement: React.FC = () => {
-  const actionRef = useRef<ActionType>();
+  const { message } = App.useApp();
+  const actionRef = useRef<ActionType>(null);
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -141,11 +143,13 @@ const DataPointManagement: React.FC = () => {
         message.success('删除成功');
         // 确保刷新操作执行
         setTimeout(() => {
-          actionRef.current?.reload();
+          if (actionRef.current?.reload) {
+            actionRef.current.reload();
+          }
           fetchOverviewStats();
         }, 100);
       } else {
-        message.error(response.errorMessage || '删除失败');
+        message.error((response as any).errorMessage || '删除失败');
       }
     } catch (error: any) {
       console.error('删除数据点失败:', error);
@@ -160,7 +164,7 @@ const DataPointManagement: React.FC = () => {
         if (response.success) {
           message.success('更新成功');
         } else {
-          message.error(response.errorMessage || '更新失败');
+          message.error((response as any).errorMessage || '更新失败');
           return;
         }
       } else {
@@ -168,14 +172,16 @@ const DataPointManagement: React.FC = () => {
         if (response.success) {
           message.success('创建成功');
         } else {
-          message.error(response.errorMessage || '创建失败');
+          message.error((response as any).errorMessage || '创建失败');
           return;
         }
       }
       setIsModalVisible(false);
       // 确保刷新操作执行
       setTimeout(() => {
-        actionRef.current?.reload();
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
         fetchOverviewStats();
       }, 100);
     } catch (error: any) {
@@ -197,7 +203,7 @@ const DataPointManagement: React.FC = () => {
     return typeMap[normalizedType] || type;
   };
 
-  const columns: ProColumns<IoTDataPoint>[] = [
+  const columns: TableColumnsType<IoTDataPoint> = [
     {
       title: '数据点名称',
       dataIndex: 'title',
@@ -233,14 +239,12 @@ const DataPointManagement: React.FC = () => {
       dataIndex: 'samplingInterval',
       key: 'samplingInterval',
       width: 120,
-      hideInSearch: true,
     },
     {
       title: '最后采集值',
       dataIndex: 'lastValue',
       key: 'lastValue',
       width: 150,
-      hideInSearch: true,
       render: (value: string, record: IoTDataPoint) => {
         if (!value) {
           return <span style={{ color: '#999' }}>暂无数据</span>;
@@ -273,7 +277,6 @@ const DataPointManagement: React.FC = () => {
       dataIndex: 'lastUpdatedAt',
       key: 'lastUpdatedAt',
       width: 180,
-      hideInSearch: true,
       sorter: true,
       render: (time: string) => {
         if (!time) {
@@ -322,7 +325,6 @@ const DataPointManagement: React.FC = () => {
       dataIndex: 'alarmConfig',
       key: 'alarmConfig',
       width: 100,
-      hideInSearch: true,
       render: (alarmConfig: any) => {
         if (alarmConfig?.isEnabled) {
           return <Tag color="orange">已配置</Tag>;
@@ -335,13 +337,10 @@ const DataPointManagement: React.FC = () => {
       dataIndex: 'isEnabled',
       key: 'isEnabled',
       width: 100,
-      valueType: 'select',
-      valueEnum: {
-        true: { text: '启用', status: 'Success' },
-        false: { text: '禁用', status: 'Default' },
-      },
-      render: (isEnabled: boolean) => (
-        <Tag color={isEnabled ? 'green' : 'default'}>{isEnabled ? '启用' : '禁用'}</Tag>
+      render: (value: boolean) => (
+        <Tag color={value ? 'success' : 'default'}>
+          {value ? '启用' : '禁用'}
+        </Tag>
       ),
     },
     {
@@ -418,17 +417,12 @@ const DataPointManagement: React.FC = () => {
       </Card>
 
       {/* 数据点配置列表表格 */}
-      <ProTable<IoTDataPoint>
+      <DataTable<IoTDataPoint>
         actionRef={actionRef}
         columns={columns}
         request={fetchDataPoints}
         rowKey="id"
-        search={{
-          labelWidth: 90,
-        }}
         toolbar={{
-          title: '数据点管理 - 配置管理',
-          tooltip: '管理数据点的配置信息，包括数据类型、单位、告警规则等',
           actions: [
             <Button
               key="create"
@@ -442,7 +436,9 @@ const DataPointManagement: React.FC = () => {
               key="refresh"
               icon={<ReloadOutlined />}
               onClick={() => {
-                actionRef.current?.reload();
+                if (actionRef.current?.reload) {
+            actionRef.current.reload();
+          }
                 fetchOverviewStats();
               }}
             >

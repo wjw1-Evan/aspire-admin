@@ -8,16 +8,11 @@ import {
   CameraOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
-import {
-  ProCard,
-  ProForm,
-  ProFormText,
-  ProFormDigit,
-} from '@ant-design/pro-components';
 import { FormattedMessage, useIntl } from '@umijs/max';
 import {
   Avatar,
   Button,
+  Card,
   Descriptions,
   Divider,
   List,
@@ -25,6 +20,10 @@ import {
   Space,
   Tag,
   Typography,
+  Form,
+  Input,
+  InputNumber,
+  Tooltip,
 } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
@@ -104,7 +103,7 @@ const UserCenter: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
-  const [form] = ProForm.useForm();
+  const [form] = Form.useForm();
   const { styles } = useStyles();
   const intl = useIntl();
 
@@ -343,7 +342,7 @@ const UserCenter: React.FC = () => {
       </Title>
 
       {/* 个人信息卡片 */}
-      <ProCard
+      <Card
         title={
           <FormattedMessage
             id="pages.account.center.profile"
@@ -479,49 +478,31 @@ const UserCenter: React.FC = () => {
         <Divider />
 
         {editing ? (
-          <ProForm
+          <Form
             form={form}
             onFinish={handleUpdateProfile}
-            submitter={{
-              searchConfig: {
-                submitText: '保存',
-                resetText: '取消',
-              },
-              render: (_props, _doms) => {
-                return (
-                  <div style={{ textAlign: 'right' }}>
-                    <Space>
-                      <Button onClick={handleCancelEdit}>取消</Button>
-                      <Button type="primary" htmlType="submit">
-                        保存
-                      </Button>
-                    </Space>
-                  </div>
-                );
-              },
-              resetButtonProps: {
-                style: { display: 'none' },
-              },
-              submitButtonProps: {
-                style: { display: 'none' },
-              },
-            }}
+            layout="vertical"
           >
-            <ProFormText
+            <Form.Item
               name="username"
               label={
-                <FormattedMessage
-                  id="pages.account.center.username"
-                  defaultMessage="用户名"
-                />
+                <span>
+                  <FormattedMessage
+                    id="pages.account.center.username"
+                    defaultMessage="用户名"
+                  />
+                  <Tooltip title="用户名不可修改">
+                    <span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span>
+                  </Tooltip>
+                </span>
               }
-              disabled
-              tooltip="用户名不可修改"
-              fieldProps={{
-                style: { color: 'rgba(0, 0, 0, 0.45)' },
-              }}
-            />
-            <ProFormText
+            >
+              <Input
+                disabled
+                style={{ color: 'rgba(0, 0, 0, 0.45)' }}
+              />
+            </Form.Item>
+            <Form.Item
               name="name"
               label={
                 <FormattedMessage
@@ -529,9 +510,10 @@ const UserCenter: React.FC = () => {
                   defaultMessage="姓名"
                 />
               }
-              placeholder="请输入姓名"
-            />
-            <ProFormText
+            >
+              <Input placeholder="请输入姓名" />
+            </Form.Item>
+            <Form.Item
               name="email"
               label={
                 <FormattedMessage
@@ -540,8 +522,10 @@ const UserCenter: React.FC = () => {
                 />
               }
               rules={[{ type: 'email', message: '请输入有效的邮箱地址' }]}
-            />
-            <ProFormDigit
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
               name="age"
               label={
                 <FormattedMessage
@@ -549,13 +533,32 @@ const UserCenter: React.FC = () => {
                   defaultMessage="年龄"
                 />
               }
-              min={1}
-              max={150}
-              placeholder="请输入年龄"
-            />
+              rules={[
+                { type: 'number', min: 1, max: 150, message: '年龄必须在 1-150 之间' }
+              ]}
+            >
+              <InputNumber
+                min={1}
+                max={150}
+                placeholder="请输入年龄"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
             {/* 隐藏的头像字段，用于表单提交 */}
-            <ProFormText name="avatar" hidden />
-          </ProForm>
+            <Form.Item name="avatar" hidden>
+              <Input />
+            </Form.Item>
+            <Form.Item>
+              <div style={{ textAlign: 'right' }}>
+                <Space>
+                  <Button onClick={handleCancelEdit}>取消</Button>
+                  <Button type="primary" htmlType="submit">
+                    保存
+                  </Button>
+                </Space>
+              </div>
+            </Form.Item>
+          </Form>
         ) : (
           <Descriptions column={2} bordered>
             <Descriptions.Item
@@ -696,10 +699,10 @@ const UserCenter: React.FC = () => {
             )}
           </Descriptions>
         )}
-      </ProCard>
+      </Card>
 
       {/* 活动日志卡片 */}
-      <ProCard
+      <Card
         title={
           <Space>
             <HistoryOutlined />
@@ -742,7 +745,7 @@ const UserCenter: React.FC = () => {
             );
           }}
         />
-      </ProCard>
+      </Card>
       </div>
     </>
   );

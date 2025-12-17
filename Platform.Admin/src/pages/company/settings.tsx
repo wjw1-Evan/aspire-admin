@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  PageContainer,
-  ProCard,
-  ProDescriptions,
-} from '@ant-design/pro-components';
-import { Card, Spin, Row, Col, Progress, Tag } from 'antd';
+import { PageContainer } from '@/components';
+import { Card, Spin, Row, Col, Progress, Tag, Descriptions } from 'antd';
 import {
   UserOutlined,
   TeamOutlined,
@@ -193,66 +189,66 @@ export default function CompanySettings() {
       )}
 
       {/* 企业详细信息 */}
-      <ProCard title={intl.formatMessage({ id: 'pages.companySettings.details' })} bordered headerBordered>
-        <ProDescriptions
-          column={2}
-          dataSource={company}
-          styles={{
-            content: {},
-          }}
-          columns={[
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.name' }),
-              dataIndex: 'name',
-              copyable: true,
-            },
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.code' }),
-              dataIndex: 'code',
-              copyable: true,
-              render: (_, record) => <Tag color="blue">{record.code}</Tag>,
-            },
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.industry' }),
-              dataIndex: 'industry',
-              render: (text) => text || '-',
-            },
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.contactName' }),
-              dataIndex: 'contactName',
-              render: (text) => text || '-',
-            },
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.contactEmail' }),
-              dataIndex: 'contactEmail',
-              copyable: true,
-              render: (text) => text || '-',
-            },
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.contactPhone' }),
-              dataIndex: 'contactPhone',
-              copyable: true,
-              render: (text) => text || '-',
-            },
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.description' }),
-              dataIndex: 'description',
-              span: 2,
-              render: (text) => text || '-',
-            },
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.createdAt' }),
-              dataIndex: 'createdAt',
-              valueType: 'dateTime',
-            },
-            {
-              title: intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' }),
-              dataIndex: 'updatedAt',
-              valueType: 'dateTime',
-            },
-          ]}
-        />
-      </ProCard>
+      <Card 
+        title={intl.formatMessage({ id: 'pages.companySettings.details' })} 
+        bordered
+        style={{ marginBottom: 16 }}
+      >
+        {company && (
+          <Descriptions
+            column={2}
+            bordered
+            items={[
+              {
+                key: 'name',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.name' }),
+                children: company.name,
+              },
+              {
+                key: 'code',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.code' }),
+                children: <Tag color="blue">{company.code}</Tag>,
+              },
+              {
+                key: 'industry',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.industry' }),
+                children: company.industry || '-',
+              },
+              {
+                key: 'contactName',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.contactName' }),
+                children: company.contactName || '-',
+              },
+              {
+                key: 'contactEmail',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.contactEmail' }),
+                children: company.contactEmail || '-',
+              },
+              {
+                key: 'contactPhone',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.contactPhone' }),
+                children: company.contactPhone || '-',
+              },
+              {
+                key: 'description',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.description' }),
+                span: 2,
+                children: company.description || '-',
+              },
+              {
+                key: 'createdAt',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.createdAt' }),
+                children: company.createdAt ? new Date(company.createdAt).toLocaleString() : '-',
+              },
+              {
+                key: 'updatedAt',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' }),
+                children: company.updatedAt ? new Date(company.updatedAt).toLocaleString() : '-',
+              },
+            ]}
+          />
+        )}
+      </Card>
 
       {/* 编辑企业信息弹窗 */}
       <EditCompanyModal

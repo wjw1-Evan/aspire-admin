@@ -111,7 +111,12 @@ const CompanySearch: React.FC = () => {
 
   return (
     <PageContainer
-      title={intl.formatMessage({ id: 'pages.company.search.title' })}
+      title={
+        <Space>
+          <SearchOutlined />
+          {intl.formatMessage({ id: 'pages.company.search.title' })}
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
     >
       <Card>

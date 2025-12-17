@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { PageContainer } from '@/components';
 import { Button, Space } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, BellOutlined } from '@ant-design/icons';
 import EventManagement, { EventManagementRef } from './components/EventManagement';
 
 const EventManagementPage: React.FC = () => {
@@ -9,7 +9,12 @@ const EventManagementPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="事件管理"
+      title={
+        <Space>
+          <BellOutlined />
+          事件管理
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { PageContainer } from '@/components';
 import { Button, Space } from 'antd';
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import DataPointManagement, { DataPointManagementRef } from './components/DataPointManagement';
 
 const DataPointManagementPage: React.FC = () => {
@@ -9,7 +9,12 @@ const DataPointManagementPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="数据点管理"
+      title={
+        <Space>
+          <DatabaseOutlined />
+          数据点管理
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

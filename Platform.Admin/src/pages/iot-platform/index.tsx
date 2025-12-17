@@ -7,6 +7,7 @@ import {
   AlertOutlined,
   DesktopOutlined,
   ReloadOutlined,
+  CloudOutlined,
 } from '@ant-design/icons';
 import { iotService } from '@/services/iotService';
 import { StatCard } from '@/components';
@@ -43,7 +44,12 @@ const IoTPlatform: React.FC = () => {
 
   return (
     <PageContainer
-      title="物联网平台概览"
+      title={
+        <Space>
+          <CloudOutlined />
+          物联网平台概览
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

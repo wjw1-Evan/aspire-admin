@@ -620,7 +620,12 @@ const UserManagement: React.FC = () => {
 
   return (
     <PageContainer
-      title={intl.formatMessage({ id: 'pages.userManagement.title' })}
+      title={
+        <Space>
+          <UserOutlined />
+          {intl.formatMessage({ id: 'pages.userManagement.title' })}
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

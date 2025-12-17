@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { PageContainer } from '@/components';
 import { Button, Space } from 'antd';
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, DesktopOutlined } from '@ant-design/icons';
 import DeviceManagement, { DeviceManagementRef } from './components/DeviceManagement';
 
 const DeviceManagementPage: React.FC = () => {
@@ -9,7 +9,12 @@ const DeviceManagementPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="设备管理"
+      title={
+        <Space>
+          <DesktopOutlined />
+          设备管理
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

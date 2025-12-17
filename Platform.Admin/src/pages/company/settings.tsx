@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { PageContainer } from '@/components';
-import { Card, Spin, Row, Col, Progress, Tag, Descriptions } from 'antd';
+import { Card, Spin, Row, Col, Progress, Tag, Descriptions, Space } from 'antd';
 import {
   UserOutlined,
   TeamOutlined,
   MenuOutlined,
   SafetyOutlined,
   ClockCircleOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
@@ -85,7 +86,12 @@ export default function CompanySettings() {
 
   return (
     <PageContainer
-      title={intl.formatMessage({ id: 'pages.companySettings.title' })}
+      title={
+        <Space>
+          <SettingOutlined />
+          {intl.formatMessage({ id: 'pages.companySettings.title' })}
+        </Space>
+      }
       extra={[
         <a key="edit" onClick={() => setEditModalVisible(true)}>
           {intl.formatMessage({ id: 'pages.companySettings.editCompany' })}

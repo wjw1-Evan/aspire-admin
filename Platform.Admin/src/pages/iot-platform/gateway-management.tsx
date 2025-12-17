@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { PageContainer } from '@/components';
 import { Button, Space } from 'antd';
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, ApiOutlined } from '@ant-design/icons';
 import GatewayManagement, { GatewayManagementRef } from './components/GatewayManagement';
 
 const GatewayManagementPage: React.FC = () => {
@@ -9,7 +9,12 @@ const GatewayManagementPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="网关管理"
+      title={
+        <Space>
+          <ApiOutlined />
+          网关管理
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

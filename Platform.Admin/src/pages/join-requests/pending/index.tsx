@@ -8,7 +8,7 @@ import {
   rejectRequest,
 } from '@/services/company';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 
@@ -317,7 +317,12 @@ const PendingJoinRequests: React.FC = () => {
 
   return (
     <PageContainer
-      title={intl.formatMessage({ id: 'pages.joinRequests.pending.title' })}
+      title={
+        <Space>
+          <ClockCircleOutlined />
+          {intl.formatMessage({ id: 'pages.joinRequests.pending.title' })}
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { PageContainer } from '@/components';
 import { Button, Space } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, HddOutlined } from '@ant-design/icons';
 import DataCenter, { DataCenterRef } from './components/DataCenter';
 
 const DataCenterPage: React.FC = () => {
@@ -9,7 +9,12 @@ const DataCenterPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="数据中心"
+      title={
+        <Space>
+          <HddOutlined />
+          数据中心
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

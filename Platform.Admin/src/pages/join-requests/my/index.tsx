@@ -10,6 +10,7 @@ import {
   CloseCircleOutlined,
   ReloadOutlined,
   SearchOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 
 /**
@@ -290,7 +291,12 @@ const MyJoinRequests: React.FC = () => {
 
   return (
     <PageContainer
-      title={intl.formatMessage({ id: 'pages.joinRequests.my.title' })}
+      title={
+        <Space>
+          <FileTextOutlined />
+          {intl.formatMessage({ id: 'pages.joinRequests.my.title' })}
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

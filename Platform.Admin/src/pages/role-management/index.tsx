@@ -6,6 +6,7 @@ import {
   UserOutlined,
   MenuOutlined,
   ReloadOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
@@ -393,7 +394,12 @@ const RoleManagement: FC = () => {
 
   return (
     <PageContainer
-      title={intl.formatMessage({ id: 'pages.roleManagement.title' })}
+      title={
+        <Space>
+          <SafetyOutlined />
+          {intl.formatMessage({ id: 'pages.roleManagement.title' })}
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

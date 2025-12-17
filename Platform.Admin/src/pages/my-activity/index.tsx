@@ -1,7 +1,7 @@
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { Button, Tag, Badge, Row, Col, Card, Space } from 'antd';
+import { Button, Tag, Badge, Row, Col, Card, Space, Form, Input, Select, DatePicker } from 'antd';
 import {
   EyeOutlined,
   HistoryOutlined,
@@ -9,6 +9,7 @@ import {
   CloseCircleOutlined,
   ThunderboltOutlined,
   ReloadOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
@@ -16,6 +17,9 @@ import { getCurrentUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import LogDetailDrawer from '../user-log/components/LogDetailDrawer';
 import { StatCard } from '@/components';
+import dayjs from 'dayjs';
+
+const { RangePicker } = DatePicker;
 
 const MyActivity: React.FC = () => {
   const intl = useIntl();
@@ -29,6 +33,8 @@ const MyActivity: React.FC = () => {
     errorCount: number;
     actionTypes: number;
   } | null>(null);
+  const [searchForm] = Form.useForm();
+  const [searchParams, setSearchParams] = useState<any>({});
 
   const handleViewDetail = (record: UserActivityLog) => {
     // ✅ 只传递 logId，让 LogDetailDrawer 从 API 获取完整数据
@@ -39,6 +45,36 @@ const MyActivity: React.FC = () => {
   const handleCloseDetail = () => {
     setDetailDrawerOpen(false);
     setSelectedLogId(null);
+  };
+
+  // 处理搜索
+  const handleSearch = () => {
+    const values = searchForm.getFieldsValue();
+    // 处理日期范围
+    if (values.dateRange && Array.isArray(values.dateRange) && values.dateRange.length === 2) {
+      const [start, end] = values.dateRange;
+      values.startDate = start ? dayjs(start).toISOString() : undefined;
+      values.endDate = end ? dayjs(end).toISOString() : undefined;
+      delete values.dateRange;
+    }
+    setSearchParams(values);
+    // 重置到第一页并重新加载数据
+    if (actionRef.current?.reloadAndReset) {
+      actionRef.current.reloadAndReset();
+    } else if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+  };
+
+  // 处理重置
+  const handleReset = () => {
+    searchForm.resetFields();
+    setSearchParams({});
+    if (actionRef.current?.reloadAndReset) {
+      actionRef.current.reloadAndReset();
+    } else if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
   };
 
   /**
@@ -472,7 +508,12 @@ const MyActivity: React.FC = () => {
 
   return (
     <PageContainer
-      title={intl.formatMessage({ id: 'pages.myActivity.title' })}
+      title={
+        <Space>
+          <HistoryOutlined />
+          {intl.formatMessage({ id: 'pages.myActivity.title' })}
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>
@@ -528,21 +569,75 @@ const MyActivity: React.FC = () => {
         </Card>
       )}
 
+      {/* 搜索表单 */}
+      <Card style={{ marginBottom: 16 }}>
+        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
+          <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
+            <Input 
+              placeholder={intl.formatMessage({ id: 'pages.table.action' })} 
+              style={{ width: 150 }} 
+              allowClear 
+            />
+          </Form.Item>
+          <Form.Item name="httpMethod" label={intl.formatMessage({ id: 'pages.table.httpMethod' })}>
+            <Select
+              placeholder={intl.formatMessage({ id: 'pages.table.httpMethod' })}
+              style={{ width: 120 }}
+              allowClear
+            >
+              <Select.Option value="GET">GET</Select.Option>
+              <Select.Option value="POST">POST</Select.Option>
+              <Select.Option value="PUT">PUT</Select.Option>
+              <Select.Option value="DELETE">DELETE</Select.Option>
+              <Select.Option value="PATCH">PATCH</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="statusCode" label={intl.formatMessage({ id: 'pages.table.statusCode' })}>
+            <Input 
+              placeholder={intl.formatMessage({ id: 'pages.table.statusCode' })} 
+              style={{ width: 120 }} 
+              allowClear 
+            />
+          </Form.Item>
+          <Form.Item name="ipAddress" label={intl.formatMessage({ id: 'pages.table.ipAddress' })}>
+            <Input 
+              placeholder={intl.formatMessage({ id: 'pages.table.ipAddress' })} 
+              style={{ width: 150 }} 
+              allowClear 
+            />
+          </Form.Item>
+          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.table.actionTime' })}>
+            <RangePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              style={{ width: 400 }}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+                {intl.formatMessage({ id: 'pages.button.search' })}
+              </Button>
+              <Button onClick={handleReset} icon={<ReloadOutlined />}>
+                {intl.formatMessage({ id: 'pages.userManagement.reset' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
       <div ref={tableRef}>
         <DataTable<UserActivityLog>
           actionRef={actionRef}
           rowKey="id"
           scroll={{ x: 'max-content' }}
-          search={{
-            labelWidth: 120,
-            optionRender: (_searchConfig, _formProps, dom) => {
-              const reversed = [...dom];
-              reversed.reverse();
-              return reversed;
-            },
-          }}
+          search={false}
           request={async (params, sort) => {
-          const { current = 1, pageSize = 20, action, httpMethod, statusCode, ipAddress, startDate, endDate } = params;
+          const { current = 1, pageSize = 20 } = params;
+          
+          // 合并搜索参数
+          const mergedParams = { ...searchParams, ...params };
+          const { action, httpMethod, statusCode, ipAddress, startDate, endDate } = mergedParams;
 
           // 处理排序参数
           let sortBy = 'createdAt'; // 默认按创建时间排序

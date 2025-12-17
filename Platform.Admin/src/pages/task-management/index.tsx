@@ -33,6 +33,7 @@ import {
   StopOutlined,
   TeamOutlined,
   BellOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
@@ -169,7 +170,7 @@ const TaskManagement: React.FC = () => {
         total: 0,
       };
     } catch (error) {
-      message.error('获取任务列表失败');
+      message.error(intl.formatMessage({ id: 'pages.message.loadFailed' }));
       return {
         data: [],
         success: false,
@@ -205,18 +206,18 @@ const TaskManagement: React.FC = () => {
   // 处理删除任务
   const handleDeleteTask = (task: TaskDto) => {
     Modal.confirm({
-      title: '删除任务',
-      content: `确定要删除任务 "${task.taskName}" 吗？`,
-      okText: '确定',
-      cancelText: '取消',
+      title: intl.formatMessage({ id: 'pages.taskManagement.modal.deleteTask' }),
+      content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmDelete' }),
+      okText: intl.formatMessage({ id: 'pages.table.ok' }),
+      cancelText: intl.formatMessage({ id: 'pages.table.cancel' }),
       onOk: async () => {
         try {
           await deleteTask(task.id!);
-          message.success('任务已删除');
+          message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' }));
           actionRef.current?.reload();
           fetchStatistics();
         } catch (error) {
-          message.error('删除任务失败');
+          message.error(intl.formatMessage({ id: 'pages.taskManagement.message.deleteFailed' }));
         }
       },
     });
@@ -225,18 +226,18 @@ const TaskManagement: React.FC = () => {
   // 处理取消任务
   const handleCancelTask = (task: TaskDto) => {
     Modal.confirm({
-      title: '取消任务',
-      content: `确定要取消任务 "${task.taskName}" 吗？`,
-      okText: '确定',
-      cancelText: '取消',
+      title: intl.formatMessage({ id: 'pages.taskManagement.modal.cancelTask' }),
+      content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }),
+      okText: intl.formatMessage({ id: 'pages.table.ok' }),
+      cancelText: intl.formatMessage({ id: 'pages.table.cancel' }),
       onOk: async () => {
         try {
           await cancelTask(task.id!);
-          message.success('任务已取消');
+          message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' }));
           actionRef.current?.reload();
           fetchStatistics();
         } catch (error) {
-          message.error('取消任务失败');
+          message.error(intl.formatMessage({ id: 'pages.taskManagement.message.cancelFailed' }));
         }
       },
     });
@@ -299,7 +300,7 @@ const TaskManagement: React.FC = () => {
   // 表格列定义
   const columns: ProColumns<TaskDto>[] = [
     {
-      title: '任务名称',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.taskName' }),
       dataIndex: 'taskName',
       key: 'taskName',
       width: 200,
@@ -310,18 +311,18 @@ const TaskManagement: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.status' }),
       dataIndex: 'statusName',
       key: 'status',
       width: 100,
       filters: [
-        { text: '待分配', value: TaskStatus.Pending },
-        { text: '已分配', value: TaskStatus.Assigned },
-        { text: '执行中', value: TaskStatus.InProgress },
-        { text: '已完成', value: TaskStatus.Completed },
-        { text: '已取消', value: TaskStatus.Cancelled },
-        { text: '失败', value: TaskStatus.Failed },
-        { text: '暂停', value: TaskStatus.Paused },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.status.pending' }), value: TaskStatus.Pending },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.status.assigned' }), value: TaskStatus.Assigned },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.status.inProgress' }), value: TaskStatus.InProgress },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.status.completed' }), value: TaskStatus.Completed },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.status.cancelled' }), value: TaskStatus.Cancelled },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.status.failed' }), value: TaskStatus.Failed },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.status.paused' }), value: TaskStatus.Paused },
       ],
       onFilter: (value, record) => record.status === value,
       render: (_, record) => (
@@ -331,15 +332,15 @@ const TaskManagement: React.FC = () => {
       ),
     },
     {
-      title: '优先级',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.priority' }),
       dataIndex: 'priorityName',
       key: 'priority',
       width: 80,
       filters: [
-        { text: '低', value: TaskPriority.Low },
-        { text: '中', value: TaskPriority.Medium },
-        { text: '高', value: TaskPriority.High },
-        { text: '紧急', value: TaskPriority.Urgent },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.priority.low' }), value: TaskPriority.Low },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.priority.medium' }), value: TaskPriority.Medium },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.priority.high' }), value: TaskPriority.High },
+        { text: intl.formatMessage({ id: 'pages.taskManagement.priority.urgent' }), value: TaskPriority.Urgent },
       ],
       onFilter: (value, record) => record.priority === value,
       render: (_, record) => (
@@ -349,7 +350,7 @@ const TaskManagement: React.FC = () => {
       ),
     },
     {
-      title: '进度',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.progress' }),
       dataIndex: 'completionPercentage',
       key: 'completionPercentage',
       width: 120,
@@ -368,21 +369,21 @@ const TaskManagement: React.FC = () => {
       ),
     },
     {
-      title: '分配给',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.assignedTo' }),
       dataIndex: 'assignedToName',
       key: 'assignedTo',
       width: 100,
       render: (_, record) => record.assignedToName || '-',
     },
     {
-      title: '创建者',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }),
       dataIndex: 'createdByName',
       key: 'createdBy',
       width: 100,
       render: (_, record) => record.createdByName || '-',
     },
     {
-      title: '计划完成',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEndTime' }),
       dataIndex: 'plannedEndTime',
       key: 'plannedEndTime',
       width: 150,
@@ -390,7 +391,7 @@ const TaskManagement: React.FC = () => {
         record.plannedEndTime ? dayjs(record.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-',
     },
     {
-      title: '创建时间',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 150,
@@ -398,7 +399,7 @@ const TaskManagement: React.FC = () => {
       render: (_, record) => dayjs(record.createdAt).format('YYYY-MM-DD HH:mm'),
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'pages.taskManagement.table.action' }),
       key: 'action',
       width: 150,
       fixed: 'right',
@@ -407,33 +408,33 @@ const TaskManagement: React.FC = () => {
           {
             key: 'view',
             icon: <EyeOutlined />,
-            label: '查看详情',
+            label: intl.formatMessage({ id: 'pages.taskManagement.viewDetails' }),
             onClick: () => handleViewTask(record),
           },
           {
             key: 'edit',
             icon: <EditOutlined />,
-            label: '编辑',
+            label: intl.formatMessage({ id: 'pages.taskManagement.action.edit' }),
             onClick: () => handleEditTask(record),
           },
           {
             key: 'execute',
             icon: <PlayCircleOutlined />,
-            label: '执行',
+            label: intl.formatMessage({ id: 'pages.taskManagement.action.execute' }),
             onClick: () => handleExecuteTask(record),
             disabled: record.status === TaskStatus.Completed || record.status === TaskStatus.Cancelled,
           },
           {
             key: 'cancel',
             icon: <StopOutlined />,
-            label: '取消',
+            label: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }),
             onClick: () => handleCancelTask(record),
             disabled: record.status === TaskStatus.Completed || record.status === TaskStatus.Cancelled,
           },
           {
             key: 'delete',
             icon: <DeleteOutlined />,
-            label: '删除',
+            label: intl.formatMessage({ id: 'pages.taskManagement.action.delete' }),
             danger: true,
             onClick: () => handleDeleteTask(record),
           },
@@ -450,7 +451,12 @@ const TaskManagement: React.FC = () => {
 
   return (
     <PageContainer
-      title={intl.formatMessage({ id: 'pages.taskManagement.title' })}
+      title={
+        <Space>
+          <UnorderedListOutlined />
+          {intl.formatMessage({ id: 'pages.taskManagement.title' })}
+        </Space>
+      }
       style={{ paddingBlock: 12 }}
       extra={
         <Space>

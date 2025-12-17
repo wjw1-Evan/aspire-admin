@@ -38,6 +38,8 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<any>({});
+  // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
+  const searchParamsRef = useRef<any>({});
 
   const fetchRecords = async (params: any) => {
     try {
@@ -47,8 +49,8 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         pageSize,
       };
 
-      // 合并搜索参数
-      const mergedParams = { ...searchParams, ...params };
+      // 合并搜索参数，使用 ref 确保获取最新的搜索参数
+      const mergedParams = { ...searchParamsRef.current, ...params };
 
       // 只添加非空参数
       if (mergedParams.deviceId) {
@@ -130,6 +132,8 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   // 处理搜索
   const handleSearch = () => {
     const values = searchForm.getFieldsValue();
+    // 同时更新 state 和 ref，ref 确保 request 函数能立即访问到最新值
+    searchParamsRef.current = values;
     setSearchParams(values);
     // 重置到第一页并重新加载数据
     if (actionRef.current?.reloadAndReset) {
@@ -142,6 +146,8 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   // 处理重置
   const handleReset = () => {
     searchForm.resetFields();
+    // 同时更新 state 和 ref
+    searchParamsRef.current = {};
     setSearchParams({});
     if (actionRef.current?.reloadAndReset) {
       actionRef.current.reloadAndReset();

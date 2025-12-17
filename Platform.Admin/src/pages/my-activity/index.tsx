@@ -35,6 +35,8 @@ const MyActivity: React.FC = () => {
   } | null>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<any>({});
+  // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
+  const searchParamsRef = useRef<any>({});
 
   const handleViewDetail = (record: UserActivityLog) => {
     // ✅ 只传递 logId，让 LogDetailDrawer 从 API 获取完整数据
@@ -57,6 +59,8 @@ const MyActivity: React.FC = () => {
       values.endDate = end ? dayjs(end).toISOString() : undefined;
       delete values.dateRange;
     }
+    // 同时更新 state 和 ref，ref 确保 request 函数能立即访问到最新值
+    searchParamsRef.current = values;
     setSearchParams(values);
     // 重置到第一页并重新加载数据
     if (actionRef.current?.reloadAndReset) {
@@ -69,6 +73,8 @@ const MyActivity: React.FC = () => {
   // 处理重置
   const handleReset = () => {
     searchForm.resetFields();
+    // 同时更新 state 和 ref
+    searchParamsRef.current = {};
     setSearchParams({});
     if (actionRef.current?.reloadAndReset) {
       actionRef.current.reloadAndReset();
@@ -635,8 +641,8 @@ const MyActivity: React.FC = () => {
           request={async (params, sort) => {
           const { current = 1, pageSize = 20 } = params;
           
-          // 合并搜索参数
-          const mergedParams = { ...searchParams, ...params };
+          // 合并搜索参数，使用 ref 确保获取最新的搜索参数
+          const mergedParams = { ...searchParamsRef.current, ...params };
           const { action, httpMethod, statusCode, ipAddress, startDate, endDate } = mergedParams;
 
           // 处理排序参数

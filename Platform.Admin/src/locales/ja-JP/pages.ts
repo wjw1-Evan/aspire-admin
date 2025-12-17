@@ -104,4 +104,23 @@ export default {
   'pages.company.industryLabel': '業界',
   'pages.company.industryPlaceholder': '業界を入力してください（任意）',
   'pages.company.industryMaxLength': '業界は50文字を超えることはできません',
+  // ボタンテキスト
+  'pages.button.refresh': '更新',
+  // テーブル共通列タイトル
+  'pages.table.actions': '操作',
+  'pages.table.action': '操作タイプ',
+  'pages.table.httpMethod': 'HTTPメソッド',
+  'pages.table.statusCode': 'ステータスコード',
+  'pages.table.fullUrl': '完全URL',
+  'pages.table.ipAddress': 'IPアドレス',
+  'pages.table.userAgent': 'ユーザーエージェント',
+  'pages.table.actionTime': '操作時間',
+  'pages.table.detail': '詳細',
+  // ページタイトル
+  'pages.myActivity.title': 'マイアクティビティ',
+  'pages.myActivity.subTitle': 'すべての操作記録を表示',
+  'pages.myActivity.statistics.totalLogs': 'ログ総数',
+  'pages.myActivity.statistics.successCount': '成功リクエスト数',
+  'pages.myActivity.statistics.errorCount': 'エラーリクエスト数',
+  'pages.myActivity.statistics.actionTypes': '操作タイプ数',
 };

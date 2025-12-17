@@ -5,6 +5,7 @@ import {
   TeamOutlined,
   UserOutlined,
   MenuOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
@@ -392,11 +393,34 @@ const RoleManagement: FC = () => {
 
   return (
     <PageContainer
-      header={{
-        title: intl.formatMessage({ id: 'pages.roleManagement.title' }),
-        subTitle: intl.formatMessage({ id: 'pages.roleManagement.subTitle' }),
-      }}
+      title={intl.formatMessage({ id: 'pages.roleManagement.title' })}
       style={{ paddingBlock: 12 }}
+      extra={
+        <Space>
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              if (actionRef.current?.reload) {
+                actionRef.current.reload();
+              }
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.button.refresh' })}
+          </Button>
+          <Button
+            key="create"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setCurrentRole(undefined);
+              setModalVisible(true);
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.button.addRole' })}
+          </Button>
+        </Space>
+      }
     >
       {/* 角色统计信息：统一使用 StatCard 风格 */}
       {statistics && (
@@ -444,21 +468,6 @@ const RoleManagement: FC = () => {
           rowKey="id"
           scroll={{ x: 'max-content' }}
           search={false}
-          toolbar={{
-            actions: [
-              <Button
-                key="create"
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setCurrentRole(undefined);
-                  setModalVisible(true);
-                }}
-              >
-                {intl.formatMessage({ id: 'pages.button.addRole' })}
-              </Button>,
-            ],
-          }}
           request={loadRoleData}
           columns={columns}
         />

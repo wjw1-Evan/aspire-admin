@@ -101,4 +101,23 @@ export default {
   'pages.company.industryLabel': 'Industri',
   'pages.company.industryPlaceholder': 'Masukkan industri (opsional)',
   'pages.company.industryMaxLength': 'Industri tidak boleh melebihi 50 karakter',
+  // Teks tombol
+  'pages.button.refresh': 'Muat Ulang',
+  // Judul kolom tabel umum
+  'pages.table.actions': 'Tindakan',
+  'pages.table.action': 'Jenis Tindakan',
+  'pages.table.httpMethod': 'Metode HTTP',
+  'pages.table.statusCode': 'Kode Status',
+  'pages.table.fullUrl': 'URL Lengkap',
+  'pages.table.ipAddress': 'Alamat IP',
+  'pages.table.userAgent': 'User Agent',
+  'pages.table.actionTime': 'Waktu Tindakan',
+  'pages.table.detail': 'Detail',
+  // Judul halaman
+  'pages.myActivity.title': 'Aktivitas Saya',
+  'pages.myActivity.subTitle': 'Lihat semua catatan operasi Anda',
+  'pages.myActivity.statistics.totalLogs': 'Total Log',
+  'pages.myActivity.statistics.successCount': 'Permintaan Berhasil',
+  'pages.myActivity.statistics.errorCount': 'Permintaan Error',
+  'pages.myActivity.statistics.actionTypes': 'Jumlah Jenis Tindakan',
 };

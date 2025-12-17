@@ -622,31 +622,60 @@ const UserManagement: React.FC = () => {
     <PageContainer
       title={intl.formatMessage({ id: 'pages.userManagement.title' })}
       style={{ paddingBlock: 12 }}
-      extra={[
-        <Button
-          key="refresh"
-          icon={<ReloadOutlined />}
-          aria-label={intl.formatMessage({ id: 'pages.userManagement.refresh' })}
-          onClick={() => {
-            actionRef.current?.reload();
-            fetchStatistics();
-          }}
-        >
-          {intl.formatMessage({ id: 'pages.userManagement.refresh' })}
-        </Button>,
-        <Button
-          key="add"
-          type="primary"
-          icon={<PlusOutlined />}
-          aria-label={intl.formatMessage({ id: 'pages.userManagement.addUser' })}
-          onClick={() => {
-            setEditingUser(null);
-            setFormVisible(true);
-          }}
-        >
-          {intl.formatMessage({ id: 'pages.userManagement.addUser' })}
-        </Button>,
-      ]}
+      extra={
+        <Space>
+          {/* 批量操作按钮 */}
+          <Button
+            key="activate"
+            onClick={() => handleBulkAction('activate')}
+            disabled={selectedRows.length === 0}
+            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
+          >
+            {intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
+          </Button>
+          <Button
+            key="deactivate"
+            onClick={() => handleBulkAction('deactivate')}
+            disabled={selectedRows.length === 0}
+            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
+          >
+            {intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
+          </Button>
+          <Button
+            key="delete"
+            danger
+            onClick={() => handleBulkAction('delete')}
+            disabled={selectedRows.length === 0}
+            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
+          >
+            {intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
+          </Button>
+          {/* 刷新和添加按钮 */}
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            aria-label={intl.formatMessage({ id: 'pages.userManagement.refresh' })}
+            onClick={() => {
+              actionRef.current?.reload();
+              fetchStatistics();
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.userManagement.refresh' })}
+          </Button>
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusOutlined />}
+            aria-label={intl.formatMessage({ id: 'pages.userManagement.addUser' })}
+            onClick={() => {
+              setEditingUser(null);
+              setFormVisible(true);
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.userManagement.addUser' })}
+          </Button>
+        </Space>
+      }
     >
       {/* 统计卡片：参考 Welcome 页面风格 */}
       {statistics && (
@@ -742,35 +771,6 @@ const UserManagement: React.FC = () => {
           rowKey="id"
           scroll={{ x: 'max-content' }}
           search={false}
-          toolbar={{
-            actions: [
-              <Button
-                key="activate"
-                onClick={() => handleBulkAction('activate')}
-                disabled={selectedRows.length === 0}
-                aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
-              >
-                {intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
-              </Button>,
-              <Button
-                key="deactivate"
-                onClick={() => handleBulkAction('deactivate')}
-                disabled={selectedRows.length === 0}
-                aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
-              >
-                {intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
-              </Button>,
-              <Button
-                key="delete"
-                danger
-                onClick={() => handleBulkAction('delete')}
-                disabled={selectedRows.length === 0}
-                aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
-              >
-                {intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
-              </Button>,
-            ],
-          }}
           request={fetchUsers}
           columns={columns}
           rowSelection={{

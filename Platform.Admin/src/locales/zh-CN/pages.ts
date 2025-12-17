@@ -281,6 +281,7 @@ export default {
   'pages.button.save': '保存',
   'pages.button.add': '新增',
   'pages.button.addRole': '新增角色',
+  'pages.button.refresh': '刷新',
   'pages.button.approve': '通过',
   'pages.button.reject': '拒绝',
   'pages.button.cancelRequest': '撤回申请',

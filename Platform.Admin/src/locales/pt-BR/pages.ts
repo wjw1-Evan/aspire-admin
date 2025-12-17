@@ -103,4 +103,23 @@ export default {
   'pages.company.industryLabel': 'Indústria',
   'pages.company.industryPlaceholder': 'Por favor, insira a indústria (opcional)',
   'pages.company.industryMaxLength': 'A indústria não pode exceder 50 caracteres',
+  // Texto do botão
+  'pages.button.refresh': 'Atualizar',
+  // Títulos de colunas da tabela comuns
+  'pages.table.actions': 'Ações',
+  'pages.table.action': 'Tipo de Ação',
+  'pages.table.httpMethod': 'Método HTTP',
+  'pages.table.statusCode': 'Código de Status',
+  'pages.table.fullUrl': 'URL Completa',
+  'pages.table.ipAddress': 'Endereço IP',
+  'pages.table.userAgent': 'User Agent',
+  'pages.table.actionTime': 'Hora da Ação',
+  'pages.table.detail': 'Detalhes',
+  // Títulos da página
+  'pages.myActivity.title': 'Minha Atividade',
+  'pages.myActivity.subTitle': 'Ver todos os seus registros de operação',
+  'pages.myActivity.statistics.totalLogs': 'Total de Logs',
+  'pages.myActivity.statistics.successCount': 'Solicitações Bem-Sucedidas',
+  'pages.myActivity.statistics.errorCount': 'Solicitações com Erro',
+  'pages.myActivity.statistics.actionTypes': 'Tipos de Ação',
 };

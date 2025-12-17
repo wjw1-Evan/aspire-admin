@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { type TableColumnsType } from 'antd';
@@ -28,7 +28,12 @@ import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
 import dayjs from 'dayjs';
 import { StatCard } from '@/components';
 
-const EventManagement: React.FC = () => {
+export interface EventManagementRef {
+  reload: () => void;
+  refreshStats: () => void;
+}
+
+const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   const actionRef = useRef<ActionType>(null);
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -132,6 +137,18 @@ const EventManagement: React.FC = () => {
     }
     fetchOverviewStats();
   };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    reload: () => {
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+    },
+    refreshStats: () => {
+      fetchOverviewStats();
+    },
+  }));
 
   const handleHandle = (event: IoTDeviceEvent) => {
     setSelectedEvent(event);
@@ -349,22 +366,6 @@ const EventManagement: React.FC = () => {
         request={fetchEvents}
         rowKey="id"
         search={false}
-        toolbar={{
-          actions: [
-            <Button
-              key="refresh"
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-                fetchOverviewStats();
-              }}
-            >
-              刷新
-            </Button>,
-          ],
-        }}
         pagination={{
           pageSize: 20,
           pageSizeOptions: [10, 20, 50, 100],
@@ -415,7 +416,9 @@ const EventManagement: React.FC = () => {
       </Modal>
     </>
   );
-};
+});
+
+EventManagement.displayName = 'EventManagement';
 
 export default EventManagement;
 

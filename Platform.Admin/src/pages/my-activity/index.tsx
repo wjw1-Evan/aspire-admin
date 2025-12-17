@@ -1,13 +1,14 @@
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { Button, Tag, Badge, Row, Col, Card } from 'antd';
+import { Button, Tag, Badge, Row, Col, Card, Space } from 'antd';
 import {
   EyeOutlined,
   HistoryOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   ThunderboltOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
@@ -471,11 +472,21 @@ const MyActivity: React.FC = () => {
 
   return (
     <PageContainer
-      header={{
-        title: intl.formatMessage({ id: 'pages.myActivity.title' }),
-        subTitle: intl.formatMessage({ id: 'pages.myActivity.subTitle' }),
-      }}
+      title={intl.formatMessage({ id: 'pages.myActivity.title' })}
       style={{ paddingBlock: 12 }}
+      extra={
+        <Space>
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              actionRef.current?.reload();
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.button.refresh' })}
+          </Button>
+        </Space>
+      }
     >
       {/* 活动统计信息：统一使用 StatCard 风格 */}
       {statistics && (

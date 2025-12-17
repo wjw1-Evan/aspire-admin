@@ -173,6 +173,10 @@ export default {
   // 頁面標題
   'pages.myActivity.title': '我的活動',
   'pages.myActivity.subTitle': '查看您的所有操作記錄',
+  'pages.myActivity.statistics.totalLogs': '總日誌數',
+  'pages.myActivity.statistics.successCount': '成功請求數',
+  'pages.myActivity.statistics.errorCount': '錯誤請求數',
+  'pages.myActivity.statistics.actionTypes': '操作類型數',
   'pages.roleManagement.title': '角色管理',
   'pages.roleManagement.subTitle': '系統角色配置和權限管理',
   'pages.userLog.title': '用戶操作日誌',
@@ -237,6 +241,7 @@ export default {
   'pages.button.save': '保存',
   'pages.button.add': '新增',
   'pages.button.addRole': '新增角色',
+  'pages.button.refresh': '刷新',
   'pages.button.approve': '通過',
   'pages.button.reject': '拒絕',
   'pages.button.cancelRequest': '撤回申請',

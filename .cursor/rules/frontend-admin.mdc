@@ -15,21 +15,50 @@ appliesTo:
 - **错误处理**：全局错误拦截器已统一处理 `success=false` 的情况（显示 message、处理 401/403 等），业务代码主要关注成功场景的数据处理。
 
 ## 页面骨架与列表规范（强制）
-- **表格组件**：列表/管理页必须使用 `ProTable`（`@ant-design/pro-components`），禁止使用普通 `Table`。ProTable 提供统一的搜索、排序、分页、工具栏等功能。
-- **ProTable request 函数**：
+- **标准页面布局**：参考 `src/pages/user-management/index.tsx` 作为标准页面布局规范。
+- **页面结构顺序**（从上到下）：
+  1. **PageContainer**：统一使用 `title` 和 `extra` 属性
+     - `title`：页面标题（使用国际化）
+     - `extra`：所有操作按钮集中放在右上角，使用 `Space` 包裹
+     - `style={{ paddingBlock: 12 }}`
+  2. **统计卡片区域**（可选，有统计数据时显示）：
+     - 使用 `Card` 包裹，`style={{ marginBottom: 16, borderRadius: 12 }}`
+     - 内部使用 `Row` 和 `Col`，`gutter={[12, 12]}`
+     - 使用 `StatCard` 组件展示统计数据
+  3. **搜索表单**（可选，需要搜索功能时显示）：
+     - 使用 `Card` 包裹，`style={{ marginBottom: 16 }}`
+     - 使用 `Form` 组件，`layout="inline"`
+     - 使用 `Form.useForm()` 创建表单实例，管理搜索状态
+     - 搜索参数通过 `useState` 管理，在 `request` 函数中合并到查询参数
+     - 搜索按钮使用 `Button type="primary" htmlType="submit" icon={<SearchOutlined />}`
+     - 重置按钮使用 `Button onClick={handleReset} icon={<ReloadOutlined />}`
+     - 参考示例：`src/pages/iot-platform/components/DataCenter.tsx`
+  4. **数据表格**：
+     - 使用 `DataTable`（基于 antd Table，不支持内置搜索表单）
+     - 如果有独立搜索表单，设置 `search={false}`
+     - 不使用 `toolbar.actions`（所有操作按钮都在 PageContainer 的 extra 中）
+- **操作按钮规范**：
+  - **所有操作按钮必须放在 PageContainer 的 `extra` 中**（页面右上角）
+  - 按钮顺序：批量操作按钮在前，刷新按钮在中间，主要操作按钮（如添加）在最后
+  - 批量操作按钮需要根据选中行状态启用/禁用
+  - 主操作按钮使用 `type="primary"`，刷新按钮使用 `ReloadOutlined` 图标
+- **表格组件**：列表/管理页必须使用 `DataTable`（`@/components/DataTable`），禁止使用普通 `Table` 或 `ProTable`。
+  - `DataTable` 基于 antd `Table`，不支持内置搜索表单，需要搜索功能时使用独立的搜索表单
+  - `DataTable` 支持 `request`、`actionRef`、`search`（布尔值，实际不会渲染搜索表单）、`pagination` 等属性
+- **DataTable request 函数**：
   - `request` 函数需返回 `{ data: T[], success: boolean, total: number }` 格式
+  - 函数签名：`(params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => Promise<RequestData<T>>`
   - 错误已被全局错误处理捕获并显示提示时，应返回 `{ data: [], total: 0, success: false }` 避免表格显示错误状态
-  - 从后端 `ApiResponse<PagedResult<T>>` 中提取 `data.list` 和 `data.total` 返回给 ProTable
-- **页面容器**：统一使用 `PageContainer`，设置 `style={{ paddingBlock: 12 }}`，保持上下内边距一致。
-- **统计卡片区域**：使用 `Card` 包裹，`marginBottom: 16`，`borderRadius: 12`，内部 `Row` 的 `gutter={[12, 12]}`。
-- **工具栏**：使用 `toolbar.actions`，主操作按钮 `type="primary"`，刷新按钮使用 `ReloadOutlined` 图标。
-- **操作列**：固定宽度 `150px`，固定在右侧（`fixed: 'right'`），按钮使用 `Button type="text" size="small"`，删除动作必须使用 `Popconfirm` 确认。
+  - 从后端 `ApiResponse<PagedResult<T>>` 中提取 `data.list` 和 `data.total` 返回给 DataTable
+  - 搜索参数需在 `request` 函数中手动合并（通过 `useState` 管理搜索状态）
+- **操作列**：固定宽度 `150px`，固定在右侧（`fixed: 'right'`），按钮使用 `Button type="link" size="small"`，删除动作必须使用 `Popconfirm` 或 `Modal.confirm` 确认。
 - **样式规范**：禁止自定义样式类，优先使用 Ant Design / ProComponents 现有属性。如需自定义样式，通过组件的 `style` 属性或 Ant Design 的 `theme` 配置实现。
 
 ## 统计卡片布局（Welcome/各管理页面）
 - 统一使用 `src/components/StatCard`（`Platform.Admin/src/components/StatCard.tsx`）。
 - 布局：卡片 padding `10px 12px`，图标 20px，数值字号 20px，标题字号 12px，图标在左、数值与标题右侧垂直排列且右对齐。
-- 间距：`Row` 的 `gutter={[12, 12]}`，卡片外间距 16px，`Col` 响应式 `xs={24} sm={12} md={6}`。
+- 间距：`Row` 的 `gutter={[12, 12]}`，卡片外间距 `marginBottom: 16`，`Col` 响应式 `xs={24} sm={12} md={6}`。
+- 统计卡片区域使用 `Card` 包裹，`style={{ marginBottom: 16, borderRadius: 12 }}`。
 
 ## 状态管理与类型
 - 优先使用 hooks（`useRequest`、`useModel` 等），避免不必要的全局状态。

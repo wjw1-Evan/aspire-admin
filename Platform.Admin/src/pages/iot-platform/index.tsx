@@ -42,22 +42,24 @@ const IoTPlatform: React.FC = () => {
   };
 
   return (
-    <PageContainer style={{ paddingBlock: 12 }}>
+    <PageContainer
+      title="物联网平台概览"
+      style={{ paddingBlock: 12 }}
+      extra={
+        <Space>
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            loading={loading}
+          >
+            刷新
+          </Button>
+        </Space>
+      }
+    >
       <Card
-        title="物联网平台概览"
-        extra={
-          <Space>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined />}
-              onClick={handleRefresh}
-              loading={loading}
-            >
-              刷新
-            </Button>
-          </Space>
-        }
-        style={{ marginBottom: 16 }}
+        style={{ marginBottom: 16, borderRadius: 12 }}
       >
         <Spin spinning={loading}>
           <div style={{ padding: '20px 0' }}>

@@ -8,7 +8,7 @@ import {
   rejectRequest,
 } from '@/services/company';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 
@@ -317,10 +317,21 @@ const PendingJoinRequests: React.FC = () => {
 
   return (
     <PageContainer
-      header={{
-        title: intl.formatMessage({ id: 'pages.joinRequests.pending.title' }),
-        subTitle: intl.formatMessage({ id: 'pages.joinRequests.pending.subTitle' }),
-      }}
+      title={intl.formatMessage({ id: 'pages.joinRequests.pending.title' })}
+      style={{ paddingBlock: 12 }}
+      extra={
+        <Space>
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              actionRef.current?.reload();
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.button.refresh' })}
+          </Button>
+        </Space>
+      }
     >
       <DataTable<API.JoinRequestDetail>
         columns={columns}

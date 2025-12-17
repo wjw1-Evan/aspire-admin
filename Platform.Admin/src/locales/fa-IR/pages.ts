@@ -102,4 +102,23 @@ export default {
   'pages.company.industryLabel': 'صنعت',
   'pages.company.industryPlaceholder': 'لطفا صنعت را وارد کنید (اختیاری)',
   'pages.company.industryMaxLength': 'صنعت نمی‌تواند بیش از 50 کاراکتر باشد',
+  // متن دکمه
+  'pages.button.refresh': 'به‌روزرسانی',
+  // عناوین ستون‌های مشترک جدول
+  'pages.table.actions': 'عملیات',
+  'pages.table.action': 'نوع عملیات',
+  'pages.table.httpMethod': 'روش HTTP',
+  'pages.table.statusCode': 'کد وضعیت',
+  'pages.table.fullUrl': 'آدرس کامل',
+  'pages.table.ipAddress': 'آدرس IP',
+  'pages.table.userAgent': 'نماینده کاربر',
+  'pages.table.actionTime': 'زمان عملیات',
+  'pages.table.detail': 'جزئیات',
+  // عناوین صفحه
+  'pages.myActivity.title': 'فعالیت من',
+  'pages.myActivity.subTitle': 'مشاهده تمام سوابق عملیات شما',
+  'pages.myActivity.statistics.totalLogs': 'کل لاگ‌ها',
+  'pages.myActivity.statistics.successCount': 'درخواست‌های موفق',
+  'pages.myActivity.statistics.errorCount': 'درخواست‌های خطا',
+  'pages.myActivity.statistics.actionTypes': 'تعداد انواع عملیات',
 };

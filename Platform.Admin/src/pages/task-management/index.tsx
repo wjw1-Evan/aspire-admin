@@ -58,6 +58,7 @@ const TaskManagement: React.FC = () => {
   const intl = useIntl();
   const location = useLocation();
   const actionRef = useRef<ActionType>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [searchForm] = Form.useForm();
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -448,7 +449,32 @@ const TaskManagement: React.FC = () => {
   ];
 
   return (
-    <PageContainer style={{ paddingBlock: 12 }}>
+    <PageContainer
+      title={intl.formatMessage({ id: 'pages.taskManagement.title' })}
+      style={{ paddingBlock: 12 }}
+      extra={
+        <Space>
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              actionRef.current?.reload();
+              fetchStatistics();
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.taskManagement.refresh' })}
+          </Button>
+          <Button
+            key="create"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreateTask}
+          >
+            {intl.formatMessage({ id: 'pages.taskManagement.createTask' })}
+          </Button>
+        </Space>
+      }
+    >
       {/* 统计卡片：与 Welcome 页面保持一致的紧凑横向布局 */}
       {statistics && (
         <Card style={{ marginBottom: 16, borderRadius: 12 }}>
@@ -491,61 +517,40 @@ const TaskManagement: React.FC = () => {
       )}
 
       {/* 任务列表表格 */}
-      <DataTable<TaskDto>
-        actionRef={actionRef}
-        columns={columns}
-        request={async (params, sort) => {
-          return fetchTasks(params, sort);
-        }}
-        rowKey="id"
-        search={{
-          labelWidth: 'auto',
-
-          span: 6,
-        }}
-        form={{
-          initialValues: {
-            status: undefined,
-            priority: undefined,
-          },
-        }}
-        toolbar={{
-          actions: [
-            <Button
-              key="create"
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreateTask}
-            >
-              创建任务
-            </Button>,
-            <Button
-              key="refresh"
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                actionRef.current?.reload();
-                fetchStatistics();
-              }}
-            >
-              刷新
-            </Button>,
-          ],
-        }}
-        pagination={{
-          pageSize: 10,
-          pageSizeOptions: [10, 20, 50, 100],
-        }}
-        rowSelection={{
-          onChange: (_, selectedRows) => {
-            setSelectedRows(selectedRows);
-          },
-        }}
-        options={{
-          setting: {
-            listsHeight: 400,
-          },
-        }}
-      />
+      <div ref={tableRef}>
+        <DataTable<TaskDto>
+          actionRef={actionRef}
+          columns={columns}
+          request={async (params, sort) => {
+            return fetchTasks(params, sort);
+          }}
+          rowKey="id"
+          search={{
+            labelWidth: 'auto',
+            span: 6,
+          }}
+          form={{
+            initialValues: {
+              status: undefined,
+              priority: undefined,
+            },
+          }}
+          pagination={{
+            pageSize: 10,
+            pageSizeOptions: [10, 20, 50, 100],
+          }}
+          rowSelection={{
+            onChange: (_, selectedRows) => {
+              setSelectedRows(selectedRows);
+            },
+          }}
+          options={{
+            setting: {
+              listsHeight: 400,
+            },
+          }}
+        />
+      </div>
 
       {/* 创建/编辑任务表单 */}
       <TaskForm

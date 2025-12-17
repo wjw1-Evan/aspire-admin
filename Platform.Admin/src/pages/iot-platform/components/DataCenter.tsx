@@ -1,9 +1,15 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
-import { Tag, Button, Drawer, Descriptions, Space, message, type TableColumnsType } from 'antd';
-import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
+import { Tag, Button, Drawer, Descriptions, Space, message, Form, Input, DatePicker, Card } from 'antd';
+import { ReloadOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
 import { iotService, IoTDataRecord } from '@/services/iotService';
+import dayjs from 'dayjs';
+const { RangePicker } = DatePicker;
+
+export interface DataCenterRef {
+  reload: () => void;
+}
 
 const getDataTypeLabel = (type: string) => {
   // 支持 camelCase (后端返回) 和首字母大写格式
@@ -26,36 +32,42 @@ const dataTypeLabels: Record<string, string> = {
   Json: 'JSON',
 };
 
-const DataCenter: React.FC = () => {
+const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   const actionRef = useRef<ActionType>(null);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
+  const [searchForm] = Form.useForm();
+  const [searchParams, setSearchParams] = useState<any>({});
 
   const fetchRecords = async (params: any) => {
     try {
-      const { current = 1, pageSize = 20, reportedAt } = params;
+      const { current = 1, pageSize = 20 } = params;
       const payload: any = {
         pageIndex: current,
         pageSize,
       };
 
+      // 合并搜索参数
+      const mergedParams = { ...searchParams, ...params };
+
       // 只添加非空参数
-      if (params.deviceId) {
-        payload.deviceId = params.deviceId;
+      if (mergedParams.deviceId) {
+        payload.deviceId = mergedParams.deviceId;
       }
-      if (params.dataPointId) {
-        payload.dataPointId = params.dataPointId;
+      if (mergedParams.dataPointId) {
+        payload.dataPointId = mergedParams.dataPointId;
       }
 
       // 处理时间范围
-      if (Array.isArray(reportedAt) && reportedAt.length === 2) {
-        const [start, end] = reportedAt;
+      const timeRange = mergedParams.dateRange || mergedParams.reportedAt;
+      if (Array.isArray(timeRange) && timeRange.length === 2) {
+        const [start, end] = timeRange;
         if (start) {
-          // 处理 dayjs 对象或 Date 对象
-          payload.startTime = start.format ? start.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]') : (start.toISOString ? start.toISOString() : start);
+          // 处理 dayjs 对象
+          payload.startTime = dayjs(start).toISOString();
         }
         if (end) {
-          payload.endTime = end.format ? end.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]') : (end.toISOString ? end.toISOString() : end);
+          payload.endTime = dayjs(end).toISOString();
         }
       }
 
@@ -115,12 +127,46 @@ const DataCenter: React.FC = () => {
     }
   };
 
-  const columns: TableColumnsType<IoTDataRecord> = [
+  // 处理搜索
+  const handleSearch = () => {
+    const values = searchForm.getFieldsValue();
+    setSearchParams(values);
+    // 重置到第一页并重新加载数据
+    if (actionRef.current?.reloadAndReset) {
+      actionRef.current.reloadAndReset();
+    } else if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+  };
+
+  // 处理重置
+  const handleReset = () => {
+    searchForm.resetFields();
+    setSearchParams({});
+    if (actionRef.current?.reloadAndReset) {
+      actionRef.current.reloadAndReset();
+    } else if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+  };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    reload: () => {
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+    },
+  }));
+
+  const columns: ProColumns<IoTDataRecord>[] = [
     {
       title: '设备ID',
       dataIndex: 'deviceId',
+      key: 'deviceId',
       width: 200,
       ellipsis: true,
+      valueType: 'text',
       render: (text: string) => (
         <span
           style={{ cursor: 'pointer' }}
@@ -136,8 +182,10 @@ const DataCenter: React.FC = () => {
     {
       title: '数据点ID',
       dataIndex: 'dataPointId',
+      key: 'dataPointId',
       width: 200,
       ellipsis: true,
+      valueType: 'text',
       render: (text: string) => (
         <span
           style={{ cursor: 'pointer' }}
@@ -153,16 +201,20 @@ const DataCenter: React.FC = () => {
     {
       title: '数据类型',
       dataIndex: 'dataType',
+      key: 'dataType',
       width: 100,
+      search: false, // 后端暂不支持按数据类型筛选
       render: (_: any, record: IoTDataRecord) => <Tag>{getDataTypeLabel(record.dataType)}</Tag>,
     },
     {
       title: '数据值',
       dataIndex: 'value',
+      key: 'value',
       width: 250,
       ellipsis: {
         showTitle: false,
       },
+      search: false,
       render: (value: string, record: IoTDataRecord) => {
         // 如果是 JSON 类型，尝试格式化显示
         if (record.dataType?.toLowerCase() === 'json') {
@@ -184,8 +236,26 @@ const DataCenter: React.FC = () => {
     {
       title: '上报时间',
       dataIndex: 'reportedAt',
+      key: 'reportedAt',
       width: 180,
+      valueType: 'dateTimeRange',
       sorter: true,
+      fieldProps: {
+        showTime: {
+          format: 'HH:mm:ss',
+        },
+        format: 'YYYY-MM-DD HH:mm:ss',
+      },
+      search: {
+        transform: (value: any) => {
+          if (!value || !Array.isArray(value) || value.length !== 2) {
+            return {};
+          }
+          return {
+            reportedAt: value,
+          };
+        },
+      },
       render: (_: any, record: IoTDataRecord) => {
         const time = record.reportedAt;
         if (!time) return '-';
@@ -210,13 +280,17 @@ const DataCenter: React.FC = () => {
     {
       title: '告警',
       dataIndex: 'isAlarm',
+      key: 'isAlarm',
       width: 100,
+      search: false, // 后端暂不支持按告警状态筛选
       render: (_: any, record: IoTDataRecord) =>
         record.isAlarm ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag>,
     },
     {
       title: '操作',
+      key: 'option',
       width: 100,
+      valueType: 'option',
       fixed: 'right' as const,
       render: (_: any, record: IoTDataRecord) => (
         <Space>
@@ -238,34 +312,48 @@ const DataCenter: React.FC = () => {
 
   return (
     <>
-    <DataTable<IoTDataRecord>
-      actionRef={actionRef}
-      columns={columns}
-      request={fetchRecords}
-      rowKey={(record) => record.id || `${record.deviceId}-${record.dataPointId}-${record.reportedAt}`}
-      search={false}
-      pagination={{
-        pageSize: 20,
-        pageSizeOptions: [10, 20, 50, 100],
-        showSizeChanger: true,
-        showQuickJumper: true,
-      }}
-      toolbar={{
-        actions: [
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              if (actionRef.current?.reload) {
-                actionRef.current.reload();
-              }
-            }}
-          >
-            刷新
-          </Button>,
-        ],
-      }}
-    />
+      {/* 搜索表单 */}
+      <Card style={{ marginBottom: 16 }}>
+        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
+          <Form.Item name="deviceId" label="设备ID">
+            <Input placeholder="请输入设备ID" style={{ width: 200 }} allowClear />
+          </Form.Item>
+          <Form.Item name="dataPointId" label="数据点ID">
+            <Input placeholder="请输入数据点ID" style={{ width: 200 }} allowClear />
+          </Form.Item>
+          <Form.Item name="dateRange" label="上报时间">
+            <RangePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              style={{ width: 400 }}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+                搜索
+              </Button>
+              <Button onClick={handleReset} icon={<ReloadOutlined />}>
+                重置
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
+      <DataTable<IoTDataRecord>
+        actionRef={actionRef}
+        columns={columns}
+        request={fetchRecords}
+        rowKey={(record) => record.id || `${record.deviceId}-${record.dataPointId}-${record.reportedAt}`}
+        search={false}
+        pagination={{
+          pageSize: 20,
+          pageSizeOptions: [10, 20, 50, 100],
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+      />
     <Drawer
       title="数据记录详情"
       placement="right"
@@ -375,7 +463,9 @@ const DataCenter: React.FC = () => {
     </Drawer>
   </>
   );
-};
+});
+
+DataCenter.displayName = 'DataCenter';
 
 export default DataCenter;
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import {
@@ -33,7 +33,13 @@ import {
 import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
 import { StatCard } from '@/components';
 
-const DataPointManagement: React.FC = () => {
+export interface DataPointManagementRef {
+  reload: () => void;
+  refreshStats: () => void;
+  handleAdd: () => void;
+}
+
+const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   const { message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
   const [devices, setDevices] = useState<IoTDevice[]>([]);
@@ -124,6 +130,19 @@ const DataPointManagement: React.FC = () => {
     setSelectedDataPoint(null);
     setIsModalVisible(true);
   };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    reload: () => {
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+    },
+    refreshStats: () => {
+      fetchOverviewStats();
+    },
+    handleAdd,
+  }));
 
   const handleEdit = (dataPoint: IoTDataPoint) => {
     setSelectedDataPoint(dataPoint);
@@ -422,30 +441,6 @@ const DataPointManagement: React.FC = () => {
         columns={columns}
         request={fetchDataPoints}
         rowKey="id"
-        toolbar={{
-          actions: [
-            <Button
-              key="create"
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAdd}
-            >
-              新建数据点
-            </Button>,
-            <Button
-              key="refresh"
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                if (actionRef.current?.reload) {
-            actionRef.current.reload();
-          }
-                fetchOverviewStats();
-              }}
-            >
-              刷新
-            </Button>,
-          ],
-        }}
         pagination={{
           pageSize: 20,
           pageSizeOptions: [10, 20, 50, 100],
@@ -648,7 +643,9 @@ const DataPointManagement: React.FC = () => {
       </Drawer>
     </>
   );
-};
+});
+
+DataPointManagement.displayName = 'DataPointManagement';
 
 export default DataPointManagement;
 

@@ -111,10 +111,8 @@ const CompanySearch: React.FC = () => {
 
   return (
     <PageContainer
-      header={{
-        title: intl.formatMessage({ id: 'pages.company.search.title' }),
-        subTitle: intl.formatMessage({ id: 'pages.company.search.subTitle' }),
-      }}
+      title={intl.formatMessage({ id: 'pages.company.search.title' })}
+      style={{ paddingBlock: 12 }}
     >
       <Card>
         {/* 搜索框 */}

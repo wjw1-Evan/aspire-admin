@@ -1,5 +1,5 @@
 import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
-import { Tag, Button, App, Popconfirm } from 'antd';
+import { Tag, Button, App, Popconfirm, Space } from 'antd';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { getMyRequests, cancelRequest } from '@/services/company';
@@ -8,6 +8,8 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  ReloadOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 
 /**
@@ -288,10 +290,31 @@ const MyJoinRequests: React.FC = () => {
 
   return (
     <PageContainer
-      header={{
-        title: intl.formatMessage({ id: 'pages.joinRequests.my.title' }),
-        subTitle: intl.formatMessage({ id: 'pages.joinRequests.my.subTitle' }),
-      }}
+      title={intl.formatMessage({ id: 'pages.joinRequests.my.title' })}
+      style={{ paddingBlock: 12 }}
+      extra={
+        <Space>
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              actionRef.current?.reload();
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.button.refresh' })}
+          </Button>
+          <Button
+            key="search"
+            type="primary"
+            icon={<SearchOutlined />}
+            onClick={() => {
+              globalThis.location.href = '/company/search';
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.button.searchCompany' })}
+          </Button>
+        </Space>
+      }
     >
       <DataTable<API.JoinRequestDetail>
         columns={columns}
@@ -330,17 +353,6 @@ const MyJoinRequests: React.FC = () => {
           showSizeChanger: true,
         }}
         dateFormatter="string"
-        toolBarRender={() => [
-          <Button
-            key="search"
-            type="primary"
-            onClick={() => {
-              globalThis.location.href = '/company/search';
-            }}
-          >
-            {intl.formatMessage({ id: 'pages.button.searchCompany' })}
-          </Button>,
-        ]}
         />
     </PageContainer>
   );

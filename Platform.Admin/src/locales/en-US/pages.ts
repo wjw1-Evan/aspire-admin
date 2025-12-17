@@ -289,6 +289,7 @@ export default {
   'pages.button.save': 'Save',
   'pages.button.add': 'Add',
   'pages.button.addRole': 'Add Role',
+  'pages.button.refresh': 'Refresh',
   'pages.button.approve': 'Approve',
   'pages.button.reject': 'Reject',
   'pages.button.cancelRequest': 'Cancel Request',

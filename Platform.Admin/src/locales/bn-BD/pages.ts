@@ -99,4 +99,23 @@ export default {
   'pages.company.industryLabel': 'শিল্প',
   'pages.company.industryPlaceholder': 'অনুগ্রহ করে শিল্প লিখুন (ঐচ্ছিক)',
   'pages.company.industryMaxLength': 'শিল্প 50 অক্ষরের বেশি হতে পারবে না',
+  // বোতাম টেক্সট
+  'pages.button.refresh': 'রিফ্রেশ',
+  // টেবিল সাধারণ কলাম শিরোনাম
+  'pages.table.actions': 'কর্ম',
+  'pages.table.action': 'কর্মের ধরন',
+  'pages.table.httpMethod': 'HTTP পদ্ধতি',
+  'pages.table.statusCode': 'স্ট্যাটাস কোড',
+  'pages.table.fullUrl': 'সম্পূর্ণ URL',
+  'pages.table.ipAddress': 'IP ঠিকানা',
+  'pages.table.userAgent': 'ইউজার এজেন্ট',
+  'pages.table.actionTime': 'কর্মের সময়',
+  'pages.table.detail': 'বিস্তারিত',
+  // পৃষ্ঠা শিরোনাম
+  'pages.myActivity.title': 'আমার কার্যক্রম',
+  'pages.myActivity.subTitle': 'আপনার সমস্ত অপারেশন রেকর্ড দেখুন',
+  'pages.myActivity.statistics.totalLogs': 'মোট লগ',
+  'pages.myActivity.statistics.successCount': 'সফল অনুরোধ',
+  'pages.myActivity.statistics.errorCount': 'ত্রুটিযুক্ত অনুরোধ',
+  'pages.myActivity.statistics.actionTypes': 'কর্মের ধরন সংখ্যা',
 };

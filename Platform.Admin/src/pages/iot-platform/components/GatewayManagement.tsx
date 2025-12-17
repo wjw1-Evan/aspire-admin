@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { type TableColumnsType } from 'antd';
@@ -31,7 +31,13 @@ import {
 import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/services/iotService';
 import { StatCard } from '@/components';
 
-const GatewayManagement: React.FC = () => {
+export interface GatewayManagementRef {
+  reload: () => void;
+  refreshStats: () => void;
+  handleAdd: () => void;
+}
+
+const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   const actionRef = useRef<ActionType>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -113,6 +119,19 @@ const GatewayManagement: React.FC = () => {
     setSelectedGateway(null);
     setIsModalVisible(true);
   };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    reload: () => {
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+    },
+    refreshStats: () => {
+      fetchOverviewStats();
+    },
+    handleAdd,
+  }));
 
   const handleEdit = (gateway: IoTGateway) => {
     setSelectedGateway(gateway);
@@ -334,30 +353,6 @@ const GatewayManagement: React.FC = () => {
         request={fetchGateways}
         rowKey="id"
         search={false}
-        toolbar={{
-          actions: [
-            <Button
-              key="create"
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAdd}
-            >
-              新建网关
-            </Button>,
-            <Button
-              key="refresh"
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                if (actionRef.current?.reload) {
-          actionRef.current.reload();
-        }
-                fetchOverviewStats();
-              }}
-            >
-              刷新
-            </Button>,
-          ],
-        }}
         pagination={{
           pageSize: 20,
           pageSizeOptions: [10, 20, 50, 100],
@@ -506,7 +501,9 @@ const GatewayManagement: React.FC = () => {
       </Drawer>
     </>
   );
-};
+});
+
+GatewayManagement.displayName = 'GatewayManagement';
 
 export default GatewayManagement;
 

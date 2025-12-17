@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { type TableColumnsType } from 'antd';
@@ -38,7 +38,13 @@ import {
 } from '@/services/iotService';
 import { StatCard } from '@/components';
 
-const DeviceManagement: React.FC = () => {
+export interface DeviceManagementRef {
+  reload: () => void;
+  refreshStats: () => void;
+  handleAdd: () => void;
+}
+
+const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const actionRef = useRef<ActionType>(null);
   const [gateways, setGateways] = useState<IoTGateway[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -144,6 +150,19 @@ const DeviceManagement: React.FC = () => {
     setSelectedDevice(null);
     setIsModalVisible(true);
   };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    reload: () => {
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+    },
+    refreshStats: () => {
+      fetchOverviewStats();
+    },
+    handleAdd,
+  }));
 
   const handleEdit = (device: IoTDevice) => {
     setSelectedDevice(device);
@@ -344,30 +363,6 @@ const DeviceManagement: React.FC = () => {
         request={fetchDevices}
         rowKey="id"
         search={false}
-        toolbar={{
-          actions: [
-            <Button
-              key="create"
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAdd}
-            >
-              新建设备
-            </Button>,
-            <Button
-              key="refresh"
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                if (actionRef.current?.reload) {
-          actionRef.current.reload();
-        }
-                fetchOverviewStats();
-              }}
-            >
-              刷新
-            </Button>,
-          ],
-        }}
         pagination={{
           pageSize: 20,
           pageSizeOptions: [10, 20, 50, 100],
@@ -517,7 +512,9 @@ const DeviceManagement: React.FC = () => {
       </Drawer>
     </>
   );
-};
+});
+
+DeviceManagement.displayName = 'DeviceManagement';
 
 export default DeviceManagement;
 

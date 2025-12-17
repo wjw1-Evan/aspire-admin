@@ -1,8 +1,8 @@
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { Tag, Button, Badge } from 'antd';
-import { EyeOutlined } from '@ant-design/icons';
+import { Tag, Button, Badge, Space } from 'antd';
+import { EyeOutlined, ReloadOutlined } from '@ant-design/icons';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { getUserActivityLogs } from '@/services/user-log/api';
@@ -526,10 +526,21 @@ const UserLog: React.FC = () => {
 
   return (
     <PageContainer
-      header={{
-        title: intl.formatMessage({ id: 'pages.userLog.title' }),
-        subTitle: intl.formatMessage({ id: 'pages.userLog.subTitle' }),
-      }}
+      title={intl.formatMessage({ id: 'pages.userLog.title' })}
+      style={{ paddingBlock: 12 }}
+      extra={
+        <Space>
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              actionRef.current?.reload();
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.button.refresh' })}
+          </Button>
+        </Space>
+      }
     >
       <div ref={tableRef}>
         <DataTable<UserActivityLog>

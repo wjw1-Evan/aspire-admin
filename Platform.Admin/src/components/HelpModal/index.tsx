@@ -7,6 +7,7 @@ import {
 } from '@ant-design/icons';
 import { Modal, Space, Tabs, Typography } from 'antd';
 import React from 'react';
+import { useIntl } from '@umijs/max';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -16,71 +17,71 @@ interface HelpModalProps {
 }
 
 const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
+  const intl = useIntl();
   const tabItems = [
     {
       key: 'quick-start',
       label: (
         <span>
-          <RocketOutlined /> 快速开始
+          <RocketOutlined /> {intl.formatMessage({ id: 'pages.help.tab.quickStart' })}
         </span>
       ),
       children: (
         <div style={{ padding: '16px 0' }}>
-          <Title level={4}>欢迎使用 Aspire Admin Platform</Title>
+          <Title level={4}>{intl.formatMessage({ id: 'pages.help.quickStart.welcome' })}</Title>
           <Paragraph>
-            这是一个基于 .NET Aspire、React 和 Ant Design Pro
-            构建的现代化企业级管理平台，提供统一的后端服务、管理后台与跨平台移动应用。
+            {intl.formatMessage({ id: 'pages.help.quickStart.description' })}
           </Paragraph>
 
           <Paragraph>
             <Text type="success">
-              🎉 平台提供多租户数据隔离、菜单级权限控制、实时聊天、AI 助手、IoT 平台、规则管理等完整的企业级功能！
+              🎉 {intl.formatMessage({ id: 'pages.help.quickStart.highlights' })}
             </Text>
           </Paragraph>
 
-          <Title level={5}>核心功能模块</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.quickStart.coreFeatures' })}</Title>
           <ul>
             <li>
-              <strong>用户管理</strong> - 创建、编辑、删除用户，分配角色，支持多企业隶属
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.userManagement' })}</strong>
             </li>
             <li>
-              <strong>角色管理</strong> - 定义角色，配置菜单权限，简化权限控制
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.roleManagement' })}</strong>
             </li>
             <li>
-              <strong>企业协作</strong> - 多租户企业配置、成员管理、加入申请审批、企业切换
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.companyCollaboration' })}</strong>
             </li>
             <li>
-              <strong>任务管理</strong> - 创建任务、分配执行人、跟踪进度、统计报表
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.taskManagement' })}</strong>
             </li>
             <li>
-              <strong>IoT 平台</strong> - 设备管理、网关配置、数据流监控、设备状态追踪
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.iotPlatform' })}</strong>
             </li>
             <li>
-              <strong>规则管理</strong> - 配置业务规则，支持 MCP 集成，自动化工作流
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.ruleManagement' })}</strong>
             </li>
             <li>
-              <strong>实时聊天</strong> - SignalR 实时通信、会话管理、消息撤回、已读状态
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.realTimeChat' })}</strong>
             </li>
             <li>
-              <strong>AI 智能助手</strong> - 智能回复、匹配推荐、话题引导、附件处理
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.aiAssistant' })}</strong>
             </li>
             <li>
-              <strong>活动日志</strong> - 记录所有用户操作，便于审计和追溯
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.activityLog' })}</strong>
             </li>
             <li>
-              <strong>系统监控</strong> - 资源监控、性能指标、健康检查、OpenTelemetry 追踪
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.systemMonitor' })}</strong>
             </li>
             <li>
-              <strong>API 文档</strong> - 集成 Scalar API 文档系统，支持在线测试
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.apiDocs' })}</strong>
             </li>
             <li>
-              <strong>多语言支持</strong> - 支持 8 种语言的完整界面翻译
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.multilang' })}</strong>
             </li>
           </ul>
 
-          <Title level={5}>多语言支持</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.quickStart.multilang.title' })}</Title>
           <Paragraph>
-            系统支持 8 种语言的完整界面翻译：
+            {intl.formatMessage({ id: 'pages.help.quickStart.multilang.description' })}
           </Paragraph>
           <ul>
             <li>🇨🇳 简体中文 (zh-CN)</li>
@@ -94,54 +95,54 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           </ul>
           <Paragraph>
             <Text type="secondary">
-              点击右上角的语言选择器可以切换界面语言。所有界面元素（菜单、按钮、提示信息等）都已完整翻译。
+              {intl.formatMessage({ id: 'pages.help.quickStart.multilang.note' })}
             </Text>
           </Paragraph>
 
-          <Title level={5}>功能亮点</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.quickStart.highlights.title' })}</Title>
           <Paragraph>
-            <strong>多租户架构</strong> - 所有数据通过企业 ID 自动隔离，支持用户隶属多个企业，灵活切换工作空间。
+            <strong>{intl.formatMessage({ id: 'pages.help.quickStart.highlights.multiTenant' })}</strong>
           </Paragraph>
           <Paragraph>
-            <strong>菜单级权限</strong> - 简化的权限模型，菜单即权限，能访问菜单就能使用功能，降低配置复杂度。
+            <strong>{intl.formatMessage({ id: 'pages.help.quickStart.highlights.menuPermission' })}</strong>
           </Paragraph>
           <Paragraph>
-            <strong>实时通信</strong> - 基于 SignalR 的实时聊天系统，支持自动重连、会话房间、消息撤回、已读状态推送。
+            <strong>{intl.formatMessage({ id: 'pages.help.quickStart.highlights.realTime' })}</strong>
           </Paragraph>
           <Paragraph>
-            <strong>AI 集成</strong> - 内置 AI 智能回复服务，支持智能匹配推荐、话题引导，提升沟通效率。
+            <strong>{intl.formatMessage({ id: 'pages.help.quickStart.highlights.aiIntegration' })}</strong>
           </Paragraph>
           <Paragraph>
-            <strong>IoT 平台</strong> - 完整的物联网设备管理能力，支持设备注册、网关配置、数据流监控和状态追踪。
+            <strong>{intl.formatMessage({ id: 'pages.help.quickStart.highlights.iot' })}</strong>
           </Paragraph>
           <Paragraph>
-            <strong>规则引擎</strong> - 灵活的规则配置系统，支持 MCP 集成，实现自动化工作流和业务规则管理。
+            <strong>{intl.formatMessage({ id: 'pages.help.quickStart.highlights.ruleEngine' })}</strong>
           </Paragraph>
 
-          <Title level={5}>开始使用</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.quickStart.gettingStarted.title' })}</Title>
           <Paragraph>
-            系统采用注册制，没有默认账户。请按照以下步骤开始使用：
+            {intl.formatMessage({ id: 'pages.help.quickStart.gettingStarted.description' })}
           </Paragraph>
           <ol>
             <li>
-              <strong>注册账户</strong> - 访问注册页面，填写用户名、邮箱和密码
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.gettingStarted.step1' })}</strong>
             </li>
             <li>
-              <strong>自动创建企业</strong> - 注册成功后，系统会自动为您创建个人企业
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.gettingStarted.step2' })}</strong>
             </li>
             <li>
-              <strong>自动设置管理员</strong> - 您将自动成为企业管理员，拥有所有权限
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.gettingStarted.step3' })}</strong>
             </li>
             <li>
-              <strong>立即登录</strong> - 注册完成后会自动登录系统
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.gettingStarted.step4' })}</strong>
             </li>
             <li>
-              <strong>探索功能</strong> - 访问欢迎页面查看系统概览，或直接使用各个功能模块
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.gettingStarted.step5' })}</strong>
             </li>
           </ol>
           <Paragraph>
             <Text type="secondary">
-              💡 提示：每个用户注册时都会自动获得一个个人企业，您可以后续申请加入其他企业或创建新企业。系统支持多企业切换，方便在不同工作空间间切换。
+              💡 {intl.formatMessage({ id: 'pages.help.quickStart.gettingStarted.tip' })}
             </Text>
           </Paragraph>
         </div>
@@ -151,15 +152,14 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       key: 'version-history',
       label: (
         <span>
-          <CodeOutlined /> 版本历史
+          <CodeOutlined /> {intl.formatMessage({ id: 'pages.help.tab.versionHistory' })}
         </span>
       ),
       children: (
         <div style={{ padding: '16px 0' }}>
-          <Title level={4}>📚 系统版本历史</Title>
+          <Title level={4}>📚 {intl.formatMessage({ id: 'pages.help.versionHistory.title' })}</Title>
           <Paragraph>
-            以下是 Aspire Admin
-            平台的完整版本历史，记录了每个版本的重要更新和改进。
+            {intl.formatMessage({ id: 'pages.help.versionHistory.description' })}
           </Paragraph>
 
           {/* 最新版本 */}
@@ -173,10 +173,10 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#52c41a', marginBottom: 16 }}>
-              🚀 最新版本 - 功能完善与扩展
+              🚀 {intl.formatMessage({ id: 'pages.help.versionHistory.latest.title' })}
             </Title>
 
-            <Title level={5}>新增功能模块</Title>
+            <Title level={5}>{intl.formatMessage({ id: 'pages.help.versionHistory.latest.newFeatures' })}</Title>
             <ul>
               <li>
                 <strong>任务管理</strong> - 完整的任务创建、分配、跟踪和统计功能
@@ -222,7 +222,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#1890ff', marginBottom: 16 }}>
-              🌐 v6.1.0 - 多语言支持完善
+              🌐 {intl.formatMessage({ id: 'pages.help.versionHistory.v6_1.title' })}
             </Title>
 
             <Title level={5}>多语言翻译补充</Title>
@@ -265,7 +265,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#1890ff', marginBottom: 16 }}>
-              🎯 v6.0.0 - 菜单级权限系统重构 (2025-10-14)
+              🎯 {intl.formatMessage({ id: 'pages.help.versionHistory.v6_0.title' })}
             </Title>
 
             <Title level={5}>核心特性</Title>
@@ -314,7 +314,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#52c41a', marginBottom: 16 }}>
-              🚀 v5.0.0 - 后端架构重大升级 (2025-10-13)
+              🚀 {intl.formatMessage({ id: 'pages.help.versionHistory.v5_0.title' })}
             </Title>
 
             <Title level={5}>新增基础组件</Title>
@@ -386,7 +386,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#eb2f96', marginBottom: 16 }}>
-              🔧 v4.0.0 - 系统架构扩展优化 (2025-10-11)
+              🔧 {intl.formatMessage({ id: 'pages.help.versionHistory.v4_0.title' })}
             </Title>
 
             <Title level={5}>架构扩展</Title>
@@ -421,7 +421,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#13c2c2', marginBottom: 16 }}>
-              🏢 v3.1.0 - 多企业隶属架构 (2025-01-13)
+              🏢 {intl.formatMessage({ id: 'pages.help.versionHistory.v3_1.title' })}
             </Title>
 
             <Title level={5}>多企业支持</Title>
@@ -474,7 +474,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#52c41a', marginBottom: 16 }}>
-              ⚡ v3.0.0 - 代码质量提升 (2025-10-12)
+              ⚡ {intl.formatMessage({ id: 'pages.help.versionHistory.v3_0.title' })}
             </Title>
 
             <Title level={5}>代码质量优化</Title>
@@ -533,7 +533,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             }}
           >
             <Title level={5} style={{ color: '#fa8c16', marginBottom: 16 }}>
-              📊 v2.0.0 - 数据模型统一与性能优化 (2025-10-12)
+              📊 {intl.formatMessage({ id: 'pages.help.versionHistory.v2_0.title' })}
             </Title>
 
             <Title level={5}>数据模型统一</Title>
@@ -614,7 +614,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </ol>
           </div>
 
-          <Title level={5}>📈 版本演进趋势</Title>
+          <Title level={5}>📈 {intl.formatMessage({ id: 'pages.help.versionHistory.trend.title' })}</Title>
           <ul>
             <li>
               <strong>v2.0</strong> - 基础功能完善，性能优化
@@ -639,7 +639,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>🔮 未来规划</Title>
+          <Title level={5}>🔮 {intl.formatMessage({ id: 'pages.help.versionHistory.future.title' })}</Title>
           <ul>
             <li>继续优化用户体验和界面交互</li>
             <li>增强系统性能和可扩展性</li>
@@ -657,16 +657,16 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       key: 'features',
       label: (
         <span>
-          <ApiOutlined /> 功能说明
+          <ApiOutlined /> {intl.formatMessage({ id: 'pages.help.tab.features' })}
         </span>
       ),
       children: (
         <div style={{ padding: '16px 0' }}>
-          <Title level={4}>📋 功能模块详细说明</Title>
+          <Title level={4}>📋 {intl.formatMessage({ id: 'pages.help.features.title' })}</Title>
 
-          <Title level={5}>👥 用户管理</Title>
+          <Title level={5}>👥 {intl.formatMessage({ id: 'pages.help.features.userManagement.title' })}</Title>
           <Paragraph>
-            用户管理模块提供完整的用户生命周期管理功能：
+            {intl.formatMessage({ id: 'pages.help.features.userManagement.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -686,9 +686,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>🎭 角色管理</Title>
+          <Title level={5}>🎭 {intl.formatMessage({ id: 'pages.help.features.roleManagement.title' })}</Title>
           <Paragraph>
-            角色管理采用菜单级权限模型，简化权限配置：
+            {intl.formatMessage({ id: 'pages.help.features.roleManagement.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -710,9 +710,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </Text>
           </Paragraph>
 
-          <Title level={5}>🏢 企业协作</Title>
+          <Title level={5}>🏢 {intl.formatMessage({ id: 'pages.help.features.companyCollaboration.title' })}</Title>
           <Paragraph>
-            多租户企业协作功能，支持企业创建、成员管理、申请审批：
+            {intl.formatMessage({ id: 'pages.help.features.companyCollaboration.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -735,9 +735,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>✅ 任务管理</Title>
+          <Title level={5}>✅ {intl.formatMessage({ id: 'pages.help.features.taskManagement.title' })}</Title>
           <Paragraph>
-            完整的任务管理功能，支持任务创建、分配、跟踪和统计：
+            {intl.formatMessage({ id: 'pages.help.features.taskManagement.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -760,9 +760,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>🌐 IoT 平台</Title>
+          <Title level={5}>🌐 {intl.formatMessage({ id: 'pages.help.features.iotPlatform.title' })}</Title>
           <Paragraph>
-            物联网设备管理平台，支持设备注册、监控和数据流管理：
+            {intl.formatMessage({ id: 'pages.help.features.iotPlatform.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -787,9 +787,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </Text>
           </Paragraph>
 
-          <Title level={5}>⚙️ 规则管理</Title>
+          <Title level={5}>⚙️ {intl.formatMessage({ id: 'pages.help.features.ruleManagement.title' })}</Title>
           <Paragraph>
-            业务规则配置系统，支持规则创建、MCP 集成和自动化工作流：
+            {intl.formatMessage({ id: 'pages.help.features.ruleManagement.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -809,9 +809,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>💬 实时聊天</Title>
+          <Title level={5}>💬 {intl.formatMessage({ id: 'pages.help.features.realTimeChat.title' })}</Title>
           <Paragraph>
-            基于 SignalR 的实时聊天系统，支持会话管理和消息功能：
+            {intl.formatMessage({ id: 'pages.help.features.realTimeChat.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -834,9 +834,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>🤖 AI 智能助手</Title>
+          <Title level={5}>🤖 {intl.formatMessage({ id: 'pages.help.features.aiAssistant.title' })}</Title>
           <Paragraph>
-            集成 AI 智能回复服务，提升沟通效率：
+            {intl.formatMessage({ id: 'pages.help.features.aiAssistant.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -856,9 +856,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>📊 活动日志</Title>
+          <Title level={5}>📊 {intl.formatMessage({ id: 'pages.help.features.activityLog.title' })}</Title>
           <Paragraph>
-            完整的用户操作审计日志，记录所有关键操作：
+            {intl.formatMessage({ id: 'pages.help.features.activityLog.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -878,9 +878,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>📈 系统监控</Title>
+          <Title level={5}>📈 {intl.formatMessage({ id: 'pages.help.features.systemMonitor.title' })}</Title>
           <Paragraph>
-            系统资源监控和性能指标查看：
+            {intl.formatMessage({ id: 'pages.help.features.systemMonitor.description' })}
           </Paragraph>
           <ul>
             <li>
@@ -903,91 +903,79 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       key: 'faq',
       label: (
         <span>
-          <QuestionCircleOutlined /> 常见问题
+          <QuestionCircleOutlined /> {intl.formatMessage({ id: 'pages.help.tab.faq' })}
         </span>
       ),
       children: (
         <div style={{ padding: '16px 0' }}>
-          <Title level={5}>Q: 忘记密码怎么办？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.forgotPassword.q' })}</Title>
           <Paragraph>
-            请联系系统管理员重置密码，或通过"忘记密码"功能自助重置。
+            {intl.formatMessage({ id: 'pages.help.faq.forgotPassword.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 没有某个功能的权限？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.noPermission.q' })}</Title>
           <Paragraph>
-            请联系管理员为您分配相应的角色和菜单权限。在 v6.0
-            中，权限控制已简化为菜单级权限。
+            {intl.formatMessage({ id: 'pages.help.faq.noPermission.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 为什么所有用户看到相同的按钮？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.sameButtons.q' })}</Title>
           <Paragraph>
-            这是 v6.0
-            的设计特性。所有用户看到相同的界面，但点击按钮时，后端会验证菜单权限。无权限时会返回
-            403 错误。
+            {intl.formatMessage({ id: 'pages.help.faq.sameButtons.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 如何修改个人信息？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.editProfile.q' })}</Title>
           <Paragraph>
-            点击右上角头像 → 选择"个人中心"，即可修改个人信息和密码。
+            {intl.formatMessage({ id: 'pages.help.faq.editProfile.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 数据丢失或误删除？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.dataLoss.q' })}</Title>
           <Paragraph>
-            系统采用软删除机制，数据不会真正删除。请联系管理员恢复数据。
+            {intl.formatMessage({ id: 'pages.help.faq.dataLoss.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 页面加载慢或出错？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.pageError.q' })}</Title>
           <Paragraph>
-            1. 清除浏览器缓存（Ctrl+Shift+R 或 Cmd+Shift+R）
-            <br />
-            2. 检查网络连接
-            <br />
-            3. 尝试重新登录
-            <br />
-            4. 如果问题持续，请联系技术支持
+            {intl.formatMessage({ id: 'pages.help.faq.pageError.a' }).split('\n').map((line, index) => (
+              <React.Fragment key={index}>
+                {line}
+                {index < intl.formatMessage({ id: 'pages.help.faq.pageError.a' }).split('\n').length - 1 && <br />}
+              </React.Fragment>
+            ))}
           </Paragraph>
 
-          <Title level={5}>Q: 如何切换界面语言？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.switchLanguage.q' })}</Title>
           <Paragraph>
-            点击右上角的语言选择器（🌐 图标），选择您想要的语言。系统支持 8 种语言：
-            <br />
-            简体中文、繁体中文、英语、日语、葡萄牙语（巴西）、波斯语（伊朗）、印尼语、孟加拉语
+            {intl.formatMessage({ id: 'pages.help.faq.switchLanguage.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 某些界面元素没有翻译？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.noTranslation.q' })}</Title>
           <Paragraph>
-            系统正在持续完善多语言支持。如果发现某些内容未翻译，请联系技术支持。
-            目前核心功能（用户管理、角色管理、企业设置等）已完整支持所有语言。
+            {intl.formatMessage({ id: 'pages.help.faq.noTranslation.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 如何使用任务管理功能？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.taskManagement.q' })}</Title>
           <Paragraph>
-            访问"任务管理"菜单，您可以创建新任务、分配给团队成员、设置优先级和截止日期。
-            系统会自动跟踪任务进度，并提供统计报表帮助您了解任务完成情况。
+            {intl.formatMessage({ id: 'pages.help.faq.taskManagement.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: IoT 平台如何添加设备？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.iotDevice.q' })}</Title>
           <Paragraph>
-            在"IoT 平台"页面，点击"添加设备"按钮，填写设备信息（名称、类型、网关等）。
-            设备添加后，系统会自动监控设备状态和数据流，您可以在设备列表中查看详细信息。
+            {intl.formatMessage({ id: 'pages.help.faq.iotDevice.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 规则管理支持哪些功能？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.ruleManagement.q' })}</Title>
           <Paragraph>
-            规则管理系统支持创建业务规则、配置触发条件、设置执行动作。系统支持 MCP 集成，
-            可以实现自动化工作流。规则可以启用/禁用，支持状态管理和版本控制。
+            {intl.formatMessage({ id: 'pages.help.faq.ruleManagement.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 实时聊天功能如何使用？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.chat.q' })}</Title>
           <Paragraph>
-            系统集成了 SignalR 实时聊天功能，支持创建会话、发送消息、撤回消息、查看已读状态。
-            聊天记录会自动保存，支持附件上传和预览。AI 智能助手可以帮助您快速回复和推荐内容。
+            {intl.formatMessage({ id: 'pages.help.faq.chat.a' })}
           </Paragraph>
 
-          <Title level={5}>Q: 如何切换企业？</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.switchCompany.q' })}</Title>
           <Paragraph>
-            点击右上角头像 → 选择"切换企业"，在弹出窗口中选择要切换的企业。
-            系统支持用户隶属多个企业，切换后所有数据会自动按企业隔离显示。
+            {intl.formatMessage({ id: 'pages.help.faq.switchCompany.a' })}
           </Paragraph>
         </div>
       ),
@@ -996,12 +984,12 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       key: 'tech',
       label: (
         <span>
-          <ToolOutlined /> 技术支持
+          <ToolOutlined /> {intl.formatMessage({ id: 'pages.help.tab.tech' })}
         </span>
       ),
       children: (
         <div style={{ padding: '16px 0' }}>
-          <Title level={5}>技术文档</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.tech.docs.title' })}</Title>
           <ul>
             <li>
               <a href="https://pro.ant.design" target="_blank" rel="noreferrer">
@@ -1033,7 +1021,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
           </ul>
 
-          <Title level={5}>联系我们</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.tech.contact.title' })}</Title>
           <Paragraph>
             <Space direction="vertical">
               <Text>📧 邮箱: support@example.com</Text>
@@ -1042,19 +1030,15 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </Space>
           </Paragraph>
 
-          <Title level={5}>版本信息</Title>
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.tech.version.title' })}</Title>
           <Paragraph>
             <Text type="secondary">
-              Aspire Admin Platform
-              <br />
-              核心版本: v6.1.0+
-              <br />
-              更新内容: 多语言支持完善、任务管理、IoT 平台、规则管理、实时聊天、AI 助手
-              <br />
-              支持语言: 8 种语言（中文、英文、日语、葡萄牙语、波斯语、印尼语、孟加拉语）
-              <br />
-              技术栈: .NET 10, React 19, Ant Design Pro, MongoDB, SignalR, .NET Aspire
-              <br />© 2025 All Rights Reserved
+              {intl.formatMessage({ id: 'pages.help.tech.version.content' }).split('\n').map((line, index) => (
+                <React.Fragment key={index}>
+                  {line}
+                  {index < intl.formatMessage({ id: 'pages.help.tech.version.content' }).split('\n').length - 1 && <br />}
+                </React.Fragment>
+              ))}
             </Text>
           </Paragraph>
         </div>
@@ -1067,7 +1051,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       title={
         <Space>
           <QuestionCircleOutlined />
-          <span>系统帮助</span>
+          <span>{intl.formatMessage({ id: 'pages.help.title' })}</span>
         </Space>
       }
       open={open}

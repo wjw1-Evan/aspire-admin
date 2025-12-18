@@ -1,4 +1,5 @@
 export default {
+  'app.setting.title': 'Page Style Settings',
   'app.setting.pagestyle': 'Page style setting',
   'app.setting.pagestyle.dark': 'Dark style',
   'app.setting.pagestyle.light': 'Light style',
@@ -19,6 +20,7 @@ export default {
   'app.setting.navigationmode': 'Navigation Mode',
   'app.setting.sidemenu': 'Side Menu Layout',
   'app.setting.topmenu': 'Top Menu Layout',
+  'app.setting.mixmenu': 'Mix Menu Layout',
   'app.setting.fixedheader': 'Fixed Header',
   'app.setting.fixedsidebar': 'Fixed Sidebar',
   'app.setting.fixedsidebar.hint': 'Works on Side Menu Layout',
@@ -31,4 +33,6 @@ export default {
     'copy success, please replace defaultSettings in src/models/setting.js',
   'app.setting.production.hint':
     'Setting panel shows in development environment only, please manually modify',
+  'app.setting.themeChangeHint': 'Theme changed, please refresh the page to apply the new theme',
+  'app.setting.themeChangeSuccess': 'Theme changed successfully',
 };

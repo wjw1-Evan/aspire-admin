@@ -1,4 +1,5 @@
 export default {
+  'app.setting.title': 'Configurações de Estilo da Página',
   'app.setting.pagestyle': 'Configuração de estilo da página',
   'app.setting.pagestyle.dark': 'Dark style',
   'app.setting.pagestyle.light': 'Light style',
@@ -17,6 +18,7 @@ export default {
   'app.setting.navigationmode': 'Modo de Navegação',
   'app.setting.sidemenu': 'Layout do Menu Lateral',
   'app.setting.topmenu': 'Layout do Menu Superior',
+  'app.setting.mixmenu': 'Layout do Menu Misto',
   'app.setting.fixedheader': 'Cabeçalho fixo',
   'app.setting.fixedsidebar': 'Barra lateral fixa',
   'app.setting.fixedsidebar.hint': 'Funciona no layout do menu lateral',
@@ -30,4 +32,6 @@ export default {
     'copiado com sucesso, por favor trocar o defaultSettings em src/models/setting.js',
   'app.setting.production.hint':
     'O painel de configuração apenas é exibido no ambiente de desenvolvimento, por favor modifique manualmente o',
+  'app.setting.themeChangeHint': 'Tema alterado, por favor atualize a página para aplicar o novo tema',
+  'app.setting.themeChangeSuccess': 'Tema alterado com sucesso',
 };

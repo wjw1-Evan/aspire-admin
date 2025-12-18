@@ -2,16 +2,20 @@ import {
   LogoutOutlined,
   UserOutlined,
   LockOutlined,
+  SettingOutlined,
+  QuestionCircleOutlined,
 } from '@ant-design/icons';
-import { history, useModel } from '@umijs/max';
+import { history, useModel, useIntl } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import React from 'react';
+import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import HeaderDropdown from '../HeaderDropdown';
+import HelpModal from '../HelpModal';
+import { ThemeSettingsDrawer } from './ThemeSettingsDrawer';
 
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -71,6 +75,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   const { styles } = useStyles();
 
   const { initialState, setInitialState } = useModel('@@initialState');
+  const intl = useIntl();
+  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
 
   const onMenuClick: MenuProps['onClick'] = (event) => {
     const { key } = event;
@@ -87,6 +94,14 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     }
     if (key === 'center') {
       history.push('/account/center');
+      return;
+    }
+    if (key === 'settings') {
+      setSettingsDrawerOpen(true);
+      return;
+    }
+    if (key === 'help') {
+      setHelpModalOpen(true);
       return;
     }
     history.push(`/account/${key}`);
@@ -120,12 +135,12 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
           {
             key: 'center',
             icon: <UserOutlined />,
-            label: '个人中心',
+            label: intl.formatMessage({ id: 'menu.account.center' }),
           },
           {
             key: 'change-password',
             icon: <LockOutlined />,
-            label: '修改密码',
+            label: intl.formatMessage({ id: 'menu.account.changePassword' }),
           },
           {
             type: 'divider' as const,
@@ -133,21 +148,44 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
         ]
       : []),
     {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: intl.formatMessage({ id: 'menu.account.settings' }),
+    },
+    {
+      key: 'help',
+      icon: <QuestionCircleOutlined />,
+      label: intl.formatMessage({ id: 'menu.account.help' }),
+    },
+    {
+      type: 'divider' as const,
+    },
+    {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: '退出登录',
+      label: intl.formatMessage({ id: 'menu.account.logout' }),
     },
   ];
 
   return (
-    <HeaderDropdown
-      menu={{
-        selectedKeys: [],
-        onClick: onMenuClick,
-        items: menuItems,
-      }}
-    >
-      {children}
-    </HeaderDropdown>
+    <>
+      <HeaderDropdown
+        menu={{
+          selectedKeys: [],
+          onClick: onMenuClick,
+          items: menuItems,
+        }}
+      >
+        {children}
+      </HeaderDropdown>
+      <ThemeSettingsDrawer
+        open={settingsDrawerOpen}
+        onClose={() => setSettingsDrawerOpen(false)}
+      />
+      <HelpModal
+        open={helpModalOpen}
+        onClose={() => setHelpModalOpen(false)}
+      />
+    </>
   );
 };

@@ -11,7 +11,6 @@ import {
   CompanySwitcher,
   Footer,
   NoticeIcon,
-  Question,
   SelectLang,
 } from '@/components';
 import AiAssistant from '@/components/AiAssistant';
@@ -224,7 +223,6 @@ export const layout: RunTimeLayoutConfig = ({
     actionsRender: () => [
       <NoticeIcon key="NoticeIcon" />,
       <CompanySwitcher key="CompanySwitcher" />,
-      <Question key="doc" />,
       <SelectLang key="SelectLang" />,
     ],
     avatarProps: {

@@ -1,4 +1,5 @@
 export default {
+  'app.setting.title': 'Pengaturan Gaya Halaman',
   'app.setting.pagestyle': 'Pengaturan style Halaman',
   'app.setting.pagestyle.dark': 'Style Gelap',
   'app.setting.pagestyle.light': 'Style Cerah',
@@ -17,6 +18,7 @@ export default {
   'app.setting.navigationmode': 'Mode Navigasi',
   'app.setting.sidemenu': 'Susunan Menu Samping',
   'app.setting.topmenu': 'Susunan Menu Atas',
+  'app.setting.mixmenu': 'Susunan Menu Campuran',
   'app.setting.fixedheader': 'Header Tetap',
   'app.setting.fixedsidebar': 'Sidebar Tetap',
   'app.setting.fixedsidebar.hint': 'Berjalan pada Susunan Menu Samping',
@@ -30,4 +32,6 @@ export default {
     'Berhasil disalin, tolong ubah defaultSettings pada src/models/setting.js',
   'app.setting.production.hint':
     'Panel pengaturan hanya muncul pada lingkungan pengembangan, silahkan modifikasi secara menual',
+  'app.setting.themeChangeHint': 'Tema telah diubah, silakan refresh halaman untuk menerapkan tema baru',
+  'app.setting.themeChangeSuccess': 'Tema berhasil diubah',
 };

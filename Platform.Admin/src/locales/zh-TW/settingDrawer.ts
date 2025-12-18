@@ -1,4 +1,5 @@
 export default {
+  'app.setting.title': '頁面樣式設置',
   'app.setting.pagestyle': '整體風格設置',
   'app.setting.pagestyle.dark': '暗色菜單風格',
   'app.setting.pagestyle.light': '亮色菜單風格',
@@ -17,6 +18,7 @@ export default {
   'app.setting.navigationmode': '導航模式',
   'app.setting.sidemenu': '側邊菜單布局',
   'app.setting.topmenu': '頂部菜單布局',
+  'app.setting.mixmenu': '混合菜單布局',
   'app.setting.fixedheader': '固定 Header',
   'app.setting.fixedsidebar': '固定側邊菜單',
   'app.setting.fixedsidebar.hint': '側邊菜單布局時可配置',
@@ -29,4 +31,6 @@ export default {
     '拷貝成功，請到 config/defaultSettings.js 中替換默認配置',
   'app.setting.production.hint':
     '配置欄只在開發環境用於預覽，生產環境不會展現，請拷貝後手動修改配置文件',
+  'app.setting.themeChangeHint': '主題已更改，請刷新頁面以應用新主題',
+  'app.setting.themeChangeSuccess': '主題已更改',
 };

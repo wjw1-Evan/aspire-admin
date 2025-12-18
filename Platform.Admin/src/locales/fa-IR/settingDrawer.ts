@@ -29,4 +29,8 @@ export default {
     'موفقیت در کپی کردن ， لطفا defaultSettings را در src / models / setting.js جایگزین کنید',
   'app.setting.production.hint':
     'صفحه تنظیم فقط در محیط توسعه نمایش داده می شود ، لطفاً دستی تغییر دهید',
+  'app.setting.title': 'تنظیمات سبک صفحه',
+  'app.setting.mixmenu': 'طرح منوی ترکیبی',
+  'app.setting.themeChangeHint': 'تم تغییر کرده است، لطفاً صفحه را به‌روزرسانی کنید تا تم جدید اعمال شود',
+  'app.setting.themeChangeSuccess': 'تم با موفقیت تغییر کرد',
 };

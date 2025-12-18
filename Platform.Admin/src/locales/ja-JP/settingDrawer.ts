@@ -1,4 +1,5 @@
 export default {
+  'app.setting.title': 'ページスタイル設定',
   'app.setting.pagestyle': 'ページスタイル設定',
   'app.setting.pagestyle.dark': 'ダークスタイル',
   'app.setting.pagestyle.light': 'ライトスタイル',
@@ -17,6 +18,7 @@ export default {
   'app.setting.navigationmode': 'ナビゲーションモード',
   'app.setting.sidemenu': 'サイドメニューのレイアウト',
   'app.setting.topmenu': 'トップメニューのレイアウト',
+  'app.setting.mixmenu': 'ミックスメニューのレイアウト',
   'app.setting.fixedheader': '固定ヘッダー',
   'app.setting.fixedsidebar': '固定サイドバー',
   'app.setting.fixedsidebar.hint': 'サイドメニューのレイアウトで動作します',
@@ -30,4 +32,6 @@ export default {
     'コピーが成功しました。src/models/setting.jsのdefaultSettingsを置き換えてください',
   'app.setting.production.hint':
     '設定パネルは開発環境でのみ表示されます。手動で変更してください',
+  'app.setting.themeChangeHint': 'テーマが変更されました。新しいテーマを適用するにはページを更新してください',
+  'app.setting.themeChangeSuccess': 'テーマが正常に変更されました',
 };

@@ -27,6 +27,10 @@ export default {
   'menu.pending-join-requests': '待审批申请',
   'menu.account': '个人页',
   'menu.account.center': '个人中心',
+  'menu.account.changePassword': '修改密码',
+  'menu.account.settings': '设置',
+  'menu.account.help': '帮助',
+  'menu.account.logout': '退出登录',
   // 企业切换器
   'component.companySwitcher.title': '切换企业',
   'component.companySwitcher.join': '加入新企业',

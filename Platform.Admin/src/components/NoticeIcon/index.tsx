@@ -47,7 +47,7 @@ export default function NoticeIcon() {
     <>
       <span className={styles.noticeButton} onClick={() => setVisible(true)}>
         <Badge count={unreadCount} overflowCount={99}>
-          <BellOutlined style={{ fontSize: 18 }} />
+          <BellOutlined />
         </Badge>
       </span>
 

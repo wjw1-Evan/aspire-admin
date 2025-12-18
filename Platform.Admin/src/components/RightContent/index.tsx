@@ -4,6 +4,7 @@ import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { useIntl, setLocale, getLocale } from '@umijs/max';
 import HelpModal from '../HelpModal';
+import styles from './index.less';
 
 export type SiderTheme = 'light' | 'dark';
 
@@ -54,15 +55,7 @@ export const SelectLang: React.FC = () => {
         root: undefined,
       }}
     >
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          padding: '4px',
-          cursor: 'pointer',
-          fontSize: '18px',
-        }}
-      >
+      <span className={styles.headerActionButton}>
         <GlobalOutlined />
         {currentLocaleInfo && (
           <span style={{ marginLeft: 4, fontSize: '14px' }}>
@@ -81,13 +74,7 @@ export const Question: React.FC = () => {
     <>
       <span
         onClick={() => setHelpModalOpen(true)}
-        style={{
-          display: 'inline-flex',
-          padding: '4px',
-          fontSize: '18px',
-          color: 'inherit',
-          cursor: 'pointer',
-        }}
+        className={styles.headerActionButton}
       >
         <QuestionCircleOutlined />
       </span>

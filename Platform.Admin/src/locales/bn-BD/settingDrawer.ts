@@ -1,4 +1,5 @@
 export default {
+  'app.setting.title': 'পৃষ্ঠা স্টাইল সেটিংস',
   'app.setting.pagestyle': 'পৃষ্ঠা স্টাইল সেটিং',
   'app.setting.pagestyle.dark': 'ডার্ক স্টাইল',
   'app.setting.pagestyle.light': 'লাইট স্টাইল',
@@ -17,6 +18,7 @@ export default {
   'app.setting.navigationmode': 'নেভিগেশন মোড',
   'app.setting.sidemenu': 'সাইড মেনু লেআউট',
   'app.setting.topmenu': 'টপ মেনু লেআউট',
+  'app.setting.mixmenu': 'মিশ্র মেনু লেআউট',
   'app.setting.fixedheader': 'স্থির হেডার',
   'app.setting.fixedsidebar': 'স্থির সাইডবার',
   'app.setting.fixedsidebar.hint': 'সাইড মেনু বিন্যাসে কাজ করে',
@@ -29,4 +31,6 @@ export default {
     'সাফল্যের অনুলিপি করুন - প্রতিস্থাপন করুন: src/models/setting.js',
   'app.setting.production.hint':
     'কেবল বিকাশের পরিবেশে প্যানেল শো সেট করা হচ্ছে, দয়া করে ম্যানুয়ালি সংশোধন করুন',
+  'app.setting.themeChangeHint': 'থিম পরিবর্তন করা হয়েছে, নতুন থিম প্রয়োগ করতে দয়া করে পৃষ্ঠাটি রিফ্রেশ করুন',
+  'app.setting.themeChangeSuccess': 'থিম সফলভাবে পরিবর্তন করা হয়েছে',
 };

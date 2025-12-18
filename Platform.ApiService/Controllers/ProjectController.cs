@@ -198,7 +198,7 @@ public class ProjectController : BaseApiController
             var member = await _projectService.AddProjectMemberAsync(request, userId, user.CurrentCompanyId);
             return Success(member);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
             return NotFoundError("项目", projectId);
         }

@@ -173,8 +173,11 @@ public class DataInitializerService : IDataInitializerService
 
             foreach (var menu in childMenus)
             {
-                // 根据 ParentId 的名称查找父菜单的实际 ID
-                var parentMenuName = GetParentMenuNameByChildName(menu.Name);
+                // 优先使用 menu.ParentId 中已设置的父菜单名称，如果没有则通过子菜单名称推断
+                var parentMenuName = !string.IsNullOrEmpty(menu.ParentId) 
+                    ? menu.ParentId 
+                    : GetParentMenuNameByChildName(menu.Name);
+                
                 if (string.IsNullOrEmpty(parentMenuName))
                 {
                     _logger.LogWarning("⚠️  无法确定子菜单 {Name} 的父菜单，跳过", menu.Name);

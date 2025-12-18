@@ -188,6 +188,7 @@ export default {
   'pages.projectManagement.table.progress': '進捗',
   'pages.projectManagement.table.priority': '優先度',
   'pages.projectManagement.table.manager': 'プロジェクトマネージャー',
+  'pages.projectManagement.table.createdBy': '作成者',
   'pages.projectManagement.table.startDate': '開始日',
   'pages.projectManagement.table.endDate': '終了日',
   'pages.projectManagement.table.createdAt': '作成日時',

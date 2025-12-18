@@ -66,3 +66,26 @@ appliesTo:
 
 ## 权限呈现
 - 前端不隐藏按钮/菜单，真实权限以后端菜单级校验决定；`access.ts` 仅作基础访问控制。
+
+## 用户显示规范
+- **统一显示规则**：所有用户相关字段（创建者、分配者、执行者等）统一显示用户昵称（`Name` 字段），如果用户昵称为空则显示用户名（`Username` 字段）。
+- **后端保证**：后端 DTO 转换时已统一处理，前端直接使用 `*Name` 字段（如 `createdByName`、`assignedToName` 等）即可，无需额外处理。
+
+## 日期时间显示规范
+- **统一格式**：所有日期时间字段统一使用 `YYYY-MM-DD HH:mm:ss` 格式显示。
+- **格式化函数**：在组件中定义统一的 `formatDateTime` 函数，使用 `dayjs` 进行格式化：
+  ```typescript
+  const formatDateTime = (dateTime: string | null | undefined): string => {
+    if (!dateTime) return '-';
+    try {
+      const date = dayjs(dateTime);
+      if (!date.isValid()) return dateTime;
+      return date.format('YYYY-MM-DD HH:mm:ss');
+    } catch (error) {
+      console.error('日期格式化错误:', error, dateTime);
+      return dateTime || '-';
+    }
+  };
+  ```
+- **日期字段处理**：对于仅日期字段（如开始日期、结束日期），如果包含时间部分则显示完整时间，否则只显示日期部分。
+- **空值处理**：日期时间为空或无效时统一显示 `-`。

@@ -186,6 +186,7 @@ export default {
   'pages.projectManagement.table.progress': 'پیشرفت',
   'pages.projectManagement.table.priority': 'اولویت',
   'pages.projectManagement.table.manager': 'مدیر پروژه',
+  'pages.projectManagement.table.createdBy': 'ایجاد شده توسط',
   'pages.projectManagement.table.startDate': 'تاریخ شروع',
   'pages.projectManagement.table.endDate': 'تاریخ پایان',
   'pages.projectManagement.table.createdAt': 'ایجاد شده در',

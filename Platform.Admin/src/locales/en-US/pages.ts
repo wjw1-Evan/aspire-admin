@@ -574,6 +574,7 @@ export default {
   'pages.projectManagement.table.progress': 'Progress',
   'pages.projectManagement.table.priority': 'Priority',
   'pages.projectManagement.table.manager': 'Project Manager',
+  'pages.projectManagement.table.createdBy': 'Created By',
   'pages.projectManagement.table.startDate': 'Start Date',
   'pages.projectManagement.table.endDate': 'End Date',
   'pages.projectManagement.table.createdAt': 'Created At',

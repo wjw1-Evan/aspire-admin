@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } f
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { useIntl } from '@umijs/max';
+import dayjs from 'dayjs';
 import {
   Button,
   Tag,
@@ -187,6 +188,34 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     });
   };
 
+  // 格式化日期时间
+  const formatDateTime = (dateTime: string | null | undefined): string => {
+    if (!dateTime) return '-';
+    try {
+      const date = dayjs(dateTime);
+      if (!date.isValid()) return dateTime;
+      return date.format('YYYY-MM-DD HH:mm:ss');
+    } catch (error) {
+      console.error('日期格式化错误:', error, dateTime);
+      return dateTime || '-';
+    }
+  };
+
+  // 格式化日期（仅日期部分）
+  const formatDate = (date: string | null | undefined): string => {
+    if (!date) return '-';
+    try {
+      const dateObj = dayjs(date);
+      if (!dateObj.isValid()) return date;
+      // 如果包含时间部分且时间为 00:00:00，则只显示日期
+      const hasTime = dateObj.hour() !== 0 || dateObj.minute() !== 0 || dateObj.second() !== 0;
+      return hasTime ? dateObj.format('YYYY-MM-DD HH:mm:ss') : dateObj.format('YYYY-MM-DD');
+    } catch (error) {
+      console.error('日期格式化错误:', error, date);
+      return date || '-';
+    }
+  };
+
   // 表格列定义
   const columns: ProColumns<ProjectDto>[] = [
     {
@@ -243,18 +272,24 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       render: (text) => text || '-',
     },
     {
+      title: intl.formatMessage({ id: 'pages.projectManagement.table.createdBy' }),
+      dataIndex: 'createdByName',
+      key: 'createdByName',
+      render: (text) => text || '-',
+    },
+    {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.startDate' }),
       dataIndex: 'startDate',
       key: 'startDate',
       valueType: 'date',
-      render: (text) => text || '-',
+      render: (_, record) => formatDate(record.startDate),
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.endDate' }),
       dataIndex: 'endDate',
       key: 'endDate',
       valueType: 'date',
-      render: (text) => text || '-',
+      render: (_, record) => formatDate(record.endDate),
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.createdAt' }),
@@ -262,6 +297,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       key: 'createdAt',
       valueType: 'dateTime',
       sorter: true,
+      render: (_, record) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.action' }),

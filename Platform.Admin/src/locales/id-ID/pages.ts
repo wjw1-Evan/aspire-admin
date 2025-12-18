@@ -185,6 +185,7 @@ export default {
   'pages.projectManagement.table.progress': 'Kemajuan',
   'pages.projectManagement.table.priority': 'Prioritas',
   'pages.projectManagement.table.manager': 'Manajer Proyek',
+  'pages.projectManagement.table.createdBy': 'Dibuat oleh',
   'pages.projectManagement.table.startDate': 'Tanggal Mulai',
   'pages.projectManagement.table.endDate': 'Tanggal Selesai',
   'pages.projectManagement.table.createdAt': 'Dibuat pada',

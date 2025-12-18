@@ -62,3 +62,14 @@ appliesTo:
 ## 数据初始化与主机
 - `Platform.DataInitializer` 中的数据脚本同样使用 `IDatabaseOperationFactory<T>`，禁止裸 Mongo 操作。
 - AppHost / Tests 遵循相同的中间件顺序与响应格式约束。
+
+## 用户信息显示规范
+- **DTO 转换规则**：在将实体转换为 DTO 时，所有用户相关字段（创建者、分配者、执行者、参与者等）必须统一处理：
+  - 优先使用用户昵称（`Name` 字段），如果为空则使用用户名（`Username` 字段）
+  - 代码示例：
+    ```csharp
+    // 优先使用 Name（显示名称），如果为空则使用 Username
+    dto.CreatedByName = !string.IsNullOrWhiteSpace(user.Name) ? user.Name : user.Username;
+    ```
+- **跨租户场景**：对于可能跨租户的用户信息（如创建者可能属于不同企业），使用 `GetUserByIdWithoutTenantFilterAsync` 方法获取用户信息。
+- **统一性要求**：确保所有服务（TaskService、ProjectService 等）中的用户信息转换逻辑保持一致。

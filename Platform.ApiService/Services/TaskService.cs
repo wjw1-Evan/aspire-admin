@@ -888,7 +888,8 @@ public class TaskService : ITaskService
                 var createdByUser = await _userService.GetUserByIdAsync(task.CreatedBy);
                 if (createdByUser != null)
                 {
-                    dto.CreatedByName = createdByUser.Username;
+                    // 优先使用 Name（显示名称），如果为空则使用 Username
+                    dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name) ? createdByUser.Name : createdByUser.Username;
                 }
             }
 
@@ -897,7 +898,8 @@ public class TaskService : ITaskService
                 var assignedToUser = await _userService.GetUserByIdAsync(task.AssignedTo);
                 if (assignedToUser != null)
                 {
-                    dto.AssignedToName = assignedToUser.Username;
+                    // 优先使用 Name（显示名称），如果为空则使用 Username
+                    dto.AssignedToName = !string.IsNullOrWhiteSpace(assignedToUser.Name) ? assignedToUser.Name : assignedToUser.Username;
                 }
             }
 
@@ -966,7 +968,8 @@ public class TaskService : ITaskService
                 var user = await _userService.GetUserByIdAsync(log.ExecutedBy);
                 if (user != null)
                 {
-                    dto.ExecutedByName = user.Username;
+                    // 优先使用 Name（显示名称），如果为空则使用 Username
+                    dto.ExecutedByName = !string.IsNullOrWhiteSpace(user.Name) ? user.Name : user.Username;
                 }
             }
         }

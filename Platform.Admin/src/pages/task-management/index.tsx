@@ -330,6 +330,19 @@ const TaskManagement: React.FC = () => {
     }
   };
 
+  // 格式化日期时间
+  const formatDateTime = (dateTime: string | null | undefined): string => {
+    if (!dateTime) return '-';
+    try {
+      const date = dayjs(dateTime);
+      if (!date.isValid()) return dateTime;
+      return date.format('YYYY-MM-DD HH:mm:ss');
+    } catch (error) {
+      console.error('日期格式化错误:', error, dateTime);
+      return dateTime || '-';
+    }
+  };
+
   // 表格列定义
   const columns: ProColumns<TaskDto>[] = [
     {
@@ -420,8 +433,7 @@ const TaskManagement: React.FC = () => {
       dataIndex: 'plannedEndTime',
       key: 'plannedEndTime',
       width: 150,
-      render: (_, record) =>
-        record.plannedEndTime ? dayjs(record.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-',
+      render: (_, record) => formatDateTime(record.plannedEndTime),
     },
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }),
@@ -429,7 +441,7 @@ const TaskManagement: React.FC = () => {
       key: 'createdAt',
       width: 150,
       sorter: true,
-      render: (_, record) => dayjs(record.createdAt).format('YYYY-MM-DD HH:mm'),
+      render: (_, record) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.action' }),

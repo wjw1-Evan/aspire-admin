@@ -183,6 +183,7 @@ export default {
   'pages.projectManagement.table.progress': 'অগ্রগতি',
   'pages.projectManagement.table.priority': 'অগ্রাধিকার',
   'pages.projectManagement.table.manager': 'প্রকল্প ব্যবস্থাপক',
+  'pages.projectManagement.table.createdBy': 'তৈরি করেছেন',
   'pages.projectManagement.table.startDate': 'শুরুর তারিখ',
   'pages.projectManagement.table.endDate': 'শেষ তারিখ',
   'pages.projectManagement.table.createdAt': 'তৈরির তারিখ',

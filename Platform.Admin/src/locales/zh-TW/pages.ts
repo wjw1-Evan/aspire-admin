@@ -583,6 +583,7 @@ export default {
   'pages.projectManagement.table.progress': '進度',
   'pages.projectManagement.table.priority': '優先級',
   'pages.projectManagement.table.manager': '項目經理',
+  'pages.projectManagement.table.createdBy': '創建者',
   'pages.projectManagement.table.startDate': '開始日期',
   'pages.projectManagement.table.endDate': '結束日期',
   'pages.projectManagement.table.createdAt': '創建時間',

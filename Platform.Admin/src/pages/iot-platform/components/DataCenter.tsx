@@ -365,7 +365,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       placement="right"
       onClose={() => setIsDetailDrawerVisible(false)}
       open={isDetailDrawerVisible}
-      width={600}
+      size={600}
     >
       {selectedRecord && (
         <Descriptions column={1} bordered>

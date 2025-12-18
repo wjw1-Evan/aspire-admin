@@ -3,7 +3,7 @@
  * 提供统一的错误处理、日志记录和用户提示
  */
 
-import { message, notification } from 'antd';
+import { getMessage, getNotification } from './antdAppInstance';
 
 // 错误类型枚举
 export enum ErrorType {
@@ -416,6 +416,9 @@ class UnifiedErrorInterceptor {
    * 显示错误给用户
    */
   private displayError(errorInfo: ErrorInfo, config: ErrorHandlerConfig, originalError?: any) {
+    const message = getMessage();
+    const notification = getNotification();
+    
     // 如果是验证错误（400状态码），尝试显示所有验证错误
     if (errorInfo.type === ErrorType.VALIDATION && originalError) {
       const validationErrors = this.extractValidationErrors(originalError);
@@ -469,6 +472,8 @@ class UnifiedErrorInterceptor {
    * 显示多个验证错误（用于需要显示所有字段错误的场景）
    */
   displayValidationErrors(error: any, displayType: ErrorDisplayType = ErrorDisplayType.MESSAGE) {
+    const message = getMessage();
+    const notification = getNotification();
     const errors = this.extractValidationErrors(error);
     
     if (errors.length === 0) {

@@ -40,6 +40,18 @@ public class CreateTaskRequest
 
     /// <summary>备注</summary>
     public string? Remarks { get; set; }
+
+    /// <summary>所属项目ID（可选）</summary>
+    public string? ProjectId { get; set; }
+
+    /// <summary>父任务ID（可选）</summary>
+    public string? ParentTaskId { get; set; }
+
+    /// <summary>排序顺序</summary>
+    public int SortOrder { get; set; } = 0;
+
+    /// <summary>工期（天数）</summary>
+    public int? Duration { get; set; }
 }
 
 /// <summary>
@@ -85,6 +97,18 @@ public class UpdateTaskRequest
 
     /// <summary>备注</summary>
     public string? Remarks { get; set; }
+
+    /// <summary>所属项目ID（可选）</summary>
+    public string? ProjectId { get; set; }
+
+    /// <summary>父任务ID（可选）</summary>
+    public string? ParentTaskId { get; set; }
+
+    /// <summary>排序顺序</summary>
+    public int? SortOrder { get; set; }
+
+    /// <summary>工期（天数）</summary>
+    public int? Duration { get; set; }
 }
 
 /// <summary>
@@ -277,6 +301,21 @@ public class TaskDto
 
     /// <summary>最后更新者ID</summary>
     public string? UpdatedBy { get; set; }
+
+    /// <summary>所属项目ID</summary>
+    public string? ProjectId { get; set; }
+
+    /// <summary>父任务ID</summary>
+    public string? ParentTaskId { get; set; }
+
+    /// <summary>排序顺序</summary>
+    public int SortOrder { get; set; }
+
+    /// <summary>工期（天数）</summary>
+    public int? Duration { get; set; }
+
+    /// <summary>子任务列表</summary>
+    public List<TaskDto> Children { get; set; } = new();
 }
 
 /// <summary>

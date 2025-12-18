@@ -69,6 +69,11 @@ export interface TaskDto {
   attachments: TaskAttachmentDto[];
   updatedAt: string;
   updatedBy?: string;
+  projectId?: string;
+  parentTaskId?: string;
+  sortOrder?: number;
+  duration?: number;
+  children?: TaskDto[];
 }
 
 /**
@@ -371,6 +376,96 @@ export async function batchUpdateTaskStatus(taskIds: string[], status: number) {
   return request<ApiResponse<{ message: string }>>('/api/task/batch-update-status', {
     method: 'POST',
     data: { taskIds, status },
+  });
+}
+
+/**
+ * 获取项目的任务树
+ */
+export async function getTasksByProjectId(projectId: string) {
+  return request<ApiResponse<TaskDto[]>>(`/api/task/project/${projectId}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * 获取任务树（支持按项目过滤）
+ */
+export async function getTaskTree(projectId?: string) {
+  return request<ApiResponse<TaskDto[]>>('/api/task/tree', {
+    method: 'GET',
+    params: projectId ? { projectId } : undefined,
+  });
+}
+
+/**
+ * 更新任务进度
+ */
+export async function updateTaskProgress(taskId: string, progress: number) {
+  return request<ApiResponse<TaskDto>>(`/api/task/${taskId}/progress`, {
+    method: 'PUT',
+    data: { progress },
+  });
+}
+
+/**
+ * 任务依赖DTO
+ */
+export interface TaskDependencyDto {
+  id?: string;
+  predecessorTaskId: string;
+  predecessorTaskName?: string;
+  successorTaskId: string;
+  successorTaskName?: string;
+  dependencyType: number;
+  dependencyTypeName: string;
+  lagDays: number;
+}
+
+/**
+ * 添加任务依赖请求
+ */
+export interface AddTaskDependencyRequest {
+  predecessorTaskId: string;
+  successorTaskId: string;
+  dependencyType?: number;
+  lagDays?: number;
+}
+
+/**
+ * 添加任务依赖
+ */
+export async function addTaskDependency(data: AddTaskDependencyRequest) {
+  return request<ApiResponse<{ id: string }>>('/api/task/dependency', {
+    method: 'POST',
+    data,
+  });
+}
+
+/**
+ * 移除任务依赖
+ */
+export async function removeTaskDependency(dependencyId: string) {
+  return request<ApiResponse<{ message: string }>>(`/api/task/dependency/${dependencyId}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * 获取任务依赖关系
+ */
+export async function getTaskDependencies(taskId: string) {
+  return request<ApiResponse<TaskDependencyDto[]>>(`/api/task/${taskId}/dependencies`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * 获取关键路径
+ */
+export async function getCriticalPath(projectId: string) {
+  return request<ApiResponse<string[]>>(`/api/task/project/${projectId}/critical-path`, {
+    method: 'GET',
   });
 }
 

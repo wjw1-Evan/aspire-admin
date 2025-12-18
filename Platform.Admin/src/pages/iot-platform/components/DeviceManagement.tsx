@@ -393,7 +393,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        width={400}
+        size={400}
       >
         {selectedDevice && (
           <div>

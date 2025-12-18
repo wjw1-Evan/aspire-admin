@@ -449,7 +449,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        width={400}
+        size={400}
       >
         {selectedGateway && (
           <div>

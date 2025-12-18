@@ -190,12 +190,10 @@ const Welcome: React.FC = () => {
     hubUrl: '/hubs/system-resource',
     autoConnect: !!currentUser,
     onConnected: () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('系统资源监控 SignalR 连接已建立');
-      }
+      // SignalR 连接已建立
     },
     onError: (error) => {
-      console.error('系统资源监控 SignalR 连接错误:', error);
+      // 错误由全局错误处理处理
     },
   });
 
@@ -234,7 +232,6 @@ const Welcome: React.FC = () => {
 
       // 系统资源采用 SignalR 实时推送，无需额外轮询
     } catch (error) {
-      console.error('Failed to fetch statistics:', error);
       // 重新抛出错误，确保全局错误处理能够处理
       throw error;
     } finally {
@@ -252,15 +249,12 @@ const Welcome: React.FC = () => {
     if (!isConnected) return;
 
     // 订阅系统资源更新（间隔 5 秒）
-    invoke('SubscribeResourceUpdatesAsync', 5000).catch((error) => {
-      console.error('订阅系统资源更新失败:', error);
+    invoke('SubscribeResourceUpdatesAsync', 5000).catch(() => {
+      // 错误由全局错误处理处理
     });
 
     // 监听资源更新事件
     on('ResourceUpdated', (resources: SystemResources) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('收到系统资源更新:', resources);
-      }
       setSystemResources(resources);
     });
 
@@ -412,7 +406,7 @@ const Welcome: React.FC = () => {
               </Space>
             </Col>
             <Col>
-              <Space direction="vertical" size="large">
+              <Space orientation="vertical" size="large">
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
                     {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
@@ -619,7 +613,7 @@ const Welcome: React.FC = () => {
                 {todoTasks.length === 0 ? (
                   <Alert
                     type="info"
-                    message={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty' })}
+                    title={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty' })}
                     showIcon
                   />
                 ) : (
@@ -634,7 +628,7 @@ const Welcome: React.FC = () => {
                         }}
                         onClick={() => history.push(`/task-management?taskId=${task.id}`)}
                       >
-                        <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                        <Space orientation="vertical" size={2} style={{ width: '100%' }}>
                           <Space>
                             <Text strong>{task.taskName}</Text>
                             {task.priorityName && (
@@ -681,7 +675,7 @@ const Welcome: React.FC = () => {
 
                   return {
                     color: getActivityColor(activity.action),
-                    children: (
+                    content: (
                       <div>
                         <Text strong>{activity.action || intl.formatMessage({ id: 'pages.welcome.recentActivities.systemActivity' })}</Text>
                         {(activity.fullUrl || activity.path) && (
@@ -712,7 +706,7 @@ const Welcome: React.FC = () => {
                 }) : [
                   {
                     color: 'green',
-                    children: (
+                    content: (
                       <div>
                         <Text strong>{intl.formatMessage({ id: 'pages.welcome.recentActivities.systemStart.title' })}</Text>
                         <br />
@@ -725,7 +719,7 @@ const Welcome: React.FC = () => {
                   },
                   {
                     color: 'blue',
-                    children: (
+                    content: (
                       <div>
                         <Text strong>{intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.title' })}</Text>
                         <br />
@@ -740,7 +734,7 @@ const Welcome: React.FC = () => {
                   },
                   {
                     color: 'orange',
-                    children: (
+                    content: (
                       <div>
                         <Text strong>{intl.formatMessage({ id: 'pages.welcome.recentActivities.dataSync.title' })}</Text>
                         <br />
@@ -947,7 +941,7 @@ const Welcome: React.FC = () => {
             style={{ marginTop: '16px', borderRadius: '12px' }}
           >
             <Alert
-              message={intl.formatMessage({ id: 'pages.welcome.systemResources.unavailable' })}
+              title={intl.formatMessage({ id: 'pages.welcome.systemResources.unavailable' })}
               description={intl.formatMessage({ id: 'pages.welcome.systemResources.unavailableDesc' })}
               type="warning"
               showIcon

@@ -125,7 +125,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
       placement="right"
       onClose={onClose}
       open={visible}
-      width={800}
+      size={800}
     >
       <Spin spinning={loading}>
         {taskDetail ? (

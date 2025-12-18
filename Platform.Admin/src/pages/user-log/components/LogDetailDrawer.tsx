@@ -137,10 +137,10 @@ export default function LogDetailDrawer({
   };
 
   return (
-    <Drawer title={intl.formatMessage({ id: 'pages.logDetail.title' })} width={720} open={open} onClose={onClose}>
+    <Drawer title={intl.formatMessage({ id: 'pages.logDetail.title' })} size={720} open={open} onClose={onClose}>
       <Spin spinning={loading}>
         {log ? (
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Space orientation="vertical" size="large" style={{ width: '100%' }}>
         {/* 基本信息 */}
         <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.basicInfo' })} bordered column={1}>
           <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.logId' })}>

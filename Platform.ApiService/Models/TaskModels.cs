@@ -176,6 +176,22 @@ public class WorkTask : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     [BsonElement("attachments")]
     public List<TaskAttachment> Attachments { get; set; } = new();
 
+    /// <summary>所属项目ID（可选，支持独立任务）</summary>
+    [BsonElement("projectId")]
+    public string? ProjectId { get; set; }
+
+    /// <summary>父任务ID（可选，支持任务层级结构）</summary>
+    [BsonElement("parentTaskId")]
+    public string? ParentTaskId { get; set; }
+
+    /// <summary>排序顺序（用于任务树排序）</summary>
+    [BsonElement("sortOrder")]
+    public int SortOrder { get; set; } = 0;
+
+    /// <summary>工期（天数，从 PlannedStartTime 和 PlannedEndTime 计算或手动设置）</summary>
+    [BsonElement("duration")]
+    public int? Duration { get; set; }
+
     /// <summary>是否已删除</summary>
     [BsonElement("isDeleted")]
     public bool IsDeleted { get; set; } = false;

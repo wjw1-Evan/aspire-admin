@@ -546,7 +546,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        width={400}
+        size={400}
       >
         {selectedDataPoint && (
           <div>

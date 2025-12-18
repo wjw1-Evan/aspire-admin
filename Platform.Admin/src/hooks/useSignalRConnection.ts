@@ -89,7 +89,16 @@ function createConnection(hubUrl: string): signalR.HubConnection {
   });
 
   connection.onclose((error) => {
-    console.warn('[SignalR] 连接关闭', error?.message);
+    // 正常关闭时 error 为 undefined，异常关闭时 error 有值
+    if (error) {
+      // 异常关闭：网络错误、服务器关闭等
+      console.warn('[SignalR] 连接异常关闭:', error.message || '未知错误');
+    } else {
+      // 正常关闭：主动断开连接
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[SignalR] 连接正常关闭');
+      }
+    }
   });
 
   return connection;

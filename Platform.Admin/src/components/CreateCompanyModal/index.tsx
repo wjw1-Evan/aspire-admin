@@ -60,7 +60,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
         }
       }}
       width={600}
-      destroyOnClose={true}
+      destroyOnHidden
     >
       <Form
         form={form}

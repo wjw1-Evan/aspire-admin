@@ -5,6 +5,7 @@ using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using TaskModel = Platform.ApiService.Models.WorkTask;
 using TaskStatusEnum = Platform.ApiService.Models.TaskStatus;
 
@@ -19,6 +20,7 @@ public class TaskService : ITaskService
     private readonly IDatabaseOperationFactory<TaskExecutionLog> _executionLogFactory;
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
+    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// 初始化 TaskService 实例
@@ -31,12 +33,14 @@ public class TaskService : ITaskService
         IDatabaseOperationFactory<TaskModel> taskFactory,
         IDatabaseOperationFactory<TaskExecutionLog> executionLogFactory,
         IUserService userService,
-        IUnifiedNotificationService notificationService)
+        IUnifiedNotificationService notificationService,
+        IServiceProvider serviceProvider)
     {
         _taskFactory = taskFactory;
         _executionLogFactory = executionLogFactory;
         _userService = userService;
         _notificationService = notificationService;
+        _serviceProvider = serviceProvider;
     }
 
     /// <summary>
@@ -64,6 +68,10 @@ public class TaskService : ITaskService
             Tags = request.Tags ?? new(),
             Remarks = request.Remarks,
             Status = string.IsNullOrEmpty(request.AssignedTo) ? TaskStatusEnum.Pending : TaskStatusEnum.Assigned,
+            ProjectId = request.ProjectId,
+            ParentTaskId = request.ParentTaskId,
+            SortOrder = request.SortOrder,
+            Duration = request.Duration,
         };
 
         if (!string.IsNullOrEmpty(request.AssignedTo))
@@ -292,6 +300,18 @@ public class TaskService : ITaskService
 
         if (request.Remarks != null)
             updateDefinition = updateDefinition.Set(t => t.Remarks, request.Remarks);
+
+        if (request.ProjectId != null)
+            updateDefinition = updateDefinition.Set(t => t.ProjectId, request.ProjectId);
+
+        if (request.ParentTaskId != null)
+            updateDefinition = updateDefinition.Set(t => t.ParentTaskId, request.ParentTaskId);
+
+        if (request.SortOrder.HasValue)
+            updateDefinition = updateDefinition.Set(t => t.SortOrder, request.SortOrder.Value);
+
+        if (request.Duration.HasValue)
+            updateDefinition = updateDefinition.Set(t => t.Duration, request.Duration.Value);
 
         var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, request.TaskId);
         var updatedTask = await _taskFactory.FindOneAndUpdateAsync(
@@ -852,7 +872,11 @@ public class TaskService : ITaskService
             ParticipantIds = task.ParticipantIds,
             Tags = task.Tags,
             UpdatedAt = task.UpdatedAt,
-            UpdatedBy = task.UpdatedBy
+            UpdatedBy = task.UpdatedBy,
+            ProjectId = task.ProjectId,
+            ParentTaskId = task.ParentTaskId,
+            SortOrder = task.SortOrder,
+            Duration = task.Duration
         };
 
         // 获取用户信息
@@ -981,6 +1005,407 @@ public class TaskService : ITaskService
         TaskExecutionResult.Failed => "失败",
         TaskExecutionResult.Timeout => "超时",
         TaskExecutionResult.Interrupted => "被中断",
+        _ => "未知"
+    };
+
+    /// <summary>
+    /// 获取项目下的所有任务（树形结构）
+    /// </summary>
+    public async System.Threading.Tasks.Task<List<TaskDto>> GetTasksByProjectIdAsync(string projectId)
+    {
+        var tasks = await _taskFactory.FindAsync(
+            _taskFactory.CreateFilterBuilder()
+                .Equal(t => t.ProjectId, projectId)
+                .Build());
+
+        var taskDtos = new List<TaskDto>();
+        foreach (var task in tasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt))
+        {
+            taskDtos.Add(await ConvertToTaskDtoAsync(task));
+        }
+
+        return BuildTaskTree(taskDtos);
+    }
+
+    /// <summary>
+    /// 获取任务树（支持按项目过滤）
+    /// </summary>
+    public async System.Threading.Tasks.Task<List<TaskDto>> GetTaskTreeAsync(string? projectId = null)
+    {
+        var filterBuilder = _taskFactory.CreateFilterBuilder();
+        if (!string.IsNullOrEmpty(projectId))
+        {
+            filterBuilder.Equal(t => t.ProjectId, projectId);
+        }
+
+        var tasks = await _taskFactory.FindAsync(filterBuilder.Build());
+        var taskDtos = new List<TaskDto>();
+        foreach (var task in tasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt))
+        {
+            taskDtos.Add(await ConvertToTaskDtoAsync(task));
+        }
+
+        return BuildTaskTree(taskDtos);
+    }
+
+    /// <summary>
+    /// 构建任务树
+    /// </summary>
+    private List<TaskDto> BuildTaskTree(List<TaskDto> allTasks)
+    {
+        var taskMap = allTasks.ToDictionary(t => t.Id!);
+        var rootTasks = new List<TaskDto>();
+
+        foreach (var task in allTasks)
+        {
+            if (string.IsNullOrEmpty(task.ParentTaskId))
+            {
+                // 根任务
+                rootTasks.Add(task);
+            }
+            else if (taskMap.ContainsKey(task.ParentTaskId))
+            {
+                // 子任务，添加到父任务的 Children 列表
+                taskMap[task.ParentTaskId].Children.Add(task);
+            }
+            else
+            {
+                // 父任务不存在，作为根任务处理
+                rootTasks.Add(task);
+            }
+        }
+
+        // 对每个节点的子任务进行排序
+        foreach (var task in allTasks)
+        {
+            task.Children = task.Children.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt).ToList();
+        }
+
+        return rootTasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt).ToList();
+    }
+
+    /// <summary>
+    /// 添加任务依赖
+    /// </summary>
+    public async System.Threading.Tasks.Task<string> AddTaskDependencyAsync(
+        string predecessorTaskId, 
+        string successorTaskId, 
+        int dependencyType, 
+        int lagDays, 
+        string userId, 
+        string companyId)
+    {
+        // 检查任务是否存在
+        var predecessor = await _taskFactory.GetByIdAsync(predecessorTaskId);
+        var successor = await _taskFactory.GetByIdAsync(successorTaskId);
+
+        if (predecessor == null)
+            throw new KeyNotFoundException($"前置任务 {predecessorTaskId} 不存在");
+        if (successor == null)
+            throw new KeyNotFoundException($"后续任务 {successorTaskId} 不存在");
+
+        // 检查循环依赖
+        if (await HasCircularDependencyAsync(predecessorTaskId, successorTaskId, companyId))
+            throw new InvalidOperationException("检测到循环依赖，无法添加");
+
+        var dependencyFactory = _serviceProvider
+            .GetRequiredService<IDatabaseOperationFactory<TaskDependency>>();
+
+        var dependency = new TaskDependency
+        {
+            PredecessorTaskId = predecessorTaskId,
+            SuccessorTaskId = successorTaskId,
+            DependencyType = (TaskDependencyType)dependencyType,
+            LagDays = lagDays,
+            CompanyId = companyId
+        };
+
+        await dependencyFactory.CreateAsync(dependency);
+        return dependency.Id;
+    }
+
+    /// <summary>
+    /// 检查是否存在循环依赖
+    /// </summary>
+    private async System.Threading.Tasks.Task<bool> HasCircularDependencyAsync(string startTaskId, string endTaskId, string companyId)
+    {
+        var dependencyFactory = _serviceProvider
+            .GetRequiredService<IDatabaseOperationFactory<TaskDependency>>();
+
+        var visited = new HashSet<string> { startTaskId };
+        var queue = new Queue<string>();
+        queue.Enqueue(startTaskId);
+
+        while (queue.Count > 0)
+        {
+            var currentTaskId = queue.Dequeue();
+            if (currentTaskId == endTaskId)
+                return true;
+
+            var dependencies = await dependencyFactory.FindAsync(
+                dependencyFactory.CreateFilterBuilder()
+                    .Equal(d => d.PredecessorTaskId, currentTaskId)
+                    .Build());
+
+            foreach (var dep in dependencies)
+            {
+                if (!visited.Contains(dep.SuccessorTaskId))
+                {
+                    visited.Add(dep.SuccessorTaskId);
+                    queue.Enqueue(dep.SuccessorTaskId);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 移除任务依赖
+    /// </summary>
+    public async System.Threading.Tasks.Task<bool> RemoveTaskDependencyAsync(string dependencyId, string userId)
+    {
+        var dependencyFactory = _serviceProvider
+            .GetRequiredService<IDatabaseOperationFactory<TaskDependency>>();
+
+        var dependency = await dependencyFactory.FindOneAndSoftDeleteAsync(
+            dependencyFactory.CreateFilterBuilder().Equal(d => d.Id, dependencyId).Build());
+
+        return dependency != null;
+    }
+
+    /// <summary>
+    /// 获取任务依赖关系
+    /// </summary>
+    public async System.Threading.Tasks.Task<List<TaskDependencyDto>> GetTaskDependenciesAsync(string taskId)
+    {
+        var dependencyFactory = _serviceProvider
+            .GetRequiredService<IDatabaseOperationFactory<TaskDependency>>();
+
+        var orFilter = Builders<TaskDependency>.Filter.Or(
+            Builders<TaskDependency>.Filter.Eq(d => d.PredecessorTaskId, taskId),
+            Builders<TaskDependency>.Filter.Eq(d => d.SuccessorTaskId, taskId)
+        );
+        
+        var filter = dependencyFactory.CreateFilterBuilder()
+            .Custom(orFilter)
+            .Build();
+            
+        var dependencies = await dependencyFactory.FindAsync(filter);
+
+        var dependencyDtos = new List<TaskDependencyDto>();
+        foreach (var dep in dependencies)
+        {
+            var predecessor = await _taskFactory.GetByIdAsync(dep.PredecessorTaskId);
+            var successor = await _taskFactory.GetByIdAsync(dep.SuccessorTaskId);
+
+            dependencyDtos.Add(new TaskDependencyDto
+            {
+                Id = dep.Id,
+                PredecessorTaskId = dep.PredecessorTaskId,
+                PredecessorTaskName = predecessor?.TaskName,
+                SuccessorTaskId = dep.SuccessorTaskId,
+                SuccessorTaskName = successor?.TaskName,
+                DependencyType = (int)dep.DependencyType,
+                DependencyTypeName = GetDependencyTypeName(dep.DependencyType),
+                LagDays = dep.LagDays
+            });
+        }
+
+        return dependencyDtos;
+    }
+
+    /// <summary>
+    /// 计算关键路径
+    /// </summary>
+    public async System.Threading.Tasks.Task<List<string>> CalculateCriticalPathAsync(string projectId)
+    {
+        // 获取项目下的所有任务
+        var tasks = await _taskFactory.FindAsync(
+            _taskFactory.CreateFilterBuilder()
+                .Equal(t => t.ProjectId, projectId)
+                .Build());
+
+        if (tasks.Count == 0)
+            return new List<string>();
+
+        var dependencyFactory = _serviceProvider
+            .GetRequiredService<IDatabaseOperationFactory<TaskDependency>>();
+
+        var dependencies = await dependencyFactory.FindAsync(
+            dependencyFactory.CreateFilterBuilder().Build());
+
+        // 构建任务图
+        var taskGraph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
+        var inDegree = tasks.ToDictionary(t => t.Id!, t => 0);
+
+        foreach (var dep in dependencies.Where(d => 
+            tasks.Any(t => t.Id == d.PredecessorTaskId || t.Id == d.SuccessorTaskId)))
+        {
+            if (taskGraph.ContainsKey(dep.PredecessorTaskId) && taskGraph.ContainsKey(dep.SuccessorTaskId))
+            {
+                taskGraph[dep.PredecessorTaskId].Add(dep.SuccessorTaskId);
+                inDegree[dep.SuccessorTaskId]++;
+            }
+        }
+
+        // 拓扑排序计算最早开始时间
+        var earliestStart = tasks.ToDictionary(t => t.Id!, t => 0);
+        var queue = new Queue<string>();
+
+        foreach (var task in tasks)
+        {
+            if (inDegree[task.Id!] == 0)
+                queue.Enqueue(task.Id!);
+        }
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!taskGraph.ContainsKey(current))
+                continue;
+                
+            foreach (var next in taskGraph[current])
+            {
+                if (!taskGraph.ContainsKey(next))
+                    continue;
+                    
+                var currentTask = tasks.FirstOrDefault(t => t.Id == current);
+                var nextTask = tasks.FirstOrDefault(t => t.Id == next);
+                
+                if (currentTask == null || nextTask == null)
+                    continue;
+                    
+                var duration = currentTask.Duration ?? 
+                    (currentTask.PlannedEndTime.HasValue && currentTask.PlannedStartTime.HasValue
+                        ? (int)(currentTask.PlannedEndTime.Value - currentTask.PlannedStartTime.Value).TotalDays
+                        : 1);
+
+                earliestStart[next] = Math.Max(earliestStart[next], earliestStart[current] + duration);
+                inDegree[next]--;
+
+                if (inDegree[next] == 0)
+                    queue.Enqueue(next);
+            }
+        }
+
+        // 计算最晚开始时间
+        var latestStart = tasks.ToDictionary(t => t.Id!, t => earliestStart.Values.Max());
+        var reverseGraph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
+
+        foreach (var dep in dependencies.Where(d => 
+            tasks.Any(t => t.Id == d.PredecessorTaskId || t.Id == d.SuccessorTaskId)))
+        {
+            if (reverseGraph.ContainsKey(dep.SuccessorTaskId) && reverseGraph.ContainsKey(dep.PredecessorTaskId))
+            {
+                reverseGraph[dep.SuccessorTaskId].Add(dep.PredecessorTaskId);
+            }
+        }
+
+        var endTasks = tasks.Where(t => taskGraph.ContainsKey(t.Id!) && taskGraph[t.Id!].Count == 0).ToList();
+        if (endTasks.Count > 0)
+        {
+            var maxEndTime = endTasks.Max(t => 
+            {
+                var taskDuration = t.Duration ?? 
+                    (t.PlannedEndTime.HasValue && t.PlannedStartTime.HasValue
+                        ? (int)(t.PlannedEndTime.Value - t.PlannedStartTime.Value).TotalDays
+                        : 1);
+                return earliestStart[t.Id!] + taskDuration;
+            });
+            foreach (var endTask in endTasks)
+            {
+                var endTaskDuration = endTask.Duration ?? 
+                    (endTask.PlannedEndTime.HasValue && endTask.PlannedStartTime.HasValue
+                        ? (int)(endTask.PlannedEndTime.Value - endTask.PlannedStartTime.Value).TotalDays
+                        : 1);
+                latestStart[endTask.Id!] = maxEndTime - endTaskDuration;
+            }
+
+            var visited = new HashSet<string>();
+            queue = new Queue<string>(endTasks.Select(t => t.Id!));
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (visited.Contains(current) || !reverseGraph.ContainsKey(current))
+                    continue;
+                visited.Add(current);
+                
+                foreach (var prev in reverseGraph[current])
+                {
+                    if (!taskGraph.ContainsKey(prev))
+                        continue;
+                        
+                    var prevTask = tasks.FirstOrDefault(t => t.Id == prev);
+                    if (prevTask == null)
+                        continue;
+                        
+                    var duration = prevTask.Duration ?? 
+                        (prevTask.PlannedEndTime.HasValue && prevTask.PlannedStartTime.HasValue
+                            ? (int)(prevTask.PlannedEndTime.Value - prevTask.PlannedStartTime.Value).TotalDays
+                            : 1);
+                    latestStart[prev] = Math.Min(latestStart[prev], latestStart[current] - duration);
+
+                    if (!visited.Contains(prev) && !queue.Contains(prev))
+                        queue.Enqueue(prev);
+                }
+            }
+        }
+
+        // 关键路径：总浮动时间为0的任务
+        var criticalPath = new List<string>();
+        foreach (var task in tasks)
+        {
+            var totalFloat = latestStart[task.Id!] - earliestStart[task.Id!];
+            if (totalFloat == 0)
+            {
+                criticalPath.Add(task.Id!);
+            }
+        }
+
+        return criticalPath;
+    }
+
+    /// <summary>
+    /// 更新任务进度（同时更新项目进度）
+    /// </summary>
+    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress, string userId)
+    {
+        var task = await _taskFactory.GetByIdAsync(taskId);
+        if (task == null)
+            throw new KeyNotFoundException($"任务 {taskId} 不存在");
+
+        var updateBuilder = _taskFactory.CreateUpdateBuilder()
+            .Set(t => t.CompletionPercentage, Math.Max(0, Math.Min(100, progress)));
+
+        var filter = _taskFactory.CreateFilterBuilder()
+            .Equal(t => t.Id, taskId)
+            .Build();
+
+        var updatedTask = await _taskFactory.FindOneAndUpdateAsync(
+            filter,
+            updateBuilder.Build(),
+            new FindOneAndUpdateOptions<TaskModel> { ReturnDocument = ReturnDocument.After });
+
+        if (updatedTask == null)
+            throw new KeyNotFoundException($"任务 {taskId} 不存在");
+
+        // 如果任务属于项目，更新项目进度
+        if (!string.IsNullOrEmpty(updatedTask.ProjectId))
+        {
+            var projectService = _serviceProvider.GetRequiredService<IProjectService>();
+            await projectService.CalculateProjectProgressAsync(updatedTask.ProjectId);
+        }
+
+        return await ConvertToTaskDtoAsync(updatedTask);
+    }
+
+    private static string GetDependencyTypeName(TaskDependencyType type) => type switch
+    {
+        TaskDependencyType.FinishToStart => "完成到开始",
+        TaskDependencyType.StartToStart => "开始到开始",
+        TaskDependencyType.FinishToFinish => "完成到完成",
+        TaskDependencyType.StartToFinish => "开始到完成",
         _ => "未知"
     };
 }

@@ -3,6 +3,8 @@ import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import type { LayoutSettings } from '@/types/layout';
 import { history, request as requestClient } from '@umijs/max';
 import React, { useEffect, useRef } from 'react';
+import { App } from 'antd';
+import { setAppInstance } from '@/utils/antdAppInstance';
 import {
   AvatarDropdown,
   AvatarName,
@@ -163,6 +165,8 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
       // 生成 locale 键：根据菜单路径和名称生成，例如：
       // /system/user-management -> menu.system.user-management
       // /welcome -> menu.welcome
+      // /project-management/task -> menu.project-management.task
+      // /project-management/project -> menu.project-management.project
       let localeKey = '';
       if (menu.path.startsWith('/system/')) {
         // 系统管理子菜单
@@ -171,6 +175,10 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
         // IoT 平台子菜单：从菜单名称中提取子菜单名称（去掉 iot-platform- 前缀）
         const shortName = menu.name.replace(/^iot-platform-/, '');
         localeKey = `menu.iot-platform.${shortName}`;
+      } else if (menu.path.startsWith('/project-management/') || menu.name.startsWith('project-management-')) {
+        // 项目管理子菜单：根据路径或菜单名称判断
+        const shortName = menu.name.replace(/^project-management-/, '');
+        localeKey = `menu.project-management.${shortName}`;
       } else if (menu.path === '/welcome') {
         localeKey = 'menu.welcome';
       } else if (menu.path.startsWith('/company/')) {
@@ -272,12 +280,13 @@ export const layout: RunTimeLayoutConfig = ({
       ) {
         // 顶部菜单显示顺序统一为：
         // 1. 工作台（/welcome）
-        // 2. 任务管理（/task-management）
+        // 2. 项目管理（/project-management）
         // 3. 用户管理（/system/user-management 或 /user-management）
         // 4. IoT 平台（/iot-platform）
         // 5. 系统设置（/system 开头的其他菜单）
         const desiredOrder = [
           '/welcome',
+          '/project-management',
           '/task-management',
           '/user-management',
           '/iot-platform',
@@ -290,6 +299,10 @@ export const layout: RunTimeLayoutConfig = ({
             if (prefix === '/system') {
               // 系统设置：匹配 /system 或 /system/*
               return menu.path === '/system' || menu.path.startsWith('/system/');
+            }
+            if (prefix === '/project-management') {
+              // 项目管理：匹配 /project-management 或 /project-management/*
+              return menu.path === '/project-management' || menu.path.startsWith('/project-management/');
             }
             // 其他：精确匹配或子路径匹配
             return (
@@ -368,16 +381,32 @@ export const layout: RunTimeLayoutConfig = ({
         return null;
       };
 
+      // 使用 App 组件包裹，以支持动态主题
+      const AppWrapper = () => {
+        const app = App.useApp();
+        
+        // 设置全局实例，供 errorInterceptor 等非组件代码使用
+        useEffect(() => {
+          setAppInstance(app);
+        }, [app]);
+
+        return (
+          <>
+            {children}
+            {/* SettingDrawer 已移除，因为 @ant-design/pro-components 与 antd 6 不兼容 */}
+            {/* 如需主题切换功能，可以使用 antd 的 ConfigProvider 和自定义主题切换组件 */}
+            {/* AI 助手组件 - 仅在用户登录后显示 */}
+            {initialState?.currentUser && <AiAssistant />}
+            {/* 位置上报组件 - 仅在用户登录后启动 */}
+            {initialState?.currentUser && <LocationReporter />}
+          </>
+        );
+      };
+
       return (
-        <>
-          {children}
-          {/* SettingDrawer 已移除，因为 @ant-design/pro-components 与 antd 6 不兼容 */}
-          {/* 如需主题切换功能，可以使用 antd 的 ConfigProvider 和自定义主题切换组件 */}
-          {/* AI 助手组件 - 仅在用户登录后显示 */}
-          {initialState?.currentUser && <AiAssistant />}
-          {/* 位置上报组件 - 仅在用户登录后启动 */}
-          {initialState?.currentUser && <LocationReporter />}
-        </>
+        <App>
+          <AppWrapper />
+        </App>
       );
     },
     ...initialState?.settings,

@@ -729,7 +729,7 @@ const UserCenter: React.FC = () => {
                     </Space>
                   }
                   description={
-                    <Space direction="vertical" size="small">
+                    <Space orientation="vertical" size="small">
                       <Text type="secondary">
                         {formatDateTime(item.createdAt)}
                       </Text>

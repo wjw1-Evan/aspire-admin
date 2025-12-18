@@ -284,7 +284,7 @@ public class DataInitializerService : IDataInitializerService
             Name = "user-management",
             Title = "用户管理",
             Path = "/system/user-management",
-            Component = "./System/UserManagement",
+            Component = "./user-management",
             Icon = "user",
             ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
             SortOrder = 1,
@@ -300,7 +300,7 @@ public class DataInitializerService : IDataInitializerService
             Name = "role-management",
             Title = "角色管理",
             Path = "/system/role-management",
-            Component = "./System/RoleManagement",
+            Component = "./role-management",
             Icon = "team",
             ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
             SortOrder = 2,
@@ -316,7 +316,7 @@ public class DataInitializerService : IDataInitializerService
             Name = "company-management",
             Title = "企业管理",
             Path = "/system/company-management",
-            Component = "./System/CompanyManagement",
+            Component = "./company/settings",
             Icon = "bank",
             ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
             SortOrder = 3,
@@ -332,7 +332,7 @@ public class DataInitializerService : IDataInitializerService
             Name = "my-activity",
             Title = "我的活动",
             Path = "/system/my-activity",
-            Component = "./System/MyActivity",
+            Component = "./my-activity",
             Icon = "history",
             ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
             SortOrder = 4,
@@ -345,20 +345,55 @@ public class DataInitializerService : IDataInitializerService
         
         // ⭐ 在此处添加新菜单，系统会自动同步到数据库
         
+        // 项目管理父菜单
         menus.Add(new Menu
         {
-            Name = "task-management",
+            Name = "project-management",
+            Title = "项目管理",
+            Path = "/project-management",
+            Icon = "project",
+            SortOrder = 3,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+        // 项目管理子菜单：任务管理
+        menus.Add(new Menu
+        {
+            Name = "project-management-task",
             Title = "任务管理",
             Path = "/task-management",
-            Component = "./TaskManagement",
+            Component = "./task-management",
             Icon = "schedule",
-            SortOrder = 3,
+            ParentId = "project-management",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
             Permissions = new List<string> { "task:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
+        
+        // 项目管理子菜单：项目列表
+        menus.Add(new Menu
+        {
+            Name = "project-management-project",
+            Title = "项目列表",
+            Path = "/project-management/project",
+            Component = "./project-management",
+            Icon = "project",
+            ParentId = "project-management",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "project:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
+       
 
         menus.Add(new Menu
         {
@@ -472,6 +507,9 @@ public class DataInitializerService : IDataInitializerService
             "role-management" => "system",
             "company-management" => "system",
             "my-activity" => "system",
+            // 项目管理子菜单
+            "project-management-task" => "project-management",
+            "project-management-project" => "project-management",
             // IoT 平台子菜单
             "iot-platform-gateway" => "iot-platform",
             "iot-platform-device" => "iot-platform",

@@ -1,0 +1,136 @@
+import React, { useState } from 'react';
+import { Table, Button, Space, Modal, message, Tag } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import {
+  addProjectMember,
+  removeProjectMember,
+  type ProjectMemberDto,
+  type AddProjectMemberRequest,
+} from '@/services/task/project';
+import { getAllUsers } from '@/services/user/api';
+import type { AppUser } from '@/services/user/api';
+import ProjectMemberForm from './ProjectMemberForm';
+
+interface ProjectMemberManagementProps {
+  projectId: string;
+  members: ProjectMemberDto[];
+  onRefresh: () => void;
+}
+
+const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
+  projectId,
+  members,
+  onRefresh,
+}) => {
+  const [formVisible, setFormVisible] = useState(false);
+  const [users, setUsers] = useState<AppUser[]>([]);
+
+  React.useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const response = await getAllUsers();
+      if (response.success && response.data) {
+        setUsers(response.data.users || []);
+      }
+    } catch (error) {
+      console.error('获取用户列表失败:', error);
+    }
+  };
+
+  const handleDelete = async (userId: string) => {
+    Modal.confirm({
+      title: '确认移除成员',
+      content: '确定要移除该成员吗？',
+      okText: '移除',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await removeProjectMember(projectId, userId);
+          message.success('移除成功');
+          onRefresh();
+        } catch (error) {
+          console.error('移除成员失败:', error);
+        }
+      },
+    });
+  };
+
+  const columns = [
+    {
+      title: '用户名',
+      dataIndex: 'userName',
+      key: 'userName',
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'userEmail',
+      key: 'userEmail',
+    },
+    {
+      title: '角色',
+      dataIndex: 'roleName',
+      key: 'roleName',
+      render: (text: string) => <Tag>{text}</Tag>,
+    },
+    {
+      title: '资源分配',
+      dataIndex: 'allocation',
+      key: 'allocation',
+      render: (allocation: number) => `${allocation}%`,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_: any, record: ProjectMemberDto) => (
+        <Button
+          type="link"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleDelete(record.userId)}
+        >
+          移除
+        </Button>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 16 }}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setFormVisible(true)}
+        >
+          添加成员
+        </Button>
+      </Space>
+
+      <Table
+        columns={columns}
+        dataSource={members}
+        rowKey="id"
+        pagination={false}
+      />
+
+      {formVisible && (
+        <ProjectMemberForm
+          projectId={projectId}
+          existingMembers={members}
+          availableUsers={users}
+          onSuccess={() => {
+            setFormVisible(false);
+            onRefresh();
+          }}
+          onCancel={() => setFormVisible(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default ProjectMemberManagement;

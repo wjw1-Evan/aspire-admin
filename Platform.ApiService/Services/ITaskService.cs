@@ -144,5 +144,62 @@ public interface ITaskService
     /// <param name="userId">当前用户ID</param>
     /// <returns>更新的任务数量</returns>
     Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status, string userId);
+
+    /// <summary>
+    /// 获取项目下的所有任务（树形结构）
+    /// </summary>
+    /// <param name="projectId">项目ID</param>
+    /// <returns>任务树列表</returns>
+    Task<List<TaskDto>> GetTasksByProjectIdAsync(string projectId);
+
+    /// <summary>
+    /// 获取任务树（支持按项目过滤）
+    /// </summary>
+    /// <param name="projectId">项目ID（可选）</param>
+    /// <returns>任务树列表</returns>
+    Task<List<TaskDto>> GetTaskTreeAsync(string? projectId = null);
+
+    /// <summary>
+    /// 添加任务依赖
+    /// </summary>
+    /// <param name="predecessorTaskId">前置任务ID</param>
+    /// <param name="successorTaskId">后续任务ID</param>
+    /// <param name="dependencyType">依赖类型</param>
+    /// <param name="lagDays">延迟天数</param>
+    /// <param name="userId">当前用户ID</param>
+    /// <param name="companyId">企业ID</param>
+    /// <returns>任务依赖ID</returns>
+    Task<string> AddTaskDependencyAsync(string predecessorTaskId, string successorTaskId, int dependencyType, int lagDays, string userId, string companyId);
+
+    /// <summary>
+    /// 移除任务依赖
+    /// </summary>
+    /// <param name="dependencyId">依赖ID</param>
+    /// <param name="userId">当前用户ID</param>
+    /// <returns>是否移除成功</returns>
+    Task<bool> RemoveTaskDependencyAsync(string dependencyId, string userId);
+
+    /// <summary>
+    /// 获取任务依赖关系
+    /// </summary>
+    /// <param name="taskId">任务ID</param>
+    /// <returns>依赖关系列表</returns>
+    Task<List<TaskDependencyDto>> GetTaskDependenciesAsync(string taskId);
+
+    /// <summary>
+    /// 计算关键路径
+    /// </summary>
+    /// <param name="projectId">项目ID</param>
+    /// <returns>关键路径任务ID列表</returns>
+    Task<List<string>> CalculateCriticalPathAsync(string projectId);
+
+    /// <summary>
+    /// 更新任务进度（同时更新项目进度）
+    /// </summary>
+    /// <param name="taskId">任务ID</param>
+    /// <param name="progress">进度百分比</param>
+    /// <param name="userId">当前用户ID</param>
+    /// <returns>更新后的任务</returns>
+    Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress, string userId);
 }
 

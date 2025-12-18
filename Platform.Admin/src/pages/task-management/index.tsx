@@ -259,6 +259,39 @@ const TaskManagement: React.FC = () => {
     fetchStatistics();
   };
 
+  // 处理搜索
+  const handleSearch = (values: any) => {
+    const newSearchParams = {
+      ...searchParams,
+      page: 1,
+      search: values.search,
+      status: values.status,
+      priority: values.priority,
+      assignedTo: values.assignedTo,
+      taskType: values.taskType,
+    };
+    setSearchParams(newSearchParams);
+    actionRef.current?.reload();
+  };
+
+  // 重置搜索
+  const handleReset = () => {
+    searchForm.resetFields();
+    const resetParams = {
+      page: 1,
+      pageSize: 10,
+      sortBy: 'CreatedAt',
+      sortOrder: 'desc',
+      search: undefined as string | undefined,
+      status: undefined as number | undefined,
+      priority: undefined as number | undefined,
+      assignedTo: undefined as string | undefined,
+      taskType: undefined as string | undefined,
+    };
+    setSearchParams(resetParams);
+    actionRef.current?.reload();
+  };
+
   // 获取状态标签颜色
   const getStatusColor = (status: number) => {
     switch (status) {
@@ -522,6 +555,34 @@ const TaskManagement: React.FC = () => {
         </Card>
       )}
 
+      {/* 搜索表单 */}
+      <Card style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout="inline"
+          onFinish={handleSearch}
+        >
+          <Form.Item name="search" label={intl.formatMessage({ id: 'pages.taskManagement.search.label' })}>
+            <Input placeholder={intl.formatMessage({ id: 'pages.taskManagement.search.placeholder' })} style={{ width: 200 }} />
+          </Form.Item>
+          <Form.Item name="status" label={intl.formatMessage({ id: 'pages.taskManagement.filter.status.label' })}>
+            <Select placeholder={intl.formatMessage({ id: 'pages.taskManagement.filter.status.all' })} style={{ width: 120 }} allowClear>
+              <Select.Option value={TaskStatus.Pending}>{intl.formatMessage({ id: 'pages.taskManagement.status.pending' })}</Select.Option>
+              <Select.Option value={TaskStatus.Assigned}>{intl.formatMessage({ id: 'pages.taskManagement.status.assigned' })}</Select.Option>
+              <Select.Option value={TaskStatus.InProgress}>{intl.formatMessage({ id: 'pages.taskManagement.status.inProgress' })}</Select.Option>
+              <Select.Option value={TaskStatus.Completed}>{intl.formatMessage({ id: 'pages.taskManagement.status.completed' })}</Select.Option>
+              <Select.Option value={TaskStatus.Cancelled}>{intl.formatMessage({ id: 'pages.taskManagement.status.cancelled' })}</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">{intl.formatMessage({ id: 'pages.button.query' })}</Button>
+              <Button onClick={handleReset}>{intl.formatMessage({ id: 'pages.button.reset' })}</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
       {/* 任务列表表格 */}
       <div ref={tableRef}>
         <DataTable<TaskDto>
@@ -531,16 +592,7 @@ const TaskManagement: React.FC = () => {
             return fetchTasks(params, sort);
           }}
           rowKey="id"
-          search={{
-            labelWidth: 'auto',
-            span: 6,
-          }}
-          form={{
-            initialValues: {
-              status: undefined,
-              priority: undefined,
-            },
-          }}
+          search={false}
           pagination={{
             pageSize: 10,
             pageSizeOptions: [10, 20, 50, 100],

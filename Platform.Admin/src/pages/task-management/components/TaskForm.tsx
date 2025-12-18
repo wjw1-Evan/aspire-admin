@@ -16,21 +16,36 @@ import dayjs from 'dayjs';
 import { createTask, updateTask, TaskPriority, type TaskDto } from '@/services/task/api';
 import { getUserList } from '@/services/user/api';
 import type { AppUser } from '@/services/user/api';
+import { getProjectList, type ProjectDto } from '@/services/task/project';
+import { getTaskTree } from '@/services/task/api';
 
 interface TaskFormProps {
-  visible: boolean;
+  visible?: boolean;
   task?: TaskDto | null;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose?: () => void;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  projectId?: string;
+  parentTaskId?: string;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ 
+  visible = false, 
+  task, 
+  onClose, 
+  onSuccess,
+  onCancel,
+  projectId,
+  parentTaskId,
+}) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
   const [users, setUsers] = React.useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = React.useState(false);
+  const [projects, setProjects] = React.useState<ProjectDto[]>([]);
+  const [tasks, setTasks] = React.useState<TaskDto[]>([]);
 
-  // 加载用户列表
+  // 加载用户列表和项目/任务列表
   useEffect(() => {
     if (visible) {
       loadUsers();
@@ -54,6 +69,38 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }
     }
   };
 
+  const loadProjects = async () => {
+    try {
+      const response = await getProjectList({ page: 1, pageSize: 100 });
+      if (response.success && response.data) {
+        setProjects(response.data.projects);
+      }
+    } catch (error) {
+      console.error('加载项目列表失败:', error);
+    }
+  };
+
+  const loadTasks = async (projId?: string) => {
+    try {
+      const response = await getTaskTree(projId);
+      if (response.success && response.data) {
+        setTasks(response.data);
+      }
+    } catch (error) {
+      console.error('加载任务列表失败:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (visible) {
+      loadProjects();
+      const currentProjectId = form.getFieldValue('projectId') || projectId;
+      if (currentProjectId) {
+        loadTasks(currentProjectId);
+      }
+    }
+  }, [visible, projectId]);
+
   // 当编辑任务时，填充表单
   useEffect(() => {
     if (visible && task) {
@@ -75,9 +122,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }
         participantIds: task.participantIds,
         tags: task.tags,
         remarks: task.remarks,
+        projectId: task.projectId,
+        parentTaskId: task.parentTaskId,
       });
     } else if (visible) {
       form.resetFields();
+      if (projectId) {
+        form.setFieldsValue({ projectId });
+      }
+      if (parentTaskId) {
+        form.setFieldsValue({ parentTaskId });
+      }
     }
   }, [visible, task, form]);
 
@@ -96,7 +151,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }
         ])
       );
 
-      const data = {
+      const data: any = {
         taskName: values.taskName,
         description: values.description,
         taskType: values.taskType,
@@ -109,6 +164,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }
         tags: values.tags,
         remarks: values.remarks,
       };
+
+      // 添加项目和父任务字段（如果存在）
+      if (values.projectId || projectId) {
+        data.projectId = values.projectId || projectId;
+      }
+      if (values.parentTaskId || parentTaskId) {
+        data.parentTaskId = values.parentTaskId || parentTaskId;
+      }
+      if (values.sortOrder !== undefined) {
+        data.sortOrder = values.sortOrder;
+      }
+      if (values.duration !== undefined) {
+        data.duration = values.duration;
+      }
 
       if (task?.id) {
         // 更新任务
@@ -123,7 +192,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }
         message.success('任务已创建');
       }
 
-      onSuccess();
+      onSuccess?.();
     } catch (error) {
       console.error('提交表单错误:', error);
       message.error(task?.id ? '更新任务失败' : '创建任务失败');
@@ -132,11 +201,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }
     }
   };
 
+  // 如果不可见，不渲染任何内容
+  if (!visible) {
+    return null;
+  }
+
   return (
     <Modal
       title={task?.id ? '编辑任务' : '创建任务'}
       open={visible}
-      onCancel={onClose}
+      onCancel={onClose || onCancel}
       onOk={() => form.submit()}
       width={800}
       confirmLoading={loading}
@@ -147,7 +221,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }
           layout="vertical"
           onFinish={handleSubmit}
         >
-          <Row gutter={16}>
+          {renderFormContent()}
+        </Form>
+      </Spin>
+    </Modal>
+  );
+
+  function renderFormContent() {
+    return (
+      <>
+        <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <Form.Item
                 label="任务名称"
@@ -305,10 +388,50 @@ const TaskForm: React.FC<TaskFormProps> = ({ visible, task, onClose, onSuccess }
               rows={2}
             />
           </Form.Item>
-        </Form>
-      </Spin>
-    </Modal>
-  );
+
+          <Form.Item
+            label="所属项目"
+            name="projectId"
+            initialValue={projectId}
+          >
+            <Select
+              placeholder="请选择项目（可选）"
+              allowClear
+              onChange={(value) => {
+                if (value) {
+                  loadTasks(value);
+                } else {
+                  setTasks([]);
+                }
+                form.setFieldsValue({ parentTaskId: undefined });
+              }}
+              options={projects.map((p) => ({
+                label: p.name,
+                value: p.id,
+              }))}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="父任务"
+            name="parentTaskId"
+            initialValue={parentTaskId}
+          >
+            <Select
+              placeholder="请选择父任务（可选）"
+              allowClear
+              disabled={!form.getFieldValue('projectId') && !projectId}
+              options={tasks
+                .filter((t) => t.id !== task?.id)
+                .map((t) => ({
+                  label: t.taskName,
+                  value: t.id,
+                }))}
+            />
+          </Form.Item>
+        </>
+    );
+  }
 };
 
 export default TaskForm;

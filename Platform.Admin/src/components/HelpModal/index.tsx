@@ -1027,7 +1027,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
 
           <Title level={5}>{intl.formatMessage({ id: 'pages.help.tech.contact.title' })}</Title>
           <Paragraph>
-            <Space direction="vertical">
+            <Space orientation="vertical">
               <Text>📧 邮箱: support@example.com</Text>
               <Text>💬 在线客服: 工作日 9:00-18:00</Text>
               <Text>📞 电话: 400-XXX-XXXX</Text>

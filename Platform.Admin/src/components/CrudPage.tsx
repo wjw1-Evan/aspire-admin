@@ -179,7 +179,7 @@ function CrudPage<T extends Record<string, any>>({
           title="新增"
           open={createVisible}
           onClose={() => setCreateVisible(false)}
-          width={600}
+          size={600}
           destroyOnHidden
         >
           <CreateForm
@@ -198,7 +198,7 @@ function CrudPage<T extends Record<string, any>>({
             setEditVisible(false);
             setCurrentItem(null);
           }}
-          width={600}
+          size={600}
           destroyOnHidden
         >
           <EditForm

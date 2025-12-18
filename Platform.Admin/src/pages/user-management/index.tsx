@@ -824,7 +824,7 @@ const UserManagement: React.FC = () => {
         title={intl.formatMessage({ id: 'pages.userDetail.title' })}
         open={detailVisible}
         onClose={() => setDetailVisible(false)}
-        width={600}
+        size={600}
       >
         {viewingUser && (
           <UserDetail

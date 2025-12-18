@@ -107,6 +107,11 @@ export default [
     hideInMenu: true,
   },
   {
+    path: '/project-management/project',
+    component: './project-management',
+    hideInMenu: true,
+  },
+  {
     path: '/iot-platform',
     component: './iot-platform',
     hideInMenu: true,

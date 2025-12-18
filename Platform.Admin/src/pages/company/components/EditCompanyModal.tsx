@@ -57,7 +57,7 @@ export default function EditCompanyModal({
       onOk={handleSubmit}
       onCancel={onCancel}
       width={600}
-      destroyOnClose={true}
+      destroyOnHidden
     >
       <Form
         form={form}

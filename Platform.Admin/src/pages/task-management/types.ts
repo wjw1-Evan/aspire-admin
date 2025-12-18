@@ -16,6 +16,7 @@ export interface TaskListRequest {
   StartDate?: string;
   EndDate?: string;
   Tags?: string[];
+  ProjectId?: string;
 }
 
 export interface TaskStatisticsResponse {
@@ -28,5 +29,45 @@ export interface TaskStatisticsResponse {
   completionRate: number;
   tasksByPriority: Record<string, number>;
   tasksByStatus: Record<string, number>;
+}
+
+/**
+ * 项目相关类型（从 services/task/project.ts 导入）
+ */
+export type {
+  ProjectDto,
+  ProjectQueryRequest,
+  ProjectListResponse,
+  CreateProjectRequest,
+  UpdateProjectRequest,
+  ProjectStatistics,
+  ProjectMemberDto,
+  AddProjectMemberRequest,
+  ProjectStatus,
+  ProjectPriority,
+} from '@/services/task/project';
+
+/**
+ * 任务依赖类型
+ */
+export type {
+  TaskDependencyDto,
+  AddTaskDependencyRequest,
+} from '@/services/task/api';
+
+/**
+ * 甘特图任务类型
+ */
+export interface GanttTask {
+  id: string;
+  name: string;
+  start: Date;
+  end: Date;
+  progress: number;
+  type: 'task' | 'milestone';
+  dependencies?: string[];
+  isCritical?: boolean;
+  projectId?: string;
+  parentTaskId?: string;
 }
 

@@ -236,7 +236,7 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
       placement="right"
       onClose={onClose}
       open={visible}
-      width={500}
+      size={500}
       styles={{ body: { padding: 8, background: '#fafafa' } }}
     >
       <Spin spinning={loading}>

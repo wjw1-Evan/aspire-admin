@@ -1,12 +1,10 @@
 import React from 'react';
-import { Space, Dropdown, Button } from 'antd';
-import type { MenuProps } from 'antd';
+import { Space, Button } from 'antd';
 import {
+  EyeOutlined,
   EditOutlined,
   DeleteOutlined,
   KeyOutlined,
-  EyeOutlined,
-  MoreOutlined,
 } from '@ant-design/icons';
 import PermissionControl from '@/components/PermissionControl';
 import type { AppUser } from '../types';
@@ -36,23 +34,18 @@ const UserTableActions: React.FC<UserTableActionsProps> = ({
   onPermission,
   onViewDetail,
 }) => {
-  const menuItems: MenuProps['items'] = [
-    {
-      key: 'detail',
-      label: '查看详情',
-      icon: <EyeOutlined />,
-      onClick: () => onViewDetail(record),
-    },
-    {
-      key: 'permission',
-      label: '配置权限',
-      icon: <KeyOutlined />,
-      onClick: () => onPermission(record),
-    },
-  ];
-
   return (
     <Space size="small">
+      <PermissionControl resource="user" action="read">
+        <Button
+          type="link"
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => onViewDetail(record)}
+        >
+          查看
+        </Button>
+      </PermissionControl>
       <PermissionControl resource="user" action="update">
         <Button
           type="link"
@@ -63,7 +56,6 @@ const UserTableActions: React.FC<UserTableActionsProps> = ({
           编辑
         </Button>
       </PermissionControl>
-
       <PermissionControl resource="user" action="delete">
         <Button
           type="link"
@@ -75,10 +67,16 @@ const UserTableActions: React.FC<UserTableActionsProps> = ({
           删除
         </Button>
       </PermissionControl>
-
-      <Dropdown menu={{ items: menuItems }} placement="bottomRight">
-        <Button type="link" size="small" icon={<MoreOutlined />} />
-      </Dropdown>
+      <PermissionControl resource="user" action="update">
+        <Button
+          type="link"
+          size="small"
+          icon={<KeyOutlined />}
+          onClick={() => onPermission(record)}
+        >
+          权限
+        </Button>
+      </PermissionControl>
     </Space>
   );
 };

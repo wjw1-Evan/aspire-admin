@@ -23,7 +23,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
   ReloadOutlined,
   ProjectOutlined,
 } from '@ant-design/icons';
@@ -225,7 +224,15 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       render: (text, record) => (
         <Space>
           <ProjectOutlined />
-          {text}
+          <a
+            onClick={() => {
+              setViewingProject(record);
+              setDetailVisible(true);
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            {text}
+          </a>
         </Space>
       ),
     },
@@ -306,17 +313,6 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       width: 150,
       render: (_, record) => (
         <Space size="small">
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => {
-              setViewingProject(record);
-              setDetailVisible(true);
-            }}
-          >
-            {intl.formatMessage({ id: 'pages.table.view' })}
-          </Button>
           <Button
             type="link"
             size="small"

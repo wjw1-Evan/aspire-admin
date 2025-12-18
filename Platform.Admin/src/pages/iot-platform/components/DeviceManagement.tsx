@@ -16,12 +16,15 @@ import {
   Card,
   Row,
   Col,
+  Descriptions,
+  Spin,
+  Empty,
 } from 'antd';
+import dayjs from 'dayjs';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
   ReloadOutlined,
   DesktopOutlined,
   CheckCircleOutlined,
@@ -224,6 +227,14 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       dataIndex: 'title',
       key: 'title',
       width: 150,
+      render: (text, record) => (
+        <a
+          onClick={() => handleView(record)}
+          style={{ cursor: 'pointer' }}
+        >
+          {text}
+        </a>
+      ),
     },
     {
       title: '所属网关',
@@ -258,17 +269,13 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       render: (_: any, record: IoTDevice) => (
         <Space size="small">
           <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleView(record)}
-          />
-          <Button
-            type="text"
+            type="link"
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
-          />
+          >
+            编辑
+          </Button>
           <Popconfirm
             title="删除设备"
             description="确定要删除此设备吗？"
@@ -276,7 +283,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
             okText="确定"
             cancelText="取消"
           >
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
           </Popconfirm>
         </Space>
       ),
@@ -393,50 +402,77 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        size={400}
+        size={800}
       >
-        {selectedDevice && (
-          <div>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>设备名称</div>
-              <div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDevice.title}</div>
-            </div>
+        <Spin spinning={false}>
+          {selectedDevice ? (
+            <>
+              {/* 基本信息 */}
+              <Card title="基本信息" style={{ marginBottom: 16 }}>
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="设备名称" span={2}>
+                    {selectedDevice.title}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="设备ID">
+                    {selectedDevice.deviceId}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="状态">
+                    {getStatusTag(selectedDevice)}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="所属网关">
+                    {(() => {
+                      const gateway = safeGateways.find((g) => g.gatewayId === selectedDevice.gatewayId);
+                      return gateway?.title || selectedDevice.gatewayId || '-';
+                    })()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="启用状态">
+                    <Tag color={selectedDevice.isEnabled ? 'green' : 'red'}>
+                      {selectedDevice.isEnabled ? '是' : '否'}
+                    </Tag>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
 
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>设备ID</div>
-              <div style={{ fontSize: 14 }}>{selectedDevice.deviceId}</div>
-            </div>
+              {/* 统计信息 */}
+              {statistics && (
+                <Card title="数据点统计" style={{ marginBottom: 16 }}>
+                  <Descriptions column={2} size="small">
+                    <Descriptions.Item label="总数">
+                      {statistics.totalDataPoints}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="已启用">
+                      {statistics.enabledDataPoints}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="数据记录">
+                      {statistics.totalDataRecords}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="未处理告警">
+                      <Tag color={statistics.unhandledAlarms > 0 ? 'red' : 'green'}>
+                        {statistics.unhandledAlarms}
+                      </Tag>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              )}
 
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>状态</div>
-              <div>{getStatusTag(selectedDevice)}</div>
-            </div>
-
-            {statistics && (
-              <>
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ color: '#666', marginBottom: 4 }}>数据点统计</div>
-                  <div>
-                    <div>总数: {statistics.totalDataPoints}</div>
-                    <div>启用: {statistics.enabledDataPoints}</div>
-                    <div>数据记录: {statistics.totalDataRecords}</div>
-                    <div>未处理告警: {statistics.unhandledAlarms}</div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>最后上报时间</div>
-              <div>{selectedDevice.lastReportedAt ? new Date(selectedDevice.lastReportedAt).toLocaleString() : '-'}</div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>创建时间</div>
-              <div>{new Date(selectedDevice.createdAt).toLocaleString()}</div>
-            </div>
-          </div>
-        )}
+              {/* 时间信息 */}
+              <Card title="时间信息" style={{ marginBottom: 16 }}>
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="最后上报时间">
+                    {selectedDevice.lastReportedAt
+                      ? dayjs(selectedDevice.lastReportedAt).format('YYYY-MM-DD HH:mm:ss')
+                      : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="创建时间">
+                    {dayjs(selectedDevice.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            </>
+          ) : (
+            <Empty description="未加载设备信息" />
+          )}
+        </Spin>
       </Drawer>
     </>
   );

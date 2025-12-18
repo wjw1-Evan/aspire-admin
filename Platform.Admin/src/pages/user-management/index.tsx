@@ -18,10 +18,8 @@ import {
   Form,
   Input,
   Card,
-  Dropdown,
   DatePicker,
 } from 'antd';
-import type { MenuProps } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -29,9 +27,7 @@ import {
   UserOutlined,
   TeamOutlined,
   CheckCircleOutlined,
-  EyeOutlined,
   ReloadOutlined,
-  MoreOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
@@ -476,10 +472,18 @@ const UserManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.username' }),
       dataIndex: 'username',
       key: 'username',
-      render: (text, _record) => (
+      render: (text, record) => (
         <Space>
           <UserOutlined />
-          {text}
+          <a
+            onClick={() => {
+              setViewingUser(record);
+              setDetailVisible(true);
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            {text}
+          </a>
         </Space>
       ),
     },
@@ -543,54 +547,10 @@ const UserManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.actions' }),
       key: 'action',
       fixed: 'right',
+      width: 150,
       render: (_, record) => {
-        const items: MenuProps['items'] = [
-          {
-            key: 'view',
-            icon: <EyeOutlined />,
-            label: intl.formatMessage({ id: 'pages.table.viewDetail' }),
-            onClick: () => {
-              setViewingUser(record);
-              setDetailVisible(true);
-            },
-          },
-          {
-            key: 'edit',
-            icon: <EditOutlined />,
-            label: intl.formatMessage({ id: 'pages.table.edit' }),
-            onClick: () => {
-              setEditingUser(record);
-              setFormVisible(true);
-            },
-          },
-          {
-            type: 'divider',
-          },
-          {
-            key: 'delete',
-            icon: <DeleteOutlined />,
-            label: intl.formatMessage({ id: 'pages.table.delete' }),
-            danger: true,
-            onClick: () => {
-              record.id && handleDelete(record.id);
-            },
-          },
-        ];
-
         return (
           <Space size="small">
-            <Button
-              type="link"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => {
-                setViewingUser(record);
-                setDetailVisible(true);
-              }}
-              aria-label={intl.formatMessage({ id: 'pages.table.viewDetail' })}
-            >
-              {intl.formatMessage({ id: 'pages.table.view' })}
-            </Button>
             <Button
               type="link"
               size="small"
@@ -603,11 +563,17 @@ const UserManagement: React.FC = () => {
             >
               {intl.formatMessage({ id: 'pages.table.edit' })}
             </Button>
-            <Dropdown menu={{ items: items.slice(2) }} trigger={["click"]}>
-              <Button type="link" size="small" icon={<MoreOutlined />}>
-                {intl.formatMessage({ id: 'pages.table.more' })}
-              </Button>
-            </Dropdown>
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => {
+                record.id && handleDelete(record.id);
+              }}
+            >
+              {intl.formatMessage({ id: 'pages.table.delete' })}
+            </Button>
           </Space>
         );
       },

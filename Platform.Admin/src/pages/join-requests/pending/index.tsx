@@ -290,23 +290,24 @@ const PendingJoinRequests: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.actions' }),
       valueType: 'option',
       fixed: 'right',
+      width: 150,
       render: (_, record) => (
-        <Space>
+        <Space size="small">
           <Button
             type="primary"
             size="small"
+            icon={<CheckCircleOutlined />}
             onClick={() => handleApprove(record)}
             loading={loading}
-            icon={<CheckCircleOutlined />}
           >
             {intl.formatMessage({ id: 'pages.button.approve' })}
           </Button>
           <Button
             danger
             size="small"
+            icon={<CloseCircleOutlined />}
             onClick={() => handleReject(record)}
             loading={loading}
-            icon={<CloseCircleOutlined />}
           >
             {intl.formatMessage({ id: 'pages.button.reject' })}
           </Button>

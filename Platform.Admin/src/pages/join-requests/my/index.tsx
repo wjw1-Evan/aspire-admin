@@ -269,6 +269,7 @@ const MyJoinRequests: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.actions' }),
       valueType: 'option',
       fixed: 'right',
+      width: 150,
       render: (_, record) => {
         if (record.status === 'pending') {
           return (
@@ -278,7 +279,7 @@ const MyJoinRequests: React.FC = () => {
               okText={intl.formatMessage({ id: 'pages.table.ok' })}
               cancelText={intl.formatMessage({ id: 'pages.table.cancel' })}
             >
-              <Button type="link" danger loading={loading}>
+              <Button type="link" danger icon={<CloseCircleOutlined />} loading={loading}>
                 {intl.formatMessage({ id: 'pages.button.cancelRequest' })}
               </Button>
             </Popconfirm>

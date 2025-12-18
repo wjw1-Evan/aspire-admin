@@ -235,6 +235,7 @@ export default function LogDetailDrawer({
                 <Paragraph
                   copyable={{ text: log.responseBody ?? '' }}
                   style={{
+                    width: '100%',
                     maxHeight: 320,
                     overflow: 'auto',
                     fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace',

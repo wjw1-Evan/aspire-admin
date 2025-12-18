@@ -356,6 +356,7 @@ const RoleManagement: FC = () => {
       title: intl.formatMessage({ id: 'pages.table.actions' }),
       key: 'action',
       fixed: 'right',
+      width: 150,
       render: (_, record) => {
         return (
           <Space size="small">

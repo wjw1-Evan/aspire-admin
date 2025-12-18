@@ -2,7 +2,7 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import { Tag, Button, Badge, Space } from 'antd';
-import { EyeOutlined, ReloadOutlined, FileTextOutlined } from '@ant-design/icons';
+import { ReloadOutlined, FileTextOutlined } from '@ant-design/icons';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { getUserActivityLogs } from '@/services/user-log/api';
@@ -352,6 +352,14 @@ const UserLog: React.FC = () => {
       dataIndex: 'username',
       key: 'username',
       ellipsis: true,
+      render: (text, record) => (
+        <a
+          onClick={() => handleViewDetail(record)}
+          style={{ cursor: 'pointer' }}
+        >
+          {text}
+        </a>
+      ),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.action' }),
@@ -504,23 +512,6 @@ const UserLog: React.FC = () => {
       valueType: 'dateTime',
       search: false,
       sorter: true,
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.actions' }),
-      key: 'option',
-      valueType: 'option',
-      fixed: 'right',
-      render: (_, record) => [
-        <Button
-          key="view"
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => handleViewDetail(record)}
-        >
-          {intl.formatMessage({ id: 'pages.table.detail' })}
-        </Button>,
-      ],
     },
   ];
 

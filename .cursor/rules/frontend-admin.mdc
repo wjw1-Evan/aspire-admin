@@ -51,7 +51,126 @@ appliesTo:
   - 错误已被全局错误处理捕获并显示提示时，应返回 `{ data: [], total: 0, success: false }` 避免表格显示错误状态
   - 从后端 `ApiResponse<PagedResult<T>>` 中提取 `data.list` 和 `data.total` 返回给 DataTable
   - 搜索参数需在 `request` 函数中手动合并（通过 `useState` 管理搜索状态）
-- **操作列**：固定宽度 `150px`，固定在右侧（`fixed: 'right'`），按钮使用 `Button type="link" size="small"`，删除动作必须使用 `Popconfirm` 或 `Modal.confirm` 确认。
+- **操作列样式规范**（强制）：
+  - 列配置：
+    - `fixed: 'right'`：固定在最右侧
+    - `width: 150`：标准宽度（如果操作按钮较多，可调整为 `200`）
+    - `key: 'action'` 或 `'option'`
+  - 按钮样式：
+    - `type="link"`：统一使用链接样式
+    - `size="small"`：统一使用小尺寸
+    - `icon={<Icon />}`：所有按钮必须包含图标
+    - 按钮文本：显示操作名称（如"编辑"、"删除"等）
+  - 容器：使用 `Space size="small"` 包裹所有按钮
+  - 禁止使用：
+    - 禁止使用下拉菜单（`Dropdown`）隐藏操作
+    - 禁止使用"更多"按钮
+    - 所有操作按钮必须直接显示在操作列中
+  - 查看功能规范（强制）：
+    - **禁止在操作列中添加"查看"按钮**
+    - 查看功能统一通过点击表格第一列（通常是名称/标题列）实现
+    - 第一列应使用 `<a>` 标签包裹，添加 `onClick` 事件和 `style={{ cursor: 'pointer' }}` 样式
+    - 如果第一列已有图标或其他元素，应在 `<a>` 标签内包裹所有内容
+    - 代码示例：
+      ```typescript
+      // 简单文本列
+      {
+        title: intl.formatMessage({ id: 'pages.table.name' }),
+        dataIndex: 'name',
+        key: 'name',
+        render: (text, record) => (
+          <a
+            onClick={() => {
+              setViewingRecord(record);
+              setDetailVisible(true);
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            {text}
+          </a>
+        ),
+      }
+      
+      // 带图标的列
+      {
+        title: intl.formatMessage({ id: 'pages.table.username' }),
+        dataIndex: 'username',
+        key: 'username',
+        render: (text, record) => (
+          <Space>
+            <UserOutlined />
+            <a
+              onClick={() => {
+                setViewingUser(record);
+                setDetailVisible(true);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              {text}
+            </a>
+          </Space>
+        ),
+      }
+      
+      // 带标签的列
+      {
+        title: intl.formatMessage({ id: 'pages.table.action' }),
+        dataIndex: 'action',
+        key: 'action',
+        render: (_, record) => (
+          <a
+            onClick={() => handleViewDetail(record)}
+            style={{ cursor: 'pointer' }}
+          >
+            <Tag color={getActionTagColor(record.action)}>
+              {getActionText(record.action)}
+            </Tag>
+          </a>
+        ),
+      }
+      ```
+  - 图标映射规范：
+    - 编辑：`EditOutlined`
+    - 删除/移除：`DeleteOutlined`
+    - 执行：`PlayCircleOutlined`
+    - 取消：`StopOutlined`
+    - 处理：`CheckOutlined`
+    - 批准：`CheckCircleOutlined`
+    - 拒绝：`CloseCircleOutlined`
+    - 权限：`KeyOutlined`
+  - 删除操作：删除按钮必须使用 `Popconfirm` 或 `Modal.confirm` 进行确认，并添加 `danger` 属性
+  - 代码示例：
+    ```typescript
+    {
+      title: intl.formatMessage({ id: 'pages.table.action' }),
+      key: 'action',
+      fixed: 'right',
+      width: 150,
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            {intl.formatMessage({ id: 'pages.table.edit' })}
+          </Button>
+          <Popconfirm
+            title="确认删除"
+            description="确定要删除吗？"
+            onConfirm={() => handleDelete(record.id)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              {intl.formatMessage({ id: 'pages.table.delete' })}
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    }
+    ```
 - **样式规范**：禁止自定义样式类，优先使用 Ant Design / ProComponents 现有属性。如需自定义样式，通过组件的 `style` 属性或 Ant Design 的 `theme` 配置实现。
 
 ## 统计卡片布局（Welcome/各管理页面）
@@ -97,3 +216,107 @@ appliesTo:
   ```
 - **日期字段处理**：对于仅日期字段（如开始日期、结束日期），如果包含时间部分则显示完整时间，否则只显示日期部分。
 - **空值处理**：日期时间为空或无效时统一显示 `-`。
+
+## 详情页面规范（强制）
+- **组件使用**：详情页面统一使用 `Drawer` 组件，`placement="right"`，`size={800}`（可根据内容调整）。
+- **加载状态**：使用 `Spin` 包裹内容，显示加载状态。
+- **空状态**：使用 `Empty` 组件显示未加载数据的情况。
+- **内容结构**：
+  - 使用 `Card` 组件分组显示不同类别的信息，每个 Card 有 `title` 属性
+  - Card 样式：`style={{ marginBottom: 16 }}`
+  - 使用 `Descriptions` 组件显示详细信息，`column={2}`（可根据内容调整），`size="small"`
+  - 使用 `Tag` 组件显示状态、类型等标签信息
+  - 使用 `Divider` 分隔不同部分（可选）
+- **日期时间格式**：统一使用 `dayjs` 格式化，格式为 `YYYY-MM-DD HH:mm:ss`
+- **代码示例**：
+  ```typescript
+  <Drawer
+    title="详情标题"
+    placement="right"
+    onClose={onClose}
+    open={visible}
+    size={800}
+  >
+    <Spin spinning={loading}>
+      {data ? (
+        <>
+          {/* 基本信息 */}
+          <Card title="基本信息" style={{ marginBottom: 16 }}>
+            <Descriptions column={2} size="small">
+              <Descriptions.Item label="名称" span={2}>
+                {data.name}
+              </Descriptions.Item>
+              <Descriptions.Item label="状态">
+                <Tag color="green">{data.status}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="创建时间">
+                {dayjs(data.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+              </Descriptions.Item>
+            </Descriptions>
+          </Card>
+
+          {/* 其他信息 */}
+          <Card title="其他信息" style={{ marginBottom: 16 }}>
+            <Descriptions column={2} size="small">
+              {/* ... */}
+            </Descriptions>
+          </Card>
+        </>
+      ) : (
+        <Empty description="未加载数据信息" />
+      )}
+    </Spin>
+  </Drawer>
+  ```
+- **特殊说明**：
+  - 如果详情内容非常复杂（如包含多个 Tab、图表等），可以使用 `Tabs` 组件组织内容
+  - 如果详情内容较少，可以使用单个 `Descriptions` 组件，但建议使用 `Card` 分组以提高可读性
+- **JSON 数据显示规范**：
+  - 所有 JSON 数据统一使用 `Paragraph` 组件（Ant Design Typography）显示
+  - 样式规范：
+    - `width: '100%'`：确保宽度占满容器
+    - `maxHeight: 400`：最大高度 400px（可根据内容调整）
+    - `overflow: 'auto'`：超出高度时显示滚动条
+    - `fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace'`：使用等宽字体
+    - `whiteSpace: 'pre-wrap'`：保留格式和换行
+    - `marginBottom: 0`：底部边距为 0
+  - 必须添加 `copyable` 属性，支持一键复制 JSON 内容
+  - 使用 `JSON.stringify(parsed, null, 2)` 格式化 JSON，美化显示
+  - 错误处理：JSON 解析失败时显示原始值和错误提示
+  - 代码示例：
+    ```typescript
+    {dataType?.toLowerCase() === 'json' ? (
+      (() => {
+        try {
+          const parsed = JSON.parse(value);
+          const formattedJson = JSON.stringify(parsed, null, 2);
+          return (
+            <Paragraph
+              copyable={{ text: value }}
+              style={{
+                width: '100%',
+                maxHeight: 400,
+                overflow: 'auto',
+                fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace',
+                whiteSpace: 'pre-wrap',
+                marginBottom: 0,
+              }}
+            >
+              {formattedJson}
+            </Paragraph>
+          );
+        } catch (error) {
+          return (
+            <div style={{ wordBreak: 'break-all', color: '#ff4d4f' }}>
+              {value}
+              <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                (JSON 解析失败，显示原始值)
+              </div>
+            </div>
+          );
+        }
+      })()
+    ) : (
+      <div style={{ wordBreak: 'break-all' }}>{value}</div>
+    )}
+    ```

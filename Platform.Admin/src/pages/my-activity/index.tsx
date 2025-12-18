@@ -3,7 +3,6 @@ import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import { Button, Tag, Badge, Row, Col, Card, Space, Form, Input, Select, DatePicker } from 'antd';
 import {
-  EyeOutlined,
   HistoryOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -396,9 +395,14 @@ const MyActivity: React.FC = () => {
       key: 'action',
       valueType: 'text',
       render: (_, record) => (
-        <Tag color={getActionTagColor(record.action)}>
-          {getActionText(record.action)}
-        </Tag>
+        <a
+          onClick={() => handleViewDetail(record)}
+          style={{ cursor: 'pointer' }}
+        >
+          <Tag color={getActionTagColor(record.action)}>
+            {getActionText(record.action)}
+          </Tag>
+        </a>
       ),
       sorter: true,
     },
@@ -492,23 +496,6 @@ const MyActivity: React.FC = () => {
           };
         },
       },
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.actions' }),
-      key: 'option',
-      valueType: 'option',
-      fixed: 'right',
-      render: (_, record) => [
-        <Button
-          key="view"
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => handleViewDetail(record)}
-        >
-          {intl.formatMessage({ id: 'pages.table.detail' })}
-        </Button>,
-      ],
     },
   ];
 

@@ -16,12 +16,15 @@ import {
   Card,
   Row,
   Col,
+  Descriptions,
+  Spin,
+  Empty,
 } from 'antd';
+import dayjs from 'dayjs';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
   ReloadOutlined,
   CloudServerOutlined,
   CheckCircleOutlined,
@@ -227,6 +230,14 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       dataIndex: 'title',
       key: 'title',
       width: 150,
+      render: (text, record) => (
+        <a
+          onClick={() => handleView(record)}
+          style={{ cursor: 'pointer' }}
+        >
+          {text}
+        </a>
+      ),
     },
     {
       title: '协议类型',
@@ -281,17 +292,13 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       render: (_: any, record: IoTGateway) => (
         <Space size="small">
           <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleView(record)}
-          />
-          <Button
-            type="text"
+            type="link"
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
-          />
+          >
+            编辑
+          </Button>
           <Popconfirm
             title="删除网关"
             description="确定要删除此网关吗？"
@@ -299,7 +306,9 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
             okText="确定"
             cancelText="取消"
           >
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
           </Popconfirm>
         </Space>
       ),
@@ -449,55 +458,70 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        size={400}
+        size={800}
       >
-        {selectedGateway && (
-          <div>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>网关名称</div>
-              <div style={{ fontSize: 16, fontWeight: 500 }}>{selectedGateway.title}</div>
-            </div>
+        <Spin spinning={false}>
+          {selectedGateway ? (
+            <>
+              {/* 基本信息 */}
+              <Card title="基本信息" style={{ marginBottom: 16 }}>
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="网关名称" span={2}>
+                    {selectedGateway.title}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="网关ID">
+                    {selectedGateway.gatewayId}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="状态">
+                    {getStatusTag(selectedGateway.status)}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="协议类型">
+                    {selectedGateway.protocolType || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="地址">
+                    {selectedGateway.address || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="启用状态">
+                    <Tag color={selectedGateway.isEnabled ? 'green' : 'red'}>
+                      {selectedGateway.isEnabled ? '是' : '否'}
+                    </Tag>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
 
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>网关ID</div>
-              <div style={{ fontSize: 14 }}>{selectedGateway.gatewayId}</div>
-            </div>
+              {/* 设备统计 */}
+              {statistics && (
+                <Card title="设备统计" style={{ marginBottom: 16 }}>
+                  <Descriptions column={2} size="small">
+                    <Descriptions.Item label="总数">
+                      {statistics.totalDevices}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="在线">
+                      <Tag color="green">{statistics.onlineDevices}</Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="离线">
+                      <Tag color="default">{statistics.offlineDevices}</Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="故障">
+                      <Tag color="red">{statistics.faultDevices}</Tag>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              )}
 
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>状态</div>
-              <div>{getStatusTag(selectedGateway.status)}</div>
-            </div>
-
-            {statistics && (
-              <>
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ color: '#666', marginBottom: 4 }}>设备统计</div>
-                  <div>
-                    <div>总数: {statistics.totalDevices}</div>
-                    <div>在线: {statistics.onlineDevices}</div>
-                    <div>离线: {statistics.offlineDevices}</div>
-                    <div>故障: {statistics.faultDevices}</div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>协议类型</div>
-              <div>{selectedGateway.protocolType}</div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>地址</div>
-              <div>{selectedGateway.address}</div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>创建时间</div>
-              <div>{new Date(selectedGateway.createdAt).toLocaleString()}</div>
-            </div>
-          </div>
-        )}
+              {/* 时间信息 */}
+              <Card title="时间信息" style={{ marginBottom: 16 }}>
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="创建时间">
+                    {dayjs(selectedGateway.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            </>
+          ) : (
+            <Empty description="未加载网关信息" />
+          )}
+        </Spin>
       </Drawer>
     </>
   );

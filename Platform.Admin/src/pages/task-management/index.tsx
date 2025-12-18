@@ -15,12 +15,10 @@ import {
   Form,
   Input,
   Card,
-  Dropdown,
   DatePicker,
   Select,
   Progress,
 } from 'antd';
-import type { MenuProps } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -28,7 +26,6 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   ReloadOutlined,
-  MoreOutlined,
   PlayCircleOutlined,
   StopOutlined,
   TeamOutlined,
@@ -446,51 +443,49 @@ const TaskManagement: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.action' }),
       key: 'action',
-      width: 150,
+      width: 200,
       fixed: 'right',
-      render: (_, record) => {
-        const items: MenuProps['items'] = [
-          {
-            key: 'view',
-            icon: <EyeOutlined />,
-            label: intl.formatMessage({ id: 'pages.taskManagement.viewDetails' }),
-            onClick: () => handleViewTask(record),
-          },
-          {
-            key: 'edit',
-            icon: <EditOutlined />,
-            label: intl.formatMessage({ id: 'pages.taskManagement.action.edit' }),
-            onClick: () => handleEditTask(record),
-          },
-          {
-            key: 'execute',
-            icon: <PlayCircleOutlined />,
-            label: intl.formatMessage({ id: 'pages.taskManagement.action.execute' }),
-            onClick: () => handleExecuteTask(record),
-            disabled: record.status === TaskStatus.Completed || record.status === TaskStatus.Cancelled,
-          },
-          {
-            key: 'cancel',
-            icon: <StopOutlined />,
-            label: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }),
-            onClick: () => handleCancelTask(record),
-            disabled: record.status === TaskStatus.Completed || record.status === TaskStatus.Cancelled,
-          },
-          {
-            key: 'delete',
-            icon: <DeleteOutlined />,
-            label: intl.formatMessage({ id: 'pages.taskManagement.action.delete' }),
-            danger: true,
-            onClick: () => handleDeleteTask(record),
-          },
-        ];
-
-        return (
-          <Dropdown menu={{ items }} trigger={['click']}>
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
-        );
-      },
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEditTask(record)}
+          >
+            {intl.formatMessage({ id: 'pages.taskManagement.action.edit' })}
+          </Button>
+          {record.status !== TaskStatus.Completed && record.status !== TaskStatus.Cancelled && (
+            <>
+              <Button
+                type="link"
+                size="small"
+                icon={<PlayCircleOutlined />}
+                onClick={() => handleExecuteTask(record)}
+              >
+                {intl.formatMessage({ id: 'pages.taskManagement.action.execute' })}
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                icon={<StopOutlined />}
+                onClick={() => handleCancelTask(record)}
+              >
+                {intl.formatMessage({ id: 'pages.taskManagement.action.cancel' })}
+              </Button>
+            </>
+          )}
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteTask(record)}
+          >
+            {intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}
+          </Button>
+        </Space>
+      ),
     },
   ];
 

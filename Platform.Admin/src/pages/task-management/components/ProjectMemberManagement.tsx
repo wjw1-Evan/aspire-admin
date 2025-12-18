@@ -85,9 +85,12 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
     {
       title: '操作',
       key: 'action',
+      fixed: 'right',
+      width: 150,
       render: (_: any, record: ProjectMemberDto) => (
         <Button
           type="link"
+          size="small"
           danger
           icon={<DeleteOutlined />}
           onClick={() => handleDelete(record.userId)}

@@ -240,7 +240,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         <Space size="small">
           {!record.isHandled && (
             <Button
-              type="text"
+              type="link"
               size="small"
               icon={<CheckOutlined />}
               onClick={() => handleHandle(record)}

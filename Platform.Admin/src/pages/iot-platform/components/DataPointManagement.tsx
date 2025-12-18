@@ -17,13 +17,19 @@ import {
   Card,
   Row,
   Col,
+  Descriptions,
+  Spin,
+  Empty,
+  Typography,
   type TableColumnsType,
 } from 'antd';
+
+const { Paragraph } = Typography;
+import dayjs from 'dayjs';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
   ReloadOutlined,
   DatabaseOutlined,
   CheckCircleOutlined,
@@ -229,6 +235,14 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       key: 'title',
       width: 150,
       ellipsis: true,
+      render: (text, record) => (
+        <a
+          onClick={() => handleView(record)}
+          style={{ cursor: 'pointer' }}
+        >
+          {text}
+        </a>
+      ),
     },
     {
       title: '所属设备',
@@ -370,17 +384,13 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       render: (_: any, record: IoTDataPoint) => (
         <Space size="small">
           <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleView(record)}
-          />
-          <Button
-            type="text"
+            type="link"
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
-          />
+          >
+            编辑
+          </Button>
           <Popconfirm
             title="删除数据点"
             description="确定要删除此数据点吗？"
@@ -388,7 +398,9 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
             okText="确定"
             cancelText="取消"
           >
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
           </Popconfirm>
         </Space>
       ),
@@ -546,100 +558,153 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        size={400}
+        size={800}
       >
-        {selectedDataPoint && (
-          <div>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>数据点名称</div>
-              <div style={{ fontSize: 16, fontWeight: 500 }}>{selectedDataPoint.title}</div>
-            </div>
+        <Spin spinning={false}>
+          {selectedDataPoint ? (
+            <>
+              {/* 基本信息 */}
+              <Card title="基本信息" style={{ marginBottom: 16 }}>
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="数据点名称" span={2}>
+                    {selectedDataPoint.title}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="数据点ID">
+                    {selectedDataPoint.dataPointId}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="所属设备">
+                    {(() => {
+                      const device = safeDevices.find((d) => d.deviceId === selectedDataPoint.deviceId);
+                      return device?.title || selectedDataPoint.deviceId || '-';
+                    })()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="数据类型">
+                    <Tag>{getDataTypeLabel(selectedDataPoint.dataType)}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="单位">
+                    {selectedDataPoint.unit || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="采样间隔">
+                    {selectedDataPoint.samplingInterval} 秒
+                  </Descriptions.Item>
+                  <Descriptions.Item label="只读">
+                    <Tag color={selectedDataPoint.isReadOnly ? 'orange' : 'green'}>
+                      {selectedDataPoint.isReadOnly ? '是' : '否'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="启用状态">
+                    <Tag color={selectedDataPoint.isEnabled ? 'green' : 'red'}>
+                      {selectedDataPoint.isEnabled ? '启用' : '禁用'}
+                    </Tag>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
 
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>数据点ID</div>
-              <div style={{ fontSize: 14 }}>{selectedDataPoint.dataPointId}</div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>数据类型</div>
-              <div>{getDataTypeLabel(selectedDataPoint.dataType)}</div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>采样间隔</div>
-              <div>{selectedDataPoint.samplingInterval} 秒</div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>只读</div>
-              <div>{selectedDataPoint.isReadOnly ? '是' : '否'}</div>
-            </div>
-
-            <div style={{ marginBottom: 16, padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-              <div style={{ color: '#666', marginBottom: 8, fontWeight: 500 }}>最后采集数据</div>
-              {selectedDataPoint.lastValue ? (
-                <>
-                  <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 4, wordBreak: 'break-all' }}>
-                    {selectedDataPoint.dataType?.toLowerCase() === 'json' ? (
-                      <pre style={{ margin: 0, fontSize: '12px', whiteSpace: 'pre-wrap' }}>
-                        {JSON.stringify(JSON.parse(selectedDataPoint.lastValue), null, 2)}
-                      </pre>
-                    ) : (
-                      <>
-                        {selectedDataPoint.lastValue}
-                        {selectedDataPoint.unit && (
-                          <span style={{ color: '#999', marginLeft: 4 }}>{selectedDataPoint.unit}</span>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  {selectedDataPoint.lastUpdatedAt && (
-                    <div style={{ fontSize: '12px', color: '#999' }}>
-                      采集时间: {new Date(selectedDataPoint.lastUpdatedAt).toLocaleString('zh-CN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      })}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ color: '#999' }}>暂无采集数据</div>
+              {/* 数值范围 */}
+              {(selectedDataPoint.minValue !== undefined || selectedDataPoint.maxValue !== undefined) && (
+                <Card title="数值范围" style={{ marginBottom: 16 }}>
+                  <Descriptions column={2} size="small">
+                    <Descriptions.Item label="最小值">
+                      {selectedDataPoint.minValue !== undefined ? selectedDataPoint.minValue : '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="最大值">
+                      {selectedDataPoint.maxValue !== undefined ? selectedDataPoint.maxValue : '-'}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
               )}
-            </div>
 
-            {selectedDataPoint.alarmConfig?.isEnabled && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ color: '#666', marginBottom: 4 }}>告警配置</div>
-                <div>
-                  <Tag color="orange">已启用</Tag>
-                  <div style={{ marginTop: 8 }}>
-                    <div>类型: {selectedDataPoint.alarmConfig.alarmType}</div>
-                    <div>阈值: {selectedDataPoint.alarmConfig.threshold}</div>
-                    <div>级别: {selectedDataPoint.alarmConfig.level}</div>
+              {/* 告警配置 */}
+              {selectedDataPoint.alarmConfig?.isEnabled && (
+                <Card title="告警配置" style={{ marginBottom: 16 }}>
+                  <Descriptions column={2} size="small">
+                    <Descriptions.Item label="告警状态">
+                      <Tag color="orange">已启用</Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="告警类型">
+                      {selectedDataPoint.alarmConfig.alarmType || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="阈值">
+                      {selectedDataPoint.alarmConfig.threshold || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="级别">
+                      {selectedDataPoint.alarmConfig.level || '-'}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              )}
+
+              {/* 最后采集数据 */}
+              <Card title="最后采集数据" style={{ marginBottom: 16 }}>
+                {selectedDataPoint.lastValue ? (
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label="数据值">
+                      {selectedDataPoint.dataType?.toLowerCase() === 'json' ? (
+                        (() => {
+                          try {
+                            const parsed = JSON.parse(selectedDataPoint.lastValue);
+                            const formattedJson = JSON.stringify(parsed, null, 2);
+                            return (
+                              <Paragraph
+                                copyable={{ text: selectedDataPoint.lastValue }}
+                                style={{
+                                  width: '100%',
+                                  maxHeight: 400,
+                                  overflow: 'auto',
+                                  fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace',
+                                  whiteSpace: 'pre-wrap',
+                                  marginBottom: 0,
+                                }}
+                              >
+                                {formattedJson}
+                              </Paragraph>
+                            );
+                          } catch (error) {
+                            return (
+                              <div style={{ wordBreak: 'break-all', color: '#ff4d4f' }}>
+                                {selectedDataPoint.lastValue}
+                                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                                  (JSON 解析失败，显示原始值)
+                                </div>
+                              </div>
+                            );
+                          }
+                        })()
+                      ) : (
+                        <div>
+                          {selectedDataPoint.lastValue}
+                          {selectedDataPoint.unit && (
+                            <span style={{ color: '#999', marginLeft: 4 }}>{selectedDataPoint.unit}</span>
+                          )}
+                        </div>
+                      )}
+                    </Descriptions.Item>
+                    {selectedDataPoint.lastUpdatedAt && (
+                      <Descriptions.Item label="采集时间">
+                        {dayjs(selectedDataPoint.lastUpdatedAt).format('YYYY-MM-DD HH:mm:ss')}
+                      </Descriptions.Item>
+                    )}
+                  </Descriptions>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                    暂无采集数据
                   </div>
-                </div>
-              </div>
-            )}
+                )}
+              </Card>
 
-            {selectedDataPoint.minValue !== undefined && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ color: '#666', marginBottom: 4 }}>范围</div>
-                <div>
-                  {selectedDataPoint.minValue} ~ {selectedDataPoint.maxValue}
-                </div>
-              </div>
-            )}
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: '#666', marginBottom: 4 }}>创建时间</div>
-              <div>{new Date(selectedDataPoint.createdAt).toLocaleString()}</div>
-            </div>
-          </div>
-        )}
+              {/* 时间信息 */}
+              <Card title="时间信息" style={{ marginBottom: 16 }}>
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="创建时间">
+                    {dayjs(selectedDataPoint.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            </>
+          ) : (
+            <Empty description="未加载数据点信息" />
+          )}
+        </Spin>
       </Drawer>
     </>
   );

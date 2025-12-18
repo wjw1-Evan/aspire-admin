@@ -1,10 +1,12 @@
 import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
-import { Tag, Button, Drawer, Descriptions, Space, message, Form, Input, DatePicker, Card } from 'antd';
-import { ReloadOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
-import { iotService, IoTDataRecord } from '@/services/iotService';
+import { Tag, Button, Drawer, Descriptions, Space, message, Form, Input, DatePicker, Card, Spin, Empty, Typography } from 'antd';
 import dayjs from 'dayjs';
+import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { iotService, IoTDataRecord } from '@/services/iotService';
+
+const { Paragraph } = Typography;
 const { RangePicker } = DatePicker;
 
 export interface DataCenterRef {
@@ -173,16 +175,16 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       width: 200,
       ellipsis: true,
       valueType: 'text',
-      render: (text: string) => (
-        <span
-          style={{ cursor: 'pointer' }}
+      render: (text: string, record: IoTDataRecord) => (
+        <a
           onClick={() => {
-            navigator.clipboard.writeText(text);
-            message.success('已复制到剪贴板');
+            setSelectedRecord(record);
+            setIsDetailDrawerVisible(true);
           }}
+          style={{ cursor: 'pointer' }}
         >
           {text}
-        </span>
+        </a>
       ),
     },
     {
@@ -292,28 +294,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       render: (_: any, record: IoTDataRecord) =>
         record.isAlarm ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag>,
     },
-    {
-      title: '操作',
-      key: 'option',
-      width: 100,
-      valueType: 'option',
-      fixed: 'right' as const,
-      render: (_: any, record: IoTDataRecord) => (
-        <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => {
-              setSelectedRecord(record);
-              setIsDetailDrawerVisible(true);
-            }}
-          >
-            详情
-          </Button>
-        </Space>
-      ),
-    },
   ];
 
   return (
@@ -365,107 +345,121 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       placement="right"
       onClose={() => setIsDetailDrawerVisible(false)}
       open={isDetailDrawerVisible}
-      size={600}
+      size={800}
     >
-      {selectedRecord && (
-        <Descriptions column={1} bordered>
-          <Descriptions.Item label="记录ID">
-            {selectedRecord.id}
-          </Descriptions.Item>
-          <Descriptions.Item label="设备ID">
-            {selectedRecord.deviceId}
-          </Descriptions.Item>
-          <Descriptions.Item label="数据点ID">
-            {selectedRecord.dataPointId}
-          </Descriptions.Item>
-          <Descriptions.Item label="数据类型">
-            <Tag>{getDataTypeLabel(selectedRecord.dataType)}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="数据值">
-            {selectedRecord.dataType?.toLowerCase() === 'json' ? (
-              (() => {
-                try {
-                  const parsed = JSON.parse(selectedRecord.value);
-                  return (
-                    <pre
-                      style={{
-                        margin: 0,
-                        padding: '8px',
-                        backgroundColor: '#f5f5f5',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
-                        maxHeight: '400px',
-                        overflow: 'auto',
-                      }}
-                    >
-                      {JSON.stringify(parsed, null, 2)}
-                    </pre>
-                  );
-                } catch (error) {
-                  return (
-                    <div style={{ wordBreak: 'break-all', color: '#ff4d4f' }}>
-                      {selectedRecord.value}
-                      <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                        (JSON 解析失败，显示原始值)
-                      </div>
-                    </div>
-                  );
-                }
-              })()
-            ) : (
-              <div style={{ wordBreak: 'break-all' }}>{selectedRecord.value}</div>
+      <Spin spinning={false}>
+        {selectedRecord ? (
+          <>
+            {/* 基本信息 */}
+            <Card title="基本信息" style={{ marginBottom: 16 }}>
+              <Descriptions column={2} size="small">
+                <Descriptions.Item label="记录ID" span={2}>
+                  {selectedRecord.id}
+                </Descriptions.Item>
+                <Descriptions.Item label="设备ID">
+                  {selectedRecord.deviceId}
+                </Descriptions.Item>
+                <Descriptions.Item label="数据点ID">
+                  {selectedRecord.dataPointId}
+                </Descriptions.Item>
+                <Descriptions.Item label="数据类型">
+                  <Tag>{getDataTypeLabel(selectedRecord.dataType)}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="采样间隔">
+                  {selectedRecord.samplingInterval} 秒
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            {/* 数据值 */}
+            <Card title="数据值" style={{ marginBottom: 16 }}>
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="值">
+                  {selectedRecord.dataType?.toLowerCase() === 'json' ? (
+                    (() => {
+                      try {
+                        const parsed = JSON.parse(selectedRecord.value);
+                        const formattedJson = JSON.stringify(parsed, null, 2);
+                        return (
+                          <Paragraph
+                            copyable={{ text: selectedRecord.value }}
+                            style={{
+                              width: '100%',
+                              maxHeight: 400,
+                              overflow: 'auto',
+                              fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace',
+                              whiteSpace: 'pre-wrap',
+                              marginBottom: 0,
+                            }}
+                          >
+                            {formattedJson}
+                          </Paragraph>
+                        );
+                      } catch (error) {
+                        return (
+                          <div style={{ wordBreak: 'break-all', color: '#ff4d4f' }}>
+                            {selectedRecord.value}
+                            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                              (JSON 解析失败，显示原始值)
+                            </div>
+                          </div>
+                        );
+                      }
+                    })()
+                  ) : (
+                    <div style={{ wordBreak: 'break-all' }}>{selectedRecord.value}</div>
+                  )}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            {/* 告警信息 */}
+            {(selectedRecord.isAlarm || selectedRecord.alarmLevel) && (
+              <Card title="告警信息" style={{ marginBottom: 16 }}>
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="告警状态">
+                    {selectedRecord.isAlarm ? (
+                      <Tag color="red">告警</Tag>
+                    ) : (
+                      <Tag color="green">正常</Tag>
+                    )}
+                  </Descriptions.Item>
+                  {selectedRecord.alarmLevel && (
+                    <Descriptions.Item label="告警级别">
+                      {selectedRecord.alarmLevel}
+                    </Descriptions.Item>
+                  )}
+                </Descriptions>
+              </Card>
             )}
-          </Descriptions.Item>
-          <Descriptions.Item label="采样间隔">
-            {selectedRecord.samplingInterval} 秒
-          </Descriptions.Item>
-          <Descriptions.Item label="上报时间">
-            {selectedRecord.reportedAt
-              ? new Date(selectedRecord.reportedAt).toLocaleString('zh-CN', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: false,
-                })
-              : '-'}
-          </Descriptions.Item>
-          <Descriptions.Item label="告警状态">
-            {selectedRecord.isAlarm ? (
-              <Tag color="red">告警</Tag>
-            ) : (
-              <Tag color="green">正常</Tag>
+
+            {/* 时间信息 */}
+            <Card title="时间信息" style={{ marginBottom: 16 }}>
+              <Descriptions column={2} size="small">
+                <Descriptions.Item label="上报时间">
+                  {selectedRecord.reportedAt
+                    ? dayjs(selectedRecord.reportedAt).format('YYYY-MM-DD HH:mm:ss')
+                    : '-'}
+                </Descriptions.Item>
+                <Descriptions.Item label="创建时间">
+                  {selectedRecord.createdAt
+                    ? dayjs(selectedRecord.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                    : '-'}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            {/* 备注 */}
+            {selectedRecord.remarks && (
+              <Card title="备注" style={{ marginBottom: 16 }}>
+                <p>{selectedRecord.remarks}</p>
+              </Card>
             )}
-          </Descriptions.Item>
-          {selectedRecord.alarmLevel && (
-            <Descriptions.Item label="告警级别">
-              {selectedRecord.alarmLevel}
-            </Descriptions.Item>
-          )}
-          {selectedRecord.remarks && (
-            <Descriptions.Item label="备注">
-              {selectedRecord.remarks}
-            </Descriptions.Item>
-          )}
-          <Descriptions.Item label="创建时间">
-            {selectedRecord.createdAt
-              ? new Date(selectedRecord.createdAt).toLocaleString('zh-CN', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: false,
-                })
-              : '-'}
-          </Descriptions.Item>
-        </Descriptions>
-      )}
+          </>
+        ) : (
+          <Empty description="未加载数据记录信息" />
+        )}
+      </Spin>
     </Drawer>
   </>
   );

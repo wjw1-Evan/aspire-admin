@@ -1,8 +1,10 @@
 import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
-import { Tag, Button, Drawer, Descriptions, Space, message, Form, Input, DatePicker, Card, Spin, Empty, Typography } from 'antd';
+import { Tag, Button, Drawer, Descriptions, Space, message, Form, Input, DatePicker, Card, Spin, Empty, Typography, Grid } from 'antd';
 import dayjs from 'dayjs';
+
+const { useBreakpoint } = Grid;
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { iotService, IoTDataRecord } from '@/services/iotService';
 
@@ -35,8 +37,11 @@ const dataTypeLabels: Record<string, string> = {
 };
 
 const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<any>({});
@@ -300,7 +305,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     <>
       {/* 搜索表单 */}
       <Card style={{ marginBottom: 16 }}>
-        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
+        <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
           <Form.Item name="deviceId" label="设备ID">
             <Input placeholder="请输入设备ID" style={{ width: 200 }} allowClear />
           </Form.Item>
@@ -315,11 +320,20 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
             />
           </Form.Item>
           <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+            <Space wrap>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                icon={<SearchOutlined />}
+                style={isMobile ? { width: '100%' } : {}}
+              >
                 搜索
               </Button>
-              <Button onClick={handleReset} icon={<ReloadOutlined />}>
+              <Button 
+                onClick={handleReset} 
+                icon={<ReloadOutlined />}
+                style={isMobile ? { width: '100%' } : {}}
+              >
                 重置
               </Button>
             </Space>
@@ -332,6 +346,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         columns={columns}
         request={fetchRecords}
         rowKey={(record) => record.id || `${record.deviceId}-${record.dataPointId}-${record.reportedAt}`}
+        scroll={{ x: 'max-content' }}
         search={false}
         pagination={{
           pageSize: 20,
@@ -345,14 +360,14 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       placement="right"
       onClose={() => setIsDetailDrawerVisible(false)}
       open={isDetailDrawerVisible}
-      size={800}
+      size={isMobile ? 'large' : 800}
     >
       <Spin spinning={false}>
         {selectedRecord ? (
           <>
             {/* 基本信息 */}
             <Card title="基本信息" style={{ marginBottom: 16 }}>
-              <Descriptions column={2} size="small">
+              <Descriptions column={isMobile ? 1 : 2} size="small">
                 <Descriptions.Item label="记录ID" span={2}>
                   {selectedRecord.id}
                 </Descriptions.Item>
@@ -416,7 +431,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
             {/* 告警信息 */}
             {(selectedRecord.isAlarm || selectedRecord.alarmLevel) && (
               <Card title="告警信息" style={{ marginBottom: 16 }}>
-                <Descriptions column={2} size="small">
+                <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="告警状态">
                     {selectedRecord.isAlarm ? (
                       <Tag color="red">告警</Tag>
@@ -435,7 +450,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
 
             {/* 时间信息 */}
             <Card title="时间信息" style={{ marginBottom: 16 }}>
-              <Descriptions column={2} size="small">
+              <Descriptions column={isMobile ? 1 : 2} size="small">
                 <Descriptions.Item label="上报时间">
                   {selectedRecord.reportedAt
                     ? dayjs(selectedRecord.reportedAt).format('YYYY-MM-DD HH:mm:ss')

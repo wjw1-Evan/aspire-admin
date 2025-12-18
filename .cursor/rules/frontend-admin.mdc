@@ -173,6 +173,122 @@ appliesTo:
     ```
 - **样式规范**：禁止自定义样式类，优先使用 Ant Design / ProComponents 现有属性。如需自定义样式，通过组件的 `style` 属性或 Ant Design 的 `theme` 配置实现。
 
+## 移动端适配规范（强制）
+- **响应式断点**：使用 Ant Design 的响应式断点系统
+  - `xs`: < 576px（超小屏，手机竖屏）
+  - `sm`: ≥ 576px（小屏，手机横屏）
+  - `md`: ≥ 768px（中屏，平板）
+  - `lg`: ≥ 992px（大屏，桌面）
+  - `xl`: ≥ 1200px（超大屏）
+  - `xxl`: ≥ 1600px（超超大屏）
+- **布局组件响应式**：
+  - **Row/Col 布局**：统计卡片、表单等必须使用响应式 `Col` 配置
+    - 统计卡片：`xs={24} sm={12} md={6}`（手机单列，平板两列，桌面四列）
+    - 表单字段：`xs={24} sm={12}`（手机单列，平板及以上两列）
+    - 代码示例：
+      ```typescript
+      <Row gutter={[12, 12]}>
+        <Col xs={24} sm={12} md={6}>
+          <StatCard title="总数" value={100} />
+        </Col>
+      </Row>
+      ```
+- **表格适配**：
+  - 表格必须支持横向滚动，使用 `scroll={{ x: 'max-content' }}` 或 `scroll={{ x: true }}`
+  - 操作列在移动端保持固定，但按钮可能需要调整显示方式
+  - 表格列宽度使用相对单位或最小宽度，避免在小屏幕上过宽
+  - 代码示例：
+    ```typescript
+    <DataTable
+      columns={columns}
+      scroll={{ x: 'max-content' }}
+      // ...
+    />
+    ```
+- **按钮和操作适配**：
+  - PageContainer 的 `extra` 区域按钮在移动端应支持换行，使用 `Space wrap` 或 `flex-wrap`
+  - 操作列按钮在移动端可考虑只显示图标，或使用下拉菜单（仅在移动端）
+  - 按钮大小：移动端使用 `size="small"` 或 `size="middle"`，避免过大
+  - 代码示例：
+    ```typescript
+    <PageContainer
+      extra={
+        <Space wrap>
+          <Button size="small">操作1</Button>
+          <Button size="small">操作2</Button>
+        </Space>
+      }
+    />
+    ```
+- **搜索表单适配**：
+  - 搜索表单在移动端应垂直布局，使用 `layout="vertical"` 或响应式切换
+  - 搜索按钮在移动端应占满宽度，使用 `style={{ width: '100%' }}`
+  - 代码示例：
+    ```typescript
+    <Form
+      layout={isMobile ? 'vertical' : 'inline'}
+      // ...
+    >
+      <Form.Item>
+        <Button
+          type="primary"
+          htmlType="submit"
+          style={isMobile ? { width: '100%' } : {}}
+        >
+          搜索
+        </Button>
+      </Form.Item>
+    </Form>
+    ```
+- **Drawer/Modal 适配**：
+  - Drawer 在移动端应占满屏幕，使用 `size="large"` 或动态计算
+  - Modal 在移动端应占满屏幕，使用 `width="100%"` 或响应式宽度
+  - 代码示例：
+    ```typescript
+    <Drawer
+      size={window.innerWidth < 768 ? 'large' : 800}
+      // ...
+    />
+    
+    <Modal
+      width={window.innerWidth < 768 ? '100%' : 600}
+      // ...
+    />
+    ```
+- **详情页面适配**：
+  - Descriptions 在移动端应使用单列布局，`column={1}` 或响应式切换
+  - Card 内容在移动端应适当调整内边距
+  - 代码示例：
+    ```typescript
+    <Descriptions
+      column={window.innerWidth < 768 ? 1 : 2}
+      size="small"
+    />
+    ```
+- **字体和间距适配**：
+  - 移动端字体大小应适当缩小，但保持可读性
+  - 移动端间距应适当减小，使用相对单位（如 `8px`、`12px`）
+  - 避免使用固定像素值，优先使用 Ant Design 的间距系统
+- **触摸交互优化**：
+  - 按钮、链接等可点击元素最小触摸目标为 `44px × 44px`
+  - 操作列按钮间距应足够，避免误触
+  - 使用 `Space size="small"` 或 `size="middle"` 控制间距
+- **检测移动端**：
+  - 使用 `window.innerWidth < 768` 判断是否为移动端
+  - 或使用 Ant Design 的 `Grid.useBreakpoint()` Hook
+  - 代码示例：
+    ```typescript
+    import { Grid } from 'antd';
+    const { useBreakpoint } = Grid;
+    
+    const screens = useBreakpoint();
+    const isMobile = !screens.md; // md 以下为移动端
+    ```
+- **全局样式**：
+  - 已在 `global.less` 中添加移动端表格适配样式
+  - 移动端菜单打开时自动锁定滚动，防止背景滚动
+  - 代码位置：`src/global.less` 和 `src/app.tsx`
+
 ## 统计卡片布局（Welcome/各管理页面）
 - 统一使用 `src/components/StatCard`（`Platform.Admin/src/components/StatCard.tsx`）。
 - 布局：卡片 padding `10px 12px`，图标 20px，数值字号 20px，标题字号 12px，图标在左、数值与标题右侧垂直排列且右对齐。

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Drawer, Descriptions, Tag, Progress, Tabs, Space, Button } from 'antd';
+import { Drawer, Descriptions, Tag, Progress, Tabs, Space, Button, Grid } from 'antd';
 import { useIntl } from '@umijs/max';
+
+const { useBreakpoint } = Grid;
 import {
   ProjectOutlined,
   TeamOutlined,
@@ -26,6 +28,8 @@ interface ProjectDetailProps {
 
 const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const [members, setMembers] = useState<ProjectMemberDto[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -78,7 +82,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
       }
       open={true}
       onClose={onClose}
-      size={1400}
+      size={isMobile ? 'large' : 1400}
     >
       <Tabs
         items={[
@@ -87,7 +91,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
             label: intl.formatMessage({ id: 'pages.projectManagement.detail.basicInfo' }),
             icon: <ProjectOutlined />,
             children: (
-              <Descriptions column={2} bordered>
+              <Descriptions column={isMobile ? 1 : 2} bordered>
                 <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.name' })}>{project.name}</Descriptions.Item>
                 <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.status' })}>
                   <Tag color={statusInfo.color}>{statusInfo.text}</Tag>

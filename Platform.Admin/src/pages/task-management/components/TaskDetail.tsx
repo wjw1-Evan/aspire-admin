@@ -119,20 +119,22 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
     }
   };
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   return (
     <Drawer
       title="任务详情"
       placement="right"
       onClose={onClose}
       open={visible}
-      size={800}
+      size={isMobile ? 'large' : 800}
     >
       <Spin spinning={loading}>
         {taskDetail ? (
           <>
             {/* 基本信息 */}
             <Card title="基本信息" style={{ marginBottom: 16 }}>
-              <Descriptions column={2} size="small">
+              <Descriptions column={isMobile ? 1 : 2} size="small">
                 <Descriptions.Item label="任务名称" span={2}>
                   {taskDetail.taskName}
                 </Descriptions.Item>
@@ -160,7 +162,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
 
             {/* 分配信息 */}
             <Card title="分配信息" style={{ marginBottom: 16 }}>
-              <Descriptions column={2} size="small">
+              <Descriptions column={isMobile ? 1 : 2} size="small">
                 <Descriptions.Item label="创建者">
                   {taskDetail.createdByName || '-'}
                 </Descriptions.Item>
@@ -178,7 +180,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
 
             {/* 时间信息 */}
             <Card title="时间信息" style={{ marginBottom: 16 }}>
-              <Descriptions column={2} size="small">
+              <Descriptions column={isMobile ? 1 : 2} size="small">
                 <Descriptions.Item label="计划开始">
                   {taskDetail.plannedStartTime ? dayjs(taskDetail.plannedStartTime).format('YYYY-MM-DD HH:mm') : '-'}
                 </Descriptions.Item>

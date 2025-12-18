@@ -19,7 +19,10 @@ import {
   Input,
   Card,
   DatePicker,
+  Grid,
 } from 'antd';
+
+const { useBreakpoint } = Grid;
 import {
   PlusOutlined,
   EditOutlined,
@@ -40,6 +43,8 @@ import { StatCard } from '@/components';
 
 const UserManagement: React.FC = () => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [searchForm] = Form.useForm();
@@ -594,7 +599,7 @@ const UserManagement: React.FC = () => {
       }
       style={{ paddingBlock: 12 }}
       extra={
-        <Space>
+        <Space wrap>
           {/* 批量操作按钮 */}
           <Button
             key="activate"
@@ -692,7 +697,7 @@ const UserManagement: React.FC = () => {
       <Card style={{ marginBottom: 16 }}>
         <Form
           form={searchForm}
-          layout="inline"
+          layout={isMobile ? 'vertical' : 'inline'}
           onFinish={handleSearch}
           style={{ marginBottom: 16 }}
         >
@@ -725,11 +730,22 @@ const UserManagement: React.FC = () => {
             <DatePicker.RangePicker style={{ width: 240 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.createdAt.label' })} />
           </Form.Item>
           <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" aria-label={intl.formatMessage({ id: 'pages.userManagement.query' })}>
+            <Space wrap>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                aria-label={intl.formatMessage({ id: 'pages.userManagement.query' })}
+                style={isMobile ? { width: '100%' } : {}}
+              >
                 {intl.formatMessage({ id: 'pages.userManagement.query' })}
               </Button>
-              <Button onClick={handleReset} aria-label={intl.formatMessage({ id: 'pages.userManagement.reset' })}>{intl.formatMessage({ id: 'pages.userManagement.reset' })}</Button>
+              <Button 
+                onClick={handleReset} 
+                aria-label={intl.formatMessage({ id: 'pages.userManagement.reset' })}
+                style={isMobile ? { width: '100%' } : {}}
+              >
+                {intl.formatMessage({ id: 'pages.userManagement.reset' })}
+              </Button>
             </Space>
           </Form.Item>
         </Form>
@@ -765,12 +781,12 @@ const UserManagement: React.FC = () => {
 
       {/* 用户表单弹窗 */}
       {formVisible && (
-        <Modal
+          <Modal
           title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
           open={formVisible}
           onCancel={() => setFormVisible(false)}
           footer={null}
-          width={600}
+          width={isMobile ? '100%' : 600}
           destroyOnHidden={true}
         >
           <UserForm

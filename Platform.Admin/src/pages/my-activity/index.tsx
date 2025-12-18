@@ -1,7 +1,9 @@
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { Button, Tag, Badge, Row, Col, Card, Space, Form, Input, Select, DatePicker } from 'antd';
+import { Button, Tag, Badge, Row, Col, Card, Space, Form, Input, Select, DatePicker, Grid } from 'antd';
+
+const { useBreakpoint } = Grid;
 import {
   HistoryOutlined,
   CheckCircleOutlined,
@@ -22,6 +24,8 @@ const { RangePicker } = DatePicker;
 
 const MyActivity: React.FC = () => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
@@ -509,7 +513,7 @@ const MyActivity: React.FC = () => {
       }
       style={{ paddingBlock: 12 }}
       extra={
-        <Space>
+        <Space wrap>
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
@@ -564,7 +568,7 @@ const MyActivity: React.FC = () => {
 
       {/* 搜索表单 */}
       <Card style={{ marginBottom: 16 }}>
-        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
+        <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
           <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
             <Input 
               placeholder={intl.formatMessage({ id: 'pages.table.action' })} 
@@ -607,11 +611,20 @@ const MyActivity: React.FC = () => {
             />
           </Form.Item>
           <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+            <Space wrap>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                icon={<SearchOutlined />}
+                style={isMobile ? { width: '100%' } : {}}
+              >
                 {intl.formatMessage({ id: 'pages.button.search' })}
               </Button>
-              <Button onClick={handleReset} icon={<ReloadOutlined />}>
+              <Button 
+                onClick={handleReset} 
+                icon={<ReloadOutlined />}
+                style={isMobile ? { width: '100%' } : {}}
+              >
                 {intl.formatMessage({ id: 'pages.userManagement.reset' })}
               </Button>
             </Space>

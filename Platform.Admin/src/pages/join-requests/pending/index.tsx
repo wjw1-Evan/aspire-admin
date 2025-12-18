@@ -1,5 +1,7 @@
 import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
-import { Button, Space, App, Modal, Input } from 'antd';
+import { Button, Space, App, Modal, Input, Grid } from 'antd';
+
+const { useBreakpoint } = Grid;
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import {
@@ -17,6 +19,8 @@ const { TextArea } = Input;
  */
 const PendingJoinRequests: React.FC = () => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const { message, modal } = App.useApp();
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -326,7 +330,7 @@ const PendingJoinRequests: React.FC = () => {
       }
       style={{ paddingBlock: 12 }}
       extra={
-        <Space>
+        <Space wrap>
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
@@ -342,6 +346,8 @@ const PendingJoinRequests: React.FC = () => {
       <DataTable<API.JoinRequestDetail>
         columns={columns}
         actionRef={actionRef}
+        scroll={{ x: 'max-content' }}
+        search={false}
         request={async (_params, _sort) => {
           try {
             const response = await getPendingRequests();

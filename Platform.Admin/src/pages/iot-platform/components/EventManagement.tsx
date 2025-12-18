@@ -15,7 +15,10 @@ import {
   Card,
   Row,
   Col,
+  Grid,
 } from 'antd';
+
+const { useBreakpoint } = Grid;
 import {
   CheckOutlined,
   ReloadOutlined,
@@ -34,6 +37,8 @@ export interface EventManagementRef {
 }
 
 const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -365,6 +370,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         columns={columns}
         request={fetchEvents}
         rowKey="id"
+        scroll={{ x: 'max-content' }}
         search={false}
         pagination={{
           pageSize: 20,
@@ -377,7 +383,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         open={isModalVisible}
         onOk={() => form.submit()}
         onCancel={() => setIsModalVisible(false)}
-        width={600}
+        width={isMobile ? '100%' : 600}
       >
         <Form
           form={form}

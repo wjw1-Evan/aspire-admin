@@ -21,11 +21,13 @@ import {
   Spin,
   Empty,
   Typography,
+  Grid,
   type TableColumnsType,
 } from 'antd';
+import dayjs from 'dayjs';
 
 const { Paragraph } = Typography;
-import dayjs from 'dayjs';
+const { useBreakpoint } = Grid;
 import {
   PlusOutlined,
   EditOutlined,
@@ -47,6 +49,8 @@ export interface DataPointManagementRef {
 
 const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   const { message } = App.useApp();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -453,6 +457,8 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         columns={columns}
         request={fetchDataPoints}
         rowKey="id"
+        scroll={{ x: 'max-content' }}
+        search={false}
         pagination={{
           pageSize: 20,
           pageSizeOptions: [10, 20, 50, 100],
@@ -464,7 +470,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         open={isModalVisible}
         onOk={() => form.submit()}
         onCancel={() => setIsModalVisible(false)}
-        width={700}
+        width={isMobile ? '100%' : 700}
       >
         <Form
           form={form}
@@ -558,14 +564,14 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        size={800}
+        size={isMobile ? 'large' : 800}
       >
         <Spin spinning={false}>
           {selectedDataPoint ? (
             <>
               {/* 基本信息 */}
               <Card title="基本信息" style={{ marginBottom: 16 }}>
-                <Descriptions column={2} size="small">
+                <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="数据点名称" span={2}>
                     {selectedDataPoint.title}
                   </Descriptions.Item>
@@ -603,7 +609,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
               {/* 数值范围 */}
               {(selectedDataPoint.minValue !== undefined || selectedDataPoint.maxValue !== undefined) && (
                 <Card title="数值范围" style={{ marginBottom: 16 }}>
-                  <Descriptions column={2} size="small">
+                  <Descriptions column={isMobile ? 1 : 2} size="small">
                     <Descriptions.Item label="最小值">
                       {selectedDataPoint.minValue !== undefined ? selectedDataPoint.minValue : '-'}
                     </Descriptions.Item>
@@ -617,7 +623,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
               {/* 告警配置 */}
               {selectedDataPoint.alarmConfig?.isEnabled && (
                 <Card title="告警配置" style={{ marginBottom: 16 }}>
-                  <Descriptions column={2} size="small">
+                  <Descriptions column={isMobile ? 1 : 2} size="small">
                     <Descriptions.Item label="告警状态">
                       <Tag color="orange">已启用</Tag>
                     </Descriptions.Item>
@@ -694,7 +700,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
 
               {/* 时间信息 */}
               <Card title="时间信息" style={{ marginBottom: 16 }}>
-                <Descriptions column={2} size="small">
+                <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="创建时间">
                     {dayjs(selectedDataPoint.createdAt).format('YYYY-MM-DD HH:mm:ss')}
                   </Descriptions.Item>

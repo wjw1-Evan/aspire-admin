@@ -18,7 +18,10 @@ import {
   Select,
   DatePicker,
   Progress,
+  Grid,
 } from 'antd';
+
+const { useBreakpoint } = Grid;
 import {
   PlusOutlined,
   EditOutlined,
@@ -49,6 +52,8 @@ export interface ProjectViewRef {
 
 const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const [searchForm] = Form.useForm();
   const [formVisible, setFormVisible] = useState(false);
@@ -382,7 +387,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
       {/* 搜索表单 */}
       <Card style={{ marginBottom: 16 }}>
-        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
+        <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
           <Form.Item name="search" label={intl.formatMessage({ id: 'pages.projectManagement.search.label' })}>
             <Input placeholder={intl.formatMessage({ id: 'pages.projectManagement.search.placeholder' })} style={{ width: 200 }} />
           </Form.Item>
@@ -406,11 +411,20 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             <DatePicker.RangePicker style={{ width: 240 }} />
           </Form.Item>
           <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
+            <Space wrap>
+              <Button 
+                type="primary" 
+                htmlType="submit"
+                style={isMobile ? { width: '100%' } : {}}
+              >
                 {intl.formatMessage({ id: 'pages.button.query' })}
               </Button>
-              <Button onClick={handleReset}>{intl.formatMessage({ id: 'pages.button.reset' })}</Button>
+              <Button 
+                onClick={handleReset}
+                style={isMobile ? { width: '100%' } : {}}
+              >
+                {intl.formatMessage({ id: 'pages.button.reset' })}
+              </Button>
             </Space>
           </Form.Item>
         </Form>
@@ -439,12 +453,12 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
       {/* 项目表单弹窗 */}
       {formVisible && (
-        <Modal
+          <Modal
           title={editingProject ? intl.formatMessage({ id: 'pages.projectManagement.editProject' }) : intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
           open={formVisible}
           onCancel={() => setFormVisible(false)}
           footer={null}
-          width={600}
+          width={isMobile ? '100%' : 600}
           destroyOnHidden
         >
           <ProjectForm

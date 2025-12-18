@@ -19,8 +19,11 @@ import {
   Descriptions,
   Spin,
   Empty,
+  Grid,
 } from 'antd';
 import dayjs from 'dayjs';
+
+const { useBreakpoint } = Grid;
 import {
   PlusOutlined,
   EditOutlined,
@@ -41,6 +44,8 @@ export interface GatewayManagementRef {
 }
 
 const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -361,6 +366,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         columns={columns}
         request={fetchGateways}
         rowKey="id"
+        scroll={{ x: 'max-content' }}
         search={false}
         pagination={{
           pageSize: 20,
@@ -373,7 +379,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         open={isModalVisible}
         onOk={() => form.submit()}
         onCancel={() => setIsModalVisible(false)}
-        width={600}
+        width={isMobile ? '100%' : 600}
       >
         <Form
           form={form}
@@ -458,14 +464,14 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        size={800}
+        size={isMobile ? 'large' : 800}
       >
         <Spin spinning={false}>
           {selectedGateway ? (
             <>
               {/* 基本信息 */}
               <Card title="基本信息" style={{ marginBottom: 16 }}>
-                <Descriptions column={2} size="small">
+                <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="网关名称" span={2}>
                     {selectedGateway.title}
                   </Descriptions.Item>
@@ -492,7 +498,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
               {/* 设备统计 */}
               {statistics && (
                 <Card title="设备统计" style={{ marginBottom: 16 }}>
-                  <Descriptions column={2} size="small">
+                  <Descriptions column={isMobile ? 1 : 2} size="small">
                     <Descriptions.Item label="总数">
                       {statistics.totalDevices}
                     </Descriptions.Item>
@@ -511,7 +517,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
 
               {/* 时间信息 */}
               <Card title="时间信息" style={{ marginBottom: 16 }}>
-                <Descriptions column={2} size="small">
+                <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="创建时间">
                     {dayjs(selectedGateway.createdAt).format('YYYY-MM-DD HH:mm:ss')}
                   </Descriptions.Item>

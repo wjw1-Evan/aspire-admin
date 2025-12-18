@@ -12,7 +12,9 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card, type TableColumnsType } from 'antd';
+import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card, Grid, type TableColumnsType } from 'antd';
+
+const { useBreakpoint } = Grid;
 import { type ChangeEvent, type FC, useEffect, useRef, useState } from 'react';
 import { deleteRole, getAllRolesWithStats } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
@@ -21,6 +23,8 @@ import { StatCard } from '@/components';
 
 const RoleManagement: FC = () => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -403,7 +407,7 @@ const RoleManagement: FC = () => {
       }
       style={{ paddingBlock: 12 }}
       extra={
-        <Space>
+        <Space wrap>
           <Button
             key="refresh"
             icon={<ReloadOutlined />}

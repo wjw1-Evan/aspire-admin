@@ -19,8 +19,11 @@ import {
   Descriptions,
   Spin,
   Empty,
+  Grid,
 } from 'antd';
 import dayjs from 'dayjs';
+
+const { useBreakpoint } = Grid;
 import {
   PlusOutlined,
   EditOutlined,
@@ -46,6 +49,8 @@ export interface DeviceManagementRef {
 }
 
 const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const [gateways, setGateways] = useState<IoTGateway[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -338,6 +343,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         columns={columns}
         request={fetchDevices}
         rowKey="id"
+        scroll={{ x: 'max-content' }}
         search={false}
         pagination={{
           pageSize: 20,
@@ -350,7 +356,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         open={isModalVisible}
         onOk={() => form.submit()}
         onCancel={() => setIsModalVisible(false)}
-        width={600}
+        width={isMobile ? '100%' : 600}
       >
         <Form
           form={form}
@@ -402,14 +408,14 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         placement="right"
         onClose={() => setIsDetailDrawerVisible(false)}
         open={isDetailDrawerVisible}
-        size={800}
+        size={typeof window !== 'undefined' && window.innerWidth < 768 ? 'large' : 800}
       >
         <Spin spinning={false}>
           {selectedDevice ? (
             <>
               {/* 基本信息 */}
               <Card title="基本信息" style={{ marginBottom: 16 }}>
-                <Descriptions column={2} size="small">
+                <Descriptions column={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 2} size="small">
                   <Descriptions.Item label="设备名称" span={2}>
                     {selectedDevice.title}
                   </Descriptions.Item>
@@ -436,7 +442,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
               {/* 统计信息 */}
               {statistics && (
                 <Card title="数据点统计" style={{ marginBottom: 16 }}>
-                  <Descriptions column={2} size="small">
+                  <Descriptions column={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 2} size="small">
                     <Descriptions.Item label="总数">
                       {statistics.totalDataPoints}
                     </Descriptions.Item>
@@ -457,7 +463,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
               {/* 时间信息 */}
               <Card title="时间信息" style={{ marginBottom: 16 }}>
-                <Descriptions column={2} size="small">
+                <Descriptions column={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 2} size="small">
                   <Descriptions.Item label="最后上报时间">
                     {selectedDevice.lastReportedAt
                       ? dayjs(selectedDevice.lastReportedAt).format('YYYY-MM-DD HH:mm:ss')

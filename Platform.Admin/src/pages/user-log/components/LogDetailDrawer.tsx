@@ -8,7 +8,10 @@ import {
   Typography,
   Divider,
   Spin,
+  Grid,
 } from 'antd';
+
+const { useBreakpoint } = Grid;
 import {
   ClockCircleOutlined,
   GlobalOutlined,
@@ -43,6 +46,8 @@ export default function LogDetailDrawer({
   fetchFromApi,
 }: LogDetailDrawerProps) {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const [log, setLog] = useState<UserActivityLog | null>(initialLog);
   const [loading, setLoading] = useState(false);
 
@@ -137,7 +142,12 @@ export default function LogDetailDrawer({
   };
 
   return (
-    <Drawer title={intl.formatMessage({ id: 'pages.logDetail.title' })} size={720} open={open} onClose={onClose}>
+    <Drawer 
+      title={intl.formatMessage({ id: 'pages.logDetail.title' })} 
+      size={isMobile ? 'large' : 720} 
+      open={open} 
+      onClose={onClose}
+    >
       <Spin spinning={loading}>
         {log ? (
           <Space orientation="vertical" size="large" style={{ width: '100%' }}>

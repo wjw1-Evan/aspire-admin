@@ -325,6 +325,13 @@ public class TaskService : ITaskService
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
         }
 
+        // 如果任务属于项目，且进度有更新，更新项目进度
+        if (!string.IsNullOrEmpty(updatedTask.ProjectId) && request.CompletionPercentage.HasValue)
+        {
+            var projectService = _serviceProvider.GetRequiredService<IProjectService>();
+            await projectService.CalculateProjectProgressAsync(updatedTask.ProjectId);
+        }
+
         // 发送任务分配通知
         try
         {
@@ -454,6 +461,13 @@ public class TaskService : ITaskService
             request.CompletionPercentage ?? 0,
             task.CompanyId);
 
+        // 如果任务属于项目，且进度有更新，更新项目进度
+        if (!string.IsNullOrEmpty(updatedTask.ProjectId) && request.CompletionPercentage.HasValue)
+        {
+            var projectService = _serviceProvider.GetRequiredService<IProjectService>();
+            await projectService.CalculateProjectProgressAsync(updatedTask.ProjectId);
+        }
+
         // 发送状态变更通知（执行中等）
         try
         {
@@ -541,6 +555,13 @@ public class TaskService : ITaskService
             request.Remarks,
             100,
             task.CompanyId);
+
+        // 如果任务属于项目，更新项目进度（任务完成时进度为100%）
+        if (!string.IsNullOrEmpty(updatedTask.ProjectId))
+        {
+            var projectService = _serviceProvider.GetRequiredService<IProjectService>();
+            await projectService.CalculateProjectProgressAsync(updatedTask.ProjectId);
+        }
 
         // 发送任务完成通知
         try

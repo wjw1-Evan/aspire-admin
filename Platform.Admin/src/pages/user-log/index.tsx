@@ -1,7 +1,9 @@
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { Tag, Button, Badge, Space } from 'antd';
+import { Tag, Button, Badge, Space, Grid } from 'antd';
+
+const { useBreakpoint } = Grid;
 import { ReloadOutlined, FileTextOutlined } from '@ant-design/icons';
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
@@ -11,6 +13,8 @@ import LogDetailDrawer from './components/LogDetailDrawer';
 
 const UserLog: React.FC = () => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
@@ -525,7 +529,7 @@ const UserLog: React.FC = () => {
       }
       style={{ paddingBlock: 12 }}
       extra={
-        <Space>
+        <Space wrap>
           <Button
             key="refresh"
             icon={<ReloadOutlined />}

@@ -1,5 +1,7 @@
 import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
-import { Tag, Button, App, Popconfirm, Space } from 'antd';
+import { Tag, Button, App, Popconfirm, Space, Grid } from 'antd';
+
+const { useBreakpoint } = Grid;
 import React, { useRef, useState, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { getMyRequests, cancelRequest } from '@/services/company';
@@ -18,6 +20,8 @@ import {
  */
 const MyJoinRequests: React.FC = () => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const { message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -300,7 +304,7 @@ const MyJoinRequests: React.FC = () => {
       }
       style={{ paddingBlock: 12 }}
       extra={
-        <Space>
+        <Space wrap>
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
@@ -326,6 +330,8 @@ const MyJoinRequests: React.FC = () => {
       <DataTable<API.JoinRequestDetail>
         columns={columns}
         actionRef={actionRef}
+        scroll={{ x: 'max-content' }}
+        search={false}
         request={async (_params, _sort) => {
           try {
             const response = await getMyRequests();

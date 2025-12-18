@@ -18,7 +18,10 @@ import {
   DatePicker,
   Select,
   Progress,
+  Grid,
 } from 'antd';
+
+const { useBreakpoint } = Grid;
 import {
   PlusOutlined,
   EditOutlined,
@@ -55,6 +58,8 @@ import { StatCard } from '@/components';
 const TaskManagement: React.FC = () => {
   const intl = useIntl();
   const location = useLocation();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [searchForm] = Form.useForm();
@@ -499,7 +504,7 @@ const TaskManagement: React.FC = () => {
       }
       style={{ paddingBlock: 12 }}
       extra={
-        <Space>
+        <Space wrap>
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
@@ -599,7 +604,9 @@ const TaskManagement: React.FC = () => {
             return fetchTasks(params, sort);
           }}
           rowKey="id"
+          scroll={{ x: 'max-content' }}
           search={false}
+          expandable={false}
           pagination={{
             pageSize: 10,
             pageSizeOptions: [10, 20, 50, 100],

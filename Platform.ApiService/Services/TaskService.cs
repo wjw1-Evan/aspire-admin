@@ -888,8 +888,10 @@ public class TaskService : ITaskService
                 var createdByUser = await _userService.GetUserByIdAsync(task.CreatedBy);
                 if (createdByUser != null)
                 {
-                    // 优先使用 Name（显示名称），如果为空则使用 Username
-                    dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name) ? createdByUser.Name : createdByUser.Username;
+                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
+                    dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name) 
+                        ? $"{createdByUser.Username} ({createdByUser.Name})" 
+                        : createdByUser.Username;
                 }
             }
 
@@ -898,8 +900,10 @@ public class TaskService : ITaskService
                 var assignedToUser = await _userService.GetUserByIdAsync(task.AssignedTo);
                 if (assignedToUser != null)
                 {
-                    // 优先使用 Name（显示名称），如果为空则使用 Username
-                    dto.AssignedToName = !string.IsNullOrWhiteSpace(assignedToUser.Name) ? assignedToUser.Name : assignedToUser.Username;
+                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
+                    dto.AssignedToName = !string.IsNullOrWhiteSpace(assignedToUser.Name) 
+                        ? $"{assignedToUser.Username} ({assignedToUser.Name})" 
+                        : assignedToUser.Username;
                 }
             }
 
@@ -968,8 +972,10 @@ public class TaskService : ITaskService
                 var user = await _userService.GetUserByIdAsync(log.ExecutedBy);
                 if (user != null)
                 {
-                    // 优先使用 Name（显示名称），如果为空则使用 Username
-                    dto.ExecutedByName = !string.IsNullOrWhiteSpace(user.Name) ? user.Name : user.Username;
+                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
+                    dto.ExecutedByName = !string.IsNullOrWhiteSpace(user.Name) 
+                        ? $"{user.Username} ({user.Name})" 
+                        : user.Username;
                 }
             }
         }

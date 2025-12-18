@@ -297,7 +297,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                   showSearch
                   placeholder="请选择分配用户（可多选）"
                   options={users.map(user => ({
-                    label: user.username,
+                    label: user.name ? `${user.username} (${user.name})` : user.username,
                     value: user.id,
                   }))}
                   optionFilterProp="label"
@@ -355,10 +355,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
             <Select
               mode="multiple"
               placeholder="请选择参与者"
+              showSearch
               options={users.map(user => ({
-                label: user.username,
+                label: user.name ? `${user.username} (${user.name})` : user.username,
                 value: user.id,
               }))}
+              optionFilterProp="label"
             />
           </Form.Item>
 

@@ -68,8 +68,16 @@ appliesTo:
 - 前端不隐藏按钮/菜单，真实权限以后端菜单级校验决定；`access.ts` 仅作基础访问控制。
 
 ## 用户显示规范
-- **统一显示规则**：所有用户相关字段（创建者、分配者、执行者等）统一显示用户昵称（`Name` 字段），如果用户昵称为空则显示用户名（`Username` 字段）。
-- **后端保证**：后端 DTO 转换时已统一处理，前端直接使用 `*Name` 字段（如 `createdByName`、`assignedToName` 等）即可，无需额外处理。
+- **统一显示规则**：所有用户相关字段（创建者、分配者、执行者等）统一显示格式为 `用户名 (昵称)`，如果用户昵称为空则只显示用户名。
+- **后端保证**：后端 DTO 转换时已统一处理，返回格式为 `用户名 (昵称)` 或 `用户名`，前端直接使用 `*Name` 字段（如 `createdByName`、`assignedToName` 等）即可，无需额外处理。
+- **用户选择框**：在用户选择组件（如 `Select`、`UserPicker` 等）中，选项显示格式应为 `用户名 (昵称)` 或 `用户名`（如果昵称为空），代码示例：
+  ```typescript
+  options={users.map(user => ({
+    label: user.name ? `${user.username} (${user.name})` : user.username,
+    value: user.id,
+  }))}
+  ```
+- **类型定义**：`AppUser` 接口必须包含 `name?: string` 字段用于存储用户昵称。
 
 ## 日期时间显示规范
 - **统一格式**：所有日期时间字段统一使用 `YYYY-MM-DD HH:mm:ss` 格式显示。

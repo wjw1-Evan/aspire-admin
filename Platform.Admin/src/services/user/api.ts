@@ -7,6 +7,7 @@ import type { ApiResponse } from '@/types/unified-api';
 export interface AppUser {
   id: string;
   username: string;
+  name?: string;
   email?: string;
   phoneNumber?: string;
   firstName?: string;

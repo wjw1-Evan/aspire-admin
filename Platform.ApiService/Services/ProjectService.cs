@@ -502,8 +502,10 @@ public class ProjectService : IProjectService
                 var manager = await _userService.GetUserByIdWithoutTenantFilterAsync(project.ManagerId);
                 if (manager != null)
                 {
-                    // 优先使用 Name（显示名称），如果为空则使用 Username
-                    dto.ManagerName = !string.IsNullOrWhiteSpace(manager.Name) ? manager.Name : manager.Username;
+                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
+                    dto.ManagerName = !string.IsNullOrWhiteSpace(manager.Name) 
+                        ? $"{manager.Username} ({manager.Name})" 
+                        : manager.Username;
                 }
                 else
                 {
@@ -528,8 +530,10 @@ public class ProjectService : IProjectService
                 var creator = await _userService.GetUserByIdWithoutTenantFilterAsync(project.CreatedBy);
                 if (creator != null)
                 {
-                    // 优先使用 Name（显示名称），如果为空则使用 Username
-                    dto.CreatedByName = !string.IsNullOrWhiteSpace(creator.Name) ? creator.Name : creator.Username;
+                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
+                    dto.CreatedByName = !string.IsNullOrWhiteSpace(creator.Name) 
+                        ? $"{creator.Username} ({creator.Name})" 
+                        : creator.Username;
                 }
                 else
                 {

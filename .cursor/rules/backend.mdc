@@ -65,11 +65,14 @@ appliesTo:
 
 ## 用户信息显示规范
 - **DTO 转换规则**：在将实体转换为 DTO 时，所有用户相关字段（创建者、分配者、执行者、参与者等）必须统一处理：
-  - 优先使用用户昵称（`Name` 字段），如果为空则使用用户名（`Username` 字段）
-  - 代码示例：
+  - **显示格式**：统一使用 `用户名 (昵称)` 格式，如果昵称为空则只显示用户名
+  - **代码示例**：
     ```csharp
-    // 优先使用 Name（显示名称），如果为空则使用 Username
-    dto.CreatedByName = !string.IsNullOrWhiteSpace(user.Name) ? user.Name : user.Username;
+    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
+    dto.CreatedByName = !string.IsNullOrWhiteSpace(user.Name) 
+        ? $"{user.Username} ({user.Name})" 
+        : user.Username;
     ```
+  - **适用字段**：`CreatedByName`、`AssignedToName`、`ExecutedByName`、`ManagerName` 等所有用户名称字段
 - **跨租户场景**：对于可能跨租户的用户信息（如创建者可能属于不同企业），使用 `GetUserByIdWithoutTenantFilterAsync` 方法获取用户信息。
-- **统一性要求**：确保所有服务（TaskService、ProjectService 等）中的用户信息转换逻辑保持一致。
+- **统一性要求**：确保所有服务（TaskService、ProjectService 等）中的用户信息转换逻辑保持一致，统一使用上述格式。

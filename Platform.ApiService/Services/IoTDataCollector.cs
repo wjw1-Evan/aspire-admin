@@ -300,16 +300,12 @@ public class IoTDataCollector
             device.DeviceId, dataPoints.Count);
 
         var collected = await _fetchClient.FetchAsync(gateway, device, dataPoints, cancellationToken).ConfigureAwait(false);
-        if (collected.Count == 0)
-        {
-            _logger.LogWarning("Device {DeviceId} returned no collected data", device.DeviceId);
-            return DeviceProcessResult.WithWarning($"设备 {device.DeviceId} 未返回任何采集数据。");
-        }
-
+        
         _logger.LogInformation("Device {DeviceId} collected {CollectedCount}/{TotalDataPoints} data points", 
             device.DeviceId, collected.Count, dataPoints.Count);
 
         var dpLookup = dataPoints.ToDictionary(dp => dp.DataPointId, dp => dp);
+        var collectedDataPointIds = collected.Select(c => c.DataPointId).ToHashSet();
         
         // 构建所有数据记录（统一处理）
         var recordsToSave = new List<IoTDataRecord>();
@@ -328,41 +324,61 @@ public class IoTDataCollector
             recordsToSave.Add(record);
             dataPointMap[record.DataPointId] = dataPoint;
         }
-
-        if (recordsToSave.Count == 0)
+        
+        // 批量检查重复并保存（如果有数据记录）
+        var recordsInserted = 0;
+        var recordsSkipped = 0;
+        
+        if (recordsToSave.Count > 0)
         {
-            return new DeviceProcessResult
+            var uniqueRecords = await FilterDuplicatesAsync(device.CompanyId, recordsToSave, cancellationToken).ConfigureAwait(false);
+            recordsInserted = uniqueRecords.Count;
+            recordsSkipped = recordsToSave.Count - uniqueRecords.Count;
+
+            if (uniqueRecords.Count > 0)
             {
-                DataPointsProcessed = dataPoints.Count,
-                RecordsInserted = 0,
-                RecordsSkipped = 0
-            };
+                // 批量保存所有记录
+                await _dataRecordFactory.CreateManyAsync(uniqueRecords).ConfigureAwait(false);
+                
+                // 按数据点分组，每个数据点只更新一次（使用最新的记录）
+                var latestRecord = uniqueRecords.OrderByDescending(r => r.ReportedAt).First();
+                
+                foreach (var group in uniqueRecords.GroupBy(r => r.DataPointId))
+                {
+                    var latestInGroup = group.OrderByDescending(r => r.ReportedAt).First();
+                    if (dataPointMap.TryGetValue(latestInGroup.DataPointId, out var dataPoint))
+                    {
+                        await UpdateDataPointAsync(device.CompanyId, dataPoint, latestInGroup, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+
+                // 更新设备最后上报时间
+                await UpdateDeviceAsync(device.CompanyId, device, latestRecord, cancellationToken).ConfigureAwait(false);
+            }
         }
 
-        // 批量检查重复并保存
-        var uniqueRecords = await FilterDuplicatesAsync(device.CompanyId, recordsToSave, cancellationToken).ConfigureAwait(false);
-        var recordsInserted = uniqueRecords.Count;
-        var recordsSkipped = recordsToSave.Count - uniqueRecords.Count;
-
-        if (uniqueRecords.Count > 0)
+        // 重要：更新所有被请求采集的数据点的 LastUpdatedAt，即使 HTTP 响应中没有它们的数据
+        // 这样可以避免这些数据点一直被过滤出来但采集不到数据的情况
+        foreach (var dataPoint in dataPoints)
         {
-            // 批量保存所有记录
-            await _dataRecordFactory.CreateManyAsync(uniqueRecords).ConfigureAwait(false);
-            
-            // 按数据点分组，每个数据点只更新一次（使用最新的记录）
-            var latestRecord = uniqueRecords.OrderByDescending(r => r.ReportedAt).First();
-            
-            foreach (var group in uniqueRecords.GroupBy(r => r.DataPointId))
+            // 如果这个数据点没有被采集到数据，也要更新它的 LastUpdatedAt，避免它一直被过滤出来
+            if (!collectedDataPointIds.Contains(dataPoint.DataPointId))
             {
-                var latestInGroup = group.OrderByDescending(r => r.ReportedAt).First();
-                if (dataPointMap.TryGetValue(latestInGroup.DataPointId, out var dataPoint))
-                {
-                    await UpdateDataPointAsync(device.CompanyId, dataPoint, latestInGroup, cancellationToken).ConfigureAwait(false);
-                }
-            }
+                _logger.LogDebug("Data point {DataPointId} ({Name}) not found in HTTP response, updating LastUpdatedAt to prevent repeated filtering", 
+                    dataPoint.DataPointId, dataPoint.Name);
+                
+                var filter = _dataPointFactory.CreateFilterBuilder()
+                    .Equal(dp => dp.DataPointId, dataPoint.DataPointId)
+                    .WithTenant(device.CompanyId)
+                    .ExcludeDeleted()
+                    .Build();
 
-            // 更新设备最后上报时间
-            await UpdateDeviceAsync(device.CompanyId, device, latestRecord, cancellationToken).ConfigureAwait(false);
+                var update = _dataPointFactory.CreateUpdateBuilder()
+                    .Set(dp => dp.LastUpdatedAt, now)
+                    .Build();
+
+                await _dataPointFactory.FindOneAndUpdateAsync(filter, update).ConfigureAwait(false);
+            }
         }
 
         return new DeviceProcessResult

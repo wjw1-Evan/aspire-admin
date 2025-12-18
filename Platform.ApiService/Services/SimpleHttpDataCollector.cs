@@ -103,6 +103,7 @@ public class SimpleHttpDataCollector
         var reportedAt = DateTime.UtcNow;
         var recordsToSave = new List<IoTDataRecord>();
         var dataPointValueMap = new Dictionary<string, (IoTDataPoint DataPoint, string Value)>();
+        var matchedDataPointIds = new HashSet<string>();
 
         var unmatchedKeys = new List<string>();
         
@@ -134,6 +135,7 @@ public class SimpleHttpDataCollector
 
             recordsToSave.Add(record);
             dataPointValueMap[dataPoint.DataPointId] = (dataPoint, value);
+            matchedDataPointIds.Add(dataPoint.DataPointId);
         }
 
         // 记录未匹配的字段（HTTP响应中有但未配置数据点）
@@ -144,44 +146,71 @@ public class SimpleHttpDataCollector
                 unmatchedKeys.Count, device.DeviceId, string.Join(", ", unmatchedKeys));
         }
 
-        if (recordsToSave.Count == 0)
+        // 批量检查重复并保存（如果有数据记录）
+        var recordsInserted = 0;
+        var recordsSkipped = 0;
+        
+        if (recordsToSave.Count > 0)
         {
-            if (dataPoints.Count == 0)
+            var uniqueRecords = await FilterDuplicatesAsync(gateway.CompanyId, recordsToSave, cancellationToken).ConfigureAwait(false);
+            recordsInserted = uniqueRecords.Count;
+            recordsSkipped = recordsToSave.Count - uniqueRecords.Count;
+
+            if (uniqueRecords.Count > 0)
             {
-                result.Warning = $"设备 {device.DeviceId} 未配置任何数据点，请先手动创建数据点";
+                // 批量保存所有记录
+                await _dataRecordFactory.CreateManyAsync(uniqueRecords).ConfigureAwait(false);
+                
+                // 按数据点分组，每个数据点只更新一次（使用最新的值）
+                foreach (var group in uniqueRecords.GroupBy(r => r.DataPointId))
+                {
+                    var latestRecord = group.OrderByDescending(r => r.ReportedAt).First();
+                    if (dataPointValueMap.TryGetValue(latestRecord.DataPointId, out var dpInfo))
+                    {
+                        await UpdateDataPointLastValueAsync(gateway.CompanyId, dpInfo.DataPoint, latestRecord.Value, reportedAt, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+
+                // 更新设备最后上报时间
+                await UpdateDeviceLastReportedAsync(gateway.CompanyId, device, reportedAt, cancellationToken).ConfigureAwait(false);
             }
-            else if (unmatchedKeys.Count > 0)
-            {
-                result.Warning = $"HTTP响应中的字段 [{string.Join(", ", unmatchedKeys)}] 未配置对应的数据点";
-            }
-            result.RecordsInserted = 0;
-            result.RecordsSkipped = 0;
-            result.Success = true;
-            return result;
         }
 
-        // 批量检查重复并保存
-        var uniqueRecords = await FilterDuplicatesAsync(gateway.CompanyId, recordsToSave, cancellationToken).ConfigureAwait(false);
-        var recordsInserted = uniqueRecords.Count;
-        var recordsSkipped = recordsToSave.Count - uniqueRecords.Count;
-
-        if (uniqueRecords.Count > 0)
+        // 重要：更新所有被请求采集的数据点的 LastUpdatedAt，即使 HTTP 响应中没有它们的数据
+        // 这样可以避免这些数据点一直被过滤出来但采集不到数据的情况
+        foreach (var dataPoint in dataPoints)
         {
-            // 批量保存所有记录
-            await _dataRecordFactory.CreateManyAsync(uniqueRecords).ConfigureAwait(false);
-            
-            // 按数据点分组，每个数据点只更新一次（使用最新的值）
-            foreach (var group in uniqueRecords.GroupBy(r => r.DataPointId))
+            // 如果这个数据点没有被采集到数据，也要更新它的 LastUpdatedAt，避免它一直被过滤出来
+            if (!matchedDataPointIds.Contains(dataPoint.DataPointId))
             {
-                var latestRecord = group.OrderByDescending(r => r.ReportedAt).First();
-                if (dataPointValueMap.TryGetValue(latestRecord.DataPointId, out var dpInfo))
-                {
-                    await UpdateDataPointLastValueAsync(gateway.CompanyId, dpInfo.DataPoint, latestRecord.Value, reportedAt, cancellationToken).ConfigureAwait(false);
-                }
-            }
+                _logger.LogDebug("Data point {DataPointId} ({Name}) not found in HTTP response, updating LastUpdatedAt to prevent repeated filtering", 
+                    dataPoint.DataPointId, dataPoint.Name);
+                
+                var filter = _dataPointFactory.CreateFilterBuilder()
+                    .Equal(dp => dp.DataPointId, dataPoint.DataPointId)
+                    .WithTenant(gateway.CompanyId)
+                    .ExcludeDeleted()
+                    .Build();
 
-            // 更新设备最后上报时间
-            await UpdateDeviceLastReportedAsync(gateway.CompanyId, device, reportedAt, cancellationToken).ConfigureAwait(false);
+                var update = _dataPointFactory.CreateUpdateBuilder()
+                    .Set(dp => dp.LastUpdatedAt, reportedAt)
+                    .Build();
+
+                await _dataPointFactory.FindOneAndUpdateAsync(filter, update).ConfigureAwait(false);
+            }
+        }
+
+        result.RecordsInserted = recordsInserted;
+        result.RecordsSkipped = recordsSkipped;
+        result.Success = true;
+        
+        if (dataPoints.Count == 0)
+        {
+            result.Warning = $"设备 {device.DeviceId} 未配置任何数据点，请先手动创建数据点";
+        }
+        else if (recordsToSave.Count == 0 && unmatchedKeys.Count > 0)
+        {
+            result.Warning = $"HTTP响应中的字段 [{string.Join(", ", unmatchedKeys)}] 未配置对应的数据点";
         }
 
         result.RecordsInserted = recordsInserted;

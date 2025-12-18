@@ -158,7 +158,7 @@ public class IoTDataCollector
         var result = new IoTDataCollectionResult();
         var warnings = new List<string>();
 
-        // HTTP网关：使用简化模式（自动创建设备，使用用户手动创建的数据点）
+        // HTTP网关：使用简化模式（处理网关下的所有设备）
         if (gateway.ProtocolType?.Equals("HTTP", StringComparison.OrdinalIgnoreCase) == true)
         {
             var simpleCollectorLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<SimpleHttpDataCollector>.Instance;
@@ -171,18 +171,57 @@ public class IoTDataCollector
                 _optionsMonitor,
                 simpleCollectorLogger);
 
-            var gatewayResult = await simpleCollector.CollectGatewayDataAsync(gateway, cancellationToken).ConfigureAwait(false);
+            // 查询网关下的所有启用设备
+            var deviceFilter = _deviceFactory.CreateFilterBuilder()
+                .Equal(d => d.GatewayId, gateway.GatewayId)
+                .Equal(d => d.IsEnabled, true)
+                .WithTenant(gateway.CompanyId)
+                .ExcludeDeleted()
+                .Build();
+
+            var devices = await _deviceFactory.FindAsync(deviceFilter).ConfigureAwait(false);
             
-            if (gatewayResult.Success)
+            if (devices.Count == 0)
             {
-                result.DevicesProcessed = 1;
-                result.DataPointsProcessed = gatewayResult.DataPointsFound;
-                result.RecordsInserted = gatewayResult.RecordsInserted;
-                result.RecordsSkipped = gatewayResult.RecordsSkipped;
+                // 如果没有设备，使用简化模式（自动创建或获取默认设备）
+                var gatewayResult = await simpleCollector.CollectGatewayDataAsync(gateway, cancellationToken).ConfigureAwait(false);
+                
+                if (gatewayResult.Success)
+                {
+                    result.DevicesProcessed = 1;
+                    result.DataPointsProcessed = gatewayResult.DataPointsFound;
+                    result.RecordsInserted = gatewayResult.RecordsInserted;
+                    result.RecordsSkipped = gatewayResult.RecordsSkipped;
+                }
+                else if (!string.IsNullOrWhiteSpace(gatewayResult.Warning))
+                {
+                    warnings.Add(gatewayResult.Warning);
+                }
             }
-            else if (!string.IsNullOrWhiteSpace(gatewayResult.Warning))
+            else
             {
-                warnings.Add(gatewayResult.Warning);
+                // 如果有多个设备，为每个设备采集数据
+                _logger.LogDebug("Processing {DeviceCount} devices for HTTP gateway {GatewayId}", 
+                    devices.Count, gateway.GatewayId);
+                
+                foreach (var device in devices)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    
+                    var deviceResult = await simpleCollector.CollectDeviceDataAsync(gateway, device, cancellationToken).ConfigureAwait(false);
+                    
+                    if (deviceResult.Success)
+                    {
+                        result.DevicesProcessed++;
+                        result.DataPointsProcessed += deviceResult.DataPointsFound;
+                        result.RecordsInserted += deviceResult.RecordsInserted;
+                        result.RecordsSkipped += deviceResult.RecordsSkipped;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(deviceResult.Warning))
+                    {
+                        warnings.Add($"设备 {device.DeviceId}: {deviceResult.Warning}");
+                    }
+                }
             }
         }
         else

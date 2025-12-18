@@ -49,7 +49,7 @@ public class SimpleHttpDataCollector
     }
 
     /// <summary>
-    /// 采集单个网关的HTTP数据
+    /// 采集单个网关的HTTP数据（自动获取或创建默认设备）
     /// </summary>
     public async Task<GatewayCollectionResult> CollectGatewayDataAsync(
         IoTGateway gateway,
@@ -85,7 +85,39 @@ public class SimpleHttpDataCollector
             return result;
         }
 
-        _logger.LogDebug("Using device {DeviceId} for gateway {GatewayId}", device.DeviceId, gateway.GatewayId);
+        return await CollectDeviceDataAsync(gateway, device, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 采集指定设备的HTTP数据
+    /// </summary>
+    public async Task<GatewayCollectionResult> CollectDeviceDataAsync(
+        IoTGateway gateway,
+        IoTDevice device,
+        CancellationToken cancellationToken)
+    {
+        var result = new GatewayCollectionResult { GatewayId = gateway.GatewayId };
+
+        if (!gateway.IsEnabled)
+        {
+            result.Warning = "网关未启用";
+            return result;
+        }
+
+        if (gateway.ProtocolType?.Equals("HTTP", StringComparison.OrdinalIgnoreCase) != true)
+        {
+            result.Warning = "网关协议不是HTTP";
+            return result;
+        }
+
+        var url = GetGatewayUrl(gateway);
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            result.Warning = "网关未配置HTTP地址";
+            return result;
+        }
+
+        _logger.LogDebug("Collecting data for device {DeviceId} on gateway {GatewayId}", device.DeviceId, gateway.GatewayId);
 
         // 采集HTTP数据
         var httpData = await FetchHttpDataAsync(url, gateway, cancellationToken).ConfigureAwait(false);

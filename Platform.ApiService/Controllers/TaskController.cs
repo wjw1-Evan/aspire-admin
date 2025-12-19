@@ -596,9 +596,10 @@ public class TaskController : BaseApiController
 
             return Success(new { id = dependencyId });
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFoundError("任务", request.PredecessorTaskId);
+            // 异常消息中已包含具体是前置任务还是后续任务不存在
+            return ValidationError(ex.Message);
         }
         catch (InvalidOperationException ex)
         {

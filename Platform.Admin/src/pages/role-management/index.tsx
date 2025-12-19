@@ -338,7 +338,7 @@ const RoleManagement: FC = () => {
       title: intl.formatMessage({ id: 'pages.table.stats' }),
       key: 'stats',
       render: (_, record: any) => (
-        <Space split="|">
+        <Space separator="|">
           <span>
             {intl.formatMessage({ id: 'pages.table.user' })}:{' '}
             {record.userCount || 0}

@@ -197,7 +197,7 @@ export default function CompanySettings() {
       {/* 企业详细信息 */}
       <Card 
         title={intl.formatMessage({ id: 'pages.companySettings.details' })} 
-        bordered
+        variant="outlined"
         style={{ marginBottom: 16 }}
       >
         {company && (

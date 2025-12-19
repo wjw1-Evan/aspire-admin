@@ -260,10 +260,11 @@ export function useSignalRConnection(
     []
   );
 
-  // 自动连接
+  // 自动连接（延迟建立，不阻塞页面渲染）
   useEffect(() => {
     let isMounted = true;
     let connectPromise: Promise<void> | null = null;
+    let connectTimer: NodeJS.Timeout | null = null;
 
     if (autoConnect) {
       // 检查是否已经有连接或正在连接
@@ -277,14 +278,23 @@ export function useSignalRConnection(
         }
       }
 
-      connectPromise = connect().catch((error) => {
-        // 如果组件已卸载或正在协商时被停止，忽略错误
-        // 错误已通过 onError 回调处理
-      });
+      // 延迟建立连接，让页面先渲染（延迟 300-800ms，避免多个连接同时建立）
+      const delay = Math.random() * 500 + 300; // 300-800ms 随机延迟
+      connectTimer = setTimeout(() => {
+        if (isMounted) {
+          connectPromise = connect().catch((error) => {
+            // 如果组件已卸载或正在协商时被停止，忽略错误
+            // 错误已通过 onError 回调处理
+          });
+        }
+      }, delay);
     }
 
     return () => {
       isMounted = false;
+      if (connectTimer) {
+        clearTimeout(connectTimer);
+      }
       // 如果连接正在进行，取消它（但不在协商阶段强制停止）
       if (connectPromise && connectionRef.current && isNegotiatingRef.current) {
         // 标记为不需要连接，让协商自然失败

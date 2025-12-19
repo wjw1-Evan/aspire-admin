@@ -360,9 +360,15 @@ export const layout: RunTimeLayoutConfig = ({
           const shouldReport = shouldReportPages.some(page => location.pathname === page || location.pathname.startsWith(page));
           
           // 仅在用户登录后、且在特定页面时启动定期上报
+          // 延迟启动，让页面先渲染完成
           if (initialState?.currentUser && shouldReport && !hasStartedRef.current) {
             hasStartedRef.current = true;
-            LocationService.reportLocation(true);
+            // 延迟 1 秒后启动位置上报，避免阻塞页面加载
+            setTimeout(() => {
+              LocationService.reportLocation(true).catch(() => {
+                // 静默失败，不影响页面加载
+              });
+            }, 1000);
           } else if ((!shouldReport || !initialState?.currentUser) && hasStartedRef.current) {
             // 离开特定页面或用户登出时停止上报
             LocationService.stopPeriodicReporting();

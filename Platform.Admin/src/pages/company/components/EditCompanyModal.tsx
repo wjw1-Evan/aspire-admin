@@ -20,10 +20,10 @@ export default function EditCompanyModal({
   const [form] = Form.useForm();
 
   React.useEffect(() => {
+    // 只在 Modal 打开时设置表单值
+    // 关闭时不需要重置，因为 destroyOnHidden 会销毁 Form
     if (visible && company) {
       form.setFieldsValue(company);
-    } else if (!visible) {
-      form.resetFields();
     }
   }, [visible, company, form]);
 

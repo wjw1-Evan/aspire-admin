@@ -12,34 +12,45 @@ export default function NoticeIcon() {
 
   // 初次加载拉取一次未读数，并建立 SignalR 连接
   useEffect(() => {
-    const init = async () => {
-      try {
-        const res = await getUnreadStatistics();
-        if (res?.success && res.data) setUnreadCount(res.data.total || 0);
-      } catch {}
-      await notificationClient.start();
+    // 延迟建立连接，让页面先渲染，不阻塞页面加载
+    const initTimer = setTimeout(() => {
+      const init = async () => {
+        try {
+          const res = await getUnreadStatistics();
+          if (res?.success && res.data) setUnreadCount(res.data.total || 0);
+        } catch {}
+        
+        // 非阻塞方式建立连接，不等待连接完成
+        notificationClient.start().catch(() => {
+          // 连接失败由自动重连机制处理
+        });
 
-      // 新通知：未读数 +1（仅当 notice.read === false）
-      const offCreated = notificationClient.on('NotificationCreated', (notice: any) => {
-        if (!notice?.read) setUnreadCount((c) => c + 1);
-      });
-      // 已读：当前用户标记已读则 -1
-      const offRead = notificationClient.on('NotificationRead', (_payload: any) => {
-        setUnreadCount((c) => (c > 0 ? c - 1 : 0));
-      });
+        // 新通知：未读数 +1（仅当 notice.read === false）
+        const offCreated = notificationClient.on('NotificationCreated', (notice: any) => {
+          if (!notice?.read) setUnreadCount((c) => c + 1);
+        });
+        // 已读：当前用户标记已读则 -1
+        const offRead = notificationClient.on('NotificationRead', (_payload: any) => {
+          setUnreadCount((c) => (c > 0 ? c - 1 : 0));
+        });
 
-      return () => {
-        offCreated();
-        offRead();
+        return () => {
+          offCreated();
+          offRead();
+        };
       };
-    };
 
-    const cleanupPromise = init();
+      const cleanupPromise = init();
+      return () => {
+        // 移除事件绑定（连接由单例保持，可不主动 stop）
+        cleanupPromise.then((cleanup: any) => {
+          if (typeof cleanup === 'function') cleanup();
+        });
+      };
+    }, 500); // 延迟 500ms，让页面先渲染
+
     return () => {
-      // 移除事件绑定（连接由单例保持，可不主动 stop）
-      cleanupPromise.then((cleanup: any) => {
-        if (typeof cleanup === 'function') cleanup();
-      });
+      clearTimeout(initTimer);
     };
   }, []);
 

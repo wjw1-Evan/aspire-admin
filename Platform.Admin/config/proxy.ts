@@ -19,17 +19,15 @@ export default {
       ws: true,
       // keep /api prefix; gateway maps /apiservice/api/* -> ApiService /api/*
     },
-    // SignalR hubs: localhost:8000/hubs/** -> http://localhost:15000/apiservice/hubs/**
-    '/hubs/': {
-      target: 'http://localhost:15000/apiservice',
-      changeOrigin: true,
-      ws: true,
-      },
-    // Also match '/hubs' (without trailing slash)
+    // SignalR hubs: localhost:15001/hubs/** -> http://localhost:15000/apiservice/hubs/**
+    // 匹配所有以 /hubs 开头的路径（包括 /hubs/chat, /hubs/notification 等）
+    // 注意：UmiJS 代理配置使用路径前缀匹配，/hubs 会匹配所有 /hubs* 路径
     '/hubs': {
       target: 'http://localhost:15000/apiservice',
       changeOrigin: true,
       ws: true,
+      // 保持路径不变，网关会正确路由到后端服务
+      // 例如：/hubs/chat -> http://localhost:15000/apiservice/hubs/chat
     },
   },
   pre: {

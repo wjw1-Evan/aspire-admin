@@ -30,7 +30,7 @@ public class XiaokeConfigController : BaseApiController
     /// <summary>
     /// 获取配置列表
     /// </summary>
-    /// <param name="current">当前页码</param>
+    /// <param name="page">当前页码</param>
     /// <param name="pageSize">页面大小</param>
     /// <param name="name">配置名称（搜索关键词）</param>
     /// <param name="isEnabled">是否启用（筛选）</param>

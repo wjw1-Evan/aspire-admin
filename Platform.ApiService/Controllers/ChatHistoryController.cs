@@ -90,7 +90,7 @@ public class ChatHistoryController : BaseApiController
         if (!string.IsNullOrEmpty(request.Content))
         {
             var messageFilterBuilder = _messageFactory.CreateFilterBuilder();
-            messageFilterBuilder = messageFilterBuilder.Regex(m => m.Content, request.Content, "i");
+            messageFilterBuilder = messageFilterBuilder.Regex(m => m.Content, request.Content!, "i");
             var messageFilter = messageFilterBuilder.Build();
 
             // ✅ 数据工厂会自动添加企业过滤（因为 ChatMessage 实现了 IMultiTenant）

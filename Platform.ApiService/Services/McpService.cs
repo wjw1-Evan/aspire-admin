@@ -23,6 +23,7 @@ public class McpService : IMcpService
     private readonly ISocialService _socialService;
     private readonly ITaskService _taskService;
     private readonly IUnifiedNotificationService _unifiedNotificationService;
+    private readonly IXiaokeConfigService? _xiaokeConfigService;
     private readonly ILogger<McpService> _logger;
     private List<McpTool>? _cachedTools;
     private DateTime _toolsCacheTime = DateTime.MinValue;
@@ -59,6 +60,7 @@ public class McpService : IMcpService
         ISocialService socialService,
         ITaskService taskService,
         IUnifiedNotificationService unifiedNotificationService,
+        IXiaokeConfigService? xiaokeConfigService,
          ILogger<McpService> logger)
     {
         _userFactory = userFactory;
@@ -74,6 +76,7 @@ public class McpService : IMcpService
         _socialService = socialService;
         _taskService = taskService;
         _unifiedNotificationService = unifiedNotificationService;
+        _xiaokeConfigService = xiaokeConfigService;
          _logger = logger;
     }
 
@@ -766,6 +769,72 @@ public class McpService : IMcpService
                         ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 10, ["minimum"] = 1, ["maximum"] = 100 }
                     }
                 }
+            },
+            // 小科配置管理相关工具
+            new()
+            {
+                Name = "get_xiaoke_configs",
+                Description = "获取小科配置列表。支持按名称、启用状态等条件查询配置。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["name"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "配置名称（搜索关键词，可选）"
+                        },
+                        ["isEnabled"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "boolean",
+                            ["description"] = "是否启用（筛选条件，可选）"
+                        },
+                        ["page"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "页码（从1开始）",
+                            ["default"] = 1,
+                            ["minimum"] = 1
+                        },
+                        ["pageSize"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "integer",
+                            ["description"] = "每页数量",
+                            ["default"] = 10,
+                            ["minimum"] = 1,
+                            ["maximum"] = 100
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_xiaoke_config",
+                Description = "获取小科配置详情。通过配置ID查询配置的详细信息。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "configId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["configId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "配置ID（必填）"
+                        }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_default_xiaoke_config",
+                Description = "获取当前企业的默认小科配置。返回当前企业设置的默认配置信息。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>()
+                }
             }
         };
 
@@ -827,6 +896,10 @@ public class McpService : IMcpService
                 "get_unread_notification_stats" => await HandleGetUnreadNotificationStatsAsync(arguments, currentUserId),
                 "mark_notification_read" => await HandleMarkNotificationReadAsync(arguments, currentUserId),
                 "get_task_notifications" => await HandleGetTaskNotificationsAsync(arguments, currentUserId),
+                // 小科配置管理相关
+                "get_xiaoke_configs" => await HandleGetXiaokeConfigsAsync(arguments, currentUserId),
+                "get_xiaoke_config" => await HandleGetXiaokeConfigAsync(arguments, currentUserId),
+                "get_default_xiaoke_config" => await HandleGetDefaultXiaokeConfigAsync(arguments, currentUserId),
                 _ => throw new ArgumentException($"未知的工具: {toolName}")
             };
 
@@ -2149,6 +2222,127 @@ public class McpService : IMcpService
             _logger.LogError(ex, "获取规则配置的 MCP 提示词时发生错误");
             return new List<McpPrompt>();
         }
+    }
+
+    #endregion
+
+    #region 小科配置管理工具处理方法
+
+    private async Task<object> HandleGetXiaokeConfigsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (_xiaokeConfigService == null)
+        {
+            return new { error = "小科配置服务未启用" };
+        }
+
+        var name = arguments.ContainsKey("name") ? arguments["name"]?.ToString() : null;
+        var isEnabled = arguments.ContainsKey("isEnabled") && bool.TryParse(arguments["isEnabled"]?.ToString(), out var enabled) ? enabled : (bool?)null;
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 10, maxPageSize: 100);
+
+        var queryParams = new XiaokeConfigQueryParams
+        {
+            Current = page,
+            PageSize = pageSize,
+            Name = name,
+            IsEnabled = isEnabled
+        };
+
+        var response = await _xiaokeConfigService.GetConfigsAsync(queryParams);
+
+        var configs = response.Data == null
+            ? new List<object>()
+            : response.Data.Select(c => new
+            {
+                id = c.Id,
+                name = c.Name,
+                model = c.Model,
+                systemPrompt = c.SystemPrompt,
+                temperature = c.Temperature,
+                maxTokens = c.MaxTokens,
+                topP = c.TopP,
+                frequencyPenalty = c.FrequencyPenalty,
+                presencePenalty = c.PresencePenalty,
+                isEnabled = c.IsEnabled,
+                isDefault = c.IsDefault,
+                createdAt = c.CreatedAt,
+                updatedAt = c.UpdatedAt
+            }).Cast<object>().ToList();
+
+        return new
+        {
+            configs = configs,
+            total = response.Total,
+            page = response.Current,
+            pageSize = response.PageSize,
+            totalPages = response.Total > 0 ? (int)Math.Ceiling(response.Total / (double)response.PageSize) : 0
+        };
+    }
+
+    private async Task<object> HandleGetXiaokeConfigAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (_xiaokeConfigService == null)
+        {
+            return new { error = "小科配置服务未启用" };
+        }
+
+        if (!arguments.ContainsKey("configId") || arguments["configId"] is not string configId)
+        {
+            return new { error = "缺少必需的参数: configId" };
+        }
+
+        var config = await _xiaokeConfigService.GetConfigByIdAsync(configId);
+        if (config == null)
+        {
+            return new { error = "配置未找到" };
+        }
+
+        return new
+        {
+            id = config.Id,
+            name = config.Name,
+            model = config.Model,
+            systemPrompt = config.SystemPrompt,
+            temperature = config.Temperature,
+            maxTokens = config.MaxTokens,
+            topP = config.TopP,
+            frequencyPenalty = config.FrequencyPenalty,
+            presencePenalty = config.PresencePenalty,
+            isEnabled = config.IsEnabled,
+            isDefault = config.IsDefault,
+            createdAt = config.CreatedAt,
+            updatedAt = config.UpdatedAt
+        };
+    }
+
+    private async Task<object> HandleGetDefaultXiaokeConfigAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (_xiaokeConfigService == null)
+        {
+            return new { error = "小科配置服务未启用" };
+        }
+
+        var config = await _xiaokeConfigService.GetDefaultConfigAsync();
+        if (config == null)
+        {
+            return new { error = "未找到默认配置" };
+        }
+
+        return new
+        {
+            id = config.Id,
+            name = config.Name,
+            model = config.Model,
+            systemPrompt = config.SystemPrompt,
+            temperature = config.Temperature,
+            maxTokens = config.MaxTokens,
+            topP = config.TopP,
+            frequencyPenalty = config.FrequencyPenalty,
+            presencePenalty = config.PresencePenalty,
+            isEnabled = config.IsEnabled,
+            isDefault = config.IsDefault,
+            createdAt = config.CreatedAt,
+            updatedAt = config.UpdatedAt
+        };
     }
 
     #endregion

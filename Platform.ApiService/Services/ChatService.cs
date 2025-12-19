@@ -41,6 +41,7 @@ public class ChatService : IChatService
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
     private readonly IMcpService? _mcpService;
+    private readonly IXiaokeConfigService? _xiaokeConfigService;
 
 
     /// <summary>
@@ -58,6 +59,7 @@ public class ChatService : IChatService
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
         IMcpService? mcpService,
+        IXiaokeConfigService? xiaokeConfigService,
         ILogger<ChatService> logger)
     {
         _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
@@ -70,6 +72,7 @@ public class ChatService : IChatService
         _openAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
         _aiOptions = aiOptions?.Value ?? throw new ArgumentNullException(nameof(aiOptions));
         _mcpService = mcpService;
+        _xiaokeConfigService = xiaokeConfigService;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         var mongoDatabase = database ?? throw new ArgumentNullException(nameof(database));
@@ -1052,9 +1055,30 @@ public class ChatService : IChatService
         string? locale,
         CancellationToken cancellationToken = default)
     {
-        var model = string.IsNullOrWhiteSpace(_aiOptions.Model)
-            ? "gpt-4o-mini"
-            : _aiOptions.Model;
+        // 优先使用小科配置管理的配置
+        XiaokeConfigDto? xiaokeConfig = null;
+        if (_xiaokeConfigService != null)
+        {
+            try
+            {
+                xiaokeConfig = await _xiaokeConfigService.GetDefaultConfigAsync();
+                // 如果配置存在但未启用，则忽略它，使用默认配置
+                if (xiaokeConfig != null && !xiaokeConfig.IsEnabled)
+                {
+                    _logger.LogInformation("小科配置 {ConfigName} 未启用，使用默认配置", xiaokeConfig.Name);
+                    xiaokeConfig = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "获取小科配置失败，使用默认配置");
+            }
+        }
+
+        // 确定使用的模型：优先使用小科配置，其次使用 _aiOptions，最后使用默认值
+        var model = xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.Model)
+            ? xiaokeConfig.Model
+            : (string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model);
 
         ChatClient chatClient;
         try
@@ -1070,18 +1094,54 @@ public class ChatService : IChatService
         var effectiveLocale = string.IsNullOrWhiteSpace(locale) ? "zh-CN" : locale!;
         var currentUserId = triggerMessage.SenderId;
 
-        // 优先使用用户自定义的角色定义，其次使用配置的系统提示词，最后使用默认值
+        // 优先使用用户自定义的角色定义，其次使用小科配置的系统提示词，再次使用 _aiOptions，最后使用默认值
         string systemPrompt;
+        const string defaultRoleDefinition = "你是小科，请使用简体中文提供简洁、专业且友好的回复。";
+        
         try
         {
-            systemPrompt = await _userService.GetAiRoleDefinitionAsync(currentUserId);
+            var userRoleDefinition = await _userService.GetAiRoleDefinitionAsync(currentUserId);
+            // 检查用户是否有自定义角色定义（不是默认值）
+            if (!string.IsNullOrWhiteSpace(userRoleDefinition) && userRoleDefinition != defaultRoleDefinition)
+            {
+                // 用户有自定义角色定义，优先使用
+                systemPrompt = userRoleDefinition;
+            }
+            else
+            {
+                // 用户没有自定义角色定义，优先使用小科配置的系统提示词
+                if (xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.SystemPrompt))
+                {
+                    systemPrompt = xiaokeConfig.SystemPrompt;
+                    _logger.LogInformation("使用小科配置的系统提示词: {ConfigName}", xiaokeConfig.Name);
+                }
+                else if (!string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt))
+                {
+                    systemPrompt = _aiOptions.SystemPrompt;
+                }
+                else
+                {
+                    systemPrompt = defaultRoleDefinition;
+                }
+            }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "获取用户角色定义失败，使用配置的默认值");
-            systemPrompt = string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)
-                ? "你是小科，请使用简体中文提供简洁、专业且友好的回复。"
-                : _aiOptions.SystemPrompt;
+            // 优先使用小科配置的系统提示词
+            if (xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.SystemPrompt))
+            {
+                systemPrompt = xiaokeConfig.SystemPrompt;
+                _logger.LogInformation("异常情况下使用小科配置的系统提示词: {ConfigName}", xiaokeConfig.Name);
+            }
+            else if (!string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt))
+            {
+                systemPrompt = _aiOptions.SystemPrompt;
+            }
+            else
+            {
+                systemPrompt = defaultRoleDefinition;
+            }
         }
 
         var conversationMessages = await BuildAssistantConversationMessagesAsync(
@@ -1127,13 +1187,18 @@ public class ChatService : IChatService
             instructionBuilder.AppendLine("【我的活动模块】");
             instructionBuilder.AppendLine("- get_my_activity_logs: 获取我的活动日志（支持按操作类型、时间范围筛选、分页）");
             instructionBuilder.AppendLine();
-            instructionBuilder.AppendLine("【聊天模块】");
-            instructionBuilder.AppendLine("- get_chat_sessions: 获取聊天会话列表");
-            instructionBuilder.AppendLine("- get_chat_messages: 获取聊天消息列表");
-            instructionBuilder.AppendLine();
-            instructionBuilder.AppendLine("【社交模块】");
-            instructionBuilder.AppendLine("- get_nearby_users: 获取附近的用户（基于地理位置）");
-            instructionBuilder.AppendLine();
+                instructionBuilder.AppendLine("【聊天模块】");
+                instructionBuilder.AppendLine("- get_chat_sessions: 获取聊天会话列表");
+                instructionBuilder.AppendLine("- get_chat_messages: 获取聊天消息列表");
+                instructionBuilder.AppendLine();
+                instructionBuilder.AppendLine("【社交模块】");
+                instructionBuilder.AppendLine("- get_nearby_users: 获取附近的用户（基于地理位置）");
+                instructionBuilder.AppendLine();
+                instructionBuilder.AppendLine("【小科配置管理模块】");
+                instructionBuilder.AppendLine("- get_xiaoke_configs: 获取小科配置列表（支持按名称、启用状态筛选、分页）");
+                instructionBuilder.AppendLine("- get_xiaoke_config: 获取小科配置详情（通过配置ID查询）");
+                instructionBuilder.AppendLine("- get_default_xiaoke_config: 获取当前企业的默认小科配置");
+                instructionBuilder.AppendLine();
             
             // 如果已经调用了工具，将结果添加到上下文中
             if (!string.IsNullOrWhiteSpace(toolResultContext))
@@ -1162,9 +1227,50 @@ public class ChatService : IChatService
             EndUserId = triggerMessage.SenderId
         };
 
-        if (_aiOptions.MaxTokens > 0)
+        // 使用小科配置的参数，如果不存在则使用 _aiOptions
+        if (xiaokeConfig != null)
         {
-            completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
+            // MaxTokens
+            if (xiaokeConfig.MaxTokens > 0)
+            {
+                completionOptions.MaxOutputTokenCount = xiaokeConfig.MaxTokens;
+            }
+            else if (_aiOptions.MaxTokens > 0)
+            {
+                completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
+            }
+
+            // Temperature
+            if (xiaokeConfig.Temperature >= 0 && xiaokeConfig.Temperature <= 2)
+            {
+                completionOptions.Temperature = (float)xiaokeConfig.Temperature;
+            }
+
+            // TopP
+            if (xiaokeConfig.TopP >= 0 && xiaokeConfig.TopP <= 1)
+            {
+                completionOptions.TopP = (float)xiaokeConfig.TopP;
+            }
+
+            // FrequencyPenalty
+            if (xiaokeConfig.FrequencyPenalty >= -2 && xiaokeConfig.FrequencyPenalty <= 2)
+            {
+                completionOptions.FrequencyPenalty = (float)xiaokeConfig.FrequencyPenalty;
+            }
+
+            // PresencePenalty
+            if (xiaokeConfig.PresencePenalty >= -2 && xiaokeConfig.PresencePenalty <= 2)
+            {
+                completionOptions.PresencePenalty = (float)xiaokeConfig.PresencePenalty;
+            }
+        }
+        else
+        {
+            // 回退到 _aiOptions
+            if (_aiOptions.MaxTokens > 0)
+            {
+                completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
+            }
         }
 
         try

@@ -26,10 +26,8 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, onSuccess, onCancel }) 
 
   // AI模型选项
   const modelOptions = [
-    { label: 'GPT-4', value: 'gpt-4' },
-    { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
-    { label: 'GPT-3.5 Turbo', value: 'gpt-3.5-turbo' },
-    { label: 'GPT-3.5', value: 'gpt-3.5' },
+    { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
+   
   ];
 
   useEffect(() => {

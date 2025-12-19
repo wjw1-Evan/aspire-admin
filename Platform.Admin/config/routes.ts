@@ -141,6 +141,22 @@ export default [
     component: './iot-platform/data-center',
     hideInMenu: true,
   },
+  {
+    path: '/xiaoke-management',
+    hideInMenu: true, // 使用数据库菜单
+    routes: [
+      {
+        path: '/xiaoke-management/config',
+        component: './xiaoke-management/config',
+        hideInMenu: true, // 使用数据库菜单
+      },
+      {
+        path: '/xiaoke-management/chat-history',
+        component: './xiaoke-management/chat-history',
+        hideInMenu: true, // 使用数据库菜单
+      },
+    ],
+  },
 
   // 默认重定向和404
   {

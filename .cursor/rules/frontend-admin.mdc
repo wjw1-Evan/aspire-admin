@@ -51,6 +51,133 @@ appliesTo:
   - 错误已被全局错误处理捕获并显示提示时，应返回 `{ data: [], total: 0, success: false }` 避免表格显示错误状态
   - 从后端 `ApiResponse<PagedResult<T>>` 中提取 `data.list` 和 `data.total` 返回给 DataTable
   - 搜索参数需在 `request` 函数中手动合并（通过 `useState` 管理搜索状态）
+
+## 分页处理规范（强制）
+- **统一分页参数**：所有分页相关 API 调用统一使用 `page` 和 `pageSize` 参数（参考 `src/pages/my-activity/index.tsx`）。
+- **搜索参数管理**：
+  - 使用 `searchParamsRef`（`useRef`）存储最新的搜索参数，确保 `request` 函数能立即访问到最新值
+  - 同时使用 `searchParams`（`useState`）管理搜索参数状态（用于 UI 显示）
+  - 代码示例：
+    ```typescript
+    const [searchParams, setSearchParams] = useState<any>({});
+    const searchParamsRef = useRef<any>({});
+    
+    const handleSearch = useCallback(() => {
+      const values = searchForm.getFieldsValue();
+      // 处理日期范围等特殊字段
+      if (values.dateRange && Array.isArray(values.dateRange) && values.dateRange.length === 2) {
+        const [start, end] = values.dateRange;
+        values.startDate = start ? dayjs(start).toISOString() : undefined;
+        values.endDate = end ? dayjs(end).toISOString() : undefined;
+        delete values.dateRange;
+      }
+      // 同时更新 state 和 ref
+      searchParamsRef.current = values;
+      setSearchParams(values);
+      // 重置到第一页并重新加载数据
+      if (actionRef.current?.reloadAndReset) {
+        actionRef.current.reloadAndReset();
+      } else if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+    }, [searchForm]);
+    
+    const handleReset = useCallback(() => {
+      searchForm.resetFields();
+      // 同时更新 state 和 ref
+      searchParamsRef.current = {};
+      setSearchParams({});
+      if (actionRef.current?.reloadAndReset) {
+        actionRef.current.reloadAndReset();
+      } else if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+    }, [searchForm]);
+    ```
+- **request 函数规范**：
+  - 使用 `useCallback` 定义 `request` 函数，依赖数组为空（`[]`），因为使用 `ref` 来获取最新的搜索参数
+  - 在 `request` 函数中，从 `params` 中提取 `current` 和 `pageSize`，然后转换为 `page` 和 `pageSize` 传递给后端 API
+  - 合并搜索参数时使用 `searchParamsRef.current` 确保获取最新值
+  - 代码示例：
+    ```typescript
+    const fetchRecords = useCallback(async (params: any, sort?: Record<string, any>) => {
+      const { current = 1, pageSize = 20 } = params;
+      
+      // 合并搜索参数，使用 ref 确保获取最新的搜索参数
+      const mergedParams = { ...searchParamsRef.current, ...params };
+      const { action, httpMethod, statusCode, ipAddress, startDate, endDate } = mergedParams;
+      
+      // 处理排序参数
+      let sortBy = 'createdAt'; // 默认按创建时间排序
+      let sortOrder: 'asc' | 'desc' = 'desc'; // 默认降序
+      
+      if (sort && Object.keys(sort).length > 0) {
+        const sortKey = Object.keys(sort)[0];
+        const sortValue = sort[sortKey];
+        sortBy = sortKey === 'createdAt' ? 'createdAt' : sortKey;
+        sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
+      }
+      
+      try {
+        const response = await getCurrentUserActivityLogs({
+          page: current, // DataTable 传递的是 current，转换为 page
+          pageSize,
+          // ... 其他搜索参数
+        });
+        
+        if (response.success && response.data) {
+          const result = response.data as any;
+          return {
+            data: result.data || [],
+            total: result.total || 0,
+            success: true,
+          };
+        }
+        
+        return {
+          data: [],
+          total: 0,
+          success: false,
+        };
+      } catch (error) {
+        console.error('Failed to load records:', error);
+        return {
+          data: [],
+          total: 0,
+          success: false,
+        };
+      }
+    }, []); // 空依赖数组，因为使用 ref 来获取最新的搜索参数
+    ```
+- **服务层 API 调用**：
+  - 服务函数参数统一使用 `page` 和 `pageSize`（而不是 `current`）
+  - 代码示例：
+    ```typescript
+    export async function getXiaokeConfigs(params?: {
+      page?: number;
+      pageSize?: number;
+      name?: string;
+      isEnabled?: boolean;
+      sorter?: string;
+    }) {
+      return request<API.ApiResponse<XiaokeConfigListResponse>>('/api/xiaoke/config', {
+        method: 'GET',
+        params,
+      });
+    }
+    ```
+- **分页配置**：
+  - `DataTable` 的 `pagination` 属性统一配置：
+    ```typescript
+    pagination={{
+      pageSize: 20,
+      pageSizeOptions: [10, 20, 50, 100],
+      showSizeChanger: true,
+      showQuickJumper: true,
+    }}
+    ```
+- **参考实现**：`src/pages/my-activity/index.tsx` 为标准实现，所有分页列表页面应参考此实现。
+
 - **操作列样式规范**（强制）：
   - 列配置：
     - `fixed: 'right'`：固定在最右侧

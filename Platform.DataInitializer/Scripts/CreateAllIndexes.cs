@@ -42,6 +42,7 @@ public class CreateAllIndexes
         await CreateFriendRequestIndexesAsync();
         await CreateLocationBeaconIndexesAsync();
         await CreateRefreshTokenIndexesAsync();
+        await CreateXiaokeConfigIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
     }
@@ -451,6 +452,58 @@ public class CreateAllIndexes
         }
     }
 
+    /// <summary>
+    /// 创建 XiaokeConfig 索引（小科配置是多租户实体）
+    /// </summary>
+    private async Task CreateXiaokeConfigIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("xiaokeConfigs");
+
+        try
+        {
+            // CompanyId + IsDeleted 复合索引（用于查询未删除的配置）
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Ascending("isDeleted"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_xiaoke_config_company_isDeleted",
+                    Background = true
+                },
+                "xiaokeConfigs.companyId + isDeleted");
+
+            // CompanyId + IsDefault 复合索引（用于快速查找默认配置）
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Ascending("isDefault"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_xiaoke_config_company_isDefault",
+                    Background = true
+                },
+                "xiaokeConfigs.companyId + isDefault");
+
+            // CompanyId + UpdatedAt 复合索引（用于排序）
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Descending("updatedAt"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_xiaoke_config_company_updatedAt",
+                    Background = true
+                },
+                "xiaokeConfigs.companyId + updatedAt");
+
+            _logger.LogInformation("✅ XiaokeConfigs 集合索引创建完成");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建 XiaokeConfig 索引失败");
+        }
+    }
 
     private async Task CreateIndexAsync<T>(
         IMongoCollection<T> collection,

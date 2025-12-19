@@ -55,6 +55,98 @@ appliesTo:
   - `ServerError(string message)`：服务器错误（`INTERNAL_ERROR`）
 - **错误处理原则**：禁止暴露底层异常信息（如堆栈、数据库错误）；记录详细错误日志供运维排查；返回给前端的错误消息要可读、可本地化。
 
+## 分页处理规范（强制）
+- **统一分页参数**：所有分页相关 API 接口统一使用 `page` 和 `pageSize` 作为查询参数（参考 `UserController.GetCurrentUserActivityLogsPaged`）。
+- **API 参数规范**：
+  - 控制器方法参数使用 `[FromQuery] int page = 1` 和 `[FromQuery] int pageSize = 20`
+  - 禁止使用 `current`、`pageIndex`、`pageNumber` 等其他命名
+  - 代码示例：
+    ```csharp
+    [HttpGet]
+    public async Task<IActionResult> GetConfigs(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? name = null)
+    {
+        // ...
+    }
+    ```
+- **参数验证规范**：
+  - 统一使用 `ArgumentException` 抛出异常，禁止静默修正参数值
+  - 验证规则：
+    - `page`：必须在 1-10000 之间，否则抛出 `ArgumentException("页码必须在 1-10000 之间")`
+    - `pageSize`：必须在 1-100 之间，否则抛出 `ArgumentException("每页数量必须在 1-100 之间")`
+  - 代码示例：
+    ```csharp
+    // 验证分页参数
+    if (page < 1 || page > 10000)
+        throw new ArgumentException("页码必须在 1-10000 之间");
+    
+    if (pageSize < 1 || pageSize > 100)
+        throw new ArgumentException("每页数量必须在 1-100 之间");
+    ```
+- **内部参数映射**：
+  - 如果使用 `PageParams` 类（包含 `Current` 和 `PageSize` 属性），需要在控制器中将 `page` 映射到 `Current`
+  - 代码示例：
+    ```csharp
+    var queryParams = new XiaokeConfigQueryParams
+    {
+        Current = page, // PageParams 使用 Current，但 API 参数使用 page
+        PageSize = pageSize,
+        // ... 其他参数
+    };
+    ```
+- **分页查询方法调用**：
+  - 调用 `IDatabaseOperationFactory<T>.FindPagedAsync` 时，直接传递 `page` 参数（页码，从 1 开始），不要计算 `skip`
+  - 代码示例：
+    ```csharp
+    // ✅ 正确：直接传递页码
+    var (configs, total) = await _configFactory.FindPagedAsync(
+        filter, 
+        sortBuilder.Build(), 
+        page,  // 页码，从 1 开始
+        pageSize
+    );
+    
+    // ❌ 错误：不要计算 skip
+    // var skip = (page - 1) * pageSize;
+    // var (configs, total) = await _configFactory.FindPagedAsync(filter, sortBuilder.Build(), skip, pageSize);
+    ```
+- **分页响应格式**：
+  - 统一返回格式：
+    ```csharp
+    return Success(new
+    {
+        data = items,
+        total = total,
+        page = page,
+        pageSize = pageSize
+    });
+    ```
+  - 或使用 `ToPaginatedResponse` 扩展方法：
+    ```csharp
+    return Success((items, total).ToPaginatedResponse(page, pageSize));
+    ```
+- **POST 请求分页**：
+  - 如果使用 POST 请求传递分页参数（如 `ChatHistoryQueryRequest`），请求体中的 `PageParams` 仍使用 `Current` 和 `PageSize`
+  - 控制器中验证时使用 `request.Current` 和 `request.PageSize`
+  - 代码示例：
+    ```csharp
+    [HttpPost("list")]
+    public async Task<IActionResult> GetChatHistory([FromBody] ChatHistoryQueryRequest request)
+    {
+        // 验证分页参数
+        if (request.Current < 1 || request.Current > 10000)
+            throw new ArgumentException("页码必须在 1-10000 之间");
+        
+        if (request.PageSize < 1 || request.PageSize > 100)
+            throw new ArgumentException("每页数量必须在 1-100 之间");
+        
+        // ...
+    }
+    ```
+- **参考实现**：`UserController.GetCurrentUserActivityLogsPaged` 为标准实现，所有分页接口应参考此实现。
+
 ## 规则系统 / IoT 特殊要求
 - 规则实体需实现多租户 + 软删接口，使用 `RuleStatus` 常量管理状态；查询、分页均走工厂 + 构建器。
 - IoT 模块同样必须遵守多租户隔离与软删，API 需绑定对应 IoT 菜单（如 `iot:device:list`）。

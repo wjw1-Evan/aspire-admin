@@ -493,6 +493,54 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
+
+        // 小科管理父菜单
+        menus.Add(new Menu
+        {
+            Name = "xiaoke-management",
+            Title = "小科管理",
+            Path = "/xiaoke-management",
+            Icon = "robot",
+            SortOrder = 5,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 小科管理子菜单：配置管理
+        menus.Add(new Menu
+        {
+            Name = "xiaoke-management-config",
+            Title = "配置管理",
+            Path = "/xiaoke-management/config",
+            Component = "./xiaoke-management/config",
+            Icon = "setting",
+            ParentId = "xiaoke-management",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "xiaoke:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 小科管理子菜单：聊天记录管理
+        menus.Add(new Menu
+        {
+            Name = "xiaoke-management-chat-history",
+            Title = "聊天记录管理",
+            Path = "/xiaoke-management/chat-history",
+            Component = "./xiaoke-management/chat-history",
+            Icon = "message",
+            ParentId = "xiaoke-management",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "xiaoke:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
         
         return menus;
     }
@@ -519,6 +567,9 @@ public class DataInitializerService : IDataInitializerService
             "iot-platform-datapoint" => "iot-platform",
             "iot-platform-event" => "iot-platform",
             "iot-platform-data-center" => "iot-platform",
+            // 小科管理子菜单
+            "xiaoke-management-config" => "xiaoke-management",
+            "xiaoke-management-chat-history" => "xiaoke-management",
             _ => null
         };
     }

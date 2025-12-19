@@ -178,6 +178,10 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
         // 项目管理子菜单：根据路径或菜单名称判断
         const shortName = menu.name.replace(/^project-management-/, '');
         localeKey = `menu.project-management.${shortName}`;
+      } else if (menu.path.startsWith('/xiaoke-management/') || menu.name.startsWith('xiaoke-management-')) {
+        // 小科管理子菜单：从菜单名称中提取子菜单名称（去掉 xiaoke-management- 前缀）
+        const shortName = menu.name.replace(/^xiaoke-management-/, '');
+        localeKey = `menu.xiaoke-management.${shortName}`;
       } else if (menu.path === '/welcome') {
         localeKey = 'menu.welcome';
       } else if (menu.path.startsWith('/company/')) {

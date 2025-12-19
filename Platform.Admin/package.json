@@ -30,25 +30,15 @@
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
     "@types/node": "^25.0.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "@types/react-helmet": "^6.1.11",
-    "@umijs/max": "^4.6.7",
+    "@umijs/max": "^4.6.8",
     "cross-env": "^10.1.0",
-    "express": "^5.2.1",
     "typescript": "^5.6.3",
     "umi-presets-pro": "^2.0.3"
   },
   "engines": {
     "node": ">=20.0.0"
-  },
-  "overrides": {
-    "react-helmet-async": {
-      "react": "^19.2.0",
-      "react-dom": "^19.2.0"
-    },
-    "use-sync-external-store": "^1.6.0"
   }
 }

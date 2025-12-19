@@ -15,7 +15,6 @@ import {
   Card,
   Descriptions,
   Divider,
-  List,
   message,
   Space,
   Tag,
@@ -24,6 +23,7 @@ import {
   Input,
   InputNumber,
   Tooltip,
+  Flex,
 } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
@@ -714,21 +714,26 @@ const UserCenter: React.FC = () => {
         }
         className={styles.activityCard}
       >
-        <List
-          dataSource={activityLogs}
-          renderItem={(item) => {
+        <div>
+          {activityLogs.map((item) => {
             const activityTag = getActivityTag(item.action);
             return (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={<SafetyOutlined />}
-                  title={
+              <div
+                key={item.id}
+                style={{
+                  padding: '12px 16px',
+                  borderBottom: '1px solid #f0f0f0',
+                }}
+              >
+                <Flex gap={12} align="flex-start">
+                  <div style={{ flexShrink: 0 }}>
+                    <Avatar icon={<SafetyOutlined />} />
+                  </div>
+                  <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
                     <Space>
                       <Tag color={activityTag.color}>{activityTag.text}</Tag>
                       <Text>{item.description}</Text>
                     </Space>
-                  }
-                  description={
                     <Space orientation="vertical" size="small">
                       <Text type="secondary">
                         {formatDateTime(item.createdAt)}
@@ -739,12 +744,12 @@ const UserCenter: React.FC = () => {
                         </Text>
                       )}
                     </Space>
-                  }
-                />
-              </List.Item>
+                  </Flex>
+                </Flex>
+              </div>
             );
-          }}
-        />
+          })}
+        </div>
       </Card>
       </div>
     </>

@@ -140,7 +140,7 @@ export const ThemeSettings: React.FC = () => {
         placement="right"
         onClose={() => setOpen(false)}
         open={open}
-        width={320}
+        size={320}
       >
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           {/* 整体风格设置 */}

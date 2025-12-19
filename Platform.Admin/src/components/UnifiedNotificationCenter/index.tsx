@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent } from 'react';
-import { Drawer, List, Tag, Space, Empty, Spin, Badge, Avatar, Tooltip } from 'antd';
+import { Drawer, Tag, Space, Empty, Spin, Badge, Avatar, Tooltip, Flex, Pagination } from 'antd';
 import { BellOutlined, FileTextOutlined, AlertOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -181,19 +181,19 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
     }
   };
 
-  const renderItem = (item: UnifiedNotificationItem) => (
-    <List.Item
-      key={item.id}
-      className={`${styles.notificationItem} ${!item.read ? styles.unread : ''}`}
-      onClick={() => handleItemClick(item)}
-    >
-      <List.Item.Meta
-        avatar={(() => {
-          const meta = getTypeMeta(item.type);
-          const avatar = (
-            <Avatar style={{ backgroundColor: meta.color }} icon={meta.icon} />
-          );
-          return (
+  const renderItem = (item: UnifiedNotificationItem) => {
+    const meta = getTypeMeta(item.type);
+    const avatar = (
+      <Avatar style={{ backgroundColor: meta.color }} icon={meta.icon} />
+    );
+    return (
+      <div
+        key={item.id}
+        className={`${styles.notificationItem} ${!item.read ? styles.unread : ''}`}
+        onClick={() => handleItemClick(item)}
+      >
+        <Flex gap={12} align="flex-start">
+          <div style={{ flexShrink: 0 }}>
             <Tooltip title={item.type}>
               {item.read ? (
                 avatar
@@ -203,10 +203,9 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
                 </Badge>
               )}
             </Tooltip>
-          );
-        })()}
-        title={
-          <div className={styles.itemHeader}>
+          </div>
+          <Flex vertical gap={6} style={{ flex: 1, minWidth: 0 }}>
+            <div className={styles.itemHeader}>
               <div className={styles.itemHeaderLeft}>
                 <Space>
                   <span className={styles.title}>{item.title}</span>
@@ -220,15 +219,14 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
                 </Tooltip>
               </div>
             </div>
-        }
-        description={
-          <div className={styles.itemDesc}>
-            <p>{item.description}</p>
-          </div>
-        }
-      />
-    </List.Item>
-  );
+            <div className={styles.itemDesc}>
+              <p>{item.description}</p>
+            </div>
+          </Flex>
+        </Flex>
+      </div>
+    );
+  };
 
   return (
     <Drawer
@@ -240,21 +238,31 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
       styles={{ body: { padding: 8, background: '#fafafa' } }}
     >
       <Spin spinning={loading}>
-        <List
-          dataSource={notifications}
-          renderItem={renderItem}
-          split={false}
-          locale={{ emptyText: <Empty description={t('pages.unifiedNotificationCenter.noNotifications', '暂无通知')} /> }}
-          pagination={{
-            current: page,
-            pageSize,
-            total,
-            onChange: (p, ps) => {
-              setPage(p);
-              setPageSize(ps);
-            },
-          }}
-        />
+        {notifications.length > 0 ? (
+          <>
+            <div style={{ padding: '8px 0' }}>
+              {notifications.map(renderItem)}
+            </div>
+            {total > pageSize && (
+              <div style={{ padding: '16px', textAlign: 'center' }}>
+                <Pagination
+                  current={page}
+                  pageSize={pageSize}
+                  total={total}
+                  onChange={(p, ps) => {
+                    setPage(p);
+                    setPageSize(ps);
+                  }}
+                  showSizeChanger
+                  showQuickJumper
+                  showTotal={(total) => `共 ${total} 条`}
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          <Empty description={t('pages.unifiedNotificationCenter.noNotifications', '暂无通知')} />
+        )}
       </Spin>
     </Drawer>
   );

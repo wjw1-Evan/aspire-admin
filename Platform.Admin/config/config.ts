@@ -151,8 +151,15 @@ export default defineConfig({
    * @name 是否开启 mako
    * @description 使用 mako 极速研发
    * @doc https://umijs.org/docs/api/config#mako
+   * @note 暂时禁用 Mako，因为与 React 19 存在兼容性问题
    */
-  mako: {},
+  // mako: {},
+  /**
+   * @name 禁用 MFSU
+   * @description 禁用模块联邦以解决加载错误
+   * @doc https://umijs.org/docs/api/config#mfsu
+   */
+  mfsu: false,
   esbuildMinifyIIFE: true,
   requestRecord: {},
   // exportStatic 仅在构建时使用，开发模式下不需要

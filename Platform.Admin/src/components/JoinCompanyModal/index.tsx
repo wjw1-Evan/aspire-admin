@@ -1,5 +1,5 @@
 import { PlusOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { Button, Input, List, Modal, Space, App as AntApp, Tag, Divider, Typography } from 'antd';
+import { Button, Input, Modal, Space, App as AntApp, Tag, Divider, Typography, Flex } from 'antd';
 import React, { useState, useMemo } from 'react';
 import { applyToJoinCompany, searchCompanies } from '@/services/company';
 
@@ -238,68 +238,64 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                     </Text>
                   </Space>
                 </div>
-                <List
-                  dataSource={joinedCompanies}
-                  renderItem={(item) => {
-                    return (
-                      <List.Item
-                        style={{
-                          cursor: 'not-allowed',
-                          opacity: 0.7,
-                          padding: '12px 16px',
-                          background: '#fafafa',
-                        }}
-                        extra={
-                          <Space>
-                            {item.isMember && (
-                              <Tag color="success" icon={<CheckCircleOutlined />}>
-                                已加入
-                              </Tag>
-                            )}
-                            {item.hasPendingRequest && (
-                              <Tag color="processing">待审核</Tag>
-                            )}
-                          </Space>
-                        }
-                      >
-                        <List.Item.Meta
-                          title={
-                            <Space wrap>
-                              <span style={{ fontWeight: 500, color: '#595959' }}>
-                                {item.company.name}
-                              </span>
-                              {item.isMember && (
-                                <Tag color="success" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>
-                                  已加入
-                                </Tag>
-                              )}
-                              {item.hasPendingRequest && !item.isMember && (
-                                <Tag color="processing" style={{ margin: 0 }}>待审核</Tag>
-                              )}
-                            </Space>
-                          }
-                          description={
-                            <Space orientation="vertical" size={0}>
-                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                企业代码: {item.company.code}
-                              </span>
-                              {item.company.description && (
-                                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                  {item.company.description}
-                                </span>
-                              )}
-                              {item.memberCount > 0 && (
-                                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                  成员数: {item.memberCount}
-                                </span>
-                              )}
-                            </Space>
-                          }
-                        />
-                      </List.Item>
-                    );
-                  }}
-                />
+                <div>
+                  {joinedCompanies.map((item) => (
+                    <div
+                      key={item.company.id}
+                      style={{
+                        cursor: 'not-allowed',
+                        opacity: 0.7,
+                        padding: '12px 16px',
+                        background: '#fafafa',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                      }}
+                    >
+                      <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
+                        <Space wrap>
+                          <span style={{ fontWeight: 500, color: '#595959' }}>
+                            {item.company.name}
+                          </span>
+                          {item.isMember && (
+                            <Tag color="success" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>
+                              已加入
+                            </Tag>
+                          )}
+                          {item.hasPendingRequest && !item.isMember && (
+                            <Tag color="processing" style={{ margin: 0 }}>待审核</Tag>
+                          )}
+                        </Space>
+                        <Space orientation="vertical" size={0}>
+                          <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                            企业代码: {item.company.code}
+                          </span>
+                          {item.company.description && (
+                            <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                              {item.company.description}
+                            </span>
+                          )}
+                          {item.memberCount > 0 && (
+                            <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                              成员数: {item.memberCount}
+                            </span>
+                          )}
+                        </Space>
+                      </Flex>
+                      <Space>
+                        {item.isMember && (
+                          <Tag color="success" icon={<CheckCircleOutlined />}>
+                            已加入
+                          </Tag>
+                        )}
+                        {item.hasPendingRequest && (
+                          <Tag color="processing">待审核</Tag>
+                        )}
+                      </Space>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 
@@ -325,20 +321,24 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                     </Text>
                   </Space>
                 </div>
-                <List
-                  dataSource={availableCompanies}
-                  renderItem={(item) => {
+                <div>
+                  {availableCompanies.map((item) => {
                     const isDisabled = item.isMember || item.hasPendingRequest;
                     const isSelected = selectedCompany?.company.id === item.company.id;
                     
                     return (
-                      <List.Item
+                      <div
+                        key={item.company.id}
                         onClick={() => !isDisabled && handleSelectCompany(item)}
                         style={{
                           cursor: isDisabled ? 'not-allowed' : 'pointer',
                           background: isSelected ? '#e6f7ff' : undefined,
                           padding: '12px 16px',
                           transition: 'background-color 0.2s',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          justifyContent: 'space-between',
+                          gap: 12,
                         }}
                         onMouseEnter={(e) => {
                           if (!isDisabled && !isSelected) {
@@ -350,40 +350,34 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                             e.currentTarget.style.background = '';
                           }
                         }}
-                        extra={
-                          <Space>
-                            {isSelected && (
-                              <Tag color="blue">已选择</Tag>
+                      >
+                        <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontWeight: 500 }}>{item.company.name}</span>
+                          <Space orientation="vertical" size={0}>
+                            <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                              企业代码: {item.company.code}
+                            </span>
+                            {item.company.description && (
+                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                {item.company.description}
+                              </span>
+                            )}
+                            {item.memberCount > 0 && (
+                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                成员数: {item.memberCount}
+                              </span>
                             )}
                           </Space>
-                        }
-                      >
-                        <List.Item.Meta
-                          title={
-                            <span style={{ fontWeight: 500 }}>{item.company.name}</span>
-                          }
-                          description={
-                            <Space orientation="vertical" size={0}>
-                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                企业代码: {item.company.code}
-                              </span>
-                              {item.company.description && (
-                                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                  {item.company.description}
-                                </span>
-                              )}
-                              {item.memberCount > 0 && (
-                                <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                  成员数: {item.memberCount}
-                                </span>
-                              )}
-                            </Space>
-                          }
-                        />
-                      </List.Item>
+                        </Flex>
+                        <Space>
+                          {isSelected && (
+                            <Tag color="blue">已选择</Tag>
+                          )}
+                        </Space>
+                      </div>
                     );
-                  }}
-                />
+                  })}
+                </div>
               </div>
             ) : null}
           </div>

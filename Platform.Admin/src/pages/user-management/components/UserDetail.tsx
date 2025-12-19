@@ -4,11 +4,11 @@ import {
   Tag,
   Badge,
   Card,
-  List,
   Typography,
   Space,
   Button,
   Spin,
+  Flex,
 } from 'antd';
 import {
   UserOutlined,
@@ -241,36 +241,34 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       >
         <Spin spinning={loading}>
           {activityLogs.length > 0 ? (
-            <List
-              size="small"
-              dataSource={activityLogs}
-              renderItem={(log) => (
-                <List.Item>
-                  <List.Item.Meta
-                    title={
-                      <Space>
-                        <Tag color={getActionColor(log.action)}>
-                          {getActionText(log.action)}
-                        </Tag>
-                        <Text type="secondary">
-                          {dayjs(log.createdAt).format('MM-DD HH:mm:ss')}
-                        </Text>
-                      </Space>
-                    }
-                    description={
-                      <div>
-                        <div>{log.description}</div>
-                        {log.ipAddress && (
-                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                            {intl.formatMessage({ id: 'pages.userDetail.ipPrefix' }, { ip: log.ipAddress })}
-                          </Text>
-                        )}
-                      </div>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
+            <div>
+              {activityLogs.map((log) => (
+                <div
+                  key={log.id}
+                  style={{
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #f0f0f0',
+                  }}
+                >
+                  <Flex vertical gap={4}>
+                    <Space>
+                      <Tag color={getActionColor(log.action)}>
+                        {getActionText(log.action)}
+                      </Tag>
+                      <Text type="secondary">
+                        {dayjs(log.createdAt).format('MM-DD HH:mm:ss')}
+                      </Text>
+                    </Space>
+                    <div>{log.description}</div>
+                    {log.ipAddress && (
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        {intl.formatMessage({ id: 'pages.userDetail.ipPrefix' }, { ip: log.ipAddress })}
+                      </Text>
+                    )}
+                  </Flex>
+                </div>
+              ))}
+            </div>
           ) : (
             <div
               style={{ textAlign: 'center', padding: '20px', color: '#999' }}

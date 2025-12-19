@@ -153,7 +153,7 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
       placement="right"
       onClose={onClose}
       open={open}
-      width={320}
+      size={320}
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {/* 整体风格设置 */}

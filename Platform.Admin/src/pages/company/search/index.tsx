@@ -8,13 +8,14 @@ import { PageContainer } from '@/components';
 import {
   Input,
   Card,
-  List,
   Button,
   Tag,
   Space,
   Empty,
   Spin,
   App,
+  Row,
+  Col,
 } from 'antd';
 import React, { useState } from 'react';
 import { useIntl } from '@umijs/max';
@@ -150,19 +151,9 @@ const CompanySearch: React.FC = () => {
             <div style={{ minHeight: 200 }} />
           </Spin>
         ) : searchResults.length > 0 ? (
-          <List
-            grid={{
-              gutter: 16,
-              xs: 1,
-              sm: 1,
-              md: 2,
-              lg: 2,
-              xl: 3,
-              xxl: 3,
-            }}
-            dataSource={searchResults}
-            renderItem={(item) => (
-              <List.Item>
+          <Row gutter={[16, 16]}>
+            {searchResults.map((item) => (
+              <Col key={item.company.id} xs={24} sm={24} md={12} lg={12} xl={8} xxl={8}>
                 <Card
                   hoverable
                   actions={[
@@ -238,9 +229,9 @@ const CompanySearch: React.FC = () => {
                     }
                   />
                 </Card>
-              </List.Item>
-            )}
-          />
+              </Col>
+            ))}
+          </Row>
         ) : keyword ? (
           <Empty description={intl.formatMessage({ id: 'pages.placeholder.noCompaniesFound' })} style={{ padding: 60 }} />
         ) : (

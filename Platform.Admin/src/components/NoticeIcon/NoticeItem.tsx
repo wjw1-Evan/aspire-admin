@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, Avatar, Tag, Typography, Badge, Button, Tooltip } from 'antd';
+import { Avatar, Tag, Typography, Badge, Button, Tooltip, Flex, Space } from 'antd';
 import {
   NotificationOutlined,
   MessageOutlined,
@@ -55,46 +55,36 @@ export default function NoticeItem({
   };
 
   return (
-    <List.Item
+    <div
       className={`${styles.noticeItem} ${!item.read ? styles.unread : ''}`}
       onClick={handleClick}
-      actions={[
-        item.read ? (
-          <Tooltip title="标记为未读" key="unread">
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={handleMarkAsUnread}
-            />
-          </Tooltip>
-        ) : (
-          <Tooltip title="标记为已读" key="read">
-            <Button
-              type="text"
-              size="small"
-              icon={<CheckOutlined />}
-              onClick={handleMarkAsRead}
-            />
-          </Tooltip>
-        ),
-      ]}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        padding: '12px 16px',
+        cursor: 'pointer',
+        transition: 'background-color 0.2s',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = '';
+      }}
     >
-      <List.Item.Meta
-        avatar={
-          item.avatar ? (
+      <Flex gap={12} align="flex-start" style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flexShrink: 0 }}>
+          {item.avatar ? (
             <Avatar src={item.avatar} />
           ) : (
             <Avatar icon={typeIcons[item.type as keyof typeof typeIcons]} />
-          )
-        }
-        title={
+          )}
+        </div>
+        <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
           <div className={styles.noticeTitle}>
             <span>{item.title}</span>
             {!item.read && <Badge status="processing" />}
           </div>
-        }
-        description={
           <div className={styles.noticeDescription}>
             {item.description && (
               <Text type="secondary">{item.description}</Text>
@@ -103,14 +93,35 @@ export default function NoticeItem({
               {dayjs(item.datetime).fromNow()}
             </Text>
           </div>
-        }
-      />
-      {item.extra && (
-        <div className={styles.noticeExtra}>
-          {item.status && <Tag color="blue">{item.status}</Tag>}
-          {item.extra}
-        </div>
-      )}
-    </List.Item>
+          {item.extra && (
+            <div className={styles.noticeExtra}>
+              {item.status && <Tag color="blue">{item.status}</Tag>}
+              {item.extra}
+            </div>
+          )}
+        </Flex>
+      </Flex>
+      <div style={{ flexShrink: 0, marginLeft: 8 }}>
+        {item.read ? (
+          <Tooltip title="标记为未读">
+            <Button
+              type="text"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={handleMarkAsUnread}
+            />
+          </Tooltip>
+        ) : (
+          <Tooltip title="标记为已读">
+            <Button
+              type="text"
+              size="small"
+              icon={<CheckOutlined />}
+              onClick={handleMarkAsRead}
+            />
+          </Tooltip>
+        )}
+      </div>
+    </div>
   );
 }

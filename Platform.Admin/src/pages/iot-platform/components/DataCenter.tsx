@@ -42,7 +42,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   const actionRef = useRef<ActionType>(null);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
-  const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<any>({});
   // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值

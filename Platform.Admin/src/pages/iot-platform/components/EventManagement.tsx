@@ -60,7 +60,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   // 获取概览统计
   const fetchOverviewStats = useCallback(async () => {
     try {
-      const response = await iotService.queryEvents({ pageIndex: 1, pageSize: 1000 });
+      const response = await iotService.queryEvents({ pageIndex: 1, pageSize: 100 });
       if (response.success && response.data) {
         const eventsList = Array.isArray(response.data.Events) ? response.data.Events : [];
         setOverviewStats({

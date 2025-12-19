@@ -144,6 +144,17 @@ Platform/
 - 直接访问 `http://localhost:15000/apiservice/openapi/v1.json` 获取 OpenAPI JSON。
 - 在 Scalar 页面点击 “Authorize”，填入 `Bearer <token>` 即可在线调试。
 
+## 📋 任务与项目管理
+
+- **任务管理**：任务创建、分配、执行、完成/取消、任务状态跟踪、优先级管理、计划时间设置、任务树（支持父子任务）、任务依赖、执行日志记录、待办任务、批量状态更新。
+- **项目管理**：项目创建、成员管理、项目统计、任务关联、项目查询与筛选。
+- **权限控制**：通过 `project-management-task` 和 `project-management-project` 菜单权限控制访问。
+
+## ⚙️ 规则管理与 MCP 集成
+
+- **规则管理**：规则的增删改查、规则查询与筛选、规则状态管理。
+- **MCP 集成**：支持 Model Context Protocol（MCP）集成，实现自动化工作流编排、规则执行与上下文管理。
+
 ## 🧩 多租户与权限模型
 
 - **企业隔离**：实现 `IMultiTenant` 的实体（角色、通知等）自动附加 `CompanyId` 过滤；`AppUser` 通过 `CurrentCompanyId` + `UserCompany` 多对多关联。

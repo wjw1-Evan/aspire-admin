@@ -37,6 +37,14 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     Task<T> CreateAsync(T entity);
 
     /// <summary>
+    /// 创建实体（原子操作，后台线程场景，避免访问 HttpContext）
+    /// </summary>
+    /// <param name="entity">要创建的实体</param>
+    /// <param name="userId">用户ID（可选，如果提供则使用此值，否则从 TenantContext 获取）</param>
+    /// <param name="username">用户名（可选，如果提供则使用此值，否则从 TenantContext 获取）</param>
+    Task<T> CreateAsync(T entity, string? userId, string? username);
+
+    /// <summary>
     /// 批量创建实体（原子操作）
     /// </summary>
     Task<List<T>> CreateManyAsync(IEnumerable<T> entities);

@@ -171,6 +171,78 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     }
 
     /// <summary>
+    /// 创建实体（原子操作，后台线程场景，避免访问 HttpContext）
+    /// </summary>
+    /// <param name="entity">要创建的实体</param>
+    /// <param name="userId">用户ID（可选，如果提供则使用此值，否则从 TenantContext 获取）</param>
+    /// <param name="username">用户名（可选，如果提供则使用此值，否则从 TenantContext 获取）</param>
+    public async Task<T> CreateAsync(T entity, string? userId, string? username)
+    {
+        // 设置时间戳
+        entity.CreatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        entity.IsDeleted = false;
+
+        // 如果未提供 userId 或 username，尝试从 TenantContext 获取（可能失败，如果 HttpContext 已释放）
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(username))
+        {
+            try
+            {
+                var (contextUserId, contextUsername) = await GetActorAsync().ConfigureAwait(false);
+                userId ??= contextUserId;
+                username ??= contextUsername;
+            }
+            catch (ObjectDisposedException)
+            {
+                // HttpContext 已释放，使用提供的值或默认值
+                // 这在后台线程场景中是预期的
+            }
+        }
+
+        // 设置创建人（通过反射设置审计字段）
+        SetAuditProperty(entity, "CreatedBy", userId);
+        SetAuditProperty(entity, "CreatedByUsername", username);
+
+        // 写入企业隔离字段
+        // 在后台线程场景中，实体应该已经设置了 CompanyId（通过业务代码设置）
+        if (entity is IMultiTenant multiTenant)
+        {
+            // 优先使用实体上已有的 CompanyId（后台线程场景中应该已经设置）
+            if (!string.IsNullOrEmpty(multiTenant.CompanyId))
+            {
+                // 实体已有 CompanyId，直接使用
+            }
+            else
+            {
+                // 如果实体没有 CompanyId，尝试从 TenantContext 获取（可能失败，如果 HttpContext 已释放）
+                try
+                {
+                    var companyId = await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
+                    if (!string.IsNullOrEmpty(companyId))
+                    {
+                        multiTenant.CompanyId = companyId;
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // HttpContext 已释放，这是后台线程场景的预期行为
+                    // 如果实体没有 CompanyId，抛出异常
+                    throw new UnauthorizedAccessException("后台线程场景中，实体必须提供 CompanyId，因为无法访问 HttpContext");
+                }
+            }
+
+            // 如果仍然没有 CompanyId，抛出异常
+            if (string.IsNullOrEmpty(multiTenant.CompanyId))
+            {
+                throw new UnauthorizedAccessException("未找到当前企业信息，且实体未提供 CompanyId");
+            }
+        }
+
+        await _collection.InsertOneAsync(entity).ConfigureAwait(false);
+        return entity;
+    }
+
+    /// <summary>
     /// 批量创建实体（原子操作）
     /// </summary>
     public async Task<List<T>> CreateManyAsync(IEnumerable<T> entities)

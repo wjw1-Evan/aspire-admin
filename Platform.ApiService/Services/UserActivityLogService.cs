@@ -200,7 +200,8 @@ public class UserActivityLogService : IUserActivityLogService
             // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
-        await _activityLogFactory.CreateAsync(log);
+        // ⚠️ 使用重载方法，传入 userId 和 username，避免在后台线程中访问已释放的 HttpContext
+        await _activityLogFactory.CreateAsync(log, request.UserId, request.Username);
     }
 }
 

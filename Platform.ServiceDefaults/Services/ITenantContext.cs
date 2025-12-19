@@ -72,22 +72,31 @@ public class TenantContext : ITenantContext
     /// </summary>
     public string? GetCurrentUserId()
     {
-        var user = _httpContextAccessor.HttpContext?.User;
-        if (user == null)
+        try
         {
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null)
+            {
+                return null;
+            }
+
+            // 优先读取自定义 userId，其次兼容常见的标识声明类型
+            var uid = user.FindFirst("userId")?.Value
+                      ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                      ?? user.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(uid))
+            {
+                _logger.LogWarning("TenantContext: 未在 JWT 中找到用户标识声明（userId/nameid/sub）");
+            }
+            return uid;
+        }
+        catch (ObjectDisposedException)
+        {
+            // HttpContext 已被释放（常见于后台线程场景）
+            // 返回 null，调用方应该提供备用值
             return null;
         }
-
-        // 优先读取自定义 userId，其次兼容常见的标识声明类型
-        var uid = user.FindFirst("userId")?.Value
-                  ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                  ?? user.FindFirst("sub")?.Value;
-
-        if (string.IsNullOrEmpty(uid))
-        {
-            _logger.LogWarning("TenantContext: 未在 JWT 中找到用户标识声明（userId/nameid/sub）");
-        }
-        return uid;
     }
 
     /// <summary>

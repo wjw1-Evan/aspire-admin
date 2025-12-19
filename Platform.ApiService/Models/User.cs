@@ -2,6 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
@@ -406,7 +407,7 @@ public class UserStatisticsResponse
 /// <summary>
 /// 用户活动日志实体
 /// </summary>
-public class UserActivityLog : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped, Platform.ServiceDefaults.Models.IMultiTenant
+public class UserActivityLog : ISoftDeletable, IEntity, ITimestamped, IMultiTenant
 {
     /// <summary>
     /// 日志ID（MongoDB ObjectId）

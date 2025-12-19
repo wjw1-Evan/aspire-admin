@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { type TableColumnsType } from 'antd';
@@ -68,7 +68,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   };
 
   // 获取概览统计
-  const fetchOverviewStats = async () => {
+  const fetchOverviewStats = useCallback(async () => {
     try {
       const response = await iotService.getGateways(1, 1);
       if (response.success && response.data) {
@@ -87,14 +87,14 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     } catch (error) {
       console.error('获取统计信息失败:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchOverviewStats();
-  }, []);
+  }, [fetchOverviewStats]);
 
-  // 获取网关列表（用于 ProTable）
-  const fetchGateways = async (params: any) => {
+  // 获取网关列表（用于 ProTable）- 使用 useCallback 避免死循环
+  const fetchGateways = useCallback(async (params: any) => {
     try {
       const response = await iotService.getGateways(params.current || 1, params.pageSize || 20);
       if (response.success && response.data) {
@@ -120,13 +120,13 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         total: 0,
       };
     }
-  };
+  }, []);
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     form.resetFields();
     setSelectedGateway(null);
     setIsModalVisible(true);
-  };
+  }, [form]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -139,9 +139,9 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       fetchOverviewStats();
     },
     handleAdd,
-  }));
+  }), [fetchOverviewStats, handleAdd]);
 
-  const handleEdit = (gateway: IoTGateway) => {
+  const handleEdit = useCallback((gateway: IoTGateway) => {
     setSelectedGateway(gateway);
     const formValues: any = { ...gateway };
     // 确保config字段正确设置
@@ -150,9 +150,9 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     }
     form.setFieldsValue(formValues);
     setIsModalVisible(true);
-  };
+  }, [form]);
 
-  const handleView = async (gateway: IoTGateway) => {
+  const handleView = useCallback(async (gateway: IoTGateway) => {
     setSelectedGateway(gateway);
     try {
       const response = await iotService.getGatewayStatistics(gateway.gatewayId);
@@ -163,9 +163,9 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       console.error('Failed to load statistics:', error);
     }
     setIsDetailDrawerVisible(true);
-  };
+  }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     try {
       const response = await iotService.deleteGateway(id);
       if (response.success) {
@@ -178,9 +178,9 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     } catch (error) {
       message.error('删除失败');
     }
-  };
+  }, [fetchOverviewStats]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = useCallback(async (values: any) => {
     // 后端仍可能需要 name 字段，这里与 title 保持一致
     const payload: any = { ...values, name: values.title };
     
@@ -211,7 +211,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           message.success('创建成功');
         }
       }
-      setIsModalVisible(false);
+      handleCloseModal();
       if (actionRef.current?.reload) {
         actionRef.current.reload();
       }
@@ -219,17 +219,17 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     } catch (error) {
       message.error('操作失败');
     }
-  };
+  }, [selectedGateway, fetchOverviewStats]);
 
-  const getStatusTag = (status: string) => {
+  const getStatusTag = useCallback((status: string) => {
     const normalized = normalizeStatus(status);
     const config = statusMap[normalized] || { color: 'default', label: status || '未知' };
     return <Tag color={config.color}>{config.label}</Tag>;
-  };
+  }, []);
 
   const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'PULL'];
 
-  const columns: TableColumnsType<IoTGateway> = [
+  const columns: TableColumnsType<IoTGateway> = useMemo(() => [
     {
       title: '网关名称',
       dataIndex: 'title',
@@ -318,7 +318,21 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         </Space>
       ),
     },
-  ];
+  ], [handleView, handleEdit, handleDelete, getStatusTag]);
+
+  // 关闭详情抽屉
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailDrawerVisible(false);
+    setSelectedGateway(null);
+    setStatistics(null);
+  }, []);
+
+  // 关闭表单弹窗
+  const handleCloseModal = useCallback(() => {
+    setIsModalVisible(false);
+    setSelectedGateway(null);
+    form.resetFields();
+  }, [form]);
 
   return (
     <>
@@ -378,7 +392,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         title={selectedGateway ? '编辑网关' : '新建网关'}
         open={isModalVisible}
         onOk={() => form.submit()}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={handleCloseModal}
         width={isMobile ? '100%' : 600}
       >
         <Form
@@ -462,7 +476,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       <Drawer
         title="网关详情"
         placement="right"
-        onClose={() => setIsDetailDrawerVisible(false)}
+        onClose={handleCloseDetail}
         open={isDetailDrawerVisible}
         size={isMobile ? 'large' : 800}
       >

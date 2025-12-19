@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo, useRef as useRefHook } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { type TableColumnsType } from 'antd';
@@ -51,6 +51,8 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     handled: 0,
     critical: 0,
   });
+  // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
+  const searchParamsRef = useRef<any>({});
 
   // 确保 devices 始终是数组
   const safeDevices = Array.isArray(devices) ? devices : [];
@@ -61,7 +63,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   }, []);
 
   // 获取概览统计
-  const fetchOverviewStats = async () => {
+  const fetchOverviewStats = useCallback(async () => {
     try {
       const response = await iotService.queryEvents({ pageIndex: 1, pageSize: 1000 });
       if (response.success && response.data) {
@@ -76,12 +78,18 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     } catch (error) {
       console.error('获取统计信息失败:', error);
     }
-  };
+  }, []);
 
-  // 获取事件列表（用于 ProTable）
-  const fetchEvents = async (params: any, sort?: Record<string, any>) => {
+  useEffect(() => {
+    loadDevices();
+    fetchOverviewStats();
+  }, [fetchOverviewStats]);
+
+  // 获取事件列表（用于 ProTable）- 使用 useCallback 避免死循环
+  const fetchEvents = useCallback(async (params: any, sort?: Record<string, any>) => {
     try {
-      const formValues = searchForm.getFieldsValue();
+      // 使用 ref 确保获取最新的搜索参数
+      const formValues = searchParamsRef.current;
       const filters: any = {
         pageIndex: params.current || 1,
         pageSize: params.pageSize || 20,
@@ -119,9 +127,9 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         total: 0,
       };
     }
-  };
+  }, []);
 
-  const loadDevices = async () => {
+  const loadDevices = useCallback(async () => {
     try {
       const response = await iotService.getDevices(undefined, 1, 1000); // 加载所有设备用于下拉选择
       if (response.success && response.data) {
@@ -134,14 +142,22 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       console.error('Failed to load devices:', error);
       setDevices([]);
     }
-  };
+  }, []);
 
-  const handleSearch = () => {
+  useEffect(() => {
+    loadDevices();
+  }, [loadDevices]);
+
+  const handleSearch = useCallback(() => {
+    // 同时更新 ref，确保 request 函数能立即访问到最新值
+    const values = searchForm.getFieldsValue();
+    searchParamsRef.current = values;
+    
     if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
     fetchOverviewStats();
-  };
+  }, [searchForm, fetchOverviewStats]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -153,32 +169,32 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     refreshStats: () => {
       fetchOverviewStats();
     },
-  }));
+  }), [fetchOverviewStats]);
 
-  const handleHandle = (event: IoTDeviceEvent) => {
+  const handleHandle = useCallback((event: IoTDeviceEvent) => {
     setSelectedEvent(event);
     form.resetFields();
     setIsModalVisible(true);
-  };
+  }, [form]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = useCallback(async (values: any) => {
     if (!selectedEvent) return;
     try {
       const response = await iotService.handleEvent(selectedEvent.id, values.remarks || '');
       if (response.success) {
         message.success('事件已处理');
-        setIsModalVisible(false);
-        if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-        fetchOverviewStats();
+      handleCloseModal();
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+      fetchOverviewStats();
       }
     } catch (error) {
       message.error('处理失败');
     }
-  };
+  }, [selectedEvent, fetchOverviewStats]);
 
-  const getLevelTag = (level: string) => {
+  const getLevelTag = useCallback((level: string) => {
     const levelMap: Record<string, { color: string; label: string }> = {
       Info: { color: 'blue', label: '信息' },
       Warning: { color: 'orange', label: '警告' },
@@ -187,9 +203,9 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     };
     const config = levelMap[level] || { color: 'default', label: level };
     return <Tag color={config.color}>{config.label}</Tag>;
-  };
+  }, []);
 
-  const columns: TableColumnsType<IoTDeviceEvent> = [
+  const columns: TableColumnsType<IoTDeviceEvent> = useMemo(() => [
     {
       title: '所属设备',
       dataIndex: 'deviceId',
@@ -256,7 +272,14 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         </Space>
       ),
     },
-  ];
+  ], [handleHandle, getLevelTag, safeDevices]);
+
+  // 关闭表单弹窗
+  const handleCloseModal = useCallback(() => {
+    setIsModalVisible(false);
+    setSelectedEvent(null);
+    form.resetFields();
+  }, [form]);
 
   return (
     <>

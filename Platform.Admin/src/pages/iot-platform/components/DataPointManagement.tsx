@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import {
@@ -67,13 +67,9 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   // 确保 devices 始终是数组
   const safeDevices = Array.isArray(devices) ? devices : [];
 
-  useEffect(() => {
-    loadDevices();
-    fetchOverviewStats();
-  }, []);
 
   // 获取概览统计
-  const fetchOverviewStats = async () => {
+  const fetchOverviewStats = useCallback(async () => {
     try {
       // 获取所有数据点用于统计
       const response = await iotService.getDataPoints(undefined, 1, 1000);
@@ -89,10 +85,15 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     } catch (error) {
       console.error('获取统计信息失败:', error);
     }
-  };
+  }, []);
 
-  // 获取数据点列表（用于 ProTable）
-  const fetchDataPoints = async (params: any) => {
+  useEffect(() => {
+    loadDevices();
+    fetchOverviewStats();
+  }, [fetchOverviewStats]);
+
+  // 获取数据点列表（用于 ProTable）- 使用 useCallback 避免死循环
+  const fetchDataPoints = useCallback(async (params: any) => {
     try {
       const response = await iotService.getDataPoints(undefined, params.current || 1, params.pageSize || 20);
       if (response.success && response.data) {
@@ -118,9 +119,9 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         total: 0,
       };
     }
-  };
+  }, []);
 
-  const loadDevices = async () => {
+  const loadDevices = useCallback(async () => {
     try {
       const response = await iotService.getDevices(undefined, 1, 1000); // 加载所有设备用于下拉选择
       if (response.success && response.data) {
@@ -133,13 +134,17 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       console.error('Failed to load devices:', error);
       setDevices([]);
     }
-  };
+  }, []);
 
-  const handleAdd = () => {
+  useEffect(() => {
+    loadDevices();
+  }, [loadDevices]);
+
+  const handleAdd = useCallback(() => {
     form.resetFields();
     setSelectedDataPoint(null);
     setIsModalVisible(true);
-  };
+  }, [form]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -152,20 +157,20 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       fetchOverviewStats();
     },
     handleAdd,
-  }));
+  }), [fetchOverviewStats, handleAdd]);
 
-  const handleEdit = (dataPoint: IoTDataPoint) => {
+  const handleEdit = useCallback((dataPoint: IoTDataPoint) => {
     setSelectedDataPoint(dataPoint);
     form.setFieldsValue(dataPoint);
     setIsModalVisible(true);
-  };
+  }, [form]);
 
-  const handleView = (dataPoint: IoTDataPoint) => {
+  const handleView = useCallback((dataPoint: IoTDataPoint) => {
     setSelectedDataPoint(dataPoint);
     setIsDetailDrawerVisible(true);
-  };
+  }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     try {
       const response = await iotService.deleteDataPoint(id);
       if (response.success) {
@@ -184,9 +189,9 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       console.error('删除数据点失败:', error);
       message.error(error?.message || '删除失败');
     }
-  };
+  }, [fetchOverviewStats]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = useCallback(async (values: any) => {
     try {
       if (selectedDataPoint) {
         const response = await iotService.updateDataPoint(selectedDataPoint.id, values);
@@ -219,7 +224,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     }
   };
 
-  const getDataTypeLabel = (type: string) => {
+  const getDataTypeLabel = useCallback((type: string) => {
     // 支持 camelCase (后端返回) 和首字母大写格式
     const normalizedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
     const typeMap: Record<string, string> = {
@@ -230,9 +235,9 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       Json: 'JSON',
     };
     return typeMap[normalizedType] || type;
-  };
+  }, []);
 
-  const columns: TableColumnsType<IoTDataPoint> = [
+  const columns: TableColumnsType<IoTDataPoint> = useMemo(() => [
     {
       title: '数据点名称',
       dataIndex: 'title',
@@ -409,7 +414,20 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         </Space>
       ),
     },
-  ];
+  ], [handleView, handleEdit, handleDelete, getDataTypeLabel, safeDevices]);
+
+  // 关闭详情抽屉
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailDrawerVisible(false);
+    setSelectedDataPoint(null);
+  }, []);
+
+  // 关闭表单弹窗
+  const handleCloseModal = useCallback(() => {
+    setIsModalVisible(false);
+    setSelectedDataPoint(null);
+    form.resetFields();
+  }, [form]);
 
   return (
     <>
@@ -469,7 +487,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         title={selectedDataPoint ? '编辑数据点' : '新建数据点'}
         open={isModalVisible}
         onOk={() => form.submit()}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={handleCloseModal}
         width={isMobile ? '100%' : 700}
       >
         <Form
@@ -562,7 +580,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       <Drawer
         title="数据点详情"
         placement="right"
-        onClose={() => setIsDetailDrawerVisible(false)}
+        onClose={handleCloseDetail}
         open={isDetailDrawerVisible}
         size={isMobile ? 'large' : 800}
       >

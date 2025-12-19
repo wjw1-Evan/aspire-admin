@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef, useCallback, useMemo } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { useIntl } from '@umijs/max';
@@ -70,7 +70,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   });
 
   // 获取统计信息
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     try {
       const response = await getProjectStatistics();
       if (response.success && response.data) {
@@ -79,28 +79,14 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     } catch (error) {
       console.error('获取统计信息失败:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchStatistics();
-  }, []);
+  }, [fetchStatistics]);
 
-  // 暴露方法给父组件
-  useImperativeHandle(ref, () => ({
-    reload: () => {
-      actionRef.current?.reload();
-    },
-    refreshStatistics: () => {
-      fetchStatistics();
-    },
-    handleCreate: () => {
-      setEditingProject(null);
-      setFormVisible(true);
-    },
-  }));
-
-  // 获取项目列表
-  const fetchProjects = async (params: any, sort?: Record<string, any>) => {
+  // 获取项目列表（使用 useCallback 避免死循环）
+  const fetchProjects = useCallback(async (params: any, sort?: Record<string, any>) => {
     let sortBy = searchParams.sortBy;
     let sortOrder = searchParams.sortOrder;
 
@@ -138,10 +124,24 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       console.error('获取项目列表失败:', error);
       return { data: [], success: false, total: 0 };
     }
-  };
+  }, [searchParams]);
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    reload: () => {
+      actionRef.current?.reload();
+    },
+    refreshStatistics: () => {
+      fetchStatistics();
+    },
+    handleCreate: () => {
+      setEditingProject(null);
+      setFormVisible(true);
+    },
+  }), [fetchStatistics]);
 
   // 处理搜索
-  const handleSearch = (values: any) => {
+  const handleSearch = useCallback((values: any) => {
     const newSearchParams: ProjectQueryRequest = {
       page: 1,
       pageSize: searchParams.pageSize,
@@ -156,10 +156,10 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     };
     setSearchParams(newSearchParams);
     actionRef.current?.reload();
-  };
+  }, [searchParams]);
 
   // 重置搜索
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     searchForm.resetFields();
     const resetParams: ProjectQueryRequest = {
       page: 1,
@@ -169,10 +169,10 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     };
     setSearchParams(resetParams);
     actionRef.current?.reload();
-  };
+  }, [searchForm, searchParams.pageSize]);
 
   // 删除项目
-  const handleDelete = async (projectId: string) => {
+  const handleDelete = useCallback(async (projectId: string) => {
     Modal.confirm({
       title: intl.formatMessage({ id: 'pages.projectManagement.modal.deleteProject' }),
       content: intl.formatMessage({ id: 'pages.projectManagement.message.confirmDelete' }),
@@ -190,10 +190,10 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         }
       },
     });
-  };
+  }, [intl, fetchStatistics]);
 
-  // 格式化日期时间
-  const formatDateTime = (dateTime: string | null | undefined): string => {
+  // 格式化日期时间（提取为纯函数）
+  const formatDateTime = useCallback((dateTime: string | null | undefined): string => {
     if (!dateTime) return '-';
     try {
       const date = dayjs(dateTime);
@@ -203,10 +203,10 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       console.error('日期格式化错误:', error, dateTime);
       return dateTime || '-';
     }
-  };
+  }, []);
 
   // 格式化日期（仅日期部分）
-  const formatDate = (date: string | null | undefined): string => {
+  const formatDate = useCallback((date: string | null | undefined): string => {
     if (!date) return '-';
     try {
       const dateObj = dayjs(date);
@@ -218,10 +218,27 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       console.error('日期格式化错误:', error, date);
       return date || '-';
     }
-  };
+  }, []);
 
-  // 表格列定义
-  const columns: ProColumns<ProjectDto>[] = [
+  // 处理查看项目详情
+  const handleViewProject = useCallback((record: ProjectDto) => {
+    setViewingProject(record);
+    setDetailVisible(true);
+  }, []);
+
+  // 处理编辑项目
+  const handleEditProject = useCallback((record: ProjectDto) => {
+    setEditingProject(record);
+    setFormVisible(true);
+  }, []);
+
+  // 行选择变化处理
+  const handleRowSelectionChange = useCallback((_: React.Key[], selectedRows: ProjectDto[]) => {
+    setSelectedRows(selectedRows);
+  }, []);
+
+  // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
+  const columns: ProColumns<ProjectDto>[] = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.name' }),
       dataIndex: 'name',
@@ -230,10 +247,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         <Space>
           <ProjectOutlined />
           <a
-            onClick={() => {
-              setViewingProject(record);
-              setDetailVisible(true);
-            }}
+            onClick={() => handleViewProject(record)}
             style={{ cursor: 'pointer' }}
           >
             {text}
@@ -322,10 +336,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             type="link"
             size="small"
             icon={<EditOutlined />}
-            onClick={() => {
-              setEditingProject(record);
-              setFormVisible(true);
-            }}
+            onClick={() => handleEditProject(record)}
           >
             {intl.formatMessage({ id: 'pages.table.edit' })}
           </Button>
@@ -341,7 +352,25 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         </Space>
       ),
     },
-  ];
+  ], [intl, handleViewProject, handleEditProject, handleDelete, formatDateTime, formatDate]);
+
+  // 关闭表单处理
+  const handleCloseForm = useCallback(() => {
+    setFormVisible(false);
+  }, []);
+
+  // 表单成功处理
+  const handleFormSuccess = useCallback(() => {
+    setFormVisible(false);
+    actionRef.current?.reload();
+    fetchStatistics();
+  }, [fetchStatistics]);
+
+  // 关闭详情处理
+  const handleCloseDetail = useCallback(() => {
+    setDetailVisible(false);
+    setViewingProject(null);
+  }, []);
 
   return (
     <div>
@@ -439,9 +468,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         request={fetchProjects}
         columns={columns}
         rowSelection={{
-          onChange: (_, selectedRows) => {
-            setSelectedRows(selectedRows);
-          },
+          onChange: handleRowSelectionChange,
         }}
         pagination={{
           pageSize: 10,
@@ -456,19 +483,15 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
           <Modal
           title={editingProject ? intl.formatMessage({ id: 'pages.projectManagement.editProject' }) : intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
           open={formVisible}
-          onCancel={() => setFormVisible(false)}
+          onCancel={handleCloseForm}
           footer={null}
           width={isMobile ? '100%' : 600}
           destroyOnHidden
         >
           <ProjectForm
             project={editingProject}
-            onSuccess={() => {
-              setFormVisible(false);
-              actionRef.current?.reload();
-              fetchStatistics();
-            }}
-            onCancel={() => setFormVisible(false)}
+            onSuccess={handleFormSuccess}
+            onCancel={handleCloseForm}
           />
         </Modal>
       )}
@@ -477,7 +500,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       {detailVisible && viewingProject && (
         <ProjectDetail
           project={viewingProject}
-          onClose={() => setDetailVisible(false)}
+          onClose={handleCloseDetail}
         />
       )}
     </div>

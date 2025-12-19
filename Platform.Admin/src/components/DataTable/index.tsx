@@ -122,6 +122,10 @@ function DataTable<T extends Record<string, any> = any>(
     setSorter(newSorter);
     
     // 当用户改变pageSize时，pag.pageSize会有值；改变页码时，pag.current会有值
+    // 计算新的分页参数（直接使用 pag 参数，避免使用可能过时的 state）
+    const newCurrent = pag.current !== undefined ? pag.current : paginationState.current;
+    const newPageSize = pag.pageSize !== undefined ? pag.pageSize : paginationState.pageSize;
+    
     setPaginationState(prev => {
       const newPagination = {
         current: pag.current !== undefined ? pag.current : prev.current,
@@ -131,9 +135,7 @@ function DataTable<T extends Record<string, any> = any>(
       return newPagination;
     });
     
-    // 使用新的分页参数加载数据（在状态更新后）
-    const newCurrent = pag.current !== undefined ? pag.current : paginationState.current;
-    const newPageSize = pag.pageSize !== undefined ? pag.pageSize : paginationState.pageSize;
+    // 使用计算好的分页参数加载数据（直接使用 pag 参数，不依赖异步更新的 state）
     loadData(newCurrent, newPageSize);
   }, [loadData, paginationState.current, paginationState.pageSize]);
 

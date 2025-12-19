@@ -87,10 +87,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     }
   }, []);
 
-  useEffect(() => {
-    loadDevices();
-    fetchOverviewStats();
-  }, [fetchOverviewStats]);
+  const loadDevices = useCallback(async () => {
 
   // 获取数据点列表（用于 ProTable）- 使用 useCallback 避免死循环
   const fetchDataPoints = useCallback(async (params: any) => {
@@ -136,9 +133,11 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     }
   }, []);
 
+  // 初始化：加载设备和统计信息
   useEffect(() => {
     loadDevices();
-  }, [loadDevices]);
+    fetchOverviewStats();
+  }, [loadDevices, fetchOverviewStats]);
 
   const handleAdd = useCallback(() => {
     form.resetFields();

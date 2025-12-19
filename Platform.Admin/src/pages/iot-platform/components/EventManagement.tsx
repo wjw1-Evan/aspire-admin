@@ -57,11 +57,6 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   // 确保 devices 始终是数组
   const safeDevices = Array.isArray(devices) ? devices : [];
 
-  useEffect(() => {
-    loadDevices();
-    fetchOverviewStats();
-  }, []);
-
   // 获取概览统计
   const fetchOverviewStats = useCallback(async () => {
     try {
@@ -80,10 +75,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     }
   }, []);
 
-  useEffect(() => {
-    loadDevices();
-    fetchOverviewStats();
-  }, [fetchOverviewStats]);
+  const loadDevices = useCallback(async () => {
 
   // 获取事件列表（用于 ProTable）- 使用 useCallback 避免死循环
   const fetchEvents = useCallback(async (params: any, sort?: Record<string, any>) => {
@@ -144,9 +136,11 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     }
   }, []);
 
+  // 初始化：加载设备和统计信息
   useEffect(() => {
     loadDevices();
-  }, [loadDevices]);
+    fetchOverviewStats();
+  }, [loadDevices, fetchOverviewStats]);
 
   const handleSearch = useCallback(() => {
     // 同时更新 ref，确保 request 函数能立即访问到最新值

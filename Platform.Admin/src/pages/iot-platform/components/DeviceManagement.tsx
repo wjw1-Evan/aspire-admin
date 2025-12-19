@@ -77,11 +77,6 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   // 确保 gateways 始终是数组
   const safeGateways = Array.isArray(gateways) ? gateways : [];
 
-  useEffect(() => {
-    loadGateways();
-    fetchOverviewStats();
-  }, []);
-
   // 获取概览统计
   const fetchOverviewStats = useCallback(async () => {
     try {
@@ -144,6 +139,12 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       setGateways([]);
     }
   }, []);
+
+  // 初始化：加载网关和统计信息
+  useEffect(() => {
+    loadGateways();
+    fetchOverviewStats();
+  }, [loadGateways, fetchOverviewStats]);
 
   const handleAdd = useCallback(() => {
     form.resetFields();

@@ -343,13 +343,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         
         return (
           <div>
-            <div>{date.toLocaleString('zh-CN', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}</div>
+            <div>{dayjs(date).format('YYYY-MM-DD HH:mm:ss')}</div>
             {timeAgo && (
               <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>
                 {timeAgo}

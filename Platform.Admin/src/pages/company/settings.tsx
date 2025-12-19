@@ -13,6 +13,20 @@ import { useIntl } from '@umijs/max';
 import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
 import EditCompanyModal from './components/EditCompanyModal';
 import { StatCard } from '@/components';
+import dayjs from 'dayjs';
+
+// 统一的日期时间格式化函数
+const formatDateTime = (dateTime: string | null | undefined): string => {
+  if (!dateTime) return '-';
+  try {
+    const date = dayjs(dateTime);
+    if (!date.isValid()) return dateTime;
+    return date.format('YYYY-MM-DD HH:mm:ss');
+  } catch (error) {
+    console.error('日期格式化错误:', error, dateTime);
+    return dateTime || '-';
+  }
+};
 
 export default function CompanySettings() {
   const intl = useIntl();
@@ -244,12 +258,12 @@ export default function CompanySettings() {
               {
                 key: 'createdAt',
                 label: intl.formatMessage({ id: 'pages.companySettings.details.createdAt' }),
-                children: company.createdAt ? new Date(company.createdAt).toLocaleString() : '-',
+                children: formatDateTime(company.createdAt),
               },
               {
                 key: 'updatedAt',
                 label: intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' }),
-                children: company.updatedAt ? new Date(company.updatedAt).toLocaleString() : '-',
+                children: formatDateTime(company.updatedAt),
               },
             ]}
           />

@@ -10,6 +10,20 @@ import { useIntl } from '@umijs/max';
 import { getUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import LogDetailDrawer from './components/LogDetailDrawer';
+import dayjs from 'dayjs';
+
+// 统一的日期时间格式化函数
+const formatDateTime = (dateTime: string | null | undefined): string => {
+  if (!dateTime) return '-';
+  try {
+    const date = dayjs(dateTime);
+    if (!date.isValid()) return dateTime;
+    return date.format('YYYY-MM-DD HH:mm:ss');
+  } catch (error) {
+    console.error('日期格式化错误:', error, dateTime);
+    return dateTime || '-';
+  }
+};
 
 const UserLog: React.FC = () => {
   const intl = useIntl();
@@ -560,6 +574,7 @@ const UserLog: React.FC = () => {
       valueType: 'dateTime',
       search: false,
       sorter: true,
+      render: (_, record) => formatDateTime(record.createdAt),
     },
   ];
 

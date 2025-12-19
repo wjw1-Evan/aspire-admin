@@ -14,6 +14,20 @@ import {
   SearchOutlined,
   FileTextOutlined,
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
+
+// 统一的日期时间格式化函数
+const formatDateTime = (dateTime: string | null | undefined): string => {
+  if (!dateTime) return '-';
+  try {
+    const date = dayjs(dateTime);
+    if (!date.isValid()) return dateTime;
+    return date.format('YYYY-MM-DD HH:mm:ss');
+  } catch (error) {
+    console.error('日期格式化错误:', error, dateTime);
+    return dateTime || '-';
+  }
+};
 
 /**
  * v3.1: 我的加入申请列表
@@ -237,6 +251,7 @@ const MyJoinRequests: React.FC = () => {
       valueType: 'dateTime',
       sorter: true,
       search: false,
+      render: (_, record) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.status' }),

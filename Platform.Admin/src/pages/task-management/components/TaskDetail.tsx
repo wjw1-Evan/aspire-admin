@@ -167,13 +167,13 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
                   {taskDetail.createdByName || '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label="创建时间">
-                  {dayjs(taskDetail.createdAt).format('YYYY-MM-DD HH:mm')}
+                  {dayjs(taskDetail.createdAt).format('YYYY-MM-DD HH:mm:ss')}
                 </Descriptions.Item>
                 <Descriptions.Item label="分配给">
                   {taskDetail.assignedToName || '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label="分配时间">
-                  {taskDetail.assignedAt ? dayjs(taskDetail.assignedAt).format('YYYY-MM-DD HH:mm') : '-'}
+                  {taskDetail.assignedAt ? dayjs(taskDetail.assignedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
@@ -182,16 +182,16 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
             <Card title="时间信息" style={{ marginBottom: 16 }}>
               <Descriptions column={isMobile ? 1 : 2} size="small">
                 <Descriptions.Item label="计划开始">
-                  {taskDetail.plannedStartTime ? dayjs(taskDetail.plannedStartTime).format('YYYY-MM-DD HH:mm') : '-'}
+                  {taskDetail.plannedStartTime ? dayjs(taskDetail.plannedStartTime).format('YYYY-MM-DD HH:mm:ss') : '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label="计划完成">
-                  {taskDetail.plannedEndTime ? dayjs(taskDetail.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-'}
+                  {taskDetail.plannedEndTime ? dayjs(taskDetail.plannedEndTime).format('YYYY-MM-DD HH:mm:ss') : '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label="实际开始">
-                  {taskDetail.actualStartTime ? dayjs(taskDetail.actualStartTime).format('YYYY-MM-DD HH:mm') : '-'}
+                  {taskDetail.actualStartTime ? dayjs(taskDetail.actualStartTime).format('YYYY-MM-DD HH:mm:ss') : '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label="实际完成">
-                  {taskDetail.actualEndTime ? dayjs(taskDetail.actualEndTime).format('YYYY-MM-DD HH:mm') : '-'}
+                  {taskDetail.actualEndTime ? dayjs(taskDetail.actualEndTime).format('YYYY-MM-DD HH:mm:ss') : '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label="预计耗时">
                   {taskDetail.estimatedDuration ? `${taskDetail.estimatedDuration} 分钟` : '-'}

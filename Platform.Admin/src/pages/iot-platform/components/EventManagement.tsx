@@ -233,7 +233,17 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       dataIndex: 'occurredAt',
       key: 'occurredAt',
       width: 180,
-      render: (time: string) => new Date(time).toLocaleString(),
+      render: (time: string) => {
+        if (!time) return '-';
+        try {
+          const date = dayjs(time);
+          if (!date.isValid()) return time;
+          return date.format('YYYY-MM-DD HH:mm:ss');
+        } catch (error) {
+          console.error('日期格式化错误:', error, time);
+          return time;
+        }
+      },
     },
     {
       title: '状态',
@@ -420,7 +430,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
               <div style={{ marginBottom: 16 }}>
                 <div style={{ color: '#666', marginBottom: 4 }}>发生时间</div>
                 <div style={{ fontSize: 14 }}>
-                  {new Date(selectedEvent.occurredAt).toLocaleString()}
+                  {dayjs(selectedEvent.occurredAt).format('YYYY-MM-DD HH:mm:ss')}
                 </div>
               </div>
             </>

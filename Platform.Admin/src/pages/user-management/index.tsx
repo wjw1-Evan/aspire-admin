@@ -40,6 +40,20 @@ import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
 import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
 import { StatCard } from '@/components';
+import dayjs from 'dayjs';
+
+// 统一的日期时间格式化函数
+const formatDateTime = (dateTime: string | null | undefined): string => {
+  if (!dateTime) return '-';
+  try {
+    const date = dayjs(dateTime);
+    if (!date.isValid()) return dateTime;
+    return date.format('YYYY-MM-DD HH:mm:ss');
+  } catch (error) {
+    console.error('日期格式化错误:', error, dateTime);
+    return dateTime || '-';
+  }
+};
 
 const UserManagement: React.FC = () => {
   const intl = useIntl();
@@ -540,13 +554,14 @@ const UserManagement: React.FC = () => {
       key: 'createdAt',
       valueType: 'dateTime',
       sorter: true,
+      render: (_, record) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.lastLogin' }),
       dataIndex: 'lastLoginAt',
       key: 'lastLoginAt',
       valueType: 'dateTime',
-      render: (text) => text || '-',
+      render: (_, record) => formatDateTime(record.lastLoginAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.actions' }),

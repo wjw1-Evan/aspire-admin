@@ -281,17 +281,9 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         const time = record.reportedAt;
         if (!time) return '-';
         try {
-          const date = new Date(time);
-          if (isNaN(date.getTime())) return time; // 如果无法解析，返回原始值
-          return date.toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-          });
+          const date = dayjs(time);
+          if (!date.isValid()) return time;
+          return date.format('YYYY-MM-DD HH:mm:ss');
         } catch (error) {
           console.error('日期格式化错误:', error, time);
           return time;

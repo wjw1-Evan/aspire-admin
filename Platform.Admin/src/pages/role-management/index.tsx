@@ -20,6 +20,20 @@ import { deleteRole, getAllRolesWithStats } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
 import { StatCard } from '@/components';
+import dayjs from 'dayjs';
+
+// 统一的日期时间格式化函数
+const formatDateTime = (dateTime: string | null | undefined): string => {
+  if (!dateTime) return '-';
+  try {
+    const date = dayjs(dateTime);
+    if (!date.isValid()) return dateTime;
+    return date.format('YYYY-MM-DD HH:mm:ss');
+  } catch (error) {
+    console.error('日期格式化错误:', error, dateTime);
+    return dateTime || '-';
+  }
+};
 
 const RoleManagement: FC = () => {
   const intl = useIntl();
@@ -388,7 +402,7 @@ const RoleManagement: FC = () => {
       title: intl.formatMessage({ id: 'pages.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (value: string) => value ? new Date(value).toLocaleString() : '-',
+      render: (value: string) => formatDateTime(value),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.actions' }),

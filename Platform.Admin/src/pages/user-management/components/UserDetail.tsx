@@ -256,7 +256,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                         {getActionText(log.action)}
                       </Tag>
                       <Text type="secondary">
-                        {dayjs(log.createdAt).format('MM-DD HH:mm:ss')}
+                        {dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss')}
                       </Text>
                     </Space>
                     <div>{log.description}</div>

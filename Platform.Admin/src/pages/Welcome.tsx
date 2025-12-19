@@ -47,6 +47,7 @@ import { getCurrentCompany } from '@/services/company';
 // import { getSystemResources } from '@/services/system/api';
 import type { CurrentUser } from '@/types/unified-api';
 import type { SystemResources } from '@/services/system/api';
+import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -665,9 +666,8 @@ const Welcome: React.FC = () => {
             >
               <Timeline
                 items={recentActivities.length > 0 ? recentActivities.map(activity => {
-                  const locale = intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US';
                   const formattedDate = activity.createdAt
-                    ? new Date(activity.createdAt).toLocaleString(locale)
+                    ? dayjs(activity.createdAt).format('YYYY-MM-DD HH:mm:ss')
                     : intl.formatMessage({ id: 'pages.welcome.recentActivities.unknownTime' });
 
                   const urlDisplay = activity.fullUrl
@@ -712,7 +712,7 @@ const Welcome: React.FC = () => {
                         <br />
                         <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.recentActivities.systemStart.desc' })}</Text>
                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                          {new Date().toLocaleString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US')}
+                          {dayjs().format('YYYY-MM-DD HH:mm:ss')}
                         </div>
                       </div>
                     ),
@@ -727,7 +727,7 @@ const Welcome: React.FC = () => {
                           {intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.desc' }, { username: currentUser?.displayName || currentUser?.username || intl.formatMessage({ id: 'pages.welcome.user' }) })}
                         </Text>
                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                          {new Date().toLocaleString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US')}
+                          {dayjs().format('YYYY-MM-DD HH:mm:ss')}
                         </div>
                       </div>
                     ),
@@ -740,7 +740,7 @@ const Welcome: React.FC = () => {
                         <br />
                         <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.recentActivities.dataSync.desc' })}</Text>
                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                          {new Date().toLocaleString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US')}
+                          {dayjs().format('YYYY-MM-DD HH:mm:ss')}
                         </div>
                       </div>
                     ),

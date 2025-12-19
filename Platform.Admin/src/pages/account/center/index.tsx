@@ -27,6 +27,7 @@ import {
 } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 import {
   getCurrentUserProfile,
   updateUserProfile,
@@ -235,9 +236,17 @@ const UserCenter: React.FC = () => {
     form.resetFields();
   };
 
-  // 格式化时间
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('zh-CN');
+  // 统一的日期时间格式化函数
+  const formatDateTime = (dateString: string | null | undefined): string => {
+    if (!dateString) return '-';
+    try {
+      const date = dayjs(dateString);
+      if (!date.isValid()) return dateString;
+      return date.format('YYYY-MM-DD HH:mm:ss');
+    } catch (error) {
+      console.error('日期格式化错误:', error, dateString);
+      return dateString || '-';
+    }
   };
 
   // 获取角色标签颜色

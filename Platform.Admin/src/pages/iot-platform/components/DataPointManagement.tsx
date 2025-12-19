@@ -219,7 +219,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       console.error('操作失败:', error);
       message.error(error?.message || '操作失败');
     }
-  };
+  }, [selectedDataPoint, fetchOverviewStats]);
 
   const getDataTypeLabel = useCallback((type: string) => {
     // 支持 camelCase (后端返回) 和首字母大写格式

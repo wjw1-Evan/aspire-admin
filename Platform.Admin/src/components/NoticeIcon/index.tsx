@@ -9,12 +9,19 @@ import styles from './index.less';
 export default function NoticeIcon() {
   const [visible, setVisible] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // 使用 ref 存储清理函数引用，确保清理函数可以访问到最新的值
+  const cleanupRef = useRef<{
+    offCreated: (() => void) | null;
+    offRead: (() => void) | null;
+  }>({
+    offCreated: null,
+    offRead: null,
+  });
 
   // 初次加载拉取一次未读数，并建立 SignalR 连接
   useEffect(() => {
     let initTimer: NodeJS.Timeout | null = null;
-    let offCreated: (() => void) | null = null;
-    let offRead: (() => void) | null = null;
     let isMounted = true;
 
     // 延迟建立连接，让页面先渲染，不阻塞页面加载
@@ -39,13 +46,14 @@ export default function NoticeIcon() {
         if (!isMounted) return;
 
         // 新通知：未读数 +1（仅当 notice.read === false）
-        offCreated = notificationClient.on('NotificationCreated', (notice: any) => {
+        // 立即存储清理函数引用到 ref，确保清理函数可以访问
+        cleanupRef.current.offCreated = notificationClient.on('NotificationCreated', (notice: any) => {
           if (isMounted && !notice?.read) {
             setUnreadCount((c) => c + 1);
           }
         });
         // 已读：当前用户标记已读则 -1
-        offRead = notificationClient.on('NotificationRead', (_payload: any) => {
+        cleanupRef.current.offRead = notificationClient.on('NotificationRead', (_payload: any) => {
           if (isMounted) {
             setUnreadCount((c) => (c > 0 ? c - 1 : 0));
           }
@@ -62,12 +70,14 @@ export default function NoticeIcon() {
       if (initTimer) {
         clearTimeout(initTimer);
       }
-      // 清理事件监听器
-      if (offCreated) {
-        offCreated();
+      // 清理事件监听器（使用 ref 确保能访问到最新的引用）
+      if (cleanupRef.current.offCreated) {
+        cleanupRef.current.offCreated();
+        cleanupRef.current.offCreated = null;
       }
-      if (offRead) {
-        offRead();
+      if (cleanupRef.current.offRead) {
+        cleanupRef.current.offRead();
+        cleanupRef.current.offRead = null;
       }
     };
   }, []);

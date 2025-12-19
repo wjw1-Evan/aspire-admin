@@ -598,8 +598,26 @@ public class TaskController : BaseApiController
         }
         catch (KeyNotFoundException ex)
         {
-            // 异常消息中已包含具体是前置任务还是后续任务不存在
-            return ValidationError(ex.Message);
+            // 根据异常消息确定是前置任务还是后续任务不存在
+            // 异常消息格式："前置任务 {taskId} 不存在" 或 "后续任务 {taskId} 不存在"
+            var message = ex.Message;
+            string taskId;
+            
+            if (message.Contains("前置任务"))
+            {
+                taskId = request.PredecessorTaskId;
+            }
+            else if (message.Contains("后续任务"))
+            {
+                taskId = request.SuccessorTaskId;
+            }
+            else
+            {
+                // 如果无法确定，默认使用前置任务ID
+                taskId = request.PredecessorTaskId;
+            }
+            
+            return NotFoundError("任务", taskId);
         }
         catch (InvalidOperationException ex)
         {

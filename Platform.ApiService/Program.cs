@@ -180,9 +180,6 @@ builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Pla
 // ✅ 注册数据库操作工厂（必须在业务服务之前注册）
 builder.Services.AddDatabaseFactory();
 
-// ✅ 注册聊天服务依赖项聚合
-builder.Services.AddScoped<ChatService.ChatServiceDependencies>();
-
 // IoT 数据采集配置与后台任务
 builder.Services.Configure<IoTDataCollectionOptions>(
     builder.Configuration.GetSection(IoTDataCollectionOptions.SectionName));
@@ -247,6 +244,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
 
+                // 也检查 Authorization header（SignalR 可能通过 header 发送 token）
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    var authHeader = context.Request.Headers["Authorization"].ToString();
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        accessToken = authHeader.Substring("Bearer ".Length).Trim();
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(accessToken) &&
                     (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/apiservice/hubs")))
                 {
@@ -264,7 +271,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             },
             OnChallenge = context =>
             {
-                // 自定义挑战响应，提供更友好的错误信息
+                var path = context.HttpContext.Request.Path;
+                
+                // SignalR 端点：不自定义响应，让 SignalR 自己处理认证失败
+                if (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/apiservice/hubs"))
+                {
+                    // 不调用 HandleResponse()，让默认的 401 响应返回
+                    return Task.CompletedTask;
+                }
+
+                // 其他端点：自定义挑战响应，提供更友好的错误信息
                 context.HandleResponse();
                 context.Response.StatusCode = 401;
                 context.Response.ContentType = "application/json";
@@ -315,14 +331,14 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 启用 WebSocket 支持（SignalR 实时通信依赖，必须在格式化中间件之前）
+app.UseWebSockets();
+
 // 活动日志中间件（在认证之后，可以获取用户信息）
 app.UseMiddleware<Platform.ApiService.Middleware.ActivityLogMiddleware>();
 
-// 响应格式化中间件（在控制器之前）
+// 响应格式化中间件（在控制器之前，但必须在 WebSocket 之后）
 app.UseMiddleware<Platform.ApiService.Middleware.ResponseFormattingMiddleware>();
-
-// 启用 WebSocket 支持（SignalR 实时通信依赖）
-app.UseWebSockets();
 
 
 // Configure controllers

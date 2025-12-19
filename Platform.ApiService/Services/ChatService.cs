@@ -46,24 +46,37 @@ public class ChatService : IChatService
     /// <summary>
     /// 初始化聊天服务。
     /// </summary>
-    /// <param name="dependencies">聊天服务所需的依赖项聚合。</param>
-    /// <param name="logger">日志记录器</param>
-    public ChatService(ChatServiceDependencies dependencies, ILogger<ChatService> logger)
+    public ChatService(
+        IDatabaseOperationFactory<ChatSession> sessionFactory,
+        IDatabaseOperationFactory<ChatMessage> messageFactory,
+        IDatabaseOperationFactory<ChatAttachment> attachmentFactory,
+        IDatabaseOperationFactory<AppUser> userFactory,
+        IUserService userService,
+        IMongoDatabase database,
+        IHubContext<ChatHub> hubContext,
+        IAiAssistantCoordinator aiAssistantCoordinator,
+        OpenAIClient openAiClient,
+        IOptions<AiCompletionOptions> aiOptions,
+        IMcpService? mcpService,
+        ILogger<ChatService> logger)
     {
-        ArgumentNullException.ThrowIfNull(dependencies);
+        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
+        _messageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
+        _attachmentFactory = attachmentFactory ?? throw new ArgumentNullException(nameof(attachmentFactory));
+        _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
+        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+        _aiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
+        _openAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
+        _aiOptions = aiOptions?.Value ?? throw new ArgumentNullException(nameof(aiOptions));
+        _mcpService = mcpService;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _sessionFactory = dependencies.SessionFactory;
-        _messageFactory = dependencies.MessageFactory;
-        _attachmentFactory = dependencies.AttachmentFactory;
-        _hubContext = dependencies.HubContext;
-        _userFactory = dependencies.UserFactory;
-        _userService = dependencies.UserService;
-        _aiAssistantCoordinator = dependencies.AiAssistantCoordinator;
-        _gridFsBucket = dependencies.GridFsBucket;
-        _openAiClient = dependencies.OpenAiClient;
-        _aiOptions = dependencies.AiOptions.Value;
-        _mcpService = dependencies.McpService;
-        _logger = logger;
+        var mongoDatabase = database ?? throw new ArgumentNullException(nameof(database));
+        _gridFsBucket = new GridFSBucket(mongoDatabase, new GridFSBucketOptions
+        {
+            BucketName = "chat_attachments"
+        });
     }
 
     /// <inheritdoc />
@@ -1653,110 +1666,5 @@ public class ChatService : IChatService
         }
     }
 
-    /// <summary>
-    /// 聊天服务的依赖项聚合。
-    /// </summary>
-    public sealed class ChatServiceDependencies
-    {
-        /// <summary>
-        /// 初始化 <see cref="ChatServiceDependencies"/> 的新实例。
-        /// </summary>
-        /// <param name="sessionFactory">会话数据操作工厂。</param>
-        /// <param name="messageFactory">消息数据操作工厂。</param>
-        /// <param name="attachmentFactory">附件数据操作工厂。</param>
-        /// <param name="userFactory">用户数据操作工厂。</param>
-        /// <param name="userService">用户服务。</param>
-        /// <param name="database">MongoDB 数据库实例。</param>
-        /// <param name="hubContext">SignalR Hub 上下文。</param>
-        /// <param name="aiAssistantCoordinator">AI 助手协调器。</param>
-        /// <param name="openAiClient">OpenAI 客户端实例。</param>
-        /// <param name="aiOptions">AI 配置项。</param>
-        /// <param name="mcpService">MCP 服务（可选）。</param>
-        public ChatServiceDependencies(
-            IDatabaseOperationFactory<ChatSession> sessionFactory,
-            IDatabaseOperationFactory<ChatMessage> messageFactory,
-            IDatabaseOperationFactory<ChatAttachment> attachmentFactory,
-            IDatabaseOperationFactory<AppUser> userFactory,
-            IUserService userService,
-            IMongoDatabase database,
-            IHubContext<ChatHub> hubContext,
-            IAiAssistantCoordinator aiAssistantCoordinator,
-            OpenAIClient openAiClient,
-            IOptions<AiCompletionOptions> aiOptions,
-            IMcpService? mcpService = null)
-        {
-            SessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
-            MessageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
-            AttachmentFactory = attachmentFactory ?? throw new ArgumentNullException(nameof(attachmentFactory));
-            UserFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
-            UserService = userService ?? throw new ArgumentNullException(nameof(userService));
-            HubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
-            AiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
-            OpenAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
-            AiOptions = aiOptions ?? throw new ArgumentNullException(nameof(aiOptions));
-            McpService = mcpService;
-
-            var mongoDatabase = database ?? throw new ArgumentNullException(nameof(database));
-            GridFsBucket = new GridFSBucket(mongoDatabase, new GridFSBucketOptions
-            {
-                BucketName = "chat_attachments"
-            });
-        }
-
-        /// <summary>
-        /// 获取会话数据操作工厂。
-        /// </summary>
-        public IDatabaseOperationFactory<ChatSession> SessionFactory { get; }
-
-        /// <summary>
-        /// 获取消息数据操作工厂。
-        /// </summary>
-        public IDatabaseOperationFactory<ChatMessage> MessageFactory { get; }
-
-        /// <summary>
-        /// 获取附件数据操作工厂。
-        /// </summary>
-        public IDatabaseOperationFactory<ChatAttachment> AttachmentFactory { get; }
-
-        /// <summary>
-        /// 获取用户数据操作工厂。
-        /// </summary>
-        public IDatabaseOperationFactory<AppUser> UserFactory { get; }
-
-        /// <summary>
-        /// 获取用户服务。
-        /// </summary>
-        public IUserService UserService { get; }
-
-        /// <summary>
-        /// 获取 SignalR Hub 上下文。
-        /// </summary>
-        public IHubContext<ChatHub> HubContext { get; }
-
-        /// <summary>
-        /// 获取 AI 助手协调器。
-        /// </summary>
-        public IAiAssistantCoordinator AiAssistantCoordinator { get; }
-
-        /// <summary>
-        /// 获取 AI 生成回复服务。
-        /// </summary>
-        public OpenAIClient OpenAiClient { get; }
-
-        /// <summary>
-        /// 获取 AI 完成配置。
-        /// </summary>
-        public IOptions<AiCompletionOptions> AiOptions { get; }
-
-        /// <summary>
-        /// 获取附件使用的 GridFS 存储桶。
-        /// </summary>
-        public GridFSBucket GridFsBucket { get; }
-
-        /// <summary>
-        /// 获取 MCP 服务（可选）。
-        /// </summary>
-        public IMcpService? McpService { get; }
-    }
 }
 

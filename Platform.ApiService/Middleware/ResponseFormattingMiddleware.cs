@@ -159,7 +159,8 @@ public class ResponseFormattingMiddleware
         }
         
         // 跳过 SignalR Hub 相关端点（协商与 WebSocket）
-        if (path.StartsWith("/hubs/"))
+        // 包括直接访问和通过网关访问的路径
+        if (path.StartsWith("/hubs/") || path.StartsWith("/apiservice/hubs/"))
         {
             return true;
         }

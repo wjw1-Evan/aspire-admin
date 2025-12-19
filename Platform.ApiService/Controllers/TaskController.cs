@@ -52,21 +52,21 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskName))
-            return BadRequest("任务名称不能为空");
+            return ValidationError("任务名称不能为空");
 
         try
         {
-            var userId = CurrentUserId;
-            var user = await _userService.GetUserByIdAsync(userId!);
+            var userId = GetRequiredUserId();
+            var user = await _userService.GetUserByIdAsync(userId);
             if (user?.CurrentCompanyId == null)
-                return BadRequest("无法获取企业信息");
+                return ValidationError("无法获取企业信息");
 
-            var task = await _taskService.CreateTaskAsync(request, userId!, user.CurrentCompanyId);
+            var task = await _taskService.CreateTaskAsync(request, userId, user.CurrentCompanyId);
             return Success(task);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("CREATE_FAILED", ex.Message);
         }
     }
 
@@ -91,13 +91,13 @@ public class TaskController : BaseApiController
         {
             var task = await _taskService.GetTaskByIdAsync(taskId);
             if (task == null)
-                return NotFound("任务不存在");
+                return NotFoundError("任务", taskId);
 
             return Success(task);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_FAILED", ex.Message);
         }
     }
 
@@ -120,17 +120,17 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId;
-            var user = await _userService.GetUserByIdAsync(userId!);
+            var userId = GetRequiredUserId();
+            var user = await _userService.GetUserByIdAsync(userId);
             if (user?.CurrentCompanyId == null)
-                return BadRequest("无法获取企业信息");
+                return ValidationError("无法获取企业信息");
 
             var result = await _taskService.QueryTasksAsync(request, user.CurrentCompanyId);
             return Success(result);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("QUERY_FAILED", ex.Message);
         }
     }
 
@@ -153,21 +153,21 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> UpdateTask([FromBody] UpdateTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId))
-            return BadRequest("任务ID不能为空");
+            return ValidationError("任务ID不能为空");
 
         try
         {
-            var userId = CurrentUserId;
-            var task = await _taskService.UpdateTaskAsync(request, userId!);
+            var userId = GetRequiredUserId();
+            var task = await _taskService.UpdateTaskAsync(request, userId);
             return Success(task);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
-            return NotFound(ex.Message);
+            return NotFoundError("任务", request.TaskId);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("UPDATE_FAILED", ex.Message);
         }
     }
 
@@ -190,21 +190,21 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> AssignTask([FromBody] AssignTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId) || string.IsNullOrEmpty(request.AssignedTo))
-            return BadRequest("任务ID和分配用户不能为空");
+            return ValidationError("任务ID和分配用户不能为空");
 
         try
         {
-            var userId = CurrentUserId;
-            var task = await _taskService.AssignTaskAsync(request, userId!);
+            var userId = GetRequiredUserId();
+            var task = await _taskService.AssignTaskAsync(request, userId);
             return Success(task);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
-            return NotFound(ex.Message);
+            return NotFoundError("任务", request.TaskId);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("ASSIGN_FAILED", ex.Message);
         }
     }
 
@@ -227,21 +227,21 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> ExecuteTask([FromBody] ExecuteTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId))
-            return BadRequest("任务ID不能为空");
+            return ValidationError("任务ID不能为空");
 
         try
         {
-            var userId = CurrentUserId;
-            var task = await _taskService.ExecuteTaskAsync(request, userId!);
+            var userId = GetRequiredUserId();
+            var task = await _taskService.ExecuteTaskAsync(request, userId);
             return Success(task);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
-            return NotFound(ex.Message);
+            return NotFoundError("任务", request.TaskId);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("EXECUTE_FAILED", ex.Message);
         }
     }
 
@@ -264,21 +264,21 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> CompleteTask([FromBody] CompleteTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId))
-            return BadRequest("任务ID不能为空");
+            return ValidationError("任务ID不能为空");
 
         try
         {
-            var userId = CurrentUserId;
-            var task = await _taskService.CompleteTaskAsync(request, userId!);
+            var userId = GetRequiredUserId();
+            var task = await _taskService.CompleteTaskAsync(request, userId);
             return Success(task);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
-            return NotFound(ex.Message);
+            return NotFoundError("任务", request.TaskId);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("COMPLETE_FAILED", ex.Message);
         }
     }
 
@@ -302,17 +302,17 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId;
-            var task = await _taskService.CancelTaskAsync(taskId, userId!, remarks);
+            var userId = GetRequiredUserId();
+            var task = await _taskService.CancelTaskAsync(taskId, userId, remarks);
             return Success(task);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
-            return NotFound(ex.Message);
+            return NotFoundError("任务", taskId);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("CANCEL_FAILED", ex.Message);
         }
     }
 
@@ -335,16 +335,16 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId;
-            var result = await _taskService.DeleteTaskAsync(taskId, userId!);
+            var userId = GetRequiredUserId();
+            var result = await _taskService.DeleteTaskAsync(taskId, userId);
             if (!result)
-                return NotFound("任务不存在");
+                return NotFoundError("任务", taskId);
 
             return Success(new { message = "任务已删除" });
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("DELETE_FAILED", ex.Message);
         }
     }
 
@@ -366,17 +366,17 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var currentUserId = CurrentUserId;
-            var user = await _userService.GetUserByIdAsync(currentUserId!);
+            var currentUserId = GetRequiredUserId();
+            var user = await _userService.GetUserByIdAsync(currentUserId);
             if (user?.CurrentCompanyId == null)
-                return BadRequest("无法获取企业信息");
+                return ValidationError("无法获取企业信息");
 
             var statistics = await _taskService.GetTaskStatisticsAsync(user.CurrentCompanyId, userId);
             return Success(statistics);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_STATISTICS_FAILED", ex.Message);
         }
     }
 
@@ -405,7 +405,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_LOGS_FAILED", ex.Message);
         }
     }
 
@@ -426,17 +426,17 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId;
-            var user = await _userService.GetUserByIdAsync(userId!);
+            var userId = GetRequiredUserId();
+            var user = await _userService.GetUserByIdAsync(userId);
             if (user?.CurrentCompanyId == null)
-                return BadRequest("无法获取企业信息");
+                return ValidationError("无法获取企业信息");
 
-            var tasks = await _taskService.GetUserTodoTasksAsync(userId!, user.CurrentCompanyId);
+            var tasks = await _taskService.GetUserTodoTasksAsync(userId, user.CurrentCompanyId);
             return Success(tasks);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_TODO_FAILED", ex.Message);
         }
     }
 
@@ -459,17 +459,17 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId;
-            var user = await _userService.GetUserByIdAsync(userId!);
+            var userId = GetRequiredUserId();
+            var user = await _userService.GetUserByIdAsync(userId);
             if (user?.CurrentCompanyId == null)
-                return BadRequest("无法获取企业信息");
+                return ValidationError("无法获取企业信息");
 
-            var (tasks, total) = await _taskService.GetUserCreatedTasksAsync(userId!, user.CurrentCompanyId, page, pageSize);
+            var (tasks, total) = await _taskService.GetUserCreatedTasksAsync(userId, user.CurrentCompanyId, page, pageSize);
             return Success(new { tasks, total, page, pageSize });
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_CREATED_FAILED", ex.Message);
         }
     }
 
@@ -491,21 +491,21 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> BatchUpdateTaskStatus([FromBody] BatchUpdateTaskStatusRequest request)
     {
         if (request.TaskIds == null || request.TaskIds.Count == 0)
-            return BadRequest("任务ID列表不能为空");
+            return ValidationError("任务ID列表不能为空");
 
         try
         {
-            var userId = CurrentUserId;
+            var userId = GetRequiredUserId();
             var count = await _taskService.BatchUpdateTaskStatusAsync(
                 request.TaskIds,
                 (Models.TaskStatus)request.Status,
-                userId!);
+                userId);
 
             return Success(new { message = $"已更新 {count} 个任务" });
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("BATCH_UPDATE_FAILED", ex.Message);
         }
     }
 
@@ -523,7 +523,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_TASKS_FAILED", ex.Message);
         }
     }
 
@@ -541,7 +541,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_TREE_FAILED", ex.Message);
         }
     }
 
@@ -555,16 +555,16 @@ public class TaskController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var task = await _taskService.UpdateTaskProgressAsync(id, request.Progress, userId!);
+            var task = await _taskService.UpdateTaskProgressAsync(id, request.Progress, userId);
             return Success(task);
         }
         catch (KeyNotFoundException)
         {
-            return NotFound("任务不存在");
+            return NotFoundError("任务", id);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("UPDATE_PROGRESS_FAILED", ex.Message);
         }
     }
 
@@ -582,31 +582,31 @@ public class TaskController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(userId!);
+            var user = await _userService.GetUserByIdAsync(userId);
             if (user?.CurrentCompanyId == null)
-                return BadRequest("无法获取企业信息");
+                return ValidationError("无法获取企业信息");
 
             var dependencyId = await _taskService.AddTaskDependencyAsync(
                 request.PredecessorTaskId,
                 request.SuccessorTaskId,
                 request.DependencyType,
                 request.LagDays,
-                userId!,
+                userId,
                 user.CurrentCompanyId);
 
             return Success(new { id = dependencyId });
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
-            return NotFound(ex.Message);
+            return NotFoundError("任务", request.PredecessorTaskId);
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return ValidationError(ex.Message);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("ADD_DEPENDENCY_FAILED", ex.Message);
         }
     }
 
@@ -620,15 +620,15 @@ public class TaskController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var removed = await _taskService.RemoveTaskDependencyAsync(id, userId!);
+            var removed = await _taskService.RemoveTaskDependencyAsync(id, userId);
             if (!removed)
-                return NotFound("依赖关系不存在");
+                return NotFoundError("依赖关系", id);
 
             return Success("依赖关系已移除");
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("REMOVE_DEPENDENCY_FAILED", ex.Message);
         }
     }
 
@@ -646,7 +646,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_DEPENDENCIES_FAILED", ex.Message);
         }
     }
 
@@ -664,7 +664,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return Error("GET_CRITICAL_PATH_FAILED", ex.Message);
         }
     }
 }

@@ -23,7 +23,9 @@ public class ActivityLogMiddleware
         "/scalar/",
         "/metrics",
         "/_framework/",
-        "/favicon.ico"
+        "/favicon.ico",
+        "/hubs/",  // SignalR Hub 端点
+        "/apiservice/hubs/"  // 通过网关访问的 SignalR Hub 端点
     };
 
     /// <summary>

@@ -73,44 +73,47 @@ public class SystemResourceHub : Hub
             
             // 使用 CancellationToken 来优雅地停止后台任务
             var cts = new CancellationTokenSource();
+            var cancellationToken = cts.Token; // 提前获取 Token，避免访问已释放的 CTS
+            
+            // 在连接断开时取消后台任务
+            Context.Items["ResourceUpdateCts"] = cts;
+            
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    while (!cts.Token.IsCancellationRequested)
-                {
-                    try
+                    while (!cancellationToken.IsCancellationRequested)
                     {
-                            await Task.Delay(interval, cts.Token);
+                        try
+                        {
+                            await Task.Delay(interval, cancellationToken);
                             
-                            if (cts.Token.IsCancellationRequested)
+                            if (cancellationToken.IsCancellationRequested)
                             {
                                 break;
                             }
 
                             var updatedResources = await _resourceService.GetSystemResourcesAsync();
-                            await clients.Client(connectionId).SendAsync(ResourceUpdatedEvent, updatedResources, cancellationToken: cts.Token);
+                            await clients.Client(connectionId).SendAsync(ResourceUpdatedEvent, updatedResources, cancellationToken: cancellationToken);
                         }
                         catch (OperationCanceledException)
                         {
                             // 连接已断开，正常退出
                             break;
-                    }
-                    catch (Exception ex)
-                    {
+                        }
+                        catch (Exception ex)
+                        {
                             _logger.LogError(ex, "发送系统资源更新失败: {ConnectionId}, 用户: {UserId}", connectionId, userId);
-                        break;
+                            break;
                         }
                     }
                 }
                 finally
                 {
-                    cts.Dispose();
+                    // 注意：这里不释放 cts，因为 OnDisconnectedAsync 会处理
+                    // 如果在这里释放，OnDisconnectedAsync 可能会尝试释放已释放的对象
                 }
             });
-            
-            // 在连接断开时取消后台任务
-            Context.Items["ResourceUpdateCts"] = cts;
         }
         catch (Exception ex)
         {
@@ -126,11 +129,31 @@ public class SystemResourceHub : Hub
     {
         var userId = Context.User?.FindFirst("sub")?.Value ?? "anonymous";
         
-        // 取消后台任务
+        // 取消后台任务并清理资源
         if (Context.Items.TryGetValue("ResourceUpdateCts", out var ctsObj) && ctsObj is CancellationTokenSource cts)
         {
-            cts.Cancel();
-            cts.Dispose();
+            try
+            {
+                cts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // 已经被释放，忽略
+            }
+            finally
+            {
+                try
+                {
+                    cts.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 已经被释放，忽略
+                }
+            }
+            
+            // 从 Items 中移除，避免重复处理
+            Context.Items.Remove("ResourceUpdateCts");
         }
         
         _logger.LogInformation("用户 {UserId} 断开系统资源 Hub 连接: {ConnectionId}", userId, Context.ConnectionId);

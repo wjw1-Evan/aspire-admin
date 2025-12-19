@@ -1143,6 +1143,26 @@ public class McpService : IMcpService
 
     #region 工具处理私有方法
 
+    /// <summary>
+    /// 解析分页参数
+    /// </summary>
+    private static (int page, int pageSize) ParsePaginationArgs(Dictionary<string, object> arguments, int defaultPageSize = 20, int maxPageSize = 100)
+    {
+        var page = 1;
+        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
+        {
+            page = p;
+        }
+
+        var pageSize = defaultPageSize;
+        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
+        {
+            pageSize = Math.Min(ps, maxPageSize);
+        }
+
+        return (page, pageSize);
+    }
+
     private async Task<object> HandleGetUserInfoAsync(Dictionary<string, object> arguments, string currentUserId)
     {
         AppUser? user = null;
@@ -1203,20 +1223,7 @@ public class McpService : IMcpService
     {
         var keyword = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : "";
         var status = arguments.ContainsKey("status") ? arguments["status"]?.ToString() : "";
-        
-        // 解析并验证 page 参数（必须 >= 1）
-        var page = 1;
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
-        {
-            page = p;
-        }
-        
-        // 解析并验证 pageSize 参数（必须 >= 1，最大 100）
-        var pageSize = 20;
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
-        {
-            pageSize = Math.Min(ps, 100); // 限制最大值为 100
-        }
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
 
         // 直接使用数据访问层，通过 currentUserId 获取企业信息
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
@@ -1275,20 +1282,7 @@ public class McpService : IMcpService
     private async Task<object> HandleGetChatSessionsAsync(Dictionary<string, object> arguments, string currentUserId)
     {
         var keyword = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : "";
-        
-        // 解析并验证 page 参数（必须 >= 1）
-        var page = 1;
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
-        {
-            page = p;
-        }
-        
-        // 解析并验证 pageSize 参数（必须 >= 1，最大 100）
-        var pageSize = 20;
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
-        {
-            pageSize = Math.Min(ps, 100); // 限制最大值为 100
-        }
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
 
         var filterBuilder = _sessionFactory.CreateFilterBuilder()
             .Custom(MongoDB.Driver.Builders<ChatSession>.Filter.AnyEq(s => s.Participants, currentUserId));
@@ -1330,19 +1324,7 @@ public class McpService : IMcpService
             return new { error = "缺少必需的参数: sessionId" };
         }
 
-        // 解析并验证 page 参数（必须 >= 1）
-        var page = 1;
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
-        {
-            page = p;
-        }
-        
-        // 解析并验证 pageSize 参数（必须 >= 1，最大 100）
-        var pageSize = 20;
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
-        {
-            pageSize = Math.Min(ps, 100); // 限制最大值为 100
-        }
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
 
         var filter = _messageFactory.CreateFilterBuilder()
             .Equal(m => m.SessionId, sessionId)
@@ -1571,20 +1553,7 @@ public class McpService : IMcpService
         var action = arguments.ContainsKey("action") ? arguments["action"]?.ToString() : "";
         var startDateStr = arguments.ContainsKey("startDate") ? arguments["startDate"]?.ToString() : "";
         var endDateStr = arguments.ContainsKey("endDate") ? arguments["endDate"]?.ToString() : "";
-        
-        // 解析并验证 page 参数（必须 >= 1）
-        var page = 1;
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
-        {
-            page = p;
-        }
-        
-        // 解析并验证 pageSize 参数（必须 >= 1，最大 100）
-        var pageSize = 20;
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
-        {
-            pageSize = Math.Min(ps, 100); // 限制最大值为 100
-        }
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
 
         DateTime? startDate = null;
         DateTime? endDate = null;
@@ -1650,17 +1619,7 @@ public class McpService : IMcpService
             return new { error = "无法确定当前企业" };
         }
 
-        var page = 1;
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
-        {
-            page = p;
-        }
-
-        var pageSize = 20;
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
-        {
-            pageSize = Math.Min(ps, 100);
-        }
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
 
         var request = new TaskQueryRequest
         {
@@ -1967,17 +1926,7 @@ public class McpService : IMcpService
             return new { error = "无法确定当前企业" };
         }
 
-        var page = 1;
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
-        {
-            page = p;
-        }
-
-        var pageSize = 20;
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
-        {
-            pageSize = Math.Min(ps, 100);
-        }
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
 
         var request = new TaskQueryRequest
         {
@@ -2019,17 +1968,7 @@ public class McpService : IMcpService
 
     private async Task<object> HandleGetUnifiedNotificationsAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var page = 1;
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
-        {
-            page = p;
-        }
-
-        var pageSize = 10;
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
-        {
-            pageSize = Math.Min(ps, 100);
-        }
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 10, maxPageSize: 100);
 
         var filterType = arguments.ContainsKey("filterType") ? (arguments["filterType"]?.ToString() ?? "all") : "all";
         var sortBy = arguments.ContainsKey("sortBy") ? (arguments["sortBy"]?.ToString() ?? "datetime") : "datetime";
@@ -2073,17 +2012,7 @@ public class McpService : IMcpService
 
     private async Task<object> HandleGetTaskNotificationsAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var page = 1;
-        if (arguments.ContainsKey("page") && int.TryParse(arguments["page"]?.ToString(), out var p) && p >= 1)
-        {
-            page = p;
-        }
-
-        var pageSize = 10;
-        if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"]?.ToString(), out var ps) && ps >= 1)
-        {
-            pageSize = Math.Min(ps, 100);
-        }
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 10, maxPageSize: 100);
 
         var result = await _unifiedNotificationService.GetTaskNotificationsAsync(page, pageSize);
         return new

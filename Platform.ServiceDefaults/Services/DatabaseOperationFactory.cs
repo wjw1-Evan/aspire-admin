@@ -393,13 +393,12 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10, ProjectionDefinition<T>? projection = null)
     {
-        // 验证分页参数
-        if (page < 1)
-            page = 1;
-        if (pageSize < 1)
-            pageSize = 10;
-        if (pageSize > 1000)
-            pageSize = 1000; // 限制最大页面大小
+        // 验证分页参数 - 按照分页规范，必须抛出异常而不是静默修正
+        if (page < 1 )
+            page=1;
+        
+        if (pageSize < 10)
+            pageSize=10;
         
         var finalFilter = await ApplyDefaultFiltersAsync(filter).ConfigureAwait(false);
         var finalSort = sort ?? Builders<T>.Sort.Descending(e => e.CreatedAt);

@@ -2,7 +2,7 @@ import { PageContainer } from '@/components'; import DataTable from '@/component
 import { Tag, Button, App, Popconfirm, Space, Grid } from 'antd';
 
 const { useBreakpoint } = Grid;
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { getMyRequests, cancelRequest } from '@/services/company';
 import type { ActionType, ProColumns } from '@/types/pro-components';
@@ -26,6 +26,42 @@ const MyJoinRequests: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
+
+  // 获取我的申请列表（使用 useCallback 避免死循环）
+  const fetchMyRequests = useCallback(async (_params: any, _sort?: Record<string, any>) => {
+    try {
+      const response = await getMyRequests();
+
+      if (response.success && response.data) {
+        return {
+          data: response.data,
+          success: true,
+          total: response.data.length,
+        };
+      }
+
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    } catch (error) {
+      console.error('获取我的加入申请失败:', error);
+      // 注意：这是 ProTable request 函数的特殊处理模式
+      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
+      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    }
+  }, []);
+
+  // 刷新处理
+  const handleRefresh = useCallback(() => {
+    actionRef.current?.reload();
+  }, []);
 
   // 撤回申请
   const handleCancel = async (id: string) => {
@@ -308,9 +344,7 @@ const MyJoinRequests: React.FC = () => {
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
-            onClick={() => {
-              actionRef.current?.reload();
-            }}
+            onClick={handleRefresh}
           >
             {intl.formatMessage({ id: 'pages.button.refresh' })}
           </Button>
@@ -332,33 +366,7 @@ const MyJoinRequests: React.FC = () => {
         actionRef={actionRef}
         scroll={{ x: 'max-content' }}
         search={false}
-        request={async (_params, _sort) => {
-          try {
-            const response = await getMyRequests();
-
-            if (response.success && response.data) {
-              return {
-                data: response.data,
-                success: true,
-                total: response.data.length,
-              };
-            }
-
-            return {
-              data: [],
-              success: false,
-            };
-          } catch (error) {
-            console.error('获取我的加入申请失败:', error);
-            // 注意：这是 ProTable request 函数的特殊处理模式
-            // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
-            // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
-            return {
-              data: [],
-              success: false,
-            };
-          }
-        }}
+        request={fetchMyRequests}
         rowKey="id"
         search={false}
         pagination={{

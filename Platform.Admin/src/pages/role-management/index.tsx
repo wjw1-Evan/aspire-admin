@@ -15,7 +15,7 @@ import { useIntl } from '@umijs/max';
 import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card, Grid, type TableColumnsType } from 'antd';
 
 const { useBreakpoint } = Grid;
-import { type ChangeEvent, type FC, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, type FC, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { deleteRole, getAllRolesWithStats } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
@@ -37,9 +37,9 @@ const RoleManagement: FC = () => {
   } | null>(null);
 
   /**
-   * 加载角色数据（带统计信息）
+   * 加载角色数据（带统计信息）- 使用 useCallback 避免死循环
    */
-  const loadRoleData = async (_params: any, _sort?: Record<string, any>) => {
+  const loadRoleData = useCallback(async (_params: any, _sort?: Record<string, any>) => {
     try {
       const response = await getAllRolesWithStats();
       if (response.success && response.data) {
@@ -84,12 +84,12 @@ const RoleManagement: FC = () => {
         success: false,
       };
     }
-  };
+  }, []); // 空依赖数组，因为函数内部只调用 API 和 setState
 
   /**
    * 删除角色（带删除原因）
    */
-  const handleDelete = async (id: string, roleName: string) => {
+  const handleDelete = useCallback(async (id: string, roleName: string) => {
     let deleteReason = '';
     Modal.confirm({
       title: intl.formatMessage(
@@ -139,7 +139,41 @@ const RoleManagement: FC = () => {
         }
       },
     });
-  };
+  }, [intl]);
+
+  // 刷新处理
+  const handleRefresh = useCallback(() => {
+    if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+  }, []);
+
+  // 打开创建角色表单
+  const handleCreateRole = useCallback(() => {
+    setCurrentRole(undefined);
+    setModalVisible(true);
+  }, []);
+
+  // 打开编辑角色表单
+  const handleEditRole = useCallback((record: Role) => {
+    setCurrentRole(record);
+    setModalVisible(true);
+  }, []);
+
+  // 关闭表单
+  const handleCloseModal = useCallback(() => {
+    setModalVisible(false);
+    setCurrentRole(undefined);
+  }, []);
+
+  // 表单成功处理
+  const handleFormSuccess = useCallback(() => {
+    setModalVisible(false);
+    setCurrentRole(undefined);
+    if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+  }, []);
 
   /**
    * 初始化列宽调整功能
@@ -293,9 +327,9 @@ const RoleManagement: FC = () => {
   }, []);
 
   /**
-   * 表格列定义
+   * 表格列定义（使用 useMemo 避免每次渲染都重新创建）
    */
-  const columns: TableColumnsType<Role> = [
+  const columns: TableColumnsType<Role> = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.table.roleName' }),
       dataIndex: 'name',
@@ -368,10 +402,7 @@ const RoleManagement: FC = () => {
               type="link"
               size="small"
               icon={<EditOutlined />}
-              onClick={() => {
-                setCurrentRole(record);
-                setModalVisible(true);
-              }}
+              onClick={() => handleEditRole(record)}
             >
               {intl.formatMessage({ id: 'pages.table.edit' })}
             </Button>
@@ -395,7 +426,7 @@ const RoleManagement: FC = () => {
         );
       },
     },
-  ];
+  ], [intl, handleEditRole, handleDelete]);
 
   return (
     <PageContainer
@@ -411,11 +442,7 @@ const RoleManagement: FC = () => {
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
-            onClick={() => {
-              if (actionRef.current?.reload) {
-                actionRef.current.reload();
-              }
-            }}
+            onClick={handleRefresh}
           >
             {intl.formatMessage({ id: 'pages.button.refresh' })}
           </Button>
@@ -423,10 +450,7 @@ const RoleManagement: FC = () => {
             key="create"
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => {
-              setCurrentRole(undefined);
-              setModalVisible(true);
-            }}
+            onClick={handleCreateRole}
           >
             {intl.formatMessage({ id: 'pages.button.addRole' })}
           </Button>
@@ -494,17 +518,8 @@ const RoleManagement: FC = () => {
         <RoleForm
           visible={modalVisible}
           current={currentRole}
-          onCancel={() => {
-            setModalVisible(false);
-            setCurrentRole(undefined);
-          }}
-          onSuccess={() => {
-            setModalVisible(false);
-            setCurrentRole(undefined);
-            if (actionRef.current?.reload) {
-              actionRef.current.reload();
-            }
-          }}
+          onCancel={handleCloseModal}
+          onSuccess={handleFormSuccess}
         />
       )}
     </PageContainer>

@@ -1,4 +1,4 @@
-import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { Tag, Button, Drawer, Descriptions, Space, message, Form, Input, DatePicker, Card, Spin, Empty, Typography, Grid } from 'antd';
@@ -47,7 +47,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
   const searchParamsRef = useRef<any>({});
 
-  const fetchRecords = async (params: any) => {
+  const fetchRecords = useCallback(async (params: any) => {
     try {
       const { current = 1, pageSize = 20 } = params;
       const payload: any = {
@@ -133,10 +133,10 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         success: false,
       };
     }
-  };
+  }, []);
 
   // 处理搜索
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     const values = searchForm.getFieldsValue();
     // 同时更新 state 和 ref，ref 确保 request 函数能立即访问到最新值
     searchParamsRef.current = values;
@@ -147,10 +147,10 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     } else if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
-  };
+  }, [searchForm]);
 
   // 处理重置
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     searchForm.resetFields();
     // 同时更新 state 和 ref
     searchParamsRef.current = {};
@@ -160,7 +160,19 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     } else if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
-  };
+  }, [searchForm]);
+
+  // 处理查看详情
+  const handleViewDetail = useCallback((record: IoTDataRecord) => {
+    setSelectedRecord(record);
+    setIsDetailDrawerVisible(true);
+  }, []);
+
+  // 处理关闭详情
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailDrawerVisible(false);
+    setSelectedRecord(null);
+  }, []);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -169,9 +181,9 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         actionRef.current.reload();
       }
     },
-  }));
+  }), []);
 
-  const columns: ProColumns<IoTDataRecord>[] = [
+  const columns: ProColumns<IoTDataRecord>[] = useMemo(() => [
     {
       title: '设备ID',
       dataIndex: 'deviceId',
@@ -181,10 +193,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       valueType: 'text',
       render: (text: string, record: IoTDataRecord) => (
         <a
-          onClick={() => {
-            setSelectedRecord(record);
-            setIsDetailDrawerVisible(true);
-          }}
+          onClick={() => handleViewDetail(record)}
           style={{ cursor: 'pointer' }}
         >
           {text}
@@ -298,7 +307,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       render: (_: any, record: IoTDataRecord) =>
         record.isAlarm ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag>,
     },
-  ];
+  ], [handleViewDetail]);
 
   return (
     <>
@@ -357,7 +366,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     <Drawer
       title="数据记录详情"
       placement="right"
-      onClose={() => setIsDetailDrawerVisible(false)}
+      onClose={handleCloseDetail}
       open={isDetailDrawerVisible}
       size={isMobile ? 'large' : 800}
     >

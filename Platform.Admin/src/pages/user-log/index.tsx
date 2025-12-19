@@ -5,7 +5,7 @@ import { Tag, Button, Badge, Space, Grid } from 'antd';
 
 const { useBreakpoint } = Grid;
 import { ReloadOutlined, FileTextOutlined } from '@ant-design/icons';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { getUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
@@ -20,15 +20,59 @@ const UserLog: React.FC = () => {
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<UserActivityLog | null>(null);
 
-  const handleViewDetail = (record: UserActivityLog) => {
+  const handleViewDetail = useCallback((record: UserActivityLog) => {
     setSelectedLog(record);
     setDetailDrawerOpen(true);
-  };
+  }, []);
 
-  const handleCloseDetail = () => {
+  const handleCloseDetail = useCallback(() => {
     setDetailDrawerOpen(false);
     setSelectedLog(null);
-  };
+  }, []);
+
+  // 获取用户活动日志列表（使用 useCallback 避免死循环）
+  const fetchUserLogs = useCallback(async (params: any, _sort?: Record<string, any>) => {
+    const { current = 1, pageSize = 20, action } = params;
+
+    try {
+      const response = await getUserActivityLogs({
+        page: current,
+        pageSize,
+        action,
+      });
+
+      if (response.success && response.data) {
+        // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
+        const result = response.data as any;
+        return {
+          data: result.data || [],
+          total: result.total || 0,
+          success: true,
+        };
+      }
+
+      return {
+        data: [],
+        total: 0,
+        success: false,
+      };
+    } catch (error) {
+      console.error('Failed to load user activity logs:', error);
+      // 注意：这是 ProTable request 函数的特殊处理模式
+      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
+      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
+      return {
+        data: [],
+        total: 0,
+        success: false,
+      };
+    }
+  }, []);
+
+  // 刷新处理
+  const handleRefresh = useCallback(() => {
+    actionRef.current?.reload();
+  }, []);
 
   /**
    * 获取操作类型标签颜色
@@ -533,9 +577,7 @@ const UserLog: React.FC = () => {
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
-            onClick={() => {
-              actionRef.current?.reload();
-            }}
+            onClick={handleRefresh}
           >
             {intl.formatMessage({ id: 'pages.button.refresh' })}
           </Button>
@@ -555,43 +597,7 @@ const UserLog: React.FC = () => {
             return reversed;
           },
         }}
-        request={async (params, _sort) => {
-          const { current = 1, pageSize = 20, action } = params;
-
-          try {
-            const response = await getUserActivityLogs({
-              page: current,
-              pageSize,
-              action,
-            });
-
-            if (response.success && response.data) {
-              // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
-              const result = response.data as any;
-              return {
-                data: result.data || [],
-                total: result.total || 0,
-                success: true,
-              };
-            }
-
-            return {
-              data: [],
-              total: 0,
-              success: false,
-            };
-          } catch (error) {
-            console.error('Failed to load user activity logs:', error);
-            // 注意：这是 ProTable request 函数的特殊处理模式
-            // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
-            // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
-            return {
-              data: [],
-              total: 0,
-              success: false,
-            };
-          }
-        }}
+        request={fetchUserLogs}
         columns={columns}
         pagination={{
           pageSize: 20,

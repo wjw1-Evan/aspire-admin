@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, Button, Space, Drawer, Modal } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import CrudTable, {
@@ -86,18 +86,40 @@ function CrudPage<T extends Record<string, any>>({
   const [editVisible, setEditVisible] = useState(false);
   const [viewVisible, setViewVisible] = useState(false);
 
+  // 关闭创建表单
+  const handleCreateClose = useCallback(() => {
+    setCreateVisible(false);
+  }, []);
+
+  // 关闭编辑表单
+  const handleEditClose = useCallback(() => {
+    setEditVisible(false);
+    setCurrentItem(null);
+  }, [setCurrentItem]);
+
+  // 关闭查看详情
+  const handleViewClose = useCallback(() => {
+    setViewVisible(false);
+    setCurrentItem(null);
+  }, [setCurrentItem]);
+
+  // 打开创建表单
+  const handleCreateOpen = useCallback(() => {
+    setCreateVisible(true);
+  }, []);
+
   // 创建操作
-  const handleCreateSubmit = async (formData: any) => {
+  const handleCreateSubmit = useCallback(async (formData: any) => {
     await handleCreate(formData);
     setCreateVisible(false);
     if (onItemCreated) {
       // 这里可以传入刚创建的项目，但需要从API返回
       onItemCreated(formData);
     }
-  };
+  }, [handleCreate, onItemCreated]);
 
   // 编辑操作
-  const handleEditSubmit = async (formData: any) => {
+  const handleEditSubmit = useCallback(async (formData: any) => {
     if (!currentItem?.id) return;
 
     await handleUpdate(currentItem.id, formData);
@@ -106,10 +128,10 @@ function CrudPage<T extends Record<string, any>>({
     if (onItemUpdated) {
       onItemUpdated(formData);
     }
-  };
+  }, [currentItem, handleUpdate, onItemUpdated, setCurrentItem]);
 
   // 查看操作
-  const handleView = async (record: T) => {
+  const handleView = useCallback(async (record: T) => {
     if (ViewForm) {
       setCurrentItem(record);
       setViewVisible(true);
@@ -117,23 +139,23 @@ function CrudPage<T extends Record<string, any>>({
       await loadById(record.id);
       setViewVisible(true);
     }
-  };
+  }, [ViewForm, dataOptions.fetchById, loadById, setCurrentItem]);
 
   // 编辑操作
-  const handleEdit = async (record: T) => {
+  const handleEdit = useCallback(async (record: T) => {
     if (EditForm) {
       setCurrentItem(record);
       setEditVisible(true);
     }
-  };
+  }, [EditForm, setCurrentItem]);
 
   // 删除操作
-  const handleDeleteItem = async (record: T) => {
+  const handleDeleteItem = useCallback(async (record: T) => {
     await handleDelete(record.id);
     if (onItemDeleted) {
       onItemDeleted(record);
     }
-  };
+  }, [handleDelete, onItemDeleted]);
 
   return (
     <Card title={title}>
@@ -144,7 +166,7 @@ function CrudPage<T extends Record<string, any>>({
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => setCreateVisible(true)}
+              onClick={handleCreateOpen}
             >
               新增
             </Button>
@@ -178,13 +200,13 @@ function CrudPage<T extends Record<string, any>>({
         <Drawer
           title="新增"
           open={createVisible}
-          onClose={() => setCreateVisible(false)}
+          onClose={handleCreateClose}
           size={600}
           destroyOnHidden
         >
           <CreateForm
             onSubmit={handleCreateSubmit}
-            onCancel={() => setCreateVisible(false)}
+            onCancel={handleCreateClose}
           />
         </Drawer>
       )}
@@ -194,20 +216,14 @@ function CrudPage<T extends Record<string, any>>({
         <Drawer
           title="编辑"
           open={editVisible}
-          onClose={() => {
-            setEditVisible(false);
-            setCurrentItem(null);
-          }}
+          onClose={handleEditClose}
           size={600}
           destroyOnHidden
         >
           <EditForm
             data={currentItem}
             onSubmit={handleEditSubmit}
-            onCancel={() => {
-              setEditVisible(false);
-              setCurrentItem(null);
-            }}
+            onCancel={handleEditClose}
           />
         </Drawer>
       )}
@@ -217,17 +233,11 @@ function CrudPage<T extends Record<string, any>>({
         <Modal
           title="详情"
           open={viewVisible}
-          onCancel={() => {
-            setViewVisible(false);
-            setCurrentItem(null);
-          }}
+          onCancel={handleViewClose}
           footer={[
             <Button
               key="close"
-              onClick={() => {
-                setViewVisible(false);
-                setCurrentItem(null);
-              }}
+              onClick={handleViewClose}
             >
               关闭
             </Button>,
@@ -236,10 +246,7 @@ function CrudPage<T extends Record<string, any>>({
         >
           <ViewForm
             data={currentItem}
-            onClose={() => {
-              setViewVisible(false);
-              setCurrentItem(null);
-            }}
+            onClose={handleViewClose}
           />
         </Modal>
       )}

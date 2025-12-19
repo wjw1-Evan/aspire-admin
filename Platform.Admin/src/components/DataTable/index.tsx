@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useState, useImperativeHandle, forwardRef, useCallback, useMemo, useRef } from 'react';
 import { Table, Space, Button } from 'antd';
 import type { TableProps, TableColumnsType } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
@@ -47,8 +47,14 @@ function DataTable<T extends Record<string, any> = any>(
     total: 0,
   });
   const [sorter, setSorter] = useState<Record<string, 'ascend' | 'descend'>>({});
+  
+  // 使用 ref 存储最新的 sorter，避免闭包问题
+  const sorterRef = useRef(sorter);
+  useEffect(() => {
+    sorterRef.current = sorter;
+  }, [sorter]);
 
-  const loadData = async (page?: number, pageSize?: number) => {
+  const loadData = useCallback(async (page?: number, pageSize?: number) => {
     if (!request) return;
 
     setLoading(true);
@@ -58,7 +64,7 @@ function DataTable<T extends Record<string, any> = any>(
         pageSize: pageSize || paginationState.pageSize,
       };
 
-      const result = await request(params, sorter);
+      const result = await request(params, sorterRef.current);
       
       if (result.success) {
         setDataSource(result.data || []);
@@ -75,33 +81,36 @@ function DataTable<T extends Record<string, any> = any>(
     } finally {
       setLoading(false);
     }
-  };
+  }, [request, paginationState.current, paginationState.pageSize]);
 
   // 暴露方法给 actionRef
-  useImperativeHandle(actionRef || ref, () => ({
-    reload: () => {
-      loadData();
-    },
-    reloadAndReset: () => {
-      setPaginationState(prev => ({ ...prev, current: 1 }));
-      loadData(1);
-    },
-    reset: () => {
-      setPaginationState(prev => ({ ...prev, current: 1 }));
-      setSorter({});
-      loadData(1);
-    },
-    clearSelected: () => {
-      // 需要外部处理选中状态
-    },
-  }));
+  useImperativeHandle(
+    actionRef || ref,
+    () => ({
+      reload: () => {
+        loadData();
+      },
+      reloadAndReset: () => {
+        setPaginationState(prev => ({ ...prev, current: 1 }));
+        loadData(1);
+      },
+      reset: () => {
+        setPaginationState(prev => ({ ...prev, current: 1 }));
+        setSorter({});
+        loadData(1);
+      },
+      clearSelected: () => {
+        // 需要外部处理选中状态
+      },
+    }),
+    [loadData]
+  );
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadData]);
 
-  const handleTableChange = (
+  const handleTableChange = useCallback((
     pag: any,
     filters: any,
     sorterInfo: any
@@ -113,32 +122,37 @@ function DataTable<T extends Record<string, any> = any>(
     setSorter(newSorter);
     
     // 当用户改变pageSize时，pag.pageSize会有值；改变页码时，pag.current会有值
-    const newPagination = {
-      current: pag.current !== undefined ? pag.current : paginationState.current,
-      pageSize: pag.pageSize !== undefined ? pag.pageSize : paginationState.pageSize,
-      total: paginationState.total,
-    };
-    
-    setPaginationState(newPagination);
-    
-    // 使用新的分页参数加载数据
-    loadData(newPagination.current, newPagination.pageSize);
-  };
-
-  const mergedPagination: TableProps<T>['pagination'] = pagination === false 
-    ? false 
-    : {
-        // 先合并传入的配置（包括 pageSizeOptions 等）
-        ...(typeof pagination === 'object' ? pagination : {}),
-        // 然后用 state 覆盖，确保 state 的优先级（用户操作后的状态）
-        current: paginationState.current,
-        pageSize: paginationState.pageSize,
-        total: paginationState.total,
-        // 默认配置
-        showSizeChanger: true,
-        showQuickJumper: true,
-        showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+    setPaginationState(prev => {
+      const newPagination = {
+        current: pag.current !== undefined ? pag.current : prev.current,
+        pageSize: pag.pageSize !== undefined ? pag.pageSize : prev.pageSize,
+        total: prev.total,
       };
+      return newPagination;
+    });
+    
+    // 使用新的分页参数加载数据（在状态更新后）
+    const newCurrent = pag.current !== undefined ? pag.current : paginationState.current;
+    const newPageSize = pag.pageSize !== undefined ? pag.pageSize : paginationState.pageSize;
+    loadData(newCurrent, newPageSize);
+  }, [loadData, paginationState.current, paginationState.pageSize]);
+
+  const mergedPagination: TableProps<T>['pagination'] = useMemo(() => {
+    if (pagination === false) return false;
+    
+    return {
+      // 先合并传入的配置（包括 pageSizeOptions 等）
+      ...(typeof pagination === 'object' ? pagination : {}),
+      // 然后用 state 覆盖，确保 state 的优先级（用户操作后的状态）
+      current: paginationState.current,
+      pageSize: paginationState.pageSize,
+      total: paginationState.total,
+      // 默认配置
+      showSizeChanger: true,
+      showQuickJumper: true,
+      showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+    };
+  }, [pagination, paginationState]);
 
   return (
     <div>
@@ -148,7 +162,7 @@ function DataTable<T extends Record<string, any> = any>(
             {toolbar.actions}
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => loadData()}
+              onClick={loadData}
             >
               刷新
             </Button>

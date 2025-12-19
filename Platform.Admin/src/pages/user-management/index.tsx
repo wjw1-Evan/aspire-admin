@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo, useEffect } from 'react';
+import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
@@ -87,7 +87,7 @@ const UserManagement: React.FC = () => {
   }, []);
 
   // 获取用户统计信息
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     try {
       const response = await getUserStatistics();
       if (response.success && response.data) {
@@ -98,10 +98,10 @@ const UserManagement: React.FC = () => {
       // 不在这里显示错误消息，让全局错误处理器统一处理
       // 这样可以避免重复显示错误提示
     }
-  };
+  }, []);
 
   // 获取用户列表
-  const fetchUsers = async (params: any, sort?: Record<string, any>) => {
+  const fetchUsers = useCallback(async (params: any, sort?: Record<string, any>) => {
     // 处理排序参数
     let sortBy = searchParams.SortBy;
     let sortOrder = searchParams.SortOrder;
@@ -161,10 +161,10 @@ const UserManagement: React.FC = () => {
         total: 0,
       };
     }
-  };
+  }, [searchParams]);
 
   // 处理搜索
-  const handleSearch = (values: any) => {
+  const handleSearch = useCallback((values: any) => {
     const newSearchParams: UserListRequest = {
       Page: 1,
       PageSize: searchParams.PageSize,
@@ -182,10 +182,10 @@ const UserManagement: React.FC = () => {
     };
     setSearchParams(newSearchParams);
     actionRef.current?.reload();
-  };
+  }, [searchParams]);
 
   // 重置搜索
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     searchForm.resetFields();
     const resetParams: UserListRequest = {
       Page: 1,
@@ -195,10 +195,10 @@ const UserManagement: React.FC = () => {
     };
     setSearchParams(resetParams);
     actionRef.current?.reload();
-  };
+  }, [searchForm, searchParams.PageSize]);
 
   // 删除用户（带删除原因）
-  const handleDelete = async (userId: string) => {
+  const handleDelete = useCallback(async (userId: string) => {
     let deleteReason = '';
     Modal.confirm({
       title: intl.formatMessage({ id: 'pages.modal.confirmDeleteUser' }),
@@ -235,10 +235,10 @@ const UserManagement: React.FC = () => {
         }
       },
     });
-  };
+  }, [intl, fetchStatistics]);
 
   // 批量操作
-  const handleBulkAction = async (action: string) => {
+  const handleBulkAction = useCallback(async (action: string) => {
     if (selectedRows.length === 0) {
       message.warning(intl.formatMessage({ id: 'pages.message.pleaseSelect' }));
       return;
@@ -315,10 +315,10 @@ const UserManagement: React.FC = () => {
       // 不在这里显示错误消息，让全局错误处理器统一处理
       // 这样可以避免重复显示错误提示
     }
-  };
+  }, [selectedRows, intl, fetchStatistics]);
 
   // 切换用户状态
-  const handleToggleStatus = async (user: AppUser) => {
+  const handleToggleStatus = useCallback(async (user: AppUser) => {
     try {
       const endpoint = user.isActive ? 'deactivate' : 'activate';
       await request(`/api/user/${user.id}/${endpoint}`, {
@@ -333,7 +333,7 @@ const UserManagement: React.FC = () => {
       // 不在这里显示错误消息，让全局错误处理器统一处理
       // 这样可以避免重复显示错误提示
     }
-  };
+  }, [intl, fetchStatistics]);
 
   /**
    * 初始化列宽调整功能
@@ -583,11 +583,39 @@ const UserManagement: React.FC = () => {
         );
       },
     },
-  ], [roleMap, intl]);
+  ], [roleMap, intl, handleToggleStatus, handleDelete]);
+
+  // 行选择变化处理
+  const handleRowSelectionChange = useCallback((_: React.Key[], selectedRows: AppUser[]) => {
+    setSelectedRows(selectedRows);
+  }, []);
+
+  // 刷新处理
+  const handleRefresh = useCallback(() => {
+    actionRef.current?.reload();
+    fetchStatistics();
+  }, [fetchStatistics]);
+
+  // 关闭表单处理
+  const handleFormClose = useCallback(() => {
+    setFormVisible(false);
+  }, []);
+
+  // 表单成功处理
+  const handleFormSuccess = useCallback(() => {
+    setFormVisible(false);
+    actionRef.current?.reload();
+    fetchStatistics();
+  }, [fetchStatistics]);
+
+  // 关闭详情处理
+  const handleDetailClose = useCallback(() => {
+    setDetailVisible(false);
+  }, []);
 
   React.useEffect(() => {
     fetchStatistics();
-  }, []);
+  }, [fetchStatistics]);
 
   return (
     <PageContainer
@@ -631,10 +659,7 @@ const UserManagement: React.FC = () => {
             key="refresh"
             icon={<ReloadOutlined />}
             aria-label={intl.formatMessage({ id: 'pages.userManagement.refresh' })}
-            onClick={() => {
-              actionRef.current?.reload();
-              fetchStatistics();
-            }}
+            onClick={handleRefresh}
           >
             {intl.formatMessage({ id: 'pages.userManagement.refresh' })}
           </Button>
@@ -761,9 +786,7 @@ const UserManagement: React.FC = () => {
           request={fetchUsers}
           columns={columns}
           rowSelection={{
-            onChange: (_, selectedRows) => {
-              setSelectedRows(selectedRows);
-            },
+            onChange: handleRowSelectionChange,
           }}
           pagination={{
             pageSize: 10,
@@ -784,19 +807,15 @@ const UserManagement: React.FC = () => {
           <Modal
           title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
           open={formVisible}
-          onCancel={() => setFormVisible(false)}
+          onCancel={handleFormClose}
           footer={null}
           width={isMobile ? '100%' : 600}
           destroyOnHidden={true}
         >
           <UserForm
             user={editingUser}
-            onSuccess={() => {
-              setFormVisible(false);
-              actionRef.current?.reload();
-              fetchStatistics();
-            }}
-            onCancel={() => setFormVisible(false)}
+            onSuccess={handleFormSuccess}
+            onCancel={handleFormClose}
           />
         </Modal>
       )}
@@ -805,13 +824,13 @@ const UserManagement: React.FC = () => {
       <Drawer
         title={intl.formatMessage({ id: 'pages.userDetail.title' })}
         open={detailVisible}
-        onClose={() => setDetailVisible(false)}
+        onClose={handleDetailClose}
         size={600}
       >
         {viewingUser && (
           <UserDetail
             user={viewingUser}
-            onClose={() => setDetailVisible(false)}
+            onClose={handleDetailClose}
           />
         )}
       </Drawer>

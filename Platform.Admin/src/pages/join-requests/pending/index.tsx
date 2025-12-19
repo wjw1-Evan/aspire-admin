@@ -2,7 +2,7 @@ import { PageContainer } from '@/components'; import DataTable from '@/component
 import { Button, Space, App, Modal, Input, Grid } from 'antd';
 
 const { useBreakpoint } = Grid;
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import {
   getPendingRequests,
@@ -25,6 +25,42 @@ const PendingJoinRequests: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
+
+  // 获取待审核申请列表（使用 useCallback 避免死循环）
+  const fetchPendingRequests = useCallback(async (_params: any, _sort?: Record<string, any>) => {
+    try {
+      const response = await getPendingRequests();
+
+      if (response.success && response.data) {
+        return {
+          data: response.data,
+          success: true,
+          total: response.data.length,
+        };
+      }
+
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    } catch (error) {
+      console.error('获取待审核申请失败:', error);
+      // 注意：这是 ProTable request 函数的特殊处理模式
+      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
+      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    }
+  }, []);
+
+  // 刷新处理
+  const handleRefresh = useCallback(() => {
+    actionRef.current?.reload();
+  }, []);
 
   // 审核通过
   const handleApprove = async (record: API.JoinRequestDetail) => {
@@ -334,9 +370,7 @@ const PendingJoinRequests: React.FC = () => {
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
-            onClick={() => {
-              actionRef.current?.reload();
-            }}
+            onClick={handleRefresh}
           >
             {intl.formatMessage({ id: 'pages.button.refresh' })}
           </Button>
@@ -348,33 +382,7 @@ const PendingJoinRequests: React.FC = () => {
         actionRef={actionRef}
         scroll={{ x: 'max-content' }}
         search={false}
-        request={async (_params, _sort) => {
-          try {
-            const response = await getPendingRequests();
-
-            if (response.success && response.data) {
-              return {
-                data: response.data,
-                success: true,
-                total: response.data.length,
-              };
-            }
-
-            return {
-              data: [],
-              success: false,
-            };
-          } catch (error) {
-            console.error('获取待审核申请失败:', error);
-            // 注意：这是 ProTable request 函数的特殊处理模式
-            // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
-            // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
-            return {
-              data: [],
-              success: false,
-            };
-          }
-        }}
+        request={fetchPendingRequests}
         rowKey="id"
         search={false}
         pagination={{

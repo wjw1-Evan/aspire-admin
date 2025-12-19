@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { type TableColumnsType } from 'antd';
@@ -48,6 +48,15 @@ export interface DeviceManagementRef {
   handleAdd: () => void;
 }
 
+// 提取纯函数到组件外部
+const isDeviceOnline = (device: IoTDevice) => {
+  if (!device.lastReportedAt) return false;
+  const reportedAt = new Date(device.lastReportedAt);
+  const now = new Date();
+  const diffMinutes = (now.getTime() - reportedAt.getTime()) / (1000 * 60);
+  return diffMinutes <= 5;
+};
+
 const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
@@ -65,15 +74,6 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     fault: 0,
   });
 
-  // 基于 lastReportedAt 判断设备是否在线（5分钟内上报过视为在线）
-  const isDeviceOnline = (device: IoTDevice) => {
-    if (!device.lastReportedAt) return false;
-    const reportedAt = new Date(device.lastReportedAt);
-    const now = new Date();
-    const diffMinutes = (now.getTime() - reportedAt.getTime()) / (1000 * 60);
-    return diffMinutes <= 5;
-  };
-
   // 确保 gateways 始终是数组
   const safeGateways = Array.isArray(gateways) ? gateways : [];
 
@@ -83,7 +83,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   }, []);
 
   // 获取概览统计
-  const fetchOverviewStats = async () => {
+  const fetchOverviewStats = useCallback(async () => {
     try {
       // 获取所有设备用于统计
       const response = await iotService.getDevices(undefined, 1, 1000);
@@ -99,10 +99,10 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     } catch (error) {
       console.error('获取统计信息失败:', error);
     }
-  };
+  }, []);
 
   // 获取设备列表（用于 ProTable）
-  const fetchDevices = async (params: any) => {
+  const fetchDevices = useCallback(async (params: any) => {
     try {
       const response = await iotService.getDevices(undefined, params.current || 1, params.pageSize || 20);
       if (response.success && response.data) {
@@ -128,9 +128,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         total: 0,
       };
     }
-  };
+  }, []);
 
-  const loadGateways = async () => {
+  const loadGateways = useCallback(async () => {
     try {
       const response = await iotService.getGateways(1, 1000); // 加载所有网关用于下拉选择
       if (response.success && response.data) {
@@ -143,13 +143,13 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       console.error('Failed to load gateways:', error);
       setGateways([]);
     }
-  };
+  }, []);
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     form.resetFields();
     setSelectedDevice(null);
     setIsModalVisible(true);
-  };
+  }, [form]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -162,15 +162,15 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       fetchOverviewStats();
     },
     handleAdd,
-  }));
+  }), [fetchOverviewStats, handleAdd]);
 
-  const handleEdit = (device: IoTDevice) => {
+  const handleEdit = useCallback((device: IoTDevice) => {
     setSelectedDevice(device);
     form.setFieldsValue(device);
     setIsModalVisible(true);
-  };
+  }, [form]);
 
-  const handleView = async (device: IoTDevice) => {
+  const handleView = useCallback(async (device: IoTDevice) => {
     setSelectedDevice(device);
     try {
       const response = await iotService.getDeviceStatistics(device.deviceId);
@@ -181,9 +181,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       console.error('Failed to load statistics:', error);
     }
     setIsDetailDrawerVisible(true);
-  };
+  }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     try {
       const response = await iotService.deleteDevice(id);
       if (response.success) {
@@ -196,9 +196,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     } catch (error) {
       message.error('删除失败');
     }
-  };
+  }, [fetchOverviewStats]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = useCallback(async (values: any) => {
     try {
       if (selectedDevice) {
         const response = await iotService.updateDevice(selectedDevice.id, values);
@@ -211,7 +211,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           message.success('创建成功');
         }
       }
-      setIsModalVisible(false);
+      handleCloseModal();
       if (actionRef.current?.reload) {
         actionRef.current.reload();
       }
@@ -219,14 +219,14 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     } catch (error) {
       message.error('操作失败');
     }
-  };
+  }, [selectedDevice, fetchOverviewStats]);
 
-  const getStatusTag = (device: IoTDevice) => {
-    const isOnline = isDeviceOnline(device);
-    return <Tag color={isOnline ? 'green' : 'default'}>{isOnline ? '在线' : '离线'}</Tag>;
-  };
+  const getStatusTag = useCallback((device: IoTDevice) => {
+    const online = isDeviceOnline(device);
+    return <Tag color={online ? 'green' : 'default'}>{online ? '在线' : '离线'}</Tag>;
+  }, []);
 
-  const columns: TableColumnsType<IoTDevice> = [
+  const columns: TableColumnsType<IoTDevice> = useMemo(() => [
     {
       title: '设备名称',
       dataIndex: 'title',
@@ -295,7 +295,21 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         </Space>
       ),
     },
-  ];
+  ], [handleEdit, handleDelete, handleView, getStatusTag, safeGateways]);
+
+  // 关闭详情抽屉
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailDrawerVisible(false);
+    setSelectedDevice(null);
+    setStatistics(null);
+  }, []);
+
+  // 关闭表单弹窗
+  const handleCloseModal = useCallback(() => {
+    setIsModalVisible(false);
+    setSelectedDevice(null);
+    form.resetFields();
+  }, [form]);
 
   return (
     <>
@@ -355,7 +369,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         title={selectedDevice ? '编辑设备' : '新建设备'}
         open={isModalVisible}
         onOk={() => form.submit()}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={handleCloseModal}
         width={isMobile ? '100%' : 600}
       >
         <Form
@@ -406,7 +420,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       <Drawer
         title="设备详情"
         placement="right"
-        onClose={() => setIsDetailDrawerVisible(false)}
+        onClose={handleCloseDetail}
         open={isDetailDrawerVisible}
         size={typeof window !== 'undefined' && window.innerWidth < 768 ? 'large' : 800}
       >

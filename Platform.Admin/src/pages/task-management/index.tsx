@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
 import { useIntl, history, useLocation } from '@umijs/max';
@@ -55,6 +55,55 @@ import TaskExecutionPanel from './components/TaskExecutionPanel';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 import { StatCard } from '@/components';
 
+// 提取纯函数到组件外部，避免每次渲染都重新创建
+const getStatusColor = (status: number) => {
+  switch (status) {
+    case TaskStatus.Pending:
+      return 'default';
+    case TaskStatus.Assigned:
+      return 'processing';
+    case TaskStatus.InProgress:
+      return 'processing';
+    case TaskStatus.Completed:
+      return 'success';
+    case TaskStatus.Cancelled:
+      return 'error';
+    case TaskStatus.Failed:
+      return 'error';
+    case TaskStatus.Paused:
+      return 'warning';
+    default:
+      return 'default';
+  }
+};
+
+const getPriorityColor = (priority: number) => {
+  switch (priority) {
+    case TaskPriority.Low:
+      return 'blue';
+    case TaskPriority.Medium:
+      return 'cyan';
+    case TaskPriority.High:
+      return 'orange';
+    case TaskPriority.Urgent:
+      return 'red';
+    default:
+      return 'blue';
+  }
+};
+
+const formatDateTime = (dateTime: string | null | undefined): string => {
+  if (!dateTime) return '-';
+  try {
+    const date = dayjs(dateTime);
+    if (!date.isValid()) return dateTime;
+    return date.format('YYYY-MM-DD HH:mm:ss');
+  } catch (error) {
+    console.error('日期格式化错误:', error, dateTime);
+    return dateTime || '-';
+  }
+};
+
 const TaskManagement: React.FC = () => {
   const intl = useIntl();
   const location = useLocation();
@@ -83,7 +132,7 @@ const TaskManagement: React.FC = () => {
   });
 
   // 获取统计信息
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     try {
       const response = await getTaskStatistics();
       if (response.success && response.data) {
@@ -92,12 +141,12 @@ const TaskManagement: React.FC = () => {
     } catch (error) {
       console.error('获取统计信息失败:', error);
     }
-  };
+  }, []);
 
   // 初始化时获取统计信息
   useEffect(() => {
     fetchStatistics();
-  }, []);
+  }, [fetchStatistics]);
 
   // 根据 URL 中的 taskId 查询参数，实时弹出任务详情
   useEffect(() => {
@@ -133,7 +182,7 @@ const TaskManagement: React.FC = () => {
   }, [location?.search]);
 
   // 获取任务列表
-  const fetchTasks = async (params: any, sort?: Record<string, any>) => {
+  const fetchTasks = useCallback(async (params: any, sort?: Record<string, any>) => {
     let sortBy = searchParams.sortBy;
     let sortOrder = searchParams.sortOrder;
 
@@ -179,34 +228,34 @@ const TaskManagement: React.FC = () => {
         total: 0,
       };
     }
-  };
+  }, [searchParams, intl]);
 
   // 处理创建任务
-  const handleCreateTask = () => {
+  const handleCreateTask = useCallback(() => {
     setEditingTask(null);
     setFormVisible(true);
-  };
+  }, []);
 
   // 处理编辑任务
-  const handleEditTask = (task: TaskDto) => {
+  const handleEditTask = useCallback((task: TaskDto) => {
     setEditingTask(task);
     setFormVisible(true);
-  };
+  }, []);
 
   // 处理查看任务详情
-  const handleViewTask = (task: TaskDto) => {
+  const handleViewTask = useCallback((task: TaskDto) => {
     setViewingTask(task);
     setDetailVisible(true);
-  };
+  }, []);
 
   // 处理执行任务
-  const handleExecuteTask = (task: TaskDto) => {
+  const handleExecuteTask = useCallback((task: TaskDto) => {
     setViewingTask(task);
     setExecutionVisible(true);
-  };
+  }, []);
 
   // 处理删除任务
-  const handleDeleteTask = (task: TaskDto) => {
+  const handleDeleteTask = useCallback((task: TaskDto) => {
     Modal.confirm({
       title: intl.formatMessage({ id: 'pages.taskManagement.modal.deleteTask' }),
       content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmDelete' }),
@@ -223,10 +272,10 @@ const TaskManagement: React.FC = () => {
         }
       },
     });
-  };
+  }, [intl, fetchStatistics]);
 
   // 处理取消任务
-  const handleCancelTask = (task: TaskDto) => {
+  const handleCancelTask = useCallback((task: TaskDto) => {
     Modal.confirm({
       title: intl.formatMessage({ id: 'pages.taskManagement.modal.cancelTask' }),
       content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }),
@@ -243,26 +292,26 @@ const TaskManagement: React.FC = () => {
         }
       },
     });
-  };
+  }, [intl, fetchStatistics]);
 
   // 处理表单提交成功
-  const handleFormSuccess = () => {
+  const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingTask(null);
     actionRef.current?.reload();
     fetchStatistics();
-  };
+  }, [fetchStatistics]);
 
   // 处理执行成功
-  const handleExecutionSuccess = () => {
+  const handleExecutionSuccess = useCallback(() => {
     setExecutionVisible(false);
     setViewingTask(null);
     actionRef.current?.reload();
     fetchStatistics();
-  };
+  }, [fetchStatistics]);
 
   // 处理搜索
-  const handleSearch = (values: any) => {
+  const handleSearch = useCallback((values: any) => {
     const newSearchParams = {
       ...searchParams,
       page: 1,
@@ -274,10 +323,10 @@ const TaskManagement: React.FC = () => {
     };
     setSearchParams(newSearchParams);
     actionRef.current?.reload();
-  };
+  }, [searchParams]);
 
   // 重置搜索
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     searchForm.resetFields();
     const resetParams = {
       page: 1,
@@ -292,61 +341,10 @@ const TaskManagement: React.FC = () => {
     };
     setSearchParams(resetParams);
     actionRef.current?.reload();
-  };
+  }, [searchForm]);
 
-  // 获取状态标签颜色
-  const getStatusColor = (status: number) => {
-    switch (status) {
-      case TaskStatus.Pending:
-        return 'default';
-      case TaskStatus.Assigned:
-        return 'processing';
-      case TaskStatus.InProgress:
-        return 'processing';
-      case TaskStatus.Completed:
-        return 'success';
-      case TaskStatus.Cancelled:
-        return 'error';
-      case TaskStatus.Failed:
-        return 'error';
-      case TaskStatus.Paused:
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  // 获取优先级标签颜色
-  const getPriorityColor = (priority: number) => {
-    switch (priority) {
-      case TaskPriority.Low:
-        return 'blue';
-      case TaskPriority.Medium:
-        return 'cyan';
-      case TaskPriority.High:
-        return 'orange';
-      case TaskPriority.Urgent:
-        return 'red';
-      default:
-        return 'blue';
-    }
-  };
-
-  // 格式化日期时间
-  const formatDateTime = (dateTime: string | null | undefined): string => {
-    if (!dateTime) return '-';
-    try {
-      const date = dayjs(dateTime);
-      if (!date.isValid()) return dateTime;
-      return date.format('YYYY-MM-DD HH:mm:ss');
-    } catch (error) {
-      console.error('日期格式化错误:', error, dateTime);
-      return dateTime || '-';
-    }
-  };
-
-  // 表格列定义
-  const columns: ProColumns<TaskDto>[] = [
+  // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
+  const columns: ProColumns<TaskDto>[] = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.taskName' }),
       dataIndex: 'taskName',
@@ -492,7 +490,41 @@ const TaskManagement: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ], [intl, handleViewTask, handleEditTask, handleExecuteTask, handleCancelTask, handleDeleteTask]);
+
+  // 行选择变化处理
+  const handleRowSelectionChange = useCallback((_: React.Key[], selectedRows: TaskDto[]) => {
+    setSelectedRows(selectedRows);
+  }, []);
+
+  // 请求函数（使用 useCallback 包装）
+  const requestFunction = useCallback(async (params: any, sort?: Record<string, any>) => {
+    return fetchTasks(params, sort);
+  }, [fetchTasks]);
+
+  // 刷新处理
+  const handleRefresh = useCallback(() => {
+    actionRef.current?.reload();
+    fetchStatistics();
+  }, [fetchStatistics]);
+
+  // 关闭表单处理
+  const handleFormClose = useCallback(() => {
+    setFormVisible(false);
+    setEditingTask(null);
+  }, []);
+
+  // 关闭详情处理
+  const handleDetailClose = useCallback(() => {
+    setDetailVisible(false);
+    setViewingTask(null);
+  }, []);
+
+  // 关闭执行面板处理
+  const handleExecutionClose = useCallback(() => {
+    setExecutionVisible(false);
+    setViewingTask(null);
+  }, []);
 
   return (
     <PageContainer
@@ -508,10 +540,7 @@ const TaskManagement: React.FC = () => {
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
-            onClick={() => {
-              actionRef.current?.reload();
-              fetchStatistics();
-            }}
+            onClick={handleRefresh}
           >
             {intl.formatMessage({ id: 'pages.taskManagement.refresh' })}
           </Button>
@@ -600,9 +629,7 @@ const TaskManagement: React.FC = () => {
         <DataTable<TaskDto>
           actionRef={actionRef}
           columns={columns}
-          request={async (params, sort) => {
-            return fetchTasks(params, sort);
-          }}
+          request={requestFunction}
           rowKey="id"
           scroll={{ x: 'max-content' }}
           search={false}
@@ -612,9 +639,7 @@ const TaskManagement: React.FC = () => {
             pageSizeOptions: [10, 20, 50, 100],
           }}
           rowSelection={{
-            onChange: (_, selectedRows) => {
-              setSelectedRows(selectedRows);
-            },
+            onChange: handleRowSelectionChange,
           }}
           options={{
             setting: {
@@ -628,10 +653,7 @@ const TaskManagement: React.FC = () => {
       <TaskForm
         visible={formVisible}
         task={editingTask}
-        onClose={() => {
-          setFormVisible(false);
-          setEditingTask(null);
-        }}
+        onClose={handleFormClose}
         onSuccess={handleFormSuccess}
       />
 
@@ -639,20 +661,14 @@ const TaskManagement: React.FC = () => {
       <TaskDetail
         visible={detailVisible}
         task={viewingTask}
-        onClose={() => {
-          setDetailVisible(false);
-          setViewingTask(null);
-        }}
+        onClose={handleDetailClose}
       />
 
       {/* 任务执行面板 */}
       <TaskExecutionPanel
         visible={executionVisible}
         task={viewingTask}
-        onClose={() => {
-          setExecutionVisible(false);
-          setViewingTask(null);
-        }}
+        onClose={handleExecutionClose}
         onSuccess={handleExecutionSuccess}
       />
     </PageContainer>

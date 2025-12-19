@@ -12,7 +12,7 @@ import {
   ReloadOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
 import { getCurrentUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
@@ -21,6 +21,149 @@ import { StatCard } from '@/components';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
+
+// 提取纯函数到组件外部
+const getMethodColor = (method?: string): string => {
+  const colors: Record<string, string> = {
+    GET: 'blue',
+    POST: 'green',
+    PUT: 'orange',
+    DELETE: 'red',
+    PATCH: 'purple',
+  };
+  return colors[method || ''] || 'default';
+};
+
+const getStatusBadge = (statusCode?: number) => {
+  if (statusCode === undefined || statusCode === null) return null;
+
+  if (statusCode >= 200 && statusCode < 300) {
+    return <Badge status="success" text={statusCode} />;
+  }
+  if (statusCode >= 400 && statusCode < 500) {
+    return <Badge status="warning" text={statusCode} />;
+  }
+  if (statusCode >= 500) {
+    return <Badge status="error" text={statusCode} />;
+  }
+  return <Badge status="default" text={statusCode} />;
+};
+
+const getActionTagColor = (action: string): string => {
+  const colorMap: Record<string, string> = {
+    // 认证相关
+    login: 'green',
+    logout: 'default',
+    refresh_token: 'geekblue',
+    register: 'blue',
+    // 用户相关
+    view_profile: 'lime',
+    update_profile: 'purple',
+    change_password: 'orange',
+    view_activity_logs: 'cyan',
+    activate_user: 'green',
+    deactivate_user: 'volcano',
+    bulk_action: 'magenta',
+    update_user_role: 'gold',
+    create_user: 'blue',
+    view_users: 'cyan',
+    view_statistics: 'purple',
+    view_user: 'cyan',
+    update_user: 'blue',
+    delete_user: 'red',
+    // 角色相关
+    view_roles: 'cyan',
+    create_role: 'blue',
+    update_role: 'orange',
+    delete_role: 'red',
+    // 菜单相关
+    view_menus: 'cyan',
+    create_menu: 'blue',
+    update_menu: 'orange',
+    delete_menu: 'red',
+    // 通知相关
+    view_notices: 'cyan',
+    create_notice: 'blue',
+    update_notice: 'orange',
+    delete_notice: 'red',
+    // 标签相关
+    view_tags: 'cyan',
+    create_tag: 'blue',
+    update_tag: 'orange',
+    delete_tag: 'red',
+    // 规则相关
+    view_rules: 'cyan',
+    create_rule: 'blue',
+    update_rule: 'orange',
+    delete_rule: 'red',
+    // 权限相关
+    view_permissions: 'cyan',
+    create_permission: 'blue',
+    update_permission: 'orange',
+    delete_permission: 'red',
+    // 其他
+    view_current_user: 'lime',
+  };
+  return colorMap[action] || 'default';
+};
+
+const getActionText = (action: string): string => {
+  const textMap: Record<string, string> = {
+    // 认证相关
+    login: '登录',
+    logout: '登出',
+    refresh_token: '刷新Token',
+    register: '注册',
+    // 用户相关
+    view_profile: '查看个人信息',
+    update_profile: '更新个人信息',
+    change_password: '修改密码',
+    view_activity_logs: '查看活动日志',
+    activate_user: '启用用户',
+    deactivate_user: '禁用用户',
+    bulk_action: '批量操作',
+    update_user_role: '更新用户角色',
+    create_user: '创建用户',
+    view_users: '查看用户列表',
+    view_statistics: '查看统计',
+    view_user: '查看用户',
+    update_user: '更新用户',
+    delete_user: '删除用户',
+    // 角色相关
+    view_roles: '查看角色',
+    create_role: '创建角色',
+    update_role: '更新角色',
+    delete_role: '删除角色',
+    // 菜单相关
+    view_menus: '查看菜单',
+    create_menu: '创建菜单',
+    update_menu: '更新菜单',
+    delete_menu: '删除菜单',
+    // 通知相关
+    view_notices: '查看通知',
+    create_notice: '创建通知',
+    update_notice: '更新通知',
+    delete_notice: '删除通知',
+    // 标签相关
+    view_tags: '查看标签',
+    create_tag: '创建标签',
+    update_tag: '更新标签',
+    delete_tag: '删除标签',
+    // 规则相关
+    view_rules: '查看规则',
+    create_rule: '创建规则',
+    update_rule: '更新规则',
+    delete_rule: '删除规则',
+    // 权限相关
+    view_permissions: '查看权限',
+    create_permission: '创建权限',
+    update_permission: '更新权限',
+    delete_permission: '删除权限',
+    // 其他
+    view_current_user: '查看当前用户',
+  };
+  return textMap[action] || action;
+};
 
 const MyActivity: React.FC = () => {
   const intl = useIntl();
@@ -41,19 +184,19 @@ const MyActivity: React.FC = () => {
   // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
   const searchParamsRef = useRef<any>({});
 
-  const handleViewDetail = (record: UserActivityLog) => {
+  const handleViewDetail = useCallback((record: UserActivityLog) => {
     // ✅ 只传递 logId，让 LogDetailDrawer 从 API 获取完整数据
     setSelectedLogId(record.id);
     setDetailDrawerOpen(true);
-  };
+  }, []);
 
-  const handleCloseDetail = () => {
+  const handleCloseDetail = useCallback(() => {
     setDetailDrawerOpen(false);
     setSelectedLogId(null);
-  };
+  }, []);
 
   // 处理搜索
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     const values = searchForm.getFieldsValue();
     // 处理日期范围
     if (values.dateRange && Array.isArray(values.dateRange) && values.dateRange.length === 2) {
@@ -71,10 +214,10 @@ const MyActivity: React.FC = () => {
     } else if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
-  };
+  }, [searchForm]);
 
   // 处理重置
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     searchForm.resetFields();
     // 同时更新 state 和 ref
     searchParamsRef.current = {};
@@ -84,39 +227,8 @@ const MyActivity: React.FC = () => {
     } else if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
-  };
+  }, [searchForm]);
 
-  /**
-   * 获取 HTTP 方法的颜色
-   */
-  const getMethodColor = (method?: string): string => {
-    const colors: Record<string, string> = {
-      GET: 'blue',
-      POST: 'green',
-      PUT: 'orange',
-      DELETE: 'red',
-      PATCH: 'purple',
-    };
-    return colors[method || ''] || 'default';
-  };
-
-  /**
-   * 获取状态码的 Badge 状态
-   */
-  const getStatusBadge = (statusCode?: number) => {
-    if (statusCode === undefined || statusCode === null) return null;
-
-    if (statusCode >= 200 && statusCode < 300) {
-      return <Badge status="success" text={statusCode} />;
-    }
-    if (statusCode >= 400 && statusCode < 500) {
-      return <Badge status="warning" text={statusCode} />;
-    }
-    if (statusCode >= 500) {
-      return <Badge status="error" text={statusCode} />;
-    }
-    return <Badge status="default" text={statusCode} />;
-  };
 
   /**
    * 初始化列宽调整功能
@@ -254,145 +366,7 @@ const MyActivity: React.FC = () => {
     };
   }, []);
   
-  /**
-   * 获取操作类型标签颜色
-   */
-  const getActionTagColor = (action: string): string => {
-    const colorMap: Record<string, string> = {
-      // 认证相关
-      login: 'green',
-      logout: 'default',
-      refresh_token: 'geekblue',
-      register: 'blue',
-
-      // 用户相关
-      view_profile: 'lime',
-      update_profile: 'purple',
-      change_password: 'orange',
-      view_activity_logs: 'cyan',
-      activate_user: 'green',
-      deactivate_user: 'volcano',
-      bulk_action: 'magenta',
-      update_user_role: 'gold',
-      create_user: 'blue',
-      view_users: 'cyan',
-      view_statistics: 'purple',
-      view_user: 'cyan',
-      update_user: 'blue',
-      delete_user: 'red',
-
-      // 角色相关
-      view_roles: 'cyan',
-      create_role: 'blue',
-      update_role: 'orange',
-      delete_role: 'red',
-
-      // 菜单相关
-      view_menus: 'cyan',
-      create_menu: 'blue',
-      update_menu: 'orange',
-      delete_menu: 'red',
-
-      // 通知相关
-      view_notices: 'cyan',
-      create_notice: 'blue',
-      update_notice: 'orange',
-      delete_notice: 'red',
-
-      // 标签相关
-      view_tags: 'cyan',
-      create_tag: 'blue',
-      update_tag: 'orange',
-      delete_tag: 'red',
-
-      // 规则相关
-      view_rules: 'cyan',
-      create_rule: 'blue',
-      update_rule: 'orange',
-      delete_rule: 'red',
-
-      // 权限相关
-      view_permissions: 'cyan',
-      create_permission: 'blue',
-      update_permission: 'orange',
-      delete_permission: 'red',
-
-      // 其他
-      view_current_user: 'lime',
-    };
-    return colorMap[action] || 'default';
-  };
-
-  /**
-   * 获取操作类型显示文本
-   */
-  const getActionText = (action: string): string => {
-    const textMap: Record<string, string> = {
-      // 认证相关
-      login: '登录',
-      logout: '登出',
-      refresh_token: '刷新Token',
-      register: '注册',
-
-      // 用户相关
-      view_profile: '查看个人信息',
-      update_profile: '更新个人信息',
-      change_password: '修改密码',
-      view_activity_logs: '查看活动日志',
-      activate_user: '启用用户',
-      deactivate_user: '禁用用户',
-      bulk_action: '批量操作',
-      update_user_role: '更新用户角色',
-      create_user: '创建用户',
-      view_users: '查看用户列表',
-      view_statistics: '查看统计',
-      view_user: '查看用户',
-      update_user: '更新用户',
-      delete_user: '删除用户',
-
-      // 角色相关
-      view_roles: '查看角色',
-      create_role: '创建角色',
-      update_role: '更新角色',
-      delete_role: '删除角色',
-
-      // 菜单相关
-      view_menus: '查看菜单',
-      create_menu: '创建菜单',
-      update_menu: '更新菜单',
-      delete_menu: '删除菜单',
-
-      // 通知相关
-      view_notices: '查看通知',
-      create_notice: '创建通知',
-      update_notice: '更新通知',
-      delete_notice: '删除通知',
-
-      // 标签相关
-      view_tags: '查看标签',
-      create_tag: '创建标签',
-      update_tag: '更新标签',
-      delete_tag: '删除标签',
-
-      // 规则相关
-      view_rules: '查看规则',
-      create_rule: '创建规则',
-      update_rule: '更新规则',
-      delete_rule: '删除规则',
-
-      // 权限相关
-      view_permissions: '查看权限',
-      create_permission: '创建权限',
-      update_permission: '更新权限',
-      delete_permission: '删除权限',
-
-      // 其他
-      view_current_user: '查看当前用户',
-    };
-    return textMap[action] || action;
-  };
-
-  const columns: ProColumns<UserActivityLog>[] = [
+  const columns: ProColumns<UserActivityLog>[] = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.table.action' }),
       dataIndex: 'action',
@@ -501,7 +475,113 @@ const MyActivity: React.FC = () => {
         },
       },
     },
-  ];
+  ], [intl, handleViewDetail]);
+
+  // 刷新处理
+  const handleRefresh = useCallback(() => {
+    actionRef.current?.reload();
+  }, []);
+
+  // 获取活动日志列表（使用 useCallback 避免死循环）
+  const fetchRecords = useCallback(async (params: any, sort?: Record<string, any>) => {
+    const { current = 1, pageSize = 20 } = params;
+    
+    // 合并搜索参数，使用 ref 确保获取最新的搜索参数
+    const mergedParams = { ...searchParamsRef.current, ...params };
+    const { action, httpMethod, statusCode, ipAddress, startDate, endDate } = mergedParams;
+
+    // 处理排序参数
+    let sortBy = 'createdAt'; // 默认按创建时间排序
+    let sortOrder: 'asc' | 'desc' = 'desc'; // 默认降序
+
+    if (sort && Object.keys(sort).length > 0) {
+      // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
+      const sortKey = Object.keys(sort)[0];
+      const sortValue = sort[sortKey];
+      
+      // 将驼峰命名转换为后端字段名（如果需要）
+      sortBy = sortKey === 'createdAt' ? 'createdAt' : sortKey;
+      sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
+    }
+
+    // 处理日期范围参数
+    let formattedStartDate: string | undefined;
+    let formattedEndDate: string | undefined;
+
+    if (startDate) {
+      formattedStartDate = typeof startDate === 'string' 
+        ? startDate 
+        : new Date(startDate).toISOString();
+    }
+
+    if (endDate) {
+      formattedEndDate = typeof endDate === 'string' 
+        ? endDate 
+        : new Date(endDate).toISOString();
+    }
+
+    try {
+      const response = await getCurrentUserActivityLogs({
+        page: current,
+        pageSize,
+        action,
+        httpMethod,
+        statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
+        ipAddress,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        sortBy,
+        sortOrder,
+      });
+
+      if (response.success && response.data) {
+        // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
+        const result = response.data as any;
+        const list: UserActivityLog[] = result.data || [];
+        const total: number = result.total || 0;
+
+        // 基于当前页数据和总数计算统计信息
+        const successCount = list.filter(
+          (x) => x.statusCode && x.statusCode >= 200 && x.statusCode < 300,
+        ).length;
+        const errorCount = list.filter(
+          (x) => x.statusCode && x.statusCode >= 400,
+        ).length;
+        const actionTypes = new Set(
+          list.map((x) => x.action).filter(Boolean),
+        ).size;
+
+        setStatistics({
+          total,
+          successCount,
+          errorCount,
+          actionTypes,
+        });
+
+        return {
+          data: list,
+          total,
+          success: true,
+        };
+      }
+
+      return {
+        data: [],
+        total: 0,
+        success: false,
+      };
+    } catch (error) {
+      console.error('Failed to load activity logs:', error);
+      // 注意：这是 ProTable request 函数的特殊处理模式
+      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
+      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
+      return {
+        data: [],
+        total: 0,
+        success: false,
+      };
+    }
+  }, []); // 空依赖数组，因为使用 ref 来获取最新的搜索参数
 
   return (
     <PageContainer
@@ -517,9 +597,7 @@ const MyActivity: React.FC = () => {
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
-            onClick={() => {
-              actionRef.current?.reload();
-            }}
+            onClick={handleRefresh}
           >
             {intl.formatMessage({ id: 'pages.button.refresh' })}
           </Button>
@@ -638,105 +716,7 @@ const MyActivity: React.FC = () => {
           rowKey="id"
           scroll={{ x: 'max-content' }}
           search={false}
-          request={async (params, sort) => {
-          const { current = 1, pageSize = 20 } = params;
-          
-          // 合并搜索参数，使用 ref 确保获取最新的搜索参数
-          const mergedParams = { ...searchParamsRef.current, ...params };
-          const { action, httpMethod, statusCode, ipAddress, startDate, endDate } = mergedParams;
-
-          // 处理排序参数
-          let sortBy = 'createdAt'; // 默认按创建时间排序
-          let sortOrder: 'asc' | 'desc' = 'desc'; // 默认降序
-
-          if (sort && Object.keys(sort).length > 0) {
-            // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
-            const sortKey = Object.keys(sort)[0];
-            const sortValue = sort[sortKey];
-            
-            // 将驼峰命名转换为后端字段名（如果需要）
-            sortBy = sortKey === 'createdAt' ? 'createdAt' : sortKey;
-            sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
-          }
-
-          // 处理日期范围参数
-          let formattedStartDate: string | undefined;
-          let formattedEndDate: string | undefined;
-
-          if (startDate) {
-            formattedStartDate = typeof startDate === 'string' 
-              ? startDate 
-              : new Date(startDate).toISOString();
-          }
-
-          if (endDate) {
-            formattedEndDate = typeof endDate === 'string' 
-              ? endDate 
-              : new Date(endDate).toISOString();
-          }
-
-          try {
-            const response = await getCurrentUserActivityLogs({
-              page: current,
-              pageSize,
-              action,
-              httpMethod,
-              statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
-              ipAddress,
-              startDate: formattedStartDate,
-              endDate: formattedEndDate,
-              sortBy,
-              sortOrder,
-            });
-
-            if (response.success && response.data) {
-              // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
-              const result = response.data as any;
-              const list: UserActivityLog[] = result.data || [];
-              const total: number = result.total || 0;
-
-              // 基于当前页数据和总数计算统计信息
-              const successCount = list.filter(
-                (x) => x.statusCode && x.statusCode >= 200 && x.statusCode < 300,
-              ).length;
-              const errorCount = list.filter(
-                (x) => x.statusCode && x.statusCode >= 400,
-              ).length;
-              const actionTypes = new Set(
-                list.map((x) => x.action).filter(Boolean),
-              ).size;
-
-              setStatistics({
-                total,
-                successCount,
-                errorCount,
-                actionTypes,
-              });
-
-              return {
-                data: list,
-                total,
-                success: true,
-              };
-            }
-
-            return {
-              data: [],
-              total: 0,
-              success: false,
-            };
-          } catch (error) {
-            console.error('Failed to load activity logs:', error);
-            // 注意：这是 ProTable request 函数的特殊处理模式
-            // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
-            // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
-            return {
-              data: [],
-              total: 0,
-              success: false,
-            };
-          }
-        }}
+          request={fetchRecords}
         columns={columns}
         pagination={{
           pageSize: 20,

@@ -58,19 +58,6 @@ const AiAssistant: React.FC = () => {
   const { isConnected, on, off, invoke } = useSignalRConnection({
     hubUrl: '/hubs/chat',
     autoConnect: !!currentUser,
-    onConnected: () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('AI 助手 SignalR 连接已建立');
-      }
-    },
-    onDisconnected: () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('AI 助手 SignalR 连接已断开');
-      }
-    },
-    onError: (error) => {
-      console.error('AI 助手 SignalR 连接错误:', error);
-    },
   });
 
   /**
@@ -88,7 +75,7 @@ const AiAssistant: React.FC = () => {
         await loadMessages(assistantSession.id);
       }
     } catch (error) {
-      console.error('初始化会话失败:', error);
+      // 初始化会话失败，由错误处理机制处理
     } finally {
       setLoading(false);
       setInitialized(true);
@@ -107,7 +94,7 @@ const AiAssistant: React.FC = () => {
     try {
       if (!isValidObjectId(sessionId)) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('跳过加载消息：无效的 sessionId', sessionId);
+          // 跳过加载消息：无效的 sessionId
         }
         return;
       }
@@ -120,7 +107,7 @@ const AiAssistant: React.FC = () => {
         lastMessageIdRef.current = lastMessage.id;
       }
     } catch (error) {
-      console.error('加载消息失败:', error);
+      // 加载消息失败，由错误处理机制处理
     }
   }, [isValidObjectId]);
 
@@ -131,18 +118,15 @@ const AiAssistant: React.FC = () => {
     if (!isConnected) return;
     if (!isValidObjectId(sessionId)) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('跳过加入会话：无效的 sessionId', sessionId);
+        // 跳过加入会话：无效的 sessionId
       }
       return;
     }
 
     try {
       await invoke('JoinSessionAsync', sessionId);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('已加入聊天会话:', sessionId);
-      }
     } catch (error) {
-      console.error('加入会话失败:', error);
+      // 加入会话失败，由错误处理机制处理
     }
   }, [isConnected, invoke, isValidObjectId]);
 
@@ -154,11 +138,8 @@ const AiAssistant: React.FC = () => {
 
     try {
       await invoke('LeaveSessionAsync', sessionId);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('已离开聊天会话:', sessionId);
-      }
     } catch (error) {
-      console.error('离开会话失败:', error);
+      // 离开会话失败，由错误处理机制处理
     }
   }, [isConnected, invoke]);
 
@@ -182,7 +163,7 @@ const AiAssistant: React.FC = () => {
           return;
         }
       } catch (error) {
-        console.error('获取会话失败:', error);
+        // 获取会话失败，由错误处理机制处理
         message.error('无法发送消息：会话不存在');
         return;
       }
@@ -225,7 +206,7 @@ const AiAssistant: React.FC = () => {
 
       // SignalR 会自动推送小科的回复，无需轮询
     } catch (error) {
-      console.error('发送消息失败:', error);
+      // 发送消息失败，由错误处理机制处理
       message.error('发送消息失败');
       // 移除临时消息
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
@@ -300,9 +281,6 @@ const AiAssistant: React.FC = () => {
     // 监听新消息事件
     on('ReceiveMessage', (payload: any) => {
       const incoming: ChatMessage = (payload && (payload as any).message) ? (payload as any).message : (payload as ChatMessage);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('收到新消息:', payload);
-      }
       if (!incoming || !incoming.sessionId) {
         return;
       }
@@ -317,18 +295,12 @@ const AiAssistant: React.FC = () => {
 
     // 监听消息删除事件
     on('MessageDeleted', (deletedMessageId: string) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('消息已删除:', deletedMessageId);
-      }
       setMessages((prev) => prev.filter((msg) => msg.id !== deletedMessageId));
     });
 
     // 监听会话更新事件
     on('SessionUpdated', (payload: any) => {
       const updatedSession: ChatSession = (payload && (payload as any).session) ? (payload as any).session : (payload as ChatSession);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('会话已更新:', payload);
-      }
       if (!updatedSession || !updatedSession.id) {
         return;
       }

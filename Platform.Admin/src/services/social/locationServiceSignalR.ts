@@ -47,12 +47,8 @@ class LocationServiceSignalR {
 
         try {
           await this.connection.start();
-          if (process.env.NODE_ENV === 'development') {
-            console.log('位置上报 SignalR 连接已重新建立');
-          }
           return;
         } catch (error) {
-          console.error('位置上报 SignalR 重新连接失败:', error);
           this.connection = null;
           throw error;
         } finally {
@@ -88,25 +84,19 @@ class LocationServiceSignalR {
           },
         })
         .withHubProtocol(new signalR.JsonHubProtocol())
-        .configureLogging(signalR.LogLevel.Information)
+        .configureLogging(signalR.LogLevel.None)
         .build();
 
       // 监听位置更新响应
-      this.connection.on('LocationUpdated', (response: any) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('位置上报响应:', response);
-        }
+      this.connection.on('LocationUpdated', () => {
+        // 位置更新响应处理
       });
 
       // 确保连接处于 Disconnected 状态后再启动
       if (this.connection.state === signalR.HubConnectionState.Disconnected) {
         await this.connection.start();
-        if (process.env.NODE_ENV === 'development') {
-          console.log('位置上报 SignalR 连接已建立');
-        }
       }
     } catch (error) {
-      console.error('位置上报 SignalR 连接失败:', error);
       this.connection = null;
       throw error;
     } finally {
@@ -121,34 +111,22 @@ class LocationServiceSignalR {
   static async reportLocation(force = false): Promise<void> {
     // 检查是否有 token
     if (!tokenUtils.hasToken()) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('位置上报：用户未登录，跳过上报');
-      }
       return;
     }
 
     // 检查是否正在上报
     if (this.isReporting) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('位置上报：正在上报中，跳过重复请求');
-      }
       return;
     }
 
     // 检查时间间隔（除非强制上报）
     const now = Date.now();
     if (!force && now - this.lastReportTime < this.REPORT_INTERVAL) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('位置上报：距离上次上报时间过短，跳过上报');
-      }
       return;
     }
 
     // 检查浏览器是否支持地理位置 API
     if (!isGeolocationSupported()) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('位置上报：浏览器不支持地理位置 API');
-      }
       return;
     }
 
@@ -181,18 +159,8 @@ class LocationServiceSignalR {
       });
 
       this.lastReportTime = now;
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('位置上报成功', {
-          latitude: position.latitude,
-          longitude: position.longitude,
-          accuracy: position.accuracy,
-        });
-      }
     } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('位置上报失败', error.message);
-      }
+      // 静默处理错误
     } finally {
       this.isReporting = false;
     }
@@ -213,10 +181,6 @@ class LocationServiceSignalR {
         // 静默失败
       });
     }, this.REPORT_INTERVAL);
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('位置上报：已启动定期上报（每 5 分钟）');
-    }
   }
 
   /**
@@ -227,11 +191,8 @@ class LocationServiceSignalR {
       try {
         await this.connection.stop();
         this.connection = null;
-        if (process.env.NODE_ENV === 'development') {
-          console.log('位置上报：已停止定期上报');
-        }
       } catch (error) {
-        console.error('位置上报：停止连接失败', error);
+        // 静默处理错误
       }
     }
   }

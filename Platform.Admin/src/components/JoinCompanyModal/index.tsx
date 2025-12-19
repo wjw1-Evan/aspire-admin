@@ -54,19 +54,6 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
 
       if (response.success && response.data) {
         setSearchResults(response.data);
-        // 调试信息：显示分组结果
-        const joined = response.data.filter((item: API.CompanySearchResult) => item.isMember || item.hasPendingRequest);
-        const available = response.data.filter((item: API.CompanySearchResult) => !item.isMember && !item.hasPendingRequest);
-        console.log('🔍 搜索结果分组:', {
-          total: response.data.length,
-          joined: joined.length,
-          available: available.length,
-          joinedItems: joined.map((item: API.CompanySearchResult) => ({
-            name: item.company.name,
-            isMember: item.isMember,
-            hasPendingRequest: item.hasPendingRequest,
-          })),
-        });
         if (response.data.length === 0) {
           message.info('未找到匹配的企业');
         }
@@ -75,7 +62,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
         setSearchResults([]);
       }
     } catch (error: any) {
-      console.error('搜索企业失败:', error);
+      // 搜索企业失败，由错误处理机制处理
       message.error(error.message || '搜索企业失败');
       setSearchResults([]);
     } finally {
@@ -135,7 +122,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
         message.error(response.errorMessage || '申请提交失败');
       }
     } catch (error: any) {
-      console.error('提交申请失败:', error);
+      // 提交申请失败，由错误处理机制处理
       message.error(error.message || '申请提交失败');
     } finally {
       setLoading(false);
@@ -161,17 +148,6 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
       }
     }
 
-    // 调试日志
-    console.log('📊 搜索结果分组:', {
-      total: searchResults.length,
-      joined: joined.length,
-      available: available.length,
-      searchResults: searchResults.map((item) => ({
-        name: item.company.name,
-        isMember: item.isMember,
-        hasPendingRequest: item.hasPendingRequest,
-      })),
-    });
 
     return {
       joinedCompanies: joined,

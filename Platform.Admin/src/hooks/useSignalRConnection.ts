@@ -30,24 +30,10 @@ interface UseSignalRConnectionReturn {
  * 创建 SignalR 连接
  */
 function createConnection(hubUrl: string): signalR.HubConnection {
-  const token = tokenUtils.getToken();
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[SignalR] 创建连接:', {
-      hubUrl,
-      hasToken: !!token,
-      tokenLength: token?.length,
-    });
-  }
-
   const connection = new signalR.HubConnectionBuilder()
     .withUrl(hubUrl, {
       accessTokenFactory: () => {
-        const currentToken = tokenUtils.getToken();
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[SignalR] accessTokenFactory 被调用，token 长度:', currentToken?.length);
-        }
-        return currentToken || '';
+        return tokenUtils.getToken() || '';
       },
       skipNegotiation: false,
       // 强制使用 LongPolling，避免代理链 WS 升级问题（待代理稳定后可改回 WebSockets | LongPolling）
@@ -76,29 +62,20 @@ function createConnection(hubUrl: string): signalR.HubConnection {
       },
     })
     .withHubProtocol(new signalR.JsonHubProtocol())
-    .configureLogging(signalR.LogLevel.Information)
+    .configureLogging(signalR.LogLevel.None)
     .build();
 
-  // 添加连接状态变化的日志
-  connection.onreconnecting((error) => {
-    console.warn('[SignalR] 重新连接中...', error?.message);
+  // 连接状态变化处理（不输出日志）
+  connection.onreconnecting(() => {
+    // 重新连接中，由自动重连机制处理
   });
 
   connection.onreconnected(() => {
-    console.log('[SignalR] ✅ 重新连接成功');
+    // 重新连接成功
   });
 
-  connection.onclose((error) => {
-    // 正常关闭时 error 为 undefined，异常关闭时 error 有值
-    if (error) {
-      // 异常关闭：网络错误、服务器关闭等
-      console.warn('[SignalR] 连接异常关闭:', error.message || '未知错误');
-    } else {
-      // 正常关闭：主动断开连接
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[SignalR] 连接正常关闭');
-      }
-    }
+  connection.onclose(() => {
+    // 连接关闭处理
   });
 
   return connection;
@@ -123,6 +100,8 @@ export function useSignalRConnection(
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  // 用于跟踪是否正在协商，防止在协商期间停止连接
+  const isNegotiatingRef = useRef(false);
 
   // 连接
   const connect = useCallback(async () => {
@@ -145,16 +124,24 @@ export function useSignalRConnection(
       if (state === signalR.HubConnectionState.Disconnected) {
         try {
           setIsConnecting(true);
+          isNegotiatingRef.current = true;
           await connectionRef.current.start();
-          setIsConnected(true);
-          setIsConnecting(false);
-          onConnected?.();
+          isNegotiatingRef.current = false;
+          // 启动成功后检查状态
+          if (connectionRef.current.state === signalR.HubConnectionState.Connected) {
+            setIsConnected(true);
+            setIsConnecting(false);
+            onConnected?.();
+          } else {
+            setIsConnecting(false);
+          }
           return;
         } catch (error) {
+          isNegotiatingRef.current = false;
           const err = error instanceof Error ? error : new Error(String(error));
           setIsConnecting(false);
+          setIsConnected(false);
           onError?.(err);
-          console.error('SignalR 重新连接失败:', err);
           throw err;
         }
       }
@@ -195,29 +182,38 @@ export function useSignalRConnection(
       }
 
       // 确保连接处于 Disconnected 状态后再启动
-      if (connectionRef.current.state === signalR.HubConnectionState.Disconnected) {
-        await connectionRef.current.start();
+      // 在启动前再次检查状态，避免竞态条件
+      const currentState = connectionRef.current.state;
+      if (currentState === signalR.HubConnectionState.Disconnected) {
+        try {
+          isNegotiatingRef.current = true;
+          await connectionRef.current.start();
+          isNegotiatingRef.current = false;
+          // 启动成功后再次检查状态，确保连接成功
+          if (connectionRef.current.state === signalR.HubConnectionState.Connected) {
+            setIsConnected(true);
+            setIsConnecting(false);
+            onConnected?.();
+          }
+        } catch (startError) {
+          isNegotiatingRef.current = false;
+          // 如果启动失败，确保状态正确
+          setIsConnecting(false);
+          setIsConnected(false);
+          throw startError;
+        }
+      } else if (currentState === signalR.HubConnectionState.Connected) {
+        // 如果已经连接，直接更新状态
         setIsConnected(true);
         setIsConnecting(false);
-        onConnected?.();
+      } else {
+        // 其他状态（Connecting/Reconnecting），等待自动完成
+        setIsConnecting(true);
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       setIsConnecting(false);
       onError?.(err);
-      
-      // 详细的错误日志
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[SignalR] ❌ 连接失败:', {
-          message: err.message,
-          stack: err.stack,
-          hubUrl,
-          hasToken: !!tokenUtils.getToken(),
-        });
-      } else {
-        console.error('SignalR 连接失败:', err.message);
-      }
-      
       throw err;
     }
   }, [hubUrl, onConnected, onDisconnected, onError]);
@@ -232,7 +228,6 @@ export function useSignalRConnection(
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         onError?.(err);
-        console.error('SignalR 断开连接失败:', err);
       }
     }
   }, [onDisconnected, onError]);
@@ -268,17 +263,33 @@ export function useSignalRConnection(
   // 自动连接
   useEffect(() => {
     let isMounted = true;
+    let connectPromise: Promise<void> | null = null;
 
     if (autoConnect) {
-      connect().catch((error) => {
-        if (isMounted) {
-          console.error('自动连接失败:', error);
+      // 检查是否已经有连接或正在连接
+      if (connectionRef.current) {
+        const state = connectionRef.current.state;
+        if (state === signalR.HubConnectionState.Connected ||
+            state === signalR.HubConnectionState.Connecting ||
+            state === signalR.HubConnectionState.Reconnecting) {
+          // 已经连接或正在连接，不需要再次连接
+          return;
         }
+      }
+
+      connectPromise = connect().catch((error) => {
+        // 如果组件已卸载或正在协商时被停止，忽略错误
+        // 错误已通过 onError 回调处理
       });
     }
 
     return () => {
       isMounted = false;
+      // 如果连接正在进行，取消它（但不在协商阶段强制停止）
+      if (connectPromise && connectionRef.current && isNegotiatingRef.current) {
+        // 标记为不需要连接，让协商自然失败
+        isNegotiatingRef.current = false;
+      }
     };
   }, [autoConnect, connect]);
 
@@ -286,9 +297,26 @@ export function useSignalRConnection(
   useEffect(() => {
     return () => {
       if (connectionRef.current) {
-        connectionRef.current.stop().catch((error) => {
-          console.error('清理 SignalR 连接失败:', error);
-        });
+        const state = connectionRef.current.state;
+        
+        // 如果正在协商，标记为不再需要连接，让协商自然失败或完成后再清理
+        if (isNegotiatingRef.current || state === signalR.HubConnectionState.Connecting) {
+          // 设置标志，让连接知道组件已卸载
+          isNegotiatingRef.current = false;
+          // 不立即停止，让协商自然完成或失败
+          // 如果协商成功，连接会在下次检查时被清理
+          // 如果协商失败，连接会自动进入 Disconnected 状态
+          return;
+        }
+        
+        // 只有在连接已建立时才停止，避免在协商或连接中停止
+        if (state === signalR.HubConnectionState.Connected) {
+          connectionRef.current.stop().catch(() => {
+            // 忽略清理错误，这是正常的清理行为
+          });
+        }
+        // 如果状态是 Disconnected，不需要停止
+        // 如果状态是 Reconnecting，让自动重连机制处理，不要强制停止
       }
     };
   }, []);

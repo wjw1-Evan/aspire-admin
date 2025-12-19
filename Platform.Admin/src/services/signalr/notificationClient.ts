@@ -40,6 +40,7 @@ class NotificationClient {
         skipNegotiation: false,
       })
       .withAutomaticReconnect({ nextRetryDelayInMilliseconds: () => 2000 })
+      .configureLogging(signalR.LogLevel.None)
       .build();
 
     // 绑定已注册的订阅者

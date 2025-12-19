@@ -363,16 +363,10 @@ export const layout: RunTimeLayoutConfig = ({
           if (initialState?.currentUser && shouldReport && !hasStartedRef.current) {
             hasStartedRef.current = true;
             LocationService.reportLocation(true);
-            if (process.env.NODE_ENV === 'development') {
-              console.log('位置上报：在页面', location.pathname, '执行一次上报');
-            }
           } else if ((!shouldReport || !initialState?.currentUser) && hasStartedRef.current) {
             // 离开特定页面或用户登出时停止上报
             LocationService.stopPeriodicReporting();
             hasStartedRef.current = false;
-            if (process.env.NODE_ENV === 'development') {
-              console.log('位置上报：停止定期上报');
-            }
           }
         }, [initialState?.currentUser, location.pathname]);
 

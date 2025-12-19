@@ -75,8 +75,6 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     }
   }, []);
 
-  const loadDevices = useCallback(async () => {
-
   // 获取事件列表（用于 ProTable）- 使用 useCallback 避免死循环
   const fetchEvents = useCallback(async (params: any, sort?: Record<string, any>) => {
     try {

@@ -48,11 +48,17 @@ function DataTable<T extends Record<string, any> = any>(
   });
   const [sorter, setSorter] = useState<Record<string, 'ascend' | 'descend'>>({});
   
-  // 使用 ref 存储最新的 sorter，避免闭包问题
+  // 使用 ref 存储最新的 sorter 和 paginationState，避免闭包问题
   const sorterRef = useRef(sorter);
+  const paginationStateRef = useRef(paginationState);
+  
   useEffect(() => {
     sorterRef.current = sorter;
   }, [sorter]);
+  
+  useEffect(() => {
+    paginationStateRef.current = paginationState;
+  }, [paginationState]);
 
   const loadData = useCallback(async (page?: number, pageSize?: number) => {
     if (!request) return;
@@ -122,9 +128,10 @@ function DataTable<T extends Record<string, any> = any>(
     setSorter(newSorter);
     
     // 当用户改变pageSize时，pag.pageSize会有值；改变页码时，pag.current会有值
-    // 计算新的分页参数（直接使用 pag 参数，避免使用可能过时的 state）
-    const newCurrent = pag.current !== undefined ? pag.current : paginationState.current;
-    const newPageSize = pag.pageSize !== undefined ? pag.pageSize : paginationState.pageSize;
+    // 计算新的分页参数（使用 ref 获取最新的 state，避免闭包问题）
+    const currentPaginationState = paginationStateRef.current;
+    const newCurrent = pag.current !== undefined ? pag.current : currentPaginationState.current;
+    const newPageSize = pag.pageSize !== undefined ? pag.pageSize : currentPaginationState.pageSize;
     
     setPaginationState(prev => {
       const newPagination = {
@@ -135,9 +142,9 @@ function DataTable<T extends Record<string, any> = any>(
       return newPagination;
     });
     
-    // 使用计算好的分页参数加载数据（直接使用 pag 参数，不依赖异步更新的 state）
+    // 使用计算好的分页参数加载数据（使用 ref 获取最新值，避免闭包问题）
     loadData(newCurrent, newPageSize);
-  }, [loadData, paginationState.current, paginationState.pageSize]);
+  }, [loadData]);
 
   const mergedPagination: TableProps<T>['pagination'] = useMemo(() => {
     if (pagination === false) return false;

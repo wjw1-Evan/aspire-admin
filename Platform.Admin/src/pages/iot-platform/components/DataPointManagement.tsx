@@ -87,8 +87,6 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     }
   }, []);
 
-  const loadDevices = useCallback(async () => {
-
   // 获取数据点列表（用于 ProTable）- 使用 useCallback 避免死循环
   const fetchDataPoints = useCallback(async (params: any) => {
     try {

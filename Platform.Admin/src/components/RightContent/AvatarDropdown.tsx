@@ -7,12 +7,13 @@ import {
 } from '@ant-design/icons';
 import { history, useModel, useIntl } from '@umijs/max';
 import type { MenuProps } from 'antd';
-import { Spin } from 'antd';
+import { Spin, Avatar } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
+import { getUserAvatar } from '@/utils/avatar';
 import HeaderDropdown from '../HeaderDropdown';
 import HelpModal from '../HelpModal';
 import { ThemeSettingsDrawer } from './ThemeSettingsDrawer';
@@ -25,7 +26,16 @@ export type GlobalHeaderRightProps = {
 export const AvatarName = () => {
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
-  return <span className="anticon">{currentUser?.name}</span>;
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <Avatar
+        size="small"
+        src={getUserAvatar(currentUser?.avatar)}
+        icon={<UserOutlined />}
+      />
+      <span className="anticon">{currentUser?.name}</span>
+    </span>
+  );
 };
 
 const useStyles = createStyles(({ token }) => {

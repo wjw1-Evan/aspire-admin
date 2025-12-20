@@ -12,6 +12,7 @@ import {
   Timeline,
   theme
 } from 'antd';
+import { getUserAvatar } from '@/utils/avatar';
 // import { getApiBaseUrl } from '@/utils/request';
 import {
   UserOutlined,
@@ -489,7 +490,7 @@ const Welcome: React.FC = () => {
               <Avatar
                 size={64}
                 icon={<UserOutlined />}
-                src={currentUser?.avatar}
+                src={getUserAvatar(currentUser?.avatar)}
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.2)',
                   border: '3px solid rgba(255,255,255,0.3)'

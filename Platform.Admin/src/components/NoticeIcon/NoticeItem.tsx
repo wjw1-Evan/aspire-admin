@@ -1,5 +1,6 @@
 import React from 'react';
 import { Avatar, Tag, Typography, Badge, Button, Tooltip, Flex, Space } from 'antd';
+import { getUserAvatar } from '@/utils/avatar';
 import {
   NotificationOutlined,
   MessageOutlined,
@@ -74,11 +75,10 @@ export default function NoticeItem({
     >
       <Flex gap={12} align="flex-start" style={{ flex: 1, minWidth: 0 }}>
         <div style={{ flexShrink: 0 }}>
-          {item.avatar ? (
-            <Avatar src={item.avatar} />
-          ) : (
-            <Avatar icon={typeIcons[item.type as keyof typeof typeIcons]} />
-          )}
+          <Avatar 
+            src={getUserAvatar(item.avatar)} 
+            icon={typeIcons[item.type as keyof typeof typeIcons]}
+          />
         </div>
         <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
           <div className={styles.noticeTitle}>

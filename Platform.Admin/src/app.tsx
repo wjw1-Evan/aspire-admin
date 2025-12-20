@@ -18,6 +18,7 @@ import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
 import { getMyPermissions } from '@/services/permission';
 import LocationService from '@/services/social/locationService';
+import { getUserAvatar } from '@/utils/avatar';
 import { tokenUtils } from '@/utils/token';
 import TokenRefreshManager from '@/utils/tokenRefreshManager';
 import defaultSettings from '../config/defaultSettings';
@@ -230,7 +231,7 @@ export const layout: RunTimeLayoutConfig = ({
       <SelectLang key="SelectLang" />,
     ],
     avatarProps: {
-      src: initialState?.currentUser?.avatar,
+      src: getUserAvatar(initialState?.currentUser?.avatar),
       title: <AvatarName />,
       render: (_: any, avatarChildren: React.ReactNode) => {
         return <AvatarDropdown menu>{avatarChildren}</AvatarDropdown>;

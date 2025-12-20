@@ -28,6 +28,7 @@ import {
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
+import { getUserAvatar } from '@/utils/avatar';
 import {
   getCurrentUserProfile,
   updateUserProfile,
@@ -378,7 +379,7 @@ const UserCenter: React.FC = () => {
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <Avatar 
                 size={80} 
-                src={avatarPreview || userProfile.avatar} 
+                src={getUserAvatar(avatarPreview || userProfile.avatar)} 
                 icon={<UserOutlined />}
               />
               <label
@@ -462,7 +463,7 @@ const UserCenter: React.FC = () => {
           ) : (
             <Avatar 
               size={80} 
-              src={userProfile.avatar} 
+              src={getUserAvatar(userProfile.avatar)} 
               icon={<UserOutlined />}
             />
           )}

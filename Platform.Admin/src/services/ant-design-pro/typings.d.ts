@@ -244,6 +244,7 @@ declare namespace API {
   type UpdateProfileParams = {
     name?: string;
     email?: string;
+    phoneNumber?: string;
     age?: number;
     avatar?: string;
   };

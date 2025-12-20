@@ -2,6 +2,7 @@ import {
   EditOutlined,
   UserOutlined,
   MailOutlined,
+  MobileOutlined,
   CalendarOutlined,
   SafetyOutlined,
   HistoryOutlined,
@@ -68,6 +69,7 @@ interface UserProfile {
   username: string;
   name?: string;
   email?: string;
+  phoneNumber?: string;
   age?: number;
   avatar?: string;
   role: string;
@@ -122,6 +124,7 @@ const UserCenter: React.FC = () => {
           username: apiUser.username || '', // ✅ 使用 username 字段
           name: apiUser.name || apiUser.username || '', // name 可选，降级到 username
           email: apiUser.email,
+          phoneNumber: apiUser.phoneNumber,
           age: apiUser.age || 18,
           avatar: apiUser.avatar, // ✅ 保存头像字段
           role: apiUser.access || 'user',
@@ -135,6 +138,7 @@ const UserCenter: React.FC = () => {
           username: apiUser.username, // ✅ 设置 username（只读，不可修改）
           name: apiUser.name || apiUser.username, // 表单使用 name，如果没有则用 username
           email: apiUser.email,
+          phoneNumber: apiUser.phoneNumber,
           age: apiUser.age || 18,
           avatar: apiUser.avatar, // ✅ 设置头像字段
         });
@@ -183,6 +187,7 @@ const UserCenter: React.FC = () => {
         username: userProfile.username,
         name: userProfile.name,
         email: userProfile.email,
+        phoneNumber: userProfile.phoneNumber,
         age: userProfile.age,
         avatar: userProfile.avatar,
       });
@@ -536,6 +541,18 @@ const UserCenter: React.FC = () => {
               <Input />
             </Form.Item>
             <Form.Item
+              name="phoneNumber"
+              label="手机号"
+              rules={[
+                {
+                  pattern: /^1[3-9]\d{9}$/,
+                  message: '请输入有效的中国手机号（11位数字，以1开头）',
+                },
+              ]}
+            >
+              <Input placeholder="请输入手机号" maxLength={11} />
+            </Form.Item>
+            <Form.Item
               name="age"
               label={
                 <FormattedMessage
@@ -606,6 +623,21 @@ const UserCenter: React.FC = () => {
             >
               <MailOutlined style={{ marginRight: '4px' }} />
               {userProfile.email || (
+                <FormattedMessage
+                  id="pages.account.center.notSet"
+                  defaultMessage="未设置"
+                />
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <Space>
+                  <MobileOutlined />
+                  手机号
+                </Space>
+              }
+            >
+              {userProfile.phoneNumber || (
                 <FormattedMessage
                   id="pages.account.center.notSet"
                   defaultMessage="未设置"

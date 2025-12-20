@@ -102,14 +102,6 @@ public interface IUserService
     Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null);
     
     /// <summary>
-    /// 更新用户角色
-    /// </summary>
-    /// <param name="id">用户ID</param>
-    /// <param name="role">角色名称</param>
-    /// <returns>是否成功更新</returns>
-    Task<bool> UpdateUserRoleAsync(string id, string role);
-    
-    /// <summary>
     /// 激活用户
     /// </summary>
     /// <param name="id">用户ID</param>

@@ -1,6 +1,8 @@
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/types/unified-api';
 import { AI_ASSISTANT_ID } from '@/constants/ai';
+import { tokenUtils } from '@/utils/token';
+import { getApiBaseUrl } from '@/utils/request';
 
 /**
  * 聊天消息类型
@@ -147,25 +149,121 @@ export async function getOrCreateAssistantSession(): Promise<ChatSession | null>
 }
 
 /**
- * 发送消息
- * 如果会话不存在，会先创建会话（通过后端自动处理）
+ * 发送消息并流式接收 AI 回复（统一接口）
+ * @param messageRequest 消息请求
+ * @param callbacks 回调函数集合
  */
-export async function sendMessage(
-  messageRequest: SendMessageRequest
-): Promise<ChatMessage> {
-  const response = await request<ApiResponse<ChatMessage>>('/api/chat/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: messageRequest,
-  });
-
-  if (!response.success || !response.data) {
-    throw new Error(response.errorMessage || '发送消息失败');
+export async function sendMessageWithStreaming(
+  messageRequest: SendMessageRequest,
+  callbacks: {
+    onUserMessage?: (message: ChatMessage) => void;
+    onAssistantStart?: (message: ChatMessage) => void;
+    onAssistantChunk?: (sessionId: string, messageId: string, delta: string) => void;
+    onAssistantComplete?: (message: ChatMessage) => void;
+    onError?: (error: string) => void;
+  }
+): Promise<void> {
+  const token = tokenUtils.getToken();
+  if (!token) {
+    throw new Error('未找到认证令牌');
   }
 
-  return response.data;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/api/chat/messages?stream=true`;
+
+  try {
+    // 使用 fetch API 发送 POST 请求并读取 SSE 流
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(messageRequest),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error('无法读取响应流');
+    }
+
+    let buffer = '';
+    let currentEventType = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          currentEventType = line.substring(7).trim();
+        } else if (line.startsWith('data: ')) {
+          const data = line.substring(6).trim();
+          if (!data || data === 'null') continue;
+          
+          try {
+            const payload = JSON.parse(data);
+            
+            // 根据事件类型调用相应的回调
+            switch (currentEventType) {
+              case 'UserMessage':
+                if (payload.message) {
+                  callbacks.onUserMessage?.(payload.message);
+                }
+                break;
+              case 'AssistantMessageStart':
+                if (payload.message) {
+                  callbacks.onAssistantStart?.(payload.message);
+                }
+                break;
+              case 'AssistantMessageChunk':
+                if (payload.sessionId && payload.messageId && payload.delta) {
+                  console.log('[sendMessageWithStreaming] 收到 AssistantMessageChunk:', {
+                    sessionId: payload.sessionId,
+                    messageId: payload.messageId,
+                    delta: payload.delta,
+                    deltaLength: payload.delta.length,
+                  });
+                  callbacks.onAssistantChunk?.(payload.sessionId, payload.messageId, payload.delta);
+                } else {
+                  console.warn('[sendMessageWithStreaming] AssistantMessageChunk 数据不完整:', payload);
+                }
+                break;
+              case 'AssistantMessageComplete':
+                if (payload.message) {
+                  callbacks.onAssistantComplete?.(payload.message);
+                }
+                break;
+              case 'Error':
+                if (payload.error) {
+                  callbacks.onError?.(payload.error);
+                }
+                break;
+            }
+          } catch (e) {
+            console.error('解析 SSE 数据失败:', e, data);
+          }
+        } else if (line.trim() === '') {
+          // 空行表示事件结束，重置事件类型
+          currentEventType = '';
+        }
+      }
+    }
+  } catch (error) {
+    callbacks.onError?.(error instanceof Error ? error.message : '发送消息失败');
+    throw error;
+  }
 }
 
 /**

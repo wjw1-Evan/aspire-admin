@@ -13,6 +13,7 @@ appliesTo:
 - **统一客户端**：统一使用 `services/api.ts` 导出的 `apiClient`（基于 axios），与后端 `ApiResponse<T>` 格式对齐。禁止在组件内直接使用 `fetch` 或创建新的 axios 实例。
 - **响应处理**：API 响应统一为 `ApiResponse<T>` 格式（`success`、`data`、`errorCode`、`errorMessage`、`traceId`）。请求拦截器自动添加 JWT token，响应拦截器统一处理 401/403 错误和 token 刷新。
 - **错误处理**：所有接口调用需显式处理 loading/error 状态，避免静默失败。使用 `try-catch` 捕获异常，展示用户友好的错误提示，不暴露底层异常信息。
+- **SSE 实时连接**：实时聊天功能使用 SSE（Server-Sent Events）连接，通过 EventSource API 建立连接（`/api/chat/sse?token={token}`）。支持自动重连、事件监听（`ReceiveMessage`、`SessionUpdated`、`MessageChunk` 等）。组件卸载时确保关闭连接，避免资源泄漏。
 
 ## 认证与权限
 - **身份信息**：用户身份信息仅从登录态/本地存储获取（通过 `tokenUtils` 和 `storage`），企业/权限信息以后端返回为准。禁止在前端硬编码企业 ID、角色或权限。

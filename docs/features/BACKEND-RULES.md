@@ -7,7 +7,7 @@
 - **职责**：统一所有 API 的 JSON 响应格式，自动包裹为 `success` / `data` / `timestamp` 结构（未使用 `ApiResponse<T>` 时的兜底方案）。
 - **强制启用**：
   - 所有 HTTP API 服务必须在 `Program.cs` 中注册并启用 `ResponseFormattingMiddleware`。
-  - 仅对健康检查、OpenAPI、SignalR Hub 等特殊路径做白名单跳过（`/health*`、`/scalar*`、`/openapi*`、`/hubs/*` 等）。
+  - 仅对健康检查、OpenAPI、SSE 等特殊路径做白名单跳过（`/health*`、`/scalar*`、`/openapi*`、`/api/chat/sse` 等）。
 - **工作方式**（基于 `Platform.ApiService.Middleware.ResponseFormattingMiddleware` 实现）：
   - 拦截响应流，若 `Content-Type` 为 `application/json` 且 `StatusCode == 200`：
     - 若响应体 **尚未**包含 `"success"` 字段，则将原始 JSON 反序列化为 `data`，再包裹为：

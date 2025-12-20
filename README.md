@@ -4,7 +4,7 @@
 
 ## ✨ 关键特性
 
-- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集、SignalR 实时聊天 Hub、GridFS 附件存储与下载代理、AI 智能回复服务编排、任务与项目管理、IoT 平台、规则管理与 MCP 集成。
+- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集、SSE 实时聊天、GridFS 附件存储与下载代理、AI 智能回复服务编排、任务与项目管理、IoT 平台、规则管理与 MCP 集成。
 - **管理后台**：Ant Design Pro 动态菜单、企业与成员管理、加入申请审批、用户活动日志、任务管理、项目管理、IoT 平台（网关/设备/数据点/事件告警）、规则管理、帮助中心、国际化与统一错误处理。
 - **移动应用**：Expo Router 导航、深色/浅色主题切换、认证守卫、企业切换、密码修改与基础组件库，内置实时聊天、附件上传 / 预览、AI 智能回复与附近的人推荐体验。
 - **基础设施**：Aspire AppHost 服务编排、YARP 统一网关、Scalar API 文档、MongoDB + Mongo Express、健康检查与可观察性。
@@ -34,6 +34,7 @@ Platform/
 - **任务与项目管理**：任务创建、分配、执行、监控、任务树、任务依赖、执行日志；项目创建、成员管理、项目统计、任务关联。
 - **IoT 平台**：网关管理、设备管理、数据点管理、数据上报与查询、事件告警、设备状态监控、平台统计与数据流监控。
 - **规则管理**：规则 CRUD、规则执行、MCP（Model Context Protocol）集成、自动化工作流编排。
+- **实时通信**：基于 SSE（Server-Sent Events）实现实时消息推送，`ChatSseConnectionManager` 管理用户连接，`ChatBroadcaster` 负责消息广播，支持流式 AI 回复、消息/会话同步、已读状态推送等。
 - **运营能力**：通知中心、统一通知服务、系统维护脚本（补全缺失关联、数据校验）、系统资源监控 (`/api/SystemMonitor/resources`)。
 - **审计与日志**：`ActivityLogMiddleware` 捕获请求轨迹，`UserActivityLog` 记录 CRUD 审计操作，所有异常由统一响应中间件处理。
 - **OpenAPI 文档**：基于 .NET 10 原生 OpenAPI + Scalar，所有公共成员已补全 XML 注释，保证文档可读性。
@@ -66,18 +67,15 @@ Platform/
 - Expo Router 文件路由，`AuthGuard` 保证敏感页面登录可达。
 - 提供登录、注册、企业切换、个人资料、密码修改、关于信息等页面。
 - 主题切换、Toast/对话框封装、会话管理、网络错误处理。
+- 内置实时聊天功能，通过 SSE 连接接收实时消息，支持附件上传、AI 智能回复、附近的人推荐等。
 
 ## 💬 实时聊天与 AI 助手
 
-- **SignalR 实时通道**：`/hubs/chat` 支持自动重连、会话房间、消息/会话摘要/撤回/已读推送，网络受限场景可回退到 REST 轮询。
+- **SSE 实时通道**：基于 Server-Sent Events 实现，`/api/chat/sse` 端点支持长连接、自动重连、心跳保活（30秒间隔）。通过 `ChatSseConnectionManager` 管理用户连接，支持消息推送、会话更新、消息删除、已读状态同步等实时事件。
+- **流式 AI 回复**：支持流式返回 AI 回复内容，通过 SSE 增量推送消息块（`MessageChunk` 事件），前端实时渲染，提升用户体验。
 - **附件能力**：移动端通过统一 `apiService` 上传附件，后端使用 MongoDB GridFS 存储并提供 `/api/chat/messages/{sessionId}/attachments/{storageObjectId}` 下载流，确保链接可直接预览。
 - **AI 协同**：整合智能回复、匹配推荐、话题引导 API，可在聊天界面一键插入推荐内容，后端直接使用 `OpenAIClient` 调用大模型，并通过 `AiCompletionOptions` 统一配置模型、系统提示词与输出长度。
 - **附近的人**：内置位置权限检测、地理围栏更新与附近用户列表刷新，支持实时 Beacon 上传。
-
-详细文档见：
-- [实时聊天集成说明](docs/features/CHAT-REALTIME-SIGNALR.md)
-- [聊天后端 API 实现说明](docs/features/CHAT-BACKEND-API.md)
-- [聊天 & AI 助手功能说明](Platform.App/docs/features/CHAT-AI-FEATURE.md)
 
 ## 📊 IoT 平台
 
@@ -179,8 +177,8 @@ Platform/
 
 ```text
 Platform.ApiService/
-├── Controllers/      # Auth、User、Company、Menu、JoinRequest、Task、Project、IoT、Rule、Chat、Maintenance、Monitor 等控制器
-├── Services/         # 业务服务层与自动注册
+├── Controllers/      # Auth、User、Company、Menu、JoinRequest、Task、Project、IoT、Rule、Chat（ChatMessages、ChatSessions、ChatHistory、ChatSse）、Maintenance、Monitor 等控制器
+├── Services/         # 业务服务层与自动注册（含 ChatService、ChatBroadcaster、ChatSseConnectionManager）
 ├── Models/           # 实体与 DTO（含 Response 模型）
 ├── Middleware/       # 活动日志、统一响应
 ├── Extensions/       # 数据过滤、分页、自动注册等扩展方法
@@ -190,8 +188,9 @@ Platform.Admin/
 ├── config/           # UmiJS 配置、路由、代理
 ├── src/
 │   ├── pages/        # 用户管理、角色管理、企业设置、加入申请、活动日志、任务管理、项目管理、IoT 平台、规则管理等
-│   ├── components/   # 复用组件、帮助弹窗等
+│   ├── components/   # 复用组件、帮助弹窗、AI 助手、统一通知中心等
 │   ├── services/     # API 封装（自动刷新 token）
+│   ├── hooks/        # 自定义 Hooks（如 useSseConnection）
 │   └── utils/        # token 工具、国际化、错误处理
 
 Platform.App/

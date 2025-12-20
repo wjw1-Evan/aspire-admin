@@ -51,6 +51,80 @@ public class SocialController : BaseApiController
     }
 
     /// <summary>
+    /// 上报当前设备位置（兼容端点，支持 JSON 和表单数据）。
+    /// </summary>
+    /// <param name="request">定位信标信息（JSON 格式）。</param>
+    /// <param name="latitude">纬度（表单格式）。</param>
+    /// <param name="longitude">经度（表单格式）。</param>
+    /// <param name="accuracy">定位精度（表单格式）。</param>
+    /// <param name="altitude">海拔高度（表单格式）。</param>
+    /// <param name="heading">航向角（表单格式）。</param>
+    /// <param name="speed">移动速度（表单格式）。</param>
+    /// <param name="timestamp">原始时间戳（表单格式）。</param>
+    /// <returns>标准 API 响应。</returns>
+    /// <remarks>
+    /// 此端点为兼容旧版前端代码而保留，功能与 location/beacon 相同。
+    /// 支持 JSON 和 application/x-www-form-urlencoded 两种格式。
+    /// 请求示例（JSON）：
+    ///
+    /// ```json
+    /// {
+    ///   "latitude": 30.27415,
+    ///   "longitude": 120.15515,
+    ///   "accuracy": 15
+    /// }
+    /// ```
+    /// </remarks>
+    [HttpPost("location/report")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ReportLocation(
+        [FromBody] UpdateLocationBeaconRequest? request = null,
+        [FromForm] double? latitude = null,
+        [FromForm] double? longitude = null,
+        [FromForm] double? accuracy = null,
+        [FromForm] double? altitude = null,
+        [FromForm] double? heading = null,
+        [FromForm] double? speed = null,
+        [FromForm] long? timestamp = null)
+    {
+        UpdateLocationBeaconRequest locationRequest;
+
+        // 判断是否为表单数据：检查 Content-Type 和是否有表单参数
+        var contentType = Request.ContentType?.ToLowerInvariant() ?? string.Empty;
+        var isFormData = contentType.Contains("application/x-www-form-urlencoded") 
+                         && latitude.HasValue && longitude.HasValue;
+
+        if (isFormData)
+        {
+            // 从表单参数构建请求（已确认 latitude 和 longitude 有值）
+            var lat = latitude!.Value;
+            var lon = longitude!.Value;
+            locationRequest = new UpdateLocationBeaconRequest
+            {
+                Latitude = lat,
+                Longitude = lon,
+                Accuracy = accuracy,
+                Altitude = altitude,
+                Heading = heading,
+                Speed = speed,
+                Timestamp = timestamp
+            };
+        }
+        else if (request != null)
+        {
+            // 使用 JSON 请求体
+            locationRequest = request;
+        }
+        else
+        {
+            return Error("INVALID_REQUEST", "请求参数无效：需要提供有效的定位信息");
+        }
+
+        await _socialService.UpdateLocationAsync(locationRequest);
+        return Success("定位已更新");
+    }
+
+    /// <summary>
     /// 获取附近的用户列表。
     /// </summary>
     /// <param name="request">搜索参数。</param>

@@ -69,5 +69,18 @@ public interface IChatService
     /// <returns>会话实体</returns>
     Task<ChatSession> GetOrCreateDirectSessionAsync(string participantUserId);
 
+    /// <summary>
+    /// 发送消息并流式生成 AI 回复（支持回调）
+    /// </summary>
+    /// <param name="request">发送请求</param>
+    /// <param name="onChunk">增量内容回调（sessionId, messageId, delta）</param>
+    /// <param name="onComplete">完成回调（完整消息）</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>用户消息和 AI 回复消息</returns>
+    Task<(ChatMessage userMessage, ChatMessage? assistantMessage)> SendMessageWithStreamingReplyAsync(
+        SendChatMessageRequest request,
+        Func<string, string, string, Task>? onChunk,
+        Func<ChatMessage, Task>? onComplete,
+        CancellationToken cancellationToken);
 }
 

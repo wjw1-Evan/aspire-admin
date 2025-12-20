@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Controllers;
 
@@ -17,14 +19,23 @@ namespace Platform.ApiService.Controllers;
 public class ChatSessionsController : BaseApiController
 {
     private readonly IChatService _chatService;
+    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
+    private readonly ILogger<ChatSessionsController> _logger;
 
     /// <summary>
     /// 初始化聊天会话控制器
     /// </summary>
     /// <param name="chatService">聊天服务</param>
-    public ChatSessionsController(IChatService chatService)
+    /// <param name="sessionFactory">会话工厂</param>
+    /// <param name="logger">日志记录器</param>
+    public ChatSessionsController(
+        IChatService chatService,
+        IDatabaseOperationFactory<ChatSession> sessionFactory,
+        ILogger<ChatSessionsController> logger)
     {
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
+        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -77,5 +88,6 @@ public class ChatSessionsController : BaseApiController
 
         return Success(response);
     }
+
 }
 

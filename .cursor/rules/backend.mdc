@@ -43,6 +43,7 @@ appliesTo:
 ## 中间件与响应
 - 中间件顺序固定：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。
 - `ResponseFormattingMiddleware` 统一响应格式并写入 `HttpContext.Items["__FormattedResponseBody"]`；`ActivityLogMiddleware` 读取该内容记录访问日志。
+- **SSE 端点处理**：SSE（Server-Sent Events）端点（如 `/api/chat/sse`）返回 `text/event-stream`，需跳过 `ResponseFormattingMiddleware` 格式化，直接写入原始 SSE 数据流。健康检查、OpenAPI 端点同样跳过格式化。
 - JSON 序列化：camelCase、忽略 null、枚举 camelCase 字符串。
 
 ## 验证与错误处理
@@ -146,6 +147,14 @@ appliesTo:
     }
     ```
 - **参考实现**：`UserController.GetCurrentUserActivityLogsPaged` 为标准实现，所有分页接口应参考此实现。
+
+## 实时通信（SSE）规范
+- **实现方式**：使用 Server-Sent Events（SSE）实现实时消息推送，通过 `ChatSseController` 提供 `/api/chat/sse` 端点。
+- **连接管理**：使用 `IChatSseConnectionManager` 管理用户连接，支持多连接注册、自动清理断开连接。连接标识通过 JWT token 验证用户身份。
+- **消息广播**：使用 `IChatBroadcaster` 接口进行消息广播，支持消息推送、会话更新、消息删除、已读状态同步、流式消息块推送等事件类型。
+- **心跳保活**：SSE 连接需要定期发送心跳（keepalive 事件），默认间隔 30 秒，避免连接被代理服务器或浏览器超时关闭。
+- **响应格式**：SSE 事件格式为 `event: {eventType}\ndata: {jsonData}\n\n`，使用 camelCase 序列化 JSON 数据。
+- **错误处理**：连接异常时记录日志并清理连接资源，避免内存泄漏。
 
 ## 规则系统 / IoT 特殊要求
 - 规则实体需实现多租户 + 软删接口，使用 `RuleStatus` 常量管理状态；查询、分页均走工厂 + 构建器。

@@ -1,12 +1,11 @@
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using OpenAI;
 using OpenAI.Chat;
+using System.Collections;
 using Platform.ApiService.Constants;
-using Platform.ApiService.Hubs;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.ClientModel;
@@ -35,7 +34,7 @@ public class ChatService : IChatService
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
     private readonly IUserService _userService;
     private readonly ILogger<ChatService> _logger;
-    private readonly IHubContext<ChatHub> _hubContext;
+    private readonly IChatBroadcaster _broadcaster;
     private readonly GridFSBucket _gridFsBucket;
     private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
     private readonly OpenAIClient _openAiClient;
@@ -54,7 +53,7 @@ public class ChatService : IChatService
         IDatabaseOperationFactory<AppUser> userFactory,
         IUserService userService,
         IMongoDatabase database,
-        IHubContext<ChatHub> hubContext,
+        IChatBroadcaster broadcaster,
         IAiAssistantCoordinator aiAssistantCoordinator,
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
@@ -67,7 +66,7 @@ public class ChatService : IChatService
         _attachmentFactory = attachmentFactory ?? throw new ArgumentNullException(nameof(attachmentFactory));
         _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
-        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+        _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
         _aiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
         _openAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
         _aiOptions = aiOptions?.Value ?? throw new ArgumentNullException(nameof(aiOptions));
@@ -454,6 +453,68 @@ public class ChatService : IChatService
         }
 
         return message;
+    }
+
+    /// <inheritdoc />
+    public async Task<(ChatMessage userMessage, ChatMessage? assistantMessage)> SendMessageWithStreamingReplyAsync(
+        SendChatMessageRequest request,
+        Func<string, string, string, Task>? onChunk,
+        Func<ChatMessage, Task>? onComplete,
+        CancellationToken cancellationToken)
+    {
+        // 1. 保存用户消息（不触发 AI 回复）
+        var currentUserId = _messageFactory.GetRequiredUserId();
+        var session = await EnsureSessionAccessibleAsync(request.SessionId);
+
+        if (!session.Participants.Contains(currentUserId))
+        {
+            throw new UnauthorizedAccessException("当前用户不属于该会话");
+        }
+
+        if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))
+        {
+            throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
+        }
+
+        var sender = await _userFactory.GetByIdAsync(currentUserId);
+
+        var message = new ChatMessage
+        {
+            SessionId = session.Id,
+            CompanyId = session.CompanyId,
+            SenderId = currentUserId,
+            SenderName = sender?.Username,
+            RecipientId = request.RecipientId,
+            Type = request.Type,
+            Content = request.Content,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            Metadata = NormalizeMetadata(request.Metadata ?? new Dictionary<string, object>()),
+            ClientMessageId = request.ClientMessageId
+        };
+
+        var savedMessage = await _messageFactory.CreateAsync(message);
+        await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
+        await NotifyMessageCreatedAsync(session, savedMessage);
+
+        ChatMessage? assistantMessage = null;
+
+        // 2. 如果需要 AI 回复，流式生成
+        if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) &&
+            savedMessage.SenderId != AiAssistantConstants.AssistantUserId &&
+            savedMessage.Type == ChatMessageType.Text &&
+            !ShouldSkipAutomaticAssistantReply(savedMessage))
+        {
+            // 使用流式生成，传入回调函数
+            assistantMessage = await GenerateAssistantReplyStreamAsync(
+                session, 
+                savedMessage, 
+                cancellationToken, 
+                onChunk, 
+                onComplete);
+        }
+
+        return (savedMessage, assistantMessage);
     }
 
     /// <inheritdoc />
@@ -848,9 +909,7 @@ public class ChatService : IChatService
                 Message = message
             };
 
-            await _hubContext.Clients.Group(ChatHub.GetSessionGroupName(session.Id))
-                .SendAsync(ChatHub.ReceiveMessageEvent, payload);
-
+            await _broadcaster.BroadcastMessageAsync(session.Id, payload);
             await NotifySessionSummaryAsync(session.Id);
         }
         catch (Exception ex)
@@ -871,11 +930,7 @@ public class ChatService : IChatService
                 ReadAtUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients.Group(ChatHub.GetSessionGroupName(sessionId))
-                .SendAsync(ChatHub.SessionReadEvent, payload);
-
-            await _hubContext.Clients.Group(ChatHub.GetUserGroupName(userId))
-                .SendAsync(ChatHub.SessionReadEvent, payload);
+            await _broadcaster.BroadcastSessionReadAsync(sessionId, userId, payload);
         }
         catch (Exception ex)
         {
@@ -894,9 +949,7 @@ public class ChatService : IChatService
                 DeletedAtUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients.Group(ChatHub.GetSessionGroupName(sessionId))
-                .SendAsync(ChatHub.MessageDeletedEvent, payload);
-
+            await _broadcaster.BroadcastMessageDeletedAsync(sessionId, payload);
             await NotifySessionSummaryAsync(sessionId);
         }
         catch (Exception ex)
@@ -920,19 +973,7 @@ public class ChatService : IChatService
                 Session = latestSession
             };
 
-            var participantGroups = latestSession.Participants
-                .Where(participant => !string.IsNullOrWhiteSpace(participant))
-                .Select(ChatHub.GetUserGroupName)
-                .Distinct()
-                .ToArray();
-
-            if (participantGroups.Length == 0)
-            {
-                return;
-            }
-
-            await _hubContext.Clients.Groups(participantGroups)
-                .SendAsync(ChatHub.SessionUpdatedEvent, payload);
+            await _broadcaster.BroadcastSessionUpdatedAsync(sessionId, payload);
         }
         catch (Exception ex)
         {
@@ -957,34 +998,22 @@ public class ChatService : IChatService
             return;
         }
 
-        string replyContent;
         if (triggerMessage.Type == ChatMessageType.Text)
         {
-            var generated = await GenerateAssistantReplyAsync(session, triggerMessage, null);
-
-            if (string.IsNullOrWhiteSpace(generated))
-            {
-                return;
-            }
-
-            replyContent = generated.Trim();
+            // 使用流式生成（不提供回调，使用默认广播方式）
+            await GenerateAssistantReplyStreamAsync(session, triggerMessage, CancellationToken.None, null, null);
         }
         else
         {
-            replyContent = "我已收到您的附件，目前仅支持文本对话，欢迎告诉我想要讨论的内容。";
+            // 非文本消息使用传统方式
+            var replyContent = "我已收到您的附件，目前仅支持文本对话，欢迎告诉我想要讨论的内容。";
+            await CreateAssistantMessageAsync(
+                session,
+                replyContent,
+                triggerMessage.SenderId,
+                clientMessageId: null,
+                CancellationToken.None);
         }
-
-        if (string.IsNullOrWhiteSpace(replyContent))
-        {
-            return;
-        }
-
-        await CreateAssistantMessageAsync(
-            session,
-            replyContent,
-            triggerMessage.SenderId,
-            clientMessageId: null,
-            CancellationToken.None);
     }
 
     private static bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage)
@@ -1049,12 +1078,421 @@ public class ChatService : IChatService
         return assistantMessage;
     }
 
+    /// <summary>
+    /// 创建流式助手消息并实时更新
+    /// </summary>
+    private async Task<ChatMessage> CreateAssistantMessageStreamingAsync(
+        ChatSession session,
+        string initialContent,
+        string recipientUserId,
+        string? clientMessageId,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var assistantMessage = new ChatMessage
+        {
+            SessionId = session.Id,
+            CompanyId = session.CompanyId,
+            SenderId = AiAssistantConstants.AssistantUserId,
+            SenderName = AiAssistantConstants.AssistantDisplayName,
+            RecipientId = recipientUserId,
+            Type = ChatMessageType.Text,
+            Content = initialContent,
+            Metadata = new Dictionary<string, object>
+            {
+                ["isAssistant"] = true,
+                ["streaming"] = true
+            },
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            ClientMessageId = clientMessageId
+        };
+
+        if (!string.IsNullOrWhiteSpace(clientMessageId))
+        {
+            assistantMessage.Metadata["clientMessageId"] = clientMessageId!;
+        }
+
+        assistantMessage = await _messageFactory.CreateAsync(assistantMessage);
+        
+        // 通知消息已创建
+        var refreshedSession = await _sessionFactory.GetByIdAsync(session.Id) ?? session;
+        await UpdateSessionAfterMessageAsync(refreshedSession, assistantMessage, AiAssistantConstants.AssistantUserId);
+        
+        // 立即广播初始消息，让前端知道有新消息开始流式传输
+        var payload = new ChatMessageRealtimePayload
+        {
+            SessionId = session.Id,
+            Message = assistantMessage,
+            BroadcastAtUtc = DateTime.UtcNow
+        };
+        
+        _logger.LogInformation("广播流式消息初始状态，会话：{SessionId}，消息ID：{MessageId}", 
+            session.Id, assistantMessage.Id);
+        await _broadcaster.BroadcastMessageAsync(session.Id, payload);
+
+        return assistantMessage;
+    }
+
+    /// <summary>
+    /// 更新流式消息内容
+    /// </summary>
+    private async Task UpdateStreamingMessageAsync(string messageId, string newContent, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var update = _messageFactory.CreateUpdateBuilder()
+            .Set(message => message.Content, newContent)
+            .Set(message => message.UpdatedAt, DateTime.UtcNow)
+            .Build();
+
+        await _messageFactory.FindOneAndUpdateAsync(
+            _messageFactory.CreateFilterBuilder()
+                .Equal(message => message.Id, messageId)
+                .Build(),
+            update);
+    }
+
+    /// <summary>
+    /// 完成流式消息（移除流式标记）
+    /// </summary>
+    private async Task CompleteStreamingMessageAsync(string messageId, string finalContent, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var message = await _messageFactory.GetByIdAsync(messageId);
+        if (message == null)
+        {
+            return;
+        }
+
+        // 创建新的 Metadata 副本，避免直接修改原对象
+        var metadata = message.Metadata != null 
+            ? new Dictionary<string, object>(message.Metadata) 
+            : new Dictionary<string, object>();
+        
+        if (metadata.ContainsKey("streaming"))
+        {
+            metadata.Remove("streaming");
+        }
+
+        var update = _messageFactory.CreateUpdateBuilder()
+            .Set(message => message.Content, finalContent)
+            .Set(message => message.UpdatedAt, DateTime.UtcNow)
+            .Set(message => message.Metadata, metadata)
+            .Build();
+
+        await _messageFactory.FindOneAndUpdateAsync(
+            _messageFactory.CreateFilterBuilder()
+                .Equal(message => message.Id, messageId)
+                .Build(),
+            update);
+    }
+
+    /// <summary>
+    /// 流式生成助手回复
+    /// </summary>
+    /// <param name="session">会话</param>
+    /// <param name="triggerMessage">触发消息</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <param name="onChunk">可选的增量内容回调（sessionId, messageId, delta）</param>
+    /// <param name="onComplete">可选的完成回调（完整消息）</param>
+    /// <returns>生成的 AI 消息</returns>
+    private async Task<ChatMessage?> GenerateAssistantReplyStreamAsync(
+        ChatSession session,
+        ChatMessage triggerMessage,
+        CancellationToken cancellationToken,
+        Func<string, string, string, Task>? onChunk = null,
+        Func<ChatMessage, Task>? onComplete = null)
+    {
+        // 优先使用小科配置管理的配置
+        XiaokeConfigDto? xiaokeConfig = null;
+        if (_xiaokeConfigService != null)
+        {
+            try
+            {
+                xiaokeConfig = await _xiaokeConfigService.GetDefaultConfigAsync();
+                if (xiaokeConfig != null && !xiaokeConfig.IsEnabled)
+                {
+                    xiaokeConfig = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "获取小科配置失败，使用默认配置");
+            }
+        }
+
+        // 确定使用的模型
+        var model = xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.Model)
+            ? xiaokeConfig.Model
+            : (string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model);
+
+        ChatClient chatClient;
+        try
+        {
+            chatClient = _openAiClient.GetChatClient(model);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "初始化 OpenAI ChatClient 失败，模型：{Model}", model);
+            return null;
+        }
+
+        var currentUserId = triggerMessage.SenderId;
+
+        // 构建系统提示词
+        string systemPrompt;
+        const string defaultRoleDefinition = "你是小科，请使用简体中文提供简洁、专业且友好的回复。";
+        
+        try
+        {
+            var userRoleDefinition = await _userService.GetAiRoleDefinitionAsync(currentUserId);
+            if (!string.IsNullOrWhiteSpace(userRoleDefinition) && userRoleDefinition != defaultRoleDefinition)
+            {
+                systemPrompt = userRoleDefinition;
+            }
+            else
+            {
+                if (xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.SystemPrompt))
+                {
+                    systemPrompt = xiaokeConfig.SystemPrompt;
+                }
+                else if (!string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt))
+                {
+                    systemPrompt = _aiOptions.SystemPrompt;
+                }
+                else
+                {
+                    systemPrompt = defaultRoleDefinition;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取用户角色定义失败，使用默认值");
+            systemPrompt = defaultRoleDefinition;
+        }
+
+        // 构建对话消息
+        var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
+        if (conversationMessages.Count == 0)
+        {
+            _logger.LogWarning("构建的对话消息为空，会话：{SessionId}，触发消息：{MessageId}", session.Id, triggerMessage.Id);
+            return null;
+        }
+
+        // 如果启用了 MCP 服务，先检测用户意图并主动调用工具
+        string? toolResultContext = null;
+        if (_mcpService != null)
+        {
+            toolResultContext = await DetectAndCallMcpToolsAsync(triggerMessage, currentUserId, cancellationToken);
+        }
+
+        var instructionBuilder = new StringBuilder();
+        instructionBuilder.AppendLine(systemPrompt.Trim());
+        instructionBuilder.AppendLine($"当前用户语言标识：zh-CN");
+        instructionBuilder.Append("请结合完整的历史聊天记录，使用自然、真诚且有温度的语气回复对方。");
+        
+        // 如果启用了 MCP 服务，告知 AI 可以使用工具，并添加工具调用结果
+        if (_mcpService != null && !string.IsNullOrWhiteSpace(toolResultContext))
+        {
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【已查询的数据】");
+            instructionBuilder.AppendLine(toolResultContext);
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("请基于以上查询结果，用自然、友好的语言向用户回复。");
+        }
+
+        var messages = new List<OpenAIChatMessage>
+        {
+            new SystemChatMessage(instructionBuilder.ToString())
+        };
+        messages.AddRange(conversationMessages);
+
+        // 配置完成选项
+        var completionOptions = new ChatCompletionOptions();
+        if (xiaokeConfig != null)
+        {
+            if (xiaokeConfig.Temperature >= 0 && xiaokeConfig.Temperature <= 2)
+            {
+                completionOptions.Temperature = (float)xiaokeConfig.Temperature;
+            }
+            if (xiaokeConfig.MaxTokens > 0)
+            {
+                completionOptions.MaxOutputTokenCount = xiaokeConfig.MaxTokens;
+            }
+            if (xiaokeConfig.TopP >= 0 && xiaokeConfig.TopP <= 1)
+            {
+                completionOptions.TopP = (float)xiaokeConfig.TopP;
+            }
+            if (xiaokeConfig.FrequencyPenalty >= -2 && xiaokeConfig.FrequencyPenalty <= 2)
+            {
+                completionOptions.FrequencyPenalty = (float)xiaokeConfig.FrequencyPenalty;
+            }
+            if (xiaokeConfig.PresencePenalty >= -2 && xiaokeConfig.PresencePenalty <= 2)
+            {
+                completionOptions.PresencePenalty = (float)xiaokeConfig.PresencePenalty;
+            }
+        }
+        else
+        {
+            if (_aiOptions.MaxTokens > 0)
+            {
+                completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
+            }
+        }
+
+        ChatMessage? assistantMessage = null;
+        var accumulatedContent = new StringBuilder();
+
+        try
+        {
+            // 创建初始消息（空内容）
+            assistantMessage = await CreateAssistantMessageStreamingAsync(
+                session,
+                string.Empty,
+                triggerMessage.SenderId,
+                clientMessageId: null,
+                cancellationToken);
+
+            // 流式生成 AI 回复：每个增量立即发送到前端
+            var streamingResult = chatClient.CompleteChatStreamingAsync(messages, completionOptions, cancellationToken);
+            
+            await foreach (var update in streamingResult)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (update.ContentUpdate == null || assistantMessage == null) continue;
+
+                foreach (var contentPart in update.ContentUpdate)
+                {
+                    if (contentPart.Kind == ChatMessageContentPartKind.Text && !string.IsNullOrWhiteSpace(contentPart.Text))
+                    {
+                        var delta = contentPart.Text;
+                        accumulatedContent.Append(delta);
+
+                        // 立即发送到前端（不等待其他操作）
+                        if (onChunk != null)
+                        {
+                            await onChunk(session.Id, assistantMessage.Id, delta);
+                        }
+                        
+                        // 后台更新数据库（每50字符，不阻塞流式输出）
+                        if (accumulatedContent.Length % 50 == 0)
+                        {
+                            var messageId = assistantMessage.Id;
+                            var content = accumulatedContent.ToString();
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await UpdateStreamingMessageAsync(messageId, content, cancellationToken);
+                                }
+                                catch { /* 忽略后台更新错误 */ }
+                            }, cancellationToken);
+                        }
+                    }
+                }
+            }
+
+            // 流式完成，保存最终内容并移除流式标记
+            var finalContent = accumulatedContent.ToString().Trim();
+            if (assistantMessage != null && !string.IsNullOrEmpty(finalContent))
+            {
+                // 确保最终内容已保存到数据库（即使长度不足50的倍数）
+                await UpdateStreamingMessageAsync(assistantMessage.Id, finalContent, cancellationToken);
+                
+                // 完成流式消息（移除流式标记）
+                await CompleteStreamingMessageAsync(assistantMessage.Id, finalContent, cancellationToken);
+                
+                // 获取更新后的消息并广播完成事件
+                var completedMessage = await _messageFactory.GetByIdAsync(assistantMessage.Id);
+                if (completedMessage != null)
+                {
+                    // 如果提供了完成回调，调用它
+                    if (onComplete != null)
+                    {
+                        await onComplete(completedMessage);
+                    }
+                    
+                    // 广播完成事件
+                    await _broadcaster.BroadcastMessageCompleteAsync(session.Id, completedMessage);
+                }
+                
+                return completedMessage;
+            }
+            else if (assistantMessage != null)
+            {
+                // 如果内容为空，删除消息
+                await _messageFactory.FindOneAndSoftDeleteAsync(
+                    _messageFactory.CreateFilterBuilder()
+                        .Equal(message => message.Id, assistantMessage.Id)
+                        .Build());
+                
+                _logger.LogWarning("AI 助手流式回复生成失败或返回空，会话：{SessionId}，触发消息：{MessageId}", 
+                    session.Id, triggerMessage.Id);
+            }
+            
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            // 流式生成被取消
+            if (assistantMessage != null)
+            {
+                await _messageFactory.FindOneAndSoftDeleteAsync(
+                    _messageFactory.CreateFilterBuilder()
+                        .Equal(message => message.Id, assistantMessage.Id)
+                        .Build());
+            }
+            return null;
+        }
+        catch (ClientResultException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "OpenAI Chat 流式请求失败，模型：{Model}，会话：{SessionId}，错误：{Error}",
+                model,
+                session.Id,
+                ex.Message);
+            
+            if (assistantMessage != null)
+            {
+                await _messageFactory.FindOneAndSoftDeleteAsync(
+                    _messageFactory.CreateFilterBuilder()
+                        .Equal(message => message.Id, assistantMessage.Id)
+                        .Build());
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "调用 OpenAI Chat 流式接口时发生未预期的异常，模型：{Model}，会话：{SessionId}",
+                model,
+                session.Id);
+            
+            if (assistantMessage != null)
+            {
+                await _messageFactory.FindOneAndSoftDeleteAsync(
+                    _messageFactory.CreateFilterBuilder()
+                        .Equal(message => message.Id, assistantMessage.Id)
+                        .Build());
+            }
+            return null;
+        }
+    }
+
     private async Task<string?> GenerateAssistantReplyAsync(
         ChatSession session,
         ChatMessage triggerMessage,
         string? locale,
         CancellationToken cancellationToken = default)
     {
+        
         // 优先使用小科配置管理的配置
         XiaokeConfigDto? xiaokeConfig = null;
         if (_xiaokeConfigService != null)
@@ -1065,7 +1503,6 @@ public class ChatService : IChatService
                 // 如果配置存在但未启用，则忽略它，使用默认配置
                 if (xiaokeConfig != null && !xiaokeConfig.IsEnabled)
                 {
-                    _logger.LogInformation("小科配置 {ConfigName} 未启用，使用默认配置", xiaokeConfig.Name);
                     xiaokeConfig = null;
                 }
             }
@@ -1113,7 +1550,6 @@ public class ChatService : IChatService
                 if (xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.SystemPrompt))
                 {
                     systemPrompt = xiaokeConfig.SystemPrompt;
-                    _logger.LogInformation("使用小科配置的系统提示词: {ConfigName}", xiaokeConfig.Name);
                 }
                 else if (!string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt))
                 {
@@ -1132,7 +1568,6 @@ public class ChatService : IChatService
             if (xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.SystemPrompt))
             {
                 systemPrompt = xiaokeConfig.SystemPrompt;
-                _logger.LogInformation("异常情况下使用小科配置的系统提示词: {ConfigName}", xiaokeConfig.Name);
             }
             else if (!string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt))
             {
@@ -1275,10 +1710,12 @@ public class ChatService : IChatService
 
         try
         {
+            
             var completionResult = await chatClient.CompleteChatAsync(messages, completionOptions);
             var completion = completionResult.Value;
             if (completion == null || completion.Content == null || completion.Content.Count == 0)
             {
+                _logger.LogWarning("OpenAI API 返回空结果，模型：{Model}，会话：{SessionId}", model, session.Id);
                 return null;
             }
 
@@ -1286,19 +1723,26 @@ public class ChatService : IChatService
             {
                 if (part.Kind == ChatMessageContentPartKind.Text && !string.IsNullOrWhiteSpace(part.Text))
                 {
-                    return part.Text.Trim();
+                    var replyText = part.Text.Trim();
+                    return replyText;
                 }
             }
 
-            return completion.Content[0].Text?.Trim();
+            var fallbackText = completion.Content[0].Text?.Trim();
+            if (string.IsNullOrWhiteSpace(fallbackText))
+            {
+                _logger.LogWarning("OpenAI API 返回的内容为空，模型：{Model}，会话：{SessionId}", model, session.Id);
+            }
+            return fallbackText;
         }
         catch (ClientResultException ex)
         {
             _logger.LogWarning(
                 ex,
-                "OpenAI Chat 完成请求失败，模型：{Model}，会话：{SessionId}",
+                "OpenAI Chat 完成请求失败，模型：{Model}，会话：{SessionId}，错误：{Error}",
                 model,
-                session.Id);
+                session.Id,
+                ex.Message);
             return null;
         }
         catch (Exception ex)
@@ -1402,14 +1846,11 @@ public class ChatService : IChatService
         var contentLower = content.ToLowerInvariant();
         var toolResults = new List<string>();
 
-        _logger.LogInformation("检测用户意图，消息内容: {Content}", content);
-
         try
         {
             // 检测用户查询意图并调用相应的工具
             if (contentLower.Contains("用户") && (contentLower.Contains("admin") || contentLower.Contains("信息") || contentLower.Contains("查询") || contentLower.Contains("查")))
             {
-                _logger.LogInformation("检测到用户信息查询意图");
                 
                 // 提取用户名（如果提到）
                 string? username = null;
@@ -1435,7 +1876,6 @@ public class ChatService : IChatService
                 if (!string.IsNullOrWhiteSpace(username))
                 {
                     userInfoArgs["username"] = username;
-                    _logger.LogInformation("提取到用户名: {Username}", username);
                 }
 
                 var userInfoRequest = new McpCallToolRequest
@@ -1444,8 +1884,6 @@ public class ChatService : IChatService
                     Arguments = userInfoArgs
                 };
 
-                _logger.LogInformation("调用 MCP 工具 get_user_info，参数: {Arguments}", 
-                    System.Text.Json.JsonSerializer.Serialize(userInfoArgs));
 
                 var userInfoResponse = await _mcpService.CallToolAsync(userInfoRequest, currentUserId);
                 
@@ -1459,8 +1897,6 @@ public class ChatService : IChatService
                 }
                 else if (userInfoResponse.Content.Count > 0)
                 {
-                    _logger.LogInformation("MCP 工具调用成功，返回内容长度: {Length}", 
-                        userInfoResponse.Content[0].Text?.Length ?? 0);
                     toolResults.Add($"用户信息查询结果：{userInfoResponse.Content[0].Text}");
                 }
                 else
@@ -1505,7 +1941,6 @@ public class ChatService : IChatService
             }
             else if (contentLower.Contains("活动") || contentLower.Contains("日志") || contentLower.Contains("记录"))
             {
-                _logger.LogInformation("检测到活动日志查询意图");
                 
                 var activityRequest = new McpCallToolRequest
                 {
@@ -1517,7 +1952,6 @@ public class ChatService : IChatService
                     }
                 };
 
-                _logger.LogInformation("调用 MCP 工具 get_my_activity_logs");
 
                 var activityResponse = await _mcpService.CallToolAsync(activityRequest, currentUserId);
                 
@@ -1531,8 +1965,6 @@ public class ChatService : IChatService
                 }
                 else if (activityResponse.Content.Count > 0)
                 {
-                    _logger.LogInformation("MCP 工具调用成功，返回内容长度: {Length}", 
-                        activityResponse.Content[0].Text?.Length ?? 0);
                     toolResults.Add($"活动日志查询结果：{activityResponse.Content[0].Text}");
                 }
                 else
@@ -1562,16 +1994,7 @@ public class ChatService : IChatService
             // 不抛出异常，继续正常流程
         }
 
-        if (toolResults.Count > 0)
-        {
-            _logger.LogInformation("MCP 工具调用完成，共 {Count} 个结果", toolResults.Count);
-            return string.Join("\n\n", toolResults);
-        }
-        else
-        {
-            _logger.LogInformation("未检测到匹配的意图或工具调用未返回结果");
-            return null;
-        }
+        return toolResults.Count > 0 ? string.Join("\n\n", toolResults) : null;
     }
 
 

@@ -1,11 +1,16 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
 using System.IO;
+using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Platform.ApiService.Controllers;
 
@@ -18,14 +23,23 @@ namespace Platform.ApiService.Controllers;
 public class ChatMessagesController : BaseApiController
 {
     private readonly IChatService _chatService;
+    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
+    private readonly ILogger<ChatMessagesController> _logger;
 
     /// <summary>
     /// 初始化聊天消息控制器
     /// </summary>
     /// <param name="chatService">聊天服务</param>
-    public ChatMessagesController(IChatService chatService)
+    /// <param name="sessionFactory">会话数据操作工厂</param>
+    /// <param name="logger">日志记录器</param>
+    public ChatMessagesController(
+        IChatService chatService,
+        IDatabaseOperationFactory<ChatSession> sessionFactory,
+        ILogger<ChatMessagesController> logger)
     {
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
+        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -58,10 +72,11 @@ public class ChatMessagesController : BaseApiController
     }
 
     /// <summary>
-    /// 发送消息
+    /// 发送消息（支持流式返回 AI 回复）
     /// </summary>
     /// <param name="request">发送请求</param>
-    /// <returns>已发送的消息</returns>
+    /// <param name="stream">是否使用 SSE 流式返回 AI 回复（默认：false）</param>
+    /// <returns>已发送的消息，如果 stream=true 则通过 SSE 流式返回 AI 回复</returns>
     /// <remarks>
     /// 示例请求：
     /// ```json
@@ -71,14 +86,139 @@ public class ChatMessagesController : BaseApiController
     ///   "content": "你好"
     /// }
     /// ```
+    /// 
+    /// 如果 stream=true，响应头会设置为 text/event-stream，并通过 SSE 事件流式返回：
+    /// - UserMessage: 用户消息已保存
+    /// - AssistantMessageStart: AI 回复开始
+    /// - AssistantMessageChunk: AI 回复增量内容
+    /// - AssistantMessageComplete: AI 回复完成
     /// </remarks>
     /// <response code="200">成功返回发送结果</response>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<ChatMessage>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> SendMessage([FromBody] SendChatMessageRequest request)
+    public async Task<IActionResult> SendMessage([FromBody] SendChatMessageRequest request, [FromQuery] bool stream = false)
     {
+        // 如果启用流式返回，使用 SSE 流式响应
+        if (stream && request.Type == ChatMessageType.Text && 
+            !string.IsNullOrWhiteSpace(request.SessionId))
+        {
+            return await SendMessageWithStreamingResponseAsync(request);
+        }
+
+        // 否则使用传统方式：保存消息并异步触发 AI 回复（通过 SSE 连接推送）
         var message = await _chatService.SendMessageAsync(request);
         return Success(message);
+    }
+
+    /// <summary>
+    /// 发送消息并流式返回 AI 回复
+    /// </summary>
+    private async Task<IActionResult> SendMessageWithStreamingResponseAsync(SendChatMessageRequest request)
+    {
+        // 禁用响应缓冲，确保流式输出立即发送
+        Response.Headers["Cache-Control"] = "no-cache";
+        Response.Headers["Connection"] = "keep-alive";
+        Response.Headers["X-Accel-Buffering"] = "no"; // 禁用 Nginx 缓冲
+        Response.ContentType = "text/event-stream";
+        
+        // 禁用 ASP.NET Core 响应缓冲
+        if (Response.Body.CanSeek)
+        {
+            Response.Body.SetLength(0);
+        }
+
+        var cancellationToken = HttpContext.RequestAborted;
+
+        try
+        {
+            // 1. 保存用户消息（但不触发 AI 回复，因为我们要在同一个流中返回）
+            var currentUserId = _sessionFactory.GetRequiredUserId();
+            var session = await _sessionFactory.GetByIdAsync(request.SessionId);
+            if (session == null || !session.Participants.Contains(currentUserId))
+            {
+                await WriteSseEventAsync("Error", new { error = "会话不存在或无权访问" }, cancellationToken);
+                return new EmptyResult();
+            }
+
+            // 存储 AI 消息 ID，用于发送开始事件
+            string? assistantMessageId = null;
+
+            // 流式输出回调：每个增量立即发送到前端
+            Func<string, string, string, Task> onChunk = async (sessionId, messageId, delta) =>
+            {
+                // 首次发送开始事件
+                if (assistantMessageId == null && !string.IsNullOrEmpty(messageId))
+                {
+                    assistantMessageId = messageId;
+                    await WriteSseEventAsync("AssistantMessageStart", new 
+                    { 
+                        sessionId, 
+                        message = new 
+                        { 
+                            id = messageId,
+                            sessionId = sessionId,
+                            senderId = AiAssistantConstants.AssistantUserId,
+                            type = "Text",
+                            content = string.Empty,
+                            createdAt = DateTime.UtcNow
+                        } 
+                    }, cancellationToken);
+                }
+                
+                // 立即发送增量内容
+                await WriteSseEventAsync("AssistantMessageChunk", new { sessionId, messageId, delta }, cancellationToken);
+            };
+
+            // 创建完成回调函数
+            Func<ChatMessage, Task> onComplete = async (completedMessage) =>
+            {
+                // 发送完成事件
+                await WriteSseEventAsync("AssistantMessageComplete", new { message = completedMessage }, cancellationToken);
+            };
+
+            // 1. 发送消息并流式生成 AI 回复
+            var (userMessage, _) = await _chatService.SendMessageWithStreamingReplyAsync(
+                request, 
+                onChunk, 
+                onComplete,
+                cancellationToken);
+            
+            // 发送用户消息事件
+            await WriteSseEventAsync("UserMessage", new { message = userMessage }, cancellationToken);
+
+            return new EmptyResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "流式发送消息失败: 会话 {SessionId}", request.SessionId);
+            await WriteSseEventAsync("Error", new { error = "发送消息失败", message = ex.Message }, cancellationToken);
+            return new EmptyResult();
+        }
+    }
+
+    private async Task WriteSseEventAsync(string eventType, object? data, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var json = data != null ? JsonSerializer.Serialize(data, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }) : "null";
+
+            var message = $"event: {eventType}\ndata: {json}\n\n";
+            var bytes = Encoding.UTF8.GetBytes(message);
+
+            await Response.Body.WriteAsync(bytes, cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // 连接已关闭，忽略
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "SSE 写入失败: {EventType}", eventType);
+        }
     }
 
     /// <summary>

@@ -2,42 +2,23 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { FloatButton, App, Input, Button, Card, Avatar, Spin } from 'antd';
 import { MessageOutlined, CloseOutlined, SendOutlined } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
-import * as signalR from '@microsoft/signalr';
 import {
   getOrCreateAssistantSession,
-  sendMessage as sendChatMessage,
+  sendMessageWithStreaming,
   getMessages,
   type ChatMessage,
   type ChatSession,
 } from '@/services/chat/api';
 import { AI_ASSISTANT_ID, AI_ASSISTANT_NAME, AI_ASSISTANT_AVATAR } from '@/constants/ai';
-import { useSignalRConnection } from '@/hooks/useSignalRConnection';
-import { getApiBaseUrl } from '@/utils/request';
+import { useSseConnection } from '@/hooks/useSseConnection';
 
 const { TextArea } = Input;
 
 /**
  * AI 助手组件
- * 固定在页面右下角，提供与小科的对话功能
- * 使用 SignalR 实时接收消息，替代轮询
+ * 使用流式接口发送消息并接收 AI 回复（统一接口）
  */
 const AiAssistant: React.FC = () => {
-  // 保证 messages 中的 id 唯一，保持原有顺序（后来的覆盖先前的）
-  const dedupeById = useCallback((list: ChatMessage[]) => {
-    // 保留“最后出现”的同 id 消息（后来的覆盖先前的）
-    const seen = new Set<string>();
-    const result: ChatMessage[] = [];
-    for (let i = list.length - 1; i >= 0; i--) {
-      const m = list[i];
-      const id = m.id || `__noid__${i}`;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      result.push(m);
-    }
-    result.reverse();
-    return result;
-  }, []);
-
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const { message } = App.useApp();
@@ -49,16 +30,23 @@ const AiAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
+  
+  // 对话框尺寸状态
+  const [dialogSize, setDialogSize] = useState({ width: 400, height: 600 });
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const lastMessageIdRef = useRef<string | null>(null);
+  // 存储正在流式传输的消息内容（messageId -> content）
+  // 注意：使用状态而不是 ref，确保更新时触发重新渲染
+  // 使用普通对象而不是 Map，确保 React 能正确检测变化
+  const [streamingMessages, setStreamingMessages] = useState<Record<string, string>>({});
 
-  // SignalR 连接管理
-  const { isConnected, on, off, invoke } = useSignalRConnection({
-    hubUrl: '/hubs/chat',
-    autoConnect: !!currentUser,
+  // SSE 连接管理
+  const { isConnected, on, connectionId, connect: connectSse } = useSseConnection({
+    autoConnect: false,
   });
+
+  const isValidObjectId = useCallback((id?: string) => !!id && /^[a-fA-F0-9]{24}$/.test(id), []);
 
   /**
    * 初始化会话
@@ -71,21 +59,15 @@ const AiAssistant: React.FC = () => {
       const assistantSession = await getOrCreateAssistantSession();
       if (assistantSession) {
         setSession(assistantSession);
-        // 加载历史消息
         await loadMessages(assistantSession.id);
       }
     } catch (error) {
-      // 初始化会话失败，由错误处理机制处理
+      // 初始化失败
     } finally {
       setLoading(false);
       setInitialized(true);
     }
   }, [currentUser, initialized]);
-
-  const isValidObjectId = useCallback((id?: string) => !!id && /^[a-fA-F0-9]{24}$/.test(id), []);
-
-  // 渲染前去重，避免重复 key
-  const renderMessages = useMemo(() => dedupeById(messages), [messages, dedupeById]);
 
   /**
    * 加载消息列表
@@ -93,65 +75,45 @@ const AiAssistant: React.FC = () => {
   const loadMessages = useCallback(async (sessionId: string) => {
     try {
       if (!isValidObjectId(sessionId)) {
-        if (process.env.NODE_ENV === 'development') {
-          // 跳过加载消息：无效的 sessionId
-        }
         return;
       }
       const response = await getMessages(sessionId, { limit: 50 });
-      setMessages(dedupeById(response.items));
-
-      // 记录最后一条消息ID
-      if (response.items.length > 0) {
-        const lastMessage = response.items[response.items.length - 1];
-        lastMessageIdRef.current = lastMessage.id;
-      }
+      // 按创建时间排序，确保消息按时间顺序显示
+      const sortedMessages = [...response.items].sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeA - timeB;
+      });
+      setMessages(sortedMessages);
     } catch (error) {
-      // 加载消息失败，由错误处理机制处理
+      // 加载失败
     }
   }, [isValidObjectId]);
 
-  /**
-   * 加入聊天会话（SignalR）
-   */
-  const joinSession = useCallback(async (sessionId: string) => {
-    if (!isConnected) return;
-    if (!isValidObjectId(sessionId)) {
-      if (process.env.NODE_ENV === 'development') {
-        // 跳过加入会话：无效的 sessionId
-      }
-      return;
-    }
-
-    try {
-      await invoke('JoinSessionAsync', sessionId);
-    } catch (error) {
-      // 加入会话失败，由错误处理机制处理
-    }
-  }, [isConnected, invoke, isValidObjectId]);
-
-  /**
-   * 离开聊天会话（SignalR）
-   */
-  const leaveSession = useCallback(async (sessionId: string) => {
-    if (!isConnected) return;
-
-    try {
-      await invoke('LeaveSessionAsync', sessionId);
-    } catch (error) {
-      // 离开会话失败，由错误处理机制处理
-    }
-  }, [isConnected, invoke]);
 
   /**
    * 发送消息
    */
   const handleSendMessage = useCallback(async () => {
-    if (!inputValue.trim() || sending) return;
+    console.log('[AiAssistant] handleSendMessage 被调用', {
+      inputValue: inputValue.trim(),
+      sending,
+      currentUser: !!currentUser,
+    });
+    
+    // 注意：用户ID由后端从token中获取，前端只需要检查用户是否登录
+    if (!inputValue.trim() || sending || !currentUser) {
+      console.log('[AiAssistant] 发送消息被阻止:', {
+        hasInput: !!inputValue.trim(),
+        isSending: sending,
+        hasUser: !!currentUser,
+      });
+      return;
+    }
 
+    console.log('[AiAssistant] 开始发送消息流程');
     let currentSession = session;
 
-    // 如果会话不存在，尝试获取或创建会话
     if (!currentSession) {
       try {
         const assistantSession = await getOrCreateAssistantSession();
@@ -163,7 +125,6 @@ const AiAssistant: React.FC = () => {
           return;
         }
       } catch (error) {
-        // 获取会话失败，由错误处理机制处理
         message.error('无法发送消息：会话不存在');
         return;
       }
@@ -172,12 +133,15 @@ const AiAssistant: React.FC = () => {
     const userMessage = inputValue.trim();
     setInputValue('');
     setSending(true);
-
+    
     // 先添加用户消息到界面（乐观更新）
+    // 注意：senderId 用于前端显示，实际发送时后端会从token中获取用户ID
+    // 这里使用临时ID，等后端返回真实消息后再替换
+    const tempUserId = currentUser.userid || (currentUser as any)?.id || 'temp-user';
     const optimisticMessage: ChatMessage = {
       id: `temp-${Date.now()}`,
       sessionId: currentSession.id,
-      senderId: currentUser?.userid || '',
+      senderId: tempUserId,
       recipientId: AI_ASSISTANT_ID,
       type: 'Text',
       content: userMessage,
@@ -185,30 +149,149 @@ const AiAssistant: React.FC = () => {
     };
 
     try {
+      // 先添加用户消息到界面（乐观更新）
       setMessages((prev) => [...prev, optimisticMessage]);
 
-      // 发送消息到后端
-      const sentMessage = await sendChatMessage({
-        sessionId: currentSession.id,
-        type: 'Text',
-        content: userMessage,
-        recipientId: AI_ASSISTANT_ID,
-      });
+      // 使用流式接口发送消息并接收 AI 回复
+      console.log('[AiAssistant] 发送消息到后端（流式）:', userMessage);
+      
+      // 保存会话 ID，用于回调中验证
+      const sessionIdForCallbacks = currentSession.id;
+      
+      let userMessageId: string | null = null;
+      let assistantMessageId: string | null = null;
 
-      // 更新最后一条消息ID
-      lastMessageIdRef.current = sentMessage.id;
-
-      // 移除临时消息，同时去掉可能由 SignalR 已经推送过的相同 id，添加真实消息
-      setMessages((prev) => {
-        const filtered = prev.filter((msg) => msg.id !== optimisticMessage.id && msg.id !== sentMessage.id);
-        return [...filtered, sentMessage];
-      });
-
-      // SignalR 会自动推送小科的回复，无需轮询
+      await sendMessageWithStreaming(
+        {
+          sessionId: currentSession.id,
+          type: 'Text',
+          content: userMessage,
+          recipientId: AI_ASSISTANT_ID,
+        },
+        {
+          // 用户消息已保存
+          onUserMessage: (sentMessage) => {
+            console.log('[AiAssistant] 用户消息已保存，消息ID:', sentMessage.id);
+            userMessageId = sentMessage.id;
+            // 替换临时消息为真实消息，并保持排序
+            setMessages((prev) => {
+              const filtered = prev.filter((msg) => msg.id !== optimisticMessage.id && msg.id !== sentMessage.id);
+              const updated = [...filtered, sentMessage];
+              // 按创建时间排序
+              return updated.sort((a, b) => {
+                const timeA = new Date(a.createdAt || 0).getTime();
+                const timeB = new Date(b.createdAt || 0).getTime();
+                return timeA - timeB;
+              });
+            });
+          },
+          // AI 回复开始
+          onAssistantStart: (assistantMessage) => {
+            console.log('[AiAssistant] AI 回复开始，消息ID:', assistantMessage.id);
+            assistantMessageId = assistantMessage.id;
+            // 初始化流式内容缓存
+            setStreamingMessages((prev) => ({
+              ...prev,
+              [assistantMessage.id]: assistantMessage.content || '',
+            }));
+            // 添加 AI 消息到界面，并保持排序
+            setMessages((prev) => {
+              const existingIndex = prev.findIndex((m) => m.id === assistantMessage.id);
+              if (existingIndex >= 0) {
+                return prev;
+              }
+              const updated = [...prev, assistantMessage];
+              // 按创建时间排序
+              return updated.sort((a, b) => {
+                const timeA = new Date(a.createdAt || 0).getTime();
+                const timeB = new Date(b.createdAt || 0).getTime();
+                return timeA - timeB;
+              });
+            });
+          },
+          // AI 回复增量内容
+          onAssistantChunk: (sessionId, messageId, delta) => {
+            if (!sessionIdForCallbacks || sessionId !== sessionIdForCallbacks || !messageId) {
+              return;
+            }
+            console.log('[AiAssistant] 收到流式增量内容:', { sessionId, messageId, delta, deltaLength: delta.length });
+            
+            // 累积流式内容（使用状态，确保触发重新渲染）
+            setStreamingMessages((prev) => {
+              const currentContent = prev[messageId] || '';
+              const newContent = currentContent + delta;
+              console.log('[AiAssistant] 收到流式增量，消息ID:', messageId, '增量长度:', delta.length, '累积长度:', newContent.length);
+              return {
+                ...prev,
+                [messageId]: newContent,
+              };
+            });
+            
+            // 确保消息在列表中（如果不在，创建临时消息）
+            // 注意：实际内容从 streamingMessages 状态读取，在 useMemo 中合并
+            setMessages((prev) => {
+              const messageIndex = prev.findIndex((m) => m.id === messageId);
+              if (messageIndex < 0) {
+                // 如果消息不在列表中，创建一个临时消息用于显示流式内容
+                // 这可能在 onAssistantStart 之前发生
+                const tempMessage: ChatMessage = {
+                  id: messageId,
+                  sessionId: sessionId,
+                  senderId: AI_ASSISTANT_ID,
+                  recipientId: (currentUser?.userid || (currentUser as any)?.id) || '',
+                  type: 'Text',
+                  content: '', // 初始为空，useMemo 会从 streamingMessages 读取最新值
+                  createdAt: new Date().toISOString(),
+                };
+                const updated = [...prev, tempMessage];
+                // 按创建时间排序
+                return updated.sort((a, b) => {
+                  const timeA = new Date(a.createdAt || 0).getTime();
+                  const timeB = new Date(b.createdAt || 0).getTime();
+                  return timeA - timeB;
+                });
+              }
+              // 如果消息已存在，不需要更新（useMemo 会从 streamingMessages 读取最新值）
+              return prev;
+            });
+          },
+          // AI 回复完成
+          onAssistantComplete: (completedMessage) => {
+            console.log('[AiAssistant] AI 回复完成，消息ID:', completedMessage.id);
+            // 清除流式内容缓存
+            setStreamingMessages((prev) => {
+              const { [completedMessage.id]: _, ...rest } = prev;
+              return rest;
+            });
+            // 更新完整消息，并保持排序
+            setMessages((prev) => {
+              const messageIndex = prev.findIndex((m) => m.id === completedMessage.id);
+              let updated: ChatMessage[];
+              if (messageIndex >= 0) {
+                updated = [...prev];
+                updated[messageIndex] = completedMessage;
+              } else {
+                updated = [...prev, completedMessage];
+              }
+              // 按创建时间排序
+              return updated.sort((a, b) => {
+                const timeA = new Date(a.createdAt || 0).getTime();
+                const timeB = new Date(b.createdAt || 0).getTime();
+                return timeA - timeB;
+              });
+            });
+          },
+          // 错误处理
+          onError: (error) => {
+            console.error('[AiAssistant] 发送消息失败:', error);
+            message.error('发送消息失败: ' + error);
+            setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
+          },
+        }
+      );
     } catch (error) {
-      // 发送消息失败，由错误处理机制处理
+      console.error('[AiAssistant] 发送消息异常:', error);
       message.error('发送消息失败');
-      // 移除临时消息
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticMessage.id));
     } finally {
       setSending(false);
@@ -238,6 +321,18 @@ const AiAssistant: React.FC = () => {
   }, []);
 
   /**
+   * 当 currentUser 可用时，建立 SSE 连接（用于会话更新、消息删除等事件）
+   * 注意：AI 回复现在通过流式接口直接接收，SSE 连接主要用于其他实时事件
+   */
+  useEffect(() => {
+    if (currentUser && !isConnected) {
+      connectSse().catch(() => {
+        // 错误已通过 onError 回调处理
+      });
+    }
+  }, [currentUser, isConnected, connectSse]);
+
+  /**
    * 初始化会话
    */
   useEffect(() => {
@@ -247,23 +342,16 @@ const AiAssistant: React.FC = () => {
   }, [currentUser, initialized, initializeSession]);
 
   /**
-   * 打开对话窗口时加载消息并加入会话
+   * 打开对话窗口时加载消息
    */
   useEffect(() => {
     const sid = session?.id;
     const valid = sid && isValidObjectId(sid);
 
-    if (open && initialized && isConnected && valid) {
+    if (open && initialized && valid) {
       loadMessages(sid!);
-      joinSession(sid!);
     }
-
-    return () => {
-      if (open && isConnected && valid) {
-        leaveSession(sid!);
-      }
-    };
-  }, [open, session?.id, initialized, isConnected, loadMessages, joinSession, leaveSession, isValidObjectId]);
+  }, [open, session?.id, initialized, loadMessages, isValidObjectId]);
 
   /**
    * 消息更新时滚动到底部
@@ -273,46 +361,74 @@ const AiAssistant: React.FC = () => {
   }, [messages, scrollToBottom]);
 
   /**
-   * 监听 SignalR 消息事件
+   * 监听 SSE 事件（用于会话更新、消息删除等，不再用于接收 AI 回复）
+   * 注意：AI 回复现在通过流式接口直接接收，不再依赖 SSE 事件
    */
   useEffect(() => {
-    if (!isConnected || !session) return;
-
-    // 监听新消息事件
-    on('ReceiveMessage', (payload: any) => {
-      const incoming: ChatMessage = (payload && (payload as any).message) ? (payload as any).message : (payload as ChatMessage);
-      if (!incoming || !incoming.sessionId) {
-        return;
-      }
-      setMessages((prev) => {
-        // 避免重复添加消息（基于 id）
-        if (incoming.id && prev.some((m) => m.id === incoming.id)) {
-          return prev;
-        }
-        return [...prev, incoming];
-      });
-    });
+    if (!isConnected || !session) {
+      return;
+    }
 
     // 监听消息删除事件
-    on('MessageDeleted', (deletedMessageId: string) => {
-      setMessages((prev) => prev.filter((msg) => msg.id !== deletedMessageId));
-    });
-
-    // 监听会话更新事件
-    on('SessionUpdated', (payload: any) => {
-      const updatedSession: ChatSession = (payload && (payload as any).session) ? (payload as any).session : (payload as ChatSession);
-      if (!updatedSession || !updatedSession.id) {
+    const handleMessageDeleted = (payload: any) => {
+      const sessionId = payload?.sessionId;
+      const messageId = payload?.messageId;
+      
+      if (sessionId && sessionId !== session.id) {
         return;
       }
-      setSession(updatedSession);
-    });
-
-    return () => {
-      off('ReceiveMessage');
-      off('MessageDeleted');
-      off('SessionUpdated');
+      
+      if (messageId) {
+        setStreamingMessages((prev) => {
+          const { [messageId]: _, ...rest } = prev;
+          return rest;
+        });
+        setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+      }
     };
-  }, [isConnected, session, on, off]);
+
+    // 监听会话更新事件
+    const handleSessionUpdated = (payload: any) => {
+      const updatedSession: ChatSession = payload?.session || payload;
+      if (updatedSession?.id === session.id) {
+        setSession(updatedSession);
+      }
+    };
+
+    // 注册事件监听器
+    const cleanupMessageDeleted = on('MessageDeleted', handleMessageDeleted);
+    const cleanupSessionUpdated = on('SessionUpdated', handleSessionUpdated);
+
+    // 清理函数
+    return () => {
+      cleanupMessageDeleted();
+      cleanupSessionUpdated();
+    };
+  }, [isConnected, session?.id, on]);
+
+  // 计算显示的消息列表（合并流式内容）
+  const displayMessages = useMemo(() => {
+    return [...messages]
+      .map((msg) => {
+        // 如果有流式内容，优先使用流式内容（用于 AI 消息）
+        if (msg.senderId === AI_ASSISTANT_ID) {
+          const streamingContent = streamingMessages[msg.id];
+          if (streamingContent !== undefined) {
+            return {
+              ...msg,
+              content: streamingContent,
+            };
+          }
+        }
+        return msg;
+      })
+      .sort((a, b) => {
+        // 按创建时间排序，确保消息按时间顺序显示
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeA - timeB;
+      });
+  }, [messages, streamingMessages]);
 
   // 如果用户未登录，不显示组件
   if (!currentUser) {
@@ -330,12 +446,15 @@ const AiAssistant: React.FC = () => {
     >
       {open ? (
         <Card
+          ref={dialogRef}
           style={{
-            width: 400,
-            height: 600,
+            width: dialogSize.width,
+            height: dialogSize.height,
             display: 'flex',
             flexDirection: 'column',
             padding: 0,
+            position: 'relative',
+            resize: 'none', // 禁用默认的 resize
           }}
           styles={{
             body: {
@@ -346,6 +465,131 @@ const AiAssistant: React.FC = () => {
             },
           }}
         >
+          {/* 左侧调整宽度手柄 */}
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              const startX = e.clientX;
+              const startWidth = dialogSize.width;
+
+              const handleMouseMove = (e: MouseEvent) => {
+                const diffX = startX - e.clientX; // 向左拖拽增加宽度
+                
+                const newWidth = Math.max(300, Math.min(800, startWidth + diffX));
+                
+                setDialogSize(prev => ({ ...prev, width: newWidth }));
+              };
+
+              const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+              };
+
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', handleMouseUp);
+              document.body.style.cursor = 'ew-resize';
+              document.body.style.userSelect = 'none';
+            }}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              cursor: 'ew-resize',
+              zIndex: 10,
+              backgroundColor: 'transparent',
+            }}
+          />
+          {/* 上边调整高度手柄 */}
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              const startY = e.clientY;
+              const startHeight = dialogSize.height;
+
+              const handleMouseMove = (e: MouseEvent) => {
+                const diffY = startY - e.clientY; // 向上拖拽增加高度
+                
+                const newHeight = Math.max(400, Math.min(1000, startHeight + diffY));
+                
+                setDialogSize(prev => ({ ...prev, height: newHeight }));
+              };
+
+              const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+              };
+
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', handleMouseUp);
+              document.body.style.cursor = 'ns-resize';
+              document.body.style.userSelect = 'none';
+            }}
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 0,
+              height: 4,
+              cursor: 'ns-resize',
+              zIndex: 10,
+              backgroundColor: 'transparent',
+            }}
+          />
+          {/* 左上角调整宽度和高度手柄 */}
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              const startX = e.clientX;
+              const startY = e.clientY;
+              const startWidth = dialogSize.width;
+              const startHeight = dialogSize.height;
+
+              const handleMouseMove = (e: MouseEvent) => {
+                const diffX = startX - e.clientX; // 向左拖拽增加宽度
+                const diffY = startY - e.clientY; // 向上拖拽增加高度
+                
+                const newWidth = Math.max(300, Math.min(800, startWidth + diffX));
+                const newHeight = Math.max(400, Math.min(1000, startHeight + diffY));
+                
+                setDialogSize({ width: newWidth, height: newHeight });
+              };
+
+              const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+              };
+
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', handleMouseUp);
+              document.body.style.cursor = 'nwse-resize';
+              document.body.style.userSelect = 'none';
+            }}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: 20,
+              height: 20,
+              cursor: 'nwse-resize',
+              zIndex: 11,
+              background: 'linear-gradient(to bottom right, transparent 0%, transparent 40%, #d9d9d9 40%, #d9d9d9 45%, transparent 45%, transparent 55%, #d9d9d9 55%, #d9d9d9 60%, transparent 60%)',
+              backgroundSize: '20px 20px',
+            }}
+          />
           {/* 头部 */}
           <div
             style={{
@@ -382,13 +626,16 @@ const AiAssistant: React.FC = () => {
               </div>
             ) : (
               <>
-                {renderMessages.map((msg, idx) => {
-                  const isAssistant = msg.senderId === AI_ASSISTANT_ID;
-                  const isUser = msg.senderId === currentUser.userid;
+                {displayMessages.map((msg, idx) => {
+                    const isAssistant = msg.senderId === AI_ASSISTANT_ID;
+                    // 判断是否为当前用户的消息（用于前端显示）
+                    // 注意：实际用户ID由后端从token中获取，这里只是用于前端显示判断
+                    const currentUserId = currentUser?.userid || (currentUser as any)?.id;
+                    const isUser = currentUserId && msg.senderId === currentUserId;
 
-                  return (
+                    return (
                     <div
-                      key={`${msg.id || 'local'}-${idx}`}
+                      key={msg.id || idx}
                       style={{
                         display: 'flex',
                         justifyContent: isAssistant ? 'flex-start' : 'flex-end',
@@ -398,19 +645,8 @@ const AiAssistant: React.FC = () => {
                       <div
                         style={{
                           maxWidth: '70%',
-                          display: 'flex',
-                          flexDirection: isAssistant ? 'row' : 'row-reverse',
-                          gap: 8,
-                          alignItems: 'flex-start',
                         }}
                       >
-                        {isAssistant && (
-                          <Avatar
-                            src={AI_ASSISTANT_AVATAR}
-                            size={32}
-                            style={{ flexShrink: 0, width: 32, height: 32 }}
-                          />
-                        )}
                         <div
                           style={{
                             padding: '8px 12px',
@@ -419,24 +655,17 @@ const AiAssistant: React.FC = () => {
                             color: isAssistant ? '#000' : '#fff',
                             boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
                             wordBreak: 'break-word',
-                            flex: 1,
-                            minWidth: 0,
                           }}
                         >
-                          {msg.content}
+                          {msg.content || ''}
+                          {isAssistant && msg.id in streamingMessages && (
+                            <span style={{ opacity: 0.5 }}>▊</span>
+                          )}
                         </div>
-                        {isUser && (
-                          <Avatar
-                            src={currentUser.avatar}
-                            size={32}
-                            style={{ flexShrink: 0, width: 32, height: 32 }}
-                          />
-                        )}
                       </div>
                     </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
+                    );
+                  })}
               </>
             )}
           </div>
@@ -462,9 +691,14 @@ const AiAssistant: React.FC = () => {
             <Button
               type="primary"
               icon={<SendOutlined />}
-              onClick={handleSendMessage}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[AiAssistant] 发送按钮被点击');
+                handleSendMessage();
+              }}
               loading={sending}
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || sending}
             >
               发送
             </Button>

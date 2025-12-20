@@ -19,7 +19,7 @@ alwaysApply: true
 
 ## 中间件与管道
 
-- **中间件顺序**：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。健康检查、OpenAPI、SignalR Hub 可跳过格式化。
+- **中间件顺序**：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。健康检查、OpenAPI、SSE 端点可跳过格式化。
 
 ## 禁用模式
 

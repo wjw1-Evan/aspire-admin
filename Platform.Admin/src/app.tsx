@@ -369,7 +369,7 @@ export const layout: RunTimeLayoutConfig = ({
             hasStartedRef.current = true;
             // 延迟 1 秒后启动位置上报，避免阻塞页面加载
             setTimeout(() => {
-              LocationService.reportLocation(true).catch(() => {
+              LocationService.startPeriodicReporting(true).catch(() => {
                 // 静默失败，不影响页面加载
               });
             }, 1000);

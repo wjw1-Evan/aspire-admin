@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
-    "@microsoft/signalr": "^10.0.0",
     "antd": "^6.1.1",
     "antd-style": "^3.7.1",
     "classnames": "^2.5.1",

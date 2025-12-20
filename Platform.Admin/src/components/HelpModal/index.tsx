@@ -188,7 +188,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
                 <strong>规则管理</strong> - 业务规则配置系统，支持 MCP 集成和自动化工作流
               </li>
               <li>
-                <strong>实时聊天</strong> - SignalR 实时通信，支持会话管理、消息撤回、已读状态
+                <strong>实时聊天</strong> - SSE 实时通信，支持会话管理、消息撤回、已读状态
               </li>
               <li>
                 <strong>AI 智能助手</strong> - 智能回复、匹配推荐、话题引导、附件处理
@@ -818,7 +818,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               <strong>创建会话</strong> - 与团队成员创建聊天会话
             </li>
             <li>
-              <strong>实时消息</strong> - SignalR 实时推送消息，支持自动重连
+              <strong>实时消息</strong> - SSE 实时推送消息，支持自动重连
             </li>
             <li>
               <strong>消息管理</strong> - 发送、撤回消息，查看已读状态

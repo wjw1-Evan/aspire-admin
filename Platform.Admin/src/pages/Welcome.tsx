@@ -12,7 +12,6 @@ import {
   Timeline,
   theme
 } from 'antd';
-import { useSignalRConnection } from '@/hooks/useSignalRConnection';
 // import { getApiBaseUrl } from '@/utils/request';
 import {
   UserOutlined,
@@ -44,7 +43,7 @@ import { StatCard } from '@/components';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
-// import { getSystemResources } from '@/services/system/api';
+import { getSystemResources } from '@/services/system/api';
 import type { CurrentUser } from '@/types/unified-api';
 import type { SystemResources } from '@/services/system/api';
 import dayjs from 'dayjs';
@@ -186,19 +185,6 @@ const Welcome: React.FC = () => {
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // SignalR 连接管理
-  const { isConnected, on, off, invoke } = useSignalRConnection({
-    hubUrl: '/hubs/system-resource',
-    autoConnect: !!currentUser,
-    onConnected: () => {
-      // SignalR 连接已建立
-    },
-    onError: (error) => {
-      // 错误由全局错误处理处理
-    },
-  });
-
-
   // 获取统计数据
   const fetchStatistics = useCallback(async () => {
     try {
@@ -230,8 +216,6 @@ const Welcome: React.FC = () => {
       if (todoTasksRes.success) {
         setTodoTasks(todoTasksRes.data || []);
       }
-
-      // 系统资源采用 SignalR 实时推送，无需额外轮询
     } catch (error) {
       // 重新抛出错误，确保全局错误处理能够处理
       throw error;
@@ -240,29 +224,41 @@ const Welcome: React.FC = () => {
     }
   }, []);
 
+  // 获取系统资源数据
+  const fetchSystemResources = useCallback(async () => {
+    try {
+      const res = await getSystemResources();
+      if (res.success && res.data) {
+        setSystemResources(res.data);
+      }
+    } catch (error) {
+      // 错误由全局错误处理处理，这里只记录但不阻止后续轮询
+      console.error('获取系统资源失败:', error);
+    }
+  }, []);
+
   // 初始数据加载
   useEffect(() => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 订阅系统资源更新
+  // 定时轮询系统资源更新（每 5 秒）
   useEffect(() => {
-    if (!isConnected) return;
+    if (!currentUser) return;
 
-    // 订阅系统资源更新（间隔 5 秒）
-    invoke('SubscribeResourceUpdatesAsync', 5000).catch(() => {
-      // 错误由全局错误处理处理
-    });
+    // 立即获取一次
+    fetchSystemResources();
 
-    // 监听资源更新事件
-    on('ResourceUpdated', (resources: SystemResources) => {
-      setSystemResources(resources);
-    });
+    // 设置定时器，每 5 秒轮询一次
+    const intervalId = setInterval(() => {
+      fetchSystemResources();
+    }, 5000);
 
+    // 清理定时器
     return () => {
-      off('ResourceUpdated');
+      clearInterval(intervalId);
     };
-  }, [isConnected, invoke, on, off]);
+  }, [currentUser, fetchSystemResources]);
 
   // 获取活动类型对应的颜色
   const getActivityColor = (action?: string): string => {

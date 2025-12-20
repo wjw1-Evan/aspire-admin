@@ -90,7 +90,7 @@ public class SocialService : ISocialService
         request.EnsureNotNull(nameof(request));
         ValidateCoordinates(request.Latitude, request.Longitude);
 
-        // 允许在无 HttpContext（如 SignalR Hub 或后台任务）时通过 override 传入
+        // 允许在无 HttpContext（如后台任务）时通过 override 传入
         var currentUserId = userIdOverride ?? _beaconFactory.GetCurrentUserId() ?? throw new UnauthorizedAccessException("未找到当前用户信息");
         string? companyId = companyIdOverride;
         if (string.IsNullOrEmpty(companyId))

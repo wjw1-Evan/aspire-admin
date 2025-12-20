@@ -17,17 +17,25 @@ export default {
       target: 'http://localhost:15000/apiservice',
       changeOrigin: true,
       ws: true,
+      // SSE 支持：确保代理支持 Server-Sent Events
+      onProxyReq: (proxyReq: any, req: any, res: any) => {
+        // 对于 SSE 请求，确保设置正确的请求头
+        if (req.url && req.url.includes('/api/chat/sse')) {
+          proxyReq.setHeader('Accept', 'text/event-stream');
+          proxyReq.setHeader('Cache-Control', 'no-cache');
+          proxyReq.setHeader('Connection', 'keep-alive');
+        }
+      },
+      onProxyRes: (proxyRes: any, req: any, res: any) => {
+        // 对于 SSE 响应，确保设置正确的响应头
+        if (req.url && req.url.includes('/api/chat/sse')) {
+          proxyRes.headers['Content-Type'] = 'text/event-stream';
+          proxyRes.headers['Cache-Control'] = 'no-cache';
+          proxyRes.headers['Connection'] = 'keep-alive';
+          proxyRes.headers['X-Accel-Buffering'] = 'no';
+        }
+      },
       // keep /api prefix; gateway maps /apiservice/api/* -> ApiService /api/*
-    },
-    // SignalR hubs: localhost:15001/hubs/** -> http://localhost:15000/apiservice/hubs/**
-    // 匹配所有以 /hubs 开头的路径（包括 /hubs/chat, /hubs/notification 等）
-    // 注意：UmiJS 代理配置使用路径前缀匹配，/hubs 会匹配所有 /hubs* 路径
-    '/hubs': {
-      target: 'http://localhost:15000/apiservice',
-      changeOrigin: true,
-      ws: true,
-      // 保持路径不变，网关会正确路由到后端服务
-      // 例如：/hubs/chat -> http://localhost:15000/apiservice/hubs/chat
     },
   },
   pre: {

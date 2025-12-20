@@ -54,6 +54,17 @@ public class ResponseFormattingMiddleware
             return;
         }
 
+        // 检查是否是流式请求（在调用 _next 之前检查，避免缓冲 SSE 流）
+        var isStreamingRequest = context.Request.Query.ContainsKey("stream") && 
+                                 context.Request.Query["stream"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+        
+        // 如果是流式请求，直接传递，不进行缓冲和格式化
+        if (isStreamingRequest)
+        {
+            await _next(context);
+            return;
+        }
+
         // 保存原始响应流
         var originalBodyStream = context.Response.Body;
 
@@ -65,6 +76,17 @@ public class ResponseFormattingMiddleware
             try
             {
                 await _next(context);
+
+                // 检查响应 Content-Type（控制器可能已设置为 text/event-stream）
+                // 如果是 SSE 流，直接复制流，不进行格式化
+                var contentType = context.Response.ContentType;
+                if (!string.IsNullOrEmpty(contentType) && contentType.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase))
+                {
+                    // SSE 流：直接复制到原始流，不进行格式化
+                    responseBody.Seek(0, SeekOrigin.Begin);
+                    await responseBody.CopyToAsync(originalBodyStream);
+                    return;
+                }
 
                 var isJsonResponse = context.Response.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true;
                 string? responseBodyText = null;
@@ -158,12 +180,22 @@ public class ResponseFormattingMiddleware
             return true;
         }
         
-        // 跳过 SignalR Hub 相关端点（协商与 WebSocket）
-        // 包括直接访问和通过网关访问的路径
-        if (path.StartsWith("/hubs/") || path.StartsWith("/apiservice/hubs/"))
+        // 跳过 SSE 端点（Server-Sent Events）
+        if (path.Contains("/chat/sse") || path.Contains("/api/chat/sse"))
         {
             return true;
         }
+        
+        // 跳过流式响应（检查查询参数或响应 Content-Type）
+        var query = context.Request.Query;
+        if (query.ContainsKey("stream") && query["stream"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        
+        // 如果响应 Content-Type 是 text/event-stream，跳过格式化（SSE 流）
+        // 注意：这里需要在 InvokeAsync 中检查，因为 Content-Type 可能在控制器中设置
+        // 但我们可以先检查请求路径和查询参数
         
         return false;
     }

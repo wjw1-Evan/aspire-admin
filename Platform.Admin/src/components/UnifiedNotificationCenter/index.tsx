@@ -11,7 +11,6 @@ import {
   getUnreadStatistics,
   type UnifiedNotificationItem,
 } from '@/services/unified-notification/api';
-import { notificationClient } from '@/services/signalr/notificationClient';
 import styles from './index.less';
 
 dayjs.extend(relativeTime);
@@ -72,57 +71,14 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
     fetchUnreadStats();
     fetchUnifiedNotifications();
 
-    // 订阅 SignalR 推送
-    const bind = async () => {
-      await notificationClient.start();
-      const offCreated = notificationClient.on('NotificationCreated', (notice: any) => {
-        // 追加到列表首位
-        setNotifications((prev) => [
-          {
-            id: notice.id,
-            title: notice.title,
-            description: notice.description,
-            avatar: notice.avatar,
-            extra: notice.extra,
-            status: notice.status,
-            datetime: notice.datetime,
-            type: notice.type,
-            read: notice.read,
-            clickClose: notice.clickClose,
-            taskId: notice.taskId,
-            taskPriority: notice.taskPriority,
-            taskStatus: notice.taskStatus,
-            isSystemMessage: notice.isSystemMessage,
-            messagePriority: notice.messagePriority,
-            actionType: notice.actionType,
-            relatedUserIds: notice.relatedUserIds,
-          },
-          ...prev,
-        ]);
-        setTotal((t) => t + 1);
-        if (!notice?.read) setUnreadTotal((c) => c + 1);
-      });
+    // 定时刷新通知列表和未读数（每 5 秒）
+    const intervalId = setInterval(() => {
+      fetchUnreadStats();
+      fetchUnifiedNotifications();
+    }, 5000);
 
-      const offRead = notificationClient.on('NotificationRead', (payload: any) => {
-        const id = payload?.id;
-        if (!id) return;
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-        );
-        setUnreadTotal((c) => (c > 0 ? c - 1 : 0));
-      });
-
-      return () => {
-        offCreated();
-        offRead();
-      };
-    };
-
-    const cleanerPromise = bind();
     return () => {
-      cleanerPromise.then((cleanup: any) => {
-        if (typeof cleanup === 'function') cleanup();
-      });
+      clearInterval(intervalId);
     };
   }, [visible, page, pageSize]);
 

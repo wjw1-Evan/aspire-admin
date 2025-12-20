@@ -852,19 +852,6 @@ public class UserService : IUserService
     }
 
     /// <summary>
-    /// 更新用户角色（已废弃）
-    /// </summary>
-    /// <param name="id">用户ID</param>
-    /// <param name="role">角色名称</param>
-    /// <returns>此方法已废弃，会抛出异常</returns>
-    /// <exception cref="InvalidOperationException">此方法已废弃，请使用 UpdateUserManagementAsync 更新用户的 RoleIds</exception>
-    public Task<bool> UpdateUserRoleAsync(string id, string role)
-    {
-        // 注意：此方法已废弃，使用 RoleIds 代替
-        throw new InvalidOperationException("此方法已废弃，请使用 UpdateUserManagementAsync 更新用户的 RoleIds");
-    }
-
-    /// <summary>
     /// 记录用户活动日志
     /// </summary>
     /// <param name="userId">用户ID</param>

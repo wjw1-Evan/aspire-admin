@@ -30,24 +30,6 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
     });
 
-// 配置 SignalR（与控制器使用相同的 JSON 序列化选项）
-builder.Services.AddSignalR(options =>
-{
-    // 启用详细错误消息（开发环境）
-    if (builder.Environment.IsDevelopment())
-    {
-        options.EnableDetailedErrors = true;
-    }
-}).AddJsonProtocol(options =>
-{
-    // 使用与控制器相同的 JSON 序列化配置
-    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-    options.PayloadSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-    options.PayloadSerializerOptions.WriteIndented = false;
-    // 序列化枚举为 camelCase 字符串
-    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-});
-
 // 配置 CORS - 严格的安全策略
 builder.Services.AddCors(options =>
 {
@@ -203,8 +185,10 @@ builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
 
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
-// 显式注册无接口的推送广播器
-builder.Services.AddScoped<Platform.ApiService.Services.UnifiedNotificationBroadcaster>();
+
+// 注册 SSE 相关服务（简化版：直接通过用户ID发送消息，无需订阅机制）
+builder.Services.AddSingleton<Platform.ApiService.Services.IChatSseConnectionManager, Platform.ApiService.Services.ChatSseConnectionManager>();
+builder.Services.AddScoped<Platform.ApiService.Services.IChatBroadcaster, Platform.ApiService.Services.ChatBroadcaster>();
 
 // Configure JWT authentication
 // JWT SecretKey 必须配置，不提供默认值以确保安全
@@ -236,32 +220,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RequireSignedTokens = true
         };
 
-        // 允许 SignalR 通过 query string access_token 进行认证
         options.Events = new JwtBearerEvents
         {
-            OnMessageReceived = context =>
-            {
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-
-                // 也检查 Authorization header（SignalR 可能通过 header 发送 token）
-                if (string.IsNullOrEmpty(accessToken))
-                {
-                    var authHeader = context.Request.Headers["Authorization"].ToString();
-                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        accessToken = authHeader.Substring("Bearer ".Length).Trim();
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(accessToken) &&
-                    (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/apiservice/hubs")))
-                {
-                    context.Token = accessToken;
-                }
-
-                return Task.CompletedTask;
-            },
             OnAuthenticationFailed = context =>
             {
                 // Token 格式错误（没有点）通常是客户端没有提供有效的 token
@@ -272,13 +232,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnChallenge = context =>
             {
                 var path = context.HttpContext.Request.Path;
-                
-                // SignalR 端点：不自定义响应，让 SignalR 自己处理认证失败
-                if (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/apiservice/hubs"))
-                {
-                    // 不调用 HandleResponse()，让默认的 401 响应返回
-                    return Task.CompletedTask;
-                }
 
                 // 其他端点：自定义挑战响应，提供更友好的错误信息
                 context.HandleResponse();
@@ -331,22 +284,16 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 启用 WebSocket 支持（SignalR 实时通信依赖，必须在格式化中间件之前）
-app.UseWebSockets();
-
 // 活动日志中间件（在认证之后，可以获取用户信息）
 app.UseMiddleware<Platform.ApiService.Middleware.ActivityLogMiddleware>();
 
-// 响应格式化中间件（在控制器之前，但必须在 WebSocket 之后）
+// 响应格式化中间件（在控制器之前）
 app.UseMiddleware<Platform.ApiService.Middleware.ResponseFormattingMiddleware>();
 
 
 // Configure controllers
 app.MapControllers();
-app.MapHub<Platform.ApiService.Hubs.ChatHub>("/hubs/chat").RequireAuthorization();
-app.MapHub<Platform.ApiService.Hubs.NotificationHub>("/hubs/notification").RequireAuthorization();
-app.MapHub<Platform.ApiService.Hubs.SystemResourceHub>("/hubs/system-resource").RequireAuthorization();
-app.MapHub<Platform.ApiService.Hubs.LocationHub>("/hubs/location").RequireAuthorization();
+// SignalR 已完全移除，所有实时通信已迁移到 SSE 或 API 轮询
 
 // Map OpenAPI endpoint
 app.MapOpenApi();

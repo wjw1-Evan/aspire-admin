@@ -279,7 +279,7 @@ public class AssistantReplyStreamRequest
         = default;
 
     /// <summary>
-    /// 触发消息的客户端标识（SignalR 场景下兜底）。
+    /// 触发消息的客户端标识（用于追踪消息来源）。
     /// </summary>
     public string? TriggerClientMessageId { get; set; }
         = default;

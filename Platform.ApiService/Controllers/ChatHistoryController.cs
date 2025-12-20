@@ -89,9 +89,11 @@ public class ChatHistoryController : BaseApiController
         List<string>? matchedSessionIds = null;
         if (!string.IsNullOrEmpty(request.Content))
         {
-            var messageFilterBuilder = _messageFactory.CreateFilterBuilder();
-            messageFilterBuilder = messageFilterBuilder.Regex(m => m.Content, request.Content!, "i");
-            var messageFilter = messageFilterBuilder.Build();
+            var content = request.Content; // 明确提取非空值
+            // 调用 Regex 方法并构建过滤器（使用链式调用避免中间变量）
+            var messageFilter = _messageFactory.CreateFilterBuilder()
+                .Regex(m => m.Content, content, "i")
+                .Build();
 
             // ✅ 数据工厂会自动添加企业过滤（因为 ChatMessage 实现了 IMultiTenant）
             var messages = await _messageFactory.FindAsync(messageFilter);

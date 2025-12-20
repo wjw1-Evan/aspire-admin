@@ -24,8 +24,8 @@ public class ActivityLogMiddleware
         "/metrics",
         "/_framework/",
         "/favicon.ico",
-        "/hubs/",  // SignalR Hub 端点
-        "/apiservice/hubs/"  // 通过网关访问的 SignalR Hub 端点
+        "/api/chat/sse",  // SSE 端点
+        "/chat/sse"  // SSE 端点（直接访问）
     };
 
     /// <summary>

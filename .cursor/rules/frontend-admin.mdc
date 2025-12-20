@@ -13,6 +13,7 @@ appliesTo:
 - **统一请求方式**：所有 HTTP 调用必须通过 `src/services` 目录下的服务文件 + `@umijs/max` 的 `request`，禁止组件内直接 `fetch` 或创建新的 axios 实例。
 - **响应类型**：服务返回类型统一为 `request<ApiResponse<T>>`，与后端 `ApiResponse<T>` 对齐（`success`、`data`、`errorCode`、`errorMessage`、`traceId`）。
 - **错误处理**：全局错误拦截器已统一处理 `success=false` 的情况（显示 message、处理 401/403 等），业务代码主要关注成功场景的数据处理。
+- **SSE 实时连接**：使用 `useSseConnection` Hook（位于 `src/hooks/useSseConnection.ts`）建立 SSE 连接，支持自动重连、事件监听（`ReceiveMessage`、`SessionUpdated`、`MessageDeleted`、`MessageChunk` 等）。连接通过 JWT token 认证，连接地址为 `/api/chat/sse?token={token}`。组件卸载时自动清理连接资源。
 
 ## 页面骨架与列表规范（强制）
 - **标准页面布局**：参考 `src/pages/user-management/index.tsx` 作为标准页面布局规范。

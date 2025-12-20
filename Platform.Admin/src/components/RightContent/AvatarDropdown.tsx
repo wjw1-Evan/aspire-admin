@@ -4,12 +4,16 @@ import {
   LockOutlined,
   SettingOutlined,
   QuestionCircleOutlined,
+  GlobalOutlined,
+  BankOutlined,
+  CheckOutlined,
+  PlusOutlined,
 } from '@ant-design/icons';
-import { history, useModel, useIntl } from '@umijs/max';
+import { history, useModel, useIntl, setLocale, getLocale, request } from '@umijs/max';
 import type { MenuProps } from 'antd';
-import { Spin, Avatar } from 'antd';
+import { Spin, Avatar, App as AntApp } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
@@ -17,6 +21,20 @@ import { getUserAvatar } from '@/utils/avatar';
 import HeaderDropdown from '../HeaderDropdown';
 import HelpModal from '../HelpModal';
 import { ThemeSettingsDrawer } from './ThemeSettingsDrawer';
+import { JoinCompanyModal } from '../JoinCompanyModal';
+import { CreateCompanyModal } from '../CreateCompanyModal';
+
+// 支持的语言列表
+const locales = [
+  { label: '简体中文', value: 'zh-CN', icon: '🇨🇳' },
+  { label: '繁體中文', value: 'zh-TW', icon: '🇹🇼' },
+  { label: 'English', value: 'en-US', icon: '🇺🇸' },
+  { label: '日本語', value: 'ja-JP', icon: '🇯🇵' },
+  { label: 'Bahasa Indonesia', value: 'id-ID', icon: '🇮🇩' },
+  { label: 'Português', value: 'pt-BR', icon: '🇧🇷' },
+  { label: 'বাংলা', value: 'bn-BD', icon: '🇧🇩' },
+  { label: 'فارسی', value: 'fa-IR', icon: '🇮🇷' },
+];
 
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -84,8 +102,103 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
 
   const { initialState, setInitialState } = useModel('@@initialState');
   const intl = useIntl();
+  const { message } = AntApp.useApp();
+  const currentLocale = getLocale();
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const [companies, setCompanies] = useState<API.UserCompanyItem[]>([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
+  const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
+
+  // 加载用户的企业列表
+  const loadCompanies = useCallback(async () => {
+    setCompaniesLoading(true);
+    try {
+      // 添加时间戳参数防止缓存
+      const response = await request<API.ApiResponse<API.UserCompanyItem[]>>(
+        '/api/company/my-companies',
+        {
+          method: 'GET',
+          params: {
+            _t: Date.now(),
+          },
+        },
+      );
+
+      if (response.success && response.data) {
+        // 确保更新状态
+        setCompanies(response.data);
+        console.log('企业列表已更新:', response.data);
+      } else {
+        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.loadFailed' }));
+      }
+    } catch (error: any) {
+      console.error('加载企业列表失败:', error);
+      message.error(error.message || intl.formatMessage({ id: 'pages.company.loadFailed' }));
+    } finally {
+      setCompaniesLoading(false);
+    }
+  }, [intl, message]);
+
+  // 在组件挂载时加载企业列表
+  useEffect(() => {
+    if (initialState?.currentUser) {
+      loadCompanies();
+    }
+  }, [initialState?.currentUser, loadCompanies]);
+
+  // 切换企业
+  const handleSwitchCompany = async (targetCompanyId: string) => {
+    const currentCompany = companies.find((c) => c.isCurrent);
+    if (currentCompany?.companyId === targetCompanyId) {
+      return;
+    }
+
+    setSwitching(true);
+    try {
+      const response = await request<API.ApiResponse<API.SwitchCompanyResult>>(
+        '/api/company/switch',
+        {
+          method: 'POST',
+          data: {
+            targetCompanyId,
+          },
+        },
+      );
+
+      if (response.success && response.data) {
+        message.success(
+          intl.formatMessage({ id: 'pages.company.switchSuccess' }, { name: response.data.companyName })
+        );
+
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+
+        if (initialState?.fetchUserInfo) {
+          const userInfo = await initialState.fetchUserInfo();
+          setInitialState((s: any) => ({
+            ...s,
+            currentUser: userInfo,
+          }));
+        }
+
+        await loadCompanies();
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } else {
+        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.switchFailed' }));
+      }
+    } catch (error: any) {
+      message.error(error.message || intl.formatMessage({ id: 'pages.company.switchFailed' }));
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   const onMenuClick: MenuProps['onClick'] = (event) => {
     const { key } = event;
@@ -110,6 +223,24 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     }
     if (key === 'help') {
       setHelpModalOpen(true);
+      return;
+    }
+    if (key === 'create-company') {
+      setCreateCompanyModalOpen(true);
+      return;
+    }
+    if (key === 'join-company') {
+      setJoinModalOpen(true);
+      return;
+    }
+    // 处理语言切换
+    if (locales.some((locale) => locale.value === key)) {
+      setLocale(key as string, false);
+      return;
+    }
+    // 处理企业切换
+    if (companies.some((company) => company.companyId === key)) {
+      handleSwitchCompany(key);
       return;
     }
     history.push(`/account/${key}`);
@@ -137,6 +268,55 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     return loading;
   }
 
+  // 构建企业切换子菜单项
+  const companyMenuItems: MenuProps['items'] = [
+    ...companies.map((company) => ({
+      key: company.companyId,
+      label: (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', minWidth: 250 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+              {company.companyName}
+              {company.isPersonal && (
+                <span style={{ marginLeft: 8, padding: '0 6px', fontSize: 12, background: '#e6f7ff', color: '#1890ff', borderRadius: 2 }}>
+                  {intl.formatMessage({ id: 'pages.company.personal' })}
+                </span>
+              )}
+              {company.isAdmin && (
+                <span style={{ marginLeft: 8, padding: '0 6px', fontSize: 12, background: '#fff7e6', color: '#fa8c16', borderRadius: 2 }}>
+                  {intl.formatMessage({ id: 'pages.company.admin' })}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: '#666' }}>
+              {company.roleNames.join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) || intl.formatMessage({ id: 'pages.company.noRole' })}
+            </div>
+          </div>
+          {company.isCurrent && <CheckOutlined style={{ marginLeft: 12, color: '#52c41a', fontSize: 16 }} />}
+        </div>
+      ),
+    })),
+    {
+      type: 'divider' as const,
+    },
+    {
+      key: 'create-company',
+      label: (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1890ff', fontWeight: 500 }}>
+          <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.createNew' })}
+        </div>
+      ),
+    },
+    {
+      key: 'join-company',
+      label: (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1890ff', fontWeight: 500 }}>
+          <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.joinNew' })}
+        </div>
+      ),
+    },
+  ];
+
   const menuItems = [
     ...(menu
       ? [
@@ -156,9 +336,30 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
         ]
       : []),
     {
+      key: 'company',
+      icon: <BankOutlined />,
+      label: intl.formatMessage({ id: 'menu.account.company', defaultMessage: '切换企业' }),
+      children: companiesLoading ? [{ key: 'loading', label: <Spin size="small" />, disabled: true }] : companyMenuItems,
+    },
+    {
       key: 'settings',
       icon: <SettingOutlined />,
       label: intl.formatMessage({ id: 'menu.account.settings' }),
+    },
+    {
+      key: 'language',
+      icon: <GlobalOutlined />,
+      label: intl.formatMessage({ id: 'menu.account.language', defaultMessage: '语言 / Language' }),
+      children: locales.map((locale) => ({
+        key: locale.value,
+        label: (
+          <span>
+            <span style={{ marginRight: 8 }}>{locale.icon}</span>
+            {locale.label}
+          </span>
+        ),
+        icon: currentLocale === locale.value ? <span>✓</span> : null,
+      })),
     },
     {
       key: 'help',
@@ -193,6 +394,30 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       <HelpModal
         open={helpModalOpen}
         onClose={() => setHelpModalOpen(false)}
+      />
+      <JoinCompanyModal
+        open={joinModalOpen}
+        onClose={() => setJoinModalOpen(false)}
+        onSuccess={async () => {
+          // 加入企业成功后刷新企业列表
+          await loadCompanies();
+        }}
+      />
+      <CreateCompanyModal
+        open={createCompanyModalOpen}
+        onClose={() => setCreateCompanyModalOpen(false)}
+        onSuccess={async () => {
+          // 创建企业成功后，刷新用户信息和企业列表
+          // 因为新创建的企业会被设置为当前企业
+          if (initialState?.fetchUserInfo) {
+            const userInfo = await initialState.fetchUserInfo();
+            setInitialState((s: any) => ({
+              ...s,
+              currentUser: userInfo,
+            }));
+          }
+          await loadCompanies();
+        }}
       />
     </>
   );

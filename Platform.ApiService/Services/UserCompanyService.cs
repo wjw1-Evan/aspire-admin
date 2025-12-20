@@ -126,14 +126,13 @@ public class UserCompanyService : IUserCompanyService
     /// </summary>
     public async Task<List<UserCompanyItem>> GetUserCompaniesAsync(string userId)
     {
-        // ✅ 使用 FindWithoutTenantFilterAsync：需要查询用户在所有企业的关联记录，不受当前企业限制
+        // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以查询用户在所有企业的关联记录
         var filter = _userCompanyFactory.CreateFilterBuilder()
             .Equal(uc => uc.UserId, userId)
             .Equal(uc => uc.Status, "active")
             .Build();
         
-        // ✅ 跨企业查询：用户可能在多个企业中有关联，不能只查询当前企业
-        var memberships = await _userCompanyFactory.FindWithoutTenantFilterAsync(filter);
+        var memberships = await _userCompanyFactory.FindAsync(filter);
         var result = new List<UserCompanyItem>();
         
         if (!memberships.Any())
@@ -212,8 +211,35 @@ public class UserCompanyService : IUserCompanyService
             }
         }
         
-        // 构建结果
+        // 构建结果 - 按 CompanyId 去重，每个企业只返回一条记录
+        // 如果同一个用户在同一个企业中有多条记录（可能是数据重复），合并它们
+        var membershipDict = new Dictionary<string, UserCompany>();
         foreach (var membership in memberships)
+        {
+            if (!membershipDict.ContainsKey(membership.CompanyId))
+            {
+                membershipDict[membership.CompanyId] = membership;
+            }
+            else
+            {
+                // 如果已存在，合并角色和权限，保留最早的 joinedAt
+                var existing = membershipDict[membership.CompanyId];
+                
+                // 合并角色ID（去重）
+                var mergedRoleIds = existing.RoleIds.Union(membership.RoleIds).Distinct().ToList();
+                existing.RoleIds = mergedRoleIds;
+                
+                // 如果任一记录是管理员，则为管理员
+                if (membership.IsAdmin)
+                    existing.IsAdmin = true;
+                
+                // 保留最早的加入时间
+                if (membership.JoinedAt < existing.JoinedAt)
+                    existing.JoinedAt = membership.JoinedAt;
+            }
+        }
+        
+        foreach (var membership in membershipDict.Values)
         {
             var company = companyDict.GetValueOrDefault(membership.CompanyId);
             if (company == null) continue;
@@ -248,13 +274,13 @@ public class UserCompanyService : IUserCompanyService
     /// </summary>
     public async Task<UserCompany?> GetUserCompanyAsync(string userId, string companyId)
     {
-        // ✅ 使用 FindWithoutTenantFilterAsync：已在过滤条件中明确指定 CompanyId，无需自动过滤
+        // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以直接查询
         var filter = _userCompanyFactory.CreateFilterBuilder()
             .Equal(uc => uc.UserId, userId)
             .Equal(uc => uc.CompanyId, companyId)
             .Build();
         
-        var userCompanies = await _userCompanyFactory.FindWithoutTenantFilterAsync(filter);
+        var userCompanies = await _userCompanyFactory.FindAsync(filter);
         return userCompanies.FirstOrDefault();
     }
 

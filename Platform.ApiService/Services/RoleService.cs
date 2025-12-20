@@ -90,16 +90,16 @@ public class RoleService : IRoleService
         
         foreach (var role in roles)
         {
-            // ✅ 数据工厂会自动添加企业过滤（因为 UserCompany 实现了 IMultiTenant）
-            // 统计使用此角色的用户数量（只统计当前企业的用户）
+            // 统计使用此角色的用户数量（只统计该角色所属企业的用户）
+            // 注意：需要在业务逻辑中手动过滤 CompanyId，因为 UserCompany 不实现 IMultiTenant
             var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
                 .Equal(uc => uc.Status, "active")
+                .Equal(uc => uc.CompanyId, role.CompanyId)  // 手动过滤企业ID（从角色对象获取）
                 .Build();
             
             // 使用原生 MongoDB 查询处理数组包含
             var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, role.Id!);
             var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
-            // ✅ 数据工厂会自动添加企业过滤
             var userCount = await _userCompanyFactory.CountAsync(combinedFilter);
             
             rolesWithStats.Add(new RoleWithStats
@@ -242,9 +242,11 @@ public class RoleService : IRoleService
             throw new InvalidOperationException("不能删除系统管理员角色");
         }
         
-        // v3.1: 从 UserCompany 表查找使用此角色的记录（工厂自动过滤当前企业）
+        // v3.1: 从 UserCompany 表查找使用此角色的记录
+        // 注意：需要在业务逻辑中手动过滤 CompanyId，因为 UserCompany 不实现 IMultiTenant
         var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
             .Equal(uc => uc.Status, "active")
+            .Equal(uc => uc.CompanyId, role.CompanyId)  // 手动过滤企业ID（从角色对象获取）
             .Build();
         
         // 使用原生 MongoDB 查询处理数组包含
@@ -262,11 +264,13 @@ public class RoleService : IRoleService
                 // 检查是否是最后一个管理员角色，如果用户是管理员且没有其他角色
                 if (userCompany.IsAdmin && !newRoleIds.Any())
                 {
-                // 检查该企业是否还有其他管理员（工厂自动过滤当前企业）
+                // 检查该企业是否还有其他管理员
+                // 注意：需要在业务逻辑中手动过滤 CompanyId，因为 UserCompany 不实现 IMultiTenant
                 var otherAdminFilter = _userCompanyFactory.CreateFilterBuilder()
                     .NotEqual(uc => uc.Id, userCompany.Id)
                     .Equal(uc => uc.IsAdmin, true)
                     .Equal(uc => uc.Status, "active")
+                    .Equal(uc => uc.CompanyId, role.CompanyId)  // 手动过滤企业ID（从角色对象获取）
                     .Build();
                 var hasOtherAdmin = await _userCompanyFactory.CountAsync(otherAdminFilter) > 0;
                     

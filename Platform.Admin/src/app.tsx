@@ -228,8 +228,6 @@ export const layout: RunTimeLayoutConfig = ({
   return {
     actionsRender: () => [
       <NoticeIcon key="NoticeIcon" />,
-      <CompanySwitcher key="CompanySwitcher" />,
-      <SelectLang key="SelectLang" />,
     ],
     avatarProps: {
       src: getUserAvatar(initialState?.currentUser?.avatar),

@@ -157,10 +157,15 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         SetAuditProperty(entity, "CreatedByUsername", username);
 
         // 写入企业隔离字段
+        // 注意：如果实体已经设置了 CompanyId（业务字段，如 UserCompany.CompanyId），优先使用实体上的值
+        // 这样可以避免业务字段被多租户隔离机制覆盖（如创建新企业时的 UserCompany 记录）
         if (entity is IMultiTenant multiTenant)
         {
-            var companyId = await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
-            companyId ??= multiTenant.CompanyId;
+            // 如果实体已经明确设置了 CompanyId（非空），优先使用实体上的值
+            // 否则从 TenantContext 获取当前企业的 CompanyId（用于多租户隔离）
+            var companyId = !string.IsNullOrEmpty(multiTenant.CompanyId) 
+                ? multiTenant.CompanyId 
+                : await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
             if (string.IsNullOrEmpty(companyId))
                 throw new UnauthorizedAccessException("未找到当前企业信息");
             multiTenant.CompanyId = companyId;
@@ -264,8 +269,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 
             if (entity is IMultiTenant multiTenant)
             {
-                var companyId = await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
-                companyId ??= multiTenant.CompanyId;
+                // 如果实体已经明确设置了 CompanyId（非空），优先使用实体上的值
+                // 否则从 TenantContext 获取当前企业的 CompanyId（用于多租户隔离）
+                var companyId = !string.IsNullOrEmpty(multiTenant.CompanyId) 
+                    ? multiTenant.CompanyId 
+                    : await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
                 if (string.IsNullOrEmpty(companyId))
                     throw new UnauthorizedAccessException("未找到当前企业信息");
                 multiTenant.CompanyId = companyId;

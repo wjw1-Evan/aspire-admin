@@ -544,7 +544,6 @@ public class CompanyService : ICompanyService
         foreach (var company in companies)
         {
             // 检查用户是否已是成员
-            // ✅ 使用 FindWithoutTenantFilterAsync：需要跨企业查询用户的企业关联关系
             UserCompany? membership = null;
             if (!string.IsNullOrEmpty(userId))
             {
@@ -552,8 +551,8 @@ public class CompanyService : ICompanyService
                     .Equal(uc => uc.UserId, userId)
                     .Equal(uc => uc.CompanyId, company.Id)
                     .Build();
-                // ✅ 跨企业查询：用户可能在其他企业有成员关系，不能只查询当前企业
-                var memberships = await _userCompanyFactory.FindWithoutTenantFilterAsync(membershipFilter);
+                // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以直接查询
+                var memberships = await _userCompanyFactory.FindAsync(membershipFilter);
                 membership = memberships.FirstOrDefault();
             }
             
@@ -573,12 +572,12 @@ public class CompanyService : ICompanyService
             }
             
             // 统计成员数
-            // ✅ 使用 FindWithoutTenantFilterAsync：统计指定企业的成员数，不受当前企业限制
+            // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以直接查询
             var memberCountFilter = _userCompanyFactory.CreateFilterBuilder()
                 .Equal(uc => uc.CompanyId, company.Id)
                 .Equal(uc => uc.Status, "active")
                 .Build();
-            var memberCountList = await _userCompanyFactory.FindWithoutTenantFilterAsync(memberCountFilter);
+            var memberCountList = await _userCompanyFactory.FindAsync(memberCountFilter);
             var memberCount = memberCountList.Count;
             
             results.Add(new CompanySearchResult

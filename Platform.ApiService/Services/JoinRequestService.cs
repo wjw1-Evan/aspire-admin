@@ -397,7 +397,8 @@ public class JoinRequestService : IJoinRequestService
             .Equal(uc => uc.Status, "active")
             .Build();
         
-        var adminMemberships = await _userCompanyFactory.FindWithoutTenantFilterAsync(adminFilter);
+        // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以直接查询
+        var adminMemberships = await _userCompanyFactory.FindAsync(adminFilter);
         return adminMemberships.Select(m => m.UserId).Distinct().ToList();
     }
 

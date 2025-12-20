@@ -10,9 +10,11 @@ namespace Platform.ApiService.Models;
 /// v3.1: 支持用户隶属多个企业
 /// 修复：使用基础实体类，简化软删除实现
 /// v6.1: 使用自定义集合名称修复命名规范问题
+/// 注意：不实现 IMultiTenant，因为 CompanyId 是业务字段（表示用户所属的企业），不是多租户隔离字段
+/// 用户需要能够访问自己所在的所有企业，不应该被当前企业的多租户机制限制
 /// </summary>
 [BsonCollectionName("user_companies")]
-public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped, Platform.ServiceDefaults.Models.IMultiTenant
+public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
 {
     /// <summary>
     /// 用户ID

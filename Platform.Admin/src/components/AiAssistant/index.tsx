@@ -10,7 +10,6 @@ import {
   type ChatSession,
 } from '@/services/chat/api';
 import { AI_ASSISTANT_ID, AI_ASSISTANT_NAME, AI_ASSISTANT_AVATAR } from '@/constants/ai';
-import { useSseConnection } from '@/hooks/useSseConnection';
 
 const { TextArea } = Input;
 
@@ -40,11 +39,6 @@ const AiAssistant: React.FC = () => {
   // 注意：使用状态而不是 ref，确保更新时触发重新渲染
   // 使用普通对象而不是 Map，确保 React 能正确检测变化
   const [streamingMessages, setStreamingMessages] = useState<Record<string, string>>({});
-
-  // SSE 连接管理
-  const { isConnected, on, connectionId, connect: connectSse } = useSseConnection({
-    autoConnect: false,
-  });
 
   const isValidObjectId = useCallback((id?: string) => !!id && /^[a-fA-F0-9]{24}$/.test(id), []);
 
@@ -321,18 +315,6 @@ const AiAssistant: React.FC = () => {
   }, []);
 
   /**
-   * 当 currentUser 可用时，建立 SSE 连接（用于会话更新、消息删除等事件）
-   * 注意：AI 回复现在通过流式接口直接接收，SSE 连接主要用于其他实时事件
-   */
-  useEffect(() => {
-    if (currentUser && !isConnected) {
-      connectSse().catch(() => {
-        // 错误已通过 onError 回调处理
-      });
-    }
-  }, [currentUser, isConnected, connectSse]);
-
-  /**
    * 初始化会话
    */
   useEffect(() => {
@@ -360,51 +342,6 @@ const AiAssistant: React.FC = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  /**
-   * 监听 SSE 事件（用于会话更新、消息删除等，不再用于接收 AI 回复）
-   * 注意：AI 回复现在通过流式接口直接接收，不再依赖 SSE 事件
-   */
-  useEffect(() => {
-    if (!isConnected || !session) {
-      return;
-    }
-
-    // 监听消息删除事件
-    const handleMessageDeleted = (payload: any) => {
-      const sessionId = payload?.sessionId;
-      const messageId = payload?.messageId;
-      
-      if (sessionId && sessionId !== session.id) {
-        return;
-      }
-      
-      if (messageId) {
-        setStreamingMessages((prev) => {
-          const { [messageId]: _, ...rest } = prev;
-          return rest;
-        });
-        setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
-      }
-    };
-
-    // 监听会话更新事件
-    const handleSessionUpdated = (payload: any) => {
-      const updatedSession: ChatSession = payload?.session || payload;
-      if (updatedSession?.id === session.id) {
-        setSession(updatedSession);
-      }
-    };
-
-    // 注册事件监听器
-    const cleanupMessageDeleted = on('MessageDeleted', handleMessageDeleted);
-    const cleanupSessionUpdated = on('SessionUpdated', handleSessionUpdated);
-
-    // 清理函数
-    return () => {
-      cleanupMessageDeleted();
-      cleanupSessionUpdated();
-    };
-  }, [isConnected, session?.id, on]);
 
   // 计算显示的消息列表（合并流式内容）
   const displayMessages = useMemo(() => {

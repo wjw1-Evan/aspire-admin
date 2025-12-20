@@ -473,7 +473,6 @@ public class ChatService : IChatService
         }
 
         ChatMessage savedMessage;
-        bool isNewMessage = false;
         
         // 尝试查找已存在的消息（通过 ClientMessageId）
         if (!string.IsNullOrWhiteSpace(request.ClientMessageId))
@@ -497,7 +496,6 @@ public class ChatService : IChatService
             else
             {
                 // 创建新消息
-                isNewMessage = true;
                 if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))
                 {
                     throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
@@ -529,7 +527,6 @@ public class ChatService : IChatService
         else
         {
             // 没有 ClientMessageId，创建新消息
-            isNewMessage = true;
             if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))
             {
                 throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
@@ -568,15 +565,20 @@ public class ChatService : IChatService
             !ShouldSkipAutomaticAssistantReply(savedMessage))
         {
             // 检查是否已存在针对此触发消息的助手回复
-            // 通过查找在触发消息之后创建的、发送者为助手的消息
+            // 通过在助手消息的 metadata 中查找 triggerMessageId 来精确匹配
             var existingAssistantFilter = _messageFactory.CreateFilterBuilder()
                 .Equal(m => m.SessionId, session.Id)
                 .Equal(m => m.SenderId, AiAssistantConstants.AssistantUserId)
-                .GreaterThan(m => m.CreatedAt, savedMessage.CreatedAt)
                 .Build();
             
-            var existingAssistantMessages = await _messageFactory.FindAsync(existingAssistantFilter, null, 1);
-            var existingAssistantMessage = existingAssistantMessages.FirstOrDefault();
+            // 查找所有助手消息，然后检查 metadata 中的 triggerMessageId
+            var existingAssistantMessages = await _messageFactory.FindAsync(existingAssistantFilter, null, 100);
+            var existingAssistantMessage = existingAssistantMessages
+                .Where(m => m.Metadata != null && 
+                           m.Metadata.TryGetValue("triggerMessageId", out var triggerId) && 
+                           triggerId?.ToString() == savedMessage.Id)
+                .OrderBy(m => m.CreatedAt) // 按创建时间升序，取最早的（最接近触发消息的）
+                .FirstOrDefault();
             
             if (existingAssistantMessage != null)
             {
@@ -1194,6 +1196,7 @@ public class ChatService : IChatService
         string initialContent,
         string recipientUserId,
         string? clientMessageId,
+        string? triggerMessageId,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -1220,6 +1223,12 @@ public class ChatService : IChatService
         if (!string.IsNullOrWhiteSpace(clientMessageId))
         {
             assistantMessage.Metadata["clientMessageId"] = clientMessageId!;
+        }
+
+        // 存储触发消息 ID，用于去重
+        if (!string.IsNullOrWhiteSpace(triggerMessageId))
+        {
+            assistantMessage.Metadata["triggerMessageId"] = triggerMessageId;
         }
 
         assistantMessage = await _messageFactory.CreateAsync(assistantMessage);
@@ -1457,12 +1466,13 @@ public class ChatService : IChatService
 
         try
         {
-            // 创建初始消息（空内容）
+            // 创建初始消息（空内容），存储触发消息 ID 用于去重
             assistantMessage = await CreateAssistantMessageStreamingAsync(
                 session,
                 string.Empty,
                 triggerMessage.SenderId,
                 clientMessageId: null,
+                triggerMessageId: triggerMessage.Id,
                 cancellationToken);
 
             // 流式生成 AI 回复：每个增量立即发送到前端

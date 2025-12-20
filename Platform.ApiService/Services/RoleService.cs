@@ -73,11 +73,13 @@ public class RoleService : IRoleService
             .Build();
 
         // ✅ 优化：使用字段投影，只返回构建 RoleWithStats 需要的字段
+        // 注意：必须包含 CompanyId，因为后续统计用户数量时需要用它来过滤 UserCompany
         var roleProjection = _roleFactory.CreateProjectionBuilder()
             .Include(r => r.Id)
             .Include(r => r.Name)
             .Include(r => r.Description)
             .Include(r => r.MenuIds)
+            .Include(r => r.CompanyId)
             .Include(r => r.IsActive)
             .Include(r => r.CreatedAt)
             .Include(r => r.UpdatedAt)
@@ -90,7 +92,7 @@ public class RoleService : IRoleService
         
         foreach (var role in roles)
         {
-            // 统计使用此角色的用户数量（只统计该角色所属企业的用户）
+            // 统计使用此角色的用户数量（只统计该角色所属企业的活跃用户）
             // 注意：需要在业务逻辑中手动过滤 CompanyId，因为 UserCompany 不实现 IMultiTenant
             var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
                 .Equal(uc => uc.Status, "active")
@@ -100,7 +102,24 @@ public class RoleService : IRoleService
             // 使用原生 MongoDB 查询处理数组包含
             var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, role.Id!);
             var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
-            var userCount = await _userCompanyFactory.CountAsync(combinedFilter);
+            
+            // 先查询符合条件的 UserCompany 记录，获取用户ID列表
+            var userIdProjection = _userCompanyFactory.CreateProjectionBuilder()
+                .Include(uc => uc.UserId)
+                .Build();
+            var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter, projection: userIdProjection);
+            var userIds = userCompanies.Select(uc => uc.UserId).Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            
+            // 再查询这些用户中活跃的用户数量（确保只统计活跃用户）
+            var userCount = 0;
+            if (userIds.Any())
+            {
+                var activeUserFilter = _userFactory.CreateFilterBuilder()
+                    .In(u => u.Id, userIds)
+                    .Equal(u => u.IsActive, true)
+                    .Build();
+                userCount = (int)await _userFactory.CountAsync(activeUserFilter);
+            }
             
             rolesWithStats.Add(new RoleWithStats
             {

@@ -12,7 +12,7 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card, Grid, type TableColumnsType } from 'antd';
+import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer } from 'antd';
 
 const { useBreakpoint } = Grid;
 import { type ChangeEvent, type FC, useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -43,6 +43,8 @@ const RoleManagement: FC = () => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRole, setCurrentRole] = useState<Role | undefined>();
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [viewingRole, setViewingRole] = useState<Role | null>(null);
   const [statistics, setStatistics] = useState<{
     totalRoles: number;
     activeRoles: number;
@@ -187,6 +189,18 @@ const RoleManagement: FC = () => {
     if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
+  }, []);
+
+  // 打开详情
+  const handleViewDetail = useCallback((record: Role) => {
+    setViewingRole(record);
+    setDetailVisible(true);
+  }, []);
+
+  // 关闭详情
+  const handleCloseDetail = useCallback(() => {
+    setDetailVisible(false);
+    setViewingRole(null);
   }, []);
 
   /**
@@ -350,7 +364,12 @@ const RoleManagement: FC = () => {
       key: 'name',
       render: (text: string, record: Role) => (
         <Space>
-          {text}
+          <a
+            onClick={() => handleViewDetail(record)}
+            style={{ cursor: 'pointer' }}
+          >
+            {text}
+          </a>
           {(record.userCount ?? 0) > 0 && (
             <Badge
               count={record.userCount ?? 0}
@@ -440,7 +459,7 @@ const RoleManagement: FC = () => {
         );
       },
     },
-  ], [intl, handleEditRole, handleDelete]);
+  ], [intl, handleEditRole, handleDelete, handleViewDetail]);
 
   return (
     <PageContainer
@@ -536,6 +555,76 @@ const RoleManagement: FC = () => {
           onSuccess={handleFormSuccess}
         />
       )}
+
+      {/* 角色详情抽屉 */}
+      <Drawer
+        title={
+          viewingRole
+            ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${viewingRole.name}`
+            : intl.formatMessage({ id: 'pages.roleManagement.title' })
+        }
+        open={detailVisible}
+        onClose={handleCloseDetail}
+        size={isMobile ? 'large' : 600}
+      >
+        {viewingRole && (
+          <div>
+            {/* 基本信息 */}
+            <Card
+              title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })}
+              style={{ marginBottom: 16 }}
+            >
+              <Descriptions column={1} size="small">
+                <Descriptions.Item
+                  label={intl.formatMessage({ id: 'pages.table.roleName' })}
+                >
+                  {viewingRole.name}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({ id: 'pages.table.description' })}
+                >
+                  {viewingRole.description || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({ id: 'pages.table.status' })}
+                >
+                  <Tag color={viewingRole.isActive ? 'success' : 'default'}>
+                    {viewingRole.isActive
+                      ? intl.formatMessage({ id: 'pages.table.activated' })
+                      : intl.formatMessage({ id: 'pages.table.deactivated' })}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({ id: 'pages.table.stats' })}
+                >
+                  <Space>
+                    <span>
+                      {intl.formatMessage({ id: 'pages.table.user' })}:{' '}
+                      {viewingRole.userCount || 0}
+                    </span>
+                    <span style={{ marginLeft: 16 }}>
+                      {intl.formatMessage({ id: 'pages.table.menu' })}:{' '}
+                      {viewingRole.menuCount || 0}
+                    </span>
+                  </Space>
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({ id: 'pages.table.createdAt' })}
+                >
+                  {formatDateTime(viewingRole.createdAt)}
+                </Descriptions.Item>
+                {viewingRole.updatedAt && (
+                  <Descriptions.Item
+                    label={intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}
+                  >
+                    {formatDateTime(viewingRole.updatedAt)}
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+            </Card>
+          </div>
+        )}
+      </Drawer>
     </PageContainer>
   );
 };

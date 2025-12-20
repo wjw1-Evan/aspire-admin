@@ -513,6 +513,13 @@ const UserManagement: React.FC = () => {
       ellipsis: true,
     },
     {
+      title: '手机号',
+      dataIndex: 'phoneNumber',
+      key: 'phoneNumber',
+      ellipsis: true,
+      render: (text: string) => text || '-',
+    },
+    {
       title: intl.formatMessage({ id: 'pages.table.role' }),
       dataIndex: 'roleIds',
       key: 'roleIds',

@@ -13,6 +13,7 @@ import {
 import {
   UserOutlined,
   MailOutlined,
+  MobileOutlined,
   CalendarOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
@@ -156,6 +157,17 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             }
           >
             {user.email || '-'}
+          </Descriptions.Item>
+
+          <Descriptions.Item
+            label={
+              <Space>
+                <MobileOutlined />
+                手机号
+              </Space>
+            }
+          >
+            {user.phoneNumber || '-'}
           </Descriptions.Item>
 
           <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })}>

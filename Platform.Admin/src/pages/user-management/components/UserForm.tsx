@@ -50,6 +50,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
       form.setFieldsValue({
         username: user.username,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         roleIds: user.roleIds || [],
         isActive: user.isActive,
       });
@@ -66,6 +67,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         const updateData: UpdateUserRequest = {
           username: values.username,
           email: values.email,
+          phoneNumber: values.phoneNumber || undefined,
           roleIds: values.roleIds || [],
           isActive: values.isActive,
         };
@@ -87,6 +89,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         const createData: CreateUserRequest = {
           username: values.username,
           email: values.email,
+          phoneNumber: values.phoneNumber || undefined,
           password: values.password,
           roleIds: values.roleIds || [],
           isActive: values.isActive,
@@ -101,7 +104,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         );
 
         if (!response.success) {
-          throw new Error(intl.formatMessage({ id: 'pages.message.createFailed' }));
+          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.createFailed' }));
         }
         // 成功提示由 onSuccess 回调处理
       }
@@ -194,6 +197,19 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         ]}
       >
         <Input placeholder="请输入邮箱地址" />
+      </Form.Item>
+
+      <Form.Item
+        name="phoneNumber"
+        label="手机号"
+        rules={[
+          {
+            pattern: /^1[3-9]\d{9}$/,
+            message: '请输入有效的中国手机号（11位数字，以1开头）',
+          },
+        ]}
+      >
+        <Input placeholder="请输入手机号" maxLength={11} />
       </Form.Item>
 
       {!isEdit && (

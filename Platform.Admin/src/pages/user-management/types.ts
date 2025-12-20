@@ -58,6 +58,7 @@ export interface UserStatisticsResponse {
 export interface CreateUserRequest {
   username: string;
   email?: string;
+  phoneNumber?: string;
   password: string;
   roleIds?: string[];
   isActive: boolean;
@@ -66,6 +67,7 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   username?: string;
   email?: string;
+  phoneNumber?: string;
   roleIds?: string[];
   isActive?: boolean;
 }

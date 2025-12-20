@@ -283,6 +283,7 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     /// 手机号码
     /// </summary>
     [BsonElement("phone")]
+    [BsonIgnoreIfNull]
     public string? PhoneNumber { get; set; }
 
     /// <summary>

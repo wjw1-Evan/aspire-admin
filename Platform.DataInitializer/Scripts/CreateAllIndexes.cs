@@ -230,16 +230,35 @@ public class CreateAllIndexes
 
         try
         {
-           
+            // 清理现有的 phone: null 记录，将它们改为字段不存在（因为使用了 BsonIgnoreIfNull）
+            // 这样可以避免稀疏唯一索引的冲突
+            var nullPhoneFilter = Builders<BsonDocument>.Filter.Eq("phone", BsonNull.Value);
+            var unsetPhoneUpdate = Builders<BsonDocument>.Update.Unset("phone");
+            var nullPhoneResult = await collection.UpdateManyAsync(nullPhoneFilter, unsetPhoneUpdate);
+            if (nullPhoneResult.ModifiedCount > 0)
+            {
+                _logger.LogInformation("✅ 清理了 {Count} 条 phone 字段为 null 的记录", nullPhoneResult.ModifiedCount);
+            }
             
-            // 创建稀疏唯一索引：只索引非空值，允许多个 null 值
+            // 删除可能存在的旧索引（如果存在）
+            try
+            {
+                await collection.Indexes.DropOneAsync("idx_appusers_phone_unique");
+                _logger.LogInformation("✅ 删除旧索引: idx_appusers_phone_unique");
+            }
+            catch
+            {
+                // 索引不存在，忽略错误
+            }
+            
+            // 创建稀疏唯一索引：只索引非空值，字段不存在或为 null 的文档不会被索引
             await CreateIndexAsync(collection,
                 Builders<BsonDocument>.IndexKeys.Ascending("phone"),
                 new CreateIndexOptions
                 {
                     Name = "idx_appusers_phone_unique",
                     Unique = true,
-                    Sparse = true  // 稀疏索引：只索引存在且非 null 的字段值
+                    Sparse = true  // 稀疏索引：只索引字段存在且非 null 的文档
                 },
                 "appusers.phone (唯一，稀疏索引，忽略 null 值)");
         }

@@ -196,6 +196,14 @@ public class UserService : IUserService
             // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
+        // 只有当 PhoneNumber 有值时才设置
+        // AppUser.PhoneNumber 使用了 [BsonIgnoreIfNull] 特性，null 值不会被写入数据库
+        // 这样可以避免稀疏唯一索引的 null 值冲突问题
+        if (!string.IsNullOrEmpty(request.PhoneNumber))
+        {
+            user.PhoneNumber = request.PhoneNumber.Trim();
+        }
+
         var createdUser = await _userFactory.CreateAsync(user);
 
         // 创建用户-企业关联，并分配角色

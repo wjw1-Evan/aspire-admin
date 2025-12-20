@@ -180,7 +180,7 @@ export const CompanySwitcher: React.FC = () => {
     <>
       <Dropdown
         menu={{ items: menuItems }}
-        trigger={['click']}
+        trigger={['hover']}
         placement="bottomRight"
         disabled={switching}
       >

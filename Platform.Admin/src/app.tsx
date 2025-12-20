@@ -37,8 +37,9 @@ export async function getInitialState(): Promise<{
   fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
 }> {
   // 从 localStorage 读取主题设置
+  // ProLayout 只支持 'light' | 'realDark'，将 'dark' 映射为 'realDark'
   const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-  const initialTheme = savedTheme || 'light';
+  const initialTheme = savedTheme === 'dark' ? 'realDark' : (savedTheme || 'light');
   const fetchUserInfo = async () => {
     // 检查是否有 token
     if (!tokenUtils.hasToken()) {
@@ -233,6 +234,12 @@ export const layout: RunTimeLayoutConfig = ({
     avatarProps: {
       src: getUserAvatar(initialState?.currentUser?.avatar),
       title: <AvatarName />,
+      style: {
+        marginLeft: 0,
+        marginRight: 0,
+        paddingInlineStart: 0,
+        paddingInlineEnd: 0,
+      },
       render: (_: any, avatarChildren: React.ReactNode) => {
         return <AvatarDropdown menu>{avatarChildren}</AvatarDropdown>;
       },
@@ -412,7 +419,18 @@ export const layout: RunTimeLayoutConfig = ({
         </App>
       );
     },
-    ...initialState?.settings,
+    ...(initialState?.settings
+      ? {
+          ...initialState.settings,
+          // ProLayout 只支持 'light' | 'realDark'，将 'dark' 映射为 'realDark'
+          navTheme:
+            initialState.settings.navTheme === 'dark'
+              ? ('realDark' as const)
+              : initialState.settings.navTheme === 'light' || initialState.settings.navTheme === 'realDark'
+              ? initialState.settings.navTheme
+              : undefined,
+        } as Partial<Omit<LayoutSettings, 'navTheme'> & { navTheme?: 'light' | 'realDark' }>
+      : {}),
     onCollapse: (collapsed: boolean) => {
       setInitialState((preInitialState) => ({
         ...preInitialState,

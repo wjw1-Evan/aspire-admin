@@ -46,12 +46,10 @@ const useStyles = createStyles(({ token }) => {
       marginLeft: 'auto',
       overflow: 'hidden',
       alignItems: 'center',
-      padding: '0 8px',
-      cursor: 'pointer',
+     
+     
       borderRadius: token.borderRadius,
-      '&:hover': {
-        backgroundColor: token.colorBgTextHover,
-      },
+     
     },
   };
 });

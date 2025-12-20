@@ -49,7 +49,7 @@ export const SelectLang: React.FC = () => {
         selectedKeys: [currentLocale],
       }}
       placement="bottomRight"
-      trigger={['click']}
+      trigger={['hover']}
       // 使用 classNames 替代已弃用的 overlayClassName
       classNames={{
         root: undefined,

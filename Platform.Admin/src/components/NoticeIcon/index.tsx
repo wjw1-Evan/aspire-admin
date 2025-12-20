@@ -3,7 +3,7 @@ import { Badge } from 'antd';
 import { BellOutlined } from '@ant-design/icons';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 import { getUnreadStatistics } from '@/services/unified-notification/api';
-import styles from './index.less';
+import headerStyles from '@/components/RightContent/index.less';
 
 export default function NoticeIcon() {
   const [visible, setVisible] = useState(false);
@@ -39,7 +39,7 @@ export default function NoticeIcon() {
 
   return (
     <>
-      <span className={styles.noticeButton} onClick={() => setVisible(true)}>
+      <span className={headerStyles.headerActionButton} onClick={() => setVisible(true)}>
         <Badge count={unreadCount} overflowCount={99}>
           <BellOutlined />
         </Badge>

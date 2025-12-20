@@ -30,6 +30,11 @@ alwaysApply: true
 - 暴露底层异常（统一错误码与错误消息）
 - 手写 BsonDocument（必须使用构建器）
 
+## Git 提交规范
+
+- **提交信息语言**：所有 Git 提交信息必须使用简体中文。使用 Cursor 的 "Generate Commit Message" 功能时，必须生成中文提交信息。
+- **提交信息格式**：遵循约定式提交格式，使用中文描述。例如：`feat: 添加用户管理功能`、`fix: 修复登录验证问题`。
+
 ## 参考文档
 
 - `docs/features/BACKEND-RULES.md`：后端核心与中间件规范

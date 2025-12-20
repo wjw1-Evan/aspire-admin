@@ -512,6 +512,7 @@ export default {
   'pages.welcome.quickActions.userLog.desc': '查看用户操作日志',
   'pages.welcome.quickActions.myActivity.title': '我的活动',
   'pages.welcome.quickActions.myActivity.desc': '查看个人活动记录',
+  'pages.welcome.quickActions.empty': '暂无快速操作',
   'pages.welcome.recentActivities': '最近活动',
   'pages.welcome.recentActivities.systemActivity': '系统活动',
   'pages.welcome.recentActivities.unknownTime': '未知时间',

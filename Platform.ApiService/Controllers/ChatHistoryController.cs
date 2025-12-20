@@ -93,7 +93,7 @@ public class ChatHistoryController : BaseApiController
             // 调用 Regex 方法并构建过滤器（使用链式调用避免中间变量）
             var messageFilter = _messageFactory.CreateFilterBuilder()
                 .Regex(m => m.Content, content, "i")
-                .Build();
+                .Build()!; // Build() 不会返回 null，使用 null-forgiving 操作符消除警告
 
             // ✅ 数据工厂会自动添加企业过滤（因为 ChatMessage 实现了 IMultiTenant）
             var messages = await _messageFactory.FindAsync(messageFilter);

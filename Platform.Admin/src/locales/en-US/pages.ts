@@ -523,6 +523,7 @@ export default {
   'pages.welcome.quickActions.userLog.desc': 'View user operation logs',
   'pages.welcome.quickActions.myActivity.title': 'My Activity',
   'pages.welcome.quickActions.myActivity.desc': 'View personal activity records',
+  'pages.welcome.quickActions.empty': 'No quick actions available',
   'pages.welcome.recentActivities': 'Recent Activities',
   'pages.welcome.recentActivities.systemActivity': 'System Activity',
   'pages.welcome.recentActivities.unknownTime': 'Unknown Time',

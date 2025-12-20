@@ -38,6 +38,7 @@ import {
   HistoryOutlined,
   UnorderedListOutlined
 } from '@ant-design/icons';
+import * as Icons from '@ant-design/icons';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StatCard } from '@/components';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
@@ -49,6 +50,120 @@ import type { SystemResources } from '@/services/system/api';
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
+
+/**
+ * 根据图标名称获取图标组件
+ */
+const getIconComponent = (iconName?: string): React.ReactNode => {
+  if (!iconName) return <MenuOutlined />;
+
+  // 将图标名称转换为 PascalCase + 'Outlined' 格式
+  const formatIconName = (name: string) => {
+    return name
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('');
+  };
+
+  // 尝试多种图标后缀
+  const suffixes = ['Outlined', 'Filled', 'TwoTone', ''];
+
+  for (const suffix of suffixes) {
+    const iconComponentName = formatIconName(iconName) + suffix;
+    const IconComponent = (Icons as any)[iconComponentName];
+
+    if (IconComponent) {
+      return React.createElement(IconComponent);
+    }
+  }
+
+  return <MenuOutlined />;
+};
+
+/**
+ * 根据路径获取菜单颜色
+ */
+const getMenuColor = (path: string): string => {
+  const colorMap: Record<string, string> = {
+    '/system/user-management': '#1890ff',
+    '/system/role-management': '#52c41a',
+    '/system/company-settings': '#faad14',
+    '/system/user-log': '#fa8c16',
+    '/system/my-activity': '#eb2f96',
+    '/task-management': '#13c2c2',
+    '/iot-platform': '#52c41a',
+    '/account/center': '#722ed1',
+  };
+
+  // 精确匹配
+  if (colorMap[path]) {
+    return colorMap[path];
+  }
+
+  // 路径前缀匹配
+  if (path.startsWith('/system/')) {
+    return '#1890ff';
+  }
+  if (path.startsWith('/iot-platform')) {
+    return '#52c41a';
+  }
+  if (path.startsWith('/task-management')) {
+    return '#13c2c2';
+  }
+  if (path.startsWith('/project-management')) {
+    return '#722ed1';
+  }
+  if (path.startsWith('/xiaoke-management')) {
+    return '#eb2f96';
+  }
+
+  // 默认颜色
+  return '#1890ff';
+};
+
+/**
+ * 扁平化菜单树，提取所有可访问的菜单项
+ */
+const flattenMenus = (menus: API.MenuTreeNode[]): API.MenuTreeNode[] => {
+  const result: API.MenuTreeNode[] = [];
+
+  const traverse = (menuList: API.MenuTreeNode[]) => {
+    for (const menu of menuList) {
+      // 跳过隐藏的菜单、外部链接、welcome 页面
+      if (
+        menu.hideInMenu ||
+        menu.isExternal ||
+        menu.path === '/welcome' ||
+        !menu.isEnabled
+      ) {
+        // 继续遍历子菜单
+        if (menu.children && menu.children.length > 0) {
+          traverse(menu.children);
+        }
+        continue;
+      }
+
+      // 跳过没有组件路径的父菜单（这些通常是分组菜单，不应该显示在快速操作中）
+      // 只有当菜单有组件路径或者是叶子节点时才添加到结果中
+      const hasComponent = !!menu.component;
+      const hasChildren = menu.children && menu.children.length > 0;
+      
+      // 如果有组件路径，说明这是一个可访问的页面菜单
+      // 如果没有组件路径但有子菜单，说明这是一个分组菜单，只遍历子菜单
+      if (hasComponent) {
+        result.push(menu);
+      }
+
+      // 递归处理子菜单
+      if (hasChildren) {
+        traverse(menu.children);
+      }
+    }
+  };
+
+  traverse(menus);
+  return result;
+};
 
 // 快速操作按钮组件
 const QuickAction: React.FC<{
@@ -62,13 +177,16 @@ const QuickAction: React.FC<{
   <Card
     hoverable={!disabled}
     size="small"
-    styles={{ body: { padding: '10px 12px' } }}
+    styles={{ body: { padding: '12px', minHeight: '72px', display: 'flex', alignItems: 'center' } }}
     style={{
       borderRadius: '12px',
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.6 : 1,
       border: `2px solid ${disabled ? '#f0f0f0' : color}`,
-      background: disabled ? '#fafafa' : '#fff'
+      background: disabled ? '#fafafa' : '#fff',
+      height: '100%',
+      width: '100%',
+      transition: 'all 0.3s ease'
     }}
     onClick={disabled ? undefined : onClick}
   >
@@ -76,10 +194,11 @@ const QuickAction: React.FC<{
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
+        gap: 12,
+        width: '100%'
       }}
     >
-      <div style={{ color, fontSize: 20, flexShrink: 0 }}>
+      <div style={{ color, fontSize: 24, flexShrink: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -87,10 +206,11 @@ const QuickAction: React.FC<{
           style={{
             fontSize: 14,
             fontWeight: 'bold',
-            marginBottom: 2,
+            marginBottom: 4,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
+            lineHeight: '20px'
           }}
         >
           {title}
@@ -100,9 +220,12 @@ const QuickAction: React.FC<{
             fontSize: 12,
             color: '#8c8c8c',
             lineHeight: 1.4,
-            maxHeight: 34,
+            height: 32,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical'
           }}
         >
           {description}
@@ -321,36 +444,26 @@ const Welcome: React.FC = () => {
   };
 
   // 快速操作处理
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case 'user-management':
-        history.push('/system/user-management');
-        break;
-      case 'role-management':
-        history.push('/system/role-management');
-        break;
-      case 'company-settings':
-        history.push('/system/company-settings');
-        break;
-      case 'account-center':
-        history.push('/account/center');
-        break;
-      case 'task-management':
-        history.push('/task-management');
-        break;
-      case 'iot-platform':
-        history.push('/iot-platform');
-        break;
-      case 'user-log':
-        history.push('/system/user-log');
-        break;
-      case 'my-activity':
-        history.push('/system/my-activity');
-        break;
-      default:
-        break;
-    }
+  const handleQuickAction = (path: string) => {
+    history.push(path);
   };
+
+  // 从用户菜单中提取快速操作项
+  const getQuickActionMenus = (): API.MenuTreeNode[] => {
+    if (!currentUser?.menus) {
+      return [];
+    }
+
+    // 扁平化菜单树
+    const flatMenus = flattenMenus(currentUser.menus);
+
+    // 按 sortOrder 排序，限制最多显示 12 个
+    return flatMenus
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .slice(0, 12);
+  };
+
+  const quickActionMenus = getQuickActionMenus();
 
   return (
     <PageContainer
@@ -433,96 +546,62 @@ const Welcome: React.FC = () => {
           }
           style={{ borderRadius: '12px', marginBottom: '16px' }}
         >
-          <Row gutter={[12, 12]}>
-            {access.canAccessPath?.('/system/user-management') && (
-              <Col xs={12} sm={8} md={4}>
-                <QuickAction
-                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.title' })}
-                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.userManagement.desc' })}
-                  icon={<TeamOutlined />}
-                  onClick={() => handleQuickAction('user-management')}
-                  color="#1890ff"
-                />
-              </Col>
-            )}
-            {access.canAccessPath?.('/system/role-management') && (
-              <Col xs={12} sm={8} md={4}>
-                <QuickAction
-                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.title' })}
-                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.roleManagement.desc' })}
-                  icon={<SafetyOutlined />}
-                  onClick={() => handleQuickAction('role-management')}
-                  color="#52c41a"
-                />
-              </Col>
-            )}
-            {access.canAccessPath?.('/system/company-settings') && (
-              <Col xs={12} sm={8} md={4}>
-                <QuickAction
-                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.title' })}
-                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.companySettings.desc' })}
-                  icon={<SettingOutlined />}
-                  onClick={() => handleQuickAction('company-settings')}
-                  color="#faad14"
-                />
-              </Col>
-            )}
-            {currentUser && (
-              <Col xs={12} sm={8} md={4}>
-                <QuickAction
-                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.title' })}
-                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.accountCenter.desc' })}
-                  icon={<UserOutlined />}
-                  onClick={() => handleQuickAction('account-center')}
-                  color="#722ed1"
-                />
-              </Col>
-            )}
-            {access.canAccessPath?.('/task-management') && (
-              <Col xs={12} sm={8} md={4}>
-                <QuickAction
-                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.taskManagement.title' })}
-                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.taskManagement.desc' })}
-                  icon={<UnorderedListOutlined />}
-                  onClick={() => handleQuickAction('task-management')}
-                  color="#13c2c2"
-                />
-              </Col>
-            )}
-            {access.canAccessPath?.('/iot-platform') && (
-              <Col xs={12} sm={8} md={4}>
-                <QuickAction
-                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.iotPlatform.title' })}
-                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.iotPlatform.desc' })}
-                  icon={<CloudOutlined />}
-                  onClick={() => handleQuickAction('iot-platform')}
-                  color="#52c41a"
-                />
-              </Col>
-            )}
-            {access.canAccessPath?.('/system/user-log') && (
-              <Col xs={12} sm={8} md={4}>
-                <QuickAction
-                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.userLog.title' })}
-                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.userLog.desc' })}
-                  icon={<FileTextOutlined />}
-                  onClick={() => handleQuickAction('user-log')}
-                  color="#fa8c16"
-                />
-              </Col>
-            )}
-            {access.canAccessPath?.('/system/my-activity') && (
-              <Col xs={12} sm={8} md={4}>
-                <QuickAction
-                  title={intl.formatMessage({ id: 'pages.welcome.quickActions.myActivity.title' })}
-                  description={intl.formatMessage({ id: 'pages.welcome.quickActions.myActivity.desc' })}
-                  icon={<HistoryOutlined />}
-                  onClick={() => handleQuickAction('my-activity')}
-                  color="#eb2f96"
-                />
-              </Col>
-            )}
-          </Row>
+          {quickActionMenus.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              {quickActionMenus.map((menu) => {
+                // 生成 locale 键用于多语言
+                let localeKey = '';
+                if (menu.path.startsWith('/system/')) {
+                  localeKey = `menu.system.${menu.name}`;
+                } else if (menu.path.startsWith('/iot-platform/')) {
+                  const shortName = menu.name.replace(/^iot-platform-/, '');
+                  localeKey = `menu.iot-platform.${shortName}`;
+                } else if (menu.path.startsWith('/project-management/')) {
+                  const shortName = menu.name.replace(/^project-management-/, '');
+                  localeKey = `menu.project-management.${shortName}`;
+                } else if (menu.path.startsWith('/xiaoke-management/') || menu.name.startsWith('xiaoke-management-')) {
+                  const shortName = menu.name.replace(/^xiaoke-management-/, '');
+                  localeKey = `menu.xiaoke-management.${shortName}`;
+                } else if (menu.path.startsWith('/account/')) {
+                  localeKey = `menu.${menu.path.replace(/^\//, '').replaceAll('/', '.')}`;
+                } else {
+                  localeKey = `menu.${menu.name}`;
+                }
+
+                // 尝试获取多语言标题，如果不存在则使用菜单的 title
+                const menuTitle = intl.formatMessage({ id: localeKey }, { defaultMessage: menu.title || menu.name });
+                const menuDescription = intl.formatMessage(
+                  { id: `${localeKey}.desc` },
+                  { defaultMessage: menuTitle }
+                );
+
+                return (
+                  <div
+                    key={menu.path || menu.id}
+                    style={{
+                      flex: '1 1 200px',
+                      minWidth: '200px',
+                      maxWidth: '280px'
+                    }}
+                  >
+                    <QuickAction
+                      title={menuTitle}
+                      description={menuDescription}
+                      icon={getIconComponent(menu.icon)}
+                      onClick={() => handleQuickAction(menu.path)}
+                      color={getMenuColor(menu.path)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <Alert
+              title={intl.formatMessage({ id: 'pages.welcome.quickActions.empty' }, { defaultMessage: '暂无快速操作' })}
+              type="info"
+              showIcon
+            />
+          )}
         </Card>
 
         <Row gutter={[16, 16]}>

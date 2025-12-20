@@ -89,7 +89,7 @@ public class ChatHistoryController : BaseApiController
         List<string>? matchedSessionIds = null;
         if (!string.IsNullOrEmpty(request.Content))
         {
-            var content = request.Content; // 明确提取非空值
+            var content = request.Content!; // 明确提取非空值（已检查 IsNullOrEmpty）
             // 调用 Regex 方法并构建过滤器（使用链式调用避免中间变量）
             var messageFilter = _messageFactory.CreateFilterBuilder()
                 .Regex(m => m.Content, content, "i")

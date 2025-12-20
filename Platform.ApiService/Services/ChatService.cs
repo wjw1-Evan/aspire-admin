@@ -477,16 +477,20 @@ public class ChatService : IChatService
         // 尝试查找已存在的消息（通过 ClientMessageId）
         if (!string.IsNullOrWhiteSpace(request.ClientMessageId))
         {
-            var existingMessage = await _messageFactory.GetOneAsync(
-                _messageFactory.CreateFilterBuilder()
-                    .Equal(m => m.SessionId, request.SessionId)
-                    .Equal(m => m.ClientMessageId, request.ClientMessageId)
-                    .Equal(m => m.SenderId, currentUserId)
-                    .Build());
+            var filter = _messageFactory.CreateFilterBuilder()
+                .Equal(m => m.SessionId, request.SessionId)
+                .Equal(m => m.ClientMessageId, request.ClientMessageId)
+                .Equal(m => m.SenderId, currentUserId)
+                .Build();
+            
+            var existingMessages = await _messageFactory.FindAsync(filter, null, 1);
+            var existingMessage = existingMessages.FirstOrDefault();
             
             if (existingMessage != null)
             {
                 savedMessage = existingMessage;
+                // 消息已存在，但仍需要更新会话状态和通知（用于重试场景）
+                // 这确保会话的 LastMessageAt、未读计数和其他参与者通知得到更新
             }
             else
             {
@@ -514,8 +518,6 @@ public class ChatService : IChatService
                 };
 
                 savedMessage = await _messageFactory.CreateAsync(message);
-                await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
-                await NotifyMessageCreatedAsync(session, savedMessage);
             }
         }
         else
@@ -544,9 +546,12 @@ public class ChatService : IChatService
             };
 
             savedMessage = await _messageFactory.CreateAsync(message);
-            await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
-            await NotifyMessageCreatedAsync(session, savedMessage);
         }
+
+        // 无论消息是新创建还是已存在，都需要更新会话状态和通知
+        // 这确保会话的 LastMessageAt、未读计数和其他参与者通知得到正确更新
+        await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
+        await NotifyMessageCreatedAsync(session, savedMessage);
 
         ChatMessage? assistantMessage = null;
 

@@ -25,7 +25,7 @@ const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({
     <Drawer
       title={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.title' })}
       placement="right"
-      width={800}
+      size={800}
       onClose={onClose}
       open={visible}
     >

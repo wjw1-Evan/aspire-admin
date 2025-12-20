@@ -81,8 +81,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
 
       const response = await iotService.queryDataRecords(payload);
       
-      console.log('DataCenter fetchRecords response:', response);
-      
       if (response && response.success && response.data) {
         // 处理不同的数据格式：优先检查小写格式（后端实际返回的格式）
         let records: IoTDataRecord[] = [];
@@ -109,8 +107,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
           }
         }
         
-        console.log('DataCenter parsed records:', records.length, 'total:', total, 'first record:', records[0]);
-        
         // 确保返回的数据格式符合 ProTable 的要求
         return {
           data: records || [],
@@ -119,7 +115,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         };
       }
       
-      console.warn('DataCenter fetchRecords failed:', response);
       return {
         data: [],
         total: 0,

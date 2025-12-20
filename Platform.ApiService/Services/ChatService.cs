@@ -462,7 +462,8 @@ public class ChatService : IChatService
         Func<ChatMessage, Task>? onComplete,
         CancellationToken cancellationToken)
     {
-        // 1. 保存用户消息（不触发 AI 回复）
+        // 1. 检查用户消息是否已存在（通过 ClientMessageId 或内容匹配）
+        // 如果已存在，直接使用；否则创建新消息
         var currentUserId = _messageFactory.GetRequiredUserId();
         var session = await EnsureSessionAccessibleAsync(request.SessionId);
 
@@ -471,35 +472,86 @@ public class ChatService : IChatService
             throw new UnauthorizedAccessException("当前用户不属于该会话");
         }
 
-        if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))
+        ChatMessage savedMessage;
+        
+        // 尝试查找已存在的消息（通过 ClientMessageId）
+        if (!string.IsNullOrWhiteSpace(request.ClientMessageId))
         {
-            throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
+            var existingMessage = await _messageFactory.GetOneAsync(
+                _messageFactory.CreateFilterBuilder()
+                    .Equal(m => m.SessionId, request.SessionId)
+                    .Equal(m => m.ClientMessageId, request.ClientMessageId)
+                    .Equal(m => m.SenderId, currentUserId)
+                    .Build());
+            
+            if (existingMessage != null)
+            {
+                savedMessage = existingMessage;
+            }
+            else
+            {
+                // 创建新消息
+                if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))
+                {
+                    throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
+                }
+
+                var sender = await _userFactory.GetByIdAsync(currentUserId);
+
+                var message = new ChatMessage
+                {
+                    SessionId = session.Id,
+                    CompanyId = session.CompanyId,
+                    SenderId = currentUserId,
+                    SenderName = sender?.Username,
+                    RecipientId = request.RecipientId,
+                    Type = request.Type,
+                    Content = request.Content,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    Metadata = NormalizeMetadata(request.Metadata ?? new Dictionary<string, object>()),
+                    ClientMessageId = request.ClientMessageId
+                };
+
+                savedMessage = await _messageFactory.CreateAsync(message);
+                await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
+                await NotifyMessageCreatedAsync(session, savedMessage);
+            }
         }
-
-        var sender = await _userFactory.GetByIdAsync(currentUserId);
-
-        var message = new ChatMessage
+        else
         {
-            SessionId = session.Id,
-            CompanyId = session.CompanyId,
-            SenderId = currentUserId,
-            SenderName = sender?.Username,
-            RecipientId = request.RecipientId,
-            Type = request.Type,
-            Content = request.Content,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            Metadata = NormalizeMetadata(request.Metadata ?? new Dictionary<string, object>()),
-            ClientMessageId = request.ClientMessageId
-        };
+            // 没有 ClientMessageId，创建新消息
+            if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))
+            {
+                throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
+            }
 
-        var savedMessage = await _messageFactory.CreateAsync(message);
-        await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
-        await NotifyMessageCreatedAsync(session, savedMessage);
+            var sender = await _userFactory.GetByIdAsync(currentUserId);
+
+            var message = new ChatMessage
+            {
+                SessionId = session.Id,
+                CompanyId = session.CompanyId,
+                SenderId = currentUserId,
+                SenderName = sender?.Username,
+                RecipientId = request.RecipientId,
+                Type = request.Type,
+                Content = request.Content,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Metadata = NormalizeMetadata(request.Metadata ?? new Dictionary<string, object>()),
+                ClientMessageId = request.ClientMessageId
+            };
+
+            savedMessage = await _messageFactory.CreateAsync(message);
+            await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
+            await NotifyMessageCreatedAsync(session, savedMessage);
+        }
 
         ChatMessage? assistantMessage = null;
 
         // 2. 如果需要 AI 回复，流式生成
+        // 注意：如果用户消息已存在（通过 SendMessageAsync 创建），这里会跳过创建，只生成 AI 回复
         if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) &&
             savedMessage.SenderId != AiAssistantConstants.AssistantUserId &&
             savedMessage.Type == ChatMessageType.Text &&

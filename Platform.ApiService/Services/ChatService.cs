@@ -473,6 +473,7 @@ public class ChatService : IChatService
         }
 
         ChatMessage savedMessage;
+        bool isNewMessage = false;
         
         // 尝试查找已存在的消息（通过 ClientMessageId）
         if (!string.IsNullOrWhiteSpace(request.ClientMessageId))
@@ -489,12 +490,14 @@ public class ChatService : IChatService
             if (existingMessage != null)
             {
                 savedMessage = existingMessage;
-                // 消息已存在，但仍需要更新会话状态和通知（用于重试场景）
-                // 这确保会话的 LastMessageAt、未读计数和其他参与者通知得到更新
+                // 消息已存在，不需要更新会话状态和通知（避免重复增加未读计数）
+                // 只更新 LastMessageAt 和 LastMessageExcerpt（如果需要）
+                await UpdateSessionLastMessageOnlyAsync(session, savedMessage);
             }
             else
             {
                 // 创建新消息
+                isNewMessage = true;
                 if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))
                 {
                     throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
@@ -518,11 +521,15 @@ public class ChatService : IChatService
                 };
 
                 savedMessage = await _messageFactory.CreateAsync(message);
+                // 新消息需要完整更新会话状态和通知
+                await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
+                await NotifyMessageCreatedAsync(session, savedMessage);
             }
         }
         else
         {
             // 没有 ClientMessageId，创建新消息
+            isNewMessage = true;
             if (request.Type == ChatMessageType.Text && string.IsNullOrWhiteSpace(request.Content))
             {
                 throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
@@ -546,29 +553,46 @@ public class ChatService : IChatService
             };
 
             savedMessage = await _messageFactory.CreateAsync(message);
+            // 新消息需要完整更新会话状态和通知
+            await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
+            await NotifyMessageCreatedAsync(session, savedMessage);
         }
-
-        // 无论消息是新创建还是已存在，都需要更新会话状态和通知
-        // 这确保会话的 LastMessageAt、未读计数和其他参与者通知得到正确更新
-        await UpdateSessionAfterMessageAsync(session, savedMessage, currentUserId);
-        await NotifyMessageCreatedAsync(session, savedMessage);
 
         ChatMessage? assistantMessage = null;
 
         // 2. 如果需要 AI 回复，流式生成
-        // 注意：如果用户消息已存在（通过 SendMessageAsync 创建），这里会跳过创建，只生成 AI 回复
+        // 注意：检查是否已存在助手回复，避免重复生成
         if (session.Participants.Contains(AiAssistantConstants.AssistantUserId) &&
             savedMessage.SenderId != AiAssistantConstants.AssistantUserId &&
             savedMessage.Type == ChatMessageType.Text &&
             !ShouldSkipAutomaticAssistantReply(savedMessage))
         {
-            // 使用流式生成，传入回调函数
-            assistantMessage = await GenerateAssistantReplyStreamAsync(
-                session, 
-                savedMessage, 
-                cancellationToken, 
-                onChunk, 
-                onComplete);
+            // 检查是否已存在针对此触发消息的助手回复
+            // 通过查找在触发消息之后创建的、发送者为助手的消息
+            var existingAssistantFilter = _messageFactory.CreateFilterBuilder()
+                .Equal(m => m.SessionId, session.Id)
+                .Equal(m => m.SenderId, AiAssistantConstants.AssistantUserId)
+                .GreaterThan(m => m.CreatedAt, savedMessage.CreatedAt)
+                .Build();
+            
+            var existingAssistantMessages = await _messageFactory.FindAsync(existingAssistantFilter, null, 1);
+            var existingAssistantMessage = existingAssistantMessages.FirstOrDefault();
+            
+            if (existingAssistantMessage != null)
+            {
+                // 已存在助手回复，直接返回
+                assistantMessage = existingAssistantMessage;
+            }
+            else
+            {
+                // 使用流式生成，传入回调函数
+                assistantMessage = await GenerateAssistantReplyStreamAsync(
+                    session, 
+                    savedMessage, 
+                    cancellationToken, 
+                    onChunk, 
+                    onComplete);
+            }
         }
 
         return (savedMessage, assistantMessage);
@@ -947,6 +971,33 @@ public class ChatService : IChatService
             .Set(s => s.LastMessageExcerpt, excerpt.Length > 120 ? excerpt[..120] : excerpt)
             .Set(s => s.LastMessageAt, message.CreatedAt)
             .Set(s => s.UnreadCounts, unreadCounts)
+            .SetCurrentTimestamp();
+
+        var filter = _sessionFactory.CreateFilterBuilder()
+            .Equal(s => s.Id, session.Id)
+            .Build();
+
+        await _sessionFactory.FindOneAndUpdateAsync(filter, update.Build());
+    }
+
+    /// <summary>
+    /// 仅更新会话的最后消息信息（不更新未读计数），用于已存在消息的重试场景
+    /// </summary>
+    private async Task UpdateSessionLastMessageOnlyAsync(ChatSession session, ChatMessage message)
+    {
+        var excerpt = message.Type switch
+        {
+            ChatMessageType.Text => string.IsNullOrWhiteSpace(message.Content) ? "[文本]" : message.Content,
+            ChatMessageType.Image => "[图片]",
+            ChatMessageType.File => message.Attachment?.Name ?? "[文件]",
+            ChatMessageType.System => string.IsNullOrWhiteSpace(message.Content) ? "[系统消息]" : message.Content,
+            _ => "[消息]"
+        };
+
+        var update = _sessionFactory.CreateUpdateBuilder()
+            .Set(s => s.LastMessageId, message.Id)
+            .Set(s => s.LastMessageExcerpt, excerpt.Length > 120 ? excerpt[..120] : excerpt)
+            .Set(s => s.LastMessageAt, message.CreatedAt)
             .SetCurrentTimestamp();
 
         var filter = _sessionFactory.CreateFilterBuilder()

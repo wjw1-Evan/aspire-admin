@@ -242,8 +242,8 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
               {executionLogs.length > 0 ? (
                 <Timeline
                   items={executionLogs.map(log => ({
-                    dot: <Tag color={getExecutionResultColor(log.status)}>{log.statusName}</Tag>,
-                    children: (
+                    icon: <Tag color={getExecutionResultColor(log.status)}>{log.statusName}</Tag>,
+                    content: (
                       <div>
                         <p>
                           <strong>{log.executedByName}</strong> 在{' '}

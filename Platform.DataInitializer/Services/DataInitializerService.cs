@@ -517,7 +517,7 @@ public class DataInitializerService : IDataInitializerService
             Title = "小科管理",
             Path = "/xiaoke-management",
             Icon = "robot",
-            SortOrder = 5,
+            SortOrder = 6,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,

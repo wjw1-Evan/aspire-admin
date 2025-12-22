@@ -83,6 +83,12 @@ export default {
   'menu.document.create.desc': '创建新的公文',
   'menu.document.approval': '我的审批',
   'menu.document.approval.desc': '处理待审批的公文',
+  // 系统生成的权限键
+  'menu.workflow.workflow:list': '流程定义',
+  'menu.workflow.workflow:create': '创建流程',
+  'menu.workflow.workflow:monitor': '流程监控',
+  'menu.document.document:list': '公文列表',
+  'menu.document.document:approval': '我的审批',
   // 企业切换器
   'component.companySwitcher.title': '切换企业',
   'component.companySwitcher.join': '加入新企业',

@@ -24,6 +24,8 @@ import type {
   ApprovalConfig,
   ConditionConfig,
   ApproverRule,
+} from '@/services/workflow/api';
+import {
   ApproverType,
 } from '@/services/workflow/api';
 import { getUserList } from '@/services/user/api';
@@ -178,13 +180,17 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
   const onConnect = useCallback(
     (params: Connection) => {
-      const newEdge: Edge = {
-        ...params,
+      const newEdge = {
         id: `edge-${Date.now()}`,
+        source: params.source,
+        target: params.target,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
         labelStyle: { fill: '#666', fontWeight: 600 },
         markerEnd: {
           type: MarkerType.ArrowClosed,
         },
+        data: {},
       };
       setEdges((eds) => addEdge(newEdge, eds));
     },
@@ -193,6 +199,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
   const addNode = useCallback(
     (type: string) => {
+      const nodeTypesMap = getNodeTypes(intl);
       const newNode: Node = {
         id: `${type}-${Date.now()}`,
         type: 'default',
@@ -204,7 +211,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           label: (
             <div style={{ textAlign: 'center', padding: '8px' }}>
               <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                {nodeTypes[type as keyof typeof nodeTypes]?.label || type}
+                {nodeTypesMap[type as keyof typeof nodeTypesMap]?.label || type}
               </div>
             </div>
           ),
@@ -212,14 +219,14 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           config: {},
         },
         style: {
-          ...nodeTypes[type as keyof typeof nodeTypes]?.style,
+          ...nodeTypesMap[type as keyof typeof nodeTypesMap]?.style,
           borderRadius: '8px',
           minWidth: '120px',
         },
       };
       setNodes((nds) => [...nds, newNode]);
     },
-    [setNodes]
+    [setNodes, intl]
   );
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -327,7 +334,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               label: (
                 <div style={{ textAlign: 'center', padding: '8px' }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                    {nodeTypes[values.nodeType as keyof typeof nodeTypes]?.label || values.nodeType}
+                    {getNodeTypes(intl)[values.nodeType as keyof ReturnType<typeof getNodeTypes>]?.label || values.nodeType}
                   </div>
                   <div style={{ fontSize: '12px' }}>{values.label || ''}</div>
                 </div>
@@ -561,8 +568,8 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                             name={[name, 'userId']}
                             noStyle
                             shouldUpdate={(prevValues, curValues) =>
-                              prevValues.approvers?.[name]?.type !== curValues.approvers?.[name]?.type
-                            }
+                                (prevValues as any).approvers?.[name]?.type !== (curValues as any).approvers?.[name]?.type
+                              }
                           >
                             {({ getFieldValue }) => {
                               const approverType = getFieldValue(['approvers', name, 'type']);
@@ -579,7 +586,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                                       loading={loadingUsers}
                                       showSearch
                                       filterOption={(input, option) =>
-                                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                        (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
                                       }
                                     >
                                       {users.map((user) => (
@@ -604,7 +611,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                                       loading={loadingRoles}
                                       showSearch
                                       filterOption={(input, option) =>
-                                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                        (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
                                       }
                                     >
                                       {roles.map((role) => (

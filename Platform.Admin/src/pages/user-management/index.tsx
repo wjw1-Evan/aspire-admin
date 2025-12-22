@@ -1,7 +1,8 @@
 import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { TableColumnsType } from 'antd/es/table';
 import { useIntl } from '@umijs/max';
 import {
   Button,
@@ -500,12 +501,16 @@ const UserManagement: React.FC = () => {
   }, []);
 
   // 表格列定义（记忆化，避免不必要渲染）
+<<<<<<< HEAD
   const columns: ProColumns<AppUser> = useMemo(() => [
+=======
+  const columns: TableColumnsType<AppUser> = useMemo(() => [
+>>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
     {
       title: intl.formatMessage({ id: 'pages.table.username' }),
       dataIndex: 'username',
       key: 'username',
-      render: (text, record) => (
+      render: (text: string, record: AppUser) => (
         <Space>
           <UserOutlined />
           <a
@@ -537,13 +542,13 @@ const UserManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.role' }),
       dataIndex: 'roleIds',
       key: 'roleIds',
-      render: (_, record) => {
+      render: (_: string[], record: AppUser) => {
         if (!record.roleIds || record.roleIds.length === 0) {
           return <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag>;
         }
         return (
           <Space wrap>
-            {record.roleIds.map((roleId) => (
+            {record.roleIds.map((roleId: string) => (
               <Tag key={roleId} color="blue">
                 {roleMap[roleId] || roleId}
               </Tag>
@@ -556,13 +561,13 @@ const UserManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.status' }),
       dataIndex: 'isActive',
       key: 'isActive',
-      render: (_, record) => (
+      render: (_: boolean, record: AppUser) => (
         <Badge
           status={record.isActive ? 'success' : 'error'}
           text={record.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}
         />
       ),
-      renderFormItem: (_, { record }) => (
+      renderFormItem: (_: boolean, { record }: { record?: AppUser }) => (
         <Switch
           checked={record?.isActive}
           onChange={() => record && handleToggleStatus(record)}
@@ -573,23 +578,21 @@ const UserManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      valueType: 'dateTime',
       sorter: true,
-      render: (_, record) => formatDateTime(record.createdAt),
+      render: (_: string, record: AppUser) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.lastLogin' }),
       dataIndex: 'lastLoginAt',
       key: 'lastLoginAt',
-      valueType: 'dateTime',
-      render: (_, record) => formatDateTime(record.lastLoginAt),
+      render: (_: string, record: AppUser) => formatDateTime(record.lastLoginAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.actions' }),
       key: 'action',
       fixed: 'right',
       width: 150,
-      render: (_, record) => {
+      render: (_: unknown, record: AppUser) => {
         return (
           <Space size="small">
             <Button

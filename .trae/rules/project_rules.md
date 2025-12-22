@@ -1,0 +1,17 @@
+alwaysApply: true
+---
+
+# Aspire Admin 规则索引
+
+> 已按代码结构拆分：通用（00-global）、后端（backend）、管理后台（frontend-admin）。如需修改特定模块规则，请编辑对应文件。
+
+## 快速入口
+- 通用原则：`.cursor/rules/00-global.mdc`
+- 后端/API/ServiceDefaults/初始化：`.cursor/rules/backend.mdc`
+- 管理后台（Platform.Admin）：`.cursor/rules/frontend-admin.mdc`
+- 移动端（Platform.App）：`.cursor/rules/frontend-app.mdc`
+
+## 更新时间
+- **2025-12-09**：根据当前代码结构拆分规则文件，新增模块化规则（含移动端）。
+- **2025-12-14**：根据全部源码更新规则，补充构建器使用规范、实体设计细节、前端 DataTable 规范、移动端 API 调用规范等。
+- **2025-12-XX**：从 SignalR 迁移至 SSE（Server-Sent Events）实时通信，更新规则与文档以反映最新架构。

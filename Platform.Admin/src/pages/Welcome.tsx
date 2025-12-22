@@ -558,16 +558,22 @@ const Welcome: React.FC = () => {
                   const shortName = menu.name.replace(/^iot-platform-/, '');
                   localeKey = `menu.iot-platform.${shortName}`;
                 } else if (menu.path.startsWith('/project-management/')) {
-                  const shortName = menu.name.replace(/^project-management-/, '');
-                  localeKey = `menu.project-management.${shortName}`;
-                } else if (menu.path.startsWith('/xiaoke-management/') || menu.name.startsWith('xiaoke-management-')) {
-                  const shortName = menu.name.replace(/^xiaoke-management-/, '');
-                  localeKey = `menu.xiaoke-management.${shortName}`;
-                } else if (menu.path.startsWith('/account/')) {
-                  localeKey = `menu.${menu.path.replace(/^\//, '').replaceAll('/', '.')}`;
-                } else {
-                  localeKey = `menu.${menu.name}`;
-                }
+              const shortName = menu.name.replace(/^project-management-/, '');
+              localeKey = `menu.project-management.${shortName}`;
+            } else if (menu.path.startsWith('/xiaoke-management/') || menu.name.startsWith('xiaoke-management-')) {
+              const shortName = menu.name.replace(/^xiaoke-management-/, '');
+              localeKey = `menu.xiaoke-management.${shortName}`;
+            } else if (menu.path.startsWith('/workflow/') || menu.name.startsWith('workflow-') || menu.name.startsWith('workflow:')) {
+              const shortName = menu.name.replace(/^workflow[-:]/, '');
+              localeKey = `menu.workflow.${shortName}`;
+            } else if (menu.path.startsWith('/document/') || menu.name.startsWith('document-') || menu.name.startsWith('document:')) {
+              const shortName = menu.name.replace(/^document[-:]/, '');
+              localeKey = `menu.document.${shortName}`;
+            } else if (menu.path.startsWith('/account/')) {
+              localeKey = `menu.${menu.path.replace(/^\//, '').replaceAll('/', '.')}`;
+            } else {
+              localeKey = `menu.${menu.name}`;
+            }
 
                 // 尝试获取多语言标题，如果不存在则使用菜单的 title
                 const menuTitle = intl.formatMessage({ id: localeKey }, { defaultMessage: menu.title || menu.name });

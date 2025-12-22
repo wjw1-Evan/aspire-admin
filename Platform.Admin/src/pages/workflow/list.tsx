@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space, Modal, message, Tag, Switch } from 'antd';
+import { Button, Space, Modal, message, Tag, Switch, Card, Row, Col, Form, Input, Select, Grid } from 'antd';
 import { 
   PlusOutlined, 
   EditOutlined, 
@@ -9,7 +9,8 @@ import {
   PartitionOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { TableColumnsType } from 'antd';
 import { DataTable } from '@/components/DataTable';
 import {
   getWorkflowList,
@@ -18,22 +19,81 @@ import {
   type WorkflowDefinition,
 } from '@/services/workflow/api';
 import WorkflowDesigner from './components/WorkflowDesigner';
+import WorkflowCreateForm from './components/WorkflowCreateForm';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
+const { useBreakpoint } = Grid;
+import type { SelectProps } from 'antd';
+
+
 
 const WorkflowManagement: React.FC = () => {
   const intl = useIntl();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
   const [designerVisible, setDesignerVisible] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowDefinition | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewGraph, setPreviewGraph] = useState<any>(null);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [searchForm] = Form.useForm();
+  const [searchParams, setSearchParams] = useState({
+    current: 1,
+    pageSize: 10,
+    keyword: '',
+    category: undefined,
+    isActive: undefined,
+  });
+
 
   const handleRefresh = () => {
+<<<<<<< HEAD
     actionRef.current?.reload?.();
   };
 
   const columns: ProColumns<WorkflowDefinition> = [
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+  };
+
+  // 搜索
+  const handleSearch = (values: any) => {
+    const newParams = {
+      current: 1,
+      pageSize: searchParams.pageSize,
+      keyword: values.keyword,
+      category: values.category,
+      isActive: values.isActive,
+    };
+    setSearchParams(newParams);
+    // 手动触发重新加载
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+  };
+
+  // 重置搜索
+  const handleReset = () => {
+    searchForm.resetFields();
+    const resetParams = {
+      current: 1,
+      pageSize: searchParams.pageSize,
+      keyword: '',
+      category: undefined,
+      isActive: undefined,
+    };
+    setSearchParams(resetParams);
+    // 手动触发重新加载
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+  };
+
+  const columns: TableColumnsType<WorkflowDefinition> = [
+>>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.name' }),
       dataIndex: 'name',
@@ -63,7 +123,7 @@ const WorkflowManagement: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.createdAt' }),
       dataIndex: 'createdAt',
-      render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
+      render: (text) => text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '',
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.action' }),
@@ -109,7 +169,13 @@ const WorkflowManagement: React.FC = () => {
                     const response = await deleteWorkflow(record.id!);
                     if (response.success) {
                       message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' }));
+<<<<<<< HEAD
                       actionRef.current?.reload?.();
+=======
+                      if (actionRef.current && actionRef.current.reload) {
+                        actionRef.current.reload();
+                      }
+>>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
                     }
                   } catch (error) {
                     console.error('删除失败:', error);
@@ -133,7 +199,13 @@ const WorkflowManagement: React.FC = () => {
           message.success(intl.formatMessage({ id: 'pages.workflow.message.saveSuccess' }));
           setDesignerVisible(false);
           setEditingWorkflow(null);
+<<<<<<< HEAD
           actionRef.current?.reload?.();
+=======
+          if (actionRef.current && actionRef.current.reload) {
+            actionRef.current.reload();
+          }
+>>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
         }
       } else {
         // 创建新流程的逻辑在创建页面处理
@@ -167,25 +239,78 @@ const WorkflowManagement: React.FC = () => {
             key="create"
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => {
-              window.location.href = '/workflow/create';
-            }}
+            onClick={() => setCreateModalVisible(true)}
           >
             {intl.formatMessage({ id: 'pages.workflow.create' })}
           </Button>
         </Space>
       }
     >
+      {/* 搜索表单 */}
+      <Card style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout={isMobile ? 'vertical' : 'inline'}
+          onFinish={handleSearch}
+          style={{ marginBottom: 16 }}
+        >
+          <Form.Item name="keyword" label="关键词">
+            <Input placeholder="流程名称、描述等" allowClear style={{ width: isMobile ? '100%' : 200 }} />
+          </Form.Item>
+          <Form.Item name="category" label="分类">
+            <Select
+              placeholder="选择分类"
+              allowClear
+              style={{ width: isMobile ? '100%' : 150 }}
+              showSearch
+              filterOption={((input: string, option: any) => {
+                const label = option?.label;
+                return typeof label === 'string' && label.toLowerCase().includes(input.toLowerCase());
+              }) as SelectProps['filterOption']}
+            />
+          </Form.Item>
+          <Form.Item name="isActive" label="状态">
+            <Select
+              placeholder="选择状态"
+              allowClear
+              style={{ width: isMobile ? '100%' : 150 }}
+              options={[
+                { label: '启用', value: true },
+                { label: '禁用', value: false },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space wrap>
+              <Button 
+                type="primary" 
+                htmlType="submit"
+                style={isMobile ? { width: '100%' } : {}}
+              >
+                搜索
+              </Button>
+              <Button 
+                onClick={handleReset}
+                style={isMobile ? { width: '100%' } : {}}
+              >
+                重置
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
+      {/* 数据表格 */}
       <DataTable<WorkflowDefinition>
         actionRef={actionRef}
         columns={columns}
         request={async (params) => {
           const response = await getWorkflowList({
-            current: params.current,
-            pageSize: params.pageSize,
-            keyword: params.keyword,
-            category: params.category as string,
-            isActive: params.isActive as boolean | undefined,
+            current: params.current || searchParams.current,
+            pageSize: params.pageSize || searchParams.pageSize,
+            keyword: searchParams.keyword,
+            category: searchParams.category,
+            isActive: searchParams.isActive,
           });
           if (response.success && response.data) {
             return {
@@ -197,8 +322,42 @@ const WorkflowManagement: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
+<<<<<<< HEAD
+=======
+        search={false}
+        pagination={{
+          defaultPageSize: 10,
+          pageSizeOptions: [10, 20, 50, 100],
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
+        }}
+        scroll={{ x: 'max-content' }}
+>>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
       />
 
+      {/* 创建流程模态窗体 */}
+      <Modal
+        title={intl.formatMessage({ id: 'pages.workflow.create.title' })}
+        open={createModalVisible}
+        onCancel={() => setCreateModalVisible(false)}
+        footer={null}
+        width={isMobile ? '100%' : 800}
+        style={{ top: 20 }}
+        bodyStyle={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}
+      >
+        <WorkflowCreateForm
+          onSuccess={() => {
+            setCreateModalVisible(false);
+            if (actionRef.current && actionRef.current.reload) {
+              actionRef.current.reload();
+            }
+          }}
+          onCancel={() => setCreateModalVisible(false)}
+        />
+      </Modal>
+
+      {/* 编辑/预览流程模态窗体 */}
       <Modal
         title={
           editingWorkflow

@@ -314,6 +314,9 @@ export default {
   'pages.modal.rejectReasonPlaceholder': '请输入拒绝理由...',
   'pages.modal.approveWarning': '通过后，该用户将成为企业成员。',
   'pages.modal.applyReasonPrefix': '申请理由：',
+  'pages.modal.reviewerPrefix': '(审核人: {name})',
+  'pages.modal.approved': '✓ 已通过',
+  'pages.modal.rejectedPrefix': '✗ 拒绝原因：',
   'pages.table.companyCode': '企业代码：',
   'pages.table.members': '{count} 名成员',
   // 日志详情

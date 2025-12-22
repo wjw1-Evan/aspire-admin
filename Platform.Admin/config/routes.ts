@@ -171,11 +171,7 @@ export default [
         component: './workflow/list',
         hideInMenu: true,
       },
-      {
-        path: '/workflow/create',
-        component: './workflow/create',
-        hideInMenu: true,
-      },
+
       {
         path: '/workflow/monitor',
         component: './workflow/monitor',

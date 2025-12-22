@@ -184,13 +184,13 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
         // 小科管理子菜单：从菜单名称中提取子菜单名称（去掉 xiaoke-management- 前缀）
         const shortName = menu.name.replace(/^xiaoke-management-/, '');
         localeKey = `menu.xiaoke-management.${shortName}`;
-      } else if (menu.path.startsWith('/workflow/') || menu.name.startsWith('workflow-')) {
-        // 工作流管理子菜单：从菜单名称中提取子菜单名称（去掉 workflow- 前缀）
-        const shortName = menu.name.replace(/^workflow-/, '');
+      } else if (menu.path.startsWith('/workflow/') || menu.name.startsWith('workflow-') || menu.name.startsWith('workflow:')) {
+        // 工作流管理子菜单：从菜单名称中提取子菜单名称（去掉 workflow- 或 workflow: 前缀）
+        const shortName = menu.name.replace(/^workflow[-:]/, '');
         localeKey = `menu.workflow.${shortName}`;
-      } else if (menu.path.startsWith('/document/') || menu.name.startsWith('document-')) {
-        // 公文管理子菜单：从菜单名称中提取子菜单名称（去掉 document- 前缀）
-        const shortName = menu.name.replace(/^document-/, '');
+      } else if (menu.path.startsWith('/document/') || menu.name.startsWith('document-') || menu.name.startsWith('document:')) {
+        // 公文管理子菜单：从菜单名称中提取子菜单名称（去掉 document- 或 document: 前缀）
+        const shortName = menu.name.replace(/^document[-:]/, '');
         localeKey = `menu.document.${shortName}`;
       } else if (menu.path === '/welcome') {
         localeKey = 'menu.welcome';

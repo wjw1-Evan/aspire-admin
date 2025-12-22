@@ -4,8 +4,8 @@
 
 ## ✨ 关键特性
 
-- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集、SSE 实时聊天、GridFS 附件存储与下载代理、AI 智能回复服务编排、任务与项目管理、IoT 平台、规则管理与 MCP 集成。
-- **管理后台**：Ant Design Pro 动态菜单、企业与成员管理、加入申请审批、用户活动日志、任务管理、项目管理、IoT 平台（网关/设备/数据点/事件告警）、规则管理、帮助中心、国际化与统一错误处理。
+- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集、SSE 实时聊天、GridFS 附件存储与下载代理、AI 智能回复服务编排、任务与项目管理、IoT 平台、规则管理与 MCP 集成、密码本管理（AES-256-GCM 加密存储）。
+- **管理后台**：Ant Design Pro 动态菜单、企业与成员管理、加入申请审批、用户活动日志、任务管理、项目管理、IoT 平台（网关/设备/数据点/事件告警）、规则管理、密码本管理、帮助中心、国际化与统一错误处理。
 - **移动应用**：Expo Router 导航、深色/浅色主题切换、认证守卫、企业切换、密码修改与基础组件库，内置实时聊天、附件上传 / 预览、AI 智能回复与附近的人推荐体验。
 - **基础设施**：Aspire AppHost 服务编排、YARP 统一网关、Scalar API 文档、MongoDB + Mongo Express、健康检查与可观察性。
 
@@ -34,6 +34,7 @@ Platform/
 - **任务与项目管理**：任务创建、分配、执行、监控、任务树、任务依赖、执行日志；项目创建、成员管理、项目统计、任务关联。
 - **IoT 平台**：网关管理、设备管理、数据点管理、数据上报与查询、事件告警、设备状态监控、平台统计与数据流监控。
 - **规则管理**：规则 CRUD、规则执行、MCP（Model Context Protocol）集成、自动化工作流编排。
+- **密码本管理**：密码条目创建、更新、查询、删除（软删除）、分类与标签管理、密码加密存储（AES-256-GCM）、密码强度检测、密码生成器、数据导出、统计信息。密码使用用户级密钥加密，确保数据安全。
 - **实时通信**：基于 SSE（Server-Sent Events）实现实时消息推送，`ChatSseConnectionManager` 管理用户连接，`ChatBroadcaster` 负责消息广播，支持流式 AI 回复、消息/会话同步、已读状态推送等。
 - **运营能力**：通知中心、统一通知服务、系统维护脚本（补全缺失关联、数据校验）、系统资源监控 (`/api/SystemMonitor/resources`)。
 - **审计与日志**：`ActivityLogMiddleware` 捕获请求轨迹，`UserActivityLog` 记录 CRUD 审计操作，所有异常由统一响应中间件处理。
@@ -55,7 +56,7 @@ Platform/
 
 - UmiJS 运行时获取当前用户与动态菜单，直接对接网关 `/apiservice`。
 - **功能模块**：
-  - **基础管理**：用户管理、角色管理、企业设置、加入申请（我发起 / 待审批）、我的活动、系统帮助。
+  - **基础管理**：用户管理、角色管理、企业设置、加入申请（我发起 / 待审批）、我的活动、密码本管理、系统帮助。
   - **任务与项目**：任务管理（创建、分配、执行、监控、任务树）、项目管理（创建、成员管理、任务关联）。
   - **IoT 平台**：物联网平台概览、网关管理、设备管理、数据点管理、事件告警、数据流监控。
   - **规则管理**：规则配置、MCP 集成、自动化工作流。
@@ -153,6 +154,16 @@ Platform/
 - **规则管理**：规则的增删改查、规则查询与筛选、规则状态管理。
 - **MCP 集成**：支持 Model Context Protocol（MCP）集成，实现自动化工作流编排、规则执行与上下文管理。
 
+## 🔐 密码本管理
+
+- **密码存储**：使用 AES-256-GCM 加密算法存储密码，每个用户使用独立的加密密钥，确保数据安全。
+- **功能特性**：密码条目管理（创建、编辑、删除、查询）、分类与标签管理、密码强度检测、随机密码生成、数据导出、统计信息。
+- **安全措施**：密码加密存储、用户级访问控制、活动日志自动过滤敏感信息、软删除支持。
+- **权限控制**：通过 `password-book` 菜单权限控制访问。
+
+详细文档见：
+- [密码本安全审计报告](docs/security/PASSWORD-BOOK-SECURITY-AUDIT.md)
+
 ## 🧩 多租户与权限模型
 
 - **企业隔离**：实现 `IMultiTenant` 的实体（角色、通知等）自动附加 `CompanyId` 过滤；`AppUser` 通过 `CurrentCompanyId` + `UserCompany` 多对多关联。
@@ -177,8 +188,8 @@ Platform/
 
 ```text
 Platform.ApiService/
-├── Controllers/      # Auth、User、Company、Menu、JoinRequest、Task、Project、IoT、Rule、Chat（ChatMessages、ChatSessions、ChatHistory、ChatSse）、Maintenance、Monitor 等控制器
-├── Services/         # 业务服务层与自动注册（含 ChatService、ChatBroadcaster、ChatSseConnectionManager）
+├── Controllers/      # Auth、User、Company、Menu、JoinRequest、Task、Project、IoT、Rule、Chat（ChatMessages、ChatSessions、ChatHistory、ChatSse）、PasswordBook、Maintenance、Monitor 等控制器
+├── Services/         # 业务服务层与自动注册（含 ChatService、ChatBroadcaster、ChatSseConnectionManager、PasswordBookService、EncryptionService）
 ├── Models/           # 实体与 DTO（含 Response 模型）
 ├── Middleware/       # 活动日志、统一响应
 ├── Extensions/       # 数据过滤、分页、自动注册等扩展方法
@@ -187,7 +198,7 @@ Platform.ApiService/
 Platform.Admin/
 ├── config/           # UmiJS 配置、路由、代理
 ├── src/
-│   ├── pages/        # 用户管理、角色管理、企业设置、加入申请、活动日志、任务管理、项目管理、IoT 平台、规则管理等
+│   ├── pages/        # 用户管理、角色管理、企业设置、加入申请、活动日志、任务管理、项目管理、IoT 平台、规则管理、密码本管理等
 │   ├── components/   # 复用组件、帮助弹窗、AI 助手、统一通知中心等
 │   ├── services/     # API 封装（自动刷新 token）
 │   ├── hooks/        # 自定义 Hooks（如 useSseConnection）
@@ -209,9 +220,14 @@ Platform.App/
 
 ### 功能模块
 - [docs/features/IOT-MENU-CONFIGURATION.md](docs/features/IOT-MENU-CONFIGURATION.md) – IoT 平台菜单配置说明。
-- [docs/features/DATA-INITIALIZER-MICROSERVICE.md](docs/features/DATA-INITIALIZER-MICROSERVICE.md) – 数据初始化微服务说明。
 - [docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md](docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md) – 数据访问工厂使用指南。
-- [docs/features/HELP-MODULE-FEATURE.md](docs/features/HELP-MODULE-FEATURE.md) – 管理后台帮助系统介绍。
+- [docs/features/DATA-INITIALIZER-MICROSERVICE.md](docs/features/DATA-INITIALIZER-MICROSERVICE.md) – 数据初始化微服务说明。
+- [docs/features/SSE-REALTIME-COMMUNICATION.md](docs/features/SSE-REALTIME-COMMUNICATION.md) – SSE 实时通信指南。
+- [docs/features/PASSWORD-BOOK-GUIDE.md](docs/features/PASSWORD-BOOK-GUIDE.md) – 密码本功能使用指南。
+- [docs/features/TASK-PROJECT-MANAGEMENT.md](docs/features/TASK-PROJECT-MANAGEMENT.md) – 任务与项目管理指南。
+
+### 安全与审计
+- [docs/security/PASSWORD-BOOK-SECURITY-AUDIT.md](docs/security/PASSWORD-BOOK-SECURITY-AUDIT.md) – 密码本安全审计报告。
 
 ---
 

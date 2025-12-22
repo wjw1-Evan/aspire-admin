@@ -4,6 +4,7 @@ import {
   QuestionCircleOutlined,
   RocketOutlined,
   ToolOutlined,
+  BuildOutlined,
 } from '@ant-design/icons';
 import { Modal, Space, Tabs, Typography } from 'antd';
 import React from 'react';
@@ -70,6 +71,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
             <li>
               <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.systemMonitor' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.passwordBook' })}</strong>
             </li>
             <li>
               <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.apiDocs' })}</strong>
@@ -192,6 +196,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
               <li>
                 <strong>AI 智能助手</strong> - 智能回复、匹配推荐、话题引导、附件处理
+              </li>
+              <li>
+                <strong>密码本管理</strong> - AES-256-GCM 加密存储、密码生成器、强度检测、数据导出
               </li>
             </ul>
 
@@ -896,6 +903,36 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               <strong>OpenTelemetry</strong> - 分布式追踪，请求链路分析
             </li>
           </ul>
+
+          <Title level={5}>🔐 {intl.formatMessage({ id: 'pages.help.features.passwordBook.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.features.passwordBook.description' })}
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>密码存储</strong> - 使用 AES-256-GCM 加密算法，每个用户使用独立密钥
+            </li>
+            <li>
+              <strong>分类管理</strong> - 支持分类和标签组织密码，便于查找和管理
+            </li>
+            <li>
+              <strong>密码生成</strong> - 内置随机密码生成器，支持自定义长度和字符类型
+            </li>
+            <li>
+              <strong>强度检测</strong> - 自动检测密码强度，提供改进建议
+            </li>
+            <li>
+              <strong>数据导出</strong> - 支持导出密码数据，便于备份和迁移
+            </li>
+            <li>
+              <strong>统计信息</strong> - 查看密码数量、分类分布等统计信息
+            </li>
+          </ul>
+          <Paragraph>
+            <Text type="secondary">
+              💡 提示：密码本功能采用用户级加密密钥，确保数据安全。所有密码操作都有审计日志记录（敏感信息已过滤）。
+            </Text>
+          </Paragraph>
         </div>
       ),
     },
@@ -981,6 +1018,11 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           <Paragraph>
             {intl.formatMessage({ id: 'pages.help.faq.switchCompany.a' })}
           </Paragraph>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.faq.passwordBook.q' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.faq.passwordBook.a' })}
+          </Paragraph>
         </div>
       ),
     },
@@ -994,6 +1036,44 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       children: (
         <div style={{ padding: '16px 0' }}>
           <Title level={5}>{intl.formatMessage({ id: 'pages.help.tech.docs.title' })}</Title>
+          <Paragraph>
+            <strong>项目文档</strong>
+          </Paragraph>
+          <ul>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/README.md" target="_blank" rel="noreferrer">
+                项目 README
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md" target="_blank" rel="noreferrer">
+                数据访问工厂使用指南
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/DATA-INITIALIZER-MICROSERVICE.md" target="_blank" rel="noreferrer">
+                数据初始化微服务说明
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/SSE-REALTIME-COMMUNICATION.md" target="_blank" rel="noreferrer">
+                SSE 实时通信指南
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/PASSWORD-BOOK-GUIDE.md" target="_blank" rel="noreferrer">
+                密码本功能使用指南
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/TASK-PROJECT-MANAGEMENT.md" target="_blank" rel="noreferrer">
+                任务与项目管理指南
+              </a>
+            </li>
+          </ul>
+          <Paragraph>
+            <strong>技术文档</strong>
+          </Paragraph>
           <ul>
             <li>
               <a href="https://pro.ant.design" target="_blank" rel="noreferrer">
@@ -1049,6 +1129,181 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               })()}
             </Text>
           </Paragraph>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.tech.development.title' })}</Title>
+          <Paragraph>
+            <Text type="secondary">
+              {intl.formatMessage({ id: 'pages.help.tech.development.content' })}
+            </Text>
+          </Paragraph>
+        </div>
+      ),
+    },
+    {
+      key: 'development',
+      label: (
+        <span>
+          <BuildOutlined /> {intl.formatMessage({ id: 'pages.help.tab.development' })}
+        </span>
+      ),
+      children: (
+        <div style={{ padding: '16px 0' }}>
+          <Title level={4}>🔧 {intl.formatMessage({ id: 'pages.help.development.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.development.description' })}
+          </Paragraph>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.development.architecture.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.development.architecture.description' })}
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.architecture.backend' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.architecture.frontend' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.architecture.mobile' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.architecture.infrastructure' })}</strong>
+            </li>
+          </ul>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.development.guide.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.development.guide.description' })}
+          </Paragraph>
+          <ol>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.guide.step1' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.guide.step2' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.guide.step3' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.guide.step4' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.guide.step5' })}</strong>
+            </li>
+          </ol>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.development.api.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.development.api.description' })}
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.api.unified' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.api.permission' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.api.multitenant' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.api.audit' })}</strong>
+            </li>
+          </ul>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.development.database.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.development.database.description' })}
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.database.factory' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.database.builder' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.database.softdelete' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.database.audit' })}</strong>
+            </li>
+          </ul>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.development.frontend.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.development.frontend.description' })}
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.frontend.component' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.frontend.hook' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.frontend.service' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.frontend.i18n' })}</strong>
+            </li>
+          </ul>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.development.bestPractices.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.development.bestPractices.description' })}
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.bestPractices.rule1' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.bestPractices.rule2' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.bestPractices.rule3' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.bestPractices.rule4' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.development.bestPractices.rule5' })}</strong>
+            </li>
+          </ul>
+
+          <Title level={5}>{intl.formatMessage({ id: 'pages.help.development.resources.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.development.resources.description' })}
+          </Paragraph>
+          <ul>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/BACKEND-RULES.md" target="_blank" rel="noreferrer">
+                {intl.formatMessage({ id: 'pages.help.development.resources.backendRules' })}
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/API-RESPONSE-RULES.md" target="_blank" rel="noreferrer">
+                {intl.formatMessage({ id: 'pages.help.development.resources.apiRules' })}
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/MENU-LEVEL-PERMISSION-GUIDE.md" target="_blank" rel="noreferrer">
+                {intl.formatMessage({ id: 'pages.help.development.resources.permissionGuide' })}
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/FRONTEND-RULES.md" target="_blank" rel="noreferrer">
+                {intl.formatMessage({ id: 'pages.help.development.resources.frontendRules' })}
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/your-repo/aspire-admin/blob/main/docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md" target="_blank" rel="noreferrer">
+                {intl.formatMessage({ id: 'pages.help.development.resources.databaseGuide' })}
+              </a>
+            </li>
+          </ul>
         </div>
       ),
     },

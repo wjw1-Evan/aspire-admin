@@ -38,6 +38,11 @@ public interface IPasswordBookService
     Task<List<string>> GetCategoriesAsync();
 
     /// <summary>
+    /// 获取所有标签
+    /// </summary>
+    Task<List<string>> GetTagsAsync();
+
+    /// <summary>
     /// 导出条目（解密后导出）
     /// </summary>
     Task<List<PasswordBookEntryDetailDto>> ExportEntriesAsync(ExportPasswordBookRequest request, string userId);

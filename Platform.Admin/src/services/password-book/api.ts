@@ -75,6 +75,15 @@ export async function getCategories() {
 }
 
 /**
+ * 获取所有标签
+ */
+export async function getTags() {
+  return request<ApiResponse<string[]>>('/api/password-book/tags', {
+    method: 'GET',
+  });
+}
+
+/**
  * 生成密码
  */
 export async function generatePassword(data: GeneratePasswordRequest) {

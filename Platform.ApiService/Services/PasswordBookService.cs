@@ -272,6 +272,24 @@ public class PasswordBookService : IPasswordBookService
     }
 
     /// <summary>
+    /// 获取所有标签
+    /// </summary>
+    public async Task<List<string>> GetTagsAsync()
+    {
+        var filter = _factory.CreateFilterBuilder().Build();
+        var entries = await _factory.FindAsync(filter);
+
+        var tags = entries
+            .Where(e => e.Tags != null && e.Tags.Any())
+            .SelectMany(e => e.Tags)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList();
+
+        return tags;
+    }
+
+    /// <summary>
     /// 导出条目（解密后导出）
     /// </summary>
     public async Task<List<PasswordBookEntryDetailDto>> ExportEntriesAsync(ExportPasswordBookRequest request, string userId)

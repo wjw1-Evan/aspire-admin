@@ -140,6 +140,17 @@ public class PasswordBookController : BaseApiController
     }
 
     /// <summary>
+    /// 获取所有标签
+    /// </summary>
+    [HttpGet("tags")]
+    [RequireMenu("password-book")]
+    public async Task<IActionResult> GetTags()
+    {
+        var tags = await _passwordBookService.GetTagsAsync();
+        return Success(tags);
+    }
+
+    /// <summary>
     /// 生成密码
     /// </summary>
     [HttpPost("generate")]

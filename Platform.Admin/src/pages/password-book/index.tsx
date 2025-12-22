@@ -46,6 +46,7 @@ import {
   deletePasswordBookEntry,
   getPasswordBookStatistics,
   getCategories,
+  getTags,
 } from '@/services/password-book/api';
 import type { ApiResponse } from '@/types/unified-api';
 import type {
@@ -73,6 +74,7 @@ const PasswordBook: React.FC = () => {
   const [viewingEntry, setViewingEntry] = useState<PasswordBookEntryDetail | null>(null);
   const [statistics, setStatistics] = useState<PasswordBookStatistics | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useState<PasswordBookQueryRequest>({
     current: 1,
     pageSize: 10,
@@ -109,10 +111,23 @@ const PasswordBook: React.FC = () => {
     }
   }, []);
 
+  // 获取标签列表
+  const fetchTags = useCallback(async () => {
+    try {
+      const response = await getTags();
+      if (response.success && response.data) {
+        setTags(response.data);
+      }
+    } catch (error) {
+      // 错误由全局错误处理统一处理
+    }
+  }, []);
+
   useEffect(() => {
     fetchStatistics();
     fetchCategories();
-  }, [fetchStatistics, fetchCategories]);
+    fetchTags();
+  }, [fetchStatistics, fetchCategories, fetchTags]);
 
   // 获取密码本列表
   const fetchEntries = useCallback(
@@ -441,6 +456,19 @@ const PasswordBook: React.FC = () => {
                 (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
               options={categories.map((cat) => ({ label: cat, value: cat }))}
+            />
+          </Form.Item>
+          <Form.Item name="tags" label="标签">
+            <Select
+              mode="multiple"
+              placeholder="选择标签"
+              allowClear
+              style={{ width: isMobile ? '100%' : 200 }}
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={tags.map((tag) => ({ label: tag, value: tag }))}
             />
           </Form.Item>
           <Form.Item>

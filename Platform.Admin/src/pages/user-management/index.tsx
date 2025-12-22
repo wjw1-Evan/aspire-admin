@@ -77,6 +77,14 @@ const UserManagement: React.FC = () => {
     SortBy: 'CreatedAt',
     SortOrder: 'desc',
   });
+  
+  // 🔧 修复：使用 ref 存储搜索参数，避免 fetchUsers 函数重新创建导致重复请求
+  const searchParamsRef = useRef<UserListRequest>({
+    Page: 1,
+    PageSize: 10,
+    SortBy: 'CreatedAt',
+    SortOrder: 'desc',
+  });
 
   // 加载角色列表
   React.useEffect(() => {
@@ -117,8 +125,8 @@ const UserManagement: React.FC = () => {
   // 获取用户列表
   const fetchUsers = useCallback(async (params: any, sort?: Record<string, any>) => {
     // 处理排序参数
-    let sortBy = searchParams.SortBy;
-    let sortOrder = searchParams.SortOrder;
+    let sortBy = searchParamsRef.current.SortBy;
+    let sortOrder = searchParamsRef.current.SortOrder;
     
     if (sort && Object.keys(sort).length > 0) {
       // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
@@ -131,15 +139,15 @@ const UserManagement: React.FC = () => {
     }
 
     const requestData: UserListRequest = {
-      Page: params.current || searchParams.Page,
-      PageSize: params.pageSize || searchParams.PageSize,
-      Search: searchParams.Search,
-      RoleIds: searchParams.RoleIds,
-      IsActive: searchParams.IsActive,
+      Page: params.current || searchParamsRef.current.Page,
+      PageSize: params.pageSize || searchParamsRef.current.PageSize,
+      Search: searchParamsRef.current.Search,
+      RoleIds: searchParamsRef.current.RoleIds,
+      IsActive: searchParamsRef.current.IsActive,
       SortBy: sortBy,
       SortOrder: sortOrder,
-      StartDate: searchParams.StartDate,
-      EndDate: searchParams.EndDate,
+      StartDate: searchParamsRef.current.StartDate,
+      EndDate: searchParamsRef.current.EndDate,
     };
 
     try {
@@ -175,13 +183,13 @@ const UserManagement: React.FC = () => {
         total: 0,
       };
     }
-  }, [searchParams]);
+  }, []); // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
 
   // 处理搜索
   const handleSearch = useCallback((values: any) => {
     const newSearchParams: UserListRequest = {
       Page: 1,
-      PageSize: searchParams.PageSize,
+      PageSize: searchParamsRef.current.PageSize,
       Search: values.search,
       RoleIds: values.roleIds
         ? Array.isArray(values.roleIds)
@@ -189,27 +197,33 @@ const UserManagement: React.FC = () => {
           : [values.roleIds]
         : undefined,
       IsActive: values.isActive,
-      SortBy: searchParams.SortBy,
-      SortOrder: searchParams.SortOrder,
+      SortBy: searchParamsRef.current.SortBy,
+      SortOrder: searchParamsRef.current.SortOrder,
       StartDate: values.dateRange?.[0]?.format('YYYY-MM-DD'),
       EndDate: values.dateRange?.[1]?.format('YYYY-MM-DD'),
     };
+    // 更新 ref 和 state
+    searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
+    // 手动触发重新加载
     actionRef.current?.reload();
-  }, [searchParams]);
+  }, []);
 
   // 重置搜索
   const handleReset = useCallback(() => {
     searchForm.resetFields();
     const resetParams: UserListRequest = {
       Page: 1,
-      PageSize: searchParams.PageSize,
+      PageSize: searchParamsRef.current.PageSize,
       SortBy: 'CreatedAt',
       SortOrder: 'desc',
     };
+    // 更新 ref 和 state
+    searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
+    // 手动触发重新加载
     actionRef.current?.reload();
-  }, [searchForm, searchParams.PageSize]);
+  }, [searchForm]);
 
   // 删除用户（带删除原因）
   const handleDelete = useCallback(async (userId: string) => {

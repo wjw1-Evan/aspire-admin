@@ -130,6 +130,19 @@ const TaskManagement: React.FC = () => {
     assignedTo: undefined as string | undefined,
     taskType: undefined as string | undefined,
   });
+  
+  // 🔧 修复：使用 ref 存储搜索参数，避免 fetchTasks 函数重新创建导致重复请求
+  const searchParamsRef = useRef({
+    page: 1,
+    pageSize: 10,
+    sortBy: 'CreatedAt',
+    sortOrder: 'desc',
+    search: undefined as string | undefined,
+    status: undefined as number | undefined,
+    priority: undefined as number | undefined,
+    assignedTo: undefined as string | undefined,
+    taskType: undefined as string | undefined,
+  });
 
   // 获取统计信息
   const fetchStatistics = useCallback(async () => {
@@ -183,8 +196,8 @@ const TaskManagement: React.FC = () => {
 
   // 获取任务列表
   const fetchTasks = useCallback(async (params: any, sort?: Record<string, any>) => {
-    let sortBy = searchParams.sortBy;
-    let sortOrder = searchParams.sortOrder;
+    let sortBy = searchParamsRef.current.sortBy;
+    let sortOrder = searchParamsRef.current.sortOrder;
 
     if (sort && Object.keys(sort).length > 0) {
       const sortKey = Object.keys(sort)[0];
@@ -194,13 +207,13 @@ const TaskManagement: React.FC = () => {
     }
 
     const requestData = {
-      page: params.current || searchParams.page,
-      pageSize: params.pageSize || searchParams.pageSize,
-      search: searchParams.search,
-      status: searchParams.status,
-      priority: searchParams.priority,
-      assignedTo: searchParams.assignedTo,
-      taskType: searchParams.taskType,
+      page: params.current || searchParamsRef.current.page,
+      pageSize: params.pageSize || searchParamsRef.current.pageSize,
+      search: searchParamsRef.current.search,
+      status: searchParamsRef.current.status,
+      priority: searchParamsRef.current.priority,
+      assignedTo: searchParamsRef.current.assignedTo,
+      taskType: searchParamsRef.current.taskType,
       sortBy,
       sortOrder,
     };
@@ -228,7 +241,7 @@ const TaskManagement: React.FC = () => {
         total: 0,
       };
     }
-  }, [searchParams, intl]);
+  }, [intl]); // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
 
   // 处理创建任务
   const handleCreateTask = useCallback(() => {
@@ -313,7 +326,7 @@ const TaskManagement: React.FC = () => {
   // 处理搜索
   const handleSearch = useCallback((values: any) => {
     const newSearchParams = {
-      ...searchParams,
+      ...searchParamsRef.current,
       page: 1,
       search: values.search,
       status: values.status,
@@ -321,16 +334,19 @@ const TaskManagement: React.FC = () => {
       assignedTo: values.assignedTo,
       taskType: values.taskType,
     };
+    // 更新 ref 和 state
+    searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
+    // 手动触发重新加载
     actionRef.current?.reload();
-  }, [searchParams]);
+  }, []);
 
   // 重置搜索
   const handleReset = useCallback(() => {
     searchForm.resetFields();
     const resetParams = {
       page: 1,
-      pageSize: 10,
+      pageSize: searchParamsRef.current.pageSize,
       sortBy: 'CreatedAt',
       sortOrder: 'desc',
       search: undefined as string | undefined,
@@ -339,7 +355,10 @@ const TaskManagement: React.FC = () => {
       assignedTo: undefined as string | undefined,
       taskType: undefined as string | undefined,
     };
+    // 更新 ref 和 state
+    searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
+    // 手动触发重新加载
     actionRef.current?.reload();
   }, [searchForm]);
 

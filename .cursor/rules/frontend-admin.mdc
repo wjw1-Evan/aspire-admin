@@ -56,7 +56,80 @@ appliesTo:
   - 函数签名：`(params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => Promise<RequestData<T>>`
   - 错误已被全局错误处理捕获并显示提示时，应返回 `{ data: [], total: 0, success: false }` 避免表格显示错误状态
   - 从后端 `ApiResponse<PagedResult<T>>` 中提取 `data.list` 和 `data.total` 返回给 DataTable
-  - 搜索参数需在 `request` 函数中手动合并（通过 `useState` 管理搜索状态）
+  - **避免重复请求**（强制）：使用 `useRef` 存储搜索参数，避免 `request` 函数因 `searchParams` state 更新而重新创建，导致 DataTable 的 `useEffect` 自动触发重复请求
+    - **问题描述**：如果 `request` 函数依赖 `searchParams` state，当搜索时更新 state 会导致函数重新创建，DataTable 检测到函数变化会自动调用，同时 `handleSearch` 中手动调用 `reload()`，导致重复请求（点击搜索时发送两次 API 请求）
+    - **解决方案**：
+      1. 使用 `useRef` 存储搜索参数：`const searchParamsRef = useRef<SearchParamsType>({ ... });`
+      2. `request` 函数从 `ref` 读取参数，依赖数组为空：`useCallback(async (params) => { ... }, [])`
+      3. 搜索和重置时同时更新 `ref` 和 `state`，然后手动调用 `reload()`
+    - **代码示例**：
+      ```typescript
+      const [searchParams, setSearchParams] = useState<SearchParamsType>({
+        current: 1,
+        pageSize: 10,
+      });
+      
+      // 🔧 使用 ref 存储搜索参数，避免 fetchData 函数重新创建导致重复请求
+      const searchParamsRef = useRef<SearchParamsType>({
+        current: 1,
+        pageSize: 10,
+      });
+      
+      const fetchData = useCallback(async (params: any) => {
+        const requestData = {
+          current: params.current || searchParamsRef.current.current,
+          pageSize: params.pageSize || searchParamsRef.current.pageSize,
+          // 从 ref 读取搜索参数
+          keyword: searchParamsRef.current.keyword,
+          platform: searchParamsRef.current.platform,
+          // ...
+        };
+        
+        try {
+          const response = await getDataList(requestData);
+          if (response.success && response.data) {
+            return {
+              data: response.data.data,
+              success: true,
+              total: response.data.total,
+            };
+          }
+          return { data: [], success: false, total: 0 };
+        } catch (error) {
+          return { data: [], success: false, total: 0 };
+        }
+      }, []); // 🔧 空依赖数组，避免函数重新创建
+      
+      const handleSearch = useCallback((values: any) => {
+        const newParams = {
+          current: 1,
+          pageSize: searchParamsRef.current.pageSize,
+          keyword: values.keyword,
+          platform: values.platform,
+          // ...
+        };
+        // 同时更新 ref 和 state
+        searchParamsRef.current = newParams;
+        setSearchParams(newParams);
+        // 手动触发重新加载
+        actionRef.current?.reload();
+      }, []);
+      
+      const handleReset = useCallback(() => {
+        searchForm.resetFields();
+        const resetParams = {
+          current: 1,
+          pageSize: searchParamsRef.current.pageSize,
+        };
+        // 同时更新 ref 和 state
+        searchParamsRef.current = resetParams;
+        setSearchParams(resetParams);
+        // 手动触发重新加载
+        actionRef.current?.reload();
+      }, [searchForm]);
+      ```
+    - **参考实现**：`src/pages/password-book/index.tsx`、`src/pages/user-management/index.tsx`、`src/pages/task-management/index.tsx`、`src/pages/task-management/components/ProjectView.tsx`
+    - 参考实现：`src/pages/password-book/index.tsx`、`src/pages/user-management/index.tsx`、`src/pages/task-management/index.tsx`
 
 ## 分页处理规范（强制）
 - **统一分页参数**：所有分页相关 API 调用统一使用 `page` 和 `pageSize` 参数（参考 `src/pages/my-activity/index.tsx`）。

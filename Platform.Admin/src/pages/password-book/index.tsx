@@ -78,6 +78,13 @@ const PasswordBook: React.FC = () => {
     pageSize: 10,
   });
 
+  // 使用 ref 存储搜索参数，避免 fetchEntries 函数重新创建导致重复请求
+  // 🔧 修复：使用 ref 存储搜索参数，避免 fetchEntries 依赖 searchParams 导致函数重新创建
+  const searchParamsRef = useRef<PasswordBookQueryRequest>({
+    current: 1,
+    pageSize: 10,
+  });
+
   // 获取统计信息
   const fetchStatistics = useCallback(async () => {
     try {
@@ -111,13 +118,13 @@ const PasswordBook: React.FC = () => {
   const fetchEntries = useCallback(
     async (params: any) => {
       const requestData: PasswordBookQueryRequest = {
-        current: params.current || searchParams.current,
-        pageSize: params.pageSize || searchParams.pageSize,
-        platform: searchParams.platform,
-        account: searchParams.account,
-        category: searchParams.category,
-        tags: searchParams.tags,
-        keyword: searchParams.keyword,
+        current: params.current || searchParamsRef.current.current,
+        pageSize: params.pageSize || searchParamsRef.current.pageSize,
+        platform: searchParamsRef.current.platform,
+        account: searchParamsRef.current.account,
+        category: searchParamsRef.current.category,
+        tags: searchParamsRef.current.tags,
+        keyword: searchParamsRef.current.keyword,
       };
 
       try {
@@ -134,7 +141,7 @@ const PasswordBook: React.FC = () => {
         return { data: [], success: false, total: 0 };
       }
     },
-    [searchParams],
+    [], // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
   );
 
   // 搜索
@@ -142,17 +149,20 @@ const PasswordBook: React.FC = () => {
     (values: any) => {
       const newParams: PasswordBookQueryRequest = {
         current: 1,
-        pageSize: searchParams.pageSize,
+        pageSize: searchParamsRef.current.pageSize,
         platform: values.platform,
         account: values.account,
         category: values.category,
         tags: values.tags,
         keyword: values.keyword,
       };
+      // 更新 ref 和 state
+      searchParamsRef.current = newParams;
       setSearchParams(newParams);
+      // 手动触发重新加载
       actionRef.current?.reload();
     },
-    [searchParams.pageSize],
+    [],
   );
 
   // 重置搜索
@@ -160,11 +170,14 @@ const PasswordBook: React.FC = () => {
     searchForm.resetFields();
     const resetParams: PasswordBookQueryRequest = {
       current: 1,
-      pageSize: searchParams.pageSize,
+      pageSize: searchParamsRef.current.pageSize,
     };
+    // 更新 ref 和 state
+    searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
+    // 手动触发重新加载
     actionRef.current?.reload();
-  }, [searchForm, searchParams.pageSize]);
+  }, [searchForm]);
 
   // 创建
   const handleCreate = useCallback(() => {

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Platform.ApiService.Models;
@@ -180,12 +181,25 @@ public class PasswordBookService : IPasswordBookService
         if (!string.IsNullOrEmpty(request.Keyword))
         {
             var keyword = request.Keyword;
+            var regex = new MongoDB.Bson.BsonRegularExpression(keyword, "i");
+            
+            // 🔧 修复：MongoDB LINQ 不支持空合并运算符 ??，需要分别处理 Notes 字段可能为 null 的情况
+            var keywordFilters = new List<FilterDefinition<PasswordBookEntry>>
+            {
+                Builders<PasswordBookEntry>.Filter.Regex(e => e.Platform, regex),
+                Builders<PasswordBookEntry>.Filter.Regex(e => e.Account, regex)
+            };
+            
+            // 对于 Notes 字段，只有当它不为 null 时才进行正则匹配
+            // 如果 Notes 为 null，它不会包含任何关键词，所以不需要匹配
+            var notesFilter = Builders<PasswordBookEntry>.Filter.And(
+                Builders<PasswordBookEntry>.Filter.Ne(e => e.Notes, null),
+                Builders<PasswordBookEntry>.Filter.Regex(e => e.Notes!, regex)
+            );
+            keywordFilters.Add(notesFilter);
+            
             filterBuilder = filterBuilder.Custom(
-                Builders<PasswordBookEntry>.Filter.Or(
-                    Builders<PasswordBookEntry>.Filter.Regex(e => e.Platform, new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                    Builders<PasswordBookEntry>.Filter.Regex(e => e.Account, new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                    Builders<PasswordBookEntry>.Filter.Regex(e => e.Notes ?? "", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
-                )
+                Builders<PasswordBookEntry>.Filter.Or(keywordFilters)
             );
         }
 

@@ -68,6 +68,14 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     sortBy: 'CreatedAt',
     sortOrder: 'desc',
   });
+  
+  // 🔧 修复：使用 ref 存储搜索参数，避免 fetchProjects 函数重新创建导致重复请求
+  const searchParamsRef = useRef<ProjectQueryRequest>({
+    page: 1,
+    pageSize: 10,
+    sortBy: 'CreatedAt',
+    sortOrder: 'desc',
+  });
 
   // 获取统计信息
   const fetchStatistics = useCallback(async () => {
@@ -87,8 +95,8 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
   // 获取项目列表（使用 useCallback 避免死循环）
   const fetchProjects = useCallback(async (params: any, sort?: Record<string, any>) => {
-    let sortBy = searchParams.sortBy;
-    let sortOrder = searchParams.sortOrder;
+    let sortBy = searchParamsRef.current.sortBy;
+    let sortOrder = searchParamsRef.current.sortOrder;
 
     if (sort && Object.keys(sort).length > 0) {
       const sortKey = Object.keys(sort)[0];
@@ -98,14 +106,14 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     }
 
     const requestData: ProjectQueryRequest = {
-      page: params.current || searchParams.page,
-      pageSize: params.pageSize || searchParams.pageSize,
-      search: searchParams.search,
-      status: searchParams.status,
-      priority: searchParams.priority,
-      managerId: searchParams.managerId,
-      startDate: searchParams.startDate,
-      endDate: searchParams.endDate,
+      page: params.current || searchParamsRef.current.page,
+      pageSize: params.pageSize || searchParamsRef.current.pageSize,
+      search: searchParamsRef.current.search,
+      status: searchParamsRef.current.status,
+      priority: searchParamsRef.current.priority,
+      managerId: searchParamsRef.current.managerId,
+      startDate: searchParamsRef.current.startDate,
+      endDate: searchParamsRef.current.endDate,
       sortBy,
       sortOrder,
     };
@@ -124,7 +132,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       console.error('获取项目列表失败:', error);
       return { data: [], success: false, total: 0 };
     }
-  }, [searchParams]);
+  }, []); // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -144,32 +152,38 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const handleSearch = useCallback((values: any) => {
     const newSearchParams: ProjectQueryRequest = {
       page: 1,
-      pageSize: searchParams.pageSize,
+      pageSize: searchParamsRef.current.pageSize,
       search: values.search,
       status: values.status,
       priority: values.priority,
       managerId: values.managerId,
       startDate: values.dateRange?.[0]?.format('YYYY-MM-DD'),
       endDate: values.dateRange?.[1]?.format('YYYY-MM-DD'),
-      sortBy: searchParams.sortBy,
-      sortOrder: searchParams.sortOrder,
+      sortBy: searchParamsRef.current.sortBy,
+      sortOrder: searchParamsRef.current.sortOrder,
     };
+    // 更新 ref 和 state
+    searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
+    // 手动触发重新加载
     actionRef.current?.reload();
-  }, [searchParams]);
+  }, []);
 
   // 重置搜索
   const handleReset = useCallback(() => {
     searchForm.resetFields();
     const resetParams: ProjectQueryRequest = {
       page: 1,
-      pageSize: searchParams.pageSize,
+      pageSize: searchParamsRef.current.pageSize,
       sortBy: 'CreatedAt',
       sortOrder: 'desc',
     };
+    // 更新 ref 和 state
+    searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
+    // 手动触发重新加载
     actionRef.current?.reload();
-  }, [searchForm, searchParams.pageSize]);
+  }, [searchForm]);
 
   // 删除项目
   const handleDelete = useCallback(async (projectId: string) => {

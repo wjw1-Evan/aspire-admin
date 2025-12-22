@@ -11,8 +11,19 @@ appliesTo:
 
 ## 控制器与权限
 - 所有业务控制器必须继承 `BaseApiController`；统一使用 `Success<T>()`、`SuccessPaged<T>()`、`ValidationError()`、`NotFoundError()` 等构造 `ApiResponse<T>`。
-- 敏感操作必须添加 `[RequireMenu("menu-name")]`；禁止在控制器或服务中使用废弃的 `HasPermission()` / `RequirePermission()`。
+- 敏感操作必须添加 `[RequireMenu("module:resource")]`（权限标识使用 `:` 分隔，如 `workflow:list`、`document:create`）；禁止在控制器或服务中使用废弃的 `HasPermission()` / `RequirePermission()`。
 - 禁止从 JWT 读取 `companyId` / `roles` 等扩展字段，需通过 `ITenantContext` 获取。
+
+## 菜单定义规范
+- **菜单名称**（`Menu.Name` 字段）：统一使用连字符 `-` 分隔，格式为 `模块-资源`，例如：
+  - `workflow-list`、`workflow-monitor`（工作流管理）
+  - `document-list`、`document-approval`（公文管理）
+  - `project-management-task`、`iot-platform-gateway`（其他模块）
+- **权限标识**（`RequireMenu` 参数和 `Menu.Permissions` 字段）：使用冒号 `:` 分隔，格式为 `模块:资源:操作`，例如：
+  - `workflow:list`、`workflow:create`、`document:list`
+- **菜单定义位置**：所有系统菜单在 `Platform.DataInitializer/Services/DataInitializerService.cs` 的 `GetExpectedMenus` 方法中定义
+- **子菜单映射**：新增子菜单时，必须在 `GetParentMenuNameByChildName` 方法中添加映射关系
+- **前端翻译**：菜单翻译键格式为 `menu.模块.资源`（使用 `.` 分隔），在 `src/locales/*/menu.ts` 中维护
 
 ## 数据访问与审计
 - **工厂模式**：仅可通过 `IDatabaseOperationFactory<T>` 访问 Mongo 集合，禁止直接注入 `IMongoCollection<T>`/`IMongoDatabase`。工厂通过 `services.AddDatabaseFactory()` 统一注册。

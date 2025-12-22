@@ -24,9 +24,11 @@
     "antd": "^6.1.1",
     "antd-style": "^3.7.1",
     "classnames": "^2.5.1",
+    "d3-transition": "^3.0.1",
     "dayjs": "^1.11.19",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "reactflow": "^11.11.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",

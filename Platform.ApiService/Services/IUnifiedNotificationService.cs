@@ -108,6 +108,25 @@ public interface IUnifiedNotificationService
         string? remarks = null);
 
     /// <summary>
+    /// 创建工作流相关通知
+    /// 当工作流状态变化时自动调用此方法
+    /// </summary>
+    /// <param name="workflowInstanceId">工作流实例ID</param>
+    /// <param name="documentTitle">公文标题</param>
+    /// <param name="actionType">操作类型：workflow_started, workflow_approved, workflow_rejected, workflow_returned, workflow_delegated, workflow_completed, workflow_cancelled, workflow_approval_required</param>
+    /// <param name="relatedUserIds">相关用户ID列表（审批人/发起人等）</param>
+    /// <param name="remarks">备注</param>
+    /// <param name="companyId">企业ID</param>
+    /// <returns>创建的通知</returns>
+    Task<NoticeIconItem> CreateWorkflowNotificationAsync(
+        string workflowInstanceId,
+        string documentTitle,
+        string actionType,
+        IEnumerable<string> relatedUserIds,
+        string? remarks = null,
+        string? companyId = null);
+
+    /// <summary>
     /// 标记通知为已读
     /// </summary>
     /// <param name="id">通知ID</param>

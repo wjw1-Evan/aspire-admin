@@ -195,4 +195,5 @@ const DataTableWithRef = forwardRef(DataTable) as <T extends Record<string, any>
   props: DataTableProps<T> & { ref?: React.Ref<ActionType> }
 ) => React.ReactElement;
 
+export { DataTableWithRef as DataTable };
 export default DataTableWithRef;

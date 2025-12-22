@@ -16,12 +16,77 @@ appliesTo:
 - **SSE 实时连接**：使用 `useSseConnection` Hook（位于 `src/hooks/useSseConnection.ts`）建立 SSE 连接，支持自动重连、事件监听（`ReceiveMessage`、`SessionUpdated`、`MessageDeleted`、`MessageChunk` 等）。连接通过 JWT token 认证，连接地址为 `/api/chat/sse?token={token}`。组件卸载时自动清理连接资源。
 
 ## 页面骨架与列表规范（强制）
-- **标准页面布局**：参考 `src/pages/user-management/index.tsx` 和 `src/pages/password-book/index.tsx` 作为标准页面布局规范。
+- **标准页面布局**：参考 `src/pages/user-management/index.tsx`、`src/pages/password-book/index.tsx`、`src/pages/workflow/index.tsx`、`src/pages/document/index.tsx` 作为标准页面布局规范。
 - **页面结构顺序**（从上到下）：
-  1. **PageContainer**：统一使用 `title` 和 `extra` 属性
-     - `title`：页面标题（使用国际化，带图标），格式：`<Space><Icon />{intl.formatMessage({ id: 'menu.xxx' })}</Space>`
-     - `extra`：所有操作按钮集中放在右上角，使用 `Space wrap` 包裹，按钮顺序：刷新 → 次要操作 → 主要操作（新建/添加）
-     - `style={{ paddingBlock: 12 }}`
+  1. **PageContainer**：统一使用 `title` 和 `extra` 属性（强制）
+     - **title 配置**（强制）：
+       - 必须包含图标和文本，格式：`<Space><IconOutlined />{intl.formatMessage({ id: 'pages.xxx.title' })}</Space>`
+       - 图标选择规范：
+         - 工作流管理：`PartitionOutlined`
+         - 流程监控：`MonitorOutlined`
+         - 公文管理：`FileTextOutlined`
+         - 我的审批：`CheckCircleOutlined`
+         - 任务管理：`UnorderedListOutlined`
+         - 项目管理：`ProjectOutlined`
+         - 用户管理：`UserOutlined`
+         - 角色管理：`TeamOutlined`
+         - 其他页面：根据业务特性选择合适的图标
+       - 文本使用国际化 key，格式：`pages.xxx.title`（如 `pages.workflow.title`、`pages.document.title`）
+     - **extra 配置**（强制）：
+       - 所有操作按钮必须放在 `extra` 中（页面右上角）
+       - 使用 `Space wrap` 包裹所有按钮，确保响应式布局
+       - 按钮顺序（从左到右）：批量操作 → 刷新按钮 → 次要操作 → 主要操作（新建/添加）
+       - 刷新按钮规范：
+         - 必须使用 `ReloadOutlined` 图标
+         - 按钮文本：`{intl.formatMessage({ id: 'pages.button.refresh' })}`
+         - 点击事件：`onClick={handleRefresh}`，其中 `handleRefresh = () => { actionRef.current?.reload(); }`
+         - 代码示例：
+           ```typescript
+           const handleRefresh = () => {
+             actionRef.current?.reload();
+           };
+           
+           <PageContainer
+             extra={
+               <Space wrap>
+                 <Button
+                   key="refresh"
+                   icon={<ReloadOutlined />}
+                   onClick={handleRefresh}
+                 >
+                   {intl.formatMessage({ id: 'pages.button.refresh' })}
+                 </Button>
+                 <Button
+                   key="create"
+                   type="primary"
+                   icon={<PlusOutlined />}
+                   onClick={handleCreate}
+                 >
+                   {intl.formatMessage({ id: 'pages.xxx.create' })}
+                 </Button>
+               </Space>
+             }
+           />
+           ```
+       - 主要操作按钮（如创建/添加）：
+         - 使用 `type="primary"` 突出显示
+         - 使用 `PlusOutlined` 图标（创建操作）
+         - 按钮文本使用国际化 key
+     - **样式配置**（强制）：
+       - 必须添加 `style={{ paddingBlock: 12 }}` 统一内边距
+       - 代码示例：
+         ```typescript
+         <PageContainer
+           title={
+             <Space>
+               <PartitionOutlined />
+               {intl.formatMessage({ id: 'pages.workflow.title' })}
+             </Space>
+           }
+           style={{ paddingBlock: 12 }}
+           extra={...}
+         />
+         ```
      - 响应式支持：使用 `Grid.useBreakpoint()` 检测移动端，`isMobile = !screens.md`
   2. **统计卡片区域**（可选，有统计数据时显示）：
      - 使用 `Card` 包裹，`style={{ marginBottom: 16, borderRadius: 12 }}`
@@ -40,14 +105,26 @@ appliesTo:
   4. **数据表格**：
      - 使用 `DataTable`（基于 antd Table，不支持内置搜索表单）
      - 如果有独立搜索表单，设置 `search={false}`
-     - **不使用 `toolbar.actions`**（所有操作按钮都在 PageContainer 的 extra 中）
+     - **不使用 `toolBarRender`**（所有操作按钮都在 PageContainer 的 extra 中，强制）
+     - **搜索配置**（强制）：
+       - 如果使用 DataTable 内置搜索，必须配置：
+         ```typescript
+         search={{
+           labelWidth: 'auto',
+           options: {
+             fullScreen: true,
+           },
+         }}
+         ```
+       - 如果使用独立搜索表单，设置 `search={false}`
      - 必须添加 `scroll={{ x: 'max-content' }}` 支持横向滚动
      - 表格不包裹在 Card 中，直接放在 PageContainer 内
-- **操作按钮规范**：
-  - **所有操作按钮必须放在 PageContainer 的 `extra` 中**（页面右上角）
-  - 按钮顺序：批量操作按钮在前，刷新按钮在中间，主要操作按钮（如添加）在最后
+- **操作按钮规范**（强制）：
+  - **所有操作按钮必须放在 PageContainer 的 `extra` 中**（页面右上角），禁止使用 `toolBarRender`
+  - 按钮顺序（从左到右）：批量操作按钮 → 刷新按钮 → 次要操作 → 主要操作按钮（如添加）
   - 批量操作按钮需要根据选中行状态启用/禁用
   - 主操作按钮使用 `type="primary"`，刷新按钮使用 `ReloadOutlined` 图标
+  - 所有按钮必须使用 `Space wrap` 包裹，确保响应式布局
 - **表格组件**：列表/管理页必须使用 `DataTable`（`@/components/DataTable`），禁止使用普通 `Table` 或 `ProTable`。
   - `DataTable` 基于 antd `Table`，不支持内置搜索表单，需要搜索功能时使用独立的搜索表单
   - `DataTable` 支持 `request`、`actionRef`、`search`（布尔值，实际不会渲染搜索表单）、`pagination` 等属性
@@ -643,10 +720,48 @@ appliesTo:
       )}
     </Spin>
   </Drawer>
-  ```
+    ```
 - **特殊说明**：
   - 如果详情内容非常复杂（如包含多个 Tab、图表等），可以使用 `Tabs` 组件组织内容
   - 如果详情内容较少，可以使用单个 `Descriptions` 组件，但建议使用 `Card` 分组以提高可读性
+
+## 页面样式统一规范（强制）
+- **所有新页面必须遵守以下规范**：
+  1. **PageContainer 配置**（强制）：
+     - `title`：必须包含图标和文本，格式：`<Space><IconOutlined />{intl.formatMessage({ id: 'pages.xxx.title' })}</Space>`
+     - `extra`：所有操作按钮集中放在右上角，使用 `Space wrap` 包裹
+     - `style={{ paddingBlock: 12 }}`：统一内边距
+  2. **图标使用规范**（强制）：
+     - 页面标题图标：根据业务特性选择合适的图标（见上方"PageContainer title 配置"）
+     - 刷新按钮：统一使用 `ReloadOutlined`
+     - 创建按钮：统一使用 `PlusOutlined`
+     - 操作列图标：见上方"操作列样式规范"
+  3. **刷新按钮规范**（强制）：
+     - 所有列表页面必须包含刷新按钮
+     - 位置：PageContainer 的 `extra` 中，在主要操作按钮之前
+     - 图标：`ReloadOutlined`
+     - 文本：`{intl.formatMessage({ id: 'pages.button.refresh' })}`
+     - 功能：调用 `actionRef.current?.reload()` 刷新表格数据
+  4. **搜索配置规范**（强制）：
+     - 如果使用 DataTable 内置搜索，必须配置：
+       ```typescript
+       search={{
+         labelWidth: 'auto',
+         options: {
+           fullScreen: true,
+         },
+       }}
+       ```
+     - 如果使用独立搜索表单，设置 `search={false}`
+  5. **参考实现**：
+     - 工作流管理：`src/pages/workflow/index.tsx`
+     - 流程监控：`src/pages/workflow/monitor.tsx`
+     - 公文管理：`src/pages/document/index.tsx`
+     - 我的审批：`src/pages/document/approval.tsx`
+     - 任务管理：`src/pages/task-management/index.tsx`
+     - 项目管理：`src/pages/project-management/index.tsx`
+     - 用户管理：`src/pages/user-management/index.tsx`
+     - 密码本：`src/pages/password-book/index.tsx`
 - **JSON 数据显示规范**：
   - 所有 JSON 数据统一使用 `Paragraph` 组件（Ant Design Typography）显示
   - 样式规范：

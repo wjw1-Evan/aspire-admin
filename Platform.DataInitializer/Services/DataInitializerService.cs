@@ -234,6 +234,8 @@ public class DataInitializerService : IDataInitializerService
                 }
             }
 
+           
+
             _logger.LogInformation("全局系统菜单同步完成 - 新建: {Created} 个，已存在: {Skipped} 个，总计: {Total} 个",
                 createdCount, skippedCount, expectedMenus.Count);
 
@@ -557,6 +559,102 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
+
+        // 工作流管理父菜单
+        menus.Add(new Menu
+        {
+            Name = "workflow",
+            Title = "工作流管理",
+            Path = "/workflow",
+            Icon = "apartment",
+            SortOrder = 7,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 工作流管理子菜单：流程定义
+        menus.Add(new Menu
+        {
+            Name = "workflow-list",
+            Title = "流程定义",
+            Path = "/workflow",
+            Component = "./workflow",
+            Icon = "apartment",
+            ParentId = "workflow",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "workflow:list" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 工作流管理子菜单：流程监控
+        menus.Add(new Menu
+        {
+            Name = "workflow-monitor",
+            Title = "流程监控",
+            Path = "/workflow/monitor",
+            Component = "./workflow/monitor",
+            Icon = "monitor",
+            ParentId = "workflow",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "workflow:monitor" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 公文管理父菜单
+        menus.Add(new Menu
+        {
+            Name = "document",
+            Title = "公文管理",
+            Path = "/document",
+            Icon = "file-text",
+            SortOrder = 8,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 公文管理子菜单：公文列表
+        menus.Add(new Menu
+        {
+            Name = "document-list",
+            Title = "公文列表",
+            Path = "/document/list",
+            Component = "./document/list",
+            Icon = "file-text",
+            ParentId = "document",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "document:list" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 公文管理子菜单：我的审批
+        menus.Add(new Menu
+        {
+            Name = "document-approval",
+            Title = "我的审批",
+            Path = "/document/approval",
+            Component = "./document/approval",
+            Icon = "check-circle",
+            ParentId = "document",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "document:approval" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
         
         return menus;
     }
@@ -586,6 +684,12 @@ public class DataInitializerService : IDataInitializerService
             // 小科管理子菜单
             "xiaoke-management-config" => "xiaoke-management",
             "xiaoke-management-chat-history" => "xiaoke-management",
+            // 工作流管理子菜单
+            "workflow-list" => "workflow",
+            "workflow-monitor" => "workflow",
+            // 公文管理子菜单
+            "document-list" => "document",
+            "document-approval" => "document",
             _ => null
         };
     }

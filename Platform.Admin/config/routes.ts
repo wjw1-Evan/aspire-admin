@@ -162,6 +162,48 @@ export default [
     component: './password-book',
     hideInMenu: true, // 使用数据库菜单
   },
+  {
+    path: '/workflow',
+    hideInMenu: true, // 使用数据库菜单
+    routes: [
+      {
+        path: '/workflow/list',
+        component: './workflow/list',
+        hideInMenu: true,
+      },
+      {
+        path: '/workflow/create',
+        component: './workflow/create',
+        hideInMenu: true,
+      },
+      {
+        path: '/workflow/monitor',
+        component: './workflow/monitor',
+        hideInMenu: true,
+      },
+    ],
+  },
+  {
+    path: '/document',
+    hideInMenu: true, // 使用数据库菜单
+    routes: [
+      {
+        path: '/document/list',
+        component: './document/list',
+        hideInMenu: true,
+      },
+      {
+        path: '/document/create',
+        component: './document/create',
+        hideInMenu: true,
+      },
+      {
+        path: '/document/approval',
+        component: './document/approval',
+        hideInMenu: true,
+      },
+    ],
+  },
 
   // 默认重定向和404
   {

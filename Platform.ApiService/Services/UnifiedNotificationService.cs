@@ -481,6 +481,67 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     }
 
     /// <summary>
+    /// 创建工作流相关通知
+    /// </summary>
+    public async Task<NoticeIconItem> CreateWorkflowNotificationAsync(
+        string workflowInstanceId,
+        string documentTitle,
+        string actionType,
+        IEnumerable<string> relatedUserIds,
+        string? remarks = null,
+        string? companyId = null)
+    {
+        // 获取企业ID
+        string finalCompanyId;
+        if (!string.IsNullOrEmpty(companyId))
+        {
+            finalCompanyId = companyId;
+        }
+        else
+        {
+            var currentUserId = _noticeFactory.GetRequiredUserId();
+            var currentUser = await _userFactory.GetByIdAsync(currentUserId)
+                ?? throw new UnauthorizedAccessException("未找到当前用户信息");
+            if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+                throw new UnauthorizedAccessException("未找到当前企业信息");
+            finalCompanyId = currentUser.CurrentCompanyId;
+        }
+
+        // 根据操作类型生成标题和描述
+        var (title, description) = GenerateWorkflowNotificationContent(actionType, documentTitle, remarks);
+
+        var notification = new NoticeIconItem
+        {
+            Title = title,
+            Description = description,
+            Type = NoticeIconItemType.Notification,
+            Extra = workflowInstanceId, // 将工作流实例ID存储在Extra字段中
+            ActionType = actionType,
+            Datetime = DateTime.UtcNow,
+            Read = false,
+            ClickClose = true,
+            CompanyId = finalCompanyId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        // 添加相关用户
+        if (relatedUserIds != null)
+        {
+            foreach (var uid in relatedUserIds)
+            {
+                if (!string.IsNullOrWhiteSpace(uid) && !notification.RelatedUserIds.Contains(uid))
+                {
+                    notification.RelatedUserIds.Add(uid);
+                }
+            }
+        }
+
+        var created = await _noticeFactory.CreateAsync(notification);
+        return created;
+    }
+
+    /// <summary>
     /// 根据操作类型生成任务通知内容
     /// </summary>
     private (string title, string description) GenerateTaskNotificationContent(
@@ -498,6 +559,31 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             "task_failed" => ("任务失败", $"任务 \"{taskName}\" 执行失败"),
             "task_paused" => ("任务已暂停", $"任务 \"{taskName}\" 已暂停"),
             _ => ("任务通知", $"任务 \"{taskName}\" 有新的更新")
+        };
+    }
+
+    /// <summary>
+    /// 根据操作类型生成工作流通知内容
+    /// </summary>
+    private (string title, string description) GenerateWorkflowNotificationContent(
+        string actionType,
+        string documentTitle,
+        string? remarks)
+    {
+        var baseDescription = $"公文 \"{documentTitle}\"";
+        var remarkText = string.IsNullOrEmpty(remarks) ? "" : $" ({remarks})";
+        
+        return actionType switch
+        {
+            "workflow_started" => ("公文已提交审批", $"{baseDescription} 已提交审批流程{remarkText}"),
+            "workflow_approval_required" => ("待审批公文", $"{baseDescription} 需要您审批{remarkText}"),
+            "workflow_approved" => ("公文审批通过", $"{baseDescription} 已审批通过{remarkText}"),
+            "workflow_rejected" => ("公文审批拒绝", $"{baseDescription} 审批被拒绝{remarkText}"),
+            "workflow_returned" => ("公文已退回", $"{baseDescription} 已退回{remarkText}"),
+            "workflow_delegated" => ("公文已转办", $"{baseDescription} 已转办{remarkText}"),
+            "workflow_completed" => ("公文审批完成", $"{baseDescription} 审批流程已完成{remarkText}"),
+            "workflow_cancelled" => ("公文审批取消", $"{baseDescription} 审批流程已取消{remarkText}"),
+            _ => ("工作流通知", $"{baseDescription} 有新的更新{remarkText}")
         };
     }
 }

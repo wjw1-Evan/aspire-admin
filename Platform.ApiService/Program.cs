@@ -162,6 +162,9 @@ builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Pla
 // ✅ 注册数据库操作工厂（必须在业务服务之前注册）
 builder.Services.AddDatabaseFactory();
 
+// 注册 GridFS 服务（用于文件存储，需要直接访问 IMongoDatabase）
+builder.Services.AddScoped<Platform.ServiceDefaults.Services.IGridFSService, Platform.ServiceDefaults.Services.GridFSService>();
+
 // IoT 数据采集配置与后台任务
 builder.Services.Configure<IoTDataCollectionOptions>(
     builder.Configuration.GetSection(IoTDataCollectionOptions.SectionName));

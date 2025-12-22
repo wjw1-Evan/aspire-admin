@@ -814,6 +814,18 @@ public class IoTService : IIoTService
     /// <returns>创建的数据记录列表</returns>
     public async Task<List<IoTDataRecord>> BatchReportDataAsync(BatchReportIoTDataRequest request)
     {
+        // 批量大小限制：防止数据洪水攻击
+        const int maxBatchSize = 100;
+        if (request.DataPoints == null || request.DataPoints.Count == 0)
+        {
+            throw new ArgumentException("批量数据点列表不能为空", nameof(request));
+        }
+        
+        if (request.DataPoints.Count > maxBatchSize)
+        {
+            throw new ArgumentException($"批量数据点数量不能超过 {maxBatchSize} 条", nameof(request));
+        }
+
         var records = new List<IoTDataRecord>();
 
         foreach (var dataPoint in request.DataPoints)

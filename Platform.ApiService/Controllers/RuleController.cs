@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -11,6 +12,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/rule")]
+[Authorize]
 public class RuleController : BaseApiController
 {
     private readonly IRuleService _ruleService;

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Attributes;
 
@@ -32,16 +33,13 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
     /// <param name="context">授权过滤器上下文</param>
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
+        var traceId = context.HttpContext.TraceIdentifier;
+
         // 检查用户是否已认证
         if (!context.HttpContext.User.Identity?.IsAuthenticated ?? true)
         {
-            context.Result = new UnauthorizedObjectResult(new
-            {
-                success = false,
-                error = "未授权访问",
-                errorCode = "UNAUTHORIZED",
-                showType = 2
-            });
+            var response = ApiResponse<object>.UnauthorizedResult("未授权访问", traceId);
+            context.Result = new UnauthorizedObjectResult(response);
             return;
         }
 
@@ -49,13 +47,8 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
         var userId = context.HttpContext.User.FindFirst("userId")?.Value;
         if (string.IsNullOrEmpty(userId))
         {
-            context.Result = new UnauthorizedObjectResult(new
-            {
-                success = false,
-                error = "用户信息无效",
-                errorCode = "INVALID_USER",
-                showType = 2
-            });
+            var response = ApiResponse<object>.ErrorResult("INVALID_USER", "用户信息无效", traceId);
+            context.Result = new UnauthorizedObjectResult(response);
             return;
         }
 
@@ -65,7 +58,11 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
 
         if (menuAccessService == null)
         {
-            context.Result = new StatusCodeResult(500);
+            var response = ApiResponse<object>.ErrorResult("INTERNAL_ERROR", "菜单访问服务未配置", traceId);
+            context.Result = new ObjectResult(response)
+            {
+                StatusCode = 500
+            };
             return;
         }
 
@@ -74,13 +71,8 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
 
         if (!hasAccess)
         {
-            context.Result = new ObjectResult(new
-            {
-                success = false,
-                error = $"无权访问菜单: {MenuName}",
-                errorCode = "FORBIDDEN",
-                showType = 2
-            })
+            var response = ApiResponse<object>.ErrorResult("FORBIDDEN", $"无权访问菜单: {MenuName}", traceId);
+            context.Result = new ObjectResult(response)
             {
                 StatusCode = 403
             };

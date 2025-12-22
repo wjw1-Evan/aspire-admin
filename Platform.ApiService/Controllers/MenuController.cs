@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
@@ -103,6 +104,7 @@ public class MenuController : BaseApiController
     /// 获取所有菜单（系统管理员查看）
     /// </summary>
     [HttpGet]
+    [RequireMenu("menu-management")]
     public async Task<IActionResult> GetAllMenus()
     {
         var menus = await _menuService.GetAllMenusAsync();
@@ -113,6 +115,7 @@ public class MenuController : BaseApiController
     /// 获取菜单树（系统管理员查看）
     /// </summary>
     [HttpGet("tree")]
+    [RequireMenu("menu-management")]
     public async Task<IActionResult> GetMenuTree()
     {
         var tree = await _menuService.GetMenuTreeAsync();

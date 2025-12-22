@@ -52,7 +52,7 @@ public class ChatService : IChatService
         IDatabaseOperationFactory<ChatAttachment> attachmentFactory,
         IDatabaseOperationFactory<AppUser> userFactory,
         IUserService userService,
-        IMongoDatabase database,
+        Platform.ServiceDefaults.Services.IGridFSService gridFSService,
         IChatBroadcaster broadcaster,
         IAiAssistantCoordinator aiAssistantCoordinator,
         OpenAIClient openAiClient,
@@ -74,11 +74,8 @@ public class ChatService : IChatService
         _xiaokeConfigService = xiaokeConfigService;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        var mongoDatabase = database ?? throw new ArgumentNullException(nameof(database));
-        _gridFsBucket = new GridFSBucket(mongoDatabase, new GridFSBucketOptions
-        {
-            BucketName = "chat_attachments"
-        });
+        var gridFSServiceNotNull = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
+        _gridFsBucket = gridFSServiceNotNull.GetBucket("chat_attachments");
     }
 
     /// <inheritdoc />

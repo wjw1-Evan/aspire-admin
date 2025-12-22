@@ -259,6 +259,14 @@ public class IoTController : BaseApiController
     /// <summary>
     /// 处理设备连接
     /// </summary>
+    /// <remarks>
+    /// 此端点允许匿名访问，因为 IoT 设备可能没有用户认证。
+    /// 安全措施：
+    /// - 通过 DeviceId 验证设备是否存在
+    /// - 输入验证（DeviceId 格式检查）
+    /// - TODO: 建议添加速率限制以防止滥用
+    /// - TODO: 建议添加 API Key 验证或设备密钥验证
+    /// </remarks>
     [HttpPost("devices/connect")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleDeviceConnect([FromBody] DeviceConnectRequest request)
@@ -281,6 +289,14 @@ public class IoTController : BaseApiController
     /// <summary>
     /// 处理设备断开连接
     /// </summary>
+    /// <remarks>
+    /// 此端点允许匿名访问，因为 IoT 设备可能没有用户认证。
+    /// 安全措施：
+    /// - 通过 DeviceId 验证设备是否存在
+    /// - 输入验证（DeviceId 格式检查）
+    /// - TODO: 建议添加速率限制以防止滥用
+    /// - TODO: 建议添加 API Key 验证或设备密钥验证
+    /// </remarks>
     [HttpPost("devices/disconnect")]
     [AllowAnonymous]
     public async Task<IActionResult> HandleDeviceDisconnect([FromBody] DeviceDisconnectRequest request)
@@ -431,6 +447,15 @@ public class IoTController : BaseApiController
     /// <summary>
     /// 上报数据
     /// </summary>
+    /// <remarks>
+    /// 此端点允许匿名访问，因为 IoT 设备可能没有用户认证。
+    /// 安全措施：
+    /// - 通过 DeviceId 和 DataPointId 验证设备和数据点是否存在
+    /// - 输入验证（值类型、格式检查）
+    /// - 数据点配置验证（采样间隔、数据类型等）
+    /// - TODO: 建议添加速率限制以防止滥用和数据洪水攻击
+    /// - TODO: 建议添加 API Key 验证或设备密钥验证
+    /// </remarks>
     [HttpPost("data/report")]
     [AllowAnonymous]
     public async Task<IActionResult> ReportData([FromBody] ReportIoTDataRequest request)
@@ -450,6 +475,16 @@ public class IoTController : BaseApiController
     /// <summary>
     /// 批量上报数据
     /// </summary>
+    /// <remarks>
+    /// 此端点允许匿名访问，因为 IoT 设备可能没有用户认证。
+    /// 安全措施：
+    /// - 通过 DeviceId 和 DataPointId 验证设备和数据点是否存在
+    /// - 输入验证（批量数据大小限制、值类型、格式检查）
+    /// - 数据点配置验证（采样间隔、数据类型等）
+    /// - TODO: 建议添加速率限制以防止滥用和数据洪水攻击
+    /// - TODO: 建议添加 API Key 验证或设备密钥验证
+    /// - TODO: 建议添加批量数据大小限制（例如最多 100 条记录）
+    /// </remarks>
     [HttpPost("data/batch-report")]
     [AllowAnonymous]
     public async Task<IActionResult> BatchReportData([FromBody] BatchReportIoTDataRequest request)

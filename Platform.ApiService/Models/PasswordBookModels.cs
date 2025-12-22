@@ -291,6 +291,9 @@ public class PasswordBookStatistics
     /// <summary>分类数量</summary>
     public int CategoryCount { get; set; }
 
+    /// <summary>标签数量</summary>
+    public int TagCount { get; set; }
+
     /// <summary>最近使用数量（7天内）</summary>
     public int RecentUsedCount { get; set; }
 }

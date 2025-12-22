@@ -24,7 +24,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
   ExportOutlined,
   ReloadOutlined,
   LockOutlined,
@@ -273,7 +272,14 @@ const PasswordBook: React.FC = () => {
       dataIndex: 'platform',
       key: 'platform',
       width: 150,
-      render: (text: string) => <strong>{text}</strong>,
+      render: (text: string, record: PasswordBookEntry) => (
+        <a
+          onClick={() => handleView(record)}
+          style={{ cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          {text}
+        </a>
+      ),
     },
     {
       title: '账号',
@@ -334,14 +340,6 @@ const PasswordBook: React.FC = () => {
       fixed: 'right' as const,
       render: (_: any, record: PasswordBookEntry) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleView(record)}
-          >
-            查看
-          </Button>
           <Button
             type="link"
             size="small"
@@ -418,6 +416,14 @@ const PasswordBook: React.FC = () => {
                 value={statistics.categoryCount}
                 icon={<FolderOutlined />}
                 color="#52c41a"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title="标签数量"
+                value={statistics.tagCount}
+                icon={<TagOutlined />}
+                color="#722ed1"
               />
             </Col>
             <Col xs={24} sm={12} md={6}>
@@ -509,25 +515,28 @@ const PasswordBook: React.FC = () => {
       />
 
       {/* 创建/编辑表单 */}
-      <Drawer
-        title={editingEntry ? '编辑密码本条目' : '新建密码本条目'}
-        open={formVisible}
-        onClose={() => {
-          setFormVisible(false);
-          setEditingEntry(null);
-        }}
-        width={isMobile ? '100%' : 600}
-        destroyOnClose
-      >
-        <PasswordBookForm
-          entry={editingEntry}
-          onSuccess={handleFormSuccess}
+      {formVisible && (
+        <Modal
+          title={editingEntry ? '编辑密码本条目' : '新建密码本条目'}
+          open={formVisible}
           onCancel={() => {
             setFormVisible(false);
             setEditingEntry(null);
           }}
-        />
-      </Drawer>
+          footer={null}
+          width={isMobile ? '100%' : 600}
+          destroyOnClose
+        >
+          <PasswordBookForm
+            entry={editingEntry}
+            onSuccess={handleFormSuccess}
+            onCancel={() => {
+              setFormVisible(false);
+              setEditingEntry(null);
+            }}
+          />
+        </Modal>
+      )}
 
       {/* 查看详情 */}
       <Drawer

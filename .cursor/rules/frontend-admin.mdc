@@ -297,6 +297,21 @@ appliesTo:
         ),
       }
       
+      // 带粗体的列（如密码本平台列）
+      {
+        title: '平台',
+        dataIndex: 'platform',
+        key: 'platform',
+        render: (text: string, record: PasswordBookEntry) => (
+          <a
+            onClick={() => handleView(record)}
+            style={{ cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            {text}
+          </a>
+        ),
+      }
+      
       // 带图标的列
       {
         title: intl.formatMessage({ id: 'pages.table.username' }),

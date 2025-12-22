@@ -360,6 +360,12 @@ public class PasswordBookService : IPasswordBookService
             .Distinct()
             .Count();
 
+        var tags = entries
+            .Where(e => e.Tags != null && e.Tags.Any())
+            .SelectMany(e => e.Tags)
+            .Distinct()
+            .Count();
+
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
         var recentUsedCount = entries
             .Count(e => e.LastUsedAt.HasValue && e.LastUsedAt.Value >= sevenDaysAgo);
@@ -368,6 +374,7 @@ public class PasswordBookService : IPasswordBookService
         {
             TotalEntries = totalEntries,
             CategoryCount = categories,
+            TagCount = tags,
             RecentUsedCount = recentUsedCount
         };
     }

@@ -129,5 +129,6 @@ export interface ExportPasswordBookRequest {
 export interface PasswordBookStatistics {
   totalEntries: number;
   categoryCount: number;
+  tagCount: number;
   recentUsedCount: number;
 }

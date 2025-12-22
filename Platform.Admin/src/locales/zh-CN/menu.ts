@@ -53,6 +53,8 @@ export default {
   // 小科管理菜单描述
   'menu.xiaoke-management.config.desc': '管理小科AI助手配置',
   'menu.xiaoke-management.chat-history.desc': '查看和管理聊天记录',
+  'menu.password-book': '密码本',
+  'menu.password-book.desc': '安全保存和管理账号密码',
   'menu.company-search': '企业搜索',
   'menu.my-join-requests': '我的加入申请',
   'menu.pending-join-requests': '待审批申请',

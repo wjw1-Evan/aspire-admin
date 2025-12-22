@@ -16,28 +16,33 @@ appliesTo:
 - **SSE 实时连接**：使用 `useSseConnection` Hook（位于 `src/hooks/useSseConnection.ts`）建立 SSE 连接，支持自动重连、事件监听（`ReceiveMessage`、`SessionUpdated`、`MessageDeleted`、`MessageChunk` 等）。连接通过 JWT token 认证，连接地址为 `/api/chat/sse?token={token}`。组件卸载时自动清理连接资源。
 
 ## 页面骨架与列表规范（强制）
-- **标准页面布局**：参考 `src/pages/user-management/index.tsx` 作为标准页面布局规范。
+- **标准页面布局**：参考 `src/pages/user-management/index.tsx` 和 `src/pages/password-book/index.tsx` 作为标准页面布局规范。
 - **页面结构顺序**（从上到下）：
   1. **PageContainer**：统一使用 `title` 和 `extra` 属性
-     - `title`：页面标题（使用国际化）
-     - `extra`：所有操作按钮集中放在右上角，使用 `Space` 包裹
+     - `title`：页面标题（使用国际化，带图标），格式：`<Space><Icon />{intl.formatMessage({ id: 'menu.xxx' })}</Space>`
+     - `extra`：所有操作按钮集中放在右上角，使用 `Space wrap` 包裹，按钮顺序：刷新 → 次要操作 → 主要操作（新建/添加）
      - `style={{ paddingBlock: 12 }}`
+     - 响应式支持：使用 `Grid.useBreakpoint()` 检测移动端，`isMobile = !screens.md`
   2. **统计卡片区域**（可选，有统计数据时显示）：
      - 使用 `Card` 包裹，`style={{ marginBottom: 16, borderRadius: 12 }}`
      - 内部使用 `Row` 和 `Col`，`gutter={[12, 12]}`
      - 使用 `StatCard` 组件展示统计数据
+     - 响应式布局：`Col` 使用 `xs={24} sm={12} md={6}`（移动端单列，平板两列，桌面四列）
+     - 条件渲染：只在有统计数据时显示，`{statistics && <Card>...</Card>}`
   3. **搜索表单**（可选，需要搜索功能时显示）：
      - 使用 `Card` 包裹，`style={{ marginBottom: 16 }}`
-     - 使用 `Form` 组件，`layout="inline"`
+     - 使用 `Form` 组件，响应式布局：`layout={isMobile ? 'vertical' : 'inline'}`
      - 使用 `Form.useForm()` 创建表单实例，管理搜索状态
      - 搜索参数通过 `useState` 管理，在 `request` 函数中合并到查询参数
-     - 搜索按钮使用 `Button type="primary" htmlType="submit" icon={<SearchOutlined />}`
-     - 重置按钮使用 `Button onClick={handleReset} icon={<ReloadOutlined />}`
-     - 参考示例：`src/pages/iot-platform/components/DataCenter.tsx`
+     - 搜索按钮：`Button type="primary" htmlType="submit"`，移动端使用 `style={{ width: '100%' }}`
+     - 重置按钮：`Button onClick={handleReset}`，移动端使用 `style={{ width: '100%' }}`
+     - 参考示例：`src/pages/password-book/index.tsx`、`src/pages/user-management/index.tsx`
   4. **数据表格**：
      - 使用 `DataTable`（基于 antd Table，不支持内置搜索表单）
      - 如果有独立搜索表单，设置 `search={false}`
-     - 不使用 `toolbar.actions`（所有操作按钮都在 PageContainer 的 extra 中）
+     - **不使用 `toolbar.actions`**（所有操作按钮都在 PageContainer 的 extra 中）
+     - 必须添加 `scroll={{ x: 'max-content' }}` 支持横向滚动
+     - 表格不包裹在 Card 中，直接放在 PageContainer 内
 - **操作按钮规范**：
   - **所有操作按钮必须放在 PageContainer 的 `extra` 中**（页面右上角）
   - 按钮顺序：批量操作按钮在前，刷新按钮在中间，主要操作按钮（如添加）在最后
@@ -309,6 +314,17 @@ appliesTo:
   - `lg`: ≥ 992px（大屏，桌面）
   - `xl`: ≥ 1200px（超大屏）
   - `xxl`: ≥ 1600px（超超大屏）
+- **移动端检测**：
+  - 使用 `Grid.useBreakpoint()` Hook 检测屏幕尺寸
+  - 标准判断：`const screens = useBreakpoint(); const isMobile = !screens.md;`（md 以下为移动端）
+  - 代码示例：
+    ```typescript
+    import { Grid } from 'antd';
+    const { useBreakpoint } = Grid;
+    
+    const screens = useBreakpoint();
+    const isMobile = !screens.md; // md 以下为移动端
+    ```
 - **布局组件响应式**：
   - **Row/Col 布局**：统计卡片、表单等必须使用响应式 `Col` 配置
     - 统计卡片：`xs={24} sm={12} md={6}`（手机单列，平板两列，桌面四列）
@@ -321,6 +337,11 @@ appliesTo:
         </Col>
       </Row>
       ```
+- **搜索表单响应式**：
+  - 表单布局：`layout={isMobile ? 'vertical' : 'inline'}`
+  - 输入框宽度：移动端使用 `width: '100%'`，桌面端使用固定宽度
+  - 按钮宽度：移动端按钮使用 `style={{ width: '100%' }}`
+  - 参考实现：`src/pages/password-book/index.tsx`
 - **表格适配**：
   - 表格必须支持横向滚动，使用 `scroll={{ x: 'max-content' }}` 或 `scroll={{ x: true }}`
   - 操作列在移动端保持固定，但按钮可能需要调整显示方式
@@ -369,30 +390,25 @@ appliesTo:
     </Form>
     ```
 - **Drawer/Modal 适配**：
-  - Drawer 在移动端应占满屏幕，使用 `size="large"` 或动态计算
-  - Modal 在移动端应占满屏幕，使用 `width="100%"` 或响应式宽度
+  - Drawer 在移动端应占满屏幕，使用 `width={isMobile ? '100%' : 600}`
+  - Modal 在移动端应占满屏幕，使用 `width={isMobile ? '100%' : 600}`
   - 代码示例：
     ```typescript
     <Drawer
-      size={window.innerWidth < 768 ? 'large' : 800}
+      width={isMobile ? '100%' : 600}
       // ...
     />
     
     <Modal
-      width={window.innerWidth < 768 ? '100%' : 600}
+      width={isMobile ? '100%' : 600}
       // ...
     />
     ```
+  - 参考实现：`src/pages/password-book/index.tsx`
 - **详情页面适配**：
-  - Descriptions 在移动端应使用单列布局，`column={1}` 或响应式切换
+  - Descriptions 在移动端应使用单列布局，使用 `column={isMobile ? 1 : 2}` 响应式切换
   - Card 内容在移动端应适当调整内边距
-  - 代码示例：
-    ```typescript
-    <Descriptions
-      column={window.innerWidth < 768 ? 1 : 2}
-      size="small"
-    />
-    ```
+  - 详细规范见下方"详情页面规范"章节
 - **字体和间距适配**：
   - 移动端字体大小应适当缩小，但保持可读性
   - 移动端间距应适当减小，使用相对单位（如 `8px`、`12px`）
@@ -401,9 +417,9 @@ appliesTo:
   - 按钮、链接等可点击元素最小触摸目标为 `44px × 44px`
   - 操作列按钮间距应足够，避免误触
   - 使用 `Space size="small"` 或 `size="middle"` 控制间距
-- **检测移动端**：
-  - 使用 `window.innerWidth < 768` 判断是否为移动端
-  - 或使用 Ant Design 的 `Grid.useBreakpoint()` Hook
+- **检测移动端**（统一规范）：
+  - **统一使用** `Grid.useBreakpoint()` Hook 检测屏幕尺寸，禁止使用 `window.innerWidth` 判断
+  - 标准判断：`const screens = useBreakpoint(); const isMobile = !screens.md;`（md 以下为移动端）
   - 代码示例：
     ```typescript
     import { Grid } from 'antd';
@@ -462,16 +478,20 @@ appliesTo:
 - **空值处理**：日期时间为空或无效时统一显示 `-`。
 
 ## 详情页面规范（强制）
-- **组件使用**：详情页面统一使用 `Drawer` 组件，`placement="right"`，`size={800}`（可根据内容调整）。
+- **组件使用**：详情页面统一使用 `Drawer` 组件，`placement="right"`，`width={isMobile ? '100%' : 600}`（可根据内容调整，参考 `src/pages/password-book/index.tsx`）。
 - **加载状态**：使用 `Spin` 包裹内容，显示加载状态。
-- **空状态**：使用 `Empty` 组件显示未加载数据的情况。
+- **空状态**：使用 `Empty` 组件或自定义空状态显示未加载数据的情况。
 - **内容结构**：
   - 使用 `Card` 组件分组显示不同类别的信息，每个 Card 有 `title` 属性
   - Card 样式：`style={{ marginBottom: 16 }}`
-  - 使用 `Descriptions` 组件显示详细信息，`column={2}`（可根据内容调整），`size="small"`
-  - 使用 `Tag` 组件显示状态、类型等标签信息
+  - 使用 `Descriptions` 组件显示详细信息，响应式布局：`column={isMobile ? 1 : 2}`，`size="small"`（移动端检测见上方"移动端适配规范"章节）
+  - 使用 `Tag` 组件显示状态、类型、分类等标签信息
+  - 使用图标增强可读性：在 `Descriptions.Item` 的 `label` 中使用 `Space` 包裹图标和文本
   - 使用 `Divider` 分隔不同部分（可选）
-- **日期时间格式**：统一使用 `dayjs` 格式化，格式为 `YYYY-MM-DD HH:mm:ss`
+- **日期时间格式**：统一使用 `dayjs` 格式化，格式为 `YYYY-MM-DD HH:mm:ss`（与上方"日期时间显示规范"一致）
+- **图标使用**：为每个字段添加合适的图标，使用 `@ant-design/icons` 中的图标
+- **响应式布局**：详情页面必须支持移动端，`Descriptions` 的 `column` 属性根据 `isMobile` 动态调整（移动端检测方法见上方"移动端适配规范"章节）
+- **参考实现**：`src/pages/password-book/index.tsx`、`src/pages/user-management/components/UserDetail.tsx`、`src/pages/task-management/components/TaskDetail.tsx`
 - **代码示例**：
   ```typescript
   <Drawer
@@ -479,21 +499,43 @@ appliesTo:
     placement="right"
     onClose={onClose}
     open={visible}
-    size={800}
+    width={isMobile ? '100%' : 600}
   >
     <Spin spinning={loading}>
       {data ? (
         <>
           {/* 基本信息 */}
           <Card title="基本信息" style={{ marginBottom: 16 }}>
-            <Descriptions column={2} size="small">
-              <Descriptions.Item label="名称" span={2}>
+            <Descriptions column={isMobile ? 1 : 2} size="small">
+              <Descriptions.Item
+                label={
+                  <Space>
+                    <IconOutlined />
+                    名称
+                  </Space>
+                }
+                span={2}
+              >
                 {data.name}
               </Descriptions.Item>
-              <Descriptions.Item label="状态">
+              <Descriptions.Item
+                label={
+                  <Space>
+                    <StatusOutlined />
+                    状态
+                  </Space>
+                }
+              >
                 <Tag color="green">{data.status}</Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="创建时间">
+              <Descriptions.Item
+                label={
+                  <Space>
+                    <CalendarOutlined />
+                    创建时间
+                  </Space>
+                }
+              >
                 {dayjs(data.createdAt).format('YYYY-MM-DD HH:mm:ss')}
               </Descriptions.Item>
             </Descriptions>
@@ -501,13 +543,15 @@ appliesTo:
 
           {/* 其他信息 */}
           <Card title="其他信息" style={{ marginBottom: 16 }}>
-            <Descriptions column={2} size="small">
+            <Descriptions column={isMobile ? 1 : 2} size="small">
               {/* ... */}
             </Descriptions>
           </Card>
         </>
       ) : (
-        <Empty description="未加载数据信息" />
+        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+          未加载数据
+        </div>
       )}
     </Spin>
   </Drawer>

@@ -27,6 +27,7 @@ export default {
   'menu.xiaoke-management': '小科管理',
   'menu.xiaoke-management.config': '設定管理',
   'menu.xiaoke-management.chat-history': 'チャット履歴管理',
+  'menu.password-book': 'パスワード帳',
   'menu.company-search': '企業検索',
   'menu.my-join-requests': '私の参加申請',
   'menu.pending-join-requests': '承認待ち申請',

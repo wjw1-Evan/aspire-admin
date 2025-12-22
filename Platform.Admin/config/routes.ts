@@ -157,6 +157,11 @@ export default [
       },
     ],
   },
+  {
+    path: '/password-book',
+    component: './password-book',
+    hideInMenu: true, // 使用数据库菜单
+  },
 
   // 默认重定向和404
   {

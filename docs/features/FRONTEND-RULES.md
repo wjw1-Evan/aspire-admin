@@ -172,37 +172,121 @@
 
 - **标准页面结构示例**：
   ```tsx
-  import { PageContainer, ProTable } from '@ant-design/pro-components';
-  import { Card, Row, Col, Button, Space } from 'antd';
+  import React, { useRef, useState, useCallback } from 'react';
+  import { PageContainer } from '@/components';
+  import DataTable from '@/components/DataTable';
   import { StatCard } from '@/components';
-  import type { ActionType, ProColumns } from '@ant-design/pro-components';
+  import type { ActionType } from '@/types/pro-components';
+  import { useIntl } from '@umijs/max';
+  import { Grid } from 'antd';
+  import { Card, Row, Col, Button, Space, Form, Input } from 'antd';
+  import { PlusOutlined, ReloadOutlined, LockOutlined } from '@ant-design/icons';
+
+  const { useBreakpoint } = Grid;
 
   const ManagementPage: React.FC = () => {
-    const actionRef = useRef<ActionType>();
+    const intl = useIntl();
+    const screens = useBreakpoint();
+    const isMobile = !screens.md;
+    const actionRef = useRef<ActionType>(null);
+    const [searchForm] = Form.useForm();
+    const [statistics, setStatistics] = useState<any>(null);
 
     return (
-      <PageContainer style={{ paddingBlock: 12 }}>
+      <PageContainer
+        title={
+          <Space>
+            <LockOutlined />
+            {intl.formatMessage({ id: 'menu.password-book' })}
+          </Space>
+        }
+        style={{ paddingBlock: 12 }}
+        extra={
+          <Space wrap>
+            <Button
+              key="refresh"
+              icon={<ReloadOutlined />}
+              onClick={() => actionRef.current?.reload()}
+            >
+              {intl.formatMessage({ id: 'pages.button.refresh' })}
+            </Button>
+            <Button
+              key="create"
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {/* 创建操作 */}}
+            >
+              新建
+            </Button>
+          </Space>
+        }
+      >
         {/* 统计卡片区域 */}
-        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
-          <Row gutter={[12, 12]}>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard title="总数" value={100} icon={<Icon />} color="#1890ff" />
-            </Col>
-            {/* 更多统计卡片 */}
-          </Row>
+        {statistics && (
+          <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+            <Row gutter={[12, 12]}>
+              <Col xs={24} sm={12} md={6}>
+                <StatCard
+                  title="总数"
+                  value={statistics.total}
+                  icon={<LockOutlined />}
+                  color="#1890ff"
+                />
+              </Col>
+              {/* 更多统计卡片 */}
+            </Row>
+          </Card>
+        )}
+
+        {/* 搜索表单 */}
+        <Card style={{ marginBottom: 16 }}>
+          <Form
+            form={searchForm}
+            layout={isMobile ? 'vertical' : 'inline'}
+            onFinish={handleSearch}
+            style={{ marginBottom: 16 }}
+          >
+            <Form.Item name="keyword" label="关键词">
+              <Input
+                placeholder="搜索关键词"
+                allowClear
+                style={{ width: isMobile ? '100%' : 200 }}
+              />
+            </Form.Item>
+            <Form.Item>
+              <Space wrap>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  style={isMobile ? { width: '100%' } : {}}
+                >
+                  搜索
+                </Button>
+                <Button
+                  onClick={handleReset}
+                  style={isMobile ? { width: '100%' } : {}}
+                >
+                  重置
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
         </Card>
 
         {/* 数据表格 */}
-        <ProTable
+        <DataTable
           actionRef={actionRef}
-          columns={columns}
           request={fetchData}
+          columns={columns}
           rowKey="id"
-          toolbar={{
-            actions: [
-              <Button key="create" type="primary" icon={<PlusOutlined />}>新建</Button>,
-              <Button key="refresh" icon={<ReloadOutlined />}>刷新</Button>,
-            ],
+          scroll={{ x: 'max-content' }}
+          search={false}
+          pagination={{
+            defaultPageSize: 10,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
           }}
         />
       </PageContainer>
@@ -213,6 +297,9 @@
 - **已统一风格的页面**：
   - ✅ 任务管理（`src/pages/task-management/index.tsx`）
   - ✅ 用户管理（`src/pages/user-management/index.tsx`）
+  - ✅ 密码本（`src/pages/password-book/index.tsx`）
+  - ✅ 角色管理（`src/pages/role-management/index.tsx`）
+  - ✅ 密码本（`src/pages/password-book/index.tsx`）
   - ✅ IoT 平台概览（`src/pages/iot-platform/index.tsx`）
   - ✅ 网关管理（`src/pages/iot-platform/components/GatewayManagement.tsx`）
   - ⚠️ 待统一：设备管理、数据点管理、事件管理（需要按此规范重构）
@@ -233,14 +320,150 @@
   - 对于 `ApiResponse.success=false` 的情况，统一在拦截器或调用处弹出 `message.error(errorMessage)` 或 `notification.error`。
   - 表单校验错误优先使用 Ant Design 的表单校验规则，而不是在提交失败后才整体提示。
 
-### 6. 在 Cursor Rules 总纲中的位置
+### 6. 详情页面规范
+
+> **强制要求**：所有详情页面（Drawer/Modal）必须遵循以下统一风格，确保整个平台视觉和交互一致性。
+
+#### 6.1 组件使用规范
+
+- **Drawer 组件**：
+  - 统一使用 `Drawer` 组件，`placement="right"`
+  - 响应式宽度：`width={isMobile ? '100%' : 600}`（可根据内容调整）
+  - 参考实现：`src/pages/password-book/index.tsx`、`src/pages/user-management/components/UserDetail.tsx`
+
+#### 6.2 内容结构规范
+
+- **Card 分组**：
+  - 使用 `Card` 组件分组显示不同类别的信息，每个 Card 有 `title` 属性
+  - Card 样式：`style={{ marginBottom: 16 }}`
+  - 常见分组：基本信息、时间信息、备注信息等
+
+- **Descriptions 组件**：
+  - 使用 `Descriptions` 组件显示详细信息
+  - 响应式布局：`column={isMobile ? 1 : 2}`（移动端单列，桌面端两列）
+  - 尺寸：`size="small"`
+  - 使用 `span` 属性控制字段跨列显示
+
+- **图标使用**：
+  - 为每个字段添加合适的图标，使用 `@ant-design/icons` 中的图标
+  - 在 `Descriptions.Item` 的 `label` 中使用 `Space` 包裹图标和文本
+  - 代码示例：
+    ```tsx
+    <Descriptions.Item
+      label={
+        <Space>
+          <LockOutlined />
+          平台
+        </Space>
+      }
+    >
+      {data.platform}
+    </Descriptions.Item>
+    ```
+
+- **Tag 组件**：
+  - 使用 `Tag` 组件显示状态、类型、分类等标签信息
+  - 根据内容选择合适的颜色（如 `color="blue"`、`color="green"` 等）
+
+#### 6.3 日期时间格式
+
+- **统一格式**：所有日期时间字段统一使用 `dayjs` 格式化，格式为 `YYYY-MM-DD HH:mm:ss`
+- **代码示例**：
+  ```tsx
+  {dayjs(data.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+  ```
+
+#### 6.4 加载和空状态
+
+- **加载状态**：使用 `Spin` 包裹内容，显示加载状态
+- **空状态**：使用自定义空状态显示未加载数据的情况
+  ```tsx
+  <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+    未加载数据
+  </div>
+  ```
+
+#### 6.5 完整代码示例
+
+```tsx
+<Drawer
+  title="详情标题"
+  placement="right"
+  onClose={onClose}
+  open={visible}
+  width={isMobile ? '100%' : 600}
+>
+  <Spin spinning={loading}>
+    {data ? (
+      <>
+        {/* 基本信息 */}
+        <Card title="基本信息" style={{ marginBottom: 16 }}>
+          <Descriptions column={isMobile ? 1 : 2} size="small">
+            <Descriptions.Item
+              label={
+                <Space>
+                  <IconOutlined />
+                  名称
+                </Space>
+              }
+              span={2}
+            >
+              {data.name}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <Space>
+                  <StatusOutlined />
+                  状态
+                </Space>
+              }
+            >
+              <Tag color="green">{data.status}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <Space>
+                  <CalendarOutlined />
+                  创建时间
+                </Space>
+              }
+            >
+              {dayjs(data.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
+
+        {/* 其他信息 */}
+        <Card title="其他信息" style={{ marginBottom: 16 }}>
+          <Descriptions column={isMobile ? 1 : 2} size="small">
+            {/* ... */}
+          </Descriptions>
+        </Card>
+      </>
+    ) : (
+      <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+        未加载数据
+      </div>
+    )}
+  </Spin>
+</Drawer>
+```
+
+#### 6.6 参考实现
+
+- ✅ 密码本详情（`src/pages/password-book/index.tsx`）
+- ✅ 用户详情（`src/pages/user-management/components/UserDetail.tsx`）
+- ✅ 任务详情（`src/pages/task-management/components/TaskDetail.tsx`）
+
+### 7. 在 Cursor Rules 总纲中的位置
 
 - `.cursor/rules/rule.mdc` 中只保留以下前端相关**硬规则摘要**：
   - 所有 API 调用必须通过 `src/services` 中的封装 + `request`；
   - 页面结构使用 ProComponents/Ant Design 提供的标准骨架，处理好 loading/错误；
   - 路由/菜单配置与多语言菜单文件必须同步维护；
   - 不再依赖隐藏按钮实现权限，权限控制以后端为准。
-  - **页面风格统一**：所有列表/管理页面必须使用 `ProTable`、`StatCard` 统计卡片、统一的 `PageContainer` 间距和布局规范（详见 3.1 节）。
+  - **页面风格统一**：所有列表/管理页面必须使用 `DataTable`、`StatCard` 统计卡片、统一的 `PageContainer` 间距和布局规范（详见 3.1 节）。
+  - **详情页面统一**：所有详情页面必须使用 `Drawer`、`Card`、`Descriptions` 组件，遵循统一的布局和样式规范（详见 6 节）。
 - 详细约定与示例请以本文件为准。
 
 

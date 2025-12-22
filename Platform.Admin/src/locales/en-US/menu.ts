@@ -52,6 +52,8 @@ export default {
   // Xiaoke Management menu descriptions
   'menu.xiaoke-management.config.desc': 'Manage Xiaoke AI assistant configuration',
   'menu.xiaoke-management.chat-history.desc': 'View and manage chat history',
+  'menu.password-book': 'Password Book',
+  'menu.password-book.desc': 'Securely save and manage account passwords',
   'menu.company-search': 'Company Search',
   'menu.my-join-requests': 'My Join Requests',
   'menu.pending-join-requests': 'Pending Join Requests',

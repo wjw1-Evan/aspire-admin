@@ -220,6 +220,9 @@ public class ActivityLogMiddleware
         await logService.LogHttpRequestAsync(request);
     }
 
+    /// <summary>
+    /// 提取响应体，过滤敏感信息（如密码）
+    /// </summary>
     private static string? ExtractResponseBody(HttpContext context)
     {
         if (!context.Items.TryGetValue(ResponseFormattingMiddleware.ResponseBodyContextItemKey, out var value))
@@ -232,6 +235,51 @@ public class ActivityLogMiddleware
             return null;
         }
 
+        // 🔒 安全修复：过滤密码本相关 API 响应中的敏感信息
+        var path = context.Request.Path.Value?.ToLower() ?? string.Empty;
+        if (path.Contains("/password-book"))
+        {
+            // 过滤密码相关字段
+            body = FilterSensitiveData(body);
+        }
+
         return body;
+    }
+
+    /// <summary>
+    /// 过滤响应体中的敏感数据（密码等）
+    /// </summary>
+    private static string FilterSensitiveData(string body)
+    {
+        try
+        {
+            // 使用简单的字符串替换过滤密码字段
+            // 注意：这不是完美的解决方案，但对于 JSON 响应通常有效
+            var filtered = body;
+            
+            // 过滤 "password" 字段（不区分大小写）
+            // 匹配模式：\"password\"\s*:\s*\"[^\"]*\"
+            filtered = System.Text.RegularExpressions.Regex.Replace(
+                filtered,
+                @"""password""\s*:\s*""[^""]*""",
+                @"""password"":""***FILTERED***""",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+            
+            // 过滤 "Password" 字段（大写开头）
+            filtered = System.Text.RegularExpressions.Regex.Replace(
+                filtered,
+                @"""Password""\s*:\s*""[^""]*""",
+                @"""Password"":""***FILTERED***""",
+                System.Text.RegularExpressions.RegexOptions.None
+            );
+
+            return filtered;
+        }
+        catch
+        {
+            // 如果过滤失败，返回空字符串而不是原始内容（更安全）
+            return string.Empty;
+        }
     }
 }

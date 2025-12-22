@@ -112,10 +112,10 @@ public class MenuController : BaseApiController
     }
 
     /// <summary>
-    /// 获取菜单树（系统管理员查看）
+    /// 获取菜单树（用于角色管理分配权限，需要 role-management 或 menu-management 权限）
     /// </summary>
     [HttpGet("tree")]
-    [RequireMenu("menu-management")]
+    [RequireMenu("role-management")]
     public async Task<IActionResult> GetMenuTree()
     {
         var tree = await _menuService.GetMenuTreeAsync();

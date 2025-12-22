@@ -348,6 +348,22 @@ public class DataInitializerService : IDataInitializerService
         
         // ⭐ 在此处添加新菜单，系统会自动同步到数据库
         
+        // 密码本菜单
+        menus.Add(new Menu
+        {
+            Name = "password-book",
+            Title = "密码本",
+            Path = "/password-book",
+            Component = "./password-book",
+            Icon = "lock",
+            SortOrder = 5,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "password-book:read" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        
         // 项目管理父菜单
         menus.Add(new Menu
         {

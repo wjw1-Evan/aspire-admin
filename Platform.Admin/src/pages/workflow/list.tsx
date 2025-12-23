@@ -67,7 +67,6 @@ const WorkflowManagement: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.action' }),
-      valueType: 'option',
       width: 200,
       render: (_, record) => (
         <Space>
@@ -198,12 +197,6 @@ const WorkflowManagement: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-        search={{
-          labelWidth: 'auto',
-          options: {
-            fullScreen: true,
-          },
-        }}
       />
 
       <Modal

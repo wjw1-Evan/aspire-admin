@@ -44,7 +44,7 @@ const { TextArea } = Input;
 
 const ApprovalPage: React.FC = () => {
   const intl = useIntl();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [approvalModalVisible, setApprovalModalVisible] = useState(false);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [returnModalVisible, setReturnModalVisible] = useState(false);
@@ -128,7 +128,6 @@ const ApprovalPage: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
-      valueType: 'option',
       width: 300,
       render: (_, record) => (
         <Space>

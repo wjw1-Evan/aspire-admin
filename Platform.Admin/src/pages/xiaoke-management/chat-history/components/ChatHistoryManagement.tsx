@@ -176,7 +176,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
       key: 'sessionId',
       width: 200,
       ellipsis: true,
-      copyable: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.participants' }),

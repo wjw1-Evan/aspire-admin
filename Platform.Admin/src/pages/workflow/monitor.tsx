@@ -17,7 +17,7 @@ import dayjs from 'dayjs';
 
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewInstance, setPreviewInstance] = useState<WorkflowInstance | null>(null);
   const [historyVisible, setHistoryVisible] = useState(false);
@@ -78,7 +78,6 @@ const WorkflowMonitor: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.action' }),
-      valueType: 'option',
       width: 200,
       render: (_, record) => (
         <Space>
@@ -161,12 +160,6 @@ const WorkflowMonitor: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-        search={{
-          labelWidth: 'auto',
-          options: {
-            fullScreen: true,
-          },
-        }}
       />
 
       <Modal

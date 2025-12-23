@@ -26,7 +26,7 @@ import dayjs from 'dayjs';
 
 const DocumentManagement: React.FC = () => {
   const intl = useIntl();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<any>(null);
   const [submitModalVisible, setSubmitModalVisible] = useState(false);
@@ -93,7 +93,6 @@ const DocumentManagement: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
-      valueType: 'option',
       width: 250,
       render: (_, record) => (
         <Space>
@@ -261,12 +260,6 @@ const DocumentManagement: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-        search={{
-          labelWidth: 'auto',
-          options: {
-            fullScreen: true,
-          },
-        }}
       />
 
       <Drawer

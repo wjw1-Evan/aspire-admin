@@ -33,7 +33,7 @@ export interface DeleteConfirmState {
  *   requireReason: true,
  *   onSuccess: () => {
  *     message.success('删除成功');
- *     actionRef.current?.reload();
+ *     actionRef.current?.reload?.();
  *   },
  * });
  *

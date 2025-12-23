@@ -145,7 +145,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
           const response = await deleteChatHistory(record.sessionId);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteSuccess' }));
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
           } else {
             message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
           }
@@ -165,11 +165,11 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-      actionRef.current?.reload();
+      actionRef.current?.reload?.();
     },
   }), []);
 
-  const columns: ProColumns<ChatHistoryListItem>[] = [
+  const columns: ProColumns<ChatHistoryListItem> = [
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.sessionId' }),
       dataIndex: 'sessionId',

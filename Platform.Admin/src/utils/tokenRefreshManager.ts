@@ -76,17 +76,17 @@ class TokenRefreshManager {
           ? new Date(refreshResult.expiresAt).getTime()
           : undefined;
 
-        // 保存新的 token
+        // 保存新的 token (已经在 hasValidTokens 中验证过非空)
         tokenUtils.setTokens(
-          refreshResult.token,
-          refreshResult.refreshToken,
+          refreshResult.token!,
+          refreshResult.refreshToken!,
           expiresAt,
         );
 
         return {
           success: true,
-          token: refreshResult.token,
-          refreshToken: refreshResult.refreshToken,
+          token: refreshResult.token!,
+          refreshToken: refreshResult.refreshToken!,
           expiresAt,
         };
       }

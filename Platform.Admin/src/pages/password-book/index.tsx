@@ -174,7 +174,7 @@ const PasswordBook: React.FC = () => {
       searchParamsRef.current = newParams;
       setSearchParams(newParams);
       // 手动触发重新加载
-      actionRef.current?.reload();
+      actionRef.current?.reload?.();
     },
     [],
   );
@@ -190,7 +190,7 @@ const PasswordBook: React.FC = () => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, [searchForm]);
 
   // 创建
@@ -239,7 +239,7 @@ const PasswordBook: React.FC = () => {
             const response = await deletePasswordBookEntry(entry.id);
             if (response.success) {
               message.success('删除成功');
-              actionRef.current?.reload();
+              actionRef.current?.reload?.();
               fetchStatistics();
             }
           } catch (error) {
@@ -255,13 +255,13 @@ const PasswordBook: React.FC = () => {
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingEntry(null);
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
     fetchStatistics();
   }, [fetchStatistics]);
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
     fetchStatistics();
   }, [fetchStatistics]);
 

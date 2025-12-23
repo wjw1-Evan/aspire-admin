@@ -85,7 +85,7 @@ const UserLog: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, []);
 
   /**
@@ -408,7 +408,7 @@ const UserLog: React.FC = () => {
     };
   }, []);
 
-  const columns: ProColumns<UserActivityLog>[] = [
+  const columns: ProColumns<UserActivityLog> = [
     {
       title: intl.formatMessage({ id: 'pages.table.user' }),
       dataIndex: 'username',

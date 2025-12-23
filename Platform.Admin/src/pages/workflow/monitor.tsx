@@ -24,7 +24,7 @@ const WorkflowMonitor: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
 
   const handleRefresh = () => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   };
 
   const statusMap = {
@@ -46,7 +46,7 @@ const WorkflowMonitor: React.FC = () => {
     },
   };
 
-  const columns: ProColumns<WorkflowInstance>[] = [
+  const columns: ProColumns<WorkflowInstance> = [
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.instanceId' }),
       dataIndex: 'id',

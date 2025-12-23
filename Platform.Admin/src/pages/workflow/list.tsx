@@ -30,10 +30,10 @@ const WorkflowManagement: React.FC = () => {
   const [previewGraph, setPreviewGraph] = useState<any>(null);
 
   const handleRefresh = () => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   };
 
-  const columns: ProColumns<WorkflowDefinition>[] = [
+  const columns: ProColumns<WorkflowDefinition> = [
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.name' }),
       dataIndex: 'name',
@@ -110,7 +110,7 @@ const WorkflowManagement: React.FC = () => {
                     const response = await deleteWorkflow(record.id!);
                     if (response.success) {
                       message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' }));
-                      actionRef.current?.reload();
+                      actionRef.current?.reload?.();
                     }
                   } catch (error) {
                     console.error('删除失败:', error);
@@ -134,7 +134,7 @@ const WorkflowManagement: React.FC = () => {
           message.success(intl.formatMessage({ id: 'pages.workflow.message.saveSuccess' }));
           setDesignerVisible(false);
           setEditingWorkflow(null);
-          actionRef.current?.reload();
+          actionRef.current?.reload?.();
         }
       } else {
         // 创建新流程的逻辑在创建页面处理

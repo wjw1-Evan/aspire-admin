@@ -366,7 +366,7 @@ const MyActivity: React.FC = () => {
     };
   }, []);
   
-  const columns: ProColumns<UserActivityLog>[] = useMemo(() => [
+  const columns: ProColumns<UserActivityLog> = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.table.action' }),
       dataIndex: 'action',
@@ -479,7 +479,7 @@ const MyActivity: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, []);
 
   // 获取活动日志列表（使用 useCallback 避免死循环）

@@ -60,7 +60,7 @@ const ApprovalPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('pending');
 
   const handleRefresh = () => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   };
 
   React.useEffect(() => {
@@ -97,7 +97,7 @@ const ApprovalPage: React.FC = () => {
     },
   };
 
-  const columns: ProColumns<Document>[] = [
+  const columns: ProColumns<Document> = [
     {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: 'title',
@@ -217,7 +217,7 @@ const ApprovalPage: React.FC = () => {
         setApprovalModalVisible(false);
         approvalForm.resetFields();
         setCurrentDocument(null);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('审批失败:', error);
@@ -238,7 +238,7 @@ const ApprovalPage: React.FC = () => {
         setRejectModalVisible(false);
         rejectForm.resetFields();
         setCurrentDocument(null);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('拒绝失败:', error);
@@ -260,7 +260,7 @@ const ApprovalPage: React.FC = () => {
         setReturnModalVisible(false);
         returnForm.resetFields();
         setCurrentDocument(null);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('退回失败:', error);
@@ -282,7 +282,7 @@ const ApprovalPage: React.FC = () => {
         setDelegateModalVisible(false);
         delegateForm.resetFields();
         setCurrentDocument(null);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('转办失败:', error);
@@ -396,7 +396,7 @@ const ApprovalPage: React.FC = () => {
         activeKey={activeTab}
         onChange={(key) => {
           setActiveTab(key);
-          actionRef.current?.reload();
+          actionRef.current?.reload?.();
         }}
         items={tabItems}
       />

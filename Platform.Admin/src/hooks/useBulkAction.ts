@@ -34,7 +34,7 @@ export interface BulkActionState {
  *   onSuccess: () => {
  *     message.success('批量删除成功');
  *     setSelectedRows([]);
- *     actionRef.current?.reload();
+ *     actionRef.current?.reload?.();
  *   },
  * });
  *

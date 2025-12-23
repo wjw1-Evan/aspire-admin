@@ -178,7 +178,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     },
   }), []);
 
-  const columns: ProColumns<IoTDataRecord>[] = useMemo(() => [
+  const columns: ProColumns<IoTDataRecord> = useMemo(() => [
     {
       title: '设备ID',
       dataIndex: 'deviceId',

@@ -661,7 +661,6 @@ export default {
   'pages.taskManagement.execution.resultTimeout': '超时',
   'pages.taskManagement.execution.resultInterrupted': '被中断',
   // 项目管理相关
-  'pages.projectManagement.title': '项目管理',
   'pages.projectManagement.createProject': '新建项目',
   'pages.projectManagement.editProject': '编辑项目',
   'pages.projectManagement.viewDetails': '查看详情',

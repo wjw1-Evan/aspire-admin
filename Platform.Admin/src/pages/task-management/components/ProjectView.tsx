@@ -137,7 +137,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-      actionRef.current?.reload();
+      actionRef.current?.reload?.();
     },
     refreshStatistics: () => {
       fetchStatistics();
@@ -166,7 +166,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
     // 手动触发重新加载
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, []);
 
   // 重置搜索
@@ -182,7 +182,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, [searchForm]);
 
   // 删除项目
@@ -197,7 +197,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         try {
           await deleteProject(projectId);
           message.success(intl.formatMessage({ id: 'pages.projectManagement.message.deleteSuccess' }));
-          actionRef.current?.reload();
+          actionRef.current?.reload?.();
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.projectManagement.message.deleteFailed' }));
@@ -252,7 +252,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   }, []);
 
   // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
-  const columns: ProColumns<ProjectDto>[] = useMemo(() => [
+  const columns: ProColumns<ProjectDto> = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.name' }),
       dataIndex: 'name',
@@ -376,7 +376,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   // 表单成功处理
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
     fetchStatistics();
   }, [fetchStatistics]);
 

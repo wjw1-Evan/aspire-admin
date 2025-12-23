@@ -10,7 +10,8 @@ import {
   FileTextOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 import { DataTable } from '@/components/DataTable';
 import {
   getDocumentList,
@@ -35,10 +36,16 @@ const DocumentManagement: React.FC = () => {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
 
   const handleRefresh = () => {
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   };
 
-  const statusMap = {
+  const statusMap: Record<DocumentStatus, { color: string; text: string }> = {
     [DocumentStatus.Draft]: {
       color: 'default',
       text: intl.formatMessage({ id: 'pages.document.status.draft' }),
@@ -57,7 +64,11 @@ const DocumentManagement: React.FC = () => {
     },
   };
 
+<<<<<<< HEAD
   const columns: ProColumns<Document> = [
+=======
+  const columns: ColumnsType<Document> = [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: 'title',
@@ -76,7 +87,7 @@ const DocumentManagement: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.document.table.status' }),
       dataIndex: 'status',
-      render: (_, record) => {
+      render: (_, record: Document) => {
         const status = statusMap[record.status];
         return <Tag color={status.color}>{status.text}</Tag>;
       },
@@ -89,12 +100,12 @@ const DocumentManagement: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.document.table.createdAt' }),
       dataIndex: 'createdAt',
-      render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
+      render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
       width: 250,
-      render: (_, record) => (
+      render: (_, record: Document) => (
         <Space>
           <Button
             type="link"
@@ -162,7 +173,13 @@ const DocumentManagement: React.FC = () => {
                         const response = await deleteDocument(record.id!);
                         if (response.success) {
                           message.success(intl.formatMessage({ id: 'pages.document.message.deleteSuccess' }));
+<<<<<<< HEAD
                           actionRef.current?.reload?.();
+=======
+                          if (actionRef.current?.reload) {
+                            actionRef.current.reload();
+                          }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
                         }
                       } catch (error) {
                         console.error('删除失败:', error);
@@ -198,7 +215,13 @@ const DocumentManagement: React.FC = () => {
         setSubmitModalVisible(false);
         setSubmittingDocument(null);
         setSelectedWorkflowId('');
+<<<<<<< HEAD
         actionRef.current?.reload?.();
+=======
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('提交失败:', error);
@@ -260,6 +283,10 @@ const DocumentManagement: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
+<<<<<<< HEAD
+=======
+        search={true}
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       />
 
       <Drawer

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef, useCallback, useMemo } from 'react';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import { type ColumnsType } from 'antd/es/table';
 import DataTable from '@/components/DataTable';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
@@ -137,8 +138,15 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
+<<<<<<< HEAD
       actionRef.current?.reload?.();
     },
+=======
+        if (actionRef.current && actionRef.current.reload) {
+          actionRef.current.reload();
+        }
+      },
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     refreshStatistics: () => {
       fetchStatistics();
     },
@@ -166,7 +174,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
     // 手动触发重新加载
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 重置搜索
@@ -182,7 +196,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, [searchForm]);
 
   // 删除项目
@@ -197,7 +217,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         try {
           await deleteProject(projectId);
           message.success(intl.formatMessage({ id: 'pages.projectManagement.message.deleteSuccess' }));
+<<<<<<< HEAD
           actionRef.current?.reload?.();
+=======
+          if (actionRef.current && actionRef.current.reload) {
+            actionRef.current.reload();
+          }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.projectManagement.message.deleteFailed' }));
@@ -252,12 +278,16 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   }, []);
 
   // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
+<<<<<<< HEAD
   const columns: ProColumns<ProjectDto> = useMemo(() => [
+=======
+  const columns: ColumnsType<ProjectDto> = useMemo(() => [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.name' }),
       dataIndex: 'name',
       key: 'name',
-      render: (text, record) => (
+      render: (text: string, record: ProjectDto) => (
         <Space>
           <ProjectOutlined />
           <a
@@ -273,7 +303,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.status' }),
       dataIndex: 'status',
       key: 'status',
-      render: (_, record) => {
+      render: (_: any, record: ProjectDto) => {
         const statusMap: Record<number, { color: string; text: string }> = {
           [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.status.planning' }) },
           [ProjectStatus.InProgress]: { color: 'processing', text: intl.formatMessage({ id: 'pages.projectManagement.status.inProgress' }) },
@@ -289,13 +319,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.progress' }),
       dataIndex: 'progress',
       key: 'progress',
-      render: (progress) => <Progress percent={progress} size="small" />,
+      render: (progress: number) => <Progress percent={progress} size="small" />,
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.priority' }),
       dataIndex: 'priority',
       key: 'priority',
-      render: (_, record) => {
+      render: (_: any, record: ProjectDto) => {
         const priorityMap: Record<number, { color: string; text: string }> = {
           [ProjectPriority.Low]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.priority.low' }) },
           [ProjectPriority.Medium]: { color: 'blue', text: intl.formatMessage({ id: 'pages.projectManagement.priority.medium' }) },
@@ -309,42 +339,39 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.manager' }),
       dataIndex: 'managerName',
       key: 'managerName',
-      render: (text) => text || '-',
+      render: (text: string) => text || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.createdBy' }),
       dataIndex: 'createdByName',
       key: 'createdByName',
-      render: (text) => text || '-',
+      render: (text: string) => text || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.startDate' }),
       dataIndex: 'startDate',
       key: 'startDate',
-      valueType: 'date',
-      render: (_, record) => formatDate(record.startDate),
+      render: (_: any, record: ProjectDto) => formatDate(record.startDate),
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.endDate' }),
       dataIndex: 'endDate',
       key: 'endDate',
-      valueType: 'date',
-      render: (_, record) => formatDate(record.endDate),
+      render: (_: any, record: ProjectDto) => formatDate(record.endDate),
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      valueType: 'dateTime',
       sorter: true,
-      render: (_, record) => formatDateTime(record.createdAt),
+      render: (_: any, record: ProjectDto) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.action' }),
       key: 'action',
       fixed: 'right',
       width: 150,
-      render: (_, record) => (
+      render: (_: any, record: ProjectDto) => (
         <Space size="small">
           <Button
             type="link"
@@ -376,7 +403,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   // 表单成功处理
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 

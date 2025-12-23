@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import DataTable from '@/components/DataTable';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType, ColumnType } from 'antd/es/table';
 import { useIntl } from '@umijs/max';
 import { Button, Tag, Space, message, Modal, Form, Input, Card, DatePicker } from 'antd';
 import {
@@ -145,7 +146,13 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
           const response = await deleteChatHistory(record.sessionId);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteSuccess' }));
+<<<<<<< HEAD
             actionRef.current?.reload?.();
+=======
+            if (actionRef.current?.reload) {
+              actionRef.current.reload();
+            }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           } else {
             message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
           }
@@ -165,11 +172,21 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
+<<<<<<< HEAD
       actionRef.current?.reload?.();
     },
   }), []);
 
   const columns: ProColumns<ChatHistoryListItem> = [
+=======
+      if (actionRef.current?.reload) {
+        actionRef.current.reload();
+      }
+    },
+  }), []);
+
+  const columns: ColumnsType<ChatHistoryListItem> = [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.sessionId' }),
       dataIndex: 'sessionId',

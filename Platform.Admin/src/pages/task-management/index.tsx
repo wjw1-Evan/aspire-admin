@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
 import { useIntl, history, useLocation } from '@umijs/max';
 import {
@@ -278,7 +279,13 @@ const TaskManagement: React.FC = () => {
         try {
           await deleteTask(task.id!);
           message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' }));
+<<<<<<< HEAD
           actionRef.current?.reload?.();
+=======
+          if (actionRef.current && actionRef.current.reload) {
+            actionRef.current.reload();
+          }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.taskManagement.message.deleteFailed' }));
@@ -298,7 +305,13 @@ const TaskManagement: React.FC = () => {
         try {
           await cancelTask(task.id!);
           message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' }));
+<<<<<<< HEAD
           actionRef.current?.reload?.();
+=======
+          if (actionRef.current && actionRef.current.reload) {
+            actionRef.current.reload();
+          }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.taskManagement.message.cancelFailed' }));
@@ -311,7 +324,13 @@ const TaskManagement: React.FC = () => {
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingTask(null);
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -319,7 +338,13 @@ const TaskManagement: React.FC = () => {
   const handleExecutionSuccess = useCallback(() => {
     setExecutionVisible(false);
     setViewingTask(null);
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -338,7 +363,13 @@ const TaskManagement: React.FC = () => {
     searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
     // 手动触发重新加载
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 重置搜索
@@ -359,17 +390,27 @@ const TaskManagement: React.FC = () => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
+<<<<<<< HEAD
     actionRef.current?.reload?.();
   }, [searchForm]);
 
   // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
   const columns: ProColumns<TaskDto> = useMemo(() => [
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+  }, [searchForm]);
+
+  // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
+  const columns: any[] = useMemo(() => [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.taskName' }),
       dataIndex: 'taskName',
       key: 'taskName',
       width: 200,
-      render: (_, record) => (
+      render: (_: any, record: TaskDto) => (
         <a onClick={() => handleViewTask(record)}>
           {record.taskName}
         </a>
@@ -389,8 +430,8 @@ const TaskManagement: React.FC = () => {
         { text: intl.formatMessage({ id: 'pages.taskManagement.status.failed' }), value: TaskStatus.Failed },
         { text: intl.formatMessage({ id: 'pages.taskManagement.status.paused' }), value: TaskStatus.Paused },
       ],
-      onFilter: (value, record) => record.status === value,
-      render: (_, record) => (
+      onFilter: (value: number, record: TaskDto) => record.status === value,
+      render: (_: any, record: TaskDto) => (
         <Tag color={getStatusColor(record.status)}>
           {record.statusName}
         </Tag>
@@ -407,8 +448,8 @@ const TaskManagement: React.FC = () => {
         { text: intl.formatMessage({ id: 'pages.taskManagement.priority.high' }), value: TaskPriority.High },
         { text: intl.formatMessage({ id: 'pages.taskManagement.priority.urgent' }), value: TaskPriority.Urgent },
       ],
-      onFilter: (value, record) => record.priority === value,
-      render: (_, record) => (
+      onFilter: (value: number, record: TaskDto) => record.priority === value,
+      render: (_: any, record: TaskDto) => (
         <Tag color={getPriorityColor(record.priority)}>
           {record.priorityName}
         </Tag>
@@ -419,7 +460,7 @@ const TaskManagement: React.FC = () => {
       dataIndex: 'completionPercentage',
       key: 'completionPercentage',
       width: 120,
-      render: (_, record) => (
+      render: (_: any, record: TaskDto) => (
         <Progress
           percent={record.completionPercentage}
           size="small"
@@ -438,21 +479,21 @@ const TaskManagement: React.FC = () => {
       dataIndex: 'assignedToName',
       key: 'assignedTo',
       width: 100,
-      render: (_, record) => record.assignedToName || '-',
+      render: (_: any, record: TaskDto) => record.assignedToName || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }),
       dataIndex: 'createdByName',
       key: 'createdBy',
       width: 100,
-      render: (_, record) => record.createdByName || '-',
+      render: (_: any, record: TaskDto) => record.createdByName || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEndTime' }),
       dataIndex: 'plannedEndTime',
       key: 'plannedEndTime',
       width: 150,
-      render: (_, record) => formatDateTime(record.plannedEndTime),
+      render: (_: any, record: TaskDto) => formatDateTime(record.plannedEndTime),
     },
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }),
@@ -460,14 +501,14 @@ const TaskManagement: React.FC = () => {
       key: 'createdAt',
       width: 150,
       sorter: true,
-      render: (_, record) => formatDateTime(record.createdAt),
+      render: (_: any, record: TaskDto) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.action' }),
       key: 'action',
       width: 200,
       fixed: 'right',
-      render: (_, record) => (
+      render: (_: any, record: TaskDto) => (
         <Space size="small">
           <Button
             type="link"
@@ -523,7 +564,13 @@ const TaskManagement: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -652,18 +699,12 @@ const TaskManagement: React.FC = () => {
           rowKey="id"
           scroll={{ x: 'max-content' }}
           search={false}
-          expandable={false}
           pagination={{
             pageSize: 10,
             pageSizeOptions: [10, 20, 50, 100],
           }}
           rowSelection={{
             onChange: handleRowSelectionChange,
-          }}
-          options={{
-            setting: {
-              listsHeight: 400,
-            },
           }}
         />
       </div>

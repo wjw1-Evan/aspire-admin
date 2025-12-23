@@ -554,7 +554,7 @@ export default {
   'pages.welcome.systemDetails.hours': '小时',
   'pages.welcome.systemDetails.unknown': 'Unknown',
   // 项目管理
-  'pages.projectManagement.title': '项目管理',
+
   // 任务管理
   'pages.taskManagement.title': '任务管理',
   'pages.taskManagement.createTask': '创建任务',
@@ -856,6 +856,18 @@ export default {
   'pages.help.faq.passwordBook.a': '访问"密码本管理"菜单，您可以创建密码条目、设置分类和标签、使用密码生成器生成强密码。密码使用 AES-256-GCM 加密存储，每个用户使用独立密钥，确保数据安全。支持密码强度检测和数据导出功能。',
   'pages.help.faq.pageError.q': 'Q: 页面加载慢或出错？',
   'pages.help.faq.pageError.a': '1. 清除浏览器缓存（Ctrl+Shift+R 或 Cmd+Shift+R）\n2. 检查网络连接\n3. 尝试重新登录\n4. 如果问题持续，请联系技术支持',
+<<<<<<< HEAD
+=======
+
+  'pages.help.features.companyCollaboration.description': '多租户企业协作功能，支持企业创建、成员管理、申请审批：',
+  'pages.help.features.taskManagement.description': '完整的任务管理功能，支持任务创建、分配、跟踪和统计：',
+  'pages.help.features.iotPlatform.description': '物联网设备管理平台，支持设备注册、监控和数据流管理：',
+  'pages.help.features.ruleManagement.description': '业务规则配置系统，支持规则创建、MCP 集成和自动化工作流：',
+  'pages.help.features.realTimeChat.description': '基于 SSE 的实时聊天系统，支持会话管理和消息功能：',
+  'pages.help.features.aiAssistant.description': '集成 AI 智能回复服务，提升沟通效率：',
+  'pages.help.features.activityLog.description': '完整的用户操作审计日志，记录所有关键操作：',
+  'pages.help.features.systemMonitor.description': '系统资源监控和性能指标查看：',
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   'pages.help.tech.title': '技术支持',
   'pages.help.tech.docs.title': '技术文档',
   'pages.help.tech.contact.title': '联系我们',

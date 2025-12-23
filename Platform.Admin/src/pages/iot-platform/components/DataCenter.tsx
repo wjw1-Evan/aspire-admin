@@ -1,5 +1,6 @@
 import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 import DataTable from '@/components/DataTable';
 import { Tag, Button, Drawer, Descriptions, Space, message, Form, Input, DatePicker, Card, Spin, Empty, Typography, Grid } from 'antd';
 import dayjs from 'dayjs';
@@ -178,14 +179,17 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     },
   }), []);
 
+<<<<<<< HEAD
   const columns: ProColumns<IoTDataRecord> = useMemo(() => [
+=======
+  const columns: ColumnsType<IoTDataRecord> = useMemo(() => [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: '设备ID',
       dataIndex: 'deviceId',
       key: 'deviceId',
       width: 200,
       ellipsis: true,
-      valueType: 'text',
       render: (text: string, record: IoTDataRecord) => (
         <a
           onClick={() => handleViewDetail(record)}
@@ -201,7 +205,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       key: 'dataPointId',
       width: 200,
       ellipsis: true,
-      valueType: 'text',
       render: (text: string) => (
         <span
           style={{ cursor: 'pointer' }}
@@ -219,7 +222,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       dataIndex: 'dataType',
       key: 'dataType',
       width: 100,
-      search: false, // 后端暂不支持按数据类型筛选
       render: (_: any, record: IoTDataRecord) => <Tag>{getDataTypeLabel(record.dataType)}</Tag>,
     },
     {
@@ -254,24 +256,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       dataIndex: 'reportedAt',
       key: 'reportedAt',
       width: 180,
-      valueType: 'dateTimeRange',
       sorter: true,
-      fieldProps: {
-        showTime: {
-          format: 'HH:mm:ss',
-        },
-        format: 'YYYY-MM-DD HH:mm:ss',
-      },
-      search: {
-        transform: (value: any) => {
-          if (!value || !Array.isArray(value) || value.length !== 2) {
-            return {};
-          }
-          return {
-            reportedAt: value,
-          };
-        },
-      },
       render: (_: any, record: IoTDataRecord) => {
         const time = record.reportedAt;
         if (!time) return '-';
@@ -290,7 +275,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       dataIndex: 'isAlarm',
       key: 'isAlarm',
       width: 100,
-      search: false, // 后端暂不支持按告警状态筛选
       render: (_: any, record: IoTDataRecord) =>
         record.isAlarm ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag>,
     },

@@ -46,7 +46,7 @@ import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pr
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
 import { getSystemResources } from '@/services/system/api';
-import type { CurrentUser } from '@/types/unified-api';
+
 import type { SystemResources } from '@/services/system/api';
 import dayjs from 'dayjs';
 
@@ -297,7 +297,7 @@ const Welcome: React.FC = () => {
   const intl = useIntl();
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
-  const currentUser = initialState?.currentUser as CurrentUser;
+  const currentUser = initialState?.currentUser as API.CurrentUser;
   const access = useAccess();
 
   const [statistics, setStatistics] = useState<any>(null);
@@ -499,7 +499,7 @@ const Welcome: React.FC = () => {
             </Col>
             <Col flex={1}>
               <Title level={2} style={{ color: 'white', margin: 0 }}>
-                {getGreeting()}，{currentUser?.displayName || currentUser?.username || intl.formatMessage({ id: 'pages.welcome.user' })}！
+                {getGreeting()}，{currentUser?.name || currentUser?.userid || intl.formatMessage({ id: 'pages.welcome.user' })}！
               </Title>
               <Paragraph style={{ color: 'rgba(255,255,255,0.8)', margin: '8px 0 16px 0' }}>
                 {intl.formatMessage({ id: 'pages.welcome.welcomeText' })}
@@ -724,7 +724,7 @@ const Welcome: React.FC = () => {
                             )}
                           </Space>
                           <Text type="secondary" style={{ fontSize: 12 }}>
-                            {task.statusName} · {task.assignedToName || currentUser?.displayName || currentUser?.username}
+                            {task.statusName} · {task.assignedToName || currentUser?.name || currentUser?.userid}
                           </Text>
                         </Space>
                       </li>
@@ -806,7 +806,7 @@ const Welcome: React.FC = () => {
                         <Text strong>{intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.title' })}</Text>
                         <br />
                         <Text type="secondary">
-                          {intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.desc' }, { username: currentUser?.displayName || currentUser?.username || intl.formatMessage({ id: 'pages.welcome.user' }) })}
+                          {intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.desc' }, { username: currentUser?.name || currentUser?.userid || intl.formatMessage({ id: 'pages.welcome.user' }) })}
                         </Text>
                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
                           {dayjs().format('YYYY-MM-DD HH:mm:ss')}

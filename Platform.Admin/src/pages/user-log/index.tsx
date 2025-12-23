@@ -2,6 +2,7 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import { Tag, Button, Badge, Space, Grid } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 
 const { useBreakpoint } = Grid;
 import { ReloadOutlined, FileTextOutlined } from '@ant-design/icons';
@@ -85,7 +86,13 @@ const UserLog: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current && actionRef.current.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   /**
@@ -408,13 +415,17 @@ const UserLog: React.FC = () => {
     };
   }, []);
 
+<<<<<<< HEAD
   const columns: ProColumns<UserActivityLog> = [
+=======
+  const columns: ColumnsType<UserActivityLog> = [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.table.user' }),
       dataIndex: 'username',
       key: 'username',
       ellipsis: true,
-      render: (text, record) => (
+      render: (text: string, record: UserActivityLog) => (
         <a
           onClick={() => handleViewDetail(record)}
           style={{ cursor: 'pointer' }}
@@ -427,81 +438,17 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.action' }),
       dataIndex: 'action',
       key: 'action',
-      render: (_, record) => (
+      render: (_: any, record: UserActivityLog) => (
         <Tag color={getActionTagColor(record.action)}>
           {getActionText(record.action)}
         </Tag>
       ),
-      valueType: 'select',
-      valueEnum: {
-        // 认证相关
-        login: { text: '登录' },
-        logout: { text: '登出' },
-        refresh_token: { text: '刷新Token' },
-        register: { text: '注册' },
-
-        // 用户相关
-        view_profile: { text: '查看个人信息' },
-        update_profile: { text: '更新个人信息' },
-        change_password: { text: '修改密码' },
-        view_activity_logs: { text: '查看活动日志' },
-        activate_user: { text: '启用用户' },
-        deactivate_user: { text: '禁用用户' },
-        bulk_action: { text: '批量操作' },
-        update_user_role: { text: '更新用户角色' },
-        create_user: { text: '创建用户' },
-        view_users: { text: '查看用户列表' },
-        view_statistics: { text: '查看统计' },
-        view_user: { text: '查看用户' },
-        update_user: { text: '更新用户' },
-        delete_user: { text: '删除用户' },
-
-        // 角色相关
-        view_roles: { text: '查看角色' },
-        create_role: { text: '创建角色' },
-        update_role: { text: '更新角色' },
-        delete_role: { text: '删除角色' },
-
-        // 菜单相关
-        view_menus: { text: '查看菜单' },
-        create_menu: { text: '创建菜单' },
-        update_menu: { text: '更新菜单' },
-        delete_menu: { text: '删除菜单' },
-
-        // 通知相关
-        view_notices: { text: '查看通知' },
-        create_notice: { text: '创建通知' },
-        update_notice: { text: '更新通知' },
-        delete_notice: { text: '删除通知' },
-
-        // 标签相关
-        view_tags: { text: '查看标签' },
-        create_tag: { text: '创建标签' },
-        update_tag: { text: '更新标签' },
-        delete_tag: { text: '删除标签' },
-
-        // 规则相关
-        view_rules: { text: '查看规则' },
-        create_rule: { text: '创建规则' },
-        update_rule: { text: '更新规则' },
-        delete_rule: { text: '删除规则' },
-
-        // 权限相关
-        view_permissions: { text: '查看权限' },
-        create_permission: { text: '创建权限' },
-        update_permission: { text: '更新权限' },
-        delete_permission: { text: '删除权限' },
-
-        // 其他
-        view_current_user: { text: '查看当前用户' },
-      },
     },
     {
       title: intl.formatMessage({ id: 'pages.table.httpMethod' }),
       dataIndex: 'httpMethod',
       key: 'httpMethod',
-      search: false,
-      render: (_, record) => {
+      render: (_: any, record: UserActivityLog) => {
         if (!record.httpMethod) return '-';
         return (
           <Tag color={getMethodColor(record.httpMethod)}>
@@ -514,16 +461,14 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.statusCode' }),
       dataIndex: 'statusCode',
       key: 'statusCode',
-      search: false,
-      render: (_, record) => getStatusBadge(record.statusCode),
+      render: (_: any, record: UserActivityLog) => getStatusBadge(record.statusCode),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.path' }),
       dataIndex: 'path',
       key: 'path',
-      search: false,
       ellipsis: true,
-      render: (_, record) => {
+      render: (_: any, record: UserActivityLog) => {
         if (!record.path) return '-';
         return <span style={{ fontFamily: 'monospace' }}>{record.path}</span>;
       },
@@ -532,10 +477,8 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.queryString' }),
       dataIndex: 'queryString',
       key: 'queryString',
-      search: false,
       ellipsis: true,
-      hideInTable: true,
-      render: (_, record) => {
+      render: (_: any, record: UserActivityLog) => {
         if (!record.queryString) return '-';
         return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.queryString}</span>;
       },
@@ -544,10 +487,8 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.fullUrl' }),
       dataIndex: 'fullUrl',
       key: 'fullUrl',
-      search: false,
       ellipsis: true,
-      hideInTable: true,
-      render: (_, record) => {
+      render: (_: any, record: UserActivityLog) => {
         if (!record.fullUrl) return '-';
         return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.fullUrl}</span>;
       },
@@ -556,25 +497,20 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.ipAddress' }),
       dataIndex: 'ipAddress',
       key: 'ipAddress',
-      search: false,
       ellipsis: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.userAgent' }),
       dataIndex: 'userAgent',
       key: 'userAgent',
-      search: false,
       ellipsis: true,
-      hideInTable: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.actionTime' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      valueType: 'dateTime',
-      search: false,
       sorter: true,
-      render: (_, record) => formatDateTime(record.createdAt),
+      render: (_: any, record: UserActivityLog) => formatDateTime(record.createdAt),
     },
   ];
 
@@ -604,14 +540,7 @@ const UserLog: React.FC = () => {
           actionRef={actionRef}
           rowKey="id"
           scroll={{ x: 'max-content' }}
-          search={{
-          labelWidth: 120,
-          optionRender: (_searchConfig, _formProps, dom) => {
-            const reversed = [...dom];
-            reversed.reverse();
-            return reversed;
-          },
-        }}
+          search={true}
         request={fetchUserLogs}
         columns={columns}
         pagination={{

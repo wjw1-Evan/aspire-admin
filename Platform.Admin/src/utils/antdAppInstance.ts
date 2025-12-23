@@ -4,6 +4,7 @@
  * 解决静态方法无法消费动态主题的问题
  */
 
+<<<<<<< HEAD
 import type { MessageInstance } from 'antd/es/message/interface';
 import type { NotificationInstance } from 'antd/es/notification/interface';
 import type { ModalStaticFunctions } from 'antd/es/modal/confirm';
@@ -15,18 +16,32 @@ type AppInstance = {
 };
 
 let appInstance: AppInstance | null = null;
+=======
+import { App } from 'antd';
+import type { useAppProps } from 'antd/es/app/context';
+
+let appInstance: useAppProps | null = null;
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
 
 /**
  * 设置 App 实例
  */
+<<<<<<< HEAD
 export function setAppInstance(app: AppInstance) {
+=======
+export function setAppInstance(app: useAppProps) {
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   appInstance = app;
 }
 
 /**
  * 获取 App 实例
  */
+<<<<<<< HEAD
 export function getAppInstance(): AppInstance | null {
+=======
+export function getAppInstance(): useAppProps | null {
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   return appInstance;
 }
 

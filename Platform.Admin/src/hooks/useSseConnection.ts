@@ -263,6 +263,8 @@ export function useSseConnection(
         clearTimeout(timer);
       };
     }
+    
+    return () => {}; // Return empty cleanup function when autoConnect is false
   }, [autoConnect, connect]);
 
   // 组件卸载时清理

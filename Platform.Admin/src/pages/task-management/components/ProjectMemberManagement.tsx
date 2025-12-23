@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Table, Button, Space, Modal, message, Tag } from 'antd';
+import type { ColumnsType, ColumnType } from 'antd/es/table';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import {
   addProjectMember,
@@ -59,7 +60,7 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
     });
   };
 
-  const columns = [
+  const columns: ColumnsType<ProjectMemberDto> = [
     {
       title: '用户名',
       dataIndex: 'userName',
@@ -85,7 +86,7 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
     {
       title: '操作',
       key: 'action',
-      fixed: 'right',
+      fixed: 'right' as ColumnType<ProjectMemberDto>['fixed'],
       width: 150,
       render: (_: any, record: ProjectMemberDto) => (
         <Button

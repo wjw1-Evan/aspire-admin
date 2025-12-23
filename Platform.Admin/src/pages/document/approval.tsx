@@ -23,7 +23,8 @@ import {
   CheckCircleOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 import { DataTable } from '@/components/DataTable';
 import {
   getPendingDocuments,
@@ -60,7 +61,13 @@ const ApprovalPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('pending');
 
   const handleRefresh = () => {
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   };
 
   React.useEffect(() => {
@@ -78,7 +85,7 @@ const ApprovalPage: React.FC = () => {
     }
   };
 
-  const statusMap = {
+  const statusMap: Record<DocumentStatus, { color: string; text: string }> = {
     [DocumentStatus.Draft]: {
       color: 'default',
       text: intl.formatMessage({ id: 'pages.document.status.draft' }),
@@ -97,7 +104,11 @@ const ApprovalPage: React.FC = () => {
     },
   };
 
+<<<<<<< HEAD
   const columns: ProColumns<Document> = [
+=======
+  const columns: ColumnsType<Document> = [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: 'title',
@@ -111,7 +122,7 @@ const ApprovalPage: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.document.table.status' }),
       dataIndex: 'status',
-      render: (_, record) => {
+      render: (_, record: Document) => {
         const status = statusMap[record.status];
         return <Tag color={status.color}>{status.text}</Tag>;
       },
@@ -124,12 +135,12 @@ const ApprovalPage: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.document.table.createdAt' }),
       dataIndex: 'createdAt',
-      render: (text) => (text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-'),
+      render: (text: string) => (text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
       width: 300,
-      render: (_, record) => (
+      render: (_, record: Document) => (
         <Space>
           <Button
             type="link"
@@ -216,7 +227,13 @@ const ApprovalPage: React.FC = () => {
         setApprovalModalVisible(false);
         approvalForm.resetFields();
         setCurrentDocument(null);
+<<<<<<< HEAD
         actionRef.current?.reload?.();
+=======
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('审批失败:', error);
@@ -237,7 +254,13 @@ const ApprovalPage: React.FC = () => {
         setRejectModalVisible(false);
         rejectForm.resetFields();
         setCurrentDocument(null);
+<<<<<<< HEAD
         actionRef.current?.reload?.();
+=======
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('拒绝失败:', error);
@@ -259,7 +282,13 @@ const ApprovalPage: React.FC = () => {
         setReturnModalVisible(false);
         returnForm.resetFields();
         setCurrentDocument(null);
+<<<<<<< HEAD
         actionRef.current?.reload?.();
+=======
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('退回失败:', error);
@@ -281,7 +310,13 @@ const ApprovalPage: React.FC = () => {
         setDelegateModalVisible(false);
         delegateForm.resetFields();
         setCurrentDocument(null);
+<<<<<<< HEAD
         actionRef.current?.reload?.();
+=======
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('转办失败:', error);
@@ -395,7 +430,13 @@ const ApprovalPage: React.FC = () => {
         activeKey={activeTab}
         onChange={(key) => {
           setActiveTab(key);
+<<<<<<< HEAD
           actionRef.current?.reload?.();
+=======
+          if (actionRef.current?.reload) {
+            actionRef.current.reload();
+          }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
         }}
         items={tabItems}
       />

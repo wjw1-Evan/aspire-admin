@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useImperativeHandle, forwardRef, useCallback, useMemo, useRef } from 'react';
 import { Table, Space, Button } from 'antd';
-import type { TableProps, TableColumnsType } from 'antd';
+import type { TableProps } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { ReloadOutlined } from '@ant-design/icons';
 import type { ActionType, RequestData, RequestParams } from '@/types/pro-components';
 
 interface DataTableProps<T = any> extends Omit<TableProps<T>, 'dataSource' | 'loading' | 'pagination'> {
   request?: (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => Promise<RequestData<T>>;
   actionRef?: React.RefObject<ActionType | null>;
-  columns: TableColumnsType<T>;
+  columns: ColumnsType<T>;
   rowKey?: string | ((record: T) => string);
   search?: boolean;
   toolbar?: {
@@ -171,7 +172,7 @@ function DataTable<T extends Record<string, any> = any>(
             {toolbar.actions}
             <Button
               icon={<ReloadOutlined />}
-              onClick={loadData}
+              onClick={() => loadData()}
             >
               刷新
             </Button>

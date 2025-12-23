@@ -1,6 +1,7 @@
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 import { Button, Tag, Badge, Row, Col, Card, Space, Form, Input, Select, DatePicker, Grid } from 'antd';
 
 const { useBreakpoint } = Grid;
@@ -366,13 +367,16 @@ const MyActivity: React.FC = () => {
     };
   }, []);
   
+<<<<<<< HEAD
   const columns: ProColumns<UserActivityLog> = useMemo(() => [
+=======
+  const columns: ColumnsType<UserActivityLog> = useMemo(() => [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.table.action' }),
       dataIndex: 'action',
       key: 'action',
-      valueType: 'text',
-      render: (_, record) => (
+      render: (_, record: UserActivityLog) => (
         <a
           onClick={() => handleViewDetail(record)}
           style={{ cursor: 'pointer' }}
@@ -382,21 +386,13 @@ const MyActivity: React.FC = () => {
           </Tag>
         </a>
       ),
-      sorter: true,
+      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.action || '').localeCompare(b.action || ''),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.httpMethod' }),
       dataIndex: 'httpMethod',
       key: 'httpMethod',
-      valueType: 'select',
-      valueEnum: {
-        GET: { text: 'GET' },
-        POST: { text: 'POST' },
-        PUT: { text: 'PUT' },
-        DELETE: { text: 'DELETE' },
-        PATCH: { text: 'PATCH' },
-      },
-      render: (_, record) => {
+      render: (_, record: UserActivityLog) => {
         if (!record.httpMethod) return '-';
         return (
           <Tag color={getMethodColor(record.httpMethod)}>
@@ -404,55 +400,51 @@ const MyActivity: React.FC = () => {
           </Tag>
         );
       },
+      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.httpMethod || '').localeCompare(b.httpMethod || ''),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.statusCode' }),
       dataIndex: 'statusCode',
       key: 'statusCode',
-      valueType: 'text',
-      render: (_, record) => getStatusBadge(record.statusCode),
+      render: (_, record: UserActivityLog) => getStatusBadge(record.statusCode),
+      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.statusCode || 0) - (b.statusCode || 0),
     },
    
     {
       title: intl.formatMessage({ id: 'pages.table.fullUrl' }),
       dataIndex: 'fullUrl',
       key: 'fullUrl',
-      search: false,
       ellipsis: true,
-      render: (_, record) => {
+      render: (_, record: UserActivityLog) => {
         if (!record.fullUrl) return '-';
         return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.fullUrl}</span>;
       },
+      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.fullUrl || '').localeCompare(b.fullUrl || ''),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.ipAddress' }),
       dataIndex: 'ipAddress',
       key: 'ipAddress',
-      valueType: 'text',
       ellipsis: true,
+      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.ipAddress || '').localeCompare(b.ipAddress || ''),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.userAgent' }),
       dataIndex: 'userAgent',
       key: 'userAgent',
-      search: false,
       ellipsis: true,
-      hideInTable: true,
+      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.userAgent || '').localeCompare(b.userAgent || ''),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.actionTime' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      valueType: 'dateTimeRange',
-      sorter: true,
-      hideInTable: false,
-      fieldProps: {
-        showTime: {
-          format: 'HH:mm:ss',
-        },
-        format: 'YYYY-MM-DD HH:mm:ss',
+      sorter: (a: UserActivityLog, b: UserActivityLog) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA; // Descending order
       },
-      render: (_, record) => {
+      render: (_, record: UserActivityLog) => {
         if (!record.createdAt) return '-';
         try {
           const date = dayjs(record.createdAt);
@@ -463,23 +455,18 @@ const MyActivity: React.FC = () => {
           return record.createdAt;
         }
       },
-      search: {
-        transform: (value: any) => {
-          if (!value || !Array.isArray(value) || value.length !== 2) {
-            return {};
-          }
-          return {
-            startDate: value[0] ? new Date(value[0]).toISOString() : undefined,
-            endDate: value[1] ? new Date(value[1]).toISOString() : undefined,
-          };
-        },
-      },
     },
   ], [intl, handleViewDetail]);
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 获取活动日志列表（使用 useCallback 避免死循环）

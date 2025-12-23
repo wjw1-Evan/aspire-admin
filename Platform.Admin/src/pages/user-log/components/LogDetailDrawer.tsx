@@ -32,7 +32,7 @@ const { Text, Paragraph } = Typography;
 
 interface LogDetailDrawerProps {
   readonly open: boolean;
-  readonly log: UserActivityLog | null;
+  readonly log?: UserActivityLog | null; // 可选：如果提供 logId，将从 API 获取完整数据
   readonly logId?: string; // 可选：如果提供 logId，将从 API 获取完整数据
   readonly onClose: () => void;
   readonly fetchFromApi?: boolean; // 是否从 API 获取完整数据（默认：如果提供了 logId 则自动获取）
@@ -48,7 +48,7 @@ export default function LogDetailDrawer({
   const intl = useIntl();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
-  const [log, setLog] = useState<UserActivityLog | null>(initialLog);
+  const [log, setLog] = useState<UserActivityLog | null>(initialLog || null);
   const [loading, setLoading] = useState(false);
 
   // 当打开抽屉且提供了 logId 时，从 API 获取完整数据

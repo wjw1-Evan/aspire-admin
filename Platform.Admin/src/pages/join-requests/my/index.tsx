@@ -5,7 +5,8 @@ const { useBreakpoint } = Grid;
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { getMyRequests, cancelRequest } from '@/services/company';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
@@ -74,7 +75,13 @@ const MyJoinRequests: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 撤回申请
@@ -85,7 +92,13 @@ const MyJoinRequests: React.FC = () => {
 
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.message.applicationCancelled' }));
+<<<<<<< HEAD
         actionRef.current?.reload?.();
+=======
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       } else {
         // 失败时抛出错误，由全局错误处理统一处理
         throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.cancelFailed' }));
@@ -232,49 +245,32 @@ const MyJoinRequests: React.FC = () => {
     };
   }, []);
 
+<<<<<<< HEAD
   const columns: ProColumns<API.JoinRequestDetail> = [
+=======
+  const columns: ColumnsType<API.JoinRequestDetail> = [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.table.companyName' }),
       dataIndex: 'companyName',
-      render: (_, record) => <strong>{record.companyName}</strong>,
+      render: (_, record: API.JoinRequestDetail) => <strong>{record.companyName}</strong>,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.applyReason' }),
       dataIndex: 'reason',
       ellipsis: true,
-      search: false,
-      render: (text) => text || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
+      render: (text: string | null | undefined) => text || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.applyTime' }),
       dataIndex: 'createdAt',
-      valueType: 'dateTime',
       sorter: true,
-      search: false,
-      render: (_, record) => formatDateTime(record.createdAt),
+      render: (_, record: API.JoinRequestDetail) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.status' }),
       dataIndex: 'status',
-      valueEnum: {
-        pending: {
-          text: intl.formatMessage({ id: 'pages.status.pending' }),
-          status: 'Processing',
-        },
-        approved: {
-          text: intl.formatMessage({ id: 'pages.status.approved' }),
-          status: 'Success',
-        },
-        rejected: {
-          text: intl.formatMessage({ id: 'pages.status.rejected' }),
-          status: 'Error',
-        },
-        cancelled: {
-          text: intl.formatMessage({ id: 'pages.status.cancelled' }),
-          status: 'Default',
-        },
-      },
-      render: (_, record) => {
+      render: (_, record: API.JoinRequestDetail) => {
         const statusConfig: Record<
           string,
           { icon: React.ReactNode; color: string }
@@ -300,8 +296,7 @@ const MyJoinRequests: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.reviewResult' }),
       dataIndex: 'rejectReason',
       ellipsis: true,
-      search: false,
-      render: (_, record) => {
+      render: (_, record: API.JoinRequestDetail) => {
         if (record.status === 'approved') {
           return (
             <span style={{ color: '#52c41a' }}>
@@ -322,10 +317,9 @@ const MyJoinRequests: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.table.actions' }),
-      valueType: 'option',
       fixed: 'right',
       width: 150,
-      render: (_, record) => {
+      render: (_, record: API.JoinRequestDetail) => {
         if (record.status === 'pending') {
           return (
             <Popconfirm
@@ -380,17 +374,14 @@ const MyJoinRequests: React.FC = () => {
         columns={columns}
         actionRef={actionRef}
         scroll={{ x: 'max-content' }}
-        search={false}
         request={fetchMyRequests}
         rowKey="id"
-        search={false}
         pagination={{
           pageSize: 10,
           pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,
         }}
-        dateFormatter="string"
         />
     </PageContainer>
   );

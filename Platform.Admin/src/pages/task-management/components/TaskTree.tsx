@@ -114,7 +114,6 @@ const TaskTree: React.FC<TaskTreeProps> = ({ projectId }) => {
         treeData={treeData}
         defaultExpandAll
         showLine
-        loading={loading}
         onSelect={(selectedKeys, info) => {
           if (selectedKeys.length > 0) {
             // 递归查找任务（包括子任务）

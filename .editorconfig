@@ -1,0 +1,18 @@
+root = true
+
+[*.{cs,csx}]
+indent_style = space
+indent_size = 2
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.{js,jsx,ts,tsx,json,md}]
+indent_style = space
+indent_size = 2
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.{md}]
+trim_trailing_whitespace = false

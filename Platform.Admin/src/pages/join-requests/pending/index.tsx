@@ -9,7 +9,8 @@ import {
   approveRequest,
   rejectRequest,
 } from '@/services/company';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -73,7 +74,13 @@ const PendingJoinRequests: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
+<<<<<<< HEAD
     actionRef.current?.reload?.();
+=======
+    if (actionRef.current?.reload) {
+      actionRef.current.reload();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 审核通过
@@ -95,7 +102,13 @@ const PendingJoinRequests: React.FC = () => {
 
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.message.applicationApproved' }));
+<<<<<<< HEAD
             actionRef.current?.reload?.();
+=======
+            if (actionRef.current?.reload) {
+              actionRef.current.reload();
+            }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           } else {
             // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
@@ -146,7 +159,13 @@ const PendingJoinRequests: React.FC = () => {
 
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.message.applicationRejected' }));
+<<<<<<< HEAD
             actionRef.current?.reload?.();
+=======
+            if (actionRef.current?.reload) {
+              actionRef.current.reload();
+            }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           } else {
             // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
@@ -298,11 +317,15 @@ const PendingJoinRequests: React.FC = () => {
     };
   }, []);
 
+<<<<<<< HEAD
   const columns: ProColumns<API.JoinRequestDetail> = [
+=======
+  const columns: ColumnsType<API.JoinRequestDetail> = [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.table.applicant' }),
       dataIndex: 'username',
-      render: (_, record) => (
+      render: (_, record: API.JoinRequestDetail) => (
         <div>
           <div>
             <strong>{record.username}</strong>
@@ -319,50 +342,46 @@ const PendingJoinRequests: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.applyReason' }),
       dataIndex: 'reason',
       ellipsis: true,
-      search: false,
-      render: (text) => text || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
+      render: (text: string) => text || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.applyTime' }),
       dataIndex: 'createdAt',
-      valueType: 'dateTime',
-      sorter: true,
-      search: false,
-      render: (_, record) => formatDateTime(record.createdAt),
+      sorter: (a: API.JoinRequestDetail, b: API.JoinRequestDetail) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA; // Descending order
+      },
+      render: (_, record: API.JoinRequestDetail) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.status' }),
       dataIndex: 'status',
-      hideInTable: true,
-      valueEnum: {
-        pending: {
-          text: intl.formatMessage({ id: 'pages.status.pending' }),
-          status: 'Processing',
-        },
-      },
+      render: () => (
+        <Space>
+          <ClockCircleOutlined style={{ color: '#faad14' }} />
+          <span>{intl.formatMessage({ id: 'pages.table.status.pending' })}</span>
+        </Space>
+      ),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.actions' }),
-      valueType: 'option',
-      fixed: 'right',
-      width: 150,
-      render: (_, record) => (
-        <Space size="small">
+      key: 'actions',
+      render: (_, record: API.JoinRequestDetail) => (
+        <Space>
           <Button
             type="primary"
-            size="small"
             icon={<CheckCircleOutlined />}
-            onClick={() => handleApprove(record)}
-            loading={loading}
+            onClick={() => handleApprove(record.id)}
+            size="small"
           >
             {intl.formatMessage({ id: 'pages.button.approve' })}
           </Button>
           <Button
             danger
-            size="small"
             icon={<CloseCircleOutlined />}
-            onClick={() => handleReject(record)}
-            loading={loading}
+            onClick={() => handleReject(record.id)}
+            size="small"
           >
             {intl.formatMessage({ id: 'pages.button.reject' })}
           </Button>

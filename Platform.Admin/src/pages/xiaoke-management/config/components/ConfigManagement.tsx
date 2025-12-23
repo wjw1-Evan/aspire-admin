@@ -3,6 +3,7 @@ import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
 import { Button, Tag, Space, message, Modal, Switch } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -90,7 +91,13 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           const response = await deleteXiaokeConfig(record.id);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
+<<<<<<< HEAD
             actionRef.current?.reload?.();
+=======
+            if (actionRef.current && actionRef.current.reload) {
+              actionRef.current.reload();
+            }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           } else {
             message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
           }
@@ -107,7 +114,13 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       const response = await setDefaultXiaokeConfig(record.id);
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
+<<<<<<< HEAD
         actionRef.current?.reload?.();
+=======
+        if (actionRef.current && actionRef.current.reload) {
+          actionRef.current.reload();
+        }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       } else {
         message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
       }
@@ -121,7 +134,13 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
     setFormVisible(false);
     setEditingConfig(null);
     // 创建成功后重置到第一页并重新加载，确保新创建的记录显示出来
+<<<<<<< HEAD
     actionRef.current?.reloadAndReset?.();
+=======
+    if (actionRef.current && actionRef.current.reloadAndReset) {
+      actionRef.current.reloadAndReset();
+    }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 处理关闭表单
@@ -133,12 +152,22 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
+<<<<<<< HEAD
       actionRef.current?.reload?.();
+=======
+      if (actionRef.current && actionRef.current.reload) {
+        actionRef.current.reload();
+      }
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     },
     handleCreate,
   }), [handleCreate]);
 
+<<<<<<< HEAD
   const columns: ProColumns<XiaokeConfig> = [
+=======
+  const columns: ColumnsType<XiaokeConfig> = [
+>>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.name' }),
       dataIndex: 'name',

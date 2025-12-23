@@ -236,7 +236,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
 
     // 生成日期标签行
     const renderDateLabels = () => {
-      const dateLabels: JSX.Element[] = [];
+      const dateLabels: React.ReactElement[] = [];
       const daysToShow = Math.min(totalDays, 30); // 最多显示30个日期标签，避免过于拥挤
       const step = Math.max(1, Math.ceil(totalDays / daysToShow));
       

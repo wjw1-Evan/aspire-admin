@@ -1,0 +1,67 @@
+{
+  // Workspace settings derived from .cursor/rules
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/node_modules": true,
+    "**/.expo": true,
+    "**/aspire-output": true,
+    "**/dist": true,
+    "**/coverage": true,
+    ".cursor": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bin": true,
+    "**/obj": true,
+    "**/.expo": true,
+    "**/aspire-output": true,
+    "**/dist": true,
+    "**/coverage": true,
+    ".cursor": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules": true,
+    "**/bin": true,
+    "**/obj": true,
+    "**/aspire-output": true
+  },
+  // Formatting and code actions
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  // Use Prettier for JS/TS/JSON formatting
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // C# specific (useful defaults for the C# extension)
+  "csharp.suppressDotnetRestoreNotification": true,
+  "csharp.format.enable": true,
+  // Git / editor niceties
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false
+}
+{
+  "dotnet.test.runSettings": {
+    "isDataCollectionEnabled": false
+  },
+  "dotnet.unitTests.runSettingsPath": "",
+  "dotnet.defaultSolution": "Platform.sln",
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.enableEditorConfigSupport": true,
+  "files.exclude": {
+    "**/bin": false,
+    "**/obj": false
+  },
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true
+}

@@ -278,7 +278,7 @@ const TaskManagement: React.FC = () => {
         try {
           await deleteTask(task.id!);
           message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' }));
-          actionRef.current?.reload();
+          actionRef.current?.reload?.();
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.taskManagement.message.deleteFailed' }));
@@ -298,7 +298,7 @@ const TaskManagement: React.FC = () => {
         try {
           await cancelTask(task.id!);
           message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' }));
-          actionRef.current?.reload();
+          actionRef.current?.reload?.();
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.taskManagement.message.cancelFailed' }));
@@ -311,7 +311,7 @@ const TaskManagement: React.FC = () => {
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingTask(null);
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -319,7 +319,7 @@ const TaskManagement: React.FC = () => {
   const handleExecutionSuccess = useCallback(() => {
     setExecutionVisible(false);
     setViewingTask(null);
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -338,7 +338,7 @@ const TaskManagement: React.FC = () => {
     searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
     // 手动触发重新加载
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, []);
 
   // 重置搜索
@@ -359,11 +359,11 @@ const TaskManagement: React.FC = () => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, [searchForm]);
 
   // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
-  const columns: ProColumns<TaskDto>[] = useMemo(() => [
+  const columns: ProColumns<TaskDto> = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.taskName' }),
       dataIndex: 'taskName',
@@ -523,7 +523,7 @@ const TaskManagement: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
     fetchStatistics();
   }, [fetchStatistics]);
 

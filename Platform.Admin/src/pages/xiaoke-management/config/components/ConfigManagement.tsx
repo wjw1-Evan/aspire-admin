@@ -90,7 +90,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           const response = await deleteXiaokeConfig(record.id);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
           } else {
             message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
           }
@@ -107,7 +107,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       const response = await setDefaultXiaokeConfig(record.id);
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       } else {
         message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
       }
@@ -121,7 +121,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
     setFormVisible(false);
     setEditingConfig(null);
     // 创建成功后重置到第一页并重新加载，确保新创建的记录显示出来
-    actionRef.current?.reloadAndReset();
+    actionRef.current?.reloadAndReset?.();
   }, []);
 
   // 处理关闭表单
@@ -133,12 +133,12 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-      actionRef.current?.reload();
+      actionRef.current?.reload?.();
     },
     handleCreate,
   }), [handleCreate]);
 
-  const columns: ProColumns<XiaokeConfig>[] = [
+  const columns: ProColumns<XiaokeConfig> = [
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.name' }),
       dataIndex: 'name',

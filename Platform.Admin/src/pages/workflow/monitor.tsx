@@ -17,14 +17,14 @@ import dayjs from 'dayjs';
 
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewInstance, setPreviewInstance] = useState<WorkflowInstance | null>(null);
   const [historyVisible, setHistoryVisible] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
 
   const handleRefresh = () => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   };
 
   const statusMap = {
@@ -46,7 +46,7 @@ const WorkflowMonitor: React.FC = () => {
     },
   };
 
-  const columns: ProColumns<WorkflowInstance>[] = [
+  const columns: ProColumns<WorkflowInstance> = [
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.instanceId' }),
       dataIndex: 'id',
@@ -78,7 +78,6 @@ const WorkflowMonitor: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.action' }),
-      valueType: 'option',
       width: 200,
       render: (_, record) => (
         <Space>
@@ -161,12 +160,6 @@ const WorkflowMonitor: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-        search={{
-          labelWidth: 'auto',
-          options: {
-            fullScreen: true,
-          },
-        }}
       />
 
       <Modal

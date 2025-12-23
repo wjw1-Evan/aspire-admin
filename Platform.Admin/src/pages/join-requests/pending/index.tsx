@@ -73,7 +73,7 @@ const PendingJoinRequests: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, []);
 
   // 审核通过
@@ -95,7 +95,7 @@ const PendingJoinRequests: React.FC = () => {
 
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.message.applicationApproved' }));
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
           } else {
             // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
@@ -146,7 +146,7 @@ const PendingJoinRequests: React.FC = () => {
 
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.message.applicationRejected' }));
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
           } else {
             // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
@@ -298,7 +298,7 @@ const PendingJoinRequests: React.FC = () => {
     };
   }, []);
 
-  const columns: ProColumns<API.JoinRequestDetail>[] = [
+  const columns: ProColumns<API.JoinRequestDetail> = [
     {
       title: intl.formatMessage({ id: 'pages.table.applicant' }),
       dataIndex: 'username',

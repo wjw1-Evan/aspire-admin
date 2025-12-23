@@ -4,21 +4,29 @@
  * 解决静态方法无法消费动态主题的问题
  */
 
-import type { App } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
+import type { NotificationInstance } from 'antd/es/notification/interface';
+import type { ModalStaticFunctions } from 'antd/es/modal/confirm';
 
-let appInstance: App | null = null;
+type AppInstance = {
+  message: MessageInstance;
+  notification: NotificationInstance;
+  modal: ModalStaticFunctions;
+};
+
+let appInstance: AppInstance | null = null;
 
 /**
  * 设置 App 实例
  */
-export function setAppInstance(app: App) {
+export function setAppInstance(app: AppInstance) {
   appInstance = app;
 }
 
 /**
  * 获取 App 实例
  */
-export function getAppInstance(): App | null {
+export function getAppInstance(): AppInstance | null {
   return appInstance;
 }
 

@@ -26,7 +26,7 @@ import dayjs from 'dayjs';
 
 const DocumentManagement: React.FC = () => {
   const intl = useIntl();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<any>(null);
   const [submitModalVisible, setSubmitModalVisible] = useState(false);
@@ -35,7 +35,7 @@ const DocumentManagement: React.FC = () => {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
 
   const handleRefresh = () => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   };
 
   const statusMap = {
@@ -57,7 +57,7 @@ const DocumentManagement: React.FC = () => {
     },
   };
 
-  const columns: ProColumns<Document>[] = [
+  const columns: ProColumns<Document> = [
     {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: 'title',
@@ -93,7 +93,6 @@ const DocumentManagement: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
-      valueType: 'option',
       width: 250,
       render: (_, record) => (
         <Space>
@@ -163,7 +162,7 @@ const DocumentManagement: React.FC = () => {
                         const response = await deleteDocument(record.id!);
                         if (response.success) {
                           message.success(intl.formatMessage({ id: 'pages.document.message.deleteSuccess' }));
-                          actionRef.current?.reload();
+                          actionRef.current?.reload?.();
                         }
                       } catch (error) {
                         console.error('删除失败:', error);
@@ -199,7 +198,7 @@ const DocumentManagement: React.FC = () => {
         setSubmitModalVisible(false);
         setSubmittingDocument(null);
         setSelectedWorkflowId('');
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('提交失败:', error);
@@ -261,12 +260,6 @@ const DocumentManagement: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-        search={{
-          labelWidth: 'auto',
-          options: {
-            fullScreen: true,
-          },
-        }}
       />
 
       <Drawer

@@ -44,7 +44,7 @@ const { TextArea } = Input;
 
 const ApprovalPage: React.FC = () => {
   const intl = useIntl();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [approvalModalVisible, setApprovalModalVisible] = useState(false);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [returnModalVisible, setReturnModalVisible] = useState(false);
@@ -60,7 +60,7 @@ const ApprovalPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('pending');
 
   const handleRefresh = () => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   };
 
   React.useEffect(() => {
@@ -97,7 +97,7 @@ const ApprovalPage: React.FC = () => {
     },
   };
 
-  const columns: ProColumns<Document>[] = [
+  const columns: ProColumns<Document> = [
     {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: 'title',
@@ -128,7 +128,6 @@ const ApprovalPage: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
-      valueType: 'option',
       width: 300,
       render: (_, record) => (
         <Space>
@@ -217,7 +216,7 @@ const ApprovalPage: React.FC = () => {
         setApprovalModalVisible(false);
         approvalForm.resetFields();
         setCurrentDocument(null);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('审批失败:', error);
@@ -238,7 +237,7 @@ const ApprovalPage: React.FC = () => {
         setRejectModalVisible(false);
         rejectForm.resetFields();
         setCurrentDocument(null);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('拒绝失败:', error);
@@ -260,7 +259,7 @@ const ApprovalPage: React.FC = () => {
         setReturnModalVisible(false);
         returnForm.resetFields();
         setCurrentDocument(null);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('退回失败:', error);
@@ -282,7 +281,7 @@ const ApprovalPage: React.FC = () => {
         setDelegateModalVisible(false);
         delegateForm.resetFields();
         setCurrentDocument(null);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       }
     } catch (error) {
       console.error('转办失败:', error);
@@ -396,7 +395,7 @@ const ApprovalPage: React.FC = () => {
         activeKey={activeTab}
         onChange={(key) => {
           setActiveTab(key);
-          actionRef.current?.reload();
+          actionRef.current?.reload?.();
         }}
         items={tabItems}
       />

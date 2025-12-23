@@ -74,7 +74,7 @@ const MyJoinRequests: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, []);
 
   // 撤回申请
@@ -85,7 +85,7 @@ const MyJoinRequests: React.FC = () => {
 
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.message.applicationCancelled' }));
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
       } else {
         // 失败时抛出错误，由全局错误处理统一处理
         throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.cancelFailed' }));
@@ -232,7 +232,7 @@ const MyJoinRequests: React.FC = () => {
     };
   }, []);
 
-  const columns: ProColumns<API.JoinRequestDetail>[] = [
+  const columns: ProColumns<API.JoinRequestDetail> = [
     {
       title: intl.formatMessage({ id: 'pages.table.companyName' }),
       dataIndex: 'companyName',

@@ -206,7 +206,7 @@ const UserManagement: React.FC = () => {
     searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
     // 手动触发重新加载
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, []);
 
   // 重置搜索
@@ -222,7 +222,7 @@ const UserManagement: React.FC = () => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, [searchForm]);
 
   // 删除用户（带删除原因）
@@ -253,7 +253,7 @@ const UserManagement: React.FC = () => {
             params: { reason: deleteReason },
           });
           message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
-          actionRef.current?.reload();
+          actionRef.current?.reload?.();
           fetchStatistics();
         } catch (error) {
           console.error('删除用户失败:', error);
@@ -306,7 +306,7 @@ const UserManagement: React.FC = () => {
 
             message.success(`批量删除成功`);
             setSelectedRows([]);
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
             fetchStatistics();
           } catch (error) {
             console.error('批量删除失败:', error);
@@ -336,7 +336,7 @@ const UserManagement: React.FC = () => {
 
       message.success(intl.formatMessage({ id: 'pages.message.success' }));
       setSelectedRows([]);
-      actionRef.current?.reload();
+      actionRef.current?.reload?.();
       fetchStatistics();
     } catch (error) {
       console.error('批量操作失败:', error);
@@ -354,7 +354,7 @@ const UserManagement: React.FC = () => {
       });
 
       message.success(user.isActive ? intl.formatMessage({ id: 'pages.userManagement.userActivated' }) : intl.formatMessage({ id: 'pages.userManagement.userDeactivated' }));
-      actionRef.current?.reload();
+      actionRef.current?.reload?.();
       fetchStatistics();
     } catch (error) {
       console.error('切换用户状态失败:', error);
@@ -500,7 +500,7 @@ const UserManagement: React.FC = () => {
   }, []);
 
   // 表格列定义（记忆化，避免不必要渲染）
-  const columns: ProColumns<AppUser>[] = useMemo(() => [
+  const columns: ProColumns<AppUser> = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.table.username' }),
       dataIndex: 'username',
@@ -628,7 +628,7 @@ const UserManagement: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -640,7 +640,7 @@ const UserManagement: React.FC = () => {
   // 表单成功处理
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
     fetchStatistics();
   }, [fetchStatistics]);
 

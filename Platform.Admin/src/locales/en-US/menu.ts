@@ -3,6 +3,7 @@ export default {
   'menu.login': 'Login',
   'menu.register': 'Register',
   'menu.register-result': 'Register Result',
+  'menu.change-password': 'Change Password',
   'menu.system': 'System',
   'menu.system.desc': 'System management functions',
   'menu.system.user-management': 'User Management',
@@ -88,4 +89,11 @@ export default {
   'menu.permission.failed': 'Failed to assign permissions',
   'menu.permission.selectAll': 'Select All',
   'menu.permission.unselectAll': 'Deselect All',
+  // Company Switcher
+  'component.companySwitcher.title': 'Switch Company',
+  'component.companySwitcher.join': 'Join New Company',
+  'component.companySwitcher.search': 'Search Company',
+  'component.companySwitcher.applyReason': 'Application Reason',
+  'component.companySwitcher.submit': 'Submit Application',
+  'component.companySwitcher.cancel': 'Cancel',
 };

@@ -11,7 +11,7 @@ import type { ModalStaticFunctions } from 'antd/es/modal/confirm';
 type AppInstance = {
   message: MessageInstance;
   notification: NotificationInstance;
-  modal: Omit<ModalStaticFunctions, 'warn'>;
+  modal: ModalStaticFunctions;
 };
 
 let appInstance: AppInstance | null = null;

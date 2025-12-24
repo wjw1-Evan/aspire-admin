@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
 import { Button, Space, Modal, message, Tag, Drawer, Card, Descriptions, Select } from 'antd';
 import {
   PlusOutlined,
@@ -36,13 +36,7 @@ const DocumentManagement: React.FC = () => {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
 
   const handleRefresh = () => {
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   };
 
   const statusMap: Record<DocumentStatus, { color: string; text: string }> = {
@@ -64,11 +58,7 @@ const DocumentManagement: React.FC = () => {
     },
   };
 
-<<<<<<< HEAD
-  const columns: ProColumns<Document> = [
-=======
   const columns: ColumnsType<Document> = [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: 'title',
@@ -173,13 +163,7 @@ const DocumentManagement: React.FC = () => {
                         const response = await deleteDocument(record.id!);
                         if (response.success) {
                           message.success(intl.formatMessage({ id: 'pages.document.message.deleteSuccess' }));
-<<<<<<< HEAD
                           actionRef.current?.reload?.();
-=======
-                          if (actionRef.current?.reload) {
-                            actionRef.current.reload();
-                          }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
                         }
                       } catch (error) {
                         console.error('删除失败:', error);
@@ -200,7 +184,7 @@ const DocumentManagement: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!submittingDocument) return;
-    
+
     if (!selectedWorkflowId) {
       message.warning(intl.formatMessage({ id: 'pages.document.modal.selectWorkflowPlaceholder' }));
       return;
@@ -215,13 +199,7 @@ const DocumentManagement: React.FC = () => {
         setSubmitModalVisible(false);
         setSubmittingDocument(null);
         setSelectedWorkflowId('');
-<<<<<<< HEAD
         actionRef.current?.reload?.();
-=======
-        if (actionRef.current?.reload) {
-          actionRef.current.reload();
-        }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('提交失败:', error);
@@ -283,10 +261,7 @@ const DocumentManagement: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-<<<<<<< HEAD
-=======
         search={true}
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       />
 
       <Drawer

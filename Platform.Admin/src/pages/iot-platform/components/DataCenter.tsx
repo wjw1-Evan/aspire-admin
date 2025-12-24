@@ -81,12 +81,12 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       }
 
       const response = await iotService.queryDataRecords(payload);
-      
+
       if (response && response.success && response.data) {
         // 处理不同的数据格式：优先检查小写格式（后端实际返回的格式）
         let records: IoTDataRecord[] = [];
         let total = 0;
-        
+
         // 优先检查大写格式（后端实际返回的格式）
         if (response.data.Records && Array.isArray(response.data.Records)) {
           // 如果是 { Records: [], Total: 0 } 格式（大写）
@@ -107,7 +107,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
             total = data.total || 0;
           }
         }
-        
+
         // 确保返回的数据格式符合 ProTable 的要求
         return {
           data: records || [],
@@ -115,7 +115,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
           success: true,
         };
       }
-      
+
       return {
         data: [],
         total: 0,
@@ -179,11 +179,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     },
   }), []);
 
-<<<<<<< HEAD
-  const columns: ProColumns<IoTDataRecord> = useMemo(() => [
-=======
   const columns: ColumnsType<IoTDataRecord> = useMemo(() => [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: '设备ID',
       dataIndex: 'deviceId',
@@ -300,16 +296,16 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
           </Form.Item>
           <Form.Item>
             <Space wrap>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 icon={<SearchOutlined />}
                 style={isMobile ? { width: '100%' } : {}}
               >
                 搜索
               </Button>
-              <Button 
-                onClick={handleReset} 
+              <Button
+                onClick={handleReset}
                 icon={<ReloadOutlined />}
                 style={isMobile ? { width: '100%' } : {}}
               >

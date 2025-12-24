@@ -41,10 +41,10 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
     async (params: any, _sort?: Record<string, any>) => {
       try {
         const { current = 1, pageSize = 10 } = params;
-        
+
         // 合并搜索参数，使用 ref 确保获取最新的搜索参数
         const mergedParams = { ...searchParamsRef.current };
-        
+
         const requestData: ChatHistoryQueryRequest = {
           current,
           pageSize,
@@ -146,13 +146,9 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
           const response = await deleteChatHistory(record.sessionId);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteSuccess' }));
-<<<<<<< HEAD
-            actionRef.current?.reload?.();
-=======
             if (actionRef.current?.reload) {
               actionRef.current.reload();
             }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           } else {
             message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
           }
@@ -172,13 +168,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-<<<<<<< HEAD
-      actionRef.current?.reload?.();
-    },
-  }), []);
-
-  const columns: ProColumns<ChatHistoryListItem> = [
-=======
       if (actionRef.current?.reload) {
         actionRef.current.reload();
       }
@@ -186,7 +175,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   }), []);
 
   const columns: ColumnsType<ChatHistoryListItem> = [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.sessionId' }),
       dataIndex: 'sessionId',

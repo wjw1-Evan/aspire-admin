@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
 import {
   Button,
   Space,
@@ -61,13 +61,9 @@ const ApprovalPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('pending');
 
   const handleRefresh = () => {
-<<<<<<< HEAD
-    actionRef.current?.reload?.();
-=======
     if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   };
 
   React.useEffect(() => {
@@ -104,11 +100,7 @@ const ApprovalPage: React.FC = () => {
     },
   };
 
-<<<<<<< HEAD
-  const columns: ProColumns<Document> = [
-=======
   const columns: ColumnsType<Document> = [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: 'title',
@@ -227,13 +219,9 @@ const ApprovalPage: React.FC = () => {
         setApprovalModalVisible(false);
         approvalForm.resetFields();
         setCurrentDocument(null);
-<<<<<<< HEAD
-        actionRef.current?.reload?.();
-=======
         if (actionRef.current?.reload) {
           actionRef.current.reload();
         }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('审批失败:', error);
@@ -254,13 +242,9 @@ const ApprovalPage: React.FC = () => {
         setRejectModalVisible(false);
         rejectForm.resetFields();
         setCurrentDocument(null);
-<<<<<<< HEAD
-        actionRef.current?.reload?.();
-=======
         if (actionRef.current?.reload) {
           actionRef.current.reload();
         }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('拒绝失败:', error);
@@ -282,13 +266,7 @@ const ApprovalPage: React.FC = () => {
         setReturnModalVisible(false);
         returnForm.resetFields();
         setCurrentDocument(null);
-<<<<<<< HEAD
         actionRef.current?.reload?.();
-=======
-        if (actionRef.current?.reload) {
-          actionRef.current.reload();
-        }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('退回失败:', error);
@@ -310,13 +288,9 @@ const ApprovalPage: React.FC = () => {
         setDelegateModalVisible(false);
         delegateForm.resetFields();
         setCurrentDocument(null);
-<<<<<<< HEAD
-        actionRef.current?.reload?.();
-=======
         if (actionRef.current?.reload) {
           actionRef.current.reload();
         }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       }
     } catch (error) {
       console.error('转办失败:', error);
@@ -430,13 +404,9 @@ const ApprovalPage: React.FC = () => {
         activeKey={activeTab}
         onChange={(key) => {
           setActiveTab(key);
-<<<<<<< HEAD
-          actionRef.current?.reload?.();
-=======
           if (actionRef.current?.reload) {
             actionRef.current.reload();
           }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
         }}
         items={tabItems}
       />
@@ -580,8 +550,8 @@ const ApprovalPage: React.FC = () => {
                   {detailData.category || '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.workflowStatus' })}>
-                  <Tag color={statusMap[detailData.status].color}>
-                    {statusMap[detailData.status].text}
+                  <Tag color={statusMap[detailData.status as DocumentStatus]?.color}>
+                    {statusMap[detailData.status as DocumentStatus]?.text}
                   </Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.createdBy' })}>

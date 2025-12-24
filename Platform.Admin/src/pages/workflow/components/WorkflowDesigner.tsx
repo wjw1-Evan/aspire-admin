@@ -13,7 +13,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import 'd3-transition';
-import { Button, Card, Drawer, Form, Input, Select, Switch, message, Space, Divider } from 'antd';
+import { Button, Card, Drawer, Form, Input, Select, Switch, message, Space, Divider, Modal } from 'antd';
 import { PlusOutlined, SaveOutlined, CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import type {
@@ -233,7 +233,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     setSelectedNode(node);
     setConfigDrawerVisible(true);
     const config = node.data.config || {};
-    
+
     // 提取节点标签文本
     let labelText = '';
     try {
@@ -250,7 +250,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     } catch (e) {
       // 如果提取失败，使用空字符串
     }
-    
+
     // 处理审批人规则，转换为表单格式
     const approversForForm = (config.approval?.approvers || []).map((rule: ApproverRule) => {
       if (rule.type === ApproverType.User) {
@@ -268,7 +268,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       }
       return rule;
     });
-    
+
     configForm.setFieldsValue({
       label: labelText,
       nodeType: node.data.nodeType,
@@ -289,7 +289,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       const updatedNodes = nodes.map((node) => {
         if (node.id === selectedNode.id) {
           const config: NodeConfig = {};
-          
+
           if (values.nodeType === 'approval') {
             // 处理审批人规则，确保格式正确
             const approvers: ApproverRule[] = (values.approvers || []).map((rule: any) => {
@@ -312,7 +312,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               }
               return rule;
             });
-            
+
             config.approval = {
               type: values.approvalType || 0,
               approvers: approvers,
@@ -370,7 +370,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     // 检查所有节点是否连通
     const nodeIds = new Set(nodes.map((n) => n.id));
     const connectedNodes = new Set<string>();
-    
+
     const dfs = (nodeId: string) => {
       if (connectedNodes.has(nodeId)) return;
       connectedNodes.add(nodeId);
@@ -413,7 +413,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         } catch (e) {
           // 如果提取失败，使用空字符串
         }
-        
+
         return {
           id: node.id,
           type: node.data.nodeType as 'start' | 'end' | 'approval' | 'condition' | 'parallel',
@@ -436,6 +436,29 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
     onSave?.(workflowGraph);
   }, [nodes, edges, validateWorkflow, onSave]);
+
+  const handleDeleteSelectedNode = useCallback(() => {
+    if (!selectedNode) {
+      message.warning('请先选择要删除的节点');
+      return;
+    }
+
+    Modal.confirm({
+      title: '确认删除节点',
+      content: '确定删除该流程节点？删除后与该节点关联的连线也会一并移除。',
+      okText: '删除',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: () => {
+        const targetId = selectedNode.id;
+        setNodes((nds) => nds.filter((n) => n.id !== targetId));
+        setEdges((eds) => eds.filter((e) => e.source !== targetId && e.target !== targetId));
+        setSelectedNode(null);
+        setConfigDrawerVisible(false);
+        message.success('节点已删除');
+      },
+    });
+  }, [selectedNode, setNodes, setEdges]);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -480,14 +503,30 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             {intl.formatMessage({ id: 'pages.workflow.designer.addEnd' })}
           </Button>
           <Divider type="vertical" />
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            onClick={handleSave}
-            size="small"
-          >
-            {intl.formatMessage({ id: 'pages.workflow.designer.save' })}
-          </Button>
+          {onSave && (
+            <>
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleDeleteSelectedNode}
+                disabled={!selectedNode}
+                size="small"
+              >
+                {intl.formatMessage({ id: 'pages.button.delete' })}
+              </Button>
+              <Divider type="vertical" />
+            </>
+          )}
+          {onSave && (
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={handleSave}
+              size="small"
+            >
+              {intl.formatMessage({ id: 'pages.workflow.designer.save' })}
+            </Button>
+          )}
           <Button
             icon={<CheckCircleOutlined />}
             onClick={validateWorkflow}

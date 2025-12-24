@@ -1,16 +1,16 @@
 import React, { useRef, useState } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
 import { Button, Space, Modal, message, Tag, Switch, Card, Row, Col, Form, Input, Select, Grid } from 'antd';
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   EyeOutlined,
   PartitionOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
 import type { ActionType } from '@/types/pro-components';
-import type { TableColumnsType } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { DataTable } from '@/components/DataTable';
 import {
   getWorkflowList,
@@ -48,15 +48,7 @@ const WorkflowManagement: React.FC = () => {
 
 
   const handleRefresh = () => {
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-  };
-
-  const columns: ProColumns<WorkflowDefinition> = [
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
   };
 
   // 搜索
@@ -70,9 +62,7 @@ const WorkflowManagement: React.FC = () => {
     };
     setSearchParams(newParams);
     // 手动触发重新加载
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
+    actionRef.current?.reload?.();
   };
 
   // 重置搜索
@@ -87,13 +77,10 @@ const WorkflowManagement: React.FC = () => {
     };
     setSearchParams(resetParams);
     // 手动触发重新加载
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
+    actionRef.current?.reload?.();
   };
 
-  const columns: TableColumnsType<WorkflowDefinition> = [
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
+  const columns: ColumnsType<WorkflowDefinition> = [
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.name' }),
       dataIndex: 'name',
@@ -169,13 +156,7 @@ const WorkflowManagement: React.FC = () => {
                     const response = await deleteWorkflow(record.id!);
                     if (response.success) {
                       message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' }));
-<<<<<<< HEAD
                       actionRef.current?.reload?.();
-=======
-                      if (actionRef.current && actionRef.current.reload) {
-                        actionRef.current.reload();
-                      }
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
                     }
                   } catch (error) {
                     console.error('删除失败:', error);
@@ -199,13 +180,7 @@ const WorkflowManagement: React.FC = () => {
           message.success(intl.formatMessage({ id: 'pages.workflow.message.saveSuccess' }));
           setDesignerVisible(false);
           setEditingWorkflow(null);
-<<<<<<< HEAD
           actionRef.current?.reload?.();
-=======
-          if (actionRef.current && actionRef.current.reload) {
-            actionRef.current.reload();
-          }
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
         }
       } else {
         // 创建新流程的逻辑在创建页面处理
@@ -282,14 +257,14 @@ const WorkflowManagement: React.FC = () => {
           </Form.Item>
           <Form.Item>
             <Space wrap>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 htmlType="submit"
                 style={isMobile ? { width: '100%' } : {}}
               >
                 搜索
               </Button>
-              <Button 
+              <Button
                 onClick={handleReset}
                 style={isMobile ? { width: '100%' } : {}}
               >
@@ -322,8 +297,6 @@ const WorkflowManagement: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-<<<<<<< HEAD
-=======
         search={false}
         pagination={{
           defaultPageSize: 10,
@@ -333,7 +306,6 @@ const WorkflowManagement: React.FC = () => {
           showTotal: (total) => `共 ${total} 条`,
         }}
         scroll={{ x: 'max-content' }}
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
       />
 
       {/* 创建流程模态窗体 */}

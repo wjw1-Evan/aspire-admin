@@ -174,13 +174,7 @@ const PasswordBook: React.FC = () => {
       searchParamsRef.current = newParams;
       setSearchParams(newParams);
       // 手动触发重新加载
-<<<<<<< HEAD
       actionRef.current?.reload?.();
-=======
-      if (actionRef.current?.reload) {
-        actionRef.current.reload();
-      }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     },
     [],
   );
@@ -196,13 +190,7 @@ const PasswordBook: React.FC = () => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, [searchForm]);
 
   // 创建
@@ -251,13 +239,7 @@ const PasswordBook: React.FC = () => {
             const response = await deletePasswordBookEntry(entry.id);
             if (response.success) {
               message.success('删除成功');
-<<<<<<< HEAD
               actionRef.current?.reload?.();
-=======
-              if (actionRef.current?.reload) {
-                actionRef.current.reload();
-              }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
               fetchStatistics();
             }
           } catch (error) {
@@ -273,25 +255,13 @@ const PasswordBook: React.FC = () => {
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingEntry(null);
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -509,14 +479,14 @@ const PasswordBook: React.FC = () => {
           </Form.Item>
           <Form.Item>
             <Space wrap>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 htmlType="submit"
                 style={isMobile ? { width: '100%' } : {}}
               >
                 搜索
               </Button>
-              <Button 
+              <Button
                 onClick={handleReset}
                 style={isMobile ? { width: '100%' } : {}}
               >

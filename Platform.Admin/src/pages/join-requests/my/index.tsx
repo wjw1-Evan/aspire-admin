@@ -75,13 +75,9 @@ const MyJoinRequests: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-<<<<<<< HEAD
-    actionRef.current?.reload?.();
-=======
     if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 撤回申请
@@ -92,13 +88,9 @@ const MyJoinRequests: React.FC = () => {
 
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.message.applicationCancelled' }));
-<<<<<<< HEAD
-        actionRef.current?.reload?.();
-=======
         if (actionRef.current?.reload) {
           actionRef.current.reload();
         }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       } else {
         // 失败时抛出错误，由全局错误处理统一处理
         throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.cancelFailed' }));
@@ -138,7 +130,7 @@ const MyJoinRequests: React.FC = () => {
 
         e.preventDefault();
         e.stopPropagation();
-        
+
         isResizing = true;
         currentHeader = header;
         startX = e.clientX;
@@ -173,12 +165,12 @@ const MyJoinRequests: React.FC = () => {
         const headerEl = header as HTMLElement;
         headerEl.style.position = 'relative';
         headerEl.style.cursor = 'default';
-        
+
         const mouseMoveHandler = (e: MouseEvent) => {
           const rect = headerEl.getBoundingClientRect();
           const edgeThreshold = 5;
           const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
-          
+
           if (isNearRightEdge && !isResizing) {
             headerEl.style.cursor = 'col-resize';
           } else if (!isResizing) {
@@ -225,7 +217,7 @@ const MyJoinRequests: React.FC = () => {
         clearTimeout(timer);
       }
       observer.disconnect();
-      
+
       // 清理事件监听器
       if (tableRef.current) {
         const thead = tableRef.current.querySelector('thead');
@@ -245,11 +237,7 @@ const MyJoinRequests: React.FC = () => {
     };
   }, []);
 
-<<<<<<< HEAD
-  const columns: ProColumns<API.JoinRequestDetail> = [
-=======
   const columns: ColumnsType<API.JoinRequestDetail> = [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.table.companyName' }),
       dataIndex: 'companyName',

@@ -10,7 +10,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 var compose = builder.AddDockerComposeEnvironment("compose").WithDashboard(dashboard =>
        {
            dashboard.WithHostPort(18888);
-       });;
+       }); ;
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
@@ -57,7 +57,7 @@ var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000).PublishAsDockerComposeService((resource, service) =>
                    {
                        service.Ports = new List<string> { "15000:15000" };
-                       
+
                    })
     .WithConfiguration(config =>
     {
@@ -74,7 +74,11 @@ builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
-    .WithHttpEndpoint(env: "PORT", port: 15001,targetPort: 8080)
+                                        // 解决 npm 安装仅生产依赖导致 postinstall（max setup）失败的问题
+                                        // 强制安装 devDependencies 并在开发模式下运行
+    .WithEnvironment("NPM_CONFIG_PRODUCTION", "false")
+    .WithEnvironment("NODE_ENV", "development")
+    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8080)
     .WithNpmPackageInstallation()
     .PublishAsDockerFile().PublishAsDockerComposeService((resource, service) =>
                    {
@@ -86,13 +90,16 @@ builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
     .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none")
+    // 同样确保安装 devDependencies，避免前端依赖缺失
+    .WithEnvironment("NPM_CONFIG_PRODUCTION", "false")
+    .WithEnvironment("NODE_ENV", "development")
     .WithHttpEndpoint(env: "PORT", port: 15002, targetPort: 8081)
     .WithNpmPackageInstallation()
     .PublishAsDockerFile().PublishAsDockerComposeService((resource, service) =>
                    {
                        service.Ports = new List<string> { "15002:8081" };
                    });
- 
+
 
 
 // 配置 Scalar API 文档

@@ -69,7 +69,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     sortBy: 'CreatedAt',
     sortOrder: 'desc',
   });
-  
+
   // 🔧 修复：使用 ref 存储搜索参数，避免 fetchProjects 函数重新创建导致重复请求
   const searchParamsRef = useRef<ProjectQueryRequest>({
     page: 1,
@@ -138,15 +138,10 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-<<<<<<< HEAD
-      actionRef.current?.reload?.();
-    },
-=======
         if (actionRef.current && actionRef.current.reload) {
           actionRef.current.reload();
         }
       },
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     refreshStatistics: () => {
       fetchStatistics();
     },
@@ -174,13 +169,9 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
     // 手动触发重新加载
-<<<<<<< HEAD
-    actionRef.current?.reload?.();
-=======
     if (actionRef.current && actionRef.current.reload) {
       actionRef.current.reload();
     }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 重置搜索
@@ -196,13 +187,9 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
-<<<<<<< HEAD
-    actionRef.current?.reload?.();
-=======
     if (actionRef.current && actionRef.current.reload) {
       actionRef.current.reload();
     }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, [searchForm]);
 
   // 删除项目
@@ -217,13 +204,9 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         try {
           await deleteProject(projectId);
           message.success(intl.formatMessage({ id: 'pages.projectManagement.message.deleteSuccess' }));
-<<<<<<< HEAD
-          actionRef.current?.reload?.();
-=======
           if (actionRef.current && actionRef.current.reload) {
             actionRef.current.reload();
           }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.projectManagement.message.deleteFailed' }));
@@ -278,11 +261,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   }, []);
 
   // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
-<<<<<<< HEAD
-  const columns: ProColumns<ProjectDto> = useMemo(() => [
-=======
   const columns: ColumnsType<ProjectDto> = useMemo(() => [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.name' }),
       dataIndex: 'name',
@@ -403,13 +382,9 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   // 表单成功处理
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
-<<<<<<< HEAD
-    actionRef.current?.reload?.();
-=======
     if (actionRef.current && actionRef.current.reload) {
       actionRef.current.reload();
     }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -488,14 +463,14 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
           </Form.Item>
           <Form.Item>
             <Space wrap>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 htmlType="submit"
                 style={isMobile ? { width: '100%' } : {}}
               >
                 {intl.formatMessage({ id: 'pages.button.query' })}
               </Button>
-              <Button 
+              <Button
                 onClick={handleReset}
                 style={isMobile ? { width: '100%' } : {}}
               >

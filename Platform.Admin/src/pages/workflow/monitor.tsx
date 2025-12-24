@@ -1,9 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
 import { Card, Tag, Space, Button, Modal } from 'antd';
 import { EyeOutlined, MonitorOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ActionType } from '@/types/pro-components';
-import type { TableColumnsType } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { DataTable } from '@/components/DataTable';
 import {
   getWorkflowInstances,
@@ -25,13 +25,7 @@ const WorkflowMonitor: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
 
   const handleRefresh = () => {
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
   };
 
   const statusMap = {
@@ -53,11 +47,7 @@ const WorkflowMonitor: React.FC = () => {
     },
   };
 
-<<<<<<< HEAD
-  const columns: ProColumns<WorkflowInstance> = [
-=======
-  const columns: TableColumnsType<WorkflowInstance> = [
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
+  const columns: ColumnsType<WorkflowInstance> = [
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.instanceId' }),
       dataIndex: 'id',
@@ -88,10 +78,6 @@ const WorkflowMonitor: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.action' }),
-<<<<<<< HEAD
-=======
-
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
       width: 200,
       render: (_, record) => (
         <Space>
@@ -174,10 +160,7 @@ const WorkflowMonitor: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-<<<<<<< HEAD
-=======
         search={true}
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
       />
 
       <Modal

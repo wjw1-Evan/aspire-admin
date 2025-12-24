@@ -86,13 +86,7 @@ const UserLog: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   /**
@@ -308,7 +302,7 @@ const UserLog: React.FC = () => {
 
         e.preventDefault();
         e.stopPropagation();
-        
+
         isResizing = true;
         currentHeader = header;
         startX = e.clientX;
@@ -343,12 +337,12 @@ const UserLog: React.FC = () => {
         const headerEl = header as HTMLElement;
         headerEl.style.position = 'relative';
         headerEl.style.cursor = 'default';
-        
+
         const mouseMoveHandler = (e: MouseEvent) => {
           const rect = headerEl.getBoundingClientRect();
           const edgeThreshold = 5;
           const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
-          
+
           if (isNearRightEdge && !isResizing) {
             headerEl.style.cursor = 'col-resize';
           } else if (!isResizing) {
@@ -395,7 +389,7 @@ const UserLog: React.FC = () => {
         clearTimeout(timer);
       }
       observer.disconnect();
-      
+
       // 清理事件监听器
       if (tableRef.current) {
         const thead = tableRef.current.querySelector('thead');
@@ -415,11 +409,7 @@ const UserLog: React.FC = () => {
     };
   }, []);
 
-<<<<<<< HEAD
-  const columns: ProColumns<UserActivityLog> = [
-=======
   const columns: ColumnsType<UserActivityLog> = [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.table.user' }),
       dataIndex: 'username',

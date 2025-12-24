@@ -260,7 +260,7 @@ const MyActivity: React.FC = () => {
 
       e.preventDefault();
       e.stopPropagation();
-      
+
       isResizing = true;
       currentHeader = header;
       startX = e.clientX;
@@ -295,12 +295,12 @@ const MyActivity: React.FC = () => {
         const headerEl = header as HTMLElement;
         headerEl.style.position = 'relative';
         headerEl.style.cursor = 'default';
-        
+
         const mouseMoveHandler = (e: MouseEvent) => {
           const rect = headerEl.getBoundingClientRect();
           const edgeThreshold = 5;
           const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
-          
+
           if (isNearRightEdge && !isResizing) {
             headerEl.style.cursor = 'col-resize';
           } else if (!isResizing) {
@@ -347,7 +347,7 @@ const MyActivity: React.FC = () => {
         clearTimeout(timer);
       }
       observer.disconnect();
-      
+
       // 清理事件监听器
       if (tableRef.current) {
         const thead = tableRef.current.querySelector('thead');
@@ -366,12 +366,8 @@ const MyActivity: React.FC = () => {
       }
     };
   }, []);
-  
-<<<<<<< HEAD
-  const columns: ProColumns<UserActivityLog> = useMemo(() => [
-=======
+
   const columns: ColumnsType<UserActivityLog> = useMemo(() => [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.table.action' }),
       dataIndex: 'action',
@@ -409,7 +405,7 @@ const MyActivity: React.FC = () => {
       render: (_, record: UserActivityLog) => getStatusBadge(record.statusCode),
       sorter: (a: UserActivityLog, b: UserActivityLog) => (a.statusCode || 0) - (b.statusCode || 0),
     },
-   
+
     {
       title: intl.formatMessage({ id: 'pages.table.fullUrl' }),
       dataIndex: 'fullUrl',
@@ -460,19 +456,13 @@ const MyActivity: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 获取活动日志列表（使用 useCallback 避免死循环）
   const fetchRecords = useCallback(async (params: any, sort?: Record<string, any>) => {
     const { current = 1, pageSize = 20 } = params;
-    
+
     // 合并搜索参数，使用 ref 确保获取最新的搜索参数
     const mergedParams = { ...searchParamsRef.current, ...params };
     const { action, httpMethod, statusCode, ipAddress, startDate, endDate } = mergedParams;
@@ -485,7 +475,7 @@ const MyActivity: React.FC = () => {
       // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
       const sortKey = Object.keys(sort)[0];
       const sortValue = sort[sortKey];
-      
+
       // 将驼峰命名转换为后端字段名（如果需要）
       sortBy = sortKey === 'createdAt' ? 'createdAt' : sortKey;
       sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
@@ -496,14 +486,14 @@ const MyActivity: React.FC = () => {
     let formattedEndDate: string | undefined;
 
     if (startDate) {
-      formattedStartDate = typeof startDate === 'string' 
-        ? startDate 
+      formattedStartDate = typeof startDate === 'string'
+        ? startDate
         : new Date(startDate).toISOString();
     }
 
     if (endDate) {
-      formattedEndDate = typeof endDate === 'string' 
-        ? endDate 
+      formattedEndDate = typeof endDate === 'string'
+        ? endDate
         : new Date(endDate).toISOString();
     }
 
@@ -635,10 +625,10 @@ const MyActivity: React.FC = () => {
       <Card style={{ marginBottom: 16 }}>
         <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
           <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
-            <Input 
-              placeholder={intl.formatMessage({ id: 'pages.table.action' })} 
-              style={{ width: 150 }} 
-              allowClear 
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.table.action' })}
+              style={{ width: 150 }}
+              allowClear
             />
           </Form.Item>
           <Form.Item name="httpMethod" label={intl.formatMessage({ id: 'pages.table.httpMethod' })}>
@@ -655,17 +645,17 @@ const MyActivity: React.FC = () => {
             </Select>
           </Form.Item>
           <Form.Item name="statusCode" label={intl.formatMessage({ id: 'pages.table.statusCode' })}>
-            <Input 
-              placeholder={intl.formatMessage({ id: 'pages.table.statusCode' })} 
-              style={{ width: 120 }} 
-              allowClear 
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.table.statusCode' })}
+              style={{ width: 120 }}
+              allowClear
             />
           </Form.Item>
           <Form.Item name="ipAddress" label={intl.formatMessage({ id: 'pages.table.ipAddress' })}>
-            <Input 
-              placeholder={intl.formatMessage({ id: 'pages.table.ipAddress' })} 
-              style={{ width: 150 }} 
-              allowClear 
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.table.ipAddress' })}
+              style={{ width: 150 }}
+              allowClear
             />
           </Form.Item>
           <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.table.actionTime' })}>
@@ -677,16 +667,16 @@ const MyActivity: React.FC = () => {
           </Form.Item>
           <Form.Item>
             <Space wrap>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 icon={<SearchOutlined />}
                 style={isMobile ? { width: '100%' } : {}}
               >
                 {intl.formatMessage({ id: 'pages.button.search' })}
               </Button>
-              <Button 
-                onClick={handleReset} 
+              <Button
+                onClick={handleReset}
                 icon={<ReloadOutlined />}
                 style={isMobile ? { width: '100%' } : {}}
               >

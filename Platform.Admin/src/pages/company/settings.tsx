@@ -70,9 +70,11 @@ export default function CompanySettings() {
 
   if (loading) {
     return (
-      <PageContainer style={{ paddingBlock: 12 }}>
-        <Spin 
-          size="large" 
+      <PageContainer
+        style={{ paddingBlock: 12 }}
+      >
+        <Spin
+          size="large"
           tip={intl.formatMessage({ id: 'pages.companySettings.loading' })}
           style={{ display: 'block', padding: 100 }}
         >
@@ -84,7 +86,9 @@ export default function CompanySettings() {
 
   if (!company) {
     return (
-      <PageContainer style={{ paddingBlock: 12 }}>
+      <PageContainer
+        style={{ paddingBlock: 12 }}
+      >
         <Card>
           <div style={{ textAlign: 'center', padding: 50 }}>
             <p>{intl.formatMessage({ id: 'pages.companySettings.companyNotFound' })}</p>
@@ -209,8 +213,8 @@ export default function CompanySettings() {
       )}
 
       {/* 企业详细信息 */}
-      <Card 
-        title={intl.formatMessage({ id: 'pages.companySettings.details' })} 
+      <Card
+        title={intl.formatMessage({ id: 'pages.companySettings.details' })}
         variant="outlined"
         style={{ marginBottom: 16 }}
       >

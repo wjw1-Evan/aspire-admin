@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef }
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, message, Modal, Switch } from 'antd';
+import { Button, Tag, Space, message, Modal, Card, Form, Input, Select, Grid } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
   EditOutlined,
@@ -26,6 +26,13 @@ export interface ConfigManagementRef {
 const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const intl = useIntl();
   const actionRef = useRef<ActionType>(null);
+  const { useBreakpoint } = Grid;
+  const screens = useBreakpoint();
+  const isMobile = !screens.md; // md 以下为移动端
+  const [searchForm] = Form.useForm();
+  const [searchParams, setSearchParams] = useState<{ current: number; pageSize: number; name?: string; isEnabled?: boolean | undefined; }>(
+    { current: 1, pageSize: 10, name: undefined, isEnabled: undefined }
+  );
   const [formVisible, setFormVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<XiaokeConfig | null>(null);
 
@@ -34,10 +41,10 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
     async (params: any, _sort?: Record<string, any>) => {
       try {
         const response = await getXiaokeConfigs({
-          page: params.current || 1,
-          pageSize: params.pageSize || 10,
-          name: params.name,
-          isEnabled: params.isEnabled,
+          page: params.current || searchParams.current,
+          pageSize: params.pageSize || searchParams.pageSize,
+          name: searchParams.name,
+          isEnabled: searchParams.isEnabled,
           sorter: params.sorter,
         });
 
@@ -63,8 +70,28 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
         };
       }
     },
-    [],
+    [searchParams],
   );
+
+  // 搜索
+  const handleSearch = useCallback((values: any) => {
+    const newParams = {
+      current: 1,
+      pageSize: searchParams.pageSize,
+      name: values.name || undefined,
+      isEnabled: values.isEnabled,
+    };
+    setSearchParams(newParams);
+    actionRef.current?.reload?.();
+  }, [searchParams.pageSize]);
+
+  // 重置
+  const handleReset = useCallback(() => {
+    searchForm.resetFields();
+    const resetParams = { current: 1, pageSize: searchParams.pageSize, name: undefined, isEnabled: undefined };
+    setSearchParams(resetParams);
+    actionRef.current?.reload?.();
+  }, [searchForm, searchParams.pageSize]);
 
   // 处理创建
   const handleCreate = useCallback(() => {
@@ -91,13 +118,9 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           const response = await deleteXiaokeConfig(record.id);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
-<<<<<<< HEAD
-            actionRef.current?.reload?.();
-=======
             if (actionRef.current && actionRef.current.reload) {
               actionRef.current.reload();
             }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           } else {
             message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
           }
@@ -114,13 +137,9 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       const response = await setDefaultXiaokeConfig(record.id);
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
-<<<<<<< HEAD
-        actionRef.current?.reload?.();
-=======
         if (actionRef.current && actionRef.current.reload) {
           actionRef.current.reload();
         }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       } else {
         message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
       }
@@ -134,13 +153,9 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
     setFormVisible(false);
     setEditingConfig(null);
     // 创建成功后重置到第一页并重新加载，确保新创建的记录显示出来
-<<<<<<< HEAD
-    actionRef.current?.reloadAndReset?.();
-=======
     if (actionRef.current && actionRef.current.reloadAndReset) {
       actionRef.current.reloadAndReset();
     }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 处理关闭表单
@@ -152,22 +167,14 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-<<<<<<< HEAD
-      actionRef.current?.reload?.();
-=======
       if (actionRef.current && actionRef.current.reload) {
         actionRef.current.reload();
       }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     },
     handleCreate,
   }), [handleCreate]);
 
-<<<<<<< HEAD
-  const columns: ProColumns<XiaokeConfig> = [
-=======
   const columns: ColumnsType<XiaokeConfig> = [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.name' }),
       dataIndex: 'name',
@@ -268,6 +275,40 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
 
   return (
     <>
+      {/* 搜索表单 */}
+      <Card style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout={isMobile ? 'vertical' : 'inline'}
+          onFinish={handleSearch}
+        >
+          <Form.Item name="name" label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.name' })}>
+            <Input placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.namePlaceholder' })} allowClear style={{ width: isMobile ? '100%' : 240 }} />
+          </Form.Item>
+          <Form.Item name="isEnabled" label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.status' })}>
+            <Select
+              placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.status' })}
+              allowClear
+              style={{ width: isMobile ? '100%' : 160 }}
+              options={[
+                { label: intl.formatMessage({ id: 'pages.xiaokeManagement.config.status.enabled' }), value: true },
+                { label: intl.formatMessage({ id: 'pages.xiaokeManagement.config.status.disabled' }), value: false },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space wrap>
+              <Button type="primary" htmlType="submit" style={isMobile ? { width: '100%' } : {}}>
+                搜索
+              </Button>
+              <Button onClick={handleReset} style={isMobile ? { width: '100%' } : {}}>
+                重置
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
       <DataTable<XiaokeConfig>
         actionRef={actionRef}
         rowKey="id"

@@ -131,7 +131,7 @@ const TaskManagement: React.FC = () => {
     assignedTo: undefined as string | undefined,
     taskType: undefined as string | undefined,
   });
-  
+
   // 🔧 修复：使用 ref 存储搜索参数，避免 fetchTasks 函数重新创建导致重复请求
   const searchParamsRef = useRef({
     page: 1,
@@ -279,13 +279,7 @@ const TaskManagement: React.FC = () => {
         try {
           await deleteTask(task.id!);
           message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' }));
-<<<<<<< HEAD
           actionRef.current?.reload?.();
-=======
-          if (actionRef.current && actionRef.current.reload) {
-            actionRef.current.reload();
-          }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.taskManagement.message.deleteFailed' }));
@@ -305,13 +299,7 @@ const TaskManagement: React.FC = () => {
         try {
           await cancelTask(task.id!);
           message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' }));
-<<<<<<< HEAD
           actionRef.current?.reload?.();
-=======
-          if (actionRef.current && actionRef.current.reload) {
-            actionRef.current.reload();
-          }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.taskManagement.message.cancelFailed' }));
@@ -324,13 +312,7 @@ const TaskManagement: React.FC = () => {
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingTask(null);
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -338,13 +320,7 @@ const TaskManagement: React.FC = () => {
   const handleExecutionSuccess = useCallback(() => {
     setExecutionVisible(false);
     setViewingTask(null);
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -363,13 +339,7 @@ const TaskManagement: React.FC = () => {
     searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
     // 手动触发重新加载
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 重置搜索
@@ -390,21 +360,11 @@ const TaskManagement: React.FC = () => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
-<<<<<<< HEAD
     actionRef.current?.reload?.();
   }, [searchForm]);
 
   // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
-  const columns: ProColumns<TaskDto> = useMemo(() => [
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
-  }, [searchForm]);
-
-  // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
-  const columns: any[] = useMemo(() => [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
+  const columns: ColumnsType<TaskDto> = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.taskName' }),
       dataIndex: 'taskName',
@@ -564,13 +524,7 @@ const TaskManagement: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer } from '@/components';
 import { Card, Form, Input, Button, message, Upload } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import { useNavigate, useIntl } from '@umijs/max';
@@ -40,7 +40,6 @@ const CreateDocument: React.FC = () => {
   return (
     <PageContainer
       title={intl.formatMessage({ id: 'pages.document.create.title' })}
-      onBack={() => navigate('/document/list')}
     >
       <Card>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>

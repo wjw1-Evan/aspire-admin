@@ -78,7 +78,7 @@ const UserManagement: React.FC = () => {
     SortBy: 'CreatedAt',
     SortOrder: 'desc',
   });
-  
+
   // 🔧 修复：使用 ref 存储搜索参数，避免 fetchUsers 函数重新创建导致重复请求
   const searchParamsRef = useRef<UserListRequest>({
     Page: 1,
@@ -128,12 +128,12 @@ const UserManagement: React.FC = () => {
     // 处理排序参数
     let sortBy = searchParamsRef.current.SortBy;
     let sortOrder = searchParamsRef.current.SortOrder;
-    
+
     if (sort && Object.keys(sort).length > 0) {
       // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
       const sortKey = Object.keys(sort)[0];
       const sortValue = sort[sortKey];
-      
+
       // 后端使用小写字段名
       sortBy = sortKey;
       sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
@@ -207,13 +207,7 @@ const UserManagement: React.FC = () => {
     searchParamsRef.current = newSearchParams;
     setSearchParams(newSearchParams);
     // 手动触发重新加载
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, []);
 
   // 重置搜索
@@ -229,13 +223,7 @@ const UserManagement: React.FC = () => {
     searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
   }, [searchForm]);
 
   // 删除用户（带删除原因）
@@ -266,15 +254,8 @@ const UserManagement: React.FC = () => {
             params: { reason: deleteReason },
           });
           message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
-<<<<<<< HEAD
           actionRef.current?.reload?.();
           fetchStatistics();
-=======
-      if (actionRef.current && actionRef.current.reload) {
-        actionRef.current.reload();
-      }
-      fetchStatistics();
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
         } catch (error) {
           console.error('删除用户失败:', error);
           // 错误已被全局错误处理捕获并显示
@@ -325,17 +306,9 @@ const UserManagement: React.FC = () => {
             });
 
             message.success(`批量删除成功`);
-<<<<<<< HEAD
             setSelectedRows([]);
             actionRef.current?.reload?.();
             fetchStatistics();
-=======
-        setSelectedRows([]);
-        if (actionRef.current && actionRef.current.reload) {
-          actionRef.current.reload();
-        }
-        fetchStatistics();
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           } catch (error) {
             console.error('批量删除失败:', error);
             // 错误已被全局错误处理捕获并显示
@@ -364,13 +337,7 @@ const UserManagement: React.FC = () => {
 
       message.success(intl.formatMessage({ id: 'pages.message.success' }));
       setSelectedRows([]);
-<<<<<<< HEAD
       actionRef.current?.reload?.();
-=======
-      if (actionRef.current && actionRef.current.reload) {
-        actionRef.current.reload();
-      }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       fetchStatistics();
     } catch (error) {
       console.error('批量操作失败:', error);
@@ -388,13 +355,7 @@ const UserManagement: React.FC = () => {
       });
 
       message.success(user.isActive ? intl.formatMessage({ id: 'pages.userManagement.userActivated' }) : intl.formatMessage({ id: 'pages.userManagement.userDeactivated' }));
-<<<<<<< HEAD
       actionRef.current?.reload?.();
-=======
-      if (actionRef.current && actionRef.current.reload) {
-        actionRef.current.reload();
-      }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
       fetchStatistics();
     } catch (error) {
       console.error('切换用户状态失败:', error);
@@ -432,7 +393,7 @@ const UserManagement: React.FC = () => {
 
         e.preventDefault();
         e.stopPropagation();
-        
+
         isResizing = true;
         currentHeader = header;
         startX = e.clientX;
@@ -467,12 +428,12 @@ const UserManagement: React.FC = () => {
         const headerEl = header as HTMLElement;
         headerEl.style.position = 'relative';
         headerEl.style.cursor = 'default';
-        
+
         const mouseMoveHandler = (e: MouseEvent) => {
           const rect = headerEl.getBoundingClientRect();
           const edgeThreshold = 5;
           const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
-          
+
           if (isNearRightEdge && !isResizing) {
             headerEl.style.cursor = 'col-resize';
           } else if (!isResizing) {
@@ -519,7 +480,7 @@ const UserManagement: React.FC = () => {
         clearTimeout(timer);
       }
       observer.disconnect();
-      
+
       // 清理事件监听器
       if (tableRef.current) {
         const thead = tableRef.current.querySelector('thead');
@@ -540,15 +501,7 @@ const UserManagement: React.FC = () => {
   }, []);
 
   // 表格列定义（记忆化，避免不必要渲染）
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const columns: ProColumns<AppUser> = useMemo(() => [
-=======
-  const columns: TableColumnsType<AppUser> = useMemo(() => [
->>>>>>> d8396d9 (feat(workflow): 重构工作流管理功能并优化多语言支持)
-=======
   const columns: ColumnsType<AppUser> = useMemo(() => [
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     {
       title: intl.formatMessage({ id: 'pages.table.username' }),
       dataIndex: 'username',
@@ -674,13 +627,7 @@ const UserManagement: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -692,13 +639,7 @@ const UserManagement: React.FC = () => {
   // 表单成功处理
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
-<<<<<<< HEAD
     actionRef.current?.reload?.();
-=======
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
     fetchStatistics();
   }, [fetchStatistics]);
 
@@ -850,16 +791,16 @@ const UserManagement: React.FC = () => {
           </Form.Item>
           <Form.Item>
             <Space wrap>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 aria-label={intl.formatMessage({ id: 'pages.userManagement.query' })}
                 style={isMobile ? { width: '100%' } : {}}
               >
                 {intl.formatMessage({ id: 'pages.userManagement.query' })}
               </Button>
-              <Button 
-                onClick={handleReset} 
+              <Button
+                onClick={handleReset}
                 aria-label={intl.formatMessage({ id: 'pages.userManagement.reset' })}
                 style={isMobile ? { width: '100%' } : {}}
               >

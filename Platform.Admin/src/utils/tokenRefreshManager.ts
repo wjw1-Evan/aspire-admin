@@ -78,13 +78,8 @@ class TokenRefreshManager {
 
         // 保存新的 token (已经在 hasValidTokens 中验证过非空)
         tokenUtils.setTokens(
-<<<<<<< HEAD
-          refreshResult.token!,
-          refreshResult.refreshToken!,
-=======
           refreshResult.token as string,
           refreshResult.refreshToken as string,
->>>>>>> 0b9b9ef (feat: refactor table column definitions and improve action handling in task and project management components)
           expiresAt,
         );
 

@@ -143,8 +143,8 @@ const CompanySearch: React.FC = () => {
 
         {/* 搜索结果 */}
         {loading ? (
-          <Spin 
-            size="large" 
+          <Spin
+            size="large"
             tip={intl.formatMessage({ id: 'pages.message.searching' })}
             style={{ display: 'block', padding: 60, textAlign: 'center' }}
           >

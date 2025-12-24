@@ -118,7 +118,8 @@ const PageContainer: React.FC<PageContainerProps> = ({
     return (
       <div style={defaultStyle} {...restProps}>
         {BreadcrumbView}
-        <Card title={title} extra={extra} bordered={false}>
+        {/* antd v6: Card 的 bordered 已弃用，改用样式移除边框 */}
+        <Card title={title} extra={extra} style={{ border: 'none' }}>
           {content}
           {children}
         </Card>

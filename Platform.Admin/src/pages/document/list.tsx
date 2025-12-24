@@ -271,7 +271,7 @@ const DocumentManagement: React.FC = () => {
           setDetailVisible(false);
           setDetailData(null);
         }}
-        width={800}
+        size={800}
       >
         {detailData && (
           <div>

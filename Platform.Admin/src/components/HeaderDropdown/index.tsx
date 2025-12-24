@@ -15,6 +15,10 @@ const useStyles = createStyles(({ token }) => {
 });
 
 export type HeaderDropdownProps = {
+  /**
+   * antd v6: overlayClassName 已弃用，改用 classNames.root
+   * 为兼容旧代码，保留该属性并映射到 classNames.root
+   */
   overlayClassName?: string;
   placement?:
     | 'bottomLeft'
@@ -23,6 +27,8 @@ export type HeaderDropdownProps = {
     | 'topCenter'
     | 'topRight'
     | 'bottomCenter';
+  /** 传递给 antd Dropdown 的 classNames */
+  classNames?: DropDownProps['classNames'];
 } & Omit<DropDownProps, 'overlay'>;
 
 const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
@@ -31,12 +37,13 @@ const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
   ...restProps
 }) => {
   const { styles } = useStyles();
-  return (
-    <Dropdown
-      overlayClassName={classNames(styles.dropdown, cls, customClassNames?.overlay)}
-      {...restProps}
-    />
-  );
+  // 合并旧的 overlayClassName 到新的 classNames.root
+  const mergedClassNames = {
+    ...customClassNames,
+    root: classNames(styles.dropdown, customClassNames?.root, cls),
+  } as DropDownProps['classNames'];
+
+  return <Dropdown classNames={mergedClassNames} {...restProps} />;
 };
 
 export default HeaderDropdown;

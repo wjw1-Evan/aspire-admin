@@ -547,7 +547,7 @@ const PasswordBook: React.FC = () => {
           setDetailVisible(false);
           setViewingEntry(null);
         }}
-        width={isMobile ? '100%' : 600}
+        size={isMobile ? '100%' : 600}
       >
         <Spin spinning={false}>
           {viewingEntry ? (

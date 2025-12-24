@@ -38,13 +38,14 @@ import {
   DocumentStatus,
 } from '@/services/document/api';
 import { getUserList } from '@/services/user/api';
-import { useIntl } from '@umijs/max';
+import { useIntl, useModel } from '@umijs/max';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 
 const ApprovalPage: React.FC = () => {
   const intl = useIntl();
+  const { initialState } = useModel('@@initialState');
   const actionRef = useRef<ActionType>(null);
   const [approvalModalVisible, setApprovalModalVisible] = useState(false);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
@@ -307,6 +308,15 @@ const ApprovalPage: React.FC = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {
+            // 防御性检查：当前企业ID必须为有效的 Mongo ObjectId
+            const currentCompanyId = (initialState as any)?.currentUser?.currentCompanyId as string | undefined;
+            const isValidObjectId = (id?: string) => !!id && /^[a-fA-F0-9]{24}$/.test(id);
+
+            if (!isValidObjectId(currentCompanyId)) {
+              // 当企业ID非法（如 none）时，避免调用后端导致 400
+              return { data: [], success: true, total: 0 };
+            }
+
             const response = await getPendingDocuments({
               current: params.current,
               pageSize: params.pageSize,
@@ -534,7 +544,7 @@ const ApprovalPage: React.FC = () => {
           setDetailVisible(false);
           setDetailData(null);
         }}
-        width={800}
+        size={800}
       >
         {detailData && (
           <div>

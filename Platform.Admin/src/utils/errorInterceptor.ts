@@ -5,6 +5,15 @@
 
 import { getMessage, getNotification } from './antdAppInstance';
 
+// 将提示操作调度到渲染阶段之外，避免 React 18 并发模式警告
+const runAfterRender = (fn: () => void) => {
+  if (typeof queueMicrotask === 'function') {
+    queueMicrotask(fn);
+  } else {
+    setTimeout(fn, 0);
+  }
+};
+
 // 错误类型枚举
 export enum ErrorType {
   NETWORK = 'NETWORK',
@@ -82,7 +91,7 @@ class UnifiedErrorInterceptor {
     // 认证错误规则
     this.addRule({
       condition: (error) => {
-        return error.response?.status === 401 || 
+        return error.response?.status === 401 ||
                error.response?.status === 404 ||
                error.message === 'Authentication handled silently' ||
                error.message === 'Authentication handled';
@@ -268,7 +277,7 @@ class UnifiedErrorInterceptor {
     if (error?.response?.data?.errors) {
       const validationErrors = error.response.data.errors;
       const errorMessages: string[] = [];
-      
+
       // 遍历所有字段的错误
       Object.keys(validationErrors).forEach((field) => {
         const fieldErrors = validationErrors[field];
@@ -280,23 +289,23 @@ class UnifiedErrorInterceptor {
           errorMessages.push(fieldErrors);
         }
       });
-      
+
       // 如果有验证错误，返回第一个（最重要的）错误
       if (errorMessages.length > 0) {
         return errorMessages[0];
       }
     }
-    
+
     // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置）
     if (error.info?.errorMessage) {
       return error.info.errorMessage;
     }
-    
+
     // 尝试从 error.response.data.title 获取（ProblemDetails 格式）
     if (error?.response?.data?.title) {
       return error.response.data.title;
     }
-    
+
     if (error.response?.data?.errorMessage) {
       return error.response.data.errorMessage;
     }
@@ -314,7 +323,7 @@ class UnifiedErrorInterceptor {
    */
   extractValidationErrors(error: any): string[] {
     const errors: string[] = [];
-    
+
     // 检查是否是 ProblemDetails 格式（.NET 标准错误格式）
     if (error?.response?.data?.errors) {
       const validationErrors = error.response.data.errors;
@@ -330,7 +339,7 @@ class UnifiedErrorInterceptor {
         }
       });
     }
-    
+
     // 如果没有提取到验证错误，尝试从其他位置获取错误信息
     if (errors.length === 0) {
       // 尝试从 error.response.data.title 获取
@@ -350,7 +359,7 @@ class UnifiedErrorInterceptor {
         errors.push(error.message);
       }
     }
-    
+
     return errors;
   }
 
@@ -418,7 +427,7 @@ class UnifiedErrorInterceptor {
   private displayError(errorInfo: ErrorInfo, config: ErrorHandlerConfig, originalError?: any) {
     const message = getMessage();
     const notification = getNotification();
-    
+
     // 如果是验证错误（400状态码），尝试显示所有验证错误
     if (errorInfo.type === ErrorType.VALIDATION && originalError) {
       const validationErrors = this.extractValidationErrors(originalError);
@@ -427,13 +436,15 @@ class UnifiedErrorInterceptor {
         validationErrors.forEach((msg, index) => {
           setTimeout(() => {
             if (config.displayType === ErrorDisplayType.MESSAGE) {
-              message.error(msg, 3);
+              runAfterRender(() => message.error(msg, 3));
             } else if (config.displayType === ErrorDisplayType.NOTIFICATION) {
-              notification.error({
-                message: `验证错误 ${index + 1}`,
-                description: msg,
-                duration: 3,
-              });
+              runAfterRender(() =>
+                notification.error({
+                  message: `验证错误 ${index + 1}`,
+                  description: msg,
+                  duration: 3,
+                }),
+              );
             }
           }, index * 500);
         });
@@ -446,18 +457,20 @@ class UnifiedErrorInterceptor {
 
     switch (config.displayType) {
       case ErrorDisplayType.MESSAGE:
-        message.error(errorInfo.message);
+        runAfterRender(() => message.error(errorInfo.message));
         break;
       case ErrorDisplayType.NOTIFICATION:
-        notification.error({
-          message: errorInfo.code || '错误',
-          description: errorInfo.message,
-          duration: 4.5,
-        });
+        runAfterRender(() =>
+          notification.error({
+            message: errorInfo.code || '错误',
+            description: errorInfo.message,
+            duration: 4.5,
+          }),
+        );
         break;
       case ErrorDisplayType.MODAL:
         // 实现模态框显示
-        message.error(errorInfo.message);
+        runAfterRender(() => message.error(errorInfo.message));
         break;
       case ErrorDisplayType.REDIRECT:
         // 实现重定向逻辑
@@ -475,7 +488,7 @@ class UnifiedErrorInterceptor {
     const message = getMessage();
     const notification = getNotification();
     const errors = this.extractValidationErrors(error);
-    
+
     if (errors.length === 0) {
       // 如果没有提取到错误，使用默认错误处理
       const errorInfo = this.parseError(error);
@@ -486,30 +499,34 @@ class UnifiedErrorInterceptor {
       });
       return;
     }
-    
+
     if (errors.length === 1) {
       // 单个错误，直接显示
       if (displayType === ErrorDisplayType.MESSAGE) {
-        message.error(errors[0]);
+        runAfterRender(() => message.error(errors[0]));
       } else if (displayType === ErrorDisplayType.NOTIFICATION) {
-        notification.error({
-          message: '验证错误',
-          description: errors[0],
-          duration: 4.5,
-        });
+        runAfterRender(() =>
+          notification.error({
+            message: '验证错误',
+            description: errors[0],
+            duration: 4.5,
+          }),
+        );
       }
     } else {
       // 多个错误，依次显示所有错误（每个错误显示3秒，间隔0.5秒）
       errors.forEach((msg, index) => {
         setTimeout(() => {
           if (displayType === ErrorDisplayType.MESSAGE) {
-            message.error(msg, 3);
+            runAfterRender(() => message.error(msg, 3));
           } else if (displayType === ErrorDisplayType.NOTIFICATION) {
-            notification.error({
-              message: `验证错误 ${index + 1}`,
-              description: msg,
-              duration: 3,
-            });
+            runAfterRender(() =>
+              notification.error({
+                message: `验证错误 ${index + 1}`,
+                description: msg,
+                duration: 3,
+              }),
+            );
           }
         }, index * 500);
       });

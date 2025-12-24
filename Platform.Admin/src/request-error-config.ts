@@ -89,24 +89,41 @@ export const errorConfig: RequestConfig = {
         requestId: error.config?.requestId,
       };
 
-      // 1. 统一处理认证错误（401/404）- 清除 token 并跳转登录
+      // 1. 统一处理认证错误（含后端返回 400 但表示未登录的情况）
+      const messageText =
+        error?.info?.errorMessage ||
+        error?.response?.data?.errorMessage ||
+        error?.response?.data?.title ||
+        error?.message;
+
       const isAuthError = error.response?.status === 401 || error.response?.status === 404;
+      // 有些接口会返回 400 但实际是未登录/未找到当前用户
+      const isMissingCurrentUser =
+        error.response?.status === 400 &&
+        (messageText?.includes('未找到当前用户信息') ||
+          messageText?.toLowerCase?.().includes('current user') ||
+          messageText?.toLowerCase?.().includes('unauthorized'));
+
       // 检查是否是认证相关的错误消息（避免已处理的认证错误重复处理）
       const isAuthErrorMessage =
         error.message === 'Authentication handled silently' ||
         error.message === 'Authentication handled';
 
-      if (isAuthError || isAuthErrorMessage) {
+      if (isAuthError || isAuthErrorMessage || isMissingCurrentUser) {
         // 清除 token
         tokenUtils.clearAllTokens();
 
         // 如果是获取当前用户的请求，不显示错误提示（因为可能是未登录状态）
         const isCurrentUserRequest = error.config?.url?.includes('/api/auth/current-user') ||
           error.config?.url?.includes('/api/currentUser');
-        if (isCurrentUserRequest || isAuthError) {
+        if (isCurrentUserRequest || isAuthError || isMissingCurrentUser) {
           // 使用 AuthenticationService 统一跳转
           AuthenticationService.redirectToLogin(
-            isAuthError ? `HTTP ${error.response?.status}` : 'Token refresh failed'
+            isAuthError
+              ? `HTTP ${error.response?.status}`
+              : isMissingCurrentUser
+              ? 'Missing current user (backend 400)'
+              : 'Token refresh failed'
           );
         }
 

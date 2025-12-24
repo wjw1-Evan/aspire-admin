@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { PageContainer } from '@/components';
-import { Button, Space, Modal, message, Tag, Drawer, Card, Descriptions, Select } from 'antd';
+import { Button, Space, Modal, message, Tag, Drawer, Card, Descriptions, Select, Form, Input } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -18,6 +18,7 @@ import {
   deleteDocument,
   getDocumentDetail,
   submitDocument,
+  createDocument,
   type Document,
   DocumentStatus,
 } from '@/services/document/api';
@@ -34,6 +35,21 @@ const DocumentManagement: React.FC = () => {
   const [submittingDocument, setSubmittingDocument] = useState<Document | null>(null);
   const [workflows, setWorkflows] = useState<any[]>([]);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createForm] = Form.useForm();
+
+  const fetchActiveWorkflows = async () => {
+    try {
+      const workflowResponse = await getWorkflowList({ current: 1, pageSize: 100, isActive: true });
+      if (workflowResponse.success && workflowResponse.data) {
+        setWorkflows(workflowResponse.data.list);
+      }
+    } catch (error) {
+      console.error('获取流程列表失败:', error);
+      message.error(intl.formatMessage({ id: 'pages.workflow.fetchFailed', defaultMessage: '获取流程列表失败' }));
+    }
+  };
 
   const handleRefresh = () => {
     actionRef.current?.reload?.();
@@ -133,12 +149,9 @@ const DocumentManagement: React.FC = () => {
                 icon={<SendOutlined />}
                 onClick={async () => {
                   try {
-                    const workflowResponse = await getWorkflowList({ current: 1, pageSize: 100 });
-                    if (workflowResponse.success && workflowResponse.data) {
-                      setWorkflows(workflowResponse.data.list);
-                      setSubmittingDocument(record);
-                      setSubmitModalVisible(true);
-                    }
+                    await fetchActiveWorkflows();
+                    setSubmittingDocument(record);
+                    setSubmitModalVisible(true);
                   } catch (error) {
                     console.error('获取流程列表失败:', error);
                   }
@@ -207,6 +220,47 @@ const DocumentManagement: React.FC = () => {
     }
   };
 
+  const handleCreateSubmit = async () => {
+    try {
+      const values = await createForm.validateFields();
+      setCreateLoading(true);
+
+      const response = await createDocument({
+        title: values.title,
+        content: values.content,
+        documentType: values.documentType,
+        category: values.category,
+        attachmentIds: values.attachmentIds || [],
+        formData: values.formData || {},
+      });
+
+      const newDocumentId = response.success ? response.data?.id : undefined;
+
+      if (!response.success || !newDocumentId) {
+        message.error(intl.formatMessage({ id: 'pages.document.create.message.createFailed' }));
+        return;
+      }
+
+      const submitResp = await submitDocument(newDocumentId, {
+        workflowDefinitionId: values.workflowDefinitionId,
+      });
+
+      if (submitResp.success) {
+        message.success(intl.formatMessage({ id: 'pages.document.message.submitSuccess' }));
+        setCreateModalVisible(false);
+        createForm.resetFields();
+        actionRef.current?.reload?.();
+      } else {
+        message.error(intl.formatMessage({ id: 'pages.document.message.submitFailed' }));
+      }
+    } catch (error) {
+      console.error('创建失败:', error);
+      message.error(intl.formatMessage({ id: 'pages.document.create.message.createFailed' }));
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   return (
     <PageContainer
       title={
@@ -229,8 +283,9 @@ const DocumentManagement: React.FC = () => {
             key="create"
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => {
-              window.location.href = '/document/create';
+            onClick={async () => {
+              await fetchActiveWorkflows();
+              setCreateModalVisible(true);
             }}
           >
             {intl.formatMessage({ id: 'pages.document.create' })}
@@ -389,6 +444,81 @@ const DocumentManagement: React.FC = () => {
               ))}
           </Select>
         </div>
+      </Modal>
+
+      <Modal
+        title={intl.formatMessage({ id: 'pages.document.create.title' })}
+        open={createModalVisible}
+        onOk={handleCreateSubmit}
+        confirmLoading={createLoading}
+        onCancel={() => {
+          setCreateModalVisible(false);
+          createForm.resetFields();
+        }}
+        destroyOnClose
+        maskClosable={false}
+      >
+        <Form form={createForm} layout="vertical" onFinish={handleCreateSubmit}>
+          <Form.Item
+            name="title"
+            label={intl.formatMessage({ id: 'pages.document.create.form.title' })}
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({ id: 'pages.document.create.form.titleRequired' }),
+              },
+            ]}
+          >
+            <Input placeholder={intl.formatMessage({ id: 'pages.document.create.form.titlePlaceholder' })} />
+          </Form.Item>
+
+          <Form.Item
+            name="documentType"
+            label={intl.formatMessage({ id: 'pages.document.create.form.type' })}
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({ id: 'pages.document.create.form.typeRequired' }),
+              },
+            ]}
+          >
+            <Input placeholder={intl.formatMessage({ id: 'pages.document.create.form.typePlaceholder' })} />
+          </Form.Item>
+
+          <Form.Item name="category" label={intl.formatMessage({ id: 'pages.document.create.form.category' })}>
+            <Input placeholder={intl.formatMessage({ id: 'pages.document.create.form.categoryPlaceholder' })} />
+          </Form.Item>
+
+          <Form.Item name="content" label={intl.formatMessage({ id: 'pages.document.create.form.content' })}>
+            <Input.TextArea
+              rows={6}
+              placeholder={intl.formatMessage({ id: 'pages.document.create.form.contentPlaceholder' })}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="workflowDefinitionId"
+            label={intl.formatMessage({ id: 'pages.document.modal.selectWorkflow' })}
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({ id: 'pages.document.modal.selectWorkflowPlaceholder' }),
+              },
+            ]}
+          >
+            <Select
+              placeholder={intl.formatMessage({ id: 'pages.document.modal.selectWorkflowPlaceholder' })}
+            >
+              {workflows
+                .filter((w) => w.isActive)
+                .map((workflow) => (
+                  <Select.Option key={workflow.id} value={workflow.id}>
+                    {workflow.name}
+                  </Select.Option>
+                ))}
+            </Select>
+          </Form.Item>
+        </Form>
       </Modal>
     </PageContainer>
   );

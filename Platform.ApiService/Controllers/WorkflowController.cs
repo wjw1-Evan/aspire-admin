@@ -111,7 +111,7 @@ public class WorkflowController : BaseApiController
     /// 创建流程定义
     /// </summary>
     [HttpPost]
-    [RequireMenu("workflow:create")]
+    [RequireMenu("workflow:list")]
     public async Task<IActionResult> CreateWorkflow([FromBody] CreateWorkflowRequest request)
     {
         try
@@ -153,7 +153,7 @@ public class WorkflowController : BaseApiController
     /// 更新流程定义
     /// </summary>
     [HttpPut("{id}")]
-    [RequireMenu("workflow:create")]
+    [RequireMenu("workflow:list")]
     public async Task<IActionResult> UpdateWorkflow(string id, [FromBody] UpdateWorkflowRequest request)
     {
         try
@@ -220,7 +220,7 @@ public class WorkflowController : BaseApiController
     /// 删除流程定义
     /// </summary>
     [HttpDelete("{id}")]
-    [RequireMenu("workflow:create")]
+    [RequireMenu("workflow:list")]
     public async Task<IActionResult> DeleteWorkflow(string id)
     {
         try
@@ -247,7 +247,7 @@ public class WorkflowController : BaseApiController
     /// 启动流程实例
     /// </summary>
     [HttpPost("{id}/start")]
-    [RequireMenu("workflow:create")]
+    [RequireMenu("workflow:list")]
     public async Task<IActionResult> StartWorkflow(string id, [FromBody] StartWorkflowRequest request)
     {
         try
@@ -347,22 +347,22 @@ public class CreateWorkflowRequest
     /// 流程名称
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 流程描述
     /// </summary>
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 流程分类
     /// </summary>
     public string? Category { get; set; }
-    
+
     /// <summary>
     /// 流程图形定义
     /// </summary>
     public WorkflowGraph Graph { get; set; } = new();
-    
+
     /// <summary>
     /// 是否启用
     /// </summary>
@@ -378,22 +378,22 @@ public class UpdateWorkflowRequest
     /// 流程名称
     /// </summary>
     public string? Name { get; set; }
-    
+
     /// <summary>
     /// 流程描述
     /// </summary>
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 流程分类
     /// </summary>
     public string? Category { get; set; }
-    
+
     /// <summary>
     /// 流程图形定义
     /// </summary>
     public WorkflowGraph? Graph { get; set; }
-    
+
     /// <summary>
     /// 是否启用
     /// </summary>
@@ -409,7 +409,7 @@ public class StartWorkflowRequest
     /// 公文ID
     /// </summary>
     public string DocumentId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 流程变量
     /// </summary>

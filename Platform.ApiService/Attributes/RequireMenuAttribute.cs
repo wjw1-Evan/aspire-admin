@@ -14,14 +14,16 @@ namespace Platform.ApiService.Attributes;
 public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
 {
     /// <summary>
-    /// 所需访问的菜单名称
+    /// 所需访问的权限标识或菜单名称
+    /// - 权限标识示例：workflow:list、document:approval（包含冒号）
+    /// - 菜单名称示例：user-management、workflow-monitor（不包含冒号）
     /// </summary>
     public string MenuName { get; }
 
     /// <summary>
     /// 初始化菜单访问权限验证特性
     /// </summary>
-    /// <param name="menuName">所需访问的菜单名称</param>
+    /// <param name="menuName">所需访问的权限标识或菜单名称</param>
     public RequireMenuAttribute(string menuName)
     {
         MenuName = menuName;

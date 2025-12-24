@@ -44,13 +44,38 @@ public class MenuAccessService : IMenuAccessService
     }
 
     /// <summary>
-    /// 检查用户是否有指定菜单的访问权限
+    /// 检查用户是否具有访问权限。
+    /// 支持两种输入形式：
+    /// - 权限标识（包含冒号，如 "workflow:list"、"document:approval"），将按菜单的 Permissions 字段进行判断；
+    /// - 菜单名称（不包含冒号，如 "user-management"、"workflow-monitor"），将按用户拥有的菜单名称进行判断。
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <param name="menuName">菜单名称</param>
+    /// <param name="menuName">权限标识或菜单名称</param>
     /// <returns>是否有访问权限</returns>
     public async Task<bool> HasMenuAccessAsync(string userId, string menuName)
     {
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(menuName))
+        {
+            return false;
+        }
+
+        // 如果包含冒号，视为权限标识（如 workflow:list）
+        if (menuName.Contains(":"))
+        {
+            var permission = menuName.Trim();
+            var userMenus = await GetUserMenusAsync(userId);
+            foreach (var m in userMenus)
+            {
+                var perms = m.Permissions ?? new List<string>();
+                if (perms.Contains(permission))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 否则，按菜单名称判断（兼容旧用法，如 "user-management"）
         var userMenuNames = await GetUserMenuNamesAsync(userId);
         return userMenuNames.Contains(menuName.ToLower());
     }
@@ -167,6 +192,78 @@ public class MenuAccessService : IMenuAccessService
         {
             _logger.LogError(ex, "获取用户菜单名称失败: UserId={UserId}", userId);
             return new List<string>();
+        }
+    }
+
+    /// <summary>
+    /// 获取用户拥有的菜单实体列表（用于基于 Permissions 的权限判断）。
+    /// </summary>
+    private async Task<List<Menu>> GetUserMenusAsync(string userId)
+    {
+        try
+        {
+            // 获取用户信息
+            var user = await _userFactory.GetByIdAsync(userId);
+            if (user == null || !user.IsActive)
+            {
+                return new List<Menu>();
+            }
+
+            var companyId = user.CurrentCompanyId;
+            if (string.IsNullOrEmpty(companyId))
+            {
+                _logger.LogWarning("用户 {UserId} 没有关联的企业ID", userId);
+                return new List<Menu>();
+            }
+
+            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.UserId, userId)
+                .Equal(uc => uc.CompanyId, companyId)
+                .Equal(uc => uc.Status, "active")
+                .Build();
+
+            var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
+            var userCompany = userCompanies.FirstOrDefault();
+            if (userCompany == null)
+            {
+                return new List<Menu>();
+            }
+
+            var menuIds = new List<string>();
+            if (userCompany.RoleIds != null && userCompany.RoleIds.Any())
+            {
+                var roleFilter = _roleFactory.CreateFilterBuilder()
+                    .In(r => r.Id, userCompany.RoleIds)
+                    .Equal(r => r.CompanyId, companyId)
+                    .Equal(r => r.IsActive, true)
+                    .Build();
+                var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
+                foreach (var role in roles)
+                {
+                    if (role.MenuIds != null)
+                    {
+                        menuIds.AddRange(role.MenuIds);
+                    }
+                }
+            }
+
+            var uniqueMenuIds = menuIds.Distinct().ToList();
+            if (!uniqueMenuIds.Any())
+            {
+                return new List<Menu>();
+            }
+
+            var menuFilter = _menuFactory.CreateFilterBuilder()
+                .In(m => m.Id, uniqueMenuIds)
+                .Equal(m => m.IsEnabled, true)
+                .Build();
+            var menus = await _menuFactory.FindAsync(menuFilter);
+            return menus;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取用户菜单失败: UserId={UserId}", userId);
+            return new List<Menu>();
         }
     }
 }

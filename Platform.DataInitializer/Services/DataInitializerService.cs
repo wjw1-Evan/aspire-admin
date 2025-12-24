@@ -94,7 +94,7 @@ public class DataInitializerService : IDataInitializerService
         {
             _logger.LogInformation("开始创建数据库索引...");
 
-            var indexCreator = new CreateAllIndexes(_database, 
+            var indexCreator = new CreateAllIndexes(_database,
                 _loggerFactory.CreateLogger<CreateAllIndexes>());
             await indexCreator.ExecuteAsync();
 
@@ -174,10 +174,10 @@ public class DataInitializerService : IDataInitializerService
             foreach (var menu in childMenus)
             {
                 // 优先使用 menu.ParentId 中已设置的父菜单名称，如果没有则通过子菜单名称推断
-                var parentMenuName = !string.IsNullOrEmpty(menu.ParentId) 
-                    ? menu.ParentId 
+                var parentMenuName = !string.IsNullOrEmpty(menu.ParentId)
+                    ? menu.ParentId
                     : GetParentMenuNameByChildName(menu.Name);
-                
+
                 if (string.IsNullOrEmpty(parentMenuName))
                 {
                     _logger.LogWarning("⚠️  无法确定子菜单 {Name} 的父菜单，跳过", menu.Name);
@@ -234,7 +234,7 @@ public class DataInitializerService : IDataInitializerService
                 }
             }
 
-           
+
 
             _logger.LogInformation("全局系统菜单同步完成 - 新建: {Created} 个，已存在: {Skipped} 个，总计: {Total} 个",
                 createdCount, skippedCount, expectedMenus.Count);
@@ -254,7 +254,7 @@ public class DataInitializerService : IDataInitializerService
     private List<Menu> GetExpectedMenus(DateTime now)
     {
         var menus = new List<Menu>();
-        
+
         // 顶级菜单
         menus.Add(new Menu
         {
@@ -269,7 +269,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         menus.Add(new Menu
         {
             Name = "system",
@@ -282,7 +282,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         // 系统管理子菜单（注意：ParentId 需要在处理时动态设置）
         menus.Add(new Menu
         {
@@ -299,7 +299,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         menus.Add(new Menu
         {
             Name = "role-management",
@@ -315,7 +315,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         menus.Add(new Menu
         {
             Name = "company-management",
@@ -331,7 +331,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         menus.Add(new Menu
         {
             Name = "my-activity",
@@ -347,9 +347,9 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         // ⭐ 在此处添加新菜单，系统会自动同步到数据库
-        
+
         // 密码本菜单
         menus.Add(new Menu
         {
@@ -365,7 +365,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         // 项目管理父菜单
         menus.Add(new Menu
         {
@@ -379,7 +379,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         // 项目管理子菜单：任务管理
         menus.Add(new Menu
         {
@@ -396,7 +396,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         // 项目管理子菜单：项目列表
         menus.Add(new Menu
         {
@@ -413,8 +413,8 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
-       
+
+
 
         menus.Add(new Menu
         {
@@ -430,7 +430,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         // IoT 平台子菜单
         menus.Add(new Menu
         {
@@ -447,7 +447,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         menus.Add(new Menu
         {
             Name = "iot-platform-device",
@@ -463,7 +463,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         menus.Add(new Menu
         {
             Name = "iot-platform-datapoint",
@@ -479,7 +479,7 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         menus.Add(new Menu
         {
             Name = "iot-platform-event",
@@ -579,8 +579,8 @@ public class DataInitializerService : IDataInitializerService
         {
             Name = "workflow-list",
             Title = "流程定义",
-            Path = "/workflow",
-            Component = "./workflow",
+            Path = "/workflow/list",
+            Component = "./workflow/list",
             Icon = "apartment",
             ParentId = "workflow",  // 临时使用名称，后续会替换为实际 ID
             SortOrder = 1,
@@ -655,10 +655,10 @@ public class DataInitializerService : IDataInitializerService
             CreatedAt = now,
             UpdatedAt = now
         });
-        
+
         return menus;
     }
-    
+
     /// <summary>
     /// 根据子菜单名称获取父菜单名称
     /// </summary>

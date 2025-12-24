@@ -19,27 +19,27 @@ public interface IDocumentService
     /// 创建公文
     /// </summary>
     Task<Document> CreateDocumentAsync(CreateDocumentRequest request);
-    
+
     /// <summary>
     /// 更新公文
     /// </summary>
     Task<Document?> UpdateDocumentAsync(string id, UpdateDocumentRequest request);
-    
+
     /// <summary>
     /// 获取公文详情
     /// </summary>
     Task<Document?> GetDocumentAsync(string id);
-    
+
     /// <summary>
     /// 获取公文列表
     /// </summary>
     Task<(List<Document> items, long total)> GetDocumentsAsync(DocumentQueryParams query);
-    
+
     /// <summary>
     /// 删除公文
     /// </summary>
     Task<bool> DeleteDocumentAsync(string id);
-    
+
     /// <summary>
     /// 提交公文（启动流程）
     /// </summary>
@@ -55,27 +55,27 @@ public class CreateDocumentRequest
     /// 公文标题
     /// </summary>
     public string Title { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 公文内容
     /// </summary>
     public string? Content { get; set; }
-    
+
     /// <summary>
     /// 公文类型
     /// </summary>
     public string DocumentType { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 分类
     /// </summary>
     public string? Category { get; set; }
-    
+
     /// <summary>
     /// 附件ID列表
     /// </summary>
     public List<string>? AttachmentIds { get; set; }
-    
+
     /// <summary>
     /// 表单数据
     /// </summary>
@@ -91,27 +91,27 @@ public class UpdateDocumentRequest
     /// 公文标题
     /// </summary>
     public string? Title { get; set; }
-    
+
     /// <summary>
     /// 公文内容
     /// </summary>
     public string? Content { get; set; }
-    
+
     /// <summary>
     /// 公文类型
     /// </summary>
     public string? DocumentType { get; set; }
-    
+
     /// <summary>
     /// 分类
     /// </summary>
     public string? Category { get; set; }
-    
+
     /// <summary>
     /// 附件ID列表
     /// </summary>
     public List<string>? AttachmentIds { get; set; }
-    
+
     /// <summary>
     /// 表单数据
     /// </summary>
@@ -127,37 +127,37 @@ public class DocumentQueryParams
     /// 当前页码
     /// </summary>
     public int Current { get; set; } = 1;
-    
+
     /// <summary>
     /// 每页数量
     /// </summary>
     public int PageSize { get; set; } = 10;
-    
+
     /// <summary>
     /// 关键词搜索
     /// </summary>
     public string? Keyword { get; set; }
-    
+
     /// <summary>
     /// 状态筛选
     /// </summary>
     public DocumentStatus? Status { get; set; }
-    
+
     /// <summary>
     /// 公文类型筛选
     /// </summary>
     public string? DocumentType { get; set; }
-    
+
     /// <summary>
     /// 分类筛选
     /// </summary>
     public string? Category { get; set; }
-    
+
     /// <summary>
     /// 创建人筛选
     /// </summary>
     public string? CreatedBy { get; set; }
-    
+
     /// <summary>
     /// 筛选类型：all, my, pending, approved, rejected
     /// </summary>
@@ -319,14 +319,14 @@ public class DocumentService : IDocumentService
             {
                 Builders<Document>.Filter.Regex(d => d.Title, regex)
             };
-            
+
             // Content 字段可能为 null，需要先检查
             var contentFilter = Builders<Document>.Filter.And(
                 Builders<Document>.Filter.Ne(d => d.Content, null),
                 Builders<Document>.Filter.Regex(d => d.Content!, regex)
             );
             keywordFilters.Add(contentFilter);
-            
+
             var searchFilter = Builders<Document>.Filter.Or(keywordFilters);
             filterBuilder.Custom(searchFilter);
         }
@@ -364,21 +364,21 @@ public class DocumentService : IDocumentService
                     // 我的发起
                     filterBuilder.Equal(d => d.CreatedBy, userId);
                     break;
-                
+
                 case "pending":
                     // 待审批：查询当前用户需要审批的公文
                     // 需要查询流程实例，找到当前节点是审批节点且审批人包含当前用户的
                     filterBuilder.Equal(d => d.Status, DocumentStatus.Pending);
-                    
+
                     // 获取所有审批中的流程实例
                     var pendingInstancesFilter = _instanceFactory.CreateFilterBuilder()
                         .Equal(i => i.Status, WorkflowStatus.Running)
                         .Build();
                     var pendingInstances = await _instanceFactory.FindAsync(pendingInstancesFilter);
-                    
+
                     // 过滤出当前用户需要审批的实例
                     var userPendingInstanceIds = new List<string>();
-                    
+
                     foreach (var instance in pendingInstances)
                     {
                         try
@@ -386,7 +386,7 @@ public class DocumentService : IDocumentService
                             // 获取流程定义
                             var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
                             if (definition == null) continue;
-                            
+
                             // 获取当前节点
                             var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
                             if (currentNode?.Type == "approval" && currentNode.Config.Approval != null)
@@ -404,7 +404,7 @@ public class DocumentService : IDocumentService
                             _logger.LogWarning(ex, "处理流程实例失败: InstanceId={InstanceId}", instance.Id);
                         }
                     }
-                    
+
                     // 只查询这些实例关联的公文
                     if (userPendingInstanceIds.Any())
                     {
@@ -412,15 +412,15 @@ public class DocumentService : IDocumentService
                     }
                     else
                     {
-                        // 如果没有待审批的，返回空结果
-                        filterBuilder.Equal(d => d.Id, "none");
+                        // 如果没有待审批的，直接返回空结果，避免构造非法的 ObjectId 过滤条件
+                        return (new List<Document>(), 0);
                     }
                     break;
-                
+
                 case "approved":
                     filterBuilder.Equal(d => d.Status, DocumentStatus.Approved);
                     break;
-                
+
                 case "rejected":
                     filterBuilder.Equal(d => d.Status, DocumentStatus.Rejected);
                     break;
@@ -508,7 +508,7 @@ public class DocumentService : IDocumentService
                         approvers.Add(rule.UserId);
                     }
                     break;
-                
+
                 case ApproverType.Role:
                     if (!string.IsNullOrEmpty(rule.RoleId))
                     {
@@ -518,16 +518,16 @@ public class DocumentService : IDocumentService
                                 .Equal(uc => uc.CompanyId, companyId)
                                 .Equal(uc => uc.Status, "active")
                                 .Build();
-                            
+
                             var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, rule.RoleId);
                             var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
-                            
+
                             var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter);
                             var userIds = userCompanies
                                 .Select(uc => uc.UserId)
                                 .Where(id => !string.IsNullOrEmpty(id))
                                 .ToList();
-                            
+
                             approvers.AddRange(userIds);
                         }
                         catch (Exception ex)
@@ -536,7 +536,7 @@ public class DocumentService : IDocumentService
                         }
                     }
                     break;
-                
+
                 case ApproverType.Department:
                     // 部门审批人解析暂未实现
                     _logger.LogWarning("部门审批人解析暂未实现: DepartmentId={DepartmentId}", rule.DepartmentId);

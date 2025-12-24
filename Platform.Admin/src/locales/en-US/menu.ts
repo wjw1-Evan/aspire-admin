@@ -73,6 +73,8 @@ export default {
   'menu.workflow.list.desc': 'Manage and configure workflow definitions',
   'menu.workflow.create': 'Create Workflow',
   'menu.workflow.create.desc': 'Create new workflow definition',
+  'menu.workflow.forms': 'Form Definitions',
+  'menu.workflow.forms.desc': 'Manage forms bound to workflow nodes',
   'menu.workflow.monitor': 'Workflow Monitor',
   'menu.workflow.monitor.desc': 'Monitor workflow instance execution',
   // Document Management

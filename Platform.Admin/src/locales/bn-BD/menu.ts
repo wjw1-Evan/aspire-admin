@@ -78,6 +78,8 @@ export default {
   'menu.workflow.list.desc': 'ওয়ার্কফ্লো সংজ্ঞা পরিচালনা এবং কনফিগার করুন',
   'menu.workflow.create': 'ওয়ার্কফ্লো তৈরি করুন',
   'menu.workflow.create.desc': 'নতুন ওয়ার্কফ্লো সংজ্ঞা তৈরি করুন',
+  'menu.workflow.forms': 'ফর্ম সংজ্ঞা',
+  'menu.workflow.forms.desc': 'ওয়ার্কফ্লোর সাথে সংযুক্ত ফর্মগুলি পরিচালনা করুন',
   'menu.workflow.monitor': 'ওয়ার্কফ্লো মনিটর',
   'menu.workflow.monitor.desc': 'ওয়ার্কফ্লো ইনস্ট্যান্স নির্বাহ নিরীক্ষণ করুন',
   // নথি ব্যবস্থাপনা

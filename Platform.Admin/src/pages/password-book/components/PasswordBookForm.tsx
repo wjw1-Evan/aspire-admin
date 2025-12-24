@@ -191,10 +191,10 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
   // 获取强度颜色
   const getStrengthColor = (level?: PasswordStrengthLevel | string) => {
     // 处理字符串值（后端可能返回字符串）
-    const normalizedLevel = typeof level === 'string' 
+    const normalizedLevel = typeof level === 'string'
       ? (level as PasswordStrengthLevel)
       : level;
-    
+
     switch (normalizedLevel) {
       case PasswordStrengthLevel.VeryStrong:
       case 'veryStrong':
@@ -216,10 +216,10 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
   // 获取强度文本
   const getStrengthText = (level?: PasswordStrengthLevel | string) => {
     // 处理字符串值（后端可能返回字符串）
-    const normalizedLevel = typeof level === 'string' 
+    const normalizedLevel = typeof level === 'string'
       ? (level as PasswordStrengthLevel)
       : level;
-    
+
     switch (normalizedLevel) {
       case PasswordStrengthLevel.VeryStrong:
       case 'veryStrong':
@@ -297,7 +297,7 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
         {/* 密码强度指示器 */}
         {strength && (
           <div style={{ marginBottom: 16 }}>
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Space orientation="vertical" style={{ width: '100%' }} size="small">
               <Space>
                 <Text type="secondary">密码强度：</Text>
                 <Text strong style={{ color: getStrengthColor(strength.level) }}>

@@ -44,16 +44,7 @@ export type GlobalHeaderRightProps = {
 export const AvatarName = () => {
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
-  return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <Avatar
-        size="small"
-        src={getUserAvatar(currentUser?.avatar)}
-        icon={<UserOutlined />}
-      />
-      <span className="anticon">{currentUser?.name}</span>
-    </span>
-  );
+  return <span className="anticon">{currentUser?.name}</span>;
 };
 
 const useStyles = createStyles(({ token }) => {
@@ -64,10 +55,10 @@ const useStyles = createStyles(({ token }) => {
       marginLeft: 'auto',
       overflow: 'hidden',
       alignItems: 'center',
-     
-     
+
+
       borderRadius: token.borderRadius,
-     
+
     },
   };
 });
@@ -320,20 +311,20 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   const menuItems = [
     ...(menu
       ? [
-          {
-            key: 'center',
-            icon: <UserOutlined />,
-            label: intl.formatMessage({ id: 'menu.account.center' }),
-          },
-          {
-            key: 'change-password',
-            icon: <LockOutlined />,
-            label: intl.formatMessage({ id: 'menu.account.changePassword' }),
-          },
-          {
-            type: 'divider' as const,
-          },
-        ]
+        {
+          key: 'center',
+          icon: <UserOutlined />,
+          label: intl.formatMessage({ id: 'menu.account.center' }),
+        },
+        {
+          key: 'change-password',
+          icon: <LockOutlined />,
+          label: intl.formatMessage({ id: 'menu.account.changePassword' }),
+        },
+        {
+          type: 'divider' as const,
+        },
+      ]
       : []),
     {
       key: 'company',

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Platform.ApiService.Extensions;
 using UserCompany = Platform.ApiService.Models.UserCompany;
 
 namespace Platform.ApiService.Services;
@@ -19,37 +20,42 @@ public interface IWorkflowEngine
     /// 启动工作流
     /// </summary>
     Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, Dictionary<string, object>? variables = null);
-    
+
     /// <summary>
     /// 处理审批操作
     /// </summary>
     Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string? comment = null, string? delegateToUserId = null);
-    
+
+    /// <summary>
+    /// 获取指定节点的实际审批人列表
+    /// </summary>
+    Task<List<string>> GetNodeApproversAsync(string instanceId, string nodeId);
+
     /// <summary>
     /// 处理条件节点
     /// </summary>
     Task<bool> ProcessConditionAsync(string instanceId, string nodeId, Dictionary<string, object> variables);
-    
+
     /// <summary>
     /// 完成并行分支
     /// </summary>
     Task<bool> CompleteParallelBranchAsync(string instanceId, string nodeId, string branchId);
-    
+
     /// <summary>
     /// 退回到指定节点
     /// </summary>
     Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment);
-    
+
     /// <summary>
     /// 获取审批历史
     /// </summary>
     Task<List<ApprovalRecord>> GetApprovalHistoryAsync(string instanceId);
-    
+
     /// <summary>
     /// 获取流程实例
     /// </summary>
     Task<WorkflowInstance?> GetInstanceAsync(string instanceId);
-    
+
     /// <summary>
     /// 取消流程
     /// </summary>
@@ -116,6 +122,11 @@ public class WorkflowEngine : IWorkflowEngine
             throw new InvalidOperationException("流程定义不存在或未启用");
         }
 
+        // 清洗变量，防止 JsonElement 进入 Mongo 序列化
+        var sanitizedVars = variables != null
+            ? SerializationExtensions.SanitizeDictionary(variables)
+            : new Dictionary<string, object>();
+
         // 2. 验证公文存在
         var document = await _documentFactory.GetByIdAsync(documentId);
         if (document == null)
@@ -123,7 +134,6 @@ public class WorkflowEngine : IWorkflowEngine
             throw new InvalidOperationException("公文不存在");
         }
 
-        // 3. 查找起始节点
         var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Type == "start");
         if (startNode == null)
         {
@@ -137,7 +147,7 @@ public class WorkflowEngine : IWorkflowEngine
             DocumentId = documentId,
             Status = WorkflowStatus.Running,
             CurrentNodeId = startNode.Id,
-            Variables = variables ?? new Dictionary<string, object>(),
+            Variables = sanitizedVars,
             StartedBy = userId,
             StartedAt = DateTime.UtcNow,
             CompanyId = companyId
@@ -179,6 +189,32 @@ public class WorkflowEngine : IWorkflowEngine
             instance.Id, definitionId, documentId);
 
         return instance;
+    }
+
+    /// <summary>
+    /// 获取指定节点的实际审批人列表
+    /// </summary>
+    public async Task<List<string>> GetNodeApproversAsync(string instanceId, string nodeId)
+    {
+        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        if (instance == null)
+        {
+            return new List<string>();
+        }
+
+        var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        if (definition == null)
+        {
+            return new List<string>();
+        }
+
+        var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node?.Config.Approval == null)
+        {
+            return new List<string>();
+        }
+
+        return await ResolveApproversAsync(instance, node.Config.Approval.Approvers);
     }
 
     /// <summary>
@@ -260,7 +296,7 @@ public class WorkflowEngine : IWorkflowEngine
                 .Equal(d => d.Id, instance.DocumentId)
                 .Build();
             await _documentFactory.FindOneAndUpdateAsync(documentFilter, documentUpdate);
-            
+
             // 发送拒绝通知
             try
             {
@@ -270,7 +306,7 @@ public class WorkflowEngine : IWorkflowEngine
                     var relatedUsers = new List<string> { instance.StartedBy };
                     if (!relatedUsers.Contains(approverId))
                         relatedUsers.Add(approverId);
-                    
+
                     await _notificationService.CreateWorkflowNotificationAsync(
                         instanceId,
                         document.Title,
@@ -285,7 +321,7 @@ public class WorkflowEngine : IWorkflowEngine
             {
                 _logger.LogWarning(ex, "发送拒绝通知失败: InstanceId={InstanceId}", instanceId);
             }
-            
+
             return true;
         }
         else if (action == ApprovalAction.Return)
@@ -300,11 +336,11 @@ public class WorkflowEngine : IWorkflowEngine
             {
                 throw new ArgumentException("转办操作必须指定目标用户");
             }
-            
+
             // 转办后，原审批人已完成审批（记录转办操作）
             // 转办目标用户成为新的审批人，流程继续等待新审批人审批
             // 注意：转办不会自动推进流程，需要等待新审批人审批
-            
+
             // 发送转办通知
             try
             {
@@ -314,7 +350,7 @@ public class WorkflowEngine : IWorkflowEngine
                     var relatedUsers = new List<string> { delegateToUserId, approverId };
                     if (!relatedUsers.Contains(instance.StartedBy))
                         relatedUsers.Add(instance.StartedBy);
-                    
+
                     await _notificationService.CreateWorkflowNotificationAsync(
                         instanceId,
                         document.Title,
@@ -329,7 +365,7 @@ public class WorkflowEngine : IWorkflowEngine
             {
                 _logger.LogWarning(ex, "发送转办通知失败: InstanceId={InstanceId}", instanceId);
             }
-            
+
             return true;
         }
         else if (action == ApprovalAction.Approve)
@@ -337,7 +373,7 @@ public class WorkflowEngine : IWorkflowEngine
             // 通过：检查是否需要等待其他审批人
             var approvalConfig = currentNode.Config.Approval;
             bool shouldMoveNext = false;
-            
+
             if (approvalConfig != null)
             {
                 if (approvalConfig.Type == ApprovalType.All)
@@ -350,7 +386,7 @@ public class WorkflowEngine : IWorkflowEngine
                     {
                         var approvedCount = updatedInstance.ApprovalRecords
                             .Count(r => r.NodeId == nodeId && r.Action == ApprovalAction.Approve);
-                        
+
                         if (approvedCount < allApprovers.Count)
                         {
                             // 还有审批人未审批，等待（只发送通知，不推进）
@@ -383,7 +419,7 @@ public class WorkflowEngine : IWorkflowEngine
             {
                 // 所有审批完成，推进到下一个节点
                 await MoveToNextNodeAsync(instanceId, nodeId);
-                
+
                 // 发送审批通过通知（节点完成时）
                 try
                 {
@@ -393,7 +429,7 @@ public class WorkflowEngine : IWorkflowEngine
                         var relatedUsers = new List<string> { instance.StartedBy };
                         if (!relatedUsers.Contains(approverId))
                             relatedUsers.Add(approverId);
-                        
+
                         await _notificationService.CreateWorkflowNotificationAsync(
                             instanceId,
                             document.Title,
@@ -441,6 +477,9 @@ public class WorkflowEngine : IWorkflowEngine
         {
             throw new InvalidOperationException("节点不存在或不是条件节点");
         }
+
+        // 清洗变量，避免 JsonElement
+        variables = SerializationExtensions.SanitizeDictionary(variables);
 
         // 更新流程变量
         foreach (var kvp in variables)
@@ -504,7 +543,7 @@ public class WorkflowEngine : IWorkflowEngine
         {
             var allBranches = parallelNode.Config.Parallel.Branches;
             var completedBranches = instance.ParallelBranches.GetValueOrDefault(nodeId, new List<string>());
-            
+
             if (allBranches.All(b => completedBranches.Contains(b)))
             {
                 // 所有分支完成，推进到下一个节点
@@ -576,7 +615,7 @@ public class WorkflowEngine : IWorkflowEngine
             if (document != null)
             {
                 var relatedUsers = new List<string> { instance.StartedBy, userId };
-                
+
                 await _notificationService.CreateWorkflowNotificationAsync(
                     instanceId,
                     document.Title,
@@ -609,7 +648,7 @@ public class WorkflowEngine : IWorkflowEngine
         var sort = _approvalRecordFactory.CreateSortBuilder()
             .Ascending(r => r.Sequence)
             .Build();
-        
+
         return await _approvalRecordFactory.FindAsync(filter, sort);
     }
 
@@ -656,7 +695,7 @@ public class WorkflowEngine : IWorkflowEngine
                     if (!relatedUsers.Contains(record.ApproverId))
                         relatedUsers.Add(record.ApproverId);
                 }
-                
+
                 await _notificationService.CreateWorkflowNotificationAsync(
                     instanceId,
                     document.Title,
@@ -694,12 +733,12 @@ public class WorkflowEngine : IWorkflowEngine
 
         // 查找出边
         var outgoingEdges = definition.Graph.Edges.Where(e => e.Source == currentNodeId).ToList();
-        
+
         if (outgoingEdges.Count == 0)
         {
             // 没有出边，流程结束
             await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
-            
+
             // 发送完成通知（流程意外结束的情况）
             try
             {
@@ -716,7 +755,7 @@ public class WorkflowEngine : IWorkflowEngine
                                 relatedUsers.Add(record.ApproverId);
                         }
                     }
-                    
+
                     await _notificationService.CreateWorkflowNotificationAsync(
                         instanceId,
                         document.Title,
@@ -725,7 +764,7 @@ public class WorkflowEngine : IWorkflowEngine
                         "审批流程已完成",
                         instance.CompanyId
                     );
-                    
+
                     // 更新公文状态
                     var documentUpdate = _documentFactory.CreateUpdateBuilder()
                         .Set(d => d.Status, DocumentStatus.Approved)
@@ -740,7 +779,7 @@ public class WorkflowEngine : IWorkflowEngine
             {
                 _logger.LogWarning(ex, "发送完成通知失败: InstanceId={InstanceId}", instanceId);
             }
-            
+
             return;
         }
 
@@ -820,7 +859,7 @@ public class WorkflowEngine : IWorkflowEngine
                     .Equal(d => d.Id, instance.DocumentId)
                     .Build();
                 await _documentFactory.FindOneAndUpdateAsync(documentFilter, documentUpdate);
-                
+
                 // 发送完成通知
                 try
                 {
@@ -834,7 +873,7 @@ public class WorkflowEngine : IWorkflowEngine
                             if (!relatedUsers.Contains(record.ApproverId))
                                 relatedUsers.Add(record.ApproverId);
                         }
-                        
+
                         await _notificationService.CreateWorkflowNotificationAsync(
                             instanceId,
                             document.Title,
@@ -850,11 +889,11 @@ public class WorkflowEngine : IWorkflowEngine
                     _logger.LogWarning(ex, "发送完成通知失败: InstanceId={InstanceId}", instanceId);
                 }
                 break;
-            
+
             case "approval":
                 // 审批节点：等待审批，不自动推进
                 await SetCurrentNodeAsync(instanceId, nodeId);
-                
+
                 // 发送通知给审批人
                 try
                 {
@@ -884,13 +923,13 @@ public class WorkflowEngine : IWorkflowEngine
                     _logger.LogWarning(ex, "发送审批通知失败: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
                 }
                 break;
-            
+
             case "condition":
                 // 条件节点：需要评估条件
                 await SetCurrentNodeAsync(instanceId, nodeId);
                 await EvaluateConditionAndMoveAsync(instanceId, nodeId, instance.Variables);
                 break;
-            
+
             case "parallel":
                 // 并行网关：推进到所有分支
                 await SetCurrentNodeAsync(instanceId, nodeId);
@@ -900,7 +939,7 @@ public class WorkflowEngine : IWorkflowEngine
                     await ProcessNodeAsync(instanceId, edge.Target);
                 }
                 break;
-            
+
             default:
                 // 其他节点：直接推进
                 await MoveToNextNodeAsync(instanceId, nodeId);
@@ -970,7 +1009,7 @@ public class WorkflowEngine : IWorkflowEngine
             // 简单的表达式解析，支持：变量名 操作符 值
             // 例如：amount > 10000, status == "approved"
             expression = expression.Trim();
-            
+
             if (expression.Contains(">"))
             {
                 var parts = expression.Split('>', StringSplitOptions.RemoveEmptyEntries);
@@ -978,7 +1017,7 @@ public class WorkflowEngine : IWorkflowEngine
                 {
                     var left = parts[0].Trim();
                     var right = parts[1].Trim();
-                    
+
                     if (variables.TryGetValue(left, out var leftValue))
                     {
                         if (double.TryParse(right, out var rightNum))
@@ -995,7 +1034,7 @@ public class WorkflowEngine : IWorkflowEngine
                 {
                     var left = parts[0].Trim();
                     var right = parts[1].Trim();
-                    
+
                     if (variables.TryGetValue(left, out var leftValue))
                     {
                         if (double.TryParse(right, out var rightNum))
@@ -1012,7 +1051,7 @@ public class WorkflowEngine : IWorkflowEngine
                 {
                     var left = parts[0].Trim();
                     var right = parts[1].Trim().Trim('"', '\'');
-                    
+
                     if (variables.TryGetValue(left, out var leftValue))
                     {
                         return leftValue?.ToString() == right;
@@ -1075,7 +1114,7 @@ public class WorkflowEngine : IWorkflowEngine
                         approvers.Add(rule.UserId);
                     }
                     break;
-                
+
                 case ApproverType.Role:
                     if (!string.IsNullOrEmpty(rule.RoleId))
                     {
@@ -1087,17 +1126,17 @@ public class WorkflowEngine : IWorkflowEngine
                                 .Equal(uc => uc.CompanyId, companyId)
                                 .Equal(uc => uc.Status, "active")
                                 .Build();
-                            
+
                             // 使用 MongoDB 查询数组包含
                             var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, rule.RoleId);
                             var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
-                            
+
                             var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter);
                             var userIds = userCompanies
                                 .Select(uc => uc.UserId)
                                 .Where(id => !string.IsNullOrEmpty(id))
                                 .ToList();
-                            
+
                             approvers.AddRange(userIds);
                         }
                         catch (Exception ex)
@@ -1106,7 +1145,7 @@ public class WorkflowEngine : IWorkflowEngine
                         }
                     }
                     break;
-                
+
                 case ApproverType.Department:
                     if (!string.IsNullOrEmpty(rule.DepartmentId))
                     {

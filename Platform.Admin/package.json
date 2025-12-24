@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
-    "antd": "^6.1.1",
+    "antd": "^6.1.2",
     "antd-style": "^4.0.0",
     "classnames": "^2.5.1",
     "d3-transition": "^3.0.1",

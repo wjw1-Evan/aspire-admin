@@ -334,7 +334,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           onCancel={handleCloseForm}
           footer={null}
           width={800}
-          destroyOnClose
+          destroyOnHidden
         >
           <ConfigForm config={editingConfig} onSuccess={handleFormSuccess} onCancel={handleCloseForm} />
         </Modal>

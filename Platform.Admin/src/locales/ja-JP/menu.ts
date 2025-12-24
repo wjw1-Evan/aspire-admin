@@ -79,6 +79,8 @@ export default {
   'menu.workflow.list.desc': 'ワークフロー定義の管理と設定',
   'menu.workflow.create': 'ワークフロー作成',
   'menu.workflow.create.desc': '新しいワークフロー定義を作成',
+  'menu.workflow.forms': 'フォーム定義',
+  'menu.workflow.forms.desc': 'ワークフローに紐づくフォームを管理',
   'menu.workflow.monitor': 'ワークフロー監視',
   'menu.workflow.monitor.desc': 'ワークフローインスタンスの実行状況を監視',
   // 文書管理

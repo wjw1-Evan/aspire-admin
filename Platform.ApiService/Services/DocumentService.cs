@@ -1,12 +1,18 @@
+using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using UserCompany = Platform.ApiService.Models.UserCompany;
+using Platform.ApiService.Extensions;
 
 namespace Platform.ApiService.Services;
 
@@ -44,6 +50,21 @@ public interface IDocumentService
     /// 提交公文（启动流程）
     /// </summary>
     Task<WorkflowInstance> SubmitDocumentAsync(string documentId, string workflowDefinitionId, Dictionary<string, object>? variables = null);
+
+    /// <summary>
+    /// 上传公文附件
+    /// </summary>
+    Task<DocumentAttachmentUploadResult> UploadAttachmentAsync(IFormFile file);
+
+    /// <summary>
+    /// 下载公文附件
+    /// </summary>
+    Task<DocumentAttachmentDownloadResult?> DownloadAttachmentAsync(string attachmentId);
+
+    /// <summary>
+    /// 基于流程定义的创建表单创建公文（草稿）
+    /// </summary>
+    Task<Document> CreateDocumentForWorkflowAsync(string workflowDefinitionId, Dictionary<string, object> values, List<string>? attachmentIds = null);
 }
 
 /// <summary>
@@ -173,8 +194,10 @@ public class DocumentService : IDocumentService
     private readonly IDatabaseOperationFactory<WorkflowInstance> _instanceFactory;
     private readonly IDatabaseOperationFactory<WorkflowDefinition> _definitionFactory;
     private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly ILogger<DocumentService> _logger;
+    private readonly GridFSBucket _gridFsBucket;
 
     /// <summary>
     /// 初始化公文服务
@@ -185,20 +208,26 @@ public class DocumentService : IDocumentService
     /// <param name="userCompanyFactory">用户企业关系工厂</param>
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="logger">日志记录器</param>
+    /// <param name="gridFSService">GridFS 存储服务</param>
     public DocumentService(
         IDatabaseOperationFactory<Document> documentFactory,
         IDatabaseOperationFactory<WorkflowInstance> instanceFactory,
         IDatabaseOperationFactory<WorkflowDefinition> definitionFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        IDatabaseOperationFactory<FormDefinition> formFactory,
         IWorkflowEngine workflowEngine,
-        ILogger<DocumentService> logger)
+        ILogger<DocumentService> logger,
+        Platform.ServiceDefaults.Services.IGridFSService gridFSService)
     {
         _documentFactory = documentFactory;
         _instanceFactory = instanceFactory;
         _definitionFactory = definitionFactory;
         _userCompanyFactory = userCompanyFactory;
+        _formFactory = formFactory;
         _workflowEngine = workflowEngine;
         _logger = logger;
+        var gridFsServiceNotNull = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
+        _gridFsBucket = gridFsServiceNotNull.GetBucket("document_attachments");
     }
 
     /// <summary>
@@ -209,6 +238,8 @@ public class DocumentService : IDocumentService
         var userId = _documentFactory.GetRequiredUserId();
         var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
 
+        var sanitizedFormData = request.FormData != null ? SerializationExtensions.SanitizeDictionary(request.FormData) : new Dictionary<string, object>();
+
         var document = new Document
         {
             Title = request.Title,
@@ -217,7 +248,7 @@ public class DocumentService : IDocumentService
             Category = request.Category,
             Status = DocumentStatus.Draft,
             AttachmentIds = request.AttachmentIds ?? new List<string>(),
-            FormData = request.FormData ?? new Dictionary<string, object>(),
+            FormData = sanitizedFormData,
             CompanyId = companyId
         };
 
@@ -276,7 +307,8 @@ public class DocumentService : IDocumentService
 
         if (request.FormData != null)
         {
-            updateBuilder.Set(d => d.FormData, request.FormData);
+            var sanitized = SerializationExtensions.SanitizeDictionary(request.FormData);
+            updateBuilder.Set(d => d.FormData, sanitized);
             hasUpdate = true;
         }
 
@@ -481,13 +513,207 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以提交");
         }
 
-        // 启动工作流
-        var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, variables);
+        // 启动工作流（先清洗变量，避免 JsonElement 序列化错误）
+        var sanitizedVars = variables != null
+            ? SerializationExtensions.SanitizeDictionary(variables)
+            : null;
+        var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, sanitizedVars);
 
         _logger.LogInformation("公文已提交: DocumentId={DocumentId}, WorkflowInstanceId={InstanceId}",
             documentId, instance.Id);
 
         return instance;
+    }
+
+    /// <summary>
+    /// 上传公文附件到 GridFS
+    /// </summary>
+    public async Task<DocumentAttachmentUploadResult> UploadAttachmentAsync(IFormFile file)
+    {
+        ArgumentNullException.ThrowIfNull(file);
+
+        if (file.Length <= 0)
+        {
+            throw new ArgumentException("附件内容为空", nameof(file));
+        }
+
+        var userId = _documentFactory.GetRequiredUserId();
+        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
+
+        await using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+
+        string checksum;
+        using (var sha256 = SHA256.Create())
+        {
+            checksum = Convert.ToHexString(sha256.ComputeHash(memoryStream));
+        }
+
+        memoryStream.Position = 0;
+
+        var fileName = string.IsNullOrWhiteSpace(file.FileName)
+            ? $"attachment-{Guid.NewGuid():N}"
+            : file.FileName;
+
+        var gridFsId = await _gridFsBucket.UploadFromStreamAsync(
+            fileName,
+            memoryStream,
+            new GridFSUploadOptions
+            {
+                Metadata = new BsonDocument
+                {
+                    { "companyId", companyId },
+                    { "uploaderId", userId },
+                    { "mimeType", file.ContentType ?? "application/octet-stream" },
+                    { "size", file.Length },
+                    { "checksum", checksum }
+                }
+            });
+
+        return new DocumentAttachmentUploadResult
+        {
+            Id = gridFsId.ToString(),
+            Name = fileName,
+            Size = file.Length,
+            ContentType = file.ContentType ?? "application/octet-stream",
+            Url = $"/api/documents/attachments/{gridFsId}"
+        };
+    }
+
+    /// <summary>
+    /// 下载公文附件
+    /// </summary>
+    public async Task<DocumentAttachmentDownloadResult?> DownloadAttachmentAsync(string attachmentId)
+    {
+        if (string.IsNullOrWhiteSpace(attachmentId))
+        {
+            throw new ArgumentException("附件标识不能为空", nameof(attachmentId));
+        }
+
+        if (!ObjectId.TryParse(attachmentId, out var gridFsId))
+        {
+            throw new ArgumentException("附件标识格式不正确", nameof(attachmentId));
+        }
+
+        try
+        {
+            var downloadStream = await _gridFsBucket.OpenDownloadStreamAsync(gridFsId);
+            if (downloadStream.CanSeek)
+            {
+                downloadStream.Seek(0, SeekOrigin.Begin);
+            }
+
+            var contentType = downloadStream.FileInfo?.Metadata?["mimeType"]?.AsString ?? "application/octet-stream";
+            var fileName = downloadStream.FileInfo?.Filename ?? "attachment";
+
+            return new DocumentAttachmentDownloadResult
+            {
+                Content = downloadStream,
+                ContentType = contentType,
+                FileName = fileName,
+                ContentLength = downloadStream.FileInfo?.Length ?? 0
+            };
+        }
+        catch (GridFSFileNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 基于流程定义的创建表单创建公文（草稿）
+    /// </summary>
+    public async Task<Document> CreateDocumentForWorkflowAsync(string workflowDefinitionId, Dictionary<string, object> values, List<string>? attachmentIds = null)
+    {
+        if (string.IsNullOrWhiteSpace(workflowDefinitionId))
+        {
+            throw new ArgumentException("流程定义ID不能为空", nameof(workflowDefinitionId));
+        }
+
+        var definition = await _definitionFactory.GetByIdAsync(workflowDefinitionId);
+        if (definition == null)
+        {
+            throw new InvalidOperationException("流程定义不存在");
+        }
+
+        // 查找创建用的文档表单绑定：优先 start 节点，否则第一个绑定文档表单的节点
+        FormBinding? binding = definition.Graph.Nodes.FirstOrDefault(n => n.Type == "start")?.Config?.Form;
+        if (binding == null || binding.Target != FormTarget.Document)
+        {
+            var nodeWithDocForm = definition.Graph.Nodes.FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document);
+            binding = nodeWithDocForm?.Config?.Form;
+        }
+
+        if (binding == null)
+        {
+            throw new InvalidOperationException("该流程未配置用于创建公文的文档表单");
+        }
+
+        var form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+        if (form == null)
+        {
+            throw new InvalidOperationException("表单定义不存在");
+        }
+
+        values ??= new Dictionary<string, object>();
+        // 清洗 JsonElement 等不可序列化类型
+        values = SerializationExtensions.SanitizeDictionary(values);
+
+        // 基本必填校验：检查所有 required 字段的 dataKey 是否存在且非空
+        var missing = new List<string>();
+        foreach (var field in form.Fields)
+        {
+            if (field.Required)
+            {
+                if (!values.TryGetValue(field.DataKey, out var val) || val == null || (val is string s && string.IsNullOrWhiteSpace(s)))
+                {
+                    missing.Add(field.Label ?? field.DataKey);
+                }
+            }
+        }
+
+        if (missing.Any())
+        {
+            throw new InvalidOperationException($"必填字段缺失: {string.Join(", ", missing)}");
+        }
+
+        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
+
+        // 构造 FormData（考虑 DataScopeKey）
+        Dictionary<string, object> formDataToSave;
+        if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+        {
+            formDataToSave = new Dictionary<string, object>
+            {
+                [binding.DataScopeKey!] = values
+            };
+        }
+        else
+        {
+            formDataToSave = new Dictionary<string, object>(values);
+        }
+
+        // 从表单值中尝试提取标题（常用 dataKey: title）
+        var title = values.TryGetValue("title", out var t) && t is string ts && !string.IsNullOrWhiteSpace(ts)
+            ? ts
+            : definition.Name;
+
+        var document = new Document
+        {
+            Title = title,
+            Content = null,
+            DocumentType = definition.Name,
+            Category = definition.Category,
+            Status = DocumentStatus.Draft,
+            AttachmentIds = attachmentIds ?? new List<string>(),
+            FormData = formDataToSave,
+            CompanyId = companyId
+        };
+
+        document = await _documentFactory.CreateAsync(document);
+        _logger.LogInformation("基于流程表单创建公文: DocumentId={DocumentId}, WorkflowDefinitionId={DefinitionId}", document.Id, workflowDefinitionId);
+        return document;
     }
 
     /// <summary>
@@ -546,4 +772,27 @@ public class DocumentService : IDocumentService
 
         return approvers.Distinct().ToList();
     }
+}
+
+/// <summary>
+/// 公文附件上传结果
+/// </summary>
+public class DocumentAttachmentUploadResult
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public long Size { get; set; }
+    public string ContentType { get; set; } = "application/octet-stream";
+    public string Url { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 公文附件下载结果
+/// </summary>
+public class DocumentAttachmentDownloadResult
+{
+    public Stream Content { get; set; } = Stream.Null;
+    public string ContentType { get; set; } = "application/octet-stream";
+    public string FileName { get; set; } = "attachment";
+    public long ContentLength { get; set; }
 }

@@ -73,6 +73,8 @@ export default {
   'menu.workflow.list.desc': '管理和配置工作流定义',
   'menu.workflow.create': '创建流程',
   'menu.workflow.create.desc': '创建新的工作流定义',
+  'menu.workflow.forms': '表单定义',
+  'menu.workflow.forms.desc': '管理流程关联表单',
   'menu.workflow.monitor': '流程监控',
   'menu.workflow.monitor.desc': '监控工作流实例执行情况',
   // 公文管理

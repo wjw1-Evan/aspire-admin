@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
@@ -77,7 +78,7 @@ public class DocumentController : BaseApiController
             {
                 var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
                 var history = await _workflowEngine.GetApprovalHistoryAsync(document.WorkflowInstanceId);
-                
+
                 return Success(new
                 {
                     document,
@@ -98,7 +99,7 @@ public class DocumentController : BaseApiController
     /// 创建公文
     /// </summary>
     [HttpPost]
-    [RequireMenu("document:create")]
+    [RequireMenu("document:list")]
     public async Task<IActionResult> CreateDocument([FromBody] CreateDocumentRequest request)
     {
         try
@@ -121,7 +122,7 @@ public class DocumentController : BaseApiController
     /// 更新公文
     /// </summary>
     [HttpPut("{id}")]
-    [RequireMenu("document:create")]
+    [RequireMenu("document:list")]
     public async Task<IActionResult> UpdateDocument(string id, [FromBody] UpdateDocumentRequest request)
     {
         try
@@ -144,7 +145,7 @@ public class DocumentController : BaseApiController
     /// 删除公文
     /// </summary>
     [HttpDelete("{id}")]
-    [RequireMenu("document:create")]
+    [RequireMenu("document:list")]
     public async Task<IActionResult> DeleteDocument(string id)
     {
         try
@@ -167,7 +168,7 @@ public class DocumentController : BaseApiController
     /// 提交公文（启动流程）
     /// </summary>
     [HttpPost("{id}/submit")]
-    [RequireMenu("document:create")]
+    [RequireMenu("document:list")]
     public async Task<IActionResult> SubmitDocument(string id, [FromBody] SubmitDocumentRequest request)
     {
         try
@@ -345,6 +346,48 @@ public class DocumentController : BaseApiController
     }
 
     /// <summary>
+    /// 上传公文附件
+    /// </summary>
+    [HttpPost("attachments")]
+    [RequireMenu("document:list")]
+    public async Task<IActionResult> UploadAttachment([FromForm] IFormFile file)
+    {
+        try
+        {
+            var result = await _documentService.UploadAttachmentAsync(file);
+            return Success(result);
+        }
+        catch (Exception ex)
+        {
+            return Error("UPLOAD_FAILED", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// 下载公文附件
+    /// </summary>
+    [HttpGet("attachments/{attachmentId}")]
+    [RequireMenu("document:list")]
+    public async Task<IActionResult> DownloadAttachment(string attachmentId)
+    {
+        try
+        {
+            var result = await _documentService.DownloadAttachmentAsync(attachmentId);
+            if (result == null)
+            {
+                return NotFoundError("附件", attachmentId);
+            }
+
+            Response.Headers.ContentLength = result.ContentLength;
+            return File(result.Content, result.ContentType, result.FileName);
+        }
+        catch (Exception ex)
+        {
+            return Error("DOWNLOAD_FAILED", ex.Message);
+        }
+    }
+
+    /// <summary>
     /// 获取待审批列表
     /// </summary>
     [HttpGet("pending")]
@@ -379,7 +422,7 @@ public class SubmitDocumentRequest
     /// 流程定义ID
     /// </summary>
     public string WorkflowDefinitionId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 流程变量
     /// </summary>
@@ -406,7 +449,7 @@ public class ReturnDocumentRequest
     /// 退回目标节点ID
     /// </summary>
     public string TargetNodeId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 退回原因
     /// </summary>
@@ -422,7 +465,7 @@ public class DelegateDocumentRequest
     /// 转办目标用户ID
     /// </summary>
     public string DelegateToUserId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 转办说明
     /// </summary>

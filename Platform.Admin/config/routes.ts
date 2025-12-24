@@ -173,6 +173,12 @@ export default [
       },
 
       {
+        path: '/workflow/forms',
+        component: './workflow/forms',
+        hideInMenu: true,
+      },
+
+      {
         path: '/workflow/monitor',
         component: './workflow/monitor',
         hideInMenu: true,
@@ -191,6 +197,11 @@ export default [
       {
         path: '/document/create',
         component: './document/create',
+        hideInMenu: true,
+      },
+      {
+        path: '/document/create-by-workflow',
+        component: './document/create-by-workflow',
         hideInMenu: true,
       },
       {

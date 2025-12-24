@@ -192,6 +192,7 @@ const WorkflowManagement: React.FC = () => {
     }
   };
 
+
   return (
     <PageContainer
       title={
@@ -316,7 +317,7 @@ const WorkflowManagement: React.FC = () => {
         footer={null}
         width={isMobile ? '100%' : 800}
         style={{ top: 20 }}
-        bodyStyle={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}
+        styles={{ body: { maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' } }}
       >
         <WorkflowCreateForm
           onSuccess={() => {
@@ -346,7 +347,7 @@ const WorkflowManagement: React.FC = () => {
         footer={null}
         width="90%"
         style={{ top: 20 }}
-        bodyStyle={{ height: 'calc(100vh - 120px)' }}
+        styles={{ body: { height: 'calc(100vh - 120px)' } }}
       >
         <WorkflowDesigner
           visible={designerVisible || previewVisible}
@@ -358,6 +359,7 @@ const WorkflowManagement: React.FC = () => {
           }}
         />
       </Modal>
+
     </PageContainer>
   );
 };

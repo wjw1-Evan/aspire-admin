@@ -276,7 +276,7 @@ public class DataInitializerService : IDataInitializerService
             Title = "系统管理",
             Path = "/system",
             Icon = "setting",
-            SortOrder = 2,
+            SortOrder = 8,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -358,7 +358,7 @@ public class DataInitializerService : IDataInitializerService
             Path = "/password-book",
             Component = "./password-book",
             Icon = "lock",
-            SortOrder = 5,
+            SortOrder = 7,
             IsEnabled = true,
             IsDeleted = false,
             Permissions = new List<string> { "password-book:read" },
@@ -373,7 +373,7 @@ public class DataInitializerService : IDataInitializerService
             Title = "项目管理",
             Path = "/project-management",
             Icon = "project",
-            SortOrder = 3,
+            SortOrder = 4,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -423,7 +423,7 @@ public class DataInitializerService : IDataInitializerService
             Path = "/iot-platform",
             Component = "./iot-platform",
             Icon = "cloud-server",
-            SortOrder = 4,
+            SortOrder = 5,
             IsEnabled = true,
             IsDeleted = false,
             Permissions = new List<string> { "iot:read" },
@@ -567,7 +567,7 @@ public class DataInitializerService : IDataInitializerService
             Title = "工作流管理",
             Path = "/workflow",
             Icon = "apartment",
-            SortOrder = 7,
+            SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -591,6 +591,23 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
+        // 工作流管理子菜单：表单定义
+        menus.Add(new Menu
+        {
+            Name = "workflow-forms",
+            Title = "表单定义",
+            Path = "/workflow/forms",
+            Component = "./workflow/forms",
+            Icon = "form",
+            ParentId = "workflow",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            Permissions = new List<string> { "workflow:list" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
         // 工作流管理子菜单：流程监控
         menus.Add(new Menu
         {
@@ -600,7 +617,7 @@ public class DataInitializerService : IDataInitializerService
             Component = "./workflow/monitor",
             Icon = "monitor",
             ParentId = "workflow",  // 临时使用名称，后续会替换为实际 ID
-            SortOrder = 2,
+            SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
             Permissions = new List<string> { "workflow:monitor" },
@@ -615,7 +632,7 @@ public class DataInitializerService : IDataInitializerService
             Title = "公文管理",
             Path = "/document",
             Icon = "file-text",
-            SortOrder = 8,
+            SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -686,6 +703,7 @@ public class DataInitializerService : IDataInitializerService
             "xiaoke-management-chat-history" => "xiaoke-management",
             // 工作流管理子菜单
             "workflow-list" => "workflow",
+            "workflow-forms" => "workflow",
             "workflow-monitor" => "workflow",
             // 公文管理子菜单
             "document-list" => "document",

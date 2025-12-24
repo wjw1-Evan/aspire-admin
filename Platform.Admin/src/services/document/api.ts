@@ -42,6 +42,14 @@ export interface CreateDocumentRequest {
   formData?: Record<string, any>;
 }
 
+export interface DocumentAttachmentUploadResponse {
+  id: string;
+  name: string;
+  url: string;
+  size?: number;
+  contentType?: string;
+}
+
 /**
  * 更新公文请求
  */
@@ -125,6 +133,20 @@ export async function createDocument(data: CreateDocumentRequest): Promise<ApiRe
   return request('/api/documents', {
     method: 'POST',
     data,
+  });
+}
+
+/**
+ * 上传公文附件
+ */
+export async function uploadDocumentAttachment(file: File): Promise<ApiResponse<DocumentAttachmentUploadResponse>> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return request('/api/documents/attachments', {
+    method: 'POST',
+    data: formData,
+    requestType: 'form',
   });
 }
 

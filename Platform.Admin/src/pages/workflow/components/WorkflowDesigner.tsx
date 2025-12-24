@@ -28,6 +28,9 @@ import type {
 import {
   ApproverType,
 } from '@/services/workflow/api';
+import { getFormList } from '@/services/form/api';
+import type { FormDefinition } from '@/services/form/api';
+import { FormTarget } from '@/services/workflow/api';
 import { getUserList } from '@/services/user/api';
 import { getAllRoles } from '@/services/role/api';
 import type { AppUser } from '@/services/user/api';
@@ -40,29 +43,29 @@ interface WorkflowDesignerProps {
   onClose?: () => void;
 }
 
-// nodeTypes 将在组件内部使用 intl 动态生成
+// nodeTypes 将在组件内部使用 intl 动态生成（仅保留文案，不包含自定义样式）
 const getNodeTypes = (intl: any) => ({
   start: {
-    style: { background: '#52c41a', color: '#fff', border: '2px solid #389e0d' },
     label: intl.formatMessage({ id: 'pages.workflow.designer.addStart' }),
   },
   end: {
-    style: { background: '#ff4d4f', color: '#fff', border: '2px solid #cf1322' },
     label: intl.formatMessage({ id: 'pages.workflow.designer.addEnd' }),
   },
   approval: {
-    style: { background: '#1890ff', color: '#fff', border: '2px solid #096dd9' },
     label: intl.formatMessage({ id: 'pages.workflow.designer.addApproval' }),
   },
   condition: {
-    style: { background: '#faad14', color: '#fff', border: '2px solid #d48806' },
     label: intl.formatMessage({ id: 'pages.workflow.designer.addCondition' }),
   },
   parallel: {
-    style: { background: '#722ed1', color: '#fff', border: '2px solid #531dab' },
     label: intl.formatMessage({ id: 'pages.workflow.designer.addParallel' }),
   },
 });
+
+const defaultNodeStyle = {
+  borderRadius: '8px',
+  minWidth: '120px',
+};
 
 const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   visible = false,
@@ -80,6 +83,8 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   const [roles, setRoles] = useState<Role[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingRoles, setLoadingRoles] = useState(false);
+  const [forms, setForms] = useState<FormDefinition[]>([]);
+  const [loadingForms, setLoadingForms] = useState(false);
 
   // 加载用户和角色列表
   useEffect(() => {
@@ -107,6 +112,24 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     loadData();
   }, []);
 
+  // 加载可用表单列表
+  useEffect(() => {
+    const loadForms = async () => {
+      setLoadingForms(true);
+      try {
+        const res = await getFormList({ pageSize: 200, current: 1, isActive: true });
+        if (res.success && res.data) {
+          setForms(res.data.list || []);
+        }
+      } catch (err) {
+        console.error('加载表单列表失败:', err);
+      } finally {
+        setLoadingForms(false);
+      }
+    };
+    loadForms();
+  }, []);
+
   // 初始化节点和边
   React.useEffect(() => {
     if (graph) {
@@ -128,9 +151,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           config: node.config,
         },
         style: {
-          ...nodeTypesMap[node.type as keyof typeof nodeTypesMap]?.style,
-          borderRadius: '8px',
-          minWidth: '120px',
+          ...defaultNodeStyle,
         },
       }));
 
@@ -168,9 +189,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             config: {},
           },
           style: {
-            ...nodeTypesMap.start.style,
-            borderRadius: '8px',
-            minWidth: '120px',
+            ...defaultNodeStyle,
           },
         },
       ]);
@@ -219,9 +238,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           config: {},
         },
         style: {
-          ...nodeTypesMap[type as keyof typeof nodeTypesMap]?.style,
-          borderRadius: '8px',
-          minWidth: '120px',
+          ...defaultNodeStyle,
         },
       };
       setNodes((nds) => [...nds, newNode]);
@@ -254,17 +271,13 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     // 处理审批人规则，转换为表单格式
     const approversForForm = (config.approval?.approvers || []).map((rule: ApproverRule) => {
       if (rule.type === ApproverType.User) {
-        return {
-          type: 0,
-          userId: rule.userId,
-          roleId: undefined,
-        };
-      } else if (rule.type === ApproverType.Role) {
-        return {
-          type: 1,
-          userId: undefined,
-          roleId: rule.roleId,
-        };
+        return { type: 0, userIds: rule.userId ? [rule.userId] : [] };
+      }
+      if (rule.type === ApproverType.Role) {
+        return { type: 1, roleIds: rule.roleId ? [rule.roleId] : [] };
+      }
+      if (rule.type === ApproverType.Department) {
+        return { type: 2, departmentId: rule.departmentId };
       }
       return rule;
     });
@@ -279,6 +292,10 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       allowReturn: config.approval?.allowReturn,
       timeoutHours: config.approval?.timeoutHours,
       expression: config.condition?.expression,
+      formDefinitionId: config.form?.formDefinitionId,
+      formTarget: config.form?.target,
+      formDataScopeKey: config.form?.dataScopeKey,
+      formRequired: config.form?.required,
     });
   }, [configForm]);
 
@@ -292,23 +309,25 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
           if (values.nodeType === 'approval') {
             // 处理审批人规则，确保格式正确
-            const approvers: ApproverRule[] = (values.approvers || []).map((rule: any) => {
+            const approvers: ApproverRule[] = (values.approvers || []).flatMap((rule: any) => {
               if (rule.type === 0) {
-                // 用户类型
-                return {
-                  type: ApproverType.User,
-                  userId: rule.userId,
-                  roleId: undefined,
-                  departmentId: undefined,
-                };
-              } else if (rule.type === 1) {
-                // 角色类型
-                return {
-                  type: ApproverType.Role,
-                  userId: undefined,
-                  roleId: rule.roleId,
-                  departmentId: undefined,
-                };
+                const userIds: string[] = Array.isArray(rule.userIds)
+                  ? rule.userIds
+                  : rule.userId
+                    ? [rule.userId]
+                    : [];
+                return userIds.map((uid) => ({ type: ApproverType.User, userId: uid } as ApproverRule));
+              }
+              if (rule.type === 1) {
+                const roleIds: string[] = Array.isArray(rule.roleIds)
+                  ? rule.roleIds
+                  : rule.roleId
+                    ? [rule.roleId]
+                    : [];
+                return roleIds.map((rid) => ({ type: ApproverType.Role, roleId: rid } as ApproverRule));
+              }
+              if (rule.type === 2) {
+                return { type: ApproverType.Department, departmentId: rule.departmentId };
               }
               return rule;
             });
@@ -325,6 +344,18 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             config.condition = {
               expression: values.expression || '',
             };
+          }
+
+          // 节点表单绑定（适用于大多数业务节点，例如开始、审批等）
+          if (values.formDefinitionId) {
+            config.form = {
+              formDefinitionId: values.formDefinitionId,
+              target: (values.formTarget as FormTarget) || FormTarget.Document,
+              dataScopeKey: values.formDataScopeKey || undefined,
+              required: values.formRequired || false,
+            };
+          } else {
+            config.form = undefined;
           }
 
           return {
@@ -464,7 +495,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Card
         style={{ marginBottom: 16 }}
-        bodyStyle={{ padding: '12px' }}
+        styles={{ body: { padding: '12px' } }}
       >
         <Space>
           <Button
@@ -557,7 +588,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         title={intl.formatMessage({ id: 'pages.workflow.designer.nodeConfig' })}
         open={configDrawerVisible}
         onClose={() => setConfigDrawerVisible(false)}
-        width={400}
+        size="default"
       >
         <Form form={configForm} layout="vertical">
           <Form.Item name="nodeType" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeType' })}>
@@ -576,7 +607,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
           {selectedNode?.data.nodeType === 'approval' && (
             <>
-              <Form.Item name="approvalType" label={intl.formatMessage({ id: 'pages.workflow.designer.approvalType' })}>
+              <Form.Item
+                name="approvalType"
+                label={intl.formatMessage({ id: 'pages.workflow.designer.approvalType' })}
+                tooltip="会签：所有审批人同意；或签：任意一人同意即可"
+              >
                 <Select>
                   <Select.Option value={0}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.all' })}</Select.Option>
                   <Select.Option value={1}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.any' })}</Select.Option>
@@ -585,7 +620,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               <Form.Item
                 name="approvers"
                 label={intl.formatMessage({ id: 'pages.workflow.designer.approverRules' })}
-                rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.designer.approverRules' }) }]}
+                rules={[{ required: true, message: '请至少添加一条审批人规则' }]}
               >
                 <Form.List name="approvers">
                   {(fields, { add, remove }) => (
@@ -595,20 +630,19 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                           <Form.Item
                             {...restField}
                             name={[name, 'type']}
-                            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.designer.approverType' }) }]}
+                            rules={[{ required: true, message: '选择类型' }]}
                           >
                             <Select style={{ width: 100 }} placeholder={intl.formatMessage({ id: 'pages.workflow.designer.approverType' })}>
                               <Select.Option value={0}>{intl.formatMessage({ id: 'pages.workflow.designer.approverType.user' })}</Select.Option>
                               <Select.Option value={1}>{intl.formatMessage({ id: 'pages.workflow.designer.approverType.role' })}</Select.Option>
+                              <Select.Option value={2}>部门</Select.Option>
                             </Select>
                           </Form.Item>
                           <Form.Item
-                            {...restField}
-                            name={[name, 'userId']}
                             noStyle
                             shouldUpdate={(prevValues, curValues) =>
-                                (prevValues as any).approvers?.[name]?.type !== (curValues as any).approvers?.[name]?.type
-                              }
+                              (prevValues as any).approvers?.[name]?.type !== (curValues as any).approvers?.[name]?.type
+                            }
                           >
                             {({ getFieldValue }) => {
                               const approverType = getFieldValue(['approvers', name, 'type']);
@@ -616,11 +650,12 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                                 return (
                                   <Form.Item
                                     {...restField}
-                                    name={[name, 'userId']}
-                                    rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.designer.selectUser' }) }]}
+                                    name={[name, 'userIds']}
+                                    rules={[{ required: true, message: '请选择用户' }]}
                                   >
                                     <Select
-                                      style={{ width: 200 }}
+                                      mode="multiple"
+                                      style={{ width: 260 }}
                                       placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectUser' })}
                                       loading={loadingUsers}
                                       showSearch
@@ -641,11 +676,12 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                                 return (
                                   <Form.Item
                                     {...restField}
-                                    name={[name, 'roleId']}
-                                    rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.designer.selectRole' }) }]}
+                                    name={[name, 'roleIds']}
+                                    rules={[{ required: true, message: '请选择角色' }]}
                                   >
                                     <Select
-                                      style={{ width: 200 }}
+                                      mode="multiple"
+                                      style={{ width: 260 }}
                                       placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectRole' })}
                                       loading={loadingRoles}
                                       showSearch
@@ -659,6 +695,17 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                                         </Select.Option>
                                       ))}
                                     </Select>
+                                  </Form.Item>
+                                );
+                              }
+                              if (approverType === 2) {
+                                return (
+                                  <Form.Item
+                                    {...restField}
+                                    name={[name, 'departmentId']}
+                                    rules={[{ required: true, message: '请选择部门' }]}
+                                  >
+                                    <Input style={{ width: 200 }} placeholder="输入部门ID" />
                                   </Form.Item>
                                 );
                               }
@@ -676,7 +723,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                         </Space>
                       ))}
                       <Form.Item>
-                        <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                        <Button type="dashed" onClick={() => add({ type: 0, userIds: [] })} block icon={<PlusOutlined />}>
                           {intl.formatMessage({ id: 'pages.workflow.designer.addApproverRule' })}
                         </Button>
                       </Form.Item>
@@ -684,23 +731,28 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                   )}
                 </Form.List>
               </Form.Item>
-              <Form.Item name="allowDelegate" valuePropName="checked">
-                <Switch
-                  checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowDelegate' })}
-                  unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowDelegate' })}
-                />
-              </Form.Item>
-              <Form.Item name="allowReject" valuePropName="checked">
-                <Switch
-                  checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowReject' })}
-                  unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowReject' })}
-                />
-              </Form.Item>
-              <Form.Item name="allowReturn" valuePropName="checked">
-                <Switch
-                  checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowReturn' })}
-                  unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowReturn' })}
-                />
+              <Space wrap>
+                <Form.Item name="allowDelegate" valuePropName="checked" label="允许转办">
+                  <Switch
+                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowDelegate' })}
+                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowDelegate' })}
+                  />
+                </Form.Item>
+                <Form.Item name="allowReject" valuePropName="checked" label="允许拒绝">
+                  <Switch
+                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowReject' })}
+                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowReject' })}
+                  />
+                </Form.Item>
+                <Form.Item name="allowReturn" valuePropName="checked" label="允许退回">
+                  <Switch
+                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowReturn' })}
+                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowReturn' })}
+                  />
+                </Form.Item>
+              </Space>
+              <Form.Item name="timeoutHours" label="超时时长（小时）" tooltip="为空表示不限时">
+                <Input type="number" min={0} placeholder="可选" />
               </Form.Item>
             </>
           )}
@@ -712,6 +764,40 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                 rows={3}
               />
             </Form.Item>
+          )}
+
+          {/* 节点表单绑定配置：在开始节点与审批节点上最常用，其它业务节点也可选 */}
+          {selectedNode && selectedNode.data && selectedNode.data.nodeType !== 'end' && (
+            <>
+              <Divider>节点表单绑定</Divider>
+              <Form.Item name="formDefinitionId" label="选择表单">
+                <Select
+                  placeholder="请选择要绑定的表单"
+                  loading={loadingForms}
+                  showSearch
+                  allowClear
+                  filterOption={(input, option) => ((option?.label as string) || '').toLowerCase().includes(input.toLowerCase())}
+                >
+                  {forms.map((f) => (
+                    <Select.Option key={f.id} value={f.id} label={f.name}>
+                      {f.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item name="formTarget" label="存储目标">
+                <Select placeholder="请选择表单数据存储位置">
+                  <Select.Option value={FormTarget.Document}>文档数据（Document）</Select.Option>
+                  <Select.Option value={FormTarget.Instance}>实例变量（Instance）</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="formDataScopeKey" label="数据范围键">
+                <Input placeholder="例如：approvalForm 或 startForm（可选）" />
+              </Form.Item>
+              <Form.Item name="formRequired" valuePropName="checked" label="是否必填">
+                <Switch checkedChildren="必填" unCheckedChildren="可选" />
+              </Form.Item>
+            </>
           )}
 
           <Form.Item>

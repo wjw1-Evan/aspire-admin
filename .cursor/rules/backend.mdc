@@ -11,7 +11,7 @@ appliesTo:
 
 ## 控制器与权限
 - 所有业务控制器必须继承 `BaseApiController`；统一使用 `Success<T>()`、`SuccessPaged<T>()`、`ValidationError()`、`NotFoundError()` 等构造 `ApiResponse<T>`。
-- 敏感操作必须添加 `[RequireMenu("module:resource")]`（权限标识使用 `:` 分隔，如 `workflow:list`、`document:create`）；禁止在控制器或服务中使用废弃的 `HasPermission()` / `RequirePermission()`。
+- 敏感操作必须添加 `[RequireMenu("module:resource")]`（权限标识使用 `:` 分隔，如 `workflow:list`、`document:list`）；禁止在控制器或服务中使用废弃的 `HasPermission()` / `RequirePermission()`。
 - 禁止从 JWT 读取 `companyId` / `roles` 等扩展字段，需通过 `ITenantContext` 获取。
 
 ## 菜单定义规范
@@ -93,7 +93,7 @@ appliesTo:
     // 验证分页参数
     if (page < 1 || page > 10000)
         throw new ArgumentException("页码必须在 1-10000 之间");
-    
+
     if (pageSize < 1 || pageSize > 100)
         throw new ArgumentException("每页数量必须在 1-100 之间");
     ```
@@ -114,12 +114,12 @@ appliesTo:
     ```csharp
     // ✅ 正确：直接传递页码
     var (configs, total) = await _configFactory.FindPagedAsync(
-        filter, 
-        sortBuilder.Build(), 
+        filter,
+        sortBuilder.Build(),
         page,  // 页码，从 1 开始
         pageSize
     );
-    
+
     // ❌ 错误：不要计算 skip
     // var skip = (page - 1) * pageSize;
     // var (configs, total) = await _configFactory.FindPagedAsync(filter, sortBuilder.Build(), skip, pageSize);
@@ -150,10 +150,10 @@ appliesTo:
         // 验证分页参数
         if (request.Current < 1 || request.Current > 10000)
             throw new ArgumentException("页码必须在 1-10000 之间");
-        
+
         if (request.PageSize < 1 || request.PageSize > 100)
             throw new ArgumentException("每页数量必须在 1-100 之间");
-        
+
         // ...
     }
     ```
@@ -181,8 +181,8 @@ appliesTo:
   - **代码示例**：
     ```csharp
     // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-    dto.CreatedByName = !string.IsNullOrWhiteSpace(user.Name) 
-        ? $"{user.Username} ({user.Name})" 
+    dto.CreatedByName = !string.IsNullOrWhiteSpace(user.Name)
+        ? $"{user.Username} ({user.Name})"
         : user.Username;
     ```
   - **适用字段**：`CreatedByName`、`AssignedToName`、`ExecutedByName`、`ManagerName` 等所有用户名称字段

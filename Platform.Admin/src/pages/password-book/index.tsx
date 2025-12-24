@@ -525,7 +525,7 @@ const PasswordBook: React.FC = () => {
           }}
           footer={null}
           width={isMobile ? '100%' : 600}
-          destroyOnClose
+          destroyOnHidden
         >
           <PasswordBookForm
             entry={editingEntry}

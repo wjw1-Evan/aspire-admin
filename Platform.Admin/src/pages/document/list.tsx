@@ -1,77 +1,102 @@
 import React, { useRef, useState } from 'react';
 import { PageContainer } from '@/components';
-import { Button, Space, Modal, message, Tag, Drawer, Card, Descriptions, Select, Form, Input } from 'antd';
 import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
+  Button,
+  Space,
+  Modal,
+  message,
+  Tag,
+  Drawer,
+  Card,
+  Descriptions,
+  Select,
+  Form,
+  Input,
+  Upload,
+  DatePicker,
+  InputNumber,
+  Radio,
+  Checkbox,
+  Switch,
+  Steps,
+} from 'antd';
+import {
   EyeOutlined,
+  EditOutlined,
   SendOutlined,
-  FileTextOutlined,
+  DeleteOutlined,
   ReloadOutlined,
+  PlusOutlined,
+  UploadOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
+import type { UploadFile, UploadProps } from 'antd';
 import { DataTable } from '@/components/DataTable';
 import {
   getDocumentList,
-  deleteDocument,
   getDocumentDetail,
+  deleteDocument,
   submitDocument,
-  createDocument,
+  uploadDocumentAttachment,
   type Document,
   DocumentStatus,
 } from '@/services/document/api';
-import { getWorkflowList } from '@/services/workflow/api';
+import {
+  WorkflowStatus,
+  ApprovalAction,
+  FormFieldType,
+  type FormDefinition,
+  getDocumentCreateForm,
+  getNodeForm,
+  getWorkflowDetail,
+  createAndStartDocumentWorkflow,
+  getWorkflowList,
+  type WorkflowDefinition,
+} from '@/services/workflow/api';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
+import { getStatusMeta, documentStatusMap, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
 
 const DocumentManagement: React.FC = () => {
   const intl = useIntl();
   const actionRef = useRef<ActionType>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<any>(null);
+  const [detailFormDef, setDetailFormDef] = useState<FormDefinition | null>(null);
+  const [detailFormValues, setDetailFormValues] = useState<Record<string, any> | null>(null);
+  const [detailNodeForms, setDetailNodeForms] = useState<Record<string, { def: FormDefinition | null; values: Record<string, any> }>>({});
+  const [detailWorkflowDef, setDetailWorkflowDef] = useState<WorkflowDefinition | null>(null);
+  const [detailVisibleLoading, setDetailVisibleLoading] = useState(false);
   const [submitModalVisible, setSubmitModalVisible] = useState(false);
   const [submittingDocument, setSubmittingDocument] = useState<Document | null>(null);
   const [workflows, setWorkflows] = useState<any[]>([]);
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createForm] = Form.useForm();
-
-  const fetchActiveWorkflows = async () => {
-    try {
-      const workflowResponse = await getWorkflowList({ current: 1, pageSize: 100, isActive: true });
-      if (workflowResponse.success && workflowResponse.data) {
-        setWorkflows(workflowResponse.data.list);
-      }
-    } catch (error) {
-      console.error('获取流程列表失败:', error);
-      message.error(intl.formatMessage({ id: 'pages.workflow.fetchFailed', defaultMessage: '获取流程列表失败' }));
-    }
-  };
+  const [workflowFormDef, setWorkflowFormDef] = useState<FormDefinition | null>(null);
+  const [workflowInitialValues, setWorkflowInitialValues] = useState<Record<string, any>>({});
+  const [wfAttachmentFileList, setWfAttachmentFileList] = useState<UploadFile[]>([]);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
+  const [isFormStep, setIsFormStep] = useState(false);
+  const [nextStepLoading, setNextStepLoading] = useState(false);
+  const [wfForm] = Form.useForm();
 
   const handleRefresh = () => {
     actionRef.current?.reload?.();
   };
 
-  const statusMap: Record<DocumentStatus, { color: string; text: string }> = {
-    [DocumentStatus.Draft]: {
-      color: 'default',
-      text: intl.formatMessage({ id: 'pages.document.status.draft' }),
-    },
-    [DocumentStatus.Pending]: {
-      color: 'processing',
-      text: intl.formatMessage({ id: 'pages.document.status.pending' }),
-    },
-    [DocumentStatus.Approved]: {
-      color: 'success',
-      text: intl.formatMessage({ id: 'pages.document.status.approved' }),
-    },
-    [DocumentStatus.Rejected]: {
-      color: 'error',
-      text: intl.formatMessage({ id: 'pages.document.status.rejected' }),
-    },
+  const getDocStatus = (status?: DocumentStatus | null) =>
+    getStatusMeta(intl, status ?? null, documentStatusMap);
+
+  const fetchActiveWorkflows = async () => {
+    try {
+      const resp = await getWorkflowList({ current: 1, pageSize: 100, isActive: true });
+      if (resp.success) {
+        setWorkflows(resp.data?.list || []);
+      }
+    } catch (e) {
+      console.error('加载流程列表失败', e);
+    }
   };
 
   const columns: ColumnsType<Document> = [
@@ -94,7 +119,7 @@ const DocumentManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.document.table.status' }),
       dataIndex: 'status',
       render: (_, record: Document) => {
-        const status = statusMap[record.status];
+        const status = getDocStatus(record.status);
         return <Tag color={status.color}>{status.text}</Tag>;
       },
     },
@@ -119,13 +144,92 @@ const DocumentManagement: React.FC = () => {
             icon={<EyeOutlined />}
             onClick={async () => {
               try {
+                setDetailVisibleLoading(true);
                 const response = await getDocumentDetail(record.id!);
                 if (response.success && response.data) {
                   setDetailData(response.data);
+                  const rawData: any = response.data as any;
+                  const doc = rawData.document ?? rawData;
+                  const instance = response.data.workflowInstance ?? doc?.workflowInstance;
+                  const defId = instance?.workflowDefinitionId;
+                  const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
+                  const currentNodeId = instance?.currentNodeId;
+                  const approvalHistory = response.data?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
+                  if (defId) {
+                    try {
+                      const formResp = await getDocumentCreateForm(defId);
+                      if (formResp.success) {
+                        const formDef = formResp.data?.form || null;
+                        const dataScopeKey = formResp.data?.dataScopeKey;
+                        const sourceFormData = doc?.formData || {};
+                        const values = dataScopeKey ? sourceFormData?.[dataScopeKey] || {} : sourceFormData || {};
+                        setDetailFormDef(formDef);
+                        setDetailFormValues(values);
+                      } else {
+                        setDetailFormDef(null);
+                        setDetailFormValues(null);
+                      }
+                      try {
+                        const defResp = await getWorkflowDetail(defId);
+                        if (defResp.success) {
+                          setDetailWorkflowDef(defResp.data || null);
+                        } else {
+                          setDetailWorkflowDef(null);
+                        }
+                      } catch (err) {
+                        console.error('加载流程定义失败', err);
+                        setDetailWorkflowDef(null);
+                      }
+
+                      if (instanceId) {
+                        try {
+                          const allNodeIds = Array.from(
+                            new Set([
+                              currentNodeId,
+                              ...approvalHistory.map((h: any) => h.nodeId).filter(Boolean),
+                            ]),
+                          ).filter(Boolean) as string[];
+                          const forms: Record<string, { def: FormDefinition | null; values: Record<string, any> }> = {};
+                          for (const nid of allNodeIds) {
+                            try {
+                              const nf = await getNodeForm(instanceId, nid);
+                              if (nf.success) {
+                                forms[nid] = {
+                                  def: nf.data?.form || null,
+                                  values: nf.data?.initialValues || {},
+                                };
+                              }
+                            } catch (e) {
+                              console.error('加载节点表单失败', nid, e);
+                            }
+                          }
+                          setDetailNodeForms(forms);
+                        } catch (e) {
+                          console.error('批量加载节点表单失败', e);
+                          setDetailNodeForms({});
+                        }
+                      } else {
+                        setDetailNodeForms({});
+                      }
+                    } catch (e) {
+                      console.error('加载表单定义失败', e);
+                      setDetailFormDef(null);
+                      setDetailFormValues(null);
+                      setDetailWorkflowDef(null);
+                      setDetailNodeForms({});
+                    }
+                  } else {
+                    setDetailFormDef(null);
+                    setDetailFormValues(null);
+                    setDetailWorkflowDef(null);
+                    setDetailNodeForms({});
+                  }
                   setDetailVisible(true);
                 }
               } catch (error) {
                 console.error('获取详情失败:', error);
+              } finally {
+                setDetailVisibleLoading(false);
               }
             }}
           >
@@ -220,45 +324,50 @@ const DocumentManagement: React.FC = () => {
     }
   };
 
-  const handleCreateSubmit = async () => {
-    try {
-      const values = await createForm.validateFields();
-      setCreateLoading(true);
+  // 已废弃的创建/提交逻辑改为在模态窗体中按流程表单创建并启动
 
-      const response = await createDocument({
-        title: values.title,
-        content: values.content,
-        documentType: values.documentType,
-        category: values.category,
-        attachmentIds: values.attachmentIds || [],
-        formData: values.formData || {},
-      });
+  // 工作流表单附件上传配置
+  const wfUploadProps: UploadProps = {
+    fileList: wfAttachmentFileList,
+    multiple: true,
+    customRequest: async (options) => {
+      const { file, onSuccess, onError } = options;
+      try {
+        const response = await uploadDocumentAttachment(file as File);
+        if (response.success && response.data?.id) {
+          const ids = wfForm.getFieldValue('attachmentIds') || [];
+          wfForm.setFieldsValue({ attachmentIds: [...ids, response.data.id] });
 
-      const newDocumentId = response.success ? response.data?.id : undefined;
+          const newFile: UploadFile = {
+            uid: response.data.id,
+            name: response.data.name || (file as any).name,
+            status: 'done',
+            url: response.data.url,
+            size: response.data.size,
+            type: response.data.contentType,
+            response,
+          };
 
-      if (!response.success || !newDocumentId) {
-        message.error(intl.formatMessage({ id: 'pages.document.create.message.createFailed' }));
-        return;
+          setWfAttachmentFileList((prev) => [...prev, newFile]);
+          onSuccess?.(response, file as any);
+        } else {
+          const msg = response.errorMessage || intl.formatMessage({ id: 'pages.document.create.message.uploadFailed', defaultMessage: '附件上传失败' });
+          message.error(msg);
+          onError?.(new Error(msg));
+        }
+      } catch (err: any) {
+        const msg = err?.message || intl.formatMessage({ id: 'pages.document.create.message.uploadFailed', defaultMessage: '附件上传失败' });
+        message.error(msg);
+        onError?.(err as Error);
       }
-
-      const submitResp = await submitDocument(newDocumentId, {
-        workflowDefinitionId: values.workflowDefinitionId,
-      });
-
-      if (submitResp.success) {
-        message.success(intl.formatMessage({ id: 'pages.document.message.submitSuccess' }));
-        setCreateModalVisible(false);
-        createForm.resetFields();
-        actionRef.current?.reload?.();
-      } else {
-        message.error(intl.formatMessage({ id: 'pages.document.message.submitFailed' }));
-      }
-    } catch (error) {
-      console.error('创建失败:', error);
-      message.error(intl.formatMessage({ id: 'pages.document.create.message.createFailed' }));
-    } finally {
-      setCreateLoading(false);
-    }
+    },
+    onRemove: (file) => {
+      const currentIds: string[] = wfForm.getFieldValue('attachmentIds') || [];
+      const filtered = currentIds.filter((id) => id !== file.uid);
+      wfForm.setFieldsValue({ attachmentIds: filtered });
+      setWfAttachmentFileList((prev) => prev.filter((f) => f.uid !== file.uid));
+      return true;
+    },
   };
 
   return (
@@ -285,6 +394,13 @@ const DocumentManagement: React.FC = () => {
             icon={<PlusOutlined />}
             onClick={async () => {
               await fetchActiveWorkflows();
+              // 下一步模式：仅选择流程，随后在模态窗体内填写流程自定义表单
+              setSelectedWorkflowId('');
+              setWorkflowFormDef(null);
+              setWorkflowInitialValues({});
+              setIsFormStep(false);
+              setWfAttachmentFileList([]);
+              wfForm.resetFields();
               setCreateModalVisible(true);
             }}
           >
@@ -325,94 +441,229 @@ const DocumentManagement: React.FC = () => {
         onClose={() => {
           setDetailVisible(false);
           setDetailData(null);
+          setDetailNodeForms({});
         }}
         size={800}
       >
-        {detailData && (
-          <div>
-            <Card style={{ marginBottom: 16 }}>
-              <Descriptions column={2} bordered>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.title' })}>
-                  {detailData.title}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.type' })}>
-                  {detailData.documentType}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.category' })}>
-                  {detailData.category || '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.workflowStatus' })}>
-                  <Tag color={statusMap[detailData.status].color}>
-                    {statusMap[detailData.status].text}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.createdBy' })}>
-                  {detailData.createdBy}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.createdAt' })}>
-                  {dayjs(detailData.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
-            <Card title={intl.formatMessage({ id: 'pages.document.detail.content' })}>
-              <div style={{ whiteSpace: 'pre-wrap' }}>{detailData.content || '-'}</div>
-            </Card>
-            {detailData.workflowInstance && (
-              <Card title={intl.formatMessage({ id: 'pages.document.detail.workflowInfo' })} style={{ marginTop: 16 }}>
-                <Descriptions column={1}>
-                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.workflowStatus' })}>
-                    {detailData.workflowInstance.status === 0
-                      ? intl.formatMessage({ id: 'pages.workflow.monitor.status.running' })
-                      : detailData.workflowInstance.status === 1
-                      ? intl.formatMessage({ id: 'pages.workflow.monitor.status.completed' })
-                      : detailData.workflowInstance.status === 2
-                      ? intl.formatMessage({ id: 'pages.workflow.monitor.status.cancelled' })
-                      : intl.formatMessage({ id: 'pages.workflow.monitor.status.rejected' })}
+        {detailData && (() => {
+          const doc = detailData?.document ?? detailData;
+          const workflowInstance = detailData?.workflowInstance ?? doc?.workflowInstance;
+          const approvalHistory = detailData?.approvalHistory ?? doc?.approvalHistory ?? workflowInstance?.approvalHistory;
+
+          return (
+            <div>
+              <Card style={{ marginBottom: 16 }}>
+                <Descriptions column={2} bordered>
+                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.title' })}>
+                    {doc?.title || '-'}
                   </Descriptions.Item>
-                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.workflow.monitor.progress.currentNode' })}>
-                    {detailData.workflowInstance.currentNodeId}
+                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.type' })}>
+                    {doc?.documentType || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.category' })}>
+                    {doc?.category || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.workflowStatus' })}>
+                    {(() => {
+                      const statusMeta = getStatusMeta(
+                        intl,
+                        workflowInstance?.status as WorkflowStatus | null,
+                        workflowStatusMap,
+                      );
+                      return <Tag color={statusMeta.color}>{statusMeta.text}</Tag>;
+                    })()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.createdBy' })}>
+                    {doc?.createdBy || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.createdAt' })}>
+                    {doc?.createdAt ? dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
                   </Descriptions.Item>
                 </Descriptions>
               </Card>
-            )}
-            {detailData.approvalHistory && detailData.approvalHistory.length > 0 && (
-              <Card title={intl.formatMessage({ id: 'pages.document.detail.approvalHistory' })} style={{ marginTop: 16 }}>
-                {detailData.approvalHistory.map((record: any, index: number) => (
-                  <Card key={index} size="small" style={{ marginBottom: 8 }}>
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                      <div>
-                        <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong>{' '}
-                        {record.approverName || record.approverId}
-                      </div>
-                      <div>
-                        <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong>{' '}
-                        {record.action === 0
-                          ? intl.formatMessage({ id: 'pages.workflow.monitor.history.action.approve' })
-                          : record.action === 1
-                          ? intl.formatMessage({ id: 'pages.workflow.monitor.history.action.reject' })
-                          : record.action === 2
-                          ? intl.formatMessage({ id: 'pages.workflow.monitor.history.action.return' })
-                          : intl.formatMessage({ id: 'pages.workflow.monitor.history.action.delegate' })}
-                      </div>
-                      {record.comment && (
-                        <div>
-                          <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong>{' '}
-                          {record.comment}
-                        </div>
-                      )}
-                      <div>
-                        <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time' })}:</strong>{' '}
-                        {record.approvedAt
-                          ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss')
-                          : '-'}
-                      </div>
-                    </Space>
-                  </Card>
-                ))}
+              <Card title={intl.formatMessage({ id: 'pages.document.detail.formData', defaultMessage: '表单填写内容' })} style={{ marginTop: 16 }}>
+                {detailFormDef && detailFormDef.fields?.length ? (
+                  <Descriptions column={1} bordered>
+                    {detailFormDef.fields.map((f) => {
+                      const raw = detailFormValues ? detailFormValues[f.dataKey] : undefined;
+                      const formatValue = () => {
+                        if (raw === undefined || raw === null || raw === '') return '-';
+                        switch (f.type) {
+                          case FormFieldType.Date:
+                          case FormFieldType.DateTime:
+                            return dayjs(raw).isValid() ? dayjs(raw).format('YYYY-MM-DD HH:mm:ss') : String(raw);
+                          case FormFieldType.Checkbox:
+                            return Array.isArray(raw) ? raw.join(', ') : String(raw);
+                          case FormFieldType.Switch:
+                            return raw ? intl.formatMessage({ id: 'pages.boolean.yes', defaultMessage: '是' }) : intl.formatMessage({ id: 'pages.boolean.no', defaultMessage: '否' });
+                          default:
+                            return typeof raw === 'object' ? JSON.stringify(raw) : String(raw);
+                        }
+                      };
+                      return (
+                        <Descriptions.Item key={f.dataKey} label={f.label || f.dataKey}>
+                          {formatValue()}
+                        </Descriptions.Item>
+                      );
+                    })}
+                  </Descriptions>
+                ) : (
+                  <pre style={{ background: '#f6f6f6', padding: 12, borderRadius: 8, minHeight: 80, whiteSpace: 'pre-wrap' }}>
+                    {doc?.formData && Object.keys(doc.formData).length > 0
+                      ? JSON.stringify(doc.formData, null, 2)
+                      : intl.formatMessage({ id: 'pages.document.detail.formData.empty', defaultMessage: '暂无表单数据' })}
+                  </pre>
+                )}
               </Card>
-            )}
-          </div>
-        )}
+              {workflowInstance && (
+                <Card title={intl.formatMessage({ id: 'pages.document.detail.workflowInfo' })} style={{ marginTop: 16 }}>
+                  <Descriptions column={1}>
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.document.detail.workflowStatus' })}>
+                      {(() => {
+                        const statusMeta = getStatusMeta(
+                          intl,
+                          workflowInstance?.status as WorkflowStatus | null,
+                          workflowStatusMap,
+                        );
+                        return <Tag color={statusMeta.color}>{statusMeta.text}</Tag>;
+                      })()}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.workflow.monitor.progress.currentNode' })}>
+                      {workflowInstance.currentNodeId}
+                    </Descriptions.Item>
+                  </Descriptions>
+                  {detailWorkflowDef && (
+                    <div style={{ marginTop: 12 }}>
+                      <Steps
+                        size="small"
+                        direction="vertical"
+                        items={(() => {
+                          const nodes: any[] = [...(detailWorkflowDef.graph?.nodes || [])];
+                          const completedIds = new Set((approvalHistory || []).map((r: any) => r.nodeId));
+                          const currentId = workflowInstance.currentNodeId;
+                          const typeLabel = (type?: string) => {
+                            switch (type) {
+                              case 'start':
+                                return intl.formatMessage({ id: 'pages.workflow.node.type.start', defaultMessage: '开始' });
+                              case 'end':
+                                return intl.formatMessage({ id: 'pages.workflow.node.type.end', defaultMessage: '结束' });
+                              case 'approval':
+                                return intl.formatMessage({ id: 'pages.workflow.node.type.approval', defaultMessage: '审批' });
+                              case 'form':
+                                return intl.formatMessage({ id: 'pages.workflow.node.type.form', defaultMessage: '表单' });
+                              case 'gateway':
+                                return intl.formatMessage({ id: 'pages.workflow.node.type.gateway', defaultMessage: '网关' });
+                              default:
+                                return type || intl.formatMessage({ id: 'pages.workflow.node.type.unknown', defaultMessage: '节点' });
+                            }
+                          };
+
+                          const sorted = nodes.sort((a, b) => {
+                            if (a.type === 'start') return -1;
+                            if (b.type === 'start') return 1;
+                            if (a.type === 'end') return 1;
+                            if (b.type === 'end') return -1;
+                            return 0;
+                          });
+
+                          return sorted.map((n: any) => {
+                            const isCurrent = n.id === currentId;
+                            const status = isCurrent
+                              ? 'process'
+                              : completedIds.has(n.id) || (n.type === 'start' && currentId && currentId !== n.id)
+                                ? 'finish'
+                                : 'wait';
+                            return {
+                              title: `${n.label || n.id} (${typeLabel(n.type)})`,
+                              status,
+                              description: isCurrent
+                                ? intl.formatMessage({ id: 'pages.workflow.current', defaultMessage: '当前节点' })
+                                : undefined,
+                            };
+                          });
+                        })()}
+                      />
+                    </div>
+                  )}
+                  <div style={{ marginTop: 12 }}>
+                    <strong>{intl.formatMessage({ id: 'pages.document.detail.workflow.variables', defaultMessage: '流程变量' })}</strong>
+                    {detailFormDef && detailFormDef.fields?.length ? (
+                      <Descriptions column={1} bordered style={{ marginTop: 8 }}>
+                        {detailFormDef.fields.map((f) => {
+                          const raw = workflowInstance.variables ? workflowInstance.variables[f.dataKey] : undefined;
+                          const formatValue = () => {
+                            if (raw === undefined || raw === null || raw === '') return '-';
+                            switch (f.type) {
+                              case FormFieldType.Date:
+                              case FormFieldType.DateTime:
+                                return dayjs(raw).isValid() ? dayjs(raw).format('YYYY-MM-DD HH:mm:ss') : String(raw);
+                              case FormFieldType.Checkbox:
+                                return Array.isArray(raw) ? raw.join(', ') : String(raw);
+                              case FormFieldType.Switch:
+                                return raw
+                                  ? intl.formatMessage({ id: 'pages.boolean.yes', defaultMessage: '是' })
+                                  : intl.formatMessage({ id: 'pages.boolean.no', defaultMessage: '否' });
+                              default:
+                                return typeof raw === 'object' ? JSON.stringify(raw) : String(raw);
+                            }
+                          };
+                          return (
+                            <Descriptions.Item key={`var-${f.dataKey}`} label={f.label || f.dataKey}>
+                              {formatValue()}
+                            </Descriptions.Item>
+                          );
+                        })}
+                      </Descriptions>
+                    ) : (
+                      <pre style={{ background: '#f6f6f6', padding: 12, borderRadius: 8, minHeight: 80, whiteSpace: 'pre-wrap', marginTop: 8 }}>
+                        {workflowInstance.variables && Object.keys(workflowInstance.variables).length > 0
+                          ? JSON.stringify(workflowInstance.variables, null, 2)
+                          : intl.formatMessage({ id: 'pages.document.detail.workflow.variables.empty', defaultMessage: '暂无流程变量' })}
+                      </pre>
+                    )}
+                  </div>
+                </Card>
+              )}
+              {approvalHistory && approvalHistory.length > 0 && (
+                <Card title={intl.formatMessage({ id: 'pages.document.detail.approvalHistory' })} style={{ marginTop: 16 }}>
+                  {approvalHistory.map((record: any, index: number) => (
+                    <Card key={index} size="small" style={{ marginBottom: 8 }}>
+                      <Space orientation="vertical" style={{ width: '100%' }}>
+                        <div>
+                          <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong>{' '}
+                          {record.approverName || record.approverId}
+                        </div>
+                        <div>
+                          <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong>{' '}
+                          {(() => {
+                            const actionMeta = getStatusMeta(
+                              intl,
+                              record.action as ApprovalAction,
+                              approvalActionMap,
+                            );
+                            return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>;
+                          })()}
+                        </div>
+                        {record.comment && (
+                          <div>
+                            <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong>{' '}
+                            {record.comment}
+                          </div>
+                        )}
+                        <div>
+                          <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time' })}:</strong>{' '}
+                          {record.approvedAt
+                            ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss')
+                            : '-'}
+                        </div>
+                      </Space>
+                    </Card>
+                  ))}
+                </Card>
+              )}
+            </div>
+          );
+        })()}
       </Drawer>
 
       <Modal
@@ -447,67 +698,115 @@ const DocumentManagement: React.FC = () => {
       </Modal>
 
       <Modal
-        title={intl.formatMessage({ id: 'pages.document.create.title' })}
+        title={isFormStep ? intl.formatMessage({ id: 'pages.document.create.title.fillForm', defaultMessage: '填写流程表单' }) : intl.formatMessage({ id: 'pages.document.create.title' })}
         open={createModalVisible}
-        onOk={handleCreateSubmit}
-        confirmLoading={createLoading}
+        okText={isFormStep ? intl.formatMessage({ id: 'pages.document.create.submit', defaultMessage: '提交' }) : intl.formatMessage({ id: 'pages.document.create.next', defaultMessage: '下一步' })}
+        confirmLoading={nextStepLoading}
+        onOk={async () => {
+          if (!isFormStep) {
+            if (!selectedWorkflowId) {
+              message.warning(intl.formatMessage({ id: 'pages.document.modal.selectWorkflowPlaceholder' }));
+              return;
+            }
+            try {
+              setNextStepLoading(true);
+              const resp = await getDocumentCreateForm(selectedWorkflowId);
+              if (resp.success) {
+                const def = resp.data?.form || null;
+                setWorkflowFormDef(def);
+                const initVals = resp.data?.initialValues || {};
+                setWorkflowInitialValues(initVals);
+                wfForm.setFieldsValue({ values: initVals, attachmentIds: [] });
+                setIsFormStep(true);
+              } else {
+                message.error(resp.errorMessage || intl.formatMessage({ id: 'pages.workflow.form.loadFailed', defaultMessage: '表单加载失败' }));
+              }
+            } catch (e) {
+              console.error(e);
+              message.error(intl.formatMessage({ id: 'pages.workflow.form.loadFailed', defaultMessage: '表单加载失败' }));
+            } finally {
+              setNextStepLoading(false);
+            }
+            return;
+          }
+
+          try {
+            await wfForm.validateFields();
+            const values = wfForm.getFieldValue('values') || {};
+            const normalizedValues: Record<string, any> = { ...values };
+            if (workflowFormDef?.fields?.length) {
+              for (const f of workflowFormDef.fields) {
+                const key = f.dataKey;
+                const val = values[key];
+                if (val === undefined) continue;
+                switch (f.type) {
+                  case FormFieldType.Date:
+                  case FormFieldType.DateTime:
+                    normalizedValues[key] = val && (val as any).toISOString ? (val as any).toISOString() : val;
+                    break;
+                  case FormFieldType.Number:
+                    normalizedValues[key] = typeof val === 'string' ? Number(val) : val;
+                    break;
+                  case FormFieldType.Checkbox:
+                    normalizedValues[key] = Array.isArray(val) ? val : [val];
+                    break;
+                  default:
+                    normalizedValues[key] = val;
+                }
+              }
+            }
+            const attachmentIds: string[] = wfForm.getFieldValue('attachmentIds') || [];
+            if (!selectedWorkflowId) {
+              message.error(intl.formatMessage({ id: 'pages.workflow.select.definition', defaultMessage: '请先选择流程' }));
+              return;
+            }
+            setNextStepLoading(true);
+            const resp = await createAndStartDocumentWorkflow(selectedWorkflowId, {
+              values: normalizedValues,
+              attachmentIds,
+            });
+            if (resp.success) {
+              message.success(intl.formatMessage({ id: 'pages.document.create.message.createSuccess', defaultMessage: '创建并启动成功' }));
+              setCreateModalVisible(false);
+              setIsFormStep(false);
+              setSelectedWorkflowId('');
+              setWorkflowFormDef(null);
+              setWorkflowInitialValues({});
+              wfForm.resetFields();
+              setWfAttachmentFileList([]);
+              actionRef.current?.reload?.();
+            } else {
+              message.error(resp.errorMessage || intl.formatMessage({ id: 'pages.document.create.message.createFailed', defaultMessage: '创建失败' }));
+            }
+          } catch (err) {
+            console.error(err);
+            message.error(intl.formatMessage({ id: 'pages.document.create.message.createFailed', defaultMessage: '创建失败' }));
+          } finally {
+            setNextStepLoading(false);
+          }
+        }}
         onCancel={() => {
           setCreateModalVisible(false);
-          createForm.resetFields();
+          setIsFormStep(false);
+          setSelectedWorkflowId('');
+          setWorkflowFormDef(null);
+          setWorkflowInitialValues({});
+          wfForm.resetFields();
+          setWfAttachmentFileList([]);
         }}
-        destroyOnClose
         maskClosable={false}
+        width={720}
       >
-        <Form form={createForm} layout="vertical" onFinish={handleCreateSubmit}>
-          <Form.Item
-            name="title"
-            label={intl.formatMessage({ id: 'pages.document.create.form.title' })}
-            rules={[
-              {
-                required: true,
-                message: intl.formatMessage({ id: 'pages.document.create.form.titleRequired' }),
-              },
-            ]}
-          >
-            <Input placeholder={intl.formatMessage({ id: 'pages.document.create.form.titlePlaceholder' })} />
-          </Form.Item>
-
-          <Form.Item
-            name="documentType"
-            label={intl.formatMessage({ id: 'pages.document.create.form.type' })}
-            rules={[
-              {
-                required: true,
-                message: intl.formatMessage({ id: 'pages.document.create.form.typeRequired' }),
-              },
-            ]}
-          >
-            <Input placeholder={intl.formatMessage({ id: 'pages.document.create.form.typePlaceholder' })} />
-          </Form.Item>
-
-          <Form.Item name="category" label={intl.formatMessage({ id: 'pages.document.create.form.category' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.document.create.form.categoryPlaceholder' })} />
-          </Form.Item>
-
-          <Form.Item name="content" label={intl.formatMessage({ id: 'pages.document.create.form.content' })}>
-            <Input.TextArea
-              rows={6}
-              placeholder={intl.formatMessage({ id: 'pages.document.create.form.contentPlaceholder' })}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="workflowDefinitionId"
-            label={intl.formatMessage({ id: 'pages.document.modal.selectWorkflow' })}
-            rules={[
-              {
-                required: true,
-                message: intl.formatMessage({ id: 'pages.document.modal.selectWorkflowPlaceholder' }),
-              },
-            ]}
-          >
+        {!isFormStep ? (
+          <div>
+            <div style={{ marginBottom: 8 }}>
+              {intl.formatMessage({ id: 'pages.document.create.nextStep.tip', defaultMessage: '请选择流程，下一步将在模态窗体内填写流程自定义表单并创建/启动流程。' })}
+            </div>
             <Select
+              style={{ width: '100%' }}
               placeholder={intl.formatMessage({ id: 'pages.document.modal.selectWorkflowPlaceholder' })}
+              value={selectedWorkflowId || undefined}
+              onChange={(value) => setSelectedWorkflowId(value)}
             >
               {workflows
                 .filter((w) => w.isActive)
@@ -517,8 +816,91 @@ const DocumentManagement: React.FC = () => {
                   </Select.Option>
                 ))}
             </Select>
-          </Form.Item>
-        </Form>
+          </div>
+        ) : (
+          <Form form={wfForm} layout="vertical" initialValues={{ values: workflowInitialValues, attachmentIds: [] }}>
+            {(workflowFormDef?.fields || []).map((f) => {
+              const common = {
+                name: ['values', f.dataKey],
+                label: f.label,
+                rules: f.required ? [{ required: true, message: intl.formatMessage({ id: 'pages.form.required' }) }] : [],
+              } as any;
+
+              switch (f.type) {
+                case FormFieldType.Text:
+                  return (
+                    <Form.Item key={f.dataKey} {...common}>
+                      <Input placeholder={f.placeholder} />
+                    </Form.Item>
+                  );
+                case FormFieldType.TextArea:
+                  return (
+                    <Form.Item key={f.dataKey} {...common}>
+                      <Input.TextArea rows={4} placeholder={f.placeholder} />
+                    </Form.Item>
+                  );
+                case FormFieldType.Number:
+                  return (
+                    <Form.Item key={f.dataKey} {...common}>
+                      <InputNumber style={{ width: '100%' }} />
+                    </Form.Item>
+                  );
+                case FormFieldType.Date:
+                  return (
+                    <Form.Item key={f.dataKey} {...common} getValueProps={(v: any) => ({ value: v ? dayjs(v) : undefined })}>
+                      <DatePicker style={{ width: '100%' }} />
+                    </Form.Item>
+                  );
+                case FormFieldType.DateTime:
+                  return (
+                    <Form.Item key={f.dataKey} {...common} getValueProps={(v: any) => ({ value: v ? dayjs(v) : undefined })}>
+                      <DatePicker showTime style={{ width: '100%' }} />
+                    </Form.Item>
+                  );
+                case FormFieldType.Select:
+                  return (
+                    <Form.Item key={f.dataKey} {...common}>
+                      <Select options={(f.options || []).map(o => ({ label: o.label, value: o.value }))} placeholder={f.placeholder} />
+                    </Form.Item>
+                  );
+                case FormFieldType.Radio:
+                  return (
+                    <Form.Item key={f.dataKey} {...common}>
+                      <Radio.Group options={(f.options || []).map(o => ({ label: o.label, value: o.value }))} />
+                    </Form.Item>
+                  );
+                case FormFieldType.Checkbox:
+                  return (
+                    <Form.Item key={f.dataKey} {...common}>
+                      <Checkbox.Group options={(f.options || []).map(o => ({ label: o.label, value: o.value }))} />
+                    </Form.Item>
+                  );
+                case FormFieldType.Switch:
+                  return (
+                    <Form.Item key={f.dataKey} {...common} valuePropName="checked">
+                      <Switch />
+                    </Form.Item>
+                  );
+                case FormFieldType.Attachment:
+                  return (
+                    <Form.Item key={f.dataKey} label={f.label}>
+                      <Upload {...wfUploadProps}>
+                        <Button icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.document.create.form.uploadButton', defaultMessage: '上传附件' })}</Button>
+                      </Upload>
+                    </Form.Item>
+                  );
+                default:
+                  return (
+                    <Form.Item key={f.dataKey} {...common}>
+                      <Input />
+                    </Form.Item>
+                  );
+              }
+            })}
+
+            <Form.Item name="attachmentIds" hidden />
+          </Form>
+        )}
       </Modal>
     </PageContainer>
   );

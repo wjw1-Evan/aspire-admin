@@ -35,7 +35,7 @@
           var result = await _service.GetPagedAsync(query);
           return SuccessPaged(result.Items, result.Total, query.Current, query.PageSize);
       }
-      
+
       [HttpPost]
       [RequireMenu("workflow:create")]  // 创建操作需要 workflow:create 权限
       public async Task<IActionResult> Create([FromBody] CreateWorkflowRequest request)
@@ -44,7 +44,7 @@
       }
   }
   ```
-  
+
   **注意**：`RequireMenu` 中的标识是权限标识（使用 `:` 分隔），对应菜单定义中的 `Permissions` 字段，而不是菜单名称（菜单名称使用 `-` 分隔）。
 
 ### 3. 菜单命名与组织约定
@@ -63,7 +63,7 @@
 - **权限标识规范**（`RequireMenu` 属性中使用的标识）：
   - **使用冒号 `:` 分隔**，格式为 `模块:资源:操作`，例如：
     - `workflow:list`、`workflow:create`、`workflow:monitor`
-    - `document:list`、`document:create`、`document:approval`
+    - `document:list`、`document:list`、`document:approval`
     - `user:read`、`user:invite`、`user:disable`
   - **注意**：权限标识与菜单名称是不同的概念，两者通过 `Menu.Permissions` 字段建立映射关系
 

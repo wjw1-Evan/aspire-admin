@@ -88,6 +88,7 @@ Platform/
 - **平台统计**：网关/设备/数据点/事件统计、设备在线状态统计、数据流监控。
 
 详细文档见：
+
 - [IoT 平台菜单配置说明](docs/features/IOT-MENU-CONFIGURATION.md)
 
 ## 🚀 快速开始
@@ -162,6 +163,7 @@ Platform/
 - **权限控制**：通过 `password-book` 菜单权限控制访问。
 
 详细文档见：
+
 - [密码本安全审计报告](docs/security/PASSWORD-BOOK-SECURITY-AUDIT.md)
 
 ## 🧩 多租户与权限模型
@@ -213,12 +215,15 @@ Platform.App/
 ## 📚 延伸阅读
 
 ### 核心架构
+
+- [docs/开发规范.md](docs/开发规范.md) – 汇总后端/前端/移动端开发规则与链接。
 - [docs/features/BACKEND-RULES.md](docs/features/BACKEND-RULES.md) – 后端核心与中间件规范。
 - [docs/features/API-RESPONSE-RULES.md](docs/features/API-RESPONSE-RULES.md) – 统一 API 响应与控制器规范。
 - [docs/features/MENU-LEVEL-PERMISSION-GUIDE.md](docs/features/MENU-LEVEL-PERMISSION-GUIDE.md) – 菜单级权限模型。
 - [docs/features/FRONTEND-RULES.md](docs/features/FRONTEND-RULES.md) – 前端开发规范。
 
 ### 功能模块
+
 - [docs/features/IOT-MENU-CONFIGURATION.md](docs/features/IOT-MENU-CONFIGURATION.md) – IoT 平台菜单配置说明。
 - [docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md](docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md) – 数据访问工厂使用指南。
 - [docs/features/DATA-INITIALIZER-MICROSERVICE.md](docs/features/DATA-INITIALIZER-MICROSERVICE.md) – 数据初始化微服务说明。
@@ -227,6 +232,7 @@ Platform.App/
 - [docs/features/TASK-PROJECT-MANAGEMENT.md](docs/features/TASK-PROJECT-MANAGEMENT.md) – 任务与项目管理指南。
 
 ### 安全与审计
+
 - [docs/security/PASSWORD-BOOK-SECURITY-AUDIT.md](docs/security/PASSWORD-BOOK-SECURITY-AUDIT.md) – 密码本安全审计报告。
 
 ---

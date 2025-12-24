@@ -130,13 +130,13 @@ public class MenuAccessService : IMenuAccessService
 
             var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
             var userCompany = userCompanies.FirstOrDefault();
-            
+
             if (userCompany == null)
             {
                 _logger.LogWarning("用户 {UserId} 在企业 {CompanyId} 中没有找到有效的成员关系", userId, companyId);
                 return new List<string>();
             }
-            
+
             if (userCompany.RoleIds != null && userCompany.RoleIds.Any())
             {
                 // 获取用户的所有角色（明确指定企业ID，确保多租户隔离）
@@ -148,8 +148,8 @@ public class MenuAccessService : IMenuAccessService
                     .Equal(r => r.IsActive, true)
                     .Build();
                 var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
-                
-                _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {RoleCount} 个角色，角色IDs: {RoleIds}", 
+
+                _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {RoleCount} 个角色，角色IDs: {RoleIds}",
                     userId, companyId, roles.Count, string.Join(", ", userCompany.RoleIds));
 
                 // 收集所有角色的菜单ID
@@ -158,7 +158,7 @@ public class MenuAccessService : IMenuAccessService
                     if (role.MenuIds != null)
                     {
                         menuIds.AddRange(role.MenuIds);
-                        _logger.LogDebug("角色 {RoleId} ({RoleName}) 拥有 {MenuCount} 个菜单", 
+                        _logger.LogDebug("角色 {RoleId} ({RoleName}) 拥有 {MenuCount} 个菜单",
                             role.Id, role.Name, role.MenuIds.Count);
                     }
                 }
@@ -184,7 +184,7 @@ public class MenuAccessService : IMenuAccessService
 
             // 返回菜单名称列表（小写）
             var menuNames = menus.Select(m => m.Name.ToLower()).Distinct().ToList();
-            _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {MenuCount} 个菜单权限: {MenuNames}", 
+            _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {MenuCount} 个菜单权限: {MenuNames}",
                 userId, companyId, menuNames.Count, string.Join(", ", menuNames));
             return menuNames;
         }

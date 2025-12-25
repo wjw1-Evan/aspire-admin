@@ -329,38 +329,11 @@ public class WorkflowEngine : IWorkflowEngine
                 
                 if (existingApproval != null)
                 {
-                    // 检查是否是会签节点，会签节点可能允许多次相同操作
-                    var approvalConfig = currentNode.Config?.Approval;
-                    bool isCountersignNode = approvalConfig?.Type == ApprovalType.All;
+                    // 非会签节点或已有相同操作：阻止完全相同的重复操作
+                    _logger.LogWarning("检测到重复审批操作: InstanceId={InstanceId}, NodeId={NodeId}, ApproverId={ApproverId}, Action={Action}, ExistingApprovalId={ExistingApprovalId}, ExistingTime={ExistingTime}", 
+                        instanceId, nodeId, approverId, action, existingApproval.Id, existingApproval.ApprovedAt);
                     
-                    if (isCountersignNode && approvalConfig != null)
-                    {
-                        // 会签节点：检查是否所有审批人都已审批
-                        var allApprovers = await ResolveApproversAsync(instance, approvalConfig.Approvers);
-                        var approvedCount = instance.ApprovalRecords
-                            .Count(r => r.NodeId == nodeId && r.Action == ApprovalAction.Approve);
-                        
-                        if (approvedCount >= allApprovers.Count)
-                        {
-                            _logger.LogWarning("会签节点已完成所有审批，拒绝重复操作: InstanceId={InstanceId}, NodeId={NodeId}, Approved={Approved}/{Total}, CurrentNodeId={CurrentNodeId}", 
-                                instanceId, nodeId, approvedCount, allApprovers.Count, instance.CurrentNodeId);
-                            throw new InvalidOperationException($"此会签节点的所有审批已完成。如果您认为应该审批下一个节点，请刷新页面或联系管理员检查工作流配置。当前节点：{nodeId}，流程当前节点：{instance.CurrentNodeId}");
-                        }
-                        else
-                        {
-                            _logger.LogInformation("会签节点允许重复审批: InstanceId={InstanceId}, NodeId={NodeId}, Approved={Approved}/{Total}", 
-                                instanceId, nodeId, approvedCount, allApprovers.Count);
-                            // 会签节点且未完成，允许继续审批
-                        }
-                    }
-                    else
-                    {
-                        // 非会签节点：阻止完全相同的重复操作
-                        _logger.LogWarning("检测到重复审批操作: InstanceId={InstanceId}, NodeId={NodeId}, ApproverId={ApproverId}, Action={Action}, ExistingApprovalId={ExistingApprovalId}, ExistingTime={ExistingTime}", 
-                            instanceId, nodeId, approverId, action, existingApproval.Id, existingApproval.ApprovedAt);
-                        
-                        throw new InvalidOperationException($"您已对此节点执行过{action}操作");
-                    }
+                    throw new InvalidOperationException($"您已对此节点执行过{action}操作");
                 }
 
                 // 6. 转办权限验证
@@ -970,6 +943,13 @@ public class WorkflowEngine : IWorkflowEngine
                     instanceId, instance.WorkflowDefinitionId);
                 return;
             }
+            _logger.LogWarning("使用数据库中的流程定义（快照不存在）: InstanceId={InstanceId}, DefinitionId={DefinitionId}", 
+                instanceId, instance.WorkflowDefinitionId);
+        }
+        else
+        {
+            _logger.LogDebug("使用流程定义快照: InstanceId={InstanceId}, DefinitionId={DefinitionId}", 
+                instanceId, instance.WorkflowDefinitionId);
         }
 
         // 查找出边
@@ -1115,6 +1095,7 @@ public class WorkflowEngine : IWorkflowEngine
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null)
         {
+            _logger.LogError("流程实例不存在，无法处理节点: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
             return;
         }
 
@@ -1125,20 +1106,34 @@ public class WorkflowEngine : IWorkflowEngine
             definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
             if (definition == null)
             {
+                _logger.LogError("流程定义不存在，无法处理节点: InstanceId={InstanceId}, NodeId={NodeId}, DefinitionId={DefinitionId}", 
+                    instanceId, nodeId, instance.WorkflowDefinitionId);
                 return;
             }
+            _logger.LogWarning("使用数据库中的流程定义（快照不存在）: InstanceId={InstanceId}, NodeId={NodeId}, DefinitionId={DefinitionId}", 
+                instanceId, nodeId, instance.WorkflowDefinitionId);
+        }
+        else
+        {
+            _logger.LogDebug("使用流程定义快照处理节点: InstanceId={InstanceId}, NodeId={NodeId}, DefinitionId={DefinitionId}", 
+                instanceId, nodeId, instance.WorkflowDefinitionId);
         }
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
         if (node == null)
         {
+            _logger.LogError("节点不存在，无法处理: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
             return;
         }
+
+        _logger.LogInformation("处理节点: InstanceId={InstanceId}, NodeId={NodeId}, NodeType={NodeType}, NodeLabel={NodeLabel}", 
+            instanceId, nodeId, node.Type, node.Label);
 
         switch (node.Type)
         {
             case "end":
                 // 结束节点：完成流程
+                _logger.LogInformation("到达结束节点，完成流程: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
                 await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
                 var documentUpdate = _documentFactory.CreateUpdateBuilder()
                     .Set(d => d.Status, DocumentStatus.Approved)
@@ -1180,6 +1175,7 @@ public class WorkflowEngine : IWorkflowEngine
 
             case "approval":
                 // 审批节点：等待审批，不自动推进
+                _logger.LogInformation("到达审批节点，等待审批: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
                 await SetCurrentNodeAsync(instanceId, nodeId);
 
                 // 发送通知给审批人
@@ -1202,8 +1198,19 @@ public class WorkflowEngine : IWorkflowEngine
                                     $"节点：{node.Label ?? nodeId}",
                                     instance.CompanyId
                                 );
+                                
+                                _logger.LogInformation("已发送审批通知: InstanceId={InstanceId}, NodeId={NodeId}, ApproverCount={ApproverCount}", 
+                                    instanceId, nodeId, approvers.Count);
                             }
                         }
+                        else
+                        {
+                            _logger.LogWarning("审批节点没有找到有效的审批人: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("审批节点缺少审批配置: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
                     }
                 }
                 catch (Exception ex)
@@ -1214,22 +1221,28 @@ public class WorkflowEngine : IWorkflowEngine
 
             case "condition":
                 // 条件节点：需要评估条件
+                _logger.LogInformation("到达条件节点，评估条件: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
                 await SetCurrentNodeAsync(instanceId, nodeId);
                 await EvaluateConditionAndMoveAsync(instanceId, nodeId, instance.Variables);
                 break;
 
             case "parallel":
                 // 并行网关：推进到所有分支
+                _logger.LogInformation("到达并行网关，推进到所有分支: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
                 await SetCurrentNodeAsync(instanceId, nodeId);
                 var outgoingEdges = definition.Graph.Edges.Where(e => e.Source == nodeId).ToList();
                 foreach (var edge in outgoingEdges)
                 {
+                    _logger.LogInformation("推进到并行分支: InstanceId={InstanceId}, FromNode={FromNode}, ToNode={ToNode}", 
+                        instanceId, nodeId, edge.Target);
                     await ProcessNodeAsync(instanceId, edge.Target);
                 }
                 break;
 
             default:
                 // 其他节点：直接推进
+                _logger.LogInformation("处理其他类型节点，直接推进: InstanceId={InstanceId}, NodeId={NodeId}, NodeType={NodeType}", 
+                    instanceId, nodeId, node.Type);
                 await MoveToNextNodeAsync(instanceId, nodeId);
                 break;
         }
@@ -1243,6 +1256,7 @@ public class WorkflowEngine : IWorkflowEngine
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null)
         {
+            _logger.LogError("流程实例不存在，无法评估条件: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
             return;
         }
 
@@ -1253,30 +1267,50 @@ public class WorkflowEngine : IWorkflowEngine
             definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
             if (definition == null)
             {
+                _logger.LogError("流程定义不存在，无法评估条件: InstanceId={InstanceId}, NodeId={NodeId}, DefinitionId={DefinitionId}", 
+                    instanceId, nodeId, instance.WorkflowDefinitionId);
                 return;
             }
+            _logger.LogWarning("使用数据库中的流程定义（快照不存在）: InstanceId={InstanceId}, NodeId={NodeId}, DefinitionId={DefinitionId}", 
+                instanceId, nodeId, instance.WorkflowDefinitionId);
+        }
+        else
+        {
+            _logger.LogDebug("使用流程定义快照评估条件: InstanceId={InstanceId}, NodeId={NodeId}, DefinitionId={DefinitionId}", 
+                instanceId, nodeId, instance.WorkflowDefinitionId);
         }
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
         if (node?.Config.Condition == null)
         {
+            _logger.LogWarning("条件节点缺少条件配置: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
             return;
         }
 
         var expression = node.Config.Condition.Expression;
         var outgoingEdges = definition.Graph.Edges.Where(e => e.Source == nodeId).ToList();
 
+        _logger.LogInformation("评估条件节点: InstanceId={InstanceId}, NodeId={NodeId}, Expression={Expression}, EdgeCount={EdgeCount}", 
+            instanceId, nodeId, expression, outgoingEdges.Count);
+
         // 简单的表达式评估（支持基本的比较操作）
         foreach (var edge in outgoingEdges)
         {
             if (string.IsNullOrEmpty(edge.Condition))
             {
+                _logger.LogDebug("跳过无条件的边: InstanceId={InstanceId}, EdgeId={EdgeId}, Target={Target}", 
+                    instanceId, edge.Id, edge.Target);
                 continue;
             }
+
+            _logger.LogDebug("评估边条件: InstanceId={InstanceId}, EdgeId={EdgeId}, Condition={Condition}, Target={Target}", 
+                instanceId, edge.Id, edge.Condition, edge.Target);
 
             if (EvaluateExpression(edge.Condition, variables))
             {
                 // 条件满足，推进到此路径
+                _logger.LogInformation("条件满足，推进到目标节点: InstanceId={InstanceId}, EdgeId={EdgeId}, Condition={Condition}, Target={Target}", 
+                    instanceId, edge.Id, edge.Condition, edge.Target);
                 await SetCurrentNodeAsync(instanceId, edge.Target);
                 await ProcessNodeAsync(instanceId, edge.Target);
                 return;
@@ -1287,8 +1321,14 @@ public class WorkflowEngine : IWorkflowEngine
         var defaultEdge = outgoingEdges.FirstOrDefault(e => string.IsNullOrEmpty(e.Condition));
         if (defaultEdge != null)
         {
+            _logger.LogInformation("没有条件满足，使用默认路径: InstanceId={InstanceId}, EdgeId={EdgeId}, Target={Target}", 
+                instanceId, defaultEdge.Id, defaultEdge.Target);
             await SetCurrentNodeAsync(instanceId, defaultEdge.Target);
             await ProcessNodeAsync(instanceId, defaultEdge.Target);
+        }
+        else
+        {
+            _logger.LogWarning("没有条件满足且没有默认路径，流程无法继续: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
         }
     }
 

@@ -213,6 +213,7 @@ const ApprovalPage: React.FC = () => {
                   const defId = instance?.workflowDefinitionId;
                   const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                   const nodeId = instance?.currentNodeId;
+                  const approvalHistory = response.data?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
                   if (defId) {
                     try {
                       const formResp = await getDocumentCreateForm(defId);
@@ -227,6 +228,18 @@ const ApprovalPage: React.FC = () => {
                         setDetailFormDef(null);
                         setDetailFormValues(null);
                       }
+                      try {
+                        const defResp = await getWorkflowDetail(defId);
+                        if (defResp.success) {
+                          setDetailWorkflowDef(defResp.data || null);
+                        } else {
+                          setDetailWorkflowDef(null);
+                        }
+                      } catch (err) {
+                        console.error('加载流程定义失败', err);
+                        setDetailWorkflowDef(null);
+                      }
+
                       if (instanceId && nodeId) {
                         try {
                           const nodeFormResp = await getNodeForm(instanceId, nodeId);
@@ -247,7 +260,7 @@ const ApprovalPage: React.FC = () => {
                         try {
                           const allNodeIds = Array.from(
                             new Set(
-                              [nodeId, ...(response.data?.approvalHistory || []).map((h: any) => h.nodeId).filter(Boolean)],
+                              [nodeId, ...approvalHistory.map((h: any) => h.nodeId).filter(Boolean)],
                             ),
                           );
                           const forms: Record<string, { def: FormDefinition | null; values: Record<string, any> }> = {};
@@ -280,6 +293,7 @@ const ApprovalPage: React.FC = () => {
                       setDetailFormValues(null);
                       setDetailNodeFormDef(null);
                       setDetailNodeFormValues(null);
+                      setDetailWorkflowDef(null);
                       setDetailNodeForms({});
                     }
                   } else {
@@ -287,6 +301,7 @@ const ApprovalPage: React.FC = () => {
                     setDetailFormValues(null);
                     setDetailNodeFormDef(null);
                     setDetailNodeFormValues(null);
+                    setDetailWorkflowDef(null);
                     setDetailNodeForms({});
                   }
                   setDetailVisible(true);
@@ -879,6 +894,9 @@ const ApprovalPage: React.FC = () => {
         onClose={() => {
           setDetailVisible(false);
           setDetailData(null);
+          setDetailNodeFormDef(null);
+          setDetailNodeFormValues(null);
+          setDetailNodeForms({});
         }}
         size={800}
       >
@@ -918,9 +936,11 @@ const ApprovalPage: React.FC = () => {
                   </Descriptions.Item>
                 </Descriptions>
               </Card>
-              <Card title={intl.formatMessage({ id: 'pages.document.detail.content' })}>
-                <div style={{ whiteSpace: 'pre-wrap' }}>{doc?.content || '-'}</div>
-              </Card>
+              {doc?.content && (
+                <Card title={intl.formatMessage({ id: 'pages.document.detail.content' })} style={{ marginTop: 16 }}>
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{doc.content}</div>
+                </Card>
+              )}
               <Card title={intl.formatMessage({ id: 'pages.document.detail.formData', defaultMessage: '表单填写内容' })} style={{ marginTop: 16 }}>
                 {detailFormDef && detailFormDef.fields?.length ? (
                   <Descriptions column={1} bordered>
@@ -996,7 +1016,7 @@ const ApprovalPage: React.FC = () => {
 
                   {detailWorkflowDef && (
                     <div style={{ marginTop: 12 }}>
-                      <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.progress.timeline', defaultMessage: '流程时间线' })}</strong>
+                      <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.progress.timeline', defaultMessage: '流程时间线、节点表单与审批历史' })}</strong>
                       <Steps
                         size="small"
                         direction="vertical"
@@ -1037,13 +1057,108 @@ const ApprovalPage: React.FC = () => {
                               : completedIds.has(n.id) || (n.type === 'start' && currentId && currentId !== n.id)
                                 ? 'finish'
                                 : 'wait';
-
+                            
+                            // 获取该节点的审批历史
+                            const nodeHistory = (approvalHistory || []).filter((h: any) => h.nodeId === n.id);
+                            
+                            // 获取该节点的表单数据
+                            const nodeFormData = detailNodeForms?.[n.id];
+                            
+                            // 构建描述信息
+                            const descriptionElements: React.ReactNode[] = [];
+                            
+                            if (isCurrent) {
+                              descriptionElements.push(
+                                <div key="current" style={{ fontSize: 12, color: '#1890ff', fontWeight: 500, marginBottom: 4 }}>
+                                  {intl.formatMessage({ id: 'pages.workflow.current', defaultMessage: '当前节点' })}
+                                </div>
+                              );
+                            }
+                            
+                            // 添加节点表单数据
+                            if (nodeFormData?.def && nodeFormData.def.fields?.length > 0) {
+                              descriptionElements.push(
+                                <div key="form" style={{ marginTop: 8, marginBottom: 4 }}>
+                                  <div style={{ fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 4 }}>
+                                    {intl.formatMessage({ id: 'pages.document.detail.nodeFormData', defaultMessage: '节点表单' })}:
+                                  </div>
+                                  <div style={{ fontSize: 12, color: '#666', paddingLeft: 8 }}>
+                                    {nodeFormData.def.fields.map((f) => {
+                                      const raw = nodeFormData.values ? nodeFormData.values[f.dataKey] : undefined;
+                                      const formatValue = () => {
+                                        if (raw === undefined || raw === null || raw === '') return '-';
+                                        switch (f.type) {
+                                          case FormFieldType.Date:
+                                          case FormFieldType.DateTime:
+                                            return dayjs(raw).isValid() ? dayjs(raw).format('YYYY-MM-DD HH:mm:ss') : String(raw);
+                                          case FormFieldType.Checkbox:
+                                            return Array.isArray(raw) ? raw.join(', ') : String(raw);
+                                          case FormFieldType.Switch:
+                                            return raw ? intl.formatMessage({ id: 'pages.boolean.yes', defaultMessage: '是' }) : intl.formatMessage({ id: 'pages.boolean.no', defaultMessage: '否' });
+                                          default:
+                                            return typeof raw === 'object' ? JSON.stringify(raw) : String(raw);
+                                        }
+                                      };
+                                      return (
+                                        <div key={f.dataKey} style={{ marginBottom: 2 }}>
+                                          <span style={{ fontWeight: 500 }}>{f.label || f.dataKey}:</span> {formatValue()}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
+                            // 添加审批历史信息
+                            if (nodeHistory.length > 0) {
+                              descriptionElements.push(
+                                <div key="history" style={{ marginTop: 8 }}>
+                                  <div style={{ fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 4 }}>
+                                    {intl.formatMessage({ id: 'pages.workflow.monitor.history.title', defaultMessage: '审批记录' })}:
+                                  </div>
+                                  <div style={{ fontSize: 12, color: '#666', paddingLeft: 8 }}>
+                                    {nodeHistory.map((record: any, idx: number) => {
+                                      const actionMeta = getStatusMeta(
+                                        intl,
+                                        record.action as ApprovalAction,
+                                        approvalActionMap,
+                                      );
+                                      return (
+                                        <div key={idx} style={{ marginBottom: 4 }}>
+                                          <div>
+                                            <span style={{ fontWeight: 500 }}>{record.approverName || record.approverId}</span>
+                                            {' - '}
+                                            <Tag color={actionMeta.color} style={{ fontSize: 11, margin: 0 }}>
+                                              {actionMeta.text}
+                                            </Tag>
+                                          </div>
+                                          {record.comment && (
+                                            <div style={{ color: '#999', fontSize: 11, marginTop: 2, paddingLeft: 8 }}>
+                                              {record.comment}
+                                            </div>
+                                          )}
+                                          {record.approvedAt && (
+                                            <div style={{ color: '#999', fontSize: 11, marginTop: 2 }}>
+                                              {dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss')}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
                             return {
                               title: `${n.label || n.id} (${typeLabel(n.type)})`,
                               status,
-                              description: isCurrent
-                                ? intl.formatMessage({ id: 'pages.workflow.current', defaultMessage: '当前节点' })
-                                : undefined,
+                              description: descriptionElements.length > 0 ? (
+                                <div style={{ marginTop: 4 }}>
+                                  {descriptionElements}
+                                </div>
+                              ) : undefined,
                             };
                           });
                         })()}
@@ -1086,181 +1201,6 @@ const ApprovalPage: React.FC = () => {
                     </div>
                   )}
 
-                  {((detailNodeForms && Object.keys(detailNodeForms).length > 0) || (approvalHistory && approvalHistory.length > 0)) && (
-                    <div style={{ marginTop: 12 }}>
-                      <strong>
-                        {intl.formatMessage({
-                          id: 'pages.document.detail.nodeFormDataAndApprovalHistory',
-                          defaultMessage: '节点表单填写 / 审批历史',
-                        })}
-                      </strong>
-
-                      {detailNodeForms && Object.keys(detailNodeForms).length > 0 && (
-                        <div style={{ marginTop: 8 }}>
-                          {Object.entries(detailNodeForms).map(([nid, payload]) => (
-                            <Card
-                              key={nid}
-                              size="small"
-                              type="inner"
-                              title={
-                                (() => {
-                                  const nodeMeta = detailWorkflowDef?.graph?.nodes?.find((n) => n.id === nid);
-                                  const label = nodeMeta?.label || payload.def?.name || payload.def?.description || nid;
-                                  const typeLabel = (() => {
-                                    switch (nodeMeta?.type) {
-                                      case 'start':
-                                        return intl.formatMessage({ id: 'pages.workflow.node.start', defaultMessage: '开始' });
-                                      case 'end':
-                                        return intl.formatMessage({ id: 'pages.workflow.node.end', defaultMessage: '结束' });
-                                      case 'approval':
-                                        return intl.formatMessage({ id: 'pages.workflow.node.approval', defaultMessage: '审批' });
-                                      case 'condition':
-                                        return intl.formatMessage({ id: 'pages.workflow.node.condition', defaultMessage: '条件' });
-                                      case 'parallel':
-                                        return intl.formatMessage({ id: 'pages.workflow.node.parallel', defaultMessage: '并行' });
-                                      default:
-                                        return intl.formatMessage({ id: 'pages.workflow.node.unknown', defaultMessage: '节点' });
-                                    }
-                                  })();
-                                  return `${label} (${typeLabel}/${nid})`;
-                                })()
-                              }
-                              style={{ marginTop: 8 }}
-                            >
-                              {payload.def && payload.def.fields?.length ? (
-                                <Descriptions column={1} bordered>
-                                  {payload.def.fields.map((f) => {
-                                    const raw = payload.values ? payload.values[f.dataKey] : undefined;
-                                    const formatValue = () => {
-                                      if (raw === undefined || raw === null || raw === '') return '-';
-                                      switch (f.type) {
-                                        case FormFieldType.Date:
-                                        case FormFieldType.DateTime:
-                                          return dayjs(raw).isValid() ? dayjs(raw).format('YYYY-MM-DD HH:mm:ss') : String(raw);
-                                        case FormFieldType.Checkbox:
-                                          return Array.isArray(raw) ? raw.join(', ') : String(raw);
-                                        case FormFieldType.Switch:
-                                          return raw ? intl.formatMessage({ id: 'pages.boolean.yes', defaultMessage: '是' }) : intl.formatMessage({ id: 'pages.boolean.no', defaultMessage: '否' });
-                                        default:
-                                          return typeof raw === 'object' ? JSON.stringify(raw) : String(raw);
-                                      }
-                                    };
-                                    return (
-                                      <Descriptions.Item key={`${nid}-${f.dataKey}`} label={f.label || f.dataKey}>
-                                        {formatValue()}
-                                      </Descriptions.Item>
-                                    );
-                                  })}
-                                </Descriptions>
-                              ) : (
-                                <pre style={{ background: '#f6f6f6', padding: 12, borderRadius: 8, minHeight: 80, whiteSpace: 'pre-wrap' }}>
-                                  {intl.formatMessage({ id: 'pages.document.detail.nodeFormData.empty', defaultMessage: '暂无节点表单数据' })}
-                                </pre>
-                              )}
-
-                              {(() => {
-                                const nodeHistory = (approvalHistory || []).filter((h: any) => h.nodeId === nid);
-                                if (!nodeHistory.length) return null;
-                                return (
-                                  <div style={{ marginTop: 12 }}>
-                                    <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.title', defaultMessage: '审批记录' })}</strong>
-                                    <div style={{ marginTop: 8 }}>
-                                      {nodeHistory.map((record: any, index: number) => (
-                                        <Card key={`${nid}-history-${index}`} size="small" style={{ marginBottom: 8 }}>
-                                          <Space orientation="vertical" style={{ width: '100%' }}>
-                                            <div>
-                                              <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong>{' '}
-                                              {record.approverName || record.approverId}
-                                            </div>
-                                            <div>
-                                              <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong>{' '}
-                                              {(() => {
-                                                const actionMeta = getStatusMeta(
-                                                  intl,
-                                                  record.action as ApprovalAction,
-                                                  approvalActionMap,
-                                                );
-                                                return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>;
-                                              })()}
-                                            </div>
-                                            {record.comment && (
-                                              <div>
-                                                <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong>{' '}
-                                                {record.comment}
-                                              </div>
-                                            )}
-                                            <div>
-                                              <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time' })}:</strong>{' '}
-                                              {record.approvedAt
-                                                ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss')
-                                                : '-'}
-                                            </div>
-                                          </Space>
-                                        </Card>
-                                      ))}
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-
-                      {(() => {
-                        const remainingHistory = (approvalHistory || []).filter(
-                          (h: any) => !h.nodeId || !(detailNodeForms && detailNodeForms[h.nodeId]),
-                        );
-                        if (!remainingHistory.length) return null;
-                        return (
-                          <div style={{ marginTop: 12 }}>
-                            <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.other', defaultMessage: '其他审批记录' })}</strong>
-                            <div style={{ marginTop: 8 }}>
-                              {remainingHistory.map((record: any, index: number) => (
-                                <Card key={`other-history-${index}`} size="small" style={{ marginBottom: 8 }}>
-                                  <Space orientation="vertical" style={{ width: '100%' }}>
-                                    <div>
-                                      <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong>{' '}
-                                      {record.approverName || record.approverId}
-                                    </div>
-                                    <div>
-                                      <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong>{' '}
-                                      {(() => {
-                                        const actionMeta = getStatusMeta(
-                                          intl,
-                                          record.action as ApprovalAction,
-                                          approvalActionMap,
-                                        );
-                                        return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>;
-                                      })()}
-                                    </div>
-                                    {record.comment && (
-                                      <div>
-                                        <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong>{' '}
-                                        {record.comment}
-                                      </div>
-                                    )}
-                                    <div>
-                                      <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time' })}:</strong>{' '}
-                                      {record.approvedAt
-                                        ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss')
-                                        : '-'}
-                                    </div>
-                                    {record.nodeId && (
-                                      <div>
-                                        <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.node', defaultMessage: '节点' })}:</strong>{' '}
-                                        {record.nodeId}
-                                      </div>
-                                    )}
-                                  </Space>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
 
                   {detailNodeFormDef && (
                     <div style={{ marginTop: 12 }}>

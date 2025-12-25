@@ -24,7 +24,6 @@
     "antd": "^6.1.2",
     "antd-style": "^4.0.0",
     "classnames": "^2.5.1",
-    "d3-transition": "^3.0.1",
     "dayjs": "^1.11.19",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -34,7 +33,7 @@
     "@types/node": "^25.0.3",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "@umijs/max": "^4.6.13",
+    "@umijs/max": "^4.6.14",
     "cross-env": "^10.1.0",
     "typescript": "^5.9.3",
     "umi-presets-pro": "^2.0.3"

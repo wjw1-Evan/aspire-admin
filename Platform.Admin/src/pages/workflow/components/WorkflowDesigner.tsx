@@ -12,7 +12,7 @@ import ReactFlow, {
   MarkerType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import 'd3-transition';
+
 import { Button, Card, Drawer, Form, Input, Select, Switch, message, Space, Divider, Modal } from 'antd';
 import { PlusOutlined, SaveOutlined, CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';

@@ -634,7 +634,7 @@ public class WorkflowInstance : IEntity, ISoftDeletable, ITimestamped, IMultiTen
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("approval_records")]
-public class ApprovalRecord : IEntity, ISoftDeletable, ITimestamped
+public class ApprovalRecord : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
 {
     /// <summary>
     /// 实体ID
@@ -762,6 +762,13 @@ public class ApprovalRecord : IEntity, ISoftDeletable, ITimestamped
     /// </summary>
     [BsonElement("updatedByUsername")]
     public string? UpdatedByUsername { get; set; }
+
+    // IMultiTenant
+    /// <summary>
+    /// 企业ID（多租户）
+    /// </summary>
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
 }
 
 /// <summary>

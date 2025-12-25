@@ -1,0 +1,48 @@
+---
+inclusion: always
+---
+
+# Aspire Admin 平台通用规则
+
+## 核心架构原则
+
+- **多租户隔离**：所有实体访问统一走 `IDatabaseOperationFactory<T>`，禁止直接注入或使用 `IMongoCollection<T>` / `IMongoDatabase`。实现 `IMultiTenant` 自动附加 `CompanyId` 过滤。
+- **企业上下文唯一入口**：除 `userId`（JWT claim）外，企业/角色/权限信息统一通过 `ITenantContext` 读取，禁止从 JWT 直接取 `companyId`、`roles` 等。
+- **菜单级权限**：后端统一使用 `[RequireMenu("menu-name")]`（`Platform.ApiService.Attributes.RequireMenuAttribute`）做鉴权，禁止旧的 `HasPermission()` / `RequirePermission()`。前端不隐藏按钮，真实权限以后端判定。
+- **统一响应**：HTTP API 必须返回 `ApiResponse<T>`，采用 camelCase，忽略 null，枚举序列化为 camelCase 字符串。
+- **审计与软删**：创建/更新/删除统一走工厂的原子方法（`CreateAsync`、`FindOneAndUpdateAsync`、`FindOneAndSoftDeleteAsync`），审计字段由工厂自动维护，业务代码不得手填。
+
+## 数据访问规范
+
+- **查询构建器**：使用 `FilterBuilder<T>`、`SortBuilder<T>`、`UpdateBuilder<T>`、`ProjectionBuilder<T>` 构建查询条件，避免手写 BsonDocument。
+- **实体设计**：业务实体应实现 `IEntity`、`ISoftDeletable`、`ITimestamped`，多租户实体继承 `MultiTenantEntity` 或实现 `IMultiTenant`。集合名称优先使用 `[BsonCollectionName("xxx")]` 特性指定。
+
+## 中间件与管道
+
+- **中间件顺序**：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。健康检查、OpenAPI、SSE 端点可跳过格式化。
+
+## 禁用模式
+
+- 直接访问 Mongo（必须通过工厂）
+- 硬编码企业ID（必须通过 `ITenantContext`）
+- 同步等待异步（`.Result`/`.Wait()`）
+- 缺失权限检查（必须使用 `[RequireMenu]`）
+- 暴露底层异常（统一错误码与错误消息）
+- 手写 BsonDocument（必须使用构建器）
+
+## Git 提交规范
+
+- **提交信息语言**：所有 Git 提交信息必须使用简体中文。使用 Cursor 的 "Generate Commit Message" 功能时，必须生成中文提交信息。
+- **提交信息格式**：遵循约定式提交格式，使用中文描述。例如：`feat: 添加用户管理功能`、`fix: 修复登录验证问题`。
+
+## 代码质量与安全规范
+
+- **漏洞检查**：修改代码后必须重新检查系统漏洞并修复。包括但不限于：安全漏洞（SQL注入、XSS、CSRF、权限绕过等）、性能问题、数据泄露风险、输入验证缺陷等。
+
+## 参考文档
+
+- `docs/features/BACKEND-RULES.md`：后端核心与中间件规范
+- `docs/features/API-RESPONSE-RULES.md`：统一 API 响应与控制器规范
+- `docs/features/MENU-LEVEL-PERMISSION-GUIDE.md`：菜单级权限与角色模型规范
+- `docs/features/FRONTEND-RULES.md`：前端开发规范
+- `README.md`：项目总体说明

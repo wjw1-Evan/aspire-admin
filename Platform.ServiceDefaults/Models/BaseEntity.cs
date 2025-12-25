@@ -10,7 +10,7 @@ public abstract class BaseEntity
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+    public string Id { get; set; } = string.Empty;
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -41,6 +41,22 @@ public abstract class BaseEntity
 
     [BsonElement("updatedByUsername")]
     public string? UpdatedByUsername { get; set; }
+
+    /// <summary>
+    /// 构造函数 - 生成新的ObjectId
+    /// </summary>
+    protected BaseEntity()
+    {
+        try
+        {
+            Id = ObjectId.GenerateNewId().ToString();
+        }
+        catch
+        {
+            // 如果ObjectId生成失败，使用GUID作为备选方案
+            Id = Guid.NewGuid().ToString("N");
+        }
+    }
 }
 
 /// <summary>

@@ -51,6 +51,9 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WithHttpHealthCheck("/health")
         .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
         .WithReference(chat)
+        // 🔧 添加日志配置，确保在 AppHost 控制台中能看到清晰的日志
+        .WithEnvironment("DOTNET_LOGGING__CONSOLE__INCLUDESCOPES", "true")
+        .WithEnvironment("DOTNET_LOGGING__CONSOLE__TIMESTAMPFORMAT", "[yyyy-MM-dd HH:mm:ss] ")
 };
 
 var yarp = builder.AddYarp("apigateway")

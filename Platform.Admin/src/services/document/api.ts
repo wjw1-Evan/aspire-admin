@@ -66,7 +66,7 @@ export interface UpdateDocumentRequest {
  * 公文查询参数
  */
 export interface DocumentQueryParams {
-  current?: number;
+  page?: number;
   pageSize?: number;
   keyword?: string;
   status?: DocumentStatus;
@@ -232,7 +232,7 @@ export async function delegateDocument(id: string, data: DelegateDocumentRequest
  * 获取待审批列表
  */
 export async function getPendingDocuments(params: {
-  current?: number;
+  page?: number;
   pageSize?: number;
 }): Promise<ApiResponse<{ list: Document[]; total: number; page: number; pageSize: number }>> {
   return request('/api/documents/pending', {

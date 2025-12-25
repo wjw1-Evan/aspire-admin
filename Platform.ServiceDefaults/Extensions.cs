@@ -46,11 +46,22 @@ public static class Extensions
 
     public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
+        // 配置日志记录，确保在 dotnet watch 下能看到清晰的日志输出
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
         });
+
+        // 在开发环境下添加控制台日志提供程序，确保日志能在 AppHost 控制台中显示
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Logging.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.TimestampFormat = "[yyyy-MM-dd HH:mm:ss] ";
+            });
+        }
 
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>

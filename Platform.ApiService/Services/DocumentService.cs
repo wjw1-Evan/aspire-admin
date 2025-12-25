@@ -145,9 +145,9 @@ public class UpdateDocumentRequest
 public class DocumentQueryParams
 {
     /// <summary>
-    /// 当前页码
+    /// 页码
     /// </summary>
-    public int Current { get; set; } = 1;
+    public int Page { get; set; } = 1;
 
     /// <summary>
     /// 每页数量
@@ -468,7 +468,7 @@ public class DocumentService : IDocumentService
         return await _documentFactory.FindPagedAsync(
             filter,
             sort,
-            query.Current,
+            query.Page,
             query.PageSize
         );
     }

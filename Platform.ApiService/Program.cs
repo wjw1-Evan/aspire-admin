@@ -189,6 +189,9 @@ builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
 
+// 注册字段验证服务
+builder.Services.AddScoped<Platform.ApiService.Services.IFieldValidationService, Platform.ApiService.Services.FieldValidationService>();
+
 // 注册 SSE 相关服务（简化版：直接通过用户ID发送消息，无需订阅机制）
 builder.Services.AddSingleton<Platform.ApiService.Services.IChatSseConnectionManager, Platform.ApiService.Services.ChatSseConnectionManager>();
 builder.Services.AddScoped<Platform.ApiService.Services.IChatBroadcaster, Platform.ApiService.Services.ChatBroadcaster>();
@@ -269,6 +272,13 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+// 添加启动日志，确保在 AppHost 控制台中能看到 ApiService 的启动信息
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("🚀 Platform.ApiService 正在启动...");
+logger.LogInformation("📝 环境: {Environment}", app.Environment.EnvironmentName);
+logger.LogInformation("🔧 配置源: {ConfigSources}", 
+    string.Join(", ", app.Configuration.AsEnumerable().Take(3).Select(c => c.Key)));
+
 // Configure the HTTP request pipeline.
 // ✅ HTTPS 强制重定向（生产环境）
 if (!app.Environment.IsDevelopment())
@@ -306,5 +316,10 @@ app.MapOpenApi();
 app.MapDefaultEndpoints();
 
 // 数据库初始化已迁移到 Platform.DataInitializer 微服务
+
+// 添加应用启动完成日志
+logger.LogInformation("✅ Platform.ApiService 启动完成，准备接收请求");
+logger.LogInformation("🌐 健康检查端点: /health");
+logger.LogInformation("📚 API 文档端点: /openapi/v1.json");
 
 await app.RunAsync();

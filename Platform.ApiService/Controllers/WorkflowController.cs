@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -27,6 +28,8 @@ public class WorkflowController : BaseApiController
     private readonly IDatabaseOperationFactory<Document> _documentFactory;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly IUserService _userService;
+    private readonly IFieldValidationService _fieldValidationService;
+    private readonly ILogger<WorkflowController> _logger;
 
     /// <summary>
     /// 初始化工作流管理控制器
@@ -37,13 +40,17 @@ public class WorkflowController : BaseApiController
     /// <param name="documentFactory">文档工厂</param>
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="userService">用户服务</param>
+    /// <param name="fieldValidationService">字段验证服务</param>
+    /// <param name="logger">日志记录器</param>
     public WorkflowController(
         IDatabaseOperationFactory<WorkflowDefinition> definitionFactory,
         IDatabaseOperationFactory<WorkflowInstance> instanceFactory,
         IDatabaseOperationFactory<FormDefinition> formFactory,
         IDatabaseOperationFactory<Document> documentFactory,
         IWorkflowEngine workflowEngine,
-        IUserService userService)
+        IUserService userService,
+        IFieldValidationService fieldValidationService,
+        ILogger<WorkflowController> logger)
     {
         _definitionFactory = definitionFactory;
         _instanceFactory = instanceFactory;
@@ -51,6 +58,8 @@ public class WorkflowController : BaseApiController
         _documentFactory = documentFactory;
         _workflowEngine = workflowEngine;
         _userService = userService;
+        _fieldValidationService = fieldValidationService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -58,10 +67,17 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("workflow:list")]
-    public async Task<IActionResult> GetWorkflows([FromQuery] int current = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null, [FromQuery] string? category = null, [FromQuery] bool? isActive = null)
+    public async Task<IActionResult> GetWorkflows([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null, [FromQuery] string? category = null, [FromQuery] bool? isActive = null)
     {
         try
         {
+            // 验证分页参数
+            if (page < 1 || page > 10000)
+                throw new ArgumentException("页码必须在 1-10000 之间");
+
+            if (pageSize < 1 || pageSize > 100)
+                throw new ArgumentException("每页数量必须在 1-100 之间");
+
             var filterBuilder = _definitionFactory.CreateFilterBuilder();
 
             if (!string.IsNullOrEmpty(keyword))
@@ -84,12 +100,16 @@ public class WorkflowController : BaseApiController
                 .Descending(w => w.CreatedAt)
                 .Build();
 
-            var result = await _definitionFactory.FindPagedAsync(filter, sort, current, pageSize);
-            return SuccessPaged(result.items, result.total, current, pageSize);
+            var result = await _definitionFactory.FindPagedAsync(filter, sort, page, pageSize);
+            return SuccessPaged(result.items, result.total, page, pageSize);
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
         }
         catch (Exception ex)
         {
-            return Error("GET_FAILED", ex.Message);
+            return ServerError($"获取流程定义列表失败: {ex.Message}");
         }
     }
 
@@ -261,16 +281,36 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var sanitizedVars = request.Variables != null
-                ? Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(request.Variables)
-                : null;
+            Dictionary<string, object>? sanitizedVars = null;
+            
+            if (request.Variables != null)
+            {
+                try
+                {
+                    sanitizedVars = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(request.Variables);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "变量清洗失败: WorkflowId={WorkflowId}, Variables={Variables}", 
+                        id, System.Text.Json.JsonSerializer.Serialize(request.Variables));
+                    return Error("VARIABLE_SANITIZATION_FAILED", "流程变量处理失败，请检查变量格式");
+                }
+            }
 
             var instance = await _workflowEngine.StartWorkflowAsync(id, request.DocumentId, sanitizedVars);
             return Success(instance);
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "启动流程失败: WorkflowId={WorkflowId}, DocumentId={DocumentId}", 
+                id, request.DocumentId);
+            return Error("START_FAILED", ex.Message);
+        }
         catch (Exception ex)
         {
-            return Error("START_FAILED", ex.Message);
+            _logger.LogError(ex, "启动流程时发生未预期错误: WorkflowId={WorkflowId}, DocumentId={DocumentId}", 
+                id, request.DocumentId);
+            return Error("START_FAILED", "启动流程时发生错误，请稍后重试");
         }
     }
 
@@ -595,10 +635,15 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("流程实例", id);
             }
 
-            var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+            // 优先使用实例中的定义快照
+            WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
             if (definition == null)
             {
-                return NotFoundError("流程定义", instance.WorkflowDefinitionId);
+                definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                if (definition == null)
+                {
+                    return NotFoundError("流程定义", instance.WorkflowDefinitionId);
+                }
             }
 
             var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -613,14 +658,39 @@ public class WorkflowController : BaseApiController
                 return ValidationError("该节点未绑定表单");
             }
 
-            // 简单校验：若标记为必填，则要求非空
+            // 获取表单定义进行验证
+            FormDefinition? form = null;
+            if (instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.TryGetValue(nodeId, out var snapshotForm))
+            {
+                form = snapshotForm;
+            }
+            else
+            {
+                form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+                if (form == null)
+                {
+                    return NotFoundError("表单定义", binding.FormDefinitionId);
+                }
+            }
+
+            // 表单数据验证
             if (binding.Required && (values == null || values.Count == 0))
             {
                 return ValidationError("表单数据不能为空");
             }
 
+            // 使用字段验证服务进行详细验证
+            if (values != null && values.Any())
+            {
+                var validationErrors = _fieldValidationService.ValidateFormData(form, values);
+                if (validationErrors.Any())
+                {
+                    return ValidationError(string.Join("; ", validationErrors));
+                }
+            }
+
             // 清洗 JsonElement 等不可序列化类型
-            values = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(values ?? new System.Collections.Generic.Dictionary<string, object>());
+            values = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(values ?? new Dictionary<string, object>());
 
             if (binding.Target == FormTarget.Document)
             {
@@ -629,7 +699,7 @@ public class WorkflowController : BaseApiController
                 {
                     // 将数据作为子键存储在 FormData 中
                     var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
-                    var formData = document?.FormData ?? new System.Collections.Generic.Dictionary<string, object>();
+                    var formData = document?.FormData ?? new Dictionary<string, object>();
                     formData[binding.DataScopeKey] = values;
                     updateBuilder.Set(d => d.FormData, formData);
                 }
@@ -651,7 +721,7 @@ public class WorkflowController : BaseApiController
                 var instanceUpdateBuilder = _instanceFactory.CreateUpdateBuilder();
                 if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                 {
-                    var vars = instance.Variables ?? new System.Collections.Generic.Dictionary<string, object>();
+                    var vars = instance.Variables ?? new Dictionary<string, object>();
                     vars[binding.DataScopeKey] = values;
                     instanceUpdateBuilder.Set(i => i.Variables, vars);
                 }
@@ -670,7 +740,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("SUBMIT_FAILED", ex.Message);
+            return ServerError($"提交表单数据失败: {ex.Message}");
         }
     }
 

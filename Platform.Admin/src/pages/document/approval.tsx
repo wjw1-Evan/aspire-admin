@@ -216,7 +216,7 @@ const ApprovalPage: React.FC = () => {
                   const nodeId = instance?.currentNodeId;
                   const approvalHistory = response.data?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
                   const workflowDefinition = response.data?.workflowDefinition;
-                  
+
                   // 使用实例快照中的流程定义（如果有）
                   if (workflowDefinition) {
                     setDetailWorkflowDef(workflowDefinition);
@@ -282,53 +282,53 @@ const ApprovalPage: React.FC = () => {
                     }
                   }
 
-                      if (instanceId && nodeId) {
-                        try {
-                          const nodeFormResp = await getNodeForm(instanceId, nodeId);
-                          if (nodeFormResp.success) {
-                            setDetailNodeFormDef(nodeFormResp.data?.form || null);
-                            setDetailNodeFormValues(nodeFormResp.data?.initialValues || {});
-                          } else {
-                            setDetailNodeFormDef(null);
-                            setDetailNodeFormValues(null);
-                          }
-                        } catch (err) {
-                          console.error('加载节点表单失败', err);
-                          setDetailNodeFormDef(null);
-                          setDetailNodeFormValues(null);
-                        }
-
-                        // 拉取所有涉及的节点表单（已审批节点也可查看）
-                        try {
-                          const allNodeIds = Array.from(
-                            new Set(
-                              [nodeId, ...approvalHistory.map((h: any) => h.nodeId).filter(Boolean)],
-                            ),
-                          );
-                          const forms: Record<string, { def: FormDefinition | null; values: Record<string, any> }> = {};
-                          for (const nid of allNodeIds) {
-                            try {
-                              const nf = await getNodeForm(instanceId, nid);
-                              if (nf.success) {
-                                forms[nid] = {
-                                  def: nf.data?.form || null,
-                                  values: nf.data?.initialValues || {},
-                                };
-                              }
-                            } catch (e) {
-                              console.error('加载节点表单失败', nid, e);
-                            }
-                          }
-                          setDetailNodeForms(forms);
-                        } catch (e) {
-                          console.error('批量加载节点表单失败', e);
-                          setDetailNodeForms({});
-                        }
+                  if (instanceId && nodeId) {
+                    try {
+                      const nodeFormResp = await getNodeForm(instanceId, nodeId);
+                      if (nodeFormResp.success) {
+                        setDetailNodeFormDef(nodeFormResp.data?.form || null);
+                        setDetailNodeFormValues(nodeFormResp.data?.initialValues || {});
                       } else {
                         setDetailNodeFormDef(null);
                         setDetailNodeFormValues(null);
-                        setDetailNodeForms({});
                       }
+                    } catch (err) {
+                      console.error('加载节点表单失败', err);
+                      setDetailNodeFormDef(null);
+                      setDetailNodeFormValues(null);
+                    }
+
+                    // 拉取所有涉及的节点表单（已审批节点也可查看）
+                    try {
+                      const allNodeIds = Array.from(
+                        new Set(
+                          [nodeId, ...approvalHistory.map((h: any) => h.nodeId).filter(Boolean)],
+                        ),
+                      );
+                      const forms: Record<string, { def: FormDefinition | null; values: Record<string, any> }> = {};
+                      for (const nid of allNodeIds) {
+                        try {
+                          const nf = await getNodeForm(instanceId, nid);
+                          if (nf.success) {
+                            forms[nid] = {
+                              def: nf.data?.form || null,
+                              values: nf.data?.initialValues || {},
+                            };
+                          }
+                        } catch (e) {
+                          console.error('加载节点表单失败', nid, e);
+                        }
+                      }
+                      setDetailNodeForms(forms);
+                    } catch (e) {
+                      console.error('批量加载节点表单失败', e);
+                      setDetailNodeForms({});
+                    }
+                  } else {
+                    setDetailNodeFormDef(null);
+                    setDetailNodeFormValues(null);
+                    setDetailNodeForms({});
+                  }
                   setDetailVisible(true);
                 }
               } catch (error) {
@@ -355,6 +355,7 @@ const ApprovalPage: React.FC = () => {
                       const defId = instance?.workflowDefinitionId;
                       const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                       const nodeId = instance?.currentNodeId;
+                      setCurrentInstanceId(instanceId || null);
                       setCurrentNodeId(nodeId || null);
                       if (instanceId && nodeId) {
                         try {
@@ -410,8 +411,22 @@ const ApprovalPage: React.FC = () => {
                 size="small"
                 danger
                 icon={<CloseOutlined />}
-                onClick={() => {
+                onClick={async () => {
                   setCurrentDocument(record);
+                  // 获取流程实例和节点信息
+                  try {
+                    const detailResp = await getDocumentDetail(record.id!);
+                    if (detailResp.success && detailResp.data) {
+                      const doc = detailResp.data.document ?? detailResp.data;
+                      const instance = detailResp.data.workflowInstance ?? doc?.workflowInstance;
+                      const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
+                      const nodeId = instance?.currentNodeId;
+                      setCurrentInstanceId(instanceId || null);
+                      setCurrentNodeId(nodeId || null);
+                    }
+                  } catch (e) {
+                    console.error('获取流程信息失败', e);
+                  }
                   setRejectModalVisible(true);
                 }}
               >
@@ -421,8 +436,22 @@ const ApprovalPage: React.FC = () => {
                 type="link"
                 size="small"
                 icon={<RollbackOutlined />}
-                onClick={() => {
+                onClick={async () => {
                   setCurrentDocument(record);
+                  // 获取流程实例和节点信息
+                  try {
+                    const detailResp = await getDocumentDetail(record.id!);
+                    if (detailResp.success && detailResp.data) {
+                      const doc = detailResp.data.document ?? detailResp.data;
+                      const instance = detailResp.data.workflowInstance ?? doc?.workflowInstance;
+                      const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
+                      const nodeId = instance?.currentNodeId;
+                      setCurrentInstanceId(instanceId || null);
+                      setCurrentNodeId(nodeId || null);
+                    }
+                  } catch (e) {
+                    console.error('获取流程信息失败', e);
+                  }
                   setReturnModalVisible(true);
                 }}
               >
@@ -432,8 +461,31 @@ const ApprovalPage: React.FC = () => {
                 type="link"
                 size="small"
                 icon={<SwapOutlined />}
-                onClick={() => {
+                onClick={async () => {
                   setCurrentDocument(record);
+                  // 获取流程实例和节点信息
+                  try {
+                    const detailResp = await getDocumentDetail(record.id!);
+                    if (detailResp.success && detailResp.data) {
+                      const doc = detailResp.data.document ?? detailResp.data;
+                      const instance = detailResp.data.workflowInstance ?? doc?.workflowInstance;
+                      const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
+                      const nodeId = instance?.currentNodeId;
+                      setCurrentInstanceId(instanceId || null);
+                      setCurrentNodeId(nodeId || null);
+                    }
+                  } catch (e) {
+                    console.error('获取流程信息失败', e);
+                  }
+                  // 获取用户列表用于转办
+                  try {
+                    const userResp = await getUserList({ page: 1, pageSize: 1000 });
+                    if (userResp.success && userResp.data) {
+                      setUsers(userResp.data.list || userResp.data.data || []);
+                    }
+                  } catch (e) {
+                    console.error('获取用户列表失败', e);
+                  }
                   setDelegateModalVisible(true);
                 }}
               >
@@ -455,6 +507,7 @@ const ApprovalPage: React.FC = () => {
       const comment = values.comment;
       const nodeValues: Record<string, any> = values.nodeValues || {};
 
+      // 统一使用 executeNodeAction 接口，确保审批记录记录在正确的节点上
       if (currentInstanceId && currentNodeId) {
         const normalized: Record<string, any> = { ...nodeValues };
         if (nodeFormDef?.fields?.length) {
@@ -478,10 +531,12 @@ const ApprovalPage: React.FC = () => {
           }
         }
 
+        // 如果有节点表单，先提交表单数据
         if (nodeFormDef) {
           await submitNodeForm(currentInstanceId, currentNodeId, normalized);
         }
 
+        // 执行审批操作
         const actionResp = await executeNodeAction(currentInstanceId, currentNodeId, {
           action: 'approve',
           comment,
@@ -502,23 +557,10 @@ const ApprovalPage: React.FC = () => {
           setApproving(false);
           return;
         }
-      }
-
-      const response = await approveDocument(currentDocument.id!, {
-        comment,
-      });
-      if (response.success) {
-        message.success(intl.formatMessage({ id: 'pages.document.approval.message.approveSuccess' }));
-        setApprovalModalVisible(false);
-        approvalForm.resetFields();
-        setCurrentDocument(null);
-        setNodeFormDef(null);
-        setNodeFormInitialValues({});
-        setCurrentInstanceId(null);
-        setCurrentNodeId(null);
-        if (actionRef.current?.reload) {
-          actionRef.current.reload();
-        }
+      } else {
+        message.error('缺少流程实例或节点信息');
+        setApproving(false);
+        return;
       }
     } catch (error) {
       console.error('审批失败:', error);
@@ -533,17 +575,25 @@ const ApprovalPage: React.FC = () => {
 
     try {
       const values = await rejectForm.validateFields();
-      const response = await rejectDocument(currentDocument.id!, {
-        comment: values.comment,
-      });
-      if (response.success) {
-        message.success(intl.formatMessage({ id: 'pages.document.approval.message.rejectSuccess' }));
-        setRejectModalVisible(false);
-        rejectForm.resetFields();
-        setCurrentDocument(null);
-        if (actionRef.current?.reload) {
-          actionRef.current.reload();
+
+      // 统一使用 executeNodeAction 接口，确保审批记录记录在正确的节点上
+      if (currentInstanceId && currentNodeId) {
+        const actionResp = await executeNodeAction(currentInstanceId, currentNodeId, {
+          action: 'reject',
+          comment: values.comment,
+        });
+
+        if (actionResp.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.message.rejectSuccess' }));
+          setRejectModalVisible(false);
+          rejectForm.resetFields();
+          setCurrentDocument(null);
+          if (actionRef.current?.reload) {
+            actionRef.current.reload();
+          }
         }
+      } else {
+        message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
       console.error('拒绝失败:', error);
@@ -556,16 +606,24 @@ const ApprovalPage: React.FC = () => {
 
     try {
       const values = await returnForm.validateFields();
-      const response = await returnDocument(currentDocument.id!, {
-        targetNodeId: values.targetNodeId,
-        comment: values.comment,
-      });
-      if (response.success) {
-        message.success(intl.formatMessage({ id: 'pages.document.approval.message.returnSuccess' }));
-        setReturnModalVisible(false);
-        returnForm.resetFields();
-        setCurrentDocument(null);
-        actionRef.current?.reload?.();
+
+      // 统一使用 executeNodeAction 接口，确保审批记录记录在正确的节点上
+      if (currentInstanceId && currentNodeId) {
+        const actionResp = await executeNodeAction(currentInstanceId, currentNodeId, {
+          action: 'return',
+          comment: values.comment,
+          targetNodeId: values.targetNodeId,
+        });
+
+        if (actionResp.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.message.returnSuccess' }));
+          setReturnModalVisible(false);
+          returnForm.resetFields();
+          setCurrentDocument(null);
+          actionRef.current?.reload?.();
+        }
+      } else {
+        message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
       console.error('退回失败:', error);
@@ -578,18 +636,26 @@ const ApprovalPage: React.FC = () => {
 
     try {
       const values = await delegateForm.validateFields();
-      const response = await delegateDocument(currentDocument.id!, {
-        delegateToUserId: values.delegateToUserId,
-        comment: values.comment,
-      });
-      if (response.success) {
-        message.success(intl.formatMessage({ id: 'pages.document.approval.message.delegateSuccess' }));
-        setDelegateModalVisible(false);
-        delegateForm.resetFields();
-        setCurrentDocument(null);
-        if (actionRef.current?.reload) {
-          actionRef.current.reload();
+
+      // 统一使用 executeNodeAction 接口，确保审批记录记录在正确的节点上
+      if (currentInstanceId && currentNodeId) {
+        const actionResp = await executeNodeAction(currentInstanceId, currentNodeId, {
+          action: 'delegate',
+          comment: values.comment,
+          delegateToUserId: values.delegateToUserId,
+        });
+
+        if (actionResp.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.message.delegateSuccess' }));
+          setDelegateModalVisible(false);
+          delegateForm.resetFields();
+          setCurrentDocument(null);
+          if (actionRef.current?.reload) {
+            actionRef.current.reload();
+          }
         }
+      } else {
+        message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
       console.error('转办失败:', error);
@@ -607,14 +673,14 @@ const ApprovalPage: React.FC = () => {
           columns={columns}
           request={async (params) => {
             const response = await getPendingDocuments({
-              current: params.current,
+              page: params.current,
               pageSize: params.pageSize,
             });
             if (response.success && response.data) {
               return {
-                data: response.data.list,
+                data: response.data.list || response.data.data || [],
                 success: true,
-                total: response.data.total,
+                total: response.data.total || 0,
               };
             }
             return { data: [], success: false, total: 0 };
@@ -633,15 +699,15 @@ const ApprovalPage: React.FC = () => {
           columns={columns}
           request={async (params) => {
             const response = await getDocumentList({
-              current: params.current,
+              page: params.current,
               pageSize: params.pageSize,
               filterType: 'approved',
             });
             if (response.success && response.data) {
               return {
-                data: response.data.list,
+                data: response.data.list || response.data.data || [],
                 success: true,
-                total: response.data.total,
+                total: response.data.total || 0,
               };
             }
             return { data: [], success: false, total: 0 };
@@ -660,15 +726,15 @@ const ApprovalPage: React.FC = () => {
           columns={columns}
           request={async (params) => {
             const response = await getDocumentList({
-              current: params.current,
+              page: params.current,
               pageSize: params.pageSize,
               filterType: 'my',
             });
             if (response.success && response.data) {
               return {
-                data: response.data.list,
+                data: response.data.list || response.data.data || [],
                 success: true,
-                total: response.data.total,
+                total: response.data.total || 0,
               };
             }
             return { data: [], success: false, total: 0 };
@@ -1082,16 +1148,16 @@ const ApprovalPage: React.FC = () => {
                               : completedIds.has(n.id) || (n.type === 'start' && currentId && currentId !== n.id)
                                 ? 'finish'
                                 : 'wait';
-                            
+
                             // 获取该节点的审批历史
                             const nodeHistory = (approvalHistory || []).filter((h: any) => h.nodeId === n.id);
-                            
+
                             // 获取该节点的表单数据
                             const nodeFormData = detailNodeForms?.[n.id];
-                            
+
                             // 构建描述信息
                             const descriptionElements: React.ReactNode[] = [];
-                            
+
                             if (isCurrent) {
                               descriptionElements.push(
                                 <div key="current" style={{ fontSize: 12, color: '#1890ff', fontWeight: 500, marginBottom: 4 }}>
@@ -1099,7 +1165,7 @@ const ApprovalPage: React.FC = () => {
                                 </div>
                               );
                             }
-                            
+
                             // 添加节点表单数据
                             if (nodeFormData?.def && nodeFormData.def.fields?.length > 0) {
                               descriptionElements.push(
@@ -1134,7 +1200,7 @@ const ApprovalPage: React.FC = () => {
                                 </div>
                               );
                             }
-                            
+
                             // 添加审批历史信息
                             if (nodeHistory.length > 0) {
                               descriptionElements.push(
@@ -1175,7 +1241,7 @@ const ApprovalPage: React.FC = () => {
                                 </div>
                               );
                             }
-                            
+
                             return {
                               title: `${n.label || n.id} (${typeLabel(n.type)})`,
                               status,

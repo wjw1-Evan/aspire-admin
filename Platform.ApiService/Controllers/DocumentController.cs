@@ -58,7 +58,7 @@ public class DocumentController : BaseApiController
         try
         {
             var result = await _documentService.GetDocumentsAsync(query);
-            return SuccessPaged(result.items, result.total, query.Current, query.PageSize);
+            return SuccessPaged(result.items, result.total, query.Page, query.PageSize);
         }
         catch (Exception ex)
         {
@@ -498,23 +498,34 @@ public class DocumentController : BaseApiController
     /// </summary>
     [HttpGet("pending")]
     [RequireMenu("document:approval")]
-    public async Task<IActionResult> GetPendingDocuments([FromQuery] int current = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetPendingDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         try
         {
+            // 验证分页参数
+            if (page < 1 || page > 10000)
+                throw new ArgumentException("页码必须在 1-10000 之间");
+
+            if (pageSize < 1 || pageSize > 100)
+                throw new ArgumentException("每页数量必须在 1-100 之间");
+
             var query = new DocumentQueryParams
             {
-                Current = current,
+                Page = page,
                 PageSize = pageSize,
                 FilterType = "pending"
             };
 
             var result = await _documentService.GetDocumentsAsync(query);
-            return SuccessPaged(result.items, result.total, current, pageSize);
+            return SuccessPaged(result.items, result.total, page, pageSize);
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
         }
         catch (Exception ex)
         {
-            return Error("GET_FAILED", ex.Message);
+            return ServerError($"获取待审批公文失败: {ex.Message}");
         }
     }
 }

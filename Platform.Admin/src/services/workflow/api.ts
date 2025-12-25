@@ -281,7 +281,7 @@ export interface StartWorkflowRequest {
  * 获取流程定义列表
  */
 export async function getWorkflowList(params: {
-  current?: number;
+  page?: number;
   pageSize?: number;
   keyword?: string;
   category?: string;
@@ -345,7 +345,7 @@ export async function startWorkflow(id: string, data: StartWorkflowRequest): Pro
  * 获取流程实例列表
  */
 export async function getWorkflowInstances(params: {
-  current?: number;
+  page?: number;
   pageSize?: number;
   workflowDefinitionId?: string;
   status?: WorkflowStatus;
@@ -360,7 +360,7 @@ export async function getWorkflowInstances(params: {
  * 获取当前用户待办的流程实例
  */
 export async function getTodoInstances(params: {
-  current?: number;
+  page?: number;
   pageSize?: number;
 }): Promise<ApiResponse<{ list: any[]; total: number; page: number; pageSize: number }>> {
   return request('/api/workflows/instances/todo', {

@@ -1,0 +1,29 @@
+---
+inclusion: always
+---
+
+# 前端规则（Platform.App 移动端 / Expo）
+
+## 路由与状态管理
+- **React Navigation**：遵循 React Navigation 规范，避免在组件中直接操作全局导航实例；封装导航辅助函数，通过 `useNavigation` hook 访问导航。
+- **状态管理**：优先使用 hooks（`useState`、`useReducer`、`useContext` 或 `zustand` 等轻量方案），避免无序的全局单例。跨页面共享状态使用 Context 或轻量状态管理库。
+
+## 数据请求与 API 调用
+- **统一客户端**：统一使用 `services/api.ts` 导出的 `apiClient`（基于 axios），与后端 `ApiResponse<T>` 格式对齐。禁止在组件内直接使用 `fetch` 或创建新的 axios 实例。
+- **响应处理**：API 响应统一为 `ApiResponse<T>` 格式（`success`、`data`、`errorCode`、`errorMessage`、`traceId`）。请求拦截器自动添加 JWT token，响应拦截器统一处理 401/403 错误和 token 刷新。
+- **错误处理**：所有接口调用需显式处理 loading/error 状态，避免静默失败。使用 `try-catch` 捕获异常，展示用户友好的错误提示，不暴露底层异常信息。
+- **SSE 实时连接**：实时聊天功能使用 SSE（Server-Sent Events）连接，通过 EventSource API 建立连接（`/api/chat/sse?token={token}`）。支持自动重连、事件监听（`ReceiveMessage`、`SessionUpdated`、`MessageChunk` 等）。组件卸载时确保关闭连接，避免资源泄漏。
+
+## 认证与权限
+- **身份信息**：用户身份信息仅从登录态/本地存储获取（通过 `tokenUtils` 和 `storage`），企业/权限信息以后端返回为准。禁止在前端硬编码企业 ID、角色或权限。
+- **Token 管理**：使用 `TokenRefreshManager` 管理 token 刷新，避免并发刷新问题。token 存储在内存缓存和 AsyncStorage 中，优先使用内存缓存避免时序问题。
+- **权限模型**：调用需要权限的接口时，保持与后端菜单级权限模型一致。前端只展示内容，不自行屏蔽关键按钮，真实权限以后端 `RequireMenu` 判定为准。
+
+## UI 与用户体验
+- **组件复用**：优先使用 Expo/React Native 官方组件或项目内公共组件，减少自定义样式分叉。保持 UI 风格一致。
+- **状态处理**：表单与列表场景需处理空态、错误态与加载态。操作按钮需具备禁用/防抖保护，避免重复提交。
+- **加载指示**：长时间操作应显示加载指示器（Loading/Spinner），提升用户体验。
+
+## 错误处理与日志
+- **错误展示**：捕获接口错误并展示可理解的提示信息（使用 `errorMessage`），不暴露底层异常（如堆栈信息）。
+- **日志记录**：重要操作（登录、关键表单提交）应按既有埋点/日志方案记录。如有统一的日志 hooks/服务，优先复用。

@@ -1,0 +1,185 @@
+---
+inclusion: always
+---
+
+# 后端规则（API / ServiceDefaults / 数据初始化）
+
+## 控制器与权限
+- 所有业务控制器必须继承 `BaseApiController`；统一使用 `Success<T>()`、`SuccessPaged<T>()`、`ValidationError()`、`NotFoundError()` 等构造 `ApiResponse<T>`。
+- 敏感操作必须添加 `[RequireMenu("module:resource")]`（权限标识使用 `:` 分隔，如 `workflow:list`、`document:list`）；禁止在控制器或服务中使用废弃的 `HasPermission()` / `RequirePermission()`。
+- 禁止从 JWT 读取 `companyId` / `roles` 等扩展字段，需通过 `ITenantContext` 获取。
+
+## 菜单定义规范
+- **菜单名称**（`Menu.Name` 字段）：统一使用连字符 `-` 分隔，格式为 `模块-资源`，例如：
+  - `workflow-list`、`workflow-monitor`（工作流管理）
+  - `document-list`、`document-approval`（公文管理）
+  - `project-management-task`、`iot-platform-gateway`（其他模块）
+- **权限标识**（`RequireMenu` 参数和 `Menu.Permissions` 字段）：使用冒号 `:` 分隔，格式为 `模块:资源:操作`，例如：
+  - `workflow:list`、`workflow:create`、`document:list`
+- **菜单定义位置**：所有系统菜单在 `Platform.DataInitializer/Services/DataInitializerService.cs` 的 `GetExpectedMenus` 方法中定义
+- **子菜单映射**：新增子菜单时，必须在 `GetParentMenuNameByChildName` 方法中添加映射关系
+- **前端翻译**：菜单翻译键格式为 `menu.模块.资源`（使用 `.` 分隔），在 `src/locales/*/menu.ts` 中维护
+
+## 数据访问与审计
+- **工厂模式**：仅可通过 `IDatabaseOperationFactory<T>` 访问 Mongo 集合，禁止直接注入 `IMongoCollection<T>`/`IMongoDatabase`。工厂通过 `services.AddDatabaseFactory()` 统一注册。
+- **原子操作**：实体创建/更新/删除必须使用工厂提供的原子方法：
+  - `CreateAsync` / `CreateManyAsync`：创建实体（自动设置 `CreatedAt`、`CreatedBy` 等）
+  - `FindOneAndUpdateAsync`：查找并更新（自动设置 `UpdatedAt`、`UpdatedBy` 等）
+  - `FindOneAndSoftDeleteAsync` / `SoftDeleteManyAsync`：软删除（自动设置 `IsDeleted`、`DeletedAt`、`DeletedBy` 等）
+  - `FindOneAndReplaceAsync`：查找并替换（原子替换整个文档）
+- **审计字段自动维护**：`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`CreatedBy`、`CreatedByUsername`、`UpdatedBy`、`UpdatedByUsername` 等字段由工厂自动维护，业务代码不得手动赋值。
+- **跨租户访问**：仅在极少数运维/平台级场景下才允许使用 `FindWithoutTenantFilterAsync` / `GetByIdWithoutTenantFilterAsync` / `FindOneAndUpdateWithoutTenantFilterAsync` 等 *WithoutTenantFilter* 方法，且必须：
+  - 拥有明确的运维/平台级菜单权限
+  - 在上层服务中记录详细审计日志（谁、何时、对哪些企业做了什么操作）
+
+## 多租户与实体设计
+- **实体基类**：
+  - `BaseEntity`：提供 `Id`、`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`CreatedBy`、`UpdatedBy` 等审计字段。
+  - `MultiTenantEntity`：继承 `BaseEntity` 并实现 `IMultiTenant`，自动包含 `CompanyId`。
+- **接口要求**：所有 MongoDB 实体必须实现 `IEntity`、`ISoftDeletable`、`ITimestamped`。多租户实体需实现 `IMultiTenant` 或继承 `MultiTenantEntity`，工厂会自动附加 `CompanyId` 过滤。
+- **集合命名**：优先使用 `[BsonCollectionName("xxx")]` 特性指定集合名，否则使用类型名的复数形式（小写）。
+
+## 查询/更新构建器（强制使用）
+- **FilterBuilder<T>**：通过 `factory.CreateFilterBuilder()` 创建，支持链式调用（`Equal`、`NotEqual`、`In`、`Contains`、`DateRange`、`TextSearch`、`IsDeleted(false)` 等），最后调用 `Build()` 生成 `FilterDefinition<T>`。
+- **SortBuilder<T>**：通过 `factory.CreateSortBuilder()` 创建，使用 `Ascending`/`Descending` 指定排序字段，默认降序按 `Id` 排序。
+- **UpdateBuilder<T>**：通过 `factory.CreateUpdateBuilder()` 创建，支持 `Set`、`Unset`、`Inc`、`AddToSet`、`Pull` 等操作，禁止直接修改审计字段（审计字段由工厂自动维护）。
+- **ProjectionBuilder<T>**：通过 `factory.CreateProjectionBuilder()` 创建，用于字段投影以减少数据传输。
+- 所有查询条件、排序、更新必须使用构建器，禁止手写 `BsonDocument` 或直接使用 MongoDB Driver 的构建器。更新必须是原子操作，避免"先查后改"竞态。
+
+## 中间件与响应
+- 中间件顺序固定：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。
+- `ResponseFormattingMiddleware` 统一响应格式并写入 `HttpContext.Items["__FormattedResponseBody"]`；`ActivityLogMiddleware` 读取该内容记录访问日志。
+- **SSE 端点处理**：SSE（Server-Sent Events）端点（如 `/api/chat/sse`）返回 `text/event-stream`，需跳过 `ResponseFormattingMiddleware` 格式化，直接写入原始 SSE 数据流。健康检查、OpenAPI 端点同样跳过格式化。
+- JSON 序列化：camelCase、忽略 null、枚举 camelCase 字符串。
+
+## 验证与错误处理
+- **模型验证**：控制器中使用 `ValidateModelState()` 检查模型状态，无效时返回 `ValidationError()`。
+- **业务校验**：服务层进行业务规则校验，错误统一通过 `BaseApiController` 的方法返回：
+  - `ValidationError(string message)`：参数/模型验证错误（`VALIDATION_ERROR`）
+  - `NotFoundError(string resource, string id)`：资源未找到（`NOT_FOUND`）
+  - `UnauthorizedError(string message)`：未授权（`UNAUTHORIZED`）
+  - `ForbiddenError(string message)`：禁止访问（`FORBIDDEN`）
+  - `ServerError(string message)`：服务器错误（`INTERNAL_ERROR`）
+- **错误处理原则**：禁止暴露底层异常信息（如堆栈、数据库错误）；记录详细错误日志供运维排查；返回给前端的错误消息要可读、可本地化。
+
+## 分页处理规范（强制）
+- **统一分页参数**：所有分页相关 API 接口统一使用 `page` 和 `pageSize` 作为查询参数（参考 `UserController.GetCurrentUserActivityLogsPaged`）。
+- **API 参数规范**：
+  - 控制器方法参数使用 `[FromQuery] int page = 1` 和 `[FromQuery] int pageSize = 20`
+  - 禁止使用 `current`、`pageIndex`、`pageNumber` 等其他命名
+  - 代码示例：
+    ```csharp
+    [HttpGet]
+    public async Task<IActionResult> GetConfigs(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? name = null)
+    {
+        // ...
+    }
+    ```
+- **参数验证规范**：
+  - 统一使用 `ArgumentException` 抛出异常，禁止静默修正参数值
+  - 验证规则：
+    - `page`：必须在 1-10000 之间，否则抛出 `ArgumentException("页码必须在 1-10000 之间")`
+    - `pageSize`：必须在 1-100 之间，否则抛出 `ArgumentException("每页数量必须在 1-100 之间")`
+  - 代码示例：
+    ```csharp
+    // 验证分页参数
+    if (page < 1 || page > 10000)
+        throw new ArgumentException("页码必须在 1-10000 之间");
+
+    if (pageSize < 1 || pageSize > 100)
+        throw new ArgumentException("每页数量必须在 1-100 之间");
+    ```
+- **内部参数映射**：
+  - 如果使用 `PageParams` 类（包含 `Current` 和 `PageSize` 属性），需要在控制器中将 `page` 映射到 `Current`
+  - 代码示例：
+    ```csharp
+    var queryParams = new XiaokeConfigQueryParams
+    {
+        Current = page, // PageParams 使用 Current，但 API 参数使用 page
+        PageSize = pageSize,
+        // ... 其他参数
+    };
+    ```
+- **分页查询方法调用**：
+  - 调用 `IDatabaseOperationFactory<T>.FindPagedAsync` 时，直接传递 `page` 参数（页码，从 1 开始），不要计算 `skip`
+  - 代码示例：
+    ```csharp
+    // ✅ 正确：直接传递页码
+    var (configs, total) = await _configFactory.FindPagedAsync(
+        filter,
+        sortBuilder.Build(),
+        page,  // 页码，从 1 开始
+        pageSize
+    );
+
+    // ❌ 错误：不要计算 skip
+    // var skip = (page - 1) * pageSize;
+    // var (configs, total) = await _configFactory.FindPagedAsync(filter, sortBuilder.Build(), skip, pageSize);
+    ```
+- **分页响应格式**：
+  - 统一返回格式：
+    ```csharp
+    return Success(new
+    {
+        data = items,
+        total = total,
+        page = page,
+        pageSize = pageSize
+    });
+    ```
+  - 或使用 `ToPaginatedResponse` 扩展方法：
+    ```csharp
+    return Success((items, total).ToPaginatedResponse(page, pageSize));
+    ```
+- **POST 请求分页**：
+  - 如果使用 POST 请求传递分页参数（如 `ChatHistoryQueryRequest`），请求体中的 `PageParams` 仍使用 `Current` 和 `PageSize`
+  - 控制器中验证时使用 `request.Current` 和 `request.PageSize`
+  - 代码示例：
+    ```csharp
+    [HttpPost("list")]
+    public async Task<IActionResult> GetChatHistory([FromBody] ChatHistoryQueryRequest request)
+    {
+        // 验证分页参数
+        if (request.Current < 1 || request.Current > 10000)
+            throw new ArgumentException("页码必须在 1-10000 之间");
+
+        if (request.PageSize < 1 || request.PageSize > 100)
+            throw new ArgumentException("每页数量必须在 1-100 之间");
+
+        // ...
+    }
+    ```
+- **参考实现**：`UserController.GetCurrentUserActivityLogsPaged` 为标准实现，所有分页接口应参考此实现。
+
+## 实时通信（SSE）规范
+- **实现方式**：使用 Server-Sent Events（SSE）实现实时消息推送，通过 `ChatSseController` 提供 `/api/chat/sse` 端点。
+- **连接管理**：使用 `IChatSseConnectionManager` 管理用户连接，支持多连接注册、自动清理断开连接。连接标识通过 JWT token 验证用户身份。
+- **消息广播**：使用 `IChatBroadcaster` 接口进行消息广播，支持消息推送、会话更新、消息删除、已读状态同步、流式消息块推送等事件类型。
+- **心跳保活**：SSE 连接需要定期发送心跳（keepalive 事件），默认间隔 30 秒，避免连接被代理服务器或浏览器超时关闭。
+- **响应格式**：SSE 事件格式为 `event: {eventType}\ndata: {jsonData}\n\n`，使用 camelCase 序列化 JSON 数据。
+- **错误处理**：连接异常时记录日志并清理连接资源，避免内存泄漏。
+
+## 规则系统 / IoT 特殊要求
+- 规则实体需实现多租户 + 软删接口，使用 `RuleStatus` 常量管理状态；查询、分页均走工厂 + 构建器。
+- IoT 模块同样必须遵守多租户隔离与软删，API 需绑定对应 IoT 菜单（如 `iot:device:list`）。
+
+## 数据初始化与主机
+- `Platform.DataInitializer` 中的数据脚本同样使用 `IDatabaseOperationFactory<T>`，禁止裸 Mongo 操作。
+- AppHost / Tests 遵循相同的中间件顺序与响应格式约束。
+
+## 用户信息显示规范
+- **DTO 转换规则**：在将实体转换为 DTO 时，所有用户相关字段（创建者、分配者、执行者、参与者等）必须统一处理：
+  - **显示格式**：统一使用 `用户名 (昵称)` 格式，如果昵称为空则只显示用户名
+  - **代码示例**：
+    ```csharp
+    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
+    dto.CreatedByName = !string.IsNullOrWhiteSpace(user.Name)
+        ? $"{user.Username} ({user.Name})"
+        : user.Username;
+    ```
+  - **适用字段**：`CreatedByName`、`AssignedToName`、`ExecutedByName`、`ManagerName` 等所有用户名称字段
+- **跨租户场景**：对于可能跨租户的用户信息（如创建者可能属于不同企业），使用 `GetUserByIdWithoutTenantFilterAsync` 方法获取用户信息。
+- **统一性要求**：确保所有服务（TaskService、ProjectService 等）中的用户信息转换逻辑保持一致，统一使用上述格式。

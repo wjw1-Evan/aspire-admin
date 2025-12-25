@@ -49,7 +49,7 @@ public class ChatHistoryController : BaseApiController
         // 验证分页参数
         if (request.Current < 1 || request.Current > 10000)
             throw new ArgumentException("页码必须在 1-10000 之间");
-        
+
         if (request.PageSize < 1 || request.PageSize > 100)
             throw new ArgumentException("每页数量必须在 1-100 之间");
 
@@ -92,12 +92,12 @@ public class ChatHistoryController : BaseApiController
             var content = request.Content!; // 明确提取非空值（已检查 IsNullOrEmpty）
             // 调用 Regex 方法并构建过滤器
             var messageFilterBuilder = _messageFactory.CreateFilterBuilder();
-            _ = messageFilterBuilder.Regex(m => m.Content, content, "i"); // Regex 方法返回 this，不会为 null
+            _ = messageFilterBuilder.Regex(m => m.Content!, content, "i"); // Regex 方法返回 this，不会为 null
             var messageFilter = messageFilterBuilder.Build(); // Build() 返回 FilterDefinition<T>，不会为 null
 
             // ✅ 数据工厂会自动添加企业过滤（因为 ChatMessage 实现了 IMultiTenant）
             var messages = await _messageFactory.FindAsync(messageFilter);
-            matchedSessionIds = messages.Select(m => m.SessionId).Distinct().ToList();
+            matchedSessionIds = messages.Select(m => m.SessionId).Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
 
             if (!matchedSessionIds.Any())
             {
@@ -214,7 +214,7 @@ public class ChatHistoryController : BaseApiController
 
         // ✅ 数据工厂会自动添加企业过滤（因为 ChatSession 实现了 IMultiTenant）
         var result = await _sessionFactory.FindOneAndSoftDeleteAsync(filter);
-        
+
         if (result == null)
         {
             return Error("SESSION_NOT_FOUND", $"会话 {sessionId} 不存在");

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer } from '@/components';
 import { Button, Space, Modal, message, Tag, Switch, Card, Row, Col, Form, Input, Select, Grid } from 'antd';
 import {
@@ -46,6 +46,14 @@ const WorkflowManagement: React.FC = () => {
     isActive: undefined,
   });
 
+  // 🔧 使用 ref 存储搜索参数，避免 request 函数重新创建导致重复请求
+  const searchParamsRef = useRef({
+    current: 1,
+    pageSize: 10,
+    keyword: '',
+    category: undefined,
+    isActive: undefined,
+  });
 
   const handleRefresh = () => {
     actionRef.current?.reload?.();
@@ -55,11 +63,13 @@ const WorkflowManagement: React.FC = () => {
   const handleSearch = (values: any) => {
     const newParams = {
       current: 1,
-      pageSize: searchParams.pageSize,
-      keyword: values.keyword,
+      pageSize: searchParamsRef.current.pageSize,
+      keyword: values.keyword || '',
       category: values.category,
       isActive: values.isActive,
     };
+    // 同时更新 ref 和 state
+    searchParamsRef.current = newParams;
     setSearchParams(newParams);
     // 手动触发重新加载
     actionRef.current?.reload?.();
@@ -70,15 +80,44 @@ const WorkflowManagement: React.FC = () => {
     searchForm.resetFields();
     const resetParams = {
       current: 1,
-      pageSize: searchParams.pageSize,
+      pageSize: searchParamsRef.current.pageSize,
       keyword: '',
       category: undefined,
       isActive: undefined,
     };
+    // 同时更新 ref 和 state
+    searchParamsRef.current = resetParams;
     setSearchParams(resetParams);
     // 手动触发重新加载
     actionRef.current?.reload?.();
   };
+
+  // 🔧 使用 useCallback 定义 request 函数，依赖数组为空，避免函数重新创建
+  const fetchWorkflows = useCallback(async (params: any) => {
+    const requestData = {
+      page: params.current || searchParamsRef.current.current, // 使用 page 参数
+      pageSize: params.pageSize || searchParamsRef.current.pageSize,
+      // 从 ref 读取搜索参数
+      keyword: searchParamsRef.current.keyword,
+      category: searchParamsRef.current.category,
+      isActive: searchParamsRef.current.isActive,
+    };
+
+    try {
+      const response = await getWorkflowList(requestData);
+      if (response.success && response.data) {
+        return {
+          data: response.data.list || response.data.data || [], // 兼容不同的响应格式
+          success: true,
+          total: response.data.total || 0,
+        };
+      }
+      return { data: [], success: false, total: 0 };
+    } catch (error) {
+      console.error('获取工作流列表失败:', error);
+      return { data: [], success: false, total: 0 };
+    }
+  }, []); // 🔧 空依赖数组，避免函数重新创建
 
   const columns: ColumnsType<WorkflowDefinition> = [
     {
@@ -280,27 +319,11 @@ const WorkflowManagement: React.FC = () => {
       <DataTable<WorkflowDefinition>
         actionRef={actionRef}
         columns={columns}
-        request={async (params) => {
-          const response = await getWorkflowList({
-            current: params.current || searchParams.current,
-            pageSize: params.pageSize || searchParams.pageSize,
-            keyword: searchParams.keyword,
-            category: searchParams.category,
-            isActive: searchParams.isActive,
-          });
-          if (response.success && response.data) {
-            return {
-              data: response.data.list,
-              success: true,
-              total: response.data.total,
-            };
-          }
-          return { data: [], success: false, total: 0 };
-        }}
+        request={fetchWorkflows}
         rowKey="id"
         search={false}
         pagination={{
-          defaultPageSize: 10,
+          pageSize: 20,
           pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,

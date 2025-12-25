@@ -551,6 +551,18 @@ public class WorkflowInstance : IEntity, ISoftDeletable, ITimestamped, IMultiTen
     [BsonElement("parallelBranches")]
     public Dictionary<string, List<string>> ParallelBranches { get; set; } = new();
 
+    /// <summary>
+    /// 流程定义快照（创建实例时保存，确保已创建的流程不受后续定义变更影响）
+    /// </summary>
+    [BsonElement("workflowDefinitionSnapshot")]
+    public WorkflowDefinition? WorkflowDefinitionSnapshot { get; set; }
+
+    /// <summary>
+    /// 表单定义快照（节点ID -> 表单定义，创建实例时保存）
+    /// </summary>
+    [BsonElement("formDefinitionSnapshots")]
+    public Dictionary<string, FormDefinition> FormDefinitionSnapshots { get; set; } = new();
+
     // IEntity
     // Id 已定义
 

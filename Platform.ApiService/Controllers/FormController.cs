@@ -20,6 +20,10 @@ public class FormController : BaseApiController
 {
     private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
 
+    /// <summary>
+    /// 初始化表单管理控制器
+    /// </summary>
+    /// <param name="formFactory">表单定义工厂</param>
     public FormController(IDatabaseOperationFactory<FormDefinition> formFactory)
     {
         _formFactory = formFactory;

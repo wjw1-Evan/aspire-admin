@@ -39,6 +39,7 @@ import { DataTable } from '@/components/DataTable';
 import {
   getDocumentList,
   getDocumentDetail,
+  getDocumentInstanceForm,
   deleteDocument,
   submitDocument,
   uploadDocumentAttachment,
@@ -207,7 +208,53 @@ const DocumentManagement: React.FC = () => {
                   const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                   const currentNodeId = instance?.currentNodeId;
                   const approvalHistory = response.data?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
-                  if (defId) {
+                  const workflowDefinition = response.data?.workflowDefinition;
+                  
+                  // 使用实例快照中的流程定义（如果有）
+                  if (workflowDefinition) {
+                    setDetailWorkflowDef(workflowDefinition);
+                  } else if (defId) {
+                    // 如果没有快照，使用最新定义（向后兼容）
+                    try {
+                      const defResp = await getWorkflowDetail(defId);
+                      if (defResp.success) {
+                        setDetailWorkflowDef(defResp.data || null);
+                      } else {
+                        setDetailWorkflowDef(null);
+                      }
+                    } catch (err) {
+                      console.error('加载流程定义失败', err);
+                      setDetailWorkflowDef(null);
+                    }
+                  } else {
+                    setDetailWorkflowDef(null);
+                  }
+
+                  // 使用实例快照中的表单定义（如果有实例）
+                  if (instanceId) {
+                    try {
+                      const formResp = await getDocumentInstanceForm(record.id!);
+                      if (formResp.success) {
+                        const formDef = formResp.data?.form || null;
+                        const values = formResp.data?.initialValues || {};
+                        setDetailFormDef(formDef);
+                        setDetailFormValues(values);
+                      } else {
+                        setDetailFormDef(null);
+                        setDetailFormValues(null);
+                      }
+                    } catch (e) {
+                      console.error('加载表单定义失败', e);
+                      setDetailFormDef(null);
+                      setDetailFormValues(null);
+                    }
+                  } else {
+                    setDetailFormDef(null);
+                    setDetailFormValues(null);
+                  }
+
+                  if (defId && !instanceId) {
+                    // 如果没有实例，使用最新定义（向后兼容，用于草稿状态）
                     try {
                       const formResp = await getDocumentCreateForm(defId);
                       if (formResp.success) {
@@ -221,17 +268,12 @@ const DocumentManagement: React.FC = () => {
                         setDetailFormDef(null);
                         setDetailFormValues(null);
                       }
-                      try {
-                        const defResp = await getWorkflowDetail(defId);
-                        if (defResp.success) {
-                          setDetailWorkflowDef(defResp.data || null);
-                        } else {
-                          setDetailWorkflowDef(null);
-                        }
-                      } catch (err) {
-                        console.error('加载流程定义失败', err);
-                        setDetailWorkflowDef(null);
-                      }
+                    } catch (e) {
+                      console.error('加载表单定义失败', e);
+                      setDetailFormDef(null);
+                      setDetailFormValues(null);
+                    }
+                  }
 
                       if (instanceId && currentNodeId) {
                         try {
@@ -280,23 +322,6 @@ const DocumentManagement: React.FC = () => {
                         setDetailNodeFormValues(null);
                         setDetailNodeForms({});
                       }
-                    } catch (e) {
-                      console.error('加载表单定义失败', e);
-                      setDetailFormDef(null);
-                      setDetailFormValues(null);
-                      setDetailNodeFormDef(null);
-                      setDetailNodeFormValues(null);
-                      setDetailWorkflowDef(null);
-                      setDetailNodeForms({});
-                    }
-                  } else {
-                    setDetailFormDef(null);
-                    setDetailFormValues(null);
-                    setDetailNodeFormDef(null);
-                    setDetailNodeFormValues(null);
-                    setDetailWorkflowDef(null);
-                    setDetailNodeForms({});
-                  }
                   setDetailVisible(true);
                 }
               } catch (error) {

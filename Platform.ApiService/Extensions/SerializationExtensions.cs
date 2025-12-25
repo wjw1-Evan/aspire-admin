@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace Platform.ApiService.Extensions
 {
+    /// <summary>
+    /// 序列化扩展方法
+    /// </summary>
     public static class SerializationExtensions
     {
         /// <summary>
@@ -51,14 +54,7 @@ namespace Platform.ApiService.Extensions
             foreach (var kv in source)
             {
                 var sanitized = SanitizeForMongo(kv.Value);
-                if (sanitized is null)
-                {
-                    result[kv.Key] = null!;
-                }
-                else
-                {
-                    result[kv.Key] = sanitized;
-                }
+                result[kv.Key] = sanitized ?? (object)string.Empty;
             }
             return result;
         }
@@ -71,7 +67,8 @@ namespace Platform.ApiService.Extensions
                     var objDict = new Dictionary<string, object>();
                     foreach (var prop in element.EnumerateObject())
                     {
-                        objDict[prop.Name] = SanitizeForMongo(prop.Value);
+                        var sanitized = SanitizeForMongo(prop.Value);
+                        objDict[prop.Name] = sanitized ?? (object)string.Empty;
                     }
                     return objDict;
                 case JsonValueKind.Array:
@@ -82,7 +79,7 @@ namespace Platform.ApiService.Extensions
                     }
                     return list;
                 case JsonValueKind.String:
-                    return element.GetString();
+                    return element.GetString() ?? string.Empty;
                 case JsonValueKind.Number:
                     if (element.TryGetInt64(out var l)) return l;
                     if (element.TryGetDouble(out var d)) return d;

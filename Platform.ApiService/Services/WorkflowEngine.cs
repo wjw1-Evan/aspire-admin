@@ -72,6 +72,7 @@ public class WorkflowEngine : IWorkflowEngine
     private readonly IDatabaseOperationFactory<ApprovalRecord> _approvalRecordFactory;
     private readonly IDatabaseOperationFactory<Document> _documentFactory;
     private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
     private readonly ILogger<WorkflowEngine> _logger;
@@ -84,6 +85,7 @@ public class WorkflowEngine : IWorkflowEngine
     /// <param name="approvalRecordFactory">审批记录工厂</param>
     /// <param name="documentFactory">公文工厂</param>
     /// <param name="userCompanyFactory">用户企业关系工厂</param>
+    /// <param name="formFactory">表单定义工厂</param>
     /// <param name="userService">用户服务</param>
     /// <param name="notificationService">通知服务</param>
     /// <param name="logger">日志记录器</param>
@@ -93,6 +95,7 @@ public class WorkflowEngine : IWorkflowEngine
         IDatabaseOperationFactory<ApprovalRecord> approvalRecordFactory,
         IDatabaseOperationFactory<Document> documentFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        IDatabaseOperationFactory<FormDefinition> formFactory,
         IUserService userService,
         IUnifiedNotificationService notificationService,
         ILogger<WorkflowEngine> logger)
@@ -102,6 +105,7 @@ public class WorkflowEngine : IWorkflowEngine
         _approvalRecordFactory = approvalRecordFactory;
         _documentFactory = documentFactory;
         _userCompanyFactory = userCompanyFactory;
+        _formFactory = formFactory;
         _userService = userService;
         _notificationService = notificationService;
         _logger = logger;
@@ -140,7 +144,22 @@ public class WorkflowEngine : IWorkflowEngine
             throw new InvalidOperationException("流程定义中未找到起始节点");
         }
 
-        // 4. 创建流程实例
+        // 3. 保存表单定义快照（所有绑定表单的节点）
+        var formSnapshots = new Dictionary<string, FormDefinition>();
+        foreach (var node in definition.Graph.Nodes)
+        {
+            var formBinding = node.Config?.Form;
+            if (formBinding != null && !string.IsNullOrEmpty(formBinding.FormDefinitionId))
+            {
+                var form = await _formFactory.GetByIdAsync(formBinding.FormDefinitionId);
+                if (form != null)
+                {
+                    formSnapshots[node.Id] = form;
+                }
+            }
+        }
+
+        // 4. 创建流程实例（保存定义快照）
         var instance = new WorkflowInstance
         {
             WorkflowDefinitionId = definitionId,
@@ -150,7 +169,9 @@ public class WorkflowEngine : IWorkflowEngine
             Variables = sanitizedVars,
             StartedBy = userId,
             StartedAt = DateTime.UtcNow,
-            CompanyId = companyId
+            CompanyId = companyId,
+            WorkflowDefinitionSnapshot = definition, // 保存流程定义快照
+            FormDefinitionSnapshots = formSnapshots // 保存表单定义快照
         };
 
         instance = await _instanceFactory.CreateAsync(instance);

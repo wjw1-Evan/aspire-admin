@@ -33,6 +33,8 @@ public class WorkflowController : BaseApiController
     /// </summary>
     /// <param name="definitionFactory">流程定义工厂</param>
     /// <param name="instanceFactory">流程实例工厂</param>
+    /// <param name="formFactory">表单定义工厂</param>
+    /// <param name="documentFactory">文档工厂</param>
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="userService">用户服务</param>
     public WorkflowController(
@@ -506,10 +508,15 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("流程实例", id);
             }
 
-            var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+            // 优先使用实例中的定义快照，如果没有快照则使用最新定义（向后兼容）
+            WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
             if (definition == null)
             {
-                return NotFoundError("流程定义", instance.WorkflowDefinitionId);
+                definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                if (definition == null)
+                {
+                    return NotFoundError("流程定义", instance.WorkflowDefinitionId);
+                }
             }
 
             var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -524,20 +531,40 @@ public class WorkflowController : BaseApiController
                 return Success(new { form = (FormDefinition?)null, initialValues = (object?)null });
             }
 
-            var form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
-            if (form == null)
+            // 优先使用实例中的表单定义快照
+            FormDefinition? form = null;
+            if (instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.TryGetValue(nodeId, out var snapshotForm))
             {
-                return NotFoundError("表单定义", binding.FormDefinitionId);
+                form = snapshotForm;
+            }
+            else
+            {
+                // 如果没有快照，则使用最新定义（向后兼容）
+                form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+                if (form == null)
+                {
+                    return NotFoundError("表单定义", binding.FormDefinitionId);
+                }
             }
 
             object? initialValues = null;
             if (binding.Target == FormTarget.Document)
             {
-                var documentFactory = HttpContext.RequestServices.GetService(typeof(IDatabaseOperationFactory<Document>)) as IDatabaseOperationFactory<Document>;
-                if (documentFactory != null)
+                var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                if (document != null)
                 {
-                    var document = await documentFactory.GetByIdAsync(instance.DocumentId);
-                    initialValues = document?.FormData;
+                    var sourceFormData = document.FormData ?? new Dictionary<string, object>();
+                    if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+                    {
+                        if (sourceFormData.TryGetValue(binding.DataScopeKey, out var scopedData) && scopedData is Dictionary<string, object> scopedDict)
+                        {
+                            initialValues = scopedDict;
+                        }
+                    }
+                    else
+                    {
+                        initialValues = sourceFormData;
+                    }
                 }
             }
             else
@@ -597,17 +624,11 @@ public class WorkflowController : BaseApiController
 
             if (binding.Target == FormTarget.Document)
             {
-                var documentFactory = HttpContext.RequestServices.GetService(typeof(IDatabaseOperationFactory<Document>)) as IDatabaseOperationFactory<Document>;
-                if (documentFactory == null)
-                {
-                    return Error("SUBMIT_FAILED", "文档服务不可用");
-                }
-
-                var updateBuilder = documentFactory.CreateUpdateBuilder();
+                var updateBuilder = _documentFactory.CreateUpdateBuilder();
                 if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                 {
                     // 将数据作为子键存储在 FormData 中
-                    var document = await documentFactory.GetByIdAsync(instance.DocumentId);
+                    var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
                     var formData = document?.FormData ?? new System.Collections.Generic.Dictionary<string, object>();
                     formData[binding.DataScopeKey] = values;
                     updateBuilder.Set(d => d.FormData, formData);
@@ -618,10 +639,10 @@ public class WorkflowController : BaseApiController
                 }
 
                 var update = updateBuilder.Build();
-                var filter = documentFactory.CreateFilterBuilder()
+                var filter = _documentFactory.CreateFilterBuilder()
                     .Equal(d => d.Id, instance.DocumentId)
                     .Build();
-                var updated = await documentFactory.FindOneAndUpdateAsync(filter, update);
+                var updated = await _documentFactory.FindOneAndUpdateAsync(filter, update);
                 return Success(updated?.FormData ?? values);
             }
             else

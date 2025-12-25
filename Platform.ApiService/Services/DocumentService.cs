@@ -206,6 +206,7 @@ public class DocumentService : IDocumentService
     /// <param name="instanceFactory">流程实例工厂</param>
     /// <param name="definitionFactory">流程定义工厂</param>
     /// <param name="userCompanyFactory">用户企业关系工厂</param>
+    /// <param name="formFactory">表单定义工厂</param>
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="logger">日志记录器</param>
     /// <param name="gridFSService">GridFS 存储服务</param>
@@ -779,10 +780,15 @@ public class DocumentService : IDocumentService
 /// </summary>
 public class DocumentAttachmentUploadResult
 {
+    /// <summary>附件ID</summary>
     public string Id { get; set; } = string.Empty;
+    /// <summary>文件名</summary>
     public string Name { get; set; } = string.Empty;
+    /// <summary>文件大小（字节）</summary>
     public long Size { get; set; }
+    /// <summary>内容类型</summary>
     public string ContentType { get; set; } = "application/octet-stream";
+    /// <summary>访问URL</summary>
     public string Url { get; set; } = string.Empty;
 }
 
@@ -791,8 +797,12 @@ public class DocumentAttachmentUploadResult
 /// </summary>
 public class DocumentAttachmentDownloadResult
 {
+    /// <summary>文件内容流</summary>
     public Stream Content { get; set; } = Stream.Null;
+    /// <summary>内容类型</summary>
     public string ContentType { get; set; } = "application/octet-stream";
+    /// <summary>文件名</summary>
     public string FileName { get; set; } = "attachment";
+    /// <summary>内容长度（字节）</summary>
     public long ContentLength { get; set; }
 }

@@ -23,6 +23,8 @@ public class DocumentController : BaseApiController
     private readonly IDocumentService _documentService;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly IDatabaseOperationFactory<WorkflowInstance> _instanceFactory;
+    private readonly IDatabaseOperationFactory<WorkflowDefinition> _definitionFactory;
+    private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
 
     /// <summary>
     /// 初始化公文管理控制器
@@ -30,14 +32,20 @@ public class DocumentController : BaseApiController
     /// <param name="documentService">公文服务</param>
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="instanceFactory">流程实例工厂</param>
+    /// <param name="definitionFactory">流程定义工厂</param>
+    /// <param name="formFactory">表单定义工厂</param>
     public DocumentController(
         IDocumentService documentService,
         IWorkflowEngine workflowEngine,
-        IDatabaseOperationFactory<WorkflowInstance> instanceFactory)
+        IDatabaseOperationFactory<WorkflowInstance> instanceFactory,
+        IDatabaseOperationFactory<WorkflowDefinition> definitionFactory,
+        IDatabaseOperationFactory<FormDefinition> formFactory)
     {
         _documentService = documentService;
         _workflowEngine = workflowEngine;
         _instanceFactory = instanceFactory;
+        _definitionFactory = definitionFactory;
+        _formFactory = formFactory;
     }
 
     /// <summary>
@@ -79,10 +87,18 @@ public class DocumentController : BaseApiController
                 var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
                 var history = await _workflowEngine.GetApprovalHistoryAsync(document.WorkflowInstanceId);
 
+                // 如果有快照，使用快照中的流程定义，否则使用最新定义（用于向后兼容）
+                WorkflowDefinition? workflowDef = instance?.WorkflowDefinitionSnapshot;
+                if (workflowDef == null && instance != null)
+                {
+                    workflowDef = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                }
+
                 return Success(new
                 {
                     document,
                     workflowInstance = instance,
+                    workflowDefinition = workflowDef, // 包含流程定义（优先使用快照）
                     approvalHistory = history
                 });
             }
@@ -360,6 +376,96 @@ public class DocumentController : BaseApiController
         catch (Exception ex)
         {
             return Error("UPLOAD_FAILED", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// 从文档实例中获取文档创建表单（使用实例快照）
+    /// </summary>
+    [HttpGet("{id}/instance-form")]
+    [RequireMenu("document:list")]
+    public async Task<IActionResult> GetDocumentInstanceForm(string id)
+    {
+        try
+        {
+            var document = await _documentService.GetDocumentAsync(id);
+            if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
+            {
+                return NotFoundError("公文或流程实例", id);
+            }
+
+            var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
+            if (instance == null)
+            {
+                return NotFoundError("流程实例", document.WorkflowInstanceId);
+            }
+
+            // 优先使用实例中的流程定义快照
+            WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
+            if (definition == null)
+            {
+                // 如果没有快照，使用最新定义（向后兼容）
+                definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                if (definition == null)
+                {
+                    return NotFoundError("流程定义", instance.WorkflowDefinitionId);
+                }
+            }
+
+            // 优先起始节点
+            var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Type == "start");
+            FormBinding? binding = startNode?.Config?.Form;
+
+            if (binding == null || binding.Target != FormTarget.Document)
+            {
+                // 取第一个绑定了文档表单的节点
+                var nodeWithDocForm = definition.Graph.Nodes
+                    .FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document);
+                binding = nodeWithDocForm?.Config?.Form;
+            }
+
+            if (binding == null)
+            {
+                return Success(new { form = (FormDefinition?)null, dataScopeKey = (string?)null, initialValues = (object?)null });
+            }
+
+            // 优先使用实例中的表单定义快照（使用起始节点ID或第一个文档表单节点ID）
+            FormDefinition? form = null;
+            var formNodeId = startNode?.Id ?? definition.Graph.Nodes.FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document)?.Id;
+            if (!string.IsNullOrEmpty(formNodeId) && instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.TryGetValue(formNodeId, out var snapshotForm))
+            {
+                form = snapshotForm;
+            }
+            else
+            {
+                // 如果没有快照，使用最新定义（向后兼容）
+                form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+                if (form == null)
+                {
+                    return NotFoundError("表单定义", binding.FormDefinitionId);
+                }
+            }
+
+            // 从文档中获取初始值
+            var initialValues = new Dictionary<string, object>();
+            var sourceFormData = document.FormData ?? new Dictionary<string, object>();
+            if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+            {
+                if (sourceFormData.TryGetValue(binding.DataScopeKey, out var scopedData) && scopedData is Dictionary<string, object> scopedDict)
+                {
+                    initialValues = scopedDict;
+                }
+            }
+            else
+            {
+                initialValues = sourceFormData;
+            }
+
+            return Success(new { form, dataScopeKey = binding.DataScopeKey, initialValues });
+        }
+        catch (Exception ex)
+        {
+            return Error("GET_FAILED", ex.Message);
         }
     }
 

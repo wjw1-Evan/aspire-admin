@@ -283,9 +283,21 @@ public class WorkflowEngine : IWorkflowEngine
             {
                 // 1. 获取流程实例
                 var instance = await _instanceFactory.GetByIdAsync(instanceId);
-                if (instance == null || instance.Status != WorkflowStatus.Running)
+                if (instance == null)
                 {
-                    throw new InvalidOperationException("流程实例不存在或已结束");
+                    throw new InvalidOperationException("流程实例不存在");
+                }
+                
+                if (instance.Status != WorkflowStatus.Running)
+                {
+                    var statusText = instance.Status switch
+                    {
+                        WorkflowStatus.Completed => "已完成",
+                        WorkflowStatus.Cancelled => "已取消", 
+                        WorkflowStatus.Rejected => "已拒绝",
+                        _ => instance.Status.ToString()
+                    };
+                    throw new InvalidOperationException($"流程实例已结束，当前状态：{statusText}。请刷新页面查看最新状态。");
                 }
 
                 // 2. 获取流程定义（使用快照）
@@ -295,69 +307,104 @@ public class WorkflowEngine : IWorkflowEngine
                     throw new InvalidOperationException("流程定义快照不存在");
                 }
 
-                // 3. 获取当前节点
-                var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
+                // 3. 🔧 简化的节点验证和智能匹配
+                var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
                 if (currentNode == null || currentNode.Type != "approval")
                 {
-                    throw new InvalidOperationException("节点不存在或不是审批节点");
+                    throw new InvalidOperationException("当前节点不存在或不是审批节点");
                 }
 
-                _logger.LogInformation("审批节点检查: InstanceId={InstanceId}, RequestNodeId={RequestNodeId}, CurrentNodeId={CurrentNodeId}, NodeMatch={NodeMatch}", 
-                    instanceId, nodeId, instance.CurrentNodeId, nodeId == instance.CurrentNodeId);
-
-                if (currentNode.Id != instance.CurrentNodeId)
+                // 如果请求的节点与当前节点不匹配，进行智能匹配
+                if (nodeId != instance.CurrentNodeId)
                 {
-                    throw new InvalidOperationException($"当前节点不匹配，期望节点：{instance.CurrentNodeId}，请求节点：{nodeId}");
+                    _logger.LogWarning("请求节点与当前节点不匹配，进行智能匹配: InstanceId={InstanceId}, RequestNodeId={RequestNodeId}, CurrentNodeId={CurrentNodeId}", 
+                        instanceId, nodeId, instance.CurrentNodeId);
+                    
+                    // 检查用户是否有权限审批当前节点
+                    var currentApproverId = delegateToUserId ?? userId;
+                    var canApproveCurrentNode = await CanApproveAsync(instance, currentNode, currentApproverId);
+                    
+                    if (canApproveCurrentNode)
+                    {
+                        // 用户有权限审批当前节点，使用当前节点
+                        _logger.LogInformation("智能匹配成功，使用当前节点: InstanceId={InstanceId}, RequestNodeId={RequestNodeId}, CurrentNodeId={CurrentNodeId}", 
+                            instanceId, nodeId, instance.CurrentNodeId);
+                        // 注意：这里不修改 requestedNode，因为我们在创建审批记录时会使用 instance.CurrentNodeId
+                    }
+                    else
+                    {
+                        _logger.LogError("智能匹配失败，用户无权限审批当前节点: InstanceId={InstanceId}, RequestNodeId={RequestNodeId}, CurrentNodeId={CurrentNodeId}, UserId={UserId}", 
+                            instanceId, nodeId, instance.CurrentNodeId, currentApproverId);
+                        throw new InvalidOperationException($"当前节点不匹配，期望节点：{instance.CurrentNodeId}，请求节点：{nodeId}，且您无权限审批当前节点");
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("节点ID匹配: InstanceId={InstanceId}, NodeId={NodeId}", 
+                        instanceId, nodeId);
                 }
 
+                // 使用当前节点进行后续处理
+                var processingNode = currentNode;
+                
                 // 4. 验证审批权限
                 var approverId = delegateToUserId ?? userId;
-                if (!await CanApproveAsync(instance, currentNode, approverId))
+                if (!await CanApproveAsync(instance, processingNode, approverId))
                 {
                     throw new UnauthorizedAccessException("无权审批此节点");
                 }
 
-                // 5. 智能重复审批检查
-                // 检查逻辑：
-                // - 允许用户在不同节点审批
-                // - 允许用户在同一节点进行不同类型的审批操作（如先拒绝后通过）
-                // - 只阻止完全相同的重复操作（相同节点+相同用户+相同动作）
-                var existingApproval = instance.ApprovalRecords.FirstOrDefault(r => 
-                    r.NodeId == nodeId && 
-                    r.ApproverId == approverId &&
-                    r.Action == action);
+                // 5. 🔧 简化的重复审批检查 - 只检查当前节点的审批记录
+                _logger.LogInformation("检查重复审批: InstanceId={InstanceId}, CurrentNodeId={CurrentNodeId}, ApproverId={ApproverId}, Action={Action}", 
+                    instanceId, instance.CurrentNodeId, approverId, action);
                 
-                if (existingApproval != null)
+                // 查找该用户在当前节点的所有审批记录
+                var userApprovalRecordsForCurrentNode = instance.ApprovalRecords
+                    .Where(r => r.NodeId == instance.CurrentNodeId && r.ApproverId == approverId)
+                    .ToList();
+                
+                _logger.LogInformation("用户在当前节点的审批记录: InstanceId={InstanceId}, CurrentNodeId={CurrentNodeId}, ApproverId={ApproverId}, RecordCount={RecordCount}, Records={Records}", 
+                    instanceId, instance.CurrentNodeId, approverId, userApprovalRecordsForCurrentNode.Count, 
+                    string.Join(", ", userApprovalRecordsForCurrentNode.Select(r => $"{r.Action}@{r.ApprovedAt:yyyy-MM-dd HH:mm:ss}")));
+                
+                var existingApprovalForCurrentNode = userApprovalRecordsForCurrentNode.FirstOrDefault(r => r.Action == action);
+                
+                if (existingApprovalForCurrentNode != null)
                 {
-                    // 非会签节点或已有相同操作：阻止完全相同的重复操作
-                    _logger.LogWarning("检测到重复审批操作: InstanceId={InstanceId}, NodeId={NodeId}, ApproverId={ApproverId}, Action={Action}, ExistingApprovalId={ExistingApprovalId}, ExistingTime={ExistingTime}", 
-                        instanceId, nodeId, approverId, action, existingApproval.Id, existingApproval.ApprovedAt);
-                    
+                    // 用户已经在当前节点执行过相同的操作
+                    _logger.LogError("用户已在当前节点执行过相同操作: InstanceId={InstanceId}, CurrentNodeId={CurrentNodeId}, ApproverId={ApproverId}, Action={Action}", 
+                        instanceId, instance.CurrentNodeId, approverId, action);
                     throw new InvalidOperationException($"您已对此节点执行过{action}操作");
                 }
+                
+                _logger.LogInformation("重复审批检查通过: InstanceId={InstanceId}, CurrentNodeId={CurrentNodeId}, ApproverId={ApproverId}, Action={Action}", 
+                    instanceId, instance.CurrentNodeId, approverId, action);
 
                 // 6. 转办权限验证
                 if (action == ApprovalAction.Delegate && !string.IsNullOrEmpty(delegateToUserId))
                 {
-                    var canDelegateApprove = await CanApproveAsync(instance, currentNode, delegateToUserId);
+                    var canDelegateApprove = await CanApproveAsync(instance, processingNode, delegateToUserId);
                     if (!canDelegateApprove)
                     {
                         throw new InvalidOperationException("转办目标用户无权限审批此节点");
                     }
                 }
 
-                // 7. 创建审批记录
+                // 7. 创建审批记录 - 关键修复：使用当前节点ID而不是请求节点ID
                 var user = await _userService.GetUserByIdAsync(approverId);
                 var userName = user?.Username ?? approverId;
                 
-                _logger.LogInformation("创建审批记录: InstanceId={InstanceId}, NodeId={NodeId}, ApproverId={ApproverId}, Action={Action}", 
-                    instanceId, nodeId, approverId, action);
+                // 🔧 关键修复：审批记录必须使用当前节点ID，确保记录到正确的节点上
+                var actualNodeId = instance.CurrentNodeId;
+                
+                _logger.LogInformation("创建审批记录: InstanceId={InstanceId}, ActualNodeId={ActualNodeId}, RequestedNodeId={RequestedNodeId}, ApproverId={ApproverId}, Action={Action}", 
+                    instanceId, actualNodeId, nodeId, approverId, action);
                 
                 var approvalRecord = new ApprovalRecord
                 {
                     Id = GenerateSafeObjectId(), // 使用安全的ObjectId生成方法
                     WorkflowInstanceId = instanceId,
-                    NodeId = nodeId,
+                    NodeId = actualNodeId, // 🔧 关键修复：使用当前节点ID，确保审批记录记录在正确的节点上
                     ApproverId = approverId,
                     ApproverName = userName,
                     Action = action,
@@ -374,10 +421,13 @@ public class WorkflowEngine : IWorkflowEngine
                 // 8. 使用原子操作更新实例（包含乐观锁检查）
                 var newApprovalRecords = new List<ApprovalRecord>(instance.ApprovalRecords) { approvalRecord };
                 
+                // 乐观锁：确保实例状态没有被其他操作修改
+                // 注意：这里检查的是获取实例时的CurrentNodeId，而不是requestedNode.Id
+                // 因为在智能节点匹配中，我们可能已经将requestedNode调整为当前节点
                 var instanceFilter = _instanceFactory.CreateFilterBuilder()
                     .Equal(i => i.Id, instanceId)
                     .Equal(i => i.Status, WorkflowStatus.Running) // 确保状态未变
-                    .Equal(i => i.CurrentNodeId, nodeId) // 确保当前节点未变
+                    .Equal(i => i.CurrentNodeId, instance.CurrentNodeId) // 确保当前节点未变（使用获取时的节点ID）
                     .Build();
 
                 var instanceUpdate = _instanceFactory.CreateUpdateBuilder()
@@ -392,8 +442,8 @@ public class WorkflowEngine : IWorkflowEngine
                     // 实例已被其他操作修改，重试
                     if (retry < maxRetries - 1)
                     {
-                        _logger.LogWarning("审批操作冲突，重试 {Retry}/{MaxRetries}: InstanceId={InstanceId}, NodeId={NodeId}", 
-                            retry + 1, maxRetries, instanceId, nodeId);
+                        _logger.LogWarning("审批操作冲突，重试 {Retry}/{MaxRetries}: InstanceId={InstanceId}, RequestedNodeId={RequestedNodeId}, InstanceCurrentNodeId={InstanceCurrentNodeId}", 
+                            retry + 1, maxRetries, instanceId, nodeId, instance.CurrentNodeId);
                         await Task.Delay(100 * (retry + 1)); // 指数退避
                         continue;
                     }
@@ -418,10 +468,10 @@ public class WorkflowEngine : IWorkflowEngine
                 }
 
                 // 10. 根据审批动作处理（可能会推进流程）
-                var result = await HandleApprovalActionAsync(updatedInstance, currentNode, approvalRecord);
+                var result = await HandleApprovalActionAsync(updatedInstance, processingNode, approvalRecord);
                 
-                _logger.LogInformation("审批操作成功: InstanceId={InstanceId}, NodeId={NodeId}, Action={Action}, ApproverId={ApproverId}, FlowMoved={FlowMoved}",
-                    instanceId, nodeId, action, approverId, result);
+                _logger.LogInformation("审批操作成功: InstanceId={InstanceId}, CurrentNodeId={CurrentNodeId}, Action={Action}, ApproverId={ApproverId}, FlowMoved={FlowMoved}",
+                    instanceId, instance.CurrentNodeId, action, approverId, result);
                 
                 return result;
             }
@@ -960,8 +1010,21 @@ public class WorkflowEngine : IWorkflowEngine
         if (outgoingEdges.Count == 0)
         {
             // 没有出边，流程结束
-            _logger.LogInformation("没有出边，流程结束: InstanceId={InstanceId}, CurrentNodeId={CurrentNodeId}", 
+            _logger.LogWarning("工作流定义可能有问题：节点没有出边，流程意外结束: InstanceId={InstanceId}, CurrentNodeId={CurrentNodeId}. 请检查工作流定义中是否正确配置了节点之间的连接。", 
                 instanceId, currentNodeId);
+            
+            // 输出工作流定义的所有边，用于调试
+            if (definition.Graph.Edges.Any())
+            {
+                _logger.LogInformation("工作流定义中的所有边: InstanceId={InstanceId}, Edges={Edges}", 
+                    instanceId, string.Join("; ", definition.Graph.Edges.Select(e => $"{e.Source}->{e.Target}")));
+            }
+            else
+            {
+                _logger.LogError("工作流定义中没有任何边: InstanceId={InstanceId}, DefinitionId={DefinitionId}", 
+                    instanceId, instance.WorkflowDefinitionId);
+            }
+            
             await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
 
             // 发送完成通知（流程意外结束的情况）

@@ -851,7 +851,6 @@ public class WorkflowEngine : IWorkflowEngine
         }
 
         // 创建退回记录
-        var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
         var user = await _userService.GetUserByIdAsync(userId);
         var userName = user?.Username ?? userId;
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync();

@@ -212,6 +212,17 @@ public class DocumentController : BaseApiController
     {
         try
         {
+            // 输入验证
+            if (string.IsNullOrEmpty(id))
+            {
+                return ValidationError("文档ID不能为空");
+            }
+
+            if (request == null)
+            {
+                return ValidationError("请求参数不能为空");
+            }
+
             var document = await _documentService.GetDocumentAsync(id);
             if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
             {
@@ -248,6 +259,17 @@ public class DocumentController : BaseApiController
     {
         try
         {
+            // 输入验证
+            if (string.IsNullOrEmpty(id))
+            {
+                return ValidationError("文档ID不能为空");
+            }
+
+            if (request == null)
+            {
+                return ValidationError("请求参数不能为空");
+            }
+
             if (string.IsNullOrEmpty(request.Comment))
             {
                 return ValidationError("拒绝原因不能为空");

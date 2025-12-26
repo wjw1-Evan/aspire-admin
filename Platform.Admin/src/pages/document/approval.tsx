@@ -94,6 +94,9 @@ const ApprovalPage: React.FC = () => {
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
   const [approvalModalLoading, setApprovalModalLoading] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const [delegating, setDelegating] = useState(false);
   const [returnableNodes, setReturnableNodes] = useState<Array<{ id: string; label: string; type: string }>>([]);
 
   const graphNodes: FlowNode[] = useMemo(() => {
@@ -161,7 +164,7 @@ const ApprovalPage: React.FC = () => {
         setUsers(response.data.users);
       }
     } catch (error) {
-      console.error('加载用户列表失败:', error);
+      // 用户列表加载失败不影响主要功能，静默处理
     }
   };
 
@@ -205,7 +208,10 @@ const ApprovalPage: React.FC = () => {
             type="link"
             size="small"
             icon={<EyeOutlined />}
-            onClick={async () => {
+            onClick={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
               try {
                 const response = await getDocumentDetail(record.id!);
                 if (response.success && response.data) {
@@ -231,7 +237,7 @@ const ApprovalPage: React.FC = () => {
                         setDetailWorkflowDef(null);
                       }
                     } catch (err) {
-                      console.error('加载流程定义失败', err);
+                      message.error('加载流程定义失败');
                       setDetailWorkflowDef(null);
                     }
                   } else {
@@ -252,7 +258,7 @@ const ApprovalPage: React.FC = () => {
                         setDetailFormValues(null);
                       }
                     } catch (e) {
-                      console.error('加载表单定义失败', e);
+                      // 表单定义加载失败，静默处理
                       setDetailFormDef(null);
                       setDetailFormValues(null);
                     }
@@ -277,7 +283,7 @@ const ApprovalPage: React.FC = () => {
                         setDetailFormValues(null);
                       }
                     } catch (e) {
-                      console.error('加载表单定义失败', e);
+                      // 表单定义加载失败，静默处理
                       setDetailFormDef(null);
                       setDetailFormValues(null);
                     }
@@ -294,7 +300,7 @@ const ApprovalPage: React.FC = () => {
                         setDetailNodeFormValues(null);
                       }
                     } catch (err) {
-                      console.error('加载节点表单失败', err);
+                      // 节点表单加载失败，静默处理
                       setDetailNodeFormDef(null);
                       setDetailNodeFormValues(null);
                     }
@@ -317,12 +323,12 @@ const ApprovalPage: React.FC = () => {
                             };
                           }
                         } catch (e) {
-                          console.error('加载节点表单失败', nid, e);
+                          // 单个节点表单加载失败，跳过
                         }
                       }
                       setDetailNodeForms(forms);
                     } catch (e) {
-                      console.error('批量加载节点表单失败', e);
+                      // 批量加载失败，使用空对象
                       setDetailNodeForms({});
                     }
                   } else {
@@ -333,7 +339,7 @@ const ApprovalPage: React.FC = () => {
                   setDetailVisible(true);
                 }
               } catch (error) {
-                console.error('获取详情失败:', error);
+                message.error('获取详情失败');
               }
             }}
           >
@@ -345,7 +351,10 @@ const ApprovalPage: React.FC = () => {
                 type="link"
                 size="small"
                 icon={<CheckOutlined />}
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
                   setCurrentDocument(record);
                   setApprovalModalLoading(true);
                   try {
@@ -381,11 +390,11 @@ const ApprovalPage: React.FC = () => {
                               setDetailWorkflowDef(null);
                             }
                           } catch (err) {
-                            console.error('加载流程定义失败', err);
+                            // 流程定义加载失败，静默处理
                             setDetailWorkflowDef(null);
                           }
                         } catch (e) {
-                          console.error('加载节点表单失败', e);
+                          // 节点表单加载失败，静默处理
                           setNodeFormDef(null);
                           setNodeFormInitialValues({});
                         }
@@ -398,7 +407,6 @@ const ApprovalPage: React.FC = () => {
                       setApprovalModalVisible(true);
                     }
                   } catch (e) {
-                    console.error('加载审批信息失败', e);
                     message.error(intl.formatMessage({ id: 'pages.document.approval.loadFailed', defaultMessage: '加载审批信息失败' }));
                   } finally {
                     setApprovalModalLoading(false);
@@ -412,7 +420,10 @@ const ApprovalPage: React.FC = () => {
                 size="small"
                 danger
                 icon={<CloseOutlined />}
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
                   setCurrentDocument(record);
                   // 获取流程实例和节点信息
                   try {
@@ -426,7 +437,7 @@ const ApprovalPage: React.FC = () => {
                       setCurrentNodeId(nodeId || null);
                     }
                   } catch (e) {
-                    console.error('获取流程信息失败', e);
+                    // 获取流程信息失败，静默处理
                   }
                   setRejectModalVisible(true);
                 }}
@@ -437,7 +448,10 @@ const ApprovalPage: React.FC = () => {
                 type="link"
                 size="small"
                 icon={<RollbackOutlined />}
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
                   setCurrentDocument(record);
                   // 获取流程实例和节点信息
                   try {
@@ -501,7 +515,7 @@ const ApprovalPage: React.FC = () => {
                             setReturnableNodes([]);
                           }
                         } catch (err) {
-                          console.error('获取流程定义失败', err);
+                          // 获取流程定义失败，静默处理
                           setReturnableNodes([]);
                         }
                       } else {
@@ -509,7 +523,7 @@ const ApprovalPage: React.FC = () => {
                       }
                     }
                   } catch (e) {
-                    console.error('获取流程信息失败', e);
+                    // 获取流程信息失败，静默处理
                     setReturnableNodes([]);
                   }
                   setReturnModalVisible(true);
@@ -521,7 +535,10 @@ const ApprovalPage: React.FC = () => {
                 type="link"
                 size="small"
                 icon={<SwapOutlined />}
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
                   setCurrentDocument(record);
                   // 获取流程实例和节点信息
                   try {
@@ -535,7 +552,7 @@ const ApprovalPage: React.FC = () => {
                       setCurrentNodeId(nodeId || null);
                     }
                   } catch (e) {
-                    console.error('获取流程信息失败', e);
+                    // 获取流程信息失败，静默处理
                   }
                   // 获取用户列表用于转办
                   try {
@@ -544,7 +561,7 @@ const ApprovalPage: React.FC = () => {
                       setUsers(userResp.data.list || userResp.data.data || []);
                     }
                   } catch (e) {
-                    console.error('获取用户列表失败', e);
+                    // 获取用户列表失败，静默处理
                   }
                   setDelegateModalVisible(true);
                 }}
@@ -619,7 +636,6 @@ const ApprovalPage: React.FC = () => {
         message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
-      console.error('审批失败:', error);
       message.error(intl.formatMessage({ id: 'pages.document.approval.message.approveFailed' }));
     } finally {
       setApproving(false);
@@ -627,9 +643,10 @@ const ApprovalPage: React.FC = () => {
   };
 
   const handleReject = async () => {
-    if (!currentDocument) return;
+    if (!currentDocument || rejecting) return;
 
     try {
+      setRejecting(true);
       const values = await rejectForm.validateFields();
 
       // 统一使用 executeNodeAction 接口
@@ -652,15 +669,17 @@ const ApprovalPage: React.FC = () => {
         message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
-      console.error('拒绝失败:', error);
       message.error(intl.formatMessage({ id: 'pages.document.approval.message.rejectFailed' }));
+    } finally {
+      setRejecting(false);
     }
   };
 
   const handleReturn = async () => {
-    if (!currentDocument) return;
+    if (!currentDocument || returning) return;
 
     try {
+      setReturning(true);
       const values = await returnForm.validateFields();
 
       // 统一使用 executeNodeAction 接口
@@ -684,15 +703,17 @@ const ApprovalPage: React.FC = () => {
         message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
-      console.error('退回失败:', error);
       message.error(intl.formatMessage({ id: 'pages.document.approval.message.returnFailed' }));
+    } finally {
+      setReturning(false);
     }
   };
 
   const handleDelegate = async () => {
-    if (!currentDocument) return;
+    if (!currentDocument || delegating) return;
 
     try {
+      setDelegating(true);
       const values = await delegateForm.validateFields();
 
       // 统一使用 executeNodeAction 接口
@@ -716,8 +737,9 @@ const ApprovalPage: React.FC = () => {
         message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
-      console.error('转办失败:', error);
       message.error(intl.formatMessage({ id: 'pages.document.approval.message.delegateFailed' }));
+    } finally {
+      setDelegating(false);
     }
   };
 
@@ -942,6 +964,7 @@ const ApprovalPage: React.FC = () => {
         title={intl.formatMessage({ id: 'pages.document.approval.modal.rejectTitle' })}
         open={rejectModalVisible}
         onOk={handleReject}
+        confirmLoading={rejecting}
         onCancel={() => {
           setRejectModalVisible(false);
           rejectForm.resetFields();
@@ -968,6 +991,7 @@ const ApprovalPage: React.FC = () => {
         title={intl.formatMessage({ id: 'pages.document.approval.modal.returnTitle' })}
         open={returnModalVisible}
         onOk={handleReturn}
+        confirmLoading={returning}
         onCancel={() => {
           setReturnModalVisible(false);
           returnForm.resetFields();
@@ -1014,6 +1038,7 @@ const ApprovalPage: React.FC = () => {
         title={intl.formatMessage({ id: 'pages.document.approval.modal.delegateTitle' })}
         open={delegateModalVisible}
         onOk={handleDelegate}
+        confirmLoading={delegating}
         onCancel={() => {
           setDelegateModalVisible(false);
           delegateForm.resetFields();

@@ -576,7 +576,7 @@ const ApprovalPage: React.FC = () => {
   ];
 
   const handleApprove = async () => {
-    if (!currentDocument) return;
+    if (!currentDocument || approving) return;
 
     try {
       setApproving(true);

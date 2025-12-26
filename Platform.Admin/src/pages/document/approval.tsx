@@ -94,6 +94,7 @@ const ApprovalPage: React.FC = () => {
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
   const [approvalModalLoading, setApprovalModalLoading] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [returnableNodes, setReturnableNodes] = useState<Array<{ id: string; label: string; type: string }>>([]);
 
   const graphNodes: FlowNode[] = useMemo(() => {
     if (!detailWorkflowDef?.graph?.nodes?.length) return [];
@@ -446,11 +447,70 @@ const ApprovalPage: React.FC = () => {
                       const instance = detailResp.data.workflowInstance ?? doc?.workflowInstance;
                       const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                       const nodeId = instance?.currentNodeId;
+                      const defId = instance?.workflowDefinitionId;
+                      const approvalHistory = detailResp.data?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
+
                       setCurrentInstanceId(instanceId || null);
                       setCurrentNodeId(nodeId || null);
+
+                      // 获取流程定义以确定可退回的节点
+                      if (defId) {
+                        try {
+                          const defResp = await getWorkflowDetail(defId);
+                          if (defResp.success && defResp.data) {
+                            const workflowDef = defResp.data;
+
+                            // 获取已经通过的节点（从审批历史中）
+                            const completedNodeIds = new Set(
+                              approvalHistory
+                                .filter((h: any) => h.action === 'Approve' || h.action === 'approve')
+                                .map((h: any) => h.nodeId)
+                            );
+
+                            // 获取可退回的节点
+                            const returnableNodeList = (workflowDef.graph?.nodes || [])
+                              .filter((node: any) => {
+                                // 排除当前节点
+                                if (node.id === nodeId) return false;
+
+                                // 开始节点始终可以退回（重新开始流程）
+                                if (node.type === 'start') return true;
+
+                                // 审批节点需要已经完成审批才能退回
+                                if (node.type === 'approval') {
+                                  return completedNodeIds.has(node.id);
+                                }
+
+                                return false;
+                              })
+                              .map((node: any) => ({
+                                id: node.id,
+                                label: node.label || node.id,
+                                type: node.type
+                              }))
+                              .sort((a, b) => {
+                                // 开始节点排在最前面
+                                if (a.type === 'start' && b.type !== 'start') return -1;
+                                if (b.type === 'start' && a.type !== 'start') return 1;
+                                // 其他节点按标签排序
+                                return a.label.localeCompare(b.label);
+                              });
+
+                            setReturnableNodes(returnableNodeList);
+                          } else {
+                            setReturnableNodes([]);
+                          }
+                        } catch (err) {
+                          console.error('获取流程定义失败', err);
+                          setReturnableNodes([]);
+                        }
+                      } else {
+                        setReturnableNodes([]);
+                      }
                     }
                   } catch (e) {
                     console.error('获取流程信息失败', e);
+                    setReturnableNodes([]);
                   }
                   setReturnModalVisible(true);
                 }}
@@ -507,92 +567,56 @@ const ApprovalPage: React.FC = () => {
       const comment = values.comment;
       const nodeValues: Record<string, any> = values.nodeValues || {};
 
-      // 🔧 关键修复：在审批前重新获取最新的流程实例状态
-      if (currentInstanceId) {
-        try {
-          const latestDetailResp = await getDocumentDetail(currentDocument.id!);
-          if (latestDetailResp.success && latestDetailResp.data) {
-            const latestDoc = latestDetailResp.data.document ?? latestDetailResp.data;
-            const latestInstance = latestDetailResp.data.workflowInstance ?? latestDoc?.workflowInstance;
-            const latestInstanceId = latestInstance?.id || latestInstance?.workflowInstanceId || latestInstance?.workflowInstance?.id;
-            const latestNodeId = latestInstance?.currentNodeId;
-
-            if (latestInstanceId && latestNodeId) {
-              // 更新为最新的实例和节点ID
-              setCurrentInstanceId(latestInstanceId);
-              setCurrentNodeId(latestNodeId);
-
-              console.log('已更新为最新的流程状态:', { instanceId: latestInstanceId, nodeId: latestNodeId });
-
-              // 使用最新的节点ID进行审批
-              const normalized: Record<string, any> = { ...nodeValues };
-              if (nodeFormDef?.fields?.length) {
-                for (const f of nodeFormDef.fields) {
-                  const v = normalized[f.dataKey];
-                  if (v === undefined) continue;
-                  switch (f.type) {
-                    case FormFieldType.Date:
-                    case FormFieldType.DateTime:
-                      normalized[f.dataKey] = v && (v as any).toISOString ? (v as any).toISOString() : v;
-                      break;
-                    case FormFieldType.Number:
-                      normalized[f.dataKey] = typeof v === 'string' ? Number(v) : v;
-                      break;
-                    case FormFieldType.Checkbox:
-                      normalized[f.dataKey] = Array.isArray(v) ? v : [v];
-                      break;
-                    default:
-                      normalized[f.dataKey] = v;
-                  }
-                }
-              }
-
-              // 如果有节点表单，先提交表单数据
-              if (nodeFormDef) {
-                await submitNodeForm(latestInstanceId, latestNodeId, normalized);
-              }
-
-              // 执行审批操作 - 使用最新的节点ID
-              const actionResp = await executeNodeAction(latestInstanceId, latestNodeId, {
-                action: 'approve',
-                comment,
-              });
-
-              if (actionResp.success) {
-                message.success(intl.formatMessage({ id: 'pages.document.approval.message.approveSuccess' }));
-                setApprovalModalVisible(false);
-                approvalForm.resetFields();
-                setCurrentDocument(null);
-                setNodeFormDef(null);
-                setNodeFormInitialValues({});
-                setCurrentInstanceId(null);
-                setCurrentNodeId(null);
-                if (actionRef.current?.reload) {
-                  actionRef.current.reload();
-                }
-                setApproving(false);
-                return;
-              }
-            } else {
-              message.error('无法获取最新的流程状态');
-              setApproving(false);
-              return;
+      // 统一使用 executeNodeAction 接口
+      if (currentInstanceId && currentNodeId) {
+        const normalized: Record<string, any> = { ...nodeValues };
+        if (nodeFormDef?.fields?.length) {
+          for (const f of nodeFormDef.fields) {
+            const v = normalized[f.dataKey];
+            if (v === undefined) continue;
+            switch (f.type) {
+              case FormFieldType.Date:
+              case FormFieldType.DateTime:
+                normalized[f.dataKey] = v && (v as any).toISOString ? (v as any).toISOString() : v;
+                break;
+              case FormFieldType.Number:
+                normalized[f.dataKey] = typeof v === 'string' ? Number(v) : v;
+                break;
+              case FormFieldType.Checkbox:
+                normalized[f.dataKey] = Array.isArray(v) ? v : [v];
+                break;
+              default:
+                normalized[f.dataKey] = v;
             }
-          } else {
-            message.error('无法获取最新的流程状态');
-            setApproving(false);
-            return;
           }
-        } catch (error) {
-          console.error('获取最新流程状态失败:', error);
-          message.error('获取最新流程状态失败');
-          setApproving(false);
-          return;
+        }
+
+        // 如果有节点表单，先提交表单数据
+        if (nodeFormDef) {
+          await submitNodeForm(currentInstanceId, currentNodeId, normalized);
+        }
+
+        // 执行审批操作
+        const actionResp = await executeNodeAction(currentInstanceId, currentNodeId, {
+          action: 'approve',
+          comment,
+        });
+
+        if (actionResp.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.message.approveSuccess' }));
+          setApprovalModalVisible(false);
+          approvalForm.resetFields();
+          setCurrentDocument(null);
+          setNodeFormDef(null);
+          setNodeFormInitialValues({});
+          setCurrentInstanceId(null);
+          setCurrentNodeId(null);
+          if (actionRef.current?.reload) {
+            actionRef.current.reload();
+          }
         }
       } else {
-        message.error('缺少流程实例信息');
-        setApproving(false);
-        return;
+        message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
       console.error('审批失败:', error);
@@ -608,44 +632,24 @@ const ApprovalPage: React.FC = () => {
     try {
       const values = await rejectForm.validateFields();
 
-      // 🔧 关键修复：在拒绝前重新获取最新的流程实例状态
-      if (currentInstanceId) {
-        try {
-          const latestDetailResp = await getDocumentDetail(currentDocument.id!);
-          if (latestDetailResp.success && latestDetailResp.data) {
-            const latestDoc = latestDetailResp.data.document ?? latestDetailResp.data;
-            const latestInstance = latestDetailResp.data.workflowInstance ?? latestDoc?.workflowInstance;
-            const latestInstanceId = latestInstance?.id || latestInstance?.workflowInstanceId || latestInstance?.workflowInstance?.id;
-            const latestNodeId = latestInstance?.currentNodeId;
+      // 统一使用 executeNodeAction 接口
+      if (currentInstanceId && currentNodeId) {
+        const actionResp = await executeNodeAction(currentInstanceId, currentNodeId, {
+          action: 'reject',
+          comment: values.comment,
+        });
 
-            if (latestInstanceId && latestNodeId) {
-              // 使用最新的节点ID执行拒绝操作
-              const actionResp = await executeNodeAction(latestInstanceId, latestNodeId, {
-                action: 'reject',
-                comment: values.comment,
-              });
-
-              if (actionResp.success) {
-                message.success(intl.formatMessage({ id: 'pages.document.approval.message.rejectSuccess' }));
-                setRejectModalVisible(false);
-                rejectForm.resetFields();
-                setCurrentDocument(null);
-                if (actionRef.current?.reload) {
-                  actionRef.current.reload();
-                }
-              }
-            } else {
-              message.error('无法获取最新的流程状态');
-            }
-          } else {
-            message.error('无法获取最新的流程状态');
+        if (actionResp.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.message.rejectSuccess' }));
+          setRejectModalVisible(false);
+          rejectForm.resetFields();
+          setCurrentDocument(null);
+          if (actionRef.current?.reload) {
+            actionRef.current.reload();
           }
-        } catch (error) {
-          console.error('获取最新流程状态失败:', error);
-          message.error('获取最新流程状态失败');
         }
       } else {
-        message.error('缺少流程实例信息');
+        message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
       console.error('拒绝失败:', error);
@@ -659,43 +663,25 @@ const ApprovalPage: React.FC = () => {
     try {
       const values = await returnForm.validateFields();
 
-      // 🔧 关键修复：在退回前重新获取最新的流程实例状态
-      if (currentInstanceId) {
-        try {
-          const latestDetailResp = await getDocumentDetail(currentDocument.id!);
-          if (latestDetailResp.success && latestDetailResp.data) {
-            const latestDoc = latestDetailResp.data.document ?? latestDetailResp.data;
-            const latestInstance = latestDetailResp.data.workflowInstance ?? latestDoc?.workflowInstance;
-            const latestInstanceId = latestInstance?.id || latestInstance?.workflowInstanceId || latestInstance?.workflowInstance?.id;
-            const latestNodeId = latestInstance?.currentNodeId;
+      // 统一使用 executeNodeAction 接口
+      if (currentInstanceId && currentNodeId) {
+        const actionResp = await executeNodeAction(currentInstanceId, currentNodeId, {
+          action: 'return',
+          comment: values.comment,
+          targetNodeId: values.targetNodeId,
+        });
 
-            if (latestInstanceId && latestNodeId) {
-              // 使用最新的节点ID执行退回操作
-              const actionResp = await executeNodeAction(latestInstanceId, latestNodeId, {
-                action: 'return',
-                comment: values.comment,
-                targetNodeId: values.targetNodeId,
-              });
-
-              if (actionResp.success) {
-                message.success(intl.formatMessage({ id: 'pages.document.approval.message.returnSuccess' }));
-                setReturnModalVisible(false);
-                returnForm.resetFields();
-                setCurrentDocument(null);
-                actionRef.current?.reload?.();
-              }
-            } else {
-              message.error('无法获取最新的流程状态');
-            }
-          } else {
-            message.error('无法获取最新的流程状态');
+        if (actionResp.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.message.returnSuccess' }));
+          setReturnModalVisible(false);
+          returnForm.resetFields();
+          setCurrentDocument(null);
+          if (actionRef.current?.reload) {
+            actionRef.current.reload();
           }
-        } catch (error) {
-          console.error('获取最新流程状态失败:', error);
-          message.error('获取最新流程状态失败');
         }
       } else {
-        message.error('缺少流程实例信息');
+        message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
       console.error('退回失败:', error);
@@ -709,45 +695,25 @@ const ApprovalPage: React.FC = () => {
     try {
       const values = await delegateForm.validateFields();
 
-      // 🔧 关键修复：在转办前重新获取最新的流程实例状态
-      if (currentInstanceId) {
-        try {
-          const latestDetailResp = await getDocumentDetail(currentDocument.id!);
-          if (latestDetailResp.success && latestDetailResp.data) {
-            const latestDoc = latestDetailResp.data.document ?? latestDetailResp.data;
-            const latestInstance = latestDetailResp.data.workflowInstance ?? latestDoc?.workflowInstance;
-            const latestInstanceId = latestInstance?.id || latestInstance?.workflowInstanceId || latestInstance?.workflowInstance?.id;
-            const latestNodeId = latestInstance?.currentNodeId;
+      // 统一使用 executeNodeAction 接口
+      if (currentInstanceId && currentNodeId) {
+        const actionResp = await executeNodeAction(currentInstanceId, currentNodeId, {
+          action: 'delegate',
+          comment: values.comment,
+          delegateToUserId: values.delegateToUserId,
+        });
 
-            if (latestInstanceId && latestNodeId) {
-              // 使用最新的节点ID执行转办操作
-              const actionResp = await executeNodeAction(latestInstanceId, latestNodeId, {
-                action: 'delegate',
-                comment: values.comment,
-                delegateToUserId: values.delegateToUserId,
-              });
-
-              if (actionResp.success) {
-                message.success(intl.formatMessage({ id: 'pages.document.approval.message.delegateSuccess' }));
-                setDelegateModalVisible(false);
-                delegateForm.resetFields();
-                setCurrentDocument(null);
-                if (actionRef.current?.reload) {
-                  actionRef.current.reload();
-                }
-              }
-            } else {
-              message.error('无法获取最新的流程状态');
-            }
-          } else {
-            message.error('无法获取最新的流程状态');
+        if (actionResp.success) {
+          message.success(intl.formatMessage({ id: 'pages.document.approval.message.delegateSuccess' }));
+          setDelegateModalVisible(false);
+          delegateForm.resetFields();
+          setCurrentDocument(null);
+          if (actionRef.current?.reload) {
+            actionRef.current.reload();
           }
-        } catch (error) {
-          console.error('获取最新流程状态失败:', error);
-          message.error('获取最新流程状态失败');
         }
       } else {
-        message.error('缺少流程实例信息');
+        message.error('缺少流程实例或节点信息');
       }
     } catch (error) {
       console.error('转办失败:', error);
@@ -1006,6 +972,7 @@ const ApprovalPage: React.FC = () => {
           setReturnModalVisible(false);
           returnForm.resetFields();
           setCurrentDocument(null);
+          setReturnableNodes([]);
         }}
       >
         <Form form={returnForm} layout="vertical">
@@ -1019,7 +986,14 @@ const ApprovalPage: React.FC = () => {
               },
             ]}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.document.approval.modal.returnNodePlaceholder' })} />
+            <Select
+              placeholder={intl.formatMessage({ id: 'pages.document.approval.modal.returnNodePlaceholder' })}
+              options={returnableNodes.map(node => ({
+                label: `${node.label} (${node.type === 'start' ? '开始节点' : '审批节点'})`,
+                value: node.id
+              }))}
+              notFoundContent={returnableNodes.length === 0 ? '暂无可退回的节点' : '未找到匹配项'}
+            />
           </Form.Item>
           <Form.Item
             name="comment"

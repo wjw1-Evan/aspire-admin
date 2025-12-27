@@ -149,12 +149,6 @@ const WorkflowMonitor: React.FC = () => {
                 const res = await getNodeForm(record.id!, record.currentNodeId);
                 if (res.success) {
                   // 确保数据是最新的
-                  console.log('获取到的表单数据:', {
-                    instanceId: record.id,
-                    nodeId: record.currentNodeId,
-                    formDef: res.data?.form,
-                    initialValues: res.data?.initialValues
-                  });
                   setNodeFormDef(res.data?.form || null);
                   setNodeFormInitial(res.data?.initialValues || null);
                   // 延迟一点再打开模态框，确保状态已更新
@@ -266,12 +260,6 @@ const WorkflowMonitor: React.FC = () => {
                       const res = await getNodeForm(previewInstance.id!, previewInstance.currentNodeId);
                       if (res.success) {
                         // 确保数据是最新的
-                        console.log('获取到的表单数据 (进度弹窗):', {
-                          instanceId: previewInstance.id,
-                          nodeId: previewInstance.currentNodeId,
-                          formDef: res.data?.form,
-                          initialValues: res.data?.initialValues
-                        });
                         setNodeFormDef(res.data?.form || null);
                         setNodeFormInitial(res.data?.initialValues || null);
                         // 延迟一点再打开模态框，确保状态已更新
@@ -336,8 +324,6 @@ const WorkflowMonitor: React.FC = () => {
               }
             });
           }
-
-          console.log('提交的表单数据:', values); // 调试日志
 
           if (currentFormInstanceId) {
             try {

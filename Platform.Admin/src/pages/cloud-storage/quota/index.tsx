@@ -182,9 +182,58 @@ const CloudStorageQuotaPage: React.FC = () => {
             const response = await getQuotaList(listRequest);
 
             if (response.success && response.data) {
+                // 转换后端数据格式到前端期望的格式
+                const rawData = response.data.data || [];
+                
+                // 按 userId 去重，保留每个用户最新更新的记录（updatedAt 最新的）
+                const uniqueDataMap = new Map<string, any>();
+                rawData.forEach((item: any) => {
+                    const userId = item.userId;
+                    const existing = uniqueDataMap.get(userId);
+                    
+                    if (!existing) {
+                        uniqueDataMap.set(userId, item);
+                    } else {
+                        // 比较 updatedAt，保留更新日期更近的记录
+                        const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+                        const currentTime = new Date(item.updatedAt || item.createdAt || 0).getTime();
+                        
+                        if (currentTime > existingTime) {
+                            uniqueDataMap.set(userId, item);
+                        }
+                    }
+                });
+                
+                const uniqueData = Array.from(uniqueDataMap.values());
+                
+                const transformedData = uniqueData.map((item: any) => {
+                    // 处理用户显示名称：优先使用 displayName，如果 displayName 是用户ID格式，尝试使用 userDisplayName
+                    let userDisplayName = item.userDisplayName || item.displayName;
+                    // 如果 displayName 看起来像用户ID（24位十六进制），且与 username 相同，可能需要特殊处理
+                    if (userDisplayName && userDisplayName === item.username && /^[0-9a-f]{24}$/i.test(userDisplayName)) {
+                        // 如果都是用户ID格式，显示名称可以显示用户ID或者尝试获取真实用户名
+                        // 这里先保持原样，后续可以通过用户服务获取真实用户名
+                        userDisplayName = item.displayName || item.userDisplayName || item.username || '未知用户';
+                    } else {
+                        userDisplayName = item.userDisplayName || item.displayName || item.username || '未知用户';
+                    }
+                    
+                    return {
+                        ...item,
+                        // 字段映射
+                        id: item.id || `${item.userId}_${item.updatedAt || item.createdAt}`, // 使用 userId + 时间戳作为唯一 id
+                        userDisplayName: userDisplayName,
+                        username: item.username || item.userId || '-', // username 保持原值，如果为空则使用 userId
+                        usedQuota: item.usedQuota !== undefined ? item.usedQuota : (item.usedSpace || 0),
+                        // 确保有默认值
+                        warningThreshold: item.warningThreshold !== undefined ? item.warningThreshold : 80,
+                        isEnabled: item.isEnabled !== undefined ? item.isEnabled : (item.status === 'Active'),
+                    };
+                });
+                
                 return {
-                    data: response.data.data || [],
-                    total: response.data.total || 0,
+                    data: transformedData,
+                    total: transformedData.length, // 使用去重后的数量
                     success: true,
                 };
             }
@@ -243,7 +292,17 @@ const CloudStorageQuotaPage: React.FC = () => {
         try {
             const response = await getUserQuota(quota.userId);
             if (response.success && response.data) {
-                setViewingQuota(response.data);
+                // 转换后端数据格式到前端期望的格式
+                const quotaData = response.data as any;
+                const transformedQuota: StorageQuota = {
+                    ...quotaData,
+                    id: quotaData.id || quotaData.userId,
+                    userDisplayName: quotaData.userDisplayName || quotaData.displayName || quotaData.username || '-',
+                    usedQuota: quotaData.usedQuota !== undefined ? quotaData.usedQuota : (quotaData.usedSpace || 0),
+                    warningThreshold: quotaData.warningThreshold !== undefined ? quotaData.warningThreshold : 80,
+                    isEnabled: quotaData.isEnabled !== undefined ? quotaData.isEnabled : (quotaData.status === 'Active'),
+                };
+                setViewingQuota(transformedQuota);
                 setDetailVisible(true);
             }
         } catch (err) {
@@ -404,9 +463,15 @@ const CloudStorageQuotaPage: React.FC = () => {
             return <Tag color="default">已禁用</Tag>;
         }
 
-        const usagePercentage = (quota.usedQuota / quota.totalQuota) * 100;
+        // 避免除以零
+        if (!quota.totalQuota || quota.totalQuota === 0) {
+            return <Tag color="green">正常</Tag>;
+        }
 
-        if (usagePercentage >= quota.warningThreshold) {
+        const usagePercentage = (quota.usedQuota / quota.totalQuota) * 100;
+        const warningThreshold = quota.warningThreshold || 80;
+
+        if (usagePercentage >= warningThreshold) {
             return <Tag color="red">超出警告线</Tag>;
         }
 
@@ -419,23 +484,35 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '用户',
             dataIndex: 'userDisplayName',
             key: 'userDisplayName',
-            render: (text: string, record: StorageQuota) => (
+            render: (text: string, record: StorageQuota) => {
+                // 如果显示名称是用户ID格式，显示为"用户ID: xxx"
+                const displayText = /^[0-9a-f]{24}$/i.test(text) && text === record.username
+                    ? `用户ID: ${text.substring(0, 8)}...`
+                    : (text || '未知用户');
+                return (
                 <Space>
                     <UserOutlined />
                     <a
                         onClick={() => handleView(record)}
                         style={{ cursor: 'pointer' }}
                     >
-                        {text}
+                            {displayText}
                     </a>
                 </Space>
-            ),
+                );
+            },
         },
         {
             title: '用户名',
             dataIndex: 'username',
             key: 'username',
             width: 120,
+            render: (text: string, record: StorageQuota) => {
+                // 如果用户名是用户ID格式，显示简短格式
+                return /^[0-9a-f]{24}$/i.test(text)
+                    ? `${text.substring(0, 8)}...`
+                    : (text || '-');
+            },
         },
         {
             title: '配额',
@@ -456,7 +533,10 @@ const CloudStorageQuotaPage: React.FC = () => {
             key: 'usagePercentage',
             width: 150,
             render: (_, record: StorageQuota) => {
-                const percentage = Math.round((record.usedQuota / record.totalQuota) * 100);
+                // 避免除以零
+                const percentage = record.totalQuota > 0 
+                    ? Math.round((record.usedQuota / record.totalQuota) * 100) 
+                    : 0;
                 return (
                     <Progress
                         percent={percentage}
@@ -493,15 +573,6 @@ const CloudStorageQuotaPage: React.FC = () => {
             width: 200,
             render: (_, record: StorageQuota) => (
                 <Space size="small">
-                    <Button
-                        type="link"
-                        size="small"
-                        icon={<SyncOutlined />}
-                        loading={refreshing[record.userId]}
-                        onClick={() => handleRefreshUsage(record)}
-                    >
-                        刷新
-                    </Button>
                     <Button
                         type="link"
                         size="small"
@@ -657,7 +728,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                             actionRef={actionRef}
                             columns={columns}
                             request={fetchData}
-                            rowKey="userId"
+                            rowKey={(record) => record.id || record.userId}
                             search={false}
                             scroll={{ x: 'max-content' }}
                             pagination={{
@@ -795,7 +866,9 @@ const CloudStorageQuotaPage: React.FC = () => {
                                         label={<Space><UserOutlined />用户</Space>}
                                         span={2}
                                     >
-                                        {viewingQuota.userDisplayName} ({viewingQuota.username})
+                                        {viewingQuota.userDisplayName && viewingQuota.userDisplayName !== viewingQuota.username
+                                            ? `${viewingQuota.userDisplayName} (${viewingQuota.username})`
+                                            : viewingQuota.userDisplayName || viewingQuota.username || '-'}
                                     </Descriptions.Item>
                                     <Descriptions.Item
                                         label={<Space><CloudOutlined />总配额</Space>}
@@ -811,9 +884,13 @@ const CloudStorageQuotaPage: React.FC = () => {
                                         label={<Space><PieChartOutlined />使用率</Space>}
                                     >
                                         <Progress
-                                            percent={Math.round((viewingQuota.usedQuota / viewingQuota.totalQuota) * 100)}
+                                            percent={viewingQuota.totalQuota > 0 
+                                                ? Math.round((viewingQuota.usedQuota / viewingQuota.totalQuota) * 100) 
+                                                : 0}
                                             size="small"
-                                            strokeColor={getUsageColor((viewingQuota.usedQuota / viewingQuota.totalQuota) * 100)}
+                                            strokeColor={viewingQuota.totalQuota > 0 
+                                                ? getUsageColor((viewingQuota.usedQuota / viewingQuota.totalQuota) * 100) 
+                                                : '#52c41a'}
                                         />
                                     </Descriptions.Item>
                                     <Descriptions.Item

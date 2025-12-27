@@ -16,13 +16,13 @@
     "start:pre": "cross-env REACT_APP_ENV=pre UMI_ENV=dev max dev",
     "start:test": "cross-env REACT_APP_ENV=test UMI_ENV=dev max dev",
     "tsc": "tsc --noEmit",
-    "update:deps": "npm update",
-    "outdated": "npm outdated"
+    "outdated": "npm outdated",
+    "install-package": "npm install"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "antd": "^6.1.2",
-    "antd-style": "^4.0.0",
+    "antd-style": "^4.1.0",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",
     "react": "^19.2.3",
@@ -33,7 +33,7 @@
     "@types/node": "^25.0.3",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "@umijs/max": "^4.6.14",
+    "@umijs/max": "^4.6.15",
     "cross-env": "^10.1.0",
     "typescript": "^5.9.3",
     "umi-presets-pro": "^2.0.3"

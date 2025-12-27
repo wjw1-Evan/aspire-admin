@@ -508,7 +508,7 @@ public class StorageQuotaService : IStorageQuotaService
 
         if (!quotas.Any())
         {
-            return new StorageUsageStats();
+            return new Platform.ApiService.Models.StorageUsageStats();
         }
 
         // 计算基本统计
@@ -524,7 +524,7 @@ public class StorageQuotaService : IStorageQuotaService
         var topUsers = quotas
             .OrderByDescending(q => q.UsedSpace)
             .Take(10)
-            .Select(q => new TopUserItem
+            .Select(q => new Platform.ApiService.Models.TopUserItem
             {
                 UserId = q.UserId,
                 Username = q.UserId, // TODO: 从用户服务获取用户名
@@ -534,7 +534,7 @@ public class StorageQuotaService : IStorageQuotaService
             })
             .ToList();
 
-        return new StorageUsageStats
+        return new Platform.ApiService.Models.StorageUsageStats
         {
             TotalUsers = totalUsers,
             TotalQuota = totalQuota,
@@ -548,9 +548,9 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 计算使用量分布
     /// </summary>
-    private static List<UsageDistributionItem> CalculateUsageDistribution(List<StorageQuota> quotas)
+    private static List<Platform.ApiService.Models.UsageDistributionItem> CalculateUsageDistribution(List<StorageQuota> quotas)
     {
-        var distribution = new List<UsageDistributionItem>();
+        var distribution = new List<Platform.ApiService.Models.UsageDistributionItem>();
         var totalUsers = quotas.Count;
 
         if (totalUsers == 0)
@@ -576,7 +576,7 @@ public class StorageQuotaService : IStorageQuotaService
                 return usageRatio >= range.Min && usageRatio < range.Max;
             });
 
-            distribution.Add(new UsageDistributionItem
+            distribution.Add(new Platform.ApiService.Models.UsageDistributionItem
             {
                 Range = range.Range,
                 Count = count,

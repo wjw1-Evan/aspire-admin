@@ -315,6 +315,36 @@ public class StorageUsageInfo
 }
 
 /// <summary>
+/// 回收站统计信息
+/// </summary>
+public class RecycleStatistics
+{
+    /// <summary>回收站总项目数（含文件和文件夹）</summary>
+    public int TotalItems { get; set; }
+
+    /// <summary>回收站中文件总大小（字节）</summary>
+    public long TotalSize { get; set; }
+
+    /// <summary>按日期分组的统计</summary>
+    public List<RecycleStatisticsItem> ItemsByDate { get; set; } = [];
+}
+
+/// <summary>
+/// 回收站按日期分组统计项
+/// </summary>
+public class RecycleStatisticsItem
+{
+    /// <summary>日期（yyyy-MM-dd）</summary>
+    public string Date { get; set; } = string.Empty;
+
+    /// <summary>当日回收站项目数</summary>
+    public int Count { get; set; }
+
+    /// <summary>当日文件总大小（字节）</summary>
+    public long Size { get; set; }
+}
+
+/// <summary>
 /// 文件版本比较结果模型
 /// </summary>
 public class FileVersionComparison
@@ -550,4 +580,64 @@ public class BatchOperationError
 
     /// <summary>错误详情</summary>
     public Dictionary<string, object> ErrorDetails { get; set; } = [];
+}
+
+/// <summary>
+/// 存储使用统计信息
+/// </summary>
+public class StorageUsageStats
+{
+    /// <summary>总用户数</summary>
+    public int TotalUsers { get; set; } = 0;
+
+    /// <summary>总配额（字节）</summary>
+    public long TotalQuota { get; set; } = 0;
+
+    /// <summary>总使用量（字节）</summary>
+    public long TotalUsed { get; set; } = 0;
+
+    /// <summary>平均使用量（字节）</summary>
+    public long AverageUsage { get; set; } = 0;
+
+    /// <summary>使用量分布</summary>
+    public List<UsageDistributionItem> UsageDistribution { get; set; } = [];
+
+    /// <summary>使用量排行榜</summary>
+    public List<TopUserItem> TopUsers { get; set; } = [];
+}
+
+/// <summary>
+/// 使用量分布项
+/// </summary>
+public class UsageDistributionItem
+{
+    /// <summary>使用量范围</summary>
+    public string Range { get; set; } = string.Empty;
+
+    /// <summary>用户数量</summary>
+    public int Count { get; set; } = 0;
+
+    /// <summary>百分比</summary>
+    public double Percentage { get; set; } = 0;
+}
+
+/// <summary>
+/// 排行榜用户项
+/// </summary>
+public class TopUserItem
+{
+    /// <summary>用户ID</summary>
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>用户名</summary>
+    public string Username { get; set; } = string.Empty;
+
+    /// <summary>用户显示名称</summary>
+    public string UserDisplayName { get; set; } = string.Empty;
+
+    /// <summary>已使用配额（字节）</summary>
+    public long UsedQuota { get; set; } = 0;
+
+    /// <summary>使用率（百分比）</summary>
+    public double UsagePercentage { get; set; } = 0;
 }

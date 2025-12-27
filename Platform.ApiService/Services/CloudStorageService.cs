@@ -240,6 +240,10 @@ public class CloudStorageService : ICloudStorageService
         if (string.IsNullOrWhiteSpace(id))
             return null;
 
+        // 如果不是有效的 ObjectId，直接返回 null，避免 Mongo 驱动在序列化过滤器时抛出 FormatException
+        if (!ObjectId.TryParse(id, out _))
+            return null;
+
         var filterBuilder = _fileItemFactory.CreateFilterBuilder();
         var filter = filterBuilder
             .Equal(f => f.Id, id)
@@ -496,6 +500,10 @@ public class CloudStorageService : ICloudStorageService
     /// </summary>
     public async Task PermanentDeleteFileItemAsync(string id)
     {
+        // 非法的 ObjectId 直接视为不存在
+        if (string.IsNullOrWhiteSpace(id) || !ObjectId.TryParse(id, out _))
+            throw new ArgumentException("文件项不存在", nameof(id));
+
         var fileItem = await GetFileItemAsync(id);
         if (fileItem == null)
         {
@@ -531,6 +539,10 @@ public class CloudStorageService : ICloudStorageService
     /// </summary>
     public async Task<FileItem> RestoreFileItemAsync(string id, string? newParentId = null)
     {
+        // 非法的 ObjectId 直接视为回收站中不存在该文件项
+        if (string.IsNullOrWhiteSpace(id) || !ObjectId.TryParse(id, out _))
+            throw new ArgumentException("回收站中不存在该文件项", nameof(id));
+
         var filterBuilder = _fileItemFactory.CreateFilterBuilder();
         var recycleBinFilter = filterBuilder
             .Equal(f => f.Id, id)
@@ -1171,6 +1183,38 @@ public class CloudStorageService : ICloudStorageService
 
         result.EndTime = DateTime.UtcNow;
         return result;
+    }
+
+    /// <summary>
+    /// 获取回收站统计信息
+    /// </summary>
+    public async Task<RecycleStatistics> GetRecycleStatisticsAsync()
+    {
+        var filterBuilder = _fileItemFactory.CreateFilterBuilder();
+        var filter = filterBuilder.Equal(f => f.Status, FileStatus.InRecycleBin).Build();
+
+        var items = await _fileItemFactory.FindAsync(filter);
+
+        var totalItems = items.Count;
+        var totalSize = items.Where(f => f.Type == FileItemType.File).Sum(f => f.Size);
+
+        var itemsByDate = items
+            .GroupBy(f => ((DateTime?)f.DeletedAt ?? (DateTime?)f.UpdatedAt ?? (DateTime?)f.CreatedAt ?? DateTime.UtcNow).Date)
+            .Select(g => new RecycleStatisticsItem
+            {
+                Date = g.Key.ToString("yyyy-MM-dd"),
+                Count = g.Count(),
+                Size = g.Where(f => f.Type == FileItemType.File).Sum(f => f.Size)
+            })
+            .OrderByDescending(g => g.Date)
+            .ToList();
+
+        return new RecycleStatistics
+        {
+            TotalItems = totalItems,
+            TotalSize = totalSize,
+            ItemsByDate = itemsByDate
+        };
     }
 
     /// <summary>

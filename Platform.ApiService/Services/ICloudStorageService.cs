@@ -197,6 +197,12 @@ public interface ICloudStorageService
     /// <returns>存储使用信息</returns>
     Task<StorageUsageInfo> GetStorageUsageAsync(string? userId = null);
 
+    /// <summary>
+    /// 获取回收站统计信息
+    /// </summary>
+    /// <returns>回收站统计</returns>
+    Task<RecycleStatistics> GetRecycleStatisticsAsync();
+
     // 批量操作
 
     /// <summary>

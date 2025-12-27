@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -122,9 +123,9 @@ namespace Platform.AppHost.Tests
         {
             var builder = await CreateBuilderAsync();
 
-        var relationships = GetResourceRelationships(builder, "chat");
+            var relationships = GetResourceRelationships(builder, "chat");
 
-        Assert.Contains(relationships, relation => relation.Resource.Name == "openai");
+            Assert.Contains(relationships, relation => relation.Resource.Name == "openai");
         }
     }
 }

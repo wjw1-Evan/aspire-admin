@@ -9,18 +9,37 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface IWorkflowExpressionEvaluator
 {
+    /// <summary>
+    /// 评估表达式在给定变量集下是否成立
+    /// </summary>
+    /// <param name="expression">表达式字符串（支持 &gt;, &lt;, &gt;=, &lt;=, ==, != 及布尔变量）</param>
+    /// <param name="variables">变量字典</param>
+    /// <returns>表达式是否为真</returns>
     bool Evaluate(string expression, Dictionary<string, object> variables);
 }
 
+/// <summary>
+/// 默认的工作流表达式评估器实现
+/// </summary>
 public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
 {
     private readonly ILogger<WorkflowExpressionEvaluator> _logger;
 
+    /// <summary>
+    /// 初始化表达式评估器
+    /// </summary>
+    /// <param name="logger">日志记录器</param>
     public WorkflowExpressionEvaluator(ILogger<WorkflowExpressionEvaluator> logger)
     {
         _logger = logger;
     }
 
+    /// <summary>
+    /// 评估表达式在给定变量集下是否成立
+    /// </summary>
+    /// <param name="expression">表达式字符串（支持 &gt;, &lt;, &gt;=, &lt;=, ==, != 及布尔变量）</param>
+    /// <param name="variables">变量字典</param>
+    /// <returns>表达式是否为真</returns>
     public bool Evaluate(string expression, Dictionary<string, object> variables)
     {
         if (string.IsNullOrWhiteSpace(expression)) return true;
@@ -32,7 +51,7 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
 
             // 按照长度降序排列操作符，避免 ">=" 被识别为 ">"
             string[] operators = { ">=", "<=", "!=", "==", ">", "<" };
-            
+
             string? foundOp = null;
             foreach (var op in operators)
             {

@@ -16,8 +16,16 @@ public interface IWorkflowGraphValidator
     (bool isValid, string? errorMessage) Validate(WorkflowGraph graph);
 }
 
+/// <summary>
+/// 工作流图形校验服务的默认实现
+/// </summary>
 public class WorkflowGraphValidator : IWorkflowGraphValidator
 {
+    /// <summary>
+    /// 校验工作流定义的图形结构是否合法
+    /// </summary>
+    /// <param name="graph">工作流图形定义</param>
+    /// <returns>若合法返回 (true, null)，否则返回 (false, 错误消息)</returns>
     public (bool isValid, string? errorMessage) Validate(WorkflowGraph graph)
     {
         if (graph == null || graph.Nodes == null || !graph.Nodes.Any())
@@ -57,7 +65,7 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
 
         // 4. 连通性检查 (从开始节点到所有节点是否可达)
         // 5. 循环检查 (可选，某些流程允许循环，但典型的审批流应该是 DAG)
-        
+
         return (true, null);
     }
 }

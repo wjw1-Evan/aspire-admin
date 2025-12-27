@@ -42,6 +42,7 @@ public class WorkflowController : BaseApiController
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="userService">用户服务</param>
     /// <param name="fieldValidationService">字段验证服务</param>
+    /// <param name="graphValidator">流程图形校验服务</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowController(
         IDatabaseOperationFactory<WorkflowDefinition> definitionFactory,
@@ -232,7 +233,7 @@ public class WorkflowController : BaseApiController
                 {
                     return ValidationError($"流程图形定义不合法: {graphError}");
                 }
-                
+
                 updateBuilder.Set(w => w.Graph, request.Graph);
                 hasUpdate = true;
             }
@@ -299,7 +300,7 @@ public class WorkflowController : BaseApiController
         try
         {
             Dictionary<string, object>? sanitizedVars = null;
-            
+
             if (request.Variables != null)
             {
                 try
@@ -308,7 +309,7 @@ public class WorkflowController : BaseApiController
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "变量清洗失败: WorkflowId={WorkflowId}, Variables={Variables}", 
+                    _logger.LogError(ex, "变量清洗失败: WorkflowId={WorkflowId}, Variables={Variables}",
                         id, System.Text.Json.JsonSerializer.Serialize(request.Variables));
                     return Error("VARIABLE_SANITIZATION_FAILED", "流程变量处理失败，请检查变量格式");
                 }
@@ -319,13 +320,13 @@ public class WorkflowController : BaseApiController
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "启动流程失败: WorkflowId={WorkflowId}, DocumentId={DocumentId}", 
+            _logger.LogWarning(ex, "启动流程失败: WorkflowId={WorkflowId}, DocumentId={DocumentId}",
                 id, request.DocumentId);
             return Error("START_FAILED", ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "启动流程时发生未预期错误: WorkflowId={WorkflowId}, DocumentId={DocumentId}", 
+            _logger.LogError(ex, "启动流程时发生未预期错误: WorkflowId={WorkflowId}, DocumentId={DocumentId}",
                 id, request.DocumentId);
             return Error("START_FAILED", "启动流程时发生错误，请稍后重试");
         }

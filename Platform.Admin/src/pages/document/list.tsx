@@ -61,10 +61,12 @@ import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, documentStatusMap, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 
 const DocumentManagement: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
+  const modal = useModal();
   const actionRef = useRef<ActionType>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<any>(null);
@@ -370,7 +372,7 @@ const DocumentManagement: React.FC = () => {
             danger
             icon={<DeleteOutlined />}
             onClick={async () => {
-              Modal.confirm({
+              modal.confirm({
                 title: intl.formatMessage({ id: 'pages.document.modal.confirmDelete' }),
                 content: intl.formatMessage(
                   { id: 'pages.document.modal.confirmDeleteContent' },

@@ -7,7 +7,6 @@ import {
   Button,
   Tag,
   Space,
-  message,
   Modal,
   Drawer,
   Row,
@@ -21,6 +20,8 @@ import {
   Progress,
   Grid,
 } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 
 const { useBreakpoint } = Grid;
 import {
@@ -107,6 +108,8 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 
 const TaskManagement: React.FC = () => {
   const intl = useIntl();
+  const message = useMessage();
+  const modal = useModal();
   const location = useLocation();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
@@ -270,7 +273,7 @@ const TaskManagement: React.FC = () => {
 
   // 处理删除任务
   const handleDeleteTask = useCallback((task: TaskDto) => {
-    Modal.confirm({
+    modal.confirm({
       title: intl.formatMessage({ id: 'pages.taskManagement.modal.deleteTask' }),
       content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmDelete' }),
       okText: intl.formatMessage({ id: 'pages.table.ok' }),
@@ -290,7 +293,7 @@ const TaskManagement: React.FC = () => {
 
   // 处理取消任务
   const handleCancelTask = useCallback((task: TaskDto) => {
-    Modal.confirm({
+    modal.confirm({
       title: intl.formatMessage({ id: 'pages.taskManagement.modal.cancelTask' }),
       content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }),
       okText: intl.formatMessage({ id: 'pages.table.ok' }),

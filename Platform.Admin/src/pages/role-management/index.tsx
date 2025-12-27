@@ -14,6 +14,7 @@ import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
 import { Badge, Button, Input, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 
 const { useBreakpoint } = Grid;
 import { type ChangeEvent, type FC, useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -39,6 +40,7 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 const RoleManagement: FC = () => {
   const intl = useIntl();
   const message = useMessage();
+  const modal = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -109,7 +111,7 @@ const RoleManagement: FC = () => {
    */
   const handleDelete = useCallback(async (id: string, roleName: string) => {
     let deleteReason = '';
-    Modal.confirm({
+    modal.confirm({
       title: intl.formatMessage(
         { id: 'pages.modal.confirmDeleteRole' },
         { roleName },

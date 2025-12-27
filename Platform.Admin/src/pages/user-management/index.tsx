@@ -5,6 +5,7 @@ import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 import {
   Button,
   Tag,
@@ -59,6 +60,7 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 const UserManagement: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
+  const modal = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -230,7 +232,7 @@ const UserManagement: React.FC = () => {
   // 删除用户（带删除原因）
   const handleDelete = useCallback(async (userId: string) => {
     let deleteReason = '';
-    Modal.confirm({
+    modal.confirm({
       title: intl.formatMessage({ id: 'pages.modal.confirmDeleteUser' }),
       content: (
         <div>
@@ -277,7 +279,7 @@ const UserManagement: React.FC = () => {
     // 如果是删除操作，弹窗输入删除原因
     if (action === 'delete') {
       let deleteReason = '';
-      Modal.confirm({
+      modal.confirm({
         title: intl.formatMessage({ id: 'pages.modal.confirmBatchDelete' }, { count: selectedRows.length }),
         content: (
           <div>

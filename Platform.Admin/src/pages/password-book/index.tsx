@@ -8,7 +8,6 @@ import {
   Button,
   Tag,
   Space,
-  message,
   Modal,
   Drawer,
   Row,
@@ -20,6 +19,8 @@ import {
   Descriptions,
   Spin,
 } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 import {
   PlusOutlined,
   EditOutlined,
@@ -62,6 +63,8 @@ import { getPasswordBookEntry } from '@/services/password-book/api';
 
 const PasswordBook: React.FC = () => {
   const intl = useIntl();
+  const message = useMessage();
+  const modal = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -228,7 +231,7 @@ const PasswordBook: React.FC = () => {
   // 删除
   const handleDelete = useCallback(
     async (entry: PasswordBookEntry) => {
-      Modal.confirm({
+      modal.confirm({
         title: '确认删除',
         content: `确定要删除平台"${entry.platform}"的账号"${entry.account}"吗？`,
         okText: '删除',

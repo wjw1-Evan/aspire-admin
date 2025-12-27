@@ -189,6 +189,11 @@ builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
 
+// 注册审批人解析器（支持多个实现）
+builder.Services.AddScoped<IApproverResolver, UserApproverResolver>();
+builder.Services.AddScoped<IApproverResolver, RoleApproverResolver>();
+builder.Services.AddScoped<IApproverResolverFactory, ApproverResolverFactory>();
+
 // 注册字段验证服务
 builder.Services.AddScoped<Platform.ApiService.Services.IFieldValidationService, Platform.ApiService.Services.FieldValidationService>();
 

@@ -33,7 +33,7 @@ public class FormController : BaseApiController
     /// 获取表单列表
     /// </summary>
     [HttpGet]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetForms([FromQuery] int current = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null, [FromQuery] bool? isActive = null)
     {
         try
@@ -68,7 +68,7 @@ public class FormController : BaseApiController
     /// 获取表单定义详情
     /// </summary>
     [HttpGet("{id}")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetForm(string id)
     {
         try
@@ -91,7 +91,7 @@ public class FormController : BaseApiController
     /// 创建表单定义
     /// </summary>
     [HttpPost]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> CreateForm([FromBody] FormDefinition form)
     {
         try
@@ -118,7 +118,7 @@ public class FormController : BaseApiController
     /// 更新表单定义
     /// </summary>
     [HttpPut("{id}")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> UpdateForm(string id, [FromBody] FormDefinition form)
     {
         try
@@ -154,7 +154,7 @@ public class FormController : BaseApiController
     /// 删除表单定义
     /// </summary>
     [HttpDelete("{id}")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> DeleteForm(string id)
     {
         try

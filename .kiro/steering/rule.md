@@ -4,6 +4,8 @@ inclusion: always
 alwaysApply: true
 ---
 
+项目启动：Platform.AppHost ,aspire run
+
 # Aspire Admin 规则索引
 
 > 已按代码结构拆分：通用（00-global）、后端（backend）、管理后台（frontend-admin）。如需修改特定模块规则，请编辑对应文件。

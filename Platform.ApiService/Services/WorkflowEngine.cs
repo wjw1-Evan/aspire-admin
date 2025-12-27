@@ -77,6 +77,8 @@ public class WorkflowEngine : IWorkflowEngine
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
     private readonly ITenantContext _tenantContext;
+    private readonly IApproverResolverFactory _approverResolverFactory;
+    private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
     private readonly ILogger<WorkflowEngine> _logger;
 
     /// <summary>
@@ -102,6 +104,8 @@ public class WorkflowEngine : IWorkflowEngine
         IUserService userService,
         IUnifiedNotificationService notificationService,
         ITenantContext tenantContext,
+        IApproverResolverFactory approverResolverFactory,
+        IWorkflowExpressionEvaluator expressionEvaluator,
         ILogger<WorkflowEngine> logger)
     {
         _definitionFactory = definitionFactory;
@@ -113,6 +117,8 @@ public class WorkflowEngine : IWorkflowEngine
         _userService = userService;
         _notificationService = notificationService;
         _tenantContext = tenantContext;
+        _approverResolverFactory = approverResolverFactory;
+        _expressionEvaluator = expressionEvaluator;
         _logger = logger;
     }
 
@@ -874,6 +880,7 @@ public class WorkflowEngine : IWorkflowEngine
         var instanceUpdate = _instanceFactory.CreateUpdateBuilder()
             .Set(i => i.CurrentNodeId, targetNodeId)
             .Set(i => i.ApprovalRecords, instance.ApprovalRecords)
+            .Set(i => i.ParallelBranches, new Dictionary<string, List<string>>()) // 🔧 退回时简单清理所有并行状态，确保状态一致性
             .Build();
         var instanceFilter = _instanceFactory.CreateFilterBuilder()
             .Equal(i => i.Id, instanceId)
@@ -1164,35 +1171,54 @@ public class WorkflowEngine : IWorkflowEngine
     }
 
     /// <summary>
-    /// 设置当前节点
+    /// 设置当前节点及其关联状态（审批人、超时时间）
     /// </summary>
     private async Task SetCurrentNodeAsync(string instanceId, string nodeId)
     {
-        // 先获取当前实例以记录旧节点ID
-        var currentInstance = await _instanceFactory.GetByIdAsync(instanceId);
-        var oldNodeId = currentInstance?.CurrentNodeId ?? "未知";
+        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        if (instance == null) return;
         
+        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        if (definition == null) return;
+
+        var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node == null) return;
+
+        var oldNodeId = instance.CurrentNodeId ?? "未知";
         _logger.LogInformation("设置当前节点: InstanceId={InstanceId}, OldNodeId={OldNodeId}, NewNodeId={NewNodeId}", 
             instanceId, oldNodeId, nodeId);
             
-        var update = _instanceFactory.CreateUpdateBuilder()
-            .Set(i => i.CurrentNodeId, nodeId)
-            .Build();
-        var filter = _instanceFactory.CreateFilterBuilder()
-            .Equal(i => i.Id, instanceId)
-            .Build();
-        var updatedInstance = await _instanceFactory.FindOneAndUpdateAsync(filter, update);
-        
-        if (updatedInstance != null)
+        var updateBuilder = _instanceFactory.CreateUpdateBuilder()
+            .Set(i => i.CurrentNodeId, nodeId);
+
+        // 解析审批人
+        if (node.Type == "approval" && node.Config.Approval != null)
         {
-            _logger.LogInformation("当前节点已更新: InstanceId={InstanceId}, CurrentNodeId={CurrentNodeId}", 
-                instanceId, nodeId);
+            var approvers = await ResolveApproversAsync(instance, node.Config.Approval.Approvers);
+            updateBuilder.Set(i => i.CurrentApproverIds, approvers);
+            
+            // 设置超时时间
+            if (node.Config.Approval.TimeoutHours > 0)
+            {
+                updateBuilder.Set(i => i.TimeoutAt, DateTime.UtcNow.AddHours(node.Config.Approval.TimeoutHours.Value));
+            }
+            else
+            {
+                updateBuilder.Set(i => i.TimeoutAt, null);
+            }
         }
         else
         {
-            _logger.LogError("更新当前节点失败: InstanceId={InstanceId}, NodeId={NodeId}", 
-                instanceId, nodeId);
+            updateBuilder.Set(i => i.CurrentApproverIds, new List<string>());
+            updateBuilder.Set(i => i.TimeoutAt, null);
         }
+
+        var update = updateBuilder.Build();
+        var filter = _instanceFactory.CreateFilterBuilder()
+            .Equal(i => i.Id, instanceId)
+            .Build();
+            
+        await _instanceFactory.FindOneAndUpdateAsync(filter, update);
     }
 
     /// <summary>
@@ -1414,7 +1440,7 @@ public class WorkflowEngine : IWorkflowEngine
             _logger.LogDebug("评估边条件: InstanceId={InstanceId}, EdgeId={EdgeId}, Condition={Condition}, Target={Target}", 
                 instanceId, edge.Id, edge.Condition, edge.Target);
 
-            if (EvaluateExpression(edge.Condition, variables))
+            if (_expressionEvaluator.Evaluate(edge.Condition, variables))
             {
                 // 条件满足，推进到此路径
                 _logger.LogInformation("条件满足，推进到目标节点: InstanceId={InstanceId}, EdgeId={EdgeId}, Condition={Condition}, Target={Target}", 
@@ -1634,108 +1660,16 @@ public class WorkflowEngine : IWorkflowEngine
         {
             try
             {
-                switch (rule.Type)
-                {
-                    case ApproverType.User:
-                        if (!string.IsNullOrEmpty(rule.UserId))
-                        {
-                            // 验证用户是否存在且属于当前企业
-                            var user = await _userService.GetUserByIdAsync(rule.UserId);
-                            if (user != null)
-                            {
-                                // 检查用户是否属于当前企业
-                                var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
-                                    .Equal(uc => uc.UserId, rule.UserId)
-                                    .Equal(uc => uc.CompanyId, companyId)
-                                    .Equal(uc => uc.Status, "active")
-                                    .Build();
-
-                                var userCompany = await _userCompanyFactory.FindAsync(userCompanyFilter);
-                                if (userCompany.Any())
-                                {
-                                    approvers.Add(rule.UserId);
-                                }
-                                else
-                                {
-                                    _logger.LogWarning("用户不属于当前企业或状态非活跃: UserId={UserId}, CompanyId={CompanyId}", 
-                                        rule.UserId, companyId);
-                                }
-                            }
-                            else
-                            {
-                                _logger.LogWarning("审批人用户不存在: UserId={UserId}", rule.UserId);
-                            }
-                        }
-                        break;
-
-                    case ApproverType.Role:
-                        if (!string.IsNullOrEmpty(rule.RoleId))
-                        {
-                            // 查询该角色下的所有活跃用户
-                            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
-                                .Equal(uc => uc.CompanyId, companyId)
-                                .Equal(uc => uc.Status, "active")
-                                .Build();
-
-                            // 使用 MongoDB 查询数组包含
-                            var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, rule.RoleId);
-                            var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
-
-                            var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter);
-                            var roleUserIds = userCompanies
-                                .Select(uc => uc.UserId)
-                                .Where(id => !string.IsNullOrEmpty(id))
-                                .ToList();
-
-                            if (roleUserIds.Any())
-                            {
-                                approvers.AddRange(roleUserIds);
-                                _logger.LogDebug("解析角色审批人成功: RoleId={RoleId}, UserCount={UserCount}", 
-                                    rule.RoleId, roleUserIds.Count);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("角色下没有找到活跃用户: RoleId={RoleId}, CompanyId={CompanyId}", 
-                                    rule.RoleId, companyId);
-                            }
-                        }
-                        break;
-
-                    case ApproverType.Department:
-                        if (!string.IsNullOrEmpty(rule.DepartmentId))
-                        {
-                            // 查询该部门下的所有用户
-                            // 注意：当前系统可能没有部门概念，这里先留空
-                            // 如果未来需要支持部门，可以通过 UserCompany 或其他关联表查询
-                            _logger.LogWarning("部门审批人解析暂未实现: DepartmentId={DepartmentId}", rule.DepartmentId);
-                        }
-                        break;
-
-                    default:
-                        _logger.LogWarning("不支持的审批人类型: Type={Type}", rule.Type);
-                        break;
-                }
+                var resolved = await _approverResolverFactory.ResolveAsync(rule, companyId);
+                approvers.AddRange(resolved);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "解析审批人规则失败: Type={Type}, UserId={UserId}, RoleId={RoleId}, DepartmentId={DepartmentId}", 
-                    rule.Type, rule.UserId, rule.RoleId, rule.DepartmentId);
+                _logger.LogError(ex, "解析审批人规则失败: Type={Type}", rule.Type);
             }
         }
 
         var distinctApprovers = approvers.Distinct().ToList();
-        
-        if (!distinctApprovers.Any())
-        {
-            _logger.LogWarning("未找到任何有效的审批人: InstanceId={InstanceId}, RuleCount={RuleCount}", 
-                instance.Id, rules.Count);
-        }
-        else
-        {
-            _logger.LogDebug("解析审批人完成: InstanceId={InstanceId}, ApproverCount={ApproverCount}", 
-                instance.Id, distinctApprovers.Count);
-        }
-
         return distinctApprovers;
     }
 

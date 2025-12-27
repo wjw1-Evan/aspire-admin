@@ -29,6 +29,7 @@ public class WorkflowController : BaseApiController
     private readonly IWorkflowEngine _workflowEngine;
     private readonly IUserService _userService;
     private readonly IFieldValidationService _fieldValidationService;
+    private readonly IWorkflowGraphValidator _graphValidator;
     private readonly ILogger<WorkflowController> _logger;
 
     /// <summary>
@@ -50,6 +51,7 @@ public class WorkflowController : BaseApiController
         IWorkflowEngine workflowEngine,
         IUserService userService,
         IFieldValidationService fieldValidationService,
+        IWorkflowGraphValidator graphValidator,
         ILogger<WorkflowController> logger)
     {
         _definitionFactory = definitionFactory;
@@ -59,6 +61,7 @@ public class WorkflowController : BaseApiController
         _workflowEngine = workflowEngine;
         _userService = userService;
         _fieldValidationService = fieldValidationService;
+        _graphValidator = graphValidator;
         _logger = logger;
     }
 
@@ -66,7 +69,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程定义列表
     /// </summary>
     [HttpGet]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetWorkflows([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null, [FromQuery] string? category = null, [FromQuery] bool? isActive = null)
     {
         try
@@ -117,7 +120,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程定义详情
     /// </summary>
     [HttpGet("{id}")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetWorkflow(string id)
     {
         try
@@ -140,7 +143,7 @@ public class WorkflowController : BaseApiController
     /// 创建流程定义
     /// </summary>
     [HttpPost]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> CreateWorkflow([FromBody] CreateWorkflowRequest request)
     {
         try
@@ -153,6 +156,13 @@ public class WorkflowController : BaseApiController
             if (request.Graph == null || request.Graph.Nodes == null || !request.Graph.Nodes.Any())
             {
                 return ValidationError("流程图形定义不能为空");
+            }
+
+            // 验证图形合法性
+            var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
+            if (!isGraphValid)
+            {
+                return ValidationError($"流程图形定义不合法: {graphError}");
             }
 
             var userId = GetRequiredUserId();
@@ -182,7 +192,7 @@ public class WorkflowController : BaseApiController
     /// 更新流程定义
     /// </summary>
     [HttpPut("{id}")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> UpdateWorkflow(string id, [FromBody] UpdateWorkflowRequest request)
     {
         try
@@ -216,6 +226,13 @@ public class WorkflowController : BaseApiController
 
             if (request.Graph != null)
             {
+                // 验证图形合法性
+                var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
+                if (!isGraphValid)
+                {
+                    return ValidationError($"流程图形定义不合法: {graphError}");
+                }
+                
                 updateBuilder.Set(w => w.Graph, request.Graph);
                 hasUpdate = true;
             }
@@ -249,7 +266,7 @@ public class WorkflowController : BaseApiController
     /// 删除流程定义
     /// </summary>
     [HttpDelete("{id}")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> DeleteWorkflow(string id)
     {
         try
@@ -276,7 +293,7 @@ public class WorkflowController : BaseApiController
     /// 启动流程实例
     /// </summary>
     [HttpPost("{id}/start")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> StartWorkflow(string id, [FromBody] StartWorkflowRequest request)
     {
         try
@@ -318,7 +335,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程实例列表
     /// </summary>
     [HttpGet("instances")]
-    [RequireMenu("workflow:monitor")]
+    [RequireMenu("workflow-monitor")]
     public async Task<IActionResult> GetInstances([FromQuery] int current = 1, [FromQuery] int pageSize = 10, [FromQuery] string? workflowDefinitionId = null, [FromQuery] WorkflowStatus? status = null)
     {
         try
@@ -353,7 +370,7 @@ public class WorkflowController : BaseApiController
     /// 获取用于创建公文的自定义表单（优先使用起始节点绑定的文档表单；若无，则取第一个绑定文档表单的节点）
     /// </summary>
     [HttpGet("{id}/document-form")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> GetDocumentCreateForm(string id)
     {
         try
@@ -415,7 +432,7 @@ public class WorkflowController : BaseApiController
     /// 获取当前用户待办的流程实例
     /// </summary>
     [HttpGet("instances/todo")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetTodoInstances([FromQuery] int current = 1, [FromQuery] int pageSize = 10)
     {
         try
@@ -423,21 +440,19 @@ public class WorkflowController : BaseApiController
             var userId = GetRequiredUserId();
             var filter = _instanceFactory.CreateFilterBuilder()
                 .Equal(i => i.Status, WorkflowStatus.Running)
+                .AnyEq(i => i.CurrentApproverIds, userId) // 🔧 关键改进：使用高效索引直接查询待办
                 .Build();
             var sort = _instanceFactory.CreateSortBuilder()
                 .Descending(i => i.CreatedAt)
                 .Build();
 
-            var runningInstances = await _instanceFactory.FindAsync(filter, sort);
+            var result = await _instanceFactory.FindPagedAsync(filter, sort, current, pageSize);
             var todos = new List<object>();
 
-            foreach (var instance in runningInstances)
+            foreach (var instance in result.items)
             {
-                var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
-                if (definition == null)
-                {
-                    continue;
-                }
+                var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                if (definition == null) continue;
 
                 var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
                 if (currentNode == null || currentNode.Type != "approval" || currentNode.Config.Approval == null)
@@ -462,6 +477,7 @@ public class WorkflowController : BaseApiController
                     instance.CurrentNodeId,
                     instance.StartedBy,
                     instance.StartedAt,
+                    instance.TimeoutAt, // 增加超时时间显示
                     DefinitionName = definition.Name,
                     DefinitionCategory = definition.Category,
                     CurrentNode = new { currentNode.Id, currentNode.Label, currentNode.Type },
@@ -478,13 +494,7 @@ public class WorkflowController : BaseApiController
                 });
             }
 
-            var total = todos.Count;
-            var items = todos
-                .Skip((current - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            return SuccessPaged(items, total, current, pageSize);
+            return SuccessPaged(todos, result.total, current, pageSize);
         }
         catch (Exception ex)
         {
@@ -496,7 +506,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程实例详情
     /// </summary>
     [HttpGet("instances/{id}")]
-    [RequireMenu("workflow:monitor")]
+    [RequireMenu("workflow-monitor")]
     public async Task<IActionResult> GetInstance(string id)
     {
         try
@@ -519,7 +529,7 @@ public class WorkflowController : BaseApiController
     /// 获取审批历史
     /// </summary>
     [HttpGet("instances/{id}/history")]
-    [RequireMenu("workflow:monitor")]
+    [RequireMenu("workflow-monitor")]
     public async Task<IActionResult> GetApprovalHistory(string id)
     {
         try
@@ -537,7 +547,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程实例当前节点的表单定义与初始值
     /// </summary>
     [HttpGet("instances/{id}/nodes/{nodeId}/form")]
-    [RequireMenu("workflow:monitor")]
+    [RequireMenu("workflow-monitor")]
     public async Task<IActionResult> GetNodeForm(string id, string nodeId)
     {
         try
@@ -624,7 +634,7 @@ public class WorkflowController : BaseApiController
     /// 提交节点表单数据
     /// </summary>
     [HttpPost("instances/{id}/nodes/{nodeId}/form")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> SubmitNodeForm(string id, string nodeId, [FromBody] Dictionary<string, object> values)
     {
         try
@@ -748,7 +758,7 @@ public class WorkflowController : BaseApiController
     /// 对流程实例节点执行审批/退回/转办
     /// </summary>
     [HttpPost("instances/{id}/nodes/{nodeId}/action")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> ExecuteNodeAction(string id, string nodeId, [FromBody] WorkflowActionRequest request)
     {
         try
@@ -756,6 +766,16 @@ public class WorkflowController : BaseApiController
             if (string.IsNullOrWhiteSpace(request.Action))
             {
                 return ValidationError("操作类型不能为空");
+            }
+
+            // 🔧 支持填表 + 审批一步到位
+            if (request.FormData != null && request.FormData.Any())
+            {
+                var submitResult = await SubmitNodeForm(id, nodeId, request.FormData);
+                if (submitResult is ObjectResult obj && obj.StatusCode != 200)
+                {
+                    return submitResult; // 如果填表校验失败，直接返回
+                }
             }
 
             var action = request.Action.Trim().ToLowerInvariant();
@@ -808,7 +828,7 @@ public class WorkflowController : BaseApiController
     /// 发起人撤回流程
     /// </summary>
     [HttpPost("instances/{id}/withdraw")]
-    [RequireMenu("workflow:list")]
+    [RequireMenu("workflow-list")]
     public async Task<IActionResult> WithdrawInstance(string id, [FromBody] WithdrawWorkflowRequest? request)
     {
         try
@@ -844,7 +864,7 @@ public class WorkflowController : BaseApiController
     /// 按流程的创建表单创建公文（草稿），仅保存数据不启动流程
     /// </summary>
     [HttpPost("{id}/documents")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> CreateDocumentByWorkflow(string id, [FromBody] CreateWorkflowDocumentRequest request)
     {
         try
@@ -863,7 +883,7 @@ public class WorkflowController : BaseApiController
     /// 创建公文并直接启动流程（一步到位）
     /// </summary>
     [HttpPost("{id}/documents/start")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> CreateAndStartDocumentWorkflow(string id, [FromBody] CreateAndStartWorkflowDocumentRequest request)
     {
         try
@@ -999,6 +1019,11 @@ public class WorkflowActionRequest
     /// 转办目标用户ID
     /// </summary>
     public string? DelegateToUserId { get; set; }
+
+    /// <summary>
+    /// 随审批动作提交的表单数据（可选，用于填表+审批一步到位）
+    /// </summary>
+    public Dictionary<string, object>? FormData { get; set; }
 }
 
 /// <summary>

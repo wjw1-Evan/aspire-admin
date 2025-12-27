@@ -68,9 +68,10 @@ public class MenuTreeNode
     public string? ParentId { get; set; }
     
     /// <summary>
-    /// 所需权限列表
+    /// 所需权限列表（已废弃，权限控制现在基于菜单名称）
     /// </summary>
-    public List<string> Permissions { get; set; } = new();
+    [Obsolete("权限控制已改为菜单级别，此字段不再使用")]
+    public List<string>? Permissions { get; set; }
     
     /// <summary>
     /// 子菜单列表

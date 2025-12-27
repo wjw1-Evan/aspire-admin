@@ -1304,4 +1304,9 @@ export default {
   'pages.document.approval.message.returnFailed': '退回失败',
   'pages.document.approval.message.delegateSuccess': '已转办',
   'pages.document.approval.message.delegateFailed': '转办失败',
+  // 网盘管理
+  'pages.cloud-storage.files.title': '我的文件',
+  'pages.cloud-storage.shared.title': '共享文件',
+  'pages.cloud-storage.recycle.title': '回收站',
+  'pages.cloud-storage.quota.title': '存储管理',
 };

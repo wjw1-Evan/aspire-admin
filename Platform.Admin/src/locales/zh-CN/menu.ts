@@ -98,4 +98,15 @@ export default {
   'component.companySwitcher.applyReason': '申请理由',
   'component.companySwitcher.submit': '提交申请',
   'component.companySwitcher.cancel': '取消',
+  // 网盘管理
+  'menu.cloud-storage': '网盘管理',
+  'menu.cloud-storage.desc': '云存储文件管理',
+  'menu.cloud-storage.files': '我的文件',
+  'menu.cloud-storage.files.desc': '管理个人文件和文件夹',
+  'menu.cloud-storage.shared': '共享文件',
+  'menu.cloud-storage.shared.desc': '管理文件分享和共享',
+  'menu.cloud-storage.recycle': '回收站',
+  'menu.cloud-storage.recycle.desc': '管理已删除的文件',
+  'menu.cloud-storage.quota': '存储管理',
+  'menu.cloud-storage.quota.desc': '管理存储配额和使用统计',
 };

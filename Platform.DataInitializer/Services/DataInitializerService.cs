@@ -295,7 +295,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "user:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -311,7 +310,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "role:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -327,7 +325,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "company:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -343,7 +340,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 4,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string>(),  // 无需权限，所有登录用户都可以查看自己的活动
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -361,7 +357,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 7,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "password-book:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -392,7 +387,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "task:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -409,7 +403,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "project:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -426,7 +419,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 5,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "iot:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -443,7 +435,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "iot:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -459,7 +450,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "iot:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -475,7 +465,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "iot:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -491,7 +480,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 4,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "iot:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -507,7 +495,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 5,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "iot:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -538,7 +525,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "xiaoke:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -555,7 +541,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "xiaoke:read" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -586,7 +571,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "workflow:list" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -603,7 +587,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "workflow:list" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -620,7 +603,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "workflow:monitor" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -651,7 +633,6 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "document:list" },
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -668,7 +649,84 @@ public class DataInitializerService : IDataInitializerService
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
-            Permissions = new List<string> { "document:approval" },
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 网盘管理父菜单
+        menus.Add(new Menu
+        {
+            Name = "cloud-storage",
+            Title = "网盘管理",
+            Path = "/cloud-storage",
+            Icon = "cloud",
+            SortOrder = 9,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 网盘管理子菜单：我的文件
+        menus.Add(new Menu
+        {
+            Name = "cloud-storage-files",
+            Title = "我的文件",
+            Path = "/cloud-storage/files",
+            Component = "./cloud-storage/files",
+            Icon = "folder",
+            ParentId = "cloud-storage",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 网盘管理子菜单：共享文件
+        menus.Add(new Menu
+        {
+            Name = "cloud-storage-shared",
+            Title = "共享文件",
+            Path = "/cloud-storage/shared",
+            Component = "./cloud-storage/shared",
+            Icon = "share-alt",
+            ParentId = "cloud-storage",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 网盘管理子菜单：回收站
+        menus.Add(new Menu
+        {
+            Name = "cloud-storage-recycle",
+            Title = "回收站",
+            Path = "/cloud-storage/recycle",
+            Component = "./cloud-storage/recycle",
+            Icon = "delete",
+            ParentId = "cloud-storage",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 3,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 网盘管理子菜单：存储管理（管理员功能）
+        menus.Add(new Menu
+        {
+            Name = "cloud-storage-quota",
+            Title = "存储管理",
+            Path = "/cloud-storage/quota",
+            Component = "./cloud-storage/quota",
+            Icon = "pie-chart",
+            ParentId = "cloud-storage",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 4,
+            IsEnabled = true,
+            IsDeleted = false,
             CreatedAt = now,
             UpdatedAt = now
         });
@@ -708,6 +766,11 @@ public class DataInitializerService : IDataInitializerService
             // 公文管理子菜单
             "document-list" => "document",
             "document-approval" => "document",
+            // 网盘管理子菜单
+            "cloud-storage-files" => "cloud-storage",
+            "cloud-storage-shared" => "cloud-storage",
+            "cloud-storage-recycle" => "cloud-storage",
+            "cloud-storage-quota" => "cloud-storage",
             _ => null
         };
     }

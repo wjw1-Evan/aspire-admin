@@ -1,13 +1,12 @@
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
-using Platform.ApiService.Constants;
-using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
 
 /// <summary>
 /// 菜单访问权限服务实现
+/// 简化版：只支持菜单名称级别的权限控制
 /// </summary>
 public class MenuAccessService : IMenuAccessService
 {
@@ -16,41 +15,29 @@ public class MenuAccessService : IMenuAccessService
     private readonly IDatabaseOperationFactory<Menu> _menuFactory;
     private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
     private readonly ILogger<MenuAccessService> _logger;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化菜单访问权限服务
     /// </summary>
-    /// <param name="userFactory">用户数据操作工厂</param>
-    /// <param name="roleFactory">角色数据操作工厂</param>
-    /// <param name="menuFactory">菜单数据操作工厂</param>
-    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
-    /// <param name="logger">日志记录器</param>
-    /// <param name="tenantContext">租户上下文</param>
     public MenuAccessService(
         IDatabaseOperationFactory<AppUser> userFactory,
         IDatabaseOperationFactory<Role> roleFactory,
         IDatabaseOperationFactory<Menu> menuFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
-        ILogger<MenuAccessService> logger,
-        ITenantContext tenantContext)
+        ILogger<MenuAccessService> logger)
     {
         _userFactory = userFactory;
         _roleFactory = roleFactory;
         _menuFactory = menuFactory;
         _userCompanyFactory = userCompanyFactory;
         _logger = logger;
-        _tenantContext = tenantContext;
     }
 
     /// <summary>
-    /// 检查用户是否具有访问权限。
-    /// 支持两种输入形式：
-    /// - 权限标识（包含冒号，如 "workflow:list"、"document:approval"），将按菜单的 Permissions 字段进行判断；
-    /// - 菜单名称（不包含冒号，如 "user-management"、"workflow-monitor"），将按用户拥有的菜单名称进行判断。
+    /// 检查用户是否具有指定菜单的访问权限
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <param name="menuName">权限标识或菜单名称</param>
+    /// <param name="menuName">菜单名称（如 "user-management"、"cloud-storage-files"）</param>
     /// <returns>是否有访问权限</returns>
     public async Task<bool> HasMenuAccessAsync(string userId, string menuName)
     {
@@ -59,23 +46,6 @@ public class MenuAccessService : IMenuAccessService
             return false;
         }
 
-        // 如果包含冒号，视为权限标识（如 workflow:list）
-        if (menuName.Contains(":"))
-        {
-            var permission = menuName.Trim();
-            var userMenus = await GetUserMenusAsync(userId);
-            foreach (var m in userMenus)
-            {
-                var perms = m.Permissions ?? new List<string>();
-                if (perms.Contains(permission))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // 否则，按菜单名称判断（兼容旧用法，如 "user-management"）
         var userMenuNames = await GetUserMenuNamesAsync(userId);
         return userMenuNames.Contains(menuName.ToLower());
     }
@@ -97,7 +67,7 @@ public class MenuAccessService : IMenuAccessService
     /// 获取用户的菜单名称列表
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <returns>菜单名称列表</returns>
+    /// <returns>菜单名称列表（小写）</returns>
     public async Task<List<string>> GetUserMenuNamesAsync(string userId)
     {
         try
@@ -109,10 +79,7 @@ public class MenuAccessService : IMenuAccessService
                 return new List<string>();
             }
 
-            var menuIds = new List<string>();
-
-            // 获取用户的企业ID（从数据库获取，不使用 JWT token 中的企业ID）
-            // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，统一从数据库获取
+            // 获取用户的企业ID
             var companyId = user.CurrentCompanyId;
             if (string.IsNullOrEmpty(companyId))
             {
@@ -122,6 +89,7 @@ public class MenuAccessService : IMenuAccessService
 
             _logger.LogDebug("获取用户 {UserId} 在企业 {CompanyId} 的菜单权限", userId, companyId);
 
+            // 获取用户在企业中的关联关系
             var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
                 .Equal(uc => uc.UserId, userId)
                 .Equal(uc => uc.CompanyId, companyId)
@@ -137,20 +105,20 @@ public class MenuAccessService : IMenuAccessService
                 return new List<string>();
             }
 
+            var menuIds = new List<string>();
+
             if (userCompany.RoleIds != null && userCompany.RoleIds.Any())
             {
-                // 获取用户的所有角色（明确指定企业ID，确保多租户隔离）
-                // ⚠️ 关键修复：使用 FindWithoutTenantFilterAsync 因为我们已手动添加了 CompanyId 过滤
-                // 避免 DatabaseOperationFactory 使用 JWT token 中的旧企业ID自动过滤
+                // 获取用户的所有角色
                 var roleFilter = _roleFactory.CreateFilterBuilder()
                     .In(r => r.Id, userCompany.RoleIds)
-                    .Equal(r => r.CompanyId, companyId)  // ✅ 明确过滤当前企业的角色（使用数据库中的 CurrentCompanyId）
+                    .Equal(r => r.CompanyId, companyId)
                     .Equal(r => r.IsActive, true)
                     .Build();
                 var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
 
-                _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {RoleCount} 个角色，角色IDs: {RoleIds}",
-                    userId, companyId, roles.Count, string.Join(", ", userCompany.RoleIds));
+                _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {RoleCount} 个角色",
+                    userId, companyId, roles.Count);
 
                 // 收集所有角色的菜单ID
                 foreach (var role in roles)
@@ -158,8 +126,6 @@ public class MenuAccessService : IMenuAccessService
                     if (role.MenuIds != null)
                     {
                         menuIds.AddRange(role.MenuIds);
-                        _logger.LogDebug("角色 {RoleId} ({RoleName}) 拥有 {MenuCount} 个菜单",
-                            role.Id, role.Name, role.MenuIds.Count);
                     }
                 }
             }
@@ -184,8 +150,8 @@ public class MenuAccessService : IMenuAccessService
 
             // 返回菜单名称列表（小写）
             var menuNames = menus.Select(m => m.Name.ToLower()).Distinct().ToList();
-            _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {MenuCount} 个菜单权限: {MenuNames}",
-                userId, companyId, menuNames.Count, string.Join(", ", menuNames));
+            _logger.LogDebug("用户 {UserId} 拥有 {MenuCount} 个菜单权限: {MenuNames}",
+                userId, menuNames.Count, string.Join(", ", menuNames));
             return menuNames;
         }
         catch (Exception ex)
@@ -194,77 +160,4 @@ public class MenuAccessService : IMenuAccessService
             return new List<string>();
         }
     }
-
-    /// <summary>
-    /// 获取用户拥有的菜单实体列表（用于基于 Permissions 的权限判断）。
-    /// </summary>
-    private async Task<List<Menu>> GetUserMenusAsync(string userId)
-    {
-        try
-        {
-            // 获取用户信息
-            var user = await _userFactory.GetByIdAsync(userId);
-            if (user == null || !user.IsActive)
-            {
-                return new List<Menu>();
-            }
-
-            var companyId = user.CurrentCompanyId;
-            if (string.IsNullOrEmpty(companyId))
-            {
-                _logger.LogWarning("用户 {UserId} 没有关联的企业ID", userId);
-                return new List<Menu>();
-            }
-
-            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
-                .Equal(uc => uc.UserId, userId)
-                .Equal(uc => uc.CompanyId, companyId)
-                .Equal(uc => uc.Status, "active")
-                .Build();
-
-            var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
-            var userCompany = userCompanies.FirstOrDefault();
-            if (userCompany == null)
-            {
-                return new List<Menu>();
-            }
-
-            var menuIds = new List<string>();
-            if (userCompany.RoleIds != null && userCompany.RoleIds.Any())
-            {
-                var roleFilter = _roleFactory.CreateFilterBuilder()
-                    .In(r => r.Id, userCompany.RoleIds)
-                    .Equal(r => r.CompanyId, companyId)
-                    .Equal(r => r.IsActive, true)
-                    .Build();
-                var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
-                foreach (var role in roles)
-                {
-                    if (role.MenuIds != null)
-                    {
-                        menuIds.AddRange(role.MenuIds);
-                    }
-                }
-            }
-
-            var uniqueMenuIds = menuIds.Distinct().ToList();
-            if (!uniqueMenuIds.Any())
-            {
-                return new List<Menu>();
-            }
-
-            var menuFilter = _menuFactory.CreateFilterBuilder()
-                .In(m => m.Id, uniqueMenuIds)
-                .Equal(m => m.IsEnabled, true)
-                .Build();
-            var menus = await _menuFactory.FindAsync(menuFilter);
-            return menus;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取用户菜单失败: UserId={UserId}", userId);
-            return new List<Menu>();
-        }
-    }
 }
-

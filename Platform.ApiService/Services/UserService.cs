@@ -1407,10 +1407,11 @@ public class UserService : IUserService
     #endregion
 
     /// <summary>
-    /// 获取用户的所有权限信息
+    /// 获取用户可访问的菜单ID列表（用于权限判断）
+    /// 权限控制基于菜单，用户有权访问的菜单ID即为其权限
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <returns>权限信息</returns>
+    /// <returns>菜单权限信息</returns>
     public async Task<object> GetUserPermissionsAsync(string userId)
     {
         // 获取用户信息
@@ -1421,16 +1422,13 @@ public class UserService : IUserService
         }
 
         // 获取用户在当前企业的角色（从数据库获取，不使用 JWT token）
-        // ⚠️ 已移除 JWT token 中的 CurrentCompanyId，统一从数据库获取
         var companyId = user.CurrentCompanyId;
         if (string.IsNullOrEmpty(companyId))
         {
             // 没有企业上下文，返回空权限
             return new
             {
-                allPermissionCodes = new string[0],
-                rolePermissions = new string[0],
-                customPermissions = new string[0]
+                menuIds = Array.Empty<string>()
             };
         }
 
@@ -1442,35 +1440,26 @@ public class UserService : IUserService
         var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
         var userCompany = userCompanies.FirstOrDefault();
         
-        var allPermissionCodes = new List<string>();
-        var rolePermissions = new List<string>();
+        var menuIds = new List<string>();
 
         if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
         {
             // 获取用户角色对应的菜单权限
-            // ⚠️ 关键修复：使用 FindWithoutTenantFilterAsync 因为我们已手动添加了 CompanyId 过滤
-            // 避免 DatabaseOperationFactory 使用 JWT token 中的旧企业ID自动过滤
             var roleFilter = _roleFactory.CreateFilterBuilder()
                 .In(r => r.Id, userCompany.RoleIds)
-                .Equal(r => r.CompanyId, companyId)  // ✅ 使用数据库中的 CurrentCompanyId
+                .Equal(r => r.CompanyId, companyId)
                 .Equal(r => r.IsActive, true)
                 .Build();
 
             var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
             
-            // 收集所有角色的菜单权限
-            var menuIds = roles.SelectMany(r => r.MenuIds).Distinct().ToList();
-            
-            // 将菜单ID作为权限代码（简化的权限模型）
-            rolePermissions.AddRange(menuIds);
-            allPermissionCodes.AddRange(menuIds);
+            // 收集所有角色的菜单ID
+            menuIds = roles.SelectMany(r => r.MenuIds).Distinct().ToList();
         }
 
         return new
         {
-            allPermissionCodes = allPermissionCodes.Distinct().ToArray(),
-            rolePermissions = rolePermissions.ToArray(),
-            customPermissions = new string[0] // 当前版本暂不支持自定义权限
+            menuIds = menuIds.ToArray()
         };
     }
 

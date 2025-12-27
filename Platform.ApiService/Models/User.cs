@@ -17,7 +17,7 @@ public class CreateUserRequest
     [Required(ErrorMessage = "用户名不能为空")]
     [StringLength(50, ErrorMessage = "用户名长度不能超过50个字符")]
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 邮箱地址
     /// </summary>
@@ -33,7 +33,7 @@ public class CreateUserRequest
     /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
     /// </remarks>
     public string? PhoneNumber { get; set; }
-    
+
     /// <summary>
     /// 年龄
     /// </summary>
@@ -52,7 +52,7 @@ public class CreateUserManagementRequest
     [Required(ErrorMessage = "用户名不能为空")]
     [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
     public string Username { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 邮箱地址（可选）
     /// </summary>
@@ -67,19 +67,19 @@ public class CreateUserManagementRequest
     /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
     /// </remarks>
     public string? PhoneNumber { get; set; }
-    
+
     /// <summary>
     /// 密码（至少6个字符）
     /// </summary>
     [Required(ErrorMessage = "密码不能为空")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
     public string Password { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 角色ID列表
     /// </summary>
     public List<string>? RoleIds { get; set; }
-    
+
     /// <summary>
     /// 是否激活（默认true）
     /// </summary>
@@ -95,7 +95,7 @@ public class UpdateUserRequest
     /// 姓名
     /// </summary>
     public string? Name { get; set; }
-    
+
     /// <summary>
     /// 邮箱地址
     /// </summary>
@@ -109,7 +109,7 @@ public class UpdateUserRequest
     /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
     /// </remarks>
     public string? PhoneNumber { get; set; }
-    
+
     /// <summary>
     /// 年龄
     /// </summary>
@@ -125,7 +125,7 @@ public class UpdateUserManagementRequest
     /// 用户名
     /// </summary>
     public string? Username { get; set; }
-    
+
     /// <summary>
     /// 邮箱地址
     /// </summary>
@@ -139,12 +139,12 @@ public class UpdateUserManagementRequest
     /// 空字符串或 null 值将被视为清空手机号，不会触发验证错误
     /// </remarks>
     public string? PhoneNumber { get; set; }
-    
+
     /// <summary>
     /// 角色ID列表
     /// </summary>
     public List<string>? RoleIds { get; set; }
-    
+
     /// <summary>
     /// 是否激活
     /// </summary>
@@ -160,42 +160,42 @@ public class UserListRequest
     /// 页码（默认1）
     /// </summary>
     public int Page { get; set; } = 1;
-    
+
     /// <summary>
     /// 每页大小（默认10）
     /// </summary>
     public int PageSize { get; set; } = 10;
-    
+
     /// <summary>
     /// 搜索关键词（用户名、邮箱）
     /// </summary>
     public string? Search { get; set; }
-    
+
     /// <summary>
     /// 角色ID列表（按角色筛选）
     /// </summary>
     public List<string>? RoleIds { get; set; }
-    
+
     /// <summary>
     /// 是否激活（按状态筛选）
     /// </summary>
     public bool? IsActive { get; set; }
-    
+
     /// <summary>
     /// 排序字段（默认CreatedAt）
     /// </summary>
     public string? SortBy { get; set; } = "CreatedAt";
-    
+
     /// <summary>
     /// 排序方向（asc/desc，默认desc）
     /// </summary>
     public string? SortOrder { get; set; } = "desc";
-    
+
     /// <summary>
     /// 开始日期（按创建时间范围搜索）
     /// </summary>
     public DateTime? StartDate { get; set; }
-    
+
     /// <summary>
     /// 结束日期（按创建时间范围搜索）
     /// </summary>
@@ -212,17 +212,17 @@ public class UserWithRolesResponse
     /// 用户ID
     /// </summary>
     public string? Id { get; set; }
-    
+
     /// <summary>
     /// 用户名
     /// </summary>
     public string Username { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 显示名称
     /// </summary>
     public string? Name { get; set; }
-    
+
     /// <summary>
     /// 邮箱地址
     /// </summary>
@@ -232,42 +232,42 @@ public class UserWithRolesResponse
     /// 手机号码
     /// </summary>
     public string? PhoneNumber { get; set; }
-    
+
     /// <summary>
     /// 年龄
     /// </summary>
     public int? Age { get; set; }
-    
+
     /// <summary>
     /// 是否激活
     /// </summary>
     public bool IsActive { get; set; }
-    
+
     /// <summary>
     /// 最后登录时间
     /// </summary>
     public DateTime? LastLoginAt { get; set; }
-    
+
     /// <summary>
     /// 创建时间
     /// </summary>
     public DateTime CreatedAt { get; set; }
-    
+
     /// <summary>
     /// 更新时间
     /// </summary>
     public DateTime UpdatedAt { get; set; }
-    
+
     /// <summary>
     /// 用户在当前企业的角色ID列表
     /// </summary>
     public List<string> RoleIds { get; set; } = new();
-    
+
     /// <summary>
     /// 用户在当前企业的角色名称列表
     /// </summary>
     public List<string> RoleNames { get; set; } = new();
-    
+
     /// <summary>
     /// 是否为当前企业的管理员
     /// </summary>
@@ -283,22 +283,22 @@ public class UserListResponse
     /// 用户列表
     /// </summary>
     public List<AppUser> Users { get; set; } = new();
-    
+
     /// <summary>
     /// 总记录数
     /// </summary>
     public int Total { get; set; }
-    
+
     /// <summary>
     /// 当前页码
     /// </summary>
     public int Page { get; set; }
-    
+
     /// <summary>
     /// 每页大小
     /// </summary>
     public int PageSize { get; set; }
-    
+
     /// <summary>
     /// 总页数
     /// </summary>
@@ -315,22 +315,22 @@ public class UserListWithRolesResponse
     /// 用户列表（包含角色信息）
     /// </summary>
     public List<UserWithRolesResponse> Users { get; set; } = new();
-    
+
     /// <summary>
     /// 总记录数
     /// </summary>
     public int Total { get; set; }
-    
+
     /// <summary>
     /// 当前页码
     /// </summary>
     public int Page { get; set; }
-    
+
     /// <summary>
     /// 每页大小
     /// </summary>
     public int PageSize { get; set; }
-    
+
     /// <summary>
     /// 总页数
     /// </summary>
@@ -346,12 +346,12 @@ public class BulkUserActionRequest
     /// 用户ID列表
     /// </summary>
     public List<string> UserIds { get; set; } = new();
-    
+
     /// <summary>
     /// 操作类型（"activate", "deactivate", "delete"）
     /// </summary>
     public string Action { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 删除原因（仅用于delete操作）
     /// </summary>
@@ -367,37 +367,37 @@ public class UserStatisticsResponse
     /// 总用户数
     /// </summary>
     public int TotalUsers { get; set; }
-    
+
     /// <summary>
     /// 活跃用户数
     /// </summary>
     public int ActiveUsers { get; set; }
-    
+
     /// <summary>
     /// 非活跃用户数
     /// </summary>
     public int InactiveUsers { get; set; }
-    
+
     /// <summary>
     /// 管理员用户数
     /// </summary>
     public int AdminUsers { get; set; }
-    
+
     /// <summary>
     /// 普通用户数
     /// </summary>
     public int RegularUsers { get; set; }
-    
+
     /// <summary>
     /// 今日新增用户数
     /// </summary>
     public int NewUsersToday { get; set; }
-    
+
     /// <summary>
     /// 本周新增用户数
     /// </summary>
     public int NewUsersThisWeek { get; set; }
-    
+
     /// <summary>
     /// 本月新增用户数
     /// </summary>
@@ -496,6 +496,13 @@ public class UserActivityLog : ISoftDeletable, IEntity, ITimestamped, IMultiTena
     public string? ResponseBody { get; set; }
 
     /// <summary>
+    /// 操作元数据（用于云存储等特殊操作的额外信息）
+    /// </summary>
+    [BsonElement("metadata")]
+    [JsonPropertyName("metadata")]
+    public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
     /// 企业ID
     /// </summary>
     [BsonElement("companyId")]
@@ -547,27 +554,27 @@ public class GetUserActivityLogsRequest
     /// 页码（默认1）
     /// </summary>
     public int Page { get; set; } = 1;
-    
+
     /// <summary>
     /// 每页大小（默认20）
     /// </summary>
     public int PageSize { get; set; } = 20;
-    
+
     /// <summary>
     /// 用户ID（可选，按用户筛选）
     /// </summary>
     public string? UserId { get; set; }
-    
+
     /// <summary>
     /// 操作类型（可选，按操作类型筛选）
     /// </summary>
     public string? Action { get; set; }
-    
+
     /// <summary>
     /// 开始日期（可选，按时间范围筛选）
     /// </summary>
     public DateTime? StartDate { get; set; }
-    
+
     /// <summary>
     /// 结束日期（可选，按时间范围筛选）
     /// </summary>
@@ -583,22 +590,22 @@ public class UserActivityLogPagedResponse
     /// 日志数据列表
     /// </summary>
     public List<UserActivityLog> Data { get; set; } = new();
-    
+
     /// <summary>
     /// 总记录数
     /// </summary>
     public long Total { get; set; }
-    
+
     /// <summary>
     /// 当前页码
     /// </summary>
     public int Page { get; set; }
-    
+
     /// <summary>
     /// 每页大小
     /// </summary>
     public int PageSize { get; set; }
-    
+
     /// <summary>
     /// 总页数
     /// </summary>
@@ -614,52 +621,52 @@ public class LogHttpRequestRequest
     /// 用户ID
     /// </summary>
     public string? UserId { get; set; }
-    
+
     /// <summary>
     /// 用户名
     /// </summary>
     public string? Username { get; set; }
-    
+
     /// <summary>
     /// HTTP方法
     /// </summary>
     public string HttpMethod { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 请求路径
     /// </summary>
     public string Path { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 查询字符串
     /// </summary>
     public string? QueryString { get; set; }
-    
+
     /// <summary>
     /// 协议（http/https）
     /// </summary>
     public string Scheme { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 主机名
     /// </summary>
     public string Host { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// HTTP状态码
     /// </summary>
     public int StatusCode { get; set; }
-    
+
     /// <summary>
     /// 请求持续时间（毫秒）
     /// </summary>
     public long DurationMs { get; set; }
-    
+
     /// <summary>
     /// IP地址
     /// </summary>
     public string? IpAddress { get; set; }
-    
+
     /// <summary>
     /// 用户代理（User Agent）
     /// </summary>
@@ -669,6 +676,11 @@ public class LogHttpRequestRequest
     /// 响应内容（JSON字符串，已截断）
     /// </summary>
     public string? ResponseBody { get; set; }
+
+    /// <summary>
+    /// 操作元数据（用于云存储等特殊操作的额外信息）
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
 /// <summary>
@@ -680,19 +692,19 @@ public class UpdateProfileRequest
     /// 用户名
     /// </summary>
     public string? Username { get; set; }
-    
+
     /// <summary>
     /// 邮箱地址
     /// </summary>
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
     public string? Email { get; set; }
-    
+
     /// <summary>
     /// 姓名
     /// </summary>
     [StringLength(50, ErrorMessage = "姓名长度不能超过50个字符")]
     public string? Name { get; set; }
-    
+
     /// <summary>
     /// 年龄
     /// </summary>

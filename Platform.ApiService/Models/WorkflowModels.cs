@@ -504,6 +504,18 @@ public class WorkflowInstance : IEntity, ISoftDeletable, ITimestamped, IMultiTen
     public WorkflowStatus Status { get; set; } = WorkflowStatus.Running;
 
     /// <summary>
+    /// 当前审批任务的审批人 ID 列表（用于优化待办列表查询）
+    /// </summary>
+    [BsonElement("currentApproverIds")]
+    public List<string> CurrentApproverIds { get; set; } = new();
+
+    /// <summary>
+    /// 流程实例在当前节点的预计超时时间
+    /// </summary>
+    [BsonElement("timeoutAt")]
+    public DateTime? TimeoutAt { get; set; }
+
+    /// <summary>
     /// 当前节点ID
     /// </summary>
     [BsonElement("currentNodeId")]

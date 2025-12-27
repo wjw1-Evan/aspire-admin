@@ -192,6 +192,10 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
         // 公文管理子菜单：从菜单名称中提取子菜单名称（去掉 document- 或 document: 前缀）
         const shortName = menu.name.replace(/^document[-:]/, '');
         localeKey = `menu.document.${shortName}`;
+      } else if (menu.path.startsWith('/cloud-storage/') || menu.name.startsWith('cloud-storage-') || menu.name.startsWith('cloud-storage:')) {
+        // 网盘管理子菜单：从菜单名称中提取子菜单名称（去掉 cloud-storage- 或 cloud-storage: 前缀）
+        const shortName = menu.name.replace(/^cloud-storage[-:]/, '');
+        localeKey = `menu.cloud-storage.${shortName}`;
       } else if (menu.path === '/welcome') {
         localeKey = 'menu.welcome';
       } else if (menu.path.startsWith('/company/')) {
@@ -305,6 +309,7 @@ export const layout: RunTimeLayoutConfig = ({
           '/project-management',
           '/task-management',
           '/user-management',
+          '/cloud-storage',
           '/iot-platform',
           '/system',
         ];
@@ -320,6 +325,10 @@ export const layout: RunTimeLayoutConfig = ({
               // 项目管理：匹配 /project-management 或 /project-management/*
               return menu.path === '/project-management' || menu.path.startsWith('/project-management/');
             }
+            if (prefix === '/cloud-storage') {
+              // 网盘管理：匹配 /cloud-storage 或 /cloud-storage/*
+              return menu.path === '/cloud-storage' || menu.path.startsWith('/cloud-storage/');
+            }
             // 其他：精确匹配或子路径匹配
             return (
               menu.path === prefix || menu.path.startsWith(`${prefix}/`)
@@ -329,7 +338,7 @@ export const layout: RunTimeLayoutConfig = ({
           // 未匹配到的菜单排在最后，保持原有顺序（通过原数组下标兜底）
           return index === -1
             ? desiredOrder.length +
-                initialState.currentUser!.menus!.indexOf(menu)
+            initialState.currentUser!.menus!.indexOf(menu)
             : index;
         };
 
@@ -376,7 +385,7 @@ export const layout: RunTimeLayoutConfig = ({
           // 只在特定页面访问时才启动上报
           const shouldReportPages = ['/welcome'];
           const shouldReport = shouldReportPages.some(page => location.pathname === page || location.pathname.startsWith(page));
-          
+
           // 仅在用户登录后、且在特定页面时启动定期上报
           // 延迟启动，让页面先渲染完成
           if (initialState?.currentUser && shouldReport && !hasStartedRef.current) {
@@ -400,7 +409,7 @@ export const layout: RunTimeLayoutConfig = ({
       // 使用 App 组件包裹，以支持动态主题
       const AppWrapper = () => {
         const app = App.useApp();
-        
+
         // 设置全局实例，供 errorInterceptor 等非组件代码使用
         useEffect(() => {
           setAppInstance(app);
@@ -427,15 +436,15 @@ export const layout: RunTimeLayoutConfig = ({
     },
     ...(initialState?.settings
       ? {
-          ...initialState.settings,
-          // ProLayout 只支持 'light' | 'realDark'，将 'dark' 映射为 'realDark'
-          navTheme:
-            initialState.settings.navTheme === 'dark'
-              ? ('realDark' as const)
-              : initialState.settings.navTheme === 'light' || initialState.settings.navTheme === 'realDark'
+        ...initialState.settings,
+        // ProLayout 只支持 'light' | 'realDark'，将 'dark' 映射为 'realDark'
+        navTheme:
+          initialState.settings.navTheme === 'dark'
+            ? ('realDark' as const)
+            : initialState.settings.navTheme === 'light' || initialState.settings.navTheme === 'realDark'
               ? initialState.settings.navTheme
               : undefined,
-        } as Partial<Omit<LayoutSettings, 'navTheme'> & { navTheme?: 'light' | 'realDark' }>
+      } as Partial<Omit<LayoutSettings, 'navTheme'> & { navTheme?: 'light' | 'realDark' }>
       : {}),
     onCollapse: (collapsed: boolean) => {
       setInitialState((preInitialState) => ({

@@ -51,6 +51,18 @@ public class FilterBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     }
 
     /// <summary>
+    /// 添加数组包含元素条件
+    /// </summary>
+    public FilterBuilder<T> AnyEq<TItem>(System.Linq.Expressions.Expression<Func<T, IEnumerable<TItem>>> field, TItem value)
+    {
+        if (value != null)
+        {
+            _filters.Add(_builder.AnyEq(field, value));
+        }
+        return this;
+    }
+
+    /// <summary>
     /// 添加在范围内条件
     /// </summary>
     public FilterBuilder<T> In<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field, IEnumerable<TField> values)

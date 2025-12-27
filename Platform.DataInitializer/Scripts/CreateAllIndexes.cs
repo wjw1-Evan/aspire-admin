@@ -43,6 +43,7 @@ public class CreateAllIndexes
         await CreateLocationBeaconIndexesAsync();
         await CreateRefreshTokenIndexesAsync();
         await CreateXiaokeConfigIndexesAsync();
+        await CreateWorkflowIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
     }
@@ -521,6 +522,49 @@ public class CreateAllIndexes
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建 XiaokeConfig 索引失败");
+        }
+    }
+
+    /// <summary>
+    /// 创建工作流相关索引
+    /// </summary>
+    private async Task CreateWorkflowIndexesAsync()
+    {
+        var collection = _database.GetCollection<BsonDocument>("workflowinstances");
+
+        try
+        {
+            // 待办查询优化索引：CompanyId + Status + CurrentApproverIds
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Ascending("status")
+                    .Ascending("currentApproverIds")
+                    .Descending(CreatedAtFieldName),
+                new CreateIndexOptions
+                {
+                    Name = "idx_workflow_todo_lookup",
+                    Background = true
+                },
+                "workflowinstances.companyId + status + currentApproverIds + createdAt");
+
+            // 按公文查询实例
+            await CreateIndexAsync(collection,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Ascending("documentId"),
+                new CreateIndexOptions
+                {
+                    Name = "idx_workflow_documentId",
+                    Background = true
+                },
+                "workflowinstances.companyId + documentId");
+
+            _logger.LogInformation("✅ WorkflowInstances 集合索引创建完成");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建 Workflow 索引失败");
         }
     }
 

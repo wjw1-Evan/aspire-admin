@@ -8,22 +8,21 @@ namespace Platform.ApiService.Attributes;
 /// <summary>
 /// 菜单访问权限验证特性
 /// 用于控制器和方法级别的菜单权限检查
-/// 替代原有的 RequirePermission 特性
+/// 只支持菜单名称（如 "user-management"、"cloud-storage-files"）
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
 {
     /// <summary>
-    /// 所需访问的权限标识或菜单名称
-    /// - 权限标识示例：workflow:list、document:approval（包含冒号）
-    /// - 菜单名称示例：user-management、workflow-monitor（不包含冒号）
+    /// 所需访问的菜单名称
+    /// 示例：user-management、cloud-storage-files、workflow-list
     /// </summary>
     public string MenuName { get; }
 
     /// <summary>
     /// 初始化菜单访问权限验证特性
     /// </summary>
-    /// <param name="menuName">所需访问的权限标识或菜单名称</param>
+    /// <param name="menuName">菜单名称</param>
     public RequireMenuAttribute(string menuName)
     {
         MenuName = menuName;
@@ -32,7 +31,6 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
     /// <summary>
     /// 执行授权验证
     /// </summary>
-    /// <param name="context">授权过滤器上下文</param>
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         var traceId = context.HttpContext.TraceIdentifier;
@@ -73,7 +71,7 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
 
         if (!hasAccess)
         {
-            var response = ApiResponse<object>.ErrorResult("FORBIDDEN", $"无权访问菜单: {MenuName}", traceId);
+            var response = ApiResponse<object>.ErrorResult("FORBIDDEN", $"无权访问: {MenuName}", traceId);
             context.Result = new ObjectResult(response)
             {
                 StatusCode = 403
@@ -81,4 +79,3 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
         }
     }
 }
-

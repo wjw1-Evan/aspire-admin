@@ -52,7 +52,7 @@ public class DocumentController : BaseApiController
     /// 获取公文列表
     /// </summary>
     [HttpGet]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> GetDocuments([FromQuery] DocumentQueryParams query)
     {
         try
@@ -70,7 +70,7 @@ public class DocumentController : BaseApiController
     /// 获取公文详情
     /// </summary>
     [HttpGet("{id}")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> GetDocument(string id)
     {
         try
@@ -115,7 +115,7 @@ public class DocumentController : BaseApiController
     /// 创建公文
     /// </summary>
     [HttpPost]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> CreateDocument([FromBody] CreateDocumentRequest request)
     {
         try
@@ -138,7 +138,7 @@ public class DocumentController : BaseApiController
     /// 更新公文
     /// </summary>
     [HttpPut("{id}")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> UpdateDocument(string id, [FromBody] UpdateDocumentRequest request)
     {
         try
@@ -161,7 +161,7 @@ public class DocumentController : BaseApiController
     /// 删除公文
     /// </summary>
     [HttpDelete("{id}")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> DeleteDocument(string id)
     {
         try
@@ -184,7 +184,7 @@ public class DocumentController : BaseApiController
     /// 提交公文（启动流程）
     /// </summary>
     [HttpPost("{id}/submit")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> SubmitDocument(string id, [FromBody] SubmitDocumentRequest request)
     {
         try
@@ -207,7 +207,7 @@ public class DocumentController : BaseApiController
     /// 审批通过
     /// </summary>
     [HttpPost("{id}/approve")]
-    [RequireMenu("document:approval")]
+    [RequireMenu("document-approval")]
     public async Task<IActionResult> ApproveDocument(string id, [FromBody] ApprovalRequest request)
     {
         try
@@ -254,7 +254,7 @@ public class DocumentController : BaseApiController
     /// 审批拒绝
     /// </summary>
     [HttpPost("{id}/reject")]
-    [RequireMenu("document:approval")]
+    [RequireMenu("document-approval")]
     public async Task<IActionResult> RejectDocument(string id, [FromBody] ApprovalRequest request)
     {
         try
@@ -306,7 +306,7 @@ public class DocumentController : BaseApiController
     /// 退回
     /// </summary>
     [HttpPost("{id}/return")]
-    [RequireMenu("document:approval")]
+    [RequireMenu("document-approval")]
     public async Task<IActionResult> ReturnDocument(string id, [FromBody] ReturnDocumentRequest request)
     {
         try
@@ -345,7 +345,7 @@ public class DocumentController : BaseApiController
     /// 转办
     /// </summary>
     [HttpPost("{id}/delegate")]
-    [RequireMenu("document:approval")]
+    [RequireMenu("document-approval")]
     public async Task<IActionResult> DelegateDocument(string id, [FromBody] DelegateDocumentRequest request)
     {
         try
@@ -387,7 +387,7 @@ public class DocumentController : BaseApiController
     /// 上传公文附件
     /// </summary>
     [HttpPost("attachments")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> UploadAttachment([FromForm] IFormFile file)
     {
         try
@@ -405,7 +405,7 @@ public class DocumentController : BaseApiController
     /// 从文档实例中获取文档创建表单（使用实例快照）
     /// </summary>
     [HttpGet("{id}/instance-form")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> GetDocumentInstanceForm(string id)
     {
         try
@@ -495,7 +495,7 @@ public class DocumentController : BaseApiController
     /// 下载公文附件
     /// </summary>
     [HttpGet("attachments/{attachmentId}")]
-    [RequireMenu("document:list")]
+    [RequireMenu("document-list")]
     public async Task<IActionResult> DownloadAttachment(string attachmentId)
     {
         try
@@ -519,7 +519,7 @@ public class DocumentController : BaseApiController
     /// 获取待审批列表
     /// </summary>
     [HttpGet("pending")]
-    [RequireMenu("document:approval")]
+    [RequireMenu("document-approval")]
     public async Task<IActionResult> GetPendingDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         try

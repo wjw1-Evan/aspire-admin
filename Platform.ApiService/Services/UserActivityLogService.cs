@@ -24,9 +24,9 @@ public class UserActivityLogService : IUserActivityLogService
     {
         _activityLogFactory = activityLogFactory;
         _userFactory = userFactory;
-         
+
     }
-    
+
     /// <summary>
     /// 尝试获取用户的企业ID（从数据库获取，不使用 JWT token）
     /// 如果没有用户上下文或用户未登录，返回 null
@@ -113,7 +113,7 @@ public class UserActivityLogService : IUserActivityLogService
         // 分页查询
         var sortBuilder = _activityLogFactory.CreateSortBuilder()
             .Descending(log => log.CreatedAt);
-        
+
         var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, sortBuilder.Build(), request.Page, request.PageSize);
 
         var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
@@ -137,7 +137,7 @@ public class UserActivityLogService : IUserActivityLogService
         var filter = _activityLogFactory.CreateFilterBuilder()
             .Equal(log => log.UserId, userId)
             .Build();
-        
+
         var sort = _activityLogFactory.CreateSortBuilder()
             .Descending(log => log.CreatedAt)
             .Build();
@@ -157,12 +157,12 @@ public class UserActivityLogService : IUserActivityLogService
 
         var logs = await _activityLogFactory.FindAsync(filter);
         var logIds = logs.Select(log => log.Id!).ToList();
-        
+
         if (logIds.Any())
         {
             await _activityLogFactory.SoftDeleteManyAsync(logIds);
         }
-        
+
         return logIds.Count;
     }
 
@@ -172,14 +172,14 @@ public class UserActivityLogService : IUserActivityLogService
     public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
     {
         // 获取当前企业上下文（如果有的话，从数据库获取，不使用 JWT token）
-        var companyId = await TryGetUserCompanyIdAsync(request.UserId) 
+        var companyId = await TryGetUserCompanyIdAsync(request.UserId)
                         ?? "system"; // 登录/匿名场景无企业上下文时使用系统租户占位，避免写入失败
 
         // 构建完整URL（包含协议、主机、端口、路径和查询字符串）
-        var pathWithQuery = string.IsNullOrEmpty(request.QueryString) 
-            ? request.Path 
+        var pathWithQuery = string.IsNullOrEmpty(request.QueryString)
+            ? request.Path
             : $"{request.Path}{request.QueryString}"; // queryString 已经包含了 "?"
-        
+
         var fullUrl = $"{request.Scheme}://{request.Host}{pathWithQuery}";
 
         var log = new UserActivityLog
@@ -196,6 +196,7 @@ public class UserActivityLogService : IUserActivityLogService
             IpAddress = request.IpAddress,
             UserAgent = request.UserAgent,
             ResponseBody = request.ResponseBody,
+            Metadata = request.Metadata,
             CompanyId = companyId ?? string.Empty
             // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };

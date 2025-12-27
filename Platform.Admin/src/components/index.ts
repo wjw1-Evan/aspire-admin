@@ -16,6 +16,8 @@ import StatCard from './StatCard';
 import PageContainer from './PageContainer';
 import { ThemeSettings } from './ThemeSettings';
 
+import { DataTable } from './DataTable';
+
 export {
   AvatarDropdown,
   AvatarName,
@@ -29,4 +31,5 @@ export {
   StatCard, // 统一统计卡片组件
   PageContainer, // 页面容器组件（替代 @ant-design/pro-components 的 PageContainer）
   ThemeSettings, // 主题设置组件（替代已移除的 SettingDrawer）
+  DataTable, // 数据表格组件
 };

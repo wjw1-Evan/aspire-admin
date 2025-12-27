@@ -211,6 +211,32 @@ export default [
       },
     ],
   },
+  {
+    path: '/cloud-storage',
+    hideInMenu: true, // 使用数据库菜单
+    routes: [
+      {
+        path: '/cloud-storage/files',
+        component: './cloud-storage/files',
+        hideInMenu: true,
+      },
+      {
+        path: '/cloud-storage/shared',
+        component: './cloud-storage/shared',
+        hideInMenu: true,
+      },
+      {
+        path: '/cloud-storage/recycle',
+        component: './cloud-storage/recycle',
+        hideInMenu: true,
+      },
+      {
+        path: '/cloud-storage/quota',
+        component: './cloud-storage/quota',
+        hideInMenu: true,
+      },
+    ],
+  },
 
   // 默认重定向和404
   {

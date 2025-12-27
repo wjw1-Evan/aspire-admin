@@ -79,7 +79,7 @@ public class ActivityLogMiddleware
 
         // ⚠️ 关键修复：在请求线程中提取所有数据，避免在后台线程访问 HttpContext
         var logData = ExtractLogData(context, stopwatch.ElapsedMilliseconds);
-        
+
         if (logData.HasValue)
         {
             // 异步记录日志（不等待完成，避免阻塞响应）
@@ -91,7 +91,7 @@ public class ActivityLogMiddleware
                     // 创建新的 Scope，确保 Scoped 服务正常工作
                     using var scope = _serviceProvider.CreateScope();
                     var scopedLogService = scope.ServiceProvider.GetRequiredService<IUserActivityLogService>();
-                    
+
                     await LogRequestAsync(logData.Value, scopedLogService);
                 }
                 catch (OperationCanceledException)
@@ -132,7 +132,7 @@ public class ActivityLogMiddleware
     /// <summary>
     /// 在请求线程中提取日志数据（避免后台线程访问 HttpContext）
     /// </summary>
-    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody)? ExtractLogData(HttpContext context, long durationMs)
+    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody, Dictionary<string, object>? metadata)? ExtractLogData(HttpContext context, long durationMs)
     {
         // 提取用户信息
         string? userId = null;
@@ -187,17 +187,20 @@ public class ActivityLogMiddleware
 
         var responseBody = ExtractResponseBody(context);
 
-        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, responseBody);
+        // 提取云存储操作的元数据
+        var metadata = ExtractCloudStorageMetadata(context, httpMethod, path);
+
+        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, responseBody, metadata);
     }
 
     /// <summary>
     /// 记录请求信息（使用已提取的数据，不访问 HttpContext）
     /// </summary>
     private static async Task LogRequestAsync(
-        (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody) logData,
+        (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody, Dictionary<string, object>? metadata) logData,
         IUserActivityLogService logService)
     {
-        var (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, responseBody) = logData;
+        var (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, responseBody, metadata) = logData;
 
         // 构建请求对象
         var request = new LogHttpRequestRequest
@@ -213,7 +216,8 @@ public class ActivityLogMiddleware
             DurationMs = durationMs,
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            ResponseBody = responseBody
+            ResponseBody = responseBody,
+            Metadata = metadata ?? new Dictionary<string, object>()
         };
 
         // 调用日志服务记录
@@ -256,7 +260,7 @@ public class ActivityLogMiddleware
             // 使用简单的字符串替换过滤密码字段
             // 注意：这不是完美的解决方案，但对于 JSON 响应通常有效
             var filtered = body;
-            
+
             // 过滤 "password" 字段（不区分大小写）
             // 匹配模式：\"password\"\s*:\s*\"[^\"]*\"
             filtered = System.Text.RegularExpressions.Regex.Replace(
@@ -265,7 +269,7 @@ public class ActivityLogMiddleware
                 @"""password"":""***FILTERED***""",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase
             );
-            
+
             // 过滤 "Password" 字段（大写开头）
             filtered = System.Text.RegularExpressions.Regex.Replace(
                 filtered,
@@ -281,5 +285,149 @@ public class ActivityLogMiddleware
             // 如果过滤失败，返回空字符串而不是原始内容（更安全）
             return string.Empty;
         }
+    }
+
+    /// <summary>
+    /// 提取云存储操作的元数据
+    /// </summary>
+    private static Dictionary<string, object>? ExtractCloudStorageMetadata(HttpContext context, string httpMethod, string path)
+    {
+        var pathLower = path.ToLower();
+
+        // 检查是否是云存储相关的API
+        if (!pathLower.StartsWith("/api/cloud-storage") &&
+            !pathLower.StartsWith("/api/file-share") &&
+            !pathLower.StartsWith("/api/file-version") &&
+            !pathLower.StartsWith("/api/storage-quota"))
+        {
+            return null;
+        }
+
+        var metadata = new Dictionary<string, object>
+        {
+            ["category"] = "cloud_storage",
+            ["operation_type"] = DetermineOperationType(httpMethod, pathLower),
+            ["is_security_sensitive"] = IsSecuritySensitiveOperation(pathLower),
+            ["is_file_operation"] = IsFileOperation(pathLower),
+            ["is_share_operation"] = IsShareOperation(pathLower)
+        };
+
+        // 提取文件ID（如果存在）
+        var fileId = ExtractFileIdFromPath(pathLower);
+        if (!string.IsNullOrEmpty(fileId))
+        {
+            metadata["file_id"] = fileId;
+        }
+
+        // 提取操作详情
+        var operationDetails = ExtractOperationDetails(httpMethod, pathLower);
+        if (operationDetails.Count > 0)
+        {
+            metadata["operation_details"] = operationDetails;
+        }
+
+        // 记录文件大小（如果是上传操作）
+        if (pathLower.Contains("/upload") && context.Request.ContentLength.HasValue)
+        {
+            metadata["file_size"] = context.Request.ContentLength.Value;
+        }
+
+        return metadata;
+    }
+
+    /// <summary>
+    /// 确定操作类型
+    /// </summary>
+    private static string DetermineOperationType(string httpMethod, string path)
+    {
+        return (httpMethod.ToUpper(), path) switch
+        {
+            ("POST", var p) when p.Contains("/upload") => "file_upload",
+            ("POST", var p) when p.Contains("/folders") => "folder_create",
+            ("POST", var p) when p.Contains("/copy") => "file_copy",
+            ("POST", var p) when p.Contains("/restore") => "file_restore",
+            ("POST", var p) when p.Contains("/batch") => "batch_operation",
+            ("POST", var p) when p.Contains("/file-share") => "share_create",
+            ("GET", var p) when p.Contains("/download") => "file_download",
+            ("GET", var p) when p.Contains("/preview") => "file_preview",
+            ("GET", var p) when p.Contains("/thumbnail") => "file_thumbnail",
+            ("GET", var p) when p.Contains("/search") => "file_search",
+            ("GET", var p) when p.Contains("/recycle-bin") => "recycle_bin_view",
+            ("PUT", var p) when p.Contains("/rename") => "file_rename",
+            ("PUT", var p) when p.Contains("/move") => "file_move",
+            ("DELETE", var p) when p.Contains("/permanent") => "file_permanent_delete",
+            ("DELETE", var p) when p.Contains("/recycle-bin/empty") => "recycle_bin_empty",
+            ("DELETE", _) => "file_delete",
+            ("GET", _) => "file_view",
+            _ => "unknown"
+        };
+    }
+
+    /// <summary>
+    /// 判断是否是安全敏感操作
+    /// </summary>
+    private static bool IsSecuritySensitiveOperation(string path)
+    {
+        return path.Contains("/share") ||
+               path.Contains("/permanent") ||
+               path.Contains("/batch") ||
+               path.Contains("/recycle-bin/empty") ||
+               path.Contains("/storage-quota");
+    }
+
+    /// <summary>
+    /// 判断是否是文件操作
+    /// </summary>
+    private static bool IsFileOperation(string path)
+    {
+        return path.StartsWith("/api/cloud-storage") ||
+               path.StartsWith("/api/file-version");
+    }
+
+    /// <summary>
+    /// 判断是否是分享操作
+    /// </summary>
+    private static bool IsShareOperation(string path)
+    {
+        return path.StartsWith("/api/file-share");
+    }
+
+    /// <summary>
+    /// 从路径中提取文件ID
+    /// </summary>
+    private static string? ExtractFileIdFromPath(string path)
+    {
+        // 匹配路径中的GUID格式ID
+        var match = System.Text.RegularExpressions.Regex.Match(
+            path,
+            @"/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    /// <summary>
+    /// 提取操作详情
+    /// </summary>
+    private static Dictionary<string, object> ExtractOperationDetails(string httpMethod, string path)
+    {
+        var details = new Dictionary<string, object>();
+
+        if (path.Contains("/batch/"))
+        {
+            if (path.Contains("/delete"))
+                details["batch_type"] = "delete";
+            else if (path.Contains("/move"))
+                details["batch_type"] = "move";
+            else if (path.Contains("/copy"))
+                details["batch_type"] = "copy";
+        }
+
+        if (path.Contains("/search"))
+        {
+            details["search_type"] = path.Contains("/content") ? "content_search" : "metadata_search";
+        }
+
+        return details;
     }
 }

@@ -672,10 +672,11 @@ appliesTo:
   - 操作列宽度优化：简化按钮文字，添加图标，设置合适宽度
   - 表单数据处理修复：修复了多个流程表单数据相同的问题，使用实例ID跟踪
   - 添加了横向滚动支持和状态重置逻辑
-- **操作列图标标准化**（已完成）：
-  - 为工作流表单页面添加了操作按钮图标（EditOutlined、DeleteOutlined）
-  - 完善了操作列图标映射规范，涵盖常用操作类型
-  - 统一了按钮样式：`type="link"`、`size="small"`、包含图标和文本
+- **ProComponents 迁移完成**（已完成）：
+  - 工作流表单页面：从 ProTable 迁移到 DataTable，完全基于 Ant Design 6 原生组件
+  - 移除了 @ant-design/pro-components 依赖，使用轻量级的 DataTable 封装
+  - 优化了操作列样式，符合统一的操作列规范
+  - 实现了搜索参数管理最佳实践，避免重复请求问题
 - **国际化消息修复**（已完成）：
   - 修复了公文创建相关的国际化消息缺失
   - 覆盖了所有8种语言的翻译文件
@@ -868,7 +869,7 @@ appliesTo:
      - 项目管理：`src/pages/project-management/index.tsx`
      - 用户管理：`src/pages/user-management/index.tsx`
      - 密码本：`src/pages/password-book/index.tsx`
-     - 工作流表单：`src/pages/workflow/forms/index.tsx`（已完成操作列图标优化）
+     - 工作流表单：`src/pages/workflow/forms/index.tsx`（已完成 ProTable 到 DataTable 迁移）
 - **JSON 数据显示规范**：
   - 所有 JSON 数据统一使用 `Paragraph` 组件（Ant Design Typography）显示
   - 样式规范：

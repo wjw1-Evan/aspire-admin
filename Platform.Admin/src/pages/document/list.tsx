@@ -4,7 +4,6 @@ import {
   Button,
   Space,
   Modal,
-  message,
   Tag,
   Drawer,
   Card,
@@ -61,9 +60,11 @@ import {
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, documentStatusMap, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
+import { useMessage } from '@/hooks/useMessage';
 
 const DocumentManagement: React.FC = () => {
   const intl = useIntl();
+  const message = useMessage();
   const actionRef = useRef<ActionType>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<any>(null);
@@ -209,7 +210,7 @@ const DocumentManagement: React.FC = () => {
                   const currentNodeId = instance?.currentNodeId;
                   const approvalHistory = response.data?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
                   const workflowDefinition = response.data?.workflowDefinition;
-                  
+
                   // 使用实例快照中的流程定义（如果有）
                   if (workflowDefinition) {
                     setDetailWorkflowDef(workflowDefinition);
@@ -275,53 +276,53 @@ const DocumentManagement: React.FC = () => {
                     }
                   }
 
-                      if (instanceId && currentNodeId) {
-                        try {
-                          const nodeFormResp = await getNodeForm(instanceId, currentNodeId);
-                          if (nodeFormResp.success) {
-                            setDetailNodeFormDef(nodeFormResp.data?.form || null);
-                            setDetailNodeFormValues(nodeFormResp.data?.initialValues || {});
-                          } else {
-                            setDetailNodeFormDef(null);
-                            setDetailNodeFormValues(null);
-                          }
-                        } catch (err) {
-                          console.error('加载节点表单失败', err);
-                          setDetailNodeFormDef(null);
-                          setDetailNodeFormValues(null);
-                        }
-
-                        // 拉取所有涉及的节点表单（已审批节点也可查看）
-                        try {
-                          const allNodeIds = Array.from(
-                            new Set(
-                              [currentNodeId, ...approvalHistory.map((h: any) => h.nodeId).filter(Boolean)],
-                            ),
-                          );
-                          const forms: Record<string, { def: FormDefinition | null; values: Record<string, any> }> = {};
-                          for (const nid of allNodeIds) {
-                            try {
-                              const nf = await getNodeForm(instanceId, nid);
-                              if (nf.success) {
-                                forms[nid] = {
-                                  def: nf.data?.form || null,
-                                  values: nf.data?.initialValues || {},
-                                };
-                              }
-                            } catch (e) {
-                              console.error('加载节点表单失败', nid, e);
-                            }
-                          }
-                          setDetailNodeForms(forms);
-                        } catch (e) {
-                          console.error('批量加载节点表单失败', e);
-                          setDetailNodeForms({});
-                        }
+                  if (instanceId && currentNodeId) {
+                    try {
+                      const nodeFormResp = await getNodeForm(instanceId, currentNodeId);
+                      if (nodeFormResp.success) {
+                        setDetailNodeFormDef(nodeFormResp.data?.form || null);
+                        setDetailNodeFormValues(nodeFormResp.data?.initialValues || {});
                       } else {
                         setDetailNodeFormDef(null);
                         setDetailNodeFormValues(null);
-                        setDetailNodeForms({});
                       }
+                    } catch (err) {
+                      console.error('加载节点表单失败', err);
+                      setDetailNodeFormDef(null);
+                      setDetailNodeFormValues(null);
+                    }
+
+                    // 拉取所有涉及的节点表单（已审批节点也可查看）
+                    try {
+                      const allNodeIds = Array.from(
+                        new Set(
+                          [currentNodeId, ...approvalHistory.map((h: any) => h.nodeId).filter(Boolean)],
+                        ),
+                      );
+                      const forms: Record<string, { def: FormDefinition | null; values: Record<string, any> }> = {};
+                      for (const nid of allNodeIds) {
+                        try {
+                          const nf = await getNodeForm(instanceId, nid);
+                          if (nf.success) {
+                            forms[nid] = {
+                              def: nf.data?.form || null,
+                              values: nf.data?.initialValues || {},
+                            };
+                          }
+                        } catch (e) {
+                          console.error('加载节点表单失败', nid, e);
+                        }
+                      }
+                      setDetailNodeForms(forms);
+                    } catch (e) {
+                      console.error('批量加载节点表单失败', e);
+                      setDetailNodeForms({});
+                    }
+                  } else {
+                    setDetailNodeFormDef(null);
+                    setDetailNodeFormValues(null);
+                    setDetailNodeForms({});
+                  }
                   setDetailVisible(true);
                 }
               } catch (error) {
@@ -361,37 +362,37 @@ const DocumentManagement: React.FC = () => {
               >
                 {intl.formatMessage({ id: 'pages.document.action.submit' })}
               </Button>
-              <Button
-                type="link"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={async () => {
-                  Modal.confirm({
-                    title: intl.formatMessage({ id: 'pages.document.modal.confirmDelete' }),
-                    content: intl.formatMessage(
-                      { id: 'pages.document.modal.confirmDeleteContent' },
-                      { title: record.title }
-                    ),
-                    onOk: async () => {
-                      try {
-                        const response = await deleteDocument(record.id!);
-                        if (response.success) {
-                          message.success(intl.formatMessage({ id: 'pages.document.message.deleteSuccess' }));
-                          actionRef.current?.reload?.();
-                        }
-                      } catch (error) {
-                        console.error('删除失败:', error);
-                        message.error(intl.formatMessage({ id: 'pages.document.message.deleteFailed' }));
-                      }
-                    },
-                  });
-                }}
-              >
-                {intl.formatMessage({ id: 'pages.document.action.delete' })}
-              </Button>
             </>
           )}
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={async () => {
+              Modal.confirm({
+                title: intl.formatMessage({ id: 'pages.document.modal.confirmDelete' }),
+                content: intl.formatMessage(
+                  { id: 'pages.document.modal.confirmDeleteContent' },
+                  { title: record.title }
+                ),
+                onOk: async () => {
+                  try {
+                    const response = await deleteDocument(record.id!);
+                    if (response.success) {
+                      message.success(intl.formatMessage({ id: 'pages.document.message.deleteSuccess' }));
+                      actionRef.current?.reload?.();
+                    }
+                  } catch (error) {
+                    console.error('删除失败:', error);
+                    message.error(intl.formatMessage({ id: 'pages.document.message.deleteFailed' }));
+                  }
+                },
+              });
+            }}
+          >
+            {intl.formatMessage({ id: 'pages.document.action.delete' })}
+          </Button>
         </Space>
       ),
     },
@@ -702,16 +703,16 @@ const DocumentManagement: React.FC = () => {
                               : completedIds.has(n.id) || (n.type === 'start' && currentId && currentId !== n.id)
                                 ? 'finish'
                                 : 'wait';
-                            
+
                             // 获取该节点的审批历史
                             const nodeHistory = (approvalHistory || []).filter((h: any) => h.nodeId === n.id);
-                            
+
                             // 获取该节点的表单数据
                             const nodeFormData = detailNodeForms?.[n.id];
-                            
+
                             // 构建描述信息
                             const descriptionElements: React.ReactNode[] = [];
-                            
+
                             if (isCurrent) {
                               descriptionElements.push(
                                 <div key="current" style={{ fontSize: 12, color: '#1890ff', fontWeight: 500, marginBottom: 4 }}>
@@ -719,7 +720,7 @@ const DocumentManagement: React.FC = () => {
                                 </div>
                               );
                             }
-                            
+
                             // 添加节点表单数据
                             if (nodeFormData?.def && nodeFormData.def.fields?.length > 0) {
                               descriptionElements.push(
@@ -754,7 +755,7 @@ const DocumentManagement: React.FC = () => {
                                 </div>
                               );
                             }
-                            
+
                             // 添加审批历史信息
                             if (nodeHistory.length > 0) {
                               descriptionElements.push(
@@ -795,7 +796,7 @@ const DocumentManagement: React.FC = () => {
                                 </div>
                               );
                             }
-                            
+
                             return {
                               title: `${n.label || n.id} (${typeLabel(n.type)})`,
                               status,

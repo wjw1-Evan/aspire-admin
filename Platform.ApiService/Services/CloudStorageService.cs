@@ -918,15 +918,25 @@ public class CloudStorageService : ICloudStorageService
             filter = filter.LessThanOrEqual(f => f.DeletedAt, query.DeletedBefore.Value);
 
         var sortBuilder = _fileItemFactory.CreateSortBuilder();
+        var isDescending = query.SortOrder.ToLower() == "desc";
         var sort = query.SortBy.ToLower() switch
         {
-            "name" => query.SortOrder.ToLower() == "desc"
+            "name" => isDescending
                 ? sortBuilder.Descending(f => f.Name).Build()
                 : sortBuilder.Ascending(f => f.Name).Build(),
-            "deletedat" => query.SortOrder.ToLower() == "desc"
+            "deletedat" => isDescending
                 ? sortBuilder.Descending(f => f.DeletedAt).Build()
                 : sortBuilder.Ascending(f => f.DeletedAt).Build(),
-            _ => sortBuilder.Descending(f => f.DeletedAt).Build()
+            "size" => isDescending
+                ? sortBuilder.Descending(f => f.Size).Build()
+                : sortBuilder.Ascending(f => f.Size).Build(),
+            "type" => isDescending
+                ? sortBuilder.Descending(f => f.Type).Build()
+                : sortBuilder.Ascending(f => f.Type).Build(),
+            "createdat" => isDescending
+                ? sortBuilder.Descending(f => f.CreatedAt).Build()
+                : sortBuilder.Ascending(f => f.CreatedAt).Build(),
+            _ => sortBuilder.Descending(f => f.DeletedAt).Build() // 默认按删除时间降序
         };
 
         var (items, total) = await _fileItemFactory.FindPagedAsync(

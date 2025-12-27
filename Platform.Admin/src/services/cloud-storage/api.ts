@@ -7,19 +7,23 @@ export interface FileItem {
     name: string;
     path: string;
     parentId?: string;
+    // 前端使用 isFolder，后端返回 type (可能为 "folder" | "file" 或 0 | 1)
     isFolder: boolean;
+    type?: string | number; // 后端原始字段，保留以兼容
     size: number;
     mimeType?: string;
     extension?: string;
     tags: string[];
     description?: string;
-    isPublic: boolean;
+    isPublic?: boolean;
     createdAt: string;
     updatedAt: string;
     createdBy: string;
     createdByName: string;
-    updatedBy: string;
+    createdByUsername?: string; // 后端可能返回此字段，转换为 createdByName
+    updatedBy?: string;
     updatedByName: string;
+    updatedByUsername?: string; // 后端可能返回此字段，转换为 updatedByName
 }
 
 export interface CreateFolderRequest {
@@ -79,10 +83,12 @@ export interface FileListRequest {
 }
 
 export interface FileListResponse {
-    data: FileItem[];
+    list?: FileItem[]; // 后端可能返回 list 字段
+    data?: FileItem[]; // 或 data 字段（兼容）
     total: number;
     page: number;
     pageSize: number;
+    totalPages?: number; // 后端可能返回总页数
 }
 
 export interface StorageStatistics {

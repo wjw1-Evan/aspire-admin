@@ -110,6 +110,8 @@ const CloudStorageFilesPage: React.FC = () => {
     // 状态管理
     const [currentPath, setCurrentPath] = useState<string>('');
     const [currentParentId, setCurrentParentId] = useState<string | undefined>(undefined);
+    // 使用 ref 存储 currentParentId，确保 fetchData 能获取到最新值
+    const currentParentIdRef = useRef<string | undefined>(undefined);
     const [pathHistory, setPathHistory] = useState<Array<{ id?: string; name: string; path: string }>>([
         { name: '我的文件', path: '' }
     ]);
@@ -141,7 +143,23 @@ const CloudStorageFilesPage: React.FC = () => {
         try {
             const response = await getStorageStatistics();
             if (response.success && response.data) {
-                setStatistics(response.data);
+                // 转换后端数据格式到前端期望的格式
+                const apiData = response.data as any;
+                const transformedStatistics: StorageStatistics = {
+                    totalFiles: apiData.fileCount || apiData.totalFiles || 0,
+                    totalFolders: apiData.folderCount || apiData.totalFolders || 0,
+                    totalSize: apiData.usedSpace || apiData.totalSize || 0,
+                    usedQuota: apiData.usedSpace || apiData.usedQuota || 0,
+                    totalQuota: apiData.totalQuota || 0,
+                    fileTypeStats: apiData.typeUsage 
+                        ? Object.entries(apiData.typeUsage).map(([type, size]) => ({
+                            type,
+                            count: 0, // API 没有提供每种类型的文件数量
+                            size: typeof size === 'number' ? size : 0,
+                        }))
+                        : apiData.fileTypeStats || [],
+                };
+                setStatistics(transformedStatistics);
             }
         } catch (err) {
             console.error('Failed to load statistics:', err);
@@ -184,8 +202,10 @@ const CloudStorageFilesPage: React.FC = () => {
                 response = await searchFiles(searchRequest);
             } else {
                 // 正常文件列表模式
+                // 使用 ref 获取最新的 parentId，避免闭包问题
+                const parentId = currentParentIdRef.current;
                 const listRequest: FileListRequest = {
-                    parentId: currentParentId,
+                    parentId: parentId,
                     page: current,
                     pageSize,
                     sortBy: 'updatedAt',
@@ -195,8 +215,37 @@ const CloudStorageFilesPage: React.FC = () => {
             }
 
             if (response.success && response.data) {
+                // 后端返回的数据在 list 字段中，而不是 data 字段
+                const rawData = response.data.list || response.data.data || [];
+                // 转换后端数据格式到前端期望的格式
+                const transformedData = rawData.map((item: any) => {
+                    // 提取文件扩展名（如果还没有）
+                    const extension = item.extension || (() => {
+                        if (item.type === 'folder' || item.type === 1) return undefined;
+                        const nameParts = item.name?.split('.');
+                        return nameParts && nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : undefined;
+                    })();
+                    
+                    return {
+                        ...item,
+                        // 将 type 字段转换为 isFolder 布尔值
+                        isFolder: item.type === 'folder' || item.type === 1,
+                        // 确保字段名称匹配
+                        createdByName: item.createdByName || item.createdByUsername || '',
+                        updatedByName: item.updatedByName || item.updatedByUsername || '',
+                        // 确保 parentId 为空字符串时转换为 undefined
+                        parentId: item.parentId && item.parentId.trim() ? item.parentId : undefined,
+                        // 确保 extension 字段存在
+                        extension,
+                        // 确保 tags 是数组
+                        tags: Array.isArray(item.tags) ? item.tags : [],
+                        // 确保 isPublic 有默认值
+                        isPublic: item.isPublic !== undefined ? item.isPublic : false,
+                    };
+                });
+                
                 return {
-                    data: response.data.data || [],
+                    data: transformedData,
                     total: response.data.total || 0,
                     success: true,
                 };
@@ -215,7 +264,7 @@ const CloudStorageFilesPage: React.FC = () => {
                 success: false,
             };
         }
-    }, [currentParentId, isSearchMode]);
+    }, [isSearchMode]);
 
     // 搜索处理
     const handleSearch = useCallback((values: any) => {
@@ -259,6 +308,8 @@ const CloudStorageFilesPage: React.FC = () => {
         const newPath = currentPath ? `${currentPath}/${folder.name}` : folder.name;
         const newPathItem = { id: folder.id, name: folder.name, path: newPath };
 
+        // 先更新 ref，确保 fetchData 能获取到最新值
+        currentParentIdRef.current = folder.id;
         setCurrentPath(newPath);
         setCurrentParentId(folder.id);
         setPathHistory(prev => [...prev, newPathItem]);
@@ -275,6 +326,8 @@ const CloudStorageFilesPage: React.FC = () => {
         const targetItem = pathHistory[index];
         const newPathHistory = pathHistory.slice(0, index + 1);
 
+        // 先更新 ref，确保 fetchData 能获取到最新值
+        currentParentIdRef.current = targetItem.id;
         setCurrentPath(targetItem.path);
         setCurrentParentId(targetItem.id);
         setPathHistory(newPathHistory);
@@ -292,7 +345,23 @@ const CloudStorageFilesPage: React.FC = () => {
         try {
             const response = await getFileDetail(file.id);
             if (response.success && response.data) {
-                setViewingFile(response.data);
+                // 转换后端数据格式到前端期望的格式
+                const fileData = response.data as any;
+                const transformedFile: FileItem = {
+                    ...fileData,
+                    // 将 type 字段转换为 isFolder 布尔值
+                    isFolder: fileData.type === 'folder' || fileData.type === 1,
+                    // 确保字段名称匹配
+                    createdByName: fileData.createdByName || fileData.createdByUsername || '',
+                    updatedByName: fileData.updatedByName || fileData.updatedByUsername || '',
+                    // 确保 parentId 为空字符串时转换为 undefined
+                    parentId: fileData.parentId && fileData.parentId.trim() ? fileData.parentId : undefined,
+                    // 确保 tags 是数组
+                    tags: Array.isArray(fileData.tags) ? fileData.tags : [],
+                    // 确保 isPublic 有默认值
+                    isPublic: fileData.isPublic !== undefined ? fileData.isPublic : false,
+                };
+                setViewingFile(transformedFile);
                 setDetailVisible(true);
             }
         } catch (err) {
@@ -626,15 +695,15 @@ const CloudStorageFilesPage: React.FC = () => {
                             <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center' }}>
                                 <CloudOutlined style={{ fontSize: 20, color: '#722ed1', marginRight: 12 }} />
                                 <div style={{ textAlign: 'right', flex: 1 }}>
-                                    <div style={{ fontSize: 20, fontWeight: 'bold' }}>{formatFileSize(statistics.totalSize)}</div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>总大小</div>
+                                    <div style={{ fontSize: 20, fontWeight: 'bold' }}>{formatFileSize(statistics.totalQuota)}</div>
+                                    <div style={{ fontSize: 12, color: '#666' }}>总配额</div>
                                 </div>
                             </div>
                         </Col>
                         <Col xs={24} sm={12} md={6}>
                             <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center' }}>
                                 <div style={{ fontSize: 20, color: '#fa8c16', marginRight: 12 }}>
-                                    {Math.round((statistics.usedQuota / statistics.totalQuota) * 100)}%
+                                    {statistics.totalQuota > 0 ? Math.round((statistics.usedQuota / statistics.totalQuota) * 100) : 0}%
                                 </div>
                                 <div style={{ textAlign: 'right', flex: 1 }}>
                                     <div style={{ fontSize: 20, fontWeight: 'bold' }}>{formatFileSize(statistics.usedQuota)}</div>
@@ -776,12 +845,12 @@ const CloudStorageFilesPage: React.FC = () => {
                                     <Descriptions.Item
                                         label={<Space><UserOutlined />创建者</Space>}
                                     >
-                                        {viewingFile.createdByName}
+                                        {viewingFile.createdByName || viewingFile.createdByUsername || '-'}
                                     </Descriptions.Item>
                                     <Descriptions.Item
                                         label={<Space><UserOutlined />修改者</Space>}
                                     >
-                                        {viewingFile.updatedByName}
+                                        {viewingFile.updatedByName || viewingFile.updatedByUsername || '-'}
                                     </Descriptions.Item>
                                 </Descriptions>
                             </Card>

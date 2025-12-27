@@ -41,8 +41,10 @@ alwaysApply: true
 
 ## 参考文档
 
+- `docs/开发规范.md`：汇总后端/前端/移动端开发规则与链接
 - `docs/features/BACKEND-RULES.md`：后端核心与中间件规范
 - `docs/features/API-RESPONSE-RULES.md`：统一 API 响应与控制器规范
 - `docs/features/MENU-LEVEL-PERMISSION-GUIDE.md`：菜单级权限与角色模型规范
 - `docs/features/FRONTEND-RULES.md`：前端开发规范
 - `README.md`：项目总体说明
+- `.cursor/rules/rule.mdc`：规则索引与快速入口

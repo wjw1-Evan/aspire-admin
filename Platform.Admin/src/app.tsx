@@ -238,9 +238,15 @@ export const layout: RunTimeLayoutConfig = ({
   setInitialState,
 }) => {
   return {
-    actionsRender: () => [
-      <NoticeIcon key="NoticeIcon" />,
-    ],
+    actionsRender: () => {
+      // 只在用户已登录时渲染通知图标，避免在登录页面调用需要认证的 API
+      if (!initialState?.currentUser) {
+        return [];
+      }
+      return [
+        <NoticeIcon key="NoticeIcon" />,
+      ];
+    },
     avatarProps: {
       src: getUserAvatar(initialState?.currentUser?.avatar),
       title: <AvatarName />,

@@ -5,7 +5,7 @@
 ## ✨ 关键特性
 
 - **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集、SSE 实时聊天、GridFS 附件存储与下载代理、AI 智能回复服务编排、任务与项目管理、IoT 平台、规则管理与 MCP 集成、密码本管理（AES-256-GCM 加密存储）。
-- **管理后台**：Ant Design Pro 动态菜单、企业与成员管理、加入申请审批、用户活动日志、任务管理、项目管理、IoT 平台（网关/设备/数据点/事件告警）、规则管理、密码本管理、帮助中心、国际化与统一错误处理。
+- **管理后台**：React 19 + Ant Design 6 原生组件、动态菜单、企业与成员管理、加入申请审批、用户活动日志、任务管理、项目管理、IoT 平台（网关/设备/数据点/事件告警）、规则管理、密码本管理、帮助中心、国际化与统一错误处理。
 - **移动应用**：Expo Router 导航、深色/浅色主题切换、认证守卫、企业切换、密码修改与基础组件库，内置实时聊天、附件上传 / 预览、AI 智能回复与附近的人推荐体验。
 - **基础设施**：Aspire AppHost 服务编排、YARP 统一网关、Scalar API 文档、MongoDB + Mongo Express、健康检查与可观察性。
 
@@ -60,7 +60,8 @@ Platform/
   - **任务与项目**：任务管理（创建、分配、执行、监控、任务树）、项目管理（创建、成员管理、任务关联）。
   - **IoT 平台**：物联网平台概览、网关管理、设备管理、数据点管理、事件告警、数据流监控。
   - **规则管理**：规则配置、MCP 集成、自动化工作流。
-- 统一请求封装、自动刷新 token、Ant Design Pro 组件体系、Biome 代码规范。
+- **技术栈**：React 19 + Ant Design 6 原生组件、UmiJS（@umijs/max）、统一请求封装、自动刷新 token、Biome 代码规范。
+- **组件规范**：优先使用 Ant Design 6 原生组件（Table、Form、Modal、Drawer 等），使用轻量级 DataTable 封装替代 ProTable，支持动态主题与响应式布局。
 - 支持多语言、响应式布局、错误提示与细粒度操作验证。
 
 ## 📱 移动应用（Platform.App）
@@ -214,9 +215,17 @@ Platform.App/
 
 ## 📚 延伸阅读
 
-### 核心架构
+### 开发规范与规则
 
 - [docs/开发规范.md](docs/开发规范.md) – 汇总后端/前端/移动端开发规则与链接。
+- [.cursor/rules/](.cursor/rules/) – Cursor AI 开发规则文件（模块化规则索引）。
+  - `.cursor/rules/00-global.mdc` – 通用架构原则与规范。
+  - `.cursor/rules/backend.mdc` – 后端/API/ServiceDefaults/数据初始化规范。
+  - `.cursor/rules/frontend-admin.mdc` – 管理后台（Platform.Admin）开发规范。
+  - `.cursor/rules/frontend-app.mdc` – 移动端（Platform.App）开发规范。
+
+### 核心架构
+
 - [docs/features/BACKEND-RULES.md](docs/features/BACKEND-RULES.md) – 后端核心与中间件规范。
 - [docs/features/API-RESPONSE-RULES.md](docs/features/API-RESPONSE-RULES.md) – 统一 API 响应与控制器规范。
 - [docs/features/MENU-LEVEL-PERMISSION-GUIDE.md](docs/features/MENU-LEVEL-PERMISSION-GUIDE.md) – 菜单级权限模型。

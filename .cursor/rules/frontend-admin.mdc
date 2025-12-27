@@ -436,6 +436,18 @@ appliesTo:
     - 批准：`CheckCircleOutlined`
     - 拒绝：`CloseCircleOutlined`
     - 权限：`KeyOutlined`
+    - 查看：`EyeOutlined`（仅在特殊情况下使用，优先使用第一列点击）
+    - 复制：`CopyOutlined`
+    - 下载：`DownloadOutlined`
+    - 上传：`UploadOutlined`
+    - 启用/激活：`PlayCircleOutlined`
+    - 禁用/停用：`PauseCircleOutlined`
+    - 重置：`ReloadOutlined`
+    - 配置/设置：`SettingOutlined`
+    - 详情/信息：`InfoCircleOutlined`
+    - 历史记录：`HistoryOutlined`
+    - 表单：`FormOutlined`
+    - 进度：`BarChartOutlined`
   - 删除操作：删除按钮必须使用 `Popconfirm` 或 `Modal.confirm` 进行确认，并添加 `danger` 属性
   - 代码示例：
     ```typescript
@@ -762,6 +774,7 @@ appliesTo:
      - 项目管理：`src/pages/project-management/index.tsx`
      - 用户管理：`src/pages/user-management/index.tsx`
      - 密码本：`src/pages/password-book/index.tsx`
+     - 工作流表单：`src/pages/workflow/forms/index.tsx`（已完成操作列图标优化）
 - **JSON 数据显示规范**：
   - 所有 JSON 数据统一使用 `Paragraph` 组件（Ant Design Typography）显示
   - 样式规范：

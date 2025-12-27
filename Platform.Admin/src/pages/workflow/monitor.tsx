@@ -138,18 +138,31 @@ const WorkflowMonitor: React.FC = () => {
             onClick={async () => {
               if (!record.id) return;
 
-              // 重置表单状态并设置当前实例ID
+              // 立即重置表单状态，确保不显示之前的数据
               setNodeFormDef(null);
               setNodeFormInitial(null);
+              setNodeFormVisible(false); // 先关闭模态框
               setCurrentFormInstanceId(record.id);
               setNodeFormLoading(true);
 
               try {
                 const res = await getNodeForm(record.id!, record.currentNodeId);
                 if (res.success) {
+                  // 确保数据是最新的
+                  console.log('获取到的表单数据:', {
+                    instanceId: record.id,
+                    nodeId: record.currentNodeId,
+                    formDef: res.data?.form,
+                    initialValues: res.data?.initialValues
+                  });
                   setNodeFormDef(res.data?.form || null);
                   setNodeFormInitial(res.data?.initialValues || null);
-                  setNodeFormVisible(true);
+                  // 延迟一点再打开模态框，确保状态已更新
+                  setTimeout(() => {
+                    setNodeFormVisible(true);
+                  }, 50);
+                } else {
+                  console.error('获取节点表单失败:', res.errorMessage);
                 }
               } catch (error) {
                 console.error('获取节点表单失败:', error);
@@ -242,18 +255,31 @@ const WorkflowMonitor: React.FC = () => {
                   onClick={async () => {
                     if (!previewInstance?.id) return;
 
-                    // 重置表单状态并设置当前实例ID
+                    // 立即重置表单状态，确保不显示之前的数据
                     setNodeFormDef(null);
                     setNodeFormInitial(null);
+                    setNodeFormVisible(false); // 先关闭模态框
                     setCurrentFormInstanceId(previewInstance.id);
                     setNodeFormLoading(true);
 
                     try {
                       const res = await getNodeForm(previewInstance.id!, previewInstance.currentNodeId);
                       if (res.success) {
+                        // 确保数据是最新的
+                        console.log('获取到的表单数据 (进度弹窗):', {
+                          instanceId: previewInstance.id,
+                          nodeId: previewInstance.currentNodeId,
+                          formDef: res.data?.form,
+                          initialValues: res.data?.initialValues
+                        });
                         setNodeFormDef(res.data?.form || null);
                         setNodeFormInitial(res.data?.initialValues || null);
-                        setNodeFormVisible(true);
+                        // 延迟一点再打开模态框，确保状态已更新
+                        setTimeout(() => {
+                          setNodeFormVisible(true);
+                        }, 50);
+                      } else {
+                        console.error('获取节点表单失败:', res.errorMessage);
                       }
                     } catch (error) {
                       console.error('获取节点表单失败:', error);
@@ -442,7 +468,7 @@ const WorkflowMonitor: React.FC = () => {
             }
           `}
         </style>
-        <div id="node-form-container" style={{ padding: '16px 0' }}>
+        <div id="node-form-container" style={{ padding: '16px 0' }} key={currentFormInstanceId}>
           {!nodeFormDef && (
             <div className="node-form-empty">
               <span className="node-form-empty-icon">📝</span>
@@ -459,7 +485,7 @@ const WorkflowMonitor: React.FC = () => {
                 switch (field.type) {
                   case FormFieldType.Number:
                     return (
-                      <div key={`${name}-${index}`} className="node-form-field">
+                      <div key={`${currentFormInstanceId}-${name}-${index}`} className="node-form-field">
                         <label className={`node-form-label ${isRequired ? 'required' : ''}`}>
                           {field.label}
                         </label>
@@ -476,7 +502,7 @@ const WorkflowMonitor: React.FC = () => {
                     );
                   case FormFieldType.Select:
                     return (
-                      <div key={`${name}-${index}`} className="node-form-field">
+                      <div key={`${currentFormInstanceId}-${name}-${index}`} className="node-form-field">
                         <label className={`node-form-label ${isRequired ? 'required' : ''}`}>
                           {field.label}
                         </label>
@@ -497,7 +523,7 @@ const WorkflowMonitor: React.FC = () => {
                     );
                   case FormFieldType.TextArea:
                     return (
-                      <div key={`${name}-${index}`} className="node-form-field">
+                      <div key={`${currentFormInstanceId}-${name}-${index}`} className="node-form-field">
                         <label className={`node-form-label ${isRequired ? 'required' : ''}`}>
                           {field.label}
                         </label>
@@ -513,17 +539,17 @@ const WorkflowMonitor: React.FC = () => {
                     );
                   case FormFieldType.Switch:
                     return (
-                      <div key={`${name}-${index}`} className="node-form-field">
+                      <div key={`${currentFormInstanceId}-${name}-${index}`} className="node-form-field">
                         <div className="node-form-checkbox-wrapper">
                           <input
                             name={name}
                             type="checkbox"
                             defaultChecked={!!initVal}
                             className="node-form-checkbox"
-                            id={`checkbox-${name}-${index}`}
+                            id={`checkbox-${currentFormInstanceId}-${name}-${index}`}
                           />
                           <label
-                            htmlFor={`checkbox-${name}-${index}`}
+                            htmlFor={`checkbox-${currentFormInstanceId}-${name}-${index}`}
                             className="node-form-checkbox-label"
                           >
                             {field.label}
@@ -533,7 +559,7 @@ const WorkflowMonitor: React.FC = () => {
                     );
                   default:
                     return (
-                      <div key={`${name}-${index}`} className="node-form-field">
+                      <div key={`${currentFormInstanceId}-${name}-${index}`} className="node-form-field">
                         <label className={`node-form-label ${isRequired ? 'required' : ''}`}>
                           {field.label}
                         </label>

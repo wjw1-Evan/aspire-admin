@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Modal, Form, Input, Switch, Space, Select, Divider, Card, Grid, Row, Col, DatePicker, Radio, Checkbox, Upload } from 'antd';
-import { PartitionOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PartitionOutlined, PlusOutlined, ReloadOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
 import { PageContainer } from '@/components';
 import {
@@ -387,20 +387,37 @@ const FormsPage: React.FC = () => {
             title: '操作',
             valueType: 'option',
             render: (_, record) => [
-                <a key="edit" onClick={() => {
-                    setEditing(record);
-                    setOpen(true);
-                    form.setFieldsValue(record);
-                }}>编辑</a>,
-                <a key="del" onClick={async () => {
-                    const res = await deleteForm(record.id!);
-                    if (res.success) {
-                        message.success('已删除');
-                        actionRef.current?.reload();
-                    } else {
-                        message.error('删除失败');
-                    }
-                }}>删除</a>,
+                <Button
+                    key="edit"
+                    type="link"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => {
+                        setEditing(record);
+                        setOpen(true);
+                        form.setFieldsValue(record);
+                    }}
+                >
+                    编辑
+                </Button>,
+                <Button
+                    key="del"
+                    type="link"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={async () => {
+                        const res = await deleteForm(record.id!);
+                        if (res.success) {
+                            message.success('已删除');
+                            actionRef.current?.reload();
+                        } else {
+                            message.error('删除失败');
+                        }
+                    }}
+                >
+                    删除
+                </Button>,
             ],
         },
     ];
@@ -517,7 +534,7 @@ const FormsPage: React.FC = () => {
             <Modal
                 width={1200}
                 open={open}
-                destroyOnClose
+                destroyOnHidden
                 title={editing ? '编辑表单' : '新建表单'}
                 onCancel={() => setOpen(false)}
                 footer={[
@@ -551,7 +568,7 @@ const FormsPage: React.FC = () => {
                         保存
                     </Button>,
                 ]}
-                bodyStyle={{ maxHeight: '72vh', overflowY: 'auto' }}
+                styles={{ body: { maxHeight: '72vh', overflowY: 'auto' } }}
             >
                 <Form form={form} layout="vertical">
                     <Card size="small" title="基础信息" bordered style={{ marginBottom: 12 }}>

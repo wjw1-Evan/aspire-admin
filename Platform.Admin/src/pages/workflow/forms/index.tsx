@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button, Modal, Form, Input, Switch, Space, Select, Divider, Card, Grid, Row, Col, DatePicker, Radio, Checkbox, Upload } from 'antd';
 import { PartitionOutlined, PlusOutlined, ReloadOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
-import { PageContainer } from '@/components';
+import { PageContainer, DataTable } from '@/components';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 import {
     getFormList,
     createForm,
@@ -378,71 +379,117 @@ const FormsPage: React.FC = () => {
         { current: 1, pageSize: 10, keyword: '', isActive: undefined }
     );
 
-    const columns: ProColumns<FormDefinition>[] = [
+    // 🔧 使用 ref 存储搜索参数，避免 request 函数重新创建导致重复请求
+    const searchParamsRef = useRef<{ current: number; pageSize: number; keyword?: string; isActive?: boolean }>({
+        current: 1,
+        pageSize: 10,
+        keyword: '',
+        isActive: undefined,
+    });
+
+    const columns: ColumnsType<FormDefinition> = [
         { title: '名称', dataIndex: 'name', ellipsis: true },
         { title: '键', dataIndex: 'key', ellipsis: true },
         { title: '版本', dataIndex: 'version', width: 80 },
         { title: '启用', dataIndex: 'isActive', width: 80, render: (_, r) => (r.isActive ? '是' : '否') },
         {
             title: '操作',
-            valueType: 'option',
-            render: (_, record) => [
-                <Button
-                    key="edit"
-                    type="link"
-                    size="small"
-                    icon={<EditOutlined />}
-                    onClick={() => {
-                        setEditing(record);
-                        setOpen(true);
-                        form.setFieldsValue(record);
-                    }}
-                >
-                    编辑
-                </Button>,
-                <Button
-                    key="del"
-                    type="link"
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={async () => {
-                        const res = await deleteForm(record.id!);
-                        if (res.success) {
-                            message.success('已删除');
-                            actionRef.current?.reload();
-                        } else {
-                            message.error('删除失败');
-                        }
-                    }}
-                >
-                    删除
-                </Button>,
-            ],
+            key: 'action',
+            fixed: 'right',
+            width: 150,
+            render: (_, record) => (
+                <Space size="small">
+                    <Button
+                        type="link"
+                        size="small"
+                        icon={<EditOutlined />}
+                        onClick={() => {
+                            setEditing(record);
+                            setOpen(true);
+                            form.setFieldsValue(record);
+                        }}
+                    >
+                        编辑
+                    </Button>
+                    <Button
+                        type="link"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={async () => {
+                            const res = await deleteForm(record.id!);
+                            if (res.success) {
+                                message.success('已删除');
+                                actionRef.current?.reload();
+                            } else {
+                                message.error('删除失败');
+                            }
+                        }}
+                    >
+                        删除
+                    </Button>
+                </Space>
+            ),
         },
     ];
 
-    const handleSearch = (values: any) => {
-        const next = {
-            ...searchParams,
+    // 数据请求函数
+    const fetchData = useCallback(async (params: any) => {
+        const requestData = {
+            current: params.current || searchParamsRef.current.current,
+            pageSize: params.pageSize || searchParamsRef.current.pageSize,
+            keyword: searchParamsRef.current.keyword,
+            isActive: searchParamsRef.current.isActive,
+        };
+
+        try {
+            const response = await getFormList(requestData);
+            if (response.success && response.data) {
+                return {
+                    data: response.data.list || [],
+                    success: true,
+                    total: response.data.total || 0,
+                };
+            }
+            return { data: [], success: false, total: 0 };
+        } catch (error) {
+            console.error('Failed to load forms:', error);
+            return { data: [], success: false, total: 0 };
+        }
+    }, []);
+
+    const handleSearch = useCallback((values: any) => {
+        const newParams = {
             current: 1,
+            pageSize: searchParamsRef.current.pageSize,
             keyword: values.keyword || '',
             isActive: values.isActive,
         };
-        setSearchParams(next);
-        actionRef.current?.reload?.();
-    };
+        // 同时更新 ref 和 state
+        searchParamsRef.current = newParams;
+        setSearchParams(newParams);
+        // 手动触发重新加载
+        actionRef.current?.reload();
+    }, []);
 
-    const handleReset = () => {
+    const handleReset = useCallback(() => {
         searchForm.resetFields();
-        const reset = { current: 1, pageSize: searchParams.pageSize, keyword: '', isActive: undefined };
-        setSearchParams(reset);
-        actionRef.current?.reload?.();
-    };
+        const resetParams = {
+            current: 1,
+            pageSize: searchParamsRef.current.pageSize,
+            keyword: '',
+            isActive: undefined,
+        };
+        // 同时更新 ref 和 state
+        searchParamsRef.current = resetParams;
+        setSearchParams(resetParams);
+        // 手动触发重新加载
+        actionRef.current?.reload();
+    }, [searchForm]);
 
-    const handleRefresh = () => {
-        actionRef.current?.reload?.();
-    };
+    const handleRefresh = useCallback(() => {
+        actionRef.current?.reload();
+    }, []);
 
     return (
         <PageContainer
@@ -500,35 +547,19 @@ const FormsPage: React.FC = () => {
                 </Form>
             </Card>
 
-            <ProTable<FormDefinition>
+            <DataTable<FormDefinition>
                 actionRef={actionRef}
                 rowKey="id"
-                search={false}
-                cardBordered
-                options={false}
-                toolBarRender={false}
                 columns={columns}
+                request={fetchData}
                 pagination={{
-                    defaultPageSize: 10,
+                    pageSize: 10,
                     pageSizeOptions: [10, 20, 50, 100],
                     showSizeChanger: true,
                     showQuickJumper: true,
                     showTotal: (total) => `共 ${total} 条`,
                 }}
                 scroll={{ x: 'max-content' }}
-                request={async (params) => {
-                    const res = await getFormList({
-                        current: params.current || searchParams.current,
-                        pageSize: params.pageSize || searchParams.pageSize,
-                        keyword: searchParams.keyword,
-                        isActive: searchParams.isActive,
-                    });
-                    return {
-                        data: res.data?.list || [],
-                        total: res.data?.total || 0,
-                        success: res.success,
-                    };
-                }}
             />
 
             <Modal

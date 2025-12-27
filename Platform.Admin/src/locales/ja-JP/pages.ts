@@ -380,6 +380,8 @@ export default {
   'pages.document.create.form.contentPlaceholder': '内容を入力してください',
   'pages.document.create.message.createSuccess': '作成成功',
   'pages.document.create.message.createFailed': '作成失敗',
+  'pages.document.create.next': '次へ',
+  'pages.document.create.nextStep.tip': 'ワークフローを選択してください。次のステップでは、モーダル内でワークフローカスタムフォームを記入し、プロセスを作成/開始します。',
   'pages.document.approval.tab.pending': '承認待ち',
   'pages.document.approval.tab.approved': '承認済み',
   'pages.document.approval.tab.myInitiated': '私が開始',

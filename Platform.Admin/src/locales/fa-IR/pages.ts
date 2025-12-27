@@ -378,6 +378,8 @@ export default {
   'pages.document.create.form.contentPlaceholder': 'محتوای را وارد کنید',
   'pages.document.create.message.createSuccess': 'ایجاد موفق',
   'pages.document.create.message.createFailed': 'ایجاد ناموفق',
+  'pages.document.create.next': 'بعدی',
+  'pages.document.create.nextStep.tip': 'یک گردش کار انتخاب کنید. در مرحله بعد، شما فرم سفارشی گردش کار را در مودال پر خواهید کرد و فرآیند را ایجاد/شروع خواهید کرد.',
   'pages.document.approval.tab.pending': 'در انتظار',
   'pages.document.approval.tab.approved': 'تأیید شده',
   'pages.document.approval.tab.myInitiated': 'شروع شده توسط من',

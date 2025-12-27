@@ -1256,6 +1256,8 @@ export default {
   'pages.document.create.message.uploadFailed': '附件上传失败',
   'pages.document.create.message.createSuccess': '创建成功',
   'pages.document.create.message.createFailed': '创建失败',
+  'pages.document.create.next': '下一步',
+  'pages.document.create.nextStep.tip': '请选择流程，下一步将在模态窗体内填写流程自定义表单并创建/启动流程。',
   'pages.document.createByWorkflow.title': '按流程表单创建并启动',
   'pages.document.createByWorkflow.submit': '创建并启动',
   'pages.document.detail.formData': '表单填写内容',

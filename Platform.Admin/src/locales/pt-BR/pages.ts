@@ -379,6 +379,8 @@ export default {
   'pages.document.create.form.contentPlaceholder': 'Digite o conteúdo',
   'pages.document.create.message.createSuccess': 'Criado com sucesso',
   'pages.document.create.message.createFailed': 'Falha ao criar',
+  'pages.document.create.next': 'Próximo',
+  'pages.document.create.nextStep.tip': 'Selecione um fluxo de trabalho. Na próxima etapa, você preencherá o formulário personalizado do fluxo de trabalho no modal e criará/iniciará o processo.',
   'pages.document.approval.tab.pending': 'Pendente',
   'pages.document.approval.tab.approved': 'Aprovado',
   'pages.document.approval.tab.myInitiated': 'Meus Iniciados',

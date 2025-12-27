@@ -377,6 +377,8 @@ export default {
   'pages.document.create.form.contentPlaceholder': 'Masukkan konten',
   'pages.document.create.message.createSuccess': 'Berhasil dibuat',
   'pages.document.create.message.createFailed': 'Gagal membuat',
+  'pages.document.create.next': 'Selanjutnya',
+  'pages.document.create.nextStep.tip': 'Pilih alur kerja. Pada langkah selanjutnya, Anda akan mengisi formulir kustom alur kerja di modal dan membuat/memulai proses.',
   'pages.document.approval.tab.pending': 'Menunggu',
   'pages.document.approval.tab.approved': 'Disetujui',
   'pages.document.approval.tab.myInitiated': 'Yang Saya Mulai',

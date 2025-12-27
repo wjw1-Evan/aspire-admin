@@ -1155,6 +1155,8 @@ export default {
   'pages.document.create.message.uploadFailed': 'Attachment upload failed',
   'pages.document.create.message.createSuccess': 'Created successfully',
   'pages.document.create.message.createFailed': 'Create failed',
+  'pages.document.create.next': 'Next',
+  'pages.document.create.nextStep.tip': 'Please select a workflow. In the next step, you will fill out the workflow custom form in the modal and create/start the process.',
   'pages.document.approval.tab.pending': 'Pending',
   'pages.document.approval.tab.approved': 'Approved',
   'pages.document.approval.tab.myInitiated': 'My Initiated',

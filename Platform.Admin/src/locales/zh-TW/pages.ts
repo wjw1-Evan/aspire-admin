@@ -776,6 +776,8 @@ export default {
   'pages.document.create.form.contentPlaceholder': '請輸入內容',
   'pages.document.create.message.createSuccess': '創建成功',
   'pages.document.create.message.createFailed': '創建失敗',
+  'pages.document.create.next': '下一步',
+  'pages.document.create.nextStep.tip': '請選擇流程，下一步將在模態窗體內填寫流程自定義表單並創建/啟動流程。',
   'pages.document.approval.tab.pending': '待審批',
   'pages.document.approval.tab.approved': '已審批',
   'pages.document.approval.tab.myInitiated': '我的發起',

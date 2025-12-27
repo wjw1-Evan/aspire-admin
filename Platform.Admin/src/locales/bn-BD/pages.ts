@@ -375,6 +375,8 @@ export default {
   'pages.document.create.form.contentPlaceholder': 'বিষয়বস্তু লিখুন',
   'pages.document.create.message.createSuccess': 'সফলভাবে তৈরি করা হয়েছে',
   'pages.document.create.message.createFailed': 'তৈরি করতে ব্যর্থ',
+  'pages.document.create.next': 'পরবর্তী',
+  'pages.document.create.nextStep.tip': 'একটি ওয়ার্কফ্লো নির্বাচন করুন। পরবর্তী ধাপে, আপনি মোডালে ওয়ার্কফ্লো কাস্টম ফর্ম পূরণ করবেন এবং প্রক্রিয়া তৈরি/শুরু করবেন।',
   'pages.document.approval.tab.pending': 'অপেক্ষমাণ',
   'pages.document.approval.tab.approved': 'অনুমোদিত',
   'pages.document.approval.tab.myInitiated': 'আমার শুরু',

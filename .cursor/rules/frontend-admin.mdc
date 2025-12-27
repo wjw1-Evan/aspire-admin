@@ -15,6 +15,20 @@ appliesTo:
 - **错误处理**：全局错误拦截器已统一处理 `success=false` 的情况（显示 message、处理 401/403 等），业务代码主要关注成功场景的数据处理。
 - **SSE 实时连接**：使用 `useSseConnection` Hook（位于 `src/hooks/useSseConnection.ts`）建立 SSE 连接，支持自动重连、事件监听（`ReceiveMessage`、`SessionUpdated`、`MessageDeleted`、`MessageChunk` 等）。连接通过 JWT token 认证，连接地址为 `/api/chat/sse?token={token}`。组件卸载时自动清理连接资源。
 
+## Ant Design 6 规范遵循（强制）
+- **组件属性更新**：
+  - Modal: 使用 `open` 而非 `visible`，使用 `destroyOnHidden` 而非 `destroyOnClose`，使用 `styles.body` 而非 `bodyStyle`
+  - Drawer: 使用 `open` 而非 `visible`
+  - Popconfirm: 使用 `open` 而非 `visible`
+- **API 使用规范**：
+  - Message: 使用 `useMessage()` Hook 而非静态方法 `message.success()`
+  - Modal: 使用 `useModal()` Hook 而非静态方法 `Modal.confirm()`
+  - Notification: 使用 `useNotification()` Hook 而非静态方法
+- **主题支持**：所有组件必须支持动态主题，避免使用静态方法
+- **TypeScript 类型**：使用 Ant Design 6 提供的最新类型定义
+- **图标导入**：使用 Tree Shaking 优化，按需导入图标 `import { EditOutlined } from '@ant-design/icons'`
+- **参考文档**：`Platform.Admin/docs/ANTD_6_COMPLIANCE.md` 包含完整的规范遵循指南
+
 ## 页面骨架与列表规范（强制）
 - **标准页面布局**：参考 `src/pages/user-management/index.tsx`、`src/pages/password-book/index.tsx`、`src/pages/workflow/index.tsx`、`src/pages/document/index.tsx` 作为标准页面布局规范。
 - **页面结构顺序**（从上到下）：

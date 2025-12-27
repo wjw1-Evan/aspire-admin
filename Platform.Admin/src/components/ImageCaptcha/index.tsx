@@ -1,5 +1,6 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
-import { Button, Input, Space, message, Image } from 'antd';
+import { Button, Input, Space, Image } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { getImageCaptcha, verifyImageCaptcha } from '@/services/ant-design-pro/api';
@@ -26,6 +27,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
   size = 'large',
 }, ref) => {
   const intl = useIntl();
+  const message = useMessage();
   const [captchaId, setCaptchaId] = useState<string>('');
   const [imageData, setImageData] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -38,18 +40,18 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
     try {
       setLoading(true);
       const response = await getImageCaptcha(type);
-      
+
       if (response.success && response.data) {
         setCaptchaId(response.data.captchaId);
         setImageData(response.data.imageData);
         onCaptchaIdChange?.(response.data.captchaId);
-        
+
         // 清空输入框
         if (inputRef.current) {
           inputRef.current.input.value = '';
         }
         onChange?.('');
-        
+
         // 只有在手动刷新时显示成功消息，自动刷新时不显示（避免频繁提示）
         if (showSuccessMessage) {
           message.success(intl.formatMessage({ id: 'pages.captcha.refreshSuccess' }));

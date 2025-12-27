@@ -6,26 +6,27 @@ import {
   Form,
   Button,
   Space,
-  message,
   Alert,
 } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import { DownloadOutlined } from '@ant-design/icons';
 import { exportPasswordBook, getCategories } from '@/services/password-book/api';
 import type { ExportPasswordBookRequest } from '../types';
 
 interface ExportDialogProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
 }
 
-const ExportDialog: React.FC<ExportDialogProps> = ({ visible, onClose }) => {
+const ExportDialog: React.FC<ExportDialogProps> = ({ open, onClose }) => {
+  const message = useMessage();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
 
   // 加载分类列表
   useEffect(() => {
-    if (visible) {
+    if (open) {
       const fetchCategories = async () => {
         try {
           const response = await getCategories();
@@ -39,7 +40,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ visible, onClose }) => {
       fetchCategories();
       form.resetFields();
     }
-  }, [visible, form]);
+  }, [open, form]);
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
@@ -63,7 +64,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ visible, onClose }) => {
   return (
     <Modal
       title="导出密码本"
-      open={visible}
+      open={open}
       onCancel={onClose}
       footer={null}
       width={500}

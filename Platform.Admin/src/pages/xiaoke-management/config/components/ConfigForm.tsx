@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import { Form, Input, Select, Switch, Button, Space, Slider, InputNumber, message } from 'antd';
+import { Form, Input, Select, Switch, Button, Space, Slider, InputNumber } from 'antd';
 import { useIntl } from '@umijs/max';
+import { useMessage } from '@/hooks/useMessage';
 import {
   createXiaokeConfig,
   updateXiaokeConfig,
@@ -19,6 +20,7 @@ interface ConfigFormProps {
 
 const ConfigForm: React.FC<ConfigFormProps> = ({ config, onSuccess, onCancel }) => {
   const intl = useIntl();
+  const message = useMessage();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
 
@@ -27,7 +29,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, onSuccess, onCancel }) 
   // AI模型选项
   const modelOptions = [
     { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
-   
+
   ];
 
   useEffect(() => {

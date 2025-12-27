@@ -665,7 +665,7 @@ const TaskManagement: React.FC = () => {
 
       {/* 创建/编辑任务表单 */}
       <TaskForm
-        visible={formVisible}
+        open={formVisible}
         task={editingTask}
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
@@ -673,14 +673,14 @@ const TaskManagement: React.FC = () => {
 
       {/* 任务详情抽屉 */}
       <TaskDetail
-        visible={detailVisible}
+        open={detailVisible}
         task={viewingTask}
         onClose={handleDetailClose}
       />
 
       {/* 任务执行面板 */}
       <TaskExecutionPanel
-        visible={executionVisible}
+        open={executionVisible}
         task={viewingTask}
         onClose={handleExecutionClose}
         onSuccess={handleExecutionSuccess}

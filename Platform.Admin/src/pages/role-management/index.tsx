@@ -12,7 +12,8 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Input, Modal, message, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer } from 'antd';
+import { Badge, Button, Input, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 
 const { useBreakpoint } = Grid;
 import { type ChangeEvent, type FC, useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -37,6 +38,7 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 
 const RoleManagement: FC = () => {
   const intl = useIntl();
+  const message = useMessage();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -145,7 +147,7 @@ const RoleManagement: FC = () => {
             // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(
               response.errorMessage ||
-                intl.formatMessage({ id: 'pages.message.deleteFailed' }),
+              intl.formatMessage({ id: 'pages.message.deleteFailed' }),
             );
           }
         } catch (error) {
@@ -549,7 +551,7 @@ const RoleManagement: FC = () => {
 
       {modalVisible && (
         <RoleForm
-          visible={modalVisible}
+          open={modalVisible}
           current={currentRole}
           onCancel={handleCloseModal}
           onSuccess={handleFormSuccess}

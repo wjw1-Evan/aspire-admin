@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tree, Button, Space, Modal, message } from 'antd';
+import { Tree, Button, Space, Modal } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -7,6 +7,7 @@ import {
   FolderOutlined,
   FileOutlined,
 } from '@ant-design/icons';
+import { useMessage } from '@/hooks/useMessage';
 import type { DataNode } from 'antd/es/tree';
 import {
   getTasksByProjectId,
@@ -20,6 +21,7 @@ interface TaskTreeProps {
 }
 
 const TaskTree: React.FC<TaskTreeProps> = ({ projectId }) => {
+  const message = useMessage();
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [formVisible, setFormVisible] = useState(false);
@@ -127,7 +129,7 @@ const TaskTree: React.FC<TaskTreeProps> = ({ projectId }) => {
               }
               return null;
             };
-            
+
             const task = findTask(tasks, selectedKeys[0] as string);
             if (task) {
               setEditingTask(task);
@@ -147,7 +149,7 @@ const TaskTree: React.FC<TaskTreeProps> = ({ projectId }) => {
           destroyOnHidden
         >
           <TaskForm
-            visible={formVisible}
+            open={formVisible}
             task={editingTask}
             projectId={projectId}
             onSuccess={() => {

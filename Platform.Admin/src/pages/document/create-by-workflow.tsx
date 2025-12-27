@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PageContainer } from '@/components';
-import { Card, Form, Input, Button, Select, message, DatePicker, InputNumber, Radio, Checkbox, Switch, Upload, Space } from 'antd';
+import { Card, Form, Input, Button, Select, DatePicker, InputNumber, Radio, Checkbox, Switch, Upload, Space } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import { PlayCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import { useIntl, useNavigate, useLocation } from '@umijs/max';
 import type { UploadFile, UploadProps } from 'antd';
@@ -17,6 +18,7 @@ import { uploadDocumentAttachment } from '@/services/document/api';
 
 const CreateAndStartByWorkflow: React.FC = () => {
     const intl = useIntl();
+    const message = useMessage();
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);

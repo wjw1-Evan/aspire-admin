@@ -6,13 +6,13 @@ import { useIntl } from '@umijs/max';
 import type { ChatHistoryDetailResponse } from '@/services/xiaoke/api';
 
 interface ChatHistoryDetailProps {
-  visible: boolean;
+  open: boolean;
   detail: ChatHistoryDetailResponse | null;
   onClose: () => void;
 }
 
 const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({
-  visible,
+  open,
   detail,
   onClose,
 }) => {
@@ -27,7 +27,7 @@ const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({
       placement="right"
       size={800}
       onClose={onClose}
-      open={visible}
+      open={open}
     >
       <Descriptions
         title={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.sessionInfo' })}

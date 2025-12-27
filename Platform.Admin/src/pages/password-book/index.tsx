@@ -724,7 +724,7 @@ const PasswordBook: React.FC = () => {
 
       {/* 导出对话框 */}
       <ExportDialog
-        visible={exportVisible}
+        open={exportVisible}
         onClose={() => setExportVisible(false)}
       />
     </PageContainer>

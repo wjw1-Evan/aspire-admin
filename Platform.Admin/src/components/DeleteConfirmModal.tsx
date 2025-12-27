@@ -8,7 +8,7 @@ const { Text } = Typography;
 
 export interface DeleteConfirmModalProps {
   /** 是否显示弹窗 */
-  visible?: boolean;
+  open?: boolean;
   /** 确认取消回调 */
   onCancel?: () => void;
   /** 确认删除回调 */
@@ -33,7 +33,7 @@ export interface DeleteConfirmModalProps {
  * @example
  * ```tsx
  * <DeleteConfirmModal
- *   visible={visible}
+ *   open={visible}
  *   itemName="用户张三"
  *   description="删除后将无法恢复"
  *   requireReason
@@ -45,7 +45,7 @@ export interface DeleteConfirmModalProps {
  * ```
  */
 const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
-  visible = false,
+  open = false,
   onCancel,
   onConfirm,
   itemName,
@@ -57,7 +57,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 }) => {
   // 使用自定义 Hook 管理状态
   const modalState = useModalState({
-    visible,
+    visible: open,
     requireReason,
     onConfirm,
     onCancel,
@@ -73,7 +73,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           确认删除
         </span>
       }
-      open={visible}
+      open={open}
       onOk={modalState.handleConfirm}
       onCancel={modalState.handleCancel}
       okText={okText}

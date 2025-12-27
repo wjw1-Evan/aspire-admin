@@ -9,7 +9,7 @@ const { Text } = Typography;
 
 export interface BulkActionModalProps {
   /** 是否显示弹窗 */
-  visible?: boolean;
+  open?: boolean;
   /** 确认取消回调 */
   onCancel?: () => void;
   /** 确认操作回调 */
@@ -34,7 +34,7 @@ export interface BulkActionModalProps {
  * @example
  * ```tsx
  * <BulkActionModal
- *   visible={visible}
+ *   open={visible}
  *   actionType="delete"
  *   selectedCount={selectedRows.length}
  *   requireReason
@@ -46,7 +46,7 @@ export interface BulkActionModalProps {
  * ```
  */
 const BulkActionModal: React.FC<BulkActionModalProps> = ({
-  visible = false,
+  open = false,
   onCancel,
   onConfirm,
   actionType = 'custom',
@@ -57,10 +57,10 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
   reasonPlaceholder,
 }) => {
   const intl = useIntl();
-  
+
   // 使用自定义 Hook 管理状态
   const modalState = useModalState({
-    visible,
+    visible: open,
     requireReason,
     onConfirm,
     onCancel,
@@ -110,7 +110,7 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
           {title}
         </span>
       }
-      open={visible}
+      open={open}
       onOk={modalState.handleConfirm}
       onCancel={modalState.handleCancel}
       okText={okText}

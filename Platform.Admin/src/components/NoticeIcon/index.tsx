@@ -46,7 +46,7 @@ export default function NoticeIcon() {
       </span>
 
       <UnifiedNotificationCenter
-        visible={visible}
+        open={visible}
         onClose={() => setVisible(false)}
       />
     </>

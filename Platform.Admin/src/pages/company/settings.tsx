@@ -276,7 +276,7 @@ export default function CompanySettings() {
 
       {/* 编辑企业信息弹窗 */}
       <EditCompanyModal
-        visible={editModalVisible}
+        open={editModalVisible}
         company={company}
         onCancel={() => setEditModalVisible(false)}
         onSuccess={handleEditSuccess}

@@ -6,9 +6,9 @@ import {
   Button,
   Space,
   Input,
-  message,
   Typography,
 } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import { CopyOutlined, ReloadOutlined } from '@ant-design/icons';
 import { generatePassword } from '@/services/password-book/api';
 import type { GeneratePasswordRequest } from '../types';
@@ -16,16 +16,17 @@ import type { GeneratePasswordRequest } from '../types';
 const { Text } = Typography;
 
 interface PasswordGeneratorProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
   onSelect: (password: string) => void;
 }
 
 const PasswordGenerator: React.FC<PasswordGeneratorProps> = ({
-  visible,
+  open,
   onClose,
   onSelect,
 }) => {
+  const message = useMessage();
   const [length, setLength] = useState(16);
   const [includeUppercase, setIncludeUppercase] = useState(true);
   const [includeLowercase, setIncludeLowercase] = useState(true);
@@ -79,7 +80,7 @@ const PasswordGenerator: React.FC<PasswordGeneratorProps> = ({
   return (
     <Modal
       title="密码生成器"
-      open={visible}
+      open={open}
       onCancel={onClose}
       footer={[
         <Button key="cancel" onClick={onClose}>

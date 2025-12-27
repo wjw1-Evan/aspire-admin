@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PageContainer } from '@/components';
-import { Card, Form, Input, Button, message, Upload } from 'antd';
+import { Card, Form, Input, Button, Upload } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import { SaveOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate, useIntl } from '@umijs/max';
 import { uploadDocumentAttachment } from '@/services/document/api';
@@ -9,6 +10,7 @@ import type { UploadFile, UploadProps } from 'antd';
 
 const CreateDocument: React.FC = () => {
   const intl = useIntl();
+  const message = useMessage();
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);

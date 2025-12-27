@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Select, Switch, Button, Space, message } from 'antd';
+import { Form, Input, Select, Switch, Button, Space } from 'antd';
 import { request, useIntl } from '@umijs/max';
+import { useMessage } from '@/hooks/useMessage';
 import { getAllRoles } from '@/services/role/api';
 import type { ApiResponse } from '@/types/unified-api';
 import type { AppUser, CreateUserRequest, UpdateUserRequest } from '../types';

@@ -12,14 +12,14 @@ import type { MenuTreeNode } from '@/services/menu/types';
 import type { DataNode } from 'antd/es/tree';
 
 interface RoleFormProps {
-  visible: boolean;
+  open: boolean;
   current?: Role;
   onCancel: () => void;
   onSuccess: () => void;
 }
 
 const RoleForm: React.FC<RoleFormProps> = ({
-  visible,
+  open,
   current,
   onCancel,
   onSuccess,
@@ -79,7 +79,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
         // 展开所有节点
         const allKeys = getAllKeys(menuResponse.data);
         setExpandedKeys(allKeys);
-        
+
         return treeData;
       }
       return [];
@@ -103,7 +103,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
         // 过滤掉空值和无效值
         const roleMenuIds = (permissionResponse.data || [])
           .filter((id): id is string => Boolean(id && typeof id === 'string'));
-        
+
         // 获取菜单树中所有有效的菜单ID
         const getAllMenuIdsFromTree = (nodes: DataNode[]): string[] => {
           let ids: string[] = [];
@@ -117,17 +117,17 @@ const RoleForm: React.FC<RoleFormProps> = ({
           });
           return ids;
         };
-        
+
         const validMenuIdsInTree = getAllMenuIdsFromTree(menuTree);
-        
+
         // 只保留在菜单树中存在的菜单ID
         const validMenuIds = roleMenuIds.filter((id) => validMenuIdsInTree.includes(id));
-        
+
         // 直接设置选中状态，不通过表单
         setCheckedKeys(validMenuIds);
         // 同时更新表单值，用于提交
         form.setFieldsValue({ menuIds: validMenuIds });
-        
+
         console.log(
           `角色 ${current.id} 加载菜单权限：后端返回 ${roleMenuIds.length} 个菜单ID，` +
           `菜单树中有 ${validMenuIdsInTree.length} 个菜单，` +
@@ -161,11 +161,11 @@ const RoleForm: React.FC<RoleFormProps> = ({
       });
       return ids;
     };
-    
+
     const allMenuIds = getAllMenuIdsFromTree(menuTree);
     // 从表单获取当前选中状态，而不是依赖 checkedKeys 状态
     const currentMenuIds = form.getFieldValue('menuIds') || [];
-    
+
     if (currentMenuIds.length === allMenuIds.length) {
       setCheckedKeys([]);
       form.setFieldsValue({ menuIds: [] });
@@ -182,7 +182,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
     const newCheckedKeys = Array.isArray(checked)
       ? (checked as string[])
       : (checked.checked as string[]);
-    
+
     // 更新选中状态和表单值
     setCheckedKeys(newCheckedKeys);
     form.setFieldsValue({ menuIds: newCheckedKeys });
@@ -192,7 +192,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
    * 设置表单初始值
    */
   useEffect(() => {
-    if (!visible) {
+    if (!open) {
       // Modal 关闭时重置
       form.resetFields();
       setExpandedKeys([]);
@@ -203,11 +203,11 @@ const RoleForm: React.FC<RoleFormProps> = ({
     // Modal 打开时初始化
     form.resetFields();
     setCheckedKeys([]);
-    
+
     const initializeForm = async () => {
       // 先加载菜单树
       const treeData = await loadMenuTree();
-      
+
       if (current) {
         // 编辑模式：设置基本字段
         form.setFieldsValue({
@@ -233,10 +233,10 @@ const RoleForm: React.FC<RoleFormProps> = ({
         setCheckedKeys([]);
       }
     };
-    
+
     initializeForm();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, current?.id, loadMenuTree, form]);
+  }, [open, current?.id, loadMenuTree, form]);
 
   /**
    * 使用菜单树数据加载角色菜单权限（避免循环依赖）
@@ -250,7 +250,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
         // 过滤掉空值和无效值
         const roleMenuIds = (permissionResponse.data || [])
           .filter((id): id is string => Boolean(id && typeof id === 'string'));
-        
+
         // 获取菜单树中所有有效的菜单ID
         const getAllMenuIdsFromTree = (nodes: DataNode[]): string[] => {
           let ids: string[] = [];
@@ -264,17 +264,17 @@ const RoleForm: React.FC<RoleFormProps> = ({
           });
           return ids;
         };
-        
+
         const validMenuIdsInTree = getAllMenuIdsFromTree(treeData);
-        
+
         // 只保留在菜单树中存在的菜单ID
         const validMenuIds = roleMenuIds.filter((id) => validMenuIdsInTree.includes(id));
-        
+
         // 直接设置选中状态，不通过表单
         setCheckedKeys(validMenuIds);
         // 同时更新表单值，用于提交
         form.setFieldsValue({ menuIds: validMenuIds });
-        
+
         console.log(
           `角色 ${current.id} 加载菜单权限：后端返回 ${roleMenuIds.length} 个菜单ID，` +
           `菜单树中有 ${validMenuIdsInTree.length} 个菜单，` +
@@ -343,7 +343,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
   return (
     <Modal
       title={current ? intl.formatMessage({ id: 'pages.roleForm.editTitle' }) : intl.formatMessage({ id: 'pages.roleForm.createTitle' })}
-      open={visible}
+      open={open}
       onCancel={onCancel}
       onOk={handleSubmit}
       confirmLoading={loading}

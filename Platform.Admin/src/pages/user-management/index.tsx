@@ -4,11 +4,11 @@ import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { useIntl } from '@umijs/max';
+import { useMessage } from '@/hooks/useMessage';
 import {
   Button,
   Tag,
   Space,
-  message,
   Modal,
   Select,
   Switch,
@@ -58,6 +58,7 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 
 const UserManagement: React.FC = () => {
   const intl = useIntl();
+  const message = useMessage();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -839,7 +840,7 @@ const UserManagement: React.FC = () => {
 
       {/* 用户表单弹窗 */}
       {formVisible && (
-          <Modal
+        <Modal
           title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
           open={formVisible}
           onCancel={handleFormClose}

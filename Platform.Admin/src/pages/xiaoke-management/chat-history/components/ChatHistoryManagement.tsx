@@ -3,11 +3,12 @@ import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType, ColumnType } from 'antd/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, message, Modal, Form, Input, Card, DatePicker } from 'antd';
+import { Button, Tag, Space, Modal, Form, Input, Card, DatePicker } from 'antd';
 import {
   EyeOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
+import { useMessage } from '@/hooks/useMessage';
 import {
   getChatHistory,
   deleteChatHistory,
@@ -27,6 +28,7 @@ export interface ChatHistoryManagementRef {
 
 const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) => {
   const intl = useIntl();
+  const message = useMessage();
   const actionRef = useRef<ActionType>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<Omit<ChatHistoryQueryRequest, 'current' | 'pageSize'>>({});
@@ -306,7 +308,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
 
       {/* 聊天记录详情抽屉 */}
       <ChatHistoryDetail
-        visible={detailVisible}
+        open={detailVisible}
         detail={detailData}
         onClose={handleCloseDetail}
       />

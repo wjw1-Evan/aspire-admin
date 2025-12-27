@@ -4,14 +4,14 @@ import { updateCurrentCompany } from '@/services/company';
 import React from 'react';
 
 interface EditCompanyModalProps {
-  visible: boolean;
+  open: boolean;
   company: API.Company | null;
   onCancel: () => void;
   onSuccess: () => void;
 }
 
 export default function EditCompanyModal({
-  visible,
+  open,
   company,
   onCancel,
   onSuccess,
@@ -22,10 +22,10 @@ export default function EditCompanyModal({
   React.useEffect(() => {
     // 只在 Modal 打开时设置表单值
     // 关闭时不需要重置，因为 destroyOnHidden 会销毁 Form
-    if (visible && company) {
+    if (open && company) {
       form.setFieldsValue(company);
     }
-  }, [visible, company, form]);
+  }, [open, company, form]);
 
   const handleSubmit = async () => {
     try {
@@ -53,7 +53,7 @@ export default function EditCompanyModal({
   return (
     <Modal
       title={intl.formatMessage({ id: 'pages.companySettings.edit.title' })}
-      open={visible}
+      open={open}
       onOk={handleSubmit}
       onCancel={onCancel}
       width={600}

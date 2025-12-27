@@ -2,13 +2,14 @@ import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef }
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, message, Modal, Card, Form, Input, Select, Grid } from 'antd';
+import { Button, Tag, Space, Modal, Card, Form, Input, Select, Grid } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
   EditOutlined,
   DeleteOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
+import { useMessage } from '@/hooks/useMessage';
 import {
   getXiaokeConfigs,
   deleteXiaokeConfig,
@@ -25,6 +26,7 @@ export interface ConfigManagementRef {
 
 const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const intl = useIntl();
+  const message = useMessage();
   const actionRef = useRef<ActionType>(null);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();

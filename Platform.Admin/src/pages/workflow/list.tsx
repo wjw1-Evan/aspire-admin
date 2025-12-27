@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer } from '@/components';
-import { Button, Space, Modal, message, Tag, Switch, Card, Row, Col, Form, Input, Select, Grid } from 'antd';
+import { Button, Space, Modal, Tag, Switch, Card, Row, Col, Form, Input, Select, Grid } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import {
   PlusOutlined,
   EditOutlined,
@@ -29,6 +30,7 @@ import type { SelectProps } from 'antd';
 
 const WorkflowManagement: React.FC = () => {
   const intl = useIntl();
+  const message = useMessage();
   const actionRef = useRef<ActionType>(null);
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
@@ -373,7 +375,7 @@ const WorkflowManagement: React.FC = () => {
         styles={{ body: { height: 'calc(100vh - 120px)' } }}
       >
         <WorkflowDesigner
-          visible={designerVisible || previewVisible}
+          open={designerVisible || previewVisible}
           graph={editingWorkflow?.graph || previewGraph}
           onSave={handleSave}
           onClose={() => {

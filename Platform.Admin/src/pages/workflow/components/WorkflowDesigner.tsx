@@ -13,9 +13,10 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { Button, Card, Drawer, Form, Input, Select, Switch, message, Space, Divider, Modal } from 'antd';
+import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Modal } from 'antd';
 import { PlusOutlined, SaveOutlined, CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
+import { useMessage } from '@/hooks/useMessage';
 import type {
   WorkflowGraph,
   WorkflowNode,
@@ -37,7 +38,7 @@ import type { AppUser } from '@/services/user/api';
 import type { Role } from '@/services/role/api';
 
 interface WorkflowDesignerProps {
-  visible?: boolean;
+  open?: boolean;
   graph?: WorkflowGraph;
   onSave?: (graph: WorkflowGraph) => void;
   onClose?: () => void;
@@ -68,12 +69,13 @@ const defaultNodeStyle = {
 };
 
 const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
-  visible = false,
+  open = false,
   graph,
   onSave,
   onClose,
 }) => {
   const intl = useIntl();
+  const message = useMessage();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -533,7 +535,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           >
             {intl.formatMessage({ id: 'pages.workflow.designer.addEnd' })}
           </Button>
-          <Divider type="vertical" />
+          <Divider orientation="vertical" />
           {onSave && (
             <>
               <Button
@@ -545,7 +547,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               >
                 {intl.formatMessage({ id: 'pages.button.delete' })}
               </Button>
-              <Divider type="vertical" />
+              <Divider orientation="vertical" />
             </>
           )}
           {onSave && (

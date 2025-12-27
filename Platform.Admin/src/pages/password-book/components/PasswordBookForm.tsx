@@ -5,11 +5,11 @@ import {
   Select,
   Button,
   Space,
-  message,
   Tag,
   Progress,
   Typography,
 } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import { KeyOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
 import PasswordGenerator from './PasswordGenerator';
 import { checkPasswordStrength, getCategories } from '@/services/password-book/api';
@@ -35,6 +35,7 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
+  const message = useMessage();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -377,7 +378,7 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
       </Form>
 
       <PasswordGenerator
-        visible={generatorVisible}
+        open={generatorVisible}
         onClose={() => setGeneratorVisible(false)}
         onSelect={handleSelectPassword}
       />

@@ -20,7 +20,7 @@ import { getProjectList, type ProjectDto } from '@/services/task/project';
 import { getTaskTree } from '@/services/task/api';
 
 interface TaskFormProps {
-  visible?: boolean;
+  open?: boolean;
   task?: TaskDto | null;
   onClose?: () => void;
   onSuccess?: () => void;
@@ -29,10 +29,10 @@ interface TaskFormProps {
   parentTaskId?: string;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ 
-  visible = false, 
-  task, 
-  onClose, 
+const TaskForm: React.FC<TaskFormProps> = ({
+  open = false,
+  task,
+  onClose,
   onSuccess,
   onCancel,
   projectId,
@@ -47,10 +47,10 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
   // 加载用户列表和项目/任务列表
   useEffect(() => {
-    if (visible) {
+    if (open) {
       loadUsers();
     }
-  }, [visible]);
+  }, [open]);
 
   const loadUsers = async () => {
     setUsersLoading(true);
@@ -92,18 +92,18 @@ const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   useEffect(() => {
-    if (visible) {
+    if (open) {
       loadProjects();
       const currentProjectId = form.getFieldValue('projectId') || projectId;
       if (currentProjectId) {
         loadTasks(currentProjectId);
       }
     }
-  }, [visible, projectId]);
+  }, [open, projectId]);
 
   // 当编辑任务时，填充表单
   useEffect(() => {
-    if (visible && task) {
+    if (open && task) {
       const assignedUserIds = Array.from(
         new Set([
           task.assignedTo,
@@ -125,7 +125,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         projectId: task.projectId,
         parentTaskId: task.parentTaskId,
       });
-    } else if (visible) {
+    } else if (open) {
       form.resetFields();
       if (projectId) {
         form.setFieldsValue({ projectId });
@@ -134,7 +134,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         form.setFieldsValue({ parentTaskId });
       }
     }
-  }, [visible, task, form]);
+  }, [open, task, form]);
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
@@ -142,7 +142,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       const assignedUserIds: string[] = values.assignedUserIds || [];
       // 如果清空选择，使用空字符串表示需要清空后端的 AssignedTo
       const assignedTo = assignedUserIds.length > 0 ? assignedUserIds[0] : '';
-      
+
       // 合并分配用户和参与者，确保没有重复
       const participantIds = Array.from(
         new Set([
@@ -202,14 +202,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
   };
 
   // 如果不可见，不渲染任何内容
-  if (!visible) {
+  if (!open) {
     return null;
   }
 
   return (
     <Modal
       title={task?.id ? '编辑任务' : '创建任务'}
-      open={visible}
+      open={open}
       onCancel={onClose || onCancel}
       onOk={() => form.submit()}
       width={800}
@@ -231,207 +231,207 @@ const TaskForm: React.FC<TaskFormProps> = ({
     return (
       <>
         <Row gutter={16}>
-            <Col xs={24} sm={24} md={12}>
-              <Form.Item
-                label="任务名称"
-                name="taskName"
-                rules={[{ required: true, message: '请输入任务名称' }]}
-              >
-                <Input placeholder="请输入任务名称" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={24} md={12}>
-              <Form.Item
-                label="任务类型"
-                name="taskType"
-                rules={[{ required: true, message: '请选择任务类型' }]}
-              >
-                <Select
-                  placeholder="请选择任务类型"
-                  options={[
-                    { label: '开发', value: 'Development' },
-                    { label: '设计', value: 'Design' },
-                    { label: '测试', value: 'Testing' },
-                    { label: '文档', value: 'Documentation' },
-                    { label: '其他', value: 'Other' },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+          <Col xs={24} sm={24} md={12}>
+            <Form.Item
+              label="任务名称"
+              name="taskName"
+              rules={[{ required: true, message: '请输入任务名称' }]}
+            >
+              <Input placeholder="请输入任务名称" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={24} md={12}>
+            <Form.Item
+              label="任务类型"
+              name="taskType"
+              rules={[{ required: true, message: '请选择任务类型' }]}
+            >
+              <Select
+                placeholder="请选择任务类型"
+                options={[
+                  { label: '开发', value: 'Development' },
+                  { label: '设计', value: 'Design' },
+                  { label: '测试', value: 'Testing' },
+                  { label: '文档', value: 'Documentation' },
+                  { label: '其他', value: 'Other' },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
 
-          <Form.Item
-            label="任务描述"
-            name="description"
-          >
-            <Input.TextArea
-              placeholder="请输入任务描述"
-              rows={3}
-            />
-          </Form.Item>
+        <Form.Item
+          label="任务描述"
+          name="description"
+        >
+          <Input.TextArea
+            placeholder="请输入任务描述"
+            rows={3}
+          />
+        </Form.Item>
 
-          <Row gutter={16}>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="优先级"
-                name="priority"
-                initialValue={TaskPriority.Medium}
-              >
-                <Select
-                  options={[
-                    { label: '低', value: TaskPriority.Low },
-                    { label: '中', value: TaskPriority.Medium },
-                    { label: '高', value: TaskPriority.High },
-                    { label: '紧急', value: TaskPriority.Urgent },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="分配给（可多选）"
-                name="assignedUserIds"
-              >
-                <Select
-                  mode="multiple"
-                  showSearch
-                  placeholder="请选择分配用户（可多选）"
-                  options={users.map(user => ({
-                    label: user.name ? `${user.username} (${user.name})` : user.username,
-                    value: user.id,
-                  }))}
-                  optionFilterProp="label"
-                  allowClear
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={24} md={8}>
-              <Form.Item
-                label="预计耗时（分钟）"
-                name="estimatedDuration"
-              >
-                <InputNumber
-                  min={0}
-                  placeholder="请输入预计耗时"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} sm={24} md={12}>
-              <Form.Item
-                label="计划开始时间"
-                name="plannedStartTime"
-              >
-                <DatePicker
-                  showTime
-                  format="YYYY-MM-DD HH:mm"
-                  placeholder="请选择计划开始时间"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={24} md={12}>
-              <Form.Item
-                label="计划完成时间"
-                name="plannedEndTime"
-              >
-                <DatePicker
-                  showTime
-                  format="YYYY-MM-DD HH:mm"
-                  placeholder="请选择计划完成时间"
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            label="参与者"
-            name="participantIds"
-          >
-            <Select
-              mode="multiple"
-              placeholder="请选择参与者"
-              showSearch
-              options={users.map(user => ({
-                label: user.name ? `${user.username} (${user.name})` : user.username,
-                value: user.id,
-              }))}
-              optionFilterProp="label"
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="标签"
-            name="tags"
-          >
-            <Select
-              mode="tags"
-              placeholder="请输入或选择标签"
-              options={[
-                { label: 'UI', value: 'UI' },
-                { label: 'API', value: 'API' },
-                { label: 'Bug', value: 'Bug' },
-                { label: 'Feature', value: 'Feature' },
-                { label: 'Performance', value: 'Performance' },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="备注"
-            name="remarks"
-          >
-            <Input.TextArea
-              placeholder="请输入备注信息"
-              rows={2}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="所属项目"
-            name="projectId"
-            initialValue={projectId}
-          >
-            <Select
-              placeholder="请选择项目（可选）"
-              allowClear
-              onChange={(value) => {
-                if (value) {
-                  loadTasks(value);
-                } else {
-                  setTasks([]);
-                }
-                form.setFieldsValue({ parentTaskId: undefined });
-              }}
-              options={projects.map((p) => ({
-                label: p.name,
-                value: p.id,
-              }))}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="父任务"
-            name="parentTaskId"
-            initialValue={parentTaskId}
-          >
-            <Select
-              placeholder="请选择父任务（可选）"
-              allowClear
-              disabled={!form.getFieldValue('projectId') && !projectId}
-              options={tasks
-                .filter((t) => t.id !== task?.id)
-                .map((t) => ({
-                  label: t.taskName,
-                  value: t.id,
+        <Row gutter={16}>
+          <Col xs={24} sm={24} md={8}>
+            <Form.Item
+              label="优先级"
+              name="priority"
+              initialValue={TaskPriority.Medium}
+            >
+              <Select
+                options={[
+                  { label: '低', value: TaskPriority.Low },
+                  { label: '中', value: TaskPriority.Medium },
+                  { label: '高', value: TaskPriority.High },
+                  { label: '紧急', value: TaskPriority.Urgent },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={24} md={8}>
+            <Form.Item
+              label="分配给（可多选）"
+              name="assignedUserIds"
+            >
+              <Select
+                mode="multiple"
+                showSearch
+                placeholder="请选择分配用户（可多选）"
+                options={users.map(user => ({
+                  label: user.name ? `${user.username} (${user.name})` : user.username,
+                  value: user.id,
                 }))}
-            />
-          </Form.Item>
-        </>
+                optionFilterProp="label"
+                allowClear
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={24} md={8}>
+            <Form.Item
+              label="预计耗时（分钟）"
+              name="estimatedDuration"
+            >
+              <InputNumber
+                min={0}
+                placeholder="请输入预计耗时"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col xs={24} sm={24} md={12}>
+            <Form.Item
+              label="计划开始时间"
+              name="plannedStartTime"
+            >
+              <DatePicker
+                showTime
+                format="YYYY-MM-DD HH:mm"
+                placeholder="请选择计划开始时间"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={24} md={12}>
+            <Form.Item
+              label="计划完成时间"
+              name="plannedEndTime"
+            >
+              <DatePicker
+                showTime
+                format="YYYY-MM-DD HH:mm"
+                placeholder="请选择计划完成时间"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item
+          label="参与者"
+          name="participantIds"
+        >
+          <Select
+            mode="multiple"
+            placeholder="请选择参与者"
+            showSearch
+            options={users.map(user => ({
+              label: user.name ? `${user.username} (${user.name})` : user.username,
+              value: user.id,
+            }))}
+            optionFilterProp="label"
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="标签"
+          name="tags"
+        >
+          <Select
+            mode="tags"
+            placeholder="请输入或选择标签"
+            options={[
+              { label: 'UI', value: 'UI' },
+              { label: 'API', value: 'API' },
+              { label: 'Bug', value: 'Bug' },
+              { label: 'Feature', value: 'Feature' },
+              { label: 'Performance', value: 'Performance' },
+            ]}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="备注"
+          name="remarks"
+        >
+          <Input.TextArea
+            placeholder="请输入备注信息"
+            rows={2}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="所属项目"
+          name="projectId"
+          initialValue={projectId}
+        >
+          <Select
+            placeholder="请选择项目（可选）"
+            allowClear
+            onChange={(value) => {
+              if (value) {
+                loadTasks(value);
+              } else {
+                setTasks([]);
+              }
+              form.setFieldsValue({ parentTaskId: undefined });
+            }}
+            options={projects.map((p) => ({
+              label: p.name,
+              value: p.id,
+            }))}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="父任务"
+          name="parentTaskId"
+          initialValue={parentTaskId}
+        >
+          <Select
+            placeholder="请选择父任务（可选）"
+            allowClear
+            disabled={!form.getFieldValue('projectId') && !projectId}
+            options={tasks
+              .filter((t) => t.id !== task?.id)
+              .map((t) => ({
+                label: t.taskName,
+                value: t.id,
+              }))}
+          />
+        </Form.Item>
+      </>
     );
   }
 };

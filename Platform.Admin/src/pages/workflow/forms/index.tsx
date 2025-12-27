@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
-import { Button, Modal, Form, Input, Switch, Space, message, Select, Divider, Card, Grid, Row, Col, DatePicker, Radio, Checkbox, Upload } from 'antd';
+import { Button, Modal, Form, Input, Switch, Space, Select, Divider, Card, Grid, Row, Col, DatePicker, Radio, Checkbox, Upload } from 'antd';
 import { PartitionOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useMessage } from '@/hooks/useMessage';
 import { PageContainer } from '@/components';
 import {
     getFormList,
@@ -372,7 +373,7 @@ const FormsPage: React.FC = () => {
     const [editing, setEditing] = useState<FormDefinition | null>(null);
     const [form] = Form.useForm<FormDefinition>();
     const [searchForm] = Form.useForm();
-    const [messageApi, contextHolder] = message.useMessage();
+    const message = useMessage();
     const [searchParams, setSearchParams] = useState<{ current: number; pageSize: number; keyword?: string; isActive?: boolean }>(
         { current: 1, pageSize: 10, keyword: '', isActive: undefined }
     );
@@ -394,10 +395,10 @@ const FormsPage: React.FC = () => {
                 <a key="del" onClick={async () => {
                     const res = await deleteForm(record.id!);
                     if (res.success) {
-                        messageApi.success('已删除');
+                        message.success('已删除');
                         actionRef.current?.reload();
                     } else {
-                        messageApi.error('删除失败');
+                        message.error('删除失败');
                     }
                 }}>删除</a>,
             ],
@@ -451,7 +452,6 @@ const FormsPage: React.FC = () => {
                 </Space>
             }
         >
-            {contextHolder}
 
             <Card style={{ marginBottom: 16 }}>
                 <Form
@@ -540,11 +540,11 @@ const FormsPage: React.FC = () => {
                                 res = await createForm(payload);
                             }
                             if (res.success) {
-                                messageApi.success('已保存');
+                                message.success('已保存');
                                 setOpen(false);
                                 actionRef.current?.reload();
                             } else {
-                                messageApi.error('保存失败');
+                                message.error('保存失败');
                             }
                         }}
                     >

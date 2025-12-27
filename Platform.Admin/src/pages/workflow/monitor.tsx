@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { PageContainer } from '@/components';
-import { Card, Tag, Space, Button, Modal } from 'antd';
-import { EyeOutlined, MonitorOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, Tag, Space, Button, Modal, Grid } from 'antd';
+import { EyeOutlined, MonitorOutlined, ReloadOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { DataTable } from '@/components/DataTable';
@@ -24,8 +24,12 @@ import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
 
+const { useBreakpoint } = Grid;
+
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const actionRef = useRef<ActionType>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewInstance, setPreviewInstance] = useState<WorkflowInstance | null>(null);
@@ -36,6 +40,7 @@ const WorkflowMonitor: React.FC = () => {
   const [nodeFormDef, setNodeFormDef] = useState<FormDefinition | null>(null);
   const [nodeFormInitial, setNodeFormInitial] = useState<Record<string, any> | null>(null);
   const [nodeFormLoading, setNodeFormLoading] = useState(false);
+  const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
 
   const handleRefresh = () => {
     actionRef.current?.reload?.();
@@ -74,9 +79,11 @@ const WorkflowMonitor: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.action' }),
-      width: 200,
+      key: 'action',
+      fixed: 'right',
+      width: 260,
       render: (_, record) => (
-        <Space>
+        <Space size="small" wrap>
           <Button
             type="link"
             size="small"
@@ -104,11 +111,12 @@ const WorkflowMonitor: React.FC = () => {
               }
             }}
           >
-            {intl.formatMessage({ id: 'pages.workflow.monitor.action.viewProgress' })}
+            进度
           </Button>
           <Button
             type="link"
             size="small"
+            icon={<HistoryOutlined />}
             onClick={async () => {
               try {
                 const historyResponse = await getApprovalHistory(record.id!);
@@ -121,14 +129,21 @@ const WorkflowMonitor: React.FC = () => {
               }
             }}
           >
-            {intl.formatMessage({ id: 'pages.workflow.monitor.action.viewHistory' })}
+            历史
           </Button>
           <Button
             type="link"
             size="small"
+            icon={<FormOutlined />}
             onClick={async () => {
               if (!record.id) return;
+
+              // 重置表单状态并设置当前实例ID
+              setNodeFormDef(null);
+              setNodeFormInitial(null);
+              setCurrentFormInstanceId(record.id);
               setNodeFormLoading(true);
+
               try {
                 const res = await getNodeForm(record.id!, record.currentNodeId);
                 if (res.success) {
@@ -136,12 +151,14 @@ const WorkflowMonitor: React.FC = () => {
                   setNodeFormInitial(res.data?.initialValues || null);
                   setNodeFormVisible(true);
                 }
+              } catch (error) {
+                console.error('获取节点表单失败:', error);
               } finally {
                 setNodeFormLoading(false);
               }
             }}
           >
-            {intl.formatMessage({ id: 'pages.workflow.monitor.action.viewNodeForm', defaultMessage: '节点表单' })}
+            表单
           </Button>
         </Space>
       ),
@@ -172,7 +189,7 @@ const WorkflowMonitor: React.FC = () => {
         columns={columns}
         request={async (params) => {
           const response = await getWorkflowInstances({
-            current: params.current,
+            page: params.current,
             pageSize: params.pageSize,
             workflowDefinitionId: params.workflowDefinitionId as string,
             status: params.status as WorkflowStatus,
@@ -188,6 +205,7 @@ const WorkflowMonitor: React.FC = () => {
         }}
         rowKey="id"
         search={true}
+        scroll={{ x: 'max-content' }}
       />
 
       <Modal
@@ -223,7 +241,13 @@ const WorkflowMonitor: React.FC = () => {
                   disabled={nodeFormLoading}
                   onClick={async () => {
                     if (!previewInstance?.id) return;
+
+                    // 重置表单状态并设置当前实例ID
+                    setNodeFormDef(null);
+                    setNodeFormInitial(null);
+                    setCurrentFormInstanceId(previewInstance.id);
                     setNodeFormLoading(true);
+
                     try {
                       const res = await getNodeForm(previewInstance.id!, previewInstance.currentNodeId);
                       if (res.success) {
@@ -231,6 +255,8 @@ const WorkflowMonitor: React.FC = () => {
                         setNodeFormInitial(res.data?.initialValues || null);
                         setNodeFormVisible(true);
                       }
+                    } catch (error) {
+                      console.error('获取节点表单失败:', error);
                     } finally {
                       setNodeFormLoading(false);
                     }
@@ -243,7 +269,7 @@ const WorkflowMonitor: React.FC = () => {
             {/* 这里可以展示流程图形，高亮当前节点 */}
             <div style={{ height: '500px', border: '1px solid #d9d9d9' }}>
               <WorkflowDesigner
-                visible={true}
+                open={true}
                 graph={previewGraph || undefined}
               />
             </div>
@@ -256,82 +282,274 @@ const WorkflowMonitor: React.FC = () => {
         open={nodeFormVisible}
         onCancel={() => {
           setNodeFormVisible(false);
+          // 重置表单状态
           setNodeFormDef(null);
           setNodeFormInitial(null);
+          setCurrentFormInstanceId(null);
         }}
         onOk={async () => {
-          // 收集简单值并提交
+          // 收集表单数据并提交
           const formEl = document.getElementById('node-form-container');
           const values: Record<string, any> = {};
           if (formEl) {
             const inputs = formEl.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input[name],textarea[name],select[name]');
             inputs.forEach((el) => {
+              const name = el.name;
+              if (!name) return; // 跳过没有name属性的元素
+
               if (el.type === 'checkbox') {
-                values[el.name] = (el as HTMLInputElement).checked;
+                values[name] = (el as HTMLInputElement).checked;
+              } else if (el.type === 'number') {
+                // 处理数字类型，确保转换为数字或保持为空
+                const numValue = (el as HTMLInputElement).value;
+                values[name] = numValue === '' ? null : Number(numValue);
               } else {
-                values[el.name] = el.value;
+                // 处理文本、选择框等其他类型
+                const textValue = el.value.trim();
+                values[name] = textValue === '' ? null : textValue;
               }
             });
           }
-          if (previewInstance?.id) {
-            const res = await submitNodeForm(previewInstance.id!, previewInstance.currentNodeId, values);
-            if (res.success) {
-              setNodeFormVisible(false);
+
+          console.log('提交的表单数据:', values); // 调试日志
+
+          if (currentFormInstanceId) {
+            try {
+              const res = await submitNodeForm(currentFormInstanceId!, previewInstance?.currentNodeId || '', values);
+              if (res.success) {
+                setNodeFormVisible(false);
+                // 重置表单状态
+                setNodeFormDef(null);
+                setNodeFormInitial(null);
+                setCurrentFormInstanceId(null);
+                // 刷新表格数据
+                actionRef.current?.reload?.();
+              }
+            } catch (error) {
+              console.error('提交表单失败:', error);
             }
           }
         }}
-        width={720}
+        width={isMobile ? '100%' : 720}
+        styles={{
+          body: {
+            maxHeight: isMobile ? 'calc(100vh - 200px)' : '600px',
+            overflowY: 'auto'
+          }
+        }}
       >
-        <div id="node-form-container">
-          {!nodeFormDef && <div>{intl.formatMessage({ id: 'pages.workflow.monitor.nodeForm.none', defaultMessage: '该节点未绑定表单' })}</div>}
+        <style>
+          {`
+            .node-form-field {
+              margin-bottom: 20px;
+            }
+            .node-form-field:last-child {
+              margin-bottom: 0;
+            }
+            .node-form-label {
+              display: block;
+              font-size: 14px;
+              font-weight: 500;
+              color: #262626;
+              margin-bottom: 8px;
+              line-height: 1.4;
+            }
+            .node-form-label.required::after {
+              content: '*';
+              color: #ff4d4f;
+              margin-left: 4px;
+            }
+            .node-form-input,
+            .node-form-textarea,
+            .node-form-select {
+              width: 100%;
+              padding: 8px 12px;
+              border: 1px solid #d9d9d9;
+              border-radius: 6px;
+              font-size: 14px;
+              line-height: 1.5;
+              transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+              outline: none;
+              background-color: #fff;
+            }
+            .node-form-input:hover,
+            .node-form-textarea:hover,
+            .node-form-select:hover {
+              border-color: #40a9ff;
+            }
+            .node-form-input:focus,
+            .node-form-textarea:focus,
+            .node-form-select:focus {
+              border-color: #1890ff;
+              box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+            }
+            .node-form-input:disabled,
+            .node-form-textarea:disabled,
+            .node-form-select:disabled {
+              background-color: #f5f5f5;
+              border-color: #d9d9d9;
+              color: rgba(0, 0, 0, 0.25);
+              cursor: not-allowed;
+            }
+            .node-form-textarea {
+              resize: vertical;
+              min-height: 80px;
+            }
+            .node-form-select {
+              cursor: pointer;
+            }
+            .node-form-checkbox-wrapper {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              padding: 4px 0;
+            }
+            .node-form-checkbox {
+              width: 16px;
+              height: 16px;
+              cursor: pointer;
+              accent-color: #1890ff;
+            }
+            .node-form-checkbox-label {
+              font-size: 14px;
+              font-weight: 500;
+              color: #262626;
+              cursor: pointer;
+              margin: 0;
+              line-height: 1.4;
+            }
+            .node-form-empty {
+              text-align: center;
+              padding: 60px 20px;
+              color: #999;
+              font-size: 14px;
+              background-color: #fafafa;
+              border-radius: 8px;
+              border: 1px dashed #d9d9d9;
+            }
+            .node-form-empty-icon {
+              font-size: 48px;
+              color: #d9d9d9;
+              margin-bottom: 16px;
+              display: block;
+            }
+            @media (max-width: 768px) {
+              .node-form-input,
+              .node-form-textarea,
+              .node-form-select {
+                font-size: 16px; /* 防止iOS缩放 */
+              }
+            }
+          `}
+        </style>
+        <div id="node-form-container" style={{ padding: '16px 0' }}>
+          {!nodeFormDef && (
+            <div className="node-form-empty">
+              <span className="node-form-empty-icon">📝</span>
+              <div>{intl.formatMessage({ id: 'pages.workflow.monitor.nodeForm.none', defaultMessage: '该节点未绑定表单' })}</div>
+            </div>
+          )}
           {nodeFormDef && (
-            <Space orientation="vertical" style={{ width: '100%' }}>
-              {nodeFormDef.fields?.map((field) => {
+            <div>
+              {nodeFormDef.fields?.map((field, index) => {
                 const name = field.dataKey || field.label;
                 const initVal = (nodeFormInitial || {})[name];
+                const isRequired = field.required;
+
                 switch (field.type) {
                   case FormFieldType.Number:
                     return (
-                      <div key={name}>
-                        <label>{field.label}</label>
-                        <input name={name} type="number" defaultValue={initVal} placeholder={field.placeholder} />
+                      <div key={`${name}-${index}`} className="node-form-field">
+                        <label className={`node-form-label ${isRequired ? 'required' : ''}`}>
+                          {field.label}
+                        </label>
+                        <input
+                          name={name}
+                          type="number"
+                          defaultValue={initVal != null ? String(initVal) : ''}
+                          placeholder={field.placeholder || `请输入${field.label}`}
+                          className="node-form-input"
+                          required={isRequired}
+                          step="any"
+                        />
                       </div>
                     );
                   case FormFieldType.Select:
                     return (
-                      <div key={name}>
-                        <label>{field.label}</label>
-                        <select name={name} defaultValue={initVal}>
-                          {(field.options || []).map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <div key={`${name}-${index}`} className="node-form-field">
+                        <label className={`node-form-label ${isRequired ? 'required' : ''}`}>
+                          {field.label}
+                        </label>
+                        <select
+                          name={name}
+                          defaultValue={initVal != null ? String(initVal) : ''}
+                          className="node-form-select"
+                          required={isRequired}
+                        >
+                          <option value="">请选择{field.label}</option>
+                          {(field.options || []).map((opt, optIndex) => (
+                            <option key={`${opt.value}-${optIndex}`} value={opt.value}>
+                              {opt.label}
+                            </option>
                           ))}
                         </select>
                       </div>
                     );
                   case FormFieldType.TextArea:
                     return (
-                      <div key={name}>
-                        <label>{field.label}</label>
-                        <textarea name={name} defaultValue={initVal} placeholder={field.placeholder} />
+                      <div key={`${name}-${index}`} className="node-form-field">
+                        <label className={`node-form-label ${isRequired ? 'required' : ''}`}>
+                          {field.label}
+                        </label>
+                        <textarea
+                          name={name}
+                          defaultValue={initVal != null ? String(initVal) : ''}
+                          placeholder={field.placeholder || `请输入${field.label}`}
+                          rows={4}
+                          className="node-form-textarea"
+                          required={isRequired}
+                        />
                       </div>
                     );
                   case FormFieldType.Switch:
                     return (
-                      <div key={name}>
-                        <label>{field.label}</label>
-                        <input name={name} type="checkbox" defaultChecked={!!initVal} />
+                      <div key={`${name}-${index}`} className="node-form-field">
+                        <div className="node-form-checkbox-wrapper">
+                          <input
+                            name={name}
+                            type="checkbox"
+                            defaultChecked={!!initVal}
+                            className="node-form-checkbox"
+                            id={`checkbox-${name}-${index}`}
+                          />
+                          <label
+                            htmlFor={`checkbox-${name}-${index}`}
+                            className="node-form-checkbox-label"
+                          >
+                            {field.label}
+                          </label>
+                        </div>
                       </div>
                     );
                   default:
                     return (
-                      <div key={name}>
-                        <label>{field.label}</label>
-                        <input name={name} type="text" defaultValue={initVal} placeholder={field.placeholder} />
+                      <div key={`${name}-${index}`} className="node-form-field">
+                        <label className={`node-form-label ${isRequired ? 'required' : ''}`}>
+                          {field.label}
+                        </label>
+                        <input
+                          name={name}
+                          type="text"
+                          defaultValue={initVal != null ? String(initVal) : ''}
+                          placeholder={field.placeholder || `请输入${field.label}`}
+                          className="node-form-input"
+                          required={isRequired}
+                        />
                       </div>
                     );
                 }
               })}
-            </Space>
+            </div>
           )}
         </div>
       </Modal>

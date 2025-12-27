@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Form, Input, message } from 'antd';
+import { Modal, Form, Input } from 'antd';
+import { useMessage } from '@/hooks/useMessage';
 import { useIntl } from '@umijs/max';
 import { createCompany } from '@/services/company';
 
@@ -18,6 +19,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
   onSuccess,
 }) => {
   const intl = useIntl();
+  const message = useMessage();
 
   /**
    * 提交创建企业
@@ -26,7 +28,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
     try {
       // 企业代码由后端自动生成，不需要传递
       const { code: _code, ...requestData } = values;
-      
+
       const response = await createCompany(requestData);
       if (response.success && response.data) {
         message.success(intl.formatMessage({ id: 'pages.company.createSuccess' }));

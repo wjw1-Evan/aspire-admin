@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Form, Input, Select, Button, message, Card, Space } from 'antd';
+import { Form, Input, Select, Button, Card, Space } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
+import { useMessage } from '@/hooks/useMessage';
 import { createWorkflow, type WorkflowGraph } from '@/services/workflow/api';
 import WorkflowDesigner from './WorkflowDesigner';
 
@@ -12,6 +13,7 @@ interface WorkflowCreateFormProps {
 
 const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCancel }) => {
   const intl = useIntl();
+  const message = useMessage();
   const [form] = Form.useForm();
   const [graph, setGraph] = useState<WorkflowGraph | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,12 +21,12 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
   const handleSave = async (workflowGraph: WorkflowGraph) => {
     try {
       const values = await form.validateFields();
-      
+
       if (!workflowGraph || !workflowGraph.nodes || workflowGraph.nodes.length === 0) {
         message.error(intl.formatMessage({ id: 'pages.workflow.create.message.designFirst' }));
         return;
       }
-      
+
       setLoading(true);
 
       const response = await createWorkflow({
@@ -79,7 +81,7 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
 
       <div style={{ height: '400px', border: '1px solid #d9d9d9', borderRadius: '4px' }}>
         <WorkflowDesigner
-          visible={true}
+          open={true}
           graph={graph || undefined}
           onSave={handleSave}
         />

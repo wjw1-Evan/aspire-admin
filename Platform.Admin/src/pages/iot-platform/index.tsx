@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@/components';
-import { Card, Row, Col, Button, Space, message, Spin } from 'antd';
+import { Card, Row, Col, Button, Space, Spin } from 'antd';
 import {
   CloudServerOutlined,
   DatabaseOutlined,
@@ -9,10 +9,12 @@ import {
   ReloadOutlined,
   CloudOutlined,
 } from '@ant-design/icons';
+import { useMessage } from '@/hooks/useMessage';
 import { iotService } from '@/services/iotService';
 import { StatCard } from '@/components';
 
 const IoTPlatform: React.FC = () => {
+  const message = useMessage();
   const [loading, setLoading] = useState(false);
   const [statistics, setStatistics] = useState<any>(null);
 

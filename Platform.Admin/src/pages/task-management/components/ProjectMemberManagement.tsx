@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Modal, message, Tag } from 'antd';
+import { Table, Button, Space, Modal, Tag } from 'antd';
 import type { ColumnsType, ColumnType } from 'antd/es/table';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useMessage } from '@/hooks/useMessage';
 import {
   addProjectMember,
   removeProjectMember,
@@ -23,6 +24,7 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
   members,
   onRefresh,
 }) => {
+  const message = useMessage();
   const [formVisible, setFormVisible] = useState(false);
   const [users, setUsers] = useState<AppUser[]>([]);
 

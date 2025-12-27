@@ -15,6 +15,27 @@ appliesTo:
 - **错误处理**：全局错误拦截器已统一处理 `success=false` 的情况（显示 message、处理 401/403 等），业务代码主要关注成功场景的数据处理。
 - **SSE 实时连接**：使用 `useSseConnection` Hook（位于 `src/hooks/useSseConnection.ts`）建立 SSE 连接，支持自动重连、事件监听（`ReceiveMessage`、`SessionUpdated`、`MessageDeleted`、`MessageChunk` 等）。连接通过 JWT token 认证，连接地址为 `/api/chat/sse?token={token}`。组件卸载时自动清理连接资源。
 
+## Ant Design 6 原生组件优先原则（强制）
+- **优先使用原生组件**：尽量使用 Ant Design 6 提供的原生组件，避免自定义封装或第三方组件
+- **组件选择优先级**：
+  1. **Ant Design 6 原生组件**：Table、Form、Modal、Drawer、Card、Button 等
+  2. **项目必要的轻量封装**：仅在原生组件无法满足特定业务需求时使用
+  3. **避免重度封装**：禁止对 Ant Design 组件进行复杂的二次封装
+- **当前项目组件使用规范**：
+  - **DataTable**：轻量封装的 Table 组件，提供 ProTable 类似的 API，但基于原生 Table
+  - **PageContainer**：轻量封装的页面容器，提供面包屑和标题功能，基于原生 Card
+  - **StatCard**：统计卡片组件，基于原生 Card，统一样式规范
+  - **其他组件**：直接使用 Ant Design 6 原生组件
+- **禁止使用的组件**：
+  - ProTable：使用 DataTable 或原生 Table 替代
+  - ProForm：使用原生 Form 替代
+  - ProCard：使用原生 Card 替代
+  - 其他 ProComponents：优先使用对应的原生组件
+- **组件迁移原则**：
+  - 新功能开发必须使用原生组件
+  - 现有功能维护时逐步迁移到原生组件
+  - 保持 API 兼容性，减少迁移成本
+
 ## Ant Design 6 规范遵循（强制）
 - **项目状态**：当前使用 Ant Design 6.1.2、React 19.2.3、@ant-design/icons 6.1.0，已完成主要迁移工作
 - **组件属性更新**：

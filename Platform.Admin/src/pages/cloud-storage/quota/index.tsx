@@ -33,7 +33,6 @@ import {
     EditOutlined,
     DeleteOutlined,
     ReloadOutlined,
-    PlusOutlined,
     UserOutlined,
     CloudOutlined,
     WarningOutlined,
@@ -41,8 +40,8 @@ import {
     ExclamationCircleOutlined,
     BarChartOutlined,
     TeamOutlined,
-    SettingOutlined,
-    SyncOutlined,
+    FileOutlined,
+    CalendarOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -52,18 +51,13 @@ const { TabPane } = Tabs;
 import {
     getQuotaList,
     getUserQuota,
-    getMyQuota,
-    setUserQuota,
     updateUserQuota,
     deleteUserQuota,
-    batchSetQuota,
     getQuotaUsageStats,
     getQuotaWarnings,
     refreshUserQuotaUsage,
-    refreshAllQuotaUsage,
     getQuotaRecommendations,
     type StorageQuota,
-    type SetQuotaRequest,
     type UpdateQuotaRequest,
     type QuotaListRequest,
     type QuotaUsageStats,
@@ -87,11 +81,8 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     // 状态管理
     const [activeTab, setActiveTab] = useState<'quota-list' | 'usage-stats' | 'warnings'>('quota-list');
-    const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
-    const [selectedRows, setSelectedRows] = useState<StorageQuota[]>([]);
     const [usageStats, setUsageStats] = useState<QuotaUsageStats | null>(null);
     const [warnings, setWarnings] = useState<QuotaWarning[]>([]);
-    const [myQuota, setMyQuota] = useState<StorageQuota | null>(null);
 
     // 搜索相关状态
     const [searchParams, setSearchParams] = useState<SearchParams>({});
@@ -101,16 +92,12 @@ const CloudStorageQuotaPage: React.FC = () => {
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
     const [viewingQuota, setViewingQuota] = useState<StorageQuota | null>(null);
-    const [setQuotaVisible, setSetQuotaVisible] = useState(false);
     const [editQuotaVisible, setEditQuotaVisible] = useState(false);
     const [editingQuota, setEditingQuota] = useState<StorageQuota | null>(null);
-    const [batchSetVisible, setBatchSetVisible] = useState(false);
     const [refreshing, setRefreshing] = useState<{ [key: string]: boolean }>({});
 
     // 表单
-    const [setQuotaForm] = Form.useForm();
     const [editQuotaForm] = Form.useForm();
-    const [batchSetForm] = Form.useForm();
 
     // 加载数据
     const loadUsageStats = useCallback(async () => {
@@ -135,22 +122,10 @@ const CloudStorageQuotaPage: React.FC = () => {
         }
     }, []);
 
-    const loadMyQuota = useCallback(async () => {
-        try {
-            const response = await getMyQuota();
-            if (response.success && response.data) {
-                setMyQuota(response.data);
-            }
-        } catch (err) {
-            console.error('Failed to load my quota:', err);
-        }
-    }, []);
-
     useEffect(() => {
         loadUsageStats();
         loadWarnings();
-        loadMyQuota();
-    }, [loadUsageStats, loadWarnings, loadMyQuota]);
+    }, [loadUsageStats, loadWarnings]);
 
     // 刷新处理
     const handleRefresh = useCallback(() => {
@@ -263,8 +238,6 @@ const CloudStorageQuotaPage: React.FC = () => {
     // Tab 切换
     const handleTabChange = useCallback((key: string) => {
         setActiveTab(key as 'quota-list' | 'usage-stats' | 'warnings');
-        setSelectedRowKeys([]);
-        setSelectedRows([]);
     }, []);
 
     // 配额操作
@@ -273,14 +246,22 @@ const CloudStorageQuotaPage: React.FC = () => {
             const response = await getUserQuota(quota.userId);
             if (response.success && response.data) {
                 // 转换后端数据格式到前端期望的格式
+                // 后端返回的数据结构：{ userId, totalQuota, usedSpace, fileCount, lastCalculatedAt, ... }
                 const quotaData = response.data as any;
                 const transformedQuota: StorageQuota = {
                     ...quotaData,
                     id: quotaData.id || quotaData.userId,
-                    userDisplayName: quotaData.userDisplayName || quotaData.displayName || quotaData.username || '-',
-                    usedQuota: quotaData.usedQuota !== undefined ? quotaData.usedQuota : (quotaData.usedSpace || 0),
+                    // 使用列表中的用户信息，如果没有则使用 createdByUsername 或 userId
+                    userDisplayName: quota.userDisplayName || quota.username || quotaData.createdByUsername || quotaData.userId || '未知用户',
+                    username: quota.username || quotaData.createdByUsername || quotaData.userId || '-',
+                    // 后端返回的是 usedSpace，映射为 usedQuota
+                    usedQuota: quotaData.usedSpace !== undefined ? quotaData.usedSpace : (quotaData.usedQuota || 0),
+                    // 后端返回的是 fileCount，确保正确映射
+                    fileCount: quotaData.fileCount !== undefined ? quotaData.fileCount : (quota.fileCount || 0),
+                    // 后端没有返回 warningThreshold，使用默认值 80
                     warningThreshold: quotaData.warningThreshold !== undefined ? quotaData.warningThreshold : 80,
-                    isEnabled: quotaData.isEnabled !== undefined ? quotaData.isEnabled : (quotaData.status === 'Active'),
+                    // 后端没有返回 isEnabled，根据 isDeleted 判断，未删除则为启用
+                    isEnabled: quotaData.isEnabled !== undefined ? quotaData.isEnabled : (!quotaData.isDeleted),
                 };
                 setViewingQuota(transformedQuota);
                 setDetailVisible(true);
@@ -324,47 +305,6 @@ const CloudStorageQuotaPage: React.FC = () => {
         }
     }, [success, error]);
 
-    // 批量操作
-    const handleBatchSetQuota = useCallback(async () => {
-        if (selectedRowKeys.length === 0) {
-            error('请选择要设置配额的用户');
-            return;
-        }
-        setBatchSetVisible(true);
-    }, [selectedRowKeys, error]);
-
-    const handleRefreshAllUsage = useCallback(async () => {
-        confirm({
-            title: '确认刷新所有用户使用量',
-            content: '此操作可能需要较长时间，确定要继续吗？',
-            onOk: async () => {
-                try {
-                    const response = await refreshAllQuotaUsage();
-                    if (response.success && response.data) {
-                        success(`刷新完成，处理了 ${response.data.processedCount} 个用户`);
-                    }
-                    actionRef.current?.reload();
-                    loadUsageStats();
-                } catch (err) {
-                    error('刷新失败');
-                }
-            },
-        });
-    }, [confirm, success, error, loadUsageStats]);
-
-    // 设置配额
-    const handleSetQuota = useCallback(async (values: SetQuotaRequest) => {
-        try {
-            await setUserQuota(values);
-            success('设置配额成功');
-            setSetQuotaVisible(false);
-            setQuotaForm.resetFields();
-            actionRef.current?.reload();
-            loadUsageStats();
-        } catch (err) {
-            error('设置配额失败');
-        }
-    }, [success, error, setQuotaForm, loadUsageStats]);
 
     // 更新配额
     const handleEditSubmit = useCallback(async (values: UpdateQuotaRequest) => {
@@ -384,28 +324,6 @@ const CloudStorageQuotaPage: React.FC = () => {
     }, [editingQuota, success, error, editQuotaForm, loadUsageStats]);
 
     // 批量设置配额
-    const handleBatchSetSubmit = useCallback(async (values: any) => {
-        try {
-            const response = await batchSetQuota({
-                userIds: selectedRowKeys,
-                totalQuota: values.totalQuota,
-                warningThreshold: values.warningThreshold,
-            });
-
-            if (response.success && response.data) {
-                success(`批量设置完成，成功 ${response.data.successCount} 个，失败 ${response.data.failedCount} 个`);
-            }
-
-            setBatchSetVisible(false);
-            batchSetForm.resetFields();
-            setSelectedRowKeys([]);
-            setSelectedRows([]);
-            actionRef.current?.reload();
-            loadUsageStats();
-        } catch (err) {
-            error('批量设置失败');
-        }
-    }, [selectedRowKeys, success, error, batchSetForm, loadUsageStats]);
 
     // 格式化文件大小
     const formatFileSize = useCallback((bytes: number) => {
@@ -597,22 +515,6 @@ const CloudStorageQuotaPage: React.FC = () => {
             style={{ paddingBlock: 12 }}
             extra={
                 <Space wrap>
-                    {selectedRowKeys.length > 0 && activeTab === 'quota-list' && (
-                        <Button
-                            key="batch-set"
-                            icon={<SettingOutlined />}
-                            onClick={handleBatchSetQuota}
-                        >
-                            批量设置 ({selectedRowKeys.length})
-                        </Button>
-                    )}
-                    <Button
-                        key="refresh-all"
-                        icon={<SyncOutlined />}
-                        onClick={handleRefreshAllUsage}
-                    >
-                        刷新所有使用量
-                    </Button>
                     <Button
                         key="refresh"
                         icon={<ReloadOutlined />}
@@ -620,50 +522,9 @@ const CloudStorageQuotaPage: React.FC = () => {
                     >
                         {intl.formatMessage({ id: 'pages.button.refresh' })}
                     </Button>
-                    {activeTab === 'quota-list' && (
-                        <Button
-                            key="set-quota"
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => setSetQuotaVisible(true)}
-                        >
-                            设置配额
-                        </Button>
-                    )}
                 </Space>
             }
         >
-            {/* 我的配额卡片 */}
-            {myQuota && (
-                <Card title="我的存储配额" style={{ marginBottom: 16 }}>
-                    <Row gutter={16}>
-                        <Col xs={24} sm={12} md={8}>
-                            <Statistic
-                                title="总配额"
-                                value={formatFileSize(myQuota.totalQuota)}
-                                prefix={<CloudOutlined />}
-                            />
-                        </Col>
-                        <Col xs={24} sm={12} md={8}>
-                            <Statistic
-                                title="已使用"
-                                value={formatFileSize(myQuota.usedQuota)}
-                                prefix={<BarChartOutlined />}
-                            />
-                        </Col>
-                        <Col xs={24} sm={12} md={8}>
-                            <div>
-                                <div style={{ marginBottom: 8 }}>使用率</div>
-                                <Progress
-                                    percent={Math.round((myQuota.usedQuota / myQuota.totalQuota) * 100)}
-                                    strokeColor={getUsageColor((myQuota.usedQuota / myQuota.totalQuota) * 100)}
-                                />
-                            </div>
-                        </Col>
-                    </Row>
-                </Card>
-            )}
-
             {/* 搜索表单 */}
             {activeTab === 'quota-list' && (
                 <Card style={{ marginBottom: 16 }}>
@@ -725,13 +586,6 @@ const CloudStorageQuotaPage: React.FC = () => {
                                 pageSizeOptions: [10, 20, 50, 100],
                                 showSizeChanger: true,
                                 showQuickJumper: true,
-                            }}
-                            rowSelection={{
-                                selectedRowKeys,
-                                onChange: (keys, rows) => {
-                                    setSelectedRowKeys(keys as string[]);
-                                    setSelectedRows(rows);
-                                },
                             }}
                         />
                     </TabPane>
@@ -885,17 +739,22 @@ const CloudStorageQuotaPage: React.FC = () => {
                                     <Descriptions.Item
                                         label={<Space><FileOutlined />文件数量</Space>}
                                     >
-                                        {viewingQuota.fileCount}
+                                        {viewingQuota.fileCount || 0}
                                     </Descriptions.Item>
                                     <Descriptions.Item
                                         label={<Space><WarningOutlined />警告阈值</Space>}
                                     >
-                                        {viewingQuota.warningThreshold}%
+                                        {viewingQuota.warningThreshold || 80}%
                                     </Descriptions.Item>
                                     <Descriptions.Item
                                         label={<Space><CheckCircleOutlined />启用状态</Space>}
                                     >
-                                        {viewingQuota.isEnabled ? '启用' : '禁用'}
+                                        {viewingQuota.isEnabled !== false ? '启用' : '禁用'}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item
+                                        label={<Space><CalendarOutlined />最后计算时间</Space>}
+                                    >
+                                        {formatDateTime((viewingQuota as any).lastCalculatedAt || viewingQuota.updatedAt)}
                                     </Descriptions.Item>
                                     <Descriptions.Item
                                         label={<Space><CalendarOutlined />创建时间</Space>}
@@ -907,6 +766,20 @@ const CloudStorageQuotaPage: React.FC = () => {
                                     >
                                         {formatDateTime(viewingQuota.updatedAt)}
                                     </Descriptions.Item>
+                                    {(viewingQuota as any).createdByUsername && (
+                                        <Descriptions.Item
+                                            label={<Space><UserOutlined />创建人</Space>}
+                                        >
+                                            {(viewingQuota as any).createdByUsername}
+                                        </Descriptions.Item>
+                                    )}
+                                    {(viewingQuota as any).updatedByUsername && (
+                                        <Descriptions.Item
+                                            label={<Space><UserOutlined />更新人</Space>}
+                                        >
+                                            {(viewingQuota as any).updatedByUsername}
+                                        </Descriptions.Item>
+                                    )}
                                 </Descriptions>
                             </Card>
                         </>
@@ -917,76 +790,6 @@ const CloudStorageQuotaPage: React.FC = () => {
                     )}
                 </Spin>
             </Drawer>
-
-            {/* 设置配额弹窗 */}
-            <Modal
-                title="设置用户配额"
-                open={setQuotaVisible}
-                onCancel={() => {
-                    setSetQuotaVisible(false);
-                    setQuotaForm.resetFields();
-                }}
-                footer={null}
-                width={600}
-            >
-                <Form
-                    form={setQuotaForm}
-                    layout="vertical"
-                    onFinish={handleSetQuota}
-                >
-                    <Form.Item
-                        name="userId"
-                        label="用户"
-                        rules={[{ required: true, message: '请选择用户' }]}
-                    >
-                        <Select placeholder="请选择用户" showSearch>
-                            {/* 这里可以加载用户列表 */}
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        name="totalQuota"
-                        label="总配额 (字节)"
-                        rules={[{ required: true, message: '请输入总配额' }]}
-                    >
-                        <InputNumber
-                            placeholder="请输入总配额"
-                            style={{ width: '100%' }}
-                            min={0}
-                            formatter={(value) => value ? formatFileSize(Number(value)) : ''}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        name="warningThreshold"
-                        label="警告阈值 (%)"
-                        initialValue={80}
-                    >
-                        <InputNumber
-                            placeholder="请输入警告阈值"
-                            style={{ width: '100%' }}
-                            min={0}
-                            max={100}
-                        />
-                    </Form.Item>
-                    <Form.Item name="isEnabled" label="启用状态" valuePropName="checked" initialValue={true}>
-                        <Switch />
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">
-                                设置
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    setSetQuotaVisible(false);
-                                    setQuotaForm.resetFields();
-                                }}
-                            >
-                                取消
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </Modal>
 
             {/* 编辑配额弹窗 */}
             <Modal
@@ -1050,63 +853,6 @@ const CloudStorageQuotaPage: React.FC = () => {
                 </Form>
             </Modal>
 
-            {/* 批量设置配额弹窗 */}
-            <Modal
-                title={`批量设置配额 (${selectedRowKeys.length} 个用户)`}
-                open={batchSetVisible}
-                onCancel={() => {
-                    setBatchSetVisible(false);
-                    batchSetForm.resetFields();
-                }}
-                footer={null}
-                width={600}
-            >
-                <Form
-                    form={batchSetForm}
-                    layout="vertical"
-                    onFinish={handleBatchSetSubmit}
-                >
-                    <Form.Item
-                        name="totalQuota"
-                        label="总配额 (字节)"
-                        rules={[{ required: true, message: '请输入总配额' }]}
-                    >
-                        <InputNumber
-                            placeholder="请输入总配额"
-                            style={{ width: '100%' }}
-                            min={0}
-                            formatter={(value) => value ? formatFileSize(Number(value)) : ''}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        name="warningThreshold"
-                        label="警告阈值 (%)"
-                        initialValue={80}
-                    >
-                        <InputNumber
-                            placeholder="请输入警告阈值"
-                            style={{ width: '100%' }}
-                            min={0}
-                            max={100}
-                        />
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">
-                                批量设置
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    setBatchSetVisible(false);
-                                    batchSetForm.resetFields();
-                                }}
-                            >
-                                取消
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </Modal>
         </PageContainer>
     );
 };

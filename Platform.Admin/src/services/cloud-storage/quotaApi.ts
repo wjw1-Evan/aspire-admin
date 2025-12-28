@@ -97,7 +97,7 @@ export async function setUserQuota(data: SetQuotaRequest) {
  * 更新用户存储配额
  */
 export async function updateUserQuota(userId: string, data: UpdateQuotaRequest) {
-    return request<ApiResponse<StorageQuota>>(`/api/storage-quota/${userId}`, {
+    return request<ApiResponse<StorageQuota>>(`/api/storage-quota/user/${userId}`, {
         method: 'PUT',
         data,
     });
@@ -107,7 +107,7 @@ export async function updateUserQuota(userId: string, data: UpdateQuotaRequest) 
  * 获取用户存储配额详情
  */
 export async function getUserQuota(userId: string) {
-    return request<ApiResponse<StorageQuota>>(`/api/storage-quota/${userId}`, {
+    return request<ApiResponse<StorageQuota>>(`/api/storage-quota/user/${userId}`, {
         method: 'GET',
     });
 }
@@ -135,7 +135,7 @@ export async function getQuotaList(params: QuotaListRequest) {
  * 删除用户存储配额（恢复为默认配额）
  */
 export async function deleteUserQuota(userId: string) {
-    return request<ApiResponse<void>>(`/api/storage-quota/${userId}`, {
+    return request<ApiResponse<void>>(`/api/storage-quota/user/${userId}`, {
         method: 'DELETE',
     });
 }
@@ -172,7 +172,7 @@ export async function getQuotaWarnings() {
  * 刷新用户存储使用量
  */
 export async function refreshUserQuotaUsage(userId: string) {
-    return request<ApiResponse<StorageQuota>>(`/api/storage-quota/${userId}/refresh`, {
+    return request<ApiResponse<StorageQuota>>(`/api/storage-quota/user/${userId}/recalculate`, {
         method: 'POST',
     });
 }

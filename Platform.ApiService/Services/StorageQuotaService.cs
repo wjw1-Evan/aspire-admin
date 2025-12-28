@@ -37,7 +37,7 @@ public class StorageQuotaService : IStorageQuotaService
     }
 
     /// <summary>
-    /// 获取用户存储配额信息
+    /// 获取用户存储配额信息（实时计算文件统计）
     /// </summary>
     public async Task<StorageQuota> GetUserQuotaAsync(string? userId = null)
     {
@@ -45,7 +45,39 @@ public class StorageQuotaService : IStorageQuotaService
         if (string.IsNullOrEmpty(targetUserId))
             throw new InvalidOperationException("用户ID不能为空");
 
-        return await GetOrCreateUserQuotaAsync(targetUserId);
+        var quota = await GetOrCreateUserQuotaAsync(targetUserId);
+
+        // 实时查询用户的所有活跃文件，计算准确的文件数量和使用空间
+        var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
+        var fileFilter = fileFilterBuilder
+            .Equal(f => f.CreatedBy, targetUserId)
+            .Equal(f => f.Type, FileItemType.File)
+            .Equal(f => f.Status, FileStatus.Active)
+            .Build();
+
+        var allFiles = await _fileItemFactory.FindAsync(fileFilter);
+        
+        // 过滤掉 CreatedBy 为空的文件（确保统计准确）
+        var userFiles = allFiles
+            .Where(f => !string.IsNullOrEmpty(f.CreatedBy) && f.CreatedBy == targetUserId)
+            .ToList();
+
+        // 计算实际使用量和文件数量
+        var actualUsedSpace = userFiles.Sum(f => f.Size);
+        var fileCount = userFiles.Count;
+
+        // 按文件类型统计
+        var typeUsage = userFiles
+            .GroupBy(f => GetFileTypeCategory(f.MimeType))
+            .ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
+
+        // 更新返回对象的值（不更新数据库，只是返回实时统计）
+        quota.UsedSpace = actualUsedSpace;
+        quota.FileCount = fileCount;
+        quota.TypeUsage = typeUsage;
+        quota.LastCalculatedAt = DateTime.UtcNow;
+
+        return quota;
     }
 
     /// <summary>
@@ -462,10 +494,10 @@ public class StorageQuotaService : IStorageQuotaService
         {
             foreach (var group in usernameGroups)
             {
-                var userIds = string.Join(", ", group.Select(u => u.Id));
+                var userIdsText = string.Join(", ", group.Select(u => u.Id));
                 _logger.LogWarning(
                     "发现重复的用户名: {Username}，对应的用户ID: {UserIds}",
-                    group.Key, userIds);
+                    group.Key, userIdsText);
             }
         }
 
@@ -476,10 +508,10 @@ public class StorageQuotaService : IStorageQuotaService
         
         if (usersWithEmptyUsername.Any())
         {
-            var userIds = string.Join(", ", usersWithEmptyUsername.Select(u => u.Id));
+            var emptyUsernameIds = string.Join(", ", usersWithEmptyUsername.Select(u => u.Id));
             _logger.LogWarning(
                 "发现 {Count} 个用户没有用户名，用户ID: {UserIds}",
-                usersWithEmptyUsername.Count, userIds);
+                usersWithEmptyUsername.Count, emptyUsernameIds);
         }
 
         // 获取所有配额记录（当前企业）
@@ -495,19 +527,52 @@ public class StorageQuotaService : IStorageQuotaService
                 g => g.OrderByDescending(q => q.UpdatedAt).First()
             );
 
+        // 批量查询所有用户的文件统计（实时统计，与统计API保持一致）
+        var userIds = users.Select(u => u.Id ?? string.Empty).Where(id => !string.IsNullOrEmpty(id)).ToList();
+        var fileCountDict = new Dictionary<string, int>();
+        var usedSpaceDict = new Dictionary<string, long>();
+        
+        if (userIds.Any())
+        {
+            // 查询所有用户的活跃文件（按用户分组统计）
+            // 注意：CreatedBy 可能为空，需要过滤掉空值
+            var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
+            var fileFilter = fileFilterBuilder
+                .In(f => f.CreatedBy, userIds)
+                .Equal(f => f.Type, FileItemType.File)
+                .Equal(f => f.Status, FileStatus.Active)
+                .Build();
+            
+            var allFiles = await _fileItemFactory.FindAsync(fileFilter);
+            
+            // 按 CreatedBy 分组，过滤掉 CreatedBy 为空的文件
+            var fileGroups = allFiles
+                .Where(f => !string.IsNullOrEmpty(f.CreatedBy))
+                .GroupBy(f => f.CreatedBy!)
+                .ToList();
+            
+            fileCountDict = fileGroups.ToDictionary(g => g.Key, g => g.Count());
+            usedSpaceDict = fileGroups.ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
+        }
+
         // 合并用户和配额数据，为没有配额的用户创建默认记录
         // 先创建一个字典来跟踪已使用的用户名，确保显示唯一性
         var usernameUsageCount = new Dictionary<string, int>();
         var allItems = users.Select(user =>
         {
-            var hasQuota = quotaDict.TryGetValue(user.Id ?? string.Empty, out var quota);
+            var userId = user.Id ?? string.Empty;
+            var hasQuota = quotaDict.TryGetValue(userId, out var quota);
+            
+            // 始终使用实时统计的文件数量和使用空间，确保数据准确性（与统计API保持一致）
+            // 实时统计是最准确的，配额记录中的数据可能已经过时
+            var fileCount = fileCountDict.TryGetValue(userId, out var count) ? count : 0;
+            var usedSpace = usedSpaceDict.TryGetValue(userId, out var space) ? space : 0;
             
             // 确保用户名唯一显示
             string username;
             if (string.IsNullOrWhiteSpace(user.Username))
             {
                 // 如果用户名为空，使用用户ID的后8位作为标识
-                var userId = user.Id ?? string.Empty;
                 var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
                 username = $"用户_{suffix}";
             }
@@ -519,7 +584,6 @@ public class StorageQuotaService : IStorageQuotaService
                 if (usernameUsageCount.ContainsKey(username))
                 {
                     // 如果用户名重复，添加用户ID后缀以确保唯一性
-                    var userId = user.Id ?? string.Empty;
                     var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
                     username = $"{user.Username}({suffix})";
                 }
@@ -530,7 +594,6 @@ public class StorageQuotaService : IStorageQuotaService
                     if (duplicateCount > 0)
                     {
                         // 如果有重复，添加用户ID后缀
-                        var userId = user.Id ?? string.Empty;
                         var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
                         username = $"{user.Username}({suffix})";
                     }
@@ -547,13 +610,13 @@ public class StorageQuotaService : IStorageQuotaService
             
             return new StorageQuotaListItem
             {
-                UserId = user.Id ?? string.Empty,
+                UserId = userId,
                 Username = username,
                 DisplayName = displayName,
                 Email = user.Email ?? string.Empty,
                 TotalQuota = hasQuota ? quota!.TotalQuota : DefaultQuota,
-                UsedSpace = hasQuota ? quota!.UsedSpace : 0,
-                FileCount = hasQuota ? quota!.FileCount : 0,
+                UsedSpace = usedSpace,
+                FileCount = fileCount,
                 LastCalculatedAt = hasQuota ? quota!.LastCalculatedAt : DateTime.UtcNow,
                 CreatedAt = hasQuota ? quota!.CreatedAt : (user.CreatedAt != default(DateTime) ? user.CreatedAt : DateTime.UtcNow),
                 UpdatedAt = hasQuota ? quota!.UpdatedAt : (user.UpdatedAt != default(DateTime) ? user.UpdatedAt : DateTime.UtcNow),

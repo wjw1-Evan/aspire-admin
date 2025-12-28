@@ -3,6 +3,16 @@ import { history } from '@umijs/max';
 import { errorInterceptor } from '@/utils/errorInterceptor';
 import AuthenticationService from '@/utils/authService';
 import { tokenUtils } from '@/utils/token';
+import { getMessage } from '@/utils/antdAppInstance';
+
+// 将提示操作调度到渲染阶段之外，避免 React 18 并发模式警告
+const runAfterRender = (fn: () => void) => {
+  if (typeof queueMicrotask === 'function') {
+    queueMicrotask(fn);
+  } else {
+    setTimeout(fn, 0);
+  }
+};
 
 // 错误处理方案： 错误类型
 enum ErrorShowType {
@@ -96,6 +106,10 @@ export const errorConfig: RequestConfig = {
         error?.response?.data?.title ||
         error?.message;
 
+      const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
+      const isLoginRequest = error.config?.url?.includes('/api/auth/login') || 
+                            error.config?.url?.includes('/login');
+      
       const isAuthError = error.response?.status === 401 || error.response?.status === 404;
       // 有些接口会返回 400 但实际是未登录/未找到当前用户
       const isMissingCurrentUser =
@@ -108,6 +122,24 @@ export const errorConfig: RequestConfig = {
       const isAuthErrorMessage =
         error.message === 'Authentication handled silently' ||
         error.message === 'Authentication handled';
+
+      // 2. 特殊处理登录错误：只显示友好的消息提示，不显示技术性错误页面
+      if (isLoginRequest && (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || error.name === 'BizError')) {
+        // 如果错误已经被登录页面处理过（标记了 skipGlobalHandler），直接返回
+        if (error?.skipGlobalHandler) {
+          return;
+        }
+        
+        // 登录错误已经在登录页面中处理了，这里只需要静默处理，避免显示技术性错误页面
+        // 如果登录页面没有处理（比如直接从错误拦截器抛出），则显示友好提示
+        const { message: msg } = getMessage();
+        const errorMessage = error?.info?.errorMessage || messageText || '登录失败，请检查用户名和密码';
+        runAfterRender(() => {
+          msg.error(errorMessage);
+        });
+        // 静默处理，不再抛出错误
+        return;
+      }
 
       if (isAuthError || isAuthErrorMessage || isMissingCurrentUser) {
         // 清除 token
@@ -132,7 +164,7 @@ export const errorConfig: RequestConfig = {
         return; // 不再抛出错误，避免重复处理
       }
 
-      // 2. 其他错误使用统一拦截器处理
+      // 3. 其他错误使用统一拦截器处理
       errorInterceptor.handleError(error, context);
     },
   },

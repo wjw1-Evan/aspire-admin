@@ -10,6 +10,7 @@ public class StorageQuotaService : IStorageQuotaService
 {
     private readonly IDatabaseOperationFactory<StorageQuota> _quotaFactory;
     private readonly IDatabaseOperationFactory<FileItem> _fileItemFactory;
+    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<StorageQuotaService> _logger;
 
@@ -24,11 +25,13 @@ public class StorageQuotaService : IStorageQuotaService
     public StorageQuotaService(
         IDatabaseOperationFactory<StorageQuota> quotaFactory,
         IDatabaseOperationFactory<FileItem> fileItemFactory,
+        IDatabaseOperationFactory<AppUser> userFactory,
         ITenantContext tenantContext,
         ILogger<StorageQuotaService> logger)
     {
         _quotaFactory = quotaFactory ?? throw new ArgumentNullException(nameof(quotaFactory));
         _fileItemFactory = fileItemFactory ?? throw new ArgumentNullException(nameof(fileItemFactory));
+        _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -431,65 +434,181 @@ public class StorageQuotaService : IStorageQuotaService
 
     /// <summary>
     /// 获取存储配额列表（分页）
+    /// 修复：基于所有用户查询，而不仅仅是已有配额记录的用户
     /// </summary>
     public async Task<PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListQuery query)
     {
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Build(); // 多租户过滤会自动应用
+        // 获取当前企业ID
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(currentCompanyId))
+            throw new InvalidOperationException("未找到当前企业信息");
 
-        // 添加关键词搜索
-        if (!string.IsNullOrWhiteSpace(query.Keyword))
+        // 获取当前企业的所有用户
+        var userFilterBuilder = _userFactory.CreateFilterBuilder();
+        var userFilter = userFilterBuilder
+            .Equal(u => u.CurrentCompanyId, currentCompanyId)
+            .Build();
+        
+        var users = await _userFactory.FindAsync(userFilter);
+
+        // 验证用户名唯一性（调试用）
+        var usernameGroups = users
+            .Where(u => !string.IsNullOrWhiteSpace(u.Username))
+            .GroupBy(u => u.Username)
+            .Where(g => g.Count() > 1)
+            .ToList();
+        
+        if (usernameGroups.Any())
         {
-            // TODO: 需要根据用户名搜索，这里暂时按用户ID搜索
-            filter = filterBuilder.Contains(q => q.UserId, query.Keyword).Build();
+            foreach (var group in usernameGroups)
+            {
+                var userIds = string.Join(", ", group.Select(u => u.Id));
+                _logger.LogWarning(
+                    "发现重复的用户名: {Username}，对应的用户ID: {UserIds}",
+                    group.Key, userIds);
+            }
         }
 
-        // 构建排序
-        var sortBuilder = _quotaFactory.CreateSortBuilder();
-        var sort = query.SortBy.ToLowerInvariant() switch
+        // 检查空用户名
+        var usersWithEmptyUsername = users
+            .Where(u => string.IsNullOrWhiteSpace(u.Username))
+            .ToList();
+        
+        if (usersWithEmptyUsername.Any())
+        {
+            var userIds = string.Join(", ", usersWithEmptyUsername.Select(u => u.Id));
+            _logger.LogWarning(
+                "发现 {Count} 个用户没有用户名，用户ID: {UserIds}",
+                usersWithEmptyUsername.Count, userIds);
+        }
+
+        // 获取所有配额记录（当前企业）
+        var quotaFilterBuilder = _quotaFactory.CreateFilterBuilder();
+        var quotaFilter = quotaFilterBuilder.Build(); // 多租户过滤会自动应用
+        var quotas = await _quotaFactory.FindAsync(quotaFilter);
+        
+        // 处理重复的用户ID：如果有多个配额记录对应同一个用户，保留最新的（UpdatedAt最大的）
+        var quotaDict = quotas
+            .GroupBy(q => q.UserId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(q => q.UpdatedAt).First()
+            );
+
+        // 合并用户和配额数据，为没有配额的用户创建默认记录
+        // 先创建一个字典来跟踪已使用的用户名，确保显示唯一性
+        var usernameUsageCount = new Dictionary<string, int>();
+        var allItems = users.Select(user =>
+        {
+            var hasQuota = quotaDict.TryGetValue(user.Id ?? string.Empty, out var quota);
+            
+            // 确保用户名唯一显示
+            string username;
+            if (string.IsNullOrWhiteSpace(user.Username))
+            {
+                // 如果用户名为空，使用用户ID的后8位作为标识
+                var userId = user.Id ?? string.Empty;
+                var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
+                username = $"用户_{suffix}";
+            }
+            else
+            {
+                username = user.Username;
+                
+                // 检查是否有重复的用户名
+                if (usernameUsageCount.ContainsKey(username))
+                {
+                    // 如果用户名重复，添加用户ID后缀以确保唯一性
+                    var userId = user.Id ?? string.Empty;
+                    var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
+                    username = $"{user.Username}({suffix})";
+                }
+                else
+                {
+                    // 检查当前批次中是否有其他用户使用相同的用户名
+                    var duplicateCount = users.Count(u => u.Username == username && u.Id != user.Id);
+                    if (duplicateCount > 0)
+                    {
+                        // 如果有重复，添加用户ID后缀
+                        var userId = user.Id ?? string.Empty;
+                        var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
+                        username = $"{user.Username}({suffix})";
+                    }
+                }
+                
+                // 记录这个用户名已被使用
+                usernameUsageCount[username] = usernameUsageCount.GetValueOrDefault(username, 0) + 1;
+            }
+            
+            // 处理显示名称
+            var displayName = !string.IsNullOrWhiteSpace(user.Name) 
+                ? user.Name 
+                : (!string.IsNullOrWhiteSpace(user.Username) ? user.Username : username);
+            
+            return new StorageQuotaListItem
+            {
+                UserId = user.Id ?? string.Empty,
+                Username = username,
+                DisplayName = displayName,
+                Email = user.Email ?? string.Empty,
+                TotalQuota = hasQuota ? quota!.TotalQuota : DefaultQuota,
+                UsedSpace = hasQuota ? quota!.UsedSpace : 0,
+                FileCount = hasQuota ? quota!.FileCount : 0,
+                LastCalculatedAt = hasQuota ? quota!.LastCalculatedAt : DateTime.UtcNow,
+                CreatedAt = hasQuota ? quota!.CreatedAt : (user.CreatedAt != default(DateTime) ? user.CreatedAt : DateTime.UtcNow),
+                UpdatedAt = hasQuota ? quota!.UpdatedAt : (user.UpdatedAt != default(DateTime) ? user.UpdatedAt : DateTime.UtcNow),
+                Status = "Active",
+                WarningLevel = hasQuota ? GetWarningLevel(quota!.UsedSpace, quota!.TotalQuota) : null
+            };
+        }).ToList();
+
+        // 应用关键词搜索
+        if (!string.IsNullOrWhiteSpace(query.Keyword))
+        {
+            var keyword = query.Keyword.ToLowerInvariant();
+            allItems = allItems.Where(item =>
+                item.UserId.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                item.Username.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                (item.DisplayName != null && item.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                (item.Email != null && item.Email.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+
+        // 应用排序
+        var sortedItems = query.SortBy.ToLowerInvariant() switch
         {
             "usedquota" or "usedspace" => query.SortOrder == "asc"
-                ? sortBuilder.Ascending(q => q.UsedSpace).Build()
-                : sortBuilder.Descending(q => q.UsedSpace).Build(),
+                ? allItems.OrderBy(item => item.UsedSpace).ToList()
+                : allItems.OrderByDescending(item => item.UsedSpace).ToList(),
             "totalquota" => query.SortOrder == "asc"
-                ? sortBuilder.Ascending(q => q.TotalQuota).Build()
-                : sortBuilder.Descending(q => q.TotalQuota).Build(),
+                ? allItems.OrderBy(item => item.TotalQuota).ToList()
+                : allItems.OrderByDescending(item => item.TotalQuota).ToList(),
+            "usagepercentage" => query.SortOrder == "asc"
+                ? allItems.OrderBy(item => item.UsagePercentage).ToList()
+                : allItems.OrderByDescending(item => item.UsagePercentage).ToList(),
             "filecount" => query.SortOrder == "asc"
-                ? sortBuilder.Ascending(q => q.FileCount).Build()
-                : sortBuilder.Descending(q => q.FileCount).Build(),
+                ? allItems.OrderBy(item => item.FileCount).ToList()
+                : allItems.OrderByDescending(item => item.FileCount).ToList(),
             "createdat" => query.SortOrder == "asc"
-                ? sortBuilder.Ascending(q => q.CreatedAt).Build()
-                : sortBuilder.Descending(q => q.CreatedAt).Build(),
+                ? allItems.OrderBy(item => item.CreatedAt).ToList()
+                : allItems.OrderByDescending(item => item.CreatedAt).ToList(),
             "lastcalculatedat" => query.SortOrder == "asc"
-                ? sortBuilder.Ascending(q => q.LastCalculatedAt).Build()
-                : sortBuilder.Descending(q => q.LastCalculatedAt).Build(),
-            _ => sortBuilder.Descending(q => q.UsedSpace).Build() // 默认按使用量降序
+                ? allItems.OrderBy(item => item.LastCalculatedAt).ToList()
+                : allItems.OrderByDescending(item => item.LastCalculatedAt).ToList(),
+            _ => allItems.OrderByDescending(item => item.UsedSpace).ToList() // 默认按使用量降序
         };
 
-        // 执行分页查询
-        var (quotas, total) = await _quotaFactory.FindPagedAsync(filter, sort, query.Page, query.PageSize);
-
-        // 转换为列表项
-        var items = quotas.Select(q => new StorageQuotaListItem
-        {
-            UserId = q.UserId,
-            Username = q.UserId, // TODO: 从用户服务获取用户名
-            DisplayName = q.UserId, // TODO: 从用户服务获取显示名称
-            Email = "", // TODO: 从用户服务获取邮箱
-            TotalQuota = q.TotalQuota,
-            UsedSpace = q.UsedSpace,
-            FileCount = q.FileCount,
-            LastCalculatedAt = q.LastCalculatedAt,
-            CreatedAt = q.CreatedAt,
-            UpdatedAt = q.UpdatedAt,
-            Status = "Active", // TODO: 根据实际状态设置
-            WarningLevel = GetWarningLevel(q.UsedSpace, q.TotalQuota)
-        }).ToList();
+        // 应用分页
+        var total = sortedItems.Count;
+        var pagedItems = sortedItems
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToList();
 
         return new PagedResult<StorageQuotaListItem>
         {
-            Data = items,
-            Total = (int)total,
+            Data = pagedItems,
+            Total = total,
             Page = query.Page,
             PageSize = query.PageSize
         };

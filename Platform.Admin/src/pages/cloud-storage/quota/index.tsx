@@ -184,29 +184,9 @@ const CloudStorageQuotaPage: React.FC = () => {
             if (response.success && response.data) {
                 // 转换后端数据格式到前端期望的格式
                 const rawData = response.data.data || [];
+                const totalCount = response.data.total || 0; // 使用后端返回的真实总数
                 
-                // 按 userId 去重，保留每个用户最新更新的记录（updatedAt 最新的）
-                const uniqueDataMap = new Map<string, any>();
-                rawData.forEach((item: any) => {
-                    const userId = item.userId;
-                    const existing = uniqueDataMap.get(userId);
-                    
-                    if (!existing) {
-                        uniqueDataMap.set(userId, item);
-                    } else {
-                        // 比较 updatedAt，保留更新日期更近的记录
-                        const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
-                        const currentTime = new Date(item.updatedAt || item.createdAt || 0).getTime();
-                        
-                        if (currentTime > existingTime) {
-                            uniqueDataMap.set(userId, item);
-                        }
-                    }
-                });
-                
-                const uniqueData = Array.from(uniqueDataMap.values());
-                
-                const transformedData = uniqueData.map((item: any) => {
+                const transformedData = rawData.map((item: any) => {
                     // 处理用户显示名称：优先使用 displayName，如果 displayName 是用户ID格式，尝试使用 userDisplayName
                     let userDisplayName = item.userDisplayName || item.displayName;
                     // 如果 displayName 看起来像用户ID（24位十六进制），且与 username 相同，可能需要特殊处理
@@ -221,7 +201,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                     return {
                         ...item,
                         // 字段映射
-                        id: item.id || `${item.userId}_${item.updatedAt || item.createdAt}`, // 使用 userId + 时间戳作为唯一 id
+                        id: item.id || item.userId, // 使用 userId 作为唯一 id
                         userDisplayName: userDisplayName,
                         username: item.username || item.userId || '-', // username 保持原值，如果为空则使用 userId
                         usedQuota: item.usedQuota !== undefined ? item.usedQuota : (item.usedSpace || 0),
@@ -233,7 +213,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 
                 return {
                     data: transformedData,
-                    total: transformedData.length, // 使用去重后的数量
+                    total: totalCount, // 使用后端返回的真实总数
                     success: true,
                 };
             }
@@ -484,17 +464,20 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '用户',
             dataIndex: 'userDisplayName',
             key: 'userDisplayName',
+            width: 200,
+            ellipsis: {
+                showTitle: true, // 鼠标悬停时显示完整内容
+            },
             render: (text: string, record: StorageQuota) => {
-                // 如果显示名称是用户ID格式，显示为"用户ID: xxx"
-                const displayText = /^[0-9a-f]{24}$/i.test(text) && text === record.username
-                    ? `用户ID: ${text.substring(0, 8)}...`
-                    : (text || '未知用户');
+                // 显示完整的用户显示名称
+                const displayText = text || record.username || record.userId || '未知用户';
                 return (
                 <Space>
                     <UserOutlined />
                     <a
                         onClick={() => handleView(record)}
                         style={{ cursor: 'pointer' }}
+                        title={displayText} // 添加 title 属性以便悬停时查看完整内容
                     >
                             {displayText}
                     </a>
@@ -506,12 +489,18 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '用户名',
             dataIndex: 'username',
             key: 'username',
-            width: 120,
+            width: 180,
+            ellipsis: {
+                showTitle: true, // 鼠标悬停时显示完整内容
+            },
             render: (text: string, record: StorageQuota) => {
-                // 如果用户名是用户ID格式，显示简短格式
-                return /^[0-9a-f]{24}$/i.test(text)
-                    ? `${text.substring(0, 8)}...`
-                    : (text || '-');
+                // 显示完整的用户名
+                const displayText = text || record.userId || '-';
+                return (
+                    <span title={displayText}>
+                        {displayText}
+                    </span>
+                );
             },
         },
         {

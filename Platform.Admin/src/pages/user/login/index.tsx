@@ -222,7 +222,7 @@ const Login: React.FC = () => {
         return;
       }
 
-      // 如果失败，处理业务逻辑（显示验证码），然后抛出错误让全局错误处理显示错误提示
+      // 如果失败，处理业务逻辑（显示验证码），然后显示友好的错误提示
       const errorCode = response.errorCode;
       const errorMsg = response.errorMessage || '登录失败，请重试！';
       
@@ -242,9 +242,24 @@ const Login: React.FC = () => {
         }
       }
       
-      // 抛出错误，由全局错误处理统一显示错误提示
-      throw new Error(errorMsg);
+      // 设置错误状态（用于表单显示），不抛出错误，避免显示技术性错误页面
+      setUserLoginState({ status: 'error', errorMessage: errorMsg });
+      // 显示友好的错误提示
+      message.error(errorMsg);
+      
+      // 创建一个带有错误信息的错误对象，但不抛出，避免触发全局错误处理器的技术性错误页面
+      const loginError: any = new Error(errorMsg);
+      loginError.name = 'BizError';
+      loginError.info = { errorCode, errorMessage: errorMsg };
+      // 标记为已处理，避免全局错误处理器重复处理
+      loginError.skipGlobalHandler = true;
+      return;
     } catch (error: any) {
+      // 如果错误已经标记为已处理，不再处理
+      if (error?.skipGlobalHandler) {
+        return;
+      }
+
       // 从错误对象中提取 errorCode
       // UmiJS 的 errorThrower 会将 errorCode 存储在 error.info 中
       const errorCode = 
@@ -279,9 +294,8 @@ const Login: React.FC = () => {
         }
       }
       
-      // 不再调用 message.error，错误提示已由全局错误处理统一显示
-      // 重新抛出错误，确保全局错误处理能够处理
-      throw error;
+      // 显示友好的错误提示，不再抛出错误，避免显示技术性错误页面
+      message.error(errorMsg);
     }
   };
   const { status, type: loginType } = userLoginState;

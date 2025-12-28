@@ -76,6 +76,12 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.passwordBook' })}</strong>
             </li>
             <li>
+              <strong>云存储管理</strong> - 文件上传/下载、文件夹管理、文件搜索、回收站管理
+            </li>
+            <li>
+              <strong>存储配额管理</strong> - 配额设置与监控、配额警告、企业存储统计、使用量排行榜
+            </li>
+            <li>
               <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.apiDocs' })}</strong>
             </li>
             <li>
@@ -199,6 +205,12 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </li>
               <li>
                 <strong>密码本管理</strong> - AES-256-GCM 加密存储、密码生成器、强度检测、数据导出
+              </li>
+              <li>
+                <strong>云存储管理</strong> - 文件上传/下载、文件夹管理、文件搜索、回收站管理
+              </li>
+              <li>
+                <strong>存储配额管理</strong> - 配额设置与监控、配额警告、企业存储统计、使用量排行榜
               </li>
             </ul>
 
@@ -931,6 +943,63 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           <Paragraph>
             <Text type="secondary">
               💡 提示：密码本功能采用用户级加密密钥，确保数据安全。所有密码操作都有审计日志记录（敏感信息已过滤）。
+            </Text>
+          </Paragraph>
+
+          <Title level={5}>☁️ 云存储管理</Title>
+          <Paragraph>
+            提供企业级云存储解决方案，支持文件上传、下载、管理和协作，基于 MongoDB GridFS 存储文件。
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>文件管理</strong> - 文件上传/下载、文件夹创建与管理、文件重命名/移动/复制/删除
+            </li>
+            <li>
+              <strong>文件搜索</strong> - 根据文件名、类型、修改时间等条件搜索文件
+            </li>
+            <li>
+              <strong>回收站</strong> - 删除的文件移动到回收站，保留30天后自动清理
+            </li>
+            <li>
+              <strong>文件预览</strong> - 支持多种文件类型的在线预览（图片、文档、视频等）
+            </li>
+            <li>
+              <strong>多租户隔离</strong> - 每个企业的文件数据完全隔离，确保数据安全
+            </li>
+          </ul>
+          <Paragraph>
+            <Text type="secondary">
+              💡 提示：云存储功能基于 MongoDB GridFS，支持大文件上传和存储。所有文件操作都有审计日志记录。
+            </Text>
+          </Paragraph>
+
+          <Title level={5}>📊 存储配额管理</Title>
+          <Paragraph>
+            提供存储配额设置、监控和统计功能，帮助管理员管理用户存储空间使用情况。
+          </Paragraph>
+          <ul>
+            <li>
+              <strong>配额设置</strong> - 为用户设置存储配额（默认10GB），支持批量设置
+            </li>
+            <li>
+              <strong>使用统计</strong> - 实时统计用户存储使用量、文件数量、按文件类型统计
+            </li>
+            <li>
+              <strong>配额警告</strong> - 当使用量超过80%时自动警告，提醒用户清理空间
+            </li>
+            <li>
+              <strong>企业统计</strong> - 查看企业整体存储使用情况、用户分布统计
+            </li>
+            <li>
+              <strong>使用量排行</strong> - 查看存储使用量排行榜，识别大存储用户
+            </li>
+            <li>
+              <strong>配额重新计算</strong> - 手动触发存储使用量重新计算，确保统计准确
+            </li>
+          </ul>
+          <Paragraph>
+            <Text type="secondary">
+              💡 提示：存储配额管理功能与云存储功能紧密集成，上传文件时自动检查配额，超出配额时禁止上传。
             </Text>
           </Paragraph>
         </div>

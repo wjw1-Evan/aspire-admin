@@ -167,6 +167,37 @@ public class StorageQuotaController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 删除用户存储配额（恢复为默认配额）
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <returns>恢复后的配额信息</returns>
+    [HttpDelete("user/{userId}")]
+    [RequireMenu("cloud-storage-quota")]
+    public async Task<IActionResult> DeleteUserQuota(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return ValidationError("用户ID不能为空");
+
+        try
+        {
+            // 恢复为默认配额（10GB）
+            const long defaultQuota = 10L * 1024 * 1024 * 1024;
+            var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota);
+            LogOperation("DeleteUserQuota", userId, new { defaultQuota });
+            return Success(quota, "配额已恢复为默认值");
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            LogError("DeleteUserQuota", ex, userId);
+            return ServerError("删除配额失败，请稍后重试");
+        }
+    }
+
     #endregion
 
     #region 使用统计

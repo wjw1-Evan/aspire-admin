@@ -242,17 +242,13 @@ const Login: React.FC = () => {
         }
       }
       
-      // 设置错误状态（用于表单显示），不抛出错误，避免显示技术性错误页面
+      // 设置错误状态（用于表单显示）
       setUserLoginState({ status: 'error', errorMessage: errorMsg });
       // 显示友好的错误提示
       message.error(errorMsg);
       
-      // 创建一个带有错误信息的错误对象，但不抛出，避免触发全局错误处理器的技术性错误页面
-      const loginError: any = new Error(errorMsg);
-      loginError.name = 'BizError';
-      loginError.info = { errorCode, errorMessage: errorMsg };
-      // 标记为已处理，避免全局错误处理器重复处理
-      loginError.skipGlobalHandler = true;
+      // 登录错误已在当前函数中处理，直接返回，不抛出错误
+      // 避免触发全局错误处理器的技术性错误页面
       return;
     } catch (error: any) {
       // 如果错误已经标记为已处理，不再处理

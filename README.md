@@ -4,8 +4,8 @@
 
 ## ✨ 关键特性
 
-- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集、SSE 实时聊天、GridFS 附件存储与下载代理、AI 智能回复服务编排、任务与项目管理、IoT 平台、规则管理与 MCP 集成、密码本管理（AES-256-GCM 加密存储）。
-- **管理后台**：React 19 + Ant Design 6 原生组件、动态菜单、企业与成员管理、加入申请审批、用户活动日志、任务管理、项目管理、IoT 平台（网关/设备/数据点/事件告警）、规则管理、密码本管理、帮助中心、国际化与统一错误处理。
+- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集、SSE 实时聊天、GridFS 附件存储与下载代理、AI 智能回复服务编排、任务与项目管理、IoT 平台、规则管理与 MCP 集成、密码本管理（AES-256-GCM 加密存储）、云存储与存储配额管理。
+- **管理后台**：React 19 + Ant Design 6 原生组件、动态菜单、企业与成员管理、加入申请审批、用户活动日志、任务管理、项目管理、IoT 平台（网关/设备/数据点/事件告警）、规则管理、密码本管理、云存储与存储配额管理、帮助中心、国际化与统一错误处理。
 - **移动应用**：Expo Router 导航、深色/浅色主题切换、认证守卫、企业切换、密码修改与基础组件库，内置实时聊天、附件上传 / 预览、AI 智能回复与附近的人推荐体验。
 - **基础设施**：Aspire AppHost 服务编排、YARP 统一网关、Scalar API 文档、MongoDB + Mongo Express、健康检查与可观察性。
 
@@ -35,6 +35,7 @@ Platform/
 - **IoT 平台**：网关管理、设备管理、数据点管理、数据上报与查询、事件告警、设备状态监控、平台统计与数据流监控。
 - **规则管理**：规则 CRUD、规则执行、MCP（Model Context Protocol）集成、自动化工作流编排。
 - **密码本管理**：密码条目创建、更新、查询、删除（软删除）、分类与标签管理、密码加密存储（AES-256-GCM）、密码强度检测、密码生成器、数据导出、统计信息。密码使用用户级密钥加密，确保数据安全。
+- **云存储与存储配额**：文件上传/下载、文件夹管理、文件搜索、回收站管理、存储配额设置与监控、配额警告、企业存储统计、存储使用量排行榜。基于 MongoDB GridFS 存储文件，支持多租户数据隔离。
 - **实时通信**：基于 SSE（Server-Sent Events）实现实时消息推送，`ChatSseConnectionManager` 管理用户连接，`ChatBroadcaster` 负责消息广播，支持流式 AI 回复、消息/会话同步、已读状态推送等。
 - **运营能力**：通知中心、统一通知服务、系统维护脚本（补全缺失关联、数据校验）、系统资源监控 (`/api/SystemMonitor/resources`)。
 - **审计与日志**：`ActivityLogMiddleware` 捕获请求轨迹，`UserActivityLog` 记录 CRUD 审计操作，所有异常由统一响应中间件处理。
@@ -167,6 +168,13 @@ Platform/
 
 - [密码本安全审计报告](docs/security/PASSWORD-BOOK-SECURITY-AUDIT.md)
 
+## ☁️ 云存储与存储配额管理
+
+- **文件管理**：文件上传/下载、文件夹创建与管理、文件重命名/移动/复制/删除、文件搜索与筛选、回收站管理（30天保留期）。
+- **存储配额**：用户存储配额设置（默认10GB）、实时存储使用量统计、配额警告（80%阈值）、企业存储统计、存储使用量排行榜、批量配额设置、配额使用量重新计算。
+- **技术实现**：基于 MongoDB GridFS 存储文件，支持大文件上传、文件预览、缩略图生成、多租户数据隔离。
+- **权限控制**：通过 `cloud-storage` 和 `cloud-storage-quota` 菜单权限控制访问。
+
 ## 🧩 多租户与权限模型
 
 - **企业隔离**：实现 `IMultiTenant` 的实体（角色、通知等）自动附加 `CompanyId` 过滤；`AppUser` 通过 `CurrentCompanyId` + `UserCompany` 多对多关联。
@@ -191,8 +199,8 @@ Platform/
 
 ```text
 Platform.ApiService/
-├── Controllers/      # Auth、User、Company、Menu、JoinRequest、Task、Project、IoT、Rule、Chat（ChatMessages、ChatSessions、ChatHistory、ChatSse）、PasswordBook、Maintenance、Monitor 等控制器
-├── Services/         # 业务服务层与自动注册（含 ChatService、ChatBroadcaster、ChatSseConnectionManager、PasswordBookService、EncryptionService）
+├── Controllers/      # Auth、User、Company、Menu、JoinRequest、Task、Project、IoT、Rule、Chat（ChatMessages、ChatSessions、ChatHistory、ChatSse）、PasswordBook、CloudStorage、StorageQuota、Maintenance、Monitor 等控制器
+├── Services/         # 业务服务层与自动注册（含 ChatService、ChatBroadcaster、ChatSseConnectionManager、PasswordBookService、EncryptionService、CloudStorageService、StorageQuotaService）
 ├── Models/           # 实体与 DTO（含 Response 模型）
 ├── Middleware/       # 活动日志、统一响应
 ├── Extensions/       # 数据过滤、分页、自动注册等扩展方法
@@ -201,7 +209,7 @@ Platform.ApiService/
 Platform.Admin/
 ├── config/           # UmiJS 配置、路由、代理
 ├── src/
-│   ├── pages/        # 用户管理、角色管理、企业设置、加入申请、活动日志、任务管理、项目管理、IoT 平台、规则管理、密码本管理等
+│   ├── pages/        # 用户管理、角色管理、企业设置、加入申请、活动日志、任务管理、项目管理、IoT 平台、规则管理、密码本管理、云存储、存储配额管理等
 │   ├── components/   # 复用组件、帮助弹窗、AI 助手、统一通知中心等
 │   ├── services/     # API 封装（自动刷新 token）
 │   ├── hooks/        # 自定义 Hooks（如 useSseConnection）

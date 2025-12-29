@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -92,8 +93,12 @@ public class StorageQuotaController : BaseApiController
 
         try
         {
-            var quota = await _storageQuotaService.SetUserQuotaAsync(userId, request.TotalQuota);
-            LogOperation("SetUserQuota", userId, new { request.TotalQuota });
+            var quota = await _storageQuotaService.SetUserQuotaAsync(
+                userId,
+                request.TotalQuota,
+                request.WarningThreshold,
+                request.IsEnabled);
+            LogOperation("SetUserQuota", userId, new { request.TotalQuota, request.WarningThreshold, request.IsEnabled });
             return Success(quota, "配额设置成功");
         }
         catch (ArgumentException ex)
@@ -183,7 +188,7 @@ public class StorageQuotaController : BaseApiController
         {
             // 恢复为默认配额（10GB）
             const long defaultQuota = 10L * 1024 * 1024 * 1024;
-            var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota);
+            var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota, 80, true);
             LogOperation("DeleteUserQuota", userId, new { defaultQuota });
             return Success(quota, "配额已恢复为默认值");
         }
@@ -235,6 +240,7 @@ public class StorageQuotaController : BaseApiController
     /// <param name="sortOrder">排序方向</param>
     /// <param name="keyword">搜索关键词</param>
     /// <param name="companyId">企业ID（可选）</param>
+    /// <param name="isEnabled">启用状态筛选（可选）</param>
     /// <returns>分页的存储配额列表</returns>
     [HttpGet("list")]
     [RequireMenu("cloud-storage-quota")]
@@ -244,7 +250,8 @@ public class StorageQuotaController : BaseApiController
         [FromQuery] string sortBy = "usedQuota",
         [FromQuery] string sortOrder = "desc",
         [FromQuery] string? keyword = null,
-        [FromQuery] string? companyId = null)
+        [FromQuery] string? companyId = null,
+        [FromQuery] bool? isEnabled = null)
     {
         // 验证分页参数
         if (page < 1 || page > 10000)
@@ -270,7 +277,8 @@ public class StorageQuotaController : BaseApiController
                 SortBy = sortBy,
                 SortOrder = sortOrder,
                 Keyword = keyword,
-                CompanyId = companyId
+                CompanyId = companyId,
+                IsEnabled = isEnabled
             };
 
             var result = await _storageQuotaService.GetStorageQuotaListAsync(query);
@@ -467,6 +475,13 @@ public class SetQuotaRequest
 {
     /// <summary>总配额（字节）</summary>
     public long TotalQuota { get; set; }
+
+    /// <summary>警告阈值（百分比，0-100，可选）</summary>
+    [Range(0, 100)]
+    public int? WarningThreshold { get; set; }
+
+    /// <summary>是否启用（可选）</summary>
+    public bool? IsEnabled { get; set; }
 }
 
 /// <summary>

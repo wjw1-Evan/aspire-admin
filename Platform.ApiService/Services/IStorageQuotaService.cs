@@ -19,8 +19,10 @@ public interface IStorageQuotaService
     /// </summary>
     /// <param name="userId">用户ID</param>
     /// <param name="totalQuota">总配额（字节）</param>
+    /// <param name="warningThreshold">警告阈值（百分比，0-100，可选）</param>
+    /// <param name="isEnabled">是否启用（可选）</param>
     /// <returns>更新后的配额信息</returns>
-    Task<StorageQuota> SetUserQuotaAsync(string userId, long totalQuota);
+    Task<StorageQuota> SetUserQuotaAsync(string userId, long totalQuota, int? warningThreshold = null, bool? isEnabled = null);
 
     /// <summary>
     /// 更新用户存储使用量
@@ -152,6 +154,12 @@ public class UserQuotaSetting
 
     /// <summary>总配额（字节）</summary>
     public long TotalQuota { get; set; } = 0;
+
+    /// <summary>警告阈值（百分比，0-100，可选）</summary>
+    public int? WarningThreshold { get; set; }
+
+    /// <summary>是否启用（可选）</summary>
+    public bool? IsEnabled { get; set; }
 }
 
 /// <summary>
@@ -260,6 +268,9 @@ public class StorageQuotaListQuery
 
     /// <summary>企业ID</summary>
     public string? CompanyId { get; set; }
+
+    /// <summary>是否启用（筛选）</summary>
+    public bool? IsEnabled { get; set; }
 }
 
 /// <summary>
@@ -293,6 +304,12 @@ public class StorageQuotaListItem
 
     /// <summary>文件数量</summary>
     public long FileCount { get; set; } = 0;
+
+    /// <summary>警告阈值（百分比，0-100）</summary>
+    public int WarningThreshold { get; set; } = 80;
+
+    /// <summary>是否启用</summary>
+    public bool IsEnabled { get; set; } = true;
 
     /// <summary>最后计算时间</summary>
     public DateTime LastCalculatedAt { get; set; }

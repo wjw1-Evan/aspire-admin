@@ -83,7 +83,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 设置用户存储配额
     /// </summary>
-    public async Task<StorageQuota> SetUserQuotaAsync(string userId, long totalQuota)
+    public async Task<StorageQuota> SetUserQuotaAsync(string userId, long totalQuota, int? warningThreshold = null, bool? isEnabled = null)
     {
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
@@ -91,13 +91,27 @@ public class StorageQuotaService : IStorageQuotaService
         if (totalQuota < 0)
             throw new ArgumentException("配额不能为负数", nameof(totalQuota));
 
+        if (warningThreshold.HasValue && (warningThreshold.Value < 0 || warningThreshold.Value > 100))
+            throw new ArgumentException("警告阈值必须在0-100之间", nameof(warningThreshold));
+
         var quota = await GetOrCreateUserQuotaAsync(userId);
 
         var updateBuilder = _quotaFactory.CreateUpdateBuilder();
-        var update = updateBuilder
+        updateBuilder
             .Set(q => q.TotalQuota, totalQuota)
-            .Set(q => q.LastCalculatedAt, DateTime.UtcNow)
-            .Build();
+            .Set(q => q.LastCalculatedAt, DateTime.UtcNow);
+
+        if (warningThreshold.HasValue)
+        {
+            updateBuilder.Set(q => q.WarningThreshold, warningThreshold.Value);
+        }
+
+        if (isEnabled.HasValue)
+        {
+            updateBuilder.Set(q => q.IsEnabled, isEnabled.Value);
+        }
+
+        var update = updateBuilder.Build();
 
         var filterBuilder = _quotaFactory.CreateFilterBuilder();
         var updatedQuota = await _quotaFactory.FindOneAndUpdateAsync(
@@ -107,7 +121,11 @@ public class StorageQuotaService : IStorageQuotaService
         if (updatedQuota == null)
             throw new InvalidOperationException("更新配额失败");
 
-        _logger.LogInformation("Updated storage quota for user {UserId} to {TotalQuota} bytes", userId, totalQuota);
+        _logger.LogInformation("Updated storage quota for user {UserId} to {TotalQuota} bytes (WarningThreshold: {WarningThreshold}, IsEnabled: {IsEnabled})",
+            userId,
+            totalQuota,
+            warningThreshold ?? updatedQuota.WarningThreshold,
+            isEnabled ?? updatedQuota.IsEnabled);
         return updatedQuota;
     }
 
@@ -280,7 +298,7 @@ public class StorageQuotaService : IStorageQuotaService
         {
             try
             {
-                await SetUserQuotaAsync(setting.UserId, setting.TotalQuota);
+                await SetUserQuotaAsync(setting.UserId, setting.TotalQuota, setting.WarningThreshold, setting.IsEnabled);
                 result.SuccessIds.Add(setting.UserId);
                 result.SuccessCount++;
             }
@@ -617,10 +635,12 @@ public class StorageQuotaService : IStorageQuotaService
                 TotalQuota = hasQuota ? quota!.TotalQuota : DefaultQuota,
                 UsedSpace = usedSpace,
                 FileCount = fileCount,
+                WarningThreshold = hasQuota ? quota!.WarningThreshold : 80,
+                IsEnabled = hasQuota ? quota!.IsEnabled : true,
                 LastCalculatedAt = hasQuota ? quota!.LastCalculatedAt : DateTime.UtcNow,
                 CreatedAt = hasQuota ? quota!.CreatedAt : (user.CreatedAt != default(DateTime) ? user.CreatedAt : DateTime.UtcNow),
                 UpdatedAt = hasQuota ? quota!.UpdatedAt : (user.UpdatedAt != default(DateTime) ? user.UpdatedAt : DateTime.UtcNow),
-                Status = "Active",
+                Status = hasQuota ? (quota!.IsEnabled ? "Active" : "Disabled") : "Active",
                 WarningLevel = hasQuota ? GetWarningLevel(quota!.UsedSpace, quota!.TotalQuota) : null
             };
         }).ToList();
@@ -635,6 +655,14 @@ public class StorageQuotaService : IStorageQuotaService
                 (item.DisplayName != null && item.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
                 (item.Email != null && item.Email.Contains(keyword, StringComparison.OrdinalIgnoreCase))
             ).ToList();
+        }
+
+        // 应用启用状态过滤
+        if (query.IsEnabled.HasValue)
+        {
+            allItems = allItems
+                .Where(item => item.IsEnabled == query.IsEnabled.Value)
+                .ToList();
         }
 
         // 应用排序

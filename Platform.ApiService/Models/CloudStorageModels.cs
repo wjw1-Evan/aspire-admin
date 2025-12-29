@@ -248,6 +248,16 @@ public class StorageQuota : MultiTenantEntity, IEntity, ISoftDeletable, ITimesta
     [BsonElement("fileCount")]
     public long FileCount { get; set; } = 0;
 
+    /// <summary>警告阈值（百分比，0-100）</summary>
+    [BsonElement("warningThreshold")]
+    [BsonDefaultValue(80)]
+    public int WarningThreshold { get; set; } = 80;
+
+    /// <summary>是否启用</summary>
+    [BsonElement("isEnabled")]
+    [BsonDefaultValue(true)]
+    public bool IsEnabled { get; set; } = true;
+
     /// <summary>最后计算时间</summary>
     [BsonElement("lastCalculatedAt")]
     public DateTime LastCalculatedAt { get; set; } = DateTime.UtcNow;

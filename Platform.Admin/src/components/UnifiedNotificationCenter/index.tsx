@@ -17,14 +17,19 @@ dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
 
 interface UnifiedNotificationCenterProps {
-  visible: boolean;
+  /** antd v5 推荐使用的受控开关 */
+  open?: boolean;
+  /** 兼容旧命名，等同于 open */
+  visible?: boolean;
   onClose: () => void;
 }
 
 const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
+  open,
   visible,
   onClose,
 }) => {
+  const isOpen = open ?? visible ?? false;
   const intl = useIntl();
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<UnifiedNotificationItem[]>([]);
@@ -67,7 +72,7 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
   };
 
   useEffect(() => {
-    if (!visible) return;
+    if (!isOpen) return;
     fetchUnreadStats();
     fetchUnifiedNotifications();
 
@@ -80,7 +85,7 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
     return () => {
       clearInterval(intervalId);
     };
-  }, [visible, page, pageSize]);
+  }, [isOpen, page, pageSize]);
 
 
 
@@ -189,7 +194,7 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
       title={<Space size="small"><span>{t('pages.unifiedNotificationCenter.title', '通知中心')}</span><Badge count={unreadTotal} size="small" /></Space>}
       placement="right"
       onClose={onClose}
-      open={visible}
+      open={isOpen}
       size={500}
       styles={{ body: { padding: 8, background: '#fafafa' } }}
     >

@@ -56,7 +56,7 @@ public class StorageQuotaService : IStorageQuotaService
             .Build();
 
         var allFiles = await _fileItemFactory.FindAsync(fileFilter);
-        
+
         // 过滤掉 CreatedBy 为空的文件（确保统计准确）
         var userFiles = allFiles
             .Where(f => !string.IsNullOrEmpty(f.CreatedBy) && f.CreatedBy == targetUserId)
@@ -498,7 +498,7 @@ public class StorageQuotaService : IStorageQuotaService
         var userFilter = userFilterBuilder
             .Equal(u => u.CurrentCompanyId, currentCompanyId)
             .Build();
-        
+
         var users = await _userFactory.FindAsync(userFilter);
 
         // 验证用户名唯一性（调试用）
@@ -507,7 +507,7 @@ public class StorageQuotaService : IStorageQuotaService
             .GroupBy(u => u.Username)
             .Where(g => g.Count() > 1)
             .ToList();
-        
+
         if (usernameGroups.Any())
         {
             foreach (var group in usernameGroups)
@@ -523,7 +523,7 @@ public class StorageQuotaService : IStorageQuotaService
         var usersWithEmptyUsername = users
             .Where(u => string.IsNullOrWhiteSpace(u.Username))
             .ToList();
-        
+
         if (usersWithEmptyUsername.Any())
         {
             var emptyUsernameIds = string.Join(", ", usersWithEmptyUsername.Select(u => u.Id));
@@ -536,7 +536,7 @@ public class StorageQuotaService : IStorageQuotaService
         var quotaFilterBuilder = _quotaFactory.CreateFilterBuilder();
         var quotaFilter = quotaFilterBuilder.Build(); // 多租户过滤会自动应用
         var quotas = await _quotaFactory.FindAsync(quotaFilter);
-        
+
         // 处理重复的用户ID：如果有多个配额记录对应同一个用户，保留最新的（UpdatedAt最大的）
         var quotaDict = quotas
             .GroupBy(q => q.UserId)
@@ -549,7 +549,7 @@ public class StorageQuotaService : IStorageQuotaService
         var userIds = users.Select(u => u.Id ?? string.Empty).Where(id => !string.IsNullOrEmpty(id)).ToList();
         var fileCountDict = new Dictionary<string, int>();
         var usedSpaceDict = new Dictionary<string, long>();
-        
+
         if (userIds.Any())
         {
             // 查询所有用户的活跃文件（按用户分组统计）
@@ -560,15 +560,15 @@ public class StorageQuotaService : IStorageQuotaService
                 .Equal(f => f.Type, FileItemType.File)
                 .Equal(f => f.Status, FileStatus.Active)
                 .Build();
-            
+
             var allFiles = await _fileItemFactory.FindAsync(fileFilter);
-            
+
             // 按 CreatedBy 分组，过滤掉 CreatedBy 为空的文件
             var fileGroups = allFiles
                 .Where(f => !string.IsNullOrEmpty(f.CreatedBy))
                 .GroupBy(f => f.CreatedBy!)
                 .ToList();
-            
+
             fileCountDict = fileGroups.ToDictionary(g => g.Key, g => g.Count());
             usedSpaceDict = fileGroups.ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
         }
@@ -580,12 +580,12 @@ public class StorageQuotaService : IStorageQuotaService
         {
             var userId = user.Id ?? string.Empty;
             var hasQuota = quotaDict.TryGetValue(userId, out var quota);
-            
+
             // 始终使用实时统计的文件数量和使用空间，确保数据准确性（与统计API保持一致）
             // 实时统计是最准确的，配额记录中的数据可能已经过时
             var fileCount = fileCountDict.TryGetValue(userId, out var count) ? count : 0;
             var usedSpace = usedSpaceDict.TryGetValue(userId, out var space) ? space : 0;
-            
+
             // 确保用户名唯一显示
             string username;
             if (string.IsNullOrWhiteSpace(user.Username))
@@ -597,7 +597,7 @@ public class StorageQuotaService : IStorageQuotaService
             else
             {
                 username = user.Username;
-                
+
                 // 检查是否有重复的用户名
                 if (usernameUsageCount.ContainsKey(username))
                 {
@@ -616,16 +616,16 @@ public class StorageQuotaService : IStorageQuotaService
                         username = $"{user.Username}({suffix})";
                     }
                 }
-                
+
                 // 记录这个用户名已被使用
                 usernameUsageCount[username] = usernameUsageCount.GetValueOrDefault(username, 0) + 1;
             }
-            
+
             // 处理显示名称
-            var displayName = !string.IsNullOrWhiteSpace(user.Name) 
-                ? user.Name 
+            var displayName = !string.IsNullOrWhiteSpace(user.Name)
+                ? user.Name
                 : (!string.IsNullOrWhiteSpace(user.Username) ? user.Username : username);
-            
+
             return new StorageQuotaListItem
             {
                 UserId = userId,

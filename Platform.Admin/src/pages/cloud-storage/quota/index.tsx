@@ -271,15 +271,25 @@ const CloudStorageQuotaPage: React.FC = () => {
         }
     }, [error]);
 
+    const bytesToGB = useCallback((bytes?: number) => {
+        if (bytes === undefined || bytes === null) return 0;
+        return Number((bytes / (1024 ** 3)).toFixed(2));
+    }, []);
+
+    const gbToBytes = useCallback((gb?: number) => {
+        if (gb === undefined || gb === null) return undefined;
+        return Math.round(gb * 1024 * 1024 * 1024);
+    }, []);
+
     const handleEdit = useCallback((quota: StorageQuota) => {
         setEditingQuota(quota);
         editQuotaForm.setFieldsValue({
-            totalQuota: quota.totalQuota,
+            totalQuota: bytesToGB(quota.totalQuota),
             warningThreshold: quota.warningThreshold,
             isEnabled: quota.isEnabled,
         });
         setEditQuotaVisible(true);
-    }, [editQuotaForm]);
+    }, [editQuotaForm, bytesToGB]);
 
     const handleDelete = useCallback(async (quota: StorageQuota) => {
         try {
@@ -311,7 +321,12 @@ const CloudStorageQuotaPage: React.FC = () => {
         if (!editingQuota) return;
 
         try {
-            await updateUserQuota(editingQuota.userId, values);
+            const payload: UpdateQuotaRequest = {
+                ...values,
+                totalQuota: values.totalQuota !== undefined ? gbToBytes(values.totalQuota) : undefined,
+            };
+
+            await updateUserQuota(editingQuota.userId, payload);
             success('更新配额成功');
             setEditQuotaVisible(false);
             setEditingQuota(null);
@@ -321,17 +336,14 @@ const CloudStorageQuotaPage: React.FC = () => {
         } catch (err) {
             error('更新配额失败');
         }
-    }, [editingQuota, success, error, editQuotaForm, loadUsageStats]);
+    }, [editingQuota, success, error, editQuotaForm, loadUsageStats, gbToBytes]);
 
     // 批量设置配额
 
     // 格式化文件大小
     const formatFileSize = useCallback((bytes: number) => {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        if (!bytes) return '0 GB';
+        return `${(bytes / (1024 ** 3)).toFixed(2)} GB`;
     }, []);
 
     // 格式化日期时间
@@ -810,14 +822,27 @@ const CloudStorageQuotaPage: React.FC = () => {
                 >
                     <Form.Item
                         name="totalQuota"
-                        label="总配额 (字节)"
+                        label="总配额 (GB)"
                         rules={[{ required: true, message: '请输入总配额' }]}
                     >
                         <InputNumber
-                            placeholder="请输入总配额"
+                            placeholder="请输入总配额（GB）"
                             style={{ width: '100%' }}
                             min={0}
-                            formatter={(value) => value ? formatFileSize(Number(value)) : ''}
+                            formatter={(value) =>
+                                value !== undefined && value !== null && value !== ''
+                                    ? `${value} GB`
+                                    : ''
+                            }
+                            parser={(value) => {
+                                const numeric = (value || '')
+                                    .toString()
+                                    // 去掉所有非数字和小数点/负号/空格/GB字样
+                                    .replace(/[^0-9.-]/g, '')
+                                    // 去掉开头多余的点
+                                    .replace(/^\./, '');
+                                return numeric ? Number(numeric) : undefined;
+                            }}
                         />
                     </Form.Item>
                     <Form.Item

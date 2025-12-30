@@ -160,7 +160,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 // 转换后端数据格式到前端期望的格式
                 const rawData = response.data.data || [];
                 const totalCount = response.data.total || 0; // 使用后端返回的真实总数
-                
+
                 const transformedData = rawData.map((item: any) => {
                     // 处理用户显示名称：优先使用 displayName，如果 displayName 是用户ID格式，尝试使用 userDisplayName
                     let userDisplayName = item.userDisplayName || item.displayName;
@@ -172,7 +172,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                     } else {
                         userDisplayName = item.userDisplayName || item.displayName || item.username || '未知用户';
                     }
-                    
+
                     return {
                         ...item,
                         // 字段映射
@@ -185,7 +185,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                         isEnabled: item.isEnabled !== undefined ? item.isEnabled : (item.status === 'Active'),
                     };
                 });
-                
+
                 return {
                     data: transformedData,
                     total: totalCount, // 使用后端返回的真实总数
@@ -402,16 +402,16 @@ const CloudStorageQuotaPage: React.FC = () => {
                 // 显示完整的用户显示名称
                 const displayText = text || record.username || record.userId || '未知用户';
                 return (
-                <Space>
-                    <UserOutlined />
-                    <a
-                        onClick={() => handleView(record)}
-                        style={{ cursor: 'pointer' }}
-                        title={displayText} // 添加 title 属性以便悬停时查看完整内容
-                    >
+                    <Space>
+                        <UserOutlined />
+                        <a
+                            onClick={() => handleView(record)}
+                            style={{ cursor: 'pointer' }}
+                            title={displayText} // 添加 title 属性以便悬停时查看完整内容
+                        >
                             {displayText}
-                    </a>
-                </Space>
+                        </a>
+                    </Space>
                 );
             },
         },
@@ -453,8 +453,8 @@ const CloudStorageQuotaPage: React.FC = () => {
             width: 150,
             render: (_, record: StorageQuota) => {
                 // 避免除以零
-                const percentage = record.totalQuota > 0 
-                    ? Math.round((record.usedQuota / record.totalQuota) * 100) 
+                const percentage = record.totalQuota > 0
+                    ? Math.round((record.usedQuota / record.totalQuota) * 100)
                     : 0;
                 return (
                     <Progress
@@ -739,12 +739,12 @@ const CloudStorageQuotaPage: React.FC = () => {
                                         label={<Space><PieChartOutlined />使用率</Space>}
                                     >
                                         <Progress
-                                            percent={viewingQuota.totalQuota > 0 
-                                                ? Math.round((viewingQuota.usedQuota / viewingQuota.totalQuota) * 100) 
+                                            percent={viewingQuota.totalQuota > 0
+                                                ? Math.round((viewingQuota.usedQuota / viewingQuota.totalQuota) * 100)
                                                 : 0}
                                             size="small"
-                                            strokeColor={viewingQuota.totalQuota > 0 
-                                                ? getUsageColor((viewingQuota.usedQuota / viewingQuota.totalQuota) * 100) 
+                                            strokeColor={viewingQuota.totalQuota > 0
+                                                ? getUsageColor((viewingQuota.usedQuota / viewingQuota.totalQuota) * 100)
                                                 : '#52c41a'}
                                         />
                                     </Descriptions.Item>

@@ -52,7 +52,7 @@ public class StorageQuotaService : IStorageQuotaService
         var fileFilter = fileFilterBuilder
             .Equal(f => f.CreatedBy, targetUserId)
             .Equal(f => f.Type, FileItemType.File)
-            .Equal(f => f.Status, FileStatus.Active)
+            .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
             .Build();
 
         var allFiles = await _fileItemFactory.FindAsync(fileFilter);
@@ -197,7 +197,7 @@ public class StorageQuotaService : IStorageQuotaService
         // 获取企业所有文件统计
         var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
         var fileFilter = fileFilterBuilder
-            .Equal(f => f.Status, FileStatus.Active)
+            .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
             .Build();
 
         var files = await _fileItemFactory.FindAsync(fileFilter);
@@ -244,7 +244,7 @@ public class StorageQuotaService : IStorageQuotaService
         var fileFilter = fileFilterBuilder
             .Equal(f => f.CreatedBy, userId)
             .Equal(f => f.Type, FileItemType.File)
-            .Equal(f => f.Status, FileStatus.Active)
+            .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
             .Build();
 
         var userFiles = await _fileItemFactory.FindAsync(fileFilter);
@@ -537,14 +537,6 @@ public class StorageQuotaService : IStorageQuotaService
         var quotaFilter = quotaFilterBuilder.Build(); // 多租户过滤会自动应用
         var quotas = await _quotaFactory.FindAsync(quotaFilter);
 
-        // 处理重复的用户ID：如果有多个配额记录对应同一个用户，保留最新的（UpdatedAt最大的）
-        var quotaDict = quotas
-            .GroupBy(q => q.UserId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.OrderByDescending(q => q.UpdatedAt).First()
-            );
-
         // 批量查询所有用户的文件统计（实时统计，与统计API保持一致）
         var userIds = users.Select(u => u.Id ?? string.Empty).Where(id => !string.IsNullOrEmpty(id)).ToList();
         var fileCountDict = new Dictionary<string, int>();
@@ -558,7 +550,7 @@ public class StorageQuotaService : IStorageQuotaService
             var fileFilter = fileFilterBuilder
                 .In(f => f.CreatedBy, userIds)
                 .Equal(f => f.Type, FileItemType.File)
-                .Equal(f => f.Status, FileStatus.Active)
+                .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
                 .Build();
 
             var allFiles = await _fileItemFactory.FindAsync(fileFilter);
@@ -573,77 +565,104 @@ public class StorageQuotaService : IStorageQuotaService
             usedSpaceDict = fileGroups.ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
         }
 
-        // 合并用户和配额数据，为没有配额的用户创建默认记录
-        // 先创建一个字典来跟踪已使用的用户名，确保显示唯一性
+        // 合并用户和配额数据，为没有配额的用户创建默认记录；保留重复用户/配额记录
         var usernameUsageCount = new Dictionary<string, int>();
-        var allItems = users.Select(user =>
+        var allItems = new List<StorageQuotaListItem>();
+
+        string ResolveUsername(AppUser? user, string userId)
+        {
+            if (user == null || string.IsNullOrWhiteSpace(user.Username))
+            {
+                var suffix = userId.Length >= 8 ? userId[^8..] : userId;
+                return $"用户_{suffix}";
+            }
+
+            var baseUsername = user.Username;
+
+            if (usernameUsageCount.ContainsKey(baseUsername))
+            {
+                var suffix = userId.Length >= 8 ? userId[^8..] : userId;
+                return $"{baseUsername}({suffix})";
+            }
+
+            var duplicateCount = users.Count(u => u.Username == baseUsername && u.Id != user.Id);
+            if (duplicateCount > 0)
+            {
+                var suffix = userId.Length >= 8 ? userId[^8..] : userId;
+                return $"{baseUsername}({suffix})";
+            }
+
+            return baseUsername;
+        }
+
+        // 先添加已有配额的记录（可能存在重复用户ID）
+        foreach (var quota in quotas)
+        {
+            var userId = quota.UserId ?? string.Empty;
+            var user = users.FirstOrDefault(u => (u.Id ?? string.Empty) == userId);
+
+            var fileCount = fileCountDict.TryGetValue(userId, out var count) ? count : quota.FileCount;
+            var usedSpace = usedSpaceDict.TryGetValue(userId, out var space) ? space : quota.UsedSpace;
+
+            var username = ResolveUsername(user, userId);
+            usernameUsageCount[username] = usernameUsageCount.GetValueOrDefault(username, 0) + 1;
+
+            var displayName = !string.IsNullOrWhiteSpace(user?.Name)
+                ? user!.Name
+                : (!string.IsNullOrWhiteSpace(user?.Username) ? user!.Username : username);
+
+            allItems.Add(new StorageQuotaListItem
+            {
+                UserId = userId,
+                Username = username,
+                DisplayName = displayName,
+                Email = user?.Email ?? string.Empty,
+                TotalQuota = quota.TotalQuota,
+                UsedSpace = usedSpace,
+                FileCount = fileCount,
+                WarningThreshold = quota.WarningThreshold,
+                IsEnabled = quota.IsEnabled,
+                LastCalculatedAt = quota.LastCalculatedAt,
+                CreatedAt = quota.CreatedAt,
+                UpdatedAt = quota.UpdatedAt,
+                Status = quota.IsEnabled ? "Active" : "Disabled",
+                WarningLevel = GetWarningLevel(usedSpace, quota.TotalQuota)
+            });
+        }
+
+        // 再补充没有配额记录的用户（默认配额）
+        var usersWithoutQuota = users.Where(u => quotas.All(q => q.UserId != u.Id)).ToList();
+        foreach (var user in usersWithoutQuota)
         {
             var userId = user.Id ?? string.Empty;
-            var hasQuota = quotaDict.TryGetValue(userId, out var quota);
-
-            // 始终使用实时统计的文件数量和使用空间，确保数据准确性（与统计API保持一致）
-            // 实时统计是最准确的，配额记录中的数据可能已经过时
             var fileCount = fileCountDict.TryGetValue(userId, out var count) ? count : 0;
             var usedSpace = usedSpaceDict.TryGetValue(userId, out var space) ? space : 0;
 
-            // 确保用户名唯一显示
-            string username;
-            if (string.IsNullOrWhiteSpace(user.Username))
-            {
-                // 如果用户名为空，使用用户ID的后8位作为标识
-                var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
-                username = $"用户_{suffix}";
-            }
-            else
-            {
-                username = user.Username;
+            var username = ResolveUsername(user, userId);
+            usernameUsageCount[username] = usernameUsageCount.GetValueOrDefault(username, 0) + 1;
 
-                // 检查是否有重复的用户名
-                if (usernameUsageCount.ContainsKey(username))
-                {
-                    // 如果用户名重复，添加用户ID后缀以确保唯一性
-                    var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
-                    username = $"{user.Username}({suffix})";
-                }
-                else
-                {
-                    // 检查当前批次中是否有其他用户使用相同的用户名
-                    var duplicateCount = users.Count(u => u.Username == username && u.Id != user.Id);
-                    if (duplicateCount > 0)
-                    {
-                        // 如果有重复，添加用户ID后缀
-                        var suffix = userId.Length >= 8 ? userId.Substring(userId.Length - 8) : userId;
-                        username = $"{user.Username}({suffix})";
-                    }
-                }
-
-                // 记录这个用户名已被使用
-                usernameUsageCount[username] = usernameUsageCount.GetValueOrDefault(username, 0) + 1;
-            }
-
-            // 处理显示名称
             var displayName = !string.IsNullOrWhiteSpace(user.Name)
                 ? user.Name
                 : (!string.IsNullOrWhiteSpace(user.Username) ? user.Username : username);
 
-            return new StorageQuotaListItem
+            allItems.Add(new StorageQuotaListItem
             {
                 UserId = userId,
                 Username = username,
                 DisplayName = displayName,
                 Email = user.Email ?? string.Empty,
-                TotalQuota = hasQuota ? quota!.TotalQuota : DefaultQuota,
+                TotalQuota = DefaultQuota,
                 UsedSpace = usedSpace,
                 FileCount = fileCount,
-                WarningThreshold = hasQuota ? quota!.WarningThreshold : 80,
-                IsEnabled = hasQuota ? quota!.IsEnabled : true,
-                LastCalculatedAt = hasQuota ? quota!.LastCalculatedAt : DateTime.UtcNow,
-                CreatedAt = hasQuota ? quota!.CreatedAt : (user.CreatedAt != default(DateTime) ? user.CreatedAt : DateTime.UtcNow),
-                UpdatedAt = hasQuota ? quota!.UpdatedAt : (user.UpdatedAt != default(DateTime) ? user.UpdatedAt : DateTime.UtcNow),
-                Status = hasQuota ? (quota!.IsEnabled ? "Active" : "Disabled") : "Active",
-                WarningLevel = hasQuota ? GetWarningLevel(quota!.UsedSpace, quota!.TotalQuota) : null
-            };
-        }).ToList();
+                WarningThreshold = 80,
+                IsEnabled = true,
+                LastCalculatedAt = DateTime.UtcNow,
+                CreatedAt = user.CreatedAt != default(DateTime) ? user.CreatedAt : DateTime.UtcNow,
+                UpdatedAt = user.UpdatedAt != default(DateTime) ? user.UpdatedAt : DateTime.UtcNow,
+                Status = "Active",
+                WarningLevel = GetWarningLevel(usedSpace, DefaultQuota)
+            });
+        }
 
         // 应用关键词搜索
         if (!string.IsNullOrWhiteSpace(query.Keyword))
@@ -710,45 +729,118 @@ public class StorageQuotaService : IStorageQuotaService
     /// </summary>
     public async Task<StorageUsageStats> GetStorageUsageStatsAsync(string? userId = null)
     {
-        // 获取所有配额记录（企业级统计）
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Build(); // 多租户过滤会自动应用
+        // 企业维度统计应与列表一致：基于企业全部用户 + 实时文件统计
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(currentCompanyId))
+            throw new InvalidOperationException("未找到当前企业信息");
 
-        var quotas = await _quotaFactory.FindAsync(filter);
+        // 获取企业用户
+        var userFilterBuilder = _userFactory.CreateFilterBuilder();
+        var userFilter = userFilterBuilder
+            .Equal(u => u.CurrentCompanyId, currentCompanyId)
+            .Build();
+        var users = await _userFactory.FindAsync(userFilter);
 
-        if (!quotas.Any())
+        // 如果指定用户，只保留该用户
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            users = users.Where(u => (u.Id ?? string.Empty) == userId).ToList();
+        }
+
+        if (!users.Any())
         {
             return new Platform.ApiService.Models.StorageUsageStats();
         }
 
-        // 计算基本统计
-        var totalUsers = quotas.Count;
-        var totalQuota = quotas.Sum(q => q.TotalQuota);
-        var totalUsed = quotas.Sum(q => q.UsedSpace);
-        var averageUsage = totalUsers > 0 ? totalUsed / totalUsers : 0;
+        var userIds = users.Select(u => u.Id ?? string.Empty).Where(id => !string.IsNullOrEmpty(id)).ToList();
 
-        // 计算使用量分布
-        var usageDistribution = CalculateUsageDistribution(quotas);
+        // 读取配额记录
+        var quotaFilterBuilder = _quotaFactory.CreateFilterBuilder();
+        var quotaFilter = quotaFilterBuilder.Build(); // 多租户过滤自动应用
+        var quotas = await _quotaFactory.FindAsync(quotaFilter);
+        var quotaDict = quotas.GroupBy(q => q.UserId).ToDictionary(g => g.Key, g => g.OrderByDescending(q => q.UpdatedAt).First());
 
-        // 获取使用量排行榜（前10名）
-        var topUsers = quotas
-            .OrderByDescending(q => q.UsedSpace)
-            .Take(10)
-            .Select(q => new Platform.ApiService.Models.TopUserItem
+        // 实时文件使用量
+        var usedSpaceDict = new Dictionary<string, long>();
+        if (userIds.Any())
+        {
+            var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
+            var fileFilter = fileFilterBuilder
+                .In(f => f.CreatedBy, userIds)
+                .Equal(f => f.Type, FileItemType.File)
+                .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
+                .Build();
+
+            var allFiles = await _fileItemFactory.FindAsync(fileFilter);
+            usedSpaceDict = allFiles
+                .Where(f => !string.IsNullOrEmpty(f.CreatedBy))
+                .GroupBy(f => f.CreatedBy!)
+                .ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
+        }
+
+        // 汇总 per-user 数据
+        var userUsageList = users.Select(u =>
+        {
+            var uid = u.Id ?? string.Empty;
+            var quota = quotaDict.TryGetValue(uid, out var q) ? q : null;
+            var used = usedSpaceDict.TryGetValue(uid, out var s) ? s : 0;
+            var totalQuota = quota?.TotalQuota ?? DefaultQuota;
+            var usagePercentage = totalQuota > 0 ? (double)used / totalQuota * 100 : 0;
+
+            // 用于排名的显示名/用户名
+            var displayName = !string.IsNullOrWhiteSpace(u.Name)
+                ? u.Name
+                : (!string.IsNullOrWhiteSpace(u.Username) ? u.Username : uid);
+
+            return new
             {
-                UserId = q.UserId,
-                Username = q.UserId, // TODO: 从用户服务获取用户名
-                UserDisplayName = q.UserId, // TODO: 从用户服务获取显示名称
-                UsedQuota = q.UsedSpace,
-                UsagePercentage = q.TotalQuota > 0 ? (double)q.UsedSpace / q.TotalQuota * 100 : 0
+                UserId = uid,
+                Username = !string.IsNullOrWhiteSpace(u.Username) ? u.Username : uid,
+                DisplayName = displayName,
+                UsedSpace = used,
+                TotalQuota = totalQuota,
+                UsagePercentage = usagePercentage
+            };
+        }).ToList();
+
+        if (!userUsageList.Any())
+        {
+            return new Platform.ApiService.Models.StorageUsageStats();
+        }
+
+        var totalUsers = userUsageList.Count;
+        var totalQuotaSum = userUsageList.Sum(x => x.TotalQuota);
+        var totalUsedSum = userUsageList.Sum(x => x.UsedSpace);
+        var averageUsage = totalUsers > 0 ? totalUsedSum / totalUsers : 0;
+
+        // 构造临时配额列表用于复用分布计算逻辑
+        var quotaLikeList = userUsageList.Select(x => new StorageQuota
+        {
+            UserId = x.UserId,
+            TotalQuota = x.TotalQuota,
+            UsedSpace = x.UsedSpace
+        }).ToList();
+
+        var usageDistribution = CalculateUsageDistribution(quotaLikeList);
+
+        var topUsers = userUsageList
+            .OrderByDescending(x => x.UsedSpace)
+            .Take(10)
+            .Select(x => new Platform.ApiService.Models.TopUserItem
+            {
+                UserId = x.UserId,
+                Username = x.Username,
+                UserDisplayName = x.DisplayName,
+                UsedQuota = x.UsedSpace,
+                UsagePercentage = x.UsagePercentage
             })
             .ToList();
 
         return new Platform.ApiService.Models.StorageUsageStats
         {
             TotalUsers = totalUsers,
-            TotalQuota = totalQuota,
-            TotalUsed = totalUsed,
+            TotalQuota = totalQuotaSum,
+            TotalUsed = totalUsedSum,
             AverageUsage = averageUsage,
             UsageDistribution = usageDistribution,
             TopUsers = topUsers

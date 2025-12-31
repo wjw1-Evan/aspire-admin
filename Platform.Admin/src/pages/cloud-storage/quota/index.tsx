@@ -3,66 +3,15 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Grid } from 'antd';
-import {
-    Button,
-    Tag,
-    Space,
-    Modal,
-    Drawer,
-    Row,
-    Col,
-    Card,
-    Form,
-    Input,
-    Select,
-    Descriptions,
-    Spin,
-    Progress,
-    InputNumber,
-    Switch,
-    Alert,
-    Statistic,
-    Popconfirm,
-    Tabs,
-} from 'antd';
+import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
-import { useModal } from '@/hooks/useModal';
-import {
-    PieChartOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    ReloadOutlined,
-    UserOutlined,
-    CloudOutlined,
-    WarningOutlined,
-    CheckCircleOutlined,
-    ExclamationCircleOutlined,
-    BarChartOutlined,
-    TeamOutlined,
-    FileOutlined,
-    CalendarOutlined,
-} from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TeamOutlined, FileOutlined, CalendarOutlined } from '@ant-design/icons';
+import { getQuotaList, getUserQuota, updateUserQuota, getQuotaWarnings, getCompanyUsage, getStorageUsageRanking, type StorageQuota, type UpdateQuotaRequest, type QuotaListRequest, type QuotaUsageStats, type QuotaWarning, type CompanyUsageStats, type UserStorageRanking } from '@/services/cloud-storage/quotaApi';
+import { getCurrentCompany } from '@/services/company';
 
 const { useBreakpoint } = Grid;
 const { TabPane } = Tabs;
-
-import {
-    getQuotaList,
-    getUserQuota,
-    updateUserQuota,
-    deleteUserQuota,
-    getQuotaUsageStats,
-    getQuotaWarnings,
-    refreshUserQuotaUsage,
-    getQuotaRecommendations,
-    type StorageQuota,
-    type UpdateQuotaRequest,
-    type QuotaListRequest,
-    type QuotaUsageStats,
-    type QuotaWarning,
-} from '@/services/cloud-storage/quotaApi';
 
 interface SearchParams {
     username?: string;
@@ -72,64 +21,109 @@ interface SearchParams {
 const CloudStorageQuotaPage: React.FC = () => {
     const intl = useIntl();
     const { success, error } = useMessage();
-    const { confirm } = useModal();
     const screens = useBreakpoint();
     const isMobile = !screens.md;
 
-    // 表格引用
-    const actionRef = useRef<ActionType>();
+    const actionRef = useRef<ActionType | null>(null);
 
-    // 状态管理
     const [activeTab, setActiveTab] = useState<'quota-list' | 'usage-stats' | 'warnings'>('quota-list');
     const [usageStats, setUsageStats] = useState<QuotaUsageStats | null>(null);
+    const [quotaTotalCount, setQuotaTotalCount] = useState<number>(0);
+
     const [warnings, setWarnings] = useState<QuotaWarning[]>([]);
 
-    // 搜索相关状态
-    const [searchParams, setSearchParams] = useState<SearchParams>({});
     const searchParamsRef = useRef<SearchParams>({});
     const [searchForm] = Form.useForm();
 
-    // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
     const [viewingQuota, setViewingQuota] = useState<StorageQuota | null>(null);
     const [editQuotaVisible, setEditQuotaVisible] = useState(false);
     const [editingQuota, setEditingQuota] = useState<StorageQuota | null>(null);
-    const [refreshing, setRefreshing] = useState<{ [key: string]: boolean }>({});
 
-    // 表单
     const [editQuotaForm] = Form.useForm();
 
-    // 加载数据
+    const [currentCompanyId, setCurrentCompanyId] = useState<string>();
+
+    const loadCurrentCompany = useCallback(async () => {
+        try {
+            const res = await getCurrentCompany();
+            if (res.success && res.data) {
+                const id = (res.data as any).id || (res.data as any).companyId;
+                if (id) setCurrentCompanyId(id);
+            }
+        } catch (err) {
+            console.error('Failed to load current company:', err);
+        }
+    }, []);
+
+    const mapRankingToTopUsers = useCallback((ranking: UserStorageRanking[]) => {
+        return ranking.map((item) => ({
+            userId: item.userId,
+            username: item.username,
+            userDisplayName: item.displayName || item.username || item.userId,
+            usedQuota: item.usedSpace,
+            usagePercentage: parseFloat(((item.usagePercentage ?? 0)).toFixed(2)),
+        }));
+    }, []);
+
+    // 加载数据（按当前企业）
     const loadUsageStats = useCallback(async () => {
         try {
-            const response = await getQuotaUsageStats();
-            if (response.success && response.data) {
-                setUsageStats(response.data);
+            const [usageRes, rankingRes] = await Promise.all([
+                getCompanyUsage(currentCompanyId),
+                getStorageUsageRanking(10, currentCompanyId),
+            ]);
+
+            const companyUsage: CompanyUsageStats | null = usageRes.success && usageRes.data ? usageRes.data : null;
+            const ranking: UserStorageRanking[] = rankingRes.success && rankingRes.data ? rankingRes.data : [];
+
+            if (companyUsage) {
+                setUsageStats({
+                    totalUsers: companyUsage.totalUsers ?? 0,
+                    totalQuota: companyUsage.totalQuota ?? 0,
+                    totalUsed: companyUsage.usedSpace ?? 0,
+                    averageUsage: parseFloat(((companyUsage.usagePercentage ?? 0)).toFixed(2)),
+                    usageDistribution: [],
+                    topUsers: mapRankingToTopUsers(ranking),
+                });
+                setQuotaTotalCount(companyUsage.totalUsers ?? 0);
+            } else {
+                setUsageStats({
+                    totalUsers: 0,
+                    totalQuota: 0,
+                    totalUsed: 0,
+                    averageUsage: 0,
+                    usageDistribution: [],
+                    topUsers: mapRankingToTopUsers(ranking),
+                });
             }
         } catch (err) {
             console.error('Failed to load usage stats:', err);
         }
-    }, []);
+    }, [currentCompanyId, mapRankingToTopUsers]);
 
     const loadWarnings = useCallback(async () => {
         try {
-            const response = await getQuotaWarnings();
+            const response = await getQuotaWarnings(currentCompanyId);
             if (response.success && response.data) {
                 setWarnings(response.data.data || []);
             }
         } catch (err) {
             console.error('Failed to load warnings:', err);
         }
-    }, []);
+    }, [currentCompanyId]);
+
+    useEffect(() => {
+        loadCurrentCompany();
+    }, [loadCurrentCompany]);
 
     useEffect(() => {
         loadUsageStats();
         loadWarnings();
     }, [loadUsageStats, loadWarnings]);
 
-    // 刷新处理
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
         if (activeTab === 'usage-stats') {
             loadUsageStats();
         } else if (activeTab === 'warnings') {
@@ -137,11 +131,9 @@ const CloudStorageQuotaPage: React.FC = () => {
         }
     }, [activeTab, loadUsageStats, loadWarnings]);
 
-    // 数据获取函数
     const fetchData = useCallback(async (params: any) => {
         const { current = 1, pageSize = 20 } = params;
 
-        // 合并搜索参数，使用 ref 确保获取最新的搜索参数
         const mergedParams = { ...searchParamsRef.current, ...params };
 
         try {
@@ -152,43 +144,36 @@ const CloudStorageQuotaPage: React.FC = () => {
                 pageSize,
                 sortBy: 'usedQuota',
                 sortOrder: 'desc',
+                companyId: currentCompanyId,
             };
 
             const response = await getQuotaList(listRequest);
 
             if (response.success && response.data) {
-                // 转换后端数据格式到前端期望的格式
                 const rawData = response.data.data || [];
-                const totalCount = response.data.total || 0; // 使用后端返回的真实总数
+                const totalCount = response.data.total || 0;
+
+                setQuotaTotalCount(totalCount);
 
                 const transformedData = rawData.map((item: any) => {
-                    // 处理用户显示名称：优先使用 displayName，如果 displayName 是用户ID格式，尝试使用 userDisplayName
-                    let userDisplayName = item.userDisplayName || item.displayName;
-                    // 如果 displayName 看起来像用户ID（24位十六进制），且与 username 相同，可能需要特殊处理
-                    if (userDisplayName && userDisplayName === item.username && /^[0-9a-f]{24}$/i.test(userDisplayName)) {
-                        // 如果都是用户ID格式，显示名称可以显示用户ID或者尝试获取真实用户名
-                        // 这里先保持原样，后续可以通过用户服务获取真实用户名
-                        userDisplayName = item.displayName || item.userDisplayName || item.username || '未知用户';
-                    } else {
-                        userDisplayName = item.userDisplayName || item.displayName || item.username || '未知用户';
-                    }
-
+                    const userDisplayName = item.userDisplayName || item.username || item.userId || '未知用户';
                     return {
                         ...item,
-                        // 字段映射
-                        id: item.id || item.userId, // 使用 userId 作为唯一 id
-                        userDisplayName: userDisplayName,
-                        username: item.username || item.userId || '-', // username 保持原值，如果为空则使用 userId
+                        id: item.id || item.userId,
+                        userDisplayName,
+                        username: item.username || item.userId || '-',
                         usedQuota: item.usedQuota !== undefined ? item.usedQuota : (item.usedSpace || 0),
-                        // 确保有默认值
+                        usagePercentage: item.usagePercentage !== undefined
+                            ? parseFloat((item.usagePercentage).toFixed(2))
+                            : (item.totalQuota > 0 ? parseFloat(((item.usedSpace || 0) / item.totalQuota * 100).toFixed(2)) : 0),
                         warningThreshold: item.warningThreshold !== undefined ? item.warningThreshold : 80,
                         isEnabled: item.isEnabled !== undefined ? item.isEnabled : (item.status === 'Active'),
-                    };
+                    } as StorageQuota;
                 });
 
                 return {
                     data: transformedData,
-                    total: totalCount, // 使用后端返回的真实总数
+                    total: totalCount,
                     success: true,
                 };
             }
@@ -206,19 +191,18 @@ const CloudStorageQuotaPage: React.FC = () => {
                 success: false,
             };
         }
-    }, []);
+    }, [currentCompanyId]);
 
     // 搜索处理
     const handleSearch = useCallback((values: any) => {
         // 同时更新 state 和 ref
         searchParamsRef.current = values;
-        setSearchParams(values);
 
         // 重新加载数据
         if (actionRef.current?.reloadAndReset) {
-            actionRef.current.reloadAndReset();
+            actionRef.current?.reloadAndReset?.();
         } else if (actionRef.current?.reload) {
-            actionRef.current.reload();
+            actionRef.current?.reload?.();
         }
     }, []);
 
@@ -226,12 +210,11 @@ const CloudStorageQuotaPage: React.FC = () => {
         searchForm.resetFields();
         // 同时更新 state 和 ref
         searchParamsRef.current = {};
-        setSearchParams({});
 
         if (actionRef.current?.reloadAndReset) {
-            actionRef.current.reloadAndReset();
+            actionRef.current?.reloadAndReset?.();
         } else if (actionRef.current?.reload) {
-            actionRef.current.reload();
+            actionRef.current?.reload?.();
         }
     }, [searchForm]);
 
@@ -291,31 +274,6 @@ const CloudStorageQuotaPage: React.FC = () => {
         setEditQuotaVisible(true);
     }, [editQuotaForm, bytesToGB]);
 
-    const handleDelete = useCallback(async (quota: StorageQuota) => {
-        try {
-            await deleteUserQuota(quota.userId);
-            success('删除配额成功');
-            actionRef.current?.reload();
-            loadUsageStats();
-        } catch (err) {
-            error('删除配额失败');
-        }
-    }, [success, error, loadUsageStats]);
-
-    const handleRefreshUsage = useCallback(async (quota: StorageQuota) => {
-        try {
-            setRefreshing(prev => ({ ...prev, [quota.userId]: true }));
-            await refreshUserQuotaUsage(quota.userId);
-            success('刷新使用量成功');
-            actionRef.current?.reload();
-            setRefreshing(prev => ({ ...prev, [quota.userId]: false }));
-        } catch (err) {
-            error('刷新使用量失败');
-            setRefreshing(prev => ({ ...prev, [quota.userId]: false }));
-        }
-    }, [success, error]);
-
-
     // 更新配额
     const handleEditSubmit = useCallback(async (values: UpdateQuotaRequest) => {
         if (!editingQuota) return;
@@ -331,7 +289,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             setEditQuotaVisible(false);
             setEditingQuota(null);
             editQuotaForm.resetFields();
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
             loadUsageStats();
         } catch (err) {
             error('更新配额失败');
@@ -342,8 +300,18 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     // 格式化文件大小
     const formatFileSize = useCallback((bytes: number) => {
-        if (!bytes) return '0 GB';
-        return `${(bytes / (1024 ** 3)).toFixed(2)} GB`;
+        if (!bytes || Number.isNaN(bytes)) return '0 B';
+
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let size = bytes;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex += 1;
+        }
+
+        return `${size.toFixed(2)} ${units[unitIndex]}`;
     }, []);
 
     // 格式化日期时间
@@ -451,10 +419,10 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '使用率',
             key: 'usagePercentage',
             width: 150,
-            render: (_, record: StorageQuota) => {
+            render: (_: any, record: StorageQuota) => {
                 // 避免除以零
                 const percentage = record.totalQuota > 0
-                    ? Math.round((record.usedQuota / record.totalQuota) * 100)
+                    ? parseFloat(((record.usedQuota / record.totalQuota) * 100).toFixed(2))
                     : 0;
                 return (
                     <Progress
@@ -476,7 +444,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '状态',
             key: 'status',
             width: 100,
-            render: (_, record: StorageQuota) => getStatusTag(record),
+            render: (_: any, record: StorageQuota) => getStatusTag(record),
         },
         {
             title: '更新时间',
@@ -489,8 +457,8 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            width: 200,
-            render: (_, record: StorageQuota) => (
+            width: 120,
+            render: (_: any, record: StorageQuota) => (
                 <Space size="small">
                     <Button
                         type="link"
@@ -500,17 +468,6 @@ const CloudStorageQuotaPage: React.FC = () => {
                     >
                         编辑
                     </Button>
-                    <Popconfirm
-                        title="确认删除"
-                        description={`确定要删除用户 "${record.userDisplayName}" 的配额设置吗？`}
-                        onConfirm={() => handleDelete(record)}
-                        okText="确定"
-                        cancelText="取消"
-                    >
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                            删除
-                        </Button>
-                    </Popconfirm>
                 </Space>
             ),
         },
@@ -609,7 +566,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                     <Card>
                                         <Statistic
                                             title="总用户数"
-                                            value={usageStats.totalUsers}
+                                            value={usageStats.totalUsers ?? quotaTotalCount}
                                             prefix={<TeamOutlined />}
                                         />
                                     </Card>
@@ -659,11 +616,11 @@ const CloudStorageQuotaPage: React.FC = () => {
 
                                 <Col xs={24} md={12}>
                                     <Card title="使用量排行">
-                                        {usageStats.topUsers.map((user, index) => (
-                                            <div key={user.userId} style={{ marginBottom: 8 }}>
+                                        {(usageStats.topUsers ?? []).map((user, index) => (
+                                            <div key={user.userId || `${user.username}-${index}`} style={{ marginBottom: 8 }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                     <span>#{index + 1} {user.userDisplayName}</span>
-                                                    <span>{formatFileSize(user.usedQuota)} ({user.usagePercentage}%)</span>
+                                                    <span>{formatFileSize(user.usedQuota)} ({user.usagePercentage.toFixed(2)}%)</span>
                                                 </div>
                                                 <Progress percent={user.usagePercentage} showInfo={false} />
                                             </div>
@@ -829,26 +786,10 @@ const CloudStorageQuotaPage: React.FC = () => {
                             placeholder="请输入总配额（GB）"
                             style={{ width: '100%' }}
                             min={0}
-                            formatter={(value) =>
-                                value !== undefined && value !== null && value !== ''
-                                    ? `${value} GB`
-                                    : ''
-                            }
-                            parser={(value) => {
-                                const numeric = (value || '')
-                                    .toString()
-                                    // 去掉所有非数字和小数点/负号/空格/GB字样
-                                    .replace(/[^0-9.-]/g, '')
-                                    // 去掉开头多余的点
-                                    .replace(/^\./, '');
-                                return numeric ? Number(numeric) : undefined;
-                            }}
+                            formatter={(value) => `${value}`}
                         />
                     </Form.Item>
-                    <Form.Item
-                        name="warningThreshold"
-                        label="警告阈值 (%)"
-                    >
+                    <Form.Item name="warningThreshold" label="警告阈值 (%)">
                         <InputNumber
                             placeholder="请输入警告阈值"
                             style={{ width: '100%' }}

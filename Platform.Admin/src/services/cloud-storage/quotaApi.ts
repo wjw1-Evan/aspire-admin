@@ -36,6 +36,7 @@ export interface QuotaListRequest {
     pageSize?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    companyId?: string;
 }
 
 export interface QuotaListResponse {
@@ -162,9 +163,10 @@ export async function getQuotaUsageStats() {
 /**
  * 获取配额警告列表
  */
-export async function getQuotaWarnings() {
+export async function getQuotaWarnings(companyId?: string) {
     return request<ApiResponse<QuotaWarningListResponse>>('/api/storage-quota/warnings', {
         method: 'GET',
+        params: { companyId },
     });
 }
 
@@ -201,5 +203,52 @@ export async function getQuotaRecommendations() {
         }>;
     }>>('/api/storage-quota/recommendations', {
         method: 'GET',
+    });
+}
+
+export interface CompanyUsageStats {
+    companyId: string;
+    companyName: string;
+    totalUsers: number;
+    totalQuota: number;
+    usedSpace: number;
+    availableSpace: number;
+    usagePercentage: number;
+    totalFiles: number;
+    totalFolders: number;
+    typeUsage: Record<string, number>;
+    userUsage: Record<string, number>;
+    lastUpdatedAt: string;
+}
+
+export interface UserStorageRanking {
+    rank: number;
+    userId: string;
+    username: string;
+    displayName: string;
+    usedSpace: number;
+    totalQuota: number;
+    usagePercentage: number;
+    fileCount: number;
+    lastActivityAt?: string;
+}
+
+/**
+ * 获取企业存储统计
+ */
+export async function getCompanyUsage(companyId?: string) {
+    return request<ApiResponse<CompanyUsageStats>>('/api/storage-quota/company/usage', {
+        method: 'GET',
+        params: { companyId },
+    });
+}
+
+/**
+ * 获取存储使用量排行榜（支持企业过滤）
+ */
+export async function getStorageUsageRanking(topCount = 10, companyId?: string) {
+    return request<ApiResponse<UserStorageRanking[]>>('/api/storage-quota/ranking', {
+        method: 'GET',
+        params: { topCount, companyId },
     });
 }

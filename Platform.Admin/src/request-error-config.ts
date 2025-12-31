@@ -107,9 +107,9 @@ export const errorConfig: RequestConfig = {
         error?.message;
 
       const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
-      const isLoginRequest = error.config?.url?.includes('/api/auth/login') || 
-                            error.config?.url?.includes('/login');
-      
+      const isLoginRequest = error.config?.url?.includes('/api/auth/login') ||
+        error.config?.url?.includes('/login');
+
       const isAuthError = error.response?.status === 401;
       // 有些接口会返回 400 但实际是未登录/未找到当前用户
       const isMissingCurrentUser =
@@ -129,7 +129,7 @@ export const errorConfig: RequestConfig = {
         if (error?.skipGlobalHandler) {
           return;
         }
-        
+
         // 登录错误已经在登录页面中处理了，这里只需要静默处理，避免显示技术性错误页面
         // 如果登录页面没有处理（比如直接从错误拦截器抛出），则显示友好提示
         const { message: msg } = getMessage();
@@ -154,8 +154,8 @@ export const errorConfig: RequestConfig = {
             isAuthError
               ? `HTTP ${error.response?.status}`
               : isMissingCurrentUser
-              ? 'Missing current user (backend 400)'
-              : 'Token refresh failed'
+                ? 'Missing current user (backend 400)'
+                : 'Token refresh failed'
           );
         }
 

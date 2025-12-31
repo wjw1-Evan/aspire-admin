@@ -92,8 +92,8 @@ class UnifiedErrorInterceptor {
     this.addRule({
       condition: (error) => {
         return error.response?.status === 401 ||
-               error.message === 'Authentication handled silently' ||
-               error.message === 'Authentication handled';
+          error.message === 'Authentication handled silently' ||
+          error.message === 'Authentication handled';
       },
       config: {
         displayType: ErrorDisplayType.SILENT,

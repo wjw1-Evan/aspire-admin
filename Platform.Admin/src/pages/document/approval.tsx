@@ -201,7 +201,8 @@ const ApprovalPage: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
-      width: 300,
+      key: 'action',
+      fixed: 'right' as const,
       render: (_, record: Document) => (
         <Space>
           <Button

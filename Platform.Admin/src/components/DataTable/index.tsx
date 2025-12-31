@@ -38,25 +38,25 @@ function DataTable<T extends Record<string, any> = any>(
   const [loading, setLoading] = useState(false);
   // 初始化时从传入的 pagination 配置中获取 pageSize
   // 支持 pageSize 和 defaultPageSize（兼容 antd Table 的两种写法）
-  const initialPageSize = typeof pagination === 'object' 
+  const initialPageSize = typeof pagination === 'object'
     ? (pagination.pageSize ?? pagination.defaultPageSize ?? 10)
     : 10;
-  
+
   const [paginationState, setPaginationState] = useState({
     current: 1,
     pageSize: initialPageSize,
     total: 0,
   });
   const [sorter, setSorter] = useState<Record<string, 'ascend' | 'descend'>>({});
-  
+
   // 使用 ref 存储最新的 sorter 和 paginationState，避免闭包问题
   const sorterRef = useRef(sorter);
   const paginationStateRef = useRef(paginationState);
-  
+
   useEffect(() => {
     sorterRef.current = sorter;
   }, [sorter]);
-  
+
   useEffect(() => {
     paginationStateRef.current = paginationState;
   }, [paginationState]);
@@ -72,7 +72,7 @@ function DataTable<T extends Record<string, any> = any>(
       };
 
       const result = await request(params, sorterRef.current);
-      
+
       if (result.success) {
         setDataSource(result.data || []);
         setPaginationState(prev => ({
@@ -117,6 +117,45 @@ function DataTable<T extends Record<string, any> = any>(
     loadData();
   }, [loadData]);
 
+  const normalizeColumns = useCallback((cols: ColumnsType<T>): ColumnsType<T> => {
+    return (cols || []).map((col: any) => {
+      const { width, children, key, dataIndex, fixed, ...rest } = col;
+      const normalized: any = {
+        ...rest,
+        key,
+        dataIndex,
+      };
+
+      // 递归处理子列
+      if (children && Array.isArray(children)) {
+        normalized.children = normalizeColumns(children as ColumnsType<T>);
+      }
+
+      // 移除固定宽度以便自动根据内容调整
+      if (width !== undefined) {
+        normalized.width = undefined;
+      }
+
+      // 统一固定操作列在右侧
+      const columnKey = key || (Array.isArray(dataIndex) ? dataIndex.join('.') : dataIndex);
+      if (columnKey === 'action') {
+        normalized.fixed = fixed || 'right';
+      } else if (fixed !== undefined) {
+        normalized.fixed = fixed;
+      }
+
+      return normalized;
+    });
+  }, []);
+
+  const processedColumns = useMemo(() => normalizeColumns(columns), [columns, normalizeColumns]);
+
+  const mergedScroll = useMemo(() => {
+    const defaultScroll = { x: 'max-content' as const };
+    if (!tableProps.scroll) return defaultScroll;
+    return { ...defaultScroll, ...tableProps.scroll };
+  }, [tableProps.scroll]);
+
   const handleTableChange = useCallback((
     pag: any,
     filters: any,
@@ -127,13 +166,13 @@ function DataTable<T extends Record<string, any> = any>(
       newSorter[sorterInfo.field] = sorterInfo.order;
     }
     setSorter(newSorter);
-    
+
     // 当用户改变pageSize时，pag.pageSize会有值；改变页码时，pag.current会有值
     // 计算新的分页参数（使用 ref 获取最新的 state，避免闭包问题）
     const currentPaginationState = paginationStateRef.current;
     const newCurrent = pag.current !== undefined ? pag.current : currentPaginationState.current;
     const newPageSize = pag.pageSize !== undefined ? pag.pageSize : currentPaginationState.pageSize;
-    
+
     setPaginationState(prev => {
       const newPagination = {
         current: pag.current !== undefined ? pag.current : prev.current,
@@ -142,14 +181,14 @@ function DataTable<T extends Record<string, any> = any>(
       };
       return newPagination;
     });
-    
+
     // 使用计算好的分页参数加载数据（使用 ref 获取最新值，避免闭包问题）
     loadData(newCurrent, newPageSize);
   }, [loadData]);
 
   const mergedPagination: TableProps<T>['pagination'] = useMemo(() => {
     if (pagination === false) return false;
-    
+
     return {
       // 先合并传入的配置（包括 pageSizeOptions 等）
       ...(typeof pagination === 'object' ? pagination : {}),
@@ -181,7 +220,9 @@ function DataTable<T extends Record<string, any> = any>(
       )}
       <Table<T>
         {...tableProps}
-        columns={columns}
+        tableLayout={tableProps.tableLayout ?? 'auto'}
+        scroll={mergedScroll}
+        columns={processedColumns}
         dataSource={dataSource}
         loading={loading}
         rowKey={rowKey}

@@ -191,7 +191,8 @@ const DocumentManagement: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.action' }),
-      width: 250,
+      key: 'action',
+      fixed: 'right' as const,
       render: (_, record: Document) => (
         <Space>
           <Button

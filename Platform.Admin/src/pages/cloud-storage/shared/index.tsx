@@ -388,7 +388,6 @@ const CloudStorageSharedPage: React.FC = () => {
             title: '分享类型',
             dataIndex: 'shareType',
             key: 'shareType',
-            width: 100,
             render: (type: string) => (
                 <Tag color={type === 'internal' ? 'blue' : 'green'}>
                     {type === 'internal' ? '内部' : '外部'}
@@ -399,39 +398,33 @@ const CloudStorageSharedPage: React.FC = () => {
             title: '访问权限',
             dataIndex: 'accessType',
             key: 'accessType',
-            width: 100,
             render: (type: string) => getAccessTypeTag(type),
         },
         {
             title: '状态',
             key: 'status',
-            width: 100,
             render: (_, record: FileShare) => getShareStatusTag(record),
         },
         {
             title: '访问次数',
             dataIndex: 'accessCount',
             key: 'accessCount',
-            width: 100,
         },
         {
             title: '下载次数',
             dataIndex: 'downloadCount',
             key: 'downloadCount',
-            width: 100,
         },
         {
             title: '创建时间',
             dataIndex: 'createdAt',
             key: 'createdAt',
-            width: 180,
             render: (time: string) => formatDateTime(time),
         },
         {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            width: 250,
             render: (_, record: FileShare) => (
                 <Space size="small">
                     <Button

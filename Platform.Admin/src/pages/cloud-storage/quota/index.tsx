@@ -420,10 +420,6 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '用户',
             dataIndex: 'userDisplayName',
             key: 'userDisplayName',
-            width: 200,
-            ellipsis: {
-                showTitle: true, // 鼠标悬停时显示完整内容
-            },
             render: (text: string, record: StorageQuota) => {
                 // 显示完整的用户显示名称
                 const displayText = text || record.username || record.userId || '未知用户';
@@ -445,10 +441,6 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '用户名',
             dataIndex: 'username',
             key: 'username',
-            width: 180,
-            ellipsis: {
-                showTitle: true, // 鼠标悬停时显示完整内容
-            },
             render: (text: string, record: StorageQuota) => {
                 // 显示完整的用户名
                 const displayText = text || record.userId || '-';
@@ -463,20 +455,17 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '配额',
             dataIndex: 'totalQuota',
             key: 'totalQuota',
-            width: 120,
             render: (quota: number) => formatFileSize(quota),
         },
         {
             title: '已用',
             dataIndex: 'usedQuota',
             key: 'usedQuota',
-            width: 120,
             render: (used: number) => formatFileSize(used),
         },
         {
             title: '使用率',
             key: 'usagePercentage',
-            width: 150,
             render: (_: any, record: StorageQuota) => {
                 // 避免除以零
                 const percentage = record.totalQuota > 0
@@ -496,26 +485,22 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '文件数',
             dataIndex: 'fileCount',
             key: 'fileCount',
-            width: 80,
         },
         {
             title: '状态',
             key: 'status',
-            width: 100,
             render: (_: any, record: StorageQuota) => getStatusTag(record),
         },
         {
             title: '更新时间',
             dataIndex: 'updatedAt',
             key: 'updatedAt',
-            width: 180,
             render: (time: string) => formatDateTime(time),
         },
         {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            width: 180,
             render: (_: any, record: StorageQuota) => (
                 <Space size="small">
                     <Button
@@ -634,6 +619,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                             request={fetchData}
                             rowKey={(record) => record.id || record.userId}
                             search={false}
+                            tableLayout="auto"
                             scroll={{ x: 'max-content' }}
                             pagination={{
                                 pageSize: 20,

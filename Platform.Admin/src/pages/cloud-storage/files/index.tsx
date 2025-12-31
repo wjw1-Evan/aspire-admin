@@ -151,7 +151,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     totalSize: apiData.usedSpace || apiData.totalSize || 0,
                     usedQuota: apiData.usedSpace || apiData.usedQuota || 0,
                     totalQuota: apiData.totalQuota || 0,
-                    fileTypeStats: apiData.typeUsage 
+                    fileTypeStats: apiData.typeUsage
                         ? Object.entries(apiData.typeUsage).map(([type, size]) => ({
                             type,
                             count: 0, // API 没有提供每种类型的文件数量
@@ -225,7 +225,7 @@ const CloudStorageFilesPage: React.FC = () => {
                         const nameParts = item.name?.split('.');
                         return nameParts && nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : undefined;
                     })();
-                    
+
                     return {
                         ...item,
                         // 将 type 字段转换为 isFolder 布尔值
@@ -243,7 +243,7 @@ const CloudStorageFilesPage: React.FC = () => {
                         isPublic: item.isPublic !== undefined ? item.isPublic : false,
                     };
                 });
-                
+
                 return {
                     data: transformedData,
                     total: response.data.total || 0,
@@ -567,7 +567,6 @@ const CloudStorageFilesPage: React.FC = () => {
             title: '大小',
             dataIndex: 'size',
             key: 'size',
-            width: 100,
             render: (size: number, record: FileItem) =>
                 record.isFolder ? '-' : formatFileSize(size),
         },
@@ -575,20 +574,17 @@ const CloudStorageFilesPage: React.FC = () => {
             title: '修改时间',
             dataIndex: 'updatedAt',
             key: 'updatedAt',
-            width: 180,
             render: (time: string) => formatDateTime(time),
         },
         {
             title: '创建者',
             dataIndex: 'createdByName',
             key: 'createdByName',
-            width: 120,
         },
         {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            width: 200,
             render: (_, record: FileItem) => (
                 <Space size="small">
                     <Button

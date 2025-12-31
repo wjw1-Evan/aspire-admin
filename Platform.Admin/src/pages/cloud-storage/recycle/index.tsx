@@ -463,14 +463,11 @@ const CloudStorageRecyclePage: React.FC = () => {
             title: '原路径',
             dataIndex: 'originalPath',
             key: 'originalPath',
-            width: 200,
-            ellipsis: true,
         },
         {
             title: '大小',
             dataIndex: 'size',
             key: 'size',
-            width: 100,
             render: (size: number, record: RecycleItem) =>
                 record.isFolder ? '-' : formatFileSize(size),
         },
@@ -478,26 +475,22 @@ const CloudStorageRecyclePage: React.FC = () => {
             title: '删除时间',
             dataIndex: 'deletedAt',
             key: 'deletedAt',
-            width: 180,
             render: (time: string) => formatDateTime(time),
         },
         {
             title: '删除者',
             dataIndex: 'deletedByName',
             key: 'deletedByName',
-            width: 120,
         },
         {
             title: '过期状态',
             key: 'expiry',
-            width: 150,
             render: (_, record: RecycleItem) => getExpiryTag(record),
         },
         {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            width: 200,
             render: (_, record: RecycleItem) => (
                 <Space size="small">
                     <Button

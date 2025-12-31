@@ -274,7 +274,6 @@ const PasswordBook: React.FC = () => {
       title: '平台',
       dataIndex: 'platform',
       key: 'platform',
-      width: 150,
       render: (text: string, record: PasswordBookEntry) => (
         <a
           onClick={() => handleView(record)}
@@ -288,14 +287,11 @@ const PasswordBook: React.FC = () => {
       title: '账号',
       dataIndex: 'account',
       key: 'account',
-      width: 200,
     },
     {
       title: '网址',
       dataIndex: 'url',
       key: 'url',
-      width: 200,
-      ellipsis: true,
       render: (url: string) =>
         url ? (
           <a href={url} target="_blank" rel="noopener noreferrer">
@@ -309,7 +305,6 @@ const PasswordBook: React.FC = () => {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
-      width: 120,
       render: (category: string) =>
         category ? <Tag color="blue">{category}</Tag> : '-',
     },
@@ -317,7 +312,6 @@ const PasswordBook: React.FC = () => {
       title: '标签',
       dataIndex: 'tags',
       key: 'tags',
-      width: 200,
       render: (tags: string[]) =>
         tags && tags.length > 0 ? (
           <Space size={[0, 8]} wrap>
@@ -333,13 +327,11 @@ const PasswordBook: React.FC = () => {
       title: '最后使用',
       dataIndex: 'lastUsedAt',
       key: 'lastUsedAt',
-      width: 180,
       render: (date: string) => (date ? new Date(date).toLocaleString('zh-CN') : '-'),
     },
     {
       title: '操作',
       key: 'action',
-      width: 200,
       fixed: 'right' as const,
       render: (_: any, record: PasswordBookEntry) => (
         <Space>

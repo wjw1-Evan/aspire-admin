@@ -110,7 +110,7 @@ export const errorConfig: RequestConfig = {
       const isLoginRequest = error.config?.url?.includes('/api/auth/login') || 
                             error.config?.url?.includes('/login');
       
-      const isAuthError = error.response?.status === 401 || error.response?.status === 404;
+      const isAuthError = error.response?.status === 401;
       // 有些接口会返回 400 但实际是未登录/未找到当前用户
       const isMissingCurrentUser =
         error.response?.status === 400 &&

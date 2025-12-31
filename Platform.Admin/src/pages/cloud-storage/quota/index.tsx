@@ -3,11 +3,12 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs } from 'antd';
+import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import dayjs from 'dayjs';
-import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TeamOutlined, FileOutlined, CalendarOutlined } from '@ant-design/icons';
-import { getQuotaList, getUserQuota, updateUserQuota, getQuotaWarnings, getCompanyUsage, getStorageUsageRanking, type StorageQuota, type UpdateQuotaRequest, type QuotaListRequest, type QuotaUsageStats, type QuotaWarning, type CompanyUsageStats, type UserStorageRanking } from '@/services/cloud-storage/quotaApi';
+import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TeamOutlined, FileOutlined, CalendarOutlined, PlusOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { getQuotaList, getUserQuota, updateUserQuota, getQuotaWarnings, getQuotaUsageStats, setUserQuota, deleteUserQuota, type StorageQuota, type UpdateQuotaRequest, type QuotaListRequest, type QuotaUsageStats, type QuotaWarning } from '@/services/cloud-storage/quotaApi';
+import { getUserList, type AppUser } from '@/services/user/api';
 import { getCurrentCompany } from '@/services/company';
 
 const { useBreakpoint } = Grid;
@@ -42,6 +43,13 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const [editQuotaForm] = Form.useForm();
 
+    const [addQuotaVisible, setAddQuotaVisible] = useState(false);
+    const [addQuotaForm] = Form.useForm();
+    const [userOptions, setUserOptions] = useState<AppUser[]>([]);
+    const [userLoading, setUserLoading] = useState(false);
+    const [submitLoading, setSubmitLoading] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
     const [currentCompanyId, setCurrentCompanyId] = useState<string>();
 
     const loadCurrentCompany = useCallback(async () => {
@@ -56,37 +64,13 @@ const CloudStorageQuotaPage: React.FC = () => {
         }
     }, []);
 
-    const mapRankingToTopUsers = useCallback((ranking: UserStorageRanking[]) => {
-        return ranking.map((item) => ({
-            userId: item.userId,
-            username: item.username,
-            userDisplayName: item.displayName || item.username || item.userId,
-            usedQuota: item.usedSpace,
-            usagePercentage: parseFloat(((item.usagePercentage ?? 0)).toFixed(2)),
-        }));
-    }, []);
-
     // 加载数据（按当前企业）
     const loadUsageStats = useCallback(async () => {
         try {
-            const [usageRes, rankingRes] = await Promise.all([
-                getCompanyUsage(currentCompanyId),
-                getStorageUsageRanking(10, currentCompanyId),
-            ]);
-
-            const companyUsage: CompanyUsageStats | null = usageRes.success && usageRes.data ? usageRes.data : null;
-            const ranking: UserStorageRanking[] = rankingRes.success && rankingRes.data ? rankingRes.data : [];
-
-            if (companyUsage) {
-                setUsageStats({
-                    totalUsers: companyUsage.totalUsers ?? 0,
-                    totalQuota: companyUsage.totalQuota ?? 0,
-                    totalUsed: companyUsage.usedSpace ?? 0,
-                    averageUsage: parseFloat(((companyUsage.usagePercentage ?? 0)).toFixed(2)),
-                    usageDistribution: [],
-                    topUsers: mapRankingToTopUsers(ranking),
-                });
-                setQuotaTotalCount(companyUsage.totalUsers ?? 0);
+            const usageRes = await getQuotaUsageStats();
+            if (usageRes.success && usageRes.data) {
+                setUsageStats(usageRes.data);
+                setQuotaTotalCount(usageRes.data.totalUsers ?? 0);
             } else {
                 setUsageStats({
                     totalUsers: 0,
@@ -94,13 +78,13 @@ const CloudStorageQuotaPage: React.FC = () => {
                     totalUsed: 0,
                     averageUsage: 0,
                     usageDistribution: [],
-                    topUsers: mapRankingToTopUsers(ranking),
+                    topUsers: [],
                 });
             }
         } catch (err) {
             console.error('Failed to load usage stats:', err);
         }
-    }, [currentCompanyId, mapRankingToTopUsers]);
+    }, []);
 
     const loadWarnings = useCallback(async () => {
         try {
@@ -156,11 +140,13 @@ const CloudStorageQuotaPage: React.FC = () => {
                 setQuotaTotalCount(totalCount);
 
                 const transformedData = rawData.map((item: any) => {
-                    const userDisplayName = item.userDisplayName || item.username || item.userId || '未知用户';
+                    const displayName = item.displayName || item.userDisplayName;
+                    const userDisplayName = displayName || item.username || item.userId || '未知用户';
                     return {
                         ...item,
                         id: item.id || item.userId,
                         userDisplayName,
+                        displayName: userDisplayName,
                         username: item.username || item.userId || '-',
                         usedQuota: item.usedQuota !== undefined ? item.usedQuota : (item.usedSpace || 0),
                         usagePercentage: item.usagePercentage !== undefined
@@ -274,6 +260,70 @@ const CloudStorageQuotaPage: React.FC = () => {
         setEditQuotaVisible(true);
     }, [editQuotaForm, bytesToGB]);
 
+    const loadUserOptions = useCallback(async (keyword?: string) => {
+        setUserLoading(true);
+        try {
+            const res = await getUserList({
+                page: 1,
+                pageSize: 50,
+                search: keyword,
+            });
+            if (res.success && res.data) {
+                setUserOptions(res.data.users || []);
+            }
+        } catch (err) {
+            console.error('Failed to load users:', err);
+        } finally {
+            setUserLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (addQuotaVisible) {
+            loadUserOptions();
+        }
+    }, [addQuotaVisible, loadUserOptions]);
+
+    const handleAddSubmit = useCallback(async (values: any) => {
+        if (!values.userId) {
+            error('请选择用户');
+            return;
+        }
+
+        setSubmitLoading(true);
+        try {
+            await setUserQuota({
+                userId: values.userId,
+                totalQuota: gbToBytes(values.totalQuota) ?? 0,
+                warningThreshold: values.warningThreshold,
+                isEnabled: values.isEnabled,
+            });
+            success('新增配额成功');
+            setAddQuotaVisible(false);
+            addQuotaForm.resetFields();
+            actionRef.current?.reload?.();
+            loadUsageStats();
+        } catch (err) {
+            error('新增配额失败');
+        } finally {
+            setSubmitLoading(false);
+        }
+    }, [addQuotaForm, error, gbToBytes, loadUsageStats, success]);
+
+    const handleDelete = useCallback(async (quota: StorageQuota) => {
+        setDeletingId(quota.userId);
+        try {
+            await deleteUserQuota(quota.userId);
+            success('已删除配额并恢复默认值');
+            actionRef.current?.reload?.();
+            loadUsageStats();
+        } catch (err) {
+            error('删除配额失败');
+        } finally {
+            setDeletingId(null);
+        }
+    }, [error, loadUsageStats, success]);
+
     // 更新配额
     const handleEditSubmit = useCallback(async (values: UpdateQuotaRequest) => {
         if (!editingQuota) return;
@@ -325,6 +375,14 @@ const CloudStorageQuotaPage: React.FC = () => {
             console.error('日期格式化错误:', error, dateTime);
             return dateTime || '-';
         }
+    }, []);
+
+    // 平均使用率（基于总使用量/总配额）
+    const getAverageUsagePercent = useCallback((stats?: QuotaUsageStats | null) => {
+        if (!stats) return 0;
+        const { totalUsed = 0, totalQuota = 0 } = stats;
+        if (totalQuota <= 0) return 0;
+        return Number(((totalUsed / totalQuota) * 100).toFixed(2));
     }, []);
 
     // 获取使用率颜色
@@ -457,7 +515,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            width: 120,
+            width: 180,
             render: (_: any, record: StorageQuota) => (
                 <Space size="small">
                     <Button
@@ -468,6 +526,25 @@ const CloudStorageQuotaPage: React.FC = () => {
                     >
                         编辑
                     </Button>
+                    <Popconfirm
+                        title="删除配额"
+                        description={<span>删除后该用户将恢复默认配额，确认删除？</span>}
+                        okText="删除"
+                        okButtonProps={{ danger: true }}
+                        cancelText="取消"
+                        icon={<ExclamationCircleOutlined style={{ color: '#faad14' }} />}
+                        onConfirm={() => handleDelete(record)}
+                    >
+                        <Button
+                            type="link"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            loading={deletingId === record.userId}
+                        >
+                            删除
+                        </Button>
+                    </Popconfirm>
                 </Space>
             ),
         },
@@ -484,6 +561,14 @@ const CloudStorageQuotaPage: React.FC = () => {
             style={{ paddingBlock: 12 }}
             extra={
                 <Space wrap>
+                    <Button
+                        key="add"
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => setAddQuotaVisible(true)}
+                    >
+                        新增配额
+                    </Button>
                     <Button
                         key="refresh"
                         icon={<ReloadOutlined />}
@@ -593,7 +678,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                     <Card>
                                         <Statistic
                                             title="平均使用率"
-                                            value={usageStats.averageUsage}
+                                            value={getAverageUsagePercent(usageStats)}
                                             suffix="%"
                                             prefix={<PieChartOutlined />}
                                         />
@@ -619,7 +704,13 @@ const CloudStorageQuotaPage: React.FC = () => {
                                         {(usageStats.topUsers ?? []).map((user, index) => (
                                             <div key={user.userId || `${user.username}-${index}`} style={{ marginBottom: 8 }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span>#{index + 1} {user.userDisplayName}</span>
+                                                    <span>
+                                                        #{index + 1}{' '}
+                                                        {user.userDisplayName || user.username || user.userId || '未知用户'}
+                                                        {user.username && user.username !== user.userDisplayName
+                                                            ? ` (${user.username})`
+                                                            : ''}
+                                                    </span>
                                                     <span>{formatFileSize(user.usedQuota)} ({user.usagePercentage.toFixed(2)}%)</span>
                                                 </div>
                                                 <Progress percent={user.usagePercentage} showInfo={false} />
@@ -810,6 +901,81 @@ const CloudStorageQuotaPage: React.FC = () => {
                                     setEditQuotaVisible(false);
                                     setEditingQuota(null);
                                     editQuotaForm.resetFields();
+                                }}
+                            >
+                                取消
+                            </Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* 新增配额弹窗 */}
+            <Modal
+                title="新增配额"
+                open={addQuotaVisible}
+                onCancel={() => {
+                    setAddQuotaVisible(false);
+                    addQuotaForm.resetFields();
+                }}
+                footer={null}
+                width={600}
+            >
+                <Form
+                    form={addQuotaForm}
+                    layout="vertical"
+                    onFinish={handleAddSubmit}
+                >
+                    <Form.Item
+                        name="userId"
+                        label="选择用户"
+                        rules={[{ required: true, message: '请选择用户' }]}
+                    >
+                        <Select
+                            showSearch
+                            placeholder="请选择用户"
+                            loading={userLoading}
+                            optionFilterProp="label"
+                            onSearch={(value) => loadUserOptions(value)}
+                            filterOption={false}
+                            options={userOptions.map((user) => ({
+                                label: user.name || user.username,
+                                value: user.id,
+                            }))}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        name="totalQuota"
+                        label="总配额 (GB)"
+                        rules={[{ required: true, message: '请输入总配额' }]}
+                    >
+                        <InputNumber
+                            placeholder="请输入总配额（GB）"
+                            style={{ width: '100%' }}
+                            min={0}
+                            formatter={(value) => `${value}`}
+                        />
+                    </Form.Item>
+                    <Form.Item name="warningThreshold" label="警告阈值 (%)">
+                        <InputNumber
+                            placeholder="请输入警告阈值"
+                            style={{ width: '100%' }}
+                            min={0}
+                            max={100}
+                        />
+                    </Form.Item>
+                    <Form.Item name="isEnabled" label="启用状态" valuePropName="checked" initialValue={true}>
+                        <Switch defaultChecked />
+                    </Form.Item>
+                    <Form.Item>
+                        <Space>
+                            <Button type="primary" htmlType="submit" loading={submitLoading}>
+                                保存
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setAddQuotaVisible(false);
+                                    addQuotaForm.resetFields();
                                 }}
                             >
                                 取消

@@ -44,6 +44,10 @@ public class StorageQuotaController : BaseApiController
             var quota = await _storageQuotaService.GetUserQuotaAsync();
             return Success(quota);
         }
+        catch (InvalidOperationException ex)
+        {
+            return ValidationError(ex.Message);
+        }
         catch (Exception ex)
         {
             LogError("GetMyQuota", ex);
@@ -65,6 +69,10 @@ public class StorageQuotaController : BaseApiController
             return Success(quota);
         }
         catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
+        }
+        catch (InvalidOperationException ex)
         {
             return ValidationError(ex.Message);
         }
@@ -165,6 +173,10 @@ public class StorageQuotaController : BaseApiController
         {
             return ValidationError(ex.Message);
         }
+        catch (InvalidOperationException ex)
+        {
+            return ValidationError(ex.Message);
+        }
         catch (Exception ex)
         {
             LogError("RecalculateUserStorage", ex, userId);
@@ -186,13 +198,17 @@ public class StorageQuotaController : BaseApiController
 
         try
         {
-            // 恢复为默认配额（10GB）
-            const long defaultQuota = 10L * 1024 * 1024 * 1024;
-            var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota, 80, true);
+            // 清除配额，恢复为未分配状态
+            const long defaultQuota = 0;
+            var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota, 0, false);
             LogOperation("DeleteUserQuota", userId, new { defaultQuota });
-            return Success(quota, "配额已恢复为默认值");
+            return Success(quota, "已清除用户配额，需管理员重新分配后才能使用网盘");
         }
         catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
+        }
+        catch (InvalidOperationException ex)
         {
             return ValidationError(ex.Message);
         }
@@ -415,11 +431,15 @@ public class StorageQuotaController : BaseApiController
                 UserId = userId,
                 RequiredSize = requiredSize,
                 IsAvailable = isAvailable,
-                Message = isAvailable ? "存储空间充足" : "存储空间不足"
+                Message = isAvailable ? "存储空间充足" : "存储空间不足或未分配配额"
             };
             return Success(result);
         }
         catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
+        }
+        catch (InvalidOperationException ex)
         {
             return ValidationError(ex.Message);
         }
@@ -453,6 +473,10 @@ public class StorageQuotaController : BaseApiController
             return Success(quota, "存储使用量更新成功");
         }
         catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
+        }
+        catch (InvalidOperationException ex)
         {
             return ValidationError(ex.Message);
         }

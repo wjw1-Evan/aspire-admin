@@ -15,9 +15,9 @@ public class StorageQuotaService : IStorageQuotaService
     private readonly ILogger<StorageQuotaService> _logger;
 
     /// <summary>
-    /// 默认存储配额（10GB）
+    /// 默认存储配额（默认不分配，0 表示未分配）
     /// </summary>
-    private const long DefaultQuota = 10L * 1024 * 1024 * 1024;
+    private const long DefaultQuota = 0;
 
     /// <summary>
     /// 初始化存储配额服务
@@ -45,7 +45,8 @@ public class StorageQuotaService : IStorageQuotaService
         if (string.IsNullOrEmpty(targetUserId))
             throw new InvalidOperationException("用户ID不能为空");
 
-        var quota = await GetOrCreateUserQuotaAsync(targetUserId);
+        var quota = await FindUserQuotaAsync(targetUserId)
+            ?? throw new InvalidOperationException("用户尚未分配存储配额，请联系管理员设置配额");
 
         // 实时查询用户的所有活跃文件，计算准确的文件数量和使用空间
         var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
@@ -94,7 +95,7 @@ public class StorageQuotaService : IStorageQuotaService
         if (warningThreshold.HasValue && (warningThreshold.Value < 0 || warningThreshold.Value > 100))
             throw new ArgumentException("警告阈值必须在0-100之间", nameof(warningThreshold));
 
-        var quota = await GetOrCreateUserQuotaAsync(userId);
+        var quota = await EnsureQuotaForSettingAsync(userId, totalQuota, warningThreshold, isEnabled);
 
         var updateBuilder = _quotaFactory.CreateUpdateBuilder();
         updateBuilder
@@ -137,7 +138,8 @@ public class StorageQuotaService : IStorageQuotaService
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
-        var quota = await GetOrCreateUserQuotaAsync(userId);
+        var quota = await FindUserQuotaAsync(userId)
+            ?? throw new InvalidOperationException("用户尚未分配存储配额，无法更新存储使用量");
 
         // 计算新的使用量
         var newUsedSpace = Math.Max(0, quota.UsedSpace + sizeChange);
@@ -173,7 +175,8 @@ public class StorageQuotaService : IStorageQuotaService
         if (requiredSize < 0)
             return true;
 
-        var quota = await GetOrCreateUserQuotaAsync(userId);
+        var quota = await FindUserQuotaAsync(userId)
+            ?? throw new InvalidOperationException("用户尚未分配存储配额，无法检查可用空间");
         var availableSpace = quota.TotalQuota - quota.UsedSpace;
 
         return availableSpace >= requiredSize;
@@ -259,7 +262,8 @@ public class StorageQuotaService : IStorageQuotaService
             .ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
 
         // 更新配额信息
-        var quota = await GetOrCreateUserQuotaAsync(userId);
+        var quota = await FindUserQuotaAsync(userId)
+            ?? throw new InvalidOperationException("用户尚未分配存储配额，无法重新计算使用量");
 
         var updateBuilder = _quotaFactory.CreateUpdateBuilder();
         var update = updateBuilder
@@ -654,12 +658,12 @@ public class StorageQuotaService : IStorageQuotaService
                 TotalQuota = DefaultQuota,
                 UsedSpace = usedSpace,
                 FileCount = fileCount,
-                WarningThreshold = 80,
-                IsEnabled = true,
+                WarningThreshold = 0,
+                IsEnabled = false,
                 LastCalculatedAt = DateTime.UtcNow,
                 CreatedAt = user.CreatedAt != default(DateTime) ? user.CreatedAt : DateTime.UtcNow,
                 UpdatedAt = user.UpdatedAt != default(DateTime) ? user.UpdatedAt : DateTime.UtcNow,
-                Status = "Active",
+                Status = "NotAssigned",
                 WarningLevel = GetWarningLevel(usedSpace, DefaultQuota)
             });
         }
@@ -892,32 +896,42 @@ public class StorageQuotaService : IStorageQuotaService
     #region 私有辅助方法
 
     /// <summary>
-    /// 获取或创建用户配额
+    /// 获取用户配额（不存在时返回 null）
     /// </summary>
-    private async Task<StorageQuota> GetOrCreateUserQuotaAsync(string userId)
+    private async Task<StorageQuota?> FindUserQuotaAsync(string userId)
     {
         var filterBuilder = _quotaFactory.CreateFilterBuilder();
         var filter = filterBuilder.Equal(q => q.UserId, userId).Build();
 
         var quotas = await _quotaFactory.FindAsync(filter, limit: 1);
-        var quota = quotas.FirstOrDefault();
+        return quotas.FirstOrDefault();
+    }
 
-        if (quota == null)
+    /// <summary>
+    /// 确保用于管理员设置场景的配额存在，不存在则按给定参数创建
+    /// </summary>
+    private async Task<StorageQuota> EnsureQuotaForSettingAsync(string userId, long totalQuota, int? warningThreshold, bool? isEnabled)
+    {
+        var existing = await FindUserQuotaAsync(userId);
+        if (existing != null)
         {
-            quota = new StorageQuota
-            {
-                UserId = userId,
-                TotalQuota = DefaultQuota,
-                UsedSpace = 0,
-                FileCount = 0,
-                LastCalculatedAt = DateTime.UtcNow,
-                TypeUsage = []
-            };
-
-            await _quotaFactory.CreateAsync(quota);
-            _logger.LogInformation("Created default storage quota for user {UserId}: {TotalQuota} bytes", userId, DefaultQuota);
+            return existing;
         }
 
+        var quota = new StorageQuota
+        {
+            UserId = userId,
+            TotalQuota = totalQuota,
+            UsedSpace = 0,
+            FileCount = 0,
+            WarningThreshold = warningThreshold ?? 80,
+            IsEnabled = isEnabled ?? true,
+            LastCalculatedAt = DateTime.UtcNow,
+            TypeUsage = []
+        };
+
+        await _quotaFactory.CreateAsync(quota);
+        _logger.LogInformation("Created storage quota for user {UserId}: {TotalQuota} bytes (IsEnabled: {IsEnabled})", userId, totalQuota, quota.IsEnabled);
         return quota;
     }
 

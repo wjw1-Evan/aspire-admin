@@ -88,9 +88,11 @@ export interface QuotaWarningListResponse {
  * 设置用户存储配额
  */
 export async function setUserQuota(data: SetQuotaRequest) {
-    return request<ApiResponse<StorageQuota>>('/api/storage-quota', {
-        method: 'POST',
-        data,
+    const { userId, ...body } = data;
+
+    return request<ApiResponse<StorageQuota>>(`/api/storage-quota/user/${userId}`, {
+        method: 'PUT',
+        data: body,
     });
 }
 
@@ -145,7 +147,7 @@ export async function deleteUserQuota(userId: string) {
  * 批量设置存储配额
  */
 export async function batchSetQuota(data: { userIds: string[]; totalQuota: number; warningThreshold?: number }) {
-    return request<ApiResponse<{ successCount: number; failedCount: number }>>('/api/storage-quota/batch-set', {
+    return request<ApiResponse<{ successCount: number; failedCount: number }>>('/api/storage-quota/batch/set', {
         method: 'POST',
         data,
     });

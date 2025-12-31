@@ -92,7 +92,6 @@ class UnifiedErrorInterceptor {
     this.addRule({
       condition: (error) => {
         return error.response?.status === 401 ||
-               error.response?.status === 404 ||
                error.message === 'Authentication handled silently' ||
                error.message === 'Authentication handled';
       },
@@ -232,7 +231,7 @@ class UnifiedErrorInterceptor {
    * 确定错误类型
    */
   private determineErrorType(error: any): ErrorType {
-    if (error.response?.status === 401 || error.response?.status === 404) {
+    if (error.response?.status === 401) {
       return ErrorType.AUTHENTICATION;
     }
     if (error.response?.status === 403) {

@@ -237,6 +237,12 @@ export default [
       },
     ],
   },
+  // 公共分享访问页面（无需布局、无需登录）
+  {
+    path: '/share/:token',
+    component: './share',
+    layout: false,
+  },
 
   // 默认重定向和404
   {

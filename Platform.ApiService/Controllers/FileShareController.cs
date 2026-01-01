@@ -272,16 +272,40 @@ public class FileShareController : BaseApiController
             if (!hasAccess)
                 return ForbiddenError("分享链接无效、已过期或密码错误");
 
-            // 获取分享文件信息
+            // 获取分享和文件信息
+            var share = await _fileShareService.GetShareAsync(shareToken);
             var fileInfo = await _fileShareService.GetSharedFileInfoAsync(shareToken, password);
-            if (fileInfo == null)
+            if (share == null || fileInfo == null)
                 return NotFoundError("分享文件", shareToken);
 
             // 记录访问日志
             var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {GetUserAgent()}";
             await _fileShareService.RecordShareAccessAsync(shareToken, accessorInfo);
 
-            return Success(fileInfo);
+            // 包含权限信息，便于前端判断下载/预览能力
+            var accessType = share.Permission switch
+            {
+                SharePermission.Download => "download",
+                SharePermission.Edit or SharePermission.Full => "edit",
+                _ => "view"
+            };
+
+            var response = new
+            {
+                fileId = fileInfo.Id,
+                fileName = fileInfo.Name,
+                fileSize = fileInfo.Size,
+                mimeType = fileInfo.MimeType,
+                accessType,
+                permission = share.Permission,
+                canDownload = share.Permission != SharePermission.View,
+                canView = true,
+                shareType = share.Type,
+                expiresAt = share.ExpiresAt,
+                isActive = share.IsActive
+            };
+
+            return Success(response);
         }
         catch (ArgumentException ex)
         {

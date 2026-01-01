@@ -15,6 +15,7 @@ import {
     Card,
     Form,
     Input,
+    DatePicker,
     Select,
     Descriptions,
     Spin,
@@ -92,6 +93,8 @@ import {
     type StorageStatistics,
     type FileVersion,
 } from '@/services/cloud-storage';
+import { createShare, type CreateShareRequest } from '@/services/cloud-storage/shareApi';
+import { getAllUsers, type AppUser } from '@/services/user/api';
 
 // 与后端保持一致的上传体积上限（5GB）
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024;
@@ -114,7 +117,7 @@ const CloudStorageFilesPage: React.FC = () => {
     const isMobile = !screens.md;
 
     // 表格引用
-    const actionRef = useRef<ActionType>();
+    const actionRef = useRef<ActionType | null>(null);
 
     // 状态管理
     const [currentPath, setCurrentPath] = useState<string>('');
@@ -144,10 +147,15 @@ const CloudStorageFilesPage: React.FC = () => {
     const [renamingItem, setRenamingItem] = useState<FileItem | null>(null);
     const [uploadVisible, setUploadVisible] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{ [key: string]: { percent: number; label: string } }>({});
+    const [shareVisible, setShareVisible] = useState(false);
+    const [sharingItem, setSharingItem] = useState<FileItem | null>(null);
+    const [userOptions, setUserOptions] = useState<AppUser[]>([]);
+    const [userLoading, setUserLoading] = useState(false);
 
     // 表单
     const [createFolderForm] = Form.useForm();
     const [renameForm] = Form.useForm();
+    const [shareForm] = Form.useForm();
 
     // 加载统计数据
     const loadStatistics = useCallback(async () => {
@@ -183,7 +191,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
     // 刷新处理
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
         loadStatistics();
     }, [loadStatistics]);
 
@@ -294,9 +302,9 @@ const CloudStorageFilesPage: React.FC = () => {
 
         // 重新加载数据
         if (actionRef.current?.reloadAndReset) {
-            actionRef.current.reloadAndReset();
+            actionRef.current.reloadAndReset?.();
         } else if (actionRef.current?.reload) {
-            actionRef.current.reload();
+            actionRef.current.reload?.();
         }
     }, []);
 
@@ -308,9 +316,9 @@ const CloudStorageFilesPage: React.FC = () => {
         setIsSearchMode(false);
 
         if (actionRef.current?.reloadAndReset) {
-            actionRef.current.reloadAndReset();
+            actionRef.current.reloadAndReset?.();
         } else if (actionRef.current?.reload) {
-            actionRef.current.reload();
+            actionRef.current.reload?.();
         }
     }, [searchForm]);
 
@@ -330,7 +338,7 @@ const CloudStorageFilesPage: React.FC = () => {
         setSearchParams({});
 
         // 重新加载数据
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     }, [currentPath, searchForm]);
 
     const handleBreadcrumbClick = useCallback((index: number) => {
@@ -348,7 +356,7 @@ const CloudStorageFilesPage: React.FC = () => {
         setSearchParams({});
 
         // 重新加载数据
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     }, [pathHistory, searchForm]);
 
     // 文件操作
@@ -417,7 +425,7 @@ const CloudStorageFilesPage: React.FC = () => {
         try {
             await deleteItem(file.id);
             success('删除成功');
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
             loadStatistics();
         } catch (err) {
             error('删除失败');
@@ -429,6 +437,62 @@ const CloudStorageFilesPage: React.FC = () => {
         renameForm.setFieldsValue({ name: file.name });
         setRenameVisible(true);
     }, [renameForm]);
+
+    // 创建分享
+    const handleOpenShare = useCallback((file: FileItem) => {
+        setSharingItem(file);
+        shareForm.resetFields();
+        shareForm.setFieldsValue({
+            shareType: 'internal',
+            accessType: 'view',
+            password: undefined,
+            expiresAt: undefined,
+            maxDownloads: undefined,
+        });
+        setShareVisible(true);
+    }, [shareForm]);
+
+    const loadUsers = useCallback(async () => {
+        try {
+            setUserLoading(true);
+            const resp = await getAllUsers();
+            if (resp.success && resp.data?.users) {
+                setUserOptions(resp.data.users);
+            }
+        } catch (e) {
+            console.error('加载用户列表失败', e);
+            error('无法加载用户列表');
+        } finally {
+            setUserLoading(false);
+        }
+    }, [error]);
+
+    useEffect(() => {
+        if (shareVisible) {
+            loadUsers();
+        }
+    }, [shareVisible, loadUsers]);
+
+    const handleCreateShare = useCallback(async (values: any) => {
+        if (!sharingItem) return;
+
+        try {
+            const payload: CreateShareRequest = {
+                ...values,
+                fileId: sharingItem.id,
+                expiresAt: values.expiresAt ? dayjs(values.expiresAt).toISOString() : undefined,
+                maxDownloads: values.maxDownloads ? Number(values.maxDownloads) : undefined,
+                allowedUserIds: values.shareType === 'internal' ? values.allowedUserIds || [] : undefined,
+            };
+            await createShare(payload);
+            success('创建分享成功');
+            setShareVisible(false);
+            setSharingItem(null);
+            shareForm.resetFields();
+        } catch (err) {
+            error('创建分享失败');
+        }
+    }, [sharingItem, success, error, shareForm]);
 
     // 批量操作
     const handleBatchDelete = useCallback(async () => {
@@ -446,7 +510,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     success('批量删除成功');
                     setSelectedRowKeys([]);
                     setSelectedRows([]);
-                    actionRef.current?.reload();
+                    actionRef.current?.reload?.();
                     loadStatistics();
                 } catch (err) {
                     error('批量删除失败');
@@ -465,7 +529,7 @@ const CloudStorageFilesPage: React.FC = () => {
             success('创建文件夹成功');
             setCreateFolderVisible(false);
             createFolderForm.resetFields();
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
         } catch (err) {
             error('创建文件夹失败');
         }
@@ -481,7 +545,7 @@ const CloudStorageFilesPage: React.FC = () => {
             setRenameVisible(false);
             setRenamingItem(null);
             renameForm.resetFields();
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
         } catch (err) {
             error('重命名失败');
         }
@@ -511,7 +575,7 @@ const CloudStorageFilesPage: React.FC = () => {
                 delete newProgress[uploadId];
                 return newProgress;
             });
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
             loadStatistics();
         } catch (err) {
             error('上传失败');
@@ -571,7 +635,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
         if (successCount > 0) {
             success(`上传完成：${successCount}/${files.length}`);
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
             loadStatistics();
         }
     }, [loadStatistics, success, uploadSingleWithProgress]);
@@ -673,8 +737,16 @@ const CloudStorageFilesPage: React.FC = () => {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            render: (_, record: FileItem) => (
+            render: (_: unknown, record: FileItem) => (
                 <Space size="small">
+                    <Button
+                        type="link"
+                        size="small"
+                        icon={<ShareAltOutlined />}
+                        onClick={() => handleOpenShare(record)}
+                    >
+                        分享
+                    </Button>
                     <Button
                         type="link"
                         size="small"
@@ -998,7 +1070,7 @@ const CloudStorageFilesPage: React.FC = () => {
                                                                     try {
                                                                         await restoreVersion({ versionId: record.id });
                                                                         success('已恢复到该版本');
-                                                                        actionRef.current?.reload();
+                                                                        actionRef.current?.reload?.();
                                                                         handleView(viewingFile);
                                                                     } catch (e) {
                                                                         error('恢复失败');
@@ -1023,6 +1095,111 @@ const CloudStorageFilesPage: React.FC = () => {
                     )}
                 </Spin>
             </Drawer>
+
+            {/* 创建分享弹窗 */}
+            <Modal
+                title="创建分享"
+                open={shareVisible}
+                onCancel={() => {
+                    setShareVisible(false);
+                    setSharingItem(null);
+                    shareForm.resetFields();
+                }}
+                footer={null}
+                width={600}
+            >
+                <Form
+                    form={shareForm}
+                    layout="vertical"
+                    onFinish={handleCreateShare}
+                >
+                    <Form.Item label="分享对象">
+                        <Input
+                            value={sharingItem ? `${sharingItem.isFolder ? '文件夹' : '文件'}：${sharingItem.name}` : ''}
+                            disabled
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        name="shareType"
+                        label="分享类型"
+                        rules={[{ required: true, message: '请选择分享类型' }]}
+                    >
+                        <Select placeholder="请选择分享类型">
+                            <Select.Option value="internal">内部分享</Select.Option>
+                            <Select.Option value="external">外部分享</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item noStyle shouldUpdate={(prev, next) => prev.shareType !== next.shareType}>
+                        {({ getFieldValue }) =>
+                            getFieldValue('shareType') === 'internal' ? (
+                                <Form.Item
+                                    name="allowedUserIds"
+                                    label="选择可访问用户"
+                                    rules={[{ required: true, message: '请选择内部分享的可访问用户' }]}
+                                >
+                                    <Select
+                                        mode="multiple"
+                                        placeholder="请选择可访问的用户"
+                                        loading={userLoading}
+                                        optionFilterProp="label"
+                                        showSearch
+                                    >
+                                        {userOptions.map((user) => (
+                                            <Select.Option key={user.id} value={user.id} label={user.name || user.username}>
+                                                {user.name || user.username}
+                                            </Select.Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                            ) : null
+                        }
+                    </Form.Item>
+                    <Form.Item
+                        name="accessType"
+                        label="访问权限"
+                        rules={[{ required: true, message: '请选择访问权限' }]}
+                    >
+                        <Select placeholder="请选择访问权限">
+                            <Select.Option value="view">仅查看</Select.Option>
+                            <Select.Option value="download">查看和下载</Select.Option>
+                            <Select.Option value="edit">查看、下载和编辑</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item name="password" label="访问密码">
+                        <Input.Password placeholder="设置访问密码（可选）" />
+                    </Form.Item>
+                    <Form.Item name="expiresAt" label="过期时间">
+                        <DatePicker
+                            showTime
+                            placeholder="设置过期时间（可选）"
+                            style={{ width: '100%' }}
+                        />
+                    </Form.Item>
+                    <Form.Item name="maxDownloads" label="下载次数限制">
+                        <Input
+                            type="number"
+                            placeholder="设置最大下载次数（可选）"
+                            min={1}
+                        />
+                    </Form.Item>
+                    <Form.Item>
+                        <Space>
+                            <Button type="primary" htmlType="submit" disabled={!sharingItem}>
+                                创建分享
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setShareVisible(false);
+                                    setSharingItem(null);
+                                    shareForm.resetFields();
+                                }}
+                            >
+                                取消
+                            </Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
+            </Modal>
 
             {/* 创建文件夹弹窗 */}
             <Modal

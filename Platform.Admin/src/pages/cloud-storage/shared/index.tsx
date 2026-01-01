@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
@@ -54,7 +54,6 @@ const { RangePicker } = DatePicker;
 import {
     getShareList,
     getShareDetail,
-    createShare,
     updateShare,
     deleteShare,
     toggleShare,
@@ -62,16 +61,12 @@ import {
     getMyShares,
     getSharedWithMe,
     type FileShare,
-    type CreateShareRequest,
     type UpdateShareRequest,
     type ShareListRequest,
     type ShareNotificationRequest,
 } from '@/services/cloud-storage/shareApi';
+import { getFileDetail } from '@/services/cloud-storage';
 
-import {
-    getFileList,
-    type FileItem,
-} from '@/services/cloud-storage/api';
 
 interface SearchParams {
     shareType?: 'internal' | 'external';
@@ -102,24 +97,79 @@ const CloudStorageSharedPage: React.FC = () => {
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
     const [viewingShare, setViewingShare] = useState<FileShare | null>(null);
-    const [createShareVisible, setCreateShareVisible] = useState(false);
     const [editShareVisible, setEditShareVisible] = useState(false);
     const [editingShare, setEditingShare] = useState<FileShare | null>(null);
     const [notifyVisible, setNotifyVisible] = useState(false);
     const [notifyingShare, setNotifyingShare] = useState<FileShare | null>(null);
+    const [fileNameMap, setFileNameMap] = useState<Record<string, string>>({});
 
     // 表单
-    const [createShareForm] = Form.useForm();
     const [editShareForm] = Form.useForm();
     const [notifyForm] = Form.useForm();
-
-    // 文件列表（用于创建分享时选择）
-    const [fileList, setFileList] = useState<FileItem[]>([]);
 
     // 刷新处理
     const handleRefresh = useCallback(() => {
         actionRef.current?.reload();
     }, []);
+
+    const mapShareType = (type: any): 'internal' | 'external' => {
+        if (typeof type === 'string') {
+            const lower = type.toLowerCase();
+            return lower === 'internal' ? 'internal' : 'external';
+        }
+        // 枚举：1 = Internal，其余视为外部/链接
+        return type === 1 ? 'internal' : 'external';
+    };
+
+    const mapAccessType = (permission: any): 'view' | 'download' | 'edit' => {
+        // 0=view,1=download,2=edit,3=full
+        if (typeof permission === 'number') {
+            if (permission === 1) return 'download';
+            if (permission >= 2) return 'edit';
+            return 'view';
+        }
+        const lower = typeof permission === 'string' ? permission.toLowerCase() : '';
+        if (lower === 'download') return 'download';
+        if (lower === 'edit' || lower === 'full') return 'edit';
+        return 'view';
+    };
+
+    const transformShare = (item: any): FileShare => {
+        const maxDownloads = item.settings?.maxDownloads ?? item.maxDownloads;
+        return {
+            id: item.id,
+            fileId: item.fileItemId,
+            fileName: item.fileName || item.fileItemName || item.fileItemId || '未知文件',
+            shareToken: item.shareToken,
+            shareType: mapShareType(item.type),
+            accessType: mapAccessType(item.permission),
+            password: item.password || '',
+            expiresAt: item.expiresAt,
+            maxDownloads: typeof maxDownloads === 'number' ? maxDownloads : undefined,
+            downloadCount: item.downloadCount || item.accessCount || 0,
+            accessCount: item.accessCount || 0,
+            isEnabled: item.isActive !== undefined ? item.isActive : item.isEnabled,
+            createdAt: item.createdAt,
+            createdBy: item.createdBy,
+            createdByName: item.createdByName || item.createdByUsername || '',
+        } as FileShare;
+    };
+
+    const resolveFileName = useCallback(async (fileId?: string) => {
+        if (!fileId) return undefined;
+        if (fileNameMap[fileId]) return fileNameMap[fileId];
+        try {
+            const resp = await getFileDetail(fileId);
+            if (resp.success && resp.data) {
+                const name = resp.data.name || fileId;
+                setFileNameMap(prev => ({ ...prev, [fileId]: name }));
+                return name;
+            }
+        } catch (e) {
+            // ignore
+        }
+        return fileId;
+    }, [fileNameMap]);
 
     // 数据获取函数
     const fetchData = useCallback(async (params: any) => {
@@ -144,9 +194,50 @@ const CloudStorageSharedPage: React.FC = () => {
             }
 
             if (response.success && response.data) {
+                const list = response.data.list || response.data.data || [];
+                const transformed = list.map(transformShare);
+
+                // 补齐文件名（接口只返回 fileItemId）
+                const missingIds = transformed
+                    .map(item => item.fileId)
+                    .filter(id => id && !fileNameMap[id]);
+
+                if (missingIds.length > 0) {
+                    const uniqueIds = Array.from(new Set(missingIds));
+                    const details = await Promise.all(uniqueIds.map(async (id) => {
+                        try {
+                            const resp = await getFileDetail(id);
+                            if (resp.success && resp.data) {
+                                return { id, name: resp.data.name };
+                            }
+                        } catch (e) {
+                            // ignore
+                        }
+                        return { id, name: id };
+                    }));
+
+                    const newMap = { ...fileNameMap };
+                    details.forEach(d => {
+                        if (d?.id) newMap[d.id] = d.name;
+                    });
+                    setFileNameMap(newMap);
+
+                    transformed.forEach(item => {
+                        if (newMap[item.fileId]) {
+                            item.fileName = newMap[item.fileId];
+                        }
+                    });
+                } else {
+                    transformed.forEach(item => {
+                        if (fileNameMap[item.fileId]) {
+                            item.fileName = fileNameMap[item.fileId];
+                        }
+                    });
+                }
+
                 return {
-                    data: response.data.data || [],
-                    total: response.data.total || 0,
+                    data: transformed,
+                    total: response.data.total || response.data.totalCount || list.length,
                     success: true,
                 };
             }
@@ -206,13 +297,19 @@ const CloudStorageSharedPage: React.FC = () => {
         try {
             const response = await getShareDetail(share.id);
             if (response.success && response.data) {
-                setViewingShare(response.data);
+                const transformed = transformShare(response.data);
+                const resolvedName = await resolveFileName(transformed.fileId);
+                const finalShare = {
+                    ...transformed,
+                    fileName: resolvedName || transformed.fileName,
+                } as FileShare;
+                setViewingShare(finalShare);
                 setDetailVisible(true);
             }
         } catch (err) {
             error('获取分享详情失败');
         }
-    }, [error]);
+    }, [error, resolveFileName]);
 
     const handleEdit = useCallback((share: FileShare) => {
         setEditingShare(share);
@@ -268,23 +365,6 @@ const CloudStorageSharedPage: React.FC = () => {
             success('分享链接已复制到剪贴板');
         }
     }, [success]);
-
-    // 创建分享
-    const handleCreateShare = useCallback(async (values: CreateShareRequest) => {
-        try {
-            const submitData = {
-                ...values,
-                expiresAt: values.expiresAt ? dayjs(values.expiresAt).toISOString() : undefined,
-            };
-            await createShare(submitData);
-            success('创建分享成功');
-            setCreateShareVisible(false);
-            createShareForm.resetFields();
-            actionRef.current?.reload();
-        } catch (err) {
-            error('创建分享失败');
-        }
-    }, [success, error, createShareForm]);
 
     // 更新分享
     const handleEditSubmit = useCallback(async (values: UpdateShareRequest) => {
@@ -489,16 +569,6 @@ const CloudStorageSharedPage: React.FC = () => {
                     >
                         {intl.formatMessage({ id: 'pages.button.refresh' })}
                     </Button>
-                    {activeTab === 'my-shares' && (
-                        <Button
-                            key="create-share"
-                            type="primary"
-                            icon={<ShareAltOutlined />}
-                            onClick={() => setCreateShareVisible(true)}
-                        >
-                            创建分享
-                        </Button>
-                    )}
                 </Space>
             }
         >
@@ -689,94 +759,6 @@ const CloudStorageSharedPage: React.FC = () => {
                     )}
                 </Spin>
             </Drawer>
-
-            {/* 创建分享弹窗 */}
-            <Modal
-                title="创建分享"
-                open={createShareVisible}
-                onCancel={() => {
-                    setCreateShareVisible(false);
-                    createShareForm.resetFields();
-                }}
-                footer={null}
-                width={600}
-            >
-                <Form
-                    form={createShareForm}
-                    layout="vertical"
-                    onFinish={handleCreateShare}
-                >
-                    <Form.Item
-                        name="fileId"
-                        label="选择文件"
-                        rules={[{ required: true, message: '请选择要分享的文件' }]}
-                    >
-                        <Select placeholder="请选择要分享的文件" showSearch>
-                            {fileList.map(file => (
-                                <Select.Option key={file.id} value={file.id}>
-                                    <Space>
-                                        {file.isFolder ? <FolderOutlined /> : <FileOutlined />}
-                                        {file.name}
-                                    </Space>
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        name="shareType"
-                        label="分享类型"
-                        rules={[{ required: true, message: '请选择分享类型' }]}
-                    >
-                        <Select placeholder="请选择分享类型">
-                            <Select.Option value="internal">内部分享</Select.Option>
-                            <Select.Option value="external">外部分享</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        name="accessType"
-                        label="访问权限"
-                        rules={[{ required: true, message: '请选择访问权限' }]}
-                    >
-                        <Select placeholder="请选择访问权限">
-                            <Select.Option value="view">仅查看</Select.Option>
-                            <Select.Option value="download">查看和下载</Select.Option>
-                            <Select.Option value="edit">查看、下载和编辑</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="password" label="访问密码">
-                        <Input.Password placeholder="设置访问密码（可选）" />
-                    </Form.Item>
-                    <Form.Item name="expiresAt" label="过期时间">
-                        <DatePicker
-                            showTime
-                            placeholder="设置过期时间（可选）"
-                            style={{ width: '100%' }}
-                        />
-                    </Form.Item>
-                    <Form.Item name="maxDownloads" label="下载次数限制">
-                        <Input
-                            type="number"
-                            placeholder="设置最大下载次数（可选）"
-                            min={1}
-                        />
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">
-                                创建分享
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    setCreateShareVisible(false);
-                                    createShareForm.resetFields();
-                                }}
-                            >
-                                取消
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </Modal>
 
             {/* 编辑分享弹窗 */}
             <Modal

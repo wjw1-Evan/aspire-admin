@@ -2,10 +2,98 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
-using System;
-using System.Collections.Generic;
 
 namespace Platform.ApiService.Models;
+
+/// <summary>
+/// 批量操作类型枚举
+/// </summary>
+public enum BulkOperationType
+{
+    /// <summary>激活</summary>
+    Activate = 0,
+
+    /// <summary>停用</summary>
+    Deactivate = 1,
+
+    /// <summary>删除</summary>
+    Delete = 2,
+
+    /// <summary>更新类别</summary>
+    UpdateCategory = 3,
+
+    /// <summary>导出</summary>
+    Export = 4
+}
+
+/// <summary>
+/// 批量操作状态枚举
+/// </summary>
+public enum BulkOperationStatus
+{
+    /// <summary>排队中</summary>
+    Queued = 0,
+
+    /// <summary>进行中</summary>
+    InProgress = 1,
+
+    /// <summary>已完成</summary>
+    Completed = 2,
+
+    /// <summary>已取消</summary>
+    Cancelled = 3,
+
+    /// <summary>失败</summary>
+    Failed = 4
+}
+
+/// <summary>
+/// 导出格式枚举
+/// </summary>
+public enum ExportFormat
+{
+    /// <summary>JSON格式</summary>
+    Json = 0,
+
+    /// <summary>Excel格式</summary>
+    Excel = 1,
+
+    /// <summary>CSV格式</summary>
+    Csv = 2
+}
+
+/// <summary>
+/// 模板类型枚举
+/// </summary>
+public enum TemplateType
+{
+    /// <summary>系统模板</summary>
+    System = 0,
+
+    /// <summary>企业模板</summary>
+    Company = 1,
+
+    /// <summary>用户模板</summary>
+    User = 2
+}
+
+/// <summary>
+/// 验证严重程度枚举
+/// </summary>
+public enum ValidationSeverity
+{
+    /// <summary>信息</summary>
+    Info = 0,
+
+    /// <summary>警告</summary>
+    Warning = 1,
+
+    /// <summary>错误</summary>
+    Error = 2,
+
+    /// <summary>严重错误</summary>
+    Critical = 3
+}
 
 /// <summary>
 /// 工作流状态枚举
@@ -68,6 +156,966 @@ public enum ApproverType
 
     /// <summary>部门</summary>
     Department = 2
+}
+
+/// <summary>
+/// 工作流分析数据
+/// </summary>
+public class WorkflowAnalytics
+{
+    /// <summary>
+    /// 使用次数
+    /// </summary>
+    [BsonElement("usageCount")]
+    public int UsageCount { get; set; } = 0;
+
+    /// <summary>
+    /// 完成率（百分比）
+    /// </summary>
+    [BsonElement("completionRate")]
+    public double CompletionRate { get; set; } = 0.0;
+
+    /// <summary>
+    /// 平均完成时间（小时）
+    /// </summary>
+    [BsonElement("averageCompletionTimeHours")]
+    public double AverageCompletionTimeHours { get; set; } = 0.0;
+
+    /// <summary>
+    /// 最后使用时间
+    /// </summary>
+    [BsonElement("lastUsedAt")]
+    public DateTime? LastUsedAt { get; set; }
+
+    /// <summary>
+    /// 性能评分（0-100）
+    /// </summary>
+    [BsonElement("performanceScore")]
+    public double PerformanceScore { get; set; } = 0.0;
+
+    /// <summary>
+    /// 趋势数据（最近30天的使用情况）
+    /// </summary>
+    [BsonElement("trendData")]
+    public List<TrendDataPoint> TrendData { get; set; } = new();
+
+    /// <summary>
+    /// 性能问题列表
+    /// </summary>
+    [BsonElement("performanceIssues")]
+    public List<PerformanceIssue> PerformanceIssues { get; set; } = new();
+}
+
+/// <summary>
+/// 趋势数据点
+/// </summary>
+public class TrendDataPoint
+{
+    /// <summary>
+    /// 日期
+    /// </summary>
+    [BsonElement("date")]
+    public DateTime Date { get; set; }
+
+    /// <summary>
+    /// 使用次数
+    /// </summary>
+    [BsonElement("usageCount")]
+    public int UsageCount { get; set; }
+
+    /// <summary>
+    /// 完成次数
+    /// </summary>
+    [BsonElement("completionCount")]
+    public int CompletionCount { get; set; }
+
+    /// <summary>
+    /// 平均完成时间（小时）
+    /// </summary>
+    [BsonElement("averageCompletionTimeHours")]
+    public double AverageCompletionTimeHours { get; set; }
+}
+
+/// <summary>
+/// 性能问题
+/// </summary>
+public class PerformanceIssue
+{
+    /// <summary>
+    /// 问题类型
+    /// </summary>
+    [BsonElement("type")]
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 问题描述
+    /// </summary>
+    [BsonElement("description")]
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 严重程度
+    /// </summary>
+    [BsonElement("severity")]
+    [BsonRepresentation(BsonType.String)]
+    public ValidationSeverity Severity { get; set; }
+
+    /// <summary>
+    /// 检测时间
+    /// </summary>
+    [BsonElement("detectedAt")]
+    public DateTime DetectedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 建议解决方案
+    /// </summary>
+    [BsonElement("suggestedSolution")]
+    public string? SuggestedSolution { get; set; }
+}
+
+/// <summary>
+/// 批量操作记录
+/// </summary>
+[BsonIgnoreExtraElements]
+[BsonCollectionName("bulk_operations")]
+public class BulkOperation : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+{
+    /// <summary>
+    /// 实体ID
+    /// </summary>
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 操作类型
+    /// </summary>
+    [BsonElement("operationType")]
+    [BsonRepresentation(BsonType.String)]
+    public BulkOperationType OperationType { get; set; }
+
+    /// <summary>
+    /// 操作状态
+    /// </summary>
+    [BsonElement("status")]
+    [BsonRepresentation(BsonType.String)]
+    public BulkOperationStatus Status { get; set; } = BulkOperationStatus.Queued;
+
+    /// <summary>
+    /// 目标工作流ID列表
+    /// </summary>
+    [BsonElement("targetWorkflowIds")]
+    public List<string> TargetWorkflowIds { get; set; } = new();
+
+    /// <summary>
+    /// 操作参数（JSON格式）
+    /// </summary>
+    [BsonElement("parameters")]
+    public Dictionary<string, object> Parameters { get; set; } = new();
+
+    /// <summary>
+    /// 总数量
+    /// </summary>
+    [BsonElement("totalCount")]
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// 已处理数量
+    /// </summary>
+    [BsonElement("processedCount")]
+    public int ProcessedCount { get; set; } = 0;
+
+    /// <summary>
+    /// 成功数量
+    /// </summary>
+    [BsonElement("successCount")]
+    public int SuccessCount { get; set; } = 0;
+
+    /// <summary>
+    /// 失败数量
+    /// </summary>
+    [BsonElement("failureCount")]
+    public int FailureCount { get; set; } = 0;
+
+    /// <summary>
+    /// 错误信息列表
+    /// </summary>
+    [BsonElement("errors")]
+    public List<BulkOperationError> Errors { get; set; } = new();
+
+    /// <summary>
+    /// 开始时间
+    /// </summary>
+    [BsonElement("startedAt")]
+    public DateTime? StartedAt { get; set; }
+
+    /// <summary>
+    /// 完成时间
+    /// </summary>
+    [BsonElement("completedAt")]
+    public DateTime? CompletedAt { get; set; }
+
+    /// <summary>
+    /// 预估完成时间
+    /// </summary>
+    [BsonElement("estimatedCompletionAt")]
+    public DateTime? EstimatedCompletionAt { get; set; }
+
+    /// <summary>
+    /// 是否可取消
+    /// </summary>
+    [BsonElement("cancellable")]
+    public bool Cancellable { get; set; } = true;
+
+    /// <summary>
+    /// 企业ID（多租户）
+    /// </summary>
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+
+    // IEntity, ISoftDeletable, ITimestamped 接口实现
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
+
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("createdBy")]
+    public string? CreatedBy { get; set; }
+
+    [BsonElement("createdByUsername")]
+    public string? CreatedByUsername { get; set; }
+
+    [BsonElement("updatedBy")]
+    public string? UpdatedBy { get; set; }
+
+    [BsonElement("updatedByUsername")]
+    public string? UpdatedByUsername { get; set; }
+}
+
+/// <summary>
+/// 批量操作错误
+/// </summary>
+public class BulkOperationError
+{
+    /// <summary>
+    /// 工作流ID
+    /// </summary>
+    [BsonElement("workflowId")]
+    public string WorkflowId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 工作流名称
+    /// </summary>
+    [BsonElement("workflowName")]
+    public string? WorkflowName { get; set; }
+
+    /// <summary>
+    /// 错误消息
+    /// </summary>
+    [BsonElement("errorMessage")]
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 错误代码
+    /// </summary>
+    [BsonElement("errorCode")]
+    public string? ErrorCode { get; set; }
+
+    /// <summary>
+    /// 发生时间
+    /// </summary>
+    [BsonElement("occurredAt")]
+    public DateTime OccurredAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// 工作流导出配置
+/// </summary>
+public class WorkflowExportConfig
+{
+    /// <summary>
+    /// 导出格式
+    /// </summary>
+    [BsonElement("format")]
+    [BsonRepresentation(BsonType.String)]
+    public ExportFormat Format { get; set; } = ExportFormat.Json;
+
+    /// <summary>
+    /// 是否包含分析数据
+    /// </summary>
+    [BsonElement("includeAnalytics")]
+    public bool IncludeAnalytics { get; set; } = false;
+
+    /// <summary>
+    /// 是否包含依赖项
+    /// </summary>
+    [BsonElement("includeDependencies")]
+    public bool IncludeDependencies { get; set; } = false;
+
+    /// <summary>
+    /// 是否包含历史版本
+    /// </summary>
+    [BsonElement("includeVersionHistory")]
+    public bool IncludeVersionHistory { get; set; } = false;
+
+    /// <summary>
+    /// 过滤条件
+    /// </summary>
+    [BsonElement("filters")]
+    public Dictionary<string, object> Filters { get; set; } = new();
+
+    /// <summary>
+    /// 自定义字段列表
+    /// </summary>
+    [BsonElement("customFields")]
+    public List<string> CustomFields { get; set; } = new();
+}
+
+/// <summary>
+/// 工作流导入结果
+/// </summary>
+public class WorkflowImportResult
+{
+    /// <summary>
+    /// 导入的工作流数量
+    /// </summary>
+    [BsonElement("importedCount")]
+    public int ImportedCount { get; set; } = 0;
+
+    /// <summary>
+    /// 跳过的工作流数量
+    /// </summary>
+    [BsonElement("skippedCount")]
+    public int SkippedCount { get; set; } = 0;
+
+    /// <summary>
+    /// 失败的工作流数量
+    /// </summary>
+    [BsonElement("failedCount")]
+    public int FailedCount { get; set; } = 0;
+
+    /// <summary>
+    /// 冲突列表
+    /// </summary>
+    [BsonElement("conflicts")]
+    public List<ImportConflict> Conflicts { get; set; } = new();
+
+    /// <summary>
+    /// 错误列表
+    /// </summary>
+    [BsonElement("errors")]
+    public List<ImportError> Errors { get; set; } = new();
+
+    /// <summary>
+    /// 导入的工作流ID列表
+    /// </summary>
+    [BsonElement("importedWorkflowIds")]
+    public List<string> ImportedWorkflowIds { get; set; } = new();
+}
+
+/// <summary>
+/// 导入冲突
+/// </summary>
+public class ImportConflict
+{
+    /// <summary>
+    /// 工作流名称
+    /// </summary>
+    [BsonElement("workflowName")]
+    public string WorkflowName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 冲突类型
+    /// </summary>
+    [BsonElement("conflictType")]
+    public string ConflictType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 现有工作流ID
+    /// </summary>
+    [BsonElement("existingWorkflowId")]
+    public string? ExistingWorkflowId { get; set; }
+
+    /// <summary>
+    /// 冲突描述
+    /// </summary>
+    [BsonElement("description")]
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 建议解决方案
+    /// </summary>
+    [BsonElement("suggestedResolution")]
+    public string? SuggestedResolution { get; set; }
+}
+
+/// <summary>
+/// 导入错误
+/// </summary>
+public class ImportError
+{
+    /// <summary>
+    /// 工作流名称
+    /// </summary>
+    [BsonElement("workflowName")]
+    public string? WorkflowName { get; set; }
+
+    /// <summary>
+    /// 错误消息
+    /// </summary>
+    [BsonElement("errorMessage")]
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 错误详情
+    /// </summary>
+    [BsonElement("errorDetails")]
+    public string? ErrorDetails { get; set; }
+
+    /// <summary>
+    /// 行号（如果适用）
+    /// </summary>
+    [BsonElement("lineNumber")]
+    public int? LineNumber { get; set; }
+}
+
+/// <summary>
+/// 工作流模板
+/// </summary>
+[BsonIgnoreExtraElements]
+[BsonCollectionName("workflow_templates")]
+public class WorkflowTemplate : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+{
+    /// <summary>
+    /// 实体ID
+    /// </summary>
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 模板名称
+    /// </summary>
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 模板描述
+    /// </summary>
+    [BsonElement("description")]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// 模板类型
+    /// </summary>
+    [BsonElement("templateType")]
+    [BsonRepresentation(BsonType.String)]
+    public TemplateType TemplateType { get; set; } = TemplateType.User;
+
+    /// <summary>
+    /// 模板分类
+    /// </summary>
+    [BsonElement("category")]
+    public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 模板标签
+    /// </summary>
+    [BsonElement("tags")]
+    public List<string> Tags { get; set; } = new();
+
+    /// <summary>
+    /// 工作流定义模板
+    /// </summary>
+    [BsonElement("workflowDefinitionTemplate")]
+    public WorkflowDefinition WorkflowDefinitionTemplate { get; set; } = new();
+
+    /// <summary>
+    /// 参数定义
+    /// </summary>
+    [BsonElement("parameters")]
+    public List<TemplateParameter> Parameters { get; set; } = new();
+
+    /// <summary>
+    /// 版本号
+    /// </summary>
+    [BsonElement("version")]
+    public string Version { get; set; } = "1.0.0";
+
+    /// <summary>
+    /// 是否公开（对其他用户可见）
+    /// </summary>
+    [BsonElement("isPublic")]
+    public bool IsPublic { get; set; } = false;
+
+    /// <summary>
+    /// 使用次数
+    /// </summary>
+    [BsonElement("usageCount")]
+    public int UsageCount { get; set; } = 0;
+
+    /// <summary>
+    /// 评分（1-5星）
+    /// </summary>
+    [BsonElement("rating")]
+    public double Rating { get; set; } = 0.0;
+
+    /// <summary>
+    /// 评价数量
+    /// </summary>
+    [BsonElement("ratingCount")]
+    public int RatingCount { get; set; } = 0;
+
+    /// <summary>
+    /// 依赖项列表
+    /// </summary>
+    [BsonElement("dependencies")]
+    public List<TemplateDependency> Dependencies { get; set; } = new();
+
+    /// <summary>
+    /// 企业ID（多租户）
+    /// </summary>
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+
+    // IEntity, ISoftDeletable, ITimestamped 接口实现
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
+
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("createdBy")]
+    public string? CreatedBy { get; set; }
+
+    [BsonElement("createdByUsername")]
+    public string? CreatedByUsername { get; set; }
+
+    [BsonElement("updatedBy")]
+    public string? UpdatedBy { get; set; }
+
+    [BsonElement("updatedByUsername")]
+    public string? UpdatedByUsername { get; set; }
+}
+
+/// <summary>
+/// 模板参数
+/// </summary>
+public class TemplateParameter
+{
+    /// <summary>
+    /// 参数名称
+    /// </summary>
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 参数显示名称
+    /// </summary>
+    [BsonElement("displayName")]
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 参数描述
+    /// </summary>
+    [BsonElement("description")]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// 参数类型（string, number, boolean, select）
+    /// </summary>
+    [BsonElement("type")]
+    public string Type { get; set; } = "string";
+
+    /// <summary>
+    /// 默认值
+    /// </summary>
+    [BsonElement("defaultValue")]
+    public object? DefaultValue { get; set; }
+
+    /// <summary>
+    /// 是否必需
+    /// </summary>
+    [BsonElement("required")]
+    public bool Required { get; set; } = false;
+
+    /// <summary>
+    /// 选项列表（当type为select时使用）
+    /// </summary>
+    [BsonElement("options")]
+    public List<ParameterOption> Options { get; set; } = new();
+
+    /// <summary>
+    /// 验证规则
+    /// </summary>
+    [BsonElement("validation")]
+    public ParameterValidation? Validation { get; set; }
+}
+
+/// <summary>
+/// 参数选项
+/// </summary>
+public class ParameterOption
+{
+    /// <summary>
+    /// 选项值
+    /// </summary>
+    [BsonElement("value")]
+    public string Value { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 选项标签
+    /// </summary>
+    [BsonElement("label")]
+    public string Label { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 参数验证规则
+/// </summary>
+public class ParameterValidation
+{
+    /// <summary>
+    /// 最小值（数字类型）
+    /// </summary>
+    [BsonElement("min")]
+    public double? Min { get; set; }
+
+    /// <summary>
+    /// 最大值（数字类型）
+    /// </summary>
+    [BsonElement("max")]
+    public double? Max { get; set; }
+
+    /// <summary>
+    /// 最小长度（字符串类型）
+    /// </summary>
+    [BsonElement("minLength")]
+    public int? MinLength { get; set; }
+
+    /// <summary>
+    /// 最大长度（字符串类型）
+    /// </summary>
+    [BsonElement("maxLength")]
+    public int? MaxLength { get; set; }
+
+    /// <summary>
+    /// 正则表达式模式
+    /// </summary>
+    [BsonElement("pattern")]
+    public string? Pattern { get; set; }
+}
+
+/// <summary>
+/// 模板依赖项
+/// </summary>
+public class TemplateDependency
+{
+    /// <summary>
+    /// 依赖项名称
+    /// </summary>
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 依赖项类型（role, department, form, etc.）
+    /// </summary>
+    [BsonElement("type")]
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 依赖项ID
+    /// </summary>
+    [BsonElement("dependencyId")]
+    public string? DependencyId { get; set; }
+
+    /// <summary>
+    /// 是否必需
+    /// </summary>
+    [BsonElement("required")]
+    public bool Required { get; set; } = true;
+
+    /// <summary>
+    /// 描述
+    /// </summary>
+    [BsonElement("description")]
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// 工作流验证结果
+/// </summary>
+public class WorkflowValidationResult
+{
+    /// <summary>
+    /// 是否有效
+    /// </summary>
+    [BsonElement("isValid")]
+    public bool IsValid { get; set; } = true;
+
+    /// <summary>
+    /// 验证问题列表
+    /// </summary>
+    [BsonElement("issues")]
+    public List<ValidationIssue> Issues { get; set; } = new();
+
+    /// <summary>
+    /// 验证时间
+    /// </summary>
+    [BsonElement("validatedAt")]
+    public DateTime ValidatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 验证器版本
+    /// </summary>
+    [BsonElement("validatorVersion")]
+    public string ValidatorVersion { get; set; } = "1.0.0";
+}
+
+/// <summary>
+/// 验证问题
+/// </summary>
+public class ValidationIssue
+{
+    /// <summary>
+    /// 问题ID
+    /// </summary>
+    [BsonElement("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// 问题类型
+    /// </summary>
+    [BsonElement("type")]
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 严重程度
+    /// </summary>
+    [BsonElement("severity")]
+    [BsonRepresentation(BsonType.String)]
+    public ValidationSeverity Severity { get; set; }
+
+    /// <summary>
+    /// 问题描述
+    /// </summary>
+    [BsonElement("message")]
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 问题详情
+    /// </summary>
+    [BsonElement("details")]
+    public string? Details { get; set; }
+
+    /// <summary>
+    /// 相关节点ID
+    /// </summary>
+    [BsonElement("nodeId")]
+    public string? NodeId { get; set; }
+
+    /// <summary>
+    /// 相关边ID
+    /// </summary>
+    [BsonElement("edgeId")]
+    public string? EdgeId { get; set; }
+
+    /// <summary>
+    /// 建议解决方案
+    /// </summary>
+    [BsonElement("suggestedFix")]
+    public string? SuggestedFix { get; set; }
+
+    /// <summary>
+    /// 问题位置信息
+    /// </summary>
+    [BsonElement("location")]
+    public ValidationLocation? Location { get; set; }
+}
+
+/// <summary>
+/// 验证问题位置信息
+/// </summary>
+public class ValidationLocation
+{
+    /// <summary>
+    /// X坐标
+    /// </summary>
+    [BsonElement("x")]
+    public double? X { get; set; }
+
+    /// <summary>
+    /// Y坐标
+    /// </summary>
+    [BsonElement("y")]
+    public double? Y { get; set; }
+
+    /// <summary>
+    /// 区域宽度
+    /// </summary>
+    [BsonElement("width")]
+    public double? Width { get; set; }
+
+    /// <summary>
+    /// 区域高度
+    /// </summary>
+    [BsonElement("height")]
+    public double? Height { get; set; }
+}
+
+/// <summary>
+/// 用户工作流过滤器偏好
+/// </summary>
+[BsonIgnoreExtraElements]
+[BsonCollectionName("user_workflow_filter_preferences")]
+public class UserWorkflowFilterPreference : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+{
+    /// <summary>
+    /// 实体ID
+    /// </summary>
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 用户ID
+    /// </summary>
+    [BsonElement("userId")]
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 偏好名称
+    /// </summary>
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 是否为默认偏好
+    /// </summary>
+    [BsonElement("isDefault")]
+    public bool IsDefault { get; set; } = false;
+
+    /// <summary>
+    /// 过滤器配置
+    /// </summary>
+    [BsonElement("filterConfig")]
+    public WorkflowFilterConfig FilterConfig { get; set; } = new();
+
+    /// <summary>
+    /// 企业ID（多租户）
+    /// </summary>
+    [BsonElement("companyId")]
+    public string CompanyId { get; set; } = string.Empty;
+
+    // IEntity, ISoftDeletable, ITimestamped 接口实现
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false;
+
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+
+    [BsonElement("deletedBy")]
+    public string? DeletedBy { get; set; }
+
+    [BsonElement("deletedReason")]
+    public string? DeletedReason { get; set; }
+
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("createdBy")]
+    public string? CreatedBy { get; set; }
+
+    [BsonElement("createdByUsername")]
+    public string? CreatedByUsername { get; set; }
+
+    [BsonElement("updatedBy")]
+    public string? UpdatedBy { get; set; }
+
+    [BsonElement("updatedByUsername")]
+    public string? UpdatedByUsername { get; set; }
+}
+
+/// <summary>
+/// 工作流过滤器配置
+/// </summary>
+public class WorkflowFilterConfig
+{
+    /// <summary>
+    /// 关键词搜索
+    /// </summary>
+    [BsonElement("keyword")]
+    public string? Keyword { get; set; }
+
+    /// <summary>
+    /// 类别列表
+    /// </summary>
+    [BsonElement("categories")]
+    public List<string> Categories { get; set; } = new();
+
+    /// <summary>
+    /// 状态列表
+    /// </summary>
+    [BsonElement("statuses")]
+    public List<string> Statuses { get; set; } = new();
+
+    /// <summary>
+    /// 日期范围过滤
+    /// </summary>
+    [BsonElement("dateRange")]
+    public DateRangeFilter? DateRange { get; set; }
+
+    /// <summary>
+    /// 使用次数范围
+    /// </summary>
+    [BsonElement("usageRange")]
+    public UsageRangeFilter? UsageRange { get; set; }
+
+    /// <summary>
+    /// 创建者ID列表
+    /// </summary>
+    [BsonElement("createdBy")]
+    public List<string> CreatedBy { get; set; } = new();
+
+    /// <summary>
+    /// 排序字段
+    /// </summary>
+    [BsonElement("sortBy")]
+    public string? SortBy { get; set; }
+
+    /// <summary>
+    /// 排序方向
+    /// </summary>
+    [BsonElement("sortOrder")]
+    public string? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -397,6 +1445,30 @@ public class WorkflowDefinition : IEntity, ISoftDeletable, ITimestamped, IMultiT
     /// </summary>
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// 分析数据
+    /// </summary>
+    [BsonElement("analytics")]
+    public WorkflowAnalytics Analytics { get; set; } = new();
+
+    /// <summary>
+    /// 验证结果
+    /// </summary>
+    [BsonElement("validationResult")]
+    public WorkflowValidationResult? ValidationResult { get; set; }
+
+    /// <summary>
+    /// 基于的模板ID（如果从模板创建）
+    /// </summary>
+    [BsonElement("templateId")]
+    public string? TemplateId { get; set; }
+
+    /// <summary>
+    /// 模板版本（如果从模板创建）
+    /// </summary>
+    [BsonElement("templateVersion")]
+    public string? TemplateVersion { get; set; }
 
     /// <summary>
     /// 企业ID（多租户）
@@ -916,4 +1988,40 @@ public class Document : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     /// </summary>
     [BsonElement("updatedByUsername")]
     public string? UpdatedByUsername { get; set; }
+}
+/// <summary>
+/// 日期范围过滤
+/// </summary>
+public class DateRangeFilter
+{
+    /// <summary>
+    /// 开始日期
+    /// </summary>
+    public DateTime? Start { get; set; }
+
+    /// <summary>
+    /// 结束日期
+    /// </summary>
+    public DateTime? End { get; set; }
+
+    /// <summary>
+    /// 日期字段（createdAt, updatedAt, lastUsed）
+    /// </summary>
+    public string? Field { get; set; }
+}
+
+/// <summary>
+/// 使用次数范围过滤
+/// </summary>
+public class UsageRangeFilter
+{
+    /// <summary>
+    /// 最小使用次数
+    /// </summary>
+    public int? Min { get; set; }
+
+    /// <summary>
+    /// 最大使用次数
+    /// </summary>
+    public int? Max { get; set; }
 }

@@ -10,6 +10,7 @@ import {
   EyeOutlined,
   PartitionOutlined,
   ReloadOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
@@ -22,6 +23,7 @@ import {
 } from '@/services/workflow/api';
 import WorkflowDesigner from './components/WorkflowDesigner';
 import WorkflowCreateForm from './components/WorkflowCreateForm';
+import BulkOperationsPanel from './components/BulkOperationsPanel';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 const { useBreakpoint } = Grid;
@@ -41,6 +43,9 @@ const WorkflowManagement: React.FC = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewGraph, setPreviewGraph] = useState<any>(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [bulkOperationsVisible, setBulkOperationsVisible] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRows, setSelectedRows] = useState<WorkflowDefinition[]>([]);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState({
     current: 1,
@@ -61,6 +66,26 @@ const WorkflowManagement: React.FC = () => {
 
   const handleRefresh = () => {
     actionRef.current?.reload?.();
+  };
+
+  // 处理批量操作
+  const handleBulkOperations = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning(intl.formatMessage({ id: 'pages.workflow.bulk.noSelection' }));
+      return;
+    }
+    setBulkOperationsVisible(true);
+  };
+
+  // 批量操作成功后的回调
+  const handleBulkOperationSuccess = () => {
+    // 清空选择
+    setSelectedRowKeys([]);
+    setSelectedRows([]);
+    // 刷新列表
+    actionRef.current?.reload?.();
+    // 关闭面板
+    setBulkOperationsVisible(false);
   };
 
   // 搜索
@@ -248,6 +273,14 @@ const WorkflowManagement: React.FC = () => {
       extra={
         <Space wrap>
           <Button
+            key="bulk"
+            icon={<SettingOutlined />}
+            onClick={handleBulkOperations}
+            disabled={selectedRowKeys.length === 0}
+          >
+            {intl.formatMessage({ id: 'pages.workflow.bulk.operations' })} ({selectedRowKeys.length})
+          </Button>
+          <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={handleRefresh}
@@ -334,6 +367,16 @@ const WorkflowManagement: React.FC = () => {
           showTotal: (total) => `共 ${total} 条`,
         }}
         scroll={{ x: 'max-content' }}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys, rows) => {
+            setSelectedRowKeys(keys);
+            setSelectedRows(rows);
+          },
+          getCheckboxProps: (record) => ({
+            disabled: false, // 所有行都可以选择
+          }),
+        }}
       />
 
       {/* 创建流程模态窗体 */}
@@ -386,6 +429,19 @@ const WorkflowManagement: React.FC = () => {
           }}
         />
       </Modal>
+
+      {/* 批量操作面板 */}
+      <BulkOperationsPanel
+        visible={bulkOperationsVisible}
+        onClose={() => setBulkOperationsVisible(false)}
+        selectedWorkflowIds={selectedRowKeys.map(key => String(key))}
+        selectedWorkflows={selectedRows.map(row => ({
+          id: row.id!,
+          name: row.name,
+          category: row.category,
+        }))}
+        onSuccess={handleBulkOperationSuccess}
+      />
 
     </PageContainer>
   );

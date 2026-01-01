@@ -2,6 +2,54 @@ import { request } from '@umijs/max';
 import type { ApiResponse } from '@/types/unified-api';
 
 /**
+ * 批量操作类型
+ */
+export type BulkOperationType = 'Activate' | 'Deactivate' | 'Delete' | 'UpdateCategory';
+
+/**
+ * 批量操作状态
+ */
+export type BulkOperationStatus = 'Pending' | 'InProgress' | 'Completed' | 'Cancelled' | 'Failed';
+
+/**
+ * 批量操作错误
+ */
+export interface BulkOperationError {
+  workflowId: string;
+  workflowName?: string;
+  errorMessage: string;
+}
+
+/**
+ * 批量操作
+ */
+export interface BulkOperation {
+  id: string;
+  operationType: BulkOperationType;
+  workflowIds: string[];
+  parameters: Record<string, any>;
+  status: BulkOperationStatus;
+  totalCount: number;
+  processedCount: number;
+  successCount: number;
+  failureCount: number;
+  errors: BulkOperationError[];
+  cancellable: boolean;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+/**
+ * 创建批量操作请求
+ */
+export interface CreateBulkOperationRequest {
+  operationType: BulkOperationType;
+  workflowIds: string[];
+  parameters?: Record<string, any>;
+}
+
+/**
  * 工作流状态枚举
  */
 export enum WorkflowStatus {
@@ -464,5 +512,187 @@ export async function createAndStartDocumentWorkflow(definitionId: string, data:
   return request(`/api/workflows/${definitionId}/documents/start`, {
     method: 'POST',
     data,
+  });
+}
+
+/**
+ * 创建批量操作
+ */
+export async function createBulkOperation(data: CreateBulkOperationRequest): Promise<ApiResponse<BulkOperation>> {
+  return request('/api/workflows/bulk-operations', {
+    method: 'POST',
+    data,
+  });
+}
+
+/**
+ * 执行批量操作
+ */
+export async function executeBulkOperation(operationId: string): Promise<ApiResponse<void>> {
+  return request(`/api/workflows/bulk-operations/${operationId}/execute`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 取消批量操作
+ */
+export async function cancelBulkOperation(operationId: string): Promise<ApiResponse<void>> {
+  return request(`/api/workflows/bulk-operations/${operationId}/cancel`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 获取批量操作状态
+ */
+export async function getBulkOperation(operationId: string): Promise<ApiResponse<BulkOperation>> {
+  return request(`/api/workflows/bulk-operations/${operationId}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * 获取批量操作列表
+ */
+export async function getBulkOperations(params: {
+  page?: number;
+  pageSize?: number;
+  status?: BulkOperationStatus;
+}): Promise<ApiResponse<{ list: BulkOperation[]; total: number; page: number; pageSize: number }>> {
+  return request('/api/workflows/bulk-operations', {
+    method: 'GET',
+    params,
+  });
+}
+/**
+ * 工作流导出配置
+ */
+export interface WorkflowExportConfig {
+  format: 'json' | 'csv' | 'excel';
+  includeAnalytics: boolean;
+  includeDependencies: boolean;
+}
+
+/**
+ * 工作流导出请求
+ */
+export interface WorkflowExportRequest {
+  workflowIds: string[];
+  config: WorkflowExportConfig;
+}
+
+/**
+ * 工作流过滤导出请求
+ */
+export interface WorkflowFilteredExportRequest {
+  filters: Record<string, any>;
+  config: WorkflowExportConfig;
+}
+
+/**
+ * 工作流导入结果
+ */
+export interface WorkflowImportResult {
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  conflicts: ImportConflict[];
+  errors: ImportError[];
+  importedWorkflowIds: string[];
+}
+
+/**
+ * 导入冲突
+ */
+export interface ImportConflict {
+  workflowName: string;
+  conflictType: string;
+  existingWorkflowId?: string;
+  description: string;
+  suggestedResolution?: string;
+}
+
+/**
+ * 导入错误
+ */
+export interface ImportError {
+  workflowName?: string;
+  errorMessage: string;
+  errorDetails?: string;
+  lineNumber?: number;
+}
+
+/**
+ * 导出工作流
+ */
+export async function exportWorkflows(data: WorkflowExportRequest): Promise<ApiResponse<Blob>> {
+  return request('/api/workflows/export', {
+    method: 'POST',
+    data,
+    responseType: 'blob',
+  });
+}
+
+/**
+ * 导出过滤结果
+ */
+export async function exportFilteredWorkflows(data: WorkflowFilteredExportRequest): Promise<ApiResponse<Blob>> {
+  return request('/api/workflows/export-filtered', {
+    method: 'POST',
+    data,
+    responseType: 'blob',
+  });
+}
+
+/**
+ * 验证导入文件
+ */
+export async function validateImportFile(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
+  return request('/api/workflows/import/validate', {
+    method: 'POST',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+}
+
+/**
+ * 导入工作流
+ */
+export async function importWorkflows(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
+  return request('/api/workflows/import', {
+    method: 'POST',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+}
+
+/**
+ * 预览导入
+ */
+export async function previewImport(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
+  return request('/api/workflows/import/preview', {
+    method: 'POST',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+}
+
+/**
+ * 解决导入冲突
+ */
+export async function resolveImportConflicts(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
+  return request('/api/workflows/import/resolve-conflicts', {
+    method: 'POST',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
   });
 }

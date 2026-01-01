@@ -32,6 +32,47 @@ public class FileVersionController : BaseApiController
     #region 版本管理
 
     /// <summary>
+    /// 获取文件版本列表（分页）
+    /// </summary>
+    /// <param name="fileId">文件ID</param>
+    /// <param name="page">页码（默认1）</param>
+    /// <param name="pageSize">每页数量（默认50）</param>
+    /// <returns>版本列表</returns>
+    [HttpGet("list")]
+    public async Task<IActionResult> GetVersionList([FromQuery] string fileId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        if (string.IsNullOrWhiteSpace(fileId))
+            return ValidationError("文件ID不能为空");
+
+        if (page < 1 || pageSize < 1 || pageSize > 500)
+            return ValidationError("分页参数不合法");
+
+        try
+        {
+            var versions = await _fileVersionService.GetVersionHistoryAsync(fileId);
+            var ordered = versions.OrderByDescending(v => v.VersionNumber).ToList();
+            var total = ordered.Count;
+            var paged = ordered
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return Success(new
+            {
+                data = paged,
+                total,
+                page,
+                pageSize
+            });
+        }
+        catch (Exception ex)
+        {
+            LogError("GetVersionList", ex, fileId);
+            return ServerError("获取版本列表失败，请稍后重试");
+        }
+    }
+
+    /// <summary>
     /// 创建文件版本
     /// </summary>
     /// <param name="fileId">文件ID</param>

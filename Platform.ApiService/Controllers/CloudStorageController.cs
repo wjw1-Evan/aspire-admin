@@ -733,6 +733,7 @@ public class CloudStorageController : BaseApiController
     /// </summary>
     /// <returns>清空结果</returns>
     [HttpDelete("recycle-bin/empty")]
+    [HttpDelete("recycle/empty")] // 兼容前端旧路径
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> EmptyRecycleBin()
     {
@@ -746,6 +747,30 @@ public class CloudStorageController : BaseApiController
         {
             LogError("EmptyRecycleBin", ex);
             return ServerError("清空回收站失败，请稍后重试");
+        }
+    }
+
+    /// <summary>
+    /// 自动清理过期回收站文件
+    /// </summary>
+    /// <param name="expireDays">过期天数（默认30天）</param>
+    /// <returns>清理结果</returns>
+    [HttpPost("recycle/auto-cleanup")]
+    [RequireMenu("cloud-storage-recycle")]
+    public async Task<IActionResult> AutoCleanupRecycleBin([FromQuery] int? expireDays = null)
+    {
+        try
+        {
+            var days = expireDays ?? 30;
+            var result = await _cloudStorageService.CleanupExpiredRecycleBinItemsAsync(days);
+            LogOperation("AutoCleanupRecycleBin", null, new { expireDays = days, result.deletedCount, result.freedSpace });
+            return Success(new { deletedCount = result.deletedCount, freedSpace = result.freedSpace },
+                $"自动清理完成，删除 {result.deletedCount} 个文件，释放 {result.freedSpace} 字节");
+        }
+        catch (Exception ex)
+        {
+            LogError("AutoCleanupRecycleBin", ex, expireDays?.ToString());
+            return ServerError("自动清理失败，请稍后重试");
         }
     }
 
@@ -777,6 +802,48 @@ public class CloudStorageController : BaseApiController
     #endregion
 
     #region 批量操作
+
+    /// <summary>
+    /// 批量永久删除（回收站）
+    /// </summary>
+    /// <param name="request">批量操作请求</param>
+    /// <returns>删除结果</returns>
+    [HttpPost("recycle/batch-permanent-delete")]
+    [RequireMenu("cloud-storage-recycle")]
+    public async Task<IActionResult> BatchPermanentDelete([FromBody] BatchOperationRequest request)
+    {
+        var validation = ValidateModelState();
+        if (validation != null) return validation;
+
+        if (request?.Ids == null || request.Ids.Count == 0)
+            return ValidationError("文件项ID列表不能为空");
+
+        if (request.Ids.Count > 100)
+            return ValidationError("批量操作最多支持100个文件项");
+
+        var successCount = 0;
+        var failureCount = 0;
+        var errors = new List<string>();
+
+        foreach (var id in request.Ids)
+        {
+            try
+            {
+                await _cloudStorageService.PermanentDeleteFileItemAsync(id);
+                successCount++;
+            }
+            catch (Exception ex)
+            {
+                failureCount++;
+                errors.Add($"{id}: {ex.Message}");
+            }
+        }
+
+        LogOperation("BatchPermanentDelete", null, new { request.Ids, successCount, failureCount, errors });
+
+        return Success(new { successCount, failureCount, errors },
+            $"批量永久删除完成，成功 {successCount} 个，失败 {failureCount} 个");
+    }
 
     /// <summary>
     /// 批量删除文件项

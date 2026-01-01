@@ -4,6 +4,7 @@ using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,6 +16,7 @@ namespace Platform.ApiService.Services;
 public class CloudStorageService : ICloudStorageService
 {
     private readonly IDatabaseOperationFactory<FileItem> _fileItemFactory;
+    private readonly IDatabaseOperationFactory<FileVersion> _fileVersionFactory;
     private readonly IDatabaseOperationFactory<StorageQuota> _storageQuotaFactory;
     private readonly IGridFSService _gridFSService;
     private readonly ITenantContext _tenantContext;
@@ -27,12 +29,14 @@ public class CloudStorageService : ICloudStorageService
     /// </summary>
     public CloudStorageService(
         IDatabaseOperationFactory<FileItem> fileItemFactory,
+        IDatabaseOperationFactory<FileVersion> fileVersionFactory,
         IDatabaseOperationFactory<StorageQuota> storageQuotaFactory,
         IGridFSService gridFSService,
         ITenantContext tenantContext,
         ILogger<CloudStorageService> logger)
     {
         _fileItemFactory = fileItemFactory ?? throw new ArgumentNullException(nameof(fileItemFactory));
+        _fileVersionFactory = fileVersionFactory ?? throw new ArgumentNullException(nameof(fileVersionFactory));
         _storageQuotaFactory = storageQuotaFactory ?? throw new ArgumentNullException(nameof(storageQuotaFactory));
         _gridFSService = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
@@ -52,10 +56,13 @@ public class CloudStorageService : ICloudStorageService
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("文件夹名称不能为空", nameof(name));
 
+        // 规范化根目录标识：将空字符串视为 null，避免重复创建根下同名文件夹
+        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
+
         // 验证父文件夹是否存在
-        if (!string.IsNullOrEmpty(parentId))
+        if (!string.IsNullOrEmpty(normalizedParentId))
         {
-            var parentFolder = await GetFileItemAsync(parentId);
+            var parentFolder = await GetFileItemAsync(normalizedParentId);
             if (parentFolder == null)
                 throw new ArgumentException("父文件夹不存在", nameof(parentId));
             if (parentFolder.Type != FileItemType.Folder)
@@ -66,7 +73,7 @@ public class CloudStorageService : ICloudStorageService
         var filterBuilder = _fileItemFactory.CreateFilterBuilder();
         var existingFilter = filterBuilder
             .Equal(f => f.Name, name)
-            .Equal(f => f.ParentId, parentId)
+            .Equal(f => f.ParentId, normalizedParentId)
             .Equal(f => f.Type, FileItemType.Folder)
             .Equal(f => f.Status, FileStatus.Active)
             .Build();
@@ -76,13 +83,13 @@ public class CloudStorageService : ICloudStorageService
             throw new InvalidOperationException($"文件夹 '{name}' 已存在");
 
         // 构建路径
-        var path = await BuildFilePathAsync(name, parentId);
+        var path = await BuildFilePathAsync(name, normalizedParentId ?? string.Empty);
 
         var folder = new FileItem
         {
             Name = name,
             Path = path,
-            ParentId = parentId,
+            ParentId = normalizedParentId,
             Type = FileItemType.Folder,
             Status = FileStatus.Active,
             Size = 0,
@@ -137,10 +144,6 @@ public class CloudStorageService : ICloudStorageService
             .Build();
 
         var existingFile = await _fileItemFactory.FindAsync(existingFilter, limit: 1);
-        if (existingFile.Count > 0 && !overwrite)
-        {
-            throw new InvalidOperationException($"文件 '{fileName}' 已存在，请选择覆盖或重命名");
-        }
 
         // 检查是否存在相同哈希的文件（去重）
         var hashFilter = filterBuilder
@@ -162,7 +165,6 @@ public class CloudStorageService : ICloudStorageService
         {
             // 上传新文件到GridFS
             using var fileStream = file.OpenReadStream();
-            var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
             var uploadOptions = new GridFSUploadOptions
             {
                 Metadata = new BsonDocument
@@ -170,7 +172,6 @@ public class CloudStorageService : ICloudStorageService
                     ["originalName"] = fileName,
                     ["contentType"] = file.ContentType ?? "application/octet-stream",
                     ["uploadedAt"] = DateTime.UtcNow,
-                    ["companyId"] = companyId ?? string.Empty,
                     ["hash"] = fileHash
                 }
             };
@@ -181,28 +182,69 @@ public class CloudStorageService : ICloudStorageService
 
         // 构建文件路径
         var filePath = await BuildFilePathAsync(fileName, parentId);
-
         FileItem fileItem;
-        if (existingFile.Count > 0 && overwrite)
+        if (existingFile.Count > 0)
         {
-            // 覆盖现有文件
             var existingFileItem = existingFile.First();
-            var updateBuilder = _fileItemFactory.CreateUpdateBuilder();
-            var update = updateBuilder
-                .Set(f => f.GridFSId, gridFSId)
-                .Set(f => f.Size, file.Length)
-                .Set(f => f.Hash, fileHash)
-                .Set(f => f.MimeType, file.ContentType ?? "application/octet-stream")
-                .Build();
 
-            var updatedFileItem = await _fileItemFactory.FindOneAndUpdateAsync(
-                filterBuilder.Equal(f => f.Id, existingFileItem.Id).Build(),
-                update);
+            if (!overwrite)
+            {
+                // 不重命名，生成新历史版本并更新为最新内容
+                await EnsureCurrentVersionSnapshotAsync(existingFileItem);
+                var nextVersionNumber = await GetNextVersionNumberAsync(existingFileItem.Id!);
 
-            if (updatedFileItem == null)
-                throw new InvalidOperationException("更新文件失败");
+                // 创建新版本记录（标记为当前版本）
+                await MarkAllVersionsAsNonCurrentAsync(existingFileItem.Id!);
+                var version = new FileVersion
+                {
+                    FileItemId = existingFileItem.Id!,
+                    VersionNumber = nextVersionNumber,
+                    GridFSId = gridFSId,
+                    Size = file.Length,
+                    Hash = fileHash,
+                    Comment = "上传新版本",
+                    IsCurrentVersion = true
+                };
+                await _fileVersionFactory.CreateAsync(version);
 
-            fileItem = updatedFileItem;
+                // 更新文件项指向最新版本
+                var updateBuilder = _fileItemFactory.CreateUpdateBuilder();
+                var update = updateBuilder
+                    .Set(f => f.GridFSId, gridFSId)
+                    .Set(f => f.Size, file.Length)
+                    .Set(f => f.Hash, fileHash)
+                    .Set(f => f.MimeType, file.ContentType ?? "application/octet-stream")
+                    .Build();
+
+                var updatedFileItem = await _fileItemFactory.FindOneAndUpdateAsync(
+                    filterBuilder.Equal(f => f.Id, existingFileItem.Id).Build(),
+                    update);
+
+                if (updatedFileItem == null)
+                    throw new InvalidOperationException("更新文件失败");
+
+                fileItem = updatedFileItem;
+            }
+            else
+            {
+                // 覆盖现有文件
+                var updateBuilder = _fileItemFactory.CreateUpdateBuilder();
+                var update = updateBuilder
+                    .Set(f => f.GridFSId, gridFSId)
+                    .Set(f => f.Size, file.Length)
+                    .Set(f => f.Hash, fileHash)
+                    .Set(f => f.MimeType, file.ContentType ?? "application/octet-stream")
+                    .Build();
+
+                var updatedFileItem = await _fileItemFactory.FindOneAndUpdateAsync(
+                    filterBuilder.Equal(f => f.Id, existingFileItem.Id).Build(),
+                    update);
+
+                if (updatedFileItem == null)
+                    throw new InvalidOperationException("更新文件失败");
+
+                fileItem = updatedFileItem;
+            }
         }
         else
         {
@@ -482,9 +524,19 @@ public class CloudStorageService : ICloudStorageService
         if (fileItem == null)
             throw new ArgumentException("文件项不存在", nameof(id));
 
+        var now = DateTime.UtcNow;
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var currentUsername = await _tenantContext.GetCurrentUsernameAsync();
+        var keepDays = 30;
+
         var updateBuilder = _fileItemFactory.CreateUpdateBuilder();
         var update = updateBuilder
             .Set(f => f.Status, FileStatus.InRecycleBin)
+            .Set(f => f.DeletedAt, now)
+            .Set(f => f.DeletedBy, currentUserId)
+            .Set(f => f.DeletedByName, currentUsername)
+            .Set(f => f.OriginalPath, fileItem.Path)
+            .Set(f => f.DaysUntilPermanentDelete, keepDays)
             .Build();
 
         var filterBuilder = _fileItemFactory.CreateFilterBuilder();
@@ -585,6 +637,11 @@ public class CloudStorageService : ICloudStorageService
             .Set(f => f.Status, FileStatus.Active)
             .Set(f => f.ParentId, targetParentId)
             .Set(f => f.Path, newPath)
+            .Set(f => f.DeletedAt, null)
+            .Set(f => f.DeletedBy, null)
+            .Set(f => f.DeletedByName, null)
+            .Set(f => f.OriginalPath, null)
+            .Set(f => f.DaysUntilPermanentDelete, null)
             .Build();
 
         var restoredItem = await _fileItemFactory.FindOneAndUpdateAsync(
@@ -986,7 +1043,7 @@ public class CloudStorageService : ICloudStorageService
     /// <summary>
     /// 清理过期的回收站文件
     /// </summary>
-    public async Task CleanupExpiredRecycleBinItemsAsync(int expireDays = 30)
+    public async Task<(int deletedCount, long freedSpace)> CleanupExpiredRecycleBinItemsAsync(int expireDays = 30)
     {
         var expireDate = DateTime.UtcNow.AddDays(-expireDays);
 
@@ -1013,6 +1070,8 @@ public class CloudStorageService : ICloudStorageService
             _logger.LogInformation("Cleaned up {ItemCount} expired recycle bin items, freed {TotalSize} bytes",
                 itemIds.Count, totalSize);
         }
+
+        return (itemIds.Count, totalSize);
     }
 
     #endregion
@@ -1032,11 +1091,18 @@ public class CloudStorageService : ICloudStorageService
 
         // 统计文件和文件夹数量
         var filterBuilder = _fileItemFactory.CreateFilterBuilder();
-        var activeFilter = filterBuilder.Equal(f => f.Status, FileStatus.Active).Build();
+        var activeFilter = filterBuilder
+            .Equal(f => f.Status, FileStatus.Active)
+            .Equal(f => f.IsDeleted, false)
+            .Build();
 
+        // 仅统计未删除、活跃的文件/文件夹
         var allItems = await _fileItemFactory.FindAsync(activeFilter);
         var files = allItems.Where(f => f.Type == FileItemType.File).ToList();
         var folders = allItems.Where(f => f.Type == FileItemType.Folder).ToList();
+
+        // 使用实时计算的已用空间，避免旧配额值包含已删除或他人文件
+        var usedSpace = files.Sum(f => f.Size);
 
         // 按文件类型统计使用量
         var typeUsage = files
@@ -1047,7 +1113,7 @@ public class CloudStorageService : ICloudStorageService
         {
             UserId = targetUserId,
             TotalQuota = quota.TotalQuota,
-            UsedSpace = quota.UsedSpace,
+            UsedSpace = usedSpace,
             FileCount = files.Count,
             FolderCount = folders.Count,
             TypeUsage = typeUsage,
@@ -1067,6 +1133,8 @@ public class CloudStorageService : ICloudStorageService
         if (files == null || files.Count == 0)
             throw new ArgumentException("文件列表不能为空", nameof(files));
 
+        var rootParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
+
         var results = new List<FileItem>();
         var totalSize = files.Sum(f => f.Length);
 
@@ -1077,9 +1145,19 @@ public class CloudStorageService : ICloudStorageService
         {
             try
             {
-                var fileName = Path.GetFileName(file.FileName);
+                // 支持文件夹批量上传：当 FileName 包含相对路径时，创建对应的子目录
+                var relativePath = file.FileName?.Replace("\\", "/") ?? string.Empty;
+                var directoryPath = Path.GetDirectoryName(relativePath)?.Replace("\\", "/");
+                var fileName = Path.GetFileName(relativePath);
+
                 if (string.IsNullOrWhiteSpace(fileName))
                     continue;
+
+                var targetParentId = rootParentId;
+                if (!string.IsNullOrWhiteSpace(directoryPath))
+                {
+                    targetParentId = await EnsureFolderPathAsync(directoryPath!, rootParentId);
+                }
 
                 // 处理文件名冲突
                 var finalFileName = fileName;
@@ -1091,17 +1169,18 @@ public class CloudStorageService : ICloudStorageService
                         overwrite = true;
                         break;
                     case FileConflictResolution.Rename:
-                        finalFileName = await GetUniqueFileNameAsync(fileName, parentId);
+                        // 保持原名，依靠版本控制避免重名
+                        overwrite = false;
                         break;
                     case FileConflictResolution.Skip:
-                        if (await FileExistsAsync(fileName, parentId))
+                        if (await FileExistsAsync(fileName, targetParentId))
                             continue;
                         break;
                 }
 
                 // 创建临时文件用于上传
                 var tempFile = new FormFileWrapper(file, finalFileName);
-                var uploadedFile = await UploadFileAsync(tempFile, parentId, overwrite);
+                var uploadedFile = await UploadFileAsync(tempFile, targetParentId, overwrite);
                 results.Add(uploadedFile);
             }
             catch (Exception ex)
@@ -1112,6 +1191,102 @@ public class CloudStorageService : ICloudStorageService
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// 确保相对路径中的文件夹层级存在，返回最末级文件夹的ID
+    /// </summary>
+    private async Task<string> EnsureFolderPathAsync(string relativePath, string parentId)
+    {
+        var segments = relativePath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+        var currentParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
+
+        foreach (var segment in segments)
+        {
+            // 查找现有文件夹
+            var filterBuilder = _fileItemFactory.CreateFilterBuilder();
+            var folderFilter = filterBuilder
+                .Equal(f => f.Name, segment)
+                .Equal(f => f.ParentId, currentParentId)
+                .Equal(f => f.Type, FileItemType.Folder)
+                .Equal(f => f.Status, FileStatus.Active)
+                .Build();
+
+            var existing = await _fileItemFactory.FindAsync(folderFilter, limit: 1);
+
+            if (existing.Any())
+            {
+                currentParentId = existing.First().Id!;
+            }
+            else
+            {
+                var folder = await CreateFolderAsync(segment, currentParentId ?? string.Empty);
+                currentParentId = folder.Id!;
+            }
+        }
+
+        return currentParentId;
+    }
+
+    /// <summary>
+    /// 当文件已有内容但尚未创建版本记录时，补打一份当前版本快照
+    /// </summary>
+    private async Task<FileVersion?> EnsureCurrentVersionSnapshotAsync(FileItem fileItem)
+    {
+        if (fileItem == null || string.IsNullOrEmpty(fileItem.Id))
+            return null;
+
+        var existingVersions = await GetVersionHistoryInternalAsync(fileItem.Id);
+        var currentVersion = existingVersions.FirstOrDefault(v => v.IsCurrentVersion);
+        if (currentVersion != null)
+            return currentVersion;
+
+        // 如果已有历史但没有标记当前版本，则按最新版本号继续
+        var nextVersionNumber = existingVersions.Any()
+            ? existingVersions.Max(v => v.VersionNumber) + 1
+            : 1;
+
+        var snapshot = new FileVersion
+        {
+            FileItemId = fileItem.Id!,
+            VersionNumber = nextVersionNumber,
+            GridFSId = fileItem.GridFSId,
+            Size = fileItem.Size,
+            Hash = fileItem.Hash,
+            Comment = "初始版本",
+            IsCurrentVersion = true
+        };
+
+        await _fileVersionFactory.CreateAsync(snapshot);
+        return snapshot;
+    }
+
+    private async Task<List<FileVersion>> GetVersionHistoryInternalAsync(string fileItemId)
+    {
+        var filterBuilder = _fileVersionFactory.CreateFilterBuilder();
+        var filter = filterBuilder.Equal(v => v.FileItemId, fileItemId).Build();
+
+        var sortBuilder = _fileVersionFactory.CreateSortBuilder();
+        var sort = sortBuilder.Descending(v => v.VersionNumber).Build();
+
+        return await _fileVersionFactory.FindAsync(filter, sort);
+    }
+
+    private async Task<int> GetNextVersionNumberAsync(string fileItemId)
+    {
+        var history = await GetVersionHistoryInternalAsync(fileItemId);
+        return history.Count > 0 ? history.Max(v => v.VersionNumber) + 1 : 1;
+    }
+
+    private async Task MarkAllVersionsAsNonCurrentAsync(string fileItemId)
+    {
+        var filterBuilder = _fileVersionFactory.CreateFilterBuilder();
+        var updateBuilder = _fileVersionFactory.CreateUpdateBuilder();
+
+        var filter = filterBuilder.Equal(v => v.FileItemId, fileItemId).Equal(v => v.IsCurrentVersion, true).Build();
+        var update = updateBuilder.Set(v => v.IsCurrentVersion, false).Build();
+
+        await _fileVersionFactory.UpdateManyAsync(filter, update);
     }
 
     /// <summary>

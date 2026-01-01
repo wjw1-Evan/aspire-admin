@@ -24,6 +24,8 @@ import {
     Dropdown,
     Popconfirm,
     message,
+    Table,
+    Divider,
 } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -74,6 +76,9 @@ import {
     searchFiles,
     getStorageStatistics,
     downloadFolder,
+    getVersionList,
+    downloadVersion,
+    restoreVersion,
     type FileItem,
     type FileListRequest,
     type CreateFolderRequest,
@@ -85,6 +90,7 @@ import {
     type BatchOperationRequest,
     type FileSearchRequest,
     type StorageStatistics,
+    type FileVersion,
 } from '@/services/cloud-storage';
 
 interface SearchParams {
@@ -128,11 +134,13 @@ const CloudStorageFilesPage: React.FC = () => {
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
     const [viewingFile, setViewingFile] = useState<FileItem | null>(null);
+    const [versionList, setVersionList] = useState<FileVersion[]>([]);
+    const [versionLoading, setVersionLoading] = useState(false);
     const [createFolderVisible, setCreateFolderVisible] = useState(false);
     const [renameVisible, setRenameVisible] = useState(false);
     const [renamingItem, setRenamingItem] = useState<FileItem | null>(null);
     const [uploadVisible, setUploadVisible] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+    const [uploadProgress, setUploadProgress] = useState<{ [key: string]: { percent: number; label: string } }>({});
 
     // 表单
     const [createFolderForm] = Form.useForm();
@@ -347,6 +355,26 @@ const CloudStorageFilesPage: React.FC = () => {
             if (response.success && response.data) {
                 // 转换后端数据格式到前端期望的格式
                 const fileData = response.data as any;
+
+                // 加载历史版本（仅文件）
+                if (!response.data.isFolder) {
+                    setVersionLoading(true);
+                    try {
+                        const versionResp = await getVersionList({ fileId: response.data.id, page: 1, pageSize: 50 });
+                        if (versionResp.success && versionResp.data) {
+                            setVersionList(versionResp.data.data || []);
+                        } else {
+                            setVersionList([]);
+                        }
+                    } catch (e) {
+                        console.error('Failed to load versions', e);
+                        setVersionList([]);
+                    } finally {
+                        setVersionLoading(false);
+                    }
+                } else {
+                    setVersionList([]);
+                }
                 const transformedFile: FileItem = {
                     ...fileData,
                     // 将 type 字段转换为 isFolder 布尔值
@@ -411,7 +439,7 @@ const CloudStorageFilesPage: React.FC = () => {
             content: `确定要删除选中的 ${selectedRowKeys.length} 个文件吗？`,
             onOk: async () => {
                 try {
-                    await batchDeleteItems({ itemIds: selectedRowKeys });
+                    await batchDeleteItems({ ids: selectedRowKeys });
                     success('批量删除成功');
                     setSelectedRowKeys([]);
                     setSelectedRows([]);
@@ -459,9 +487,10 @@ const CloudStorageFilesPage: React.FC = () => {
     // 文件上传
     const handleUpload = useCallback(async (file: File) => {
         const uploadId = `${Date.now()}_${file.name}`;
+        const label = file.name;
 
         try {
-            setUploadProgress(prev => ({ ...prev, [uploadId]: 0 }));
+            setUploadProgress(prev => ({ ...prev, [uploadId]: { percent: 0, label } }));
 
             await uploadFile(
                 {
@@ -469,7 +498,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     parentId: currentParentId,
                 },
                 (percent) => {
-                    setUploadProgress(prev => ({ ...prev, [uploadId]: percent }));
+                    setUploadProgress(prev => ({ ...prev, [uploadId]: { percent, label: prev[uploadId]?.label || label } }));
                 }
             );
 
@@ -490,6 +519,59 @@ const CloudStorageFilesPage: React.FC = () => {
             });
         }
     }, [currentParentId, success, error, loadStatistics]);
+
+    // 单个文件（含相对路径）上传，便于分条显示进度
+    const uploadSingleWithProgress = useCallback(async (file: File) => {
+        const uploadId = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;
+        const relativePath = (file as any).webkitRelativePath as string | undefined;
+        const label = relativePath || file.name;
+
+        try {
+            setUploadProgress(prev => ({ ...prev, [uploadId]: { percent: 0, label } }));
+
+            await batchUploadFiles(
+                {
+                    files: [file],
+                    parentId: currentParentId,
+                },
+                (percent) => {
+                    setUploadProgress(prev => ({ ...prev, [uploadId]: { percent, label: prev[uploadId]?.label || label } }));
+                },
+            );
+
+            setUploadProgress(prev => {
+                const newProgress = { ...prev };
+                delete newProgress[uploadId];
+                return newProgress;
+            });
+            return true;
+        } catch (err) {
+            setUploadProgress(prev => {
+                const newProgress = { ...prev };
+                delete newProgress[uploadId];
+                return newProgress;
+            });
+            error(`上传失败：${label}`);
+            return false;
+        }
+    }, [currentParentId, error]);
+
+    // 文件夹/多文件上传：逐文件上传并逐条显示进度
+    const handleBatchUpload = useCallback(async (files: File[]) => {
+        if (!files || files.length === 0) return;
+
+        let successCount = 0;
+        for (const file of files) {
+            const ok = await uploadSingleWithProgress(file);
+            if (ok) successCount += 1;
+        }
+
+        if (successCount > 0) {
+            success(`上传完成：${successCount}/${files.length}`);
+            actionRef.current?.reload();
+            loadStatistics();
+        }
+    }, [loadStatistics, success, uploadSingleWithProgress]);
 
     // 格式化文件大小
     const formatFileSize = useCallback((bytes: number) => {
@@ -866,6 +948,67 @@ const CloudStorageFilesPage: React.FC = () => {
                                     </Space>
                                 </Card>
                             )}
+
+                            {!viewingFile.isFolder && (
+                                <Card title="历史版本" style={{ marginBottom: 16 }}>
+                                    <Spin spinning={versionLoading}>
+                                        {versionList.length === 0 ? (
+                                            <div style={{ color: '#999' }}>暂无历史版本</div>
+                                        ) : (
+                                            <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                                                {versionList.map((record) => (
+                                                    <div
+                                                        key={record.id}
+                                                        style={{
+                                                            border: '1px solid #f0f0f0',
+                                                            borderRadius: 8,
+                                                            padding: 12,
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            gap: 12,
+                                                            flexWrap: 'wrap',
+                                                        }}
+                                                    >
+                                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                                            <div style={{ fontWeight: 600 }}>版本 {record.versionNumber}</div>
+                                                            <div style={{ color: '#666', fontSize: 12 }}>
+                                                                {formatFileSize(record.size)} · {formatDateTime(record.createdAt)} · {record.createdByName || '-'}
+                                                            </div>
+                                                            {record.comment && (
+                                                                <div style={{ marginTop: 4, color: '#555' }}>备注：{record.comment}</div>
+                                                            )}
+                                                        </div>
+                                                        <Space size="small" wrap>
+                                                            <Button
+                                                                size="small"
+                                                                onClick={() => downloadVersion(record.id, `${viewingFile.name}_v${record.versionNumber}`)}
+                                                            >
+                                                                下载
+                                                            </Button>
+                                                            <Popconfirm
+                                                                title="确认恢复此版本？"
+                                                                onConfirm={async () => {
+                                                                    try {
+                                                                        await restoreVersion({ versionId: record.id });
+                                                                        success('已恢复到该版本');
+                                                                        actionRef.current?.reload();
+                                                                        handleView(viewingFile);
+                                                                    } catch (e) {
+                                                                        error('恢复失败');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Button size="small" type="primary">恢复</Button>
+                                                            </Popconfirm>
+                                                        </Space>
+                                                    </div>
+                                                ))}
+                                            </Space>
+                                        )}
+                                    </Spin>
+                                </Card>
+                            )}
                         </>
                     ) : (
                         <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
@@ -979,29 +1122,39 @@ const CloudStorageFilesPage: React.FC = () => {
                 width={600}
             >
                 <Dragger
+                    name="file"
                     multiple
+                    directory
                     showUploadList={false}
-                    beforeUpload={(file) => {
-                        handleUpload(file);
-                        return false;
+                    beforeUpload={(file, fileList) => {
+                        const list = fileList && fileList.length > 0 ? fileList : [file];
+                        const hasDirectory = list.some((f) => (f as any).webkitRelativePath);
+
+                        if (hasDirectory || list.length > 1) {
+                            handleBatchUpload(list as File[]);
+                        } else {
+                            handleUpload(file as File);
+                        }
+
+                        return false; // 阻止默认上传行为
                     }}
                 >
                     <p className="ant-upload-drag-icon">
                         <UploadOutlined />
                     </p>
                     <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                    <p className="ant-upload-hint">支持单个或批量上传</p>
+                    <p className="ant-upload-hint">支持单个文件、批量文件或整个文件夹上传</p>
                 </Dragger>
 
                 {/* 上传进度 */}
                 {Object.keys(uploadProgress).length > 0 && (
                     <div style={{ marginTop: 16 }}>
                         <h4>上传进度</h4>
-                        {Object.entries(uploadProgress).map(([uploadId, percent]) => {
-                            const fileName = uploadId.split('_').slice(1).join('_');
+                        {Object.entries(uploadProgress).map(([uploadId, info]) => {
+                            const { percent, label } = info;
                             return (
                                 <div key={uploadId} style={{ marginBottom: 8 }}>
-                                    <div>{fileName}</div>
+                                    <div>{label}</div>
                                     <Progress percent={percent} />
                                 </div>
                             );

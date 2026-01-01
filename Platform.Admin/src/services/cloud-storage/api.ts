@@ -58,7 +58,10 @@ export interface BatchUploadRequest {
 }
 
 export interface BatchOperationRequest {
-    itemIds: string[];
+    /** 后端期望的文件项 ID 列表字段 */
+    ids?: string[];
+    /** 兼容旧字段，内部会转为 ids */
+    itemIds?: string[];
     targetParentId?: string;
 }
 
@@ -178,9 +181,13 @@ export async function deleteItem(id: string) {
  * 批量删除文件或文件夹
  */
 export async function batchDeleteItems(data: BatchOperationRequest) {
+    const payload = {
+        ids: data.ids ?? data.itemIds ?? [],
+    };
+
     return request<ApiResponse<void>>('/api/cloud-storage/items/batch-delete', {
         method: 'POST',
-        data,
+        data: payload,
     });
 }
 
@@ -188,9 +195,14 @@ export async function batchDeleteItems(data: BatchOperationRequest) {
  * 批量移动文件或文件夹
  */
 export async function batchMoveItems(data: BatchOperationRequest) {
+    const payload = {
+        ids: data.ids ?? data.itemIds ?? [],
+        targetParentId: data.targetParentId,
+    };
+
     return request<ApiResponse<void>>('/api/cloud-storage/items/batch-move', {
         method: 'POST',
-        data,
+        data: payload,
     });
 }
 
@@ -229,7 +241,8 @@ export async function uploadFile(data: FileUploadRequest, onProgress?: (percent:
 export async function batchUploadFiles(data: BatchUploadRequest, onProgress?: (percent: number) => void) {
     const formData = new FormData();
     data.files.forEach((file) => {
-        formData.append('files', file);
+        const filename = (file as any).webkitRelativePath || file.name;
+        formData.append('files', file, filename);
     });
     if (data.parentId) {
         formData.append('parentId', data.parentId);

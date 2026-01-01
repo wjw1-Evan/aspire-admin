@@ -105,6 +105,18 @@ public class FileItem : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
     [BsonElement("hash")]
     public string Hash { get; set; } = string.Empty;
 
+    /// <summary>删除时的原路径（用于回收站显示）</summary>
+    [BsonElement("originalPath")]
+    public string? OriginalPath { get; set; }
+
+    /// <summary>删除者显示名</summary>
+    [BsonElement("deletedByName")]
+    public string? DeletedByName { get; set; }
+
+    /// <summary>距离永久删除的天数（回收站提示）</summary>
+    [BsonElement("daysUntilPermanentDelete")]
+    public int? DaysUntilPermanentDelete { get; set; }
+
     /// <summary>文件状态</summary>
     [BsonElement("status")]
     [BsonRepresentation(BsonType.Int32)]

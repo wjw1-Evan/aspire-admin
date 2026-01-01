@@ -4,6 +4,9 @@ using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// 上传大小限制（与 ApiService 对齐，2GB，可按需调整）
+const string MaxUploadBytes = "2147483648"; // 2GB
+
 // Add Kubernetes environment
 //var k8s = builder.AddKubernetesEnvironment("k8s");
 // Add a Docker Compose environment 发布：aspire publish
@@ -52,6 +55,8 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WithReplicas(1)
         .WithHttpHealthCheck("/health")
         .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+    // 上传大小限制（Kestrel）
+    .WithEnvironment("ASPNETCORE_Kestrel__Limits__MaxRequestBodySize", MaxUploadBytes)
         .WithReference(chat)
         // 🔧 添加日志配置，确保在 AppHost 控制台中能看到清晰的日志
         .WithEnvironment("DOTNET_LOGGING__CONSOLE__INCLUDESCOPES", "true")
@@ -64,6 +69,8 @@ var yarp = builder.AddYarp("apigateway")
                        service.Ports = new List<string> { "15000:15000" };
 
                    })
+    // 上传大小限制（Kestrel）
+    .WithEnvironment("ASPNETCORE_Kestrel__Limits__MaxRequestBodySize", MaxUploadBytes)
     .WithConfiguration(config =>
     {
         // 微服务路由配置 - 统一通过/{service}路径访问

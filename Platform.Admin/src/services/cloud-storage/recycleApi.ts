@@ -37,12 +37,16 @@ export interface RestoreItemRequest {
 }
 
 export interface BatchRestoreRequest {
-    itemIds: string[];
+    ids?: string[];
+    /** 兼容旧字段，内部会转换为 ids */
+    itemIds?: string[];
     targetParentId?: string;
 }
 
 export interface BatchPermanentDeleteRequest {
-    itemIds: string[];
+    ids?: string[];
+    /** 兼容旧字段，内部会转换为 ids */
+    itemIds?: string[];
 }
 
 export interface RecycleStatistics {
@@ -99,9 +103,14 @@ export async function restoreItem(data: RestoreItemRequest) {
  * 批量恢复文件或文件夹
  */
 export async function batchRestoreItems(data: BatchRestoreRequest) {
+    const payload = {
+        ids: data.ids ?? data.itemIds ?? [],
+        targetParentId: data.targetParentId,
+    };
+
     return request<ApiResponse<{ successCount: number; failedCount: number; errors?: string[] }>>('/api/cloud-storage/recycle/batch-restore', {
         method: 'POST',
-        data,
+        data: payload,
     });
 }
 
@@ -118,9 +127,13 @@ export async function permanentDeleteItem(id: string) {
  * 批量永久删除文件或文件夹
  */
 export async function batchPermanentDeleteItems(data: BatchPermanentDeleteRequest) {
+    const payload = {
+        ids: data.ids ?? data.itemIds ?? [],
+    };
+
     return request<ApiResponse<{ successCount: number; failedCount: number; errors?: string[] }>>('/api/cloud-storage/recycle/batch-permanent-delete', {
         method: 'POST',
-        data,
+        data: payload,
     });
 }
 

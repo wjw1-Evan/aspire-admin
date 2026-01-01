@@ -7,12 +7,22 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Options;
 using Platform.ApiService.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+// 上传大小限制（可按需调整）
+const long MaxUploadBytes = 2L * 1024 * 1024 * 1024; // 2GB
+
+// Kestrel 请求大小限制
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = MaxUploadBytes;
+});
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
@@ -30,6 +40,12 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
     });
 
+// 上传表单大小限制
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = MaxUploadBytes;
+});
+
 // 配置 CORS - 严格的安全策略
 builder.Services.AddCors(options =>
 {
@@ -45,7 +61,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:15001",  // 管理后台
                 "http://localhost:15002",  // 移动应用
             };
-            
+
             policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
@@ -54,9 +70,9 @@ builder.Services.AddCors(options =>
         else
         {
             // 生产环境：从配置读取允许的源
-            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
                 ?? throw new InvalidOperationException("AllowedOrigins must be configured in production");
-            
+
             policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
@@ -84,7 +100,7 @@ builder.Services.AddOpenApi(options =>
                 Email = "support@platform.com"
             }
         };
-        
+
         // 添加 JWT 认证配置
         document.Components ??= new OpenApiComponents();
         document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
@@ -110,10 +126,10 @@ builder.Services.AddOpenApi(options =>
             };
             document.Security.Add(securityRequirement);
         }
-        
+
         return Task.CompletedTask;
     });
-    
+
     options.AddOperationTransformer((operation, context, cancellationToken) =>
     {
         // 为需要认证的端点添加安全要求
@@ -139,8 +155,8 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
-// Register MongoDB services 
-// 添加MongoDB服务  
+// Register MongoDB services
+// 添加MongoDB服务
 builder.AddMongoDBClient(connectionName: "mongodb");
 
 // 添加OpenAI服务
@@ -248,7 +264,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 context.HandleResponse();
                 context.Response.StatusCode = 401;
                 context.Response.ContentType = "application/json";
-                
+
                 var errorMessage = "未提供有效的认证令牌或令牌格式错误。请确保在请求头中包含 'Authorization: Bearer {token}'。";
                 var response = System.Text.Json.JsonSerializer.Serialize(new
                 {
@@ -256,7 +272,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     message = errorMessage,
                     traceId = context.HttpContext.TraceIdentifier
                 });
-                
+
                 return context.Response.WriteAsync(response);
             }
         };
@@ -281,7 +297,7 @@ var app = builder.Build();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("🚀 Platform.ApiService 正在启动...");
 logger.LogInformation("📝 环境: {Environment}", app.Environment.EnvironmentName);
-logger.LogInformation("🔧 配置源: {ConfigSources}", 
+logger.LogInformation("🔧 配置源: {ConfigSources}",
     string.Join(", ", app.Configuration.AsEnumerable().Take(3).Select(c => c.Key)));
 
 // Configure the HTTP request pipeline.

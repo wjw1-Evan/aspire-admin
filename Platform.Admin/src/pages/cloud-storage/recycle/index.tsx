@@ -149,8 +149,15 @@ const CloudStorageRecyclePage: React.FC = () => {
             const response = await getRecycleList(listRequest);
 
             if (response.success && response.data) {
+                const list = response.data.list || response.data.data || [];
+                const normalizedList = (list || []).map((item: RecycleItem) => ({
+                    ...item,
+                    // 兼容后端未直接返回 isFolder 的情况
+                    isFolder: item.isFolder ?? (item.type === 'folder' || item.type === 'Folder' || item.type === 1),
+                }));
+
                 return {
-                    data: response.data.data || [],
+                    data: normalizedList,
                     total: response.data.total || 0,
                     success: true,
                 };
@@ -259,7 +266,7 @@ const CloudStorageRecyclePage: React.FC = () => {
             content: `确定要恢复选中的 ${selectedRowKeys.length} 个文件吗？`,
             onOk: async () => {
                 try {
-                    await batchRestoreItems({ itemIds: selectedRowKeys });
+                    await batchRestoreItems({ ids: selectedRowKeys });
                     success('批量恢复成功');
                     setSelectedRowKeys([]);
                     setSelectedRows([]);
@@ -293,7 +300,7 @@ const CloudStorageRecyclePage: React.FC = () => {
             ),
             onOk: async () => {
                 try {
-                    await batchPermanentDeleteItems({ itemIds: selectedRowKeys });
+                    await batchPermanentDeleteItems({ ids: selectedRowKeys });
                     success('批量永久删除成功');
                     setSelectedRowKeys([]);
                     setSelectedRows([]);

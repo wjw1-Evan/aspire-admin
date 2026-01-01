@@ -155,8 +155,8 @@ public interface ICloudStorageService
     /// 清理过期的回收站文件
     /// </summary>
     /// <param name="expireDays">过期天数</param>
-    /// <returns>清理操作结果</returns>
-    Task CleanupExpiredRecycleBinItemsAsync(int expireDays = 30);
+    /// <returns>清理数量与释放空间</returns>
+    Task<(int deletedCount, long freedSpace)> CleanupExpiredRecycleBinItemsAsync(int expireDays = 30);
 
     // 高级文件操作
 

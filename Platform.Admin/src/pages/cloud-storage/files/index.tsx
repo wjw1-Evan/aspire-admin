@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
@@ -92,6 +92,9 @@ import {
     type StorageStatistics,
     type FileVersion,
 } from '@/services/cloud-storage';
+
+// 与后端保持一致的上传体积上限（5GB）
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024;
 
 interface SearchParams {
     keyword?: string;
@@ -581,6 +584,9 @@ const CloudStorageFilesPage: React.FC = () => {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }, []);
+
+    // 上传大小提示
+    const maxUploadSizeLabel = useMemo(() => formatFileSize(MAX_UPLOAD_BYTES), [formatFileSize]);
 
     // 格式化日期时间
     const formatDateTime = useCallback((dateTime: string | null | undefined): string => {
@@ -1127,6 +1133,11 @@ const CloudStorageFilesPage: React.FC = () => {
                     directory
                     showUploadList={false}
                     beforeUpload={(file, fileList) => {
+                        // Antd 会对同一批次的每个文件逐个触发 beforeUpload，这里只在首个文件上触发自定义上传，避免重复提交
+                        if (fileList && fileList[0] && file.uid !== fileList[0].uid) {
+                            return false;
+                        }
+
                         const list = fileList && fileList.length > 0 ? fileList : [file];
                         const hasDirectory = list.some((f) => (f as any).webkitRelativePath);
 
@@ -1143,7 +1154,9 @@ const CloudStorageFilesPage: React.FC = () => {
                         <UploadOutlined />
                     </p>
                     <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                    <p className="ant-upload-hint">支持单个文件、批量文件或整个文件夹上传</p>
+                    <p className="ant-upload-hint">
+                        支持单个文件、批量文件或整个文件夹上传，单文件最大 {maxUploadSizeLabel}
+                    </p>
                 </Dragger>
 
                 {/* 上传进度 */}

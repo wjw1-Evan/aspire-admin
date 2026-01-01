@@ -1,11 +1,9 @@
+using Aspire.Hosting.Yarp;
 using Aspire.Hosting.Yarp.Transforms;
 using Microsoft.Extensions.Hosting;
 using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
-
-// 上传大小限制（与 ApiService 对齐，2GB，可按需调整）
-const string MaxUploadBytes = "2147483648"; // 2GB
 
 // Add Kubernetes environment
 //var k8s = builder.AddKubernetesEnvironment("k8s");
@@ -15,7 +13,6 @@ var compose = builder.AddDockerComposeEnvironment("compose").WithDashboard(dashb
        {
            dashboard.WithHostPort(18888);
        });
-
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
@@ -55,8 +52,6 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WithReplicas(1)
         .WithHttpHealthCheck("/health")
         .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
-    // 上传大小限制（Kestrel）
-    .WithEnvironment("ASPNETCORE_Kestrel__Limits__MaxRequestBodySize", MaxUploadBytes)
         .WithReference(chat)
         // 🔧 添加日志配置，确保在 AppHost 控制台中能看到清晰的日志
         .WithEnvironment("DOTNET_LOGGING__CONSOLE__INCLUDESCOPES", "true")
@@ -67,18 +62,14 @@ var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000).PublishAsDockerComposeService((resource, service) =>
                    {
                        service.Ports = new List<string> { "15000:15000" };
-
                    })
-    // 上传大小限制（Kestrel）
-    .WithEnvironment("ASPNETCORE_Kestrel__Limits__MaxRequestBodySize", MaxUploadBytes)
     .WithConfiguration(config =>
     {
         // 微服务路由配置 - 统一通过/{service}路径访问
         // 使用通配符{**catch-all}捕获所有子路径
         foreach (var service in services)
         {
-            config.AddRoute($"/{service.Key}/{{**catch-all}}", config.AddCluster(service.Value))
-                .WithTransformPathRouteValues("/{**catch-all}");
+            config.AddRoute($"/{service.Key}/{{**catch-all}}", config.AddCluster(service.Value)).WithMaxRequestBodySize(-1).WithTransformPathRouteValues("/{**catch-all}");
         }
     });
 
@@ -111,8 +102,6 @@ builder.AddNpmApp("app", "../Platform.App")
                    {
                        service.Ports = new List<string> { "15002:8081" };
                    });
-
-
 
 // 配置 Scalar API 文档
 // 使用 .NET 10 原生 OpenAPI 支持

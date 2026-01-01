@@ -16,12 +16,18 @@ using Platform.ApiService.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // 上传大小限制（可按需调整）
-const long MaxUploadBytes = 2L * 1024 * 1024 * 1024; // 2GB
+const long MaxUploadBytes = 5L * 1024 * 1024 * 1024; // 5GB
 
 // Kestrel 请求大小限制
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize = MaxUploadBytes;
+});
+
+// 上传表单大小限制
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = MaxUploadBytes;
 });
 
 // Add service defaults & Aspire client integrations.
@@ -39,12 +45,6 @@ builder.Services.AddControllers()
         // 序列化枚举为 camelCase 字符串，便于前端读取/提交
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
     });
-
-// 上传表单大小限制
-builder.Services.Configure<FormOptions>(options =>
-{
-    options.MultipartBodyLengthLimit = MaxUploadBytes;
-});
 
 // 配置 CORS - 严格的安全策略
 builder.Services.AddCors(options =>
@@ -293,13 +293,6 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// 添加启动日志，确保在 AppHost 控制台中能看到 ApiService 的启动信息
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("🚀 Platform.ApiService 正在启动...");
-logger.LogInformation("📝 环境: {Environment}", app.Environment.EnvironmentName);
-logger.LogInformation("🔧 配置源: {ConfigSources}",
-    string.Join(", ", app.Configuration.AsEnumerable().Take(3).Select(c => c.Key)));
-
 // Configure the HTTP request pipeline.
 // ✅ HTTPS 强制重定向（生产环境）
 if (!app.Environment.IsDevelopment())
@@ -324,7 +317,6 @@ app.UseMiddleware<Platform.ApiService.Middleware.ActivityLogMiddleware>();
 // 响应格式化中间件（在控制器之前）
 app.UseMiddleware<Platform.ApiService.Middleware.ResponseFormattingMiddleware>();
 
-
 // Configure controllers
 app.MapControllers();
 // SignalR 已完全移除，所有实时通信已迁移到 SSE 或 API 轮询
@@ -332,15 +324,9 @@ app.MapControllers();
 // Map OpenAPI endpoint
 app.MapOpenApi();
 
-
 // Map default endpoints (includes health checks)
 app.MapDefaultEndpoints();
 
 // 数据库初始化已迁移到 Platform.DataInitializer 微服务
-
-// 添加应用启动完成日志
-logger.LogInformation("✅ Platform.ApiService 启动完成，准备接收请求");
-logger.LogInformation("🌐 健康检查端点: /health");
-logger.LogInformation("📚 API 文档端点: /openapi/v1.json");
 
 await app.RunAsync();

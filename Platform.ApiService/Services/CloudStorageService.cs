@@ -114,10 +114,12 @@ public class CloudStorageService : ICloudStorageService
         if (string.IsNullOrWhiteSpace(fileName))
             throw new ArgumentException("文件名不能为空");
 
+        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
+
         // 验证父文件夹
-        if (!string.IsNullOrEmpty(parentId))
+        if (normalizedParentId != null)
         {
-            var parentFolder = await GetFileItemAsync(parentId);
+            var parentFolder = await GetFileItemAsync(normalizedParentId);
             if (parentFolder == null)
                 throw new ArgumentException("父文件夹不存在", nameof(parentId));
             if (parentFolder.Type != FileItemType.Folder)
@@ -138,17 +140,32 @@ public class CloudStorageService : ICloudStorageService
         var filterBuilder = _fileItemFactory.CreateFilterBuilder();
         var existingFilter = filterBuilder
             .Equal(f => f.Name, fileName)
-            .Equal(f => f.ParentId, parentId)
             .Equal(f => f.Type, FileItemType.File)
             .Equal(f => f.Status, FileStatus.Active)
-            .Build();
+            .Equal(f => f.IsDeleted, false);
 
-        var existingFile = await _fileItemFactory.FindAsync(existingFilter, limit: 1);
+        if (normalizedParentId == null)
+        {
+            var parentFilter = Builders<FileItem>.Filter.Or(
+                Builders<FileItem>.Filter.Eq(f => f.ParentId, null),
+                Builders<FileItem>.Filter.Eq(f => f.ParentId, string.Empty)
+            );
+            existingFilter = existingFilter.Custom(parentFilter);
+        }
+        else
+        {
+            existingFilter = existingFilter.Equal(f => f.ParentId, normalizedParentId);
+        }
+
+        var existingFilterBuilt = existingFilter.Build();
+
+        var existingFile = await _fileItemFactory.FindAsync(existingFilterBuilt, limit: 1);
 
         // 检查是否存在相同哈希的文件（去重）
         var hashFilter = filterBuilder
             .Equal(f => f.Hash, fileHash)
             .Equal(f => f.Status, FileStatus.Active)
+            .Equal(f => f.IsDeleted, false)
             .Build();
 
         var duplicateFiles = await _fileItemFactory.FindAsync(hashFilter, limit: 1);
@@ -181,7 +198,7 @@ public class CloudStorageService : ICloudStorageService
         }
 
         // 构建文件路径
-        var filePath = await BuildFilePathAsync(fileName, parentId);
+        var filePath = await BuildFilePathAsync(fileName, normalizedParentId ?? string.Empty);
         FileItem fileItem;
         if (existingFile.Count > 0)
         {
@@ -302,9 +319,25 @@ public class CloudStorageService : ICloudStorageService
     public async Task<PagedResult<FileItem>> GetFileItemsAsync(string parentId, FileListQuery query)
     {
         var filterBuilder = _fileItemFactory.CreateFilterBuilder();
+        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
+
         var filter = filterBuilder
-            .Equal(f => f.ParentId, parentId)
-            .Equal(f => f.Status, FileStatus.Active);
+            .Equal(f => f.Status, FileStatus.Active)
+            .Equal(f => f.IsDeleted, false);
+
+        // 根目录兼容 null 和 空字符串（需要显式 OR，而不是 In，因为过滤器构建器会去掉 null 值）
+        if (normalizedParentId == null)
+        {
+            var parentFilter = Builders<FileItem>.Filter.Or(
+                Builders<FileItem>.Filter.Eq(f => f.ParentId, null),
+                Builders<FileItem>.Filter.Eq(f => f.ParentId, string.Empty)
+            );
+            filter = filter.Custom(parentFilter);
+        }
+        else
+        {
+            filter = filter.Equal(f => f.ParentId, normalizedParentId);
+        }
 
         if (query.Type.HasValue)
             filter = filter.Equal(f => f.Type, query.Type.Value);
@@ -1133,7 +1166,8 @@ public class CloudStorageService : ICloudStorageService
         if (files == null || files.Count == 0)
             throw new ArgumentException("文件列表不能为空", nameof(files));
 
-        var rootParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
+        var rootParentId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
+        var processedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var results = new List<FileItem>();
         var totalSize = files.Sum(f => f.Length);
@@ -1149,6 +1183,14 @@ public class CloudStorageService : ICloudStorageService
                 var relativePath = file.FileName?.Replace("\\", "/") ?? string.Empty;
                 var directoryPath = Path.GetDirectoryName(relativePath)?.Replace("\\", "/");
                 var fileName = Path.GetFileName(relativePath);
+
+                // 去重：同一次请求内相同相对路径的文件只处理一次
+                var dedupeKey = string.IsNullOrEmpty(relativePath) ? (file.FileName ?? string.Empty) : relativePath;
+                if (!processedPaths.Add(dedupeKey))
+                {
+                    _logger.LogWarning("Skipped duplicate file in batch: {Path}", dedupeKey);
+                    continue;
+                }
 
                 if (string.IsNullOrWhiteSpace(fileName))
                     continue;
@@ -1207,12 +1249,26 @@ public class CloudStorageService : ICloudStorageService
             var filterBuilder = _fileItemFactory.CreateFilterBuilder();
             var folderFilter = filterBuilder
                 .Equal(f => f.Name, segment)
-                .Equal(f => f.ParentId, currentParentId)
                 .Equal(f => f.Type, FileItemType.Folder)
                 .Equal(f => f.Status, FileStatus.Active)
-                .Build();
+                .Equal(f => f.IsDeleted, false);
 
-            var existing = await _fileItemFactory.FindAsync(folderFilter, limit: 1);
+            if (currentParentId == null)
+            {
+                var parentFilter = Builders<FileItem>.Filter.Or(
+                    Builders<FileItem>.Filter.Eq(f => f.ParentId, null),
+                    Builders<FileItem>.Filter.Eq(f => f.ParentId, string.Empty)
+                );
+                folderFilter = folderFilter.Custom(parentFilter);
+            }
+            else
+            {
+                folderFilter = folderFilter.Equal(f => f.ParentId, currentParentId);
+            }
+
+            var folderFilterBuilt = folderFilter.Build();
+
+            var existing = await _fileItemFactory.FindAsync(folderFilterBuilt, limit: 1);
 
             if (existing.Any())
             {
@@ -1225,7 +1281,7 @@ public class CloudStorageService : ICloudStorageService
             }
         }
 
-        return currentParentId;
+        return currentParentId ?? string.Empty;
     }
 
     /// <summary>
@@ -1661,11 +1717,26 @@ public class CloudStorageService : ICloudStorageService
         var filterBuilder = _fileItemFactory.CreateFilterBuilder();
         var filter = filterBuilder
             .Equal(f => f.Name, fileName)
-            .Equal(f => f.ParentId, parentId)
             .Equal(f => f.Status, FileStatus.Active)
-            .Build();
+            .Equal(f => f.IsDeleted, false);
 
-        var existingFiles = await _fileItemFactory.FindAsync(filter, limit: 1);
+        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
+        if (normalizedParentId == null)
+        {
+            var parentFilter = Builders<FileItem>.Filter.Or(
+                Builders<FileItem>.Filter.Eq(f => f.ParentId, null),
+                Builders<FileItem>.Filter.Eq(f => f.ParentId, string.Empty)
+            );
+            filter = filter.Custom(parentFilter);
+        }
+        else
+        {
+            filter = filter.Equal(f => f.ParentId, normalizedParentId);
+        }
+
+        var filterBuilt = filter.Build();
+
+        var existingFiles = await _fileItemFactory.FindAsync(filterBuilt, limit: 1);
         return existingFiles.Count > 0;
     }
 

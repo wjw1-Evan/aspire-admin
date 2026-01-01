@@ -260,10 +260,15 @@ public class WorkflowEngine : IWorkflowEngine
             return new List<string>();
         }
 
-        var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        // 优先使用实例中的流程定义快照，如果没有快照则使用最新定义（向后兼容）
+        var definition = instance.WorkflowDefinitionSnapshot;
         if (definition == null)
         {
-            return new List<string>();
+            definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+            if (definition == null)
+            {
+                return new List<string>();
+            }
         }
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -724,10 +729,15 @@ public class WorkflowEngine : IWorkflowEngine
             throw new InvalidOperationException("流程实例不存在或已结束");
         }
 
-        var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        // 优先使用实例中的流程定义快照，如果没有快照则使用最新定义（向后兼容）
+        var definition = instance.WorkflowDefinitionSnapshot;
         if (definition == null)
         {
-            throw new InvalidOperationException("流程定义不存在");
+            definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+            if (definition == null)
+            {
+                throw new InvalidOperationException("流程定义不存在");
+            }
         }
 
         var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -789,11 +799,15 @@ public class WorkflowEngine : IWorkflowEngine
             .Build();
         await _instanceFactory.FindOneAndUpdateAsync(instanceFilter, instanceUpdate);
 
-        // 检查是否所有分支都完成
-        var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        // 检查是否所有分支都完成（使用流程定义快照，保持与实例一致）
+        var definition = instance.WorkflowDefinitionSnapshot;
         if (definition == null)
         {
-            throw new InvalidOperationException("流程定义不存在");
+            definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+            if (definition == null)
+            {
+                throw new InvalidOperationException("流程定义不存在");
+            }
         }
 
         var parallelNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);

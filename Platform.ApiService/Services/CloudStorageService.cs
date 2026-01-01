@@ -89,7 +89,7 @@ public class CloudStorageService : ICloudStorageService
         {
             Name = name,
             Path = path,
-            ParentId = normalizedParentId,
+            ParentId = normalizedParentId ?? string.Empty,
             Type = FileItemType.Folder,
             Status = FileStatus.Active,
             Size = 0,

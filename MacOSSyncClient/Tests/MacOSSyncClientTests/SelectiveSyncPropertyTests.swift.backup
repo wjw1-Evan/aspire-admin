@@ -1,0 +1,157 @@
+import XCTes
+import SwiftCheck
+@testable import MacOSSyncClientCore
+
+/// 选择性同步属性测试
+/// 验证同步一致性
+/// 验
+class SelectiveSyncPropertyTests: XCTestCase {
+    
+    var siveSync!
+    var mockCloudAPIService: MockCloudAPIService!
+    var mockLocalDBService!
+    var mockSyncEngine: Mockgine!
+    
+
+        tr
+        
+        mockCloudAPIService = MockCloudAPIService()
+        mockLocalDBService = MockLocalDBService()
+        mockSyncEngine = Mo
+        
+        s
+      ervice,
+            localDBService: mockLocalDBService,
+            syncEngine: mockSyncEngine
+        )
+    }
+    
+    override func tearDown() asynchrows {
+     nil
+        mockil
+        mockLoc
+        mockSyncEngine = nil
+        try awa
+    }
+    
+   一致性测试
+    
+    /// 测试需求 4.2: 取消选择文件夹应从本
+    func  {
+ 
+        
+                let expectation = XCTestExpectatio test")
+                
+                Task {tor in
+               {
+         选中
+                        try await self.selectiveSync.selectFolder(folderPath, selected: true)
+               )
+             
+                        // 取消选择文件夹
+          
+                        
+       
+       
+                        let selectedFolders()
+               
+                        let resu&& 
+                                   !final && 
+                                   !selecth)
+  
+       )
+                        expectation.fulfill()
+                    } catch
+            r)")
+          )
+                    }
+                }
+                
+                self.wut: 5.0)
+                return true
+            }
+        }
+    }
+    
+    /// 测试需求 4.3: 选择文件地
+    func testSelectFolderDownload
+        property("Selecting folder downloa
+            return folderPath.count > 0 =
+                let expectation = XCTestExpectation(det")
+         
+                Task { @MainActor in
+                    do {
+                        // 确保文件夹初始未选中
+                        try awa
+th)
+              
+              择文件夹
+     
+      
+                       
+                        let finallySelected = self.selecti)
+                        let selectedFolers()
+                        
+                        let result = !initiallySelected && 
+                                  
+                                   selectedFolders.cont)
+                        
+ ")
+               
+                     {
+                        XCTFail(r)")
+                    ()
+                    }
+                }
+              
+                sel.0)
+ 
+            }
+        }
+    }
+    
+    /// 测试选择性同步状态的内部一致性
+    func testSelectiveSyncStateConsistency() {
+        property("Selective syncg]) in
+            return folderPa
+                let")
+                
+                Task { @MainActor in
+                    do {
+                        // 批量选择文件夹
+                        for path in folderPaths where path.count > 0 {
+                         ed: true)
+                        }
+                        
+                        // 验证状态一致性
+                        let selectedFolders = self.selectiveSync.g)
+                        let selectedCount = self.selectiveSync.getSelectedCount()
+                        let selectedSize
+                      
+                        // 验证计数一致性
+                        let countConsistent ount
+                        
+                        // 验证大小一致性（非负数）
+                        let sizeConsistent = se= 0
+              
+                        // 验证选择状态一致性
+                        let stateConsistent = selectedFolders.allSatisfy { path in
+                            self.selectiveSync.isSelected(path)
+                        }
+                        
+                      
+                        
+                        XCTAssertTrue(result, "Selective sync state should remain inent")
+                        expectation.fulfill()
+                    } catch {
+                        XCTFail("Test f
+                        expectation.fulfill()
+                    }
+                }
+                
+                self.wait(for: [expectation], t0.0)
+                return true
+            }
+        }
+    }
+}

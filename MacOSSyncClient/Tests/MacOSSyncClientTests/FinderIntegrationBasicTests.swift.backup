@@ -1,0 +1,65 @@
+
+}rs")
+    }ro eroutplete with comh should"Refresrue(true, CTAssertT   X     正常执行不抛出异常
+/ Then: 方法应该        /
+        ()
+llStatusesshAice.refrervfinderSe        
+hen: 调用刷新方法   // W     
+ )
+       erServicetNil(findssertNoCTA    X服务已初始化
+     Finder 集成   // Given:() {
+     RefreshtStatusunc tes   f
+  测试状态刷新功能///    }
+    
+ )
+   ed"ould be savpath sholder "Sync fPath, ath, testavedP(stEqualCTAsser        Xh")
+erPat: "syncFoldg(forKeyinfaults.strerDeath = usdPt save        le.standard
+tsaulUserDef?? red") .shalientc-cos-synoup.com.macteName: "gruifaults(sserDeaults = Ut userDef  le  功
+    路径设置成// Then: 验证         
+       (testPath)
+lderPathetSyncForService.s finde
+       路径设置同步文件夹  // When:   
+      
+      lder"/test/SyncFo"/UserstPath =     let tes路径
+    测试ven:    // Gi) {
+     hSetting(rPatstSyncFolde func te设置
+   // 测试同步文件夹路径
+    /  }
+    
+  l")ould be nie status sh filials, "Initl(statusertNi     XCTAsl
+   始状态应为 ni// Then: 初             
+   testPath)
+tus(at: e.getFileStaervicrSindestatus = ft 
+        le取文件状态hen: 获    // W     
+    e.txt"
+   h/fil"/test/patath = t testPle    测试路径
+    en: 设置      // Giv
+  ) {ieval(RetrStatusFilenc test    fu取
+/// 测试文件状态获
+    
+    }")
+    lizediainit be ouldvice shtegrationSerIn, "FinderrvicederSertNotNil(finXCTAsse{
+        lization() rviceInitiationSeerIntegranc testFind
+    fu务初始化inder 集成服  /// 测试 F}
+    
+  
+    rDown()per.tea       sup()
+ anuvice?.clederSer     fin) {
+   Down( func tear  override
+    
+    }gine)
+  mockEnne: ce(syncEngiationServiinderIntegr = FnderService fi      
+ ne()yncEngie = MockSin     mockEng
+   r.setUp()   supep() {
+      func setUride
+    over  Engine!
+  MockSyncckEngine: vate var mo   priervice!
+ ationStegrderInvice: FinderSere var fin
+    privat  ase {
+  tCTests: XCBasicTestionerIntegra Findlass能
+final c件状态图标和右键菜单功, 10.3 - 文10.2: 证需求能测试
+/// 验基础功Finder 集成t
+
+/// OSSyncClienmport Macble ition
+@testadaunmport Fort XCTest
+iimpo

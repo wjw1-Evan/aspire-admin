@@ -1,0 +1,110 @@
+impost
+importn
+@testable import MacOSSyncClien
+
+/// Find
+/// 测和右键菜单功能
+final class FinderIntegrationTests{
+    
+    // MARrties
+
+    private var finderIntegrationService: FinderIntegratioice!
+    private var mockSyncEngine: MockSyncEngine!
+     URL!
+    priv
+    
+    // MARK: - Setup and Teardown
+    
+    o
+        super.setUp()
+        
+
+        
+        finderIntegrationService = Find
+        
+   测试同步文件夹
+     
+        testSyncFolderU")
+        
+        do {
+        
+            finderIntegrationService.setSyth)
+        } catch {
+            XCTFail("
+        }
+    }
+
+   wn() {
+     件夹
+        if let testSyncFolderURL = testSyncFolderURL {
+    rURL)
+        }
+        
+        finderIntegration
+        findenil
+        mockSyncEngine = nil
+        
+     
+    }
+    
+    // MARK: - 2)
+    
+   
+    func testFileStatusIconDi
+        // Given: 创建测试文件
+        let testFilt")
+        let testContent = "Test file content"
+       
+        do {
+            try testContent.write(to: testFile, atomically: true, encoding: .utf8)
+        } catch {
+            XCTFail("Failed to cre
+            return
+    
+        
+      步
+        mockSyncEngine.setItemState(at: testFile.
+        
+        // 等待状态更新
+        let expectation = XCTestExpectatid")
+      {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 2.0)
+        
+    正确
+        let fileStatus = finderIntegr)
+        XCTAssertEqual(fil")
+    }
+    
+    /// 测试同步中状态的图标显示
+    func testSyncingSplay() {
+        // Given: 创建测试文件
+        let testFile ")
+        let testContent = "Syncing filntent"
+        
+        do {
+            try tef8)
+        }h {
+            XCTFail("Failed to create test file: \(e
+            
+        }
+        
+        // When: 设置文件状态为同步中
+        mockSyncEngine.setItemState(at: testFile.path, state: .syncing)
+        
+        
+       
+        
+        // 等待状态更新
+        let expectation = XCTestExpectation(description: "Syncing status updated
+        DispatchQueue.ma{
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 2.0)
+        
+        // The
+        let fth)
+        XCTAssertEqua
+    }
+}

@@ -1,0 +1,744 @@
+import XCTest
+@testable import MacOSSyncClientCore
+
+class ConflictResolutionTests: XCTestCase {
+    var conflictResolver: ConflictResolver!
+    var conflictResolutionManager: ConflictResolutionManager!
+    var mockFileSystemService: MockFileSystemService!
+    var mockCloudAPIService: MockCloudAPIService!
+    var mockLocalDBService: MockLocalDBService!
+    var testDirectory: String!
+    
+    override func setUp() {
+        super.setUp()
+        
+        // 创建测试目录
+        let tempDir = NSTemporaryDirectory()
+        testDirectory = tempDir + "ConflictResolutionTests_\(UUID().uuidString)"
+        try? FileManager.default.createDirectory(atPath: testDirectory, withIntermediateDirectories: true, attributes: nil)
+        
+        // 创建 mock 服务
+        mockFileSystemService = MockFileSystemService()
+        mockCloudAPIService = MockCloudAPIService()
+        mockLocalDBService = MockLocalDBService()
+        
+        // 创建冲突解决器
+        conflictResolver = ConflictResolver(
+            fileSystemService: mockFileSystemService,
+            cloudAPIService: mockCloudAPIService,
+            localDBService: mockLocalDBService
+        )
+        
+        // 创建冲突解决管理器
+        conflictResolutionManager = ConflictResolutionManager(
+            conflictResolver: conflictResolver,
+            localDBService: mockLocalDBService
+        )
+    }
+    
+    override func tearDown() {
+        // 清理测试目录
+        if let testDir = testDirectory {
+            try? FileManager.default.removeItem(atPath: testDir)
+        }
+        
+        conflictResolver = nil
+        conflictResolutionManager = nil
+        mockFileSystemService = nil
+        mockCloudAPIService = nil
+        mockLocalDBService = nil
+        testDirectory = nil
+        super.tearDown()
+    }
+    
+    // MARK: - 冲突检测测试
+    
+    func testDetectContentConflict() async {
+        // 准备测试数据
+        let localItem = createTestSyncItem(
+            name: "test.txt",
+            hash: "local_hash",
+            modifiedDate: Date(timeIntervalSince1970: 1000)
+        )
+        
+        let cloudFile = CloudFile(
+            id: "cloud_id",
+            name: "test.txt",
+            path: "/test.txt",
+            size: 100,
+            hash: "cloud_hash",
+            modifiedDate: Date(timeIntervalSince1970: 2000),
+            createdDate: Date(timeIntervalSince1970: 500)
+        )
+        
+        let cloudItem = CloudItem.file(cloudFile)
+        
+        // 执行冲突检测
+        let conflict = await conflictResolver.detectConflict(between: localItem, and: cloudItem)
+        
+        // 验证结果
+        XCTAssertNotNil(conflict)
+        XCTAssertEqual(conflict?.conflictType, .contentConflict)
+        XCTAssertEqual(conflict?.localModifiedDate, localItem.modifiedDate)
+        XCTAssertEqual(conflict?.cloudModifiedDate, cloudFile.modifiedDate)
+    }
+    
+    func testDetectNameConflict() async {
+        // 准备测试数据
+        let localItem = createTestSyncItem(
+            name: "local_name.txt",
+            hash: "same_hash",
+            modifiedDate: Date(timeIntervalSince1970: 1000)
+        )
+        
+        let cloudFile = CloudFile(
+            id: "cloud_id",
+            name: "cloud_name.txt",
+            path: "/cloud_name.txt",
+            size: 100,
+            hash: "same_hash",
+            modifiedDate: Date(timeIntervalSince1970: 2000),
+            createdDate: Date(timeIntervalSince1970: 500)
+        )
+        
+        let cloudItem = CloudItem.file(cloudFile)
+        
+        // 执行冲突检测
+        let conflict = await conflictResolver.detectConflict(between: localItem, and: cloudItem)
+        
+        // 验证结果
+        XCTAssertNotNil(conflict)
+        XCTAssertEqual(conflict?.conflictType, .nameConflict)
+    }
+    
+    func testDetectTypeConflict() async {
+        // 准备测试数据 - 本地是文件，云端是文件夹
+        let localItem = createTestSyncItem(
+            name: "test",
+            type: .file,
+            modifiedDate: Date(timeIntervalSince1970: 1000)
+        )
+        
+        let cloudFolder = CloudFolder(
+            id: "cloud_id",
+            name: "test",
+            path: "/test",
+            modifiedDate: Date(timeIntervalSince1970: 2000),
+            createdDate: Date(timeIntervalSince1970: 500)
+        )
+        
+        let cloudItem = CloudItem.folder(cloudFolder)
+        
+        // 执行冲突检测
+        let conflict = await conflictResolver.detectConflict(between: localItem, and: cloudItem)
+        
+        // 验证结果
+        XCTAssertNotNil(conflict)
+        XCTAssertEqual(conflict?.conflictType, .typeConflict)
+    }
+    
+    func testNoConflictWhenTimestampsMatch() async {
+        // 准备测试数据 - 相同的修改时间
+        let sameDate = Date(timeIntervalSince1970: 1000)
+        
+        let localItem = createTestSyncItem(
+            name: "test.txt",
+            hash: "same_hash",
+            modifiedDate: sameDate
+        )
+        
+        let cloudFile = CloudFile(
+            id: "cloud_id",
+            name: "test.txt",
+            path: "/test.txt",
+            size: 100,
+            hash: "same_hash",
+            modifiedDate: sameDate,
+            createdDate: Date(timeIntervalSince1970: 500)
+        )
+        
+        let cloudItem = CloudItem.file(cloudFile)
+        
+        // 执行冲突检测
+        let conflict = await conflictResolver.detectConflict(between: localItem, and: cloudItem)
+        
+        // 验证结果 - 不应该有冲突
+        XCTAssertNil(conflict)
+    }
+    
+    func testDetectAllConflicts() async {
+        // 准备测试数据
+        let conflictItem1 = createTestSyncItem(
+            name: "conflict1.txt",
+            hash: "hash1",
+            modifiedDate: Date(timeIntervalSince1970: 1000)
+        )
+        
+        let conflictItem2 = createTestSyncItem(
+            name: "conflict2.txt",
+            hash: "hash2",
+            modifiedDate: Date(timeIntervalSince1970: 1000)
+        )
+        
+        let noConflictItem = createTestSyncItem(
+            name: "no_conflict.txt",
+            hash: "hash3",
+            modifiedDate: Date(timeIntervalSince1970: 1000)
+        )
+        
+        // 设置 mock 数据
+        mockLocalDBService.syncItems = [conflictItem1, conflictItem2, noConflictItem]
+        
+        // 设置云端数据 - 只有前两个有冲突
+        mockCloudAPIService.mockFiles = [
+            "/conflict1.txt": CloudFile(
+                id: "1", name: "conflict1.txt", path: "/conflict1.txt",
+                size: 100, hash: "different_hash1",
+                modifiedDate: Date(timeIntervalSince1970: 2000),
+                createdDate: Date(timeIntervalSince1970: 500)
+            ),
+            "/conflict2.txt": CloudFile(
+                id: "2", name: "conflict2.txt", path: "/conflict2.txt",
+                size: 100, hash: "different_hash2",
+                modifiedDate: Date(timeIntervalSince1970: 2000),
+                createdDate: Date(timeIntervalSince1970: 500)
+            ),
+            "/no_conflict.txt": CloudFile(
+                id: "3", name: "no_conflict.txt", path: "/no_conflict.txt",
+                size: 100, hash: "hash3",
+                modifiedDate: Date(timeIntervalSince1970: 1000),
+                createdDate: Date(timeIntervalSince1970: 500)
+            )
+        ]
+        
+        // 执行冲突检测
+        let conflicts = await conflictResolver.detectConflicts()
+        
+        // 验证结果
+        XCTAssertEqual(conflicts.count, 2)
+        XCTAssertTrue(conflicts.contains { $0.conflictType == .contentConflict })
+    }
+    
+    // MARK: - 冲突解决测试
+    
+    func testResolveConflictKeepLocal() async {
+        // 准备测试数据
+        let localItem = createTestSyncItemWithConflict(
+            name: "test.txt",
+            conflictType: .contentConflict
+        )
+        
+        // 设置 mock 期望
+        mockCloudAPIService.shouldSucceedUpload = true
+        
+        do {
+            // 执行冲突解决
+            try await conflictResolver.resolveConflict(for: localItem, resolution: .keepLocal)
+            
+            // 验证上传被调用
+            XCTAssertTrue(mockCloudAPIService.uploadCalled)
+            XCTAssertEqual(mockCloudAPIService.lastUploadLocalPath, localItem.localPath)
+            XCTAssertEqual(mockCloudAPIService.lastUploadCloudPath, localItem.cloudPath)
+            
+        } catch {
+            XCTFail("解决冲突失败: \(error)")
+        }
+    }
+    
+    func testResolveConflictKeepCloud() async {
+        // 准备测试数据
+        let localItem = createTestSyncItemWithConflict(
+            name: "test.txt",
+            conflictType: .contentConflict
+        )
+        
+        // 设置 mock 期望
+        mockCloudAPIService.shouldSucceedDownload = true
+        mockFileSystemService.mockFileAttributes = FileAttributes(
+            size: 200,
+            isDirectory: false,
+            isReadable: true,
+            isWritable: true,
+            creationDate: Date(),
+            modificationDate: Date(),
+            permissions: "rw-r--r--"
+        )
+        
+        do {
+            // 执行冲突解决
+            try await conflictResolver.resolveConflict(for: localItem, resolution: .keepCloud)
+            
+            // 验证下载被调用
+            XCTAssertTrue(mockCloudAPIService.downloadCalled)
+            XCTAssertEqual(mockCloudAPIService.lastDownloadCloudPath, localItem.cloudPath)
+            XCTAssertEqual(mockCloudAPIService.lastDownloadLocalPath, localItem.localPath)
+            
+        } catch {
+            XCTFail("解决冲突失败: \(error)")
+        }
+    }
+    
+    func testResolveConflictKeepBoth() async {
+        // 准备测试数据
+        let localItem = createTestSyncItemWithConflict(
+            name: "test.txt",
+            conflictType: .contentConflict
+        )
+        
+        // 设置 mock 期望
+        mockFileSystemService.shouldSucceedCopy = true
+        mockCloudAPIService.shouldSucceedDownload = true
+        mockLocalDBService.shouldSucceedInsert = true
+        
+        do {
+            // 执行冲突解决
+            try await conflictResolver.resolveConflict(for: localItem, resolution: .keepBoth)
+            
+            // 验证文件复制被调用（创建冲突副本）
+            XCTAssertTrue(mockFileSystemService.copyCalled)
+            
+            // 验证下载被调用（保留云端版本）
+            XCTAssertTrue(mockCloudAPIService.downloadCalled)
+            
+            // 验证数据库插入被调用（保存冲突副本）
+            XCTAssertTrue(mockLocalDBService.insertCalled)
+            
+        } catch {
+            XCTFail("解决冲突失败: \(error)")
+        }
+    }
+    
+    func testCreateConflictCopy() async {
+        // 准备测试数据
+        let originalItem = createTestSyncItem(name: "document.txt")
+        
+        // 设置 mock 期望
+        mockFileSystemService.shouldSucceedCopy = true
+        
+        do {
+            // 创建冲突副本
+            let conflictCopy = try await conflictResolver.createConflictCopy(for: originalItem)
+            
+            // 验证冲突副本的属性
+            XCTAssertTrue(conflictCopy.name.contains("Conflicted Copy"))
+            XCTAssertTrue(conflictCopy.name.contains("document"))
+            XCTAssertTrue(conflictCopy.name.hasSuffix(".txt"))
+            XCTAssertNotEqual(conflictCopy.cloudId, originalItem.cloudId)
+            XCTAssertEqual(conflictCopy.syncState, .localOnly)
+            
+            // 验证文件复制被调用
+            XCTAssertTrue(mockFileSystemService.copyCalled)
+            
+        } catch {
+            XCTFail("创建冲突副本失败: \(error)")
+        }
+    }
+    
+    func testCreateConflictCopyWithoutExtension() async {
+        // 准备测试数据 - 没有扩展名的文件
+        let originalItem = createTestSyncItem(name: "README")
+        
+        // 设置 mock 期望
+        mockFileSystemService.shouldSucceedCopy = true
+        
+        do {
+            // 创建冲突副本
+            let conflictCopy = try await conflictResolver.createConflictCopy(for: originalItem)
+            
+            // 验证冲突副本的属性
+            XCTAssertTrue(conflictCopy.name.contains("Conflicted Copy"))
+            XCTAssertTrue(conflictCopy.name.contains("README"))
+            XCTAssertFalse(conflictCopy.name.contains("."))
+            
+        } catch {
+            XCTFail("创建冲突副本失败: \(error)")
+        }
+    }
+    
+    // MARK: - 冲突解决管理器测试
+    
+    func testConflictResolutionManagerResolveAllPending() async {
+        // 准备测试数据
+        let conflictItem1 = createTestSyncItemWithConflict(name: "conflict1.txt", conflictType: .contentConflict)
+        let conflictItem2 = createTestSyncItemWithConflict(name: "conflict2.txt", conflictType: .nameConflict)
+        
+        mockLocalDBService.syncItems = [conflictItem1, conflictItem2]
+        
+        // 设置云端数据
+        mockCloudAPIService.mockFiles = [
+            "/conflict1.txt": CloudFile(
+                id: "1", name: "conflict1.txt", path: "/conflict1.txt",
+                size: 100, hash: "different_hash",
+                modifiedDate: Date(timeIntervalSince1970: 2000),
+                createdDate: Date(timeIntervalSince1970: 500)
+            ),
+            "/conflict2.txt": CloudFile(
+                id: "2", name: "different_name.txt", path: "/different_name.txt",
+                size: 100, hash: "same_hash",
+                modifiedDate: Date(timeIntervalSince1970: 2000),
+                createdDate: Date(timeIntervalSince1970: 500)
+            )
+        ]
+        
+        // 设置自动解决策略
+        conflictResolutionManager.currentStrategy = .keepNewer
+        
+        do {
+            // 执行批量解决
+            try await conflictResolutionManager.resolveAllPendingConflicts()
+            
+            // 验证没有抛出异常（具体的解决逻辑在实际实现中会更复杂）
+            
+        } catch {
+            XCTFail("批量解决冲突失败: \(error)")
+        }
+    }
+    
+    func testConflictResolutionManagerIntelligentResolution() async {
+        // 测试内容冲突的智能解决
+        let contentConflict = ConflictInfo(
+            conflictType: .contentConflict,
+            localModifiedDate: Date(timeIntervalSince1970: 2000), // 本地更新
+            cloudModifiedDate: Date(timeIntervalSince1970: 1000), // 云端较旧
+            localSize: 100,
+            cloudSize: 80,
+            resolutionOptions: [.keepLocal, .keepCloud, .keepBoth]
+        )
+        
+        do {
+            let resolution = try await conflictResolutionManager.resolveConflictIntelligently(contentConflict)
+            
+            // 对于内容冲突，应该选择较新的版本（本地）
+            XCTAssertEqual(resolution, .keepLocal)
+            
+        } catch {
+            XCTFail("智能解决冲突失败: \(error)")
+        }
+    }
+    
+    func testConflictResolutionManagerNameConflictResolution() async {
+        // 测试名称冲突的智能解决
+        let nameConflict = ConflictInfo(
+            conflictType: .nameConflict,
+            localModifiedDate: Date(timeIntervalSince1970: 1000),
+            cloudModifiedDate: Date(timeIntervalSince1970: 2000),
+            localSize: 100,
+            cloudSize: 100,
+            resolutionOptions: [.keepLocal, .keepCloud, .keepBoth]
+        )
+        
+        do {
+            let resolution = try await conflictResolutionManager.resolveConflictIntelligently(nameConflict)
+            
+            // 对于名称冲突，通常保留两个版本
+            XCTAssertEqual(resolution, .keepBoth)
+            
+        } catch {
+            XCTFail("智能解决冲突失败: \(error)")
+        }
+    }
+    
+    func testConflictResolutionManagerTypeConflictResolution() async {
+        // 测试类型冲突的智能解决
+        let typeConflict = ConflictInfo(
+            conflictType: .typeConflict,
+            localModifiedDate: Date(timeIntervalSince1970: 1000),
+            cloudModifiedDate: Date(timeIntervalSince1970: 2000),
+            localSize: 100, // 本地有内容（文件）
+            cloudSize: 0,   // 云端无内容（文件夹）
+            resolutionOptions: [.keepLocal, .keepCloud]
+        )
+        
+        do {
+            let resolution = try await conflictResolutionManager.resolveConflictIntelligently(typeConflict)
+            
+            // 对于类型冲突，优先保留有内容的文件
+            XCTAssertEqual(resolution, .keepLocal)
+            
+        } catch {
+            XCTFail("智能解决冲突失败: \(error)")
+        }
+    }
+    
+    // MARK: - 错误处理测试
+    
+    func testResolveConflictWithoutConflictInfo() async {
+        // 准备没有冲突信息的项目
+        let itemWithoutConflict = createTestSyncItem(name: "normal.txt")
+        
+        do {
+            try await conflictResolver.resolveConflict(for: itemWithoutConflict, resolution: .keepLocal)
+            XCTFail("应该抛出 conflictNotFound 错误")
+        } catch ConflictResolutionError.conflictNotFound {
+            // 预期的错误
+        } catch {
+            XCTFail("预期 conflictNotFound 错误，但得到: \(error)")
+        }
+    }
+    
+    func testResolveConflictWithNetworkError() async {
+        // 准备测试数据
+        let localItem = createTestSyncItemWithConflict(name: "test.txt", conflictType: .contentConflict)
+        
+        // 设置网络错误
+        mockCloudAPIService.shouldSucceedUpload = false
+        mockCloudAPIService.uploadError = CloudAPIError.networkError("Network timeout")
+        
+        do {
+            try await conflictResolver.resolveConflict(for: localItem, resolution: .keepLocal)
+            XCTFail("应该抛出网络错误")
+        } catch {
+            // 验证错误被正确传播
+            XCTAssertTrue(error is CloudAPIError)
+        }
+    }
+    
+    func testResolveConflictWithFileSystemError() async {
+        // 准备测试数据
+        let localItem = createTestSyncItemWithConflict(name: "test.txt", conflictType: .contentConflict)
+        
+        // 设置文件系统错误
+        mockFileSystemService.shouldSucceedCopy = false
+        mockFileSystemService.copyError = FileSystemError.permissionDenied("/test/path")
+        
+        do {
+            try await conflictResolver.resolveConflict(for: localItem, resolution: .keepBoth)
+            XCTFail("应该抛出文件系统错误")
+        } catch {
+            // 验证错误被正确传播
+            XCTAssertTrue(error is FileSystemError)
+        }
+    }
+    
+    // MARK: - 事件流测试
+    
+    func testConflictDetectedEventStream() async {
+        // 准备测试数据
+        let conflictItem = createTestSyncItem(
+            name: "conflict.txt",
+            hash: "local_hash",
+            modifiedDate: Date(timeIntervalSince1970: 1000)
+        )
+        
+        mockLocalDBService.syncItems = [conflictItem]
+        mockCloudAPIService.mockFiles = [
+            "/conflict.txt": CloudFile(
+                id: "1", name: "conflict.txt", path: "/conflict.txt",
+                size: 100, hash: "cloud_hash",
+                modifiedDate: Date(timeIntervalSince1970: 2000),
+                createdDate: Date(timeIntervalSince1970: 500)
+            )
+        ]
+        
+        // 监听事件流
+        var detectedConflicts: [ConflictInfo] = []
+        let expectation = XCTestExpectation(description: "Conflict detected event")
+        
+        Task {
+            for await conflict in conflictResolver.conflictDetected {
+                detectedConflicts.append(conflict)
+                expectation.fulfill()
+                break // 只等待第一个事件
+            }
+        }
+        
+        // 触发冲突检测
+        _ = await conflictResolver.detectConflicts()
+        
+        // 等待事件
+        await fulfillment(of: [expectation], timeout: 1.0)
+        
+        // 验证事件
+        XCTAssertEqual(detectedConflicts.count, 1)
+        XCTAssertEqual(detectedConflicts.first?.conflictType, .contentConflict)
+    }
+    
+    // MARK: - 辅助方法
+    
+    private func createTestSyncItem(
+        name: String,
+        type: SyncItemType = .file,
+        hash: String = "test_hash",
+        modifiedDate: Date = Date()
+    ) -> SyncItem {
+        return SyncItem(
+            cloudId: UUID().uuidString,
+            localPath: testDirectory + "/" + name,
+            cloudPath: "/" + name,
+            name: name,
+            type: type,
+            size: 100,
+            modifiedDate: modifiedDate,
+            syncState: .synced,
+            hash: hash,
+            parentId: nil
+        )
+    }
+    
+    private func createTestSyncItemWithConflict(
+        name: String,
+        conflictType: ConflictInfo.ConflictType
+    ) -> SyncItem {
+        var item = createTestSyncItem(name: name)
+        
+        let conflictInfo = ConflictInfo(
+            conflictType: conflictType,
+            localModifiedDate: Date(timeIntervalSince1970: 1000),
+            cloudModifiedDate: Date(timeIntervalSince1970: 2000),
+            localSize: 100,
+            cloudSize: 80,
+            resolutionOptions: ConflictInfo.availableOptions(for: conflictType)
+        )
+        
+        item.conflictInfo = conflictInfo
+        return item
+    }
+}
+
+// MARK: - Mock 服务实现
+
+class MockFileSystemService: FileSystemServiceProtocol {
+    var shouldSucceedCopy = true
+    var copyError: Error?
+    var copyCalled = false
+    var mockFileAttributes: FileAttributes?
+    
+    func copyFile(from sourcePath: String, to destinationPath: String) throws {
+        copyCalled = true
+        if !shouldSucceedCopy {
+            throw copyError ?? FileSystemError.permissionDenied(sourcePath)
+        }
+    }
+    
+    func getFileAttributes(at path: String) throws -> FileAttributes {
+        if let attributes = mockFileAttributes {
+            return attributes
+        }
+        return FileAttributes(
+            size: 100,
+            isDirectory: false,
+            isReadable: true,
+            isWritable: true,
+            creationDate: Date(),
+            modificationDate: Date(),
+            permissions: "rw-r--r--"
+        )
+    }
+    
+    // 其他必需的方法（简化实现）
+    func createFile(at path: String, with data: Data) throws {}
+    func readFile(at path: String) throws -> Data { return Data() }
+    func updateFile(at path: String, with data: Data) throws {}
+    func deleteFile(at path: String) throws {}
+    func moveFile(from sourcePath: String, to destinationPath: String) throws {}
+    func createDirectory(at path: String) throws {}
+    func deleteDirectory(at path: String) throws {}
+    func listDirectory(at path: String) throws -> [String] { return [] }
+    func fileExists(at path: String) -> Bool { return true }
+    func directoryExists(at path: String) -> Bool { return true }
+    func hasPermission(_ permission: FilePermission, for path: String) -> Bool { return true }
+    func getAvailableSpace(at path: String) throws -> Int64 { return 1000000 }
+}
+class MockCloudAPIService: CloudAPIServiceProtocol {
+    var shouldSucceedUpload = true
+    var shouldSucceedDownload = true
+    var uploadError: Error?
+    var downloadError: Error?
+    var uploadCalled = false
+    var downloadCalled = false
+    var lastUploadLocalPath: String?
+    var lastUploadCloudPath: String?
+    var lastDownloadCloudPath: String?
+    var lastDownloadLocalPath: String?
+    var mockFiles: [String: CloudFile] = [:]
+    var mockFolders: [String: CloudFolder] = [:]
+    
+    func uploadFile(at localPath: String, to cloudPath: String, progressHandler: @escaping (Double) -> Void) async throws -> CloudFile {
+        uploadCalled = true
+        lastUploadLocalPath = localPath
+        lastUploadCloudPath = cloudPath
+        
+        if !shouldSucceedUpload {
+            throw uploadError ?? CloudAPIError.networkError("Upload failed")
+        }
+        
+        return CloudFile(
+            id: UUID().uuidString,
+            name: URL(fileURLWithPath: cloudPath).lastPathComponent,
+            path: cloudPath,
+            size: 100,
+            hash: "uploaded_hash",
+            modifiedDate: Date(),
+            createdDate: Date()
+        )
+    }
+    
+    func downloadFile(from cloudPath: String, to localPath: String, progressHandler: @escaping (Double) -> Void) async throws {
+        downloadCalled = true
+        lastDownloadCloudPath = cloudPath
+        lastDownloadLocalPath = localPath
+        
+        if !shouldSucceedDownload {
+            throw downloadError ?? CloudAPIError.networkError("Download failed")
+        }
+    }
+    
+    func getFileInfo(at path: String) async throws -> CloudFile {
+        if let file = mockFiles[path] {
+            return file
+        }
+        throw CloudAPIError.fileNotFound(path)
+    }
+    
+    func getFolderInfo(at path: String) async throws -> CloudFolder {
+        if let folder = mockFolders[path] {
+            return folder
+        }
+        throw CloudAPIError.fileNotFound(path)
+    }
+    
+    // 其他必需的方法（简化实现）
+    func authenticate(username: String, password: String) async throws -> AuthToken {
+        return AuthToken(accessToken: "mock_token", refreshToken: "mock_refresh", expiresAt: Date())
+    }
+    func refreshToken(_ token: AuthToken) async throws -> AuthToken {
+        return token
+    }
+    func listFiles(in folderPath: String) async throws -> [CloudFile] { return [] }
+    func listFolders(in folderPath: String) async throws -> [CloudFolder] { return [] }
+    func createFolder(at path: String) async throws -> CloudFolder {
+        return CloudFolder(id: "mock", name: "mock", path: path, modifiedDate: Date(), createdDate: Date())
+    }
+    func deleteFile(at path: String) async throws {}
+    func deleteFolder(at path: String) async throws {}
+    func moveFile(from sourcePath: String, to destinationPath: String) async throws -> CloudFile {
+        return CloudFile(id: "mock", name: "mock", path: destinationPath, size: 0, hash: "mock", modifiedDate: Date(), createdDate: Date())
+    }
+    func moveFolder(from sourcePath: String, to destinationPath: String) async throws -> CloudFolder {
+        return CloudFolder(id: "mock", name: "mock", path: destinationPath, modifiedDate: Date(), createdDate: Date())
+    }
+    func getQuota() async throws -> CloudQuota {
+        return CloudQuota(totalSpace: 1000000, usedSpace: 500000, availableSpace: 500000)
+    }
+}
+
+class MockLocalDBService: LocalDBService {
+    var syncItems: [SyncItem] = []
+    var shouldSucceedInsert = true
+    var insertError: Error?
+    var insertCalled = false
+    
+    override func getAllSyncItems() throws -> [SyncItem] {
+        return syncItems
+    }
+    
+    override func insertSyncItem(_ item: SyncItem) throws {
+        insertCalled = true
+        if !shouldSucceedInsert {
+            throw insertError ?? DatabaseError.insertFailed
+        }
+        syncItems.append(item)
+    }
+    
+    // 其他必需的方法保持默认实现
+}

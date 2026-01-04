@@ -74,6 +74,7 @@
 		A100008B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000050 /* SettingsView.swift */; };
 		A100008C /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000051 /* SidebarView.swift */; };
 		A100008D /* SyncStatusButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000052 /* SyncStatusButton.swift */; };
+		A1000091 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000090 /* LoginView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -146,6 +147,7 @@
 		A1000050 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A1000051 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		A1000052 /* SyncStatusButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusButton.swift; sourceTree = "<group>"; };
+		A1000090 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -286,6 +288,7 @@
 				A1000050 /* SettingsView.swift */,
 				A1000051 /* SidebarView.swift */,
 				A1000052 /* SyncStatusButton.swift */,
+				A1000090 /* LoginView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -364,6 +367,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1000091 /* LoginView.swift in Sources */,
 				A1000054 /* AccountModels.swift in Sources */,
 				A1000055 /* BandwidthModels.swift in Sources */,
 				A1000056 /* CloudModels.swift in Sources */,

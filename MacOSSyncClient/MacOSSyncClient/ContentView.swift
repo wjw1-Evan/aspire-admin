@@ -1,6 +1,5 @@
 import OSLog
 import SwiftUI
-import MacOSSyncClientCore
 
 struct ContentView: View {
     @EnvironmentObject var syncClientIntegrator: SyncClientIntegrator
@@ -9,6 +8,14 @@ struct ContentView: View {
     private let logger = Logger(subsystem: "com.macos.syncclient", category: "ContentView")
 
     var body: some View {
+        content
+            .sheet(isPresented: $appState.showSettings) {
+                SettingsView()
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if appState.isAuthenticated {
             MainWindowDebugShell()
                 .onAppear {
@@ -72,9 +79,11 @@ struct MainWindowDebugShell: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("内容占位：\(selection.rawValue)")
                                 .font(.headline)
-                            Text("逐步替换为真实子视图（Files/Activity/Conflicts/Settings），每次恢复后运行以观察是否复现约束递归崩溃。")
-                                .foregroundColor(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                            Text(
+                                "逐步替换为真实子视图（Files/Activity/Conflicts/Settings），每次恢复后运行以观察是否复现约束递归崩溃。"
+                            )
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.accentColor.opacity(0.08))
@@ -138,7 +147,7 @@ struct MainWindowDebugShell: View {
                 modifiedDate: Date(),
                 syncState: .conflict,
                 hash: "def456"
-            )
+            ),
         ]
 
         Task { @MainActor in

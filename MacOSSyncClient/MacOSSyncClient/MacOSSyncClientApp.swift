@@ -13,6 +13,13 @@ struct MacOSSyncClientApp: App {
 
     // MARK: - Scene Configuration
 
+    init() {
+        guard Self.ensureSingleInstance() else {
+            // 终止重复实例，避免多开带来的状态冲突
+            exit(0)
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -85,6 +92,30 @@ struct MacOSSyncClientApp: App {
                 .keyboardShortcut("o", modifiers: [.command])
             }
         }
+    }
+}
+
+// MARK: - Single Instance Guard
+
+extension MacOSSyncClientApp {
+    /// 确保同步客户端仅运行单个实例。如果检测到已有实例，激活它并让当前进程退出。
+    @discardableResult
+    private static func ensureSingleInstance() -> Bool {
+        guard let bundleId = Bundle.main.bundleIdentifier else { return true }
+
+        let running = NSWorkspace.shared.runningApplications.filter {
+            $0.bundleIdentifier == bundleId
+        }
+
+        // 当前实例计入列表，因此超过 1 说明已存在其他实例
+        guard running.count > 1 else { return true }
+
+        // 激活已运行的实例，前置到前台
+        if let existing = running.first(where: { !$0.isEqual(NSRunningApplication.current) }) {
+            existing.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+        }
+
+        return false
     }
 }
 

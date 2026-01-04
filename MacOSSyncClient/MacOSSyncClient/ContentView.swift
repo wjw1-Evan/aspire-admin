@@ -35,6 +35,7 @@ struct ContentView: View {
 
 /// 极简主窗口壳，用于排查约束递归问题
 struct MainWindowDebugShell: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var statusManager = StatusManager()
     @State private var selection: MainWindow.TabType = .files
     @State private var syncItems: [SyncItem] = []
@@ -56,7 +57,7 @@ struct MainWindowDebugShell: View {
                     Text(selection.displayName)
                         .font(.title3).bold()
                     Spacer()
-                    Button(action: {}) {
+                    Button(action: { appState.showSettings = true }) {
                         Image(systemName: "gear")
                     }
                     .buttonStyle(.borderless)

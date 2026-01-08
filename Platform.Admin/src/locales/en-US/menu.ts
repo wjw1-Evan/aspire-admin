@@ -12,6 +12,7 @@ export default {
   'menu.system.user-log': 'User Log',
   'menu.system.company-settings': 'Company Settings',
   'menu.system.company-management': 'Company Management',
+  'menu.system.organization': 'Organization',
   'menu.system.my-activity': 'My Activity',
   // System Management menu descriptions
   'menu.system.user-management.desc': 'Manage system user accounts',
@@ -20,6 +21,7 @@ export default {
   'menu.system.user-log.desc': 'View user operation logs',
   'menu.system.company-settings.desc': 'Configure company basic information',
   'menu.system.company-management.desc': 'Manage company information',
+  'menu.system.organization.desc': 'Manage organizational hierarchy',
   'menu.system.my-activity.desc': 'View personal activity records',
   'menu.project-management': 'Project Management',
   'menu.project-management.desc': 'Project management functions',

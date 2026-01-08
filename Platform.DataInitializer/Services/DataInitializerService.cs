@@ -331,6 +331,21 @@ public class DataInitializerService : IDataInitializerService
 
         menus.Add(new Menu
         {
+            Name = "organization",
+            Title = "组织架构",
+            Path = "/system/organization",
+            Component = "./organization",
+            Icon = "apartment",
+            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 5,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        menus.Add(new Menu
+        {
             Name = "my-activity",
             Title = "我的活动",
             Path = "/system/my-activity",
@@ -746,6 +761,7 @@ public class DataInitializerService : IDataInitializerService
             "user-management" => "system",
             "role-management" => "system",
             "company-management" => "system",
+            "organization" => "system",
             "my-activity" => "system",
             // 项目管理子菜单
             "project-management-task" => "project-management",

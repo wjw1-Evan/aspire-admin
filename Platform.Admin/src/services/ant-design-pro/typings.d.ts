@@ -328,6 +328,31 @@ declare namespace API {
     expiresAt?: string;
   };
 
+  // 组织架构
+  type OrganizationUnit = {
+    id?: string;
+    name: string;
+    code?: string;
+    parentId?: string;
+    description?: string;
+    sortOrder?: number;
+    managerUserId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    children?: OrganizationUnit[];
+  };
+
+  type CreateOrganizationUnitRequest = {
+    name: string;
+    code?: string;
+    parentId?: string;
+    description?: string;
+    sortOrder?: number;
+    managerUserId?: string;
+  };
+
+  type UpdateOrganizationUnitRequest = CreateOrganizationUnitRequest;
+
   type RefreshTokenRequest = {
     refreshToken: string;
   };

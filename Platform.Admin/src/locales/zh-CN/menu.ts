@@ -12,6 +12,7 @@ export default {
   'menu.system.user-log': '用户日志',
   'menu.system.company-settings': '企业设置',
   'menu.system.company-management': '企业管理',
+  'menu.system.organization': '组织架构',
   'menu.system.my-activity': '我的活动',
   // 系统管理菜单描述
   'menu.system.user-management.desc': '管理系统用户账户',
@@ -20,6 +21,7 @@ export default {
   'menu.system.user-log.desc': '查看用户操作日志',
   'menu.system.company-settings.desc': '配置企业基本信息',
   'menu.system.company-management.desc': '管理企业信息',
+  'menu.system.organization.desc': '管理企业组织架构与层级',
   'menu.system.my-activity.desc': '查看个人活动记录',
   'menu.project-management': '项目管理',
   'menu.project-management.desc': '项目管理功能',

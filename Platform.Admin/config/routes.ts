@@ -97,6 +97,11 @@ export default [
     hideInMenu: true,
   },
   {
+    path: '/system/organization',
+    component: './organization',
+    hideInMenu: true,
+  },
+  {
     path: '/system/my-activity',
     component: './my-activity',
     hideInMenu: true,

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.Hosting;
@@ -126,6 +127,99 @@ namespace Platform.AppHost.Tests
             var relationships = GetResourceRelationships(builder, "chat");
 
             Assert.Contains(relationships, relation => relation.Resource.Name == "openai");
+        }
+
+        [Fact]
+        public async Task ApiService_Should_Inject_Key_Env_Variables()
+        {
+            var builder = await CreateBuilderAsync();
+
+            var env = await GetEnvVarsAsync<ProjectResource>(builder, "apiservice");
+
+            Assert.Contains(env, kvp => kvp.Key == "Jwt__SecretKey" && kvp.Value == "unit-test-secret-key");
+            Assert.Contains(env, kvp => kvp.Key == "DOTNET_LOGGING__CONSOLE__INCLUDESCOPES" && kvp.Value == "true");
+            Assert.Contains(env, kvp => kvp.Key == "DOTNET_LOGGING__CONSOLE__TIMESTAMPFORMAT" && kvp.Value == "[yyyy-MM-dd HH:mm:ss] ");
+        }
+
+        [Fact]
+        public async Task Frontend_Apps_Should_Receive_Dev_Env_Vars()
+        {
+            var builder = await CreateBuilderAsync();
+
+            var adminEnv = await GetEnvVarsAsync<ProjectResource>(builder, "admin");
+            var appEnv = await GetEnvVarsAsync<ProjectResource>(builder, "app");
+
+            Assert.Contains(adminEnv, kvp => kvp.Key == "NPM_CONFIG_PRODUCTION" && kvp.Value == "false");
+            Assert.Contains(appEnv, kvp => kvp.Key == "NPM_CONFIG_PRODUCTION" && kvp.Value == "false");
+
+            Assert.Contains(adminEnv, kvp => kvp.Key == "NODE_ENV" && kvp.Value == "development");
+            Assert.Contains(appEnv, kvp => kvp.Key == "NODE_ENV" && kvp.Value == "development");
+
+            Assert.Contains(adminEnv, kvp => kvp.Key == "BROWSER" && kvp.Value == "none");
+            Assert.Contains(appEnv, kvp => kvp.Key == "BROWSER" && kvp.Value == "none");
+
+            Assert.Contains(adminEnv, kvp => kvp.Key.EndsWith("apigateway__http__0", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(appEnv, kvp => kvp.Key.EndsWith("apigateway__http__0", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public async Task AppHost_Should_Respect_Jwt_Secret_From_Environment()
+        {
+            var originalJwt = Environment.GetEnvironmentVariable(JwtSecretKeyEnv);
+            var originalOpenAi = Environment.GetEnvironmentVariable(OpenAiEndpointEnv);
+
+            const string overriddenSecret = "override-jwt-secret-for-test";
+
+            Environment.SetEnvironmentVariable(JwtSecretKeyEnv, overriddenSecret);
+            Environment.SetEnvironmentVariable(OpenAiEndpointEnv, originalOpenAi ?? "https://unit-test-openai-endpoint");
+
+            try
+            {
+                var builder = await CreateBuilderAsync();
+                var configuredSecret = builder.Configuration["Jwt:SecretKey"];
+
+                Assert.Equal(overriddenSecret, configuredSecret);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(JwtSecretKeyEnv, originalJwt);
+                Environment.SetEnvironmentVariable(OpenAiEndpointEnv, originalOpenAi);
+            }
+        }
+
+        [Fact]
+        public async Task AppHost_Should_Respect_OpenAi_Endpoint_From_Environment()
+        {
+            var originalJwt = Environment.GetEnvironmentVariable(JwtSecretKeyEnv);
+            var originalOpenAi = Environment.GetEnvironmentVariable(OpenAiEndpointEnv);
+
+            const string overriddenEndpoint = "https://override-openai-endpoint";
+
+            Environment.SetEnvironmentVariable(JwtSecretKeyEnv, originalJwt ?? "unit-test-secret-key");
+            Environment.SetEnvironmentVariable(OpenAiEndpointEnv, overriddenEndpoint);
+
+            try
+            {
+                var builder = await CreateBuilderAsync();
+                var configuredEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"];
+
+                Assert.Equal(overriddenEndpoint, configuredEndpoint);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(JwtSecretKeyEnv, originalJwt);
+                Environment.SetEnvironmentVariable(OpenAiEndpointEnv, originalOpenAi);
+            }
+        }
+
+        private static async Task<IReadOnlyDictionary<string, string?>> GetEnvVarsAsync<TResource>(
+            IDistributedApplicationTestingBuilder builder,
+            string resourceName)
+        {
+            var resource = builder.Resources.Single(r => r.Name == resourceName) as IResourceWithEnvironment
+                ?? throw new InvalidOperationException($"Resource '{resourceName}' does not implement IResourceWithEnvironment.");
+
+            return await resource.GetEnvironmentVariableValuesAsync(DistributedApplicationOperation.Publish);
         }
     }
 }

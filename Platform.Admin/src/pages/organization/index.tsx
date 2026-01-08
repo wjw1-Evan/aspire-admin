@@ -350,7 +350,12 @@ const OrganizationPage: React.FC = () => {
 
     return (
         <PageContainer
-            title={intl.formatMessage({ id: 'pages.organization.title' })}
+            title={
+                <Space>
+                    <ApartmentOutlined />
+                    {intl.formatMessage({ id: 'pages.organization.title' })}
+                </Space>
+            }
             style={{ paddingBlock: 12 }}
             extra={
                 <Space wrap>

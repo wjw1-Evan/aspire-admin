@@ -374,33 +374,63 @@ public class BulkOperation : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     public string CompanyId { get; set; } = string.Empty;
 
     // IEntity, ISoftDeletable, ITimestamped 接口实现
+    /// <summary>
+    /// 是否已软删除
+    /// </summary>
     [BsonElement("isDeleted")]
     public bool IsDeleted { get; set; } = false;
 
+    /// <summary>
+    /// 软删除时间（UTC）
+    /// </summary>
     [BsonElement("deletedAt")]
     public DateTime? DeletedAt { get; set; }
 
+    /// <summary>
+    /// 软删除操作人ID
+    /// </summary>
     [BsonElement("deletedBy")]
     public string? DeletedBy { get; set; }
 
+    /// <summary>
+    /// 软删除原因
+    /// </summary>
     [BsonElement("deletedReason")]
     public string? DeletedReason { get; set; }
 
+    /// <summary>
+    /// 创建时间（UTC）
+    /// </summary>
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// 最近更新时间（UTC）
+    /// </summary>
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// 创建人ID
+    /// </summary>
     [BsonElement("createdBy")]
     public string? CreatedBy { get; set; }
 
+    /// <summary>
+    /// 创建人用户名
+    /// </summary>
     [BsonElement("createdByUsername")]
     public string? CreatedByUsername { get; set; }
 
+    /// <summary>
+    /// 更新人ID
+    /// </summary>
     [BsonElement("updatedBy")]
     public string? UpdatedBy { get; set; }
 
+    /// <summary>
+    /// 更新人用户名
+    /// </summary>
     [BsonElement("updatedByUsername")]
     public string? UpdatedByUsername { get; set; }
 }
@@ -692,33 +722,63 @@ public class WorkflowTemplate : IEntity, ISoftDeletable, ITimestamped, IMultiTen
     public string CompanyId { get; set; } = string.Empty;
 
     // IEntity, ISoftDeletable, ITimestamped 接口实现
+    /// <summary>
+    /// 是否已软删除
+    /// </summary>
     [BsonElement("isDeleted")]
     public bool IsDeleted { get; set; } = false;
 
+    /// <summary>
+    /// 软删除时间（UTC）
+    /// </summary>
     [BsonElement("deletedAt")]
     public DateTime? DeletedAt { get; set; }
 
+    /// <summary>
+    /// 软删除操作人ID
+    /// </summary>
     [BsonElement("deletedBy")]
     public string? DeletedBy { get; set; }
 
+    /// <summary>
+    /// 软删除原因
+    /// </summary>
     [BsonElement("deletedReason")]
     public string? DeletedReason { get; set; }
 
+    /// <summary>
+    /// 创建时间（UTC）
+    /// </summary>
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// 最近更新时间（UTC）
+    /// </summary>
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// 创建人ID
+    /// </summary>
     [BsonElement("createdBy")]
     public string? CreatedBy { get; set; }
 
+    /// <summary>
+    /// 创建人用户名
+    /// </summary>
     [BsonElement("createdByUsername")]
     public string? CreatedByUsername { get; set; }
 
+    /// <summary>
+    /// 更新人ID
+    /// </summary>
     [BsonElement("updatedBy")]
     public string? UpdatedBy { get; set; }
 
+    /// <summary>
+    /// 更新人用户名
+    /// </summary>
     [BsonElement("updatedByUsername")]
     public string? UpdatedByUsername { get; set; }
 }
@@ -1033,33 +1093,63 @@ public class UserWorkflowFilterPreference : IEntity, ISoftDeletable, ITimestampe
     public string CompanyId { get; set; } = string.Empty;
 
     // IEntity, ISoftDeletable, ITimestamped 接口实现
+    /// <summary>
+    /// 是否已软删除
+    /// </summary>
     [BsonElement("isDeleted")]
     public bool IsDeleted { get; set; } = false;
 
+    /// <summary>
+    /// 软删除时间（UTC）
+    /// </summary>
     [BsonElement("deletedAt")]
     public DateTime? DeletedAt { get; set; }
 
+    /// <summary>
+    /// 软删除操作人ID
+    /// </summary>
     [BsonElement("deletedBy")]
     public string? DeletedBy { get; set; }
 
+    /// <summary>
+    /// 软删除原因
+    /// </summary>
     [BsonElement("deletedReason")]
     public string? DeletedReason { get; set; }
 
+    /// <summary>
+    /// 创建时间（UTC）
+    /// </summary>
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// 最近更新时间（UTC）
+    /// </summary>
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// 创建人ID
+    /// </summary>
     [BsonElement("createdBy")]
     public string? CreatedBy { get; set; }
 
+    /// <summary>
+    /// 创建人用户名
+    /// </summary>
     [BsonElement("createdByUsername")]
     public string? CreatedByUsername { get; set; }
 
+    /// <summary>
+    /// 更新人ID
+    /// </summary>
     [BsonElement("updatedBy")]
     public string? UpdatedBy { get; set; }
 
+    /// <summary>
+    /// 更新人用户名
+    /// </summary>
     [BsonElement("updatedByUsername")]
     public string? UpdatedByUsername { get; set; }
 }

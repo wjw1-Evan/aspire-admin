@@ -12,6 +12,10 @@ public class WorkflowPerformanceService : IWorkflowPerformanceService
     private readonly List<PerformanceRecord> _performanceRecords = new();
     private readonly object _lockObject = new();
 
+    /// <summary>
+    /// 初始化工作流性能监控服务
+    /// </summary>
+    /// <param name="logger">日志记录器</param>
     public WorkflowPerformanceService(ILogger<WorkflowPerformanceService> logger)
     {
         _logger = logger;

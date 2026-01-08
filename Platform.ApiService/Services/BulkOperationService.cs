@@ -14,6 +14,13 @@ public class BulkOperationService : IBulkOperationService
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<BulkOperationService> _logger;
 
+    /// <summary>
+    /// 初始化批量操作服务
+    /// </summary>
+    /// <param name="bulkOperationFactory">批量操作数据工厂</param>
+    /// <param name="workflowFactory">工作流定义数据工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
+    /// <param name="logger">日志记录器</param>
     public BulkOperationService(
         IDatabaseOperationFactory<BulkOperation> bulkOperationFactory,
         IDatabaseOperationFactory<WorkflowDefinition> workflowFactory,

@@ -14,6 +14,13 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<WorkflowAnalyticsService> _logger;
 
+    /// <summary>
+    /// 初始化工作流分析服务
+    /// </summary>
+    /// <param name="workflowFactory">工作流定义数据工厂</param>
+    /// <param name="instanceFactory">工作流实例数据工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
+    /// <param name="logger">日志记录器</param>
     public WorkflowAnalyticsService(
         IDatabaseOperationFactory<WorkflowDefinition> workflowFactory,
         IDatabaseOperationFactory<WorkflowInstance> instanceFactory,

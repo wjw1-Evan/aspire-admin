@@ -14,6 +14,12 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
     private readonly ILogger<WorkflowExportImportService> _logger;
 
+    /// <summary>
+    /// 初始化工作流导出导入服务
+    /// </summary>
+    /// <param name="workflowFactory">工作流定义数据工厂</param>
+    /// <param name="formFactory">表单定义数据工厂</param>
+    /// <param name="logger">日志记录器</param>
     public WorkflowExportImportService(
         IDatabaseOperationFactory<WorkflowDefinition> workflowFactory,
         IDatabaseOperationFactory<FormDefinition> formFactory,

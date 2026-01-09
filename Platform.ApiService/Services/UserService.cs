@@ -14,7 +14,7 @@ namespace Platform.ApiService.Services;
 public class UserService : IUserService
 {
     private const string ACTIVE_STATUS = "active";
-    
+
     private readonly IDatabaseOperationFactory<User> _userFactory;
     private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
@@ -78,7 +78,7 @@ public class UserService : IUserService
         var filter = _userFactory.CreateFilterBuilder()
             .Equal(u => u.CurrentCompanyId, currentCompanyId)
             .Build();
-        
+
         return await _userFactory.FindAsync(filter);
     }
 
@@ -151,7 +151,7 @@ public class UserService : IUserService
         {
             var companies = await _companyFactory.FindAsync(_companyFactory.CreateFilterBuilder().Equal(c => c.Id, companyId).Build());
             var company = companies.FirstOrDefault();
-            
+
             if (company != null)
             {
                 // 统计当前企业的用户数（不包括已删除）
@@ -187,7 +187,7 @@ public class UserService : IUserService
                 .Equal(r => r.CompanyId, companyId)
                 .Build();
             var validRoles = await _roleFactory.FindAsync(roleFilter);
-            
+
             if (validRoles.Count != roleIds.Count)
             {
                 throw new InvalidOperationException("部分角色不存在或不属于该企业");
@@ -241,12 +241,12 @@ public class UserService : IUserService
             .Build();
 
         var updateBuilder = _userFactory.CreateUpdateBuilder();
-        
+
         if (!string.IsNullOrEmpty(request.Name))
             updateBuilder.Set(u => u.Username, request.Name);
         if (!string.IsNullOrEmpty(request.Email))
             updateBuilder.Set(u => u.Email, request.Email);
-        
+
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<User>
@@ -286,14 +286,14 @@ public class UserService : IUserService
             .Build();
 
         var updateBuilder = _userFactory.CreateUpdateBuilder();
-        
+
         if (!string.IsNullOrEmpty(request.Username))
             updateBuilder.Set(u => u.Username, request.Username);
         if (!string.IsNullOrEmpty(request.Email))
             updateBuilder.Set(u => u.Email, request.Email);
         if (request.IsActive.HasValue)
             updateBuilder.Set(u => u.IsActive, request.IsActive.Value);
-        
+
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<User>
@@ -324,7 +324,7 @@ public class UserService : IUserService
                     .Equal(r => r.CompanyId, companyId)
                     .Build();
                 var validRoles = await _roleFactory.FindAsync(roleFilter);
-                
+
                 if (validRoles.Count != request.RoleIds.Count)
                 {
                     throw new InvalidOperationException("部分角色不存在或不属于该企业");
@@ -381,7 +381,7 @@ public class UserService : IUserService
         var filter = _userFactory.CreateFilterBuilder()
             .Regex(u => u.Username, name)
             .Build();
-        
+
         return await _userFactory.FindAsync(filter);
     }
 
@@ -440,7 +440,7 @@ public class UserService : IUserService
     {
         // 调用包含角色信息的方法，然后转换为基础响应格式
         var result = await GetUsersWithRolesAsync(request);
-        
+
         // 转换为基础用户列表响应
         var basicUsers = result.Users.Select(userWithRoles => new User
         {
@@ -483,7 +483,7 @@ public class UserService : IUserService
 
         // 构建查询过滤器
         var filter = await BuildUserListFilterAsync(request, currentCompanyId);
-        
+
         // 构建排序（支持多字段，默认按创建时间倒序）
         var sortBuilder = _userFactory.CreateSortBuilder();
         var sortBy = request.SortBy?.Trim();
@@ -599,7 +599,7 @@ public class UserService : IUserService
                 filterBuilder.Equal(u => u.Id, "nonexistent");
             }
         }
-        
+
         // 日期范围过滤
         if (request.StartDate.HasValue)
         {
@@ -628,11 +628,11 @@ public class UserService : IUserService
             .Equal(uc => uc.CompanyId, companyId)
             .Equal(uc => uc.Status, ACTIVE_STATUS)
             .Build();
-        
+
         // 使用 MongoDB 的 AnyIn 操作符
         var anyInFilter = Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, roleIds);
         var combinedFilter = Builders<UserCompany>.Filter.And(filter, anyInFilter);
-        
+
         var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter);
         return userCompanies.Select(uc => uc.UserId).Distinct().ToList();
     }
@@ -641,27 +641,27 @@ public class UserService : IUserService
     /// 批量为用户加载角色信息
     /// </summary>
     private async Task<List<UserWithRolesResponse>> EnrichUsersWithRolesAsync(
-        List<User> users, 
+        List<User> users,
         string companyId)
     {
         var userIds = users.Select(u => u.Id!).ToList();
-        
+
         // 批量查询用户企业关联
         var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
             .In(uc => uc.UserId, userIds)
             .Equal(uc => uc.CompanyId, companyId)
             .Equal(uc => uc.Status, ACTIVE_STATUS)
             .Build();
-        
+
         var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
-        
+
         // 批量查询角色信息
         var allRoleIds = userCompanies.SelectMany(uc => uc.RoleIds).Distinct().ToList();
         var roleIdToNameMap = await GetRoleNameMapAsync(allRoleIds, companyId);
 
         // 批量查询组织信息
         var userOrganizationMap = await GetUserOrganizationMapAsync(userIds, companyId);
-        
+
         // 构建用户-角色映射
         var userIdToCompanyMap = userCompanies.ToDictionary(uc => uc.UserId, uc => uc);
 
@@ -709,13 +709,13 @@ public class UserService : IUserService
             .In(r => r.Id, roleIds)
             .Equal(r => r.CompanyId, companyId)
             .Build();
-        
+
         // ✅ 优化：使用字段投影，只返回 Id 和 Name
         var roleProjection = _roleFactory.CreateProjectionBuilder()
             .Include(r => r.Id)
             .Include(r => r.Name)
             .Build();
-        
+
         var roles = await _roleFactory.FindAsync(roleFilter, projection: roleProjection);
         return roles.ToDictionary(r => r.Id!, r => r.Name);
     }
@@ -817,16 +817,16 @@ public class UserService : IUserService
         var baseFilter = _userFactory.CreateFilterBuilder()
             .Equal(u => u.CurrentCompanyId, currentCompanyId) // ✅ 修复：使用CurrentCompanyId
             .Build();
-        
+
         var totalUsers = await _userFactory.CountAsync(baseFilter);
-        
+
         var activeFilter = _userFactory.CreateFilterBuilder()
             .Equal(u => u.CurrentCompanyId, currentCompanyId)
             .Equal(u => u.IsActive, true)
             .Build();
         var activeUsers = await _userFactory.CountAsync(activeFilter);
         var inactiveUsers = totalUsers - activeUsers;
-        
+
         // ✅ 查询当前企业的管理员角色（添加企业过滤）
         var adminRoleNames = new[] { "admin", "super-admin" };
         var adminRoleFilter = _roleFactory.CreateFilterBuilder()
@@ -835,7 +835,7 @@ public class UserService : IUserService
             .Build();
         var adminRoles = await _roleFactory.FindAsync(adminRoleFilter);
         var adminRoleIds = adminRoles.Select(r => r.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
-        
+
         // v3.1: 从 UserCompany 表统计当前企业内拥有管理员角色的用户数量
         var adminUsers = 0L;
         if (adminRoleIds.Any())
@@ -844,14 +844,14 @@ public class UserService : IUserService
                 .Equal(uc => uc.CompanyId, currentCompanyId)
                 .Equal(uc => uc.Status, ACTIVE_STATUS)
                 .Build();
-            
+
             // 使用 MongoDB 的 AnyIn 操作符
             var anyInFilter = Builders<UserCompany>.Filter.AnyIn(uc => uc.RoleIds, adminRoleIds);
             var combinedFilter = Builders<UserCompany>.Filter.And(adminUserCompanyFilter, anyInFilter);
-            
+
             adminUsers = await _userCompanyFactory.CountAsync(combinedFilter);
         }
-        
+
         // 另外，直接统计当前企业内标记为管理员的用户
         var directAdminFilter = _userCompanyFactory.CreateFilterBuilder()
             .Equal(uc => uc.IsAdmin, true)
@@ -859,10 +859,10 @@ public class UserService : IUserService
             .Equal(uc => uc.Status, ACTIVE_STATUS)
             .Build();
         var directAdminUsers = await _userCompanyFactory.CountAsync(directAdminFilter);
-        
+
         // 取最大值（可能存在既有管理员角色又标记为管理员的情况）
         adminUsers = Math.Max(adminUsers, directAdminUsers);
-        
+
         var regularUsers = totalUsers - adminUsers;
 
         var today = DateTime.UtcNow.Date;
@@ -875,13 +875,13 @@ public class UserService : IUserService
             .GreaterThanOrEqual(user => user.CreatedAt, today)
             .Build();
         var newUsersToday = await _userFactory.CountAsync(todayFilter);
-        
+
         var weekFilter = _userFactory.CreateFilterBuilder()
             .Equal(u => u.CurrentCompanyId, currentCompanyId)
             .GreaterThanOrEqual(user => user.CreatedAt, thisWeek)
             .Build();
         var newUsersThisWeek = await _userFactory.CountAsync(weekFilter);
-        
+
         var monthFilter = _userFactory.CreateFilterBuilder()
             .Equal(u => u.CurrentCompanyId, currentCompanyId)
             .GreaterThanOrEqual(user => user.CreatedAt, thisMonth)
@@ -922,7 +922,7 @@ public class UserService : IUserService
             .In(user => user.Id, request.UserIds)
             .Equal(user => user.CurrentCompanyId, currentCompanyId)
             .Build();
-        
+
         var update = Builders<User>.Update.Set(user => user.UpdatedAt, DateTime.UtcNow);
 
         switch (request.Action.ToLower())
@@ -1007,11 +1007,11 @@ public class UserService : IUserService
         var filter = _activityLogFactory.CreateFilterBuilder()
             .Equal(log => log.UserId, userId)
             .Build();
-        
+
         var sort = _activityLogFactory.CreateSortBuilder()
             .Descending(log => log.CreatedAt)
             .Build();
-        
+
         // ✅ 数据工厂会自动添加企业过滤（因为 UserActivityLog 实现了 IMultiTenant）
         return await _activityLogFactory.FindAsync(filter, sort: sort, limit: limit);
     }
@@ -1034,31 +1034,31 @@ public class UserService : IUserService
     {
         // 获取当前用户ID
         var currentUserId = _userFactory.GetRequiredUserId();
-        
+
         var filterBuilder = _activityLogFactory.CreateFilterBuilder();
-        
+
         // 固定过滤当前用户
         filterBuilder.Equal(log => log.UserId, currentUserId);
-        
+
         // 按操作类型过滤（支持模糊搜索）
         if (!string.IsNullOrEmpty(action))
         {
             // 使用正则表达式进行模糊匹配，不区分大小写
             filterBuilder.Regex(log => log.Action, action, "i");
         }
-        
+
         // 按 HTTP 方法过滤
         if (!string.IsNullOrEmpty(httpMethod))
         {
             filterBuilder.Equal(log => log.HttpMethod, httpMethod);
         }
-        
+
         // 按状态码过滤
         if (statusCode.HasValue)
         {
             filterBuilder.Equal(log => log.StatusCode, statusCode.Value);
         }
-        
+
         // 按 IP 地址过滤（支持模糊搜索）
         if (!string.IsNullOrEmpty(ipAddress))
         {
@@ -1070,7 +1070,7 @@ public class UserService : IUserService
             );
             filterBuilder.Custom(ipFilter);
         }
-        
+
         // 按日期范围过滤
         if (startDate.HasValue)
         {
@@ -1080,16 +1080,16 @@ public class UserService : IUserService
         {
             filterBuilder.LessThanOrEqual(log => log.CreatedAt, endDate.Value);
         }
-        
+
         var filter = filterBuilder.Build();
-        
+
         // ✅ 数据工厂会自动添加企业过滤（因为 UserActivityLog 实现了 IMultiTenant）
         // 获取总数
         var total = await _activityLogFactory.CountAsync(filter);
-        
+
         // 构建排序
         var sortBuilder = _activityLogFactory.CreateSortBuilder();
-        
+
         // 默认按创建时间降序
         if (string.IsNullOrEmpty(sortBy) || sortBy.Equals("createdAt", StringComparison.OrdinalIgnoreCase))
         {
@@ -1120,9 +1120,9 @@ public class UserService : IUserService
             // 未知排序字段，使用默认排序（按创建时间降序）
             sortBuilder.Descending(log => log.CreatedAt);
         }
-        
+
         var sort = sortBuilder.Build();
-        
+
         // ✅ 使用字段投影，只返回必要的字段，减少数据传输量
         // 排除大字段：ResponseBody、UserAgent、QueryString、FullUrl 等
         var projection = _activityLogFactory.CreateProjectionBuilder()
@@ -1138,10 +1138,10 @@ public class UserService : IUserService
             .Include(log => log.Duration)
             .Include(log => log.CreatedAt)
             .Build();
-        
+
         // 获取分页数据（使用投影）
         var (logs, totalFromPaged) = await _activityLogFactory.FindPagedAsync(filter, sort, page, pageSize, projection);
-        
+
         return (logs, total);
     }
 
@@ -1154,17 +1154,17 @@ public class UserService : IUserService
     {
         // 获取当前用户ID
         var currentUserId = _userFactory.GetRequiredUserId();
-        
+
         // ✅ 使用 GetByIdAsync 获取完整日志数据（不使用投影，返回所有字段）
         // ✅ 数据工厂会自动添加企业过滤（因为 UserActivityLog 实现了 IMultiTenant）
         var log = await _activityLogFactory.GetByIdAsync(logId);
-        
+
         // 验证日志是否存在且属于当前用户
         if (log == null || log.UserId != currentUserId)
         {
             return null;
         }
-        
+
         return log;
     }
 
@@ -1173,8 +1173,8 @@ public class UserService : IUserService
     /// v6.1: 委托给优化版本的方法
     /// </summary>
     public async Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(
-        int page = 1, 
-        int pageSize = 20, 
+        int page = 1,
+        int pageSize = 20,
         string? userId = null,
         string? action = null,
         DateTime? startDate = null,
@@ -1183,13 +1183,13 @@ public class UserService : IUserService
         var (logs, total, _) = await GetAllActivityLogsWithUsersAsync(page, pageSize, userId, action, startDate, endDate);
         return (logs, total);
     }
-    
+
     /// <summary>
     /// 获取所有用户的活动日志（分页）- 优化版本，使用批量查询
     /// </summary>
     public async Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(
-        int page = 1, 
-        int pageSize = 20, 
+        int page = 1,
+        int pageSize = 20,
         string? userId = null,
         string? action = null,
         DateTime? startDate = null,
@@ -1228,7 +1228,7 @@ public class UserService : IUserService
         var sort = _activityLogFactory.CreateSortBuilder()
             .Descending(log => log.CreatedAt)
             .Build();
-        
+
         var logs = await _activityLogFactory.FindAsync(filter, sort, limit: pageSize);
 
         // 批量获取用户信息（解决 N+1 问题）
@@ -1247,7 +1247,7 @@ public class UserService : IUserService
                 .Build();
             users = await _userFactory.FindAsync(userFilter);
         }
-        
+
         // 构建用户 ID 到用户名的映射
         var userMap = users.ToDictionary(u => u.Id!, u => u.Username);
 
@@ -1299,7 +1299,7 @@ public class UserService : IUserService
     {
         var filterBuilder = _userFactory.CreateFilterBuilder()
             .Equal(user => user.Email, email);
-        
+
         if (!string.IsNullOrEmpty(excludeUserId))
         {
             filterBuilder.NotEqual(user => user.Id, excludeUserId);
@@ -1320,7 +1320,7 @@ public class UserService : IUserService
     {
         var filterBuilder = _userFactory.CreateFilterBuilder()
             .Equal(user => user.Username, username);
-        
+
         if (!string.IsNullOrEmpty(excludeUserId))
         {
             filterBuilder.NotEqual(user => user.Id, excludeUserId);
@@ -1350,13 +1350,13 @@ public class UserService : IUserService
             .Build();
 
         var updateBuilder = _userFactory.CreateUpdateBuilder();
-        
+
         if (!string.IsNullOrEmpty(request.Email))
             updateBuilder.Set(u => u.Email, request.Email);
-        
+
         if (!string.IsNullOrEmpty(request.Name))
             updateBuilder.Set(u => u.Name, request.Name);
-        
+
         if (request.Age.HasValue)
             updateBuilder.Set(u => u.Age, request.Age.Value);
 
@@ -1400,7 +1400,7 @@ public class UserService : IUserService
                 updateBuilder.Set(u => u.PhoneNumber, phoneNumber);
             }
         }
- 
+
         var update = updateBuilder.Build();
 
         var options = new FindOneAndUpdateOptions<User>
@@ -1410,7 +1410,7 @@ public class UserService : IUserService
         };
 
         var updatedUser = await _userFactory.FindOneAndUpdateAsync(filter, update, options);
-        
+
         if (updatedUser == null)
         {
             throw new KeyNotFoundException($"用户 {userId} 不存在");
@@ -1439,12 +1439,12 @@ public class UserService : IUserService
 
         // 更新密码
         var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-        
+
         var filter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
         var update = _userFactory.CreateUpdateBuilder()
             .Set(u => u.PasswordHash, newPasswordHash)
             .Build();
-        
+
         var result = await _userFactory.FindOneAndUpdateAsync(filter, update);
         return result != null;
     }
@@ -1528,7 +1528,7 @@ public class UserService : IUserService
 
         var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
         var userCompany = userCompanies.FirstOrDefault();
-        
+
         var menuIds = new List<string>();
 
         if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
@@ -1541,7 +1541,7 @@ public class UserService : IUserService
                 .Build();
 
             var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
-            
+
             // 收集所有角色的菜单ID
             menuIds = roles.SelectMany(r => r.MenuIds).Distinct().ToList();
         }

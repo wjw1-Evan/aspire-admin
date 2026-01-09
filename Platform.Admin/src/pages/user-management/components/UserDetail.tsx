@@ -184,6 +184,27 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             )}
           </Descriptions.Item>
 
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.organization' })}>
+            {!user.organizations || user.organizations.length === 0 ? (
+              <Text type="secondary">
+                {intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}
+              </Text>
+            ) : (
+              <Space direction="vertical" size={4} wrap>
+                {user.organizations.map((org) => (
+                  <Space key={org.id || org.fullPath || org.name} size={4} wrap>
+                    <Text>{org.fullPath || org.name || '-'}</Text>
+                    {org.isPrimary ? (
+                      <Tag color="gold" bordered={false}>
+                        {intl.formatMessage({ id: 'pages.userManagement.organization.primary' })}
+                      </Tag>
+                    ) : null}
+                  </Space>
+                ))}
+              </Space>
+            )}
+          </Descriptions.Item>
+
           <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.status' })}>
             <Badge
               status={user.isActive ? 'success' : 'error'}

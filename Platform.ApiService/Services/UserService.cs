@@ -20,6 +20,8 @@ public class UserService : IUserService
     private readonly IDatabaseOperationFactory<Role> _roleFactory;
     private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
     private readonly IDatabaseOperationFactory<Company> _companyFactory;
+    private readonly IDatabaseOperationFactory<OrganizationUnit> _organizationFactory;
+    private readonly IDatabaseOperationFactory<UserOrganization> _userOrgFactory;
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
 
@@ -31,6 +33,8 @@ public class UserService : IUserService
     /// <param name="roleFactory">角色数据操作工厂</param>
     /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
     /// <param name="companyFactory">企业数据操作工厂</param>
+    /// <param name="organizationFactory">组织架构数据操作工厂</param>
+    /// <param name="userOrgFactory">用户组织关系数据操作工厂</param>
     /// <param name="uniquenessChecker">唯一性检查服务</param>
     /// <param name="validationService">字段验证服务</param>
     public UserService(
@@ -39,6 +43,8 @@ public class UserService : IUserService
         IDatabaseOperationFactory<Role> roleFactory,
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
         IDatabaseOperationFactory<Company> companyFactory,
+        IDatabaseOperationFactory<OrganizationUnit> organizationFactory,
+        IDatabaseOperationFactory<UserOrganization> userOrgFactory,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService)
     {
@@ -47,6 +53,8 @@ public class UserService : IUserService
         _roleFactory = roleFactory;
         _userCompanyFactory = userCompanyFactory;
         _companyFactory = companyFactory;
+        _organizationFactory = organizationFactory;
+        _userOrgFactory = userOrgFactory;
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
     }
@@ -650,6 +658,9 @@ public class UserService : IUserService
         // 批量查询角色信息
         var allRoleIds = userCompanies.SelectMany(uc => uc.RoleIds).Distinct().ToList();
         var roleIdToNameMap = await GetRoleNameMapAsync(allRoleIds, companyId);
+
+        // 批量查询组织信息
+        var userOrganizationMap = await GetUserOrganizationMapAsync(userIds, companyId);
         
         // 构建用户-角色映射
         var userIdToCompanyMap = userCompanies.ToDictionary(uc => uc.UserId, uc => uc);
@@ -678,7 +689,8 @@ public class UserService : IUserService
                 UpdatedAt = user.UpdatedAt,
                 RoleIds = roleIds,
                 RoleNames = roleNames,
-                IsAdmin = userCompany?.IsAdmin ?? false
+                IsAdmin = userCompany?.IsAdmin ?? false,
+                Organizations = userOrganizationMap.GetValueOrDefault(user.Id!, new List<UserOrganizationInfo>())
             };
         }).ToList();
     }
@@ -706,6 +718,83 @@ public class UserService : IUserService
         
         var roles = await _roleFactory.FindAsync(roleFilter, projection: roleProjection);
         return roles.ToDictionary(r => r.Id!, r => r.Name);
+    }
+
+    /// <summary>
+    /// 批量获取用户的组织信息（含层级路径）
+    /// </summary>
+    private async Task<Dictionary<string, List<UserOrganizationInfo>>> GetUserOrganizationMapAsync(List<string> userIds, string companyId)
+    {
+        var result = new Dictionary<string, List<UserOrganizationInfo>>();
+        if (!userIds.Any()) return result;
+
+        var mappingFilter = _userOrgFactory.CreateFilterBuilder()
+            .In(m => m.UserId, userIds)
+            .Equal(m => m.CompanyId, companyId)
+            .Build();
+        var mappings = await _userOrgFactory.FindAsync(mappingFilter);
+        if (mappings == null || !mappings.Any()) return result;
+
+        var organizationIds = mappings.Select(m => m.OrganizationUnitId).Distinct().ToList();
+        if (!organizationIds.Any()) return result;
+
+        var orgFilter = _organizationFactory.CreateFilterBuilder()
+            .In(o => o.Id, organizationIds)
+            .Equal(o => o.CompanyId, companyId)
+            .Build();
+
+        var orgProjection = _organizationFactory.CreateProjectionBuilder()
+            .Include(o => o.Id)
+            .Include(o => o.Name)
+            .Include(o => o.ParentId)
+            .Build();
+
+        var orgUnits = await _organizationFactory.FindAsync(orgFilter, projection: orgProjection);
+        var orgMap = orgUnits
+            .Where(o => !string.IsNullOrEmpty(o.Id))
+            .ToDictionary(o => o.Id!, o => o);
+
+        string BuildFullPath(string? orgId)
+        {
+            if (string.IsNullOrEmpty(orgId) || !orgMap.TryGetValue(orgId, out _))
+            {
+                return string.Empty;
+            }
+
+            var segments = new List<string>();
+            var currentId = orgId;
+            var guard = 0;
+
+            while (!string.IsNullOrEmpty(currentId) && guard < 64 && orgMap.TryGetValue(currentId, out var node))
+            {
+                segments.Add(node.Name);
+                currentId = node.ParentId;
+                guard++;
+            }
+
+            segments.Reverse();
+            return string.Join(" / ", segments);
+        }
+
+        foreach (var mapping in mappings)
+        {
+            var info = new UserOrganizationInfo
+            {
+                OrganizationUnitId = mapping.OrganizationUnitId,
+                OrganizationUnitName = orgMap.TryGetValue(mapping.OrganizationUnitId, out var unit) ? unit.Name : null,
+                FullPath = BuildFullPath(mapping.OrganizationUnitId),
+                IsPrimary = mapping.IsPrimary
+            };
+
+            if (!result.TryGetValue(mapping.UserId, out var list))
+            {
+                list = new List<UserOrganizationInfo>();
+                result[mapping.UserId] = list;
+            }
+            list.Add(info);
+        }
+
+        return result;
     }
 
     /// <summary>

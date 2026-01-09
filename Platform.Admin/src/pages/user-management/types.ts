@@ -13,11 +13,19 @@ export interface AppUser {
   age?: number;
   roleIds: string[];
   roleNames?: string[];
+  organizations?: UserOrganizationInfo[];
   isActive: boolean;
   isAdmin?: boolean;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
+}
+
+export interface UserOrganizationInfo {
+  id?: string;
+  name?: string;
+  fullPath?: string;
+  isPrimary?: boolean;
 }
 
 export interface UserListRequest {

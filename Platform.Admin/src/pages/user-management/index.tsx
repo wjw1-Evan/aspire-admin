@@ -22,6 +22,7 @@ import {
   Card,
   DatePicker,
   Grid,
+  Typography,
 } from 'antd';
 
 const { useBreakpoint } = Grid;
@@ -551,6 +552,35 @@ const UserManagement: React.FC = () => {
               <Tag key={roleId} color="blue">
                 {roleMap[roleId] || roleId}
               </Tag>
+            ))}
+          </Space>
+        );
+      },
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.table.organization' }),
+      dataIndex: 'organizations',
+      key: 'organizations',
+      render: (_: unknown, record: AppUser) => {
+        const orgs = record.organizations || [];
+        if (!orgs.length) {
+          return (
+            <Typography.Text type="secondary">
+              {intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}
+            </Typography.Text>
+          );
+        }
+        return (
+          <Space direction="vertical" size={4} wrap>
+            {orgs.map((org) => (
+              <Space key={org.id || org.fullPath || org.name} size={4} wrap>
+                <span>{org.fullPath || org.name || '-'}</span>
+                {org.isPrimary ? (
+                  <Tag color="gold" bordered={false} style={{ marginInlineStart: 4 }}>
+                    {intl.formatMessage({ id: 'pages.userManagement.organization.primary' })}
+                  </Tag>
+                ) : null}
+              </Space>
             ))}
           </Space>
         );

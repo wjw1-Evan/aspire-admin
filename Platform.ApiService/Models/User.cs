@@ -209,6 +209,11 @@ public class UserListRequest
 public class UserWithRolesResponse
 {
     /// <summary>
+    /// 用户所在组织信息列表（含层级路径）
+    /// </summary>
+    public List<UserOrganizationInfo> Organizations { get; set; } = new();
+
+    /// <summary>
     /// 用户ID
     /// </summary>
     public string? Id { get; set; }
@@ -272,6 +277,32 @@ public class UserWithRolesResponse
     /// 是否为当前企业的管理员
     /// </summary>
     public bool IsAdmin { get; set; }
+}
+
+/// <summary>
+/// 用户所属组织信息
+/// </summary>
+public class UserOrganizationInfo
+{
+    /// <summary>
+    /// 组织节点ID
+    /// </summary>
+    public string OrganizationUnitId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 组织节点名称
+    /// </summary>
+    public string? OrganizationUnitName { get; set; }
+
+    /// <summary>
+    /// 层级路径（例如：总部 / 技术部 / 后端组）
+    /// </summary>
+    public string? FullPath { get; set; }
+
+    /// <summary>
+    /// 是否主组织
+    /// </summary>
+    public bool IsPrimary { get; set; }
 }
 
 /// <summary>

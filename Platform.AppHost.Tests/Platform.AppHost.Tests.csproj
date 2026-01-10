@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="../Platform.AppHost/Platform.AppHost.csproj" />
     <ProjectReference Include="../Platform.ApiService/Platform.ApiService.csproj" />
+    <ProjectReference Include="../Platform.ServiceDefaults/Platform.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

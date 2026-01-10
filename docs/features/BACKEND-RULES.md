@@ -1,5 +1,14 @@
 ## 后端核心与中间件规范（Backend Core & Middleware Rules）
 
+> 2026-01 补充：数据工厂与构建器行为更新
+
+- 分页参数统一范围：`page` 1–10000，`pageSize` 1–100；控制器直接传 `page/pageSize` 给工厂分页方法。
+- 多租户过滤字段映射：工厂应用租户过滤时，优先使用实体 `CompanyId` 的 `[BsonElement]` 字段名（否则使用 camelCase），避免字符串硬编码导致不一致。
+- FilterBuilder 字段名解析：`Regex/Exists` 等基于字符串字段名的方法统一为 BsonElement-aware，与 `SortBuilder/UpdateBuilder` 保持一致。
+- 数组包含语义：`Contains` 采用 `Eq` 的数组匹配语义；复杂匹配场景使用 `AnyEq` 或自定义 `ElemMatch`。
+- UpdateBuilder 空更新处理：`Build()` 无更新项时抛出异常，调用方需保证至少一个更新操作。
+- 审计字段赋值策略：优先通过 `IOperationTrackable` 直接赋值（`CreatedBy/UpdatedBy` 等），反射仅作为兜底，建议实体逐步实现接口以去反射化。
+
 > 本文档是对 `.cursor/rules/rule.mdc` 后端相关总纲的展开说明，**以此文档为准**，总纲只保留硬规则与索引。
 
 ### 1. 统一响应格式中间件（ResponseFormattingMiddleware）
@@ -52,6 +61,7 @@
   - 不允许在各个服务中自行注入 `IMongoDatabase` 去读取用户/企业/权限信息，统一通过 `ITenantContext` 间接访问。
 - **推荐用法**：
   - 在服务层通过构造函数注入 `ITenantContext`：
+
     ```csharp
     public class SomeService : ISomeService
     {
@@ -91,6 +101,7 @@
 - **服务启动约定**：
   - 每个微服务在 `Program.cs` 或 `Startup` 中，必须调用 `services.AddDatabaseFactory()`（或等效封装）一次，**禁止**在业务代码中自行 new `DatabaseOperationFactory<T>`。
   - 业务层只能通过构造函数注入 `IDatabaseOperationFactory<T>` 使用工厂：
+
     ```csharp
     public class UserService : IUserService
     {
@@ -102,6 +113,7 @@
         }
     }
     ```
+
 - **禁止行为**：
   - 禁止在控制器或服务中直接注入 `IMongoCollection<T>` 或 `IMongoDatabase` 处理业务数据。
   - 禁止绕过工厂自行维护审计字段或多租户过滤逻辑。
@@ -139,5 +151,3 @@
   - 审计字段由 `DatabaseOperationFactory<T>` 自动维护，业务代码不得手动修改；
   - 数据库工厂必须通过统一扩展方法注册，业务实体必须实现统一的接口/基类约定。
 - 详细实现、示例与背景说明请以本文件为准。
-
-

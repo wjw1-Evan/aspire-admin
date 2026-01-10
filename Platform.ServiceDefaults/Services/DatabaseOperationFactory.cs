@@ -21,11 +21,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(tenantContext);
-        
+
         // 支持自定义集合名称，优先使用 BsonCollectionName 特性
         var collectionNameAttribute = typeof(T).GetCustomAttribute<BsonCollectionNameAttribute>();
         var collectionName = collectionNameAttribute?.Name ?? typeof(T).Name.ToLowerInvariant() + "s";
-        
+
         _collection = database.GetCollection<T>(collectionName);
         _tenantContext = tenantContext;
     }
@@ -61,7 +61,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         if (entity == null || string.IsNullOrEmpty(value))
             return;
-            
+
         var prop = typeof(T).GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
         if (prop != null && prop.CanWrite && prop.PropertyType == typeof(string))
         {
@@ -153,8 +153,16 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 
         // 设置创建人（通过反射设置审计字段）
         var (userId, username) = await GetActorAsync().ConfigureAwait(false);
-        SetAuditProperty(entity, "CreatedBy", userId);
-        SetAuditProperty(entity, "CreatedByUsername", username);
+        if (entity is IOperationTrackable op)
+        {
+            op.CreatedBy = userId;
+            op.CreatedByUsername = username;
+        }
+        else
+        {
+            SetAuditProperty(entity, "CreatedBy", userId);
+            SetAuditProperty(entity, "CreatedByUsername", username);
+        }
 
         // 写入企业隔离字段
         // 注意：如果实体已经设置了 CompanyId（业务字段，如 UserCompany.CompanyId），优先使用实体上的值
@@ -163,8 +171,8 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         {
             // 如果实体已经明确设置了 CompanyId（非空），优先使用实体上的值
             // 否则从 TenantContext 获取当前企业的 CompanyId（用于多租户隔离）
-            var companyId = !string.IsNullOrEmpty(multiTenant.CompanyId) 
-                ? multiTenant.CompanyId 
+            var companyId = !string.IsNullOrEmpty(multiTenant.CompanyId)
+                ? multiTenant.CompanyId
                 : await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
             if (string.IsNullOrEmpty(companyId))
                 throw new UnauthorizedAccessException("未找到当前企业信息");
@@ -205,8 +213,16 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         }
 
         // 设置创建人（通过反射设置审计字段）
-        SetAuditProperty(entity, "CreatedBy", userId);
-        SetAuditProperty(entity, "CreatedByUsername", username);
+        if (entity is IOperationTrackable op)
+        {
+            op.CreatedBy = userId;
+            op.CreatedByUsername = username;
+        }
+        else
+        {
+            SetAuditProperty(entity, "CreatedBy", userId);
+            SetAuditProperty(entity, "CreatedByUsername", username);
+        }
 
         // 写入企业隔离字段
         // 在后台线程场景中，实体应该已经设置了 CompanyId（通过业务代码设置）
@@ -255,24 +271,32 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var entityList = entities.ToList();
         if (entityList.Count == 0)
             return entityList;
-        
+
         var (uid, uname) = await GetActorAsync().ConfigureAwait(false);
         var now = DateTime.UtcNow;
-        
+
         foreach (var entity in entityList)
         {
             entity.CreatedAt = now;
             entity.UpdatedAt = now;
             entity.IsDeleted = false;
-            SetAuditProperty(entity, "CreatedBy", uid);
-            SetAuditProperty(entity, "CreatedByUsername", uname);
+            if (entity is IOperationTrackable op)
+            {
+                op.CreatedBy = uid;
+                op.CreatedByUsername = uname;
+            }
+            else
+            {
+                SetAuditProperty(entity, "CreatedBy", uid);
+                SetAuditProperty(entity, "CreatedByUsername", uname);
+            }
 
             if (entity is IMultiTenant multiTenant)
             {
                 // 如果实体已经明确设置了 CompanyId（非空），优先使用实体上的值
                 // 否则从 TenantContext 获取当前企业的 CompanyId（用于多租户隔离）
-                var companyId = !string.IsNullOrEmpty(multiTenant.CompanyId) 
-                    ? multiTenant.CompanyId 
+                var companyId = !string.IsNullOrEmpty(multiTenant.CompanyId)
+                    ? multiTenant.CompanyId
                     : await ResolveCurrentCompanyIdAsync().ConfigureAwait(false);
                 if (string.IsNullOrEmpty(companyId))
                     throw new UnauthorizedAccessException("未找到当前企业信息");
@@ -292,7 +316,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var tenantFilter = await ApplyTenantFilterAsync(filter).ConfigureAwait(false);
         return await FindOneAndReplaceInternalAsync(tenantFilter, replacement, options).ConfigureAwait(false);
     }
-    
+
     /// <summary>
     /// 查找并替换内部实现（共享逻辑）
     /// </summary>
@@ -301,9 +325,17 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 更新审计字段
         replacement.UpdatedAt = DateTime.UtcNow;
         var (userId, username) = await GetActorAsync().ConfigureAwait(false);
-        SetAuditProperty(replacement, "UpdatedBy", userId);
-        SetAuditProperty(replacement, "UpdatedByUsername", username);
-        
+        if (replacement is IOperationTrackable op)
+        {
+            op.UpdatedBy = userId;
+            op.UpdatedByUsername = username;
+        }
+        else
+        {
+            SetAuditProperty(replacement, "UpdatedBy", userId);
+            SetAuditProperty(replacement, "UpdatedByUsername", username);
+        }
+
         var result = await _collection.FindOneAndReplaceAsync(filter, replacement, options).ConfigureAwait(false);
         return result;
     }
@@ -315,7 +347,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         // 应用多租户过滤
         var tenantFilter = await ApplyTenantFilterAsync(filter).ConfigureAwait(false);
-        
+
         // 确保更新时间戳与更新人
         var updateWithTimestamp = await WithUpdateAuditAsync(update).ConfigureAwait(false);
 
@@ -329,7 +361,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         // 应用多租户过滤
         var tenantFilter = await ApplyTenantFilterAsync(filter).ConfigureAwait(false);
-        
+
         var update = await WithSoftDeleteAuditAsync(Builders<T>.Update.Combine()).ConfigureAwait(false);
 
         return await _collection.FindOneAndUpdateAsync(tenantFilter, update, options).ConfigureAwait(false);
@@ -353,7 +385,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         // 应用多租户过滤
         var tenantFilter = await ApplyTenantFilterAsync(filter).ConfigureAwait(false);
-        
+
         // 确保更新时间戳与更新人
         var updateWithTimestamp = await WithUpdateAuditAsync(update).ConfigureAwait(false);
 
@@ -369,7 +401,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var idList = ids.ToList();
         if (idList.Count == 0)
             return 0;
-        
+
         var filter = Builders<T>.Filter.In(e => e.Id, idList);
         var finalFilter = await ApplyDefaultFiltersAsync(filter).ConfigureAwait(false);
         var update = await WithSoftDeleteAuditAsync(Builders<T>.Update.Combine()).ConfigureAwait(false);
@@ -387,11 +419,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         var finalFilter = await ApplyDefaultFiltersAsync(filter).ConfigureAwait(false);
         var finalSort = sort ?? Builders<T>.Sort.Descending(e => e.CreatedAt);
-        
+
         var findOptions = new FindOptions<T> { Sort = finalSort, Limit = limit };
         if (projection != null)
             findOptions.Projection = projection;
-        
+
         var cursor = await _collection.FindAsync(finalFilter, findOptions).ConfigureAwait(false);
         return await cursor.ToListAsync().ConfigureAwait(false);
     }
@@ -401,26 +433,30 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     public async Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10, ProjectionDefinition<T>? projection = null)
     {
-        // 验证分页参数 - 按照分页规范，必须抛出异常而不是静默修正
-        if (page < 1 )
-            page=1;
-        
-        if (pageSize < 10)
-            pageSize=10;
-        
+        // 验证并钳制分页参数到项目规范范围：page 1–10000，pageSize 1–100
+        if (page < 1)
+            page = 1;
+        else if (page > 10000)
+            page = 10000;
+
+        if (pageSize < 1)
+            pageSize = 1;
+        else if (pageSize > 100)
+            pageSize = 100;
+
         var finalFilter = await ApplyDefaultFiltersAsync(filter).ConfigureAwait(false);
         var finalSort = sort ?? Builders<T>.Sort.Descending(e => e.CreatedAt);
         var skip = (page - 1) * pageSize;
-        
+
         var findOptions = new FindOptions<T> { Sort = finalSort, Skip = skip, Limit = pageSize };
         if (projection != null)
             findOptions.Projection = projection;
-        
+
         var findTask = _collection.FindAsync(finalFilter, findOptions);
         var countTask = _collection.CountDocumentsAsync(finalFilter);
-        
+
         await Task.WhenAll(findTask, countTask).ConfigureAwait(false);
-        
+
         var cursor = await findTask.ConfigureAwait(false);
         var items = await cursor.ToListAsync().ConfigureAwait(false);
         var total = await countTask.ConfigureAwait(false);
@@ -438,12 +474,12 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             Builders<T>.Filter.Eq(e => e.IsDeleted, false)
         );
         var tenantFilter = await ApplyTenantFilterAsync(filter).ConfigureAwait(false);
-        
+
         if (projection != null)
         {
             return await _collection.Find(tenantFilter).Project(projection).As<T>().FirstOrDefaultAsync().ConfigureAwait(false);
         }
-        
+
         return await _collection.Find(tenantFilter).FirstOrDefaultAsync().ConfigureAwait(false);
     }
 
@@ -479,11 +515,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         var finalFilter = ApplySoftDeleteFilter(filter);
         var finalSort = sort ?? Builders<T>.Sort.Descending(e => e.CreatedAt);
-        
+
         var findOptions = new FindOptions<T> { Sort = finalSort, Limit = limit };
         if (projection != null)
             findOptions.Projection = projection;
-        
+
         var cursor = await _collection.FindAsync(finalFilter, findOptions);
         return await cursor.ToListAsync();
     }
@@ -497,12 +533,12 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             Builders<T>.Filter.Eq(e => e.Id, id),
             Builders<T>.Filter.Eq(e => e.IsDeleted, false)
         );
-        
+
         if (projection != null)
         {
             return await _collection.Find(filter).Project(projection).As<T>().FirstOrDefaultAsync();
         }
-        
+
         return await _collection.Find(filter).FirstOrDefaultAsync();
     }
 
@@ -522,7 +558,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
-        
+
         // 确保更新时间戳与更新人
         var updateWithTimestamp = await WithUpdateAuditAsync(update).ConfigureAwait(false);
 
@@ -537,7 +573,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
-        
+
         var update = await WithSoftDeleteAuditAsync(Builders<T>.Update.Combine()).ConfigureAwait(false);
 
         var result = await _collection.FindOneAndUpdateAsync(finalFilter, update, options).ConfigureAwait(false);
@@ -551,7 +587,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
-        
+
         var result = await _collection.FindOneAndDeleteAsync(finalFilter, options);
         return result;
     }
@@ -585,8 +621,9 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         if (string.IsNullOrEmpty(companyId))
             return filter;
 
-        // 直接使用 CompanyId 属性（MongoDB 驱动会自动处理 BsonElement 特性）
-        return Builders<T>.Filter.And(filter, Builders<T>.Filter.Eq("companyId", companyId));
+        // 使用 CompanyId 的 BSON 字段名（优先使用 BsonElement 特性；否则使用 camelCase 属性名）
+        var companyIdField = GetCompanyIdBsonFieldName();
+        return Builders<T>.Filter.And(filter, Builders<T>.Filter.Eq(companyIdField, companyId));
     }
 
     private async Task<string?> ResolveCurrentCompanyIdAsync() =>
@@ -603,6 +640,27 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var baseFilter = filter ?? Builders<T>.Filter.Empty;
         var tenantFilter = await ApplyTenantFilterAsync(baseFilter).ConfigureAwait(false);
         return ApplySoftDeleteFilter(tenantFilter);
+    }
+
+    /// <summary>
+    /// 获取 CompanyId 的 BSON 字段名（优先使用 BsonElement 特性；否则属性名 camelCase）。
+    /// 仅在实体实现 IMultiTenant 时调用。
+    /// </summary>
+    private static string GetCompanyIdBsonFieldName()
+    {
+        var prop = typeof(T).GetProperty("CompanyId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (prop != null)
+        {
+            var bsonElementAttr = prop.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
+            if (bsonElementAttr != null && !string.IsNullOrEmpty(bsonElementAttr.ElementName))
+            {
+                return bsonElementAttr.ElementName;
+            }
+            var name = prop.Name;
+            return name.Length > 0 ? char.ToLowerInvariant(name[0]) + name.Substring(1) : "companyId";
+        }
+        // 回退：约定默认字段名为 companyId
+        return "companyId";
     }
 
 }

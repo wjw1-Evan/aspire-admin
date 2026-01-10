@@ -38,14 +38,26 @@ public class FilterBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     }
 
     /// <summary>
-    /// 添加包含条件（用于数组字段）
+    /// 添加包含条件（用于数组字段，判断数组是否包含指定元素）
     /// </summary>
-    public FilterBuilder<T> Contains<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field, TField value)
+    public FilterBuilder<T> Contains<TItem>(System.Linq.Expressions.Expression<Func<T, IEnumerable<TItem>>> field, TItem value)
     {
         if (value != null)
         {
-            var fieldName = GetFieldName(field);
-            _filters.Add(_builder.ElemMatch(fieldName, _builder.Eq("$", value)));
+            _filters.Add(_builder.AnyEq(field, value));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// 添加字符串包含条件（大小写不敏感，使用正则匹配）
+    /// </summary>
+    public FilterBuilder<T> Contains(System.Linq.Expressions.Expression<Func<T, string>> field, string value)
+    {
+        if (!string.IsNullOrEmpty(value))
+        {
+            var fieldName = GetBsonFieldName(field);
+            _filters.Add(_builder.Regex(fieldName, new MongoDB.Bson.BsonRegularExpression(value, "i")));
         }
         return this;
     }
@@ -143,7 +155,7 @@ public class FilterBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     {
         if (!string.IsNullOrEmpty(pattern))
         {
-            var fieldName = GetFieldName(field);
+            var fieldName = GetBsonFieldName(field);
             _filters.Add(_builder.Regex(fieldName, new MongoDB.Bson.BsonRegularExpression(pattern, options)));
         }
         return this!;
@@ -189,7 +201,7 @@ public class FilterBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     /// </summary>
     public FilterBuilder<T> Exists<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field, bool exists = true)
     {
-        var fieldName = GetFieldName(field);
+        var fieldName = GetBsonFieldName(field);
         _filters.Add(_builder.Exists(fieldName, exists));
         return this;
     }
@@ -320,11 +332,24 @@ public class FilterBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     /// <summary>
     /// 获取字段名称
     /// </summary>
-    private static string GetFieldName<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
+    private static string GetBsonFieldName<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
     {
         if (field.Body is System.Linq.Expressions.MemberExpression memberExpression)
         {
-            return memberExpression.Member.Name.ToLowerInvariant();
+            var property = memberExpression.Member as PropertyInfo;
+            if (property != null)
+            {
+                var bsonElementAttr = property.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
+                if (bsonElementAttr != null && !string.IsNullOrEmpty(bsonElementAttr.ElementName))
+                {
+                    return bsonElementAttr.ElementName;
+                }
+                var propertyName = property.Name;
+                if (propertyName.Length > 0)
+                {
+                    return char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
+                }
+            }
         }
         throw new ArgumentException("Invalid field expression");
     }
@@ -403,7 +428,7 @@ public class SortBuilder<T> where T : class, IEntity, ISoftDeletable, ITimestamp
                 {
                     return bsonElementAttr.ElementName;
                 }
-                
+
                 // ✅ 如果没有 BsonElement 特性，使用属性名的 camelCase
                 var propertyName = property.Name;
                 if (propertyName.Length > 0)
@@ -571,7 +596,11 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     /// </summary>
     public UpdateDefinition<T> Build()
     {
-        return _updates.Count > 0 ? _builder.Combine(_updates) : _builder.Set(e => e.Id, "");
+        if (_updates.Count == 0)
+        {
+            throw new InvalidOperationException("No update operations specified");
+        }
+        return _builder.Combine(_updates);
     }
 
     /// <summary>
@@ -616,7 +645,7 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
                 {
                     return bsonElementAttr.ElementName;
                 }
-                
+
                 // ✅ 如果没有 BsonElement 特性，使用属性名的 camelCase
                 var propertyName = property.Name;
                 if (propertyName.Length > 0)
@@ -776,7 +805,7 @@ public class ProjectionBuilder<T> where T : class, IEntity, ISoftDeletable, ITim
                 {
                     return bsonElementAttr.ElementName;
                 }
-                
+
                 // ✅ 如果没有 BsonElement 特性，使用属性名的 camelCase
                 var propertyName = property.Name;
                 if (propertyName.Length > 0)

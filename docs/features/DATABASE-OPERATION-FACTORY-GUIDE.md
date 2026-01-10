@@ -1,5 +1,16 @@
 # 数据访问工厂使用指南
 
+> 2026-01 更新：统一分页范围、字段名映射与审计写入的行为说明
+
+为提升一致性与可维护性，数据工厂与构建器有如下更新与约定：
+
+- 分页参数钳制：`page` 范围为 1–10000，`pageSize` 范围为 1–100；控制器直接传 `page/pageSize` 给 `FindPagedAsync`，不需自行计算 `skip`。
+- 多租户过滤字段名：工厂应用租户过滤时优先使用实体 `CompanyId` 的 `[BsonElement]` 字段名；若无则使用属性名的 camelCase（避免硬编码 `"companyId"`）。
+- FilterBuilder 的 BSON 字段映射：`Regex/Exists` 等使用字符串字段名的方法统一为 BsonElement-aware；与 `SortBuilder/UpdateBuilder` 保持一致。
+- 数组包含语义：`Contains(field, value)` 采用 `Eq(field, value)` 的数组匹配语义（驱动在数组字段上解析为“数组包含元素”）。复杂数组匹配请使用 `AnyEq` 或自定义 `ElemMatch`。
+- UpdateBuilder 空更新：`Build()` 在无任何更新项时抛出 `InvalidOperationException`，避免写入无意义更新。
+- 审计字段写入：若实体实现 `IOperationTrackable`，工厂直接赋值 `CreatedBy/CreatedByUsername` 与 `UpdatedBy/UpdatedByUsername`；否则保留反射兜底，建议逐步实现接口以去反射化。
+
 > 本文档说明如何使用 `IDatabaseOperationFactory<T>` 进行数据库操作，这是平台统一的数据访问方式。
 
 ## 📋 概述
@@ -16,6 +27,7 @@
 **⚠️ 重要：以下行为严格禁止**
 
 1. **禁止直接注入 `IMongoCollection<T>` 或 `IMongoDatabase`**
+
    ```csharp
    // ❌ 错误示例
    public class UserService
@@ -25,6 +37,7 @@
    ```
 
 2. **禁止手动设置审计字段**
+
    ```csharp
    // ❌ 错误示例
    entity.CreatedAt = DateTime.UtcNow; // 禁止！
@@ -32,6 +45,7 @@
    ```
 
 3. **禁止绕过工厂直接操作数据库**
+
    ```csharp
    // ❌ 错误示例
    await _collection.InsertOneAsync(entity); // 禁止！
@@ -92,7 +106,7 @@ public async Task<User> CreateUserAsync(CreateUserRequest request)
         Email = request.Email,
         // 不要设置 CreatedAt、CreatedBy 等字段，工厂会自动处理
     };
-    
+
     // 使用工厂创建，自动处理审计字段和多租户隔离
     return await _factory.CreateAsync(user);
 }
@@ -108,24 +122,24 @@ public async Task<User?> GetUserByIdAsync(string id)
     var filter = _factory.CreateFilterBuilder()
         .Eq(u => u.Id, id)
         .Build();
-    
+
     return await _factory.GetByIdAsync(id);
 }
 
 public async Task<List<User>> GetUsersAsync(string? keyword)
 {
     var filterBuilder = _factory.CreateFilterBuilder();
-    
+
     if (!string.IsNullOrEmpty(keyword))
     {
         filterBuilder.Regex(u => u.Username, keyword);
     }
-    
+
     var filter = filterBuilder.Build();
     var sort = _factory.CreateSortBuilder()
         .Descending(u => u.CreatedAt)
         .Build();
-    
+
     return await _factory.FindAsync(filter, sort);
 }
 ```
@@ -139,11 +153,11 @@ public async Task<User?> UpdateUserAsync(string id, UpdateUserRequest request)
         .Set(u => u.Username, request.Username)
         .Set(u => u.Email, request.Email)
         .Build();
-    
+
     var filter = _factory.CreateFilterBuilder()
         .Eq(u => u.Id, id)
         .Build();
-    
+
     // 使用原子更新，自动维护 UpdatedAt、UpdatedBy
     return await _factory.FindOneAndUpdateAsync(filter, update);
 }

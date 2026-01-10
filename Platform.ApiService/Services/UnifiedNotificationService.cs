@@ -52,12 +52,16 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             case "system":
                 fb.Equal(n => n.IsSystemMessage, true);
                 break;
+            case "unread":
+                fb.Equal(n => n.Read, false);
+                break;
         }
         var filter = fb.Build();
 
         var currentUserId = _noticeFactory.GetRequiredUserId();
         // 确保“全部”列表不会显示其它人的任务通知：只显示与当前用户相关的任务通知
-        if (string.Equals(filterType, "all", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(filterType, "all", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(filterType, "unread", StringComparison.OrdinalIgnoreCase))
         {
             var builder = Builders<NoticeIconItem>.Filter;
             var onlyMyTasksOrNonTask = builder.Or(

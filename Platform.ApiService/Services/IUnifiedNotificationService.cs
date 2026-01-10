@@ -14,7 +14,7 @@ public interface IUnifiedNotificationService
     /// </summary>
     /// <param name="page">页码（从1开始）</param>
     /// <param name="pageSize">每页数量</param>
-    /// <param name="filterType">过滤类型：all, notification, message, todo, task, system</param>
+    /// <param name="filterType">过滤类型：all, notification, message, todo, task, system, unread</param>
     /// <param name="sortBy">排序字段：datetime, priority, dueDate</param>
     /// <returns>统一的通知/待办/任务列表</returns>
     Task<UnifiedNotificationListResponse> GetUnifiedNotificationsAsync(

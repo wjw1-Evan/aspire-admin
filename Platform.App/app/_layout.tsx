@@ -96,9 +96,10 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ title: '通知中心' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
-      <Toast 
+      <Toast
         config={{
           success: ({ text1, text2 }) => (
             <View style={toastStyles.successContainer}>

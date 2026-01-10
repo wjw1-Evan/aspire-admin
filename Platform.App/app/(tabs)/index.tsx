@@ -1,19 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, ScrollView, RefreshControl, ActivityIndicator, View as RNView, Text as RNText, Platform, TouchableOpacity } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppStyles, commonStyles } from '../../constants/AppStyles';
 import { authService } from '../../services/authService';
 import { companyService } from '../../services/companyService';
+import { notificationService } from '../../services/notificationService';
 import { User } from '../../types/auth';
 import { Company } from '../../types/company';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnread = useCallback(async () => {
+    try {
+      const res = await notificationService.getUnreadStatistics();
+      if (res.success && res.data) {
+        setUnreadCount(res.data.total ?? 0);
+      }
+    } catch {
+      // 静默失败
+    }
+  }, []);
 
   const loadData = async () => {
     try {
@@ -37,11 +53,21 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadData();
+    fetchUnread();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUnread();
+      const timer = setInterval(() => fetchUnread(), 10000);
+      return () => clearInterval(timer);
+    }, [fetchUnread])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
+    fetchUnread();
   };
 
   if (loading) {
@@ -75,75 +101,85 @@ export default function HomeScreen() {
                 {user?.realName || user?.username || '用户'}
               </RNText>
             </RNView>
-            <RNView style={styles.avatarContainer}>
-              <RNText style={styles.avatarText}>
-                {(user?.realName || user?.username || 'U').charAt(0).toUpperCase()}
-              </RNText>
+            <RNView style={styles.headerRight}>
+              <TouchableOpacity style={styles.noticeButton} onPress={() => router.push('/notifications')}>
+                <Ionicons name="notifications-outline" size={24} color="#fff" />
+                {unreadCount > 0 && (
+                  <RNView style={styles.noticeBadge}>
+                    <RNText style={styles.noticeBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</RNText>
+                  </RNView>
+                )}
+              </TouchableOpacity>
+              <RNView style={styles.avatarContainer}>
+                <RNText style={styles.avatarText}>
+                  {(user?.realName || user?.username || 'U').charAt(0).toUpperCase()}
+                </RNText>
+              </RNView>
             </RNView>
           </RNView>
         </LinearGradient>
         <View style={styles.contentSection}>
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardHeader}>
-            <Ionicons name="person-circle-outline" size={24} color={AppStyles.colors.primary} />
-            <Text style={commonStyles.cardTitle}>个人信息</Text>
-          </View>
-          <View style={commonStyles.infoRow}>
-            <View style={commonStyles.infoIconContainer}>
-              <Ionicons name="person-outline" size={16} color={AppStyles.colors.primary} />
-            </View>
-            <Text style={commonStyles.infoLabel}>用户名</Text>
-            <Text style={commonStyles.infoValue}>{user?.username}</Text>
-          </View>
-          <View style={commonStyles.infoRow}>
-            <View style={commonStyles.infoIconContainer}>
-              <Ionicons name="mail-outline" size={16} color={AppStyles.colors.primary} />
-            </View>
-            <Text style={commonStyles.infoLabel}>邮箱</Text>
-            <Text style={commonStyles.infoValue}>{user?.email || '未设置'}</Text>
-          </View>
-          {user?.phone && (
-            <View style={commonStyles.infoRow}>
-              <View style={commonStyles.infoIconContainer}>
-                <Ionicons name="call-outline" size={16} color={AppStyles.colors.primary} />
-              </View>
-              <Text style={commonStyles.infoLabel}>手机</Text>
-              <Text style={commonStyles.infoValue}>{user.phone}</Text>
-            </View>
-          )}
-        </View>
-
-        {company && (
           <View style={commonStyles.card}>
             <View style={commonStyles.cardHeader}>
-              <Ionicons name="business-outline" size={24} color={AppStyles.colors.primary} />
-              <Text style={commonStyles.cardTitle}>当前企业</Text>
+              <Ionicons name="person-circle-outline" size={24} color={AppStyles.colors.primary} />
+              <Text style={commonStyles.cardTitle}>个人信息</Text>
             </View>
             <View style={commonStyles.infoRow}>
               <View style={commonStyles.infoIconContainer}>
-                <Ionicons name="business" size={16} color={AppStyles.colors.primary} />
+                <Ionicons name="person-outline" size={16} color={AppStyles.colors.primary} />
               </View>
-              <Text style={commonStyles.infoLabel}>企业名称</Text>
-              <Text style={commonStyles.infoValue}>{company.name}</Text>
+              <Text style={commonStyles.infoLabel}>用户名</Text>
+              <Text style={commonStyles.infoValue}>{user?.username}</Text>
             </View>
             <View style={commonStyles.infoRow}>
               <View style={commonStyles.infoIconContainer}>
-                <Ionicons name="code-slash-outline" size={16} color={AppStyles.colors.primary} />
+                <Ionicons name="mail-outline" size={16} color={AppStyles.colors.primary} />
               </View>
-              <Text style={commonStyles.infoLabel}>企业代码</Text>
-              <Text style={commonStyles.infoValue}>{company.code}</Text>
+              <Text style={commonStyles.infoLabel}>邮箱</Text>
+              <Text style={commonStyles.infoValue}>{user?.email || '未设置'}</Text>
             </View>
-            {company.description && (
+            {user?.phone && (
               <View style={commonStyles.infoRow}>
                 <View style={commonStyles.infoIconContainer}>
-                  <Ionicons name="document-text-outline" size={16} color={AppStyles.colors.primary} />
+                  <Ionicons name="call-outline" size={16} color={AppStyles.colors.primary} />
                 </View>
-                <Text style={commonStyles.infoLabel}>描述</Text>
-                <Text style={commonStyles.infoValue}>{company.description}</Text>
+                <Text style={commonStyles.infoLabel}>手机</Text>
+                <Text style={commonStyles.infoValue}>{user.phone}</Text>
               </View>
             )}
           </View>
-        )}
+
+          {company && (
+            <View style={commonStyles.card}>
+              <View style={commonStyles.cardHeader}>
+                <Ionicons name="business-outline" size={24} color={AppStyles.colors.primary} />
+                <Text style={commonStyles.cardTitle}>当前企业</Text>
+              </View>
+              <View style={commonStyles.infoRow}>
+                <View style={commonStyles.infoIconContainer}>
+                  <Ionicons name="business" size={16} color={AppStyles.colors.primary} />
+                </View>
+                <Text style={commonStyles.infoLabel}>企业名称</Text>
+                <Text style={commonStyles.infoValue}>{company.name}</Text>
+              </View>
+              <View style={commonStyles.infoRow}>
+                <View style={commonStyles.infoIconContainer}>
+                  <Ionicons name="code-slash-outline" size={16} color={AppStyles.colors.primary} />
+                </View>
+                <Text style={commonStyles.infoLabel}>企业代码</Text>
+                <Text style={commonStyles.infoValue}>{company.code}</Text>
+              </View>
+              {company.description && (
+                <View style={commonStyles.infoRow}>
+                  <View style={commonStyles.infoIconContainer}>
+                    <Ionicons name="document-text-outline" size={16} color={AppStyles.colors.primary} />
+                  </View>
+                  <Text style={commonStyles.infoLabel}>描述</Text>
+                  <Text style={commonStyles.infoValue}>{company.description}</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -176,6 +212,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.3)',
+    marginLeft: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  noticeButton: {
+    position: 'relative',
+    padding: 8,
+  },
+  noticeBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#ff4d4f',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  noticeBadgeText: {
+    color: '#fff',
+    fontSize: AppStyles.fontSize.xs,
+    fontWeight: '700',
   },
   avatarText: {
     fontSize: AppStyles.fontSize.xl,

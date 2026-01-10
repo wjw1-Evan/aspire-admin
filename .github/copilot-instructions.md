@@ -1,5 +1,39 @@
 # Copilot Instructions for Aspire Admin
 
+## Overview
+This document provides essential guidelines for AI coding agents working within the Aspire Admin codebase. Understanding the architecture, workflows, and conventions is crucial for effective contributions.
+
+## Architecture
+- **Big Picture**: The architecture consists of several key components:
+	- **AppHost** orchestrates the flow between MongoDB, DataInitializer, ApiService, and the YARP gateway (`/apiservice`).
+	- **Admin** (React) and **App** (Expo) serve as the front-end interfaces.
+	- **Entry Points**: Key files include `Platform.AppHost/AppHost.cs` and `Platform.ApiService/Program.cs`.
+
+## Data Access
+- **Hard Rule**: Direct access to `IMongoCollection/IMongoDatabase` is prohibited. Use `IDatabaseOperationFactory<T>` with appropriate builders (e.g., `CreateFilterBuilder`, `SortBuilder`).
+- **Entity Implementation**: Entities must implement `IEntity`, `ISoftDeletable`, and `ITimestamped`. Multi-tenant entities should implement `IMultiTenant` to auto-apply filters.
+
+## Developer Workflows
+- **Build and Run**: Use `dotnet run --project Platform.AppHost` for full stack or `dotnet run --project Platform.ApiService` for backend only. Admin and mobile development commands are also specified in the existing documentation.
+- **Testing**: Run tests using `dotnet test Platform.AppHost.Tests`. Linting for Admin/App can be done via `npm run lint`.
+
+## Project-Specific Conventions
+- **Permissions**: Sensitive endpoints require `[RequireMenu("module:resource")]`. Avoid deprecated methods like `HasPermission`.
+- **Response Handling**: Controllers should inherit from `BaseApiController` and return `ApiResponse<T>`.
+- **Middleware Order**: Maintain the specified order for middleware to ensure proper functionality.
+
+## Integration Points
+- **SSE Real-Time Communication**: Handled by `ChatSseConnectionManager` and `ChatBroadcaster`. Events include `ReceiveMessage`, `SessionUpdated`, etc.
+- **External Dependencies**: Ensure to manage dependencies through the specified package managers and follow the outlined integration patterns.
+
+## Key Files and Directories
+- **Documentation**: Refer to `docs/features/` for detailed API response rules, backend rules, and other critical documentation.
+- **Key Docs**: The root `README.md` provides an overview of the architecture and endpoints.
+
+## Conclusion
+This document should serve as a foundational guide for AI agents to navigate and contribute effectively to the Aspire Admin codebase. For any unclear sections or additional details needed, please provide feedback for further iterations.
+# Copilot Instructions for Aspire Admin
+
 - **Architecture map**: AppHost orchestrates MongoDB → DataInitializer → ApiService → YARP gateway (`/apiservice`) → Admin (React) → App (Expo). Entry points: `Platform.AppHost/AppHost.cs`, `Platform.ApiService/Program.cs`.
 - **Data access (hard rule)**: Never touch `IMongoCollection/IMongoDatabase` directly. Use `IDatabaseOperationFactory<T>` with builders (`CreateFilterBuilder/SortBuilder/UpdateBuilder/ProjectionBuilder`). Entities implement `IEntity` + `ISoftDeletable` + `ITimestamped`; multi-tenant entities implement `IMultiTenant`/`MultiTenantEntity` so `CompanyId` and soft-delete filters auto-apply.
 - **Audit & CRUD**: Always use factory atomics: `CreateAsync`, `FindOneAndUpdateAsync`, `FindOneAndSoftDeleteAsync`, `FindOneAndReplaceAsync`; audit fields are auto-managed—do not set manually.

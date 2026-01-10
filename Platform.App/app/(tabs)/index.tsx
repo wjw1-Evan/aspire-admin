@@ -9,7 +9,7 @@ import { companyService } from '../../services/companyService';
 import { notificationService } from '../../services/notificationService';
 import { User } from '../../types/auth';
 import { Company } from '../../types/company';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function HomeScreen() {
@@ -102,14 +102,16 @@ export default function HomeScreen() {
               </RNText>
             </RNView>
             <RNView style={styles.headerRight}>
-              <TouchableOpacity style={styles.noticeButton} onPress={() => router.push('/notifications')}>
-                <Ionicons name="notifications-outline" size={24} color="#fff" />
-                {unreadCount > 0 && (
-                  <RNView style={styles.noticeBadge}>
-                    <RNText style={styles.noticeBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</RNText>
-                  </RNView>
-                )}
-              </TouchableOpacity>
+              <Link href="/notifications" asChild>
+                <TouchableOpacity style={styles.noticeButton}>
+                  <Ionicons name="notifications-outline" size={24} color="#fff" />
+                  {unreadCount > 0 && (
+                    <RNView style={styles.noticeBadge}>
+                      <RNText style={styles.noticeBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</RNText>
+                    </RNView>
+                  )}
+                </TouchableOpacity>
+              </Link>
               <RNView style={styles.avatarContainer}>
                 <RNText style={styles.avatarText}>
                   {(user?.realName || user?.username || 'U').charAt(0).toUpperCase()}

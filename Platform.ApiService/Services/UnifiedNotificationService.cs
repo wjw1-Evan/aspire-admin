@@ -251,7 +251,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             .Build();
 
         var updateBuilder = _noticeFactory.CreateUpdateBuilder();
-        
+
         if (!string.IsNullOrEmpty(request.Title))
             updateBuilder.Set(n => n.Title, request.Title);
 
@@ -576,7 +576,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     {
         var baseDescription = $"公文 \"{documentTitle}\"";
         var remarkText = string.IsNullOrEmpty(remarks) ? "" : $" ({remarks})";
-        
+
         return actionType switch
         {
             "workflow_started" => ("公文已提交审批", $"{baseDescription} 已提交审批流程{remarkText}"),

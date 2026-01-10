@@ -41,12 +41,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="notifications"
-        options={{
-          href: null, // hide notifications route from tab bar
-        }}
-      />
-      <Tabs.Screen
         name="two"
         options={{
           href: null, // Hide this screen from tabs

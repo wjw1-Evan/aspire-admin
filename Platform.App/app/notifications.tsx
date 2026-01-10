@@ -72,7 +72,7 @@ const renderPriorityTag = (priority?: number) => {
 export default function NotificationsScreen() {
     const [notifications, setNotifications] = useState<UnifiedNotificationItem[]>([]);
     const [page] = useState(1);
-    const [total, setTotal] = useState(0);
+    const [allTotal, setAllTotal] = useState(0);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -104,7 +104,9 @@ export default function NotificationsScreen() {
                 if (res.success && res.data) {
                     const data = res.data;
                     setNotifications(data.items);
-                    setTotal(data.total);
+                    if (targetFilter === 'all') {
+                        setAllTotal(data.total);
+                    }
                     setUnreadCount(data.unreadCount ?? 0);
                     setFilterType(targetFilter);
                     setLoadFailed(false);
@@ -240,7 +242,9 @@ export default function NotificationsScreen() {
                             }}
                         >
                             <RNText style={[styles.filterChipText, active && styles.filterChipTextActive]}>
-                                {item.label}
+                                {item.key === 'all'
+                                    ? `${item.label} (${allTotal})`
+                                    : `${item.label} (${unreadCount})`}
                             </RNText>
                         </TouchableOpacity>
                     );

@@ -105,24 +105,54 @@ public class UpdateOrganizationUnitRequest : OrganizationUnitRequestBase
 /// </summary>
 public class OrganizationTreeNode
 {
+    /// <summary>
+    /// 节点ID
+    /// </summary>
     public string Id { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 节点名称
+    /// </summary>
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 节点编码
+    /// </summary>
     public string? Code { get; set; }
 
+    /// <summary>
+    /// 父级节点ID
+    /// </summary>
     public string? ParentId { get; set; }
 
+    /// <summary>
+    /// 描述
+    /// </summary>
     public string? Description { get; set; }
 
+    /// <summary>
+    /// 排序值
+    /// </summary>
     public int SortOrder { get; set; }
 
+    /// <summary>
+    /// 负责人用户ID
+    /// </summary>
     public string? ManagerUserId { get; set; }
 
+    /// <summary>
+    /// 创建时间（UTC）
+    /// </summary>
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>
+    /// 更新时间（UTC）
+    /// </summary>
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>
+    /// 子节点列表
+    /// </summary>
     public List<OrganizationTreeNode> Children { get; set; } = new();
 }
 

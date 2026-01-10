@@ -19,6 +19,10 @@ public class OrganizationController : BaseApiController
 {
     private readonly IOrganizationService _organizationService;
 
+    /// <summary>
+    /// 初始化组织架构控制器
+    /// </summary>
+    /// <param name="organizationService">组织架构服务</param>
     public OrganizationController(IOrganizationService organizationService)
     {
         _organizationService = organizationService;

@@ -35,10 +35,25 @@ public class UserOrganization : MultiTenantEntity, IEntity, ISoftDeletable, ITim
 /// </summary>
 public class OrganizationMemberItem
 {
+    /// <summary>
+    /// 用户ID
+    /// </summary>
     public string UserId { get; set; } = string.Empty;
+    /// <summary>
+    /// 用户名
+    /// </summary>
     public string Username { get; set; } = string.Empty;
+    /// <summary>
+    /// 邮箱
+    /// </summary>
     public string? Email { get; set; }
+    /// <summary>
+    /// 组织节点ID
+    /// </summary>
     public string OrganizationUnitId { get; set; } = string.Empty;
+    /// <summary>
+    /// 组织节点名称
+    /// </summary>
     public string? OrganizationUnitName { get; set; }
 }
 
@@ -47,8 +62,17 @@ public class OrganizationMemberItem
 /// </summary>
 public class AssignUserOrganizationRequest
 {
+    /// <summary>
+    /// 用户ID
+    /// </summary>
     public string UserId { get; set; } = string.Empty;
+    /// <summary>
+    /// 组织节点ID
+    /// </summary>
     public string OrganizationUnitId { get; set; } = string.Empty;
+    /// <summary>
+    /// 是否设为主要组织
+    /// </summary>
     public bool? IsPrimary { get; set; }
 }
 
@@ -57,6 +81,12 @@ public class AssignUserOrganizationRequest
 /// </summary>
 public class RemoveUserOrganizationRequest
 {
+    /// <summary>
+    /// 用户ID
+    /// </summary>
     public string UserId { get; set; } = string.Empty;
+    /// <summary>
+    /// 组织节点ID
+    /// </summary>
     public string OrganizationUnitId { get; set; } = string.Empty;
 }

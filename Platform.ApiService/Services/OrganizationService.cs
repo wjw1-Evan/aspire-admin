@@ -13,14 +13,67 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface IOrganizationService
 {
+    /// <summary>
+    /// 获取组织架构树
+    /// </summary>
+    /// <returns>树形节点列表</returns>
     Task<List<OrganizationTreeNode>> GetTreeAsync();
+
+    /// <summary>
+    /// 按ID获取组织节点
+    /// </summary>
+    /// <param name="id">节点ID</param>
+    /// <returns>组织节点或空</returns>
     Task<OrganizationUnit?> GetByIdAsync(string id);
+
+    /// <summary>
+    /// 创建组织节点
+    /// </summary>
+    /// <param name="request">创建请求</param>
+    /// <returns>创建后的节点</returns>
     Task<OrganizationUnit> CreateAsync(CreateOrganizationUnitRequest request);
+
+    /// <summary>
+    /// 更新组织节点
+    /// </summary>
+    /// <param name="id">节点ID</param>
+    /// <param name="request">更新请求</param>
+    /// <returns>是否成功</returns>
     Task<bool> UpdateAsync(string id, UpdateOrganizationUnitRequest request);
+
+    /// <summary>
+    /// 删除组织节点
+    /// </summary>
+    /// <param name="id">节点ID</param>
+    /// <returns>是否成功</returns>
     Task<bool> DeleteAsync(string id);
+
+    /// <summary>
+    /// 批量重排节点（含父子关系）
+    /// </summary>
+    /// <param name="items">重排项</param>
+    /// <returns>是否成功</returns>
     Task<bool> ReorderAsync(List<OrganizationReorderItem> items);
+
+    /// <summary>
+    /// 获取组织成员（含子节点）
+    /// </summary>
+    /// <param name="organizationUnitId">组织节点ID</param>
+    /// <returns>成员列表</returns>
     Task<List<OrganizationMemberItem>> GetMembersAsync(string organizationUnitId);
+
+    /// <summary>
+    /// 设置用户所在组织
+    /// </summary>
+    /// <param name="request">设置请求</param>
+    /// <returns>是否成功</returns>
     Task<bool> AssignUserAsync(AssignUserOrganizationRequest request);
+
+    /// <summary>
+    /// 从组织移除用户
+    /// </summary>
+    /// <param name="request">移除请求</param>
+    /// <returns>是否成功</returns>
     Task<bool> RemoveUserAsync(RemoveUserOrganizationRequest request);
 }
 
@@ -37,6 +90,13 @@ public class OrganizationService : IOrganizationService
     private readonly IDatabaseOperationFactory<AppUser> _userFactory;
     private readonly ILogger<OrganizationService> _logger;
 
+    /// <summary>
+    /// 初始化组织架构服务
+    /// </summary>
+    /// <param name="organizationFactory">组织节点数据工厂</param>
+    /// <param name="userOrgFactory">用户-组织关系数据工厂</param>
+    /// <param name="userFactory">用户数据工厂</param>
+    /// <param name="logger">日志记录器</param>
     public OrganizationService(
         IDatabaseOperationFactory<OrganizationUnit> organizationFactory,
         IDatabaseOperationFactory<UserOrganization> userOrgFactory,

@@ -176,6 +176,12 @@ public class OrganizationService : IOrganizationService
         return created;
     }
 
+    /// <summary>
+    /// 更新组织节点
+    /// </summary>
+    /// <param name="id">节点ID</param>
+    /// <param name="request">更新请求</param>
+    /// <returns>是否成功</returns>
     public async Task<bool> UpdateAsync(string id, UpdateOrganizationUnitRequest request)
     {
         NormalizeRequest(request);
@@ -213,6 +219,11 @@ public class OrganizationService : IOrganizationService
         return result != null;
     }
 
+    /// <summary>
+    /// 删除组织节点
+    /// </summary>
+    /// <param name="id">节点ID</param>
+    /// <returns>是否成功</returns>
     public async Task<bool> DeleteAsync(string id)
     {
         var existing = await _organizationFactory.GetByIdAsync(id).ConfigureAwait(false);

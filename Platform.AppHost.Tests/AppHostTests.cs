@@ -212,14 +212,17 @@ namespace Platform.AppHost.Tests
             }
         }
 
-        private static async Task<IReadOnlyDictionary<string, string?>> GetEnvVarsAsync<TResource>(
+        private static async Task<IReadOnlyDictionary<string, string>> GetEnvVarsAsync<TResource>(
             IDistributedApplicationTestingBuilder builder,
             string resourceName)
         {
             var resource = builder.Resources.Single(r => r.Name == resourceName) as IResourceWithEnvironment
                 ?? throw new InvalidOperationException($"Resource '{resourceName}' does not implement IResourceWithEnvironment.");
-
-            return await resource.GetEnvironmentVariableValuesAsync(DistributedApplicationOperation.Publish);
+#pragma warning disable CS0618 // ResourceExtensions.GetEnvironmentVariableValuesAsync 已过时，测试场景仅需读取配置
+            var env = await resource.GetEnvironmentVariableValuesAsync(DistributedApplicationOperation.Publish)
+                .ConfigureAwait(false);
+#pragma warning restore CS0618
+            return env;
         }
     }
 }

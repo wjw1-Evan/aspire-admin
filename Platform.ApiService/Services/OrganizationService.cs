@@ -145,11 +145,22 @@ public class OrganizationService : IOrganizationService
         return BuildTree(null);
     }
 
+    /// <summary>
+    /// 按ID获取组织节点
+    /// </summary>
+    /// <param name="id">组织节点ID</param>
+    /// <returns>找到则返回组织节点，否则返回 null</returns>
     public Task<OrganizationUnit?> GetByIdAsync(string id)
     {
         return _organizationFactory.GetByIdAsync(id);
     }
 
+    /// <summary>
+    /// 创建新的组织节点。
+    /// 会对名称/编码长度进行校验，校验父级存在与唯一性约束，并由数据工厂维护审计字段。
+    /// </summary>
+    /// <param name="request">创建请求，包含名称、编码、父级ID、描述、排序与负责人用户ID等</param>
+    /// <returns>创建成功的组织节点实体</returns>
     public async Task<OrganizationUnit> CreateAsync(CreateOrganizationUnitRequest request)
     {
         NormalizeRequest(request);

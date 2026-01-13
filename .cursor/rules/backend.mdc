@@ -39,16 +39,45 @@ appliesTo:
 
 ## 多租户与实体设计
 - **实体基类**：
-  - `BaseEntity`：提供 `Id`、`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`CreatedBy`、`UpdatedBy` 等审计字段。
-  - `MultiTenantEntity`：继承 `BaseEntity` 并实现 `IMultiTenant`，自动包含 `CompanyId`。
+  - `BaseEntity`：提供 `Id`、`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`CreatedBy`、`UpdatedBy` 等审计字段。适用于非多租户实体（如 `Company`、`AppUser`、`RefreshToken`）。
+  - `MultiTenantEntity`：继承 `BaseEntity` 并实现 `IMultiTenant`，自动包含 `CompanyId`。适用于多租户实体（如 `Role`、`Project`、`WorkTask`、`IoTGateway` 等）。
 - **接口要求**：所有 MongoDB 实体必须实现 `IEntity`、`ISoftDeletable`、`ITimestamped`。多租户实体需实现 `IMultiTenant` 或继承 `MultiTenantEntity`，工厂会自动附加 `CompanyId` 过滤。
 - **集合命名**：优先使用 `[BsonCollectionName("xxx")]` 特性指定集合名，否则使用类型名的复数形式（小写）。
+- **字段名映射**：实体字段优先使用 `[BsonElement("fieldName")]` 特性指定 BSON 字段名，构建器会自动识别并使用正确的字段名。
+- **操作跟踪接口**：实体实现 `IOperationTrackable` 接口时，工厂会直接赋值 `CreatedBy`/`CreatedByUsername` 和 `UpdatedBy`/`UpdatedByUsername`，避免反射开销。
 
 ## 查询/更新构建器（强制使用）
-- **FilterBuilder<T>**：通过 `factory.CreateFilterBuilder()` 创建，支持链式调用（`Equal`、`NotEqual`、`In`、`Contains`、`DateRange`、`TextSearch`、`IsDeleted(false)` 等），最后调用 `Build()` 生成 `FilterDefinition<T>`。
-- **SortBuilder<T>**：通过 `factory.CreateSortBuilder()` 创建，使用 `Ascending`/`Descending` 指定排序字段，默认降序按 `Id` 排序。
-- **UpdateBuilder<T>**：通过 `factory.CreateUpdateBuilder()` 创建，支持 `Set`、`Unset`、`Inc`、`AddToSet`、`Pull` 等操作，禁止直接修改审计字段（审计字段由工厂自动维护）。
-- **ProjectionBuilder<T>**：通过 `factory.CreateProjectionBuilder()` 创建，用于字段投影以减少数据传输。
+- **FilterBuilder<T>**：通过 `factory.CreateFilterBuilder()` 创建，支持链式调用：
+  - 基本条件：`Equal`、`NotEqual`、`In`、`Nin`、`Gt`、`Gte`、`Lt`、`Lte`
+  - 字符串匹配：`Contains`（大小写不敏感正则）、`Regex`、`TextSearch`
+  - 数组操作：`AnyEq`、`Contains`（数组包含元素）
+  - 存在性检查：`Exists`
+  - 逻辑组合：`And`、`Or`、`Not`
+  - 软删除过滤：`IsDeleted(false)`（默认已包含，无需手动添加）
+  - 日期范围：`DateRange`、`CreatedBetween`、`UpdatedBetween`
+  - 用户相关：`CreatedBy`、`UpdatedBy`、`CreatedOrUpdatedBy`
+  - 最后调用 `Build()` 生成 `FilterDefinition<T>`
+  - BSON 字段名映射：构建器自动识别 `[BsonElement]` 特性，优先使用特性指定的字段名
+- **SortBuilder<T>**：通过 `factory.CreateSortBuilder()` 创建：
+  - `Ascending(field)`：升序
+  - `Descending(field)`：降序
+  - 默认降序按 `Id` 排序
+  - 支持多字段排序（链式调用）
+- **UpdateBuilder<T>**：通过 `factory.CreateUpdateBuilder()` 创建：
+  - `Set(field, value)`：设置值
+  - `Unset(field)`：删除字段
+  - `Inc(field, value)`：增加数值
+  - `Mul(field, value)`：乘以数值
+  - `Push(field, value)`：数组追加
+  - `Pull(field, value)`：数组移除
+  - `AddToSet(field, value)`：数组去重追加
+  - 禁止直接修改审计字段（审计字段由工厂自动维护）
+  - `Build()` 在无任何更新项时抛出 `InvalidOperationException`
+- **ProjectionBuilder<T>**：通过 `factory.CreateProjectionBuilder()` 创建：
+  - `Include(field)`：包含字段（只返回指定字段）
+  - `Exclude(field)`：排除字段（返回除指定字段外的所有字段）
+  - `IncludeCommonFields()`：包含常用字段（Id、CreatedAt、UpdatedAt）
+  - `ExcludeAuditFields()`：排除审计字段
 - 所有查询条件、排序、更新必须使用构建器，禁止手写 `BsonDocument` 或直接使用 MongoDB Driver 的构建器。更新必须是原子操作，避免"先查后改"竞态。
 
 ## 中间件与响应

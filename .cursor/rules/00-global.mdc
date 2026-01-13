@@ -14,12 +14,25 @@ alwaysApply: true
 
 ## 数据访问规范
 
-- **查询构建器**：使用 `FilterBuilder<T>`、`SortBuilder<T>`、`UpdateBuilder<T>`、`ProjectionBuilder<T>` 构建查询条件，避免手写 BsonDocument。
-- **实体设计**：业务实体应实现 `IEntity`、`ISoftDeletable`、`ITimestamped`，多租户实体继承 `MultiTenantEntity` 或实现 `IMultiTenant`。集合名称优先使用 `[BsonCollectionName("xxx")]` 特性指定。
+- **查询构建器**：使用 `FilterBuilder<T>`、`SortBuilder<T>`、`UpdateBuilder<T>`、`ProjectionBuilder<T>` 构建查询条件，避免手写 BsonDocument。构建器通过 `factory.CreateFilterBuilder()` 等方法创建。
+- **实体设计**：
+  - 业务实体应实现 `IEntity`、`ISoftDeletable`、`ITimestamped`
+  - 多租户实体继承 `MultiTenantEntity`（推荐）或实现 `IMultiTenant`
+  - 非多租户实体继承 `BaseEntity`
+  - 集合名称优先使用 `[BsonCollectionName("xxx")]` 特性指定
+  - 实体字段名映射：优先使用 `[BsonElement("fieldName")]` 特性指定 BSON 字段名，构建器会自动识别
 
 ## 中间件与管道
 
 - **中间件顺序**：`UseExceptionHandler` → `UseCors` → `UseAuthentication` → `UseAuthorization` → `UseMiddleware<ActivityLogMiddleware>` → `UseMiddleware<ResponseFormattingMiddleware>` → `MapControllers`。健康检查、OpenAPI、SSE 端点可跳过格式化。
+- **SSE 端点处理**：SSE（Server-Sent Events）端点返回 `text/event-stream`，需跳过 `ResponseFormattingMiddleware` 格式化，直接写入原始 SSE 数据流。
+
+## 分页规范
+
+- **统一分页参数**：所有分页 API 统一使用 `page`（页码，从 1 开始）和 `pageSize`（每页数量）作为查询参数
+- **参数验证**：`page` 范围 1-10000，`pageSize` 范围 1-100，超出范围抛出 `ArgumentException`
+- **分页查询**：调用 `FindPagedAsync` 时直接传递 `page` 参数，不要计算 `skip`
+- **分页响应**：统一返回 `{ data: T[], total: number, page: number, pageSize: number }` 格式
 
 ## 禁用模式
 
@@ -29,6 +42,7 @@ alwaysApply: true
 - 缺失权限检查（必须使用 `[RequireMenu]`）
 - 暴露底层异常（统一错误码与错误消息）
 - 手写 BsonDocument（必须使用构建器）
+- 手动设置审计字段（由工厂自动维护）
 
 ## Git 提交规范
 
@@ -38,6 +52,14 @@ alwaysApply: true
 ## 代码质量与安全规范
 
 - **漏洞检查**：修改代码后必须重新检查系统漏洞并修复。包括但不限于：安全漏洞（SQL注入、XSS、CSRF、权限绕过等）、性能问题、数据泄露风险、输入验证缺陷等。
+- **错误处理**：禁止暴露底层异常信息（如堆栈、数据库错误）；记录详细错误日志供运维排查；返回给前端的错误消息要可读、可本地化。
+
+## 实时通信规范
+
+- **SSE 实现**：使用 Server-Sent Events（SSE）实现实时消息推送，替代 SignalR
+- **连接管理**：使用 `IChatSseConnectionManager` 管理用户连接，支持多连接注册、自动清理断开连接
+- **消息广播**：使用 `IChatBroadcaster` 接口进行消息广播，支持多种事件类型
+- **心跳保活**：SSE 连接需要定期发送心跳（keepalive 事件），默认间隔 30 秒
 
 ## 参考文档
 
@@ -46,5 +68,7 @@ alwaysApply: true
 - `docs/features/API-RESPONSE-RULES.md`：统一 API 响应与控制器规范
 - `docs/features/MENU-LEVEL-PERMISSION-GUIDE.md`：菜单级权限与角色模型规范
 - `docs/features/FRONTEND-RULES.md`：前端开发规范
+- `docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md`：数据访问工厂使用指南
+- `docs/features/SSE-REALTIME-COMMUNICATION.md`：SSE 实时通信规范
 - `README.md`：项目总体说明
 - `.cursor/rules/rule.mdc`：规则索引与快速入口

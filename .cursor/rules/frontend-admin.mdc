@@ -661,6 +661,15 @@ appliesTo:
 ## 状态管理与类型
 - 优先使用 hooks（`useRequest`、`useModel` 等），避免不必要的全局状态。
 - 使用 `useState` 定义对象时需完整声明所有字段类型；可选字段写成 `T | undefined`，禁止省略字段导致后续访问类型错误。
+- **常用 Hooks**：
+  - `useMessage()`：消息提示 Hook，替代静态 `message.success()` 等方法
+  - `useModal()`：Modal 操作 Hook，替代静态 `Modal.confirm()` 等方法
+  - `useSseConnection()`：SSE 实时连接 Hook，用于建立和管理 SSE 连接
+  - `useCrudData()`：通用 CRUD 数据管理 Hook，封装常见的数据获取、增删改查操作
+  - `useDeleteConfirm()`：删除确认 Hook，封装删除确认对话框的状态管理和逻辑
+  - `useBulkAction()`：批量操作 Hook，封装批量操作的状态管理和逻辑
+  - `useModalState()`：Modal 状态管理 Hook，统一管理 Modal 的 reason 输入、loading 状态和操作处理
+  - `useAuthState()`：认证状态管理 Hook，简化权限检查和用户信息管理
 
 ## 项目迁移历史与最佳实践
 - **Ant Design 废弃方法迁移**（已完成）：

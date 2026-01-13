@@ -1,4 +1,9 @@
 #nullable enable
+// 文件说明：
+// 本测试验证 AppHost 的资源注册、依赖关系与关键环境变量注入，包括：
+// 1) 资源清单完整性（mongo/mongodb/datainitializer/apiservice/apigateway/admin/app/openai/chat）；
+// 2) 资源间引用关系（ApiService/Mongodb/DataInitializer/Chat/OpenAI/前端依赖网关）；
+// 3) 环境变量注入与来源（Jwt 密钥、OpenAI 端点、前端开发环境变量等）。
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -66,6 +71,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task AppHost_Should_Register_All_Core_Resources()
         {
+            // 场景：确保核心资源均已在编排中注册
             var builder = await CreateBuilderAsync();
 
             var resourceNames = builder.Resources
@@ -86,6 +92,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task ApiService_Should_Reference_Its_Critical_Dependencies()
         {
+            // 场景：ApiService 应依赖 mongodb、datainitializer 以及 chat（消息/SSE）
             var builder = await CreateBuilderAsync();
 
             var referencedResources = GetResourceRelationships(builder, "apiservice")
@@ -100,6 +107,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task DataInitializer_Should_Wait_For_Mongodb_Before_Running()
         {
+            // 场景：数据初始化服务在运行前应等待 mongodb 就绪
             var builder = await CreateBuilderAsync();
 
             var relationships = GetResourceRelationships(builder, "datainitializer");
@@ -110,6 +118,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task Frontend_Applications_Should_Depends_On_ApiGateway()
         {
+            // 场景：前端 Admin 与 App 项目均应依赖 API 网关以统一后端入口
             var builder = await CreateBuilderAsync();
 
             var adminRelationships = GetResourceRelationships(builder, "admin");
@@ -122,6 +131,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task OpenAi_Service_Should_Reference_Chat_Model()
         {
+            // 场景：Chat 组件应引用 OpenAI 服务作为大模型提供方
             var builder = await CreateBuilderAsync();
 
             var relationships = GetResourceRelationships(builder, "chat");
@@ -132,6 +142,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task ApiService_Should_Inject_Key_Env_Variables()
         {
+            // 场景：ApiService 应注入关键日志与 JWT 环境变量
             var builder = await CreateBuilderAsync();
 
             var env = await GetEnvVarsAsync<ProjectResource>(builder, "apiservice");
@@ -144,6 +155,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task Frontend_Apps_Should_Receive_Dev_Env_Vars()
         {
+            // 场景：前端项目在开发模式需注入 NPM/Node/BROWSER 等环境变量，并接收网关端口
             var builder = await CreateBuilderAsync();
 
             var adminEnv = await GetEnvVarsAsync<ProjectResource>(builder, "admin");
@@ -165,6 +177,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task AppHost_Should_Respect_Jwt_Secret_From_Environment()
         {
+            // 场景：Jwt 密钥应可通过环境变量覆盖配置文件，编排读取应反映覆盖值
             var originalJwt = Environment.GetEnvironmentVariable(JwtSecretKeyEnv);
             var originalOpenAi = Environment.GetEnvironmentVariable(OpenAiEndpointEnv);
 
@@ -190,6 +203,7 @@ namespace Platform.AppHost.Tests
         [Fact]
         public async Task AppHost_Should_Respect_OpenAi_Endpoint_From_Environment()
         {
+            // 场景：OpenAI 端点同样可通过环境变量覆盖，编排读取应正确
             var originalJwt = Environment.GetEnvironmentVariable(JwtSecretKeyEnv);
             var originalOpenAi = Environment.GetEnvironmentVariable(OpenAiEndpointEnv);
 

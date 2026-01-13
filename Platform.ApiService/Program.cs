@@ -2,6 +2,7 @@
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -210,6 +211,9 @@ builder.Services.AddScoped<IApproverResolver, UserApproverResolver>();
 builder.Services.AddScoped<IApproverResolver, RoleApproverResolver>();
 builder.Services.AddScoped<IApproverResolverFactory, ApproverResolverFactory>();
 
+// 注册流程图形校验服务
+builder.Services.AddScoped<IWorkflowGraphValidator, WorkflowGraphValidator>();
+
 // 注册字段验证服务
 builder.Services.AddScoped<Platform.ApiService.Services.IFieldValidationService, Platform.ApiService.Services.FieldValidationService>();
 
@@ -222,10 +226,22 @@ builder.Services.AddScoped<Platform.ApiService.Services.IChatBroadcaster, Platfo
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
 if (string.IsNullOrWhiteSpace(jwtSecretKey))
 {
-    throw new InvalidOperationException(
-        "JWT SecretKey must be configured. Set it via User Secrets (dotnet user-secrets set 'Jwt:SecretKey' 'your-key'), " +
-        "Environment Variables (Jwt__SecretKey), or Azure Key Vault. " +
-        "Never commit secrets to source control!");
+    if (builder.Environment.IsDevelopment())
+    {
+        // 开发环境：生成一次性密钥，避免本地/测试环境阻塞启动（不用于生产）
+        jwtSecretKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
+        builder.Logging.AddFilter("System", LogLevel.Warning);
+        builder.Logging.AddFilter("Platform.ApiService", LogLevel.Information);
+        Console.WriteLine("[DEV] Jwt:SecretKey 未配置，已生成一次性密钥用于开发/测试环境。切勿在生产环境使用。");
+    }
+    else
+    {
+        throw new InvalidOperationException(
+            "JWT SecretKey must be configured. Set it via User Secrets (dotnet user-secrets set 'Jwt:SecretKey' 'your-key'), " +
+            "Environment Variables (Jwt__SecretKey), or Azure Key Vault. " +
+            "Never commit secrets to source control!");
+    }
 }
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Platform.ApiService";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Platform.Web";

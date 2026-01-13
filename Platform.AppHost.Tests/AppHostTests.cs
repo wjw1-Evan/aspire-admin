@@ -3,7 +3,7 @@
 // 1) 资源清单完整性（mongo/mongodb/datainitializer/apiservice/apigateway/admin/app/openai/chat）；
 // 2) 资源间引用关系（ApiService/Mongodb/DataInitializer/Chat/OpenAI/前端依赖网关）；
 // 3) 环境变量注入与来源（Jwt 密钥、OpenAI 端点、前端开发环境变量等）。
-    /// <summary>
+/// <summary>
 #nullable enable
 // 文件说明：
 // 本测试验证 AppHost 的资源注册、依赖关系与关键环境变量注入，包括：

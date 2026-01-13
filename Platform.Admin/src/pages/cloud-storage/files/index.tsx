@@ -66,6 +66,7 @@ import {
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
+import { marked } from 'marked';
 
 const { useBreakpoint } = Grid;
 const { Dragger } = Upload;
@@ -155,6 +156,7 @@ const CloudStorageFilesPage: React.FC = () => {
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [previewLoading, setPreviewLoading] = useState(false);
     const [officeContent, setOfficeContent] = useState<{ type: 'word' | 'excel' | 'ppt'; content: any } | null>(null);
+    const [markdownContent, setMarkdownContent] = useState<string | null>(null);
     const [versionList, setVersionList] = useState<FileVersion[]>([]);
     const [versionLoading, setVersionLoading] = useState(false);
     const [createFolderVisible, setCreateFolderVisible] = useState(false);
@@ -221,8 +223,21 @@ const CloudStorageFilesPage: React.FC = () => {
     }, [loadStatistics]);
 
     // 数据获取函数
-    const fetchData = useCallback(async (params: any) => {
+    const fetchData = useCallback(async (params: any, sorter: any) => {
         const { current = 1, pageSize = 20 } = params;
+
+        // 处理排序
+        let sortBy = 'updatedAt';
+        let sortOrder: 'asc' | 'desc' = 'desc';
+
+        if (sorter && Object.keys(sorter).length > 0) {
+            const field = Object.keys(sorter)[0];
+            const order = sorter[field];
+            if (order) {
+                sortBy = field;
+                sortOrder = order === 'ascend' ? 'asc' : 'desc';
+            }
+        }
 
         // 合并搜索参数，使用 ref 确保获取最新的搜索参数
         const mergedParams = { ...searchParamsRef.current, ...params };
@@ -242,6 +257,8 @@ const CloudStorageFilesPage: React.FC = () => {
                     maxSize: mergedParams.maxSize,
                     page: current,
                     pageSize,
+                    sortBy,
+                    sortOrder,
                 };
                 response = await searchFiles(searchRequest);
             } else {
@@ -252,8 +269,8 @@ const CloudStorageFilesPage: React.FC = () => {
                     parentId: parentId,
                     page: current,
                     pageSize,
-                    sortBy: 'updatedAt',
-                    sortOrder: 'desc',
+                    sortBy,
+                    sortOrder,
                 };
                 response = await getFileList(listRequest);
             }
@@ -475,6 +492,15 @@ const CloudStorageFilesPage: React.FC = () => {
                                 setOfficeContent({ type: 'word', content: result.value });
                             } catch (err) {
                                 console.error('Failed to parse Word file', err);
+                            }
+                        }
+                        // Markdown 文件
+                        else if (mimeType.includes('markdown') || fileName.endsWith('.md')) {
+                            try {
+                                const text = await blob.text();
+                                setMarkdownContent(text);
+                            } catch (err) {
+                                console.error('Failed to parse Markdown file', err);
                             }
                         }
                     } catch (e) {
@@ -780,6 +806,7 @@ const CloudStorageFilesPage: React.FC = () => {
             title: '名称',
             dataIndex: 'name',
             key: 'name',
+            sorter: true,
             render: (text: string, record: FileItem) => (
                 <Space>
                     {getFileIcon(record)}
@@ -802,6 +829,7 @@ const CloudStorageFilesPage: React.FC = () => {
             title: '大小',
             dataIndex: 'size',
             key: 'size',
+            sorter: true,
             render: (size: number, record: FileItem) =>
                 record.isFolder ? '-' : formatFileSize(size),
         },
@@ -809,6 +837,7 @@ const CloudStorageFilesPage: React.FC = () => {
             title: '修改时间',
             dataIndex: 'updatedAt',
             key: 'updatedAt',
+            sorter: true,
             render: (time: string) => formatDateTime(time),
         },
         {
@@ -980,20 +1009,19 @@ const CloudStorageFilesPage: React.FC = () => {
 
             {/* 面包屑导航 */}
             <Card style={{ marginBottom: 16 }}>
-                <Breadcrumb>
-                    {pathHistory.map((item, index) => (
-                        <Breadcrumb.Item key={index}>
-                            {index === 0 ? (
-                                <Space>
-                                    <HomeOutlined />
-                                    <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a>
-                                </Space>
-                            ) : (
+                <Breadcrumb
+                    items={pathHistory.map((item, index) => ({
+                        key: index,
+                        title: index === 0 ? (
+                            <Space>
+                                <HomeOutlined />
                                 <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a>
-                            )}
-                        </Breadcrumb.Item>
-                    ))}
-                </Breadcrumb>
+                            </Space>
+                        ) : (
+                            <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a>
+                        )
+                    }))}
+                />
             </Card>
 
             {/* 搜索表单 */}
@@ -1072,7 +1100,7 @@ const CloudStorageFilesPage: React.FC = () => {
                 placement="right"
                 onClose={() => setDetailVisible(false)}
                 open={detailVisible}
-                width={isMobile ? '100%' : 600}
+                styles={{ wrapper: { width: isMobile ? '100%' : 600 } }}
             >
                 <Spin spinning={!viewingFile}>
                     {viewingFile ? (
@@ -1488,6 +1516,8 @@ const CloudStorageFilesPage: React.FC = () => {
                 onCancel={() => {
                     // 只关闭窗口，不清空 previewUrl，这样可以再次打开预览
                     setPreviewVisible(false);
+                    setOfficeContent(null);
+                    setMarkdownContent(null);
                 }}
                 footer={[
                     <Button key="download" icon={<DownloadOutlined />} onClick={() => viewingFile && handleDownload(viewingFile)}>
@@ -1499,8 +1529,8 @@ const CloudStorageFilesPage: React.FC = () => {
                 ]}
                 width={1000}
                 centered
-                destroyOnClose
-                bodyStyle={{ padding: 0, backgroundColor: '#f5f5f5', height: '70vh', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}
+                destroyOnHidden
+                styles={{ body: { padding: 0, backgroundColor: '#f5f5f5', height: '70vh', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' } }}
             >
                 {previewUrl ? (
                     (() => {
@@ -1573,6 +1603,54 @@ const CloudStorageFilesPage: React.FC = () => {
                                     </div>
                                 );
                             }
+                        }
+
+                        if (markdownContent !== null) {
+                            return (
+                                <div style={{ width: '100%', height: '100%', overflow: 'auto', backgroundColor: '#fff', padding: '20px' }}>
+                                    <style>{`
+                                        .markdown-preview {
+                                            line-height: 1.6;
+                                            color: #333;
+                                        }
+                                        .markdown-preview h1, .markdown-preview h2, .markdown-preview h3 {
+                                            border-bottom: 1px solid #eee;
+                                            padding-bottom: 0.3em;
+                                            margin-top: 1.5em;
+                                        }
+                                        .markdown-preview code {
+                                            background-color: #f6f8fa;
+                                            padding: 0.2em 0.4em;
+                                            border-radius: 3px;
+                                            font-family: monospace;
+                                        }
+                                        .markdown-preview pre {
+                                            background-color: #f6f8fa;
+                                            padding: 16px;
+                                            border-radius: 6px;
+                                            overflow: auto;
+                                        }
+                                        .markdown-preview blockquote {
+                                            border-left: 4px solid #dfe2e5;
+                                            color: #6a737d;
+                                            padding-left: 1em;
+                                            margin-left: 0;
+                                        }
+                                        .markdown-preview img {
+                                            max-width: 100%;
+                                        }
+                                    `}</style>
+                                    <div
+                                        className="markdown-preview"
+                                        style={{
+                                            maxWidth: 900,
+                                            margin: '0 auto',
+                                            padding: '20px 40px',
+                                        }}
+                                        dangerouslySetInnerHTML={{ __html: marked.parse(markdownContent) }}
+                                    />
+                                </div>
+                            );
                         }
 
                         if (isOfficeFile) {
@@ -1651,15 +1729,15 @@ const CloudStorageFilesPage: React.FC = () => {
 
             {/* 图片预览组件（独立于 Modal） */}
             <Image
-                src={previewUrl}
+                src={previewUrl || undefined}
                 alt={viewingFile?.name || 'preview'}
                 style={{ display: 'none' }}
                 preview={{
-                    visible: imagePreviewVisible,
-                    onVisibleChange: (visible) => {
+                    open: imagePreviewVisible,
+                    onOpenChange: (visible) => {
                         setImagePreviewVisible(visible);
                     },
-                    toolbarRender: (
+                    actionsRender: (
                         _,
                         {
                             transform: { scale },

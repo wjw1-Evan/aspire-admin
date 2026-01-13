@@ -56,7 +56,7 @@ public class StorageQuotaService : IStorageQuotaService
         var fileFilter = fileFilterBuilder
             .Equal(f => f.CreatedBy, targetUserId)
             .Equal(f => f.Type, FileItemType.File)
-            .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
+            .Equal(f => f.Status, FileStatus.Active)
             .Build();
 
         var allFiles = await _fileItemFactory.FindAsync(fileFilter);
@@ -175,14 +175,27 @@ public class StorageQuotaService : IStorageQuotaService
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
-        if (requiredSize < 0)
+        if (requiredSize <= 0)
             return true;
 
         var quota = await FindUserQuotaAsync(userId)
             ?? throw new InvalidOperationException("用户尚未分配存储配额，无法检查可用空间");
-        var availableSpace = quota.TotalQuota - quota.UsedSpace;
 
-        return availableSpace >= requiredSize;
+        // 如果配额未启用
+        if (!quota.IsEnabled)
+            return false;
+
+        // 1. 初步检查：基于当前数据库记录
+        if (quota.TotalQuota - quota.UsedSpace >= requiredSize)
+            return true;
+
+        // 2. 如果初步检查失败，极有可能是统计漂移（如回收站未同步）。
+        // 强制执行一次实时重新计算，以确保给用户最后一次正确的判定机会。
+        _logger.LogInformation("Stored quota for user {UserId} shows insufficient space. Forcing real-time recalculation...", userId);
+        quota = await RecalculateUserStorageAsync(userId);
+
+        // 3. 最终判定：基于重新计算后的最准确数据
+        return (quota.TotalQuota - quota.UsedSpace) >= requiredSize;
     }
 
     /// <summary>
@@ -203,7 +216,7 @@ public class StorageQuotaService : IStorageQuotaService
         // 获取企业所有文件统计
         var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
         var fileFilter = fileFilterBuilder
-            .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
+            .Equal(f => f.Status, FileStatus.Active)
             .Build();
 
         var files = await _fileItemFactory.FindAsync(fileFilter);
@@ -250,7 +263,7 @@ public class StorageQuotaService : IStorageQuotaService
         var fileFilter = fileFilterBuilder
             .Equal(f => f.CreatedBy, userId)
             .Equal(f => f.Type, FileItemType.File)
-            .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
+            .Equal(f => f.Status, FileStatus.Active)
             .Build();
 
         // 渲染参数
@@ -356,23 +369,35 @@ public class StorageQuotaService : IStorageQuotaService
             throw new ArgumentException("返回数量必须大于0", nameof(topCount));
 
         var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Build(); // 多租户过滤会自动应用
+        var filter = filterBuilder.Build(); 
 
         var quotas = await _quotaFactory.FindAsync(filter);
+        
+        // 获取排名前 topCount 的用户 ID
+        var topQuotas = quotas.OrderByDescending(q => q.UsedSpace).Take(topCount).ToList();
+        var userIds = topQuotas.Select(q => q.UserId).ToList();
 
-        var rankings = quotas
-            .OrderByDescending(q => q.UsedSpace)
-            .Take(topCount)
-            .Select((q, index) => new UserStorageRanking
+        // 查询用户信息
+        var userFilterBuilder = _userFactory.CreateFilterBuilder();
+        var userFilter = userFilterBuilder.In(u => u.Id, userIds).Build();
+        var users = await _userFactory.FindAsync(userFilter);
+        var userDict = users.ToDictionary(u => u.Id ?? string.Empty, u => u);
+
+        var rankings = topQuotas
+            .Select((q, index) => 
             {
-                Rank = index + 1,
-                UserId = q.UserId,
-                Username = q.UserId, // TODO: 从用户服务获取用户名
-                DisplayName = q.UserId, // TODO: 从用户服务获取显示名称
-                UsedSpace = q.UsedSpace,
-                TotalQuota = q.TotalQuota,
-                FileCount = q.FileCount,
-                LastActivityAt = q.LastCalculatedAt
+                userDict.TryGetValue(q.UserId, out var user);
+                return new UserStorageRanking
+                {
+                    Rank = index + 1,
+                    UserId = q.UserId,
+                    Username = user?.Username ?? q.UserId,
+                    DisplayName = user?.Name ?? user?.Username ?? q.UserId,
+                    UsedSpace = q.UsedSpace,
+                    TotalQuota = q.TotalQuota,
+                    FileCount = q.FileCount,
+                    LastActivityAt = q.LastCalculatedAt
+                };
             })
             .ToList();
 
@@ -387,10 +412,20 @@ public class StorageQuotaService : IStorageQuotaService
         if (warningThreshold < 0 || warningThreshold > 1)
             throw new ArgumentException("警告阈值必须在0-1之间", nameof(warningThreshold));
 
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Build(); // 多租户过滤会自动应用
+        // 1. 获取配额记录
+        var quotaFilterBuilder = _quotaFactory.CreateFilterBuilder();
+        var quotaFilter = quotaFilterBuilder.Build(); 
+        var quotas = await _quotaFactory.FindAsync(quotaFilter);
 
-        var quotas = await _quotaFactory.FindAsync(filter);
+        if (!quotas.Any())
+            return [];
+
+        // 2. 获取涉及到的用户信息
+        var userIds = quotas.Select(q => q.UserId).Distinct().ToList();
+        var userFilterBuilder = _userFactory.CreateFilterBuilder();
+        var userFilter = userFilterBuilder.In(u => u.Id, userIds).Build();
+        var users = await _userFactory.FindAsync(userFilter);
+        var userDict = users.ToDictionary(u => u.Id ?? string.Empty, u => u);
 
         var warnings = new List<StorageQuotaWarning>();
 
@@ -398,44 +433,28 @@ public class StorageQuotaService : IStorageQuotaService
         {
             if (quota.TotalQuota <= 0) continue;
 
+            // 确定该用户的有效警告阈值
+            var effectiveThreshold = Math.Min(warningThreshold, quota.WarningThreshold / 100.0);
             var usagePercentage = (double)quota.UsedSpace / quota.TotalQuota;
 
-            if (usagePercentage >= warningThreshold)
+            // 判定逻辑：使用率必须大于 0 且达到有效阈值
+            if (usagePercentage > 0 && usagePercentage >= effectiveThreshold)
             {
+                userDict.TryGetValue(quota.UserId, out var user);
+                
                 var warning = new StorageQuotaWarning
                 {
+                    Id = quota.UserId,
                     UserId = quota.UserId,
-                    Username = quota.UserId, // TODO: 从用户服务获取用户名
-                    DisplayName = quota.UserId, // TODO: 从用户服务获取显示名称
-                    UsedSpace = quota.UsedSpace,
-                    TotalQuota = quota.TotalQuota
+                    Username = user?.Username ?? quota.UserId,
+                    UserDisplayName = user?.Name ?? user?.Username ?? quota.UserId,
+                    UsedQuota = quota.UsedSpace,
+                    TotalQuota = quota.TotalQuota,
+                    UsagePercentage = Math.Round(usagePercentage * 100, 2),
+                    WarningType = usagePercentage >= 1.0 ? "exceeded" : "approaching",
+                    CreatedAt = quota.UpdatedAt,
+                    Message = usagePercentage >= 1.0 ? "存储空间已满" : $"存储空间使用率已达到 {usagePercentage:P1}"
                 };
-
-                // 确定警告级别和消息
-                if (usagePercentage >= 1.0)
-                {
-                    warning.Level = WarningLevel.Emergency;
-                    warning.Message = "存储空间已满，无法上传新文件";
-                    warning.Suggestion = "请立即清理文件或联系管理员增加配额";
-                }
-                else if (usagePercentage >= 0.95)
-                {
-                    warning.Level = WarningLevel.Critical;
-                    warning.Message = "存储空间严重不足，仅剩余5%";
-                    warning.Suggestion = "请尽快清理不需要的文件";
-                }
-                else if (usagePercentage >= 0.9)
-                {
-                    warning.Level = WarningLevel.Warning;
-                    warning.Message = "存储空间不足，仅剩余10%";
-                    warning.Suggestion = "建议清理一些文件以释放空间";
-                }
-                else
-                {
-                    warning.Level = WarningLevel.Info;
-                    warning.Message = $"存储空间使用率已达到{usagePercentage:P0}";
-                    warning.Suggestion = "建议定期清理不需要的文件";
-                }
 
                 warnings.Add(warning);
             }
@@ -578,7 +597,7 @@ public class StorageQuotaService : IStorageQuotaService
             var fileFilter = fileFilterBuilder
                 .In(f => f.CreatedBy, userIds)
                 .Equal(f => f.Type, FileItemType.File)
-                .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
+                .Equal(f => f.Status, FileStatus.Active)
                 .Build();
 
             var allFiles = await _fileItemFactory.FindAsync(fileFilter);
@@ -796,7 +815,7 @@ public class StorageQuotaService : IStorageQuotaService
             var fileFilter = fileFilterBuilder
                 .In(f => f.CreatedBy, userIds)
                 .Equal(f => f.Type, FileItemType.File)
-                .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
+                .Equal(f => f.Status, FileStatus.Active)
                 .Build();
 
             var allFiles = await _fileItemFactory.FindAsync(fileFilter);

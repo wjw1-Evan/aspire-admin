@@ -200,6 +200,9 @@ public class UserStorageRanking
 /// </summary>
 public class StorageQuotaWarning
 {
+    /// <summary>唯一标识</summary>
+    public string Id { get; set; } = string.Empty;
+
     /// <summary>用户ID</summary>
     public string UserId { get; set; } = string.Empty;
 
@@ -207,25 +210,25 @@ public class StorageQuotaWarning
     public string Username { get; set; } = string.Empty;
 
     /// <summary>用户昵称</summary>
-    public string DisplayName { get; set; } = string.Empty;
+    public string UserDisplayName { get; set; } = string.Empty;
 
     /// <summary>已使用空间（字节）</summary>
-    public long UsedSpace { get; set; } = 0;
+    public long UsedQuota { get; set; } = 0;
 
     /// <summary>总配额（字节）</summary>
     public long TotalQuota { get; set; } = 0;
 
     /// <summary>使用率（百分比）</summary>
-    public double UsagePercentage => TotalQuota > 0 ? (double)UsedSpace / TotalQuota * 100 : 0;
+    public double UsagePercentage { get; set; } = 0;
 
-    /// <summary>警告级别</summary>
-    public WarningLevel Level { get; set; } = WarningLevel.Warning;
+    /// <summary>警告类型（approaching: 接近, exceeded: 超出）</summary>
+    public string WarningType { get; set; } = "approaching";
 
-    /// <summary>警告消息</summary>
-    public string Message { get; set; } = string.Empty;
+    /// <summary>创建时间</summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    /// <summary>建议操作</summary>
-    public string Suggestion { get; set; } = string.Empty;
+    /// <summary>配额项状态信息（扩展）</summary>
+    public string? Message { get; set; }
 }
 
 /// <summary>

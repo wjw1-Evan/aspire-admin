@@ -373,7 +373,11 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var warnings = await _storageQuotaService.GetQuotaWarningsAsync(warningThreshold, companyId);
-            return Success(warnings);
+            return Success(new
+            {
+                data = warnings,
+                total = warnings.Count
+            });
         }
         catch (Exception ex)
         {

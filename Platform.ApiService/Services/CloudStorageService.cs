@@ -20,10 +20,10 @@ public class CloudStorageService : ICloudStorageService
 {
     private readonly IDatabaseOperationFactory<FileItem> _fileItemFactory;
     private readonly IDatabaseOperationFactory<FileVersion> _fileVersionFactory;
-    private readonly IDatabaseOperationFactory<StorageQuota> _storageQuotaFactory;
     private readonly IGridFSService _gridFSService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CloudStorageService> _logger;
+    private readonly IStorageQuotaService _storageQuotaService;
     private readonly GridFSBucket _filesBucket;
     private readonly GridFSBucket _thumbnailsBucket;
 
@@ -33,14 +33,14 @@ public class CloudStorageService : ICloudStorageService
     public CloudStorageService(
         IDatabaseOperationFactory<FileItem> fileItemFactory,
         IDatabaseOperationFactory<FileVersion> fileVersionFactory,
-        IDatabaseOperationFactory<StorageQuota> storageQuotaFactory,
+        IStorageQuotaService storageQuotaService,
         IGridFSService gridFSService,
         ITenantContext tenantContext,
         ILogger<CloudStorageService> logger)
     {
         _fileItemFactory = fileItemFactory ?? throw new ArgumentNullException(nameof(fileItemFactory));
         _fileVersionFactory = fileVersionFactory ?? throw new ArgumentNullException(nameof(fileVersionFactory));
-        _storageQuotaFactory = storageQuotaFactory ?? throw new ArgumentNullException(nameof(storageQuotaFactory));
+        _storageQuotaService = storageQuotaService ?? throw new ArgumentNullException(nameof(storageQuotaService));
         _gridFSService = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -1195,66 +1195,35 @@ public class CloudStorageService : ICloudStorageService
         if (string.IsNullOrEmpty(targetUserId))
             throw new InvalidOperationException("用户ID不能为空");
 
-        var quota = await GetOrCreateStorageQuotaAsync(targetUserId);
-
-        // 使用聚合查询统计文件数量、文件夹数量和总空间
-        var stats = await _fileItemFactory.AggregateAsync(PipelineDefinition<FileItem, BsonDocument>.Create(new[] {
-             new BsonDocument("$group", new BsonDocument {
-                 { "_id", "$type" },
-                 { "count", new BsonDocument("$sum", 1) },
-                 { "totalSize", new BsonDocument("$sum", "$size") }
-             })
-        }));
-
-        long usedSpace = 0;
-        long fileCount = 0;
-        long folderCount = 0;
-        var typeUsage = new Dictionary<string, long>();
-
-        foreach (var group in stats)
+        StorageQuota quota;
+        try
         {
-            var type = (FileItemType)group["_id"].AsInt32;
-            var count = group["count"].AsInt32;
-            var totalSize = group["totalSize"].AsInt64;
-
-            if (type == FileItemType.File)
-            {
-                fileCount = count;
-                usedSpace = totalSize;
-            }
-            else if (type == FileItemType.Folder)
-            {
-                folderCount = count;
-            }
+            quota = await _storageQuotaService.GetUserQuotaAsync(targetUserId);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("用户尚未分配存储配额"))
+        {
+            await InitializeDefaultQuotaAsync(targetUserId);
+            quota = await _storageQuotaService.GetUserQuotaAsync(targetUserId);
         }
 
-        // 按类型统计
-        var typeStats = await _fileItemFactory.AggregateAsync(PipelineDefinition<FileItem, BsonDocument>.Create(new[] {
-             new BsonDocument("$match", new BsonDocument("type", (int)FileItemType.File)),
-             new BsonDocument("$group", new BsonDocument {
-                 { "_id", "$mimeType" },
-                 { "totalSize", new BsonDocument("$sum", "$size") }
-             })
-        }));
-
-        foreach (var group in typeStats)
-        {
-            var mimeType = group["_id"].AsString;
-            var totalSize = group["totalSize"].AsInt64;
-            
-            var category = GetFileTypeCategory(mimeType);
-            if (typeUsage.ContainsKey(category)) typeUsage[category] += totalSize;
-            else typeUsage[category] = totalSize;
-        }
+        // 获取文件夹数量
+        var folderFilterBuilder = _fileItemFactory.CreateFilterBuilder();
+        var folderFilter = folderFilterBuilder
+            .Equal(f => f.CreatedBy, targetUserId)
+            .Equal(f => f.Type, FileItemType.Folder)
+            .Equal(f => f.Status, FileStatus.Active)
+            .Build();
+        
+        var folderCount = await _fileItemFactory.CountAsync(folderFilter);
 
         return new StorageUsageInfo
         {
             UserId = targetUserId,
             TotalQuota = quota.TotalQuota,
-            UsedSpace = usedSpace,
-            FileCount = fileCount,
-            FolderCount = folderCount,
-            TypeUsage = typeUsage,
+            UsedSpace = quota.UsedSpace,
+            FileCount = quota.FileCount,
+            FolderCount = (int)folderCount,
+            TypeUsage = quota.TypeUsage ?? [],
             LastUpdatedAt = quota.LastCalculatedAt
         };
     }
@@ -1716,10 +1685,25 @@ public class CloudStorageService : ICloudStorageService
         if (string.IsNullOrEmpty(currentUserId))
             throw new InvalidOperationException("用户未登录");
 
-        var quota = await GetOrCreateStorageQuotaAsync(currentUserId);
-        if (quota.UsedSpace + fileSize > quota.TotalQuota)
+        try
         {
-            throw new InvalidOperationException($"存储空间不足，需要 {fileSize} 字节，可用 {quota.TotalQuota - quota.UsedSpace} 字节");
+            var isAvailable = await _storageQuotaService.CheckStorageAvailabilityAsync(currentUserId, fileSize);
+            if (!isAvailable)
+            {
+                var quota = await _storageQuotaService.GetUserQuotaAsync(currentUserId);
+                throw new InvalidOperationException($"存储空间不足，需要 {fileSize} 字节，可用 {quota.TotalQuota - quota.UsedSpace} 字节");
+            }
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("用户尚未分配存储配额"))
+        {
+            // 如果用户未分配配额，则为该用户初始化默认配额并重新检查
+            await InitializeDefaultQuotaAsync(currentUserId);
+            var isAvailable = await _storageQuotaService.CheckStorageAvailabilityAsync(currentUserId, fileSize);
+            if (!isAvailable)
+            {
+                var quota = await _storageQuotaService.GetUserQuotaAsync(currentUserId);
+                throw new InvalidOperationException($"存储空间不足（初始化默认配额后），需要 {fileSize} 字节，可用 {quota.TotalQuota - quota.UsedSpace} 字节");
+            }
         }
     }
 
@@ -1732,45 +1716,32 @@ public class CloudStorageService : ICloudStorageService
         if (string.IsNullOrEmpty(currentUserId))
             return;
 
-        var filterBuilder = _storageQuotaFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Equal(q => q.UserId, currentUserId).Build();
-
-        var updateBuilder = _storageQuotaFactory.CreateUpdateBuilder();
-        var update = updateBuilder
-            .Inc(q => q.UsedSpace, sizeChange)
-            .Set(q => q.LastCalculatedAt, DateTime.UtcNow)
-            .Build();
-
-        await _storageQuotaFactory.FindOneAndUpdateAsync(filter, update);
+        try
+        {
+            await _storageQuotaService.UpdateStorageUsageAsync(currentUserId, sizeChange);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("用户尚未分配存储配额"))
+        {
+            // 初始化默认配额
+            await InitializeDefaultQuotaAsync(currentUserId);
+            // 再次尝试更新使用量
+            await _storageQuotaService.UpdateStorageUsageAsync(currentUserId, sizeChange);
+        }
     }
 
     /// <summary>
-    /// 获取或创建存储配额
+    /// 初始化默认存储配额
     /// </summary>
-    private async Task<StorageQuota> GetOrCreateStorageQuotaAsync(string userId)
+    private async Task InitializeDefaultQuotaAsync(string userId)
     {
-        var filterBuilder = _storageQuotaFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Equal(q => q.UserId, userId).Build();
-
-        var quotas = await _storageQuotaFactory.FindAsync(filter, limit: 1);
-        var quota = quotas.FirstOrDefault();
-
-        if (quota == null)
-        {
-            quota = new StorageQuota
-            {
-                UserId = userId,
-                TotalQuota = 10L * 1024 * 1024 * 1024, // 默认10GB
-                UsedSpace = 0,
-                FileCount = 0,
-                LastCalculatedAt = DateTime.UtcNow
-            };
-
-            await _storageQuotaFactory.CreateAsync(quota);
-        }
-
-        return quota;
+        // 默认 10GB
+        const long defaultQuotaLimit = 10L * 1024 * 1024 * 1024;
+        await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuotaLimit, 80, true);
+        
+        // 关键：初始化后立即触发一次重计，确保 UsedSpace 与现有文件同步
+        await _storageQuotaService.RecalculateUserStorageAsync(userId);
     }
+
 
     /// <summary>
     /// 检查是否为子文件夹

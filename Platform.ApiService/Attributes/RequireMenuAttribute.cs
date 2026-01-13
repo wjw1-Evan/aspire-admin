@@ -14,18 +14,18 @@ namespace Platform.ApiService.Attributes;
 public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
 {
     /// <summary>
-    /// 所需访问的菜单名称
-    /// 示例：user-management、cloud-storage-files、workflow-list
+    /// 所需访问的菜单名称列表
+    /// 只要用户拥有其中任意一个菜单的权限即可访问
     /// </summary>
-    public string MenuName { get; }
+    public string[] MenuNames { get; }
 
     /// <summary>
     /// 初始化菜单访问权限验证特性
     /// </summary>
-    /// <param name="menuName">菜单名称</param>
-    public RequireMenuAttribute(string menuName)
+    /// <param name="menuNames">一个或多个菜单名称</param>
+    public RequireMenuAttribute(params string[] menuNames)
     {
-        MenuName = menuName;
+        MenuNames = menuNames;
     }
 
     /// <summary>
@@ -67,11 +67,12 @@ public class RequireMenuAttribute : Attribute, IAsyncAuthorizationFilter
         }
 
         // 验证菜单访问权限
-        var hasAccess = await menuAccessService.HasMenuAccessAsync(userId, MenuName);
+        var hasAccess = await menuAccessService.HasAnyMenuAccessAsync(userId, MenuNames);
 
         if (!hasAccess)
         {
-            var response = ApiResponse<object>.ErrorResult("FORBIDDEN", $"无权访问: {MenuName}", traceId);
+            var menuList = string.Join(", ", MenuNames);
+            var response = ApiResponse<object>.ErrorResult("FORBIDDEN", $"无权访问: {menuList}", traceId);
             context.Result = new ObjectResult(response)
             {
                 StatusCode = 403

@@ -71,7 +71,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程定义列表
     /// </summary>
     [HttpGet]
-    [RequireMenu("workflow-list")]
+    [RequireMenu("workflow-list", "workflow-monitor")]
     public async Task<IActionResult> GetWorkflows([FromQuery] WorkflowSearchRequest request)
     {
         try
@@ -211,7 +211,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程定义详情
     /// </summary>
     [HttpGet("{id}")]
-    [RequireMenu("workflow-list")]
+    [RequireMenu("workflow-list", "workflow-monitor", "document-list", "document-approval")]
     public async Task<IActionResult> GetWorkflow(string id)
     {
         try
@@ -384,7 +384,7 @@ public class WorkflowController : BaseApiController
     /// 启动流程实例
     /// </summary>
     [HttpPost("{id}/start")]
-    [RequireMenu("workflow-list")]
+    [RequireMenu("workflow-list", "document-list")]
     public async Task<IActionResult> StartWorkflow(string id, [FromBody] StartWorkflowRequest request)
     {
         try
@@ -523,7 +523,7 @@ public class WorkflowController : BaseApiController
     /// 获取当前用户待办的流程实例
     /// </summary>
     [HttpGet("instances/todo")]
-    [RequireMenu("workflow-list")]
+    [RequireMenu("document-approval")]
     public async Task<IActionResult> GetTodoInstances([FromQuery] int current = 1, [FromQuery] int pageSize = 10)
     {
         try
@@ -597,7 +597,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程实例详情
     /// </summary>
     [HttpGet("instances/{id}")]
-    [RequireMenu("workflow-monitor")]
+    [RequireMenu("workflow-monitor", "document-approval", "document-list")]
     public async Task<IActionResult> GetInstance(string id)
     {
         try
@@ -620,7 +620,7 @@ public class WorkflowController : BaseApiController
     /// 获取审批历史
     /// </summary>
     [HttpGet("instances/{id}/history")]
-    [RequireMenu("workflow-monitor")]
+    [RequireMenu("workflow-monitor", "document-approval", "document-list")]
     public async Task<IActionResult> GetApprovalHistory(string id)
     {
         try
@@ -638,7 +638,7 @@ public class WorkflowController : BaseApiController
     /// 获取流程实例当前节点的表单定义与初始值
     /// </summary>
     [HttpGet("instances/{id}/nodes/{nodeId}/form")]
-    [RequireMenu("workflow-monitor")]
+    [RequireMenu("workflow-monitor", "document-approval", "document-list")]
     public async Task<IActionResult> GetNodeForm(string id, string nodeId)
     {
         try
@@ -725,7 +725,7 @@ public class WorkflowController : BaseApiController
     /// 提交节点表单数据
     /// </summary>
     [HttpPost("instances/{id}/nodes/{nodeId}/form")]
-    [RequireMenu("workflow-list")]
+    [RequireMenu("workflow-list", "document-approval")]
     public async Task<IActionResult> SubmitNodeForm(string id, string nodeId, [FromBody] Dictionary<string, object> values)
     {
         try
@@ -849,7 +849,7 @@ public class WorkflowController : BaseApiController
     /// 对流程实例节点执行审批/退回/转办
     /// </summary>
     [HttpPost("instances/{id}/nodes/{nodeId}/action")]
-    [RequireMenu("workflow-list")]
+    [RequireMenu("workflow-list", "document-approval")]
     public async Task<IActionResult> ExecuteNodeAction(string id, string nodeId, [FromBody] WorkflowActionRequest request)
     {
         try
@@ -919,7 +919,7 @@ public class WorkflowController : BaseApiController
     /// 发起人撤回流程
     /// </summary>
     [HttpPost("instances/{id}/withdraw")]
-    [RequireMenu("workflow-list")]
+    [RequireMenu("workflow-list", "document-list")]
     public async Task<IActionResult> WithdrawInstance(string id, [FromBody] WithdrawWorkflowRequest? request)
     {
         try

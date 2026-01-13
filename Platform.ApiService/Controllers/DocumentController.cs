@@ -70,7 +70,7 @@ public class DocumentController : BaseApiController
     /// 获取公文详情
     /// </summary>
     [HttpGet("{id}")]
-    [RequireMenu("document-list")]
+    [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> GetDocument(string id)
     {
         try
@@ -184,7 +184,7 @@ public class DocumentController : BaseApiController
     /// 提交公文（启动流程）
     /// </summary>
     [HttpPost("{id}/submit")]
-    [RequireMenu("document-list")]
+    [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> SubmitDocument(string id, [FromBody] SubmitDocumentRequest request)
     {
         try
@@ -387,7 +387,7 @@ public class DocumentController : BaseApiController
     /// 上传公文附件
     /// </summary>
     [HttpPost("attachments")]
-    [RequireMenu("document-list")]
+    [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> UploadAttachment([FromForm] IFormFile file)
     {
         try
@@ -405,7 +405,7 @@ public class DocumentController : BaseApiController
     /// 从文档实例中获取文档创建表单（使用实例快照）
     /// </summary>
     [HttpGet("{id}/instance-form")]
-    [RequireMenu("document-list")]
+    [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> GetDocumentInstanceForm(string id)
     {
         try
@@ -495,7 +495,7 @@ public class DocumentController : BaseApiController
     /// 下载公文附件
     /// </summary>
     [HttpGet("attachments/{attachmentId}")]
-    [RequireMenu("document-list")]
+    [RequireMenu("document-list", "document-approval")]
     public async Task<IActionResult> DownloadAttachment(string attachmentId)
     {
         try

@@ -64,6 +64,8 @@ import {
     UndoOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import * as XLSX from 'xlsx';
+import mammoth from 'mammoth';
 
 const { useBreakpoint } = Grid;
 const { Dragger } = Upload;
@@ -152,6 +154,7 @@ const CloudStorageFilesPage: React.FC = () => {
     const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string>('');
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [officeContent, setOfficeContent] = useState<{ type: 'word' | 'excel' | 'ppt'; content: any } | null>(null);
     const [versionList, setVersionList] = useState<FileVersion[]>([]);
     const [versionLoading, setVersionLoading] = useState(false);
     const [createFolderVisible, setCreateFolderVisible] = useState(false);
@@ -449,9 +452,35 @@ const CloudStorageFilesPage: React.FC = () => {
                         // 创建 Blob URL
                         const blobUrl = URL.createObjectURL(blob);
                         setPreviewUrl(blobUrl);
+
+                        // 检测 Office 文件并解析
+                        const mimeType = transformedFile.mimeType?.toLowerCase() || '';
+                        const fileName = transformedFile.name?.toLowerCase() || '';
+
+                        // Excel 文件
+                        if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || fileName.match(/\.xlsx?$/)) {
+                            try {
+                                const arrayBuffer = await blob.arrayBuffer();
+                                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                                setOfficeContent({ type: 'excel', content: workbook });
+                            } catch (err) {
+                                console.error('Failed to parse Excel file', err);
+                            }
+                        }
+                        // Word 文件 (.docx)
+                        else if ((mimeType.includes('word') || mimeType.includes('document')) && fileName.endsWith('.docx')) {
+                            try {
+                                const arrayBuffer = await blob.arrayBuffer();
+                                const result = await mammoth.convertToHtml({ arrayBuffer });
+                                setOfficeContent({ type: 'word', content: result.value });
+                            } catch (err) {
+                                console.error('Failed to parse Word file', err);
+                            }
+                        }
                     } catch (e) {
                         console.error('Failed to create preview URL', e);
                         setPreviewUrl('');
+                        setOfficeContent(null);
                     } finally {
                         setPreviewLoading(false);
                     }
@@ -1492,60 +1521,110 @@ const CloudStorageFilesPage: React.FC = () => {
                             mimeType.includes('excel') ||
                             mimeType.includes('powerpoint') ||
                             mimeType.includes('officedocument') ||
-                            viewingFile?.name?.match(/\.(docx?|xlsx?|pptx?)$/i);
+                            mimeType === 'application/vnd.ms-excel' ||
+                            mimeType === 'application/vnd.ms-powerpoint' ||
+                            mimeType === 'application/msword' ||
+                            viewingFile?.name?.match(/\.(docx?|xlsx?|pptx?|doc|xls|ppt)$/i);
 
-                        if (isOfficeFile) {
-                            // 检查是否在本地环境
-                            const isLocalhost = window.location.hostname === 'localhost' ||
-                                window.location.hostname === '127.0.0.1' ||
-                                window.location.hostname.startsWith('192.168.');
-
-                            if (isLocalhost) {
-                                return (
-                                    <div style={{ textAlign: 'center', padding: '40px' }}>
-                                        <FileTextOutlined style={{ fontSize: 64, color: '#1890ff', marginBottom: 16 }} />
-                                        <h3>Office 文件预览</h3>
-                                        <p style={{ color: '#666', marginBottom: 24 }}>
-                                            检测到 Office 文档（{viewingFile?.name}）
-                                        </p>
-                                        <p style={{ color: '#999', marginBottom: 24 }}>
-                                            💡 在线预览需要公网环境支持<br />
-                                            当前为本地环境，暂不支持在线预览
-                                        </p>
-                                        <Button
-                                            type="primary"
-                                            icon={<DownloadOutlined />}
-                                            onClick={() => viewingFile && handleDownload(viewingFile)}
-                                            size="large"
-                                        >
-                                            下载到本地查看
-                                        </Button>
-                                    </div>
-                                );
-                            } else {
-                                // 生产环境使用 Microsoft Office Online Viewer
-                                const fileUrl = encodeURIComponent(window.location.origin + `/api/cloud-storage/files/${viewingFile?.id}/download`);
-                                const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${fileUrl}`;
+                        if (isOfficeFile && officeContent) {
+                            // Excel 预览
+                            if (officeContent.type === 'excel') {
+                                const workbook = officeContent.content;
+                                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                                const htmlTable = XLSX.utils.sheet_to_html(firstSheet);
 
                                 return (
-                                    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-                                        <iframe
-                                            src={viewerUrl}
-                                            style={{ width: '100%', height: '100%', border: 'none' }}
-                                            title="office-preview"
-                                        />
-                                        <div style={{ position: 'absolute', bottom: 10, right: 10 }}>
-                                            <Button
-                                                type="primary"
-                                                icon={<DownloadOutlined />}
-                                                onClick={() => viewingFile && handleDownload(viewingFile)}
-                                            >
-                                                下载文件
-                                            </Button>
-                                        </div>
+                                    <div style={{ width: '100%', height: '100%', overflow: 'auto', backgroundColor: '#fff', padding: 20 }}>
+                                        <style>{`
+                                            #excel-table table {
+                                                border-collapse: collapse;
+                                                width: 100%;
+                                            }
+                                            #excel-table td, #excel-table th {
+                                                border: 1px solid #d9d9d9;
+                                                padding: 8px;
+                                                text-align: left;
+                                            }
+                                            #excel-table th {
+                                                background-color: #fafafa;
+                                                font-weight: 600;
+                                            }
+                                        `}</style>
+                                        <div id="excel-table" dangerouslySetInnerHTML={{ __html: htmlTable }} />
                                     </div>
                                 );
                             }
+                            // Word 预览
+                            else if (officeContent.type === 'word') {
+                                return (
+                                    <div style={{ width: '100%', height: '100%', overflow: 'auto', backgroundColor: '#f5f5f5', padding: '40px 20px' }}>
+                                        <div
+                                            style={{
+                                                maxWidth: 800,
+                                                margin: '0 auto',
+                                                backgroundColor: '#fff',
+                                                padding: '40px 60px',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                                minHeight: '100%',
+                                                lineHeight: 1.6
+                                            }}
+                                            dangerouslySetInnerHTML={{ __html: officeContent.content }}
+                                        />
+                                    </div>
+                                );
+                            }
+                        }
+
+                        if (isOfficeFile) {
+                            // 判断文件类型显示对应名称
+                            let fileTypeName = 'Office  文档';
+
+                            if (mimeType.includes('word') || viewingFile?.name?.match(/\.docx?$/i)) {
+                                fileTypeName = 'Word 文档';
+                            } else if (mimeType.includes('excel') || viewingFile?.name?.match(/\.xlsx?$/i)) {
+                                fileTypeName = 'Excel 表格';
+                            } else if (mimeType.includes('powerpoint') || viewingFile?.name?.match(/\.pptx?$/i)) {
+                                fileTypeName = 'PowerPoint 演示文稿';
+                            }
+
+                            return (
+                                <div style={{ textAlign: 'center', padding: '60px 40px' }}>
+                                    <div style={{ fontSize: 72, color: '#1890ff', marginBottom: 24 }}>
+                                        <FileTextOutlined />
+                                    </div>
+                                    <h2 style={{ marginBottom: 16 }}>{fileTypeName}</h2>
+                                    <p style={{ color: '#666', fontSize: 16, marginBottom: 8 }}>
+                                        {viewingFile?.name}
+                                    </p>
+                                    <p style={{ color: '#999', marginBottom: 32 }}>
+                                        文件大小：{formatFileSize(viewingFile?.size || 0)}
+                                    </p>
+                                    <div style={{
+                                        backgroundColor: '#f0f5ff',
+                                        padding: '16px 24px',
+                                        borderRadius: 8,
+                                        marginBottom: 32,
+                                        maxWidth: 500,
+                                        margin: '0 auto 32px'
+                                    }}>
+                                        <p style={{ margin: 0, color: '#666' }}>
+                                            💡 <strong>提示</strong>
+                                            <br />
+                                            <span style={{ fontSize: 14 }}>
+                                                Office 文件暂不支持在线预览，请下载到本地使用 Microsoft Office 或 WPS 打开查看
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="primary"
+                                        icon={<DownloadOutlined />}
+                                        onClick={() => viewingFile && handleDownload(viewingFile)}
+                                        size="large"
+                                    >
+                                        下载到本地
+                                    </Button>
+                                </div>
+                            );
                         }
 
                         if (mimeType.startsWith('text/') || mimeType.includes('json') || mimeType.includes('xml') || mimeType.includes('javascript')) {

@@ -1,3 +1,8 @@
+// 文件说明：
+// 本测试集成 ApiService 的关键功能，包括：
+// 1) 通过环境变量提供 Jwt 配置，确保 Program.cs 早期读取到值；
+// 2) 提供 IMongoClient/IMongoDatabase 的测试替代，避免 DI 验证失败；
+// 3) 验证 API 的基本请求与响应逻辑。
 using System;
 using System.Linq;
 using System.Collections.Generic;

@@ -3,6 +3,12 @@
 // 1) 200 JSON 自动包装为统一 ApiResponse；
 // 2) 已包装响应不重复包装；
 // 3) SSE、OpenAPI、stream=true、health 路径等跳过包装；
+// 4) 对 TaskCanceled/OperationCanceled 异常的稳定处理。
+// 文件说明：
+// 本测试验证 ResponseFormattingMiddleware 的响应包装与跳过规则，包括：
+// 1) 200 JSON 自动包装为统一 ApiResponse；
+// 2) 已包装响应不重复包装；
+// 3) SSE、OpenAPI、stream=true、health 路径等跳过包装；
 // 4) 对 TaskCanceled/OperationCanceled 异常的稳健处理。
 using System;
 using System.IO;

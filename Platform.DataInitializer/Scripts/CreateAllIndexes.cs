@@ -44,6 +44,7 @@ public class CreateAllIndexes
         await CreateRefreshTokenIndexesAsync();
         await CreateXiaokeConfigIndexesAsync();
         await CreateWorkflowIndexesAsync();
+        await CreateCloudStorageIndexesAsync();
 
         _logger.LogInformation("========== 数据库索引创建完成 ==========");
     }
@@ -588,6 +589,68 @@ public class CreateAllIndexes
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "创建索引失败: {Description}", description);
+        }
+    }
+
+    /// <summary>
+    /// 创建网盘管理相关索引
+    /// </summary>
+    private async Task CreateCloudStorageIndexesAsync()
+    {
+        var fileItems = _database.GetCollection<BsonDocument>("file_items");
+        var quotas = _database.GetCollection<BsonDocument>("storage_quotas");
+        var versions = _database.GetCollection<BsonDocument>("file_versions");
+
+        try
+        {
+            // 1. FileItems 索引
+            // 路径 + 租户 复合索引 (用于快速查找和列表)
+            await CreateIndexAsync(fileItems,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Ascending("parentId")
+                    .Ascending("status")
+                    .Ascending("type"),
+                new CreateIndexOptions { Name = "idx_file_parent_status_type" },
+                "file_items.companyId + parentId + status + type");
+
+            // Hash 索引 (用于全库秒传/去重)
+            await CreateIndexAsync(fileItems,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Ascending("hash")
+                    .Ascending("status"),
+                new CreateIndexOptions { Name = "idx_file_hash" },
+                "file_items.companyId + hash");
+
+            // Path 前缀索引 (用于递归路径更新和搜索)
+            await CreateIndexAsync(fileItems,
+                Builders<BsonDocument>.IndexKeys.Ascending("path"),
+                new CreateIndexOptions { Name = "idx_file_path" },
+                "file_items.path");
+
+            // 2. StorageQuotas 索引
+            await CreateIndexAsync(quotas,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Ascending("userId"),
+                new CreateIndexOptions { Name = "idx_quota_user", Unique = true },
+                "storage_quotas.companyId + userId (唯一)");
+
+            // 3. FileVersions 索引
+            await CreateIndexAsync(versions,
+                Builders<BsonDocument>.IndexKeys
+                    .Ascending(CompanyIdFieldName)
+                    .Ascending("fileItemId")
+                    .Descending("versionNumber"),
+                new CreateIndexOptions { Name = "idx_version_lookup" },
+                "file_versions.companyId + fileItemId + versionNumber");
+
+            _logger.LogInformation("✅ Cloud Storage 集合索引创建完成");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建网盘索引失败");
         }
     }
 

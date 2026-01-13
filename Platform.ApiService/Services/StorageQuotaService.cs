@@ -1,5 +1,8 @@
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -235,14 +238,14 @@ public class StorageQuotaService : IStorageQuotaService
     }
 
     /// <summary>
-    /// 重新计算用户存储使用量
+    /// 重新计算用户存储使用量 (性能优化版：使用聚合查询)
     /// </summary>
     public async Task<StorageQuota> RecalculateUserStorageAsync(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
-        // 获取用户所有活跃文件
+        // 1. 获取用户所有活跃/回收站中的文件统计
         var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
         var fileFilter = fileFilterBuilder
             .Equal(f => f.CreatedBy, userId)
@@ -250,18 +253,40 @@ public class StorageQuotaService : IStorageQuotaService
             .In(f => f.Status, new[] { FileStatus.Active, FileStatus.InRecycleBin })
             .Build();
 
-        var userFiles = await _fileItemFactory.FindAsync(fileFilter);
+        // 渲染参数
+        var serializer = BsonSerializer.SerializerRegistry.GetSerializer<FileItem>();
+        var registry = BsonSerializer.SerializerRegistry;
+        var renderArgs = new RenderArgs<FileItem>(serializer, registry);
 
-        // 计算实际使用量
-        var actualUsedSpace = userFiles.Sum(f => f.Size);
-        var fileCount = userFiles.Count;
+        // 使用聚合查询统计总大小和分布 (工厂会自动应用租户过滤)
+        var stats = await _fileItemFactory.AggregateAsync(PipelineDefinition<FileItem, BsonDocument>.Create(new[] {
+             new BsonDocument("$match", fileFilter.Render(renderArgs)),
+             new BsonDocument("$group", new BsonDocument {
+                 { "_id", "$mimeType" },
+                 { "size", new BsonDocument("$sum", "$size") },
+                 { "count", new BsonDocument("$sum", 1) }
+             })
+        }));
 
-        // 按文件类型统计
-        var typeUsage = userFiles
-            .GroupBy(f => GetFileTypeCategory(f.MimeType))
-            .ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
+        long actualUsedSpace = 0;
+        long fileCount = 0;
+        var typeUsage = new Dictionary<string, long>();
 
-        // 更新配额信息
+        foreach (var item in stats)
+        {
+            var mimeType = item["_id"].AsString;
+            var size = item["size"].AsInt64;
+            var count = item["count"].AsInt32;
+
+            actualUsedSpace += size;
+            fileCount += count;
+
+            var category = GetFileTypeCategory(mimeType);
+            if (typeUsage.ContainsKey(category)) typeUsage[category] += size;
+            else typeUsage[category] = size;
+        }
+
+        // 2. 更新配额信息
         var quota = await FindUserQuotaAsync(userId)
             ?? throw new InvalidOperationException("用户尚未分配存储配额，无法重新计算使用量");
 
@@ -273,9 +298,8 @@ public class StorageQuotaService : IStorageQuotaService
             .Set(q => q.LastCalculatedAt, DateTime.UtcNow)
             .Build();
 
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
         var updatedQuota = await _quotaFactory.FindOneAndUpdateAsync(
-            filterBuilder.Equal(q => q.Id, quota.Id).Build(),
+            _quotaFactory.CreateFilterBuilder().Equal(q => q.Id, quota.Id).Build(),
             update);
 
         if (updatedQuota == null)

@@ -79,6 +79,11 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     /// </summary>
     Task<long> SoftDeleteManyAsync(IEnumerable<string> ids);
 
+    /// <summary>
+    /// 执行批量写入操作 (原子操作)
+    /// </summary>
+    Task<BulkWriteResult<T>> BulkWriteAsync(IEnumerable<WriteModel<T>> requests, BulkWriteOptions? options = null);
+
     // ========== 查询操作 ==========
 
     /// <summary>
@@ -137,6 +142,11 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     /// 查找并硬删除（原子操作，不带租户过滤）
     /// </summary>
     Task<T?> FindOneAndDeleteWithoutTenantFilterAsync(FilterDefinition<T> filter, FindOneAndDeleteOptions<T>? options = null);
+
+    /// <summary>
+    /// 执行聚合操作（自动应用租户过滤）
+    /// </summary>
+    Task<List<TResult>> AggregateAsync<TResult>(PipelineDefinition<T, TResult> pipeline);
 
     // ========== 上下文方法 ==========
 

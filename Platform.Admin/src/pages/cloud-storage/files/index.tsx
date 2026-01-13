@@ -27,9 +27,11 @@ import {
     message,
     Table,
     Divider,
+    Image,
 } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
+import { tokenUtils } from '@/utils/token';
 import {
     PlusOutlined,
     EditOutlined,
@@ -54,6 +56,12 @@ import {
     UserOutlined,
     TagOutlined,
     FileTextOutlined,
+    RotateLeftOutlined,
+    RotateRightOutlined,
+    ZoomInOutlined,
+    ZoomOutOutlined,
+    SwapOutlined,
+    UndoOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -140,12 +148,17 @@ const CloudStorageFilesPage: React.FC = () => {
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
     const [viewingFile, setViewingFile] = useState<FileItem | null>(null);
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string>('');
+    const [previewLoading, setPreviewLoading] = useState(false);
     const [versionList, setVersionList] = useState<FileVersion[]>([]);
     const [versionLoading, setVersionLoading] = useState(false);
     const [createFolderVisible, setCreateFolderVisible] = useState(false);
     const [renameVisible, setRenameVisible] = useState(false);
     const [renamingItem, setRenamingItem] = useState<FileItem | null>(null);
     const [uploadVisible, setUploadVisible] = useState(false);
+    const [uploadType, setUploadType] = useState<'file' | 'folder'>('file');
     const [uploadProgress, setUploadProgress] = useState<{ [key: string]: { percent: number; label: string } }>({});
     const [shareVisible, setShareVisible] = useState(false);
     const [sharingItem, setSharingItem] = useState<FileItem | null>(null);
@@ -188,6 +201,15 @@ const CloudStorageFilesPage: React.FC = () => {
     useEffect(() => {
         loadStatistics();
     }, [loadStatistics]);
+
+    // 组件卸载时清理 Blob URL
+    useEffect(() => {
+        return () => {
+            if (previewUrl && previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl]);
 
     // 刷新处理
     const handleRefresh = useCallback(() => {
@@ -362,6 +384,12 @@ const CloudStorageFilesPage: React.FC = () => {
     // 文件操作
     const handleView = useCallback(async (file: FileItem) => {
         try {
+            // 先清理之前的 Blob URL（如果存在）
+            if (previewUrl && previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(previewUrl);
+                setPreviewUrl('');
+            }
+
             const response = await getFileDetail(file.id);
             if (response.success && response.data) {
                 // 转换后端数据格式到前端期望的格式
@@ -388,25 +416,51 @@ const CloudStorageFilesPage: React.FC = () => {
                 }
                 const transformedFile: FileItem = {
                     ...fileData,
-                    // 将 type 字段转换为 isFolder 布尔值
                     isFolder: fileData.type === 'folder' || fileData.type === 1,
-                    // 确保字段名称匹配
                     createdByName: fileData.createdByName || fileData.createdByUsername || '',
                     updatedByName: fileData.updatedByName || fileData.updatedByUsername || '',
-                    // 确保 parentId 为空字符串时转换为 undefined
                     parentId: fileData.parentId && fileData.parentId.trim() ? fileData.parentId : undefined,
-                    // 确保 tags 是数组
                     tags: Array.isArray(fileData.tags) ? fileData.tags : [],
-                    // 确保 isPublic 有默认值
                     isPublic: fileData.isPublic !== undefined ? fileData.isPublic : false,
                 };
                 setViewingFile(transformedFile);
                 setDetailVisible(true);
+
+                // 如果是文件且支持预览，创建 Blob URL
+                if (!transformedFile.isFolder) {
+                    try {
+                        setPreviewLoading(true);
+
+                        // 使用认证的请求下载文件
+                        const token = tokenUtils.getToken();
+                        const response = await fetch(`/api/cloud-storage/files/${file.id}/download`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to load preview');
+                        }
+
+                        // 将响应转换为 Blob
+                        const blob = await response.blob();
+
+                        // 创建 Blob URL
+                        const blobUrl = URL.createObjectURL(blob);
+                        setPreviewUrl(blobUrl);
+                    } catch (e) {
+                        console.error('Failed to create preview URL', e);
+                        setPreviewUrl('');
+                    } finally {
+                        setPreviewLoading(false);
+                    }
+                }
             }
         } catch (err) {
             error('获取文件详情失败');
         }
-    }, [error]);
+    }, [error, previewUrl]);
 
     const handleDownload = useCallback(async (file: FileItem) => {
         try {
@@ -814,14 +868,38 @@ const CloudStorageFilesPage: React.FC = () => {
                     >
                         新建文件夹
                     </Button>
-                    <Button
-                        key="upload"
-                        type="primary"
-                        icon={<UploadOutlined />}
-                        onClick={() => setUploadVisible(true)}
+                    <Dropdown
+                        menu={{
+                            items: [
+                                {
+                                    key: 'file',
+                                    label: '上传文件',
+                                    icon: <FileOutlined />,
+                                    onClick: () => {
+                                        setUploadType('file');
+                                        setUploadVisible(true);
+                                    },
+                                },
+                                {
+                                    key: 'folder',
+                                    label: '上传文件夹',
+                                    icon: <FolderOutlined />,
+                                    onClick: () => {
+                                        setUploadType('folder');
+                                        setUploadVisible(true);
+                                    },
+                                },
+                            ],
+                        }}
                     >
-                        上传文件
-                    </Button>
+                        <Button
+                            key="upload"
+                            type="primary"
+                            icon={<UploadOutlined />}
+                        >
+                            上传 <MoreOutlined style={{ fontSize: 12 }} />
+                        </Button>
+                    </Dropdown>
                 </Space>
             }
         >
@@ -1087,6 +1165,28 @@ const CloudStorageFilesPage: React.FC = () => {
                                     </Spin>
                                 </Card>
                             )}
+
+                            {!viewingFile.isFolder && (
+                                <Card title="预览" style={{ marginBottom: 16 }}>
+                                    <Button
+                                        type="primary"
+                                        block
+                                        icon={<EyeOutlined />}
+                                        onClick={() => {
+                                            const mimeType = viewingFile?.mimeType?.toLowerCase() || '';
+                                            if (mimeType.startsWith('image/')) {
+                                                setImagePreviewVisible(true);
+                                            } else {
+                                                setPreviewVisible(true);
+                                            }
+                                        }}
+                                        disabled={!previewUrl && !previewLoading}
+                                        loading={previewLoading}
+                                    >
+                                        立即预览
+                                    </Button>
+                                </Card>
+                            )}
                         </>
                     ) : (
                         <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
@@ -1298,7 +1398,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
             {/* 上传弹窗 */}
             <Modal
-                title="上传文件"
+                title={uploadType === 'folder' ? '上传文件夹' : '上传文件'}
                 open={uploadVisible}
                 onCancel={() => setUploadVisible(false)}
                 footer={null}
@@ -1307,7 +1407,7 @@ const CloudStorageFilesPage: React.FC = () => {
                 <Dragger
                     name="file"
                     multiple
-                    directory
+                    directory={uploadType === 'folder'}
                     showUploadList={false}
                     beforeUpload={(file, fileList) => {
                         // Antd 会对同一批次的每个文件逐个触发 beforeUpload，这里只在首个文件上触发自定义上传，避免重复提交
@@ -1352,6 +1452,162 @@ const CloudStorageFilesPage: React.FC = () => {
                     </div>
                 )}
             </Modal>
+
+            <Modal
+                title={viewingFile?.name || '文件预览'}
+                open={previewVisible}
+                onCancel={() => {
+                    // 只关闭窗口，不清空 previewUrl，这样可以再次打开预览
+                    setPreviewVisible(false);
+                }}
+                footer={[
+                    <Button key="download" icon={<DownloadOutlined />} onClick={() => viewingFile && handleDownload(viewingFile)}>
+                        下载文件
+                    </Button>,
+                    <Button key="close" type="primary" onClick={() => setPreviewVisible(false)}>
+                        关闭
+                    </Button>
+                ]}
+                width={1000}
+                centered
+                destroyOnClose
+                bodyStyle={{ padding: 0, backgroundColor: '#f5f5f5', height: '70vh', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}
+            >
+                {previewUrl ? (
+                    (() => {
+                        const mimeType = viewingFile?.mimeType?.toLowerCase() || '';
+                        if (mimeType.startsWith('video/')) {
+                            return <video src={previewUrl} controls style={{ maxWidth: '100%', maxHeight: '100%' }} autoPlay />;
+                        }
+                        if (mimeType.startsWith('audio/')) {
+                            return <audio src={previewUrl} controls autoPlay />;
+                        }
+                        if (mimeType === 'application/pdf') {
+                            return <iframe src={previewUrl} style={{ width: '100%', height: '100%', border: 'none' }} title="pdf-preview" />;
+                        }
+
+                        // Office 文件预览
+                        const isOfficeFile =
+                            mimeType.includes('word') ||
+                            mimeType.includes('excel') ||
+                            mimeType.includes('powerpoint') ||
+                            mimeType.includes('officedocument') ||
+                            viewingFile?.name?.match(/\.(docx?|xlsx?|pptx?)$/i);
+
+                        if (isOfficeFile) {
+                            // 检查是否在本地环境
+                            const isLocalhost = window.location.hostname === 'localhost' ||
+                                window.location.hostname === '127.0.0.1' ||
+                                window.location.hostname.startsWith('192.168.');
+
+                            if (isLocalhost) {
+                                return (
+                                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                                        <FileTextOutlined style={{ fontSize: 64, color: '#1890ff', marginBottom: 16 }} />
+                                        <h3>Office 文件预览</h3>
+                                        <p style={{ color: '#666', marginBottom: 24 }}>
+                                            检测到 Office 文档（{viewingFile?.name}）
+                                        </p>
+                                        <p style={{ color: '#999', marginBottom: 24 }}>
+                                            💡 在线预览需要公网环境支持<br />
+                                            当前为本地环境，暂不支持在线预览
+                                        </p>
+                                        <Button
+                                            type="primary"
+                                            icon={<DownloadOutlined />}
+                                            onClick={() => viewingFile && handleDownload(viewingFile)}
+                                            size="large"
+                                        >
+                                            下载到本地查看
+                                        </Button>
+                                    </div>
+                                );
+                            } else {
+                                // 生产环境使用 Microsoft Office Online Viewer
+                                const fileUrl = encodeURIComponent(window.location.origin + `/api/cloud-storage/files/${viewingFile?.id}/download`);
+                                const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${fileUrl}`;
+
+                                return (
+                                    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                                        <iframe
+                                            src={viewerUrl}
+                                            style={{ width: '100%', height: '100%', border: 'none' }}
+                                            title="office-preview"
+                                        />
+                                        <div style={{ position: 'absolute', bottom: 10, right: 10 }}>
+                                            <Button
+                                                type="primary"
+                                                icon={<DownloadOutlined />}
+                                                onClick={() => viewingFile && handleDownload(viewingFile)}
+                                            >
+                                                下载文件
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        }
+
+                        if (mimeType.startsWith('text/') || mimeType.includes('json') || mimeType.includes('xml') || mimeType.includes('javascript')) {
+                            return (
+                                <div style={{ width: '100%', height: '100%', backgroundColor: '#fff', padding: 20, overflow: 'auto' }}>
+                                    <iframe src={previewUrl} style={{ width: '100%', height: '100%', border: 'none' }} title="text-preview" />
+                                </div>
+                            );
+                        }
+                        return (
+                            <div style={{ textAlign: 'center' }}>
+                                <FileOutlined style={{ fontSize: 64, color: '#999', marginBottom: 16 }} />
+                                <h3>该文件类型暂不支持直接预览</h3>
+                                <p>请点击下方按钮下载后查看</p>
+                            </div>
+                        );
+                    })()
+                ) : (
+                    <div style={{ textAlign: 'center' }}>
+                        <Spin size="large" tip="正在加载预览..." />
+                    </div>
+                )}
+            </Modal>
+
+            {/* 图片预览组件（独立于 Modal） */}
+            <Image
+                src={previewUrl}
+                alt={viewingFile?.name || 'preview'}
+                style={{ display: 'none' }}
+                preview={{
+                    visible: imagePreviewVisible,
+                    onVisibleChange: (visible) => {
+                        setImagePreviewVisible(visible);
+                    },
+                    toolbarRender: (
+                        _,
+                        {
+                            transform: { scale },
+                            actions: {
+                                onFlipY,
+                                onFlipX,
+                                onRotateLeft,
+                                onRotateRight,
+                                onZoomOut,
+                                onZoomIn,
+                                onReset,
+                            },
+                        },
+                    ) => (
+                        <Space size={12} className="toolbar-wrapper">
+                            <DownloadOutlined onClick={() => viewingFile && handleDownload(viewingFile)} />
+                            <SwapOutlined rotate={90} onClick={onFlipY} />
+                            <SwapOutlined onClick={onFlipX} />
+                            <RotateLeftOutlined onClick={onRotateLeft} />
+                            <RotateRightOutlined onClick={onRotateRight} />
+                            <ZoomOutOutlined disabled={scale === 1} onClick={onZoomOut} />
+                            <ZoomInOutlined disabled={scale === 50} onClick={onZoomIn} />
+                            <UndoOutlined onClick={onReset} />
+                        </Space>
+                    ),
+                }}
+            />
         </PageContainer>
     );
 };

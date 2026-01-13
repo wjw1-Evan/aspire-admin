@@ -1,5 +1,7 @@
 using System.Linq;
 using System.Reflection;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
@@ -410,6 +412,14 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         return result.ModifiedCount;
     }
 
+    /// <summary>
+    /// 执行批量写入操作（由调用方负责审计和过滤）
+    /// </summary>
+    public async Task<BulkWriteResult<T>> BulkWriteAsync(IEnumerable<WriteModel<T>> requests, BulkWriteOptions? options = null)
+    {
+        return await _collection.BulkWriteAsync(requests, options).ConfigureAwait(false);
+    }
+
     // ========== 查询操作 ==========
 
     /// <summary>
@@ -610,6 +620,34 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         if (string.IsNullOrEmpty(companyId))
             throw new UnauthorizedAccessException("未找到当前企业信息");
         return companyId;
+    }
+
+    /// <summary>
+    /// 执行聚合操作（自动应用租户过滤）
+    /// </summary>
+    public async Task<List<TResult>> AggregateAsync<TResult>(PipelineDefinition<T, TResult> pipeline)
+    {
+        var finalFilter = await ApplyDefaultFiltersAsync(null).ConfigureAwait(false);
+        
+        // 创建渲染参数，这能自动处理 LinqProvider 等底层差异
+        var serializer = BsonSerializer.SerializerRegistry.GetSerializer<T>();
+        var registry = BsonSerializer.SerializerRegistry;
+        var renderArgs = new RenderArgs<T>(serializer, registry);
+        
+        // 1. 渲染过滤器为 $match 阶段
+        var filterBson = finalFilter.Render(renderArgs);
+        var matchDocument = new BsonDocument("$match", filterBson);
+        
+        // 2. 渲染原始管道
+        var renderedPipeline = pipeline.Render(renderArgs);
+        
+        // 合并阶段：先执行租户/软删除过滤，再执行业务定义的管道
+        var stages = new List<BsonDocument> { matchDocument };
+        stages.AddRange(renderedPipeline.Documents);
+        
+        // 执行聚合
+        var cursor = await _collection.Aggregate(PipelineDefinition<T, TResult>.Create(stages)).ToListAsync().ConfigureAwait(false);
+        return cursor;
     }
 
     private async Task<FilterDefinition<T>> ApplyTenantFilterAsync(FilterDefinition<T> filter)

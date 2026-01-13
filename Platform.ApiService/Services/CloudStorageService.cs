@@ -7,6 +7,9 @@ using Platform.ServiceDefaults.Services;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace Platform.ApiService.Services;
 
@@ -129,11 +132,11 @@ public class CloudStorageService : ICloudStorageService
         // 检查存储配额
         await CheckStorageQuotaAsync(file.Length);
 
-        // 计算文件哈希
         string fileHash;
-        using (var stream = file.OpenReadStream())
+        using var fileStream = file.OpenReadStream(); // Open stream once
         {
-            fileHash = await ComputeFileHashAsync(stream);
+            fileHash = await ComputeFileHashAsync(fileStream);
+            fileStream.Seek(0, SeekOrigin.Begin); // Reset stream position for GridFS upload
         }
 
         // 检查是否存在同名文件
@@ -181,7 +184,7 @@ public class CloudStorageService : ICloudStorageService
         else
         {
             // 上传新文件到GridFS
-            using var fileStream = file.OpenReadStream();
+            fileStream.Seek(0, SeekOrigin.Begin); // 重置流位置
             var uploadOptions = new GridFSUploadOptions
             {
                 Metadata = new BsonDocument
@@ -280,6 +283,20 @@ public class CloudStorageService : ICloudStorageService
             };
 
             await _fileItemFactory.CreateAsync(fileItem);
+        }
+
+        // 如果是图片，生成缩略图
+        if (IsImageFile(file.ContentType))
+        {
+            try
+            {
+                fileStream.Seek(0, SeekOrigin.Begin); // Reset stream again for thumbnail generation
+                await GenerateAndUploadThumbnailAsync(fileStream, fileItem);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to generate thumbnail for file {FileId}", fileItem.Id);
+            }
         }
 
         // 更新存储配额
@@ -416,6 +433,12 @@ public class CloudStorageService : ICloudStorageService
         if (updatedItem == null)
             throw new InvalidOperationException("重命名失败");
 
+        // 递归更新子项路径
+        if (fileItem.Type == FileItemType.Folder)
+        {
+            await UpdateDescendantsPathAsync(fileItem.Path, newPath);
+        }
+
         _logger.LogInformation("Renamed file item {Id} from '{OldName}' to '{NewName}'",
             id, fileItem.Name, newName);
 
@@ -477,6 +500,12 @@ public class CloudStorageService : ICloudStorageService
 
         if (updatedItem == null)
             throw new InvalidOperationException("移动失败");
+
+        // 递归更新子项路径
+        if (fileItem.Type == FileItemType.Folder)
+        {
+            await UpdateDescendantsPathAsync(fileItem.Path, newPath);
+        }
 
         _logger.LogInformation("Moved file item {Id} from '{OldPath}' to '{NewPath}'",
             id, fileItem.Path, newPath);
@@ -541,6 +570,11 @@ public class CloudStorageService : ICloudStorageService
         {
             await UpdateStorageUsageAsync(sourceItem.Size);
         }
+        else if (sourceItem.Type == FileItemType.Folder)
+        {
+            // 递归复制子项
+            await CopyFolderContentsAsync(sourceItem.Id, copiedItem.Id, copyPath);
+        }
 
         _logger.LogInformation("Copied file item {SourceId} to {CopyId} at path: {CopyPath}",
             id, copiedItem.Id, copyPath);
@@ -577,6 +611,19 @@ public class CloudStorageService : ICloudStorageService
             filterBuilder.Equal(f => f.Id, id).Build(),
             update);
 
+        // 递归处理子项状态
+        if (fileItem.Type == FileItemType.Folder)
+        {
+            var descendantsFilter = Builders<FileItem>.Filter.Regex(f => f.Path, new BsonRegularExpression($"^{Regex.Escape(fileItem.Path)}/"));
+            var descendantsUpdate = Builders<FileItem>.Update
+                .Set(f => f.Status, FileStatus.InRecycleBin)
+                .Set(f => f.DeletedAt, now)
+                .Set(f => f.DeletedBy, currentUserId)
+                .Set(f => f.DeletedByName, currentUsername);
+            
+            await _fileItemFactory.UpdateManyAsync(descendantsFilter, descendantsUpdate);
+        }
+
         _logger.LogInformation("Moved file item {Id} to recycle bin: {Name}", id, fileItem.Name);
     }
 
@@ -606,14 +653,21 @@ public class CloudStorageService : ICloudStorageService
             fileItem = recycleBinItems.First();
         }
 
-        // 软删除文件记录
+        // 如果是文件夹，递归删除所有子项记录和文件
+        if (fileItem.Type == FileItemType.Folder)
+        {
+            await PermanentDeleteFolderContentsAsync(fileItem);
+        }
+
+        // 软删除文件记录（标记为 Deleted）
         await _fileItemFactory.FindOneAndSoftDeleteAsync(
             _fileItemFactory.CreateFilterBuilder().Equal(f => f.Id, id).Build());
 
-        // 如果是文件，更新存储配额
+        // 如果是文件，更新存储配额、物理删除 GridFS 文件
         if (fileItem.Type == FileItemType.File)
         {
             await UpdateStorageUsageAsync(-fileItem.Size);
+            await DeleteGridFSFileAsync(fileItem);
         }
 
         _logger.LogInformation("Permanently deleted file item {Id}: {Name}", id, fileItem.Name);
@@ -683,6 +737,24 @@ public class CloudStorageService : ICloudStorageService
 
         if (restoredItem == null)
             throw new InvalidOperationException("恢复失败");
+
+        // 递归恢复子项状态
+        if (fileItem.Type == FileItemType.Folder)
+        {
+            var descendantsFilter = Builders<FileItem>.Filter.Regex(f => f.Path, new BsonRegularExpression($"^{Regex.Escape(fileItem.Path)}/"));
+            var descendantsUpdate = Builders<FileItem>.Update
+                .Set(f => f.Status, FileStatus.Active)
+                .Set(f => f.DeletedAt, null)
+                .Set(f => f.DeletedBy, null)
+                .Set(f => f.DeletedByName, null)
+                .Set(f => f.OriginalPath, null)
+                .Set(f => f.DaysUntilPermanentDelete, null);
+
+            await _fileItemFactory.UpdateManyAsync(descendantsFilter, descendantsUpdate);
+            
+            // 递归修正所有子项的 Path
+            await UpdateDescendantsPathAsync(fileItem.Path, newPath);
+        }
 
         _logger.LogInformation("Restored file item {Id} from recycle bin to path: {Path}",
             id, newPath);
@@ -775,7 +847,7 @@ public class CloudStorageService : ICloudStorageService
             FileId = id,
             IsPreviewable = IsPreviewableFile(fileItem.MimeType),
             PreviewType = GetPreviewType(fileItem.MimeType),
-            PreviewUrl = $"/api/cloud-storage/files/{id}/preview",
+            PreviewUrl = $"/api/cloud-storage/files/{id}/download",
             ThumbnailUrl = !string.IsNullOrEmpty(fileItem.ThumbnailGridFSId)
                 ? $"/api/cloud-storage/files/{id}/thumbnail"
                 : string.Empty
@@ -946,7 +1018,7 @@ public class CloudStorageService : ICloudStorageService
 
         var matchedFiles = new List<FileItem>();
 
-        // 在文件内容中搜索关键词
+        // 在文件内容中搜索关键词 (增加安全性：限制读取大小)
         foreach (var file in allFiles)
         {
             if (matchedFiles.Count >= query.PageSize * query.Page)
@@ -958,9 +1030,13 @@ public class CloudStorageService : ICloudStorageService
                     continue;
 
                 using var stream = await _filesBucket.OpenDownloadStreamAsync(gridFSId);
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-
-                var content = await reader.ReadToEndAsync();
+                // 只读取前 2MB 内容进行搜索，防止超大文件导致内存崩溃
+                var limit = 2 * 1024 * 1024;
+                var bytesToRead = (int)Math.Min(stream.Length, limit);
+                var buffer = new byte[bytesToRead];
+                await stream.ReadExactlyAsync(buffer, 0, bytesToRead);
+                
+                var content = Encoding.UTF8.GetString(buffer);
                 if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase))
                 {
                     matchedFiles.Add(file);
@@ -970,7 +1046,6 @@ public class CloudStorageService : ICloudStorageService
             {
                 _logger.LogWarning(ex, "Failed to search content in file {FileId}: {FileName}",
                     file.Id, file.Name);
-                // 继续搜索其他文件
             }
         }
 
@@ -1112,7 +1187,7 @@ public class CloudStorageService : ICloudStorageService
     #region 存储统计
 
     /// <summary>
-    /// 获取存储使用情况
+    /// 获取存储使用情况 (使用 MongoDB 聚合查询优化性能)
     /// </summary>
     public async Task<StorageUsageInfo> GetStorageUsageAsync(string? userId = null)
     {
@@ -1122,33 +1197,63 @@ public class CloudStorageService : ICloudStorageService
 
         var quota = await GetOrCreateStorageQuotaAsync(targetUserId);
 
-        // 统计文件和文件夹数量
-        var filterBuilder = _fileItemFactory.CreateFilterBuilder();
-        var activeFilter = filterBuilder
-            .Equal(f => f.Status, FileStatus.Active)
-            .Equal(f => f.IsDeleted, false)
-            .Build();
+        // 使用聚合查询统计文件数量、文件夹数量和总空间
+        var stats = await _fileItemFactory.AggregateAsync(PipelineDefinition<FileItem, BsonDocument>.Create(new[] {
+             new BsonDocument("$group", new BsonDocument {
+                 { "_id", "$type" },
+                 { "count", new BsonDocument("$sum", 1) },
+                 { "totalSize", new BsonDocument("$sum", "$size") }
+             })
+        }));
 
-        // 仅统计未删除、活跃的文件/文件夹
-        var allItems = await _fileItemFactory.FindAsync(activeFilter);
-        var files = allItems.Where(f => f.Type == FileItemType.File).ToList();
-        var folders = allItems.Where(f => f.Type == FileItemType.Folder).ToList();
+        long usedSpace = 0;
+        long fileCount = 0;
+        long folderCount = 0;
+        var typeUsage = new Dictionary<string, long>();
 
-        // 使用实时计算的已用空间，避免旧配额值包含已删除或他人文件
-        var usedSpace = files.Sum(f => f.Size);
+        foreach (var group in stats)
+        {
+            var type = (FileItemType)group["_id"].AsInt32;
+            var count = group["count"].AsInt32;
+            var totalSize = group["totalSize"].AsInt64;
 
-        // 按文件类型统计使用量
-        var typeUsage = files
-            .GroupBy(f => GetFileTypeCategory(f.MimeType))
-            .ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
+            if (type == FileItemType.File)
+            {
+                fileCount = count;
+                usedSpace = totalSize;
+            }
+            else if (type == FileItemType.Folder)
+            {
+                folderCount = count;
+            }
+        }
+
+        // 按类型统计
+        var typeStats = await _fileItemFactory.AggregateAsync(PipelineDefinition<FileItem, BsonDocument>.Create(new[] {
+             new BsonDocument("$match", new BsonDocument("type", (int)FileItemType.File)),
+             new BsonDocument("$group", new BsonDocument {
+                 { "_id", "$mimeType" },
+                 { "totalSize", new BsonDocument("$sum", "$size") }
+             })
+        }));
+
+        foreach (var group in typeStats)
+        {
+            var mimeType = group["_id"].AsString;
+            var totalSize = group["totalSize"].AsInt64;
+            
+            var category = GetFileTypeCategory(mimeType);
+            if (typeUsage.ContainsKey(category)) typeUsage[category] += totalSize;
+            else typeUsage[category] = totalSize;
+        }
 
         return new StorageUsageInfo
         {
             UserId = targetUserId,
             TotalQuota = quota.TotalQuota,
             UsedSpace = usedSpace,
-            FileCount = files.Count,
-            FolderCount = folders.Count,
+            FileCount = fileCount,
+            FolderCount = folderCount,
             TypeUsage = typeUsage,
             LastUpdatedAt = quota.LastCalculatedAt
         };
@@ -1392,7 +1497,7 @@ public class CloudStorageService : ICloudStorageService
     #region 批量操作
 
     /// <summary>
-    /// 批量删除文件项
+    /// 批量删除文件项 (性能优化版)
     /// </summary>
     public async Task<BatchOperationResult> BatchDeleteAsync(List<string> ids)
     {
@@ -1402,24 +1507,38 @@ public class CloudStorageService : ICloudStorageService
             StartTime = DateTime.UtcNow
         };
 
-        foreach (var id in ids)
+        // 查找所有要操作的文件项
+        var filterBuilder = _fileItemFactory.CreateFilterBuilder();
+        var itemsFilter = filterBuilder.In(f => f.Id, ids).Build();
+        var items = await _fileItemFactory.FindAsync(itemsFilter);
+
+        foreach (var item in items)
         {
             try
             {
-                await DeleteFileItemAsync(id);
-                result.SuccessIds.Add(id);
+                await DeleteFileItemAsync(item.Id!);
+                result.SuccessIds.Add(item.Id!);
                 result.SuccessCount++;
             }
             catch (Exception ex)
             {
                 result.Errors.Add(new BatchOperationError
                 {
-                    FileItemId = id,
+                    FileItemId = item.Id!,
+                    FileName = item.Name,
                     ErrorCode = "DELETE_FAILED",
                     ErrorMessage = ex.Message
                 });
                 result.FailureCount++;
             }
+        }
+
+        // 处理那些没查到的 ID
+        var foundIds = items.Select(i => i.Id).ToList();
+        foreach (var id in ids.Except(foundIds))
+        {
+            result.Errors.Add(new BatchOperationError { FileItemId = id, ErrorCode = "NOT_FOUND", ErrorMessage = "项不存在" });
+            result.FailureCount++;
         }
 
         result.EndTime = DateTime.UtcNow;
@@ -1459,32 +1578,63 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <summary>
-    /// 批量移动文件项
+    /// 批量移动文件项 (优化版)
     /// </summary>
-    public async Task<BatchOperationResult> BatchMoveAsync(List<string> ids, string targetParentId)
+    public async Task<BatchOperationResult> BatchMoveAsync(List<string> ids, string newParentId)
     {
-        var result = new BatchOperationResult
+        var result = new BatchOperationResult { Total = ids.Count, StartTime = DateTime.UtcNow };
+        
+        // 1. 获取目标文件夹详情
+        FileItem? targetParent = null;
+        if (!string.IsNullOrEmpty(newParentId))
         {
-            Total = ids.Count,
-            StartTime = DateTime.UtcNow
-        };
+            targetParent = await GetFileItemAsync(newParentId);
+            if (targetParent == null || targetParent.Type != FileItemType.Folder)
+                throw new ArgumentException("目标文件夹不存在");
+        }
 
-        foreach (var id in ids)
+        // 2. 获取源文件项列表
+        var filterBuilder = _fileItemFactory.CreateFilterBuilder();
+        var items = await _fileItemFactory.FindAsync(filterBuilder.In(f => f.Id, ids).Build());
+        var currentUserId = _tenantContext.GetCurrentUserId();
+        var currentUsername = await _tenantContext.GetCurrentUsernameAsync();
+
+        foreach (var item in items)
         {
             try
             {
-                await MoveFileItemAsync(id, targetParentId);
-                result.SuccessIds.Add(id);
+                // A. 防循环移动
+                if (item.Type == FileItemType.Folder && targetParent != null)
+                {
+                    if (targetParent.Path.StartsWith(item.Path + "/"))
+                        throw new InvalidOperationException($"无法将文件夹 '{item.Name}' 移动到其内部。");
+                }
+
+                // B. 执行移动
+                var newPath = await BuildFilePathAsync(item.Name, newParentId ?? string.Empty);
+                var oldPath = item.Path;
+
+                var update = _fileItemFactory.CreateUpdateBuilder()
+                    .Set(f => f.ParentId, newParentId ?? string.Empty)
+                    .Set(f => f.Path, newPath)
+                    .Build();
+
+                await _fileItemFactory.FindOneAndUpdateAsync(
+                    _fileItemFactory.CreateFilterBuilder().Equal(f => f.Id, item.Id).Build(),
+                    update);
+
+                // C. 递归更新子项路径
+                if (item.Type == FileItemType.Folder)
+                {
+                    await UpdateDescendantsPathAsync(oldPath, newPath);
+                }
+
+                result.SuccessIds.Add(item.Id!);
                 result.SuccessCount++;
             }
             catch (Exception ex)
             {
-                result.Errors.Add(new BatchOperationError
-                {
-                    FileItemId = id,
-                    ErrorCode = "MOVE_FAILED",
-                    ErrorMessage = ex.Message
-                });
+                result.Errors.Add(new BatchOperationError { FileItemId = item.Id!, FileName = item.Name, ErrorMessage = ex.Message });
                 result.FailureCount++;
             }
         }
@@ -1776,6 +1926,154 @@ public class CloudStorageService : ICloudStorageService
                 await AddFolderToZipAsync(archive, item, folderPath);
             }
         }
+    }
+
+    /// <summary>
+    /// 递归更新子项路径
+    /// </summary>
+    private async Task UpdateDescendantsPathAsync(string oldParentPath, string newParentPath)
+    {
+        var filter = Builders<FileItem>.Filter.Regex(f => f.Path, new BsonRegularExpression($"^{Regex.Escape(oldParentPath)}/"));
+        var descendants = await _fileItemFactory.FindAsync(filter);
+
+        foreach (var item in descendants)
+        {
+            var relativePath = item.Path.Substring(oldParentPath.Length);
+            var newPath = newParentPath + relativePath;
+
+            var updateBuilder = _fileItemFactory.CreateUpdateBuilder();
+            var update = updateBuilder.Set(f => f.Path, newPath).Build();
+            await _fileItemFactory.FindOneAndUpdateAsync(
+                _fileItemFactory.CreateFilterBuilder().Equal(f => f.Id, item.Id).Build(),
+                update);
+        }
+    }
+
+    /// <summary>
+    /// 递归复制文件夹内容
+    /// </summary>
+    private async Task CopyFolderContentsAsync(string sourceFolderId, string targetFolderId, string targetFolderPath)
+    {
+        var query = new FileListQuery { Page = 1, PageSize = 1000 };
+        var items = await GetFileItemsAsync(sourceFolderId, query);
+
+        foreach (var item in items.Data)
+        {
+            await CopyFileItemAsync(item.Id, targetFolderId, item.Name);
+        }
+    }
+
+    /// <summary>
+    /// 物理删除 GridFS 文件
+    /// </summary>
+    private async Task DeleteGridFSFileAsync(FileItem fileItem)
+    {
+        if (string.IsNullOrEmpty(fileItem.GridFSId)) return;
+
+        try
+        {
+            if (ObjectId.TryParse(fileItem.GridFSId, out var fileId))
+            {
+                await _filesBucket.DeleteAsync(fileId);
+            }
+
+            if (!string.IsNullOrEmpty(fileItem.ThumbnailGridFSId) && ObjectId.TryParse(fileItem.ThumbnailGridFSId, out var thumbId))
+            {
+                await _thumbnailsBucket.DeleteAsync(thumbId);
+            }
+            
+            // 同时删除所有历史版本的文件
+            var versionsFilter = _fileVersionFactory.CreateFilterBuilder().Equal(v => v.FileItemId, fileItem.Id!).Build();
+            var versions = await _fileVersionFactory.FindAsync(versionsFilter);
+            foreach (var version in versions)
+            {
+                if (!string.IsNullOrEmpty(version.GridFSId) && ObjectId.TryParse(version.GridFSId, out var vId))
+                {
+                    try { await _filesBucket.DeleteAsync(vId); } catch (GridFSFileNotFoundException) { /* 忽略 */ }
+                }
+            }
+            // 批量标记版本记录为已删除
+            await _fileVersionFactory.UpdateManyAsync(versionsFilter, _fileVersionFactory.CreateUpdateBuilder().Set(v => v.IsDeleted, true).Build());
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete GridFS file for item {Id}", fileItem.Id);
+        }
+    }
+
+    /// <summary>
+    /// 递归永久删除文件夹内容
+    /// </summary>
+    private async Task PermanentDeleteFolderContentsAsync(FileItem folder)
+    {
+        var descendantsFilter = Builders<FileItem>.Filter.Regex(f => f.Path, new BsonRegularExpression($"^{Regex.Escape(folder.Path)}/"));
+        var descendants = await _fileItemFactory.FindAsync(descendantsFilter);
+
+        foreach (var item in descendants)
+        {
+            if (item.Type == FileItemType.File)
+            {
+                await UpdateStorageUsageAsync(-item.Size);
+                await DeleteGridFSFileAsync(item);
+            }
+            
+            await _fileItemFactory.FindOneAndSoftDeleteAsync(
+                _fileItemFactory.CreateFilterBuilder().Equal(f => f.Id, item.Id).Build());
+        }
+    }
+
+    /// <summary>
+    /// 生成并上传缩略图
+    /// </summary>
+    private async Task GenerateAndUploadThumbnailAsync(Stream sourceStream, FileItem fileItem)
+    {
+        using var outputStream = new MemoryStream();
+        
+        using (var image = await Image.LoadAsync(sourceStream))
+        {
+            // 保持比例缩放到 200px
+            image.Mutate(x => x.Resize(new ResizeOptions
+            {
+                Mode = ResizeMode.Max,
+                Size = new Size(200, 200)
+            }));
+            
+            await image.SaveAsJpegAsync(outputStream);
+        }
+        
+        outputStream.Position = 0;
+        var thumbnailName = $"thumb_{fileItem.Name}.jpg";
+        
+        var uploadOptions = new GridFSUploadOptions
+        {
+            Metadata = new BsonDocument
+            {
+                ["fileItemId"] = fileItem.Id,
+                ["type"] = "thumbnail",
+                ["generatedAt"] = DateTime.UtcNow
+            }
+        };
+        
+        var objectId = await _thumbnailsBucket.UploadFromStreamAsync(thumbnailName, outputStream, uploadOptions);
+        
+        // 更新文件记录中的缩略图 ID
+        var update = _fileItemFactory.CreateUpdateBuilder()
+            .Set(f => f.ThumbnailGridFSId, objectId.ToString())
+            .Build();
+            
+        await _fileItemFactory.FindOneAndUpdateAsync(
+            _fileItemFactory.CreateFilterBuilder().Equal(f => f.Id, fileItem.Id).Build(),
+            update);
+    }
+
+    /// <summary>
+    /// 判断是否为图片文件
+    /// </summary>
+    private bool IsImageFile(string? contentType)
+    {
+        if (string.IsNullOrEmpty(contentType)) return false;
+        return contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
     }
 
     #endregion

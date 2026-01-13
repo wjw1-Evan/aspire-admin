@@ -81,23 +81,24 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
 
         // 3. 检查是否有孤立节点（除了开始或结束节点外，其他节点必须有进有出）
         // 实际上可以用可达性分析更准确
+        var edges = graph.Edges ?? new List<WorkflowEdge>();
         foreach (var node in graph.Nodes)
         {
             if (node.Type == "start")
             {
-                if (!graph.Edges.Any(e => e.Source == node.Id))
+                if (!edges.Any(e => e.Source == node.Id))
                     return (false, $"开始节点 {node.Id} 没有出边");
             }
             else if (node.Type == "end")
             {
-                if (!graph.Edges.Any(e => e.Target == node.Id))
+                if (!edges.Any(e => e.Target == node.Id))
                     return (false, $"结束节点 {node.Id} 没有入边");
             }
             else
             {
-                if (!graph.Edges.Any(e => e.Source == node.Id))
+                if (!edges.Any(e => e.Source == node.Id))
                     return (false, $"节点 {node.Label ?? node.Id} 没有出边");
-                if (!graph.Edges.Any(e => e.Target == node.Id))
+                if (!edges.Any(e => e.Target == node.Id))
                     return (false, $"节点 {node.Label ?? node.Id} 没有入边");
             }
         }
@@ -118,7 +119,7 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
             }
             else if (node.Type == "condition")
             {
-                var outgoing = graph.Edges.Where(e => e.Source == node.Id).ToList();
+                var outgoing = edges.Where(e => e.Source == node.Id).ToList();
                 if (outgoing.Count == 0)
                     return (false, $"条件节点 {node.Label ?? node.Id} 缺少出边");
                 // 若所有出边都有条件表达式，则节点配置的表达式可以为空；
@@ -130,7 +131,7 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
             }
             else if (node.Type == "parallel")
             {
-                var outgoing = graph.Edges.Where(e => e.Source == node.Id).ToList();
+                var outgoing = edges.Where(e => e.Source == node.Id).ToList();
                 if (outgoing.Count < 2)
                     return (false, $"并行网关 {node.Label ?? node.Id} 至少需要两个出边");
                 // 若配置了 Parallel.Branches，需与出边目标一致（宽松校验）
@@ -153,7 +154,7 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
         while (queue.Count > 0)
         {
             var current = queue.Dequeue();
-            var nextTargets = graph.Edges.Where(e => e.Source == current).Select(e => e.Target);
+            var nextTargets = edges.Where(e => e.Source == current).Select(e => e.Target);
             foreach (var t in nextTargets)
             {
                 if (!reachable.Contains(t))

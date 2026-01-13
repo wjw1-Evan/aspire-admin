@@ -203,6 +203,9 @@ builder.Services.AddHostedService<IoTDataCollectionHostedService>();
 builder.Services.AddScoped<IoTGatewayStatusChecker>();
 builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
 
+// 云存储维护服务
+builder.Services.AddHostedService<CloudStorageMaintenanceService>();
+
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
 

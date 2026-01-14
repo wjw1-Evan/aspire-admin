@@ -11,7 +11,7 @@
     <!-- 覆盖率收集（MSBuild 集成），允许使用 dotnet test /p:CollectCoverage=true 输出覆盖率报告 -->
     <PackageReference Include="coverlet.msbuild" Version="6.0.4" />
     <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Platform.ApiService/Platform.ApiService.csproj" />

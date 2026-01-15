@@ -1,13 +1,13 @@
 # Aspire Admin Platform
 
-基于 .NET Aspire 构建的多租户企业管理平台。项目提供统一的后端服务、管理后台与跨平台移动应用，涵盖用户管理、企业协作、菜单级权限控制、审计日志与系统监控等能力。
+基于 .NET Aspire 构建的多租户企业管理平台。项目同时交付后端、管理后台与跨平台移动端，覆盖组织协作、权限控制、文件与知识管理、工作流审批、IoT、实时通信与 AI 协同等场景。
 
 ## ✨ 关键特性
 
-- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限控制、加入企业审批、系统维护脚本、系统监控与 OpenTelemetry 采集、SSE 实时聊天、GridFS 附件存储与下载代理、AI 智能回复服务编排、任务与项目管理、IoT 平台、规则管理与 MCP 集成、密码本管理（AES-256-GCM 加密存储）、云存储与存储配额管理。
-- **管理后台**：React 19 + Ant Design 6 原生组件、动态菜单、企业与成员管理、加入申请审批、用户活动日志、任务管理、项目管理、IoT 平台（网关/设备/数据点/事件告警）、规则管理、密码本管理、云存储与存储配额管理、帮助中心、国际化与统一错误处理。
-- **移动应用**：Expo Router 导航、深色/浅色主题切换、认证守卫、企业切换、密码修改与基础组件库，内置实时聊天、附件上传 / 预览、AI 智能回复与附近的人推荐体验。
-- **基础设施**：Aspire AppHost 服务编排、YARP 统一网关、Scalar API 文档、MongoDB + Mongo Express、健康检查与可观察性。
+- **后端服务**：多租户数据访问工厂、JWT + 刷新令牌、图形验证码与登录失败保护、菜单级权限、企业协作与组织架构、任务/项目管理、工作流 + 表单 + 公文审批、云存储/版本/分享/配额、文件协同（版本、外链、权限）、统一通知中心、好友与位置社交、MCP 规则引擎、IoT 平台、密码本（AES-256-GCM）、AI 智能回复与 SSE 实时推送、系统维护脚本与监控。
+- **管理后台**：React 19 + Ant Design 6 原生组件（无 ProComponents），动态菜单与统一请求封装，内置用户/角色/企业/组织架构、加入申请、用户活动日志、任务/项目、IoT 平台、规则中心、工作流与表单设计器、公文审批、云存储（文件/版本/分享/回收站/配额）、分享中心、密码本、统一通知、帮助中心、Xiaoke 配置等模块。
+- **移动应用**：Expo Router 导航，认证守卫与企业切换，主题切换，实时聊天（SSE）、好友与附近的人、附件上传/预览、AI 智能回复、通知与基础资料管理。
+- **基础设施**：Aspire AppHost 编排 MongoDB、数据初始化、ApiService、前端应用，YARP 统一网关，Scalar/OpenAPI 文档，Mongo Express，可观察性与健康检查。
 
 ## 🏗 架构总览
 
@@ -16,32 +16,33 @@ Platform/
 ├── Platform.AppHost/          # Aspire 应用主机与服务编排
 ├── Platform.DataInitializer/  # 数据初始化微服务（索引 + 全局菜单）
 ├── Platform.ApiService/       # 多租户 REST API 服务
-├── Platform.Admin/            # 管理后台（React 19 + Ant Design Pro）
+├── Platform.Admin/            # 管理后台（React 19 + Ant Design 6）
 ├── Platform.App/              # 移动端（React Native + Expo）
 └── Platform.ServiceDefaults/  # 统一的服务发现、观测与安全配置
 ```
 
 ### 服务编排
 
-`Platform.AppHost` 会拉起 MongoDB、数据初始化服务、API 服务以及前端应用，并通过 YARP 将 `http://localhost:15000/{service}/**` 重写到后端 `/**`。
+`Platform.AppHost` 拉起 MongoDB、数据初始化服务、API 服务、管理后台与移动端 Web 预览，并通过 YARP 将 `http://localhost:15000/{service}/**` 重写到后端 `/**`。Aspire Dashboard 默认暴露在 <http://localhost:18888>，可在资源列表中直接打开 Scalar API 文档。
 
 ## 🔙 后端服务（Platform.ApiService）
 
-- **多租户数据访问**：所有实体通过 `IDatabaseOperationFactory<T>` 访问数据库，自动处理企业过滤、软删除、审计字段与批量操作，禁止直接使用 `IMongoCollection<T>`。
-- **认证与安全**：支持账户密码登录、刷新令牌、登录失败计数 + 图形验证码、密码复杂度校验、手机号验证码校验与 HSTS/CORS 配置。
-- **菜单级权限**：通过 `[RequireMenu("menu-name")]` 声明菜单访问权限，配合全局菜单与角色的 `MenuIds` 实现粗粒度控制。
-- **企业协作**：公司注册、个人企业创建、企业成员管理、管理员设置、加入申请审批、企业统计与企业切换。
-- **任务与项目管理**：任务创建、分配、执行、监控、任务树、任务依赖、执行日志；项目创建、成员管理、项目统计、任务关联。
-- **IoT 平台**：网关管理、设备管理、数据点管理、数据上报与查询、事件告警、设备状态监控、平台统计与数据流监控。
-- **规则管理**：规则 CRUD、规则执行、MCP（Model Context Protocol）集成、自动化工作流编排。
-- **密码本管理**：密码条目创建、更新、查询、删除（软删除）、分类与标签管理、密码加密存储（AES-256-GCM）、密码强度检测、密码生成器、数据导出、统计信息。密码使用用户级密钥加密，确保数据安全。
-- **云存储与存储配额**：文件上传/下载、文件夹管理、文件搜索、回收站管理、存储配额设置与监控、配额警告、企业存储统计、存储使用量排行榜。基于 MongoDB GridFS 存储文件，支持多租户数据隔离。
-- **实时通信**：基于 SSE（Server-Sent Events）实现实时消息推送，`ChatSseConnectionManager` 管理用户连接，`ChatBroadcaster` 负责消息广播，支持流式 AI 回复、消息/会话同步、已读状态推送等。
-- **运营能力**：通知中心、统一通知服务、系统维护脚本（补全缺失关联、数据校验）、系统资源监控 (`/api/SystemMonitor/resources`)。
-- **审计与日志**：`ActivityLogMiddleware` 捕获请求轨迹，`UserActivityLog` 记录 CRUD 审计操作，所有异常由统一响应中间件处理。
-- **OpenAPI 文档**：基于 .NET 10 原生 OpenAPI + Scalar，所有公共成员已补全 XML 注释，保证文档可读性。
+- **多租户数据访问**：统一通过 `IDatabaseOperationFactory<T>` 完成过滤、软删、审计字段与分页，禁止直接注入 `IMongoCollection<T>`。
+- **认证与安全**：账户密码 + 刷新令牌、登录失败计数与图形验证码、密码复杂度/历史校验、手机号验证码校验、HSTS/CORS、安全默认值。
+- **菜单级权限**：`[RequireMenu("module:resource")]` 绑定菜单权限；角色仅存储 `MenuIds`，前端不做按钮级权限分流。
+- **企业与组织协作**：企业创建/切换、成员与角色管理、管理员设置、加入申请审批、组织架构树、成员分配与排序、企业统计。
+- **任务与项目管理**：任务树/依赖/执行日志、批量状态更新、项目成员与关联、统计与筛选。
+- **工作流 + 表单 + 公文**：流程定义与图形校验、表单设计、实例运行/审批历史、任务拾取/拒绝/转签、公文创建-提交-审批-归档，流程/表单/文档三者快照可回溯。
+- **云存储与文件协同**：GridFS 文件/文件夹、回收站、搜索、配额、用量统计；文件版本历史、版本比较/恢复；文件外链与分享中心（权限/过期/提取码/访客审计）。
+- **通知与待办**：统一通知中心聚合消息、待办、任务提醒，支持未读计数、批量已读、待办创建/完成。
+- **社交与位置**：好友请求/同意/拒绝、直接会话；位置上报、附近的人、位置信息查询。
+- **聊天与 AI**：SSE 长连接推送，流式 AI 回复、会话/消息/已读同步，附件上传与 GridFS 下载代理。
+- **规则与 MCP**：规则 CRUD/执行，MCP 集成支持上下文编排与自动化。
+- **IoT 平台**：网关/设备/数据点/事件告警/统计/数据流监控。
+- **密码本**：AES-256-GCM 加密、用户级密钥、分类标签、强度检测、随机生成、软删与审计。
+- **运营与监控**：维护脚本、系统资源监控 (`/api/SystemMonitor/resources`)、OpenTelemetry 追踪、统一响应与活动日志中间件。
 
-核心启动逻辑集中在 `Program.cs`，完成 CORS、OpenAPI、JWT、健康检查与中间件管线配置。
+核心启动逻辑位于 `Program.cs`，按 `UseExceptionHandler → UseCors → UseAuthentication → UseAuthorization → ActivityLogMiddleware → ResponseFormattingMiddleware → MapControllers` 顺序配置。
 
 ## 🗄 数据初始化（Platform.DataInitializer）
 
@@ -57,28 +58,28 @@ Platform/
 
 - UmiJS 运行时获取当前用户与动态菜单，直接对接网关 `/apiservice`。
 - **功能模块**：
-  - **基础管理**：用户管理、角色管理、企业设置、加入申请（我发起 / 待审批）、我的活动、密码本管理、系统帮助。
-  - **任务与项目**：任务管理（创建、分配、执行、监控、任务树）、项目管理（创建、成员管理、任务关联）。
-  - **IoT 平台**：物联网平台概览、网关管理、设备管理、数据点管理、事件告警、数据流监控。
-  - **规则管理**：规则配置、MCP 集成、自动化工作流。
-- **技术栈**：React 19 + Ant Design 6 原生组件、UmiJS（@umijs/max）、统一请求封装、自动刷新 token、Biome 代码规范。
-- **组件规范**：优先使用 Ant Design 6 原生组件（Table、Form、Modal、Drawer 等），使用轻量级 DataTable 封装替代 ProTable，支持动态主题与响应式布局。
-- 支持多语言、响应式布局、错误提示与细粒度操作验证。
+  - **基础管理**：用户、角色、企业设置、加入申请（我发起/待审批）、组织架构、我的活动、密码本、系统帮助。
+  - **任务与项目**：任务树/依赖/执行日志、项目成员与关联。
+  - **工作流与公文**：流程定义与表单设计、运行/审批监控、公文创建/提交/审批/归档。
+  - **云存储与协作**：文件/文件夹、版本历史、分享中心、回收站、配额管理、分享记录（我分享/分享给我）。
+  - **IoT 平台**：网关、设备、数据点、事件告警、数据流监控与统计。
+  - **规则与 MCP**：规则配置、MCP 集成与自动化工作流。
+  - **通知与配置**：统一通知中心、Xiaoke 配置管理。
+- **技术栈与规范**：React 19 + Ant Design 6 原生组件、@umijs/max、统一请求封装 + token 自动刷新、Biome 规范；PageContainer 统一内边距，表格统一使用 DataTable。
+- 支持多语言、响应式布局、细粒度错误提示与校验。
 
 ## 📱 移动应用（Platform.App）
 
-- Expo Router 文件路由，`AuthGuard` 保证敏感页面登录可达。
-- 提供登录、注册、企业切换、个人资料、密码修改、关于信息等页面。
-- 主题切换、Toast/对话框封装、会话管理、网络错误处理。
-- 内置实时聊天功能，通过 SSE 连接接收实时消息，支持附件上传、AI 智能回复、附近的人推荐等。
+- Expo Router 文件路由，`AuthGuard` 保障敏感页面访问。
+- 登录/注册、企业切换、个人资料/密码修改、关于、通知。
+- 实时聊天（SSE）、附件上传与预览、AI 智能回复、好友会话与附近的人、主题切换、网络错误处理。
 
 ## 💬 实时聊天与 AI 助手
 
-- **SSE 实时通道**：基于 Server-Sent Events 实现，`/api/chat/sse` 端点支持长连接、自动重连、心跳保活（30秒间隔）。通过 `ChatSseConnectionManager` 管理用户连接，支持消息推送、会话更新、消息删除、已读状态同步等实时事件。
-- **流式 AI 回复**：支持流式返回 AI 回复内容，通过 SSE 增量推送消息块（`MessageChunk` 事件），前端实时渲染，提升用户体验。
-- **附件能力**：移动端通过统一 `apiService` 上传附件，后端使用 MongoDB GridFS 存储并提供 `/api/chat/messages/{sessionId}/attachments/{storageObjectId}` 下载流，确保链接可直接预览。
-- **AI 协同**：整合智能回复、匹配推荐、话题引导 API，可在聊天界面一键插入推荐内容，后端直接使用 `OpenAIClient` 调用大模型，并通过 `AiCompletionOptions` 统一配置模型、系统提示词与输出长度。
-- **附近的人**：内置位置权限检测、地理围栏更新与附近用户列表刷新，支持实时 Beacon 上传。
+- **SSE 通道**：`/api/chat/sse` 长连接 + 心跳保活，事件含 ReceiveMessage/SessionUpdated/MessageDeleted/MessageChunk/keepalive，支持自动重连。
+- **流式 AI 回复**：增量推送消息块，前端实时渲染；后台通过 `OpenAIClient` + `AiCompletionOptions` 统一配置模型与提示词。
+- **附件**：GridFS 存储与下载代理 `/api/chat/messages/{sessionId}/attachments/{storageObjectId}`，支持移动端/管理端直接预览。
+- **好友与附近的人**：好友请求、直接会话、位置上报、附近用户检索。
 
 ## 📊 IoT 平台
 
@@ -101,16 +102,9 @@ Platform/
    - [Docker Desktop](https://www.docker.com/products/docker-desktop)
    - （移动端调试）[Expo CLI](https://docs.expo.dev/get-started/installation/)
 
-2. **配置 JWT 密钥**（首次运行必需）
-
-   ```bash
-   cd Platform.ApiService
-   dotnet user-secrets init
-   dotnet user-secrets set "Jwt:SecretKey" "请替换为强随机密钥"
-   cd ..
-   ```
-
-   或设置环境变量 `Jwt__SecretKey`。
+2. **配置机密**（首次运行必需）
+   - `Platform.ApiService`：设置 `Jwt:SecretKey`（或环境变量 `Jwt__SecretKey`）。
+   - `Platform.AppHost`：配置 OpenAI 相关参数（`Parameters:openai-openai-endpoint`、`Parameters:openai-openai-apikey`、`Parameters:openai-openai-model`）；可用用户机密或环境变量覆盖。
 
 3. **安装前端依赖**
 
@@ -131,14 +125,14 @@ Platform/
    - 管理后台：<http://localhost:15001>
    - 移动应用（Web 预览）：<http://localhost:15002>
    - 网关与 API：<http://localhost:15000>
-   - Aspire Dashboard + Scalar：<http://localhost:15003>
+   - Aspire Dashboard（含 Scalar）：<http://localhost:18888>
    - Mongo Express：<http://localhost:15000/mongo-express>
 
 6. **首次登录**
    - 管理后台/移动端均支持直接注册。
    - 注册成功将自动创建个人企业并赋予管理员菜单权限。
 
-> 如果只需单独调试某个前端，可在对应目录执行 `npm run start`（Admin）或 `npm start`（App）。
+> 如需单独调试某个前端，可在对应目录执行 `npm run start`（Admin）或 `npm start`（App）。
 
 ## 📘 API 文档
 
@@ -146,62 +140,51 @@ Platform/
 - 直接访问 `http://localhost:15000/apiservice/openapi/v1.json` 获取 OpenAPI JSON。
 - 在 Scalar 页面点击 “Authorize”，填入 `Bearer <token>` 即可在线调试。
 
-## 📋 任务与项目管理
+## ⚙️ 工作流与公文审批
 
-- **任务管理**：任务创建、分配、执行、完成/取消、任务状态跟踪、优先级管理、计划时间设置、任务树（支持父子任务）、任务依赖、执行日志记录、待办任务、批量状态更新。
-- **项目管理**：项目创建、成员管理、项目统计、任务关联、项目查询与筛选。
-- **权限控制**：通过 `project-management-task` 和 `project-management-project` 菜单权限控制访问。
+- 流程定义：节点、连线、图形校验、分类/搜索/统计，支持启用/禁用，记录使用次数与最近使用时间。
+- 表单设计：字段定义、版本与启用状态，流程引用时自动绑定字段校验。
+- 实例运行：任务拾取/完成/转签/驳回/撤回，审批历史与执行日志可追溯。
+- 公文管理：创建/更新/删除/提交，绑定流程定义后自动启动审批流，支持快照回溯。
 
-## ⚙️ 规则管理与 MCP 集成
+## ☁️ 云存储、版本与分享
 
-- **规则管理**：规则的增删改查、规则查询与筛选、规则状态管理。
-- **MCP 集成**：支持 Model Context Protocol（MCP）集成，实现自动化工作流编排、规则执行与上下文管理。
+- **文件管理**：上传/下载、文件夹、搜索、回收站、批量操作、GridFS 存储与多租户隔离。
+- **版本历史**：版本创建、列表、详情、比较、恢复/回滚。
+- **分享与外链**：权限/过期时间/提取码/访问密码，分享记录（我分享/分享给我），访问审计与禁用。
+- **配额与统计**：用户/企业配额设置、用量统计、排行榜、阈值告警、重新计算。
 
 ## 🔐 密码本管理
 
-- **密码存储**：使用 AES-256-GCM 加密算法存储密码，每个用户使用独立的加密密钥，确保数据安全。
-- **功能特性**：密码条目管理（创建、编辑、删除、查询）、分类与标签管理、密码强度检测、随机密码生成、数据导出、统计信息。
-- **安全措施**：密码加密存储、用户级访问控制、活动日志自动过滤敏感信息、软删除支持。
-- **权限控制**：通过 `password-book` 菜单权限控制访问。
-
-详细文档见：
-
-- [密码本安全审计报告](docs/security/PASSWORD-BOOK-SECURITY-AUDIT.md)
-
-## ☁️ 云存储与存储配额管理
-
-- **文件管理**：文件上传/下载、文件夹创建与管理、文件重命名/移动/复制/删除、文件搜索与筛选、回收站管理（30天保留期）。
-- **存储配额**：用户存储配额设置（默认10GB）、实时存储使用量统计、配额警告（80%阈值）、企业存储统计、存储使用量排行榜、批量配额设置、配额使用量重新计算。
-- **技术实现**：基于 MongoDB GridFS 存储文件，支持大文件上传、文件预览、缩略图生成、多租户数据隔离。
-- **权限控制**：通过 `cloud-storage` 和 `cloud-storage-quota` 菜单权限控制访问。
+- AES-256-GCM 加密存储，用户级密钥。
+- 条目 CRUD、分类/标签、强度检测、随机生成、导出、统计，软删除与活动日志过滤敏感字段。
 
 ## 🧩 多租户与权限模型
 
-- **企业隔离**：实现 `IMultiTenant` 的实体（角色、通知等）自动附加 `CompanyId` 过滤；`AppUser` 通过 `CurrentCompanyId` + `UserCompany` 多对多关联。
-- **企业协作**：企业创建、搜索、成员列表、角色分配、管理员设置、成员移除。
-- **加入申请**：用户可申请加入其他企业；管理员在“待审核”页面审批或拒绝。
-- **菜单级权限**：角色仅包含 `MenuIds`，获得菜单即具备对应 API 访问权限；前端不再隐藏按钮，真实权限由后端控制。
+- **企业隔离**：实现 `IMultiTenant` 的实体自动附加 `CompanyId`；`AppUser` 通过 `CurrentCompanyId` + `UserCompany` 关联。
+- **加入申请**：跨企业申请、审批/拒绝。
+- **菜单级权限**：角色仅含 `MenuIds`，拥有菜单即具备 API 访问权；前端不做额外按钮屏蔽。
 
 ## 🔐 安全与可观测性
 
-- 图形验证码 / 短信验证码（可扩展）、登录失败计数、密码策略、刷新令牌、用户登出。
-- 统一异常处理中间件输出一致响应格式，前端根据 `showType` 渲染提示。
-- OpenTelemetry 追踪、健康检查端点 `/health`、SystemMonitor 资源信息、Mongo Express 数据查看。
-- `Platform.ServiceDefaults` 为所有服务注入服务发现、标准重试策略、日志记录与指标采集。
+- 图形/短信验证码、登录失败防护、密码策略、刷新令牌、登出。
+- 统一异常与响应格式化中间件，活动日志记录敏感操作（过滤敏感字段）。
+- OpenTelemetry、健康检查 `/health`、SystemMonitor 资源信息、Mongo Express。
+- `Platform.ServiceDefaults` 注入服务发现、重试、日志与指标。
 
 ## 🧪 测试与质量
 
-- 使用 Biome / ESLint（移动端）维持前端代码规范。
-- `Platform.AppHost.Tests` 提供 AppHost 集成测试示例，可通过 `dotnet test` 执行。
-- 所有公共 C# 类型保持 XML 注释，确保 Scalar 文档完整。
+- 前端 Biome/ESLint 规范。
+- `Platform.AppHost.Tests`、`Platform.ApiService.Tests` 提供集成与单元测试，可通过 `dotnet test` 运行。
+- 公共 C# 类型保持 XML 注释，保障 Scalar 文档完整。
 
 ## 📂 目录结构
 
 ```text
 Platform.ApiService/
-├── Controllers/      # Auth、User、Company、Menu、JoinRequest、Task、Project、IoT、Rule、Chat（ChatMessages、ChatSessions、ChatHistory、ChatSse）、PasswordBook、CloudStorage、StorageQuota、Maintenance、Monitor 等控制器
-├── Services/         # 业务服务层与自动注册（含 ChatService、ChatBroadcaster、ChatSseConnectionManager、PasswordBookService、EncryptionService、CloudStorageService、StorageQuotaService）
-├── Models/           # 实体与 DTO（含 Response 模型）
+├── Controllers/      # Auth/User/Company/Menu/Organization/JoinRequest/Task/Project/IoT/Rule/Mcp/Workflow/Form/Document/Chat(Sse)/PasswordBook/CloudStorage/FileVersion/FileShare/StorageQuota/UnifiedNotification/Friends/Social/Notice/SystemMonitor/Maintenance/XiaokeConfig 等
+├── Services/         # 业务服务（含 WorkflowEngine、ChatBroadcaster、ChatSseConnectionManager、FileVersion/Share、PasswordBook、CloudStorage、StorageQuota、UnifiedNotification 等）
+├── Models/           # 实体与 DTO
 ├── Middleware/       # 活动日志、统一响应
 ├── Extensions/       # 数据过滤、分页、自动注册等扩展方法
 └── Program.cs        # 服务启动入口
@@ -209,14 +192,14 @@ Platform.ApiService/
 Platform.Admin/
 ├── config/           # UmiJS 配置、路由、代理
 ├── src/
-│   ├── pages/        # 用户管理、角色管理、企业设置、加入申请、活动日志、任务管理、项目管理、IoT 平台、规则管理、密码本管理、云存储、存储配额管理等
-│   ├── components/   # 复用组件、帮助弹窗、AI 助手、统一通知中心等
+│   ├── pages/        # 用户/角色/企业/加入申请/组织架构/活动日志/任务/项目/IoT/规则/工作流/公文/云存储(文件/版本/分享/回收站)/分享中心/密码本/通知/Xiaoke 管理等
+│   ├── components/   # 复用组件、帮助弹窗、AI 助手、统一通知等
 │   ├── services/     # API 封装（自动刷新 token）
 │   ├── hooks/        # 自定义 Hooks（如 useSseConnection）
 │   └── utils/        # token 工具、国际化、错误处理
 
 Platform.App/
-├── app/              # Expo Router 页面，含认证、标签页、个人中心
+├── app/              # Expo Router 页面，含认证、标签页、聊天、好友/附近的人、通知、个人中心
 ├── components/       # 主题化组件、告警、输入校验
 └── services/         # 与网关交互的 API 封装
 ```
@@ -238,6 +221,7 @@ Platform.App/
 - [docs/features/API-RESPONSE-RULES.md](docs/features/API-RESPONSE-RULES.md) – 统一 API 响应与控制器规范。
 - [docs/features/MENU-LEVEL-PERMISSION-GUIDE.md](docs/features/MENU-LEVEL-PERMISSION-GUIDE.md) – 菜单级权限模型。
 - [docs/features/FRONTEND-RULES.md](docs/features/FRONTEND-RULES.md) – 前端开发规范。
+- [docs/features/USER-ACTIVITY-LOG.md](docs/features/USER-ACTIVITY-LOG.md) – 用户活动日志规范。
 
 ### 功能模块
 
@@ -254,4 +238,4 @@ Platform.App/
 
 ---
 
-欢迎基于此项目探索 .NET Aspire 在多租户 SaaS 场景下的最佳实践，结合前端与移动端快速构建企业级产品。
+欢迎基于本项目探索 .NET Aspire 在多租户 SaaS 场景下的最佳实践，结合前后端与移动端快速构建企业级产品。

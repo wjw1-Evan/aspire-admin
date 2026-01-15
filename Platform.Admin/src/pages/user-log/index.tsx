@@ -45,6 +45,7 @@ const UserLog: React.FC = () => {
     statusCode?: number;
     ipAddress?: string;
   }>({});
+  const initialLoadRef = useRef(true);
   const [stats, setStats] = useState({
     total: 0,
     success: 0,
@@ -136,25 +137,36 @@ const UserLog: React.FC = () => {
 
   // 提交筛选
   const handleSearch = useCallback(() => {
-    const values = form.getFieldsValue();
-    const range: [Dayjs, Dayjs] | undefined = values.dateRange;
+    const { dateRange, statusCode, ...rest } = form.getFieldsValue();
+    const [start, end]: [Dayjs | undefined, Dayjs | undefined] = dateRange || [];
+    const parsedStatus = statusCode === '' || statusCode === undefined || statusCode === null
+      ? undefined
+      : Number(statusCode);
+
     setFilters({
-      username: values.username?.trim() || undefined,
-      action: values.action || undefined,
-      httpMethod: values.httpMethod?.trim() || undefined,
-      statusCode: values.statusCode ? Number(values.statusCode) : undefined,
-      ipAddress: values.ipAddress?.trim() || undefined,
-      startDate: range && range.length === 2 ? range[0].toISOString() : undefined,
-      endDate: range && range.length === 2 ? range[1].toISOString() : undefined,
+      ...rest,
+      username: rest.username?.trim() || undefined,
+      action: rest.action || undefined,
+      httpMethod: rest.httpMethod?.trim() || undefined,
+      ipAddress: rest.ipAddress?.trim() || undefined,
+      statusCode: Number.isNaN(parsedStatus) ? undefined : parsedStatus,
+      startDate: start ? start.toISOString() : undefined,
+      endDate: end ? end.toISOString() : undefined,
     });
-    // 触发表格刷新
-    actionRef.current?.reload?.();
   }, [form]);
+
+  // 筛选变更后刷新表格（跳过首次渲染，避免双请求）
+  useEffect(() => {
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      return;
+    }
+    actionRef.current?.reload?.();
+  }, [filters]);
 
   const handleReset = useCallback(() => {
     form.resetFields();
     setFilters({});
-    actionRef.current?.reload?.();
   }, [form]);
 
   /**
@@ -558,12 +570,6 @@ const UserLog: React.FC = () => {
       ellipsis: true,
     },
     {
-      title: intl.formatMessage({ id: 'pages.table.userAgent' }),
-      dataIndex: 'userAgent',
-      key: 'userAgent',
-      ellipsis: true,
-    },
-    {
       title: intl.formatMessage({ id: 'pages.table.actionTime' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
@@ -609,10 +615,11 @@ const UserLog: React.FC = () => {
         </Form.Item>
 
         <Form.Item name="httpMethod" label={intl.formatMessage({ id: 'pages.table.httpMethod' })}>
-          <Input
+          <Select
             allowClear
-            placeholder={intl.formatMessage({ id: 'pages.table.httpMethod' })}
-            style={{ minWidth: 120 }}
+            placeholder={intl.formatMessage({ id: 'pages.placeholder.select' })}
+            style={{ minWidth: 140 }}
+            options={['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((m) => ({ label: m, value: m }))}
           />
         </Form.Item>
 

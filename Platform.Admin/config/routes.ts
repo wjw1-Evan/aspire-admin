@@ -87,6 +87,11 @@ export default [
     hideInMenu: true,
   },
   {
+    path: '/user-log',
+    component: './user-log',
+    hideInMenu: true,
+  },
+  {
     path: '/system/company-settings',
     component: './company/settings',
     hideInMenu: true,

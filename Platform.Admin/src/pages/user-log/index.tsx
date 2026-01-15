@@ -1,17 +1,18 @@
-import { PageContainer } from '@/components';
+import { PageContainer, StatCard } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { Tag, Button, Badge, Space, Grid } from 'antd';
+import { Tag, Button, Badge, Space, Grid, Form, Select, DatePicker, Card, Row, Col, Input } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 const { useBreakpoint } = Grid;
-import { ReloadOutlined, FileTextOutlined } from '@ant-design/icons';
+import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, DashboardOutlined } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { getUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import LogDetailDrawer from './components/LogDetailDrawer';
 import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 
 // 统一的日期时间格式化函数
 const formatDateTime = (dateTime: string | null | undefined): string => {
@@ -34,6 +35,23 @@ const UserLog: React.FC = () => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<UserActivityLog | null>(null);
+  const [form] = Form.useForm();
+  const [filters, setFilters] = useState<{
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+    username?: string;
+    httpMethod?: string;
+    statusCode?: number;
+    ipAddress?: string;
+  }>({});
+  const [stats, setStats] = useState({
+    total: 0,
+    success: 0,
+    error: 0,
+    avgDuration: 0,
+    actions: 0,
+  });
 
   const handleViewDetail = useCallback((record: UserActivityLog) => {
     setSelectedLog(record);
@@ -47,21 +65,48 @@ const UserLog: React.FC = () => {
 
   // 获取用户活动日志列表（使用 useCallback 避免死循环）
   const fetchUserLogs = useCallback(async (params: any, _sort?: Record<string, any>) => {
-    const { current = 1, pageSize = 20, action } = params;
+    const { current = 1, pageSize = 20 } = params;
 
     try {
       const response = await getUserActivityLogs({
         page: current,
         pageSize,
-        action,
+        action: filters.action,
+        httpMethod: filters.httpMethod,
+        statusCode: filters.statusCode,
+        ipAddress: filters.ipAddress,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
       });
 
       if (response.success && response.data) {
         // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
         const result = response.data as any;
+        let list: UserActivityLog[] = result.data || [];
+
+        if (filters.username) {
+          const keyword = filters.username.trim().toLowerCase();
+          list = list.filter((item) => (item.username || '').toLowerCase().includes(keyword));
+        }
+
+        const successCount = list.filter((item) => (item.statusCode ?? 0) >= 200 && (item.statusCode ?? 0) < 400).length;
+        const errorCount = list.filter((item) => (item.statusCode ?? 0) >= 400).length;
+        const avgDuration = list.length
+          ? Math.round(list.reduce((sum, item) => sum + (item.duration || 0), 0) / list.length)
+          : 0;
+        const actionKinds = new Set(list.map((item) => item.action || 'unknown')).size;
+
+        setStats({
+          total: result.total || list.length || 0,
+          success: successCount,
+          error: errorCount,
+          avgDuration,
+          actions: actionKinds,
+        });
+
         return {
-          data: result.data || [],
-          total: result.total || 0,
+          data: list,
+          total: filters.username ? list.length : result.total || list.length || 0,
           success: true,
         };
       }
@@ -82,12 +127,35 @@ const UserLog: React.FC = () => {
         success: false,
       };
     }
-  }, []);
+  }, [filters]);
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
     actionRef.current?.reload?.();
   }, []);
+
+  // 提交筛选
+  const handleSearch = useCallback(() => {
+    const values = form.getFieldsValue();
+    const range: [Dayjs, Dayjs] | undefined = values.dateRange;
+    setFilters({
+      username: values.username?.trim() || undefined,
+      action: values.action || undefined,
+      httpMethod: values.httpMethod?.trim() || undefined,
+      statusCode: values.statusCode ? Number(values.statusCode) : undefined,
+      ipAddress: values.ipAddress?.trim() || undefined,
+      startDate: range && range.length === 2 ? range[0].toISOString() : undefined,
+      endDate: range && range.length === 2 ? range[1].toISOString() : undefined,
+    });
+    // 触发表格刷新
+    actionRef.current?.reload?.();
+  }, [form]);
+
+  const handleReset = useCallback(() => {
+    form.resetFields();
+    setFilters({});
+    actionRef.current?.reload?.();
+  }, [form]);
 
   /**
    * 获取操作类型标签颜色
@@ -525,20 +593,131 @@ const UserLog: React.FC = () => {
         </Space>
       }
     >
+      {/* 筛选区域 */}
+      <Form
+        form={form}
+        layout={isMobile ? 'vertical' : 'inline'}
+        style={{ marginBottom: 12 }}
+        onFinish={handleSearch}
+      >
+        <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
+          <Input
+            allowClear
+            placeholder={intl.formatMessage({ id: 'pages.table.action' })}
+            style={{ minWidth: 160 }}
+          />
+        </Form.Item>
+
+        <Form.Item name="httpMethod" label={intl.formatMessage({ id: 'pages.table.httpMethod' })}>
+          <Input
+            allowClear
+            placeholder={intl.formatMessage({ id: 'pages.table.httpMethod' })}
+            style={{ minWidth: 120 }}
+          />
+        </Form.Item>
+
+        <Form.Item name="statusCode" label={intl.formatMessage({ id: 'pages.table.statusCode' })}>
+          <Input
+            allowClear
+            placeholder={intl.formatMessage({ id: 'pages.table.statusCode' })}
+            style={{ minWidth: 120 }}
+            type="number"
+          />
+        </Form.Item>
+
+        <Form.Item name="ipAddress" label={intl.formatMessage({ id: 'pages.table.ipAddress' })}>
+          <Input
+            allowClear
+            placeholder={intl.formatMessage({ id: 'pages.table.ipAddress' })}
+            style={{ minWidth: 160 }}
+          />
+        </Form.Item>
+
+        <Form.Item name="username" label={intl.formatMessage({ id: 'pages.table.username' })}>
+          <Input
+            allowClear
+            placeholder={intl.formatMessage({ id: 'pages.table.username' })}
+            style={{ minWidth: 180 }}
+          />
+        </Form.Item>
+
+        <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.logDetail.actionTime' })}>
+          <DatePicker.RangePicker showTime style={{ minWidth: 280 }} />
+        </Form.Item>
+
+        <Form.Item>
+          <Space>
+            <Button type="primary" htmlType="submit">
+              {intl.formatMessage({ id: 'pages.search.submit' }, { defaultMessage: '查询' })}
+            </Button>
+            <Button onClick={handleReset}>
+              {intl.formatMessage({ id: 'pages.search.reset' }, { defaultMessage: '重置' })}
+            </Button>
+          </Space>
+        </Form.Item>
+      </Form>
+
+      {/* 当前页统计：对齐“我的活动”StatCard 风格 */}
+      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Row gutter={[12, 12]}>
+          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+            <StatCard
+              title={intl.formatMessage({ id: 'pages.userLog.stats.total', defaultMessage: '当前页记录' })}
+              value={stats.total}
+              icon={<DashboardOutlined />}
+              color="#1890ff"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+            <StatCard
+              title={intl.formatMessage({ id: 'pages.userLog.stats.success', defaultMessage: '成功次数' })}
+              value={stats.success}
+              icon={<CheckCircleOutlined />}
+              color="#52c41a"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+            <StatCard
+              title={intl.formatMessage({ id: 'pages.userLog.stats.error', defaultMessage: '错误次数' })}
+              value={stats.error}
+              icon={<CloseCircleOutlined />}
+              color="#ff4d4f"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+            <StatCard
+              title={intl.formatMessage({ id: 'pages.userLog.stats.actions', defaultMessage: '操作类型数' })}
+              value={stats.actions}
+              icon={<ThunderboltOutlined />}
+              color="#faad14"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+            <StatCard
+              title={intl.formatMessage({ id: 'pages.userLog.stats.avgDuration', defaultMessage: '平均耗时(ms)' })}
+              value={stats.avgDuration}
+              suffix="ms"
+              icon={<DashboardOutlined />}
+              color="#722ed1"
+            />
+          </Col>
+        </Row>
+      </Card>
+
       <div ref={tableRef}>
         <DataTable<UserActivityLog>
           actionRef={actionRef}
           rowKey="id"
           scroll={{ x: 'max-content' }}
-          search={true}
-        request={fetchUserLogs}
-        columns={columns}
-        pagination={{
-          pageSize: 20,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-        }}
+          search={false}
+          request={fetchUserLogs}
+          columns={columns}
+          pagination={{
+            pageSize: 20,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+          }}
         />
       </div>
 

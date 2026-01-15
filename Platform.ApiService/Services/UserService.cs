@@ -1047,10 +1047,11 @@ public class UserService : IUserService
             filterBuilder.Regex(log => log.Action, action, "i");
         }
 
-        // 按 HTTP 方法过滤
+        // 按 HTTP 方法过滤（统一大写，以避免大小写导致的不匹配）
         if (!string.IsNullOrEmpty(httpMethod))
         {
-            filterBuilder.Equal(log => log.HttpMethod, httpMethod);
+            var method = httpMethod.ToUpperInvariant();
+            filterBuilder.Equal(log => log.HttpMethod, method);
         }
 
         // 按状态码过滤
@@ -1177,10 +1178,13 @@ public class UserService : IUserService
         int pageSize = 20,
         string? userId = null,
         string? action = null,
+        string? httpMethod = null,
+        int? statusCode = null,
+        string? ipAddress = null,
         DateTime? startDate = null,
         DateTime? endDate = null)
     {
-        var (logs, total, _) = await GetAllActivityLogsWithUsersAsync(page, pageSize, userId, action, startDate, endDate);
+        var (logs, total, _) = await GetAllActivityLogsWithUsersAsync(page, pageSize, userId, action, httpMethod, statusCode, ipAddress, startDate, endDate);
         return (logs, total);
     }
 
@@ -1192,6 +1196,9 @@ public class UserService : IUserService
         int pageSize = 20,
         string? userId = null,
         string? action = null,
+        string? httpMethod = null,
+        int? statusCode = null,
+        string? ipAddress = null,
         DateTime? startDate = null,
         DateTime? endDate = null)
     {
@@ -1207,6 +1214,24 @@ public class UserService : IUserService
         if (!string.IsNullOrEmpty(action))
         {
             filterBuilder.Equal(log => log.Action, action);
+        }
+
+        // 按 HTTP 方法过滤
+        if (!string.IsNullOrEmpty(httpMethod))
+        {
+            filterBuilder.Equal(log => log.HttpMethod, httpMethod);
+        }
+
+        // 按状态码过滤
+        if (statusCode.HasValue)
+        {
+            filterBuilder.Equal(log => log.StatusCode, statusCode.Value);
+        }
+
+        // 按 IP 地址过滤（模糊匹配）
+        if (!string.IsNullOrEmpty(ipAddress))
+        {
+            filterBuilder.Contains(log => log.IpAddress, ipAddress);
         }
 
         // 按日期范围过滤

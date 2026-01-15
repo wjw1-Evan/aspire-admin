@@ -49,7 +49,7 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WithReference(mongodb)
         .WaitForCompletion(datainitializer)
         .WithHttpEndpoint()
-        .WithReplicas(3)
+        .WithReplicas(1)
         .WithHttpHealthCheck("/health")
         .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
         .WithReference(chat)

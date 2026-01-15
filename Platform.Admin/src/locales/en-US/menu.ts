@@ -10,6 +10,7 @@ export default {
   'menu.system.role-management': 'Role Management',
   'menu.system.menu-management': 'Menu Management',
   'menu.system.user-log': 'User Log',
+  'menu.user-log': 'User Activity Log',
   'menu.system.company-settings': 'Company Settings',
   'menu.system.company-management': 'Company Management',
   'menu.system.organization': 'Organization',

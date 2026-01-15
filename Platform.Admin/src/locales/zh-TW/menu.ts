@@ -10,6 +10,7 @@ export default {
   'menu.system.role-management': '角色管理',
   'menu.system.menu-management': '菜單管理',
   'menu.system.user-log': '用戶日誌',
+  'menu.user-log': '操作日誌',
   'menu.system.company-settings': '企業設置',
   'menu.system.company-management': '企業管理',
   'menu.system.organization': '組織架構',

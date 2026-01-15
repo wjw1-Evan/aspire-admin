@@ -8,7 +8,15 @@ export async function getUserActivityLogs(
   params?: GetUserActivityLogsParams,
   options?: Record<string, any>,
 ) {
-  return request<API.ApiResponse<UserActivityLog[]> & { total: number; page: number; pageSize: number; totalPages: number }>('/api/users/activity-logs', {
+  return request<
+    API.ApiResponse<{
+      data: UserActivityLog[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages?: number;
+    }>
+  >('/api/users/activity-logs', {
     method: 'GET',
     params,
     ...(options || {}),

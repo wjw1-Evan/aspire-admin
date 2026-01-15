@@ -359,6 +359,22 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
+        // 系统管理子菜单：用户操作日志（查看当前企业内所有用户的操作日志）
+        menus.Add(new Menu
+        {
+            Name = "user-log",
+            Title = "操作日志",
+            Path = "/user-log",
+            Component = "./user-log",
+            Icon = "file-text",
+            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            SortOrder = 6,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
         // ⭐ 在此处添加新菜单，系统会自动同步到数据库
 
         // 密码本菜单
@@ -763,6 +779,7 @@ public class DataInitializerService : IDataInitializerService
             "company-management" => "system",
             "organization" => "system",
             "my-activity" => "system",
+            "user-log" => "system",
             // 项目管理子菜单
             "project-management-task" => "project-management",
             "project-management-project" => "project-management",

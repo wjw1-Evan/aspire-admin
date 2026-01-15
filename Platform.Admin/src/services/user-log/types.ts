@@ -27,6 +27,9 @@ export interface GetUserActivityLogsParams {
   pageSize?: number;
   userId?: string;
   action?: string;
+  httpMethod?: string;
+  statusCode?: number;
+  ipAddress?: string;
   startDate?: string;
   endDate?: string;
   sortBy?: string;

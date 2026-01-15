@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
-    "antd": "^6.1.4",
+    "antd": "^6.2.0",
     "antd-style": "^4.1.0",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",
@@ -34,10 +34,10 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/node": "^25.0.6",
+    "@types/node": "^25.0.8",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
-    "@umijs/max": "^4.6.22",
+    "@umijs/max": "^4.6.23",
     "cross-env": "^10.1.0",
     "typescript": "^5.9.3",
     "umi-presets-pro": "^2.0.3"

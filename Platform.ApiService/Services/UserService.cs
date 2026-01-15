@@ -1170,6 +1170,15 @@ public class UserService : IUserService
     }
 
     /// <summary>
+    /// 获取指定活动日志详情（管理员查看）
+    /// </summary>
+    public async Task<UserActivityLog?> GetActivityLogByIdAsync(string logId)
+    {
+        // 直接按 ID 查询，数据工厂会自动应用多租户过滤
+        return await _activityLogFactory.GetByIdAsync(logId);
+    }
+
+    /// <summary>
     /// 获取所有用户的活动日志（分页）- 兼容性方法
     /// v6.1: 委托给优化版本的方法
     /// </summary>

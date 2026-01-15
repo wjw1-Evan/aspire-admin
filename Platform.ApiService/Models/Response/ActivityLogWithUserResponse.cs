@@ -56,6 +56,11 @@ public class ActivityLogWithUserResponse
     public string? QueryString { get; set; }
 
     /// <summary>
+    /// 完整 URL（path + queryString）
+    /// </summary>
+    public string? FullUrl { get; set; }
+
+    /// <summary>
     /// HTTP状态码
     /// </summary>
     public int? StatusCode { get; set; }

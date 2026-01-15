@@ -148,6 +148,13 @@ public interface IUserService
     Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId);
 
     /// <summary>
+    /// 获取指定活动日志详情（管理员查看）
+    /// </summary>
+    /// <param name="logId">日志ID</param>
+    /// <returns>活动日志详情，如果不存在则返回 null</returns>
+    Task<UserActivityLog?> GetActivityLogByIdAsync(string logId);
+
+    /// <summary>
     /// 获取所有活动日志（分页，管理员功能）
     /// </summary>
     /// <param name="page">页码（默认1）</param>

@@ -24,6 +24,19 @@ export async function getUserActivityLogs(
 }
 
 /**
+ * 获取指定活动日志详情（管理员端）
+ */
+export async function getActivityLogById(
+  logId: string,
+  options?: Record<string, any>,
+) {
+  return request<API.ApiResponse<UserActivityLog>>(`/api/users/activity-logs/${logId}`, {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/**
  * 获取当前用户的活动日志（分页）
  */
 export async function getCurrentUserActivityLogs(

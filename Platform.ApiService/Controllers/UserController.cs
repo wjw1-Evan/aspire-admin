@@ -421,8 +421,8 @@ public class UserController : BaseApiController
             startDate,
             endDate);
 
-        // 组装返回数据，包含用户信息和完整的日志字段
-        var logsWithUserInfo = logs.Select(log => new ActivityLogWithUserResponse
+        // 组装返回数据（精简字段，不包含响应体等大字段）
+        var logsWithUserInfo = logs.Select(log => new ActivityLogListItemResponse
         {
             Id = log.Id ?? string.Empty,
             UserId = log.UserId,
@@ -430,22 +430,55 @@ public class UserController : BaseApiController
             Action = log.Action,
             Description = log.Description,
             IpAddress = log.IpAddress,
-            UserAgent = log.UserAgent,
             HttpMethod = log.HttpMethod,
             Path = log.Path,
             QueryString = log.QueryString,
+            FullUrl = log.FullUrl,
             StatusCode = log.StatusCode,
             Duration = log.Duration,
-            ResponseBody = log.ResponseBody,
             CreatedAt = log.CreatedAt
         }).ToList();
 
-        var response = new PaginatedResponse<ActivityLogWithUserResponse>
+        var response = new PaginatedResponse<ActivityLogListItemResponse>
         {
             Data = logsWithUserInfo,
             Total = total,
             Page = page,
             PageSize = pageSize
+        };
+
+        return Success(response);
+    }
+
+    /// <summary>
+    /// 获取指定活动日志详情（管理员查看）
+    /// </summary>
+    /// <param name="logId">活动日志ID</param>
+    [HttpGet("/api/users/activity-logs/{logId}")]
+    [RequireMenu("user-log")]
+    public async Task<IActionResult> GetActivityLogById(string logId)
+    {
+        var log = await _userService.GetActivityLogByIdAsync(logId);
+        if (log == null)
+            throw new KeyNotFoundException("活动日志不存在或不可用");
+
+        var response = new ActivityLogWithUserResponse
+        {
+            Id = log.Id ?? string.Empty,
+            UserId = log.UserId,
+            Username = log.Username,
+            Action = log.Action,
+            Description = log.Description,
+            IpAddress = log.IpAddress,
+            UserAgent = log.UserAgent,
+            HttpMethod = log.HttpMethod,
+            Path = log.Path,
+            QueryString = log.QueryString,
+            FullUrl = log.FullUrl,
+            StatusCode = log.StatusCode,
+            Duration = log.Duration,
+            ResponseBody = log.ResponseBody,
+            CreatedAt = log.CreatedAt
         };
 
         return Success(response);

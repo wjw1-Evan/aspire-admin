@@ -8,7 +8,7 @@ const { useBreakpoint } = Grid;
 import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, DashboardOutlined } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
-import { getUserActivityLogs } from '@/services/user-log/api';
+import { getActivityLogById, getUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import LogDetailDrawer from './components/LogDetailDrawer';
 import dayjs from 'dayjs';
@@ -731,7 +731,9 @@ const UserLog: React.FC = () => {
       <LogDetailDrawer
         open={detailDrawerOpen}
         log={selectedLog}
+        logId={selectedLog?.id}
         onClose={handleCloseDetail}
+        fetcher={getActivityLogById}
       />
     </PageContainer>
   );

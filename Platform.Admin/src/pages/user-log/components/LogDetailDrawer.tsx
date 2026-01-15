@@ -36,6 +36,7 @@ interface LogDetailDrawerProps {
   readonly logId?: string; // 可选：如果提供 logId，将从 API 获取完整数据
   readonly onClose: () => void;
   readonly fetchFromApi?: boolean; // 是否从 API 获取完整数据（默认：如果提供了 logId 则自动获取）
+  readonly fetcher?: (logId: string) => Promise<API.ApiResponse<UserActivityLog>>; // 自定义获取详情的 API（管理员端 / 用户端）
 }
 
 export default function LogDetailDrawer({
@@ -44,6 +45,7 @@ export default function LogDetailDrawer({
   logId,
   onClose,
   fetchFromApi,
+  fetcher,
 }: LogDetailDrawerProps) {
   const intl = useIntl();
   const screens = useBreakpoint();
@@ -54,12 +56,12 @@ export default function LogDetailDrawer({
   // 当打开抽屉且提供了 logId 时，从 API 获取完整数据
   useEffect(() => {
     const shouldFetch = fetchFromApi !== false && logId && open;
-    
+
     if (shouldFetch) {
       setLoading(true);
       const fetchLogDetail = async () => {
         try {
-          const response = await getCurrentUserActivityLogById(logId);
+          const response = await (fetcher ? fetcher(logId) : getCurrentUserActivityLogById(logId));
           if (response.success && response.data) {
             setLog(response.data);
           } else {
@@ -74,7 +76,7 @@ export default function LogDetailDrawer({
           setLoading(false);
         }
       };
-      
+
       void fetchLogDetail();
     } else if (open && initialLog) {
       // 如果没有 logId，使用传入的 log 数据
@@ -83,7 +85,7 @@ export default function LogDetailDrawer({
       // 关闭时重置状态
       setLog(null);
     }
-  }, [open, logId, initialLog, fetchFromApi, intl]);
+  }, [open, logId, initialLog, fetchFromApi, fetcher, intl]);
   const formattedResponseBody = React.useMemo(() => {
     if (!log?.responseBody) {
       return null;
@@ -101,7 +103,7 @@ export default function LogDetailDrawer({
     () => Boolean(log?.responseBody && log.responseBody.endsWith('...(truncated)')),
     [log?.responseBody],
   );
-  
+
   if (!log && !loading) return null;
 
   // 根据状态码获取显示样式
@@ -142,156 +144,156 @@ export default function LogDetailDrawer({
   };
 
   return (
-    <Drawer 
-      title={intl.formatMessage({ id: 'pages.logDetail.title' })} 
-      size={isMobile ? 'large' : 720} 
-      open={open} 
+    <Drawer
+      title={intl.formatMessage({ id: 'pages.logDetail.title' })}
+      size={isMobile ? 'large' : 720}
+      open={open}
       onClose={onClose}
     >
       <Spin spinning={loading}>
         {log ? (
           <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-        {/* 基本信息 */}
-        <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.basicInfo' })} bordered column={1}>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.logId' })}>
-            <Text copyable>{log.id}</Text>
-          </Descriptions.Item>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.user' })}>
-            <Space>
-              <Text strong>{log.username}</Text>
-              <Text type="secondary" copyable={{ text: log.userId }}>
-                ({intl.formatMessage({ id: 'pages.logDetail.userId' }, { userId: log.userId })})
-              </Text>
-            </Space>
-          </Descriptions.Item>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.actionType' })}>
-            <Tag color="blue">{log.action}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.actionDescription' })}>
-            {log.description}
-          </Descriptions.Item>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.actionTime' })}>
-            <Space>
-              <ClockCircleOutlined />
-              <Text>{dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Text>
-              <Text type="secondary">({dayjs(log.createdAt).fromNow()})</Text>
-            </Space>
-          </Descriptions.Item>
-        </Descriptions>
-
-        {/* HTTP 请求信息 */}
-        {(log.httpMethod ||
-          log.path ||
-          log.statusCode ||
-          log.duration !== undefined) && (
-          <>
-            <Divider />
-            <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.httpRequestInfo' })} bordered column={1}>
-              {log.httpMethod && (
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestMethod' })}>
-                  <Tag
-                    color={getMethodColor(log.httpMethod)}
-                    icon={<ApiOutlined />}
-                  >
-                    {log.httpMethod}
-                  </Tag>
-                </Descriptions.Item>
-              )}
-              {log.path && (
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestPath' })}>
-                  <Text code copyable>
-                    {log.path}
+            {/* 基本信息 */}
+            <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.basicInfo' })} bordered column={1}>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.logId' })}>
+                <Text copyable>{log.id}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.user' })}>
+                <Space>
+                  <Text strong>{log.username}</Text>
+                  <Text type="secondary" copyable={{ text: log.userId }}>
+                    ({intl.formatMessage({ id: 'pages.logDetail.userId' }, { userId: log.userId })})
                   </Text>
-                </Descriptions.Item>
-              )}
-              {log.queryString && (
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.queryParams' })}>
-                  <Paragraph
-                    code
-                    copyable
-                    ellipsis={{ rows: 2, expandable: true }}
-                    style={{ marginBottom: 0 }}
-                  >
-                    {log.queryString}
-                  </Paragraph>
-                </Descriptions.Item>
-              )}
-              {log.statusCode !== undefined && (
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.responseStatus' })}>
-                  {getStatusBadge(log.statusCode)}
-                </Descriptions.Item>
-              )}
-              {log.duration !== undefined && (
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestDuration' })}>
-                  <Space>
-                    <ThunderboltOutlined />
-                    <Text strong>{formatDuration(log.duration)}</Text>
-                    {log.duration > 1000 && log.duration <= 3000 && (
-                      <Tag color="warning">{intl.formatMessage({ id: 'pages.logDetail.responseSlow' })}</Tag>
-                    )}
-                    {log.duration > 3000 && <Tag color="error">{intl.formatMessage({ id: 'pages.logDetail.responseTimeout' })}</Tag>}
-                  </Space>
-                </Descriptions.Item>
-              )}
-            </Descriptions>
-          </>
-        )}
-
-        {formattedResponseBody && (
-          <>
-            <Divider />
-            <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.responseBody' })} bordered column={1}>
-              <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.responsePreview' })}>
-                <Paragraph
-                  copyable={{ text: log.responseBody ?? '' }}
-                  style={{
-                    width: '100%',
-                    maxHeight: 320,
-                    overflow: 'auto',
-                    fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace',
-                    whiteSpace: 'pre-wrap',
-                    marginBottom: isResponseTruncated ? 8 : 0,
-                  }}
-                >
-                  {formattedResponseBody}
-                </Paragraph>
-                {isResponseTruncated && (
-                  <Text type="secondary">
-                    {intl.formatMessage({ id: 'pages.logDetail.responseTruncated' })}
-                  </Text>
-                )}
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.actionType' })}>
+                <Tag color="blue">{log.action}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.actionDescription' })}>
+                {log.description}
+              </Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.actionTime' })}>
+                <Space>
+                  <ClockCircleOutlined />
+                  <Text>{dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Text>
+                  <Text type="secondary">({dayjs(log.createdAt).fromNow()})</Text>
+                </Space>
               </Descriptions.Item>
             </Descriptions>
-          </>
-        )}
 
-        {/* 网络信息 */}
-        {(log.ipAddress || log.userAgent) && (
-          <>
-            <Divider />
-            <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.networkInfo' })} bordered column={1}>
-              {log.ipAddress && (
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.ipAddress' })}>
-                  <Space>
-                    <GlobalOutlined />
-                    <Text copyable>{log.ipAddress}</Text>
-                  </Space>
-                </Descriptions.Item>
+            {/* HTTP 请求信息 */}
+            {(log.httpMethod ||
+              log.path ||
+              log.statusCode ||
+              log.duration !== undefined) && (
+                <>
+                  <Divider />
+                  <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.httpRequestInfo' })} bordered column={1}>
+                    {log.httpMethod && (
+                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestMethod' })}>
+                        <Tag
+                          color={getMethodColor(log.httpMethod)}
+                          icon={<ApiOutlined />}
+                        >
+                          {log.httpMethod}
+                        </Tag>
+                      </Descriptions.Item>
+                    )}
+                    {log.path && (
+                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestPath' })}>
+                        <Text code copyable>
+                          {log.path}
+                        </Text>
+                      </Descriptions.Item>
+                    )}
+                    {log.queryString && (
+                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.queryParams' })}>
+                        <Paragraph
+                          code
+                          copyable
+                          ellipsis={{ rows: 2, expandable: true }}
+                          style={{ marginBottom: 0 }}
+                        >
+                          {log.queryString}
+                        </Paragraph>
+                      </Descriptions.Item>
+                    )}
+                    {log.statusCode !== undefined && (
+                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.responseStatus' })}>
+                        {getStatusBadge(log.statusCode)}
+                      </Descriptions.Item>
+                    )}
+                    {log.duration !== undefined && (
+                      <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.requestDuration' })}>
+                        <Space>
+                          <ThunderboltOutlined />
+                          <Text strong>{formatDuration(log.duration)}</Text>
+                          {log.duration > 1000 && log.duration <= 3000 && (
+                            <Tag color="warning">{intl.formatMessage({ id: 'pages.logDetail.responseSlow' })}</Tag>
+                          )}
+                          {log.duration > 3000 && <Tag color="error">{intl.formatMessage({ id: 'pages.logDetail.responseTimeout' })}</Tag>}
+                        </Space>
+                      </Descriptions.Item>
+                    )}
+                  </Descriptions>
+                </>
               )}
-              {log.userAgent && (
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.userAgent' })}>
-                  <Paragraph
-                    copyable
-                    ellipsis={{ rows: 3, expandable: true }}
-                    style={{ marginBottom: 0 }}
-                  >
-                    {log.userAgent}
-                  </Paragraph>
-                </Descriptions.Item>
-              )}
-            </Descriptions>
-          </>
-        )}
+
+            {formattedResponseBody && (
+              <>
+                <Divider />
+                <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.responseBody' })} bordered column={1}>
+                  <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.responsePreview' })}>
+                    <Paragraph
+                      copyable={{ text: log.responseBody ?? '' }}
+                      style={{
+                        width: '100%',
+                        maxHeight: 320,
+                        overflow: 'auto',
+                        fontFamily: 'JetBrains Mono, SFMono-Regular, Consolas, Menlo, monospace',
+                        whiteSpace: 'pre-wrap',
+                        marginBottom: isResponseTruncated ? 8 : 0,
+                      }}
+                    >
+                      {formattedResponseBody}
+                    </Paragraph>
+                    {isResponseTruncated && (
+                      <Text type="secondary">
+                        {intl.formatMessage({ id: 'pages.logDetail.responseTruncated' })}
+                      </Text>
+                    )}
+                  </Descriptions.Item>
+                </Descriptions>
+              </>
+            )}
+
+            {/* 网络信息 */}
+            {(log.ipAddress || log.userAgent) && (
+              <>
+                <Divider />
+                <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.networkInfo' })} bordered column={1}>
+                  {log.ipAddress && (
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.ipAddress' })}>
+                      <Space>
+                        <GlobalOutlined />
+                        <Text copyable>{log.ipAddress}</Text>
+                      </Space>
+                    </Descriptions.Item>
+                  )}
+                  {log.userAgent && (
+                    <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.userAgent' })}>
+                      <Paragraph
+                        copyable
+                        ellipsis={{ rows: 3, expandable: true }}
+                        style={{ marginBottom: 0 }}
+                      >
+                        {log.userAgent}
+                      </Paragraph>
+                    </Descriptions.Item>
+                  )}
+                </Descriptions>
+              </>
+            )}
           </Space>
         ) : (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>

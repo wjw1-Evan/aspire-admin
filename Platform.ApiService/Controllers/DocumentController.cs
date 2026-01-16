@@ -67,6 +67,24 @@ public class DocumentController : BaseApiController
     }
 
     /// <summary>
+    /// 获取公文统计信息
+    /// </summary>
+    [HttpGet("statistics")]
+    [RequireMenu("document-list")]
+    public async Task<IActionResult> GetStatistics()
+    {
+        try
+        {
+            var statistics = await _documentService.GetStatisticsAsync();
+            return Success(statistics);
+        }
+        catch (Exception ex)
+        {
+            return Error("GET_STATISTICS_FAILED", ex.Message);
+        }
+    }
+
+    /// <summary>
     /// 获取公文详情
     /// </summary>
     [HttpGet("{id}")]

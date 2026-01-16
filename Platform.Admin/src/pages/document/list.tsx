@@ -42,9 +42,13 @@ import {
   deleteDocument,
   submitDocument,
   uploadDocumentAttachment,
+  getDocumentStatistics,
   type Document,
+  type DocumentStatistics,
+  type DocumentQueryParams,
   DocumentStatus,
 } from '@/services/document/api';
+import { StatisticCard } from '@ant-design/pro-components';
 import {
   WorkflowStatus,
   ApprovalAction,
@@ -88,6 +92,28 @@ const DocumentManagement: React.FC = () => {
   const [isFormStep, setIsFormStep] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
   const [wfForm] = Form.useForm();
+  const [searchForm] = Form.useForm();
+  const [searchParams, setSearchParams] = useState<DocumentQueryParams>({
+    page: 1,
+    pageSize: 10,
+  });
+
+  const [statistics, setStatistics] = useState<DocumentStatistics | null>(null);
+
+  const fetchStatistics = async () => {
+    try {
+      const resp = await getDocumentStatistics();
+      if (resp.success) {
+        setStatistics(resp.data || null);
+      }
+    } catch (e) {
+      console.error('获取统计信息失败', e);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchStatistics();
+  }, []);
 
   const graphNodes: FlowNode[] = useMemo(() => {
     if (!detailWorkflowDef?.graph?.nodes?.length) return [];
@@ -139,6 +165,18 @@ const DocumentManagement: React.FC = () => {
 
   const handleRefresh = () => {
     actionRef.current?.reload?.();
+    fetchStatistics();
+  };
+
+  const handleSearch = (values: any) => {
+    setSearchParams((prev: DocumentQueryParams) => ({ ...prev, ...values, page: 1 }));
+    actionRef.current?.reloadAndReset?.();
+  };
+
+  const handleReset = () => {
+    searchForm.resetFields();
+    setSearchParams({ page: 1, pageSize: 10 });
+    actionRef.current?.reset?.();
   };
 
   const getDocStatus = (status?: DocumentStatus | null) =>
@@ -146,7 +184,7 @@ const DocumentManagement: React.FC = () => {
 
   const fetchActiveWorkflows = async () => {
     try {
-      const resp = await getWorkflowList({ current: 1, pageSize: 100, isActive: true });
+      const resp = await getWorkflowList({ page: 1, pageSize: 100, isActive: true });
       if (resp.success) {
         setWorkflows(resp.data?.list || []);
       }
@@ -511,18 +549,97 @@ const DocumentManagement: React.FC = () => {
         </Space>
       }
     >
+      {statistics && (
+        <Card style={{ marginBottom: 16 }}>
+          <StatisticCard.Group direction="row">
+            <StatisticCard
+              statistic={{
+                title: intl.formatMessage({ id: 'pages.document.stat.total', defaultMessage: '总公文' }),
+                value: statistics.totalDocuments,
+              }}
+            />
+            <StatisticCard.Divider />
+            <StatisticCard
+              statistic={{
+                title: intl.formatMessage({ id: 'pages.document.stat.draft', defaultMessage: '草稿箱' }),
+                value: statistics.draftCount,
+                status: 'default',
+              }}
+            />
+            <StatisticCard.Divider />
+            <StatisticCard
+              statistic={{
+                title: intl.formatMessage({ id: 'pages.document.stat.pending', defaultMessage: '待审批' }),
+                value: statistics.pendingCount,
+                status: 'processing',
+              }}
+            />
+            <StatisticCard.Divider />
+            <StatisticCard
+              statistic={{
+                title: intl.formatMessage({ id: 'pages.document.stat.approved', defaultMessage: '已通过' }),
+                value: statistics.approvedCount,
+                status: 'success',
+              }}
+            />
+            <StatisticCard.Divider />
+            <StatisticCard
+              statistic={{
+                title: intl.formatMessage({ id: 'pages.document.stat.rejected', defaultMessage: '已驳回' }),
+                value: statistics.rejectedCount,
+                status: 'error',
+              }}
+            />
+            <StatisticCard.Divider />
+            <StatisticCard
+              statistic={{
+                title: intl.formatMessage({ id: 'pages.document.stat.myCreated', defaultMessage: '我发起的' }),
+                value: statistics.myCreatedCount,
+              }}
+            />
+          </StatisticCard.Group>
+        </Card>
+      )}
+
+      <Card style={{ marginBottom: 16 }}>
+        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
+          <Form.Item name="keyword" label={intl.formatMessage({ id: 'pages.document.search.keyword', defaultMessage: '关键词' })}>
+            <Input placeholder={intl.formatMessage({ id: 'pages.document.search.keywordPlaceholder', defaultMessage: '搜索标题或内容' })} />
+          </Form.Item>
+          <Form.Item name="status" label={intl.formatMessage({ id: 'pages.document.search.status', defaultMessage: '状态' })}>
+            <Select
+              allowClear
+              placeholder={intl.formatMessage({ id: 'pages.document.search.statusPlaceholder', defaultMessage: '请选择状态' })}
+              style={{ width: 120 }}
+              options={[
+                { label: intl.formatMessage({ id: 'pages.document.status.draft', defaultMessage: '草稿' }), value: DocumentStatus.Draft },
+                { label: intl.formatMessage({ id: 'pages.document.status.pending', defaultMessage: '审批中' }), value: DocumentStatus.Pending },
+                { label: intl.formatMessage({ id: 'pages.document.status.approved', defaultMessage: '已通过' }), value: DocumentStatus.Approved },
+                { label: intl.formatMessage({ id: 'pages.document.status.rejected', defaultMessage: '已驳回' }), value: DocumentStatus.Rejected },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                {intl.formatMessage({ id: 'pages.search', defaultMessage: '查询' })}
+              </Button>
+              <Button onClick={handleReset}>
+                {intl.formatMessage({ id: 'pages.reset', defaultMessage: '重置' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
       <DataTable<Document>
         actionRef={actionRef}
         columns={columns}
         request={async (params) => {
           const response = await getDocumentList({
-            current: params.current,
+            ...searchParams,
+            page: params.current,
             pageSize: params.pageSize,
-            keyword: params.keyword as string,
-            status: params.status as DocumentStatus,
-            documentType: params.documentType as string,
-            category: params.category as string,
-            filterType: params.filterType as any,
           });
           if (response.success && response.data) {
             return {
@@ -534,7 +651,6 @@ const DocumentManagement: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-        search={true}
       />
 
       <Drawer
@@ -1129,7 +1245,7 @@ const DocumentManagement: React.FC = () => {
           </Form>
         )}
       </Modal>
-    </PageContainer>
+    </PageContainer >
   );
 };
 

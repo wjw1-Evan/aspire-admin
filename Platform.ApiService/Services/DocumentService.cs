@@ -65,6 +65,10 @@ public interface IDocumentService
     /// 基于流程定义的创建表单创建公文（草稿）
     /// </summary>
     Task<Document> CreateDocumentForWorkflowAsync(string workflowDefinitionId, Dictionary<string, object> values, List<string>? attachmentIds = null);
+    /// <summary>
+    /// 获取公文统计信息
+    /// </summary>
+    Task<DocumentStatisticsResponse> GetStatisticsAsync();
 }
 
 /// <summary>
@@ -772,6 +776,94 @@ public class DocumentService : IDocumentService
         }
 
         return approvers.Distinct().ToList();
+    }
+
+    /// <summary>
+    /// 获取公文统计信息
+    /// </summary>
+    public async Task<DocumentStatisticsResponse> GetStatisticsAsync()
+    {
+        var userId = _documentFactory.GetRequiredUserId();
+        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
+
+        // 基础过滤器：当前企业
+        var baseFilter = _documentFactory.CreateFilterBuilder().Build();
+
+        // 1. 总公文数
+        var totalDocuments = await _documentFactory.CountAsync(baseFilter);
+
+        // 2. 草稿箱
+        var draftFilter = _documentFactory.CreateFilterBuilder().Equal(d => d.Status, DocumentStatus.Draft).Build();
+        var draftCount = await _documentFactory.CountAsync(draftFilter);
+
+        // 3. 已审批（通过）
+        var approvedFilter = _documentFactory.CreateFilterBuilder().Equal(d => d.Status, DocumentStatus.Approved).Build();
+        var approvedCount = await _documentFactory.CountAsync(approvedFilter);
+
+        // 4. 已驳回
+        var rejectedFilter = _documentFactory.CreateFilterBuilder().Equal(d => d.Status, DocumentStatus.Rejected).Build();
+        var rejectedCount = await _documentFactory.CountAsync(rejectedFilter);
+
+        // 5. 我发起的
+        var myCreatedFilter = _documentFactory.CreateFilterBuilder().Equal(d => d.CreatedBy, userId).Build();
+        var myCreatedCount = await _documentFactory.CountAsync(myCreatedFilter);
+
+        // 6. 待审批（复杂查询，同 GetDocumentsAsync 中的 pending 逻辑）
+        long pendingCount = 0;
+        try 
+        {
+            // 获取所有审批中的流程实例
+            var pendingInstancesFilter = _instanceFactory.CreateFilterBuilder()
+                .Equal(i => i.Status, WorkflowStatus.Running)
+                .Build();
+            var pendingInstances = await _instanceFactory.FindAsync(pendingInstancesFilter);
+
+            var pendingInstanceIds = new List<string>();
+            foreach (var instance in pendingInstances)
+            {
+               try
+               {
+                    var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                    if (definition == null) continue;
+
+                    var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
+                    if (currentNode?.Type == "approval" && currentNode.Config.Approval != null)
+                    {
+                        var approvers = await ResolveApproversAsync(instance, currentNode.Config.Approval.Approvers);
+                        if (approvers.Contains(userId))
+                        {
+                            pendingInstanceIds.Add(instance.Id);
+                        }
+                    }
+               }
+               catch
+               {
+                   // ignore individual failure
+               }
+            }
+
+            if (pendingInstanceIds.Any())
+            {
+                var pendingDocFilter = _documentFactory.CreateFilterBuilder()
+                    .In(d => d.WorkflowInstanceId, pendingInstanceIds)
+                    .Build();
+                pendingCount = await _documentFactory.CountAsync(pendingDocFilter);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取待审批数量失败");
+        }
+
+        return new DocumentStatisticsResponse
+        {
+            TotalDocuments = totalDocuments,
+            DraftCount = draftCount,
+            PendingCount = pendingCount,
+            ApprovedCount = approvedCount,
+            RejectedCount = rejectedCount,
+            MyCreatedCount = myCreatedCount
+        };
     }
 }
 

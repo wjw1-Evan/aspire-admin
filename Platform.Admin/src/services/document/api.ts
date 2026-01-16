@@ -12,6 +12,18 @@ export enum DocumentStatus {
 }
 
 /**
+ * 公文统计信息响应
+ */
+export type DocumentStatistics = {
+  totalDocuments: number;
+  draftCount: number;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  myCreatedCount: number;
+};
+
+/**
  * 公文
  */
 export interface Document {
@@ -238,5 +250,12 @@ export async function getPendingDocuments(params: {
   return request('/api/documents/pending', {
     method: 'GET',
     params,
+  });
+}
+
+/** 获取公文统计信息 */
+export async function getDocumentStatistics(): Promise<ApiResponse<DocumentStatistics>> {
+  return request('/api/documents/statistics', {
+    method: 'GET',
   });
 }

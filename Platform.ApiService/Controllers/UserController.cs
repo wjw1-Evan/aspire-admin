@@ -27,6 +27,7 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="userService">用户服务</param>
     /// <param name="authService">认证服务</param>
+    /// <param name="logger">日志服务</param>
     public UserController(IUserService userService, IAuthService authService, ILogger<UserController> logger)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
@@ -351,6 +352,9 @@ public class UserController : BaseApiController
     /// <param name="pageSize">每页数量</param>
     /// <param name="userId">用户ID（可选）</param>
     /// <param name="action">操作类型（可选）</param>
+    /// <param name="httpMethod">HTTP请求方法（可选）</param>
+    /// <param name="statusCode">HTTP状态码（可选）</param>
+    /// <param name="ipAddress">IP地址（可选）</param>
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     [HttpGet("/api/users/activity-logs")]

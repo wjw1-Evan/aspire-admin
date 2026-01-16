@@ -1240,7 +1240,7 @@ public class UserService : IUserService
         // 按 IP 地址过滤（模糊匹配）
         if (!string.IsNullOrEmpty(ipAddress))
         {
-            filterBuilder.Contains(log => log.IpAddress, ipAddress);
+            filterBuilder.Contains(log => log.IpAddress!, ipAddress);
         }
 
         // 按日期范围过滤

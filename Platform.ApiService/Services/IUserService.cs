@@ -161,6 +161,9 @@ public interface IUserService
     /// <param name="pageSize">每页大小（默认20）</param>
     /// <param name="userId">用户ID（可选，按用户筛选）</param>
     /// <param name="action">操作类型（可选，按操作类型筛选）</param>
+    /// <param name="httpMethod">HTTP请求方法（可选）</param>
+    /// <param name="statusCode">HTTP状态码（可选）</param>
+    /// <param name="ipAddress">IP地址（可选）</param>
     /// <param name="startDate">开始日期（可选，按时间范围筛选）</param>
     /// <param name="endDate">结束日期（可选，按时间范围筛选）</param>
     /// <returns>活动日志列表和总数</returns>
@@ -173,6 +176,9 @@ public interface IUserService
     /// <param name="pageSize">每页大小（默认20）</param>
     /// <param name="userId">用户ID（可选，按用户筛选）</param>
     /// <param name="action">操作类型（可选，按操作类型筛选）</param>
+    /// <param name="httpMethod">HTTP请求方法（可选）</param>
+    /// <param name="statusCode">HTTP状态码（可选）</param>
+    /// <param name="ipAddress">IP地址（可选）</param>
     /// <param name="startDate">开始日期（可选，按时间范围筛选）</param>
     /// <param name="endDate">结束日期（可选，按时间范围筛选）</param>
     /// <returns>活动日志列表、总数和用户映射</returns>

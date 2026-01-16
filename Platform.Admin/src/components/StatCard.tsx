@@ -6,7 +6,7 @@ export interface StatCardProps {
   value: number | string;
   icon: React.ReactNode;
   color?: string;
-  suffix?: string;
+  suffix?: React.ReactNode;
   loading?: boolean;
   /**
    * 可选的主题 token（例如从外部获取的 token），不传则使用内部的 theme token
@@ -25,7 +25,7 @@ const StatCard: React.FC<StatCardProps> = ({
   value,
   icon,
   color = '#1890ff',
-  suffix = '',
+  suffix = null,
   loading = false,
   token: propToken,
 }) => {

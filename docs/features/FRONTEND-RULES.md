@@ -296,6 +296,7 @@
 
 - **已统一风格的页面**：
   - ✅ 任务管理（`src/pages/task-management/index.tsx`）
+  - ✅ 公文管理（`src/pages/document/list.tsx`）
   - ✅ 用户管理（`src/pages/user-management/index.tsx`）
   - ✅ 密码本（`src/pages/password-book/index.tsx`）
   - ✅ 角色管理（`src/pages/role-management/index.tsx`）

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer, StatCard } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
@@ -632,43 +632,39 @@ const CloudStorageQuotaPage: React.FC = () => {
 
                     <TabPane tab="使用统计" key="usage-stats">
                         {usageStats && (
-                            <Row gutter={[16, 16]}>
+                            <Row gutter={[12, 12]}>
                                 <Col xs={24} sm={12} md={6}>
-                                    <Card>
-                                        <Statistic
-                                            title="总用户数"
-                                            value={usageStats.totalUsers ?? quotaTotalCount}
-                                            prefix={<TeamOutlined />}
-                                        />
-                                    </Card>
+                                    <StatCard
+                                        title="总用户数"
+                                        value={usageStats.totalUsers ?? quotaTotalCount}
+                                        icon={<TeamOutlined />}
+                                        color="#1890ff"
+                                    />
                                 </Col>
                                 <Col xs={24} sm={12} md={6}>
-                                    <Card>
-                                        <Statistic
-                                            title="总配额"
-                                            value={formatFileSize(usageStats.totalQuota)}
-                                            prefix={<CloudOutlined />}
-                                        />
-                                    </Card>
+                                    <StatCard
+                                        title="总配额"
+                                        value={formatFileSize(usageStats.totalQuota)}
+                                        icon={<CloudOutlined />}
+                                        color="#722ed1"
+                                    />
                                 </Col>
                                 <Col xs={24} sm={12} md={6}>
-                                    <Card>
-                                        <Statistic
-                                            title="总使用量"
-                                            value={formatFileSize(usageStats.totalUsed)}
-                                            prefix={<BarChartOutlined />}
-                                        />
-                                    </Card>
+                                    <StatCard
+                                        title="总使用量"
+                                        value={formatFileSize(usageStats.totalUsed)}
+                                        icon={<BarChartOutlined />}
+                                        color="#52c41a"
+                                    />
                                 </Col>
                                 <Col xs={24} sm={12} md={6}>
-                                    <Card>
-                                        <Statistic
-                                            title="平均使用率"
-                                            value={getAverageUsagePercent(usageStats)}
-                                            suffix="%"
-                                            prefix={<PieChartOutlined />}
-                                        />
-                                    </Card>
+                                    <StatCard
+                                        title="平均使用率"
+                                        value={getAverageUsagePercent(usageStats)}
+                                        icon={<PieChartOutlined />}
+                                        suffix="%"
+                                        color="#fa8c16"
+                                    />
                                 </Col>
 
                                 <Col xs={24} md={12}>

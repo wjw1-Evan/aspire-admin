@@ -243,10 +243,7 @@ export async function delegateDocument(id: string, data: DelegateDocumentRequest
 /**
  * 获取待审批列表
  */
-export async function getPendingDocuments(params: {
-  page?: number;
-  pageSize?: number;
-}): Promise<ApiResponse<{ list: Document[]; total: number; page: number; pageSize: number }>> {
+export async function getPendingDocuments(params: DocumentQueryParams): Promise<ApiResponse<{ list: Document[]; total: number; page: number; pageSize: number }>> {
   return request('/api/documents/pending', {
     method: 'GET',
     params,

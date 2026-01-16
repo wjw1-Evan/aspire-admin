@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer, StatCard } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
@@ -731,23 +731,23 @@ const CloudStorageSharedPage: React.FC = () => {
                                 </Descriptions>
                             </Card>
 
-                            <Card title="访问统计" style={{ marginBottom: 16 }}>
-                                <Row gutter={16}>
+                            <Card title="访问统计" style={{ marginBottom: 16, borderRadius: 12 }}>
+                                <Row gutter={[12, 12]}>
                                     <Col span={12}>
-                                        <div style={{ textAlign: 'center' }}>
-                                            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>
-                                                {viewingShare.accessCount}
-                                            </div>
-                                            <div style={{ color: '#666' }}>访问次数</div>
-                                        </div>
+                                        <StatCard
+                                            title="访问次数"
+                                            value={viewingShare.accessCount}
+                                            icon={<EyeOutlined />}
+                                            color="#1890ff"
+                                        />
                                     </Col>
                                     <Col span={12}>
-                                        <div style={{ textAlign: 'center' }}>
-                                            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>
-                                                {viewingShare.downloadCount}
-                                            </div>
-                                            <div style={{ color: '#666' }}>下载次数</div>
-                                        </div>
+                                        <StatCard
+                                            title="下载次数"
+                                            value={viewingShare.downloadCount}
+                                            icon={<DownloadOutlined />}
+                                            color="#52c41a"
+                                        />
                                     </Col>
                                 </Row>
                             </Card>

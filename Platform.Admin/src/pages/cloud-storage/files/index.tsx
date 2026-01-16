@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer, StatCard } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
@@ -966,42 +966,43 @@ const CloudStorageFilesPage: React.FC = () => {
                 <Card style={{ marginBottom: 16, borderRadius: 12 }}>
                     <Row gutter={[12, 12]}>
                         <Col xs={24} sm={12} md={6}>
-                            <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center' }}>
-                                <FileOutlined style={{ fontSize: 20, color: '#1890ff', marginRight: 12 }} />
-                                <div style={{ textAlign: 'right', flex: 1 }}>
-                                    <div style={{ fontSize: 20, fontWeight: 'bold' }}>{statistics.totalFiles}</div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>文件数量</div>
-                                </div>
-                            </div>
+                            <StatCard
+                                title="文件数量"
+                                value={statistics.totalFiles}
+                                icon={<FileOutlined />}
+                                color="#1890ff"
+                            />
                         </Col>
                         <Col xs={24} sm={12} md={6}>
-                            <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center' }}>
-                                <FolderOutlined style={{ fontSize: 20, color: '#52c41a', marginRight: 12 }} />
-                                <div style={{ textAlign: 'right', flex: 1 }}>
-                                    <div style={{ fontSize: 20, fontWeight: 'bold' }}>{statistics.totalFolders}</div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>文件夹数量</div>
-                                </div>
-                            </div>
+                            <StatCard
+                                title="文件夹数量"
+                                value={statistics.totalFolders}
+                                icon={<FolderOutlined />}
+                                color="#52c41a"
+                            />
                         </Col>
                         <Col xs={24} sm={12} md={6}>
-                            <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center' }}>
-                                <CloudOutlined style={{ fontSize: 20, color: '#722ed1', marginRight: 12 }} />
-                                <div style={{ textAlign: 'right', flex: 1 }}>
-                                    <div style={{ fontSize: 20, fontWeight: 'bold' }}>{formatFileSize(statistics.totalQuota)}</div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>总配额</div>
-                                </div>
-                            </div>
+                            <StatCard
+                                title="总配额"
+                                value={formatFileSize(statistics.totalQuota)}
+                                icon={<CloudOutlined />}
+                                color="#722ed1"
+                            />
                         </Col>
                         <Col xs={24} sm={12} md={6}>
-                            <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center' }}>
-                                <div style={{ fontSize: 20, color: '#fa8c16', marginRight: 12 }}>
+                            <StatCard
+                                title="已用空间"
+                                value={formatFileSize(statistics.usedQuota)}
+                                icon={<div style={{ fontSize: 20, color: '#fa8c16', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                                     {statistics.totalQuota > 0 ? Math.round((statistics.usedQuota / statistics.totalQuota) * 100) : 0}%
-                                </div>
-                                <div style={{ textAlign: 'right', flex: 1 }}>
-                                    <div style={{ fontSize: 20, fontWeight: 'bold' }}>{formatFileSize(statistics.usedQuota)}</div>
-                                    <div style={{ fontSize: 12, color: '#666' }}>已用空间</div>
-                                </div>
-                            </div>
+                                </div>}
+                                color="#fa8c16"
+                                suffix={
+                                    <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>
+                                        / {formatFileSize(statistics.totalQuota)}
+                                    </span>
+                                }
+                            />
                         </Col>
                     </Row>
                 </Card>

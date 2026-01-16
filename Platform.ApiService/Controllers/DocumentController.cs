@@ -538,26 +538,22 @@ public class DocumentController : BaseApiController
     /// </summary>
     [HttpGet("pending")]
     [RequireMenu("document-approval")]
-    public async Task<IActionResult> GetPendingDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetPendingDocuments([FromQuery] DocumentQueryParams query)
     {
         try
         {
             // 验证分页参数
-            if (page < 1 || page > 10000)
+            if (query.Page < 1 || query.Page > 10000)
                 throw new ArgumentException("页码必须在 1-10000 之间");
 
-            if (pageSize < 1 || pageSize > 100)
+            if (query.PageSize < 1 || query.PageSize > 100)
                 throw new ArgumentException("每页数量必须在 1-100 之间");
 
-            var query = new DocumentQueryParams
-            {
-                Page = page,
-                PageSize = pageSize,
-                FilterType = "pending"
-            };
+            // 强制设置为 pending 类型
+            query.FilterType = "pending";
 
             var result = await _documentService.GetDocumentsAsync(query);
-            return SuccessPaged(result.items, result.total, page, pageSize);
+            return SuccessPaged(result.items, result.total, query.Page, query.PageSize);
         }
         catch (ArgumentException ex)
         {

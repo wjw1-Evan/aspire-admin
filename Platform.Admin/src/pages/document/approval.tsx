@@ -19,6 +19,8 @@ import {
   Radio,
   Switch,
   Steps,
+  Row,
+  Col,
 } from 'antd';
 import {
   CheckOutlined,
@@ -28,6 +30,7 @@ import {
   EyeOutlined,
   CheckCircleOutlined,
   ReloadOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import ReactFlow, { Background, Controls, MiniMap, type Edge as FlowEdge, type Node as FlowNode } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -43,9 +46,13 @@ import {
   rejectDocument,
   returnDocument,
   delegateDocument,
+  getDocumentStatistics,
   type Document,
+  type DocumentStatistics,
+  type DocumentQueryParams,
   DocumentStatus,
 } from '@/services/document/api';
+import { StatCard } from '@/components';
 import {
   WorkflowStatus,
   ApprovalAction,
@@ -152,10 +159,28 @@ const ApprovalPage: React.FC = () => {
       actionRef.current.reload();
     }
   };
+  const [searchForm] = Form.useForm();
+  const [searchParams, setSearchParams] = useState<DocumentQueryParams>({
+    page: 1,
+    pageSize: 10,
+  });
+  const [statistics, setStatistics] = useState<DocumentStatistics | null>(null);
 
   React.useEffect(() => {
     loadUsers();
+    loadStatistics();
   }, []);
+
+  const loadStatistics = async () => {
+    try {
+      const response = await getDocumentStatistics();
+      if (response.success && response.data) {
+        setStatistics(response.data);
+      }
+    } catch (error) {
+      // 统计加载失败，静默处理
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -744,6 +769,20 @@ const ApprovalPage: React.FC = () => {
     }
   };
 
+  const handleSearch = (values: any) => {
+    setSearchParams((prev: DocumentQueryParams) => ({ ...prev, ...values, page: 1 }));
+    actionRef.current?.reloadAndReset?.();
+  };
+
+  const handleReset = () => {
+    searchForm.resetFields();
+    setSearchParams((prev: DocumentQueryParams) => ({
+      page: 1,
+      pageSize: prev.pageSize,
+    }));
+    actionRef.current?.reloadAndReset?.();
+  };
+
   const tabItems = [
     {
       key: 'pending',
@@ -756,6 +795,7 @@ const ApprovalPage: React.FC = () => {
             const response = await getPendingDocuments({
               page: params.current,
               pageSize: params.pageSize,
+              ...searchParams,
             });
             if (response.success && response.data) {
               return {
@@ -783,6 +823,7 @@ const ApprovalPage: React.FC = () => {
               page: params.current,
               pageSize: params.pageSize,
               filterType: 'approved',
+              ...searchParams,
             });
             if (response.success && response.data) {
               return {
@@ -810,6 +851,7 @@ const ApprovalPage: React.FC = () => {
               page: params.current,
               pageSize: params.pageSize,
               filterType: 'my',
+              ...searchParams,
             });
             if (response.success && response.data) {
               return {
@@ -846,6 +888,69 @@ const ApprovalPage: React.FC = () => {
         </Button>
       }
     >
+      {statistics && (
+        <Card style={{ marginBottom: 16 }}>
+          <Row gutter={[12, 12]}>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.document.stat.pending', defaultMessage: '待在办' })}
+                value={statistics.pendingCount}
+                icon={<CheckCircleOutlined />}
+                color="#faad14"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.document.stat.myCreated', defaultMessage: '我发起的' })}
+                value={statistics.myCreatedCount}
+                icon={<FileTextOutlined />}
+                color="#1890ff"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.document.stat.approved', defaultMessage: '已通过' })}
+                value={statistics.approvedCount}
+                icon={<CheckCircleOutlined />}
+                color="#52c41a"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.document.stat.rejected', defaultMessage: '已驳回' })}
+                value={statistics.rejectedCount}
+                icon={<CloseOutlined />}
+                color="#ff4d4f"
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
+
+      <Card style={{ marginBottom: 16 }}>
+        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
+          <Form.Item name="keyword" label={intl.formatMessage({ id: 'pages.document.form.search', defaultMessage: '关键词' })}>
+            <Input placeholder={intl.formatMessage({ id: 'pages.document.form.search', defaultMessage: '搜索关键词' })} allowClear />
+          </Form.Item>
+          <Form.Item name="documentType" label={intl.formatMessage({ id: 'pages.document.table.type', defaultMessage: '公文类型' })}>
+            <Input placeholder={intl.formatMessage({ id: 'pages.document.table.type', defaultMessage: '输入类型' })} allowClear />
+          </Form.Item>
+          <Form.Item name="category" label={intl.formatMessage({ id: 'pages.document.table.category', defaultMessage: '分类' })}>
+            <Input placeholder={intl.formatMessage({ id: 'pages.document.table.category', defaultMessage: '输入分类' })} allowClear />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" icon={<ReloadOutlined />}>
+                {intl.formatMessage({ id: 'pages.searchTable.search', defaultMessage: '查询' })}
+              </Button>
+              <Button onClick={handleReset}>
+                {intl.formatMessage({ id: 'pages.searchTable.reset', defaultMessage: '重置' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
       <Tabs
         activeKey={activeTab}
         onChange={(key) => {

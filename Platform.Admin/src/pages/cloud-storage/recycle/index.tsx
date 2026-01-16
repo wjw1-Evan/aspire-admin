@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer, StatCard } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
@@ -40,6 +40,7 @@ import {
     ExclamationCircleOutlined,
     CloudOutlined,
     WarningOutlined,
+    HistoryOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -884,6 +885,44 @@ const CloudStorageRecyclePage: React.FC = () => {
                     </Form.Item>
                 </Form>
             </Modal>
+            {statistics && (
+                <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+                    <Row gutter={[12, 12]}>
+                        <Col xs={24} sm={12} md={6}>
+                            <StatCard
+                                title="回收站项目"
+                                value={statistics.totalItems}
+                                icon={<DeleteOutlined />}
+                                color="#ff4d4f"
+                            />
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <StatCard
+                                title="占用空间"
+                                value={formatFileSize(statistics.totalSize)}
+                                icon={<CloudOutlined />}
+                                color="#1890ff"
+                            />
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <StatCard
+                                title="最早删除"
+                                value={statistics.oldestItem ? dayjs(statistics.oldestItem).fromNow() : '-'}
+                                icon={<ClockCircleOutlined />}
+                                color="#fa8c16"
+                            />
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <StatCard
+                                title="最近删除"
+                                value={statistics.newestItem ? dayjs(statistics.newestItem).fromNow() : '-'}
+                                icon={<HistoryOutlined />}
+                                color="#faad14"
+                            />
+                        </Col>
+                    </Row>
+                </Card>
+            )}
         </PageContainer>
     );
 };

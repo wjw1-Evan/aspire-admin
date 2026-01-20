@@ -22,7 +22,7 @@
     <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.1.0" />
     <PackageReference Include="Aspire.Hosting.Yarp" Version="13.1.0" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.9.0" />
-    <PackageReference Include="Scalar.Aspire" Version="0.8.17" />
+    <PackageReference Include="Scalar.Aspire" Version="0.8.20" />
     <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
     <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.1.0" />
 

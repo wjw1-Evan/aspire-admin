@@ -19,12 +19,12 @@ import dayjs from 'dayjs';
 import { getTaskById, getTaskExecutionLogs, TaskStatus, TaskPriority, type TaskDto, type TaskExecutionLogDto } from '@/services/task/api';
 
 interface TaskDetailProps {
-  visible: boolean;
+  open: boolean;
   task?: TaskDto | null;
   onClose: () => void;
 }
 
-const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
+const TaskDetail: React.FC<TaskDetailProps> = ({ open, task, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [taskDetail, setTaskDetail] = useState<TaskDto | null>(null);
   const [executionLogs, setExecutionLogs] = useState<TaskExecutionLogDto[]>([]);
@@ -32,11 +32,11 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
 
   // 加载任务详情
   useEffect(() => {
-    if (visible && task?.id) {
+    if (open && task?.id) {
       loadTaskDetail();
       loadExecutionLogs();
     }
-  }, [visible, task?.id]);
+  }, [open, task?.id]);
 
   const loadTaskDetail = async () => {
     if (!task?.id) return;
@@ -126,7 +126,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ visible, task, onClose }) => {
       title="任务详情"
       placement="right"
       onClose={onClose}
-      open={visible}
+      open={open}
       size={isMobile ? 'large' : 800}
     >
       <Spin spinning={loading}>

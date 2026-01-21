@@ -25,7 +25,7 @@ import {
 } from '@/services/task/api';
 
 interface TaskExecutionPanelProps {
-  visible: boolean;
+  open: boolean;
   task?: TaskDto | null;
   onClose: () => void;
   onSuccess: () => void;
@@ -34,7 +34,7 @@ interface TaskExecutionPanelProps {
 type ExecutionMode = 'progress' | 'complete';
 
 const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({
-  visible,
+  open,
   task,
   onClose,
   onSuccess,
@@ -104,7 +104,7 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({
   return (
     <Modal
       title="执行任务"
-      open={visible}
+      open={open}
       onCancel={onClose}
       width={700}
       footer={null}

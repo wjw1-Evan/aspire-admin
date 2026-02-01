@@ -424,10 +424,14 @@ public class WorkflowEngine : IWorkflowEngine
                 // 乐观锁：确保实例状态没有被其他操作修改
                 // 注意：这里检查的是获取实例时的CurrentNodeId，而不是requestedNode.Id
                 // 因为在智能节点匹配中，我们可能已经将requestedNode调整为当前节点
+                // 🐛 修复：增加 ApprovalRecords 数量检查，防止并发审批时覆盖他人的审批记录
+                var sizeFilter = Builders<WorkflowInstance>.Filter.Size(i => i.ApprovalRecords, instance.ApprovalRecords.Count);
+
                 var instanceFilter = _instanceFactory.CreateFilterBuilder()
                     .Equal(i => i.Id, instanceId)
                     .Equal(i => i.Status, WorkflowStatus.Running) // 确保状态未变
                     .Equal(i => i.CurrentNodeId, instance.CurrentNodeId) // 确保当前节点未变（使用获取时的节点ID）
+                    .Custom(sizeFilter)
                     .Build();
 
                 var instanceUpdate = _instanceFactory.CreateUpdateBuilder()

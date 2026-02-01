@@ -404,52 +404,31 @@ public class DocumentService : IDocumentService
 
                 case "pending":
                     // 待审批：查询当前用户需要审批的公文
-                    // 需要查询流程实例，找到当前节点是审批节点且审批人包含当前用户的
+                    // 🐛 优化：直接查询 CurrentApproverIds 包含当前用户的流程实例
                     filterBuilder.Equal(d => d.Status, DocumentStatus.Pending);
 
-                    // 获取所有审批中的流程实例
+                    // 1. 查找当前用户作为审批人的运行中实例
                     var pendingInstancesFilter = _instanceFactory.CreateFilterBuilder()
                         .Equal(i => i.Status, WorkflowStatus.Running)
+                        .AnyEq(i => i.CurrentApproverIds, userId) // 利用索引直接查询
                         .Build();
-                    var pendingInstances = await _instanceFactory.FindAsync(pendingInstancesFilter);
 
-                    // 过滤出当前用户需要审批的实例
-                    var userPendingInstanceIds = new List<string>();
+                    // 仅获取 ID 列表，减少数据传输
+                    var projection = _instanceFactory.CreateProjectionBuilder()
+                        .Include(i => i.Id)
+                        .Build();
 
-                    foreach (var instance in pendingInstances)
+                    var pendingInstances = await _instanceFactory.FindAsync(pendingInstancesFilter, projection: projection);
+                    var instanceIds = pendingInstances.Select(i => i.Id).ToList();
+
+                    // 2. 过滤出这些实例关联的公文
+                    if (instanceIds.Any())
                     {
-                        try
-                        {
-                            // 获取流程定义
-                            var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
-                            if (definition == null) continue;
-
-                            // 获取当前节点
-                            var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
-                            if (currentNode?.Type == "approval" && currentNode.Config.Approval != null)
-                            {
-                                // 解析审批人列表
-                                var approvers = await ResolveApproversAsync(instance, currentNode.Config.Approval.Approvers);
-                                if (approvers.Contains(userId))
-                                {
-                                    userPendingInstanceIds.Add(instance.Id);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "处理流程实例失败: InstanceId={InstanceId}", instance.Id);
-                        }
-                    }
-
-                    // 只查询这些实例关联的公文
-                    if (userPendingInstanceIds.Any())
-                    {
-                        filterBuilder.In(d => d.WorkflowInstanceId, userPendingInstanceIds);
+                        filterBuilder.In(d => d.WorkflowInstanceId, instanceIds);
                     }
                     else
                     {
-                        // 如果没有待审批的，直接返回空结果，避免构造非法的 ObjectId 过滤条件
+                        // 如果没有待审批的，直接返回空结果
                         return (new List<Document>(), 0);
                     }
                     break;
@@ -810,7 +789,7 @@ public class DocumentService : IDocumentService
 
         // 6. 待审批（复杂查询，同 GetDocumentsAsync 中的 pending 逻辑）
         long pendingCount = 0;
-        try 
+        try
         {
             // 获取所有审批中的流程实例
             var pendingInstancesFilter = _instanceFactory.CreateFilterBuilder()
@@ -821,8 +800,8 @@ public class DocumentService : IDocumentService
             var pendingInstanceIds = new List<string>();
             foreach (var instance in pendingInstances)
             {
-               try
-               {
+                try
+                {
                     var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
                     if (definition == null) continue;
 
@@ -835,11 +814,11 @@ public class DocumentService : IDocumentService
                             pendingInstanceIds.Add(instance.Id);
                         }
                     }
-               }
-               catch
-               {
-                   // ignore individual failure
-               }
+                }
+                catch
+                {
+                    // ignore individual failure
+                }
             }
 
             if (pendingInstanceIds.Any())

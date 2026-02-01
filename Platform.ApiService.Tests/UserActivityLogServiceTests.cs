@@ -74,7 +74,7 @@ public class UserActivityLogServiceTests
         var mockUserFactory = new Mock<IDatabaseOperationFactory<AppUser>>();
 
         mockUserFactory
-            .Setup(f => f.GetByIdAsync(It.IsAny<string>()))
+            .Setup(f => f.GetByIdAsync(It.IsAny<string>(), null))
             .ReturnsAsync(new AppUser { CurrentCompanyId = "company-1" });
 
         UserActivityLog? created = null;

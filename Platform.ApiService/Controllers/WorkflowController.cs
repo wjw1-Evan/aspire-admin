@@ -806,7 +806,17 @@ public class WorkflowController : BaseApiController
                 }
                 else
                 {
-                    updateBuilder.Set(d => d.FormData, values);
+                    // 🐛 修复：使用合并策略而不是覆盖，防止丢失其他步骤的数据
+                    var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                    var existingFormData = document?.FormData ?? new Dictionary<string, object>();
+
+                    // 合并新值到现有数据中
+                    foreach (var kvp in values)
+                    {
+                        existingFormData[kvp.Key] = kvp.Value;
+                    }
+
+                    updateBuilder.Set(d => d.FormData, existingFormData);
                 }
 
                 var update = updateBuilder.Build();

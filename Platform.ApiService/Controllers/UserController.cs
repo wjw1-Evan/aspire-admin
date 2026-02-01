@@ -21,18 +21,36 @@ public class UserController : BaseApiController
     private readonly IUserService _userService;
     private readonly IAuthService _authService;
     private readonly ILogger<UserController> _logger;
+    // Inject separate services where logic was moved (or stick to UserService facade if not fully decoupling Controller yet)
+    // Refactoring plan said "Update UserController dependency injection".
+    // Currently UserService *proxies* the calls to new services.
+    // So UserController technically *can* stay as is, calling _userService.
+    // However, for cleaner architecture, Controller should call specific services if possible,
+    // OR UserService can remain a Facade.
+    // The previous refactoring of UserService explicitly delegates calls like `GetUserPermissionsAsync` to `UserRoleService`.
+    // So UserController calls `_userService.GetUserPermissionsAsync`, which calls `_userRoleService.GetUserPermissionsAsync`.
+    // This maintains backward compatibility.
+    // So actually, NO CHANGE is strictly needed in UserController's Constructor if we keep the Facade pattern for now.
+    // The "Update UserController dependency injection" task might imply injecting `UserActivityLogService` directly for log endpoints?
+    // Let's check `GetAllActivityLogs` endpoint. It calls `_userService.GetAllActivityLogsWithUsersAsync`.
+    // If we want to decouple, we should inject `IUserActivityLogService` and call it directly.
+    // Let's do that for `IUserActivityLogService` to demonstrate the refactoring benefit (thinner UserService).
+
+    private readonly IUserActivityLogService _activityLogService;
 
     /// <summary>
     /// 初始化用户控制器
     /// </summary>
-    /// <param name="userService">用户服务</param>
-    /// <param name="authService">认证服务</param>
-    /// <param name="logger">日志服务</param>
-    public UserController(IUserService userService, IAuthService authService, ILogger<UserController> logger)
+    public UserController(
+        IUserService userService,
+        IAuthService authService,
+        ILogger<UserController> logger,
+        IUserActivityLogService activityLogService)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _activityLogService = activityLogService ?? throw new ArgumentNullException(nameof(activityLogService));
     }
 
     /// <summary>
@@ -77,20 +95,7 @@ public class UserController : BaseApiController
     {
         // ✅ 完整的权限检查：只能查看自己，或者有用户管理权限
         var currentUserId = CurrentUserId;
-        if (currentUserId != id)
-        {
-            // 检查是否有用户管理菜单权限
-            var menuAccessService = HttpContext.RequestServices
-                .GetRequiredService<IMenuAccessService>();
-
-            var hasMenuAccess = await menuAccessService
-                .HasMenuAccessAsync(currentUserId!, "user-management");
-
-            if (!hasMenuAccess)
-            {
-                throw new UnauthorizedAccessException("无权查看其他用户信息");
-            }
-        }
+        await _userService.EnsureUserAccessAsync(currentUserId!, id);
 
         var user = await _userService.GetUserByIdAsync(id);
         return Success(user.EnsureFound("用户", id));
@@ -148,7 +153,7 @@ public class UserController : BaseApiController
     /// <response code="401">未授权，需要登录</response>
     /// <response code="403">权限不足，需要用户管理权限</response>
     [HttpPost("management")]
-    [RequireMenu("user-management")]
+    [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
     {
         // 使用扩展方法简化参数验证
@@ -210,7 +215,7 @@ public class UserController : BaseApiController
     /// <response code="403">权限不足，需要用户管理权限</response>
     /// <response code="404">用户不存在</response>
     [HttpPut("{id}")]
-    [RequireMenu("user-management")]
+    [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
     {
         // v6.2: 支持在更新用户时同时更新角色
@@ -253,7 +258,7 @@ public class UserController : BaseApiController
     /// <response code="403">权限不足，需要用户管理权限</response>
     /// <response code="404">用户不存在</response>
     [HttpDelete("{id}")]
-    [RequireMenu("user-management")]
+    [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)
     {
         // 检查是否删除自己（不允许）
@@ -297,7 +302,7 @@ public class UserController : BaseApiController
     /// 获取用户统计信息（需要权限）
     /// </summary>
     [HttpGet("statistics")]
-    [RequireMenu("user-management")]
+    [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> GetUserStatistics()
     {
         var statistics = await _userService.GetUserStatisticsAsync();
@@ -310,7 +315,7 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="request">批量操作请求</param>
     [HttpPost("bulk-action")]
-    [RequireMenu("user-management")]
+    [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
         // ✅ 添加批量操作数量限制
@@ -341,7 +346,7 @@ public class UserController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetUserActivityLogs(string id, [FromQuery] int limit = 50)
     {
-        var logs = await _userService.GetUserActivityLogsAsync(id, limit);
+        var logs = await _activityLogService.GetUserActivityLogsAsync(id, limit);
         return Success(logs);
     }
 
@@ -414,7 +419,7 @@ public class UserController : BaseApiController
             throw new ArgumentException("开始日期不能晚于结束日期");
 
         // 优化后的查询：使用批量查询替代 N+1 查询
-        var (logs, total, userMap) = await _userService.GetAllActivityLogsWithUsersAsync(
+        var (logs, total, userMap) = await _activityLogService.GetAllActivityLogsWithUsersAsync(
             page,
             pageSize,
             userId,
@@ -462,7 +467,7 @@ public class UserController : BaseApiController
     [RequireMenu("user-log")]
     public async Task<IActionResult> GetActivityLogById(string logId)
     {
-        var log = await _userService.GetActivityLogByIdAsync(logId);
+        var log = await _activityLogService.GetActivityLogByIdAsync(logId);
         if (log == null)
             throw new KeyNotFoundException("活动日志不存在或不可用");
 
@@ -729,7 +734,7 @@ public class UserController : BaseApiController
                 throw new ArgumentException($"不支持的排序方向: {sortOrder}，支持: asc、desc");
         }
 
-        var (logs, total) = await _userService.GetCurrentUserActivityLogsAsync(
+        var (logs, total) = await _activityLogService.GetCurrentUserActivityLogsAsync(
             page,
             pageSize,
             action,
@@ -798,11 +803,11 @@ public class UserController : BaseApiController
     public async Task<IActionResult> GetCurrentUserActivityLogById(string logId)
     {
         // ✅ 验证日志ID格式
-        if (string.IsNullOrEmpty(logId) || !MongoDB.Bson.ObjectId.TryParse(logId, out _))
+        if (!MongoDB.Bson.ObjectId.TryParse(logId, out _))
             throw new ArgumentException("日志ID格式不正确");
 
-        // ✅ 获取日志详情（返回完整数据，包括 ResponseBody 等所有字段）
-        var log = await _userService.GetCurrentUserActivityLogByIdAsync(logId);
+        var log = await _activityLogService.GetCurrentUserActivityLogByIdAsync(logId);
+
 
         if (log == null)
             throw new KeyNotFoundException("日志不存在或不属于当前用户");

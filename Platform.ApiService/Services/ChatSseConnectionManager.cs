@@ -1,36 +1,47 @@
 using System.Collections.Concurrent;
 using System.Text;
+using System.Text.Json;
+using StackExchange.Redis;
 
 namespace Platform.ApiService.Services;
 
 /// <summary>
-/// SSE 连接管理器实现（简化版）
+/// SSE 连接管理器实现（支持 Redis Backplane）
 /// 管理所有活跃的 SSE 连接，支持按用户ID发送消息
 /// </summary>
-public class ChatSseConnectionManager : IChatSseConnectionManager
+public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
 {
     // 连接ID -> 连接信息
     private readonly ConcurrentDictionary<string, SseConnection> _connections = new();
     // 用户ID -> 连接ID集合
     private readonly ConcurrentDictionary<string, HashSet<string>> _userConnections = new();
+    // 连接ID -> 用户ID (反向索引，用于 O(1) 注销)
+    private readonly ConcurrentDictionary<string, string> _connectionToUserMap = new();
+
     private readonly ILogger<ChatSseConnectionManager> _logger;
+    private readonly IConnectionMultiplexer _redis;
+    private readonly ISubscriber _subscriber;
+    private const string RedisChannelName = "chat:sse:broadcast";
 
     /// <summary>
     /// 初始化 SSE 连接管理器
     /// </summary>
-    /// <param name="logger">日志记录器</param>
-    public ChatSseConnectionManager(ILogger<ChatSseConnectionManager> logger)
+    public ChatSseConnectionManager(ILogger<ChatSseConnectionManager> logger, IConnectionMultiplexer redis)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _redis = redis ?? throw new ArgumentNullException(nameof(redis));
+        _subscriber = _redis.GetSubscriber();
+
+        // 订阅 Redis 频道
+        _subscriber.Subscribe(RedisChannel.Literal(RedisChannelName), (channel, message) =>
+        {
+            _ = HandleRedisMessageAsync(message);
+        });
     }
 
     /// <summary>
     /// 注册 SSE 连接
     /// </summary>
-    /// <param name="connectionId">连接ID</param>
-    /// <param name="response">HTTP 响应对象</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>注册任务</returns>
     public Task RegisterConnectionAsync(string connectionId, HttpResponse response, CancellationToken cancellationToken)
     {
         var connection = new SseConnection
@@ -41,7 +52,6 @@ public class ChatSseConnectionManager : IChatSseConnectionManager
 
         _connections.TryAdd(connectionId, connection);
 
-        // 监听取消令牌，自动清理连接
         cancellationToken.Register(() =>
         {
             UnregisterConnectionAsync(connectionId);
@@ -52,19 +62,22 @@ public class ChatSseConnectionManager : IChatSseConnectionManager
     }
 
     /// <summary>
-    /// 注册用户连接（简化版：直接关联用户ID）
+    /// 注册用户连接
     /// </summary>
     public Task RegisterUserConnectionAsync(string userId, string connectionId, HttpResponse response, CancellationToken cancellationToken)
     {
-        // 先注册连接
         RegisterConnectionAsync(connectionId, response, cancellationToken);
 
-        // 建立用户 -> 连接映射
+        _connectionToUserMap.TryAdd(connectionId, userId);
+
         _userConnections.AddOrUpdate(userId,
             new HashSet<string> { connectionId },
             (key, existing) =>
             {
-                existing.Add(connectionId);
+                lock (existing)
+                {
+                    existing.Add(connectionId);
+                }
                 return existing;
             });
 
@@ -73,47 +86,83 @@ public class ChatSseConnectionManager : IChatSseConnectionManager
     }
 
     /// <summary>
-    /// 向用户的所有连接发送消息
+    /// 向用户发送消息（通过 Redis 广播）
     /// </summary>
     public async Task SendToUserAsync(string userId, string message)
     {
-        if (!_userConnections.TryGetValue(userId, out var connectionIds))
+        var payload = new SseMessagePayload
         {
-            return;
+            UserId = userId,
+            Message = message
+        };
+
+        var json = JsonSerializer.Serialize(payload);
+        await _subscriber.PublishAsync(RedisChannel.Literal(RedisChannelName), json);
+    }
+
+    private async Task HandleRedisMessageAsync(RedisValue redisMessage)
+    {
+        if (!redisMessage.HasValue) return;
+
+        try
+        {
+            var payload = JsonSerializer.Deserialize<SseMessagePayload>(redisMessage.ToString());
+            if (payload == null || string.IsNullOrEmpty(payload.UserId)) return;
+
+            // 检查本地是否有该用户的连接
+            if (_userConnections.TryGetValue(payload.UserId, out var connections))
+            {
+                List<string>? connectionIds;
+                lock (connections)
+                {
+                    connectionIds = connections.ToList();
+                }
+
+                if (connectionIds.Any())
+                {
+                    var tasks = connectionIds.Select(async connectionId =>
+                    {
+                        try
+                        {
+                            await SendMessageToLocalConnectionAsync(connectionId, payload.Message);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "向用户 {UserId} 的连接 {ConnectionId} 发送消息失败", payload.UserId, connectionId);
+                        }
+                    });
+
+                    await Task.WhenAll(tasks);
+                }
+            }
         }
-
-        var tasks = connectionIds.Select(async connectionId =>
+        catch (Exception ex)
         {
-            try
-            {
-                await SendMessageAsync(connectionId, message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "向用户 {UserId} 的连接 {ConnectionId} 发送消息失败", userId, connectionId);
-            }
-        });
-
-        await Task.WhenAll(tasks);
+            _logger.LogError(ex, "处理 Redis SSE 消息失败");
+        }
     }
 
     /// <summary>
     /// 注销 SSE 连接
     /// </summary>
-    /// <param name="connectionId">连接ID</param>
-    /// <returns>注销任务</returns>
     public Task UnregisterConnectionAsync(string connectionId)
     {
         if (_connections.TryRemove(connectionId, out var connection))
         {
             _logger.LogDebug("注销 SSE 连接: {ConnectionId}", connectionId);
 
-            // 从所有用户的连接集合中移除此连接
-            foreach (var (userId, connections) in _userConnections.ToList())
+            if (_connectionToUserMap.TryRemove(connectionId, out var userId))
             {
-                if (connections.Remove(connectionId))
+                if (_userConnections.TryGetValue(userId, out var connections))
                 {
-                    if (connections.Count == 0)
+                    bool isEmpty = false;
+                    lock (connections)
+                    {
+                        connections.Remove(connectionId);
+                        isEmpty = connections.Count == 0;
+                    }
+
+                    if (isEmpty)
                     {
                         _userConnections.TryRemove(userId, out _);
                     }
@@ -124,12 +173,17 @@ public class ChatSseConnectionManager : IChatSseConnectionManager
     }
 
     /// <summary>
-    /// 向指定连接发送消息
+    /// 向指定连接发送消息（内部使用，已修改为 SendMessageToLocalConnectionAsync）
     /// </summary>
-    /// <param name="connectionId">连接ID</param>
-    /// <param name="message">消息内容（SSE 格式）</param>
-    /// <returns>发送任务</returns>
     public async Task SendMessageAsync(string connectionId, string message)
+    {
+        // 兼容旧接口，直接发送（仅限本地）
+        // 如果调用此方法，意味着调用者知道 connectionId，通常是在单机模式下。
+        // 为了安全，这里只处理本地连接。
+        await SendMessageToLocalConnectionAsync(connectionId, message);
+    }
+
+    private async Task SendMessageToLocalConnectionAsync(string connectionId, string message)
     {
         if (!_connections.TryGetValue(connectionId, out var connection))
         {
@@ -150,7 +204,6 @@ public class ChatSseConnectionManager : IChatSseConnectionManager
         }
         catch (OperationCanceledException)
         {
-            // 连接已取消，清理
             _connections.TryRemove(connectionId, out _);
         }
         catch (Exception ex)
@@ -163,8 +216,6 @@ public class ChatSseConnectionManager : IChatSseConnectionManager
     /// <summary>
     /// 检查连接是否活跃
     /// </summary>
-    /// <param name="connectionId">连接ID</param>
-    /// <returns>如果连接存在且未取消则返回 true，否则返回 false</returns>
     public bool IsConnectionActive(string connectionId)
     {
         if (!_connections.TryGetValue(connectionId, out var connection))
@@ -175,9 +226,23 @@ public class ChatSseConnectionManager : IChatSseConnectionManager
         return !connection.CancellationToken.IsCancellationRequested;
     }
 
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    public void Dispose()
+    {
+        _subscriber?.UnsubscribeAll();
+    }
+
     private class SseConnection
     {
         public HttpResponse Response { get; set; } = null!;
         public CancellationToken CancellationToken { get; set; }
+    }
+
+    private class SseMessagePayload
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
     }
 }

@@ -54,9 +54,8 @@ builder.Services.AddCors(options =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            // ✅ 开发环境：明确列出允许的源
-            // 注意：使用 AllowCredentials() 时不能使用 AllowAnyOrigin()，必须明确指定源
-            var allowedOrigins = new[]
+            // ✅ 开发环境：从配置读取允许的源，如果未配置则使用默认值
+            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[]
             {
                 "http://localhost:15000",  // API网关
                 "http://localhost:15001",  // 管理后台
@@ -161,7 +160,11 @@ builder.Services.AddOpenApi(options =>
 builder.AddMongoDBClient(connectionName: "mongodb");
 
 // 添加OpenAI服务
+// 添加OpenAI服务
 builder.AddOpenAIClient(connectionName: "chat");
+
+// 添加 Redis 服务 (SSE Backplane)
+builder.AddRedisClient("redis");
 
 // Add HTTP context accessor
 builder.Services.AddHttpContextAccessor();
@@ -207,7 +210,12 @@ builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
 builder.Services.AddHostedService<CloudStorageMaintenanceService>();
 
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
+// ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
+
+// 手动注册拆分的 Service，确保它们被正确注入（虽然 AddBusinessServices 可能已经涵盖，但显式注册更安全）
+builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+builder.Services.AddScoped<IUserOrganizationService, UserOrganizationService>();
 
 // 注册审批人解析器（支持多个实现）
 builder.Services.AddScoped<IApproverResolver, UserApproverResolver>();

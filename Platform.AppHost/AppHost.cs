@@ -32,6 +32,11 @@ var mongo = builder.AddMongoDB("mongo")
 
 var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
+var redis = builder.AddRedis("redis")
+    .WithRedisInsight()
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithDataVolume();
+
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WaitFor(mongodb)
@@ -46,7 +51,8 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
     // 核心业务服务（端口不暴露，仅供内部访问）
     // 🔒 通过环境变量传递 JWT 配置
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
-        .WithReference(mongodb)
+        .WithReference(mongodb).WaitFor(mongodb)
+        .WithReference(redis).WaitFor(redis)
         .WaitForCompletion(datainitializer)
         .WithHttpEndpoint()
         .WithReplicas(1)

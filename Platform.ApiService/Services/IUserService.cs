@@ -88,6 +88,14 @@ public interface IUserService
     Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request);
 
     /// <summary>
+    /// 确保当前用户有权访问目标用户的数据
+    /// </summary>
+    /// <param name="currentUserId">当前用户ID</param>
+    /// <param name="targetUserId">目标用户ID</param>
+    /// <exception cref="UnauthorizedAccessException">如果无权访问</exception>
+    Task EnsureUserAccessAsync(string currentUserId, string targetUserId);
+
+    /// <summary>
     /// 获取用户统计信息
     /// </summary>
     /// <returns>用户统计信息</returns>

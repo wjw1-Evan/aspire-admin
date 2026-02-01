@@ -42,6 +42,27 @@ public class ActivityLogMiddlewareTests
             Tcs.TrySetResult(request);
             return Task.CompletedTask;
         }
+
+        public Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null) => Task.CompletedTask;
+
+        public Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(int page = 1, int pageSize = 20, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null, string? sortBy = null, string? sortOrder = null)
+        {
+            return Task.FromResult((new List<UserActivityLog>(), 0L));
+        }
+
+        public Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId) => Task.FromResult<UserActivityLog?>(null);
+
+        public Task<UserActivityLog?> GetActivityLogByIdAsync(string logId) => Task.FromResult<UserActivityLog?>(null);
+
+        public Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(int page = 1, int pageSize = 20, string? userId = null, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            return Task.FromResult((new List<UserActivityLog>(), 0L));
+        }
+
+        public Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(int page = 1, int pageSize = 20, string? userId = null, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            return Task.FromResult((new List<UserActivityLog>(), 0L, new Dictionary<string, string>()));
+        }
     }
 
     private sealed class TestLogger<T> : ILogger<T>

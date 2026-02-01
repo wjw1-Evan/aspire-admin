@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer, StatCard } from '@/components';
+import DataTable from '@/components/DataTable';
 import {
   Button,
   Space,
@@ -37,9 +38,50 @@ import {
   UploadOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-import { request } from '@umijs/max';
+import { request, useIntl, useModel } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchFormCard from '@/components/SearchFormCard';
+import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
+import type { UploadFile, UploadProps } from 'antd/es/upload';
+import {
+  getDocumentList,
+  getDocumentStatistics,
+  getDocumentDetail,
+  submitDocument,
+  approveDocument,
+  rejectDocument,
+  returnDocument,
+  delegateDocument,
+  getPendingDocuments,
+  createDocument,
+  updateDocument,
+  deleteDocument,
+  getDocumentInstanceForm,
+  uploadDocumentAttachment,
+  type Document,
+  type DocumentStatistics,
+  type DocumentQueryParams,
+  DocumentStatus,
+} from '@/services/document/api';
+import {
+  getWorkflowList,
+  getWorkflowDetail,
+  getDocumentCreateForm,
+  getNodeForm,
+  executeNodeAction,
+  createAndStartDocumentWorkflow,
+  type WorkflowDefinition,
+  FormFieldType,
+  WorkflowStatus,
+} from '@/services/workflow/api';
+import { type FormDefinition } from '@/services/form/api';
+import { getStatusMeta, documentStatusMap, workflowStatusMap, approvalActionMap, ApprovalAction } from '@/utils/statusMaps';
+import dayjs from 'dayjs';
+import ReactFlow, { Background, Controls, MiniMap, type Edge as FlowEdge, type Node as FlowNode } from 'reactflow';
+import 'reactflow/dist/style.css';
 
 const DocumentManagement: React.FC = () => {
   const intl = useIntl();

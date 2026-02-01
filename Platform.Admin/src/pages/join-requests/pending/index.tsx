@@ -1,5 +1,7 @@
-import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
-import { Button, Space, App, Modal, Input, Grid } from 'antd';
+import { PageContainer } from '@/components';
+import DataTable from '@/components/DataTable';
+import { Button, Space, App, Modal, Input, Grid, Form } from 'antd';
+import SearchFormCard from '@/components/SearchFormCard';
 
 const { useBreakpoint } = Grid;
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -40,11 +42,13 @@ const PendingJoinRequests: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
+  const [searchForm] = Form.useForm();
 
   // 获取待审核申请列表（使用 useCallback 避免死循环）
   const fetchPendingRequests = useCallback(async (_params: any, _sort?: Record<string, any>) => {
     try {
-      const response = await getPendingRequests();
+      const { keyword } = searchForm.getFieldsValue();
+      const response = await getPendingRequests(undefined, keyword);
 
       if (response.success && response.data) {
         return {
@@ -350,7 +354,7 @@ const PendingJoinRequests: React.FC = () => {
           <Button
             type="primary"
             icon={<CheckCircleOutlined />}
-            onClick={() => handleApprove(record.id)}
+            onClick={() => handleApprove(record)}
             size="small"
           >
             {intl.formatMessage({ id: 'pages.button.approve' })}
@@ -358,7 +362,7 @@ const PendingJoinRequests: React.FC = () => {
           <Button
             danger
             icon={<CloseCircleOutlined />}
-            onClick={() => handleReject(record.id)}
+            onClick={() => handleReject(record)}
             size="small"
           >
             {intl.formatMessage({ id: 'pages.button.reject' })}
@@ -389,6 +393,40 @@ const PendingJoinRequests: React.FC = () => {
         </Space>
       }
     >
+      {/* 搜索表单 */}
+      <SearchFormCard style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout="inline"
+          onFinish={() => actionRef.current?.reload?.()}
+          style={{ gap: 8 }}
+        >
+          <Form.Item name="keyword" style={{ marginBottom: 0 }}>
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.joinRequests.search.placeholder' })}
+              allowClear
+              onPressEnter={() => actionRef.current?.reload?.()}
+              style={{ width: 220 }}
+            />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Space>
+              <Button type="primary" onClick={() => actionRef.current?.reload?.()}>
+                {intl.formatMessage({ id: 'pages.button.search' })}
+              </Button>
+              <Button
+                onClick={() => {
+                  searchForm.resetFields();
+                  actionRef.current?.reload?.();
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.button.reset' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </SearchFormCard>
+
       <DataTable<API.JoinRequestDetail>
         columns={columns}
         actionRef={actionRef}
@@ -396,15 +434,13 @@ const PendingJoinRequests: React.FC = () => {
         search={false}
         request={fetchPendingRequests}
         rowKey="id"
-        search={false}
         pagination={{
           pageSize: 10,
           pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,
         }}
-        dateFormatter="string"
-        />
+      />
     </PageContainer>
   );
 };

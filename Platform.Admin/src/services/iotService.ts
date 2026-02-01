@@ -144,11 +144,15 @@ export const iotService = {
       data,
     }),
 
-  getGateways: (pageIndex = 1, pageSize = 20) =>
-    request<{ success: boolean; data: { list: IoTGateway[]; total: number; page: number; pageSize: number } }>(
-      `${API_PREFIX}/gateways?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+  getGateways: (pageIndex = 1, pageSize = 20, keyword?: string, status?: string) => {
+    let url = `${API_PREFIX}/gateways?pageIndex=${pageIndex}&pageSize=${pageSize}`;
+    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (status) url += `&status=${encodeURIComponent(status)}`;
+    return request<{ success: boolean; data: { list: IoTGateway[]; total: number; page: number; pageSize: number } }>(
+      url,
       { method: 'GET' }
-    ),
+    );
+  },
 
   getGateway: (id: string) =>
     request<{ success: boolean; data: IoTGateway }>(`${API_PREFIX}/gateways/${id}`, {
@@ -179,10 +183,13 @@ export const iotService = {
       data,
     }),
 
-  getDevices: (gatewayId?: string, pageIndex = 1, pageSize = 20) => {
+  getDevices: (gatewayId?: string, pageIndex = 1, pageSize = 20, keyword?: string) => {
     let url = `${API_PREFIX}/devices?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (gatewayId) {
       url += `&gatewayId=${gatewayId}`;
+    }
+    if (keyword) {
+      url += `&keyword=${encodeURIComponent(keyword)}`;
     }
     return request<{ success: boolean; data: { list: IoTDevice[]; total: number; page: number; pageSize: number } }>(url, { method: 'GET' });
   },
@@ -216,10 +223,13 @@ export const iotService = {
       data,
     }),
 
-  getDataPoints: (deviceId?: string, pageIndex = 1, pageSize = 20) => {
+  getDataPoints: (deviceId?: string, pageIndex = 1, pageSize = 20, keyword?: string) => {
     let url = `${API_PREFIX}/datapoints?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (deviceId) {
       url += `&deviceId=${deviceId}`;
+    }
+    if (keyword) {
+      url += `&keyword=${encodeURIComponent(keyword)}`;
     }
     return request<{ success: boolean; data: { list: IoTDataPoint[]; total: number; page: number; pageSize: number } }>(url, { method: 'GET' });
   },

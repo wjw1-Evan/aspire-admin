@@ -18,7 +18,7 @@ public interface IIoTService
     /// <summary>
     /// 获取网关列表
     /// </summary>
-    Task<(List<IoTGateway> Items, long Total)> GetGatewaysAsync(int pageIndex = 1, int pageSize = 20);
+    Task<(List<IoTGateway> Items, long Total)> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20);
 
     /// <summary>
     /// 获取网关详情
@@ -62,7 +62,7 @@ public interface IIoTService
     /// <summary>
     /// 获取设备列表
     /// </summary>
-    Task<(List<IoTDevice> Items, long Total)> GetDevicesAsync(string? gatewayId = null, int pageIndex = 1, int pageSize = 20);
+    Task<(List<IoTDevice> Items, long Total)> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20);
 
     /// <summary>
     /// 获取设备详情
@@ -116,7 +116,7 @@ public interface IIoTService
     /// <summary>
     /// 获取数据点列表
     /// </summary>
-    Task<(List<IoTDataPoint> Items, long Total)> GetDataPointsAsync(string? deviceId = null, int pageIndex = 1, int pageSize = 20);
+    Task<(List<IoTDataPoint> Items, long Total)> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20);
 
     /// <summary>
     /// 获取数据点详情

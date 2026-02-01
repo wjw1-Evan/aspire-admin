@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
+import { useIntl } from '@umijs/max';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { type TableColumnsType } from 'antd';
@@ -42,6 +43,7 @@ import {
 } from '@/services/iotService';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 
 export interface DeviceManagementRef {
   reload: () => void;
@@ -58,7 +60,8 @@ const isDeviceOnline = (device: IoTDevice) => {
   return diffMinutes <= 5;
 };
 
-const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
+const DeviceManagement = forwardRef<DeviceManagementRef, DeviceManagementProps>((props, ref) => {
+  const intl = useIntl();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const { styles } = useCommonStyles();
@@ -75,6 +78,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     offline: 0,
     fault: 0,
   });
+  const [searchForm] = Form.useForm();
 
   // 确保 gateways 始终是数组
   const safeGateways = Array.isArray(gateways) ? gateways : [];
@@ -101,7 +105,8 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   // 获取设备列表（用于 ProTable）
   const fetchDevices = useCallback(async (params: any) => {
     try {
-      const response = await iotService.getDevices(undefined, params.current || 1, params.pageSize || 20);
+      const { keyword } = searchForm.getFieldsValue();
+      const response = await iotService.getDevices(undefined, params.current || 1, params.pageSize || 20, keyword);
       if (response.success && response.data) {
         const data = response.data;
         const list = Array.isArray(data.list) ? data.list : [];
@@ -329,7 +334,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="在线设备"
+              title={intl.formatMessage({ id: 'pages.iotPlatform.status.onlineDevices' })}
               value={overviewStats.online}
               icon={<CheckCircleOutlined />}
               color="#52c41a"
@@ -337,7 +342,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="离线设备"
+              title={intl.formatMessage({ id: 'pages.iotPlatform.status.offlineDevices' })}
               value={overviewStats.offline}
               icon={<CloseCircleOutlined />}
               color="#8c8c8c"
@@ -345,7 +350,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="故障设备"
+              title={intl.formatMessage({ id: 'pages.iotPlatform.status.faultDevices' })}
               value={overviewStats.fault}
               icon={<ExclamationCircleOutlined />}
               color="#ff4d4f"
@@ -353,6 +358,40 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           </Col>
         </Row>
       </Card>
+
+      {/* 搜索表单 */}
+      <SearchFormCard style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout="inline"
+          onFinish={() => actionRef.current?.reload?.()}
+          style={{ gap: 8 }}
+        >
+          <Form.Item name="keyword" style={{ marginBottom: 0 }}>
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.iotPlatform.search.placeholder' })}
+              allowClear
+              onPressEnter={() => actionRef.current?.reload?.()}
+              style={{ width: 220 }}
+            />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Space>
+              <Button type="primary" onClick={() => actionRef.current?.reload?.()}>
+                {intl.formatMessage({ id: 'pages.button.search' })}
+              </Button>
+              <Button
+                onClick={() => {
+                  searchForm.resetFields();
+                  actionRef.current?.reload?.();
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.button.reset' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </SearchFormCard>
 
       {/* 设备列表表格 */}
       <DataTable<IoTDevice>

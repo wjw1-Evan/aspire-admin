@@ -55,11 +55,11 @@ public class IoTController : BaseApiController
     /// 获取网关列表
     /// </summary>
     [HttpGet("gateways")]
-    public async Task<IActionResult> GetGateways([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetGateways([FromQuery] string? keyword = null, [FromQuery] IoTDeviceStatus? status = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
         try
         {
-            var (items, total) = await _iotService.GetGatewaysAsync(pageIndex, pageSize);
+            var (items, total) = await _iotService.GetGatewaysAsync(keyword, status, pageIndex, pageSize);
             return SuccessPaged(items, total, pageIndex, pageSize);
         }
         catch (Exception ex)
@@ -179,11 +179,11 @@ public class IoTController : BaseApiController
     /// 获取设备列表
     /// </summary>
     [HttpGet("devices")]
-    public async Task<IActionResult> GetDevices([FromQuery] string? gatewayId = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetDevices([FromQuery] string? gatewayId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
         try
         {
-            var (items, total) = await _iotService.GetDevicesAsync(gatewayId, pageIndex, pageSize);
+            var (items, total) = await _iotService.GetDevicesAsync(gatewayId, keyword, pageIndex, pageSize);
             return SuccessPaged(items, total, pageIndex, pageSize);
         }
         catch (Exception ex)
@@ -363,11 +363,11 @@ public class IoTController : BaseApiController
     /// 获取数据点列表
     /// </summary>
     [HttpGet("datapoints")]
-    public async Task<IActionResult> GetDataPoints([FromQuery] string? deviceId = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetDataPoints([FromQuery] string? deviceId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
         try
         {
-            var (items, total) = await _iotService.GetDataPointsAsync(deviceId, pageIndex, pageSize);
+            var (items, total) = await _iotService.GetDataPointsAsync(deviceId, keyword, pageIndex, pageSize);
             return SuccessPaged(items, total, pageIndex, pageSize);
         }
         catch (Exception ex)

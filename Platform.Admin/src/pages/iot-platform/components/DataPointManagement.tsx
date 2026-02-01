@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
+import { useIntl } from '@umijs/max';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import {
@@ -41,6 +42,7 @@ import {
 import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 
 export interface DataPointManagementRef {
   reload: () => void;
@@ -49,6 +51,7 @@ export interface DataPointManagementRef {
 }
 
 const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
+  const intl = useIntl();
   const { message } = App.useApp();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
@@ -65,6 +68,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     disabled: 0,
     withAlarm: 0,
   });
+  const [searchForm] = Form.useForm();
 
   // 确保 devices 始终是数组
   const safeDevices = Array.isArray(devices) ? devices : [];
@@ -92,7 +96,8 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   // 获取数据点列表（用于 ProTable）- 使用 useCallback 避免死循环
   const fetchDataPoints = useCallback(async (params: any) => {
     try {
-      const response = await iotService.getDataPoints(undefined, params.current || 1, params.pageSize || 20);
+      const { keyword } = searchForm.getFieldsValue();
+      const response = await iotService.getDataPoints(undefined, params.current || 1, params.pageSize || 20, keyword);
       if (response.success && response.data) {
         const data = response.data;
         const list = Array.isArray(data.list) ? data.list : [];
@@ -429,7 +434,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="数据点总数"
+              title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalDatapoints' })}
               value={overviewStats.total}
               icon={<DatabaseOutlined />}
               color="#1890ff"
@@ -437,7 +442,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="已启用"
+              title={intl.formatMessage({ id: 'pages.table.activated' })}
               value={overviewStats.enabled}
               icon={<CheckCircleOutlined />}
               color="#52c41a"
@@ -445,7 +450,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="已禁用"
+              title={intl.formatMessage({ id: 'pages.table.deactivated' })}
               value={overviewStats.disabled}
               icon={<CloseCircleOutlined />}
               color="#8c8c8c"
@@ -453,7 +458,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="告警配置"
+              title={intl.formatMessage({ id: 'pages.iotPlatform.status.withAlarm' })}
               value={overviewStats.withAlarm}
               icon={<ExclamationCircleOutlined />}
               color="#faad14"
@@ -461,6 +466,40 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
           </Col>
         </Row>
       </Card>
+
+      {/* 搜索表单 */}
+      <SearchFormCard style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout="inline"
+          onFinish={() => actionRef.current?.reload?.()}
+          style={{ gap: 8 }}
+        >
+          <Form.Item name="keyword" style={{ marginBottom: 0 }}>
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.iotPlatform.search.placeholder' })}
+              allowClear
+              onPressEnter={() => actionRef.current?.reload?.()}
+              style={{ width: 220 }}
+            />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Space>
+              <Button type="primary" onClick={() => actionRef.current?.reload?.()}>
+                {intl.formatMessage({ id: 'pages.button.search' })}
+              </Button>
+              <Button
+                onClick={() => {
+                  searchForm.resetFields();
+                  actionRef.current?.reload?.();
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.button.reset' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </SearchFormCard>
 
       {/* 数据点配置列表表格 */}
       <DataTable<IoTDataPoint>

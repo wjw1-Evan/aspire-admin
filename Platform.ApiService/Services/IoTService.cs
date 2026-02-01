@@ -74,11 +74,27 @@ public class IoTService : IIoTService
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>网关列表和总数</returns>
-    public async Task<(List<IoTGateway> Items, long Total)> GetGatewaysAsync(int pageIndex = 1, int pageSize = 20)
+    public async Task<(List<IoTGateway> Items, long Total)> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20)
     {
-        var filter = _gatewayFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .Build();
+        var filterBuilder = _gatewayFactory.CreateFilterBuilder()
+            .ExcludeDeleted();
+        
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            var builder = Builders<IoTGateway>.Filter;
+            filterBuilder.Custom(builder.Or(
+                builder.Regex("name", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
+                builder.Regex("title", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
+                builder.Regex("gatewayId", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
+            ));
+        }
+
+        if (status.HasValue)
+        {
+            filterBuilder.Equal(g => g.Status, status.Value);
+        }
+
+        var filter = filterBuilder.Build();
         var sort = _gatewayFactory.CreateSortBuilder()
             .Descending(g => g.CreatedAt)
             .Build();
@@ -328,7 +344,7 @@ public class IoTService : IIoTService
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>设备列表和总数</returns>
-    public async Task<(List<IoTDevice> Items, long Total)> GetDevicesAsync(string? gatewayId = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<(List<IoTDevice> Items, long Total)> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
     {
         var filterBuilder = _deviceFactory.CreateFilterBuilder()
             .ExcludeDeleted();
@@ -336,6 +352,16 @@ public class IoTService : IIoTService
         if (!string.IsNullOrEmpty(gatewayId))
         {
             filterBuilder.Equal(d => d.GatewayId, gatewayId);
+        }
+
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            var builder = Builders<IoTDevice>.Filter;
+            filterBuilder.Custom(builder.Or(
+                builder.Regex("name", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
+                builder.Regex("title", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
+                builder.Regex("deviceId", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
+            ));
         }
         
         var filter = filterBuilder.Build();
@@ -619,7 +645,7 @@ public class IoTService : IIoTService
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>数据点列表和总数</returns>
-    public async Task<(List<IoTDataPoint> Items, long Total)> GetDataPointsAsync(string? deviceId = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<(List<IoTDataPoint> Items, long Total)> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
     {
         var filterBuilder = _dataPointFactory.CreateFilterBuilder()
             .ExcludeDeleted();
@@ -627,6 +653,16 @@ public class IoTService : IIoTService
         if (!string.IsNullOrEmpty(deviceId))
         {
             filterBuilder.Equal(dp => dp.DeviceId, deviceId);
+        }
+
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            var builder = Builders<IoTDataPoint>.Filter;
+            filterBuilder.Custom(builder.Or(
+                builder.Regex("name", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
+                builder.Regex("title", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
+                builder.Regex("dataPointId", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
+            ));
         }
         
         var filter = filterBuilder.Build();

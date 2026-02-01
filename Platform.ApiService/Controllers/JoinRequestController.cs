@@ -41,9 +41,9 @@ public class JoinRequestController : BaseApiController
     /// </summary>
     [HttpGet("my-requests")]
     [Authorize]
-    public async Task<IActionResult> GetMyRequests()
+    public async Task<IActionResult> GetMyRequests([FromQuery] string? keyword = null)
     {
-        var requests = await _joinRequestService.GetMyRequestsAsync();
+        var requests = await _joinRequestService.GetMyRequestsAsync(keyword);
         return Success(requests);
     }
 
@@ -57,7 +57,7 @@ public class JoinRequestController : BaseApiController
         var success = await _joinRequestService.CancelRequestAsync(id);
         if (!success)
             throw new KeyNotFoundException("申请不存在或已处理");
-        
+
         return Success("申请已撤回");
     }
 
@@ -66,7 +66,7 @@ public class JoinRequestController : BaseApiController
     /// </summary>
     [HttpGet("pending")]
     [Authorize]
-    public async Task<IActionResult> GetPendingRequests([FromQuery] string? companyId = null)
+    public async Task<IActionResult> GetPendingRequests([FromQuery] string? companyId = null, [FromQuery] string? keyword = null)
     {
         // 如果没有指定企业ID，使用当前企业（从数据库获取）
         if (string.IsNullOrEmpty(companyId))
@@ -80,8 +80,8 @@ public class JoinRequestController : BaseApiController
             }
             companyId = user.CurrentCompanyId;
         }
-        
-        var requests = await _joinRequestService.GetPendingRequestsAsync(companyId);
+
+        var requests = await _joinRequestService.GetPendingRequestsAsync(companyId, keyword);
         return Success(requests);
     }
 
@@ -105,7 +105,7 @@ public class JoinRequestController : BaseApiController
     {
         if (string.IsNullOrEmpty(request.RejectReason))
             throw new ArgumentException("请填写拒绝原因");
-        
+
         var success = await _joinRequestService.RejectRequestAsync(id, request.RejectReason);
         return Success(success, "申请已拒绝");
     }

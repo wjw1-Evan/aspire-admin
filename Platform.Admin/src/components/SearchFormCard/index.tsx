@@ -14,8 +14,8 @@ const useStyles = createStyles(({ token, css }) => ({
       padding: ${token.paddingLG}px;
     }
     
-    // Ensure last row of form items doesn't add extra bottom margin
-    .ant-form-item:last-child {
+    // Ensure last direct form item doesn't add extra bottom margin (for vertical layouts)
+    form > .ant-form-item:last-child {
       margin-bottom: 0;
     }
   `,

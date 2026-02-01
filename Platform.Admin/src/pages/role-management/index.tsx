@@ -12,10 +12,11 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Input, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer, theme } from 'antd';
+import { Badge, Button, Input, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer, theme, Form } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { useModal } from '@/hooks/useModal';
+import SearchFormCard from '@/components/SearchFormCard';
 
 const { useBreakpoint } = Grid;
 import { type ChangeEvent, type FC, useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -48,6 +49,7 @@ const RoleManagement: FC = () => {
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
+  const [searchForm] = Form.useForm();
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRole, setCurrentRole] = useState<Role | undefined>();
   const [detailVisible, setDetailVisible] = useState(false);
@@ -62,9 +64,16 @@ const RoleManagement: FC = () => {
   /**
    * 加载角色数据（带统计信息）- 使用 useCallback 避免死循环
    */
-  const loadRoleData = useCallback(async (_params: any, _sort?: Record<string, any>) => {
+  const loadRoleData = useCallback(async (params: any) => {
     try {
-      const response = await getAllRolesWithStats();
+      // 提取 keyword 搜索参数
+      const keyword = searchForm.getFieldValue('keyword');
+      const response = await getAllRolesWithStats({
+        params: {
+          ...params,
+          keyword: keyword || undefined,
+        }
+      });
       if (response.success && response.data) {
         const roles = response.data.roles || [];
 
@@ -107,7 +116,18 @@ const RoleManagement: FC = () => {
         success: false,
       };
     }
-  }, []); // 空依赖数组，因为函数内部只调用 API 和 setState
+  }, [searchForm]);
+
+  // 处理搜索
+  const handleSearch = useCallback(() => {
+    actionRef.current?.reload();
+  }, []);
+
+  // 重置搜索
+  const handleReset = useCallback(() => {
+    searchForm.resetFields();
+    actionRef.current?.reload();
+  }, [searchForm]);
 
   /**
    * 删除角色（带删除原因）
@@ -536,6 +556,34 @@ const RoleManagement: FC = () => {
           </Row>
         </Card>
       )}
+
+      {/* 搜索表单 */}
+      <SearchFormCard>
+        <Form
+          form={searchForm}
+          layout={isMobile ? 'vertical' : 'inline'}
+          onFinish={handleSearch}
+        >
+          <Form.Item name="keyword" label={intl.formatMessage({ id: 'pages.table.roleName' })}>
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.roleManagement.search.placeholder' })}
+              style={{ width: isMobile ? '100%' : 200 }}
+              allowClear
+              onPressEnter={handleSearch}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" onClick={handleSearch}>
+                {intl.formatMessage({ id: 'pages.button.query' })}
+              </Button>
+              <Button onClick={handleReset}>
+                {intl.formatMessage({ id: 'pages.button.reset' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </SearchFormCard>
 
       <div ref={tableRef}>
         <DataTable<Role>

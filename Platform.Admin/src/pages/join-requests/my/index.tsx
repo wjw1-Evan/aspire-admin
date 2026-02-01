@@ -1,5 +1,7 @@
-import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
-import { Tag, Button, App, Popconfirm, Space, Grid } from 'antd';
+import { PageContainer } from '@/components';
+import DataTable from '@/components/DataTable';
+import { Tag, Button, App, Popconfirm, Space, Grid, Form, Input } from 'antd';
+import SearchFormCard from '@/components/SearchFormCard';
 
 const { useBreakpoint } = Grid;
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -41,11 +43,13 @@ const MyJoinRequests: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
+  const [searchForm] = Form.useForm();
 
   // 获取我的申请列表（使用 useCallback 避免死循环）
   const fetchMyRequests = useCallback(async (_params: any, _sort?: Record<string, any>) => {
     try {
-      const response = await getMyRequests();
+      const { keyword } = searchForm.getFieldsValue();
+      const response = await getMyRequests(keyword);
 
       if (response.success && response.data) {
         return {
@@ -358,6 +362,40 @@ const MyJoinRequests: React.FC = () => {
         </Space>
       }
     >
+      {/* 搜索表单 */}
+      <SearchFormCard style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout="inline"
+          onFinish={() => actionRef.current?.reload?.()}
+          style={{ gap: 8 }}
+        >
+          <Form.Item name="keyword" style={{ marginBottom: 0 }}>
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.joinRequests.search.companyPlaceholder' })}
+              allowClear
+              onPressEnter={() => actionRef.current?.reload?.()}
+              style={{ width: 220 }}
+            />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Space>
+              <Button type="primary" onClick={() => actionRef.current?.reload?.()}>
+                {intl.formatMessage({ id: 'pages.button.search' })}
+              </Button>
+              <Button
+                onClick={() => {
+                  searchForm.resetFields();
+                  actionRef.current?.reload?.();
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.button.reset' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </SearchFormCard>
+
       <DataTable<API.JoinRequestDetail>
         columns={columns}
         actionRef={actionRef}
@@ -370,7 +408,7 @@ const MyJoinRequests: React.FC = () => {
           showSizeChanger: true,
           showQuickJumper: true,
         }}
-        />
+      />
     </PageContainer>
   );
 };

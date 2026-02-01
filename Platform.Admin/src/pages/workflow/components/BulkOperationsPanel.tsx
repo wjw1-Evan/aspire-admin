@@ -297,7 +297,7 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
                                         <Text ellipsis style={{ maxWidth: '100%' }}>
                                             {item.name}
                                             {item.category && (
-                                                <Tag size="small" style={{ marginLeft: 8 }}>
+                                                <Tag style={{ marginLeft: 8 }}>
                                                     {item.category}
                                                 </Tag>
                                             )}
@@ -410,11 +410,11 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
                                 <div><Text strong>{currentOperation.processedCount}</Text></div>
                             </Col>
                             <Col xs={12} sm={6}>
-                                <Text type="secondary">{intl.formatMessage({ id: 'pages.workflow.bulk.success' })}</Text>
+                                <Text type="secondary">{intl.formatMessage({ id: 'pages.workflow.bulk.label.success' })}</Text>
                                 <div><Text strong style={{ color: '#52c41a' }}>{currentOperation.successCount}</Text></div>
                             </Col>
                             <Col xs={12} sm={6}>
-                                <Text type="secondary">{intl.formatMessage({ id: 'pages.workflow.bulk.failed' })}</Text>
+                                <Text type="secondary">{intl.formatMessage({ id: 'pages.workflow.bulk.label.failed' })}</Text>
                                 <div><Text strong style={{ color: '#ff4d4f' }}>{currentOperation.failureCount}</Text></div>
                             </Col>
                         </Row>

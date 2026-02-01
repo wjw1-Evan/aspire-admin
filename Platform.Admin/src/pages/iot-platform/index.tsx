@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useIntl } from '@umijs/max';
 import { PageContainer } from '@/components';
 import { Card, Row, Col, Button, Space, Spin } from 'antd';
 import {
@@ -16,6 +17,7 @@ import useCommonStyles from '@/hooks/useCommonStyles';
 import { theme } from 'antd';
 
 const IoTPlatform: React.FC = () => {
+  const intl = useIntl();
   const message = useMessage();
   const { styles } = useCommonStyles();
   const { token } = theme.useToken();
@@ -45,7 +47,7 @@ const IoTPlatform: React.FC = () => {
 
   const handleRefresh = () => {
     loadStatistics();
-    message.success('数据已刷新');
+    message.success(intl.formatMessage({ id: 'pages.iotPlatform.message.refreshSuccess' }));
   };
 
   return (
@@ -53,7 +55,7 @@ const IoTPlatform: React.FC = () => {
       title={
         <Space>
           <CloudOutlined />
-          物联网平台概览
+          {intl.formatMessage({ id: 'pages.iotPlatform.title' })}
         </Space>
       }
       style={{ paddingBlock: 12 }}
@@ -65,7 +67,7 @@ const IoTPlatform: React.FC = () => {
             onClick={handleRefresh}
             loading={loading}
           >
-            刷新
+            {intl.formatMessage({ id: 'pages.common.refresh' })}
           </Button>
         </Space>
       }
@@ -78,7 +80,7 @@ const IoTPlatform: React.FC = () => {
             <Row gutter={[12, 12]}>
               <Col xs={24} sm={12} md={6}>
                 <StatCard
-                  title="网关总数"
+                  title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalGateways' })}
                   value={statistics?.totalGateways || 0}
                   icon={<CloudServerOutlined />}
                   color="#1890ff"
@@ -86,7 +88,7 @@ const IoTPlatform: React.FC = () => {
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <StatCard
-                  title="在线网关"
+                  title={intl.formatMessage({ id: 'pages.iotPlatform.status.onlineGateways' })}
                   value={statistics?.onlineGateways || 0}
                   icon={<CloudServerOutlined />}
                   color="#52c41a"
@@ -94,7 +96,7 @@ const IoTPlatform: React.FC = () => {
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <StatCard
-                  title="设备总数"
+                  title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalDevices' })}
                   value={statistics?.totalDevices || 0}
                   icon={<DesktopOutlined />}
                   color="#1890ff"
@@ -102,7 +104,7 @@ const IoTPlatform: React.FC = () => {
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <StatCard
-                  title="在线设备"
+                  title={intl.formatMessage({ id: 'pages.iotPlatform.status.onlineDevices' })}
                   value={statistics?.onlineDevices || 0}
                   icon={<DesktopOutlined />}
                   color="#52c41a"
@@ -113,18 +115,18 @@ const IoTPlatform: React.FC = () => {
             <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
               <Col xs={24} sm={12} md={6}>
                 <StatCard
-                  title="数据点总数"
+                  title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalDatapoints' })}
                   value={statistics?.totalDataPoints || 0}
                   icon={<DatabaseOutlined />}
-                  color="#1890ff"
+                  color="#722ed1"
                 />
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <StatCard
-                  title="数据记录"
-                  value={statistics?.totalDataRecords || 0}
-                  icon={<DatabaseOutlined />}
-                  color="#1890ff"
+                  title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalAlarms' })}
+                  value={statistics?.totalAlarms || 0}
+                  icon={<AlertOutlined />}
+                  color="#f5222d"
                 />
               </Col>
               <Col xs={24} sm={12} md={6}>

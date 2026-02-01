@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PageContainer } from '@/components';
-import { Card, Spin, Row, Col, Progress, Tag, Descriptions, Space } from 'antd';
+import { Card, Spin, Row, Col, Tag, Descriptions, Space } from 'antd';
 import {
   UserOutlined,
   TeamOutlined,
@@ -98,9 +98,6 @@ export default function CompanySettings() {
     );
   }
 
-  const userUsagePercent = statistics
-    ? Math.round((statistics.totalUsers / statistics.maxUsers) * 100)
-    : 0;
 
   return (
     <PageContainer
@@ -130,11 +127,6 @@ export default function CompanySettings() {
                 value={`${statistics.totalUsers} / ${statistics.maxUsers}`}
                 icon={<UserOutlined />}
                 color="#3f8600"
-              />
-              <Progress
-                percent={userUsagePercent}
-                status={userUsagePercent >= 90 ? 'exception' : 'active'}
-                style={{ marginTop: 8 }}
               />
             </Col>
             <Col xs={24} sm={12} md={6}>

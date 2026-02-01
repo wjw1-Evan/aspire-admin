@@ -30,6 +30,7 @@ import {
     PlusOutlined,
     ReloadOutlined,
     UserOutlined,
+    SearchOutlined,
 } from '@ant-design/icons';
 import type { DataNode } from 'antd/es/tree';
 import type { TreeSelectProps } from 'antd/es/tree-select';
@@ -55,6 +56,7 @@ import {
 import AssignUserModal from './components/AssignUserModal';
 
 const { Title, Text } = Typography;
+const { Search } = Input;
 
 const formatDateTime = (value?: string) => {
     if (!value) return '-';
@@ -62,13 +64,54 @@ const formatDateTime = (value?: string) => {
     return date.isValid() ? date.format('YYYY-MM-DD HH:mm:ss') : value;
 };
 
-const buildTreeData = (nodes: OrganizationTreeNode[]): DataNode[] =>
-    nodes.map((node) => ({
-        key: node.id || node.name,
-        title: node.name,
-        icon: <ApartmentOutlined />,
-        children: node.children ? buildTreeData(node.children) : undefined,
-    }));
+/**
+ * 构建树形数据，并根据搜索词高亮显示
+ */
+const buildTreeData = (nodes: OrganizationTreeNode[], searchValue: string): DataNode[] =>
+    nodes.map((node) => {
+        const name = node.name || '';
+        const index = searchValue ? name.toLowerCase().indexOf(searchValue.toLowerCase()) : -1;
+        const title = index > -1 ? (
+            <span>
+                {name.substring(0, index)}
+                <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+                    {name.substring(index, index + searchValue.length)}
+                </span>
+                {name.substring(index + searchValue.length)}
+            </span>
+        ) : (
+            <span>{name}</span>
+        );
+
+        return {
+            key: node.id || node.name,
+            title,
+            icon: <ApartmentOutlined />,
+            children: node.children ? buildTreeData(node.children, searchValue) : undefined,
+        };
+    });
+
+/**
+ * 递归过滤树节点，保留匹配搜索词的节点及其父节点
+ */
+const filterTree = (nodes: OrganizationTreeNode[], searchValue: string): OrganizationTreeNode[] => {
+    if (!searchValue) return nodes;
+    return nodes
+        .map((node) => {
+            const match = node.name.toLowerCase().includes(searchValue.toLowerCase());
+            if (match) {
+                return node;
+            }
+            if (node.children?.length) {
+                const filteredChildren = filterTree(node.children, searchValue);
+                if (filteredChildren.length > 0) {
+                    return { ...node, children: filteredChildren };
+                }
+            }
+            return null;
+        })
+        .filter((node): node is OrganizationTreeNode => node !== null);
+};
 
 const flattenTree = (nodes: OrganizationTreeNode[]): Record<string, OrganizationTreeNode> => {
     const map: Record<string, OrganizationTreeNode> = {};
@@ -109,6 +152,7 @@ const OrganizationPage: React.FC = () => {
     const { token } = theme.useToken();
     const [tree, setTree] = useState<OrganizationTreeNode[]>([]);
     const [loading, setLoading] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
     const [selectedId, setSelectedId] = useState<string>();
     const selectedIdRef = useRef<string | undefined>(undefined);
     const [formOpen, setFormOpen] = useState(false);
@@ -123,6 +167,10 @@ const OrganizationPage: React.FC = () => {
         () => (selectedId ? nodeMap[selectedId] || null : null),
         [nodeMap, selectedId],
     );
+
+    // 根据搜索词过滤后的树数据
+    const filteredTree = useMemo(() => filterTree(tree, searchValue), [tree, searchValue]);
+    const treeData = useMemo(() => buildTreeData(filteredTree, searchValue), [filteredTree, searchValue]);
 
     useEffect(() => {
         selectedIdRef.current = selectedId;
@@ -384,8 +432,17 @@ const OrganizationPage: React.FC = () => {
                         styles={{ body: { padding: 12 } }}
                         style={{ height: '100%' }}
                     >
+                        <div style={{ marginBottom: 12 }}>
+                            <Search
+                                placeholder={intl.formatMessage({ id: 'pages.organization.search.placeholder' })}
+                                allowClear
+                                onChange={(e) => setSearchValue(e.target.value)}
+                                onSearch={(value) => setSearchValue(value)}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
                         <Spin spinning={loading}>
-                            {tree.length > 0 ? (
+                            {treeData.length > 0 ? (
                                 <Tree
                                     blockNode
                                     showIcon
@@ -394,7 +451,7 @@ const OrganizationPage: React.FC = () => {
                                     onDrop={handleDrop}
                                     selectedKeys={selectedId ? [selectedId] : []}
                                     onSelect={handleSelect}
-                                    treeData={buildTreeData(tree)}
+                                    treeData={treeData}
                                 />
                             ) : (
                                 <Empty

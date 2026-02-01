@@ -155,9 +155,10 @@ export async function applyToJoinCompany(data: API.ApplyToJoinCompanyRequest) {
 }
 
 /** 获取我的申请列表 GET /api/join-request/my-requests */
-export async function getMyRequests() {
+export async function getMyRequests(keyword?: string) {
   return request<API.ApiResponse<API.JoinRequestDetail[]>>('/api/join-request/my-requests', {
     method: 'GET',
+    params: { keyword },
   });
 }
 
@@ -169,8 +170,11 @@ export async function cancelRequest(id: string) {
 }
 
 /** 获取待审核的申请列表 GET /api/join-request/pending */
-export async function getPendingRequests(companyId?: string) {
-  const params = companyId ? { companyId } : {};
+export async function getPendingRequests(companyId?: string, keyword?: string) {
+  const params: any = {};
+  if (companyId) params.companyId = companyId;
+  if (keyword) params.keyword = keyword;
+
   return request<API.ApiResponse<API.JoinRequestDetail[]>>('/api/join-request/pending', {
     method: 'GET',
     params,

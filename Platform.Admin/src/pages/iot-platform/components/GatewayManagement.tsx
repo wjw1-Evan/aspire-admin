@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
+import { useIntl } from '@umijs/max';
 import type { ActionType, ProColumns } from '@/types/pro-components';
 import DataTable from '@/components/DataTable';
 import { type TableColumnsType } from 'antd';
@@ -37,6 +38,7 @@ import {
 import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/services/iotService';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 
 export interface GatewayManagementRef {
   reload: () => void;
@@ -45,6 +47,7 @@ export interface GatewayManagementRef {
 }
 
 const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
+  const intl = useIntl();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const { styles } = useCommonStyles();
@@ -60,6 +63,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     offline: 0,
     fault: 0,
   });
+  const [searchForm] = Form.useForm();
 
   const normalizeStatus = (status?: string) => (status || '').toLowerCase() as IoTDeviceStatus;
   const statusMap: Record<IoTDeviceStatus, { color: string; label: string }> = {
@@ -98,7 +102,8 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   // 获取网关列表（用于 ProTable）- 使用 useCallback 避免死循环
   const fetchGateways = useCallback(async (params: any) => {
     try {
-      const response = await iotService.getGateways(params.current || 1, params.pageSize || 20);
+      const { keyword, status } = searchForm.getFieldsValue();
+      const response = await iotService.getGateways(params.current || 1, params.pageSize || 20, keyword, status);
       if (response.success && response.data) {
         const data = response.data;
         const list = Array.isArray(data.list) ? data.list : [];
@@ -351,7 +356,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="在线网关"
+              title={intl.formatMessage({ id: 'pages.iotPlatform.status.onlineGateways' })}
               value={overviewStats.online}
               icon={<CheckCircleOutlined />}
               color="#52c41a"
@@ -359,7 +364,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="离线网关"
+              title={intl.formatMessage({ id: 'pages.iotPlatform.status.offlineGateways' })}
               value={overviewStats.offline}
               icon={<CloseCircleOutlined />}
               color="#8c8c8c"
@@ -367,7 +372,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           </Col>
           <Col xs={24} sm={12} md={6}>
             <StatCard
-              title="故障网关"
+              title={intl.formatMessage({ id: 'pages.iotPlatform.status.faultGateways' })}
               value={overviewStats.fault}
               icon={<ExclamationCircleOutlined />}
               color="#ff4d4f"
@@ -375,6 +380,52 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           </Col>
         </Row>
       </Card>
+
+      {/* 搜索表单 */}
+      <SearchFormCard style={{ marginBottom: 16 }}>
+        <Form
+          form={searchForm}
+          layout="inline"
+          onFinish={() => actionRef.current?.reload?.()}
+          style={{ gap: 8 }}
+        >
+          <Form.Item name="keyword" style={{ marginBottom: 0 }}>
+            <Input
+              placeholder={intl.formatMessage({ id: 'pages.iotPlatform.search.placeholder' })}
+              allowClear
+              onPressEnter={() => actionRef.current?.reload?.()}
+              style={{ width: 200 }}
+            />
+          </Form.Item>
+          <Form.Item name="status" style={{ marginBottom: 0 }}>
+            <Select
+              placeholder={intl.formatMessage({ id: 'pages.table.status' })}
+              allowClear
+              style={{ width: 120 }}
+              onChange={() => actionRef.current?.reload?.()}
+            >
+              <Select.Option value="online">{intl.formatMessage({ id: 'pages.iotPlatform.status.onlineGateways' })}</Select.Option>
+              <Select.Option value="offline">{intl.formatMessage({ id: 'pages.iotPlatform.status.offlineGateways' })}</Select.Option>
+              <Select.Option value="fault">{intl.formatMessage({ id: 'pages.iotPlatform.status.faultGateways' })}</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Space>
+              <Button type="primary" onClick={() => actionRef.current?.reload?.()}>
+                {intl.formatMessage({ id: 'pages.button.search' })}
+              </Button>
+              <Button
+                onClick={() => {
+                  searchForm.resetFields();
+                  actionRef.current?.reload?.();
+                }}
+              >
+                {intl.formatMessage({ id: 'pages.button.reset' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </SearchFormCard>
 
       {/* 网关列表表格 */}
       <DataTable<IoTGateway>

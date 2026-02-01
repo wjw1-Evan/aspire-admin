@@ -1,5 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
+import SearchFormCard from '@/components/SearchFormCard';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
@@ -94,6 +96,7 @@ const CloudStorageRecyclePage: React.FC = () => {
     const [searchParams, setSearchParams] = useState<SearchParams>({});
     const searchParamsRef = useRef<SearchParams>({});
     const [searchForm] = Form.useForm();
+    const { styles } = useCommonStyles();
 
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
@@ -528,7 +531,6 @@ const CloudStorageRecyclePage: React.FC = () => {
                                     message="警告：永久删除后无法恢复！"
                                     type="warning"
                                     showIcon
-                                    size="small"
                                 />
                             </div>
                         }
@@ -620,7 +622,7 @@ const CloudStorageRecyclePage: React.FC = () => {
         >
             {/* 统计卡片区域 */}
             {statistics && (
-                <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+                <Card className={styles.card} style={{ marginBottom: 16 }}>
                     <Row gutter={[12, 12]}>
                         <Col xs={24} sm={12} md={6}>
                             <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center' }}>
@@ -663,7 +665,7 @@ const CloudStorageRecyclePage: React.FC = () => {
             )}
 
             {/* 搜索表单 */}
-            <Card style={{ marginBottom: 16 }}>
+            <SearchFormCard>
                 <Form
                     form={searchForm}
                     layout={isMobile ? 'vertical' : 'inline'}
@@ -711,11 +713,11 @@ const CloudStorageRecyclePage: React.FC = () => {
                         </Space>
                     </Form.Item>
                 </Form>
-            </Card>
+            </SearchFormCard>
 
             {/* 清理进度 */}
             {cleanupProgress !== null && (
-                <Card style={{ marginBottom: 16 }}>
+                <Card className={styles.card} style={{ marginBottom: 16 }}>
                     <Alert
                         message="正在清空回收站..."
                         description={
@@ -765,7 +767,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                 <Spin spinning={!viewingItem}>
                     {viewingItem ? (
                         <>
-                            <Card title="基本信息" style={{ marginBottom: 16 }}>
+                            <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
                                 <Descriptions column={isMobile ? 1 : 2} size="small">
                                     <Descriptions.Item
                                         label={<Space><FileOutlined />名称</Space>}

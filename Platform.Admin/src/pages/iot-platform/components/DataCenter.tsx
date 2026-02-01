@@ -5,6 +5,8 @@ import DataTable from '@/components/DataTable';
 import { Tag, Button, Drawer, Descriptions, Space, Form, Input, DatePicker, Card, Spin, Empty, Typography, Grid } from 'antd';
 import dayjs from 'dayjs';
 import { useMessage } from '@/hooks/useMessage';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 
 const { useBreakpoint } = Grid;
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
@@ -42,6 +44,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   const message = useMessage();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
+  const { styles } = useCommonStyles();
   const actionRef = useRef<ActionType>(null);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
@@ -281,7 +284,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   return (
     <>
       {/* 搜索表单 */}
-      <Card style={{ marginBottom: 16 }}>
+      <SearchFormCard>
         <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
           <Form.Item name="deviceId" label="设备ID">
             <Input placeholder="请输入设备ID" style={{ width: 200 }} allowClear />
@@ -316,7 +319,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </SearchFormCard>
 
       <DataTable<IoTDataRecord>
         actionRef={actionRef}
@@ -343,7 +346,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
           {selectedRecord ? (
             <>
               {/* 基本信息 */}
-              <Card title="基本信息" style={{ marginBottom: 16 }}>
+              <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="记录ID" span={2}>
                     {selectedRecord.id}
@@ -364,7 +367,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
               </Card>
 
               {/* 数据值 */}
-              <Card title="数据值" style={{ marginBottom: 16 }}>
+              <Card title="数据值" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="值">
                     {selectedRecord.dataType?.toLowerCase() === 'json' ? (
@@ -407,7 +410,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
 
               {/* 告警信息 */}
               {(selectedRecord.isAlarm || selectedRecord.alarmLevel) && (
-                <Card title="告警信息" style={{ marginBottom: 16 }}>
+                <Card title="告警信息" className={styles.card} style={{ marginBottom: 16 }}>
                   <Descriptions column={isMobile ? 1 : 2} size="small">
                     <Descriptions.Item label="告警状态">
                       {selectedRecord.isAlarm ? (
@@ -426,7 +429,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
               )}
 
               {/* 时间信息 */}
-              <Card title="时间信息" style={{ marginBottom: 16 }}>
+              <Card title="时间信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="上报时间">
                     {selectedRecord.reportedAt
@@ -443,7 +446,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
 
               {/* 备注 */}
               {selectedRecord.remarks && (
-                <Card title="备注" style={{ marginBottom: 16 }}>
+                <Card title="备注" className={styles.card} style={{ marginBottom: 16 }}>
                   <p>{selectedRecord.remarks}</p>
                 </Card>
               )}

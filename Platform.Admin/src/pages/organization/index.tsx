@@ -20,7 +20,9 @@ import {
     Tree,
     TreeSelect,
     Typography,
+    theme,
 } from 'antd';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import {
     ApartmentOutlined,
     DeleteOutlined,
@@ -103,6 +105,8 @@ const OrganizationPage: React.FC = () => {
     const intl = useIntl();
     const message = useMessage();
     const modal = useModal();
+    const { styles } = useCommonStyles();
+    const { token } = theme.useToken();
     const [tree, setTree] = useState<OrganizationTreeNode[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedId, setSelectedId] = useState<string>();
@@ -376,7 +380,8 @@ const OrganizationPage: React.FC = () => {
                 <Col xs={24} md={8} lg={7}>
                     <Card
                         title={intl.formatMessage({ id: 'pages.organization.tree.title' })}
-                        bodyStyle={{ padding: 12 }}
+                        className={styles.card}
+                        styles={{ body: { padding: 12 } }}
                         style={{ height: '100%' }}
                     >
                         <Spin spinning={loading}>
@@ -403,6 +408,7 @@ const OrganizationPage: React.FC = () => {
                 <Col xs={24} md={16} lg={17}>
                     <Card
                         title={intl.formatMessage({ id: 'pages.organization.detail.title' })}
+                        className={styles.card}
                         extra={
                             selectedNode ? (
                                 <Space wrap>
@@ -422,7 +428,7 @@ const OrganizationPage: React.FC = () => {
                                 </Space>
                             ) : null
                         }
-                        bodyStyle={{ padding: 16, minHeight: 360 }}
+                        styles={{ body: { padding: 16, minHeight: 360 } }}
                     >
                         {selectedNode ? (
                             <>
@@ -480,6 +486,7 @@ const OrganizationPage: React.FC = () => {
                                     </Descriptions.Item>
                                 </Descriptions>
                                 <Card
+                                    className={styles.card}
                                     style={{ marginTop: 16 }}
                                     title={intl.formatMessage({ id: 'pages.organization.members.title' })}
                                     extra={

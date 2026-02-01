@@ -12,6 +12,7 @@ import {
   Timeline,
   theme
 } from 'antd';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import { getUserAvatar } from '@/utils/avatar';
 // import { getApiBaseUrl } from '@/utils/request';
 import {
@@ -148,7 +149,7 @@ const flattenMenus = (menus: API.MenuTreeNode[]): API.MenuTreeNode[] => {
       // 只有当菜单有组件路径或者是叶子节点时才添加到结果中
       const hasComponent = !!menu.component;
       const hasChildren = menu.children && menu.children.length > 0;
-      
+
       // 如果有组件路径，说明这是一个可访问的页面菜单
       // 如果没有组件路径但有子菜单，说明这是一个分组菜单，只遍历子菜单
       if (hasComponent) {
@@ -296,6 +297,7 @@ const ResourceCard: React.FC<{
 const Welcome: React.FC = () => {
   const intl = useIntl();
   const { token } = theme.useToken();
+  const { styles } = useCommonStyles();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser as API.CurrentUser;
   const access = useAccess();
@@ -474,9 +476,8 @@ const Welcome: React.FC = () => {
       <div>
         {/* 个性化欢迎区域 */}
         <Card
+          className={styles.card}
           style={{
-            marginBottom: '16px',
-            borderRadius: '16px',
             background: token.colorBgContainer === '#ffffff'
               ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
               : 'linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%)',
@@ -545,7 +546,7 @@ const Welcome: React.FC = () => {
               <span>{intl.formatMessage({ id: 'pages.welcome.quickActions' })}</span>
             </Space>
           }
-          style={{ borderRadius: '12px', marginBottom: '16px' }}
+          className={styles.card}
         >
           {quickActionMenus.length > 0 ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
@@ -558,22 +559,22 @@ const Welcome: React.FC = () => {
                   const shortName = menu.name.replace(/^iot-platform-/, '');
                   localeKey = `menu.iot-platform.${shortName}`;
                 } else if (menu.path.startsWith('/project-management/')) {
-              const shortName = menu.name.replace(/^project-management-/, '');
-              localeKey = `menu.project-management.${shortName}`;
-            } else if (menu.path.startsWith('/xiaoke-management/') || menu.name.startsWith('xiaoke-management-')) {
-              const shortName = menu.name.replace(/^xiaoke-management-/, '');
-              localeKey = `menu.xiaoke-management.${shortName}`;
-            } else if (menu.path.startsWith('/workflow/') || menu.name.startsWith('workflow-') || menu.name.startsWith('workflow:')) {
-              const shortName = menu.name.replace(/^workflow[-:]/, '');
-              localeKey = `menu.workflow.${shortName}`;
-            } else if (menu.path.startsWith('/document/') || menu.name.startsWith('document-') || menu.name.startsWith('document:')) {
-              const shortName = menu.name.replace(/^document[-:]/, '');
-              localeKey = `menu.document.${shortName}`;
-            } else if (menu.path.startsWith('/account/')) {
-              localeKey = `menu.${menu.path.replace(/^\//, '').replaceAll('/', '.')}`;
-            } else {
-              localeKey = `menu.${menu.name}`;
-            }
+                  const shortName = menu.name.replace(/^project-management-/, '');
+                  localeKey = `menu.project-management.${shortName}`;
+                } else if (menu.path.startsWith('/xiaoke-management/') || menu.name.startsWith('xiaoke-management-')) {
+                  const shortName = menu.name.replace(/^xiaoke-management-/, '');
+                  localeKey = `menu.xiaoke-management.${shortName}`;
+                } else if (menu.path.startsWith('/workflow/') || menu.name.startsWith('workflow-') || menu.name.startsWith('workflow:')) {
+                  const shortName = menu.name.replace(/^workflow[-:]/, '');
+                  localeKey = `menu.workflow.${shortName}`;
+                } else if (menu.path.startsWith('/document/') || menu.name.startsWith('document-') || menu.name.startsWith('document:')) {
+                  const shortName = menu.name.replace(/^document[-:]/, '');
+                  localeKey = `menu.document.${shortName}`;
+                } else if (menu.path.startsWith('/account/')) {
+                  localeKey = `menu.${menu.path.replace(/^\//, '').replaceAll('/', '.')}`;
+                } else {
+                  localeKey = `menu.${menu.name}`;
+                }
 
                 // 尝试获取多语言标题，如果不存在则使用菜单的 title
                 const menuTitle = intl.formatMessage({ id: localeKey }, { defaultMessage: menu.title || menu.name });
@@ -621,7 +622,8 @@ const Welcome: React.FC = () => {
                   <span>{intl.formatMessage({ id: 'pages.welcome.taskOverview' })}</span>
                 </Space>
               }
-              style={{ borderRadius: '12px', height: '100%' }}
+              className={styles.card}
+              style={{ height: '100%' }}
             >
               <Row gutter={[12, 12]}>
                 <Col xs={24} sm={8}>
@@ -744,7 +746,8 @@ const Welcome: React.FC = () => {
                   <span>{intl.formatMessage({ id: 'pages.welcome.recentActivities' })}</span>
                 </Space>
               }
-              style={{ borderRadius: '12px', height: '100%' }}
+              className={styles.card}
+              style={{ height: '100%' }}
             >
               <Timeline
                 items={recentActivities.length > 0 ? recentActivities.map(activity => {

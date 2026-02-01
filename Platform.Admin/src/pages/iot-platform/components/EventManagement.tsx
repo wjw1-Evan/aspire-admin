@@ -30,6 +30,8 @@ import {
 import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
 import dayjs from 'dayjs';
 import { StatCard } from '@/components';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 
 export interface EventManagementRef {
   reload: () => void;
@@ -39,6 +41,7 @@ export interface EventManagementRef {
 const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
+  const { styles } = useCommonStyles();
   const actionRef = useRef<ActionType>(null);
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -84,7 +87,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         pageIndex: params.current || 1,
         pageSize: params.pageSize || 20,
       };
-      
+
       if (formValues.deviceId) filters.deviceId = formValues.deviceId;
       if (formValues.eventType) filters.eventType = formValues.eventType;
       if (formValues.level) filters.level = formValues.level;
@@ -144,7 +147,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     // 同时更新 ref，确保 request 函数能立即访问到最新值
     const values = searchForm.getFieldsValue();
     searchParamsRef.current = values;
-    
+
     if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
@@ -175,11 +178,11 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       const response = await iotService.handleEvent(selectedEvent.id, values.remarks || '');
       if (response.success) {
         message.success('事件已处理');
-      handleCloseModal();
-      if (actionRef.current?.reload) {
-        actionRef.current.reload();
-      }
-      fetchOverviewStats();
+        handleCloseModal();
+        if (actionRef.current?.reload) {
+          actionRef.current.reload();
+        }
+        fetchOverviewStats();
       }
     } catch (error) {
       message.error('处理失败');
@@ -286,7 +289,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   return (
     <>
       {/* 统计卡片：与其他页面保持一致的紧凑横向布局 */}
-      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+      <Card className={styles.card} style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6}>
             <StatCard
@@ -324,7 +327,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       </Card>
 
       {/* 搜索表单 */}
-      <Card style={{ marginBottom: 16 }}>
+      <SearchFormCard>
         <Form
           form={searchForm}
           layout="inline"
@@ -387,7 +390,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </SearchFormCard>
 
       {/* 事件列表表格 */}
       <DataTable<IoTDeviceEvent>

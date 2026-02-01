@@ -40,6 +40,7 @@ import {
 } from '@ant-design/icons';
 import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
 import { StatCard } from '@/components';
+import useCommonStyles from '@/hooks/useCommonStyles';
 
 export interface DataPointManagementRef {
   reload: () => void;
@@ -51,6 +52,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   const { message } = App.useApp();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
+  const { styles } = useCommonStyles();
   const actionRef = useRef<ActionType>(null);
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -327,7 +329,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         const diffMins = Math.floor(diffMs / 60000);
         const diffHours = Math.floor(diffMs / 3600000);
         const diffDays = Math.floor(diffMs / 86400000);
-        
+
         let timeAgo = '';
         if (diffMins < 1) {
           timeAgo = '刚刚';
@@ -340,7 +342,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         } else {
           timeAgo = '';
         }
-        
+
         return (
           <div>
             <div>{dayjs(date).format('YYYY-MM-DD HH:mm:ss')}</div>
@@ -423,7 +425,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   return (
     <>
       {/* 统计卡片：与其他页面保持一致的紧凑横向布局 */}
-      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+      <Card className={styles.card} style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6}>
             <StatCard
@@ -579,7 +581,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
           {selectedDataPoint ? (
             <>
               {/* 基本信息 */}
-              <Card title="基本信息" style={{ marginBottom: 16 }}>
+              <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="数据点名称" span={2}>
                     {selectedDataPoint.title}
@@ -617,7 +619,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
 
               {/* 数值范围 */}
               {(selectedDataPoint.minValue !== undefined || selectedDataPoint.maxValue !== undefined) && (
-                <Card title="数值范围" style={{ marginBottom: 16 }}>
+                <Card title="数值范围" className={styles.card} style={{ marginBottom: 16 }}>
                   <Descriptions column={isMobile ? 1 : 2} size="small">
                     <Descriptions.Item label="最小值">
                       {selectedDataPoint.minValue !== undefined ? selectedDataPoint.minValue : '-'}
@@ -631,7 +633,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
 
               {/* 告警配置 */}
               {selectedDataPoint.alarmConfig?.isEnabled && (
-                <Card title="告警配置" style={{ marginBottom: 16 }}>
+                <Card title="告警配置" className={styles.card} style={{ marginBottom: 16 }}>
                   <Descriptions column={isMobile ? 1 : 2} size="small">
                     <Descriptions.Item label="告警状态">
                       <Tag color="orange">已启用</Tag>
@@ -650,7 +652,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
               )}
 
               {/* 最后采集数据 */}
-              <Card title="最后采集数据" style={{ marginBottom: 16 }}>
+              <Card title="最后采集数据" className={styles.card} style={{ marginBottom: 16 }}>
                 {selectedDataPoint.lastValue ? (
                   <Descriptions column={1} size="small">
                     <Descriptions.Item label="数据值">
@@ -708,7 +710,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
               </Card>
 
               {/* 时间信息 */}
-              <Card title="时间信息" style={{ marginBottom: 16 }}>
+              <Card title="时间信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="创建时间">
                     {dayjs(selectedDataPoint.createdAt).format('YYYY-MM-DD HH:mm:ss')}

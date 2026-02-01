@@ -1,4 +1,6 @@
 import { PageContainer } from '@/components';
+import SearchFormCard from '@/components/SearchFormCard';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
@@ -184,6 +186,7 @@ const MyActivity: React.FC = () => {
   const [searchParams, setSearchParams] = useState<any>({});
   // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
   const searchParamsRef = useRef<any>({});
+  const { styles } = useCommonStyles();
 
   const handleViewDetail = useCallback((record: UserActivityLog) => {
     // ✅ 只传递 logId，让 LogDetailDrawer 从 API 获取完整数据
@@ -245,51 +248,51 @@ const MyActivity: React.FC = () => {
       if (!thead) return;
 
       const headers = thead.querySelectorAll('th');
-    let isResizing = false;
-    let currentHeader: HTMLElement | null = null;
-    let startX = 0;
-    let startWidth = 0;
+      let isResizing = false;
+      let currentHeader: HTMLElement | null = null;
+      let startX = 0;
+      let startWidth = 0;
 
-    const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
-      // 只允许在表头右边缘 5px 内拖动
-      const rect = header.getBoundingClientRect();
-      const edgeThreshold = 5;
-      const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
+      const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
+        // 只允许在表头右边缘 5px 内拖动
+        const rect = header.getBoundingClientRect();
+        const edgeThreshold = 5;
+        const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
 
-      if (!isNearRightEdge) return;
+        if (!isNearRightEdge) return;
 
-      e.preventDefault();
-      e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
 
-      isResizing = true;
-      currentHeader = header;
-      startX = e.clientX;
-      startWidth = header.offsetWidth;
+        isResizing = true;
+        currentHeader = header;
+        startX = e.clientX;
+        startWidth = header.offsetWidth;
 
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    };
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing || !currentHeader) return;
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!isResizing || !currentHeader) return;
 
-      const diff = e.clientX - startX;
-      const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
-      currentHeader.style.width = `${newWidth}px`;
-      currentHeader.style.minWidth = `${newWidth}px`;
-      currentHeader.style.maxWidth = `${newWidth}px`;
-    };
+        const diff = e.clientX - startX;
+        const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
+        currentHeader.style.width = `${newWidth}px`;
+        currentHeader.style.minWidth = `${newWidth}px`;
+        currentHeader.style.maxWidth = `${newWidth}px`;
+      };
 
-    const handleMouseUp = () => {
-      isResizing = false;
-      currentHeader = null;
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
+      const handleMouseUp = () => {
+        isResizing = false;
+        currentHeader = null;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
 
       headers.forEach((header) => {
         const headerEl = header as HTMLElement;
@@ -583,7 +586,7 @@ const MyActivity: React.FC = () => {
     >
       {/* 活动统计信息：统一使用 StatCard 风格 */}
       {statistics && (
-        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
@@ -622,7 +625,7 @@ const MyActivity: React.FC = () => {
       )}
 
       {/* 搜索表单 */}
-      <Card style={{ marginBottom: 16 }}>
+      <SearchFormCard>
         <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
           <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
             <Input
@@ -685,7 +688,7 @@ const MyActivity: React.FC = () => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </SearchFormCard>
 
       <div ref={tableRef}>
         <DataTable<UserActivityLog>
@@ -694,13 +697,13 @@ const MyActivity: React.FC = () => {
           scroll={{ x: 'max-content' }}
           search={false}
           request={fetchRecords}
-        columns={columns}
-        pagination={{
-          pageSize: 20,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-        }}
+          columns={columns}
+          pagination={{
+            pageSize: 20,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+          }}
         />
       </div>
 

@@ -26,6 +26,7 @@ import {
   Tooltip,
   Flex,
 } from 'antd';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
@@ -39,27 +40,27 @@ import Settings from '../../../../config/defaultSettings';
 
 const { Title, Text } = Typography;
 
-const useStyles = createStyles(({ token: _token }) => {
+const useStyles = createStyles(({ token }) => {
   return {
     container: {
-      padding: '24px',
+      padding: token.paddingLG,
       width: '100%',
     },
     profileCard: {
-      marginBottom: '24px',
+      marginBottom: token.marginLG,
     },
     avatarSection: {
       textAlign: 'center',
-      padding: '24px',
+      padding: token.paddingLG,
     },
     infoSection: {
-      padding: '24px',
+      padding: token.paddingLG,
     },
     activityCard: {
-      marginTop: '24px',
+      marginTop: token.marginLG,
     },
     editButton: {
-      marginBottom: '16px',
+      marginBottom: token.marginMD,
     },
   };
 });
@@ -109,6 +110,7 @@ const UserCenter: React.FC = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
   const [form] = Form.useForm();
   const { styles } = useStyles();
+  const { styles: commonStyles } = useCommonStyles();
   const intl = useIntl();
 
   // 获取用户信息
@@ -219,10 +221,10 @@ const UserCenter: React.FC = () => {
         // 失败时抛出错误，由全局错误处理统一处理
         throw new Error(
           response.errorMessage ||
-            intl.formatMessage({
-              id: 'pages.account.center.updateFailed',
-              defaultMessage: '更新失败',
-            })
+          intl.formatMessage({
+            id: 'pages.account.center.updateFailed',
+            defaultMessage: '更新失败',
+          })
         );
       }
       // 错误由全局错误处理统一处理，这里不需要 catch
@@ -349,324 +351,131 @@ const UserCenter: React.FC = () => {
       <title>{pageTitle}</title>
       <div className={styles.container}>
         <Title level={2}>
-        <UserOutlined style={{ marginRight: '8px' }} />
-        <FormattedMessage
-          id="pages.account.center.title"
-          defaultMessage="个人中心"
-        />
-      </Title>
-
-      {/* 个人信息卡片 */}
-      <Card
-        title={
+          <UserOutlined style={{ marginRight: '8px' }} />
           <FormattedMessage
-            id="pages.account.center.profile"
-            defaultMessage="个人信息"
+            id="pages.account.center.title"
+            defaultMessage="个人中心"
           />
-        }
-        className={styles.profileCard}
-        extra={
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => setEditing(true)}
-            disabled={editing}
-          >
+        </Title>
+
+        {/* 个人信息卡片 */}
+        <Card
+          title={
             <FormattedMessage
-              id="pages.account.center.editProfile"
-              defaultMessage="编辑资料"
+              id="pages.account.center.profile"
+              defaultMessage="个人信息"
             />
-          </Button>
-        }
-      >
-        <div className={styles.avatarSection}>
-          {editing ? (
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              <Avatar 
-                size={80} 
-                src={getUserAvatar(avatarPreview || userProfile.avatar)} 
-                icon={<UserOutlined />}
+          }
+          className={`${commonStyles.card} ${styles.profileCard}`}
+          extra={
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => setEditing(true)}
+              disabled={editing}
+            >
+              <FormattedMessage
+                id="pages.account.center.editProfile"
+                defaultMessage="编辑资料"
               />
-              <label
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  backgroundColor: '#1890ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  border: '2px solid #fff',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                  zIndex: 10,
-                }}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-
-                    // 检查文件大小（2MB）
-                    if (file.size > 2 * 1024 * 1024) {
-                      message.error('图片大小不能超过 2MB');
-                      e.target.value = ''; // 清空选择
-                      return;
-                    }
-
-                    // 检查文件类型
-                    if (!file.type.startsWith('image/')) {
-                      message.error('只能上传图片文件');
-                      e.target.value = ''; // 清空选择
-                      return;
-                    }
-
-                    try {
-                      const base64 = await fileToBase64(file);
-                      setAvatarPreview(base64);
-                      form.setFieldsValue({ avatar: base64 });
-                    } catch (error) {
-                      console.error('头像转换失败:', error);
-                      // 这是一个本地文件处理错误，不涉及 API 调用，所以可以在这里显示错误
-                      // 但为了统一，也可以使用全局错误处理
-                      message.error('头像处理失败，请重试');
-                      e.target.value = ''; // 清空选择
-                    }
-                  }}
+            </Button>
+          }
+        >
+          <div className={styles.avatarSection}>
+            {editing ? (
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <Avatar
+                  size={80}
+                  src={getUserAvatar(avatarPreview || userProfile.avatar)}
+                  icon={<UserOutlined />}
                 />
-                <CameraOutlined style={{ color: '#fff', fontSize: 14 }} />
-              </label>
-              {avatarPreview && (
-                <Button
-                  type="text"
-                  danger
-                  size="small"
-                  icon={<DeleteOutlined />}
-                  onClick={() => {
-                    setAvatarPreview(undefined);
-                    form.setFieldsValue({ avatar: '' });
-                  }}
+                <label
                   style={{
                     position: 'absolute',
-                    top: -8,
-                    right: -8,
-                    minWidth: 24,
-                    height: 24,
-                    padding: 0,
+                    bottom: 0,
+                    right: 0,
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    backgroundColor: '#1890ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    border: '2px solid #fff',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                     zIndex: 10,
                   }}
-                  title="删除头像"
-                />
-              )}
-            </div>
-          ) : (
-            <Avatar 
-              size={80} 
-              src={getUserAvatar(userProfile.avatar)} 
-              icon={<UserOutlined />}
-            />
-          )}
-          <div style={{ marginTop: '16px' }}>
-            <Title level={4}>{userProfile.name || userProfile.username}</Title>
-            <Tag color={getRoleTagColor(userProfile.role)}>
-              {userProfile.role === 'admin' ? (
-                <FormattedMessage
-                  id="pages.account.center.admin"
-                  defaultMessage="管理员"
-                />
-              ) : (
-                <FormattedMessage
-                  id="pages.account.center.user"
-                  defaultMessage="普通用户"
-                />
-              )}
-            </Tag>
-          </div>
-        </div>
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
 
-        <Divider />
+                      // 检查文件大小（2MB）
+                      if (file.size > 2 * 1024 * 1024) {
+                        message.error('图片大小不能超过 2MB');
+                        e.target.value = ''; // 清空选择
+                        return;
+                      }
 
-        {editing ? (
-          <Form
-            form={form}
-            onFinish={handleUpdateProfile}
-            layout="vertical"
-          >
-            <Form.Item
-              name="username"
-              label={
-                <span>
-                  <FormattedMessage
-                    id="pages.account.center.username"
-                    defaultMessage="用户名"
+                      // 检查文件类型
+                      if (!file.type.startsWith('image/')) {
+                        message.error('只能上传图片文件');
+                        e.target.value = ''; // 清空选择
+                        return;
+                      }
+
+                      try {
+                        const base64 = await fileToBase64(file);
+                        setAvatarPreview(base64);
+                        form.setFieldsValue({ avatar: base64 });
+                      } catch (error) {
+                        console.error('头像转换失败:', error);
+                        // 这是一个本地文件处理错误，不涉及 API 调用，所以可以在这里显示错误
+                        // 但为了统一，也可以使用全局错误处理
+                        message.error('头像处理失败，请重试');
+                        e.target.value = ''; // 清空选择
+                      }
+                    }}
                   />
-                  <Tooltip title="用户名不可修改">
-                    <span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span>
-                  </Tooltip>
-                </span>
-              }
-            >
-              <Input
-                disabled
-                style={{ color: 'rgba(0, 0, 0, 0.45)' }}
-              />
-            </Form.Item>
-            <Form.Item
-              name="name"
-              label={
-                <FormattedMessage
-                  id="pages.account.center.name"
-                  defaultMessage="姓名"
-                />
-              }
-            >
-              <Input placeholder="请输入姓名" />
-            </Form.Item>
-            <Form.Item
-              name="email"
-              label={
-                <FormattedMessage
-                  id="pages.account.center.email"
-                  defaultMessage="邮箱"
-                />
-              }
-              rules={[{ type: 'email', message: '请输入有效的邮箱地址' }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="phoneNumber"
-              label="手机号"
-              rules={[
-                {
-                  pattern: /^1[3-9]\d{9}$/,
-                  message: '请输入有效的中国手机号（11位数字，以1开头）',
-                },
-              ]}
-            >
-              <Input placeholder="请输入手机号" maxLength={11} />
-            </Form.Item>
-            <Form.Item
-              name="age"
-              label={
-                <FormattedMessage
-                  id="pages.account.center.age"
-                  defaultMessage="年龄"
-                />
-              }
-              rules={[
-                { type: 'number', min: 1, max: 150, message: '年龄必须在 1-150 之间' }
-              ]}
-            >
-              <InputNumber
-                min={1}
-                max={150}
-                placeholder="请输入年龄"
-                style={{ width: '100%' }}
-              />
-            </Form.Item>
-            {/* 隐藏的头像字段，用于表单提交 */}
-            <Form.Item name="avatar" hidden>
-              <Input />
-            </Form.Item>
-            <Form.Item>
-              <div style={{ textAlign: 'right' }}>
-                <Space>
-                  <Button onClick={handleCancelEdit}>取消</Button>
-                  <Button type="primary" htmlType="submit">
-                    保存
-                  </Button>
-                </Space>
+                  <CameraOutlined style={{ color: '#fff', fontSize: 14 }} />
+                </label>
+                {avatarPreview && (
+                  <Button
+                    type="text"
+                    danger
+                    size="small"
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                      setAvatarPreview(undefined);
+                      form.setFieldsValue({ avatar: '' });
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: -8,
+                      right: -8,
+                      minWidth: 24,
+                      height: 24,
+                      padding: 0,
+                      zIndex: 10,
+                    }}
+                    title="删除头像"
+                  />
+                )}
               </div>
-            </Form.Item>
-          </Form>
-        ) : (
-          <Descriptions column={2} bordered>
-            <Descriptions.Item
-              label={
-                <FormattedMessage
-                  id="pages.account.center.username"
-                  defaultMessage="用户名"
-                />
-              }
-            >
-              <Text strong>{userProfile.username}</Text>
-            </Descriptions.Item>
-            <Descriptions.Item
-              label={
-                <FormattedMessage
-                  id="pages.account.center.name"
-                  defaultMessage="姓名"
-                />
-              }
-            >
-              {userProfile.name || (
-                <FormattedMessage
-                  id="pages.account.center.notSet"
-                  defaultMessage="未设置"
-                />
-              )}
-            </Descriptions.Item>
-            <Descriptions.Item
-              label={
-                <FormattedMessage
-                  id="pages.account.center.email"
-                  defaultMessage="邮箱"
-                />
-              }
-            >
-              <MailOutlined style={{ marginRight: '4px' }} />
-              {userProfile.email || (
-                <FormattedMessage
-                  id="pages.account.center.notSet"
-                  defaultMessage="未设置"
-                />
-              )}
-            </Descriptions.Item>
-            <Descriptions.Item
-              label={
-                <Space>
-                  <MobileOutlined />
-                  手机号
-                </Space>
-              }
-            >
-              {userProfile.phoneNumber || (
-                <FormattedMessage
-                  id="pages.account.center.notSet"
-                  defaultMessage="未设置"
-                />
-              )}
-            </Descriptions.Item>
-            <Descriptions.Item
-              label={
-                <FormattedMessage
-                  id="pages.account.center.age"
-                  defaultMessage="年龄"
-                />
-              }
-            >
-              {userProfile.age || (
-                <FormattedMessage
-                  id="pages.account.center.notSet"
-                  defaultMessage="未设置"
-                />
-              )}
-            </Descriptions.Item>
-            <Descriptions.Item
-              label={
-                <FormattedMessage
-                  id="pages.account.center.role"
-                  defaultMessage="角色"
-                />
-              }
-            >
+            ) : (
+              <Avatar
+                size={80}
+                src={getUserAvatar(userProfile.avatar)}
+                icon={<UserOutlined />}
+              />
+            )}
+            <div style={{ marginTop: '16px' }}>
+              <Title level={4}>{userProfile.name || userProfile.username}</Title>
               <Tag color={getRoleTagColor(userProfile.role)}>
                 {userProfile.role === 'admin' ? (
                   <FormattedMessage
@@ -680,119 +489,312 @@ const UserCenter: React.FC = () => {
                   />
                 )}
               </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item
-              label={
-                <FormattedMessage
-                  id="pages.account.center.status"
-                  defaultMessage="状态"
-                />
-              }
+            </div>
+          </div>
+
+          <Divider />
+
+          {editing ? (
+            <Form
+              form={form}
+              onFinish={handleUpdateProfile}
+              layout="vertical"
             >
-              <Tag color={userProfile.isActive ? 'green' : 'red'}>
-                {userProfile.isActive ? (
+              <Form.Item
+                name="username"
+                label={
+                  <span>
+                    <FormattedMessage
+                      id="pages.account.center.username"
+                      defaultMessage="用户名"
+                    />
+                    <Tooltip title="用户名不可修改">
+                      <span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span>
+                    </Tooltip>
+                  </span>
+                }
+              >
+                <Input
+                  disabled
+                  style={{ color: 'rgba(0, 0, 0, 0.45)' }}
+                />
+              </Form.Item>
+              <Form.Item
+                name="name"
+                label={
                   <FormattedMessage
-                    id="pages.account.center.active"
-                    defaultMessage="正常"
+                    id="pages.account.center.name"
+                    defaultMessage="姓名"
                   />
-                ) : (
+                }
+              >
+                <Input placeholder="请输入姓名" />
+              </Form.Item>
+              <Form.Item
+                name="email"
+                label={
                   <FormattedMessage
-                    id="pages.account.center.inactive"
-                    defaultMessage="禁用"
+                    id="pages.account.center.email"
+                    defaultMessage="邮箱"
                   />
-                )}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item
-              label={
-                <FormattedMessage
-                  id="pages.account.center.registerTime"
-                  defaultMessage="注册时间"
+                }
+                rules={[{ type: 'email', message: '请输入有效的邮箱地址' }]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                name="phoneNumber"
+                label="手机号"
+                rules={[
+                  {
+                    pattern: /^1[3-9]\d{9}$/,
+                    message: '请输入有效的中国手机号（11位数字，以1开头）',
+                  },
+                ]}
+              >
+                <Input placeholder="请输入手机号" maxLength={11} />
+              </Form.Item>
+              <Form.Item
+                name="age"
+                label={
+                  <FormattedMessage
+                    id="pages.account.center.age"
+                    defaultMessage="年龄"
+                  />
+                }
+                rules={[
+                  { type: 'number', min: 1, max: 150, message: '年龄必须在 1-150 之间' }
+                ]}
+              >
+                <InputNumber
+                  min={1}
+                  max={150}
+                  placeholder="请输入年龄"
+                  style={{ width: '100%' }}
                 />
-              }
-            >
-              <CalendarOutlined style={{ marginRight: '4px' }} />
-              {formatDateTime(userProfile.createdAt)}
-            </Descriptions.Item>
-            <Descriptions.Item
-              label={
-                <FormattedMessage
-                  id="pages.account.center.lastUpdate"
-                  defaultMessage="最后更新"
-                />
-              }
-            >
-              <CalendarOutlined style={{ marginRight: '4px' }} />
-              {formatDateTime(userProfile.updatedAt)}
-            </Descriptions.Item>
-            {userProfile.lastLoginAt && (
+              </Form.Item>
+              {/* 隐藏的头像字段，用于表单提交 */}
+              <Form.Item name="avatar" hidden>
+                <Input />
+              </Form.Item>
+              <Form.Item>
+                <div style={{ textAlign: 'right' }}>
+                  <Space>
+                    <Button onClick={handleCancelEdit}>取消</Button>
+                    <Button type="primary" htmlType="submit">
+                      保存
+                    </Button>
+                  </Space>
+                </div>
+              </Form.Item>
+            </Form>
+          ) : (
+            <Descriptions column={2} bordered>
               <Descriptions.Item
                 label={
                   <FormattedMessage
-                    id="pages.account.center.lastLogin"
-                    defaultMessage="最后登录"
+                    id="pages.account.center.username"
+                    defaultMessage="用户名"
                   />
                 }
-                span={2}
+              >
+                <Text strong>{userProfile.username}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <FormattedMessage
+                    id="pages.account.center.name"
+                    defaultMessage="姓名"
+                  />
+                }
+              >
+                {userProfile.name || (
+                  <FormattedMessage
+                    id="pages.account.center.notSet"
+                    defaultMessage="未设置"
+                  />
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <FormattedMessage
+                    id="pages.account.center.email"
+                    defaultMessage="邮箱"
+                  />
+                }
+              >
+                <MailOutlined style={{ marginRight: '4px' }} />
+                {userProfile.email || (
+                  <FormattedMessage
+                    id="pages.account.center.notSet"
+                    defaultMessage="未设置"
+                  />
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <Space>
+                    <MobileOutlined />
+                    手机号
+                  </Space>
+                }
+              >
+                {userProfile.phoneNumber || (
+                  <FormattedMessage
+                    id="pages.account.center.notSet"
+                    defaultMessage="未设置"
+                  />
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <FormattedMessage
+                    id="pages.account.center.age"
+                    defaultMessage="年龄"
+                  />
+                }
+              >
+                {userProfile.age || (
+                  <FormattedMessage
+                    id="pages.account.center.notSet"
+                    defaultMessage="未设置"
+                  />
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <FormattedMessage
+                    id="pages.account.center.role"
+                    defaultMessage="角色"
+                  />
+                }
+              >
+                <Tag color={getRoleTagColor(userProfile.role)}>
+                  {userProfile.role === 'admin' ? (
+                    <FormattedMessage
+                      id="pages.account.center.admin"
+                      defaultMessage="管理员"
+                    />
+                  ) : (
+                    <FormattedMessage
+                      id="pages.account.center.user"
+                      defaultMessage="普通用户"
+                    />
+                  )}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <FormattedMessage
+                    id="pages.account.center.status"
+                    defaultMessage="状态"
+                  />
+                }
+              >
+                <Tag color={userProfile.isActive ? 'green' : 'red'}>
+                  {userProfile.isActive ? (
+                    <FormattedMessage
+                      id="pages.account.center.active"
+                      defaultMessage="正常"
+                    />
+                  ) : (
+                    <FormattedMessage
+                      id="pages.account.center.inactive"
+                      defaultMessage="禁用"
+                    />
+                  )}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={
+                  <FormattedMessage
+                    id="pages.account.center.registerTime"
+                    defaultMessage="注册时间"
+                  />
+                }
               >
                 <CalendarOutlined style={{ marginRight: '4px' }} />
-                {formatDateTime(userProfile.lastLoginAt)}
+                {formatDateTime(userProfile.createdAt)}
               </Descriptions.Item>
-            )}
-          </Descriptions>
-        )}
-      </Card>
-
-      {/* 活动日志卡片 */}
-      <Card
-        title={
-          <Space>
-            <HistoryOutlined />
-            <FormattedMessage
-              id="pages.account.center.recentActivity"
-              defaultMessage="最近活动"
-            />
-          </Space>
-        }
-        className={styles.activityCard}
-      >
-        <div>
-          {activityLogs.map((item) => {
-            const activityTag = getActivityTag(item.action);
-            return (
-              <div
-                key={item.id}
-                style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid #f0f0f0',
-                }}
+              <Descriptions.Item
+                label={
+                  <FormattedMessage
+                    id="pages.account.center.lastUpdate"
+                    defaultMessage="最后更新"
+                  />
+                }
               >
-                <Flex gap={12} align="flex-start">
-                  <div style={{ flexShrink: 0 }}>
-                    <Avatar icon={<SafetyOutlined />} />
-                  </div>
-                  <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
-                    <Space>
-                      <Tag color={activityTag.color}>{activityTag.text}</Tag>
-                      <Text>{item.description}</Text>
-                    </Space>
-                    <Space orientation="vertical" size="small">
-                      <Text type="secondary">
-                        {formatDateTime(item.createdAt)}
-                      </Text>
-                      {item.ipAddress && (
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          IP: {item.ipAddress}
+                <CalendarOutlined style={{ marginRight: '4px' }} />
+                {formatDateTime(userProfile.updatedAt)}
+              </Descriptions.Item>
+              {userProfile.lastLoginAt && (
+                <Descriptions.Item
+                  label={
+                    <FormattedMessage
+                      id="pages.account.center.lastLogin"
+                      defaultMessage="最后登录"
+                    />
+                  }
+                  span={2}
+                >
+                  <CalendarOutlined style={{ marginRight: '4px' }} />
+                  {formatDateTime(userProfile.lastLoginAt)}
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+          )}
+        </Card>
+
+        {/* 活动日志卡片 */}
+        <Card
+          title={
+            <Space>
+              <HistoryOutlined />
+              <FormattedMessage
+                id="pages.account.center.recentActivity"
+                defaultMessage="最近活动"
+              />
+            </Space>
+          }
+          className={`${commonStyles.card} ${styles.activityCard}`}
+        >
+          <div>
+            {activityLogs.map((item) => {
+              const activityTag = getActivityTag(item.action);
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #f0f0f0',
+                  }}
+                >
+                  <Flex gap={12} align="flex-start">
+                    <div style={{ flexShrink: 0 }}>
+                      <Avatar icon={<SafetyOutlined />} />
+                    </div>
+                    <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
+                      <Space>
+                        <Tag color={activityTag.color}>{activityTag.text}</Tag>
+                        <Text>{item.description}</Text>
+                      </Space>
+                      <Space orientation="vertical" size="small">
+                        <Text type="secondary">
+                          {formatDateTime(item.createdAt)}
                         </Text>
-                      )}
-                    </Space>
+                        {item.ipAddress && (
+                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                            IP: {item.ipAddress}
+                          </Text>
+                        )}
+                      </Space>
+                    </Flex>
                   </Flex>
-                </Flex>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
     </>
   );

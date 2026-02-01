@@ -1,7 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
-import { PageContainer } from '@/components'; import DataTable from '@/components/DataTable';
+import { PageContainer } from '@/components';
+import SearchFormCard from '@/components/SearchFormCard';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import DataTable from '@/components/DataTable';
 import { useIntl, history, useLocation } from '@umijs/max';
 import {
   Button,
@@ -147,6 +150,7 @@ const TaskManagement: React.FC = () => {
     assignedTo: undefined as string | undefined,
     taskType: undefined as string | undefined,
   });
+  const { styles } = useCommonStyles();
 
   // 获取统计信息
   const fetchStatistics = useCallback(async () => {
@@ -393,7 +397,7 @@ const TaskManagement: React.FC = () => {
         { text: intl.formatMessage({ id: 'pages.taskManagement.status.failed' }), value: TaskStatus.Failed },
         { text: intl.formatMessage({ id: 'pages.taskManagement.status.paused' }), value: TaskStatus.Paused },
       ],
-      onFilter: (value: number, record: TaskDto) => record.status === value,
+      onFilter: (value, record) => record.status === (value as number),
       render: (_: any, record: TaskDto) => (
         <Tag color={getStatusColor(record.status)}>
           {record.statusName}
@@ -411,7 +415,7 @@ const TaskManagement: React.FC = () => {
         { text: intl.formatMessage({ id: 'pages.taskManagement.priority.high' }), value: TaskPriority.High },
         { text: intl.formatMessage({ id: 'pages.taskManagement.priority.urgent' }), value: TaskPriority.Urgent },
       ],
-      onFilter: (value: number, record: TaskDto) => record.priority === value,
+      onFilter: (value, record) => record.priority === (value as number),
       render: (_: any, record: TaskDto) => (
         <Tag color={getPriorityColor(record.priority)}>
           {record.priorityName}
@@ -580,7 +584,7 @@ const TaskManagement: React.FC = () => {
     >
       {/* 统计卡片：与 Welcome 页面保持一致的紧凑横向布局 */}
       {statistics && (
-        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
@@ -620,7 +624,7 @@ const TaskManagement: React.FC = () => {
       )}
 
       {/* 搜索表单 */}
-      <Card style={{ marginBottom: 16 }}>
+      <SearchFormCard>
         <Form
           form={searchForm}
           layout="inline"
@@ -645,7 +649,7 @@ const TaskManagement: React.FC = () => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </SearchFormCard>
 
       {/* 任务列表表格 */}
       <div ref={tableRef}>

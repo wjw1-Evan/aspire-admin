@@ -44,6 +44,8 @@ import type { ApiResponse } from '@/types/unified-api';
 import { StatCard } from '@/components';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 
 export interface ProjectViewRef {
   reload: () => void;
@@ -53,6 +55,7 @@ export interface ProjectViewRef {
 
 const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const intl = useIntl();
+  const { styles } = useCommonStyles();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -138,10 +141,10 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-        if (actionRef.current && actionRef.current.reload) {
-          actionRef.current.reload();
-        }
-      },
+      if (actionRef.current && actionRef.current.reload) {
+        actionRef.current.reload();
+      }
+    },
     refreshStatistics: () => {
       fetchStatistics();
     },
@@ -398,7 +401,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     <div>
       {/* 统计卡片 */}
       {statistics && (
-        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
@@ -437,7 +440,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       )}
 
       {/* 搜索表单 */}
-      <Card style={{ marginBottom: 16 }}>
+      <SearchFormCard>
         <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
           <Form.Item name="search" label={intl.formatMessage({ id: 'pages.projectManagement.search.label' })}>
             <Input placeholder={intl.formatMessage({ id: 'pages.projectManagement.search.placeholder' })} style={{ width: 200 }} />
@@ -479,7 +482,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </SearchFormCard>
 
       {/* 项目列表表格 */}
       <DataTable<ProjectDto>
@@ -502,7 +505,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
       {/* 项目表单弹窗 */}
       {formVisible && (
-          <Modal
+        <Modal
           title={editingProject ? intl.formatMessage({ id: 'pages.projectManagement.editProject' }) : intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
           open={formVisible}
           onCancel={handleCloseForm}

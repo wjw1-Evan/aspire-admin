@@ -60,11 +60,14 @@ import PasswordBookForm from './components/PasswordBookForm';
 import ExportDialog from './components/ExportDialog';
 import { StatCard } from '@/components';
 import { getPasswordBookEntry } from '@/services/password-book/api';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 
 const PasswordBook: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
   const modal = useModal();
+  const { styles } = useCommonStyles();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -395,7 +398,7 @@ const PasswordBook: React.FC = () => {
     >
       {/* 统计卡片区域 */}
       {statistics && (
-        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
@@ -434,12 +437,11 @@ const PasswordBook: React.FC = () => {
       )}
 
       {/* 搜索表单 */}
-      <Card style={{ marginBottom: 16 }}>
+      <SearchFormCard>
         <Form
           form={searchForm}
           layout={isMobile ? 'vertical' : 'inline'}
           onFinish={handleSearch}
-          style={{ marginBottom: 16 }}
         >
           <Form.Item name="keyword" label="关键词">
             <Input placeholder="关键词搜索（平台、账号、备注）" allowClear style={{ width: isMobile ? '100%' : 200 }} />
@@ -490,7 +492,7 @@ const PasswordBook: React.FC = () => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </SearchFormCard>
 
       {/* 数据表格 */}
       <DataTable<PasswordBookEntry>

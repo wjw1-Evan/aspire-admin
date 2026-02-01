@@ -26,6 +26,8 @@ import WorkflowCreateForm from './components/WorkflowCreateForm';
 import BulkOperationsPanel from './components/BulkOperationsPanel';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 const { useBreakpoint } = Grid;
 import type { SelectProps } from 'antd';
 
@@ -35,6 +37,7 @@ const WorkflowManagement: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
   const modal = useModal();
+  const { styles } = useCommonStyles();
   const actionRef = useRef<ActionType>(null);
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
@@ -299,12 +302,11 @@ const WorkflowManagement: React.FC = () => {
       }
     >
       {/* 搜索表单 */}
-      <Card style={{ marginBottom: 16 }}>
+      <SearchFormCard>
         <Form
           form={searchForm}
           layout={isMobile ? 'vertical' : 'inline'}
           onFinish={handleSearch}
-          style={{ marginBottom: 16 }}
         >
           <Form.Item name="keyword" label="关键词">
             <Input placeholder="流程名称、描述等" allowClear style={{ width: isMobile ? '100%' : 200 }} />
@@ -350,7 +352,8 @@ const WorkflowManagement: React.FC = () => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+
+      </SearchFormCard>
 
       {/* 数据表格 */}
       <DataTable<WorkflowDefinition>
@@ -443,7 +446,7 @@ const WorkflowManagement: React.FC = () => {
         onSuccess={handleBulkOperationSuccess}
       />
 
-    </PageContainer>
+    </PageContainer >
   );
 };
 

@@ -41,6 +41,7 @@ import {
   DeviceStatistics,
 } from '@/services/iotService';
 import { StatCard } from '@/components';
+import useCommonStyles from '@/hooks/useCommonStyles';
 
 export interface DeviceManagementRef {
   reload: () => void;
@@ -60,6 +61,7 @@ const isDeviceOnline = (device: IoTDevice) => {
 const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
+  const { styles } = useCommonStyles();
   const actionRef = useRef<ActionType>(null);
   const [gateways, setGateways] = useState<IoTGateway[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -315,7 +317,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   return (
     <>
       {/* 统计卡片：与其他页面保持一致的紧凑横向布局 */}
-      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+      <Card className={styles.card} style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6}>
             <StatCard
@@ -429,7 +431,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           {selectedDevice ? (
             <>
               {/* 基本信息 */}
-              <Card title="基本信息" style={{ marginBottom: 16 }}>
+              <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 2} size="small">
                   <Descriptions.Item label="设备名称" span={2}>
                     {selectedDevice.title}
@@ -456,7 +458,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
               {/* 统计信息 */}
               {statistics && (
-                <Card title="数据点统计" style={{ marginBottom: 16 }}>
+                <Card title="数据点统计" className={styles.card} style={{ marginBottom: 16 }}>
                   <Descriptions column={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 2} size="small">
                     <Descriptions.Item label="总数">
                       {statistics.totalDataPoints}
@@ -477,7 +479,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
               )}
 
               {/* 时间信息 */}
-              <Card title="时间信息" style={{ marginBottom: 16 }}>
+              <Card title="时间信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 2} size="small">
                   <Descriptions.Item label="最后上报时间">
                     {selectedDevice.lastReportedAt

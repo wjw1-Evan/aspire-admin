@@ -1,5 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
+import SearchFormCard from '@/components/SearchFormCard';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
@@ -35,6 +37,7 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const searchParamsRef = useRef<SearchParams>({});
     const [searchForm] = Form.useForm();
+    const { styles } = useCommonStyles();
 
     const [detailVisible, setDetailVisible] = useState(false);
     const [viewingQuota, setViewingQuota] = useState<StorageQuota | null>(null);
@@ -566,7 +569,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         >
             {/* 搜索表单 */}
             {activeTab === 'quota-list' && (
-                <Card style={{ marginBottom: 16 }}>
+                <SearchFormCard>
                     <Form
                         form={searchForm}
                         layout={isMobile ? 'vertical' : 'inline'}
@@ -606,11 +609,11 @@ const CloudStorageQuotaPage: React.FC = () => {
                             </Space>
                         </Form.Item>
                     </Form>
-                </Card>
+                </SearchFormCard>
             )}
 
             {/* 标签页 */}
-            <Card>
+            <Card className={styles.card}>
                 <Tabs activeKey={activeTab} onChange={handleTabChange}>
                     <TabPane tab="配额列表" key="quota-list">
                         <DataTable
@@ -668,7 +671,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                 </Col>
 
                                 <Col xs={24} md={12}>
-                                    <Card title="使用量分布">
+                                    <Card title="使用量分布" className={styles.card}>
                                         {usageStats.usageDistribution.map((item, index) => (
                                             <div key={index} style={{ marginBottom: 8 }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -682,7 +685,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                 </Col>
 
                                 <Col xs={24} md={12}>
-                                    <Card title="使用量排行">
+                                    <Card title="使用量排行" className={styles.card}>
                                         {(usageStats.topUsers ?? []).map((user, index) => (
                                             <div key={user.userId || `${user.username}-${index}`} style={{ marginBottom: 8 }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -745,7 +748,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 <Spin spinning={!viewingQuota}>
                     {viewingQuota ? (
                         <>
-                            <Card title="基本信息" style={{ marginBottom: 16 }}>
+                            <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
                                 <Descriptions column={isMobile ? 1 : 2} size="small">
                                     <Descriptions.Item
                                         label={<Space><UserOutlined />用户</Space>}

@@ -12,8 +12,9 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Input, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer } from 'antd';
+import { Badge, Button, Input, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer, theme } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import { useModal } from '@/hooks/useModal';
 
 const { useBreakpoint } = Grid;
@@ -41,6 +42,8 @@ const RoleManagement: FC = () => {
   const intl = useIntl();
   const message = useMessage();
   const modal = useModal();
+  const { styles } = useCommonStyles();
+  const { token } = theme.useToken();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -496,7 +499,7 @@ const RoleManagement: FC = () => {
     >
       {/* 角色统计信息：统一使用 StatCard 风格 */}
       {statistics && (
-        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
@@ -576,6 +579,7 @@ const RoleManagement: FC = () => {
             {/* 基本信息 */}
             <Card
               title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })}
+              className={styles.card}
               style={{ marginBottom: 16 }}
             >
               <Descriptions column={1} size="small">

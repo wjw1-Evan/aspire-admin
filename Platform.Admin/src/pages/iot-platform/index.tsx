@@ -12,9 +12,13 @@ import {
 import { useMessage } from '@/hooks/useMessage';
 import { iotService } from '@/services/iotService';
 import { StatCard } from '@/components';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import { theme } from 'antd';
 
 const IoTPlatform: React.FC = () => {
   const message = useMessage();
+  const { styles } = useCommonStyles();
+  const { token } = theme.useToken();
   const [loading, setLoading] = useState(false);
   const [statistics, setStatistics] = useState<any>(null);
 
@@ -67,7 +71,7 @@ const IoTPlatform: React.FC = () => {
       }
     >
       <Card
-        style={{ marginBottom: 16, borderRadius: 12 }}
+        className={styles.card}
       >
         <Spin spinning={loading}>
           <div style={{ padding: '20px 0' }}>

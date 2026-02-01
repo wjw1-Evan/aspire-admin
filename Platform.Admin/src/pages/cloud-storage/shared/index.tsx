@@ -1,5 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer, StatCard } from '@/components';
+import SearchFormCard from '@/components/SearchFormCard';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
@@ -93,6 +95,7 @@ const CloudStorageSharedPage: React.FC = () => {
     const [searchParams, setSearchParams] = useState<SearchParams>({});
     const searchParamsRef = useRef<SearchParams>({});
     const [searchForm] = Form.useForm();
+    const { styles } = useCommonStyles();
 
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
@@ -573,7 +576,7 @@ const CloudStorageSharedPage: React.FC = () => {
             }
         >
             {/* 搜索表单 */}
-            <Card style={{ marginBottom: 16 }}>
+            <SearchFormCard>
                 <Form
                     form={searchForm}
                     layout={isMobile ? 'vertical' : 'inline'}
@@ -617,10 +620,10 @@ const CloudStorageSharedPage: React.FC = () => {
                         </Space>
                     </Form.Item>
                 </Form>
-            </Card>
+            </SearchFormCard>
 
             {/* 标签页 */}
-            <Card>
+            <Card className={styles.card}>
                 <Tabs activeKey={activeTab} onChange={handleTabChange}>
                     <TabPane tab="我的分享" key="my-shares">
                         <DataTable
@@ -668,7 +671,7 @@ const CloudStorageSharedPage: React.FC = () => {
                 <Spin spinning={!viewingShare}>
                     {viewingShare ? (
                         <>
-                            <Card title="基本信息" style={{ marginBottom: 16 }}>
+                            <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
                                 <Descriptions column={isMobile ? 1 : 2} size="small">
                                     <Descriptions.Item
                                         label={<Space><FileOutlined />文件名</Space>}
@@ -731,7 +734,7 @@ const CloudStorageSharedPage: React.FC = () => {
                                 </Descriptions>
                             </Card>
 
-                            <Card title="访问统计" style={{ marginBottom: 16, borderRadius: 12 }}>
+                            <Card title="访问统计" className={styles.card} style={{ marginBottom: 16 }}>
                                 <Row gutter={[12, 12]}>
                                     <Col span={12}>
                                         <StatCard

@@ -10,6 +10,8 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { getActivityLogById, getUserActivityLogs } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 import LogDetailDrawer from './components/LogDetailDrawer';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
@@ -29,6 +31,7 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 
 const UserLog: React.FC = () => {
   const intl = useIntl();
+  const { styles } = useCommonStyles();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -600,72 +603,73 @@ const UserLog: React.FC = () => {
       }
     >
       {/* 筛选区域 */}
-      <Form
-        form={form}
-        layout={isMobile ? 'vertical' : 'inline'}
-        style={{ marginBottom: 12 }}
-        onFinish={handleSearch}
-      >
-        <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
-          <Input
-            allowClear
-            placeholder={intl.formatMessage({ id: 'pages.table.action' })}
-            style={{ minWidth: 160 }}
-          />
-        </Form.Item>
+      <SearchFormCard>
+        <Form
+          form={form}
+          layout={isMobile ? 'vertical' : 'inline'}
+          onFinish={handleSearch}
+        >
+          <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
+            <Input
+              allowClear
+              placeholder={intl.formatMessage({ id: 'pages.table.action' })}
+              style={{ minWidth: 160 }}
+            />
+          </Form.Item>
 
-        <Form.Item name="httpMethod" label={intl.formatMessage({ id: 'pages.table.httpMethod' })}>
-          <Select
-            allowClear
-            placeholder={intl.formatMessage({ id: 'pages.placeholder.select' })}
-            style={{ minWidth: 140 }}
-            options={['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((m) => ({ label: m, value: m }))}
-          />
-        </Form.Item>
+          <Form.Item name="httpMethod" label={intl.formatMessage({ id: 'pages.table.httpMethod' })}>
+            <Select
+              allowClear
+              placeholder={intl.formatMessage({ id: 'pages.placeholder.select' })}
+              style={{ minWidth: 140 }}
+              options={['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((m) => ({ label: m, value: m }))}
+            />
+          </Form.Item>
 
-        <Form.Item name="statusCode" label={intl.formatMessage({ id: 'pages.table.statusCode' })}>
-          <Input
-            allowClear
-            placeholder={intl.formatMessage({ id: 'pages.table.statusCode' })}
-            style={{ minWidth: 120 }}
-            type="number"
-          />
-        </Form.Item>
+          <Form.Item name="statusCode" label={intl.formatMessage({ id: 'pages.table.statusCode' })}>
+            <Input
+              allowClear
+              placeholder={intl.formatMessage({ id: 'pages.table.statusCode' })}
+              style={{ minWidth: 120 }}
+              type="number"
+            />
+          </Form.Item>
 
-        <Form.Item name="ipAddress" label={intl.formatMessage({ id: 'pages.table.ipAddress' })}>
-          <Input
-            allowClear
-            placeholder={intl.formatMessage({ id: 'pages.table.ipAddress' })}
-            style={{ minWidth: 160 }}
-          />
-        </Form.Item>
+          <Form.Item name="ipAddress" label={intl.formatMessage({ id: 'pages.table.ipAddress' })}>
+            <Input
+              allowClear
+              placeholder={intl.formatMessage({ id: 'pages.table.ipAddress' })}
+              style={{ minWidth: 160 }}
+            />
+          </Form.Item>
 
-        <Form.Item name="username" label={intl.formatMessage({ id: 'pages.table.username' })}>
-          <Input
-            allowClear
-            placeholder={intl.formatMessage({ id: 'pages.table.username' })}
-            style={{ minWidth: 180 }}
-          />
-        </Form.Item>
+          <Form.Item name="username" label={intl.formatMessage({ id: 'pages.table.username' })}>
+            <Input
+              allowClear
+              placeholder={intl.formatMessage({ id: 'pages.table.username' })}
+              style={{ minWidth: 180 }}
+            />
+          </Form.Item>
 
-        <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.logDetail.actionTime' })}>
-          <DatePicker.RangePicker showTime style={{ minWidth: 280 }} />
-        </Form.Item>
+          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.logDetail.actionTime' })}>
+            <DatePicker.RangePicker showTime style={{ minWidth: 280 }} />
+          </Form.Item>
 
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit">
-              {intl.formatMessage({ id: 'pages.search.submit' }, { defaultMessage: '查询' })}
-            </Button>
-            <Button onClick={handleReset}>
-              {intl.formatMessage({ id: 'pages.search.reset' }, { defaultMessage: '重置' })}
-            </Button>
-          </Space>
-        </Form.Item>
-      </Form>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                {intl.formatMessage({ id: 'pages.search.submit' }, { defaultMessage: '查询' })}
+              </Button>
+              <Button onClick={handleReset}>
+                {intl.formatMessage({ id: 'pages.search.reset' }, { defaultMessage: '重置' })}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </SearchFormCard>
 
       {/* 当前页统计：对齐“我的活动”StatCard 风格 */}
-      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+      <Card className={styles.card} style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
             <StatCard

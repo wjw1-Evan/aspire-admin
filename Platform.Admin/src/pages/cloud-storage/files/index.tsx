@@ -1,5 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { PageContainer, StatCard } from '@/components';
+import SearchFormCard from '@/components/SearchFormCard';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
@@ -146,6 +148,7 @@ const CloudStorageFilesPage: React.FC = () => {
     const [searchParams, setSearchParams] = useState<SearchParams>({});
     const searchParamsRef = useRef<SearchParams>({});
     const [searchForm] = Form.useForm();
+    const { styles } = useCommonStyles();
     const [isSearchMode, setIsSearchMode] = useState(false);
 
     // 弹窗状态
@@ -963,7 +966,7 @@ const CloudStorageFilesPage: React.FC = () => {
         >
             {/* 统计卡片区域 */}
             {statistics && (
-                <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+                <Card className={styles.card} style={{ marginBottom: 16 }}>
                     <Row gutter={[12, 12]}>
                         <Col xs={24} sm={12} md={6}>
                             <StatCard
@@ -1009,7 +1012,7 @@ const CloudStorageFilesPage: React.FC = () => {
             )}
 
             {/* 面包屑导航 */}
-            <Card style={{ marginBottom: 16 }}>
+            <Card className={styles.card} style={{ marginBottom: 16 }}>
                 <Breadcrumb
                     items={pathHistory.map((item, index) => ({
                         key: index,
@@ -1026,7 +1029,7 @@ const CloudStorageFilesPage: React.FC = () => {
             </Card>
 
             {/* 搜索表单 */}
-            <Card style={{ marginBottom: 16 }}>
+            <SearchFormCard>
                 <Form
                     form={searchForm}
                     layout={isMobile ? 'vertical' : 'inline'}
@@ -1070,7 +1073,7 @@ const CloudStorageFilesPage: React.FC = () => {
                         </Space>
                     </Form.Item>
                 </Form>
-            </Card>
+            </SearchFormCard>
 
             {/* 数据表格 */}
             <DataTable

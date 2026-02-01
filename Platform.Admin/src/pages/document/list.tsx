@@ -20,63 +20,35 @@ import {
   Checkbox,
   Switch,
   Steps,
+  theme,
 } from 'antd';
-import ReactFlow, { Background, Controls, MiniMap, type Edge as FlowEdge, type Node as FlowNode } from 'reactflow';
-import 'reactflow/dist/style.css';
 import {
-  EyeOutlined,
-  EditOutlined,
-  SendOutlined,
-  DeleteOutlined,
+  FileTextOutlined,
+  SearchOutlined,
   ReloadOutlined,
   PlusOutlined,
-  UploadOutlined,
-  FileTextOutlined,
-  ClockCircleOutlined,
   CheckCircleOutlined,
+  CloseCircleOutlined,
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SendOutlined,
+  ClockCircleOutlined,
+  UploadOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-import type { ActionType } from '@/types/pro-components';
-import type { ColumnsType } from 'antd/es/table';
-import type { UploadFile, UploadProps } from 'antd';
-import { DataTable } from '@/components/DataTable';
-import {
-  getDocumentList,
-  getDocumentDetail,
-  getDocumentInstanceForm,
-  deleteDocument,
-  submitDocument,
-  uploadDocumentAttachment,
-  getDocumentStatistics,
-  type Document,
-  type DocumentStatistics,
-  type DocumentQueryParams,
-  DocumentStatus,
-} from '@/services/document/api';
-import { StatCard } from '@/components';
-import {
-  WorkflowStatus,
-  ApprovalAction,
-  FormFieldType,
-  type FormDefinition,
-  getDocumentCreateForm,
-  getNodeForm,
-  getWorkflowDetail,
-  createAndStartDocumentWorkflow,
-  getWorkflowList,
-  type WorkflowDefinition,
-} from '@/services/workflow/api';
-import { useIntl } from '@umijs/max';
-import dayjs from 'dayjs';
-import { getStatusMeta, documentStatusMap, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
-import { useMessage } from '@/hooks/useMessage';
-import { useModal } from '@/hooks/useModal';
+import { request } from '@umijs/max';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 
 const DocumentManagement: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
-  const modal = useModal();
   const actionRef = useRef<ActionType>(null);
+  const [form] = Form.useForm();
+  const { styles } = useCommonStyles();
+  const { token } = theme.useToken();
+  const modal = useModal();
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<any>(null);
   const [detailFormDef, setDetailFormDef] = useState<FormDefinition | null>(null);
@@ -97,7 +69,6 @@ const DocumentManagement: React.FC = () => {
   const [isFormStep, setIsFormStep] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
   const [wfForm] = Form.useForm();
-  const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<DocumentQueryParams>({
     page: 1,
     pageSize: 10,
@@ -179,7 +150,7 @@ const DocumentManagement: React.FC = () => {
   };
 
   const handleReset = () => {
-    searchForm.resetFields();
+    form.resetFields();
     setSearchParams({ page: 1, pageSize: 10 });
     actionRef.current?.reset?.();
   };
@@ -593,7 +564,7 @@ const DocumentManagement: React.FC = () => {
               <StatCard
                 title={intl.formatMessage({ id: 'pages.document.stat.rejected', defaultMessage: '已驳回' })}
                 value={statistics.rejectedCount}
-                icon={<CloseOutlined />}
+                icon={<CloseCircleOutlined />}
                 color="#ff4d4f"
               />
             </Col>
@@ -609,8 +580,16 @@ const DocumentManagement: React.FC = () => {
         </Card>
       )}
 
-      <Card style={{ marginBottom: 16 }}>
-        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
+      {/* 搜索表单 */}
+      <SearchFormCard>
+        <Form
+          form={form}
+          layout="inline"
+          onFinish={(values) => {
+            // 手动触发查询
+            actionRef.current?.reloadAndRest?.();
+          }}
+        >
           <Form.Item name="keyword" label={intl.formatMessage({ id: 'pages.document.search.keyword', defaultMessage: '关键词' })}>
             <Input placeholder={intl.formatMessage({ id: 'pages.document.search.keywordPlaceholder', defaultMessage: '搜索标题或内容' })} />
           </Form.Item>
@@ -638,7 +617,7 @@ const DocumentManagement: React.FC = () => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </SearchFormCard>
 
       <DataTable<Document>
         actionRef={actionRef}

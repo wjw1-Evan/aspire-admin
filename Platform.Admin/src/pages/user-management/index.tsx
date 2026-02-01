@@ -23,6 +23,7 @@ import {
   DatePicker,
   Grid,
   Typography,
+  theme,
 } from 'antd';
 
 const { useBreakpoint } = Grid;
@@ -36,6 +37,8 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
+import useCommonStyles from '@/hooks/useCommonStyles';
+import SearchFormCard from '@/components/SearchFormCard';
 import { getAllRoles } from '@/services/role/api';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import type { ApiResponse } from '@/types/unified-api';
@@ -61,6 +64,8 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 const UserManagement: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
+  const { styles } = useCommonStyles();
+  const { token } = theme.useToken();
   const modal = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
@@ -748,7 +753,7 @@ const UserManagement: React.FC = () => {
     >
       {/* 统计卡片：参考 Welcome 页面风格 */}
       {statistics && (
-        <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+        <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
@@ -787,7 +792,7 @@ const UserManagement: React.FC = () => {
       )}
 
       {/* 搜索表单 */}
-      <Card style={{ marginBottom: 16 }}>
+      <SearchFormCard>
         <Form
           form={searchForm}
           layout={isMobile ? 'vertical' : 'inline'}
@@ -800,11 +805,10 @@ const UserManagement: React.FC = () => {
           <Form.Item name="roleIds" label={intl.formatMessage({ id: 'pages.userManagement.role.label' })}>
             <Select
               mode="multiple"
+              allowClear
               placeholder={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
               style={{ width: 200 }}
-              allowClear
-              loading={Object.keys(roleMap).length === 0}
-              aria-label={intl.formatMessage({ id: 'pages.userManagement.role.label' })}
+              aria-label={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
             >
               {Object.entries(roleMap).map(([id, name]) => (
                 <Select.Option key={id} value={id}>
@@ -814,35 +818,26 @@ const UserManagement: React.FC = () => {
             </Select>
           </Form.Item>
           <Form.Item name="isActive" label={intl.formatMessage({ id: 'pages.userManagement.status.label' })}>
-            <Select placeholder={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })} style={{ width: 120 }} allowClear aria-label={intl.formatMessage({ id: 'pages.userManagement.status.label' })}>
-              <Select.Option value={true}>{intl.formatMessage({ id: 'pages.table.activated' })}</Select.Option>
-              <Select.Option value={false}>{intl.formatMessage({ id: 'pages.table.deactivated' })}</Select.Option>
+            <Select allowClear placeholder={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })} style={{ width: 120 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })}>
+              <Select.Option value={true}>{intl.formatMessage({ id: 'pages.userManagement.status.activated' })}</Select.Option>
+              <Select.Option value={false}>{intl.formatMessage({ id: 'pages.userManagement.status.deactivated' })}</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.userManagement.createdAt.label' })}>
-            <DatePicker.RangePicker style={{ width: 240 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.createdAt.label' })} />
+          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.userManagement.dateRange.label' })}>
+            <DatePicker.RangePicker />
           </Form.Item>
           <Form.Item>
-            <Space wrap>
-              <Button
-                type="primary"
-                htmlType="submit"
-                aria-label={intl.formatMessage({ id: 'pages.userManagement.query' })}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                {intl.formatMessage({ id: 'pages.userManagement.query' })}
+            <Space>
+              <Button type="primary" htmlType="submit">
+                {intl.formatMessage({ id: 'pages.common.search', defaultMessage: 'Search' })}
               </Button>
-              <Button
-                onClick={handleReset}
-                aria-label={intl.formatMessage({ id: 'pages.userManagement.reset' })}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                {intl.formatMessage({ id: 'pages.userManagement.reset' })}
+              <Button onClick={handleReset}>
+                {intl.formatMessage({ id: 'pages.common.reset', defaultMessage: 'Reset' })}
               </Button>
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </SearchFormCard>
 
       {/* 用户列表表格 */}
       <div ref={tableRef}>

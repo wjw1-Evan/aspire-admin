@@ -36,6 +36,7 @@ import {
 } from '@ant-design/icons';
 import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/services/iotService';
 import { StatCard } from '@/components';
+import useCommonStyles from '@/hooks/useCommonStyles';
 
 export interface GatewayManagementRef {
   reload: () => void;
@@ -46,6 +47,7 @@ export interface GatewayManagementRef {
 const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
+  const { styles } = useCommonStyles();
   const actionRef = useRef<ActionType>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -183,7 +185,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   const handleSubmit = useCallback(async (values: any) => {
     // 后端仍可能需要 name 字段，这里与 title 保持一致
     const payload: any = { ...values, name: values.title };
-    
+
     // 如果是HTTP协议，将HTTP方法和地址保存到config中
     if (values.protocolType === 'HTTP') {
       payload.config = {
@@ -198,7 +200,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       // 非HTTP协议也保留config（如果有）
       payload.config = values.config;
     }
-    
+
     try {
       if (selectedGateway) {
         const response = await iotService.updateGateway(selectedGateway.id, payload);
@@ -337,7 +339,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   return (
     <>
       {/* 统计卡片：与其他页面保持一致的紧凑横向布局 */}
-      <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+      <Card className={styles.card} style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6}>
             <StatCard
@@ -484,7 +486,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           {selectedGateway ? (
             <>
               {/* 基本信息 */}
-              <Card title="基本信息" style={{ marginBottom: 16 }}>
+              <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="网关名称" span={2}>
                     {selectedGateway.title}
@@ -511,7 +513,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
 
               {/* 设备统计 */}
               {statistics && (
-                <Card title="设备统计" style={{ marginBottom: 16 }}>
+                <Card title="设备统计" className={styles.card} style={{ marginBottom: 16 }}>
                   <Descriptions column={isMobile ? 1 : 2} size="small">
                     <Descriptions.Item label="总数">
                       {statistics.totalDevices}
@@ -530,7 +532,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
               )}
 
               {/* 时间信息 */}
-              <Card title="时间信息" style={{ marginBottom: 16 }}>
+              <Card title="时间信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="创建时间">
                     {dayjs(selectedGateway.createdAt).format('YYYY-MM-DD HH:mm:ss')}

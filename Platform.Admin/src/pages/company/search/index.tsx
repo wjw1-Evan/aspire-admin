@@ -5,6 +5,8 @@ import {
   CheckCircleOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@/components';
+import SearchFormCard from '@/components/SearchFormCard';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import {
   Input,
   Card,
@@ -30,6 +32,7 @@ const { TextArea } = Input;
 const CompanySearch: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
+  const { styles } = useCommonStyles();
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<API.CompanySearchResult[]>(
@@ -120,9 +123,9 @@ const CompanySearch: React.FC = () => {
       }
       style={{ paddingBlock: 12 }}
     >
-      <Card>
+      <SearchFormCard>
         {/* 搜索框 */}
-        <Space.Compact style={{ width: '100%', marginBottom: 24 }}>
+        <Space.Compact style={{ width: '100%' }}>
           <Input
             size="large"
             placeholder={intl.formatMessage({ id: 'pages.placeholder.searchCompany' })}
@@ -140,9 +143,11 @@ const CompanySearch: React.FC = () => {
             {intl.formatMessage({ id: 'pages.button.search' })}
           </Button>
         </Space.Compact>
+      </SearchFormCard>
 
-        {/* 搜索结果 */}
-        {loading ? (
+      {/* 搜索结果 */}
+      {loading ? (
+        <Card className={styles.card} style={{ marginTop: 16 }}>
           <Spin
             size="large"
             tip={intl.formatMessage({ id: 'pages.message.searching' })}
@@ -150,97 +155,102 @@ const CompanySearch: React.FC = () => {
           >
             <div style={{ minHeight: 200 }} />
           </Spin>
-        ) : searchResults.length > 0 ? (
-          <Row gutter={[16, 16]}>
-            {searchResults.map((item) => (
-              <Col key={item.company.id} xs={24} sm={24} md={12} lg={12} xl={8} xxl={8}>
-                <Card
-                  hoverable
-                  actions={[
-                    item.isMember ? (
-                      <Button key="joined" type="text" disabled>
-                        <CheckCircleOutlined /> {intl.formatMessage({ id: 'pages.status.joined' })}
-                      </Button>
-                    ) : item.hasPendingRequest ? (
-                      <Button key="pending" type="text" disabled>
-                        {intl.formatMessage({ id: 'pages.status.pending' })}...
-                      </Button>
-                    ) : (
-                      <Button
-                        key="apply"
-                        type="primary"
-                        onClick={() => handleApply(item.company)}
-                        loading={applyingId === item.company.id}
-                      >
-                        {intl.formatMessage({ id: 'pages.button.add' })}
-                      </Button>
-                    ),
-                  ]}
-                >
-                  <Card.Meta
-                    avatar={
-                      <BankOutlined
-                        style={{ fontSize: 32, color: '#1890ff' }}
-                      />
-                    }
-                    title={
-                      <Space wrap>
-                        <span>{item.company.name || intl.formatMessage({ id: 'pages.table.unknownCompany' })}</span>
-                        {item.isMember && (
-                          <Tag color="success">
-                            {item.memberStatus === 'active'
-                              ? intl.formatMessage({ id: 'pages.status.joined' })
-                              : intl.formatMessage({ id: 'pages.status.pendingActivation' })}
-                          </Tag>
-                        )}
-                        {item.hasPendingRequest && (
-                          <Tag color="processing">{intl.formatMessage({ id: 'pages.status.pending' })}</Tag>
-                        )}
-                      </Space>
-                    }
-                    description={
-                      <div>
-                        {item.company.code && (
-                          <div style={{ marginBottom: 8 }}>
-                            <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.companyCode' })}: </span>
-                            <span style={{ fontWeight: 500 }}>
-                              {item.company.code}
-                            </span>
-                          </div>
-                        )}
-                        {item.company.description && (
-                          <div style={{ marginBottom: 8, color: '#666', fontSize: '14px' }}>
-                            {item.company.description}
-                          </div>
-                        )}
-                        {item.company.industry && (
-                          <div style={{ marginBottom: 8 }}>
-                            <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.industry' })}: </span>
-                            <span>{item.company.industry}</span>
-                          </div>
-                        )}
-                        <div style={{ marginTop: 12 }}>
-                          <Space>
-                            <TeamOutlined />
-                            <span>{intl.formatMessage({ id: 'pages.table.members' }, { count: item.memberCount ?? 0 })}</span>
-                          </Space>
+        </Card>
+      ) : searchResults.length > 0 ? (
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          {searchResults.map((item) => (
+            <Col key={item.company.id} xs={24} sm={24} md={12} lg={12} xl={8} xxl={8}>
+              <Card
+                hoverable
+                className={styles.card}
+                actions={[
+                  item.isMember ? (
+                    <Button key="joined" type="text" disabled>
+                      <CheckCircleOutlined /> {intl.formatMessage({ id: 'pages.status.joined' })}
+                    </Button>
+                  ) : item.hasPendingRequest ? (
+                    <Button key="pending" type="text" disabled>
+                      {intl.formatMessage({ id: 'pages.status.pending' })}...
+                    </Button>
+                  ) : (
+                    <Button
+                      key="apply"
+                      type="primary"
+                      onClick={() => handleApply(item.company)}
+                      loading={applyingId === item.company.id}
+                    >
+                      {intl.formatMessage({ id: 'pages.button.add' })}
+                    </Button>
+                  ),
+                ]}
+              >
+                <Card.Meta
+                  avatar={
+                    <BankOutlined
+                      style={{ fontSize: 32, color: '#1890ff' }}
+                    />
+                  }
+                  title={
+                    <Space wrap>
+                      <span>{item.company.name || intl.formatMessage({ id: 'pages.table.unknownCompany' })}</span>
+                      {item.isMember && (
+                        <Tag color="success">
+                          {item.memberStatus === 'active'
+                            ? intl.formatMessage({ id: 'pages.status.joined' })
+                            : intl.formatMessage({ id: 'pages.status.pendingActivation' })}
+                        </Tag>
+                      )}
+                      {item.hasPendingRequest && (
+                        <Tag color="processing">{intl.formatMessage({ id: 'pages.status.pending' })}</Tag>
+                      )}
+                    </Space>
+                  }
+                  description={
+                    <div>
+                      {item.company.code && (
+                        <div style={{ marginBottom: 8 }}>
+                          <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.companyCode' })}: </span>
+                          <span style={{ fontWeight: 500 }}>
+                            {item.company.code}
+                          </span>
                         </div>
+                      )}
+                      {item.company.description && (
+                        <div style={{ marginBottom: 8, color: '#666', fontSize: '14px' }}>
+                          {item.company.description}
+                        </div>
+                      )}
+                      {item.company.industry && (
+                        <div style={{ marginBottom: 8 }}>
+                          <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.industry' })}: </span>
+                          <span>{item.company.industry}</span>
+                        </div>
+                      )}
+                      <div style={{ marginTop: 12 }}>
+                        <Space>
+                          <TeamOutlined />
+                          <span>{intl.formatMessage({ id: 'pages.table.members' }, { count: item.memberCount ?? 0 })}</span>
+                        </Space>
                       </div>
-                    }
-                  />
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        ) : keyword ? (
+                    </div>
+                  }
+                />
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      ) : keyword ? (
+        <Card className={styles.card} style={{ marginTop: 16 }}>
           <Empty description={intl.formatMessage({ id: 'pages.placeholder.noCompaniesFound' })} style={{ padding: 60 }} />
-        ) : (
+        </Card>
+      ) : (
+        <Card className={styles.card} style={{ marginTop: 16 }}>
           <Empty
             description={intl.formatMessage({ id: 'pages.placeholder.pleaseSearchCompany' })}
             style={{ padding: 60 }}
           />
-        )}
-      </Card>
+        </Card>
+      )}
     </PageContainer>
   );
 };

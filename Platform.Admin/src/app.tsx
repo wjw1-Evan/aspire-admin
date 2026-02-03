@@ -249,6 +249,7 @@ export const layout: RunTimeLayoutConfig = ({
     },
     avatarProps: {
       src: getUserAvatar(initialState?.currentUser?.avatar),
+      icon: <Icons.UserOutlined />,
       title: <AvatarName />,
       style: {
         marginLeft: 0,

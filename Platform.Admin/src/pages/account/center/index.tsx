@@ -11,12 +11,12 @@ import {
 } from '@ant-design/icons';
 import { FormattedMessage, useIntl } from '@umijs/max';
 import {
+  App,
   Avatar,
   Button,
   Card,
   Descriptions,
   Divider,
-  message,
   Space,
   Tag,
   Typography,
@@ -112,6 +112,7 @@ const UserCenter: React.FC = () => {
   const { styles } = useStyles();
   const { styles: commonStyles } = useCommonStyles();
   const intl = useIntl();
+  const { message } = App.useApp();
 
   // 获取用户信息
   const fetchUserProfile = async () => {
@@ -136,14 +137,6 @@ const UserCenter: React.FC = () => {
           lastLoginAt: apiUser.lastLoginAt || '',
         };
         setUserProfile(profile);
-        form.setFieldsValue({
-          username: apiUser.username, // ✅ 设置 username（只读，不可修改）
-          name: apiUser.name || apiUser.username, // 表单使用 name，如果没有则用 username
-          email: apiUser.email,
-          phoneNumber: apiUser.phoneNumber,
-          age: apiUser.age || 18,
-          avatar: apiUser.avatar, // ✅ 设置头像字段
-        });
         // 设置头像预览
         setAvatarPreview(apiUser.avatar);
       }
@@ -735,7 +728,6 @@ const UserCenter: React.FC = () => {
                       defaultMessage="最后登录"
                     />
                   }
-                  span={2}
                 >
                   <CalendarOutlined style={{ marginRight: '4px' }} />
                   {formatDateTime(userProfile.lastLoginAt)}

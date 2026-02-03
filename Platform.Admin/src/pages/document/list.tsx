@@ -76,9 +76,10 @@ import {
   type WorkflowDefinition,
   FormFieldType,
   WorkflowStatus,
+  ApprovalAction,
 } from '@/services/workflow/api';
 import { type FormDefinition } from '@/services/form/api';
-import { getStatusMeta, documentStatusMap, workflowStatusMap, approvalActionMap, ApprovalAction } from '@/utils/statusMaps';
+import { getStatusMeta, documentStatusMap, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
 import dayjs from 'dayjs';
 import ReactFlow, { Background, Controls, MiniMap, type Edge as FlowEdge, type Node as FlowNode } from 'reactflow';
 import 'reactflow/dist/style.css';

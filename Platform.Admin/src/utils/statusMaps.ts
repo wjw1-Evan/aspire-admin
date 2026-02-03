@@ -1,5 +1,5 @@
 import { DocumentStatus } from '@/services/document/api';
-import { WorkflowStatus } from '@/services/workflow/api';
+import { WorkflowStatus, ApprovalAction } from '@/services/workflow/api';
 
 export type StatusMeta = { color: string; text: string };
 
@@ -18,10 +18,10 @@ export const workflowStatusMap: Record<string, StatusMeta> = {
 };
 
 export const approvalActionMap: Record<string, StatusMeta> = {
-    approve: { color: 'success', text: 'pages.workflow.monitor.history.action.approve' },
-    reject: { color: 'error', text: 'pages.workflow.monitor.history.action.reject' },
-    return: { color: 'warning', text: 'pages.workflow.monitor.history.action.return' },
-    delegate: { color: 'purple', text: 'pages.workflow.monitor.history.action.delegate' },
+    [ApprovalAction.Approve]: { color: 'success', text: 'pages.workflow.monitor.history.action.approve' },
+    [ApprovalAction.Reject]: { color: 'error', text: 'pages.workflow.monitor.history.action.reject' },
+    [ApprovalAction.Return]: { color: 'warning', text: 'pages.workflow.monitor.history.action.return' },
+    [ApprovalAction.Delegate]: { color: 'purple', text: 'pages.workflow.monitor.history.action.delegate' },
 };
 
 export const getStatusMeta = (

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Table, Button, Space, Popconfirm } from 'antd';
+import { Table, Button, Space, App } from 'antd';
 import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { TableColumnsType, TableProps } from 'antd';
 import { useIntl } from '@umijs/max';
@@ -65,6 +64,7 @@ function CrudTable<T extends Record<string, any> = any>({
   ...tableProps
 }: CrudTableProps<T>) {
   const intl = useIntl();
+  const { modal } = App.useApp();
 
   // 构建操作列
   const actionColumn: CrudTableColumn<T> = {
@@ -108,18 +108,25 @@ function CrudTable<T extends Record<string, any> = any>({
       // 删除按钮
       if (showDelete && onDelete && canDelete(record)) {
         actions.push(
-          <Popconfirm
+          <Button
             key="delete"
-            title={deleteConfirmTitle || intl.formatMessage({ id: 'pages.table.confirmDelete' })}
-            description={deleteConfirmContent || intl.formatMessage({ id: 'pages.table.confirmDeleteContent' })}
-            onConfirm={() => onDelete(record)}
-            okText={intl.formatMessage({ id: 'pages.table.ok' })}
-            cancelText={intl.formatMessage({ id: 'pages.table.cancel' })}
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              modal.confirm({
+                title: deleteConfirmTitle || intl.formatMessage({ id: 'pages.table.confirmDelete' }),
+                content: deleteConfirmContent || intl.formatMessage({ id: 'pages.table.confirmDeleteContent' }),
+                okText: intl.formatMessage({ id: 'pages.table.ok' }),
+                okButtonProps: { danger: true },
+                cancelText: intl.formatMessage({ id: 'pages.table.cancel' }),
+                onOk: () => onDelete(record),
+              });
+            }}
           >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              {intl.formatMessage({ id: 'pages.table.delete' })}
-            </Button>
-          </Popconfirm>,
+            {intl.formatMessage({ id: 'pages.table.delete' })}
+          </Button>,
         );
       }
 

@@ -3,6 +3,7 @@ import { Table, Button, Space, Modal, Tag } from 'antd';
 import type { ColumnsType, ColumnType } from 'antd/es/table';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 import {
   addProjectMember,
   removeProjectMember,
@@ -25,6 +26,7 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
   onRefresh,
 }) => {
   const message = useMessage();
+  const { confirm } = useModal();
   const [formVisible, setFormVisible] = useState(false);
   const [users, setUsers] = useState<AppUser[]>([]);
 
@@ -44,12 +46,12 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
   };
 
   const handleDelete = async (userId: string) => {
-    Modal.confirm({
+    confirm({
       title: '确认移除成员',
       content: '确定要移除该成员吗？',
       okText: '移除',
       cancelText: '取消',
-      okType: 'danger',
+      okButtonProps: { danger: true },
       onOk: async () => {
         try {
           await removeProjectMember(projectId, userId);

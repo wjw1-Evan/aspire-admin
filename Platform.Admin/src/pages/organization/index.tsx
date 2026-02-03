@@ -160,6 +160,7 @@ const OrganizationPage: React.FC = () => {
     const [members, setMembers] = useState<OrganizationMemberItem[]>([]);
     const [assignOpen, setAssignOpen] = useState(false);
     const [form] = Form.useForm<CreateOrganizationUnitRequest>();
+    const [createParentId, setCreateParentId] = useState<string | undefined>();
 
     const nodeMap = useMemo(() => flattenTree(tree), [tree]);
     const selectedNode = useMemo(
@@ -174,6 +175,28 @@ const OrganizationPage: React.FC = () => {
     useEffect(() => {
         selectedIdRef.current = selectedId;
     }, [selectedId]);
+
+    // Handle form reset and initialization when modal opens
+    useEffect(() => {
+        if (formOpen) {
+            form.resetFields();
+            if (editingNode) {
+                form.setFieldsValue({
+                    name: editingNode.name,
+                    code: editingNode.code,
+                    parentId: editingNode.parentId,
+                    description: editingNode.description,
+                    sortOrder: editingNode.sortOrder ?? 1,
+                    managerUserId: editingNode.managerUserId,
+                });
+            } else {
+                form.setFieldsValue({
+                    parentId: createParentId,
+                    sortOrder: 1,
+                });
+            }
+        }
+    }, [formOpen, editingNode, createParentId, form]);
 
     const refreshTree = useCallback(async () => {
         setLoading(true);
@@ -243,23 +266,13 @@ const OrganizationPage: React.FC = () => {
 
     const openCreateModal = (parentId?: string) => {
         setEditingNode(null);
-        form.resetFields();
-        form.setFieldsValue({ parentId, sortOrder: 1 });
+        setCreateParentId(parentId);
         setFormOpen(true);
     };
 
     const openEditModal = () => {
         if (!selectedNode) return;
         setEditingNode(selectedNode);
-        form.resetFields();
-        form.setFieldsValue({
-            name: selectedNode.name,
-            code: selectedNode.code,
-            parentId: selectedNode.parentId,
-            description: selectedNode.description,
-            sortOrder: selectedNode.sortOrder ?? 1,
-            managerUserId: selectedNode.managerUserId,
-        });
         setFormOpen(true);
     };
 
@@ -572,17 +585,23 @@ const OrganizationPage: React.FC = () => {
                                                             <Tag color="purple">{m.organizationUnitName}</Tag>
                                                         ) : null}
                                                     </Space>
-                                                    <Popconfirm
-                                                        key="remove"
-                                                        title={intl.formatMessage({ id: 'pages.modal.confirmDelete' })}
-                                                        okText={intl.formatMessage({ id: 'pages.modal.okDelete' })}
-                                                        cancelText={intl.formatMessage({ id: 'pages.modal.cancel' })}
-                                                        onConfirm={() => handleRemoveMember(m.userId)}
+                                                    <Button
+                                                        type="link"
+                                                        danger
+                                                        size="small"
+                                                        onClick={() => {
+                                                            modal.confirm({
+                                                                title: intl.formatMessage({ id: 'pages.modal.confirmDelete' }),
+                                                                content: intl.formatMessage({ id: 'pages.modal.deleteContent' }, { name: m.username || m.userId }),
+                                                                okText: intl.formatMessage({ id: 'pages.modal.okDelete' }),
+                                                                okButtonProps: { danger: true },
+                                                                cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
+                                                                onOk: () => handleRemoveMember(m.userId),
+                                                            });
+                                                        }}
                                                     >
-                                                        <Button type="link" danger size="small">
-                                                            {intl.formatMessage({ id: 'pages.common.delete' })}
-                                                        </Button>
-                                                    </Popconfirm>
+                                                        {intl.formatMessage({ id: 'pages.common.delete' })}
+                                                    </Button>
                                                 </div>
                                             ))}
                                         </div>

@@ -39,7 +39,7 @@ const MyJoinRequests: React.FC = () => {
   const intl = useIntl();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -314,16 +314,24 @@ const MyJoinRequests: React.FC = () => {
       render: (_, record: API.JoinRequestDetail) => {
         if (record.status === 'pending') {
           return (
-            <Popconfirm
-              title={intl.formatMessage({ id: 'pages.modal.confirmCancel' })}
-              onConfirm={() => handleCancel(record.id)}
-              okText={intl.formatMessage({ id: 'pages.table.ok' })}
-              cancelText={intl.formatMessage({ id: 'pages.table.cancel' })}
+            <Button
+              type="link"
+              danger
+              icon={<CloseCircleOutlined />}
+              loading={loading}
+              onClick={() => {
+                modal.confirm({
+                  title: intl.formatMessage({ id: 'pages.modal.confirmCancel' }),
+                  content: intl.formatMessage({ id: 'pages.modal.cancelContent' }),
+                  okText: intl.formatMessage({ id: 'pages.table.ok' }),
+                  okButtonProps: { danger: true },
+                  cancelText: intl.formatMessage({ id: 'pages.table.cancel' }),
+                  onOk: () => handleCancel(record.id),
+                });
+              }}
             >
-              <Button type="link" danger icon={<CloseCircleOutlined />} loading={loading}>
-                {intl.formatMessage({ id: 'pages.button.cancelRequest' })}
-              </Button>
-            </Popconfirm>
+              {intl.formatMessage({ id: 'pages.button.cancelRequest' })}
+            </Button>
           );
         }
         return null;

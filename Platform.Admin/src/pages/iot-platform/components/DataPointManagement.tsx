@@ -52,7 +52,7 @@ export interface DataPointManagementRef {
 
 const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   const intl = useIntl();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const { styles } = useCommonStyles();
@@ -398,17 +398,22 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
           >
             编辑
           </Button>
-          <Popconfirm
-            title="删除数据点"
-            description="确定要删除此数据点吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              modal.confirm({
+                title: '删除数据点',
+                content: '确定要删除此数据点吗？',
+                onOk: () => handleDelete(record.id),
+                okButtonProps: { danger: true },
+              });
+            }}
           >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
+            删除
+          </Button>
         </Space>
       ),
     },

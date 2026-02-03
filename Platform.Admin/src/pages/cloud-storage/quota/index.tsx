@@ -9,6 +9,7 @@ import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutl
 import { getQuotaList, getUserQuota, updateUserQuota, getQuotaWarnings, getQuotaUsageStats, setUserQuota, deleteUserQuota, type StorageQuota, type UpdateQuotaRequest, type QuotaListRequest, type QuotaUsageStats, type QuotaWarning } from '@/services/cloud-storage/quotaApi';
 import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 import dayjs from 'dayjs';
 import { getUserList, type AppUser } from '@/services/user/api';
 import { getCurrentCompany } from '@/services/company';
@@ -23,6 +24,7 @@ interface SearchParams {
 const CloudStorageQuotaPage: React.FC = () => {
     const intl = useIntl();
     const { success, error } = useMessage();
+    const { confirm } = useModal();
     const screens = useBreakpoint();
     const isMobile = !screens.md;
 
@@ -515,25 +517,23 @@ const CloudStorageQuotaPage: React.FC = () => {
                     >
                         {intl.formatMessage({ id: 'pages.table.edit' })}
                     </Button>
-                    <Popconfirm
-                        title={intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.title' })}
-                        description={<span>{intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.desc' })}</span>}
-                        okText={intl.formatMessage({ id: 'pages.table.delete' })}
-                        okButtonProps={{ danger: true }}
-                        cancelText={intl.formatMessage({ id: 'pages.table.cancel' })}
-                        icon={<ExclamationCircleOutlined style={{ color: '#faad14' }} />}
-                        onConfirm={() => handleDelete(record)}
+                    <Button
+                        type="link"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        loading={deletingId === record.userId}
+                        onClick={() => {
+                            confirm({
+                                title: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.title' }),
+                                content: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.desc' }),
+                                onOk: () => handleDelete(record),
+                                okButtonProps: { danger: true },
+                            });
+                        }}
                     >
-                        <Button
-                            type="link"
-                            size="small"
-                            danger
-                            icon={<DeleteOutlined />}
-                            loading={deletingId === record.userId}
-                        >
-                            {intl.formatMessage({ id: 'pages.table.delete' })}
-                        </Button>
-                    </Popconfirm>
+                        {intl.formatMessage({ id: 'pages.table.delete' })}
+                    </Button>
                 </Space>
             ),
         },
@@ -574,50 +574,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 </Space>
             }
         >
-            {/* 搜索表单 */}
-            {activeTab === 'quota-list' && (
-                <SearchFormCard>
-                    <Form
-                        form={searchForm}
-                        layout={isMobile ? 'vertical' : 'inline'}
-                        onFinish={handleSearch}
-                    >
-                        <Form.Item name="username" label="用户名">
-                            <Input
-                                placeholder="搜索用户名"
-                                style={isMobile ? { width: '100%' } : { width: 200 }}
-                            />
-                        </Form.Item>
-                        <Form.Item name="isEnabled" label="状态">
-                            <Select
-                                placeholder="选择状态"
-                                style={isMobile ? { width: '100%' } : { width: 100 }}
-                                allowClear
-                            >
-                                <Select.Option value={true}>启用</Select.Option>
-                                <Select.Option value={false}>禁用</Select.Option>
-                            </Select>
-                        </Form.Item>
-                        <Form.Item>
-                            <Space>
-                                <Button
-                                    type="primary"
-                                    htmlType="submit"
-                                    style={isMobile ? { width: '100%' } : {}}
-                                >
-                                    搜索
-                                </Button>
-                                <Button
-                                    onClick={handleReset}
-                                    style={isMobile ? { width: '100%' } : {}}
-                                >
-                                    重置
-                                </Button>
-                            </Space>
-                        </Form.Item>
-                    </Form>
-                </SearchFormCard>
-            )}
+
 
             {/* 标签页 */}
             <Card className={styles.card}>
@@ -626,7 +583,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                     onChange={handleTabChange}
                     items={[
                         {
-                            key: 'list',
+                            key: 'quota-list',
                             label: (
                                 <Space>
                                     <TableOutlined />
@@ -643,9 +600,9 @@ const CloudStorageQuotaPage: React.FC = () => {
                                         }}
                                         style={{ marginBottom: 16 }}
                                     >
-                                        <Form.Item name="search" label={intl.formatMessage({ id: 'pages.userManagement.search.label' })}>
+                                        <Form.Item name="username" label={intl.formatMessage({ id: 'pages.table.username' })}>
                                             <Input
-                                                placeholder={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })}
+                                                placeholder={intl.formatMessage({ id: 'pages.projectManagement.search.placeholder' })}
                                                 style={{ width: 200 }}
                                                 allowClear
                                             />
@@ -704,7 +661,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                             ),
                         },
                         {
-                            key: 'stats',
+                            key: 'usage-stats',
                             label: (
                                 <Space>
                                     <PieChartOutlined />
@@ -712,7 +669,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                 </Space>
                             ),
                             children: usageStats ? (
-                                <Space direction="vertical" style={{ width: '100%' }} size="large">
+                                <Space orientation="vertical" style={{ width: '100%' }} size="large">
                                     <Row gutter={[16, 16]}>
                                         <Col xs={24} sm={12} md={6}>
                                             <StatCard
@@ -741,7 +698,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                         <Col xs={24} sm={12} md={6}>
                                             <StatCard
                                                 title={intl.formatMessage({ id: 'pages.cloud-storage.quota.statistics.averageUsage' })}
-                                                value={`${usageStats.averageUsage.toFixed(1)}%`}
+                                                value={`${(usageStats.totalQuota > 0 ? (usageStats.totalUsed / usageStats.totalQuota * 100) : 0).toFixed(1)}%`}
                                                 icon={<LineChartOutlined />}
                                                 color="#722ed1"
                                             />
@@ -750,22 +707,35 @@ const CloudStorageQuotaPage: React.FC = () => {
 
                                     <Row gutter={[16, 16]}>
                                         <Col xs={24} lg={12}>
-                                            <Card title={intl.formatMessage({ id: 'pages.cloud-storage.quota.usageDistribution.title' })} bordered={false}>
+                                            <Card title={intl.formatMessage({ id: 'pages.cloud-storage.quota.usageDistribution.title' })} variant="borderless">
                                                 <div style={{ height: 350, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    {/* 简单的饼图展示，实际项目中可以使用 ECharts 或 G2 */}
-                                                    <div style={{ textAlign: 'center' }}>
-                                                        <div style={{ fontSize: 48, fontWeight: 'bold', color: '#1890ff' }}>
-                                                            {usageStats.averageUsage.toFixed(1)}%
+                                                    {usageStats.usageDistribution && usageStats.usageDistribution.length > 0 ? (
+                                                        <div style={{ width: '100%', padding: '0 20px' }}>
+                                                            {usageStats.usageDistribution.map((item, index) => (
+                                                                <div key={index} style={{ marginBottom: 16 }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                                        <span>{item.range}</span>
+                                                                        <span>{item.count}人 ({item.percentage.toFixed(1)}%)</span>
+                                                                    </div>
+                                                                    <Progress percent={parseFloat(item.percentage.toFixed(1))} size="small" />
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                        <Typography.Text type="secondary">
-                                                            {intl.formatMessage({ id: 'pages.cloud-storage.quota.statistics.averageUsage' })}
-                                                        </Typography.Text>
-                                                    </div>
+                                                    ) : (
+                                                        <div style={{ textAlign: 'center' }}>
+                                                            <div style={{ fontSize: 48, fontWeight: 'bold', color: '#1890ff' }}>
+                                                                {usageStats.averageUsage.toFixed(1)}%
+                                                            </div>
+                                                            <Typography.Text type="secondary">
+                                                                {intl.formatMessage({ id: 'pages.cloud-storage.quota.statistics.averageUsage' })}
+                                                            </Typography.Text>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </Card>
                                         </Col>
                                         <Col xs={24} lg={12}>
-                                            <Card title={intl.formatMessage({ id: 'pages.cloud-storage.quota.usageRanking.title' })} bordered={false}>
+                                            <Card title={intl.formatMessage({ id: 'pages.cloud-storage.quota.usageRanking.title' })} variant="borderless">
                                                 <div style={{ height: 350, overflowY: 'auto' }}>
                                                     {usageStats.topUsers.map((user, index) => (
                                                         <div key={user.userId} style={{ marginBottom: 16 }}>
@@ -809,58 +779,55 @@ const CloudStorageQuotaPage: React.FC = () => {
                             children: (
                                 <div style={{ minHeight: 400 }}>
                                     {warnings.length > 0 ? (
-                                        <List
-                                            itemLayout="horizontal"
-                                            dataSource={warnings}
-                                            renderItem={(item) => (
-                                                <List.Item
-                                                    actions={[
-                                                        <Button key="edit" type="link" onClick={() => handleEdit(item as any)}>
-                                                            {intl.formatMessage({ id: 'pages.table.edit' })}
-                                                        </Button>
-                                                    ]}
-                                                >
-                                                    <List.Item.Meta
-                                                        avatar={
-                                                            <Avatar
-                                                                icon={<WarningOutlined />}
-                                                                style={{ backgroundColor: item.warningType === 'exceeded' ? '#ff4d4f' : '#faad14' }}
-                                                            />
-                                                        }
-                                                        title={
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            {warnings.map((item) => (
+                                                <div key={item.userId} style={{ display: 'flex', padding: '12px 24px', borderBottom: '1px solid #f0f0f0', alignItems: 'flex-start' }}>
+                                                    <div style={{ marginRight: 16 }}>
+                                                        <Avatar
+                                                            icon={<WarningOutlined />}
+                                                            style={{ backgroundColor: item.warningType === 'exceeded' ? '#ff4d4f' : '#faad14' }}
+                                                        />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ marginBottom: 4 }}>
                                                             <Space>
-                                                                {intl.formatMessage(
-                                                                    { id: 'pages.cloud-storage.quota.warning.title' },
-                                                                    { userDisplayName: item.userDisplayName || item.username }
-                                                                )}
+                                                                <Typography.Text strong>
+                                                                    {intl.formatMessage(
+                                                                        { id: 'pages.cloud-storage.quota.warning.title' },
+                                                                        { userDisplayName: item.userDisplayName || item.username }
+                                                                    )}
+                                                                </Typography.Text>
                                                                 <Tag color={item.warningType === 'exceeded' ? 'error' : 'warning'}>
                                                                     {item.warningType === 'exceeded'
                                                                         ? intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.exceeded' })
                                                                         : intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.approaching' })}
                                                                 </Tag>
                                                             </Space>
-                                                        }
-                                                        description={
-                                                            <div>
-                                                                <p>
-                                                                    {intl.formatMessage(
-                                                                        { id: 'pages.cloud-storage.quota.warning.info' },
-                                                                        {
-                                                                            used: formatFileSize(item.usedQuota),
-                                                                            total: formatFileSize(item.totalQuota),
-                                                                            percent: item.usagePercentage.toFixed(1)
-                                                                        }
-                                                                    )}
-                                                                </p>
-                                                                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                                                                    {intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.timeLabel' })}: {formatDateTime(item.createdAt)}
-                                                                </Typography.Text>
-                                                            </div>
-                                                        }
-                                                    />
-                                                </List.Item>
-                                            )}
-                                        />
+                                                        </div>
+                                                        <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14 }}>
+                                                            <p>
+                                                                {intl.formatMessage(
+                                                                    { id: 'pages.cloud-storage.quota.warning.info' },
+                                                                    {
+                                                                        used: formatFileSize(item.usedQuota),
+                                                                        total: formatFileSize(item.totalQuota),
+                                                                        percent: item.usagePercentage.toFixed(1)
+                                                                    }
+                                                                )}
+                                                            </p>
+                                                            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                                                                {intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.timeLabel' })}: {formatDateTime(item.createdAt)}
+                                                            </Typography.Text>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ marginLeft: 16 }}>
+                                                        <Button type="link" onClick={() => handleEdit(item as any)}>
+                                                            {intl.formatMessage({ id: 'pages.table.edit' })}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     ) : (
                                         <Empty
                                             image={Empty.PRESENTED_IMAGE_SIMPLE}

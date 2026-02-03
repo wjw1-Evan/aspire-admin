@@ -878,25 +878,30 @@ const CloudStorageFilesPage: React.FC = () => {
                     >
                         {intl.formatMessage({ id: 'pages.cloud-storage.files.action.rename' })}
                     </Button>
-                    <Popconfirm
-                        title={intl.formatMessage({ id: 'pages.cloud-storage.files.confirmDelete.title' })}
-                        description={intl.formatMessage(
-                            { id: 'pages.cloud-storage.files.confirmDelete.desc' },
-                            {
-                                type: record.isFolder
-                                    ? intl.formatMessage({ id: 'pages.cloud-storage.files.field.type.folder' })
-                                    : intl.formatMessage({ id: 'pages.cloud-storage.files.field.type.file' }),
-                                name: record.name,
-                            }
-                        )}
-                        onConfirm={() => handleDelete(record)}
-                        okText={intl.formatMessage({ id: 'pages.button.confirm' })}
-                        cancelText={intl.formatMessage({ id: 'pages.button.cancel' })}
+                    <Button
+                        type="link"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => {
+                            confirm({
+                                title: intl.formatMessage({ id: 'pages.cloud-storage.files.confirmDelete.title' }),
+                                content: intl.formatMessage(
+                                    { id: 'pages.cloud-storage.files.confirmDelete.desc' },
+                                    {
+                                        type: record.isFolder
+                                            ? intl.formatMessage({ id: 'pages.cloud-storage.files.field.type.folder' })
+                                            : intl.formatMessage({ id: 'pages.cloud-storage.files.field.type.file' }),
+                                        name: record.name,
+                                    }
+                                ),
+                                onOk: () => handleDelete(record),
+                                okButtonProps: { danger: true },
+                            });
+                        }}
                     >
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                            {intl.formatMessage({ id: 'pages.cloud-storage.files.action.delete' })}
-                        </Button>
-                    </Popconfirm>
+                        {intl.formatMessage({ id: 'pages.cloud-storage.files.action.delete' })}
+                    </Button>
                 </Space>
             ),
         },
@@ -1212,21 +1217,27 @@ const CloudStorageFilesPage: React.FC = () => {
                                                             >
                                                                 {intl.formatMessage({ id: 'pages.cloud-storage.files.action.download' })}
                                                             </Button>
-                                                            <Popconfirm
-                                                                title={intl.formatMessage({ id: 'pages.cloud-storage.files.confirmRestore.title' })}
-                                                                onConfirm={async () => {
-                                                                    try {
-                                                                        await restoreVersion({ versionId: record.id });
-                                                                        success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.restoreSuccess' }));
-                                                                        actionRef.current?.reload?.();
-                                                                        handleView(viewingFile);
-                                                                    } catch (e) {
-                                                                        error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.restoreFailed' }));
-                                                                    }
+                                                            <Button
+                                                                size="small"
+                                                                type="primary"
+                                                                onClick={() => {
+                                                                    confirm({
+                                                                        title: intl.formatMessage({ id: 'pages.cloud-storage.files.confirmRestore.title' }),
+                                                                        onOk: async () => {
+                                                                            try {
+                                                                                await restoreVersion({ versionId: record.id });
+                                                                                success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.restoreSuccess' }));
+                                                                                actionRef.current?.reload?.();
+                                                                                handleView(viewingFile);
+                                                                            } catch (e) {
+                                                                                error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.restoreFailed' }));
+                                                                            }
+                                                                        }
+                                                                    });
                                                                 }}
                                                             >
-                                                                <Button size="small" type="primary">{intl.formatMessage({ id: 'pages.cloud-storage.files.action.restore' })}</Button>
-                                                            </Popconfirm>
+                                                                {intl.formatMessage({ id: 'pages.cloud-storage.files.action.restore' })}
+                                                            </Button>
                                                         </Space>
                                                     </div>
                                                 ))}

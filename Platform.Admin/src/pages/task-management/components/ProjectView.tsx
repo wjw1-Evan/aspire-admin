@@ -46,6 +46,7 @@ import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchFormCard from '@/components/SearchFormCard';
+import { useModal } from '@/hooks/useModal';
 
 export interface ProjectViewRef {
   reload: () => void;
@@ -56,6 +57,7 @@ export interface ProjectViewRef {
 const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const intl = useIntl();
   const { styles } = useCommonStyles();
+  const { confirm } = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
@@ -197,12 +199,12 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
   // 删除项目
   const handleDelete = useCallback(async (projectId: string) => {
-    Modal.confirm({
+    confirm({
       title: intl.formatMessage({ id: 'pages.projectManagement.modal.deleteProject' }),
       content: intl.formatMessage({ id: 'pages.projectManagement.message.confirmDelete' }),
       okText: intl.formatMessage({ id: 'pages.button.delete' }),
       cancelText: intl.formatMessage({ id: 'pages.table.cancel' }),
-      okType: 'danger',
+      okButtonProps: { danger: true },
       onOk: async () => {
         try {
           await deleteProject(projectId);

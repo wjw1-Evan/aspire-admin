@@ -83,7 +83,7 @@ const PendingJoinRequests: React.FC = () => {
 
   // 审核通过
   const handleApprove = async (record: API.JoinRequestDetail) => {
-    Modal.confirm({
+    modal.confirm({
       title: intl.formatMessage({ id: 'pages.modal.confirmApprove' }, { username: record.username }),
       content: (
         <div>

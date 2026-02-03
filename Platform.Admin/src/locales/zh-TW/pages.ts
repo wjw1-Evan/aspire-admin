@@ -226,6 +226,7 @@ export default {
   'pages.common.delete': '刪除',
   // Modal 對話框
   'pages.modal.confirmDelete': '確定要刪除嗎？',
+  'pages.modal.deleteContent': '確認要刪除 {name} 嗎？',
   'pages.modal.confirmDeleteUser': '確定要刪除這個用戶嗎？',
   'pages.modal.confirmDeleteRole': '確定要刪除角色"{roleName}"嗎？',
   'pages.modal.confirmBatchDelete': '確定要批量刪除 {count} 個用戶嗎？',

@@ -44,6 +44,7 @@ import {
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchFormCard from '@/components/SearchFormCard';
+import { useModal } from '@/hooks/useModal';
 
 export interface DeviceManagementRef {
   reload: () => void;
@@ -60,8 +61,9 @@ const isDeviceOnline = (device: IoTDevice) => {
   return diffMinutes <= 5;
 };
 
-const DeviceManagement = forwardRef<DeviceManagementRef, DeviceManagementProps>((props, ref) => {
+const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const intl = useIntl();
+  const { confirm } = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const { styles } = useCommonStyles();
@@ -289,17 +291,22 @@ const DeviceManagement = forwardRef<DeviceManagementRef, DeviceManagementProps>(
           >
             编辑
           </Button>
-          <Popconfirm
-            title="删除设备"
-            description="确定要删除此设备吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              confirm({
+                title: '删除设备',
+                content: '确定要删除此设备吗？',
+                onOk: () => handleDelete(record.id),
+                okButtonProps: { danger: true },
+              });
+            }}
           >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
+            删除
+          </Button>
         </Space>
       ),
     },

@@ -17,6 +17,7 @@ import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Moda
 import { PlusOutlined, SaveOutlined, CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 import type {
   WorkflowGraph,
   WorkflowNode,
@@ -76,6 +77,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 }) => {
   const intl = useIntl();
   const message = useMessage();
+  const { confirm } = useModal();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -476,12 +478,12 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       return;
     }
 
-    Modal.confirm({
+    confirm({
       title: '确认删除节点',
       content: '确定删除该流程节点？删除后与该节点关联的连线也会一并移除。',
       okText: '删除',
       cancelText: '取消',
-      okType: 'danger',
+      okButtonProps: { danger: true },
       onOk: () => {
         const targetId = selectedNode.id;
         setNodes((nds) => nds.filter((n) => n.id !== targetId));

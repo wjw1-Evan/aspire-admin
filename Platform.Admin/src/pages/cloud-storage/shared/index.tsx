@@ -535,17 +535,22 @@ const CloudStorageSharedPage: React.FC = () => {
                             >
                                 {record.isEnabled ? '禁用' : '启用'}
                             </Button>
-                            <Popconfirm
-                                title="确认删除"
-                                description={`确定要删除分享 "${record.fileName}" 吗？`}
-                                onConfirm={() => handleDelete(record)}
-                                okText="确定"
-                                cancelText="取消"
+                            <Button
+                                type="link"
+                                size="small"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() => {
+                                    confirm({
+                                        title: '确认删除',
+                                        content: `确定要删除分享 "${record.fileName}" 吗？`,
+                                        onOk: () => handleDelete(record),
+                                        okButtonProps: { danger: true },
+                                    });
+                                }}
                             >
-                                <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                                    删除
-                                </Button>
-                            </Popconfirm>
+                                删除
+                            </Button>
                         </>
                     )}
                 </Space>

@@ -9,6 +9,7 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 import {
   getChatHistory,
   deleteChatHistory,
@@ -29,6 +30,7 @@ export interface ChatHistoryManagementRef {
 const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) => {
   const intl = useIntl();
   const message = useMessage();
+  const { confirm } = useModal();
   const actionRef = useRef<ActionType>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<Omit<ChatHistoryQueryRequest, 'current' | 'pageSize'>>({});
@@ -137,7 +139,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
 
   // 处理删除
   const handleDelete = useCallback((record: ChatHistoryListItem) => {
-    Modal.confirm({
+    confirm({
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.modal.confirmDelete' }),
       content: intl.formatMessage(
         { id: 'pages.xiaokeManagement.chatHistory.modal.confirmDeleteContent' },

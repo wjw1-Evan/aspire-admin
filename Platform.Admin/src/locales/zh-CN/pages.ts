@@ -278,6 +278,7 @@ export default {
   'pages.register.result.home': '返回首页',
   // Modal 对话框
   'pages.modal.confirmDelete': '确定要删除吗？',
+  'pages.modal.deleteContent': '确认要删除 {name} 吗？',
   'pages.modal.confirmDeleteUser': '确定要删除这个用户吗？',
   'pages.modal.confirmDeleteRole': '确定要删除角色"{roleName}"吗？',
   'pages.modal.confirmBatchDelete': '确定要批量删除 {count} 个用户吗？',
@@ -612,6 +613,8 @@ export default {
   'pages.welcome.systemResources.unavailable': '系统资源数据不可用',
   'pages.welcome.systemResources.unavailableDesc': '无法获取系统资源信息，请检查后端服务是否正常运行。',
   'pages.iotPlatform.title': '物联网平台概览',
+  'pages.cloud-storage.quota.status.normal': '正常',
+  'pages.cloud-storage.quota.status.warning': '警告',
   'pages.iotPlatform.status.totalGateways': '网关总数',
   'pages.iotPlatform.status.onlineGateways': '在线网关',
   'pages.iotPlatform.status.offlineGateways': '离线网关',

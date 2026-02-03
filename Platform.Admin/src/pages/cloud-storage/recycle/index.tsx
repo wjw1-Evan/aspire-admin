@@ -522,26 +522,31 @@ const CloudStorageRecyclePage: React.FC = () => {
                             下载
                         </Button>
                     )}
-                    <Popconfirm
-                        title="确认永久删除"
-                        description={
-                            <div>
-                                <p>确定要永久删除 "{record.name}" 吗？</p>
-                                <Alert
-                                    message="警告：永久删除后无法恢复！"
-                                    type="warning"
-                                    showIcon
-                                />
-                            </div>
-                        }
-                        onConfirm={() => handlePermanentDelete(record)}
-                        okText="确定"
-                        cancelText="取消"
+                    <Button
+                        type="link"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => {
+                            confirm({
+                                title: '确认永久删除',
+                                content: (
+                                    <div>
+                                        <p>确定要永久删除 "{record.name}" 吗？</p>
+                                        <div className="ant-alert ant-alert-warning ant-alert-with-description">
+                                            <div className="ant-alert-content">
+                                                <div className="ant-alert-message">警告：永久删除后无法恢复！</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ),
+                                onOk: () => handlePermanentDelete(record),
+                                okButtonProps: { danger: true },
+                            });
+                        }}
                     >
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                            永久删除
-                        </Button>
-                    </Popconfirm>
+                        永久删除
+                    </Button>
                 </Space>
             ),
         },
@@ -591,32 +596,27 @@ const CloudStorageRecyclePage: React.FC = () => {
                     >
                         {intl.formatMessage({ id: 'pages.button.refresh' })}
                     </Button>
-                    <Popconfirm
-                        title="确认清空回收站"
-                        description={
-                            <div>
-                                <p>确定要清空整个回收站吗？</p>
-                                <Alert
-                                    message="警告：此操作将永久删除所有文件，无法恢复！"
-                                    type="error"
-                                    showIcon
-                                    size="small"
-                                />
-                            </div>
-                        }
-                        onConfirm={handleEmptyRecycleBin}
-                        okText="确定"
-                        cancelText="取消"
+                    <Button
+                        key="empty"
+                        danger
+                        type="primary"
+                        icon={<ClearOutlined />}
+                        onClick={() => {
+                            confirm({
+                                title: '确认清空回收站',
+                                content: (
+                                    <div>
+                                        <p>确定要清空整个回收站吗？</p>
+                                        <div style={{ color: '#ff4d4f' }}>警告：此操作将永久删除所有文件，无法恢复！</div>
+                                    </div>
+                                ),
+                                onOk: handleEmptyRecycleBin,
+                                okButtonProps: { danger: true },
+                            });
+                        }}
                     >
-                        <Button
-                            key="empty"
-                            danger
-                            type="primary"
-                            icon={<ClearOutlined />}
-                        >
-                            清空回收站
-                        </Button>
-                    </Popconfirm>
+                        清空回收站
+                    </Button>
                 </Space>
             }
         >

@@ -8,6 +8,7 @@ import {
   FileOutlined,
 } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 import type { DataNode } from 'antd/es/tree';
 import {
   getTasksByProjectId,
@@ -22,6 +23,7 @@ interface TaskTreeProps {
 
 const TaskTree: React.FC<TaskTreeProps> = ({ projectId }) => {
   const message = useMessage();
+  const { confirm } = useModal();
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [formVisible, setFormVisible] = useState(false);
@@ -79,12 +81,12 @@ const TaskTree: React.FC<TaskTreeProps> = ({ projectId }) => {
   };
 
   const handleDelete = async (taskId: string) => {
-    Modal.confirm({
+    confirm({
       title: '确认删除任务',
       content: '删除后任务将被标记为已删除，此操作不可逆。',
       okText: '删除',
       cancelText: '取消',
-      okType: 'danger',
+      okButtonProps: { danger: true },
       onOk: async () => {
         try {
           await deleteTask(taskId);

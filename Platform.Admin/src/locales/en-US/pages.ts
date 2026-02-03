@@ -281,6 +281,7 @@ export default {
   'pages.common.reset': 'Reset',
   // Modal dialogs
   'pages.modal.confirmDelete': 'Are you sure you want to delete?',
+  'pages.modal.deleteContent': 'Are you sure you want to delete {name}?',
   'pages.modal.confirmDeleteUser': 'Are you sure you want to delete this user?',
   'pages.modal.confirmDeleteRole': 'Are you sure you want to delete role "{roleName}"?',
   'pages.modal.confirmBatchDelete': 'Are you sure you want to delete {count} users?',
@@ -614,6 +615,8 @@ export default {
   'pages.welcome.systemResources.unavailable': 'System resource data unavailable',
   'pages.welcome.systemResources.unavailableDesc': 'Unable to retrieve system resource information, please check if the backend service is running properly.',
   'pages.iotPlatform.title': 'IoT Platform Overview',
+  'pages.cloud-storage.quota.status.normal': 'Normal',
+  'pages.cloud-storage.quota.status.warning': 'Warning',
   'pages.iotPlatform.status.totalGateways': 'Total Gateways',
   'pages.iotPlatform.status.onlineGateways': 'Online Gateways',
   'pages.iotPlatform.status.offlineGateways': 'Offline Gateways',

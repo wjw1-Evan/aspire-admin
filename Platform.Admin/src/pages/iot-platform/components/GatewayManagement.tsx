@@ -39,6 +39,7 @@ import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/se
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchFormCard from '@/components/SearchFormCard';
+import { useModal } from '@/hooks/useModal';
 
 export interface GatewayManagementRef {
   reload: () => void;
@@ -48,6 +49,7 @@ export interface GatewayManagementRef {
 
 const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   const intl = useIntl();
+  const { confirm } = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const { styles } = useCommonStyles();
@@ -311,17 +313,22 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           >
             编辑
           </Button>
-          <Popconfirm
-            title="删除网关"
-            description="确定要删除此网关吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              confirm({
+                title: '删除网关',
+                content: '确定要删除此网关吗？',
+                onOk: () => handleDelete(record.id),
+                okButtonProps: { danger: true },
+              });
+            }}
           >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
+            删除
+          </Button>
         </Space>
       ),
     },

@@ -10,6 +10,7 @@ import {
   SettingOutlined,
 } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
+import { useModal } from '@/hooks/useModal';
 import {
   getXiaokeConfigs,
   deleteXiaokeConfig,
@@ -27,6 +28,7 @@ export interface ConfigManagementRef {
 const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const intl = useIntl();
   const message = useMessage();
+  const { confirm } = useModal();
   const actionRef = useRef<ActionType>(null);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
@@ -109,7 +111,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
 
   // 处理删除
   const handleDelete = useCallback((record: XiaokeConfig) => {
-    Modal.confirm({
+    confirm({
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.modal.confirmDelete' }),
       content: intl.formatMessage(
         { id: 'pages.xiaokeManagement.config.modal.confirmDeleteContent' },

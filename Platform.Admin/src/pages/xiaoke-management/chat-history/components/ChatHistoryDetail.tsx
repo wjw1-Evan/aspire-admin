@@ -1,5 +1,5 @@
 import React from 'react';
-import { Drawer, Descriptions, List, Avatar, Tag, Space } from 'antd';
+import { Drawer, Descriptions, Avatar, Tag, Space } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useIntl } from '@umijs/max';
@@ -62,33 +62,38 @@ const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({
 
       <div style={{ marginTop: 24 }}>
         <h3>{intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.messageList' })}</h3>
-        <List
-          dataSource={messages}
-          renderItem={(message) => (
-            <List.Item>
-              <List.Item.Meta
-                avatar={<Avatar icon={<UserOutlined />} />}
-                title={
-                  <Space>
-                    <span>{message.senderName || message.senderId}</span>
-                    <Tag color={message.isRecalled ? 'default' : 'blue'}>
-                      {message.isRecalled
-                        ? intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.messageRecalled' })
-                        : message.type}
-                    </Tag>
-                    <span style={{ fontSize: 12, color: '#999' }}>
-                      {dayjs(message.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-                    </span>
-                  </Space>
-                }
-                description={
-                  message.isRecalled ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              style={{
+                display: 'flex',
+                gap: 16,
+                padding: '12px 0',
+                borderBottom: '1px solid #f0f0f0',
+              }}
+            >
+              <Avatar icon={<UserOutlined />} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 500 }}>{message.senderName || message.senderId}</span>
+                  <Tag color={message.isRecalled ? 'default' : 'blue'}>
+                    {message.isRecalled
+                      ? intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.messageRecalled' })
+                      : message.type}
+                  </Tag>
+                  <span style={{ fontSize: 12, color: '#999' }}>
+                    {dayjs(message.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                  </span>
+                </div>
+                <div>
+                  {message.isRecalled ? (
                     <span style={{ color: '#999', fontStyle: 'italic' }}>
                       {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.detail.messageRecalled' })}
                     </span>
                   ) : (
                     <div>
-                      {message.content && <div>{message.content}</div>}
+                      {message.content && <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>}
                       {message.attachment && (
                         <div style={{ marginTop: 8 }}>
                           <Tag>
@@ -98,12 +103,12 @@ const ChatHistoryDetail: React.FC<ChatHistoryDetailProps> = ({
                         </div>
                       )}
                     </div>
-                  )
-                }
-              />
-            </List.Item>
-          )}
-        />
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </Drawer>
   );

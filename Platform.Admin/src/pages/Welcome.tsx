@@ -11,7 +11,7 @@ import {
   Alert,
   Timeline,
   theme,
-  Tooltip
+  Tooltip,
 } from 'antd';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { getUserAvatar } from '@/utils/avatar';
@@ -239,7 +239,8 @@ const QuickAction: React.FC<{
 );
 
 // Tiny Area Chart Component
-const TinyAreaChart: React.FC<{ data: { value: number; time: string }[]; color: string; height?: number }> = ({ data, color, height = 35 }) => {
+// Tiny Area Chart Component
+const TinyAreaChart: React.FC<{ data: { value: number; time: string }[]; color: string; height?: number }> = ({ data, color, height = 45 }) => {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   if (!data || data.length < 2) return <div style={{ height }} />;
@@ -313,14 +314,16 @@ const ResourceCard: React.FC<{
   loading?: boolean;
   token?: any;
   chart?: React.ReactNode;
-}> = ({ title, value, icon, color = '#1890ff', loading = false, token, chart }) => (
+  children?: React.ReactNode;
+}> = ({ title, value, icon, color = '#1890ff', loading = false, token, chart, children }) => (
   <Card
     size="small"
-    styles={{ body: { padding: '10px 12px' } }}
+    styles={{ body: { padding: '12px', display: 'flex', flexDirection: 'column', height: '100%' } }}
     style={{
       borderRadius: '12px',
       border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
-      backgroundColor: token?.colorBgContainer || '#ffffff'
+      backgroundColor: token?.colorBgContainer || '#ffffff',
+      height: '100%'
     }}
     loading={loading}
   >
@@ -329,6 +332,7 @@ const ResourceCard: React.FC<{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
+        marginBottom: 8
       }}
     >
       <div style={{ color, fontSize: '20px', flexShrink: 0 }}>
@@ -359,7 +363,16 @@ const ResourceCard: React.FC<{
         </div>
       </div>
     </div>
-    {chart && <div style={{ marginTop: 8 }}>{chart}</div>}
+    {chart && <div style={{ marginTop: 4, marginBottom: 6 }}>{chart}</div>}
+    {children && (
+      <div style={{
+        borderTop: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
+        paddingTop: 8,
+        marginTop: 4
+      }}>
+        {children}
+      </div>
+    )}
   </Card>
 );
 
@@ -370,6 +383,20 @@ const Welcome: React.FC = () => {
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser as API.CurrentUser;
   const access = useAccess();
+
+  // 格式化持续时间
+  const formatDuration = (seconds: number) => {
+    if (seconds <= 0) return '0m';
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
 
   const [statistics, setStatistics] = useState<any>(null);
   const [taskStatistics, setTaskStatistics] = useState<import('@/services/task/api').TaskStatistics | null>(null);
@@ -1006,25 +1033,26 @@ const Welcome: React.FC = () => {
                     loading={loading}
                     token={token}
                     chart={<TinyAreaChart data={memoryHistory} color={getResourceColor(systemResources.memory?.usagePercent || 0)} />}
-                  />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
-                    {intl.formatMessage(
-                      { id: 'pages.welcome.systemResources.systemMemory' },
-                      {
-                        used: ((systemResources.memory?.totalMemoryMB || 0) - (systemResources.memory?.availableMemoryMB || 0)).toFixed(2),
-                        total: (systemResources.memory?.totalMemoryMB || 0).toFixed(2),
-                      }
-                    )}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#1890ff', textAlign: 'center', marginTop: '2px' }}>
-                    {intl.formatMessage(
-                      { id: 'pages.welcome.systemResources.processMemory' },
-                      {
-                        memory: (systemResources.memory?.processMemoryMB || 0).toFixed(2),
-                        percent: (systemResources.memory?.processUsagePercent || 0).toFixed(2),
-                      }
-                    )}
-                  </div>
+                  >
+                    <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
+                      {intl.formatMessage(
+                        { id: 'pages.welcome.systemResources.systemMemory' },
+                        {
+                          used: ((systemResources.memory?.totalMemoryMB || 0) - (systemResources.memory?.availableMemoryMB || 0)).toFixed(2),
+                          total: (systemResources.memory?.totalMemoryMB || 0).toFixed(2),
+                        }
+                      )}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#1890ff', textAlign: 'center', marginTop: '2px' }}>
+                      {intl.formatMessage(
+                        { id: 'pages.welcome.systemResources.processMemory' },
+                        {
+                          memory: (systemResources.memory?.processMemoryMB || 0).toFixed(2),
+                          percent: (systemResources.memory?.processUsagePercent || 0).toFixed(2),
+                        }
+                      )}
+                    </div>
+                  </ResourceCard>
                 </Col>
               )}
               {/* CPU 使用率 */}
@@ -1038,13 +1066,23 @@ const Welcome: React.FC = () => {
                     loading={loading}
                     token={token}
                     chart={<TinyAreaChart data={cpuHistory} color={getResourceColor(systemResources.cpu?.usagePercent || 0)} />}
-                  />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
-                    {intl.formatMessage(
-                      { id: 'pages.welcome.systemResources.uptime' },
-                      { hours: Math.round((systemResources.cpu?.uptime || 0) / 3600) }
-                    )}
-                  </div>
+                  >
+                    <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
+                      {intl.formatMessage({ id: 'pages.welcome.systemResources.uptime' })}
+                      {formatDuration(systemResources.cpu?.uptime || 0)}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#52c41a', textAlign: 'center', marginTop: '2px' }}>
+                      {intl.formatMessage(
+                        { id: 'pages.welcome.systemResources.processCpu' },
+                        { percent: (systemResources.cpu?.processUsagePercent || 0).toFixed(2) }
+                      )}
+                      <span style={{ margin: '0 4px', opacity: 0.5 }}>|</span>
+                      {intl.formatMessage(
+                        { id: 'pages.welcome.systemResources.cpuCores' },
+                        { count: systemResources.system?.processorCount || 0 }
+                      )}
+                    </div>
+                  </ResourceCard>
                 </Col>
               )}
 
@@ -1059,27 +1097,45 @@ const Welcome: React.FC = () => {
                     loading={loading}
                     token={token}
                     chart={<TinyAreaChart data={diskHistory} color={getResourceColor(systemResources.disk?.usagePercent || 0)} />}
-                  />
-                  <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
-                    {intl.formatMessage(
-                      { id: 'pages.welcome.systemResources.diskSize' },
-                      {
-                        used: systemResources.disk?.usedSizeGB || 0,
-                        total: systemResources.disk?.totalSizeGB || 0,
-                      }
-                    )}
-                  </div>
+                  >
+                    <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
+                      {intl.formatMessage(
+                        { id: 'pages.welcome.systemResources.diskSize' },
+                        {
+                          used: (systemResources.disk?.usedSizeGB || 0).toFixed(2),
+                          total: (systemResources.disk?.totalSizeGB || 0).toFixed(2),
+                        }
+                      )}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#fa8c16', textAlign: 'center', marginTop: '2px' }}>
+                      {intl.formatMessage(
+                        { id: 'pages.welcome.systemResources.diskDrive' },
+                        {
+                          name: systemResources.disk?.driveName || '-',
+                          type: systemResources.disk?.driveType || '-'
+                        }
+                      )}
+                    </div>
+                  </ResourceCard>
                 </Col>
               )}
             </Row>
 
             {/* 系统详细信息 */}
             {systemResources?.system && (
-              <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+              <div style={{ marginTop: '12px', padding: '12px', backgroundColor: token.colorFillAlter || '#fafafa', borderRadius: '8px' }}>
                 <Row gutter={[12, 8]}>
                   <Col xs={24} sm={12} md={6}>
                     <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.machineName' })} </Text>
                     <Text strong>{systemResources.system?.machineName || intl.formatMessage({ id: 'pages.welcome.systemDetails.unknown' })}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.osVersion' }, { defaultMessage: 'OS版本:' })} </Text>
+                    <Text strong style={{ fontSize: '12px' }}>{systemResources.system?.osVersion}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.frameworkVersion' }, { defaultMessage: '运行环境:' })} </Text>
+                    <Text strong>{systemResources.system?.frameworkVersion}</Text>
                   </Col>
                   <Col xs={24} sm={12} md={6}>
                     <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.processorCount' })} </Text>
@@ -1090,10 +1146,20 @@ const Welcome: React.FC = () => {
                     <Text strong>{systemResources.system?.is64BitOperatingSystem ? intl.formatMessage({ id: 'pages.welcome.systemDetails.bit64' }) : intl.formatMessage({ id: 'pages.welcome.systemDetails.bit32' })}</Text>
                   </Col>
                   <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.userName' }, { defaultMessage: '当前用户:' })} </Text>
+                    <Text strong>{systemResources.system?.userName}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
                     <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.systemUpTime' })} </Text>
-                    <Text strong>{Math.round((systemResources.system?.systemUpTime || 0) / 3600)}{intl.formatMessage({ id: 'pages.welcome.systemDetails.hours' })}</Text>
+                    <Text strong>{formatDuration(systemResources.system?.systemUpTime || 0)}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Tag variant="filled" color="blue" style={{ fontSize: '10px' }}>64-Bit Process: {systemResources.system?.is64BitProcess ? 'Yes' : 'No'}</Tag>
                   </Col>
                 </Row>
+                <div style={{ marginTop: 8, fontSize: '11px', color: '#999', wordBreak: 'break-all' }}>
+                  {intl.formatMessage({ id: 'pages.welcome.systemDetails.workingDirectory', defaultMessage: '运行目录:' })} {systemResources.system?.workingDirectory}
+                </div>
               </div>
             )}
           </Card>

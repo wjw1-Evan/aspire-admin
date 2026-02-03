@@ -25,6 +25,7 @@ export interface SystemResources {
   };
   cpu: {
     usagePercent: number;
+    processUsagePercent?: number;
     processTime: number;
     uptime: number;
     unit: string;

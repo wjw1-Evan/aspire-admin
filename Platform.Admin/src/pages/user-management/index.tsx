@@ -581,7 +581,7 @@ const UserManagement: React.FC = () => {
               <Space key={org.id || org.fullPath || org.name} size={4} wrap>
                 <span>{org.fullPath || org.name || '-'}</span>
                 {org.isPrimary ? (
-                  <Tag color="gold" bordered={false} style={{ marginInlineStart: 4 }}>
+                  <Tag color="gold" variant="filled" style={{ marginInlineStart: 4 }}>
                     {intl.formatMessage({ id: 'pages.userManagement.organization.primary' })}
                   </Tag>
                 ) : null}

@@ -195,7 +195,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                   <Space key={org.id || org.fullPath || org.name} size={4} wrap>
                     <Text>{org.fullPath || org.name || '-'}</Text>
                     {org.isPrimary ? (
-                      <Tag color="gold" bordered={false}>
+                      <Tag color="gold" variant="filled">
                         {intl.formatMessage({ id: 'pages.userManagement.organization.primary' })}
                       </Tag>
                     ) : null}

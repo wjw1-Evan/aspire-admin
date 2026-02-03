@@ -43,19 +43,17 @@ appliesTo:
   - Drawer: 使用 `open` 而非 `visible`
   - Popconfirm: 使用 `open` 而非 `visible`
 - **API 使用规范**：
-  - Message: 使用 `useMessage()` Hook（`src/hooks/useMessage.ts`）而非静态方法 `message.success()`
-  - Modal: 使用 `useModal()` Hook（`src/hooks/useModal.ts`）而非静态方法 `Modal.confirm()`
-  - Notification: 使用 `useNotification()` Hook 而非静态方法
-- **主题支持**：所有组件必须支持动态主题，避免使用静态方法
+  - Message: 优先使用 `App.useApp().message` 或 `useMessage()` Hook
+  - Modal: 优先使用 `App.useApp().modal` 或 `useModal()` Hook
+  - Notification: 优先使用 `App.useApp().notification`
+- **主题支持**：所有组件必须支持动态主题，通过 `App` 组件上下文获取实例
 - **TypeScript 类型**：使用 Ant Design 6 提供的最新类型定义
 - **图标导入**：使用 Tree Shaking 优化，按需导入图标 `import { EditOutlined } from '@ant-design/icons'`
 - **已完成迁移**：
   - ✅ Modal 组件废弃属性已更新（`destroyOnClose` → `destroyOnHidden`，`bodyStyle` → `styles.body`）
-  - ✅ Message API 已迁移到 Hook（创建了 `useMessage` Hook，替换所有静态调用）
-  - ✅ Modal 静态方法已迁移到 Hook（创建了 `useModal` Hook，支持动态主题）
+  - ✅ Message/Modal/Notification 静态方法已逐步替换为 Hook 模式
   - ✅ 所有组件使用 `open` 而非 `visible`
   - ✅ 响应式设计符合 Ant Design 6 规范
-- **参考文档**：`Platform.Admin/docs/ANTD_6_COMPLIANCE.md` 包含完整的规范遵循指南和迁移记录
 
 ## 页面骨架与列表规范（强制）
 - **标准页面布局**：参考 `src/pages/user-management/index.tsx`、`src/pages/password-book/index.tsx`、`src/pages/workflow/index.tsx`、`src/pages/document/index.tsx` 作为标准页面布局规范。

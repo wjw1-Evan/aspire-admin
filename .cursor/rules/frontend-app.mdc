@@ -22,6 +22,7 @@ appliesTo:
 
 ## UI 与用户体验
 - **组件复用**：优先使用 Expo/React Native 官方组件或项目内公共组件，减少自定义样式分叉。保持 UI 风格一致。
+- **Toast 提示**：统一使用 `react-native-toast-message` 显示全局提示（Success/Error/Info），参考 `_layout.tsx` 配置。
 - **状态处理**：表单与列表场景需处理空态、错误态与加载态。操作按钮需具备禁用/防抖保护，避免重复提交。
 - **加载指示**：长时间操作应显示加载指示器（Loading/Spinner），提升用户体验。
 

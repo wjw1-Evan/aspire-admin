@@ -121,7 +121,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       if (response.success && response.data) {
         // 确保更新状态
         setCompanies(response.data);
-        console.log('企业列表已更新:', response.data);
+       
       } else {
         message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.loadFailed' }));
       }

@@ -12,6 +12,7 @@ import {
   Timeline,
   theme,
   Tooltip,
+  Statistic,
 } from 'antd';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { getUserAvatar } from '@/utils/avatar';
@@ -42,8 +43,7 @@ import {
   UnorderedListOutlined
 } from '@ant-design/icons';
 import * as Icons from '@ant-design/icons';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StatCard } from '@/components';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
@@ -239,21 +239,26 @@ const QuickAction: React.FC<{
 );
 
 // Tiny Area Chart Component
-// Tiny Area Chart Component
-const TinyAreaChart: React.FC<{ data: { value: number; time: string }[]; color: string; height?: number }> = ({ data, color, height = 45 }) => {
+const TinyAreaChart: React.FC<{ data: { value: number; time: string }[]; color: string; height?: number }> = React.memo(({ data, color, height = 45 }) => {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-
-  if (!data || data.length < 2) return <div style={{ height }} />;
 
   const max = 100;
   const width = 100;
-  const step = width / (data.length - 1);
 
-  const points = data.map((item, i) => {
-    const x = i * step;
-    const y = height - (Math.min(Math.max(item.value, 0), max) / max) * height;
-    return `${x},${y}`;
-  }).join(' ');
+  // Calculate step safely for useMemo and rendering
+  const step = data && data.length > 1 ? width / (data.length - 1) : 0;
+
+  const points = useMemo(() => {
+    if (!data || data.length < 2) return '';
+
+    return data.map((item, i) => {
+      const x = i * step;
+      const y = height - (Math.min(Math.max(item.value, 0), max) / max) * height;
+      return `${x},${y}`;
+    }).join(' ');
+  }, [data, height, step]);
+
+  if (!data || data.length < 2) return <div style={{ height }} />;
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height, overflow: 'visible' }} preserveAspectRatio="none">
@@ -303,7 +308,7 @@ const TinyAreaChart: React.FC<{ data: { value: number; time: string }[]; color: 
       })}
     </svg>
   );
-};
+});
 
 // 系统资源卡片组件
 const ResourceCard: React.FC<{
@@ -315,7 +320,7 @@ const ResourceCard: React.FC<{
   token?: any;
   chart?: React.ReactNode;
   children?: React.ReactNode;
-}> = ({ title, value, icon, color = '#1890ff', loading = false, token, chart, children }) => (
+}> = React.memo(({ title, value, icon, color = '#1890ff', loading = false, token, chart, children }) => (
   <Card
     size="small"
     styles={{ body: { padding: '12px', display: 'flex', flexDirection: 'column', height: '100%' } }}
@@ -374,7 +379,36 @@ const ResourceCard: React.FC<{
       </div>
     )}
   </Card>
-);
+));
+
+const StatCard: React.FC<{
+  title: string;
+  value: number | string;
+  suffix?: React.ReactNode;
+  icon: React.ReactNode;
+  color: string;
+  loading: boolean;
+  token: any;
+}> = React.memo(({ title, value, suffix, icon, color, loading, token }) => (
+  <Card
+    size="small"
+    styles={{ body: { padding: '12px' } }}
+    style={{
+      borderRadius: '12px',
+      border: `1px solid ${token.colorBorderSecondary || '#f0f0f0'}`,
+      backgroundColor: token.colorBgContainer || '#ffffff',
+    }}
+  >
+    <Statistic
+      title={<span style={{ color: token.colorTextSecondary }}>{title}</span>}
+      value={value}
+      suffix={suffix}
+      styles={{ content: { color: token.colorText, fontWeight: 'bold' } }}
+      prefix={<span style={{ color, marginRight: 8, fontSize: '20px' }}>{icon}</span>}
+      loading={loading}
+    />
+  </Card>
+));
 
 const Welcome: React.FC = () => {
   const intl = useIntl();
@@ -484,17 +518,31 @@ const Welcome: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
 
+    const performFetch = () => {
+      // 只有在页面可见时才进行轮询，节省客户端和服务器资源
+      if (document.visibilityState === 'visible') {
+        fetchSystemResources();
+      }
+    };
+
     // 立即获取一次
-    fetchSystemResources();
+    performFetch();
 
     // 设置定时器，每 5 秒轮询一次
-    const intervalId = setInterval(() => {
-      fetchSystemResources();
-    }, 5000);
+    const intervalId = setInterval(performFetch, 5000);
+
+    // 监听可见性变化，当回到页面时立即刷新
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSystemResources();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // 清理定时器
     return () => {
       clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentUser, fetchSystemResources]);
 

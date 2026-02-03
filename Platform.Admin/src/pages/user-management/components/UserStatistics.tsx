@@ -39,7 +39,7 @@ const UserStatistics: React.FC<UserStatisticsProps> = ({
             title="活跃用户"
             value={statistics?.activeUsers || 0}
             prefix={<CheckCircleOutlined />}
-            valueStyle={{ color: '#52c41a' }}
+            styles={{ content: { color: '#52c41a' } }}
           />
         </Col>
         <Col xs={24} sm={12} md={6}>
@@ -47,7 +47,7 @@ const UserStatistics: React.FC<UserStatisticsProps> = ({
             title="停用用户"
             value={statistics?.inactiveUsers || 0}
             prefix={<StopOutlined />}
-            valueStyle={{ color: '#faad14' }}
+            styles={{ content: { color: '#faad14' } }}
           />
         </Col>
         <Col xs={24} sm={12} md={6}>
@@ -55,7 +55,7 @@ const UserStatistics: React.FC<UserStatisticsProps> = ({
             title="管理员"
             value={statistics?.adminUsers || 0}
             prefix={<TeamOutlined />}
-            valueStyle={{ color: '#1890ff' }}
+            styles={{ content: { color: '#1890ff' } }}
           />
         </Col>
       </Row>

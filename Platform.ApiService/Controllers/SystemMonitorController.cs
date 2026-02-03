@@ -34,6 +34,11 @@ public class SystemMonitorController : BaseApiController
     private static double _lastCpuUsagePercent = 0;
     private static readonly object _cpuLock = new object();
 
+    private static object? _cachedResources = null;
+    private static DateTime _lastResourceFetchTime = DateTime.MinValue;
+    private static readonly TimeSpan _resourceCacheDuration = TimeSpan.FromSeconds(2);
+    private static readonly object _resourceLock = new object();
+
     /// <summary>
     /// 获取系统资源使用情况
     /// </summary>
@@ -44,34 +49,40 @@ public class SystemMonitorController : BaseApiController
     [Authorize]
     public IActionResult GetSystemResources()
     {
-
-        var process = Process.GetCurrentProcess();
-
-        // 获取内存使用情况
-        var memoryInfo = GetMemoryInfo(process);
-
-        // 获取 CPU 使用情况
-        var cpuInfo = GetCpuInfo();
-
-        // 获取磁盘使用情况
-        var diskInfo = GetDiskInfo();
-
-        // 获取系统信息
-        var systemInfo = GetSystemInfo();
-
-        var resources = new
+        lock (_resourceLock)
         {
-            Memory = memoryInfo,
-            Cpu = cpuInfo,
-            Disk = diskInfo,
-            System = systemInfo,
-            Timestamp = DateTime.UtcNow
-        };
+            if (_cachedResources != null && DateTime.UtcNow - _lastResourceFetchTime < _resourceCacheDuration)
+            {
+                return Success(_cachedResources);
+            }
 
-        return Success(resources);
+            var process = Process.GetCurrentProcess();
 
+            // 获取内存使用情况
+            var memoryInfo = GetMemoryInfo(process);
+
+            // 获取 CPU 使用情况
+            var cpuInfo = GetCpuInfo();
+
+            // 获取磁盘使用情况
+            var diskInfo = GetDiskInfo();
+
+            // 获取系统信息
+            var systemInfo = GetSystemInfo();
+
+            _cachedResources = new
+            {
+                Memory = memoryInfo,
+                Cpu = cpuInfo,
+                Disk = diskInfo,
+                System = systemInfo,
+                Timestamp = DateTime.UtcNow
+            };
+            _lastResourceFetchTime = DateTime.UtcNow;
+
+            return Success(_cachedResources);
+        }
     }
-
     /// <summary>
     /// 获取内存使用情况
     /// </summary>
@@ -426,7 +437,8 @@ public class SystemMonitorController : BaseApiController
                     var elapsed = currentTime - _lastCpuSampleTime;
                     var processorElapsed = currentProcessorTime - _lastCpuTotalProcessorTime;
 
-                    if (elapsed.TotalMilliseconds > 500)
+                    // 采样间隔至少 1 秒，以提高系统 CPU 命令解析的价值
+                    if (elapsed.TotalMilliseconds >= 1000)
                     {
                         // 计算最近一段时间的进程 CPU 使用率，并根据核心数进行归一化 (0-100%)
                         processUsagePercent = (processorElapsed.TotalMilliseconds / elapsed.TotalMilliseconds / Environment.ProcessorCount) * 100;

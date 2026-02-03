@@ -71,6 +71,8 @@ public class IoTService : IIoTService
     /// <summary>
     /// 获取网关列表
     /// </summary>
+    /// <param name="keyword">关键词</param>
+    /// <param name="status">设备状态</param>
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>网关列表和总数</returns>
@@ -78,7 +80,7 @@ public class IoTService : IIoTService
     {
         var filterBuilder = _gatewayFactory.CreateFilterBuilder()
             .ExcludeDeleted();
-        
+
         if (!string.IsNullOrEmpty(keyword))
         {
             var builder = Builders<IoTGateway>.Filter;
@@ -98,7 +100,7 @@ public class IoTService : IIoTService
         var sort = _gatewayFactory.CreateSortBuilder()
             .Descending(g => g.CreatedAt)
             .Build();
-        
+
         var (items, total) = await _gatewayFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
         return (items, total);
     }
@@ -171,10 +173,10 @@ public class IoTService : IIoTService
             .ExcludeDeleted()
             .Build();
         var update = updateBuilder.Build();
-        
-        var result = await _gatewayFactory.FindOneAndUpdateAsync(filter, update, 
+
+        var result = await _gatewayFactory.FindOneAndUpdateAsync(filter, update,
             new FindOneAndUpdateOptions<IoTGateway> { ReturnDocument = ReturnDocument.After });
-        
+
         return result;
     }
 
@@ -194,13 +196,13 @@ public class IoTService : IIoTService
             .ExcludeDeleted()
             .Build();
         var result = await _gatewayFactory.FindOneAndSoftDeleteAsync(filter);
-        
+
         if (result != null)
         {
             _logger.LogInformation("Gateway deleted: {GatewayId}", result.GatewayId);
             return true;
         }
-        
+
         return false;
     }
 
@@ -227,7 +229,7 @@ public class IoTService : IIoTService
             .ExcludeDeleted()
             .Build();
         var update = updateBuilder.Build();
-        
+
         var result = await _gatewayFactory.FindOneAndUpdateAsync(filter, update);
         return result != null;
     }
@@ -253,7 +255,7 @@ public class IoTService : IIoTService
         // 基于 LastReportedAt 判断设备是否在线（5分钟内上报过视为在线）
         var onlineThreshold = DateTime.UtcNow.AddMinutes(-5);
         var onlineDevices = devices.Count(x => x.LastReportedAt.HasValue && x.LastReportedAt.Value >= onlineThreshold);
-        
+
         return new GatewayStatistics
         {
             GatewayId = gatewayId,
@@ -286,7 +288,7 @@ public class IoTService : IIoTService
             {
                 throw new ArgumentException("设备标识符只能包含字母、数字、连字符和下划线");
             }
-            
+
             // 检查是否已存在（确保企业内唯一）
             var existingFilter = _deviceFactory.CreateFilterBuilder()
                 .Equal(d => d.DeviceId, request.DeviceId)
@@ -297,7 +299,7 @@ public class IoTService : IIoTService
             {
                 throw new InvalidOperationException($"设备标识符 {request.DeviceId} 已存在");
             }
-            
+
             deviceId = request.DeviceId.Trim();
         }
         else
@@ -315,7 +317,7 @@ public class IoTService : IIoTService
         };
 
         var result = await _deviceFactory.CreateAsync(device);
-        
+
         // Update gateway device count using atomic increment (if gateway is provided)
         if (!string.IsNullOrEmpty(request.GatewayId))
         {
@@ -341,6 +343,7 @@ public class IoTService : IIoTService
     /// 获取设备列表
     /// </summary>
     /// <param name="gatewayId">网关ID（可选）</param>
+    /// <param name="keyword">关键词</param>
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>设备列表和总数</returns>
@@ -348,7 +351,7 @@ public class IoTService : IIoTService
     {
         var filterBuilder = _deviceFactory.CreateFilterBuilder()
             .ExcludeDeleted();
-        
+
         if (!string.IsNullOrEmpty(gatewayId))
         {
             filterBuilder.Equal(d => d.GatewayId, gatewayId);
@@ -363,12 +366,12 @@ public class IoTService : IIoTService
                 builder.Regex("deviceId", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
             ));
         }
-        
+
         var filter = filterBuilder.Build();
         var sort = _deviceFactory.CreateSortBuilder()
             .Descending(d => d.CreatedAt)
             .Build();
-        
+
         var (items, total) = await _deviceFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
         return (items, total);
     }
@@ -432,10 +435,10 @@ public class IoTService : IIoTService
             .ExcludeDeleted()
             .Build();
         var update = updateBuilder.Build();
-        
+
         var result = await _deviceFactory.FindOneAndUpdateAsync(filter, update,
             new FindOneAndUpdateOptions<IoTDevice> { ReturnDocument = ReturnDocument.After });
-        
+
         return result;
     }
 
@@ -455,7 +458,7 @@ public class IoTService : IIoTService
             .ExcludeDeleted()
             .Build();
         var result = await _deviceFactory.FindOneAndSoftDeleteAsync(filter);
-        
+
         if (result != null)
         {
             // Update gateway device count using atomic decrement
@@ -475,7 +478,7 @@ public class IoTService : IIoTService
             _logger.LogInformation("Device deleted: {DeviceId} for company {CompanyId}", result.DeviceId, result.CompanyId);
             return true;
         }
-        
+
         return false;
     }
 
@@ -524,9 +527,9 @@ public class IoTService : IIoTService
             .ExcludeDeleted()
             .Build();
         var update = updateBuilder.Build();
-        
+
         var result = await _deviceFactory.FindOneAndUpdateAsync(filter, update);
-        
+
         if (result != null)
         {
             // Create event
@@ -534,7 +537,7 @@ public class IoTService : IIoTService
             _logger.LogInformation("Device connected: {DeviceId} for company {CompanyId}", request.DeviceId, result.CompanyId);
             return true;
         }
-        
+
         return false;
     }
 
@@ -552,7 +555,7 @@ public class IoTService : IIoTService
             .Build();
 
         var devices = await _deviceFactory.FindAsync(filter, limit: 1);
-        
+
         if (devices.Count > 0)
         {
             var device = devices[0];
@@ -561,7 +564,7 @@ public class IoTService : IIoTService
             _logger.LogInformation("Device disconnected: {DeviceId} for company {CompanyId}", request.DeviceId, device.CompanyId);
             return true;
         }
-        
+
         return false;
     }
 
@@ -642,6 +645,7 @@ public class IoTService : IIoTService
     /// 获取数据点列表
     /// </summary>
     /// <param name="deviceId">设备ID（可选）</param>
+    /// <param name="keyword">关键词</param>
     /// <param name="pageIndex">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>数据点列表和总数</returns>
@@ -649,7 +653,7 @@ public class IoTService : IIoTService
     {
         var filterBuilder = _dataPointFactory.CreateFilterBuilder()
             .ExcludeDeleted();
-        
+
         if (!string.IsNullOrEmpty(deviceId))
         {
             filterBuilder.Equal(dp => dp.DeviceId, deviceId);
@@ -664,12 +668,12 @@ public class IoTService : IIoTService
                 builder.Regex("dataPointId", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
             ));
         }
-        
+
         var filter = filterBuilder.Build();
         var sort = _dataPointFactory.CreateSortBuilder()
             .Descending(dp => dp.CreatedAt)
             .Build();
-        
+
         var (items, total) = await _dataPointFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
         return (items, total);
     }
@@ -741,10 +745,10 @@ public class IoTService : IIoTService
             .ExcludeDeleted()
             .Build();
         var update = updateBuilder.Build();
-        
+
         var result = await _dataPointFactory.FindOneAndUpdateAsync(filter, update,
             new FindOneAndUpdateOptions<IoTDataPoint> { ReturnDocument = ReturnDocument.After });
-        
+
         return result;
     }
 
@@ -764,13 +768,13 @@ public class IoTService : IIoTService
             .ExcludeDeleted()
             .Build();
         var result = await _dataPointFactory.FindOneAndSoftDeleteAsync(filter);
-        
+
         if (result != null)
         {
             _logger.LogInformation("DataPoint deleted: {DataPointId} for company {CompanyId}", result.DataPointId, result.CompanyId);
             return true;
         }
-        
+
         return false;
     }
 
@@ -856,7 +860,7 @@ public class IoTService : IIoTService
         {
             throw new ArgumentException("批量数据点列表不能为空", nameof(request));
         }
-        
+
         if (request.DataPoints.Count > maxBatchSize)
         {
             throw new ArgumentException($"批量数据点数量不能超过 {maxBatchSize} 条", nameof(request));

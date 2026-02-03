@@ -269,7 +269,7 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
             onCancel={handleClose}
             width={isMobile ? '100%' : 800}
             footer={null}
-            destroyOnClose
+            destroyOnHidden
         >
             <div style={{ padding: '16px 0' }}>
                 {/* 选中的工作流信息 */}

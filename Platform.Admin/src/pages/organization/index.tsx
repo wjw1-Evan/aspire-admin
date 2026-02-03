@@ -15,7 +15,6 @@ import {
     Row,
     Space,
     Spin,
-    List,
     Tag,
     Tree,
     TreeSelect,
@@ -553,23 +552,17 @@ const OrganizationPage: React.FC = () => {
                                     }
                                 >
                                     {members.length ? (
-                                        <List
-                                            dataSource={members}
-                                            renderItem={(m) => (
-                                                <List.Item
-                                                    actions={[
-                                                        <Popconfirm
-                                                            key="remove"
-                                                            title={intl.formatMessage({ id: 'pages.modal.confirmDelete' })}
-                                                            okText={intl.formatMessage({ id: 'pages.modal.okDelete' })}
-                                                            cancelText={intl.formatMessage({ id: 'pages.modal.cancel' })}
-                                                            onConfirm={() => handleRemoveMember(m.userId)}
-                                                        >
-                                                            <Button type="link" danger size="small">
-                                                                {intl.formatMessage({ id: 'pages.common.delete' })}
-                                                            </Button>
-                                                        </Popconfirm>,
-                                                    ]}
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            {members.map((m, index) => (
+                                                <div
+                                                    key={`${m.userId}-${index}`}
+                                                    style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        padding: '12px 16px',
+                                                        borderBottom: '1px solid #f0f0f0',
+                                                    }}
                                                 >
                                                     <Space>
                                                         <UserOutlined />
@@ -579,9 +572,20 @@ const OrganizationPage: React.FC = () => {
                                                             <Tag color="purple">{m.organizationUnitName}</Tag>
                                                         ) : null}
                                                     </Space>
-                                                </List.Item>
-                                            )}
-                                        />
+                                                    <Popconfirm
+                                                        key="remove"
+                                                        title={intl.formatMessage({ id: 'pages.modal.confirmDelete' })}
+                                                        okText={intl.formatMessage({ id: 'pages.modal.okDelete' })}
+                                                        cancelText={intl.formatMessage({ id: 'pages.modal.cancel' })}
+                                                        onConfirm={() => handleRemoveMember(m.userId)}
+                                                    >
+                                                        <Button type="link" danger size="small">
+                                                            {intl.formatMessage({ id: 'pages.common.delete' })}
+                                                        </Button>
+                                                    </Popconfirm>
+                                                </div>
+                                            ))}
+                                        </div>
                                     ) : (
                                         <Empty
                                             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -607,7 +611,7 @@ const OrganizationPage: React.FC = () => {
                         ? 'pages.organization.modal.updateTitle'
                         : 'pages.organization.modal.createTitle',
                 })}
-                destroyOnClose
+                destroyOnHidden
                 onCancel={() => {
                     setFormOpen(false);
                     setEditingNode(null);

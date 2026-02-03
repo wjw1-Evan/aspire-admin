@@ -112,4 +112,13 @@ export default {
   'menu.cloud-storage.recycle.desc': '管理已删除的文件',
   'menu.cloud-storage.quota': '存储管理',
   'menu.cloud-storage.quota.desc': '管理存储配额和使用统计',
+  // 兼容 dashed 格式（路由可能使用中划线）
+  'menu.cloud-storage-files': '我的文件',
+  'menu.cloud-storage-files.desc': '管理个人文件和文件夹',
+  'menu.cloud-storage-shared': '共享文件',
+  'menu.cloud-storage-shared.desc': '管理文件分享和共享',
+  'menu.cloud-storage-recycle': '回收站',
+  'menu.cloud-storage-recycle.desc': '管理已删除的文件',
+  'menu.cloud-storage-quota': '存储管理',
+  'menu.cloud-storage-quota.desc': '管理存储配额和使用统计',
 };

@@ -50,7 +50,6 @@ import {
 import dayjs from 'dayjs';
 
 const { useBreakpoint } = Grid;
-const { TabPane } = Tabs;
 const { RangePicker } = DatePicker;
 
 import {
@@ -624,40 +623,52 @@ const CloudStorageSharedPage: React.FC = () => {
 
             {/* 标签页 */}
             <Card className={styles.card}>
-                <Tabs activeKey={activeTab} onChange={handleTabChange}>
-                    <TabPane tab="我的分享" key="my-shares">
-                        <DataTable
-                            actionRef={actionRef}
-                            columns={columns}
-                            request={fetchData}
-                            rowKey="id"
-                            search={false}
-                            scroll={{ x: 'max-content' }}
-                            pagination={{
-                                pageSize: 20,
-                                pageSizeOptions: [10, 20, 50, 100],
-                                showSizeChanger: true,
-                                showQuickJumper: true,
-                            }}
-                        />
-                    </TabPane>
-                    <TabPane tab="分享给我的" key="shared-with-me">
-                        <DataTable
-                            actionRef={actionRef}
-                            columns={columns.filter(col => col.key !== 'action' || activeTab !== 'my-shares')}
-                            request={fetchData}
-                            rowKey="id"
-                            search={false}
-                            scroll={{ x: 'max-content' }}
-                            pagination={{
-                                pageSize: 20,
-                                pageSizeOptions: [10, 20, 50, 100],
-                                showSizeChanger: true,
-                                showQuickJumper: true,
-                            }}
-                        />
-                    </TabPane>
-                </Tabs>
+                <Tabs
+                    activeKey={activeTab}
+                    onChange={handleTabChange}
+                    items={[
+                        {
+                            key: 'my-shares',
+                            label: '我的分享',
+                            children: (
+                                <DataTable
+                                    actionRef={actionRef}
+                                    columns={columns}
+                                    request={fetchData}
+                                    rowKey="id"
+                                    search={false}
+                                    scroll={{ x: 'max-content' }}
+                                    pagination={{
+                                        pageSize: 20,
+                                        pageSizeOptions: [10, 20, 50, 100],
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                    }}
+                                />
+                            )
+                        },
+                        {
+                            key: 'shared-with-me',
+                            label: '分享给我的',
+                            children: (
+                                <DataTable
+                                    actionRef={actionRef}
+                                    columns={columns.filter(col => col.key !== 'action' || activeTab !== 'my-shares')}
+                                    request={fetchData}
+                                    rowKey="id"
+                                    search={false}
+                                    scroll={{ x: 'max-content' }}
+                                    pagination={{
+                                        pageSize: 20,
+                                        pageSizeOptions: [10, 20, 50, 100],
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                    }}
+                                />
+                            )
+                        }
+                    ]}
+                />
             </Card>
 
             {/* 分享详情抽屉 */}
@@ -666,7 +677,7 @@ const CloudStorageSharedPage: React.FC = () => {
                 placement="right"
                 onClose={() => setDetailVisible(false)}
                 open={detailVisible}
-                width={isMobile ? '100%' : 600}
+                size={isMobile ? 'default' : 'large'}
             >
                 <Spin spinning={!viewingShare}>
                     {viewingShare ? (

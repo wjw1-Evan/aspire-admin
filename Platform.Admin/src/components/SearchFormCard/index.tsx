@@ -44,7 +44,7 @@ const SearchFormCard: React.FC<SearchFormCardProps> = ({
         <Card
             title={title}
             extra={extra}
-            bordered={false}
+            variant="borderless"
             className={styles.searchCard}
             style={style}
         >

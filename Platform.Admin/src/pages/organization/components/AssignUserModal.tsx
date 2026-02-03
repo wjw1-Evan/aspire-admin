@@ -25,7 +25,7 @@ const AssignUserModal: React.FC<AssignUserModalProps> = ({ open, onCancel, onSub
         <Modal
             open={open}
             title={intl.formatMessage({ id: 'pages.organization.members.add' })}
-            destroyOnClose
+            destroyOnHidden
             onCancel={onCancel}
             onOk={async () => {
                 const values = await form.validateFields();

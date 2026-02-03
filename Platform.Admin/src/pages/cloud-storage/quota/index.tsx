@@ -881,7 +881,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 placement="right"
                 onClose={() => setDetailVisible(false)}
                 open={detailVisible}
-                width={isMobile ? '100%' : 600}
+                size={isMobile ? 'default' : 'large'}
             >
                 <Spin spinning={!viewingQuota}>
                     {viewingQuota ? (

@@ -10,7 +10,8 @@ import {
   Tag,
   Alert,
   Timeline,
-  theme
+  theme,
+  Tooltip
 } from 'antd';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { getUserAvatar } from '@/utils/avatar';
@@ -237,6 +238,72 @@ const QuickAction: React.FC<{
   </Card>
 );
 
+// Tiny Area Chart Component
+const TinyAreaChart: React.FC<{ data: { value: number; time: string }[]; color: string; height?: number }> = ({ data, color, height = 35 }) => {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  if (!data || data.length < 2) return <div style={{ height }} />;
+
+  const max = 100;
+  const width = 100;
+  const step = width / (data.length - 1);
+
+  const points = data.map((item, i) => {
+    const x = i * step;
+    const y = height - (Math.min(Math.max(item.value, 0), max) / max) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height, overflow: 'visible' }} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`gradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.05} />
+        </linearGradient>
+      </defs>
+      <path d={`M0,${height} ${points.replace(/ /g, ' L')} L${width},${height} Z`} fill={`url(#gradient-${color.replace('#', '')})`} />
+      <path d={`M${points.replace(/ /g, ' L')}`} fill="none" stroke={color} strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+
+      {/* Active Point */}
+      {hoverIndex !== null && data[hoverIndex] !== undefined && (
+        <circle
+          cx={hoverIndex * step}
+          cy={height - (Math.min(Math.max(data[hoverIndex].value, 0), max) / max) * height}
+          r={3}
+          fill="#fff"
+          stroke={color}
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
+
+      {/* Interaction Layer */}
+      {data.map((item, i) => {
+        // Calculate rect area for each point
+        const startX = i === 0 ? 0 : (i - 0.5) * step;
+        const endX = i === data.length - 1 ? width : (i + 0.5) * step;
+        const rectWidth = endX - startX;
+
+        return (
+          <Tooltip title={<div><div>{item.time}</div><div style={{ fontWeight: 'bold' }}>{item.value}%</div></div>} key={i}>
+            <rect
+              x={startX}
+              y={0}
+              width={rectWidth}
+              height={height}
+              fill="transparent"
+              style={{ cursor: 'pointer' }}
+              onMouseEnter={() => setHoverIndex(i)}
+              onMouseLeave={() => setHoverIndex(null)}
+            />
+          </Tooltip>
+        );
+      })}
+    </svg>
+  );
+};
+
 // 系统资源卡片组件
 const ResourceCard: React.FC<{
   title: string;
@@ -245,7 +312,8 @@ const ResourceCard: React.FC<{
   color?: string;
   loading?: boolean;
   token?: any;
-}> = ({ title, value, icon, color = '#1890ff', loading = false, token }) => (
+  chart?: React.ReactNode;
+}> = ({ title, value, icon, color = '#1890ff', loading = false, token, chart }) => (
   <Card
     size="small"
     styles={{ body: { padding: '10px 12px' } }}
@@ -291,6 +359,7 @@ const ResourceCard: React.FC<{
         </div>
       </div>
     </div>
+    {chart && <div style={{ marginTop: 8 }}>{chart}</div>}
   </Card>
 );
 
@@ -310,6 +379,11 @@ const Welcome: React.FC = () => {
   const [recentActivities, setRecentActivities] = useState<(API.UserActivityLog & { fullUrl?: string; path?: string; queryString?: string; httpMethod?: string })[]>([]);
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Resource History for Charts
+  const [cpuHistory, setCpuHistory] = useState<{ value: number; time: string }[]>([]);
+  const [memoryHistory, setMemoryHistory] = useState<{ value: number; time: string }[]>([]);
+  const [diskHistory, setDiskHistory] = useState<{ value: number; time: string }[]>([]);
 
   // 获取统计数据
   const fetchStatistics = useCallback(async () => {
@@ -355,7 +429,18 @@ const Welcome: React.FC = () => {
     try {
       const res = await getSystemResources();
       if (res.success && res.data) {
-        setSystemResources(res.data);
+        const data = res.data;
+        const currentTime = dayjs().format('HH:mm:ss');
+        setSystemResources(data);
+        if (data.cpu) {
+          setCpuHistory(prev => [...prev, { value: data.cpu.usagePercent, time: currentTime }].slice(-20)); // Keep last 20 points
+        }
+        if (data.memory) {
+          setMemoryHistory(prev => [...prev, { value: data.memory.usagePercent, time: currentTime }].slice(-20)); // Keep last 20 points
+        }
+        if (data.disk) {
+          setDiskHistory(prev => [...prev, { value: data.disk.usagePercent, time: currentTime }].slice(-20)); // Keep last 20 points
+        }
       }
     } catch (error) {
       // 错误由全局错误处理处理，这里只记录但不阻止后续轮询
@@ -920,6 +1005,7 @@ const Welcome: React.FC = () => {
                     color={getResourceColor(systemResources.memory?.usagePercent || 0)}
                     loading={loading}
                     token={token}
+                    chart={<TinyAreaChart data={memoryHistory} color={getResourceColor(systemResources.memory?.usagePercent || 0)} />}
                   />
                   <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
                     {intl.formatMessage(
@@ -951,6 +1037,7 @@ const Welcome: React.FC = () => {
                     color={getResourceColor(systemResources.cpu?.usagePercent || 0)}
                     loading={loading}
                     token={token}
+                    chart={<TinyAreaChart data={cpuHistory} color={getResourceColor(systemResources.cpu?.usagePercent || 0)} />}
                   />
                   <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
                     {intl.formatMessage(
@@ -971,6 +1058,7 @@ const Welcome: React.FC = () => {
                     color={getResourceColor(systemResources.disk?.usagePercent || 0)}
                     loading={loading}
                     token={token}
+                    chart={<TinyAreaChart data={diskHistory} color={getResourceColor(systemResources.disk?.usagePercent || 0)} />}
                   />
                   <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center', marginTop: '6px' }}>
                     {intl.formatMessage(

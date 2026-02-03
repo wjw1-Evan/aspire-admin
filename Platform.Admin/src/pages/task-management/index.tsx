@@ -169,14 +169,54 @@ const TaskManagement: React.FC = () => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 根据 URL 中的 taskId 查询参数，实时弹出任务详情
+  // 处理 URL 查询参数（taskId, status, priority, search 等）
   useEffect(() => {
     const search = location?.search || '';
     const params = new URLSearchParams(search);
     const taskId = params.get('taskId');
+    const status = params.get('status');
+    const priority = params.get('priority');
+    const searchQuery = params.get('search');
 
+    let shouldReload = false;
+    const formValues: any = {};
+
+    // 处理状态过滤
+    if (status !== null) {
+      const statusNum = parseInt(status, 10);
+      if (!isNaN(statusNum)) {
+        searchParamsRef.current.status = statusNum;
+        formValues.status = statusNum;
+        shouldReload = true;
+      }
+    }
+
+    // 处理优先级过滤
+    if (priority !== null) {
+      const priorityNum = parseInt(priority, 10);
+      if (!isNaN(priorityNum)) {
+        searchParamsRef.current.priority = priorityNum;
+        formValues.priority = priorityNum;
+        shouldReload = true;
+      }
+    }
+
+    // 处理搜索关键词
+    if (searchQuery !== null) {
+      searchParamsRef.current.search = searchQuery;
+      formValues.search = searchQuery;
+      shouldReload = true;
+    }
+
+    // 如果有过滤参数，更新表单并重载数据
+    if (shouldReload) {
+      searchForm.setFieldsValue(formValues);
+      setSearchParams({ ...searchParamsRef.current });
+      actionRef.current?.reload?.();
+    }
+
+    // 处理 taskId 弹出详情
     if (taskId) {
-      // 如果 taskId 变化，才重新加载
       if (!viewingTask || viewingTask.id !== taskId) {
         (async () => {
           try {
@@ -190,17 +230,15 @@ const TaskManagement: React.FC = () => {
           }
         })();
       } else if (!detailVisible) {
-        // 如果已有相同任务但抽屉被关闭，重新打开
         setDetailVisible(true);
       }
     } else {
-      // 没有 taskId 时，关闭抽屉
       if (detailVisible) {
         setDetailVisible(false);
         setViewingTask(null);
       }
     }
-  }, [location?.search]);
+  }, [location?.search, searchForm]);
 
   // 获取任务列表
   const fetchTasks = useCallback(async (params: any, sort?: Record<string, any>) => {

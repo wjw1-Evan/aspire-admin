@@ -632,6 +632,7 @@ export default {
   'pages.iotPlatform.status.withAlarm': 'Alarms Configured',
   'pages.iotPlatform.search.placeholder': 'Search name or identifier',
   'pages.iotPlatform.message.refreshSuccess': 'Data refreshed',
+  'pages.welcome.systemDetails': 'System Details',
   'pages.welcome.systemDetails.machineName': 'Machine Name:',
   'pages.welcome.systemDetails.processorCount': 'CPU Cores:',
   'pages.welcome.systemDetails.osVersion': 'OS Version:',

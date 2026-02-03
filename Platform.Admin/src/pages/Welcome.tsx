@@ -176,54 +176,67 @@ const QuickAction: React.FC<{
   onClick: () => void;
   color?: string;
   disabled?: boolean;
-}> = ({ title, description, icon, onClick, color = '#1890ff', disabled = false }) => (
+  token?: any;
+}> = ({ title, description, icon, onClick, color = '#1890ff', disabled = false, token }) => (
   <Card
     hoverable={!disabled}
     size="small"
-    styles={{ body: { padding: '12px', minHeight: '72px', display: 'flex', alignItems: 'center' } }}
+    styles={{ body: { padding: '16px', minHeight: '80px', display: 'flex', alignItems: 'center' } }}
     style={{
-      borderRadius: '12px',
+      borderRadius: '16px',
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.6 : 1,
-      border: `2px solid ${disabled ? '#f0f0f0' : color}`,
-      background: disabled ? '#fafafa' : '#fff',
+      border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
+      background: token?.colorBgContainer || '#fff',
       height: '100%',
       width: '100%',
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
     }}
+    className="quick-action-card"
     onClick={disabled ? undefined : onClick}
   >
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 12,
+        gap: 16,
         width: '100%'
       }}
     >
-      <div style={{ color, fontSize: 24, flexShrink: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{
+        color,
+        fontSize: 28,
+        flexShrink: 0,
+        width: 48,
+        height: 48,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: `${color}15`,
+        borderRadius: '12px',
+        transition: 'transform 0.3s ease'
+      }}>
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            fontSize: 14,
-            fontWeight: 'bold',
+            fontSize: 15,
+            fontWeight: 600,
             marginBottom: 4,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            lineHeight: '20px'
+            transition: 'color 0.3s ease',
+            color: token?.colorText || '#262626'
           }}
         >
           {title}
         </div>
         <div
           style={{
-            fontSize: 12,
-            color: '#8c8c8c',
-            lineHeight: 1.4,
-            height: 32,
+            fontSize: 13,
+            color: token?.colorTextSecondary || '#8c8c8c',
+            lineHeight: 1.5,
+            height: 38,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             display: '-webkit-box',
@@ -323,12 +336,13 @@ const ResourceCard: React.FC<{
 }> = React.memo(({ title, value, icon, color = '#1890ff', loading = false, token, chart, children }) => (
   <Card
     size="small"
-    styles={{ body: { padding: '12px', display: 'flex', flexDirection: 'column', height: '100%' } }}
+    styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
     style={{
-      borderRadius: '12px',
+      borderRadius: '16px',
       border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
       backgroundColor: token?.colorBgContainer || '#ffffff',
-      height: '100%'
+      height: '100%',
+      overflow: 'hidden'
     }}
     loading={loading}
   >
@@ -336,20 +350,31 @@ const ResourceCard: React.FC<{
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
-        marginBottom: 8
+        gap: 12,
+        marginBottom: 12
       }}
     >
-      <div style={{ color, fontSize: '20px', flexShrink: 0 }}>
+      <div style={{
+        color,
+        fontSize: '24px',
+        flexShrink: 0,
+        width: 44,
+        height: 44,
+        borderRadius: '10px',
+        background: `${color}12`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
         {icon}
       </div>
       <div style={{ textAlign: 'right', flex: 1, minWidth: 0 }}>
         <div
           style={{
-            fontSize: '20px',
-            fontWeight: 'bold',
+            fontSize: '22px',
+            fontWeight: 700,
             color: token?.colorText || '#262626',
-            lineHeight: 1.2,
+            lineHeight: 1.1,
           }}
         >
           {value}
@@ -358,22 +383,20 @@ const ResourceCard: React.FC<{
           style={{
             fontSize: '12px',
             color: token?.colorTextSecondary || '#8c8c8c',
-            marginTop: 2,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            marginTop: 4,
+            fontWeight: 500,
           }}
         >
           {title}
         </div>
       </div>
     </div>
-    {chart && <div style={{ marginTop: 4, marginBottom: 6 }}>{chart}</div>}
+    {chart && <div style={{ marginTop: 4, marginBottom: 8 }}>{chart}</div>}
     {children && (
       <div style={{
         borderTop: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
-        paddingTop: 8,
-        marginTop: 4
+        paddingTop: 12,
+        marginTop: 'auto'
       }}>
         {children}
       </div>
@@ -389,22 +412,40 @@ const StatCard: React.FC<{
   color: string;
   loading: boolean;
   token: any;
-}> = React.memo(({ title, value, suffix, icon, color, loading, token }) => (
+  onClick?: () => void;
+}> = React.memo(({ title, value, suffix, icon, color, loading, token, onClick }) => (
   <Card
     size="small"
-    styles={{ body: { padding: '12px' } }}
+    hoverable={!!onClick}
+    styles={{ body: { padding: '16px' } }}
     style={{
-      borderRadius: '12px',
+      borderRadius: '16px',
       border: `1px solid ${token.colorBorderSecondary || '#f0f0f0'}`,
       backgroundColor: token.colorBgContainer || '#ffffff',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+      cursor: onClick ? 'pointer' : 'default',
+      transition: 'all 0.3s'
     }}
+    onClick={onClick}
   >
     <Statistic
-      title={<span style={{ color: token.colorTextSecondary }}>{title}</span>}
+      title={<span style={{ color: token.colorTextSecondary, fontSize: '13px', fontWeight: 500 }}>{title}</span>}
       value={value}
       suffix={suffix}
-      styles={{ content: { color: token.colorText, fontWeight: 'bold' } }}
-      prefix={<span style={{ color, marginRight: 8, fontSize: '20px' }}>{icon}</span>}
+      styles={{ content: { color: token.colorText, fontWeight: 700, fontSize: '24px' } }}
+      prefix={<span style={{
+        color,
+        marginRight: 12,
+        fontSize: '24px',
+        width: 40,
+        height: 40,
+        borderRadius: '8px',
+        background: `${color}12`,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        verticalAlign: 'middle'
+      }}>{icon}</span>}
       loading={loading}
     />
   </Card>
@@ -633,65 +674,94 @@ const Welcome: React.FC = () => {
       title={false}
       style={{ background: 'transparent', paddingBlock: 12 }}
     >
+      <style>{`
+        .quick-action-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important;
+          border-color: rgba(0,0,0,0.1) !important;
+        }
+        .quick-action-card:hover .ant-card-body > div > div:first-child {
+          transform: scale(1.1);
+        }
+      `}</style>
       <div>
         {/* 个性化欢迎区域 */}
         <Card
           className={styles.card}
           style={{
             background: token.colorBgContainer === '#ffffff'
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-              : 'linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%)',
+              ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)'
+              : 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
             border: 'none',
             color: 'white',
+            borderRadius: '20px',
+            overflow: 'hidden',
+            position: 'relative'
           }}
-          styles={{ body: { padding: '24px' } }}
+          styles={{ body: { padding: '32px', position: 'relative', zIndex: 1 } }}
         >
-          <Row align="middle" gutter={16}>
+          {/* Decorative elements */}
+          <div style={{
+            position: 'absolute',
+            top: '-20%',
+            right: '-10%',
+            width: '300px',
+            height: '300px',
+            background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%)',
+            borderRadius: '50%',
+          }} />
+
+          <Row align="middle" gutter={32}>
             <Col>
               <Avatar
-                size={64}
+                size={88}
                 icon={<UserOutlined />}
                 src={getUserAvatar(currentUser?.avatar)}
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.2)',
-                  border: '3px solid rgba(255,255,255,0.3)'
+                  border: '4px solid rgba(255,255,255,0.3)',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                 }}
               />
             </Col>
             <Col flex={1}>
-              <Title level={2} style={{ color: 'white', margin: 0 }}>
+              <Title level={1} style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 700 }}>
                 {getGreeting()}，{currentUser?.name || currentUser?.userid || intl.formatMessage({ id: 'pages.welcome.user' })}！
               </Title>
-              <Paragraph style={{ color: 'rgba(255,255,255,0.8)', margin: '8px 0 16px 0' }}>
+              <Paragraph style={{ color: 'rgba(255,255,255,0.85)', margin: '12px 0 20px 0', fontSize: '16px' }}>
                 {intl.formatMessage({ id: 'pages.welcome.welcomeText' })}
-                {companyInfo?.name && ` - ${companyInfo.name}`}
+                {companyInfo?.name && <Tag style={{ marginLeft: 8, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white' }}>{companyInfo.name}</Tag>}
               </Paragraph>
-              <Space wrap>
+              <Space wrap size={12}>
                 {getUserRoleTags()}
                 <Tag
                   color="green"
+                  variant="filled"
                   icon={<GlobalOutlined />}
-                  style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
+                  style={{ borderRadius: '6px', border: 'none' }}
                 >
                   {intl.formatMessage({ id: 'pages.welcome.online' })}
                 </Tag>
               </Space>
             </Col>
             <Col>
-              <Space orientation="vertical" size="large">
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                    {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </div>
-                  <div style={{ fontSize: '14px', opacity: 0.8 }}>
-                    {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', { weekday: 'long' })}
-                  </div>
+              <div style={{
+                textAlign: 'right',
+                background: 'rgba(255,255,255,0.1)',
+                padding: '16px 24px',
+                borderRadius: '16px',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.2)'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: 800 }}>
+                  {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
+                    day: 'numeric'
+                  })}
                 </div>
-              </Space>
+                <div style={{ fontSize: '14px', fontWeight: 500, opacity: 0.9 }}>
+                  {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', { month: 'short', weekday: 'short' })}
+                </div>
+              </div>
             </Col>
           </Row>
         </Card>
@@ -702,14 +772,15 @@ const Welcome: React.FC = () => {
         <Card
           title={
             <Space>
-              <RocketOutlined />
-              <span>{intl.formatMessage({ id: 'pages.welcome.quickActions' })}</span>
+              <RocketOutlined style={{ color: token.colorPrimary }} />
+              <span style={{ fontWeight: 600 }}>{intl.formatMessage({ id: 'pages.welcome.quickActions' })}</span>
             </Space>
           }
           className={styles.card}
+          style={{ borderRadius: '16px' }}
         >
           {quickActionMenus.length > 0 ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+            <Row gutter={[16, 16]}>
               {quickActionMenus.map((menu) => {
                 // 生成 locale 键用于多语言
                 let localeKey = '';
@@ -744,13 +815,13 @@ const Welcome: React.FC = () => {
                 );
 
                 return (
-                  <div
+                  <Col
                     key={menu.path || menu.id}
-                    style={{
-                      flex: '1 1 200px',
-                      minWidth: '200px',
-                      maxWidth: '280px'
-                    }}
+                    xs={24}
+                    sm={12}
+                    md={8}
+                    lg={6}
+                    xl={4}
                   >
                     <QuickAction
                       title={menuTitle}
@@ -758,11 +829,12 @@ const Welcome: React.FC = () => {
                       icon={getIconComponent(menu.icon)}
                       onClick={() => handleQuickAction(menu.path)}
                       color={getMenuColor(menu.path)}
+                      token={token}
                     />
-                  </div>
+                  </Col>
                 );
               })}
-            </div>
+            </Row>
           ) : (
             <Alert
               title={intl.formatMessage({ id: 'pages.welcome.quickActions.empty' }, { defaultMessage: '暂无快速操作' })}
@@ -794,6 +866,7 @@ const Welcome: React.FC = () => {
                     color={token.colorPrimary}
                     loading={loading}
                     token={token}
+                    onClick={() => history.push('/task-management')}
                   />
                 </Col>
                 <Col xs={24} sm={8}>
@@ -804,6 +877,7 @@ const Welcome: React.FC = () => {
                     color={token.colorWarning}
                     loading={loading}
                     token={token}
+                    onClick={() => history.push('/task-management?status=0')}
                   />
                 </Col>
                 <Col xs={24} sm={8}>
@@ -814,6 +888,7 @@ const Welcome: React.FC = () => {
                     color={token.colorSuccess}
                     loading={loading}
                     token={token}
+                    onClick={() => history.push('/task-management?status=2')}
                   />
                 </Col>
               </Row>
@@ -826,6 +901,7 @@ const Welcome: React.FC = () => {
                     color={token.colorSuccess}
                     loading={loading}
                     token={token}
+                    onClick={() => history.push('/task-management?status=3')}
                   />
                 </Col>
                 <Col xs={24} sm={8}>
@@ -836,6 +912,7 @@ const Welcome: React.FC = () => {
                     color={token.colorError}
                     loading={loading}
                     token={token}
+                    onClick={() => history.push('/task-management?status=5')}
                   />
                 </Col>
                 <Col xs={24} sm={8}>
@@ -847,6 +924,7 @@ const Welcome: React.FC = () => {
                     color={token.colorPrimary}
                     loading={loading}
                     token={token}
+                    onClick={() => history.push('/task-management')}
                   />
                 </Col>
               </Row>
@@ -1171,42 +1249,51 @@ const Welcome: React.FC = () => {
 
             {/* 系统详细信息 */}
             {systemResources?.system && (
-              <div style={{ marginTop: '12px', padding: '12px', backgroundColor: token.colorFillAlter || '#fafafa', borderRadius: '8px' }}>
-                <Row gutter={[12, 8]}>
+              <div style={{
+                marginTop: '16px',
+                padding: '16px',
+                backgroundColor: token.colorFillAlter || '#fafafa',
+                borderRadius: '12px',
+                border: `1px solid ${token.colorBorderSecondary || '#f0f0f0'}`
+              }}>
+                <Title level={5} style={{ marginBottom: 12, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <MonitorOutlined style={{ color: token.colorPrimary }} />
+                  {intl.formatMessage({ id: 'pages.welcome.systemDetails' }, { defaultMessage: '系统运行详情' })}
+                </Title>
+                <Row gutter={[16, 12]}>
+                  {[
+                    { label: 'machineName', value: systemResources.system?.machineName },
+                    { label: 'osVersion', value: systemResources.system?.osVersion, large: true },
+                    { label: 'frameworkVersion', value: systemResources.system?.frameworkVersion },
+                    { label: 'processorCount', value: systemResources.system?.processorCount },
+                    { label: 'architecture', value: systemResources.system?.is64BitOperatingSystem ? intl.formatMessage({ id: 'pages.welcome.systemDetails.bit64' }) : intl.formatMessage({ id: 'pages.welcome.systemDetails.bit32' }) },
+                    { label: 'userName', value: systemResources.system?.userName },
+                    { label: 'systemUpTime', value: formatDuration(systemResources.system?.systemUpTime || 0) },
+                  ].map((item, idx) => (
+                    <Col key={idx} xs={24} sm={12} md={item.large ? 12 : 6}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Text type="secondary" style={{ fontSize: '12px' }}>{intl.formatMessage({ id: `pages.welcome.systemDetails.${item.label}` })}</Text>
+                        <Text strong style={{ fontSize: '13px', wordBreak: 'break-all' }}>{item.value || '-'}</Text>
+                      </div>
+                    </Col>
+                  ))}
                   <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.machineName' })} </Text>
-                    <Text strong>{systemResources.system?.machineName || intl.formatMessage({ id: 'pages.welcome.systemDetails.unknown' })}</Text>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.osVersion' }, { defaultMessage: 'OS版本:' })} </Text>
-                    <Text strong style={{ fontSize: '12px' }}>{systemResources.system?.osVersion}</Text>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.frameworkVersion' }, { defaultMessage: '运行环境:' })} </Text>
-                    <Text strong>{systemResources.system?.frameworkVersion}</Text>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.processorCount' })} </Text>
-                    <Text strong>{systemResources.system?.processorCount || 0}</Text>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.architecture' })} </Text>
-                    <Text strong>{systemResources.system?.is64BitOperatingSystem ? intl.formatMessage({ id: 'pages.welcome.systemDetails.bit64' }) : intl.formatMessage({ id: 'pages.welcome.systemDetails.bit32' })}</Text>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.userName' }, { defaultMessage: '当前用户:' })} </Text>
-                    <Text strong>{systemResources.system?.userName}</Text>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Text type="secondary">{intl.formatMessage({ id: 'pages.welcome.systemDetails.systemUpTime' })} </Text>
-                    <Text strong>{formatDuration(systemResources.system?.systemUpTime || 0)}</Text>
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Tag variant="filled" color="blue" style={{ fontSize: '10px' }}>64-Bit Process: {systemResources.system?.is64BitProcess ? 'Yes' : 'No'}</Tag>
+                    <Tag variant="filled" color="blue" style={{ borderRadius: '4px', marginTop: 4 }}>
+                      64-Bit Process: {systemResources.system?.is64BitProcess ? 'Yes' : 'No'}
+                    </Tag>
                   </Col>
                 </Row>
-                <div style={{ marginTop: 8, fontSize: '11px', color: '#999', wordBreak: 'break-all' }}>
-                  {intl.formatMessage({ id: 'pages.welcome.systemDetails.workingDirectory', defaultMessage: '运行目录:' })} {systemResources.system?.workingDirectory}
+                <div style={{
+                  marginTop: 12,
+                  paddingTop: 8,
+                  borderTop: `1px dashed ${token.colorBorderSecondary || '#f0f0f0'}`,
+                  fontSize: '12px',
+                  color: token.colorTextSecondary
+                }}>
+                  <Space>
+                    <span style={{ opacity: 0.7 }}>{intl.formatMessage({ id: 'pages.welcome.systemDetails.workingDirectory', defaultMessage: '运行目录:' })}</span>
+                    <Text code style={{ fontSize: '11px' }}>{systemResources.system?.workingDirectory}</Text>
+                  </Space>
                 </div>
               </div>
             )}

@@ -175,7 +175,6 @@ Platform/
 ## 🧪 测试与质量
 
 - 前端 Biome/ESLint 规范。
-- `Platform.AppHost.Tests`、`Platform.ApiService.Tests` 提供集成与单元测试，可通过 `dotnet test` 运行。
 - 公共 C# 类型保持 XML 注释，保障 Scalar 文档完整。
 
 ## 📂 目录结构

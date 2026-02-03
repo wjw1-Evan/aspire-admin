@@ -4,7 +4,6 @@ appliesTo:
   - "Platform.ServiceDefaults/**"
   - "Platform.DataInitializer/**"
   - "Platform.AppHost/**"
-  - "Platform.AppHost.Tests/**"
 ---
 
 # 后端规则（API / ServiceDefaults / 数据初始化）

@@ -4,8 +4,6 @@ import {
   MailOutlined,
   MobileOutlined,
   CalendarOutlined,
-  SafetyOutlined,
-  HistoryOutlined,
   CameraOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
@@ -34,7 +32,6 @@ import { getUserAvatar } from '@/utils/avatar';
 import {
   getCurrentUserProfile,
   updateUserProfile,
-  getUserActivityLogs,
 } from '@/services/ant-design-pro/api';
 import Settings from '../../../../config/defaultSettings';
 
@@ -55,9 +52,6 @@ const useStyles = createStyles(({ token }) => {
     },
     infoSection: {
       padding: token.paddingLG,
-    },
-    activityCard: {
-      marginTop: token.marginLG,
     },
     editButton: {
       marginBottom: token.marginMD,
@@ -80,15 +74,6 @@ interface UserProfile {
   lastLoginAt?: string;
 }
 
-interface ActivityLog {
-  id: string;
-  action: string;
-  description: string;
-  ipAddress?: string;
-  userAgent?: string;
-  createdAt: string;
-}
-
 // 将文件转换为 base64 格式
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -104,7 +89,6 @@ const fileToBase64 = (file: File): Promise<string> => {
 
 const UserCenter: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
@@ -148,31 +132,8 @@ const UserCenter: React.FC = () => {
     }
   };
 
-  // 获取活动日志
-  const fetchActivityLogs = async () => {
-    try {
-      const response = await getUserActivityLogs();
-      if (response.success && response.data) {
-        // 将 UserActivityLog[] 转换为 ActivityLog[] 格式
-        const logs: ActivityLog[] = response.data.map((log) => ({
-          id: log.id || '',
-          action: log.action || '',
-          description: log.description || '',
-          ipAddress: log.ipAddress,
-          userAgent: log.userAgent,
-          createdAt: log.createdAt || '',
-        }));
-        setActivityLogs(logs);
-      }
-    } catch (error) {
-      console.error('获取活动日志失败:', error);
-      // 错误由全局错误处理统一处理
-    }
-  };
-
   useEffect(() => {
     fetchUserProfile();
-    fetchActivityLogs();
   }, []);
 
   // 当打开编辑模式时，重新设置表单值
@@ -260,56 +221,6 @@ const UserCenter: React.FC = () => {
       default:
         return 'default';
     }
-  };
-
-  // 获取活动类型标签
-  const getActivityTag = (action: string) => {
-    const actionMap: { [key: string]: { text: string; color: string } } = {
-      login: {
-        text: intl.formatMessage({
-          id: 'pages.account.center.activity.login',
-          defaultMessage: '登录',
-        }),
-        color: 'green',
-      },
-      logout: {
-        text: intl.formatMessage({
-          id: 'pages.account.center.activity.logout',
-          defaultMessage: '退出',
-        }),
-        color: 'orange',
-      },
-      update_profile: {
-        text: intl.formatMessage({
-          id: 'pages.account.center.activity.updateProfile',
-          defaultMessage: '更新资料',
-        }),
-        color: 'blue',
-      },
-      change_password: {
-        text: intl.formatMessage({
-          id: 'pages.account.center.activity.changePassword',
-          defaultMessage: '修改密码',
-        }),
-        color: 'red',
-      },
-      view_profile: {
-        text: intl.formatMessage({
-          id: 'pages.account.center.activity.viewProfile',
-          defaultMessage: '查看资料',
-        }),
-        color: 'purple',
-      },
-      // 用户管理操作
-      create_user: { text: '创建用户', color: 'cyan' },
-      update_user: { text: '更新用户', color: 'blue' },
-      delete_user: { text: '删除用户', color: 'red' },
-      activate_user: { text: '启用用户', color: 'green' },
-      deactivate_user: { text: '禁用用户', color: 'orange' },
-      update_user_role: { text: '更新角色', color: 'purple' },
-      bulk_action: { text: '批量操作', color: 'geekblue' },
-    };
-    return actionMap[action] || { text: action, color: 'default' };
   };
 
   if (loading) {
@@ -735,57 +646,6 @@ const UserCenter: React.FC = () => {
               )}
             </Descriptions>
           )}
-        </Card>
-
-        {/* 活动日志卡片 */}
-        <Card
-          title={
-            <Space>
-              <HistoryOutlined />
-              <FormattedMessage
-                id="pages.account.center.recentActivity"
-                defaultMessage="最近活动"
-              />
-            </Space>
-          }
-          className={`${commonStyles.card} ${styles.activityCard}`}
-        >
-          <div>
-            {activityLogs.map((item) => {
-              const activityTag = getActivityTag(item.action);
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    padding: '12px 16px',
-                    borderBottom: '1px solid #f0f0f0',
-                  }}
-                >
-                  <Flex gap={12} align="flex-start">
-                    <div style={{ flexShrink: 0 }}>
-                      <Avatar icon={<SafetyOutlined />} />
-                    </div>
-                    <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
-                      <Space>
-                        <Tag color={activityTag.color}>{activityTag.text}</Tag>
-                        <Text>{item.description}</Text>
-                      </Space>
-                      <Space orientation="vertical" size="small">
-                        <Text type="secondary">
-                          {formatDateTime(item.createdAt)}
-                        </Text>
-                        {item.ipAddress && (
-                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                            IP: {item.ipAddress}
-                          </Text>
-                        )}
-                      </Space>
-                    </Flex>
-                  </Flex>
-                </div>
-              );
-            })}
-          </div>
         </Card>
       </div>
     </>

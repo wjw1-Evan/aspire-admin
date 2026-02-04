@@ -185,8 +185,8 @@ const Login: React.FC = () => {
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
-      const loginData = { 
-        ...values, 
+      const loginData = {
+        ...values,
         type,
         captchaId: captchaId || undefined,
         captchaAnswer: captchaAnswer || undefined,
@@ -225,7 +225,7 @@ const Login: React.FC = () => {
       // 如果失败，处理业务逻辑（显示验证码），然后显示友好的错误提示
       const errorCode = response.errorCode;
       const errorMsg = response.errorMessage || '登录失败，请重试！';
-      
+
       // 登录失败后显示验证码（业务逻辑）
       if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
         setShowCaptcha(true);
@@ -241,12 +241,12 @@ const Login: React.FC = () => {
           }
         }
       }
-      
+
       // 设置错误状态（用于表单显示）
       setUserLoginState({ status: 'error', errorMessage: errorMsg });
       // 显示友好的错误提示
       message.error(errorMsg);
-      
+
       // 登录错误已在当前函数中处理，直接返回，不抛出错误
       // 避免触发全局错误处理器的技术性错误页面
       return;
@@ -258,22 +258,22 @@ const Login: React.FC = () => {
 
       // 从错误对象中提取 errorCode
       // UmiJS 的 errorThrower 会将 errorCode 存储在 error.info 中
-      const errorCode = 
-        error?.info?.errorCode || 
-        error?.errorCode || 
+      const errorCode =
+        error?.info?.errorCode ||
+        error?.errorCode ||
         error?.response?.data?.errorCode;
-      
+
       // 设置错误状态（用于表单显示）
-      const errorMsg = 
-        error?.info?.errorMessage || 
-        error?.response?.data?.errorMessage || 
-        error?.message || 
+      const errorMsg =
+        error?.info?.errorMessage ||
+        error?.response?.data?.errorMessage ||
+        error?.message ||
         intl.formatMessage({
           id: 'pages.login.failure',
           defaultMessage: '登录失败，请重试！',
         });
       setUserLoginState({ status: 'error', errorMessage: errorMsg });
-      
+
       // 登录失败后显示验证码（业务逻辑）
       if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
         setShowCaptcha(true);
@@ -289,7 +289,7 @@ const Login: React.FC = () => {
           }
         }
       }
-      
+
       // 显示友好的错误提示，不再抛出错误，避免显示技术性错误页面
       message.error(errorMsg);
     }
@@ -311,7 +311,7 @@ const Login: React.FC = () => {
         message.error('请先输入手机号');
         return;
       }
-      
+
       const result = await getFakeCaptcha({ phone: mobile });
       if (result.success && result.data) {
         message.success(
@@ -542,13 +542,13 @@ const Login: React.FC = () => {
                         >
                           {captchaCountdown > 0
                             ? `${captchaCountdown} ${intl.formatMessage({
-                                id: 'pages.getCaptchaSecondText',
-                                defaultMessage: '获取验证码',
-                              })}`
+                              id: 'pages.getCaptchaSecondText',
+                              defaultMessage: '获取验证码',
+                            })}`
                             : intl.formatMessage({
-                                id: 'pages.login.phoneLogin.getVerificationCode',
-                                defaultMessage: '获取验证码',
-                              })}
+                              id: 'pages.login.phoneLogin.getVerificationCode',
+                              defaultMessage: '获取验证码',
+                            })}
                         </Button>
                       </Space.Compact>
                     </Form.Item>

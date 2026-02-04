@@ -12,5 +12,5 @@ public interface IApproverResolver
     /// <summary>
     /// 解析规则，返回匹配的用户 ID 列表
     /// </summary>
-    Task<List<string>> ResolveAsync(ApproverRule rule, string companyId);
+    Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null);
 }

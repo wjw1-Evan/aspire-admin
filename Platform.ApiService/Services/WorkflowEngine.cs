@@ -572,6 +572,45 @@ public class WorkflowEngine : IWorkflowEngine
                         instance.Id, node.Id, distinctApprovedCount, allApprovers.Count);
                 }
             }
+            else if (approvalConfig.Type == ApprovalType.Sequential)
+            {
+                // 顺序审批：按列表顺序依次审批
+                var allApprovers = await ResolveApproversAsync(instance, approvalConfig.Approvers);
+
+                // 获取当前节点的所有通过记录
+                var approvedApprovers = instance.ApprovalRecords
+                    .Where(r => r.NodeId == node.Id && r.Action == ApprovalAction.Approve)
+                    .Select(r => r.ApproverId)
+                    .ToList();
+
+                if (approvedApprovers.Count >= allApprovers.Count)
+                {
+                    shouldMoveNext = true;
+                    _logger.LogInformation("顺序审批完成: InstanceId={InstanceId}, NodeId={NodeId}", instance.Id, node.Id);
+                }
+                else
+                {
+                    // 还没完，设置下一个审批人
+                    var nextApprover = allApprovers[approvedApprovers.Count];
+                    var nextApprovers = new List<string> { nextApprover };
+
+                    // 更新实例中的当前审批人
+                    var instanceFilter = _instanceFactory.CreateFilterBuilder()
+                        .Equal(i => i.Id, instance.Id)
+                        .Build();
+                    var instanceUpdate = _instanceFactory.CreateUpdateBuilder()
+                        .Set(i => i.CurrentApproverIds, nextApprovers)
+                        .Build();
+                    await _instanceFactory.FindOneAndUpdateAsync(instanceFilter, instanceUpdate);
+
+                    // 通知下一个审批人
+                    await SendApprovalNotificationAsync(instance, "workflow_approval_required", null, nextApprovers);
+
+                    shouldMoveNext = false;
+                    _logger.LogInformation("顺序审批继续: InstanceId={InstanceId}, NodeId={NodeId}, NextApprover={NextApprover}",
+                        instance.Id, node.Id, nextApprover);
+                }
+            }
             else
             {
                 // 或签：任意一人通过即可推进
@@ -660,20 +699,27 @@ public class WorkflowEngine : IWorkflowEngine
     /// <summary>
     /// 发送审批通知
     /// </summary>
-    private async Task SendApprovalNotificationAsync(WorkflowInstance instance, string notificationType, string? comment)
+    /// <param name="instance">流程实例</param>
+    /// <param name="notificationType">通知类型</param>
+    /// <param name="comment">备注内容</param>
+    /// <param name="targetUsers">指定的接收用户列表（可选）</param>
+    private async Task SendApprovalNotificationAsync(WorkflowInstance instance, string notificationType, string? comment, IEnumerable<string>? targetUsers = null)
     {
         try
         {
             var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
             if (document != null)
             {
-                var relatedUsers = new List<string> { instance.StartedBy };
+                var relatedUsers = targetUsers?.ToList() ?? new List<string> { instance.StartedBy };
 
-                // 添加所有审批人
-                foreach (var record in instance.ApprovalRecords)
+                if (targetUsers == null)
                 {
-                    if (!relatedUsers.Contains(record.ApproverId))
-                        relatedUsers.Add(record.ApproverId);
+                    // 如果没有指定接收人，添加所有审批人
+                    foreach (var record in instance.ApprovalRecords)
+                    {
+                        if (!relatedUsers.Contains(record.ApproverId))
+                            relatedUsers.Add(record.ApproverId);
+                    }
                 }
 
                 await _notificationService.CreateWorkflowNotificationAsync(
@@ -1215,7 +1261,16 @@ public class WorkflowEngine : IWorkflowEngine
         if (node.Type == "approval" && node.Config.Approval != null)
         {
             var approvers = await ResolveApproversAsync(instance, node.Config.Approval.Approvers);
-            updateBuilder.Set(i => i.CurrentApproverIds, approvers);
+
+            if (node.Config.Approval.Type == ApprovalType.Sequential && approvers.Any())
+            {
+                // 顺序审批：初始只设置第一个审批人为当前审批人
+                updateBuilder.Set(i => i.CurrentApproverIds, new List<string> { approvers[0] });
+            }
+            else
+            {
+                updateBuilder.Set(i => i.CurrentApproverIds, approvers);
+            }
 
             // 设置超时时间
             if (node.Config.Approval.TimeoutHours > 0)
@@ -1331,6 +1386,7 @@ public class WorkflowEngine : IWorkflowEngine
                 // 审批节点：等待审批，不自动推进
                 _logger.LogInformation("到达审批节点，等待审批: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
                 await SetCurrentNodeAsync(instanceId, nodeId);
+                await ProcessCcRulesAsync(instance, node);
 
                 // 发送通知给审批人
                 try
@@ -1341,20 +1397,24 @@ public class WorkflowEngine : IWorkflowEngine
                         var approvers = await ResolveApproversAsync(instance, approvalConfig.Approvers);
                         if (approvers.Any())
                         {
+                            var targetApprovers = approvalConfig.Type == ApprovalType.Sequential
+                                ? new List<string> { approvers[0] }
+                                : approvers;
+
                             var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
                             if (document != null)
                             {
                                 await _notificationService.CreateWorkflowNotificationAsync(
-                                    instanceId,
+                                    instance.Id,
                                     document.Title,
                                     "workflow_approval_required",
-                                    approvers,
+                                    targetApprovers,
                                     $"节点：{node.Label ?? nodeId}",
                                     instance.CompanyId
                                 );
 
-                                _logger.LogInformation("已发送审批通知: InstanceId={InstanceId}, NodeId={NodeId}, ApproverCount={ApproverCount}",
-                                    instanceId, nodeId, approvers.Count);
+                                _logger.LogInformation("已发送审批通知: InstanceId={InstanceId}, NodeId={NodeId}, ApproverCount={ApproverCount}, Mode={Mode}",
+                                    instanceId, nodeId, targetApprovers.Count, approvalConfig.Type);
                             }
                         }
                         else
@@ -1680,7 +1740,7 @@ public class WorkflowEngine : IWorkflowEngine
         {
             try
             {
-                var resolved = await _approverResolverFactory.ResolveAsync(rule, companyId);
+                var resolved = await _approverResolverFactory.ResolveAsync(rule, companyId, instance);
                 approvers.AddRange(resolved);
             }
             catch (Exception ex)
@@ -1691,6 +1751,41 @@ public class WorkflowEngine : IWorkflowEngine
 
         var distinctApprovers = approvers.Distinct().ToList();
         return distinctApprovers;
+    }
+
+    /// <summary>
+    /// 处理抄送规则
+    /// </summary>
+    private async Task ProcessCcRulesAsync(WorkflowInstance instance, WorkflowNode node)
+    {
+        var ccRules = node.Config.Approval?.CcRules;
+        if (ccRules == null || !ccRules.Any()) return;
+
+        try
+        {
+            var ccUsers = await ResolveApproversAsync(instance, ccRules);
+            if (ccUsers.Any())
+            {
+                var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                if (document != null)
+                {
+                    await _notificationService.CreateWorkflowNotificationAsync(
+                        instance.Id,
+                        document.Title,
+                        "workflow_cc",
+                        ccUsers,
+                        $"抄送节点：{node.Label ?? node.Id}",
+                        instance.CompanyId
+                    );
+                    _logger.LogInformation("已发送抄送通知: InstanceId={InstanceId}, NodeId={NodeId}, CcUserCount={CcUserCount}",
+                        instance.Id, node.Id, ccUsers.Count);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "处理抄送规则失败: InstanceId={InstanceId}, NodeId={NodeId}", instance.Id, node.Id);
+        }
     }
 
     /// <summary>

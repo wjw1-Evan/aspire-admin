@@ -128,7 +128,10 @@ public enum ApprovalAction
     Return = 2,
 
     /// <summary>转办</summary>
-    Delegate = 3
+    Delegate = 3,
+
+    /// <summary>抄送</summary>
+    CC = 4
 }
 
 /// <summary>
@@ -140,7 +143,10 @@ public enum ApprovalType
     All = 0,
 
     /// <summary>或签（任意一人通过即可）</summary>
-    Any = 1
+    Any = 1,
+
+    /// <summary>顺序审批（按列表顺序依次审批）</summary>
+    Sequential = 2
 }
 
 /// <summary>
@@ -155,7 +161,10 @@ public enum ApproverType
     Role = 1,
 
     /// <summary>部门</summary>
-    Department = 2
+    Department = 2,
+
+    /// <summary>表单字段</summary>
+    FormField = 3
 }
 
 /// <summary>
@@ -1371,6 +1380,12 @@ public class ApprovalConfig
     public List<ApproverRule> Approvers { get; set; } = new();
 
     /// <summary>
+    /// 抄送规则列表
+    /// </summary>
+    [BsonElement("ccRules")]
+    public List<ApproverRule>? CcRules { get; set; }
+
+    /// <summary>
     /// 是否允许转办
     /// </summary>
     [BsonElement("allowDelegate")]
@@ -1424,6 +1439,12 @@ public class ApproverRule
     /// </summary>
     [BsonElement("departmentId")]
     public string? DepartmentId { get; set; }
+
+    /// <summary>
+    /// 表单字段Key（当Type为FormField时使用）
+    /// </summary>
+    [BsonElement("formFieldKey")]
+    public string? FormFieldKey { get; set; }
 }
 
 /// <summary>

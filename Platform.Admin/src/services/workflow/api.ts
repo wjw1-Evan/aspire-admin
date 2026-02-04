@@ -66,7 +66,8 @@ export enum ApprovalAction {
   Approve = 0,      // 通过
   Reject = 1,       // 拒绝
   Return = 2,       // 退回
-  Delegate = 3      // 转办
+  Delegate = 3,     // 转办
+  CC = 4            // 抄送
 }
 
 /**
@@ -74,7 +75,8 @@ export enum ApprovalAction {
  */
 export enum ApprovalType {
   All = 0,          // 会签
-  Any = 1           // 或签
+  Any = 1,          // 或签
+  Sequential = 2    // 顺序审批
 }
 
 /**
@@ -83,7 +85,8 @@ export enum ApprovalType {
 export enum ApproverType {
   User = 0,         // 指定用户
   Role = 1,          // 角色
-  Department = 2    // 部门
+  Department = 2,    // 部门
+  FormField = 3      // 表单字段
 }
 
 /**
@@ -111,6 +114,7 @@ export interface ApproverRule {
   userId?: string;
   roleId?: string;
   departmentId?: string;
+  formFieldKey?: string;
 }
 
 /**
@@ -119,6 +123,7 @@ export interface ApproverRule {
 export interface ApprovalConfig {
   type: ApprovalType;
   approvers: ApproverRule[];
+  ccRules?: ApproverRule[];
   allowDelegate: boolean;
   allowReject: boolean;
   allowReturn: boolean;
@@ -130,6 +135,7 @@ export interface ApprovalConfig {
  */
 export interface ConditionConfig {
   expression: string;
+  targetNodeId?: string;
 }
 
 /**

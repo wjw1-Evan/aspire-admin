@@ -27,8 +27,9 @@ public class ApproverResolverFactory : IApproverResolverFactory
     /// </summary>
     /// <param name="rule">审批人规则</param>
     /// <param name="companyId">企业（租户）ID</param>
+    /// <param name="instance">流程实例上下文</param>
     /// <returns>解析得到的审批人用户ID列表</returns>
-    public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId)
+    public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null)
     {
         // 找到支持该规则类型的解析器
         // 这里的逻辑可以根据 Resolver 实现类里的类型判断，或者直接尝试匹配
@@ -39,7 +40,7 @@ public class ApproverResolverFactory : IApproverResolverFactory
             // 简单约定：Resolver 名字包含 RuleType
             if (resolver.GetType().Name.StartsWith(rule.Type.ToString(), StringComparison.OrdinalIgnoreCase))
             {
-                return await resolver.ResolveAsync(rule, companyId);
+                return await resolver.ResolveAsync(rule, companyId, instance);
             }
         }
 
@@ -57,6 +58,7 @@ public interface IApproverResolverFactory
     /// </summary>
     /// <param name="rule">审批人规则</param>
     /// <param name="companyId">企业（租户）ID</param>
+    /// <param name="instance">流程实例上下文</param>
     /// <returns>解析得到的审批人用户ID列表</returns>
-    Task<List<string>> ResolveAsync(ApproverRule rule, string companyId);
+    Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null);
 }

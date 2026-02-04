@@ -35,13 +35,10 @@ public class UserApproverResolver : IApproverResolver
         _logger = logger;
     }
 
-    /// <summary>
-    /// 按用户规则解析审批人
-    /// </summary>
-    /// <param name="rule">审批规则（类型为 User）</param>
     /// <param name="companyId">企业（租户）ID</param>
+    /// <param name="instance">流程实例上下文</param>
     /// <returns>匹配到的用户ID列表</returns>
-    public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId)
+    public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null)
     {
         if (rule.Type != ApproverType.User || string.IsNullOrEmpty(rule.UserId))
             return new List<string>();
@@ -92,13 +89,10 @@ public class RoleApproverResolver : IApproverResolver
         _logger = logger;
     }
 
-    /// <summary>
-    /// 按角色规则解析审批人
-    /// </summary>
-    /// <param name="rule">审批规则（类型为 Role）</param>
     /// <param name="companyId">企业（租户）ID</param>
+    /// <param name="instance">流程实例上下文</param>
     /// <returns>匹配到的用户ID列表</returns>
-    public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId)
+    public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null)
     {
         if (rule.Type != ApproverType.Role || string.IsNullOrEmpty(rule.RoleId))
             return new List<string>();
@@ -124,6 +118,56 @@ public class RoleApproverResolver : IApproverResolver
 
         _logger.LogWarning("角色下没有找到活跃用户: RoleId={RoleId}, CompanyId={CompanyId}",
             rule.RoleId, companyId);
+        return new List<string>();
+    }
+}
+
+/// <summary>
+/// 基于表单字段的审批人解析器
+/// </summary>
+public class FormFieldApproverResolver : IApproverResolver
+{
+    private readonly IDatabaseOperationFactory<Document> _documentFactory;
+    private readonly ILogger<FormFieldApproverResolver> _logger;
+
+    /// <summary>
+    /// 初始化表单字段审批人解析器
+    /// </summary>
+    public FormFieldApproverResolver(
+        IDatabaseOperationFactory<Document> documentFactory,
+        ILogger<FormFieldApproverResolver> logger)
+    {
+        _documentFactory = documentFactory;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// 按表单字段解析审批人
+    /// </summary>
+    public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null)
+    {
+        if (rule.Type != ApproverType.FormField || string.IsNullOrEmpty(rule.FormFieldKey) || instance == null)
+            return new List<string>();
+
+        // 从流程实例获取公文 ID 并查询公文数据
+        var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+        if (document == null)
+        {
+            _logger.LogWarning("未找到关联公文: DocumentId={DocumentId}", instance.DocumentId);
+            return new List<string>();
+        }
+
+        // 从 FormData 中获取指定的字段值
+        if (document.FormData.TryGetValue(rule.FormFieldKey, out var value) && value != null)
+        {
+            var userId = value.ToString();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                return new List<string> { userId };
+            }
+        }
+
+        _logger.LogWarning("表单字段未找到或值为空: FormFieldKey={FormFieldKey}", rule.FormFieldKey);
         return new List<string>();
     }
 }

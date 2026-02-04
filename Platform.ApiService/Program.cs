@@ -220,6 +220,7 @@ builder.Services.AddScoped<IUserOrganizationService, UserOrganizationService>();
 // 注册审批人解析器（支持多个实现）
 builder.Services.AddScoped<IApproverResolver, UserApproverResolver>();
 builder.Services.AddScoped<IApproverResolver, RoleApproverResolver>();
+builder.Services.AddScoped<IApproverResolver, FormFieldApproverResolver>();
 builder.Services.AddScoped<IApproverResolverFactory, ApproverResolverFactory>();
 
 // 注册流程图形校验服务

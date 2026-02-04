@@ -108,6 +108,7 @@ const ApprovalPage: React.FC = () => {
 
   const graphNodes: FlowNode[] = useMemo(() => {
     if (!detailWorkflowDef?.graph?.nodes?.length) return [];
+
     const typeLabel = (type?: string) => {
       switch (type) {
         case 'start':
@@ -124,23 +125,46 @@ const ApprovalPage: React.FC = () => {
           return intl.formatMessage({ id: 'pages.workflow.node.unknown', defaultMessage: '节点' });
       }
     };
-    return detailWorkflowDef.graph.nodes.map((node) => ({
-      id: node.id,
-      position: { x: node.position?.x || 0, y: node.position?.y || 0 },
-      data: {
-        label: (
-          <div style={{ textAlign: 'center', padding: 6 }}>
-            <div style={{ fontWeight: 600 }}>{typeLabel(node.type)}</div>
-            <div style={{ fontSize: 12 }}>{node.label || node.id}</div>
-          </div>
-        ),
-      },
-      draggable: false,
-      selectable: false,
-      connectable: false,
-      style: { borderRadius: 8, padding: 4, border: '1px solid #d9d9d9', background: '#fff' },
-    }));
-  }, [detailWorkflowDef, intl]);
+
+    const nodeStyles: Record<string, any> = {
+      start: { background: '#f6ffed', border: '1px solid #b7eb8f', color: '#52c41a' },
+      end: { background: '#fff1f0', border: '1px solid #ffa39e', color: '#ff4d4f' },
+      approval: { background: '#e6f7ff', border: '1px solid #91d5ff', color: '#1890ff' },
+      condition: { background: '#fff7e6', border: '1px solid #ffd591', color: '#fa8c16' },
+      parallel: { background: '#f9f0ff', border: '1px solid #d3adf7', color: '#722ed1' },
+    };
+
+    const workflowInstance = detailData?.workflowInstance;
+
+    return detailWorkflowDef.graph.nodes.map((node) => {
+      const isCurrent = node.id === workflowInstance?.currentNodeId;
+      const style = nodeStyles[node.type] || { background: '#fff', border: '1px solid #d9d9d9' };
+
+      return {
+        id: node.id,
+        position: { x: node.position?.x || 0, y: node.position?.y || 0 },
+        data: {
+          label: (
+            <div style={{ textAlign: 'center', padding: '10px 14px' }}>
+              <div style={{ fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', opacity: 0.8 }}>{typeLabel(node.type)}</div>
+              <div style={{ fontSize: '13px', fontWeight: 700 }}>{node.label || node.id}</div>
+            </div>
+          ),
+        },
+        draggable: false,
+        selectable: false,
+        connectable: false,
+        style: {
+          ...style,
+          borderRadius: 8,
+          boxShadow: isCurrent ? '0 0 10px rgba(24, 144, 255, 0.4)' : '0 2px 4px rgba(0,0,0,0.05)',
+          borderWidth: isCurrent ? 2 : 1,
+          borderColor: isCurrent ? '#1890ff' : style.border?.split(' ')[2],
+          minWidth: 120,
+        },
+      };
+    });
+  }, [detailWorkflowDef, intl, detailData]);
 
   const graphEdges: FlowEdge[] = useMemo(() => {
     if (!detailWorkflowDef?.graph?.edges?.length) return [];
@@ -241,14 +265,15 @@ const ApprovalPage: React.FC = () => {
               try {
                 const response = await getDocumentDetail(record.id!);
                 if (response.success && response.data) {
-                  setDetailData(response.data);
-                  const doc = response.data.document ?? response.data;
-                  const instance = response.data.workflowInstance ?? doc?.workflowInstance;
+                  const docData = response.data as any;
+                  setDetailData(docData);
+                  const doc = docData.document ?? docData;
+                  const instance = docData.workflowInstance ?? doc?.workflowInstance;
                   const defId = instance?.workflowDefinitionId;
                   const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                   const nodeId = instance?.currentNodeId;
-                  const approvalHistory = response.data?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
-                  const workflowDefinition = response.data?.workflowDefinition;
+                  const approvalHistory = docData?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
+                  const workflowDefinition = docData?.workflowDefinition;
 
                   // 使用实例快照中的流程定义（如果有）
                   if (workflowDefinition) {
@@ -386,8 +411,9 @@ const ApprovalPage: React.FC = () => {
                   try {
                     const detailResp = await getDocumentDetail(record.id!);
                     if (detailResp.success && detailResp.data) {
-                      const doc = detailResp.data.document ?? detailResp.data;
-                      const instance = detailResp.data.workflowInstance ?? doc?.workflowInstance;
+                      const docData = detailResp.data as any;
+                      const doc = docData.document ?? docData;
+                      const instance = docData.workflowInstance ?? doc?.workflowInstance;
                       const defId = instance?.workflowDefinitionId;
                       const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                       const nodeId = instance?.currentNodeId;
@@ -455,8 +481,9 @@ const ApprovalPage: React.FC = () => {
                   try {
                     const detailResp = await getDocumentDetail(record.id!);
                     if (detailResp.success && detailResp.data) {
-                      const doc = detailResp.data.document ?? detailResp.data;
-                      const instance = detailResp.data.workflowInstance ?? doc?.workflowInstance;
+                      const docData = detailResp.data as any;
+                      const doc = docData.document ?? docData;
+                      const instance = docData.workflowInstance ?? doc?.workflowInstance;
                       const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                       const nodeId = instance?.currentNodeId;
                       setCurrentInstanceId(instanceId || null);
@@ -483,12 +510,13 @@ const ApprovalPage: React.FC = () => {
                   try {
                     const detailResp = await getDocumentDetail(record.id!);
                     if (detailResp.success && detailResp.data) {
-                      const doc = detailResp.data.document ?? detailResp.data;
-                      const instance = detailResp.data.workflowInstance ?? doc?.workflowInstance;
+                      const docData = detailResp.data as any;
+                      const doc = docData.document ?? docData;
+                      const instance = docData.workflowInstance ?? doc?.workflowInstance;
                       const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                       const nodeId = instance?.currentNodeId;
                       const defId = instance?.workflowDefinitionId;
-                      const approvalHistory = detailResp.data?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
+                      const approvalHistory = docData?.approvalHistory ?? doc?.approvalHistory ?? instance?.approvalHistory ?? [];
 
                       setCurrentInstanceId(instanceId || null);
                       setCurrentNodeId(nodeId || null);
@@ -570,8 +598,9 @@ const ApprovalPage: React.FC = () => {
                   try {
                     const detailResp = await getDocumentDetail(record.id!);
                     if (detailResp.success && detailResp.data) {
-                      const doc = detailResp.data.document ?? detailResp.data;
-                      const instance = detailResp.data.workflowInstance ?? doc?.workflowInstance;
+                      const docData = detailResp.data as any;
+                      const doc = docData.document ?? docData;
+                      const instance = docData.workflowInstance ?? doc?.workflowInstance;
                       const instanceId = instance?.id || instance?.workflowInstanceId || instance?.workflowInstance?.id;
                       const nodeId = instance?.currentNodeId;
                       setCurrentInstanceId(instanceId || null);
@@ -584,7 +613,8 @@ const ApprovalPage: React.FC = () => {
                   try {
                     const userResp = await getUserList({ page: 1, pageSize: 1000 });
                     if (userResp.success && userResp.data) {
-                      setUsers(userResp.data.list || userResp.data.data || []);
+                      const userData = userResp.data as any;
+                      setUsers(userData.list || userData.users || userData.data || []);
                     }
                   } catch (e) {
                     // 获取用户列表失败，静默处理
@@ -798,10 +828,11 @@ const ApprovalPage: React.FC = () => {
               ...searchParams,
             });
             if (response.success && response.data) {
+              const resData: any = response.data;
               return {
-                data: response.data.list || response.data.data || [],
+                data: resData.list || resData.data || [],
                 success: true,
-                total: response.data.total || 0,
+                total: resData.total || 0,
               };
             }
             return { data: [], success: false, total: 0 };
@@ -826,10 +857,11 @@ const ApprovalPage: React.FC = () => {
               ...searchParams,
             });
             if (response.success && response.data) {
+              const resData: any = response.data;
               return {
-                data: response.data.list || response.data.data || [],
+                data: resData.list || resData.data || [],
                 success: true,
-                total: response.data.total || 0,
+                total: resData.total || 0,
               };
             }
             return { data: [], success: false, total: 0 };
@@ -854,10 +886,11 @@ const ApprovalPage: React.FC = () => {
               ...searchParams,
             });
             if (response.success && response.data) {
+              const resData: any = response.data;
               return {
-                data: response.data.list || response.data.data || [],
+                data: resData.list || resData.data || [],
                 success: true,
-                total: response.data.total || 0,
+                total: resData.total || 0,
               };
             }
             return { data: [], success: false, total: 0 };
@@ -1413,21 +1446,27 @@ const ApprovalPage: React.FC = () => {
                                         approvalActionMap,
                                       );
                                       return (
-                                        <div key={idx} style={{ marginBottom: 4 }}>
-                                          <div>
-                                            <span style={{ fontWeight: 500 }}>{record.approverName || record.approverId}</span>
-                                            {' - '}
-                                            <Tag color={actionMeta.color} style={{ fontSize: 11, margin: 0 }}>
+                                        <div key={idx} style={{
+                                          marginBottom: 12,
+                                          padding: 8,
+                                          background: '#f8fafc',
+                                          borderRadius: 4,
+                                          borderLeft: `3px solid ${actionMeta.color}`
+                                        }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontWeight: 600, color: '#262626' }}>{record.approverName || record.approverId}</span>
+                                            <Tag color={actionMeta.color} style={{ fontSize: 10, borderRadius: 10 }}>
                                               {actionMeta.text}
                                             </Tag>
                                           </div>
                                           {record.comment && (
-                                            <div style={{ color: '#999', fontSize: 11, marginTop: 2, paddingLeft: 8 }}>
-                                              {record.comment}
+                                            <div style={{ color: '#595959', fontSize: 12, marginTop: 4, fontStyle: 'italic' }}>
+                                              “{record.comment}”
                                             </div>
                                           )}
                                           {record.approvedAt && (
-                                            <div style={{ color: '#999', fontSize: 11, marginTop: 2 }}>
+                                            <div style={{ color: '#bfbfbf', fontSize: 10, marginTop: 4 }}>
+                                              <ReloadOutlined style={{ marginRight: 4 }} />
                                               {dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss')}
                                             </div>
                                           )}

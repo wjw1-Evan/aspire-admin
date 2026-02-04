@@ -555,7 +555,7 @@ const Welcome: React.FC = () => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 定时轮询系统资源更新（每 5 秒）
+  // 定时轮询系统资源更新（每 1 秒）
   useEffect(() => {
     if (!currentUser) return;
 
@@ -569,8 +569,8 @@ const Welcome: React.FC = () => {
     // 立即获取一次
     performFetch();
 
-    // 设置定时器，每 5 秒轮询一次
-    const intervalId = setInterval(performFetch, 5000);
+    // 设置定时器，每 1 秒轮询一次
+    const intervalId = setInterval(performFetch, 1000);
 
     // 监听可见性变化，当回到页面时立即刷新
     const handleVisibilityChange = () => {
@@ -671,10 +671,19 @@ const Welcome: React.FC = () => {
 
   return (
     <PageContainer
-      title={false}
+      showBreadcrumb={false}
       style={{ background: 'transparent', paddingBlock: 12 }}
     >
       <style>{`
+        .ant-breadcrumb, 
+        .ant-page-header-breadcrumb,
+        .ant-page-header-heading { 
+          display: none !important; 
+        }
+        .ant-page-header {
+          padding-top: 0 !important;
+          padding-bottom: 0 !important;
+        }
         .quick-action-card:hover {
           transform: translateY(-4px);
           box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important;

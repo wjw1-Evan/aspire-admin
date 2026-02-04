@@ -5,6 +5,9 @@ import {
   RocketOutlined,
   ToolOutlined,
   BuildOutlined,
+  ApartmentOutlined,
+  BranchesOutlined,
+  CheckSquareOutlined,
 } from '@ant-design/icons';
 import { Modal, Space, Tabs, Typography } from 'antd';
 import React from 'react';
@@ -59,6 +62,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
             <li>
               <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.ruleManagement' })}</strong>
+            </li>
+            <li>
+              <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.workflowManagement' })}</strong>
             </li>
             <li>
               <strong>{intl.formatMessage({ id: 'pages.help.quickStart.feature.realTimeChat' })}</strong>
@@ -171,6 +177,47 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           <Paragraph>
             {intl.formatMessage({ id: 'pages.help.versionHistory.description' })}
           </Paragraph>
+
+          {/* v6.2 版本 */}
+          <div
+            style={{
+              marginBottom: 32,
+              padding: 16,
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+              backgroundColor: '#e6f7ff',
+            }}
+          >
+            <Title level={5} style={{ color: '#1890ff', marginBottom: 16 }}>
+              ⚡ {intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.title' })}
+            </Title>
+
+            <Title level={5}>{intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.workflow.title' })}</Title>
+            <ul>
+              <li>
+                {intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.workflow.feature1' })}
+              </li>
+              <li>
+                {intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.workflow.feature2' })}
+              </li>
+              <li>
+                {intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.workflow.feature3' })}
+              </li>
+              <li>
+                {intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.workflow.feature4' })}
+              </li>
+            </ul>
+
+            <Title level={5}>{intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.ui.title' })}</Title>
+            <ul>
+              <li>
+                {intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.ui.feature1' })}
+              </li>
+              <li>
+                {intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.ui.feature2' })}
+              </li>
+            </ul>
+          </div>
 
           {/* 最新版本 */}
           <div
@@ -656,6 +703,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             <li>
               <strong>v6.1</strong> - 多语言支持完善，国际化覆盖
             </li>
+            <li>
+              <strong>v6.2</strong> - {intl.formatMessage({ id: 'pages.help.versionHistory.v6_2.summary' })}
+            </li>
           </ul>
 
           <Title level={5}>🔮 {intl.formatMessage({ id: 'pages.help.versionHistory.future.title' })}</Title>
@@ -776,6 +826,28 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </li>
             <li>
               <strong>筛选搜索</strong> - 按状态、执行人、优先级、日期范围筛选
+            </li>
+          </ul>
+
+          <Title level={5}>🌿 {intl.formatMessage({ id: 'pages.help.features.workflowManagement.title' })}</Title>
+          <Paragraph>
+            {intl.formatMessage({ id: 'pages.help.features.workflowManagement.description' })}
+          </Paragraph>
+          <ul>
+            <li>
+              {intl.formatMessage({ id: 'pages.help.features.workflowManagement.item1' })}
+            </li>
+            <li>
+              {intl.formatMessage({ id: 'pages.help.features.workflowManagement.item2' })}
+            </li>
+            <li>
+              {intl.formatMessage({ id: 'pages.help.features.workflowManagement.item3' })}
+            </li>
+            <li>
+              {intl.formatMessage({ id: 'pages.help.features.workflowManagement.item4' })}
+            </li>
+            <li>
+              {intl.formatMessage({ id: 'pages.help.features.workflowManagement.item5' })}
             </li>
           </ul>
 

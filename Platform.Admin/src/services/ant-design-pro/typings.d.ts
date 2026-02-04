@@ -431,6 +431,7 @@ declare namespace API {
     memberCount: number;
     requestId?: string;
     isCreator: boolean;
+    creatorName?: string;
   };
 
   type SwitchCompanyRequest = {

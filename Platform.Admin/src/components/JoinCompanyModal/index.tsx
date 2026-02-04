@@ -300,6 +300,11 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                               成员数: {item.memberCount}
                             </span>
                           )}
+                          {item.creatorName && (
+                            <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                              创建人: {item.creatorName}
+                            </span>
+                          )}
                         </Space>
                       </Flex>
                       <Space>
@@ -404,6 +409,11 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                             {item.memberCount > 0 && (
                               <span style={{ fontSize: 12, color: '#8c8c8c' }}>
                                 成员数: {item.memberCount}
+                              </span>
+                            )}
+                            {item.creatorName && (
+                              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                创建人: {item.creatorName}
                               </span>
                             )}
                           </Space>

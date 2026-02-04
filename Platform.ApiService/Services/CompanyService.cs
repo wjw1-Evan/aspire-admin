@@ -541,6 +541,16 @@ public class CompanyService : ICompanyService
 
         var results = new List<CompanySearchResult>();
 
+        // 批量查询创建人信息
+        var creatorIds = companies.Select(c => c.CreatedBy).Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+        var creators = new Dictionary<string, AppUser>();
+        if (creatorIds.Any())
+        {
+            var creatorFilter = _userFactory.CreateFilterBuilder().In(u => u.Id, creatorIds).Build();
+            var creatorList = await _userFactory.FindAsync(creatorFilter);
+            creators = creatorList.ToDictionary(u => u.Id!, u => u);
+        }
+
         foreach (var company in companies)
         {
             // 检查用户是否已是成员
@@ -580,6 +590,13 @@ public class CompanyService : ICompanyService
             var memberCountList = await _userCompanyFactory.FindAsync(memberCountFilter);
             var memberCount = memberCountList.Count;
 
+            // 获取创建人名称
+            var creatorName = "Unknown";
+            if (!string.IsNullOrEmpty(company.CreatedBy) && creators.TryGetValue(company.CreatedBy, out var creator))
+            {
+                creatorName = creator.Username ?? creator.Name ?? "Unknown";
+            }
+
             results.Add(new CompanySearchResult
             {
                 Company = company,
@@ -587,6 +604,7 @@ public class CompanyService : ICompanyService
                 HasPendingRequest = pendingRequest != null,
                 RequestId = pendingRequest?.Id,
                 IsCreator = company.CreatedBy == userId,
+                CreatorName = creatorName,
                 MemberStatus = membership?.Status,
                 MemberCount = (int)memberCount
             });

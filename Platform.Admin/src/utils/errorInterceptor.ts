@@ -15,6 +15,19 @@ const runAfterRender = (fn: () => void) => {
   }
 };
 
+// 翻译辅助函数
+const translateMessage = (msg: string): string => {
+  if (!msg) return msg;
+  const trimmed = msg.trim();
+  try {
+    const intl = getIntl();
+    return intl.formatMessage({ id: trimmed, defaultMessage: trimmed });
+  } catch (e) {
+    console.warn('Translation failed for key:', trimmed, e);
+    return trimmed;
+  }
+};
+
 // 错误类型枚举
 export enum ErrorType {
   NETWORK = 'NETWORK',
@@ -273,58 +286,22 @@ class UnifiedErrorInterceptor {
    * 提取错误消息
    */
   private extractErrorMessage(error: any): string {
-    // 优先处理 ProblemDetails 格式的验证错误（.NET 标准错误格式）
-    if (error?.response?.data?.errors) {
-      const validationErrors = error.response.data.errors;
-      const errorMessages: string[] = [];
-
-      // 遍历所有字段的错误
-      Object.keys(validationErrors).forEach((field) => {
-        const fieldErrors = validationErrors[field];
-        if (Array.isArray(fieldErrors)) {
-          fieldErrors.forEach((err: string) => {
-            errorMessages.push(err);
-          });
-        } else if (typeof fieldErrors === 'string') {
-          errorMessages.push(fieldErrors);
-        }
-      });
-
-      // 如果有验证错误，返回第一个（最重要的）错误
-      if (errorMessages.length > 0) {
-        return errorMessages[0];
-      }
+    // 1. 尝试提取验证错误（包含 ProblemDetails 和我们的标准 errorMessage）
+    const validationErrors = this.extractValidationErrors(error);
+    if (validationErrors.length > 0) {
+      return validationErrors[0]; // extractValidationErrors 已经做了翻译
     }
 
-    // 提取原始错误信息（可能是错误码 Key，也可能是直接的错误描述）
-    let rawMessage = '';
-
-    // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置）
-    if (error.info?.errorMessage) {
-      rawMessage = error.info.errorMessage;
-    }
-    // 尝试从 error.response.data.title 获取（ProblemDetails 格式）
-    else if (error?.response?.data?.title) {
-      rawMessage = error.response.data.title;
-    }
-    else if (error.response?.data?.errorMessage) {
-      rawMessage = error.response.data.errorMessage;
-    }
-    else if (error.message) {
-      rawMessage = error.message;
-    }
-    else if (error.response?.status) {
-      rawMessage = `HTTP ${error.response.status} Error`;
+    // 2. 最后的兜底
+    if (error.message) {
+      return translateMessage(error.message);
     }
 
-    if (rawMessage) {
-      // 尝试翻译错误信息（如果 rawMessage 是一个翻译 Key）
-      const intl = getIntl(getLocale());
-      return intl.formatMessage({ id: rawMessage, defaultMessage: rawMessage });
+    if (error.response?.status) {
+      return `HTTP ${error.response.status} Error`;
     }
 
-    const intl = getIntl(getLocale());
-    return intl.formatMessage({ id: 'request.error.unknown', defaultMessage: '未知错误' });
+    return translateMessage('request.error.unknown') || '未知错误';
   }
 
   /**
@@ -333,43 +310,37 @@ class UnifiedErrorInterceptor {
   extractValidationErrors(error: any): string[] {
     const errors: string[] = [];
 
-    // 检查是否是 ProblemDetails 格式（.NET 标准错误格式）
+    // 1. ProblemDetails 格式 (.NET 标准)
     if (error?.response?.data?.errors) {
       const validationErrors = error.response.data.errors;
-      // 遍历所有字段的错误
       Object.keys(validationErrors).forEach((field) => {
         const fieldErrors = validationErrors[field];
         if (Array.isArray(fieldErrors)) {
-          fieldErrors.forEach((err: string) => {
-            errors.push(err);
-          });
+          fieldErrors.forEach((err) => errors.push(err));
         } else if (typeof fieldErrors === 'string') {
           errors.push(fieldErrors);
         }
       });
     }
 
-    // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置，通常是后端返回的 errorMessage）
-    if (error.info?.errorMessage) {
-      errors.push(error.info.errorMessage);
-      return errors;
-    }
-
-    // 如果没有提取到验证错误，尝试从其他位置获取错误信息
+    // 2. 我们的标准 errorMessage (包含在 data 中或 Umi 的 error.info 中)
     if (errors.length === 0) {
-      if (error?.response?.data?.title) {
-        errors.push(error.response.data.title);
-      } else if (error?.response?.data?.errorMessage) {
-        errors.push(error.response.data.errorMessage);
-      } else if (error?.message) {
-        // 忽略通用的 "Request failed with status code ..." 消息
-        if (!error.message.startsWith('Request failed with status code')) {
-          errors.push(error.message);
-        }
+      // UmiJS 可能把响应体放在 error.info
+      const customMessage = error.info?.errorMessage ||
+        error.response?.data?.errorMessage ||
+        error.response?.data?.title; // ProblemDetail title
+
+      if (customMessage) {
+        errors.push(customMessage);
       }
     }
 
-    return errors;
+    // 3. Axios 错误消息 (作为最后的 fallback，但忽略通用网络错误文案)
+    if (errors.length === 0 && error.message && !error.message.startsWith('Request failed')) {
+      errors.push(error.message);
+    }
+
+    return errors.map(msg => translateMessage(msg));
   }
 
   /**

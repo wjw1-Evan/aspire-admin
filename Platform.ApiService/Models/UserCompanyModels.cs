@@ -175,6 +175,12 @@ public class CompanySearchResult
     /// </summary>
     [System.Text.Json.Serialization.JsonPropertyName("isCreator")]
     public bool IsCreator { get; set; }
+
+    /// <summary>
+    /// 创建人姓名
+    /// </summary>
+    [System.Text.Json.Serialization.JsonPropertyName("creatorName")]
+    public string? CreatorName { get; set; }
 }
 
 /// <summary>

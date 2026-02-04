@@ -8,6 +8,7 @@ declare namespace API {
     data?: T;
     errorCode?: string;
     errorMessage?: string;
+    errors?: Record<string, string[]>; // 验证字段错误
     timestamp: string;
     traceId?: string;
   };

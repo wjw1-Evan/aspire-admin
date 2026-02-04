@@ -22,7 +22,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { message } = AntApp.useApp();
+  const { message, modal } = AntApp.useApp();
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState<API.CompanySearchResult[]>([]);
   const [selectedCompany, setSelectedCompany] =
@@ -131,7 +131,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
 
   // 退出企业
   const handleLeaveCompany = async (companyId: string, companyName: string) => {
-    AntApp.useApp().modal.confirm({
+    modal.confirm({
       title: '确认退出企业',
       content: `确定要退出企业“${companyName}”吗？退出后您将失去该企业的访问权限。`,
       onOk: async () => {
@@ -141,11 +141,10 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
             message.success('已成功退出企业');
             handleSearch(); // 刷新搜索结果
             onSuccess?.(); // 刷新全局状态
-          } else {
-            message.error(response.errorMessage || '退出失败');
           }
-        } catch (error: any) {
-          message.error(error.message || '退出失败');
+        } catch (error) {
+          // 错误由全局拦截器处理，此处仅需确保流程继续或停止
+          console.error(error);
         }
       },
     });
@@ -163,11 +162,10 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
       if (response.success) {
         message.success('申请已撤销');
         handleSearch(); // 刷新搜索结果
-      } else {
-        message.error(response.errorMessage || '撤销失败');
       }
-    } catch (error: any) {
-      message.error(error.message || '撤销失败');
+    } catch (error) {
+      // 错误由全局拦截器处理
+      console.error(error);
     } finally {
       setLoading(false);
     }

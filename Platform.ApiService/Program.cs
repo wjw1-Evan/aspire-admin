@@ -37,6 +37,33 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        // 统一模型验证错误响应格式
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(e => e.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => char.ToLowerInvariant(kvp.Key[0]) + kvp.Key.Substring(1), // camelCase key
+                    kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
+
+            var firstError = errors.Values.FirstOrDefault()?.FirstOrDefault() ?? "请求参数验证失败";
+
+            var result = new
+            {
+                success = false,
+                errorMessage = firstError,
+                errorCode = "VALIDATION_ERROR",
+                errors = errors,
+                timestamp = DateTime.UtcNow,
+                traceId = context.HttpContext.TraceIdentifier
+            };
+
+            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(result);
+        };
+    })
     .AddJsonOptions(options =>
     {
         // 配置 JSON 序列化选项
@@ -286,19 +313,52 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             },
             OnChallenge = context =>
             {
-                var path = context.HttpContext.Request.Path;
-
-                // 其他端点：自定义挑战响应，提供更友好的错误信息
+                // 自定义挑战响应，提供标准的错误信息
                 context.HandleResponse();
                 context.Response.StatusCode = 401;
                 context.Response.ContentType = "application/json";
 
-                var errorMessage = "未提供有效的认证令牌或令牌格式错误。请确保在请求头中包含 'Authorization: Bearer {token}'。";
-                var response = System.Text.Json.JsonSerializer.Serialize(new
+                var errorMessage = "未提供有效的认证令牌或令牌已过期。请重新登录。";
+
+                // 兼容旧代码的 error 字段，同时提供新的标准字段
+                var result = new
                 {
+                    success = false,
+                    errorMessage = errorMessage,
+                    errorCode = "UNAUTHORIZED",
+                    timestamp = DateTime.UtcNow,
+                    traceId = context.HttpContext.TraceIdentifier,
+                    // 兼容字段
                     error = "UNAUTHORIZED",
-                    message = errorMessage,
+                    message = errorMessage
+                };
+
+                var response = JsonSerializer.Serialize(result, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                });
+
+                return context.Response.WriteAsync(response);
+            },
+            OnForbidden = context =>
+            {
+                context.Response.StatusCode = 403;
+                context.Response.ContentType = "application/json";
+
+                var result = new
+                {
+                    success = false,
+                    errorMessage = "您只是此资源的访问者，无权进行操作 (403 Forbidden)",
+                    errorCode = "FORBIDDEN",
+                    timestamp = DateTime.UtcNow,
                     traceId = context.HttpContext.TraceIdentifier
+                };
+
+                var response = JsonSerializer.Serialize(result, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
                 });
 
                 return context.Response.WriteAsync(response);
@@ -329,8 +389,38 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// 全局异常处理（最外层）
-app.UseExceptionHandler();
+// 全局异常处理（最外层兜底）
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionHandlerPathFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+        var exception = exceptionHandlerPathFeature?.Error;
+
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+
+        var result = new
+        {
+            success = false,
+            errorMessage = "系统内部错误，请稍后重试", // 生产环境不显示具体堆栈
+            errorCode = "INTERNAL_SERVER_ERROR",
+            // 开发环境可附加详情
+            details = app.Environment.IsDevelopment() ? exception?.Message : null,
+            timestamp = DateTime.UtcNow,
+            traceId = context.TraceIdentifier
+        };
+
+        var response = JsonSerializer.Serialize(result, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        });
+
+        await context.Response.WriteAsync(response);
+    });
+});
 
 // CORS 必须在认证之前执行，确保 401/403 等响应也包含跨域头
 app.UseCors();
@@ -354,6 +444,30 @@ app.MapOpenApi();
 
 // Map default endpoints (includes health checks)
 app.MapDefaultEndpoints();
+
+// 统一处理 404 Not Found (必须放在最后)
+app.MapFallback(async (HttpContext context) =>
+{
+    context.Response.StatusCode = 404;
+    context.Response.ContentType = "application/json";
+
+    var result = new
+    {
+        success = false,
+        errorMessage = $"未找到请求的资源: {context.Request.Path}",
+        errorCode = "NOT_FOUND",
+        timestamp = DateTime.UtcNow,
+        traceId = context.TraceIdentifier
+    };
+
+    var response = JsonSerializer.Serialize(result, new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    });
+
+    await context.Response.WriteAsync(response);
+});
 
 // 数据库初始化已迁移到 Platform.DataInitializer 微服务
 

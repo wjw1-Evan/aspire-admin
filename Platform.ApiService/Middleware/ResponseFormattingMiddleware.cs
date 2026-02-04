@@ -126,29 +126,37 @@ public class ResponseFormattingMiddleware
                 responseBody.Seek(0, SeekOrigin.Begin);
                 await responseBody.CopyToAsync(originalBodyStream);
             }
-            catch (TaskCanceledException ex)
-            {
-                // 任务取消是正常的操作（如健康检查超时），不记录为错误
-                _logger.LogDebug(ex, "Request was canceled");
-                
-                // 恢复原始流
-                responseBody.Seek(0, SeekOrigin.Begin);
-                await responseBody.CopyToAsync(originalBodyStream);
-            }
-            catch (OperationCanceledException ex)
-            {
-                // 操作取消也是正常的操作，不记录为错误
-                _logger.LogDebug(ex, "Operation was canceled");
-                
-                // 恢复原始流
-                responseBody.Seek(0, SeekOrigin.Begin);
-                await responseBody.CopyToAsync(originalBodyStream);
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in response formatting middleware");
-                
-                // 恢复原始流
+                _logger.LogError(ex, "Error occurred: {Message}", ex.Message);
+
+                // 如果响应已经开始发送，则无法修改
+                if (context.Response.HasStarted)
+                {
+                    throw;
+                }
+
+                // 清除之前的响应内容并准备写入错误响应
+                responseBody.SetLength(0);
+                context.Response.StatusCode = 400; // 业务错误通常视为 400
+                context.Response.ContentType = "application/json";
+
+                var errorResponse = new
+                {
+                    success = false,
+                    errorMessage = ex.Message,
+                    errorCode = "BUSINESS_ERROR",
+                    timestamp = DateTime.UtcNow,
+                    traceId = context.TraceIdentifier
+                };
+
+                var json = JsonSerializer.Serialize(errorResponse, JsonOptions);
+                var bytes = Encoding.UTF8.GetBytes(json);
+                context.Response.ContentLength = bytes.Length;
+
+                await responseBody.WriteAsync(bytes);
+
+                // 恢复流位置并复制到原始流
                 responseBody.Seek(0, SeekOrigin.Begin);
                 await responseBody.CopyToAsync(originalBodyStream);
             }

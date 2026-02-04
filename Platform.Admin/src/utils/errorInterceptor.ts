@@ -339,23 +339,23 @@ class UnifiedErrorInterceptor {
       });
     }
 
+    // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置，通常是后端返回的 errorMessage）
+    if (error.info?.errorMessage) {
+      errors.push(error.info.errorMessage);
+      return errors;
+    }
+
     // 如果没有提取到验证错误，尝试从其他位置获取错误信息
     if (errors.length === 0) {
-      // 尝试从 error.response.data.title 获取
       if (error?.response?.data?.title) {
         errors.push(error.response.data.title);
-      }
-      // 尝试从 error.info.errorMessage 获取（UmiJS errorThrower）
-      if (error?.info?.errorMessage) {
-        errors.push(error.info.errorMessage);
-      }
-      // 尝试从 error.response.data.errorMessage 获取
-      if (error?.response?.data?.errorMessage) {
+      } else if (error?.response?.data?.errorMessage) {
         errors.push(error.response.data.errorMessage);
-      }
-      // 尝试从 error.message 获取
-      if (error?.message) {
-        errors.push(error.message);
+      } else if (error?.message) {
+        // 忽略通用的 "Request failed with status code ..." 消息
+        if (!error.message.startsWith('Request failed with status code')) {
+          errors.push(error.message);
+        }
       }
     }
 

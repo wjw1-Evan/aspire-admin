@@ -16,6 +16,16 @@ using Platform.ApiService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 定义全局复用的 JSON 序列化选项（性能优化）
+var jsonOptions = new JsonSerializerOptions
+{
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    WriteIndented = false,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+};
+// 序列化枚举为 camelCase 字符串
+jsonOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+
 // 上传大小限制（可按需调整）
 const long MaxUploadBytes = 5L * 1024 * 1024 * 1024; // 5GB
 
@@ -82,12 +92,12 @@ builder.Services.AddCors(options =>
         if (builder.Environment.IsDevelopment())
         {
             // ✅ 开发环境：从配置读取允许的源，如果未配置则使用默认值
-            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[]
-            {
+            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ??
+            [
                 "http://localhost:15000",  // API网关
                 "http://localhost:15001",  // 管理后台
                 "http://localhost:15002",  // 移动应用
-            };
+            ];
 
             policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
@@ -149,7 +159,7 @@ builder.Services.AddOpenApi(options =>
         {
             var securityRequirement = new OpenApiSecurityRequirement
             {
-                { bearerSchemeReference, new List<string>() }
+                { bearerSchemeReference, [] } // 简化集合初始化 new List<string>() -> []
             };
             document.Security.Add(securityRequirement);
         }
@@ -172,7 +182,7 @@ builder.Services.AddOpenApi(options =>
             {
                 var securityRequirement = new OpenApiSecurityRequirement
                 {
-                    { bearerSchemeReference, new List<string>() }
+                    { bearerSchemeReference, [] } // 简化集合初始化 new List<string>() -> []
                 };
                 operation.Security.Add(securityRequirement);
             }
@@ -333,11 +343,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     message = errorMessage
                 };
 
-                var response = JsonSerializer.Serialize(result, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = false
-                });
+                // 使用全局复用的 jsonOptions
+                var response = JsonSerializer.Serialize(result, jsonOptions);
 
                 return context.Response.WriteAsync(response);
             },
@@ -355,11 +362,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     traceId = context.HttpContext.TraceIdentifier
                 };
 
-                var response = JsonSerializer.Serialize(result, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = false
-                });
+                // 使用全局复用的 jsonOptions
+                var response = JsonSerializer.Serialize(result, jsonOptions);
 
                 return context.Response.WriteAsync(response);
             }
@@ -411,12 +415,8 @@ app.UseExceptionHandler(errorApp =>
             traceId = context.TraceIdentifier
         };
 
-        var response = JsonSerializer.Serialize(result, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = false,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        });
+        // 使用全局复用的 jsonOptions
+        var response = JsonSerializer.Serialize(result, jsonOptions);
 
         await context.Response.WriteAsync(response);
     });
@@ -460,11 +460,8 @@ app.MapFallback(async (HttpContext context) =>
         traceId = context.TraceIdentifier
     };
 
-    var response = JsonSerializer.Serialize(result, new JsonSerializerOptions
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
-    });
+    // 使用全局复用的 jsonOptions
+    var response = JsonSerializer.Serialize(result, jsonOptions);
 
     await context.Response.WriteAsync(response);
 });

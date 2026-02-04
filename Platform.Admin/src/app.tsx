@@ -239,13 +239,12 @@ export const layout: RunTimeLayoutConfig = ({
 }) => {
   return {
     actionsRender: () => {
+      const actions = [<SelectLang key="SelectLang" />];
       // 只在用户已登录时渲染通知图标，避免在登录页面调用需要认证的 API
-      if (!initialState?.currentUser) {
-        return [];
+      if (initialState?.currentUser) {
+        actions.push(<NoticeIcon key="NoticeIcon" />);
       }
-      return [
-        <NoticeIcon key="NoticeIcon" />,
-      ];
+      return actions;
     },
     avatarProps: {
       src: getUserAvatar(initialState?.currentUser?.avatar),

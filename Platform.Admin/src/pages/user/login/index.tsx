@@ -6,11 +6,11 @@ import {
 import {
   FormattedMessage,
   Link,
-  SelectLang,
   useIntl,
   useModel,
   history,
 } from '@umijs/max';
+import { SelectLang } from '@/components';
 import { Alert, App, Button, Tabs, Form, Input, Checkbox, Card, Space } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState, useRef } from 'react';
@@ -32,13 +32,8 @@ const useStyles = createStyles(({ token }) => {
       right: 16,
       top: 16,
       zIndex: 100,
-      borderRadius: token.borderRadius,
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-      backdropFilter: 'blur(10px)',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-      ':hover': {
-        backgroundColor: 'rgba(255, 255, 255, 1)',
-      },
+    
+    
     },
     container: {
       display: 'flex',

@@ -6,7 +6,8 @@
  * 布局组件
  */
 import Footer from './Footer';
-import { Question, SelectLang } from './RightContent';
+import { Question } from './RightContent';
+import SelectLang from './SelectLang';
 import { AvatarDropdown, AvatarName } from './RightContent/AvatarDropdown';
 import NoticeIcon from './NoticeIcon';
 import { CompanySwitcher } from './CompanySwitcher';

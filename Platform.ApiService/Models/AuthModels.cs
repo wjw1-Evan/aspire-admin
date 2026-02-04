@@ -277,6 +277,7 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     /// 邮箱地址
     /// </summary>
     [BsonElement("email")]
+    [BsonIgnoreIfNull]
     public string? Email { get; set; }
 
     /// <summary>

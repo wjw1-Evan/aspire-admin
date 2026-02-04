@@ -4,12 +4,11 @@ import {
   LockOutlined,
   SettingOutlined,
   QuestionCircleOutlined,
-  GlobalOutlined,
   BankOutlined,
   CheckOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
-import { history, useModel, useIntl, setLocale, getLocale, request } from '@umijs/max';
+import { history, useModel, useIntl, request } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Spin, Avatar, App as AntApp } from 'antd';
 import { createStyles } from 'antd-style';
@@ -24,17 +23,7 @@ import { ThemeSettingsDrawer } from './ThemeSettingsDrawer';
 import { JoinCompanyModal } from '../JoinCompanyModal';
 import { CreateCompanyModal } from '../CreateCompanyModal';
 
-// 支持的语言列表
-const locales = [
-  { label: '简体中文', value: 'zh-CN', icon: '🇨🇳' },
-  { label: '繁體中文', value: 'zh-TW', icon: '🇹🇼' },
-  { label: 'English', value: 'en-US', icon: '🇺🇸' },
-  { label: '日本語', value: 'ja-JP', icon: '🇯🇵' },
-  { label: 'Bahasa Indonesia', value: 'id-ID', icon: '🇮🇩' },
-  { label: 'Português', value: 'pt-BR', icon: '🇧🇷' },
-  { label: 'বাংলা', value: 'bn-BD', icon: '🇧🇩' },
-  { label: 'فارسی', value: 'fa-IR', icon: '🇮🇷' },
-];
+
 
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -94,7 +83,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   const { initialState, setInitialState } = useModel('@@initialState');
   const intl = useIntl();
   const { message } = AntApp.useApp();
-  const currentLocale = getLocale();
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [companies, setCompanies] = useState<API.UserCompanyItem[]>([]);
@@ -224,11 +212,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       setJoinModalOpen(true);
       return;
     }
-    // 处理语言切换
-    if (locales.some((locale) => locale.value === key)) {
-      setLocale(key as string, false);
-      return;
-    }
+
     // 处理企业切换
     if (companies.some((company) => company.companyId === key)) {
       handleSwitchCompany(key);
@@ -337,21 +321,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       icon: <SettingOutlined />,
       label: intl.formatMessage({ id: 'menu.account.settings' }),
     },
-    {
-      key: 'language',
-      icon: <GlobalOutlined />,
-      label: intl.formatMessage({ id: 'menu.account.language', defaultMessage: '语言 / Language' }),
-      children: locales.map((locale) => ({
-        key: locale.value,
-        label: (
-          <span>
-            <span style={{ marginRight: 8 }}>{locale.icon}</span>
-            {locale.label}
-          </span>
-        ),
-        icon: currentLocale === locale.value ? <span>✓</span> : null,
-      })),
-    },
+
     {
       key: 'help',
       icon: <QuestionCircleOutlined />,

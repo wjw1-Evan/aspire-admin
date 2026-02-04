@@ -258,6 +258,16 @@ public class CreateAllIndexes
                 _logger.LogInformation("✅ 清理了 {Count} 条 phone 字段为 null 的记录", nullPhoneResult.ModifiedCount);
             }
 
+            // 清理现有的 email: null 记录，将它们改为字段不存在（因为使用了 BsonIgnoreIfNull）
+            // 这样可以避免稀疏唯一索引的冲突
+            var nullEmailFilter = Builders<BsonDocument>.Filter.Eq("email", BsonNull.Value);
+            var unsetEmailUpdate = Builders<BsonDocument>.Update.Unset("email");
+            var nullEmailResult = await collection.UpdateManyAsync(nullEmailFilter, unsetEmailUpdate);
+            if (nullEmailResult.ModifiedCount > 0)
+            {
+                _logger.LogInformation("✅ 清理了 {Count} 条 email 字段为 null 的记录", nullEmailResult.ModifiedCount);
+            }
+
             // 删除可能存在的旧索引（如果存在）
             try
             {

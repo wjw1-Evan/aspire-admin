@@ -18,6 +18,7 @@ import {
   App,
   Row,
   Col,
+  theme,
 } from 'antd';
 import React, { useState } from 'react';
 import { useIntl } from '@umijs/max';
@@ -34,6 +35,7 @@ const CompanySearch: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
   const { styles } = useCommonStyles();
+  const { token } = theme.useToken();
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('search');
@@ -128,7 +130,8 @@ const CompanySearch: React.FC = () => {
         { tab: intl.formatMessage({ id: 'pages.company.search.tab.search' }, { defaultMessage: '搜索企业' }), key: 'search' },
         { tab: intl.formatMessage({ id: 'pages.company.search.tab.myRequests' }, { defaultMessage: '我的申请' }), key: 'requests' },
       ]}
-      onTabChange={(key) => {
+      tabActiveKey={activeTab}
+      onTabChange={(key: string) => {
         // 可以添加状态控制，当前直接使用 key 切换显示
         // 但 PageContainer 的 tabList 切换会自动更新 URI query param 'tab' 如果开启
         // 这里简单使用 state
@@ -201,42 +204,32 @@ const CompanySearch: React.FC = () => {
                     <Card.Meta
                       avatar={
                         <BankOutlined
-                          style={{ fontSize: 32, color: '#1890ff' }}
+                          style={{ fontSize: 32, color: token.colorPrimary }}
                         />
                       }
                       title={
                         <Space wrap>
                           <span>{item.company.name || intl.formatMessage({ id: 'pages.table.unknownCompany' })}</span>
-                          {item.isMember && (
-                            <Tag color="success">
-                              {item.memberStatus === 'active'
-                                ? intl.formatMessage({ id: 'pages.status.joined' })
-                                : intl.formatMessage({ id: 'pages.status.pendingActivation' })}
-                            </Tag>
-                          )}
-                          {item.hasPendingRequest && (
-                            <Tag color="processing">{intl.formatMessage({ id: 'pages.status.pending' })}</Tag>
-                          )}
                         </Space>
                       }
                       description={
                         <div>
                           {item.company.code && (
                             <div style={{ marginBottom: 8 }}>
-                              <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.companyCode' })}: </span>
+                              <span style={{ color: token.colorTextSecondary }}>{intl.formatMessage({ id: 'pages.table.companyCode' })}: </span>
                               <span style={{ fontWeight: 500 }}>
                                 {item.company.code}
                               </span>
                             </div>
                           )}
                           {item.company.description && (
-                            <div style={{ marginBottom: 8, color: '#666', fontSize: '14px' }}>
+                            <div style={{ marginBottom: 8, color: token.colorTextSecondary, fontSize: '14px' }}>
                               {item.company.description}
                             </div>
                           )}
                           {item.company.industry && (
                             <div style={{ marginBottom: 8 }}>
-                              <span style={{ color: '#666' }}>{intl.formatMessage({ id: 'pages.table.industry' })}: </span>
+                              <span style={{ color: token.colorTextSecondary }}>{intl.formatMessage({ id: 'pages.table.industry' })}: </span>
                               <span>{item.company.industry}</span>
                             </div>
                           )}

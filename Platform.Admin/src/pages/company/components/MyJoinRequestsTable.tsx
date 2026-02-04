@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Tag, Space, App, Popconfirm } from 'antd';
+import { Tag, Space, App, Popconfirm, theme } from 'antd';
 import { request, useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { cancelJoinRequest } from '@/services/company';
@@ -23,6 +23,7 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
     const actionRef = useRef<ActionType>(null);
     const intl = useIntl();
     const { message } = App.useApp();
+    const { token } = theme.useToken();
 
     const handleCancel = async (id: string) => {
         try {
@@ -79,7 +80,7 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
             search: false,
             render: (text, record) => {
                 if (record.status === 'rejected') {
-                    return <span style={{ color: 'red' }}>拒绝原因: {text}</span>;
+                    return <span style={{ color: token.colorError }}>拒绝原因: {text}</span>;
                 }
                 return '-';
             }
@@ -96,7 +97,7 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
                             okText="确定"
                             cancelText="取消"
                         >
-                            <a style={{ color: 'red' }}>撤销</a>
+                            <a style={{ color: token.colorError }}>撤销</a>
                         </Popconfirm>
                     );
                 }

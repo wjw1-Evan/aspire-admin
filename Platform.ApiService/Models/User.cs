@@ -84,6 +84,11 @@ public class CreateUserManagementRequest
     /// 是否激活（默认true）
     /// </summary>
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// 备注
+    /// </summary>
+    public string? Remark { get; set; }
 }
 
 /// <summary>
@@ -149,6 +154,11 @@ public class UpdateUserManagementRequest
     /// 是否激活
     /// </summary>
     public bool? IsActive { get; set; }
+
+    /// <summary>
+    /// 备注
+    /// </summary>
+    public string? Remark { get; set; }
 }
 
 /// <summary>
@@ -261,7 +271,15 @@ public class UserWithRolesResponse
     /// <summary>
     /// 更新时间
     /// </summary>
+    /// <summary>
+    /// 更新时间
+    /// </summary>
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// 备注
+    /// </summary>
+    public string? Remark { get; set; }
 
     /// <summary>
     /// 用户在当前企业的角色ID列表

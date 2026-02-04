@@ -162,7 +162,8 @@ public class UserService(
             Email = request.Email,
             PasswordHash = passwordHash,
             CurrentCompanyId = companyId,
-            IsActive = request.IsActive
+            IsActive = request.IsActive,
+            Remark = request.Remark
         };
 
         if (!string.IsNullOrEmpty(request.PhoneNumber))
@@ -231,6 +232,8 @@ public class UserService(
             updateBuilder.Set(u => u.Email, request.Email);
         if (request.IsActive.HasValue)
             updateBuilder.Set(u => u.IsActive, request.IsActive.Value);
+        if (request.Remark != null)
+            updateBuilder.Set(u => u.Remark, request.Remark);
 
         var update = updateBuilder.Build();
         var updatedUser = await _userFactory.FindOneAndUpdateAsync(filter, update);
@@ -264,7 +267,17 @@ public class UserService(
             var updatedUserCompany = await _userCompanyFactory.FindOneAndUpdateAsync(userCompanyFilter, userCompanyUpdate);
             if (updatedUserCompany == null)
             {
-                throw new InvalidOperationException($"用户 {id} 在企业 {companyId} 中的关联记录不存在，无法更新角色");
+                // 如果关联不存在（可能是旧数据或数据不一致），则创建新的关联
+                var newUserCompany = new UserCompany
+                {
+                    UserId = id,
+                    CompanyId = companyId,
+                    RoleIds = request.RoleIds,
+                    IsAdmin = false,
+                    Status = SystemConstants.UserStatus.Active,
+                    JoinedAt = DateTime.UtcNow
+                };
+                await _userCompanyFactory.CreateAsync(newUserCompany);
             }
         }
 
@@ -364,7 +377,9 @@ public class UserService(
             .Include(u => u.LastLoginAt)
             .Include(u => u.CreatedAt)
             .Include(u => u.UpdatedAt)
+            .Include(u => u.UpdatedAt)
             .Include(u => u.CurrentCompanyId)
+            .Include(u => u.Remark)
             .Build();
 
         var (users, total) = await _userFactory.FindPagedAsync(filter, sortBuilder.Build(), request.Page, request.PageSize, projection);
@@ -454,6 +469,7 @@ roleIds)
                 LastLoginAt = user.LastLoginAt,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
+                Remark = user.Remark,
                 RoleIds = roleIds,
                 RoleNames = roleNames,
                 IsAdmin = userCompany?.IsAdmin ?? false,

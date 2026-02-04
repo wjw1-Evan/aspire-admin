@@ -544,6 +544,13 @@ const UserManagement: React.FC = () => {
       render: (text: string) => text || '-',
     },
     {
+      title: '备注',
+      dataIndex: 'remark',
+      key: 'remark',
+      ellipsis: true,
+      render: (text: string) => text || '-',
+    },
+    {
       title: intl.formatMessage({ id: 'pages.table.role' }),
       dataIndex: 'roleIds',
       key: 'roleIds',

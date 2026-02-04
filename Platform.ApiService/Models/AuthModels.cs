@@ -321,6 +321,12 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     /// </summary>
     [BsonElement("aiRoleDefinition")]
     public string? AiRoleDefinition { get; set; }
+
+    /// <summary>
+    /// 备注
+    /// </summary>
+    [BsonElement("remark")]
+    public string? Remark { get; set; }
 }
 
 /// <summary>

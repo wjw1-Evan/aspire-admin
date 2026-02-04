@@ -19,6 +19,7 @@ export interface AppUser {
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
+  remark?: string;
 }
 
 export interface UserOrganizationInfo {
@@ -70,6 +71,7 @@ export interface CreateUserRequest {
   password: string;
   roleIds?: string[];
   isActive: boolean;
+  remark?: string;
 }
 
 export interface UpdateUserRequest {
@@ -78,6 +80,7 @@ export interface UpdateUserRequest {
   phoneNumber?: string;
   roleIds?: string[];
   isActive?: boolean;
+  remark?: string;
 }
 
 export interface UserActivityLog {

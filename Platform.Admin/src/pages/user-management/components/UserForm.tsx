@@ -54,6 +54,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         phoneNumber: user.phoneNumber,
         roleIds: user.roleIds || [],
         isActive: user.isActive,
+        remark: user.remark,
       });
     } else {
       form.resetFields();
@@ -71,6 +72,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           phoneNumber: values.phoneNumber || undefined,
           roleIds: values.roleIds || [],
           isActive: values.isActive,
+          remark: values.remark,
         };
 
         const response = await request<ApiResponse<AppUser>>(
@@ -82,6 +84,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         );
 
         if (!response.success) {
+          console.error('Update user failed:', response);
           throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.updateFailed' }));
         }
         // 成功提示由 onSuccess 回调处理
@@ -94,6 +97,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           password: values.password,
           roleIds: values.roleIds || [],
           isActive: values.isActive,
+          remark: values.remark,
         };
 
         const response = await request<ApiResponse<AppUser>>(
@@ -225,6 +229,15 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
           <Input.Password placeholder="请输入密码" />
         </Form.Item>
       )}
+
+
+      <Form.Item
+        name="remark"
+        label="备注"
+        rules={[{ max: 200, message: '备注最多200个字符' }]}
+      >
+        <Input.TextArea placeholder="请输入备注（选填）" rows={3} maxLength={200} showCount />
+      </Form.Item>
 
       <Form.Item
         name="roleIds"

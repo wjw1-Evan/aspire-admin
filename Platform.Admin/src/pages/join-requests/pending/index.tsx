@@ -7,10 +7,11 @@ const { useBreakpoint } = Grid;
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import {
-  getPendingRequests,
-  approveRequest,
-  rejectRequest,
+  getJoinRequests,
+  approveJoinRequest,
+  rejectJoinRequest,
 } from '@/services/company';
+import { useModel } from '@umijs/max';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
@@ -39,6 +40,7 @@ const PendingJoinRequests: React.FC = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const { message, modal } = App.useApp();
+  const { initialState } = useModel('@@initialState');
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -48,13 +50,28 @@ const PendingJoinRequests: React.FC = () => {
   const fetchPendingRequests = useCallback(async (_params: any, _sort?: Record<string, any>) => {
     try {
       const { keyword } = searchForm.getFieldsValue();
-      const response = await getPendingRequests(undefined, keyword);
+      const companyId = initialState?.currentUser?.currentCompanyId;
+
+      if (!companyId) {
+        return { data: [], success: true, total: 0 };
+      }
+
+      const response = await getJoinRequests(companyId, 'pending');
 
       if (response.success && response.data) {
+        // 前端过滤关键字
+        let filteredData = response.data;
+        if (keyword) {
+          filteredData = response.data.filter(item =>
+            item.username.toLowerCase().includes(keyword.toLowerCase()) ||
+            (item.reason && item.reason.toLowerCase().includes(keyword.toLowerCase()))
+          );
+        }
+
         return {
-          data: response.data,
+          data: filteredData,
           success: true,
-          total: response.data.length,
+          total: filteredData.length,
         };
       }
 
@@ -96,7 +113,7 @@ const PendingJoinRequests: React.FC = () => {
       onOk: async () => {
         setLoading(true);
         try {
-          const response = await approveRequest(record.id);
+          const response = await approveJoinRequest(record.id);
 
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.message.applicationApproved' }));
@@ -145,7 +162,7 @@ const PendingJoinRequests: React.FC = () => {
 
         setLoading(true);
         try {
-          const response = await rejectRequest(record.id, {
+          const response = await rejectJoinRequest(record.id, {
             rejectReason: rejectReason.trim(),
           });
 

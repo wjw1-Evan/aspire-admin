@@ -3,7 +3,7 @@ import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
-import { useIntl } from '@umijs/max';
+import { useIntl, useModel } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import {
@@ -47,6 +47,7 @@ import UserForm from './components/UserForm';
 import UserDetail from './components/UserDetail';
 import { StatCard } from '@/components';
 import dayjs from 'dayjs';
+import JoinRequestsTable from './components/JoinRequestsTable';
 
 // 统一的日期时间格式化函数
 const formatDateTime = (dateTime: string | null | undefined): string => {
@@ -71,6 +72,9 @@ const UserManagement: React.FC = () => {
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
+  const { initialState } = useModel('@@initialState');
+  const [activeTab, setActiveTab] = useState('members');
+  const currentCompanyId = initialState?.currentUser?.currentCompanyId || '';
   const [searchForm] = Form.useForm();
   const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);
   const [formVisible, setFormVisible] = useState(false);
@@ -706,6 +710,18 @@ const UserManagement: React.FC = () => {
         </Space>
       }
       style={{ paddingBlock: 12 }}
+      tabList={[
+        {
+          tab: '成员列表',
+          key: 'members',
+        },
+        {
+          tab: '加入申请',
+          key: 'requests',
+        },
+      ]}
+      tabActiveKey={activeTab}
+      onTabChange={(key) => setActiveTab(key)}
       extra={
         <Space wrap>
           {/* 批量操作按钮 */}
@@ -758,152 +774,160 @@ const UserManagement: React.FC = () => {
         </Space>
       }
     >
-      {/* 统计卡片：参考 Welcome 页面风格 */}
-      {statistics && (
-        <Card className={styles.card} style={{ marginBottom: 16 }}>
-          <Row gutter={[12, 12]}>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.userManagement.statistics.totalUsers' })}
-                value={statistics.totalUsers}
-                icon={<TeamOutlined />}
-                color="#1890ff"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.userManagement.statistics.activeUsers' })}
-                value={statistics.activeUsers}
-                icon={<CheckCircleOutlined />}
-                color="#52c41a"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.userManagement.statistics.adminUsers' })}
-                value={statistics.adminUsers}
-                icon={<UserOutlined />}
-                color="#faad14"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.userManagement.statistics.newUsersThisMonth' })}
-                value={statistics.newUsersThisMonth}
-                icon={<PlusOutlined />}
-                color="#1890ff"
-              />
-            </Col>
-          </Row>
-        </Card>
-      )}
+      {activeTab === 'members' && (
+        <>
+          {/* 统计卡片：参考 Welcome 页面风格 */}
+          {statistics && (
+            <Card className={styles.card} style={{ marginBottom: 16 }}>
+              <Row gutter={[12, 12]}>
+                <Col xs={24} sm={12} md={6}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.userManagement.statistics.totalUsers' })}
+                    value={statistics.totalUsers}
+                    icon={<TeamOutlined />}
+                    color="#1890ff"
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.userManagement.statistics.activeUsers' })}
+                    value={statistics.activeUsers}
+                    icon={<CheckCircleOutlined />}
+                    color="#52c41a"
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.userManagement.statistics.adminUsers' })}
+                    value={statistics.adminUsers}
+                    icon={<UserOutlined />}
+                    color="#faad14"
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <StatCard
+                    title={intl.formatMessage({ id: 'pages.userManagement.statistics.newUsersThisMonth' })}
+                    value={statistics.newUsersThisMonth}
+                    icon={<PlusOutlined />}
+                    color="#1890ff"
+                  />
+                </Col>
+              </Row>
+            </Card>
+          )}
 
-      {/* 搜索表单 */}
-      <SearchFormCard>
-        <Form
-          form={searchForm}
-          layout={isMobile ? 'vertical' : 'inline'}
-          onFinish={handleSearch}
-          style={{ marginBottom: 16 }}
-        >
-          <Form.Item name="search" label={intl.formatMessage({ id: 'pages.userManagement.search.label' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })} style={{ width: 200 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })} />
-          </Form.Item>
-          <Form.Item name="roleIds" label={intl.formatMessage({ id: 'pages.userManagement.role.label' })}>
-            <Select
-              mode="multiple"
-              allowClear
-              placeholder={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
-              style={{ width: 200 }}
-              aria-label={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
+          {/* 搜索表单 */}
+          <SearchFormCard>
+            <Form
+              form={searchForm}
+              layout={isMobile ? 'vertical' : 'inline'}
+              onFinish={handleSearch}
+              style={{ marginBottom: 16 }}
             >
-              {Object.entries(roleMap).map(([id, name]) => (
-                <Select.Option key={id} value={id}>
-                  {name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="isActive" label={intl.formatMessage({ id: 'pages.userManagement.status.label' })}>
-            <Select allowClear placeholder={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })} style={{ width: 120 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })}>
-              <Select.Option value={true}>{intl.formatMessage({ id: 'pages.userManagement.status.activated' })}</Select.Option>
-              <Select.Option value={false}>{intl.formatMessage({ id: 'pages.userManagement.status.deactivated' })}</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.userManagement.dateRange.label' })}>
-            <DatePicker.RangePicker />
-          </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                {intl.formatMessage({ id: 'pages.common.search', defaultMessage: 'Search' })}
-              </Button>
-              <Button onClick={handleReset}>
-                {intl.formatMessage({ id: 'pages.common.reset', defaultMessage: 'Reset' })}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+              <Form.Item name="search" label={intl.formatMessage({ id: 'pages.userManagement.search.label' })}>
+                <Input placeholder={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })} style={{ width: 200 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })} />
+              </Form.Item>
+              <Form.Item name="roleIds" label={intl.formatMessage({ id: 'pages.userManagement.role.label' })}>
+                <Select
+                  mode="multiple"
+                  allowClear
+                  placeholder={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
+                  style={{ width: 200 }}
+                  aria-label={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
+                >
+                  {Object.entries(roleMap).map(([id, name]) => (
+                    <Select.Option key={id} value={id}>
+                      {name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item name="isActive" label={intl.formatMessage({ id: 'pages.userManagement.status.label' })}>
+                <Select allowClear placeholder={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })} style={{ width: 120 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })}>
+                  <Select.Option value={true}>{intl.formatMessage({ id: 'pages.userManagement.status.activated' })}</Select.Option>
+                  <Select.Option value={false}>{intl.formatMessage({ id: 'pages.userManagement.status.deactivated' })}</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.userManagement.dateRange.label' })}>
+                <DatePicker.RangePicker />
+              </Form.Item>
+              <Form.Item>
+                <Space>
+                  <Button type="primary" htmlType="submit">
+                    {intl.formatMessage({ id: 'pages.common.search', defaultMessage: 'Search' })}
+                  </Button>
+                  <Button onClick={handleReset}>
+                    {intl.formatMessage({ id: 'pages.common.reset', defaultMessage: 'Reset' })}
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </SearchFormCard>
 
-      {/* 用户列表表格 */}
-      <div ref={tableRef}>
-        <DataTable<AppUser>
-          actionRef={actionRef}
-          rowKey="id"
-          scroll={{ x: 'max-content' }}
-          search={false}
-          request={fetchUsers}
-          columns={columns}
-          rowSelection={{
-            onChange: handleRowSelectionChange,
-          }}
-          pagination={{
-            pageSize: 10,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              intl.formatMessage(
-                { id: 'pages.userManagement.pagination.total' },
-                { start: range[0], end: range[1], total },
-              ),
-          }}
-        />
-      </div>
+          {/* 用户列表表格 */}
+          <div ref={tableRef}>
+            <DataTable<AppUser>
+              actionRef={actionRef}
+              rowKey="id"
+              scroll={{ x: 'max-content' }}
+              search={false}
+              request={fetchUsers}
+              columns={columns}
+              rowSelection={{
+                onChange: handleRowSelectionChange,
+              }}
+              pagination={{
+                pageSize: 10,
+                pageSizeOptions: [10, 20, 50, 100],
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total, range) =>
+                  intl.formatMessage(
+                    { id: 'pages.userManagement.pagination.total' },
+                    { start: range[0], end: range[1], total },
+                  ),
+              }}
+            />
+          </div>
 
-      {/* 用户表单弹窗 */}
-      {formVisible && (
-        <Modal
-          title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
-          open={formVisible}
-          onCancel={handleFormClose}
-          footer={null}
-          width={isMobile ? '100%' : 600}
-          destroyOnHidden={true}
-        >
-          <UserForm
-            user={editingUser}
-            onSuccess={handleFormSuccess}
-            onCancel={handleFormClose}
-          />
-        </Modal>
+          {/* 用户表单弹窗 */}
+          {formVisible && (
+            <Modal
+              title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
+              open={formVisible}
+              onCancel={handleFormClose}
+              footer={null}
+              width={isMobile ? '100%' : 600}
+              destroyOnHidden={true}
+            >
+              <UserForm
+                user={editingUser}
+                onSuccess={handleFormSuccess}
+                onCancel={handleFormClose}
+              />
+            </Modal>
+          )}
+
+          {/* 用户详情抽屉 */}
+          <Drawer
+            title={intl.formatMessage({ id: 'pages.userDetail.title' })}
+            open={detailVisible}
+            onClose={handleDetailClose}
+            size={600}
+          >
+            {viewingUser && (
+              <UserDetail
+                user={viewingUser}
+                onClose={handleDetailClose}
+              />
+            )}
+          </Drawer>
+        </>
       )}
 
-      {/* 用户详情抽屉 */}
-      <Drawer
-        title={intl.formatMessage({ id: 'pages.userDetail.title' })}
-        open={detailVisible}
-        onClose={handleDetailClose}
-        size={600}
-      >
-        {viewingUser && (
-          <UserDetail
-            user={viewingUser}
-            onClose={handleDetailClose}
-          />
-        )}
-      </Drawer>
+      {activeTab === 'requests' && (
+        <JoinRequestsTable companyId={currentCompanyId} />
+      )}
     </PageContainer>
   );
 };

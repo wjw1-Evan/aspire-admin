@@ -98,3 +98,24 @@ export interface BulkUserActionRequest {
   action: string; // "activate", "deactivate", "delete"
   reason?: string; // 删除原因（仅用于 delete 操作）
 }
+
+export interface JoinRequestDetail {
+  id: string;
+  userId: string;
+  username: string;
+  userEmail?: string;
+  companyId: string;
+  companyName: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  reason?: string;
+  reviewedBy?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  rejectReason?: string;
+  createdAt: string;
+}
+
+export interface ReviewJoinRequestRequest {
+  defaultRoleIds?: string[];
+  rejectReason?: string;
+}

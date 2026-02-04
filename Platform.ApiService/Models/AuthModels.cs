@@ -63,6 +63,12 @@ public class CurrentUser
     public string? Phone { get; set; }
 
     /// <summary>
+    /// 年龄
+    /// </summary>
+    [BsonElement("age")]
+    public int? Age { get; set; }
+
+    /// <summary>
     /// 是否已登录
     /// </summary>
     [BsonElement("isLogin")]
@@ -123,19 +129,19 @@ public class LoginRequest
     [Required(ErrorMessage = "用户名不能为空")]
     [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-50个字符之间")]
     public string? Username { get; set; }
-    
+
     /// <summary>
     /// 密码
     /// </summary>
     [Required(ErrorMessage = "密码不能为空")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
     public string? Password { get; set; }
-    
+
     /// <summary>
     /// 是否自动登录
     /// </summary>
     public bool AutoLogin { get; set; }
-    
+
     /// <summary>
     /// 登录类型
     /// </summary>
@@ -161,27 +167,27 @@ public class LoginResult
     /// 登录状态
     /// </summary>
     public string? Status { get; set; }
-    
+
     /// <summary>
     /// 登录类型
     /// </summary>
     public string? Type { get; set; }
-    
+
     /// <summary>
     /// 当前权限
     /// </summary>
     public string? CurrentAuthority { get; set; }
-    
+
     /// <summary>
     /// JWT Token
     /// </summary>
     public string? Token { get; set; }
-    
+
     /// <summary>
     /// 刷新 Token
     /// </summary>
     public string? RefreshToken { get; set; }
-    
+
     /// <summary>
     /// Token 过期时间
     /// </summary>
@@ -197,22 +203,22 @@ public class LoginData
     /// 登录类型
     /// </summary>
     public string? Type { get; set; }
-    
+
     /// <summary>
     /// 当前权限
     /// </summary>
     public string? CurrentAuthority { get; set; }
-    
+
     /// <summary>
     /// JWT Token
     /// </summary>
     public string? Token { get; set; }
-    
+
     /// <summary>
     /// 刷新 Token
     /// </summary>
     public string? RefreshToken { get; set; }
-    
+
     /// <summary>
     /// Token 过期时间
     /// </summary>
@@ -228,7 +234,7 @@ public class PageParams
     /// 当前页码
     /// </summary>
     public int Current { get; set; } = 1;
-    
+
     /// <summary>
     /// 每页大小
     /// </summary>
@@ -291,7 +297,7 @@ public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Plat
     /// </summary>
     [BsonElement("currentCompanyId")]
     public string? CurrentCompanyId { get; set; }
-    
+
     /// <summary>
     /// 个人企业ID（注册时自动创建，v3.1新增）
     /// </summary>
@@ -340,14 +346,14 @@ public class RegisterRequest
     [Required(ErrorMessage = "用户名不能为空")]
     [StringLength(20, MinimumLength = 3, ErrorMessage = "用户名长度必须在3-20个字符之间")]
     public string Username { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 密码（至少6个字符）
     /// </summary>
     [Required(ErrorMessage = "密码不能为空")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
     public string Password { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 邮箱地址（可选）
     /// </summary>
@@ -385,14 +391,14 @@ public class ChangePasswordRequest
     /// </summary>
     [Required(ErrorMessage = "当前密码不能为空")]
     public string CurrentPassword { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 新密码
     /// </summary>
     [Required(ErrorMessage = "新密码不能为空")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "新密码长度至少6个字符")]
     public string NewPassword { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 确认密码
     /// </summary>
@@ -422,22 +428,22 @@ public class RefreshTokenResult
     /// 状态
     /// </summary>
     public string? Status { get; set; }
-    
+
     /// <summary>
     /// 新的 JWT Token
     /// </summary>
     public string? Token { get; set; }
-    
+
     /// <summary>
     /// 新的刷新 Token
     /// </summary>
     public string? RefreshToken { get; set; }
-    
+
     /// <summary>
     /// Token 过期时间
     /// </summary>
     public DateTime? ExpiresAt { get; set; }
-    
+
     /// <summary>
     /// 错误消息
     /// </summary>
@@ -454,7 +460,7 @@ public class VerifyCaptchaRequest
     /// </summary>
     [Required(ErrorMessage = "手机号不能为空")]
     public string Phone { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 验证码
     /// </summary>

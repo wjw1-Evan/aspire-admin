@@ -111,11 +111,11 @@ const UserCenter: React.FC = () => {
           username: apiUser.username || '', // ✅ 使用 username 字段
           name: apiUser.name || apiUser.username || '', // name 可选，降级到 username
           email: apiUser.email,
-          phoneNumber: apiUser.phoneNumber,
+          phoneNumber: apiUser.phoneNumber || apiUser.phone,
           age: apiUser.age || 18,
           avatar: apiUser.avatar, // ✅ 保存头像字段
-          role: apiUser.access || 'user',
-          isActive: apiUser.isActive || apiUser.isLogin || false,
+          role: apiUser.access || (apiUser.roles && apiUser.roles.includes('管理员') ? 'admin' : 'user'),
+          isActive: apiUser.isActive ?? apiUser.isLogin ?? true,
           createdAt: apiUser.createdAt || '',
           updatedAt: apiUser.updatedAt || apiUser.updateAt || '',
           lastLoginAt: apiUser.lastLoginAt || '',

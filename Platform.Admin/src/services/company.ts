@@ -144,56 +144,51 @@ export async function removeMember(companyId: string, userId: string) {
   );
 }
 
-// ===== 企业加入申请相关 API =====
+// ===== v3.1: 企业加入申请 API =====
 
-/** 申请加入企业 POST /api/join-request */
+/** 申请加入企业 POST /api/company/join */
 export async function applyToJoinCompany(data: API.ApplyToJoinCompanyRequest) {
-  return request<API.ApiResponse<API.CompanyJoinRequest>>('/api/join-request', {
+  return request<API.ApiResponse<string>>('/api/company/join', {
     method: 'POST',
     data,
   });
 }
 
-/** 获取我的申请列表 GET /api/join-request/my-requests */
-export async function getMyRequests(keyword?: string) {
-  return request<API.ApiResponse<API.JoinRequestDetail[]>>('/api/join-request/my-requests', {
+/** 获取我的申请列表 GET /api/company/my-join-requests */
+export async function getMyJoinRequests() {
+  return request<API.ApiResponse<API.JoinRequestDetail[]>>('/api/company/my-join-requests', {
     method: 'GET',
-    params: { keyword },
   });
 }
 
-/** 撤回申请 DELETE /api/join-request/{id} */
-export async function cancelRequest(id: string) {
-  return request<API.ApiResponse<boolean>>(`/api/join-request/${id}`, {
-    method: 'DELETE',
-  });
-}
-
-/** 获取待审核的申请列表 GET /api/join-request/pending */
-export async function getPendingRequests(companyId?: string, keyword?: string) {
-  const params: any = {};
-  if (companyId) params.companyId = companyId;
-  if (keyword) params.keyword = keyword;
-
-  return request<API.ApiResponse<API.JoinRequestDetail[]>>('/api/join-request/pending', {
+/** 获取企业的申请列表（管理员） GET /api/company/{companyId}/join-requests */
+export async function getJoinRequests(companyId: string, status?: string) {
+  return request<API.ApiResponse<API.JoinRequestDetail[]>>(`/api/company/${companyId}/join-requests`, {
     method: 'GET',
-    params,
+    params: { status },
   });
 }
 
-/** 审核通过申请 POST /api/join-request/{id}/approve */
-export async function approveRequest(id: string, data?: API.ReviewJoinRequestRequest) {
-  return request<API.ApiResponse<boolean>>(`/api/join-request/${id}/approve`, {
+/** 批准申请 POST /api/company/join-requests/{id}/approve */
+export async function approveJoinRequest(id: string, data?: API.ReviewJoinRequestRequest) {
+  return request<API.ApiResponse<string>>(`/api/company/join-requests/${id}/approve`, {
     method: 'POST',
     data: data || {},
   });
 }
 
-/** 拒绝申请 POST /api/join-request/{id}/reject */
-export async function rejectRequest(id: string, data: API.ReviewJoinRequestRequest) {
-  return request<API.ApiResponse<boolean>>(`/api/join-request/${id}/reject`, {
+/** 拒绝申请 POST /api/company/join-requests/{id}/reject */
+export async function rejectJoinRequest(id: string, data: API.ReviewJoinRequestRequest) {
+  return request<API.ApiResponse<string>>(`/api/company/join-requests/${id}/reject`, {
     method: 'POST',
     data,
+  });
+}
+
+/** 撤销申请 POST /api/company/join-requests/{id}/cancel */
+export async function cancelJoinRequest(id: string) {
+  return request<API.ApiResponse<string>>(`/api/company/join-requests/${id}/cancel`, {
+    method: 'POST',
   });
 }
 

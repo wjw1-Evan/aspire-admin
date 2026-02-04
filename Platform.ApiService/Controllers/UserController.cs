@@ -553,13 +553,12 @@ public class UserController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetCurrentUserProfile()
     {
-        var userId = GetRequiredUserId();
-        // v3.1: 获取用户信息时不使用多租户过滤，因为用户可以属于多个企业
-        var user = await _userService.GetUserByIdWithoutTenantFilterAsync(userId);
-        if (user == null)
+        // 返回 CurrentUser 格式，包含角色等信息
+        var currentUser = await _authService.GetCurrentUserAsync();
+        if (currentUser == null)
             throw new KeyNotFoundException("用户不存在");
 
-        return Success(user);
+        return Success(currentUser);
     }
 
     /// <summary>

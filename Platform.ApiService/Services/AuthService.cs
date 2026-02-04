@@ -110,10 +110,10 @@ public class AuthService : IAuthService
             .Equal(r => r.Type, type)
             .GreaterThan(r => r.ExpiresAt, DateTime.UtcNow) // 只查询未过期的记录
             .Build();
-        
+
         var records = await _failureRecordFactory.FindWithoutTenantFilterAsync(filter);
         var record = records.FirstOrDefault();
-        
+
         return record?.FailureCount ?? 0;
     }
 
@@ -128,7 +128,7 @@ public class AuthService : IAuthService
             .Equal(r => r.ClientId, clientId)
             .Equal(r => r.Type, type)
             .Build();
-        
+
         // 使用 UpdateOneAsync 配合 IsUpsert，避免 Id 为 null 的问题
         // 这样可以原子性地更新现有记录或插入新记录
         // Inc 在 upsert 时，如果字段不存在会将字段设置为指定值（1），如果存在则增加
@@ -142,13 +142,13 @@ public class AuthService : IAuthService
             .SetOnInsert(r => r.CreatedAt, DateTime.UtcNow) // 仅在插入时设置
             .SetOnInsert(r => r.IsDeleted, false) // 仅在插入时设置
             .Build();
-        
+
         var options = new MongoDB.Driver.FindOneAndUpdateOptions<LoginFailureRecord>
         {
             IsUpsert = true, // 如果不存在则插入
             ReturnDocument = MongoDB.Driver.ReturnDocument.After
         };
-        
+
         await _failureRecordFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update, options);
     }
 
@@ -163,7 +163,7 @@ public class AuthService : IAuthService
             .Equal(r => r.ClientId, clientId)
             .Equal(r => r.Type, type)
             .Build();
-        
+
         // 使用软删除（原子操作）
         await _failureRecordFactory.FindOneAndSoftDeleteWithoutTenantFilterAsync(filter);
     }
@@ -225,7 +225,7 @@ public class AuthService : IAuthService
                 IsLogin = false
             };
         }
-        
+
         if (!user.IsActive)
         {
             // 用户已被禁用：账户被管理员停用
@@ -246,7 +246,7 @@ public class AuthService : IAuthService
                 .Equal(uc => uc.UserId, user.Id)
                 .Equal(uc => uc.CompanyId, user.CurrentCompanyId)
                 .Build();
-            
+
             var userCompany = await _userCompanyFactory.FindAsync(userCompanyFilter);
             firstUserCompany = userCompany.FirstOrDefault();
             if (firstUserCompany?.RoleIds != null && firstUserCompany.RoleIds.Any())
@@ -263,7 +263,7 @@ public class AuthService : IAuthService
                 roleNames = userRoles.Select(r => r.Name).ToList();
             }
         }
-        
+
         // 获取用户最后一次保存的城市信息（从位置信标中获取）
         string? city = null;
         try
@@ -288,6 +288,7 @@ public class AuthService : IAuthService
             Tags = user.Tags ?? new List<UserTag>(),
             Roles = roleNames,
             Phone = user.PhoneNumber,
+            Age = user.Age,
             IsLogin = true,
             CurrentCompanyId = user.CurrentCompanyId,
             CreatedAt = user.CreatedAt,
@@ -336,12 +337,12 @@ public class AuthService : IAuthService
             .Build();
         var users = await _userFactory.FindAsync(filter);
         var user = users.FirstOrDefault();
-        
+
         if (user == null)
         {
             await RecordFailureAsync(clientId, "login");
             return ApiResponse<LoginData>.ErrorResult(
-                "LOGIN_FAILED", 
+                "LOGIN_FAILED",
                 "用户名或密码错误，请检查后重试"
             );
         }
@@ -351,7 +352,7 @@ public class AuthService : IAuthService
         {
             await RecordFailureAsync(clientId, "login");
             return ApiResponse<LoginData>.ErrorResult(
-                "LOGIN_FAILED", 
+                "LOGIN_FAILED",
                 "用户名或密码错误，请检查后重试"
             );
         }
@@ -364,7 +365,7 @@ public class AuthService : IAuthService
         {
             var companies = await _companyFactory.FindAsync(_companyFactory.CreateFilterBuilder().Equal(c => c.Id, user.CurrentCompanyId).Build());
             var company = companies.FirstOrDefault();
-            
+
             if (company == null)
             {
                 return ApiResponse<LoginData>.ErrorResult(
@@ -395,7 +396,7 @@ public class AuthService : IAuthService
         var loginUpdate = _userFactory.CreateUpdateBuilder()
             .Set(u => u.LastLoginAt, DateTime.UtcNow)
             .Build();
-        
+
         await _userFactory.FindOneAndUpdateAsync(loginFilter, loginUpdate);
 
         // 记录登录活动日志
@@ -453,7 +454,7 @@ public class AuthService : IAuthService
                 await _userService.LogUserActivityAsync(userId, "logout", "用户登出", ipAddress, userAgent);
             }
         }
-        
+
         // JWT 是无状态的，登出只需要客户端删除 token
         // 如果需要服务端登出，可以实现 token 黑名单机制
         return true;
@@ -499,7 +500,7 @@ public class AuthService : IAuthService
         {
             _phoneValidationService.ValidatePhone(request.PhoneNumber.Trim());
         }
-        
+
         // 2. 检查用户名全局唯一
         try
         {
@@ -510,7 +511,7 @@ public class AuthService : IAuthService
             await RecordFailureAsync(clientId, "register");
             throw; // 重新抛出异常，让调用者处理
         }
-        
+
         if (!string.IsNullOrEmpty(request.Email))
         {
             try
@@ -554,7 +555,7 @@ public class AuthService : IAuthService
                 IsActive = true
                 // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
-            
+
             // 只有当 PhoneNumber 有值时才设置
             // AppUser.PhoneNumber 使用了 [BsonIgnoreIfNull] 特性，null 值不会被写入数据库
             // 这样可以避免稀疏唯一索引的 null 值冲突问题
@@ -562,16 +563,16 @@ public class AuthService : IAuthService
             {
                 user.PhoneNumber = request.PhoneNumber.Trim();
             }
-            
+
             await _userFactory.CreateAsync(user);
             _logger.LogInformation("用户注册成功: {Username} ({UserId})", user.Username, user.Id);
-            
+
             // 创建个人企业
             var companyResult = await CreatePersonalCompanyWithDetailsAsync(user);
             personalCompany = companyResult.Company;
             adminRole = companyResult.Role;
             userCompany = companyResult.UserCompany;
-            
+
             // 设置用户的企业信息（v3.1: 使用 CurrentCompanyId 和 PersonalCompanyId，不再使用 CompanyId）
             var userFilter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
             var userUpdate = _userFactory.CreateUpdateBuilder()
@@ -580,23 +581,23 @@ public class AuthService : IAuthService
                 // 注意：AppUser 不再有 CompanyId 字段（多企业模型，通过 UserCompany 关联表管理）
                 .SetCurrentTimestamp()
                 .Build();
-            
+
             await _userFactory.FindOneAndUpdateAsync(userFilter, userUpdate);
-            
+
             // 更新用户对象（用于后续返回）
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
             // 注意：AppUser 不再有 CompanyId 字段（多企业模型）
-            
+
             // 清除密码哈希
             user.PasswordHash = string.Empty;
-            
-            _logger.LogInformation("用户 {Username} 注册完成，个人企业: {CompanyName}", 
+
+            _logger.LogInformation("用户 {Username} 注册完成，个人企业: {CompanyName}",
                 user.Username, personalCompany.Name);
-            
+
             // 注册成功，清除失败记录
             await ClearFailureAsync(clientId, "register");
-            
+
             return ApiResponse<User>.SuccessResult(user, "注册成功！已为您创建个人企业。");
         }
         catch (ArgumentException ex)
@@ -621,7 +622,7 @@ public class AuthService : IAuthService
             return ApiResponse<User>.ErrorResult("SERVER_ERROR", $"注册失败: {ex.Message}");
         }
     }
-    
+
     /// <summary>
     /// 回滚用户注册操作（清理已创建的数据）
     /// </summary>
@@ -684,7 +685,7 @@ public class AuthService : IAuthService
         Company? company = null;
         Role? adminRole = null;
         UserCompany? userCompany = null;
-        
+
         try
         {
             // 1. 创建个人企业
@@ -696,10 +697,10 @@ public class AuthService : IAuthService
                 IsActive = true
                 // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
-            
+
             await _companyFactory.CreateAsync(company);
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
-            
+
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
             // DatabaseOperationFactory 会自动应用 IsDeleted = false 的软删除过滤
             var menuFilter = _menuFactory.CreateFilterBuilder()
@@ -708,14 +709,14 @@ public class AuthService : IAuthService
             var allMenus = await _menuFactory.FindAsync(menuFilter);
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
-            
+
             // 验证菜单数据完整性
             if (!allMenuIds.Any())
             {
                 _logger.LogError("❌ 系统菜单未初始化！请确保 DataInitializer 服务已成功运行");
                 throw new InvalidOperationException("系统菜单未初始化，请先运行 DataInitializer 服务");
             }
-            
+
             // 3. 创建管理员角色（分配所有菜单）
             adminRole = new Role
             {
@@ -727,10 +728,10 @@ public class AuthService : IAuthService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            
+
             await _roleFactory.CreateAsync(adminRole);
             _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
-            
+
             // 4. 创建用户-企业关联（用户是管理员）
             userCompany = new UserCompany
             {
@@ -742,10 +743,10 @@ public class AuthService : IAuthService
                 JoinedAt = DateTime.UtcNow  // 业务字段，需要手动设置
                 // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
-            
+
             await _userCompanyFactory.CreateAsync(userCompany);
             _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}", user.Id, company.Id);
-            
+
             return new CompanyCreationResult
             {
                 Company = company,
@@ -769,7 +770,7 @@ public class AuthService : IAuthService
     {
         Company? company = null;
         Role? adminRole = null;
-        
+
         try
         {
             // 1. 创建个人企业
@@ -783,10 +784,10 @@ public class AuthService : IAuthService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            
+
             await _companyFactory.CreateAsync(company);
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
-            
+
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
             // DatabaseOperationFactory 会自动应用 IsDeleted = false 的软删除过滤
             var menuFilter = _menuFactory.CreateFilterBuilder()
@@ -795,14 +796,14 @@ public class AuthService : IAuthService
             var allMenus = await _menuFactory.FindAsync(menuFilter);
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
-            
+
             // 验证菜单数据完整性
             if (!allMenuIds.Any())
             {
                 _logger.LogError("❌ 系统菜单未初始化！请确保 DataInitializer 服务已成功运行");
                 throw new InvalidOperationException("系统菜单未初始化，请先运行 DataInitializer 服务");
             }
-            
+
             // 3. 创建管理员角色（分配所有菜单）
             adminRole = new Role
             {
@@ -814,10 +815,10 @@ public class AuthService : IAuthService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            
+
             await _roleFactory.CreateAsync(adminRole);
             _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
-            
+
             // 4. 创建用户-企业关联（用户是管理员）
             var userCompany = new UserCompany
             {
@@ -832,18 +833,18 @@ public class AuthService : IAuthService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            
+
             await _userCompanyFactory.CreateAsync(userCompany);
-            
+
             _logger.LogInformation("个人企业创建完成");
-            
+
             return company;
         }
         catch (Exception ex)
         {
             // 错误回滚：清理已创建的数据
             _logger.LogError(ex, "创建个人企业失败，开始清理数据");
-            
+
             try
             {
                 // 按创建的逆序删除
@@ -857,7 +858,7 @@ public class AuthService : IAuthService
                         .Build();
                     var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
                     var userCompanyToDelete = userCompanies.FirstOrDefault();
-                    
+
                     if (userCompanyToDelete != null)
                     {
                         var filter = _userCompanyFactory.CreateFilterBuilder().Equal(uc => uc.Id, userCompanyToDelete.Id!).Build();
@@ -865,7 +866,7 @@ public class AuthService : IAuthService
                         _logger.LogInformation("已清理用户-企业关联: UserId={UserId}, CompanyId={CompanyId}", user.Id, company.Id);
                     }
                 }
-                
+
                 // 2. 删除角色
                 if (adminRole?.Id != null)
                 {
@@ -873,7 +874,7 @@ public class AuthService : IAuthService
                     await _roleFactory.FindOneAndSoftDeleteAsync(filter);
                     _logger.LogInformation("已清理角色: {RoleId}", adminRole.Id);
                 }
-                
+
                 // 3. 删除企业
                 if (company?.Id != null)
                 {
@@ -886,7 +887,7 @@ public class AuthService : IAuthService
             {
                 _logger.LogError(cleanupEx, "清理数据失败，可能需要手动清理");
             }
-            
+
             throw new InvalidOperationException($"注册失败: {ex.Message}", ex);
         }
     }
@@ -964,15 +965,15 @@ public class AuthService : IAuthService
 
             // 更新密码
             var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
-            
+
             var filter = _userFactory.CreateFilterBuilder().Equal(u => u.Id, user.Id).Build();
             var update = _userFactory.CreateUpdateBuilder()
                 .Set(u => u.PasswordHash, newPasswordHash)
                 .Set(u => u.UpdatedAt, DateTime.UtcNow)
                 .Build();
-            
+
             await _userFactory.FindOneAndUpdateAsync(filter, update);
-            
+
             // 记录修改密码活动日志
             var currentHttpContext = _httpContextAccessor.HttpContext;
             var ipAddress = currentHttpContext?.Connection?.RemoteIpAddress?.ToString();

@@ -26,7 +26,7 @@ public class CompanyController : BaseApiController
     /// <param name="authService">认证服务</param>
     /// <param name="userCompanyService">用户企业关联服务</param>
     public CompanyController(
-        ICompanyService companyService, 
+        ICompanyService companyService,
         IAuthService authService,
         IUserCompanyService userCompanyService)
     {
@@ -219,7 +219,7 @@ public class CompanyController : BaseApiController
             throw new UnauthorizedAccessException("未找到企业信息");
         }
         var companyId = user.CurrentCompanyId;
-        
+
         var success = await _companyService.UpdateCompanyAsync(companyId, request);
         success.EnsureSuccess("企业", companyId);
 
@@ -242,7 +242,7 @@ public class CompanyController : BaseApiController
             throw new UnauthorizedAccessException("未找到企业信息");
         }
         var companyId = user.CurrentCompanyId;
-        
+
         var statistics = await _companyService.GetCompanyStatisticsAsync(companyId);
         return Success(statistics);
     }
@@ -273,7 +273,7 @@ public class CompanyController : BaseApiController
     public async Task<IActionResult> SearchCompanies([FromQuery] string keyword)
     {
         keyword.EnsureNotEmpty("搜索关键词");
-        
+
         var results = await _companyService.SearchCompaniesAsync(keyword);
         return Success(results);
     }
@@ -298,7 +298,7 @@ public class CompanyController : BaseApiController
     public async Task<IActionResult> SwitchCompany([FromBody] SwitchCompanyRequest request)
     {
         request.TargetCompanyId.EnsureNotEmpty("目标企业ID");
-        
+
         var result = await _userCompanyService.SwitchCompanyAsync(request.TargetCompanyId);
         return Success(result, "企业切换成功");
     }
@@ -315,7 +315,7 @@ public class CompanyController : BaseApiController
         {
             throw new UnauthorizedAccessException("只有企业管理员可以查看成员列表");
         }
-        
+
         var members = await _userCompanyService.GetCompanyMembersAsync(companyId);
         return Success(members);
     }
@@ -326,8 +326,8 @@ public class CompanyController : BaseApiController
     [HttpPut("{companyId}/members/{userId}/roles")]
     [Authorize]
     public async Task<IActionResult> UpdateMemberRoles(
-        string companyId, 
-        string userId, 
+        string companyId,
+        string userId,
         [FromBody] UpdateMemberRolesRequest request)
     {
         // 验证当前用户是否是该企业的管理员
@@ -335,11 +335,11 @@ public class CompanyController : BaseApiController
         {
             throw new UnauthorizedAccessException("只有企业管理员可以分配角色");
         }
-        
+
         var success = await _userCompanyService.UpdateMemberRolesAsync(companyId, userId, request.RoleIds);
         if (!success)
             throw new KeyNotFoundException("成员不存在");
-        
+
         return Success("角色更新成功");
     }
 
@@ -358,11 +358,11 @@ public class CompanyController : BaseApiController
         {
             throw new UnauthorizedAccessException("只有企业管理员可以设置管理员权限");
         }
-        
+
         var success = await _userCompanyService.SetMemberAsAdminAsync(companyId, userId, request.IsAdmin);
         if (!success)
             throw new KeyNotFoundException("成员不存在");
-        
+
         return Success(request.IsAdmin ? "已设置为管理员" : "已取消管理员权限");
     }
 
@@ -378,12 +378,92 @@ public class CompanyController : BaseApiController
         {
             throw new UnauthorizedAccessException("只有企业管理员可以移除成员");
         }
-        
+
         var success = await _userCompanyService.RemoveMemberAsync(companyId, userId);
         if (!success)
             throw new KeyNotFoundException("成员不存在");
-        
+
         return Success("成员已移除");
+    }
+
+    /// <summary>
+    /// v3.1: 申请加入企业
+    /// </summary>
+    [HttpPost("join")]
+    [Authorize]
+    public async Task<IActionResult> ApplyToJoin([FromBody] ApplyToJoinCompanyRequest request)
+    {
+        request.CompanyId.EnsureNotEmpty("企业ID");
+
+        var userId = GetRequiredUserId();
+        await _userCompanyService.ApplyToJoinCompanyAsync(userId, request.CompanyId, request.Reason);
+
+        return Success("申请已提交，请等待管理员审核");
+    }
+
+    /// <summary>
+    /// v3.1: 获取我的加入申请列表
+    /// </summary>
+    [HttpGet("my-join-requests")]
+    [Authorize]
+    public async Task<IActionResult> GetMyJoinRequests()
+    {
+        var userId = GetRequiredUserId();
+        var requests = await _userCompanyService.GetUserJoinRequestsAsync(userId);
+        return Success(requests);
+    }
+
+    /// <summary>
+    /// v3.1: 撤销加入申请
+    /// </summary>
+    [HttpPost("join-requests/{requestId}/cancel")]
+    [Authorize]
+    public async Task<IActionResult> CancelJoinRequest(string requestId)
+    {
+        var userId = GetRequiredUserId();
+        await _userCompanyService.CancelJoinRequestAsync(userId, requestId);
+        return Success("申请已撤销");
+    }
+
+    /// <summary>
+    /// v3.1: 获取企业加入申请列表（管理员）
+    /// </summary>
+    [HttpGet("{companyId}/join-requests")]
+    [Authorize]
+    public async Task<IActionResult> GetJoinRequests(string companyId, [FromQuery] string? status = null)
+    {
+        // 验证当前用户是否是该企业的管理员
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(GetRequiredUserId(), companyId))
+        {
+            throw new UnauthorizedAccessException("只有企业管理员可以查看申请列表");
+        }
+
+        var requests = await _userCompanyService.GetJoinRequestsAsync(companyId, status);
+        return Success(requests);
+    }
+
+    /// <summary>
+    /// v3.1: 同意加入申请（管理员）
+    /// </summary>
+    [HttpPost("join-requests/{requestId}/approve")]
+    [Authorize]
+    public async Task<IActionResult> ApproveJoinRequest(string requestId, [FromBody] ReviewJoinRequestRequest request)
+    {
+        // 注意：ReviewJoinRequestAsync 内部会再次验证权限
+        await _userCompanyService.ReviewJoinRequestAsync(requestId, true, null, request.DefaultRoleIds);
+        return Success("已同意加入申请");
+    }
+
+    /// <summary>
+    /// v3.1: 拒绝加入申请（管理员）
+    /// </summary>
+    [HttpPost("join-requests/{requestId}/reject")]
+    [Authorize]
+    public async Task<IActionResult> RejectJoinRequest(string requestId, [FromBody] ReviewJoinRequestRequest request)
+    {
+        // 注意：ReviewJoinRequestAsync 内部会再次验证权限
+        await _userCompanyService.ReviewJoinRequestAsync(requestId, false, request.RejectReason, null);
+        return Success("已拒绝加入申请");
     }
 
     #endregion

@@ -6,7 +6,7 @@ import SearchFormCard from '@/components/SearchFormCard';
 const { useBreakpoint } = Grid;
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
-import { getMyRequests, cancelRequest } from '@/services/company';
+import { getMyJoinRequests, cancelJoinRequest } from '@/services/company';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -49,13 +49,25 @@ const MyJoinRequests: React.FC = () => {
   const fetchMyRequests = useCallback(async (_params: any, _sort?: Record<string, any>) => {
     try {
       const { keyword } = searchForm.getFieldsValue();
-      const response = await getMyRequests(keyword);
+      const response = await getMyJoinRequests();
 
-      if (response.success && response.data) {
+      // 前端进行关键字过滤，因为新的API不支持关键字参数
+      // 实际上 getMyJoinRequests 也没有参数
+      let filteredData = response.data || [];
+      if (keyword && response.data) {
+        filteredData = response.data.filter(item =>
+          item.companyName?.toLowerCase().includes(keyword.toLowerCase()) ||
+          item.reason?.toLowerCase().includes(keyword.toLowerCase())
+        );
+      } else if (response.data) {
+        filteredData = response.data;
+      }
+
+      if (response.success) {
         return {
-          data: response.data,
+          data: filteredData,
           success: true,
-          total: response.data.length,
+          total: filteredData.length,
         };
       }
 
@@ -88,7 +100,7 @@ const MyJoinRequests: React.FC = () => {
   const handleCancel = async (id: string) => {
     setLoading(true);
     try {
-      const response = await cancelRequest(id);
+      const response = await cancelJoinRequest(id);
 
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.message.applicationCancelled' }));

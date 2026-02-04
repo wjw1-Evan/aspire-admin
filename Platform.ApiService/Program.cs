@@ -27,7 +27,7 @@ var jsonOptions = new JsonSerializerOptions
 jsonOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 
 // 上传大小限制（可按需调整）
-const long MaxUploadBytes = 5L * 1024 * 1024 * 1024; // 5GB
+const long MaxUploadBytes = 10L * 1024 * 1024 * 1024; // 10GB
 
 // Kestrel 请求大小限制
 builder.WebHost.ConfigureKestrel(options =>
@@ -55,7 +55,7 @@ builder.Services.AddControllers()
             var errors = context.ModelState
                 .Where(e => e.Value?.Errors.Count > 0)
                 .ToDictionary(
-                    kvp => char.ToLowerInvariant(kvp.Key[0]) + kvp.Key.Substring(1), // camelCase key
+                    kvp => char.ToLowerInvariant(kvp.Key[0]) + kvp.Key[1..], // camelCase key
                     kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
                 );
 

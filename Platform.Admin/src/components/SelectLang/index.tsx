@@ -1,5 +1,4 @@
 import React from 'react';
-import { GlobalOutlined } from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { setLocale, getLocale } from '@umijs/max';
@@ -57,7 +56,6 @@ const SelectLang: React.FC = () => {
             trigger={['hover']}
         >
             <span className={styles.headerActionButton}>
-                
                 {currentLocaleInfo && (
                     <span className={styles.flagWrapper}>
                         {currentLocaleInfo.icon}

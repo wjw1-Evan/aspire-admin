@@ -2,44 +2,39 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
+  width: 44px;
+  /* 固定宽度，与导航栏其他按钮一致 */
+  height: 44px;
+  /* 固定高度 */
+  padding: 0;
   margin: 0 4px;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 50%;
+  /* 统一使用圆形 */
+  font-size: 20px;
+  color: #333;
   transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: inherit;
-
-  .globalIcon {
-    font-size: 18px;
-    transition: transform 0.3s;
-  }
+  line-height: 1;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   .flagWrapper {
     font-size: 20px;
+    /* 图标大小对齐 */
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
     overflow: hidden;
-    /* 玻璃效果 */
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s;
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
-
-    .globalIcon {
-      transform: rotate(15deg);
-    }
+    background: #fafafa;
+    border-color: #1890ff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px) scale(1.05);
 
     .flagWrapper {
       transform: scale(1.1);
@@ -51,13 +46,13 @@
   }
 }
 
-/* 下拉菜单样式增强 */
+/* 下拉菜单样式保持 Premium */
 :global(.ant-dropdown-menu) {
   padding: 8px !important;
   border-radius: 12px !important;
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.15) !important;
   backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
 
   .ant-dropdown-menu-item {

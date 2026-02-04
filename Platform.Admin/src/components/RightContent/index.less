@@ -2,22 +2,33 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
+  width: 44px;
+  /* 固定宽度 */
+  height: 44px;
+  /* 固定高度，确保正方形 */
+  padding: 0;
+  /* 移除 padding 以保证正中 */
   margin: 0 4px;
   cursor: pointer;
-  border-radius: 8px;
-  font-size: 18px;
-  color: inherit;
+  border-radius: 50%;
+  /* 改为圆形更统一 */
+  font-size: 20px;
+  color: #333;
   transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
   line-height: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: #fafafa;
+    border-color: #1890ff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transform: translateY(-1px) scale(1.05);
+
+    :global(.anticon) {
+      transform: rotate(10deg);
+    }
   }
 
   &:active {
@@ -26,9 +37,8 @@
 
   :global(.anticon) {
     transition: transform 0.3s;
-  }
-
-  &:hover :global(.anticon) {
-    transform: rotate(10deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }

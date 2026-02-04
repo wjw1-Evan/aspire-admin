@@ -12,6 +12,7 @@ import {
   Footer,
   NoticeIcon,
   SelectLang,
+  Question,
 } from '@/components';
 import AiAssistant from '@/components/AiAssistant';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
@@ -239,7 +240,10 @@ export const layout: RunTimeLayoutConfig = ({
 }) => {
   return {
     actionsRender: () => {
-      const actions = [<SelectLang key="SelectLang" />];
+      const actions = [
+        <SelectLang key="SelectLang" />,
+
+      ];
       // 只在用户已登录时渲染通知图标，避免在登录页面调用需要认证的 API
       if (initialState?.currentUser) {
         actions.push(<NoticeIcon key="NoticeIcon" />);
@@ -251,10 +255,8 @@ export const layout: RunTimeLayoutConfig = ({
       icon: <Icons.UserOutlined />,
       title: <AvatarName />,
       style: {
-        marginLeft: 0,
-        marginRight: 0,
-        paddingInlineStart: 0,
-        paddingInlineEnd: 0,
+        margin: 0,
+        padding: 0,
       },
       render: (_: any, avatarChildren: React.ReactNode) => {
         return <AvatarDropdown menu>{avatarChildren}</AvatarDropdown>;

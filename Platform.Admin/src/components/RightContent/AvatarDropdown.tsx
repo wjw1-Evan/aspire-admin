@@ -39,16 +39,36 @@ export const AvatarName = () => {
 const useStyles = createStyles(({ token }) => {
   return {
     action: {
-      display: 'flex',
-      height: '48px',
-      marginLeft: 'auto',
-      overflow: 'hidden',
+      display: 'inline-flex',
       alignItems: 'center',
+      justifyContent: 'center',
+      height: '44px',
+      padding: '0 12px',
+      margin: '0 4px',
+      cursor: 'pointer',
+      borderRadius: '22px', // 药丸形以对齐圆形按钮
+      transition: 'all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
+      lineHeight: 1,
+      background: '#ffffff',
+      border: '1px solid #e8e8e8',
+      color: '#333',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
 
+      '&:hover': {
+        background: '#fafafa',
+        borderColor: '#1890ff',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        transform: 'translateY(-1px) scale(1.02)',
+      },
 
-      borderRadius: token.borderRadius,
-
+      '&:active': {
+        transform: 'scale(0.98)',
+      },
     },
+    name: {
+      marginLeft: '8px',
+      fontWeight: '500',
+    }
   };
 });
 
@@ -346,7 +366,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
           items: menuItems,
         }}
       >
-        {children}
+        <span className={styles.action}>
+          {children}
+        </span>
       </HeaderDropdown>
       <ThemeSettingsDrawer
         open={settingsDrawerOpen}

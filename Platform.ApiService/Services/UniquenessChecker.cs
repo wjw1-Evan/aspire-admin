@@ -16,14 +16,14 @@ public interface IUniquenessChecker
     /// <param name="username">用户名</param>
     /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
     Task EnsureUsernameUniqueAsync(string username, string? excludeUserId = null);
-    
+
     /// <summary>
     /// 确保邮箱唯一，如果已存在则抛出异常
     /// </summary>
     /// <param name="email">邮箱地址</param>
     /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
     Task EnsureEmailUniqueAsync(string email, string? excludeUserId = null);
-    
+
     /// <summary>
     /// 检查用户名是否唯一
     /// </summary>
@@ -31,7 +31,7 @@ public interface IUniquenessChecker
     /// <param name="excludeUserId">排除的用户ID（用于更新时排除自己）</param>
     /// <returns>如果唯一返回 true，否则返回 false</returns>
     Task<bool> IsUsernameUniqueAsync(string username, string? excludeUserId = null);
-    
+
     /// <summary>
     /// 检查邮箱是否唯一
     /// </summary>
@@ -79,7 +79,7 @@ public class UniquenessChecker : IUniquenessChecker
     {
         if (!await IsUsernameUniqueAsync(username, excludeUserId))
         {
-            throw new InvalidOperationException("用户名已存在");
+            throw new InvalidOperationException("USER_NAME_EXISTS");
         }
     }
 
@@ -90,7 +90,7 @@ public class UniquenessChecker : IUniquenessChecker
     {
         if (!await IsEmailUniqueAsync(email, excludeUserId))
         {
-            throw new InvalidOperationException("邮箱已存在");
+            throw new InvalidOperationException("EMAIL_EXISTS");
         }
     }
 
@@ -101,7 +101,7 @@ public class UniquenessChecker : IUniquenessChecker
     {
         if (!await IsPhoneUniqueAsync(phone, excludeUserId))
         {
-            throw new InvalidOperationException("手机号已存在");
+            throw new InvalidOperationException("PHONE_NUMBER_EXISTS");
         }
     }
 
@@ -112,16 +112,16 @@ public class UniquenessChecker : IUniquenessChecker
     {
         var filterBuilder = _userFactory.CreateFilterBuilder()
             .Equal(u => u.Username, username);
-        
+
         // v3.1: 用户名全局唯一，不再按企业过滤
-        
+
         if (!string.IsNullOrEmpty(excludeUserId))
         {
             filterBuilder.NotEqual(u => u.Id, excludeUserId);
         }
-        
+
         var filter = filterBuilder.Build();
-        
+
         var users = await _userFactory.FindAsync(filter);
         var existing = users.FirstOrDefault();
         return existing == null;
@@ -134,19 +134,19 @@ public class UniquenessChecker : IUniquenessChecker
     {
         if (string.IsNullOrEmpty(email))
             return true;
-            
+
         var filterBuilder = _userFactory.CreateFilterBuilder()
             .Equal(u => u.Email, email);
-        
+
         // v3.1: 邮箱全局唯一，不再按企业过滤
-        
+
         if (!string.IsNullOrEmpty(excludeUserId))
         {
             filterBuilder.NotEqual(u => u.Id, excludeUserId);
         }
-        
+
         var filter = filterBuilder.Build();
-        
+
         var users = await _userFactory.FindAsync(filter);
         var existing = users.FirstOrDefault();
         return existing == null;

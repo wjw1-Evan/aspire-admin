@@ -79,11 +79,16 @@
   - `UNAUTHORIZED`：未认证或认证信息无效。
   - `FORBIDDEN`：已认证但无访问权限。
   - `INTERNAL_ERROR`：未预期的服务器内部错误。
+- **国际化与错误键值（i18n Error Keys）**：
+  - 为了支持多语言，后端应尽量返回**全大写下划线分隔的错误键值**（Error Key），例如 `USER_NAME_EXISTS`，而不是直接返回中文或特定语言的描述。
+  - 前端负责将这些 Key 映射到用户选择的语言（如 `request.ts` 语言包）。
+  - 若后端未返回 Key，或 Key 在前端无映射，前端将回退显示原始 `errorMessage`。
 - **使用建议**：
   - 验证错误优先使用 `ValidationErrorResult` / `ValidationError`。
   - 找不到资源时优先使用 `EnsureFound` + `NotFoundError` 或 `NotFoundResult`。
   - 鉴权失败统一通过 `UnauthorizedError` 或中间件，而不是随意返回 200 + 错误信息。
-  - 对前端暴露的 `errorMessage` 要可读、可本地化，不暴露内部实现细节。
+  - 推荐抛出 `InvalidOperationException("ERROR_KEY")`，由顶层异常处理器捕获并包装为 `BUSINESS_ERROR`。
+  - `errorMessage` 字段作为**开发/调试信息**或**前端回退显示**，在返回 Key 时，该字段可以填充该 Key。
 
 ### 5. 与中间件的关系
 

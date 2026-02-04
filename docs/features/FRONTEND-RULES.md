@@ -317,8 +317,10 @@
 
 - **加载状态**：
   - 表格、列表、按钮操作都应有 `loading` 状态，避免用户误以为无响应。
-- **错误提示**：
-  - 对于 `ApiResponse.success=false` 的情况，统一在拦截器或调用处弹出 `message.error(errorMessage)` 或 `notification.error`。
+- **错误提示与国际化**：
+  - 对于 `ApiResponse.success=false` 的情况，拦截器会优先根据后端返回的 `errorMessage`（作为 Key）在 `locales/*/request.ts` 中查找翻译。
+  - 如果找到翻译，显示翻译后的文案；如果未找到，则显示后端返回的原始文案。
+  - 统一在拦截器或调用处弹出 `message.error` 或 `notification.error`。
   - 表单校验错误优先使用 Ant Design 的表单校验规则，而不是在提交失败后才整体提示。
 
 ### 6. 详情页面规范

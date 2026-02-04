@@ -4,6 +4,7 @@
  */
 
 import { getMessage, getNotification } from './antdAppInstance';
+import { getIntl, getLocale } from '@umijs/max';
 
 // 将提示操作调度到渲染阶段之外，避免 React 18 并发模式警告
 const runAfterRender = (fn: () => void) => {
@@ -295,26 +296,35 @@ class UnifiedErrorInterceptor {
       }
     }
 
+    // 提取原始错误信息（可能是错误码 Key，也可能是直接的错误描述）
+    let rawMessage = '';
+
     // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置）
     if (error.info?.errorMessage) {
-      return error.info.errorMessage;
+      rawMessage = error.info.errorMessage;
     }
-
     // 尝试从 error.response.data.title 获取（ProblemDetails 格式）
-    if (error?.response?.data?.title) {
-      return error.response.data.title;
+    else if (error?.response?.data?.title) {
+      rawMessage = error.response.data.title;
+    }
+    else if (error.response?.data?.errorMessage) {
+      rawMessage = error.response.data.errorMessage;
+    }
+    else if (error.message) {
+      rawMessage = error.message;
+    }
+    else if (error.response?.status) {
+      rawMessage = `HTTP ${error.response.status} Error`;
     }
 
-    if (error.response?.data?.errorMessage) {
-      return error.response.data.errorMessage;
+    if (rawMessage) {
+      // 尝试翻译错误信息（如果 rawMessage 是一个翻译 Key）
+      const intl = getIntl(getLocale());
+      return intl.formatMessage({ id: rawMessage, defaultMessage: rawMessage });
     }
-    if (error.message) {
-      return error.message;
-    }
-    if (error.response?.status) {
-      return `HTTP ${error.response.status} 错误`;
-    }
-    return '未知错误';
+
+    const intl = getIntl(getLocale());
+    return intl.formatMessage({ id: 'request.error.unknown', defaultMessage: '未知错误' });
   }
 
   /**
@@ -506,7 +516,7 @@ class UnifiedErrorInterceptor {
       } else if (displayType === ErrorDisplayType.NOTIFICATION) {
         runAfterRender(() =>
           notification.error({
-            message: '验证错误',
+            message: getIntl(getLocale()).formatMessage({ id: 'request.error.validation', defaultMessage: '验证错误' }),
             description: errors[0],
             duration: 4.5,
           }),
@@ -521,7 +531,7 @@ class UnifiedErrorInterceptor {
           } else if (displayType === ErrorDisplayType.NOTIFICATION) {
             runAfterRender(() =>
               notification.error({
-                message: `验证错误 ${index + 1}`,
+                message: `${getIntl(getLocale()).formatMessage({ id: 'request.error.validation', defaultMessage: '验证错误' })} ${index + 1}`,
                 description: msg,
                 duration: 3,
               }),

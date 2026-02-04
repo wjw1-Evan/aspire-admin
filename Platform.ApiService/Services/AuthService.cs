@@ -314,8 +314,8 @@ public class AuthService : IAuthService
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
                 return ApiResponse<LoginData>.ErrorResult(
-                    "CAPTCHA_REQUIRED",
-                    "登录失败后需要输入验证码，请先获取验证码"
+                    "CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN",
+                    "CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN"
                 );
             }
 
@@ -325,7 +325,7 @@ public class AuthService : IAuthService
                 await RecordFailureAsync(clientId, "login"); // 验证码错误也记录失败
                 return ApiResponse<LoginData>.ErrorResult(
                     "CAPTCHA_INVALID",
-                    "图形验证码错误，请重新输入"
+                    "CAPTCHA_INVALID"
                 );
             }
         }
@@ -343,7 +343,7 @@ public class AuthService : IAuthService
             await RecordFailureAsync(clientId, "login");
             return ApiResponse<LoginData>.ErrorResult(
                 "LOGIN_FAILED",
-                "用户名或密码错误，请检查后重试"
+                "INVALID_CREDENTIALS"
             );
         }
 
@@ -353,7 +353,7 @@ public class AuthService : IAuthService
             await RecordFailureAsync(clientId, "login");
             return ApiResponse<LoginData>.ErrorResult(
                 "LOGIN_FAILED",
-                "用户名或密码错误，请检查后重试"
+                "INVALID_CREDENTIALS"
             );
         }
 
@@ -370,7 +370,7 @@ public class AuthService : IAuthService
             {
                 return ApiResponse<LoginData>.ErrorResult(
                     "COMPANY_NOT_FOUND",
-                    "当前企业不存在，请联系管理员"
+                    "CURRENT_COMPANY_NOT_FOUND"
                 );
             }
 
@@ -477,7 +477,7 @@ public class AuthService : IAuthService
             {
                 return ApiResponse<User>.ErrorResult(
                     "CAPTCHA_REQUIRED",
-                    "注册失败后需要输入验证码，请先获取验证码"
+                    "CAPTCHA_REQUIRED_AFTER_FAILED_REGISTER"
                 );
             }
 
@@ -487,7 +487,7 @@ public class AuthService : IAuthService
                 await RecordFailureAsync(clientId, "register"); // 验证码错误也记录失败
                 return ApiResponse<User>.ErrorResult(
                     "CAPTCHA_INVALID",
-                    "图形验证码错误，请重新输入"
+                    "CAPTCHA_INVALID"
                 );
             }
         }
@@ -598,7 +598,7 @@ public class AuthService : IAuthService
             // 注册成功，清除失败记录
             await ClearFailureAsync(clientId, "register");
 
-            return ApiResponse<User>.SuccessResult(user, "注册成功！已为您创建个人企业。");
+            return ApiResponse<User>.SuccessResult(user, "REGISTER_SUCCESS_PERSONAL_COMPANY_CREATED");
         }
         catch (ArgumentException ex)
         {
@@ -611,7 +611,7 @@ public class AuthService : IAuthService
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
             // 唯一性检查失败
-            var errorCode = ex.Message.Contains("用户名") ? "USER_EXISTS" : "EMAIL_EXISTS";
+            var errorCode = ex.Message.Contains("USER_NAME_EXISTS") ? "USER_EXISTS" : "EMAIL_EXISTS";
             return ApiResponse<User>.ErrorResult(errorCode, ex.Message);
         }
         catch (Exception ex)
@@ -619,7 +619,7 @@ public class AuthService : IAuthService
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
-            return ApiResponse<User>.ErrorResult("SERVER_ERROR", $"注册失败: {ex.Message}");
+            return ApiResponse<User>.ErrorResult("SERVER_ERROR", $"REGISTER_FAILED: {ex.Message}");
         }
     }
 

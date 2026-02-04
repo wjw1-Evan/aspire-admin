@@ -53,7 +53,7 @@ public class UserService(
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
         {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
+            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
         var currentCompanyId = currentUser.CurrentCompanyId;
 
@@ -103,7 +103,7 @@ public class UserService(
 
         if (!hasMenuAccess)
         {
-            throw new UnauthorizedAccessException("无权查看其他用户信息");
+            throw new UnauthorizedAccessException("USER_VIEW_PERMISSION_DENIED");
         }
     }
 
@@ -145,7 +145,7 @@ public class UserService(
 
         if (string.IsNullOrEmpty(companyId))
         {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
+            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
@@ -244,7 +244,7 @@ public class UserService(
             var currentUser = await _userFactory.GetByIdAsync(currentUserId);
             if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
             {
-                throw new UnauthorizedAccessException("未找到当前企业信息");
+                throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
             }
             var companyId = currentUser.CurrentCompanyId;
 
@@ -337,7 +337,7 @@ public class UserService(
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
         {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
+            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
         var currentCompanyId = currentUser.CurrentCompanyId;
 
@@ -485,7 +485,7 @@ roleIds)
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
         {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
+            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
         var currentCompanyId = currentUser.CurrentCompanyId;
 
@@ -544,7 +544,7 @@ roleIds)
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
         {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
+            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
         var currentCompanyId = currentUser.CurrentCompanyId;
 
@@ -673,7 +673,7 @@ roleIds)
             var avatarPayload = request.Avatar.Trim();
             if (!string.IsNullOrEmpty(avatarPayload))
             {
-                if (avatarPayload.Length > 2_500_000) throw new ArgumentException("头像数据过大，请选择小于 2MB 的图片", nameof(request.Avatar));
+                if (avatarPayload.Length > 2_500_000) throw new ArgumentException("AVATAR_TOO_LARGE", nameof(request.Avatar));
                 updateBuilder.Set(u => u.Avatar, avatarPayload);
             }
             else
@@ -692,7 +692,7 @@ roleIds)
         var update = updateBuilder.Build();
         var updatedUser = await _userFactory.FindOneAndUpdateAsync(filter, update);
 
-        if (updatedUser == null) throw new KeyNotFoundException($"用户 {userId} 不存在");
+        if (updatedUser == null) throw new KeyNotFoundException($"USER_NOT_FOUND");
 
         return await GetUserByIdWithoutTenantFilterAsync(userId);
     }

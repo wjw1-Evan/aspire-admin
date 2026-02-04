@@ -853,7 +853,7 @@ public class UserCompanyService : IUserCompanyService
         var membership = await GetUserCompanyAsync(userId, companyId);
         if (membership == null || membership.Status != "active")
         {
-            throw new KeyNotFoundException("您不是该企业的有效成员");
+            throw new KeyNotFoundException("COMPANY_NOT_MEMBER");
         }
 
         // 2. 检查是否是企业创建者（不允许退出，只能注销）
@@ -861,7 +861,7 @@ public class UserCompanyService : IUserCompanyService
         var company = await _companyFactory.GetByIdAsync(companyId);
         if (company?.CreatedBy == userId)
         {
-            throw new InvalidOperationException("您是该企业的创建者，不允许退出");
+            throw new InvalidOperationException("COMPANY_CREATOR_CANNOT_LEAVE");
         }
 
         // 3. 检查是否是企业创建者或唯一管理员（简单检查：如果是管理员，且企业只有这一个管理员）
@@ -875,7 +875,7 @@ public class UserCompanyService : IUserCompanyService
             var adminCount = await _userCompanyFactory.CountAsync(adminFilter);
             if (adminCount <= 1)
             {
-                throw new InvalidOperationException("您是企业唯一的管理员，请先转让管理员权限或注销企业");
+                throw new InvalidOperationException("COMPANY_SOLE_ADMIN_CANNOT_LEAVE");
             }
         }
 

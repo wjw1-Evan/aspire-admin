@@ -3,7 +3,6 @@ import { Dropdown, Spin, App as AntApp } from 'antd';
 import type { MenuProps } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { request, useModel, useIntl } from '@umijs/max';
-import { JoinCompanyModal } from '../JoinCompanyModal';
 import { CreateCompanyModal } from '../CreateCompanyModal';
 import styles from './index.less';
 
@@ -18,7 +17,6 @@ export const CompanySwitcher: React.FC = () => {
   const [companies, setCompanies] = useState<API.UserCompanyItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
-  const [joinModalOpen, setJoinModalOpen] = useState(false);
   const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
 
   // 加载用户的企业列表
@@ -148,17 +146,6 @@ export const CompanySwitcher: React.FC = () => {
         setCreateCompanyModalOpen(true);
       },
     },
-    {
-      key: 'join-company',
-      label: (
-        <div className={styles.joinCompany}>
-          <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.joinNew' })}
-        </div>
-      ),
-      onClick: () => {
-        setJoinModalOpen(true);
-      },
-    },
   ];
 
   // 当前企业信息
@@ -193,14 +180,6 @@ export const CompanySwitcher: React.FC = () => {
         </div>
       </Dropdown>
 
-      <JoinCompanyModal
-        open={joinModalOpen}
-        onClose={() => setJoinModalOpen(false)}
-        onSuccess={() => {
-          // 申请成功后刷新企业列表
-          loadCompanies();
-        }}
-      />
 
       <CreateCompanyModal
         open={createCompanyModalOpen}

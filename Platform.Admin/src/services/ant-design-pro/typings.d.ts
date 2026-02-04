@@ -428,6 +428,8 @@ declare namespace API {
     hasPendingRequest: boolean;
     memberStatus?: string;
     memberCount: number;
+    requestId?: string;
+    isCreator: boolean;
   };
 
   type SwitchCompanyRequest = {

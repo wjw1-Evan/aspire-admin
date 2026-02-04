@@ -18,7 +18,7 @@ public interface ICompanyService
     /// <param name="request">企业注册请求</param>
     /// <returns>注册的企业信息</returns>
     Task<Company> RegisterCompanyAsync(RegisterCompanyRequest request);
-    
+
     /// <summary>
     /// 创建企业（已登录用户创建企业）
     /// </summary>
@@ -26,21 +26,21 @@ public interface ICompanyService
     /// <param name="userId">创建者用户ID</param>
     /// <returns>创建的企业信息</returns>
     Task<Company> CreateCompanyAsync(CreateCompanyRequest request, string userId);
-    
+
     /// <summary>
     /// 根据ID获取企业信息
     /// </summary>
     /// <param name="id">企业ID</param>
     /// <returns>企业信息，如果不存在则返回 null</returns>
     Task<Company?> GetCompanyByIdAsync(string id);
-    
+
     /// <summary>
     /// 根据企业代码获取企业信息
     /// </summary>
     /// <param name="code">企业代码</param>
     /// <returns>企业信息，如果不存在则返回 null</returns>
     Task<Company?> GetCompanyByCodeAsync(string code);
-    
+
     /// <summary>
     /// 更新企业信息
     /// </summary>
@@ -48,20 +48,20 @@ public interface ICompanyService
     /// <param name="request">更新企业请求</param>
     /// <returns>是否成功更新</returns>
     Task<bool> UpdateCompanyAsync(string id, UpdateCompanyRequest request);
-    
+
     /// <summary>
     /// 获取企业统计信息
     /// </summary>
     /// <param name="companyId">企业ID</param>
     /// <returns>企业统计信息</returns>
     Task<CompanyStatistics> GetCompanyStatisticsAsync(string companyId);
-    
+
     /// <summary>
     /// 获取所有企业列表
     /// </summary>
     /// <returns>企业列表</returns>
     Task<List<Company>> GetAllCompaniesAsync();
-    
+
     /// <summary>
     /// 搜索企业（按关键词）
     /// </summary>
@@ -198,7 +198,7 @@ public class CompanyService : ICompanyService
                 // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
             await _userCompanyFactory.CreateAsync(userCompany);
-            _logger.LogInformation("为用户 {UserId} 创建企业关联记录，角色: {RoleIds}", 
+            _logger.LogInformation("为用户 {UserId} 创建企业关联记录，角色: {RoleIds}",
                 adminUser.Id!, string.Join(", ", userCompany.RoleIds));
 
             return company;
@@ -227,7 +227,7 @@ public class CompanyService : ICompanyService
 
         // 自动生成企业代码（基于用户名和时间戳，保证唯一性）
         string companyCode;
-        
+
         // 如果请求中提供了代码，使用用户提供的（向后兼容）
         if (!string.IsNullOrWhiteSpace(request.Code))
         {
@@ -245,31 +245,31 @@ public class CompanyService : ICompanyService
             // 格式：company-{用户ID的最后12位}（ObjectId 24位十六进制，取后12位确保唯一性）
             int attempts = 0;
             const int maxAttempts = 10;
-            
+
             do
             {
                 // 使用用户ID生成唯一代码（参考 personal-{user.Id} 的规则）
                 // 取用户ID的后12位（ObjectId是24位，取后12位足够唯一）
-                var userIdSuffix = currentUser.Id!.Length > 12 
-                    ? currentUser.Id.Substring(currentUser.Id.Length - 12) 
+                var userIdSuffix = currentUser.Id!.Length > 12
+                    ? currentUser.Id.Substring(currentUser.Id.Length - 12)
                     : currentUser.Id;
-                
+
                 companyCode = $"company-{userIdSuffix}";
-                
+
                 // 如果同一个用户在极短时间内创建多个企业，添加随机后缀
                 if (attempts > 0)
                 {
                     var randomSuffix = Random.Shared.Next(1000, 9999);
                     companyCode = $"company-{userIdSuffix}-{randomSuffix}";
                 }
-                
+
                 // 检查是否已存在
                 var existingCompany = await GetCompanyByCodeAsync(companyCode);
                 if (existingCompany == null)
                 {
                     break; // 代码可用
                 }
-                
+
                 attempts++;
                 if (attempts >= maxAttempts)
                 {
@@ -344,7 +344,7 @@ public class CompanyService : ICompanyService
             };
 
             await _userCompanyFactory.CreateAsync(userCompany);
-            _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}，角色: {RoleId}", 
+            _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}，角色: {RoleId}",
                 currentUser.Id, company.Id, adminRole.Id);
 
             return company;
@@ -423,7 +423,7 @@ public class CompanyService : ICompanyService
             .Build();
 
         var updateBuilder = _companyFactory.CreateUpdateBuilder();
-        
+
         if (request.Name != null)
             updateBuilder.Set(c => c.Name, request.Name);
         if (request.Description != null)
@@ -438,7 +438,7 @@ public class CompanyService : ICompanyService
             updateBuilder.Set(c => c.ContactPhone, request.ContactPhone);
         if (request.Logo != null)
             updateBuilder.Set(c => c.Logo, request.Logo);
-        
+
         updateBuilder.SetCurrentTimestamp();
         var update = updateBuilder.Build();
 
@@ -469,11 +469,11 @@ public class CompanyService : ICompanyService
             .Equal(uc => uc.Status, "active")
             .Build();
         var totalUsers = await _userCompanyFactory.CountAsync(ucFilter);
-        
+
         // 统计活跃用户（需要关联 AppUser 表）
         var activeUserIds = await _userCompanyFactory.FindAsync(ucFilter);
         var userIds = activeUserIds.Select(uc => uc.UserId).ToList();
-        
+
         var activeUserFilter = _userFactory.CreateFilterBuilder()
             .In(u => u.Id, userIds)
             .Equal(u => u.IsActive, true)
@@ -523,24 +523,24 @@ public class CompanyService : ICompanyService
     public async Task<List<CompanySearchResult>> SearchCompaniesAsync(string keyword)
     {
         var userId = _tenantContext.GetCurrentUserId();
-        
+
         // 搜索企业（按名称或代码）
         var nameFilter = _companyFactory.CreateFilterBuilder()
             .Regex(c => c.Name, keyword, "i")
             .Equal(c => c.IsActive, true)
             .Build();
-        
+
         var codeFilter = _companyFactory.CreateFilterBuilder()
             .Regex(c => c.Code, keyword, "i")
             .Equal(c => c.IsActive, true)
             .Build();
-        
+
         var filter = Builders<Company>.Filter.Or(nameFilter, codeFilter);
-        
+
         var companies = await _companyFactory.FindAsync(filter, limit: 20);
-        
+
         var results = new List<CompanySearchResult>();
-        
+
         foreach (var company in companies)
         {
             // 检查用户是否已是成员
@@ -555,7 +555,7 @@ public class CompanyService : ICompanyService
                 var memberships = await _userCompanyFactory.FindAsync(membershipFilter);
                 membership = memberships.FirstOrDefault();
             }
-            
+
             // 检查是否有待审核的申请
             // ✅ 使用 FindWithoutTenantFilterAsync：需要跨企业查询申请记录
             CompanyJoinRequest? pendingRequest = null;
@@ -570,7 +570,7 @@ public class CompanyService : ICompanyService
                 var requests = await _joinRequestFactory.FindWithoutTenantFilterAsync(requestFilter);
                 pendingRequest = requests.FirstOrDefault();
             }
-            
+
             // 统计成员数
             // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以直接查询
             var memberCountFilter = _userCompanyFactory.CreateFilterBuilder()
@@ -579,17 +579,19 @@ public class CompanyService : ICompanyService
                 .Build();
             var memberCountList = await _userCompanyFactory.FindAsync(memberCountFilter);
             var memberCount = memberCountList.Count;
-            
+
             results.Add(new CompanySearchResult
             {
                 Company = company,
                 IsMember = membership != null && membership.Status == "active",
                 HasPendingRequest = pendingRequest != null,
+                RequestId = pendingRequest?.Id,
+                IsCreator = company.CreatedBy == userId,
                 MemberStatus = membership?.Status,
                 MemberCount = (int)memberCount
             });
         }
-        
+
         return results;
     }
 }

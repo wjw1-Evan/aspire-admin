@@ -1,7 +1,7 @@
 import { PlusOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Button, Input, Modal, Space, App as AntApp, Tag, Divider, Typography, Flex } from 'antd';
 import React, { useState, useMemo } from 'react';
-import { applyToJoinCompany, searchCompanies } from '@/services/company';
+import { applyToJoinCompany, searchCompanies, leaveCompany, cancelJoinRequest } from '@/services/company';
 
 const { Text } = Typography;
 
@@ -129,6 +129,50 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
     }
   };
 
+  // 退出企业
+  const handleLeaveCompany = async (companyId: string, companyName: string) => {
+    AntApp.useApp().modal.confirm({
+      title: '确认退出企业',
+      content: `确定要退出企业“${companyName}”吗？退出后您将失去该企业的访问权限。`,
+      onOk: async () => {
+        try {
+          const response = await leaveCompany(companyId);
+          if (response.success) {
+            message.success('已成功退出企业');
+            handleSearch(); // 刷新搜索结果
+            onSuccess?.(); // 刷新全局状态
+          } else {
+            message.error(response.errorMessage || '退出失败');
+          }
+        } catch (error: any) {
+          message.error(error.message || '退出失败');
+        }
+      },
+    });
+  };
+
+  // 撤销申请
+  const handleCancelRequest = async (requestId: string) => {
+    if (!requestId || requestId === 'undefined') {
+      message.error('申请 ID 异常，请刷新页面重试');
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await cancelJoinRequest(requestId);
+      if (response.success) {
+        message.success('申请已撤销');
+        handleSearch(); // 刷新搜索结果
+      } else {
+        message.error(response.errorMessage || '撤销失败');
+      }
+    } catch (error: any) {
+      message.error(error.message || '撤销失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 关闭模态框
   const handleClose = () => {
     resetState();
@@ -219,8 +263,6 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                     <div
                       key={item.company.id}
                       style={{
-                        cursor: 'not-allowed',
-                        opacity: 0.7,
                         padding: '12px 16px',
                         background: '#fafafa',
                         display: 'flex',
@@ -242,6 +284,9 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                           {item.hasPendingRequest && !item.isMember && (
                             <Tag color="processing" style={{ margin: 0 }}>待审核</Tag>
                           )}
+                          {item.isCreator && (
+                            <Tag color="gold" style={{ margin: 0 }}>我的企业</Tag>
+                          )}
                         </Space>
                         <Space orientation="vertical" size={0}>
                           <span style={{ fontSize: 12, color: '#8c8c8c' }}>
@@ -260,14 +305,34 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                         </Space>
                       </Flex>
                       <Space>
-                        {item.isMember && (
-                          <Tag color="success" icon={<CheckCircleOutlined />}>
-                            已加入
-                          </Tag>
-                        )}
-                        {item.hasPendingRequest && (
-                          <Tag color="processing">待审核</Tag>
-                        )}
+                        {item.isMember ? (
+                          <Button
+                            danger
+                            size="small"
+                            disabled={item.isCreator}
+                            title={item.isCreator ? "您是该企业的创建者，不能退出" : ""}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLeaveCompany(item.company.id!, item.company.name);
+                            }}
+                          >
+                            退出企业
+                          </Button>
+                        ) : item.hasPendingRequest ? (
+                          <Button
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // 注意：我们需要 requestId。CompanySearchResult 应该包含 requestId。
+                              // 如果没有，我们需要修改后端 SearchCompaniesAsync 以返回它，或者前端通过 my-join-requests 匹配。
+                              // 查看 searchCompanies 返回类型... API.CompanySearchResult。
+                              // 我去查一下 CompanySearchResult 模型。
+                              handleCancelRequest(item.requestId!);
+                            }}
+                          >
+                            撤销申请
+                          </Button>
+                        ) : null}
                       </Space>
                     </div>
                   ))}
@@ -301,7 +366,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                   {availableCompanies.map((item) => {
                     const isDisabled = item.isMember || item.hasPendingRequest;
                     const isSelected = selectedCompany?.company.id === item.company.id;
-                    
+
                     return (
                       <div
                         key={item.company.id}

@@ -95,10 +95,12 @@ public interface IUserCompanyService
     /// <summary>
     /// 移除企业成员（管理员功能）
     /// </summary>
-    /// <param name="companyId">企业ID</param>
-    /// <param name="userId">用户ID</param>
-    /// <returns>是否成功移除</returns>
     Task<bool> RemoveMemberAsync(string companyId, string userId);
+
+    /// <summary>
+    /// 退出企业（用户自主功能）
+    /// </summary>
+    Task<bool> LeaveCompanyAsync(string userId, string companyId);
 }
 
 /// <summary>
@@ -326,6 +328,12 @@ public class UserCompanyService : IUserCompanyService
     /// </summary>
     public async Task<bool> CancelJoinRequestAsync(string userId, string requestId)
     {
+        // 安全性检查：防止非法 ID 导致崩溃
+        if (string.IsNullOrEmpty(requestId) || requestId == "undefined" || requestId.Length != 24)
+        {
+            throw new ArgumentException("非法的申请记录ID");
+        }
+
         // 1. 获取申请
         var request = await _joinRequestFactory.GetByIdAsync(requestId);
         if (request == null)
@@ -824,7 +832,7 @@ public class UserCompanyService : IUserCompanyService
         // 不能移除自己
         if (currentUserId == userId)
         {
-            throw new InvalidOperationException("不能移除自己，请转让管理员权限后再操作");
+            throw new InvalidOperationException("不能移除自己，请使用退出企业功能或转让管理员权限后再操作");
         }
 
         var filter = _userCompanyFactory.CreateFilterBuilder()
@@ -833,6 +841,63 @@ public class UserCompanyService : IUserCompanyService
             .Build();
 
         var result = await _userCompanyFactory.FindOneAndSoftDeleteAsync(filter);
+        return result != null;
+    }
+
+    /// <summary>
+    /// 退出企业
+    /// </summary>
+    public async Task<bool> LeaveCompanyAsync(string userId, string companyId)
+    {
+        // 1. 验证是否是该企业的成员
+        var membership = await GetUserCompanyAsync(userId, companyId);
+        if (membership == null || membership.Status != "active")
+        {
+            throw new KeyNotFoundException("您不是该企业的有效成员");
+        }
+
+        // 2. 检查是否是企业创建者（不允许退出，只能注销）
+        var user = await _userFactory.GetByIdAsync(userId);
+        var company = await _companyFactory.GetByIdAsync(companyId);
+        if (company?.CreatedBy == userId)
+        {
+            throw new InvalidOperationException("您是该企业的创建者，不允许退出");
+        }
+
+        // 3. 检查是否是企业创建者或唯一管理员（简单检查：如果是管理员，且企业只有这一个管理员）
+        if (membership.IsAdmin)
+        {
+            var adminFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.CompanyId, companyId)
+                .Equal(uc => uc.IsAdmin, true)
+                .Equal(uc => uc.Status, "active")
+                .Build();
+            var adminCount = await _userCompanyFactory.CountAsync(adminFilter);
+            if (adminCount <= 1)
+            {
+                throw new InvalidOperationException("您是企业唯一的管理员，请先转让管理员权限或注销企业");
+            }
+        }
+
+        // 4. 执行软删除
+        var filter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, userId)
+            .Equal(uc => uc.CompanyId, companyId)
+            .Build();
+
+        var result = await _userCompanyFactory.FindOneAndSoftDeleteAsync(filter);
+
+        // 5. 如果当前正在使用该企业，需要重置 CurrentCompanyId
+        if (user != null && user.CurrentCompanyId == companyId)
+        {
+            var update = _userFactory.CreateUpdateBuilder()
+                .Set(u => u.CurrentCompanyId, user.PersonalCompanyId ?? "")
+                .Build();
+            await _userFactory.FindOneAndUpdateAsync(
+                _userFactory.CreateFilterBuilder().Equal(u => u.Id, userId).Build(),
+                update);
+        }
+
         return result != null;
     }
 

@@ -47,15 +47,9 @@ export default [
     hideInMenu: true,
   },
   {
-    name: 'company-search',
-    path: '/company/search',
-    component: './company/search',
-    hideInMenu: true,
-  },
-  {
-    name: 'my-join-requests',
-    path: '/join-requests/my',
-    component: './join-requests/my',
+    name: 'pending-join-requests',
+    path: '/join-requests/pending',
+    component: './join-requests/pending',
     hideInMenu: true,
   },
   {

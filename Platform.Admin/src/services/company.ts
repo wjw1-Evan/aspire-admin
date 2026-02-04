@@ -144,6 +144,13 @@ export async function removeMember(companyId: string, userId: string) {
   );
 }
 
+/** v3.1: 退出企业 DELETE /api/company/{companyId}/leave */
+export async function leaveCompany(companyId: string) {
+  return request<API.ApiResponse<boolean>>(`/api/company/${companyId}/leave`, {
+    method: 'DELETE',
+  });
+}
+
 // ===== v3.1: 企业加入申请 API =====
 
 /** 申请加入企业 POST /api/company/join */

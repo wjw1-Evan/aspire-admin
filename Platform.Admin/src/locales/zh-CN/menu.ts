@@ -58,8 +58,6 @@ export default {
   'menu.xiaoke-management.chat-history.desc': '查看和管理聊天记录',
   'menu.password-book': '密码本',
   'menu.password-book.desc': '安全保存和管理账号密码',
-  'menu.company-search': '企业搜索',
-  'menu.my-join-requests': '我的加入申请',
   'menu.pending-join-requests': '待审批申请',
   'menu.account': '个人页',
   'menu.account.center': '个人中心',
@@ -96,11 +94,6 @@ export default {
   'menu.document.document:approval': '我的审批',
   // 企业切换器
   'component.companySwitcher.title': '切换企业',
-  'component.companySwitcher.join': '加入新企业',
-  'component.companySwitcher.search': '搜索企业',
-  'component.companySwitcher.applyReason': '申请理由',
-  'component.companySwitcher.submit': '提交申请',
-  'component.companySwitcher.cancel': '取消',
   // 网盘管理
   'menu.cloud-storage': '网盘管理',
   'menu.cloud-storage.desc': '云存储文件管理',

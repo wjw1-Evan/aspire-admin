@@ -1,4 +1,5 @@
 using MongoDB.Driver;
+using MongoDB.Bson;
 using Platform.ServiceDefaults.Models;
 using Platform.DataInitializer.Scripts;
 
@@ -239,6 +240,9 @@ public class DataInitializerService : IDataInitializerService
             _logger.LogInformation("全局系统菜单同步完成 - 新建: {Created} 个，已存在: {Skipped} 个，总计: {Total} 个",
                 createdCount, skippedCount, expectedMenus.Count);
 
+            // 3. 刷新现有管理员角色的菜单权限（确保新菜单对旧企业管理员可见）
+            var allMenuIds = expectedMenus.Select(m => m.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+            await RefreshAdminRolesMenusAsync(allMenuIds!);
         }
         catch (Exception ex)
         {
@@ -762,6 +766,22 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
+        // 加入申请管理
+        menus.Add(new Menu
+        {
+            Name = "pending-join-requests",
+            Title = "待审批申请",
+            Path = "/join-requests/pending",
+            Component = "./join-requests/pending",
+            Icon = "user-add",
+            ParentId = "system",
+            SortOrder = 7,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
         return menus;
     }
 
@@ -804,7 +824,59 @@ public class DataInitializerService : IDataInitializerService
             "cloud-storage-shared" => "cloud-storage",
             "cloud-storage-recycle" => "cloud-storage",
             "cloud-storage-quota" => "cloud-storage",
+            // 加入申请
+            "pending-join-requests" => "system",
             _ => null
         };
+    }
+
+    /// <summary>
+    /// 刷新所有企业的“管理员”角色菜单
+    /// 确保新添加的系统菜单能够自动分配给现有企业的管理员
+    /// </summary>
+    private async Task RefreshAdminRolesMenusAsync(List<string> allMenuIds)
+    {
+        try
+        {
+            _logger.LogInformation("开始刷新现有管理员角色的菜单权限...");
+
+            var roles = _database.GetCollection<BsonDocument>("roles");
+
+            // 查找所有名为“管理员”的角色
+            var filter = Builders<BsonDocument>.Filter.And(
+                Builders<BsonDocument>.Filter.Eq("name", "管理员"),
+                Builders<BsonDocument>.Filter.Eq("isDeleted", false)
+            );
+
+            var adminRoles = await roles.Find(filter).ToListAsync();
+            int updatedCount = 0;
+
+            foreach (var role in adminRoles)
+            {
+                var roleId = role.GetValue("_id").ToString();
+                var companyId = role.GetValue("companyId", "").ToString();
+                var existingMenuIds = role.GetValue("menuIds", new BsonArray()).AsBsonArray.Select(x => x.ToString()).ToList();
+
+                // 找出缺失的菜单ID
+                var missingMenuIds = allMenuIds.Except(existingMenuIds).ToList();
+
+                if (missingMenuIds.Any())
+                {
+                    // 使用 $addToSet 批量添加缺失的菜单ID，避免重复
+                    var update = Builders<BsonDocument>.Update.AddToSetEach("menuIds", missingMenuIds);
+                    await roles.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", role.GetValue("_id")), update);
+
+                    _logger.LogInformation("✅ 已为企业 {CompanyId} 的管理员角色同步 {Count} 个新菜单", companyId, missingMenuIds.Count);
+                    updatedCount++;
+                }
+            }
+
+            _logger.LogInformation("管理员角色权限刷新完成，共更新 {Count} 个角色", updatedCount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "刷新管理员角色菜单权限失败");
+            // 注意：刷新权限失败不应中断整个初始化流程
+        }
     }
 }

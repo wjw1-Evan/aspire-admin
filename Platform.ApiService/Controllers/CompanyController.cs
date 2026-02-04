@@ -387,6 +387,21 @@ public class CompanyController : BaseApiController
     }
 
     /// <summary>
+    /// v3.1: 退出企业（用户自主）
+    /// </summary>
+    [HttpDelete("{companyId}/leave")]
+    [Authorize]
+    public async Task<IActionResult> LeaveCompany(string companyId)
+    {
+        var userId = GetRequiredUserId();
+        var success = await _userCompanyService.LeaveCompanyAsync(userId, companyId);
+        if (!success)
+            throw new KeyNotFoundException("退出失败");
+
+        return Success("已退出该企业");
+    }
+
+    /// <summary>
     /// v3.1: 申请加入企业
     /// </summary>
     [HttpPost("join")]

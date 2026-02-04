@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent } from 'react';
-import { Drawer, Tag, Space, Empty, Spin, Badge, Avatar, Tooltip, Flex, Pagination } from 'antd';
+import { Drawer, Tag, Space, Empty, Spin, Badge, Avatar, Tooltip, Flex, Pagination, theme } from 'antd';
 import { BellOutlined, FileTextOutlined, AlertOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -89,6 +89,8 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
 
 
 
+  const { token } = theme.useToken();
+
   const getPriorityTag = (priority?: number) => {
     const map: Record<number, { label: string; color: string }> = {
       0: { label: t('pages.unifiedNotificationCenter.priority.low', '低'), color: 'blue' },
@@ -103,11 +105,11 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
   const getTypeMeta = (type: string) => {
     switch (type) {
       case 'Task':
-        return { icon: <FileTextOutlined />, color: '#1890ff' };
+        return { icon: <FileTextOutlined />, color: token.colorPrimary };
       case 'System':
-        return { icon: <AlertOutlined />, color: '#faad14' };
+        return { icon: <AlertOutlined />, color: token.colorWarning };
       default:
-        return { icon: <BellOutlined />, color: '#52c41a' };
+        return { icon: <BellOutlined />, color: token.colorSuccess };
     }
   };
 
@@ -147,10 +149,23 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
     const avatar = (
       <Avatar style={{ backgroundColor: meta.color }} icon={meta.icon} />
     );
+
+    // 动态样式
+    const itemStyle: React.CSSProperties = {
+      backgroundColor: token.colorBgContainer,
+      borderColor: token.colorBorderSecondary,
+    };
+
+    if (!item.read) {
+      itemStyle.backgroundColor = token.colorFillQuaternary; // 未读使用极淡的填充色
+      itemStyle.borderLeft = `3px solid ${token.colorPrimary}`;
+    }
+
     return (
       <div
         key={item.id}
-        className={`${styles.notificationItem} ${!item.read ? styles.unread : ''}`}
+        className={styles.notificationItem}
+        style={itemStyle}
         onClick={() => handleItemClick(item)}
       >
         <Flex gap={12} align="flex-start">
@@ -169,19 +184,19 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
             <div className={styles.itemHeader}>
               <div className={styles.itemHeaderLeft}>
                 <Space>
-                  <span className={styles.title}>{item.title}</span>
+                  <span className={styles.title} style={{ color: token.colorText }}>{item.title}</span>
                   {!item.read && <Badge status="processing" />}
                   {item.taskPriority !== undefined && getPriorityTag(item.taskPriority)}
                 </Space>
               </div>
               <div className={styles.itemHeaderRight}>
                 <Tooltip title={dayjs(item.datetime).format('YYYY-MM-DD HH:mm:ss')}>
-                  <small className={styles.time}>{dayjs(item.datetime).fromNow()}</small>
+                  <small className={styles.time} style={{ color: token.colorTextTertiary }}>{dayjs(item.datetime).fromNow()}</small>
                 </Tooltip>
               </div>
             </div>
             <div className={styles.itemDesc}>
-              <p>{item.description}</p>
+              <p style={{ color: token.colorTextSecondary }}>{item.description}</p>
             </div>
           </Flex>
         </Flex>
@@ -196,7 +211,7 @@ const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps> = ({
       onClose={onClose}
       open={isOpen}
       size={500}
-      styles={{ body: { padding: 8, background: '#fafafa' } }}
+      styles={{ body: { padding: 8, background: token.colorBgLayout } }}
     >
       <Spin spinning={loading}>
         {notifications.length > 0 ? (

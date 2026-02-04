@@ -32,6 +32,32 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         _tenantContext = tenantContext;
     }
 
+    // ========== 静态缓存（性能优化） ==========
+
+    private static readonly string _companyIdFieldName = InitCompanyIdFieldName();
+
+    /// <summary>
+    /// 初始化 CompanyId 的 BSON 字段名
+    /// </summary>
+    private static string InitCompanyIdFieldName()
+    {
+        if (!typeof(IMultiTenant).IsAssignableFrom(typeof(T)))
+            return "companyId";
+
+        var prop = typeof(T).GetProperty("CompanyId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (prop != null)
+        {
+            var bsonElementAttr = prop.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
+            if (bsonElementAttr != null && !string.IsNullOrEmpty(bsonElementAttr.ElementName))
+            {
+                return bsonElementAttr.ElementName;
+            }
+            var name = prop.Name;
+            return name.Length > 0 ? char.ToLowerInvariant(name[0]) + name.Substring(1) : "companyId";
+        }
+        return "companyId";
+    }
+
     // ========== 公共辅助 ==========
 
     /// <summary>
@@ -628,23 +654,23 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     public async Task<List<TResult>> AggregateAsync<TResult>(PipelineDefinition<T, TResult> pipeline)
     {
         var finalFilter = await ApplyDefaultFiltersAsync(null).ConfigureAwait(false);
-        
+
         // 创建渲染参数，这能自动处理 LinqProvider 等底层差异
         var serializer = BsonSerializer.SerializerRegistry.GetSerializer<T>();
         var registry = BsonSerializer.SerializerRegistry;
         var renderArgs = new RenderArgs<T>(serializer, registry);
-        
+
         // 1. 渲染过滤器为 $match 阶段
         var filterBson = finalFilter.Render(renderArgs);
         var matchDocument = new BsonDocument("$match", filterBson);
-        
+
         // 2. 渲染原始管道
         var renderedPipeline = pipeline.Render(renderArgs);
-        
+
         // 合并阶段：先执行租户/软删除过滤，再执行业务定义的管道
         var stages = new List<BsonDocument> { matchDocument };
         stages.AddRange(renderedPipeline.Documents);
-        
+
         // 执行聚合
         var cursor = await _collection.Aggregate(PipelineDefinition<T, TResult>.Create(stages)).ToListAsync().ConfigureAwait(false);
         return cursor;
@@ -659,9 +685,8 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         if (string.IsNullOrEmpty(companyId))
             return filter;
 
-        // 使用 CompanyId 的 BSON 字段名（优先使用 BsonElement 特性；否则使用 camelCase 属性名）
-        var companyIdField = GetCompanyIdBsonFieldName();
-        return Builders<T>.Filter.And(filter, Builders<T>.Filter.Eq(companyIdField, companyId));
+        // 使用缓存的 CompanyId BSON 字段名
+        return Builders<T>.Filter.And(filter, Builders<T>.Filter.Eq(_companyIdFieldName, companyId));
     }
 
     private async Task<string?> ResolveCurrentCompanyIdAsync() =>
@@ -680,25 +705,6 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         return ApplySoftDeleteFilter(tenantFilter);
     }
 
-    /// <summary>
-    /// 获取 CompanyId 的 BSON 字段名（优先使用 BsonElement 特性；否则属性名 camelCase）。
-    /// 仅在实体实现 IMultiTenant 时调用。
-    /// </summary>
-    private static string GetCompanyIdBsonFieldName()
-    {
-        var prop = typeof(T).GetProperty("CompanyId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-        if (prop != null)
-        {
-            var bsonElementAttr = prop.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonElementAttribute>();
-            if (bsonElementAttr != null && !string.IsNullOrEmpty(bsonElementAttr.ElementName))
-            {
-                return bsonElementAttr.ElementName;
-            }
-            var name = prop.Name;
-            return name.Length > 0 ? char.ToLowerInvariant(name[0]) + name.Substring(1) : "companyId";
-        }
-        // 回退：约定默认字段名为 companyId
-        return "companyId";
-    }
+
 
 }

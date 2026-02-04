@@ -35,6 +35,7 @@ public class UserApproverResolver : IApproverResolver
         _logger = logger;
     }
 
+    /// <param name="rule">审批人规则</param>
     /// <param name="companyId">企业（租户）ID</param>
     /// <param name="instance">流程实例上下文</param>
     /// <returns>匹配到的用户ID列表</returns>
@@ -89,6 +90,7 @@ public class RoleApproverResolver : IApproverResolver
         _logger = logger;
     }
 
+    /// <param name="rule">审批人规则</param>
     /// <param name="companyId">企业（租户）ID</param>
     /// <param name="instance">流程实例上下文</param>
     /// <returns>匹配到的用户ID列表</returns>

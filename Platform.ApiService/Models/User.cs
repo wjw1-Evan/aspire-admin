@@ -770,3 +770,60 @@ public class UpdateAiRoleDefinitionRequest
     [StringLength(2000, MinimumLength = 1, ErrorMessage = "角色定义长度必须在 1-2000 个字符之间")]
     public string RoleDefinition { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// 用户活动统计信息
+/// </summary>
+public class UserActivityStatistics
+{
+    /// <summary>
+    /// 总记录数
+    /// </summary>
+    public long TotalCount { get; set; }
+
+    /// <summary>
+    /// 成功导出数 (2xx)
+    /// </summary>
+    public long SuccessCount { get; set; }
+
+    /// <summary>
+    /// 异常记录数 (>= 400)
+    /// </summary>
+    public long ErrorCount { get; set; }
+
+    /// <summary>
+    /// 涉及的操作类型总数
+    /// </summary>
+    public int ActionTypesCount { get; set; }
+}
+
+/// <summary>
+/// 带统计的分页用户活动日志响应
+/// </summary>
+public class UserActivityPagedWithStatsResponse
+{
+    /// <summary>
+    /// 日志数据
+    /// </summary>
+    public List<UserActivityLog> Data { get; set; } = new();
+
+    /// <summary>
+    /// 总记录数
+    /// </summary>
+    public long Total { get; set; }
+
+    /// <summary>
+    /// 当前页码
+    /// </summary>
+    public int Page { get; set; }
+
+    /// <summary>
+    /// 每页大小
+    /// </summary>
+    public int PageSize { get; set; }
+
+    /// <summary>
+    /// 统计信息
+    /// </summary>
+    public UserActivityStatistics Statistics { get; set; } = new();
+}

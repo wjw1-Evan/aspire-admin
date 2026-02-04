@@ -132,7 +132,7 @@ public interface IUserService
     Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);
 
     /// <summary>
-    /// 获取当前用户的活动日志（分页）
+    /// 获取当前用户的活动日志（分页，带统计信息）
     /// </summary>
     /// <param name="page">页码（默认1）</param>
     /// <param name="pageSize">每页大小（默认20）</param>
@@ -144,8 +144,8 @@ public interface IUserService
     /// <param name="endDate">结束日期（可选）</param>
     /// <param name="sortBy">排序字段（可选）</param>
     /// <param name="sortOrder">排序方向（可选）</param>
-    /// <returns>活动日志列表和总数</returns>
-    Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(int page = 1, int pageSize = 20, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null, string? sortBy = null, string? sortOrder = null);
+    /// <returns>带统计的分页活动日志响应</returns>
+    Task<UserActivityPagedWithStatsResponse> GetCurrentUserActivityLogsAsync(int page = 1, int pageSize = 20, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null, string? sortBy = null, string? sortOrder = null);
 
     /// <summary>
     /// 获取当前用户的活动日志详情（根据日志ID）

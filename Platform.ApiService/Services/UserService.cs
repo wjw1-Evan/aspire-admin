@@ -594,7 +594,7 @@ roleIds)
     }
 
     /// <inheritdoc/>
-    public async Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(
+    public async Task<UserActivityPagedWithStatsResponse> GetCurrentUserActivityLogsAsync(
         int page = 1, int pageSize = 20, string? action = null, string? httpMethod = null, int? statusCode = null,
         string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null, string? sortBy = null, string? sortOrder = null)
     {

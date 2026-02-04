@@ -48,14 +48,14 @@ using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<IDataInitializerService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    
+
     try
     {
         logger.LogInformation("🚀 DataInitializer 微服务启动，开始执行数据初始化...");
         await initializer.InitializeAsync();
         logger.LogInformation("✅ 数据初始化完成");
         logger.LogInformation("🛑 DataInitializer 微服务已完成任务，正在退出...");
-        
+
         // 初始化完成后，直接退出程序
         Environment.Exit(0);
     }

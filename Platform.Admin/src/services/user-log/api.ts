@@ -59,6 +59,12 @@ export async function getCurrentUserActivityLogs(
     total: number;
     page: number;
     pageSize: number;
+    statistics: {
+      totalCount: number;
+      successCount: number;
+      errorCount: number;
+      actionTypesCount: number;
+    };
   }>>('/api/user/me/activity-logs-paged', {
     method: 'GET',
     params,

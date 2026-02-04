@@ -83,7 +83,7 @@ public class UserActivityLogService : IUserActivityLogService
         var log = new UserActivityLog
         {
             UserId = userId,
-            Username = username ?? string.Empty, 
+            Username = username ?? string.Empty,
             Action = action,
             Description = description,
             IpAddress = ipAddress,
@@ -146,7 +146,7 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public async Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(
+    public async Task<UserActivityPagedWithStatsResponse> GetCurrentUserActivityLogsAsync(
         int page = 1,
         int pageSize = 20,
         string? action = null,
@@ -167,17 +167,49 @@ public class UserActivityLogService : IUserActivityLogService
         if (statusCode.HasValue) filterBuilder.Equal(log => log.StatusCode, statusCode.Value);
         if (!string.IsNullOrEmpty(ipAddress))
         {
-             var ipFilter = Builders<UserActivityLog>.Filter.And(
-                Builders<UserActivityLog>.Filter.Ne(log => log.IpAddress, null),
-                Builders<UserActivityLog>.Filter.Regex(log => log.IpAddress!, new BsonRegularExpression(ipAddress, "i"))
-            );
+            var ipFilter = Builders<UserActivityLog>.Filter.And(
+               Builders<UserActivityLog>.Filter.Ne(log => log.IpAddress, null),
+               Builders<UserActivityLog>.Filter.Regex(log => log.IpAddress!, new BsonRegularExpression(ipAddress, "i"))
+           );
             filterBuilder.Custom(ipFilter);
         }
         if (startDate.HasValue) filterBuilder.GreaterThanOrEqual(log => log.CreatedAt, startDate.Value);
         if (endDate.HasValue) filterBuilder.LessThanOrEqual(log => log.CreatedAt, endDate.Value);
 
         var filter = filterBuilder.Build();
-        var total = await _activityLogFactory.CountAsync(filter);
+
+        // 核心：在后台线程中并行执行统计查询，提高响应速度
+        var totalTask = _activityLogFactory.CountAsync(filter);
+
+        // 成功记录统计 (2xx)
+        var successFilter = Builders<UserActivityLog>.Filter.And(filter,
+            Builders<UserActivityLog>.Filter.Gte(log => log.StatusCode, 200),
+            Builders<UserActivityLog>.Filter.Lt(log => log.StatusCode, 300));
+        var successTask = _activityLogFactory.CountAsync(successFilter);
+
+        // 错误记录统计 (>= 400)
+        var errorFilter = Builders<UserActivityLog>.Filter.And(filter,
+            Builders<UserActivityLog>.Filter.Gte(log => log.StatusCode, 400));
+        var errorTask = _activityLogFactory.CountAsync(errorFilter);
+
+        // 操作类型总数统计 (使用聚合获取去重后的 Action 列表)
+        var actionTypesTask = _activityLogFactory.AggregateAsync<BsonDocument>(
+            PipelineDefinition<UserActivityLog, BsonDocument>.Create(
+                new IPipelineStageDefinition[]
+                {
+                    PipelineStageDefinitionBuilder.Match<UserActivityLog>(filter),
+                    PipelineStageDefinitionBuilder.Group<UserActivityLog, string, BsonDocument>(log => log.Action, g => new BsonDocument { { "_id", g.Key } })
+                }
+            )
+        );
+
+        await Task.WhenAll(totalTask, successTask, errorTask, actionTypesTask);
+
+        var total = totalTask.Result;
+        var successCount = successTask.Result;
+        var errorCount = errorTask.Result;
+        var actionTypesResults = actionTypesTask.Result;
+        var actionTypesCount = actionTypesResults.Count;
 
         var sortBuilder = _activityLogFactory.CreateSortBuilder();
         if (string.IsNullOrEmpty(sortBy) || sortBy.Equals("createdAt", StringComparison.OrdinalIgnoreCase))
@@ -189,7 +221,7 @@ public class UserActivityLogService : IUserActivityLogService
         }
         else if (sortBy.Equals("action", StringComparison.OrdinalIgnoreCase))
         {
-             if (string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase))
                 sortBuilder.Descending(log => log.Action);
             else
                 sortBuilder.Ascending(log => log.Action);
@@ -215,7 +247,21 @@ public class UserActivityLogService : IUserActivityLogService
             .Build();
 
         var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, sortBuilder.Build(), page, pageSize, projection);
-        return (logs, total);
+
+        return new UserActivityPagedWithStatsResponse
+        {
+            Data = logs,
+            Total = total,
+            Page = page,
+            PageSize = pageSize,
+            Statistics = new UserActivityStatistics
+            {
+                TotalCount = total,
+                SuccessCount = successCount,
+                ErrorCount = errorCount,
+                ActionTypesCount = actionTypesCount
+            }
+        };
     }
 
     /// <inheritdoc/>

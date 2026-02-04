@@ -734,7 +734,7 @@ public class UserController : BaseApiController
                 throw new ArgumentException($"不支持的排序方向: {sortOrder}，支持: asc、desc");
         }
 
-        var (logs, total) = await _activityLogService.GetCurrentUserActivityLogsAsync(
+        var response = await _activityLogService.GetCurrentUserActivityLogsAsync(
             page,
             pageSize,
             action,
@@ -746,13 +746,7 @@ public class UserController : BaseApiController
             sortBy,
             sortOrder);
 
-        return Success(new
-        {
-            data = logs,
-            total = total,
-            page = page,
-            pageSize = pageSize
-        });
+        return Success(response);
     }
 
     /// <summary>

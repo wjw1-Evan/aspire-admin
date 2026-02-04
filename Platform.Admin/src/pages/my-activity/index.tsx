@@ -519,23 +519,13 @@ const MyActivity: React.FC = () => {
         const result = response.data as any;
         const list: UserActivityLog[] = result.data || [];
         const total: number = result.total || 0;
-
-        // 基于当前页数据和总数计算统计信息
-        const successCount = list.filter(
-          (x) => x.statusCode && x.statusCode >= 200 && x.statusCode < 300,
-        ).length;
-        const errorCount = list.filter(
-          (x) => x.statusCode && x.statusCode >= 400,
-        ).length;
-        const actionTypes = new Set(
-          list.map((x) => x.action).filter(Boolean),
-        ).size;
+        const stats = result.statistics || {};
 
         setStatistics({
-          total,
-          successCount,
-          errorCount,
-          actionTypes,
+          total: stats.totalCount || total,
+          successCount: stats.successCount || 0,
+          errorCount: stats.errorCount || 0,
+          actionTypes: stats.actionTypesCount || 0,
         });
 
         return {

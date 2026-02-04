@@ -14,14 +14,14 @@ public interface IUserActivityLogService
     /// <param name="limit">返回数量限制（默认50）</param>
     /// <returns>活动日志列表</returns>
     Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);
-    
+
     /// <summary>
     /// 获取用户活动日志（分页）
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <returns>分页的活动日志响应</returns>
     Task<UserActivityLogPagedResponse> GetActivityLogsAsync(GetUserActivityLogsRequest request);
-    
+
     /// <summary>
     /// 记录HTTP请求日志
     /// </summary>
@@ -39,9 +39,9 @@ public interface IUserActivityLogService
     Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null);
 
     /// <summary>
-    /// 获取当前用户的活动日志（分页）
+    /// 获取当前用户的活动日志（分页，带统计信息）
     /// </summary>
-    Task<(List<UserActivityLog> logs, long total)> GetCurrentUserActivityLogsAsync(
+    Task<UserActivityPagedWithStatsResponse> GetCurrentUserActivityLogsAsync(
         int page = 1,
         int pageSize = 20,
         string? action = null,

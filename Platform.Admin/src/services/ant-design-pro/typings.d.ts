@@ -45,6 +45,7 @@ declare namespace API {
     currentCompanyId?: string;
     currentCompanyDisplayName?: string;
     currentCompanyName?: string;
+    currentCompanyLogo?: string;
   };
 
   type LoginResult = {

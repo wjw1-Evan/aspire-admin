@@ -548,6 +548,11 @@ export const layout: RunTimeLayoutConfig = ({
       }
     },
     title: initialState?.currentUser?.currentCompanyDisplayName || initialState?.currentUser?.currentCompanyName || defaultSettings.title,
+    logo: initialState?.currentUser?.currentCompanyLogo ? (
+      <img src={initialState.currentUser.currentCompanyLogo} alt="logo" />
+    ) : (
+      <img src={defaultSettings.logo} alt="logo" />
+    ),
   };
 };
 

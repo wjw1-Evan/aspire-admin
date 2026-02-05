@@ -240,6 +240,7 @@ public class AuthService : IAuthService
         UserCompany? firstUserCompany = null;
         string? companyDisplayName = null;
         string? companyName = null;
+        string? companyLogo = null;
 
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
@@ -275,6 +276,7 @@ public class AuthService : IAuthService
             {
                 companyDisplayName = company.DisplayName;
                 companyName = company.Name;
+                companyLogo = company.Logo;
             }
         }
 
@@ -309,7 +311,8 @@ public class AuthService : IAuthService
             UpdatedAt = user.UpdatedAt,
             City = city,
             CurrentCompanyDisplayName = companyDisplayName,
-            CurrentCompanyName = companyName
+            CurrentCompanyName = companyName,
+            CurrentCompanyLogo = companyLogo
         };
     }
 

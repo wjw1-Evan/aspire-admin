@@ -263,6 +263,15 @@ export default function CompanySettings() {
                 children: company.contactPhone || '-',
               },
               {
+                key: 'logo',
+                label: intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' }),
+                children: company.logo ? (
+                  <img src={company.logo} alt="logo" style={{ maxHeight: 32 }} />
+                ) : (
+                  '-'
+                ),
+              },
+              {
                 key: 'description',
                 label: intl.formatMessage({ id: 'pages.companySettings.details.description' }),
                 span: 2,

@@ -112,6 +112,13 @@ public class CurrentUser
     [BsonElement("currentCompanyName")]
     [System.Text.Json.Serialization.JsonPropertyName("currentCompanyName")]
     public string? CurrentCompanyName { get; set; }
+
+    /// <summary>
+    /// 当前企业Logo
+    /// </summary>
+    [BsonElement("currentCompanyLogo")]
+    [System.Text.Json.Serialization.JsonPropertyName("currentCompanyLogo")]
+    public string? CurrentCompanyLogo { get; set; }
 }
 
 /// <summary>

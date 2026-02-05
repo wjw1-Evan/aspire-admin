@@ -15,7 +15,7 @@ const Settings: LayoutSettings = {
   fixedHeader: true,
   fixSiderbar: true,
   colorWeak: false,
-  title: 'Aspire Admin Platform',
+  title: '通用管理平台',
   pwa: true,
   logo: '/logo.svg',
   iconfontUrl: '',

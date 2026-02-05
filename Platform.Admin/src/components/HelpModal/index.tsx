@@ -12,6 +12,7 @@ import {
 import { Modal, Space, Tabs, Typography } from 'antd';
 import React from 'react';
 import { useIntl } from '@umijs/max';
+import Settings from '../../../config/defaultSettings';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -32,7 +33,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
       ),
       children: (
         <div style={{ padding: '16px 0' }}>
-          <Title level={4}>{intl.formatMessage({ id: 'pages.help.quickStart.welcome' })}</Title>
+          <Title level={4}>{intl.formatMessage({ id: 'pages.help.quickStart.welcome' }, { title: Settings.title })}</Title>
           <Paragraph>
             {intl.formatMessage({ id: 'pages.help.quickStart.description' })}
           </Paragraph>
@@ -1259,7 +1260,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           <Paragraph>
             <Text type="secondary">
               {(() => {
-                const versionContent = intl.formatMessage({ id: 'pages.help.tech.version.content' });
+                const versionContent = intl.formatMessage({ id: 'pages.help.tech.version.content' }, { title: Settings.title });
                 const lines = versionContent.split('\n');
                 return lines.map((line, index) => (
                   <React.Fragment key={index}>
@@ -1291,7 +1292,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
         <div style={{ padding: '16px 0' }}>
           <Title level={4}>🔧 {intl.formatMessage({ id: 'pages.help.development.title' })}</Title>
           <Paragraph>
-            {intl.formatMessage({ id: 'pages.help.development.description' })}
+            {intl.formatMessage({ id: 'pages.help.development.description' }, { title: Settings.title })}
           </Paragraph>
 
           <Title level={5}>{intl.formatMessage({ id: 'pages.help.development.architecture.title' })}</Title>

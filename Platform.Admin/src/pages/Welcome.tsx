@@ -739,7 +739,7 @@ const Welcome: React.FC = () => {
                 {getGreeting()}，{currentUser?.name || currentUser?.userid || intl.formatMessage({ id: 'pages.welcome.user' })}！
               </Title>
               <Paragraph style={{ color: 'rgba(255,255,255,0.85)', margin: '12px 0 20px 0', fontSize: '16px' }}>
-                {intl.formatMessage({ id: 'pages.welcome.welcomeText' })}
+                {intl.formatMessage({ id: 'pages.welcome.welcomeText' }, { title: Settings.title })}
                 {(companyInfo?.displayName || companyInfo?.name) && (
                   <Tag style={{ marginLeft: 8, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white' }}>
                     {companyInfo.displayName || companyInfo.name}

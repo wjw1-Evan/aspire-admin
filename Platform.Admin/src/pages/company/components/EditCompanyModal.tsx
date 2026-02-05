@@ -1,5 +1,6 @@
 import { Modal, Form, Input, Tooltip } from 'antd';
 import { useIntl } from '@umijs/max';
+import Settings from '../../../../config/defaultSettings';
 import { updateCurrentCompany } from '@/services/company';
 import React from 'react';
 
@@ -155,7 +156,7 @@ export default function EditCompanyModal({
           label={
             <span>
               {intl.formatMessage({ id: 'pages.companySettings.edit.displayNameLabel' })}
-              <Tooltip title={intl.formatMessage({ id: 'pages.companySettings.edit.displayNameTooltip' })}>
+              <Tooltip title={intl.formatMessage({ id: 'pages.companySettings.edit.displayNameTooltip' }, { title: Settings.title })}>
                 <span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span>
               </Tooltip>
             </span>

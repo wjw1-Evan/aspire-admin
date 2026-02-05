@@ -501,7 +501,7 @@ export default {
   'pages.welcome.greeting.afternoon': '下午好',
   'pages.welcome.greeting.evening': '晚上好',
   'pages.welcome.user': '用戶',
-  'pages.welcome.welcomeText': '歡迎回到 Aspire Admin Platform 企業級管理平台',
+  'pages.welcome.welcomeText': '歡迎回到 {title} ',
   'pages.welcome.online': '在線',
   'pages.welcome.overview': '系統概覽',
   'pages.welcome.stats.totalUsers': '總用戶數',

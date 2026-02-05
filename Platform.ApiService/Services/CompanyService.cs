@@ -438,6 +438,8 @@ public class CompanyService : ICompanyService
             updateBuilder.Set(c => c.ContactPhone, request.ContactPhone);
         if (request.Logo != null)
             updateBuilder.Set(c => c.Logo, request.Logo);
+        if (request.DisplayName != null)
+            updateBuilder.Set(c => c.DisplayName, request.DisplayName);
 
         updateBuilder.SetCurrentTimestamp();
         var update = updateBuilder.Build();

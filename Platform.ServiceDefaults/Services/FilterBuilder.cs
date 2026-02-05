@@ -334,7 +334,13 @@ public class FilterBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     /// </summary>
     private static string GetBsonFieldName<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
     {
-        if (field.Body is System.Linq.Expressions.MemberExpression memberExpression)
+        var expression = field.Body;
+        if (expression is System.Linq.Expressions.UnaryExpression unaryExpression && expression.NodeType == System.Linq.Expressions.ExpressionType.Convert)
+        {
+            expression = unaryExpression.Operand;
+        }
+
+        if (expression is System.Linq.Expressions.MemberExpression memberExpression)
         {
             var property = memberExpression.Member as PropertyInfo;
             if (property != null)
@@ -455,7 +461,8 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     /// </summary>
     public UpdateBuilder<T> Set<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field, TField value)
     {
-        _updates.Add(_builder.Set(field, value));
+        var fieldName = GetBsonFieldNameForUpdate(field);
+        _updates.Add(_builder.Set(fieldName, value));
         return this;
     }
 
@@ -526,7 +533,8 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     /// </summary>
     public UpdateBuilder<T> Inc<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field, TField value)
     {
-        _updates.Add(_builder.Inc(field, value));
+        var fieldName = GetBsonFieldNameForUpdate(field);
+        _updates.Add(_builder.Inc(fieldName, value));
         return this;
     }
 
@@ -535,7 +543,8 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     /// </summary>
     public UpdateBuilder<T> SetOnInsert<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field, TField value)
     {
-        _updates.Add(_builder.SetOnInsert(field, value));
+        var fieldName = GetBsonFieldNameForUpdate(field);
+        _updates.Add(_builder.SetOnInsert(fieldName, value));
         return this;
     }
 
@@ -634,7 +643,13 @@ public class UpdateBuilder<T> where T : class, IEntity, ISoftDeletable, ITimesta
     /// </summary>
     private static string GetBsonFieldNameForUpdate<TField>(System.Linq.Expressions.Expression<Func<T, TField>> field)
     {
-        if (field.Body is System.Linq.Expressions.MemberExpression memberExpression)
+        var expression = field.Body;
+        if (expression is System.Linq.Expressions.UnaryExpression unaryExpression && expression.NodeType == System.Linq.Expressions.ExpressionType.Convert)
+        {
+            expression = unaryExpression.Operand;
+        }
+
+        if (expression is System.Linq.Expressions.MemberExpression memberExpression)
         {
             var property = memberExpression.Member as System.Reflection.PropertyInfo;
             if (property != null)

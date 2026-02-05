@@ -382,7 +382,72 @@ export const layout: RunTimeLayoutConfig = ({
       },
     ],
     links: [],
-    menuHeaderRender: undefined,
+    headerTitleRender: (logo, _, props) => {
+      const systemName =
+        initialState?.currentUser?.currentCompanyDisplayName ||
+        initialState?.currentUser?.currentCompanyName ||
+        defaultSettings.title;
+      const companyName = initialState?.currentUser?.currentCompanyName;
+
+      if (props?.collapsed) {
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {logo}
+          </div>
+        );
+      }
+
+      return (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            cursor: 'pointer',
+            padding: '4px 0',
+            lineHeight: 1,
+          }}
+          onClick={() => history.push('/')}
+        >
+          {logo}
+          <div
+            style={{
+              marginLeft: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              lineHeight: 1.2,
+              overflow: 'hidden',
+            }}
+          >
+            <span
+              style={{
+                fontWeight: 600,
+                fontSize: '16px',
+                color: 'var(--ant-color-text-heading)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {systemName}
+            </span>
+            {companyName && companyName !== systemName && (
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--ant-color-text-description)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {companyName}
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    },
+    menuHeaderRender: false,
     childrenRender: (children) => {
       // ✅ 位置上报组件：只在特定页面访问时才启动定期上报
       const LocationReporter = () => {
@@ -482,6 +547,7 @@ export const layout: RunTimeLayoutConfig = ({
         }
       }
     },
+    title: initialState?.currentUser?.currentCompanyDisplayName || initialState?.currentUser?.currentCompanyName || defaultSettings.title,
   };
 };
 

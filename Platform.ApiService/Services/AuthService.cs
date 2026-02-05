@@ -238,6 +238,8 @@ public class AuthService : IAuthService
         // 获取用户角色信息
         var roleNames = new List<string>();
         UserCompany? firstUserCompany = null;
+        string? companyDisplayName = null;
+        string? companyName = null;
 
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
@@ -261,6 +263,18 @@ public class AuthService : IAuthService
                     .Build();
                 var userRoles = await _roleFactory.FindAsync(roleFilter, projection: roleProjection);
                 roleNames = userRoles.Select(r => r.Name).ToList();
+            }
+
+            // 获取企业信息以获取显示名称
+            var companyFilter = _companyFactory.CreateFilterBuilder()
+                .Equal(c => c.Id, user.CurrentCompanyId)
+                .Build();
+            var companies = await _companyFactory.FindAsync(companyFilter);
+            var company = companies.FirstOrDefault();
+            if (company != null)
+            {
+                companyDisplayName = company.DisplayName;
+                companyName = company.Name;
             }
         }
 
@@ -293,7 +307,9 @@ public class AuthService : IAuthService
             CurrentCompanyId = user.CurrentCompanyId,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
-            City = city
+            City = city,
+            CurrentCompanyDisplayName = companyDisplayName,
+            CurrentCompanyName = companyName
         };
     }
 

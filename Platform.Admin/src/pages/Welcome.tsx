@@ -739,7 +739,11 @@ const Welcome: React.FC = () => {
               </Title>
               <Paragraph style={{ color: 'rgba(255,255,255,0.85)', margin: '12px 0 20px 0', fontSize: '16px' }}>
                 {intl.formatMessage({ id: 'pages.welcome.welcomeText' })}
-                {companyInfo?.name && <Tag style={{ marginLeft: 8, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white' }}>{companyInfo.name}</Tag>}
+                {(companyInfo?.displayName || companyInfo?.name) && (
+                  <Tag style={{ marginLeft: 8, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white' }}>
+                    {companyInfo.displayName || companyInfo.name}
+                  </Tag>
+                )}
               </Paragraph>
               <Space wrap size={12}>
                 {getUserRoleTags()}

@@ -196,6 +196,14 @@ builder.Services.AddOpenApi(options =>
 // 添加MongoDB服务
 builder.AddMongoDBClient(connectionName: "mongodb");
 
+// ✅ 配置 MongoDB 全局约定：忽略额外字段，避免新旧字段不匹配导致崩溃
+var pack = new MongoDB.Bson.Serialization.Conventions.ConventionPack
+{
+    new MongoDB.Bson.Serialization.Conventions.IgnoreExtraElementsConvention(true),
+    new MongoDB.Bson.Serialization.Conventions.CamelCaseElementNameConvention()
+};
+MongoDB.Bson.Serialization.Conventions.ConventionRegistry.Register("PlatformConventions", pack, t => true);
+
 // 添加OpenAI服务
 // 添加OpenAI服务
 builder.AddOpenAIClient(connectionName: "chat");

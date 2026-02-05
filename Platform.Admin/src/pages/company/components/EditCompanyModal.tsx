@@ -149,6 +149,23 @@ export default function EditCompanyModal({
             placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.logoPlaceholder' })}
           />
         </Form.Item>
+
+        <Form.Item
+          name="displayName"
+          label={
+            <span>
+              {intl.formatMessage({ id: 'pages.companySettings.edit.displayNameLabel' })}
+              <Tooltip title={intl.formatMessage({ id: 'pages.companySettings.edit.displayNameTooltip' })}>
+                <span style={{ marginLeft: 4, cursor: 'help' }}>ℹ️</span>
+              </Tooltip>
+            </span>
+          }
+        >
+          <Input
+            placeholder={intl.formatMessage({ id: 'pages.companySettings.edit.displayNamePlaceholder' })}
+            maxLength={100}
+          />
+        </Form.Item>
       </Form>
     </Modal>
   );

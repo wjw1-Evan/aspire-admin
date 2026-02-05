@@ -9,7 +9,7 @@ import {
   ClockCircleOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import { useIntl, useModel } from '@umijs/max';
 import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
 import EditCompanyModal from './components/EditCompanyModal';
 import { StatCard } from '@/components';
@@ -36,6 +36,7 @@ export default function CompanySettings() {
   );
   const [loading, setLoading] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const { initialState, setInitialState } = useModel('@@initialState');
 
   useEffect(() => {
     fetchData();
@@ -62,10 +63,21 @@ export default function CompanySettings() {
     }
   };
 
-  const handleEditSuccess = () => {
+  const handleEditSuccess = async () => {
     setEditModalVisible(false);
     fetchData();
-    // 消息提示已在 EditCompanyModal 中显示，这里不再重复显示
+
+    // ✅ 关键：更新企业信息后，刷新全局 initialState 里的 currentUser 信息
+    // 这样顶部 Header 里的 System Display Name 才会立即更新
+    if (initialState?.fetchUserInfo) {
+      const currentUser = await initialState.fetchUserInfo();
+      if (currentUser) {
+        setInitialState((s) => ({
+          ...s,
+          currentUser,
+        }));
+      }
+    }
   };
 
   if (loading) {
@@ -224,6 +236,11 @@ export default function CompanySettings() {
                 key: 'code',
                 label: intl.formatMessage({ id: 'pages.companySettings.details.code' }),
                 children: <Tag color="blue">{company.code}</Tag>,
+              },
+              {
+                key: 'displayName',
+                label: intl.formatMessage({ id: 'pages.companySettings.details.displayName' }),
+                children: company.displayName || '-',
               },
               {
                 key: 'industry',

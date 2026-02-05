@@ -43,6 +43,8 @@ declare namespace API {
     isLogin?: boolean;
     menus?: MenuTreeNode[];
     currentCompanyId?: string;
+    currentCompanyDisplayName?: string;
+    currentCompanyName?: string;
   };
 
   type LoginResult = {
@@ -273,6 +275,7 @@ declare namespace API {
     contactPhone?: string;
     isActive: boolean;
     maxUsers: number;
+    displayName?: string;
     expiresAt?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -316,6 +319,7 @@ declare namespace API {
     contactEmail?: string;
     contactPhone?: string;
     logo?: string;
+    displayName?: string;
   };
 
   type CompanyStatistics = {

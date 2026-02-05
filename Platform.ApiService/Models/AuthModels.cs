@@ -98,6 +98,20 @@ public class CurrentUser
     [BsonElement("city")]
     [System.Text.Json.Serialization.JsonPropertyName("city")]
     public string? City { get; set; }
+
+    /// <summary>
+    /// 当前企业显示名称
+    /// </summary>
+    [BsonElement("currentCompanyDisplayName")]
+    [System.Text.Json.Serialization.JsonPropertyName("currentCompanyDisplayName")]
+    public string? CurrentCompanyDisplayName { get; set; }
+
+    /// <summary>
+    /// 当前企业正式名称（作为后备）
+    /// </summary>
+    [BsonElement("currentCompanyName")]
+    [System.Text.Json.Serialization.JsonPropertyName("currentCompanyName")]
+    public string? CurrentCompanyName { get; set; }
 }
 
 /// <summary>

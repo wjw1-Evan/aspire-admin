@@ -9,6 +9,7 @@ namespace Platform.ApiService.Models;
 /// 企业实体（简化模型）
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
+[BsonIgnoreExtraElements]
 public class Company : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
 {
     /// <summary>
@@ -22,6 +23,12 @@ public class Company : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletabl
     /// </summary>
     [BsonElement("code")]
     public string Code { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 系统显示名称 (admin端左上角显示，替换默认的 Aspire Admin Platform)
+    /// </summary>
+    [BsonElement("displayName")]
+    public string? DisplayName { get; set; }
 
     /// <summary>
     /// 企业Logo URL
@@ -179,6 +186,12 @@ public class UpdateCompanyRequest
     /// 企业Logo URL
     /// </summary>
     public string? Logo { get; set; }
+
+    /// <summary>
+    /// 系统显示名称
+    /// </summary>
+    [StringLength(100, ErrorMessage = "显示名称长度不能超过100个字符")]
+    public string? DisplayName { get; set; }
 }
 
 /// <summary>
@@ -256,37 +269,37 @@ public class CompanyStatistics
     /// 总用户数
     /// </summary>
     public int TotalUsers { get; set; }
-    
+
     /// <summary>
     /// 活跃用户数
     /// </summary>
     public int ActiveUsers { get; set; }
-    
+
     /// <summary>
     /// 总角色数
     /// </summary>
     public int TotalRoles { get; set; }
-    
+
     /// <summary>
     /// 总菜单数
     /// </summary>
     public int TotalMenus { get; set; }
-    
+
     /// <summary>
     /// 最大用户数
     /// </summary>
     public int MaxUsers { get; set; }
-    
+
     /// <summary>
     /// 剩余用户数
     /// </summary>
     public int RemainingUsers { get; set; }
-    
+
     /// <summary>
     /// 是否已过期
     /// </summary>
     public bool IsExpired { get; set; }
-    
+
     /// <summary>
     /// 过期时间
     /// </summary>
@@ -302,17 +315,17 @@ public class RegisterCompanyResult
     /// 企业信息
     /// </summary>
     public Company? Company { get; set; }
-    
+
     /// <summary>
     /// JWT Token
     /// </summary>
     public string? Token { get; set; }
-    
+
     /// <summary>
     /// 刷新 Token
     /// </summary>
     public string? RefreshToken { get; set; }
-    
+
     /// <summary>
     /// Token 过期时间
     /// </summary>

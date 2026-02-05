@@ -95,17 +95,34 @@ ol {
     &-tbody > tr {
       > th,
       > td {
-        white-space: pre;
-        > span {
-          display: block;
-        }
+        white-space: nowrap; // 避免文字换行严重
+        padding: 8px 12px !important; // 减少内边距以便容纳更多内容
       }
     }
+  }
+
+  // 优化表单项在移动端的间距
+  .ant-form-item {
+    margin-bottom: 16px;
+  }
+
+  // 页面容器内边距微调，增加显示面积
+  .ant-pro-page-container-children-container {
+    padding-inline: 12px !important;
+  }
+
+  // 隐藏部分非核心页头内容以腾出空间
+  .ant-pro-layout-header-actions {
+    gap: 4px;
+  }
+
+  // 优化表格卡片展示（如果有的话）
+  .ant-card-body {
+    padding: 12px !important;
   }
 }
 
 // 修复移动端 Drawer 打开时背景滚动的问题
-// 当 body 被锁定滚动时，确保 #root 也被锁定
 body[style*="overflow: hidden"] #root,
 body.ant-scrolling-effect #root {
   overflow: hidden !important;

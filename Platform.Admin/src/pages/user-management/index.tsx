@@ -539,6 +539,7 @@ const UserManagement: React.FC = () => {
       dataIndex: 'email',
       key: 'email',
       ellipsis: true,
+      responsive: ['md'],
     },
     {
       title: '手机号',
@@ -546,6 +547,7 @@ const UserManagement: React.FC = () => {
       key: 'phoneNumber',
       ellipsis: true,
       render: (text: string) => text || '-',
+      responsive: ['lg'],
     },
     {
       title: '备注',
@@ -553,11 +555,13 @@ const UserManagement: React.FC = () => {
       key: 'remark',
       ellipsis: true,
       render: (text: string) => text || '-',
+      responsive: ['xl'],
     },
     {
       title: intl.formatMessage({ id: 'pages.table.role' }),
       dataIndex: 'roleIds',
       key: 'roleIds',
+      responsive: ['md'],
       render: (_: string[], record: AppUser) => {
         if (!record.roleIds || record.roleIds.length === 0) {
           return <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag>;
@@ -577,6 +581,7 @@ const UserManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.organization' }),
       dataIndex: 'organizations',
       key: 'organizations',
+      responsive: ['lg'],
       render: (_: unknown, record: AppUser) => {
         const orgs = record.organizations || [];
         if (!orgs.length) {
@@ -721,7 +726,7 @@ const UserManagement: React.FC = () => {
         },
       ]}
       tabActiveKey={activeTab}
-      onTabChange={(key) => setActiveTab(key)}
+      onTabChange={(key: string) => setActiveTab(key)}
       extra={
         <Space wrap>
           {/* 批量操作按钮 */}

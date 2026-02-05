@@ -397,6 +397,9 @@ export const layout: RunTimeLayoutConfig = ({
         );
       }
 
+      // 移动端简单化显示：只显示系统名，不显示公司二级标题
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
       return (
         <div
           style={{
@@ -405,6 +408,7 @@ export const layout: RunTimeLayoutConfig = ({
             cursor: 'pointer',
             padding: '4px 0',
             lineHeight: 1,
+            maxWidth: isMobile ? '160px' : 'none',
           }}
           onClick={() => history.push('/')}
         >
@@ -421,7 +425,7 @@ export const layout: RunTimeLayoutConfig = ({
             <span
               style={{
                 fontWeight: 600,
-                fontSize: '16px',
+                fontSize: isMobile ? '14px' : '16px',
                 color: 'var(--ant-color-text-heading)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -430,7 +434,7 @@ export const layout: RunTimeLayoutConfig = ({
             >
               {systemName}
             </span>
-            {companyName && companyName !== systemName && (
+            {companyName && companyName !== systemName && !isMobile && (
               <span
                 style={{
                   fontSize: '11px',

@@ -32,8 +32,8 @@ const useStyles = createStyles(({ token }) => {
       right: 16,
       top: 16,
       zIndex: 100,
-    
-    
+
+
     },
     container: {
       display: 'flex',
@@ -353,10 +353,7 @@ const Login: React.FC = () => {
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
                 <img alt="logo" src="/logo.svg" style={{ width: 64, height: 64, marginBottom: 16 }} />
                 <div style={{ fontSize: 28, fontWeight: 600, color: '#1a1a1a', marginBottom: 8 }}>
-                  {intl.formatMessage({
-                    id: 'pages.login.title',
-                    defaultMessage: 'Aspire Admin Platform',
-                  })}
+                  {Settings.title}
                 </div>
                 <div style={{ fontSize: 14, color: '#666', marginBottom: 32 }}>
                   {intl.formatMessage({

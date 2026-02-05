@@ -564,7 +564,7 @@ export default {
   'pages.welcome.greeting.afternoon': 'Good Afternoon',
   'pages.welcome.greeting.evening': 'Good Evening',
   'pages.welcome.user': 'User',
-  'pages.welcome.welcomeText': 'Welcome back to Aspire Admin Platform - Enterprise Management System',
+  'pages.welcome.welcomeText': 'Welcome back to {title} ',
   'pages.welcome.online': 'Online',
   'pages.welcome.overview': 'System Overview',
   'pages.welcome.stats.totalUsers': 'Total Users',

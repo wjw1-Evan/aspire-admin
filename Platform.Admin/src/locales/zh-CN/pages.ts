@@ -598,7 +598,7 @@ export default {
   'pages.welcome.greeting.afternoon': '下午好',
   'pages.welcome.greeting.evening': '晚上好',
   'pages.welcome.user': '用户',
-  'pages.welcome.welcomeText': '欢迎回到 Aspire Admin Platform 企业级管理平台',
+  'pages.welcome.welcomeText': '欢迎回到 {title} ',
   'pages.welcome.online': '在线',
   'pages.welcome.overview': '系统概览',
   'pages.welcome.stats.totalUsers': '总用户数',
@@ -889,6 +889,7 @@ export default {
   'pages.help.tab.faq': '常见问题',
   'pages.help.tab.tech': '技术支持',
   'pages.help.tab.development': '二次开发',
+
   'pages.help.quickStart.welcome': '欢迎使用 Aspire Admin Platform',
   'pages.help.quickStart.description': '这是一个基于 .NET Aspire、React 和 Ant Design Pro 构建的现代化企业级管理平台，提供统一的后端服务、管理后台与跨平台移动应用。',
   'pages.help.quickStart.highlights': '平台提供多租户数据隔离、菜单级权限控制、实时聊天、AI 助手、IoT 平台、规则管理等完整的企业级功能！',

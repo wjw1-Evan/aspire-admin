@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { getUserAvatar } from '@/utils/avatar';
+import Settings from '../../config/defaultSettings';
 // import { getApiBaseUrl } from '@/utils/request';
 import {
   UserOutlined,

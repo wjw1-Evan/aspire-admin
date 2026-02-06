@@ -54,6 +54,32 @@ public static class ValidationHelper
             return (false, $"密码长度不能超过{ValidationRules.PasswordMaxLength}个字符");
         }
 
+        // 密码复杂度验证
+        var hasUpperCase = password.Any(char.IsUpper);
+        var hasLowerCase = password.Any(char.IsLower);
+        var hasDigit = password.Any(char.IsDigit);
+        var hasSpecialChar = password.Any(c => !char.IsLetterOrDigit(c));
+
+        if (!hasUpperCase)
+        {
+            return (false, "密码必须包含至少一个大写字母");
+        }
+
+        if (!hasLowerCase)
+        {
+            return (false, "密码必须包含至少一个小写字母");
+        }
+
+        if (!hasDigit)
+        {
+            return (false, "密码必须包含至少一个数字");
+        }
+
+        if (!hasSpecialChar)
+        {
+            return (false, "密码必须包含至少一个特殊字符");
+        }
+
         return (true, null);
     }
 

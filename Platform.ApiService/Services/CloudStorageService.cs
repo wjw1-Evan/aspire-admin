@@ -3,6 +3,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using Platform.ApiService.Models;
+using Platform.ApiService.Validators;
 using Platform.ServiceDefaults.Services;
 using System.Linq;
 using System.Security.Cryptography;
@@ -116,6 +117,11 @@ public class CloudStorageService : ICloudStorageService
         var fileName = Path.GetFileName(file.FileName);
         if (string.IsNullOrWhiteSpace(fileName))
             throw new ArgumentException("文件名不能为空");
+
+        // 文件类型和大小验证
+        var (isValid, errorMessage) = FileValidator.ValidateFile(file);
+        if (!isValid)
+            throw new ArgumentException(errorMessage!);
 
         var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
 
@@ -1253,6 +1259,14 @@ public class CloudStorageService : ICloudStorageService
         {
             try
             {
+                // 文件类型和大小验证
+                var (isValid, errorMessage) = FileValidator.ValidateFile(file);
+                if (!isValid)
+                {
+                    _logger.LogWarning("文件验证失败: {FileName} - {Error}", file.FileName, errorMessage);
+                    continue;
+                }
+
                 // 支持文件夹批量上传：当 FileName 包含相对路径时，创建对应的子目录
                 var relativePath = file.FileName?.Replace("\\", "/") ?? string.Empty;
                 var directoryPath = Path.GetDirectoryName(relativePath)?.Replace("\\", "/");

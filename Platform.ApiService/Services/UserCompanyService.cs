@@ -117,6 +117,7 @@ public class UserCompanyService : IUserCompanyService
     private readonly IMenuService _menuService;
     private readonly ITenantContext _tenantContext;
     private readonly IJwtService _jwtService;
+    private readonly ILogger<UserCompanyService> _logger;
 
     /// <summary>
     /// 初始化用户企业关联服务
@@ -139,7 +140,8 @@ public class UserCompanyService : IUserCompanyService
         IDatabaseOperationFactory<Menu> menuFactory,
         IMenuService menuService,
         ITenantContext tenantContext,
-        IJwtService jwtService)
+        IJwtService jwtService,
+        ILogger<UserCompanyService> logger)
     {
         _userCompanyFactory = userCompanyFactory;
         _userFactory = userFactory;
@@ -150,6 +152,7 @@ public class UserCompanyService : IUserCompanyService
         _menuService = menuService;
         _tenantContext = tenantContext;
         _jwtService = jwtService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -164,7 +167,7 @@ public class UserCompanyService : IUserCompanyService
 
         // 2. 检查是否已经是成员
         var existingMember = await GetUserCompanyAsync(userId, companyId);
-        if (existingMember != null)
+        if (existingMember != null && !existingMember.IsDeleted && existingMember.Status == "active")
             throw new InvalidOperationException("您已经是该企业的成员");
 
         // 3. 检查是否有待处理的申请
@@ -371,48 +374,90 @@ public class UserCompanyService : IUserCompanyService
         if (request == null)
             throw new KeyNotFoundException("申请记录不存在");
 
-        if (request.Status != "pending")
-            throw new InvalidOperationException($"申请状态为 {request.Status}，无法重复审核");
+        // 如果已经是目标状态，且不是为了更新角色，则跳过
+        if (request.Status == (approved ? "approved" : "rejected") && !approved)
+        {
+            return true;
+        }
 
         // 2. 验证权限 (管理员)
         var currentUserId = _userCompanyFactory.GetRequiredUserId();
         await this.RequireAdminAsync(currentUserId, request.CompanyId, "只有管理员可以审核申请");
 
-        // 3. 更新申请状态
+        // 3. 处理状态变更
+        var oldStatus = request.Status;
+
+        // 4. 如果从“已批准”变更为“已拒绝”，需要移除企业成员身份
+        if (oldStatus == "approved" && !approved)
+        {
+            var membership = await GetUserCompanyAsync(request.UserId, request.CompanyId);
+            if (membership != null)
+            {
+                // 彻底删除或设置为非活跃状态
+                var delFilter = _userCompanyFactory.CreateFilterBuilder()
+                    .Equal(uc => uc.Id, membership.Id)
+                    .Build();
+                await _userCompanyFactory.FindOneAndSoftDeleteAsync(delFilter);
+                _logger.LogInformation("由于申请状态变更为拒绝，已移除用户 {UserId} 在企业 {CompanyId} 的成员身份", request.UserId, request.CompanyId);
+            }
+        }
+
+        // 5. 更新申请状态
         var updateBuilder = _joinRequestFactory.CreateUpdateBuilder()
             .Set(r => r.Status, approved ? "approved" : "rejected")
             .Set(r => r.ReviewedBy, currentUserId)
             .Set(r => r.ReviewedAt, DateTime.UtcNow);
 
-        if (!approved && !string.IsNullOrEmpty(rejectReason))
+        if (!approved)
         {
-            updateBuilder = updateBuilder.Set(r => r.RejectReason, rejectReason);
+            updateBuilder = updateBuilder.Set(r => r.RejectReason, rejectReason ?? "管理员修改了审核结果");
+        }
+        else
+        {
+            updateBuilder = updateBuilder.Set(r => r.RejectReason, null); // 清除之前的拒绝原因
         }
 
         var update = updateBuilder.Build();
         var idFilter = _joinRequestFactory.CreateFilterBuilder().Equal(r => r.Id, requestId).Build();
         await _joinRequestFactory.FindOneAndUpdateAsync(idFilter, update);
 
-        // 4. 如果通过，创建 UserCompany 关联
+        // 6. 如果现在是“已批准”状态，确保 UserCompany 关联存在
         if (approved)
         {
-            // 再次检查是否已经加入（避免重复）
             var existingMember = await GetUserCompanyAsync(request.UserId, request.CompanyId);
-            if (existingMember == null)
-            {
-                // 如果没有指定角色，使用默认角色（普通成员）
-                // 查询该企业的角色列表，找到"普通成员"或类似的角色，或者不分配角色？
-                // 通常应该分配一个默认角色，否则用户没有任何权限（菜单）
 
+            // 如果已经存在，则更新状态和角色
+            if (existingMember != null)
+            {
+                // 如果是软删除状态，或者状态不是 active，需要恢复并更新
+                if (existingMember.IsDeleted || existingMember.Status != "active")
+                {
+                    var updateM = _userCompanyFactory.CreateUpdateBuilder()
+                        .Set(uc => uc.IsDeleted, false)
+                        .Set(uc => uc.Status, "active")
+                        .Set(uc => uc.RoleIds, roleIds ?? new List<string>())
+                        .Set(uc => uc.ApprovedBy, currentUserId)
+                        .Set(uc => uc.ApprovedAt, DateTime.UtcNow)
+                        .Build();
+                    var idMFilter = _userCompanyFactory.CreateFilterBuilder().Equal(uc => uc.Id, existingMember.Id).Build();
+                    await _userCompanyFactory.FindOneAndUpdateAsync(idMFilter, updateM);
+                    _logger.LogInformation("用户 {UserId} 的企业成员身份已恢复并更新角色", request.UserId);
+                }
+                else if (roleIds != null && roleIds.Any())
+                {
+                    await UpdateMemberRolesAsync(request.CompanyId, request.UserId, roleIds);
+                }
+            }
+            else
+            {
+                // 创建新关联
                 var finalRoleIds = roleIds ?? new List<string>();
                 if (!finalRoleIds.Any())
                 {
-                    // 尝试查找默认角色 "user" 或 "member"
                     var roleFilter = _roleFactory.CreateFilterBuilder()
                         .Equal(r => r.CompanyId, request.CompanyId)
                         .Build();
                     var roles = await _roleFactory.FindAsync(roleFilter);
-                    // 简单策略：分配第一个非管理员角色，或者 name="普通用户"
                     var defaultRole = roles.FirstOrDefault(r => r.Name == "普通用户" || r.Name == "user")
                                      ?? roles.FirstOrDefault(r => r.Name != "管理员");
 
@@ -600,7 +645,8 @@ public class UserCompanyService : IUserCompanyService
             .Equal(uc => uc.CompanyId, companyId)
             .Build();
 
-        var userCompanies = await _userCompanyFactory.FindAsync(filter);
+        // 修复：使用 FindIncludingDeletedAsync 确保能找到软删除记录，避免重复插入冲突
+        var userCompanies = await _userCompanyFactory.FindIncludingDeletedAsync(filter);
         return userCompanies.FirstOrDefault();
     }
 

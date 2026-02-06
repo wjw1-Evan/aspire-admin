@@ -52,12 +52,6 @@ export default [
     component: './join-requests/pending',
     hideInMenu: true,
   },
-  {
-    name: 'pending-join-requests',
-    path: '/join-requests/pending',
-    component: './join-requests/pending',
-    hideInMenu: true,
-  },
 
   // 业务页面路由（从数据库菜单生成，这里只定义路由映射）
   {

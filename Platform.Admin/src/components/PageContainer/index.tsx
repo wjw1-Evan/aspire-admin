@@ -33,6 +33,18 @@ interface PageContainerProps {
    * 面包屑项，默认为空。如提供将显示在页面顶部。
    */
   breadcrumbItems?: BreadcrumbItemType[];
+  /**
+   * 页签列表
+   */
+  tabList?: { key: string; tab: React.ReactNode }[];
+  /**
+   * 当前激活页签的 key
+   */
+  tabActiveKey?: string;
+  /**
+   * 页签切换回调
+   */
+  onTabChange?: (key: string) => void;
   [key: string]: any;
 }
 
@@ -48,6 +60,9 @@ const PageContainer: React.FC<PageContainerProps> = ({
   content,
   showBreadcrumb = true,
   breadcrumbItems = [],
+  tabList,
+  tabActiveKey,
+  onTabChange,
   ...restProps
 }) => {
   const location = useLocation();
@@ -114,12 +129,19 @@ const PageContainer: React.FC<PageContainerProps> = ({
     </div>
   ) : null;
 
-  if (title || extra || content) {
+  if (title || extra || content || tabList) {
     return (
       <div style={defaultStyle} {...restProps}>
         {BreadcrumbView}
         {/* antd v6: Card 的 bordered 已弃用，改用样式移除边框 */}
-        <Card title={title} extra={extra} style={{ border: 'none' }}>
+        <Card
+          title={title}
+          extra={extra}
+          style={{ border: 'none' }}
+          tabList={tabList}
+          activeTabKey={tabActiveKey}
+          onTabChange={onTabChange}
+        >
           {content}
           {children}
         </Card>

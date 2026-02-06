@@ -60,7 +60,6 @@ export default {
   'menu.password-book.desc': 'Securely save and manage account passwords',
   'menu.company-search': 'Company Search',
   'menu.my-join-requests': 'My Join Requests',
-  'menu.pending-join-requests': 'Pending Join Requests',
   'menu.account': 'Account',
   'menu.account.center': 'Account Center',
   'menu.account.center.desc': 'Manage personal information and settings',
@@ -121,4 +120,5 @@ export default {
   'menu.cloud-storage-recycle.desc': 'Manage deleted files',
   'menu.cloud-storage-quota': 'Storage Quota',
   'menu.cloud-storage-quota.desc': 'Manage storage quota and usage',
+  'menu.pending-join-requests': 'Join Requests',
 };

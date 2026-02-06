@@ -23,6 +23,11 @@ export default defineConfig({
    */
   hash: true,
 
+  // 开启代码拆分，优化首屏加载速度
+  codeSplitting: {
+    jsStrategy: 'granularChunks',
+  },
+
   publicPath: PUBLIC_PATH,
 
   /**
@@ -145,7 +150,7 @@ export default defineConfig({
   ],
   //================ pro 插件配置 =================
   presets: ['umi-presets-pro'],
-  
+
   /**
    * @name 是否开启 mako
    * @description 使用 mako 极速研发

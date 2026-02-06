@@ -24,6 +24,7 @@ import {
   Grid,
   Typography,
   theme,
+  Spin,
 } from 'antd';
 
 const { useBreakpoint } = Grid;
@@ -43,11 +44,11 @@ import { getAllRoles } from '@/services/role/api';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import type { ApiResponse } from '@/types/unified-api';
 import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
-import UserForm from './components/UserForm';
-import UserDetail from './components/UserDetail';
+const UserForm = React.lazy(() => import('./components/UserForm'));
+const UserDetail = React.lazy(() => import('./components/UserDetail'));
 import { StatCard } from '@/components';
 import dayjs from 'dayjs';
-import JoinRequestsTable from './components/JoinRequestsTable';
+const JoinRequestsTable = React.lazy(() => import('./components/JoinRequestsTable'));
 
 // 统一的日期时间格式化函数
 const formatDateTime = (dateTime: string | null | undefined): string => {
@@ -657,17 +658,6 @@ const UserManagement: React.FC = () => {
             >
               {intl.formatMessage({ id: 'pages.table.edit' })}
             </Button>
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => {
-                record.id && handleDelete(record.id);
-              }}
-            >
-              {intl.formatMessage({ id: 'pages.table.delete' })}
-            </Button>
           </Space>
         );
       },
@@ -717,11 +707,11 @@ const UserManagement: React.FC = () => {
       style={{ paddingBlock: 12 }}
       tabList={[
         {
-          tab: '成员列表',
+          tab: intl.formatMessage({ id: 'pages.userManagement.members.title', defaultMessage: 'Member List' }),
           key: 'members',
         },
         {
-          tab: '加入申请',
+          tab: intl.formatMessage({ id: 'pages.joinRequests.pending.title', defaultMessage: 'Join Requests' }),
           key: 'requests',
         },
       ]}
@@ -729,32 +719,6 @@ const UserManagement: React.FC = () => {
       onTabChange={(key: string) => setActiveTab(key)}
       extra={
         <Space wrap>
-          {/* 批量操作按钮 */}
-          <Button
-            key="activate"
-            onClick={() => handleBulkAction('activate')}
-            disabled={selectedRows.length === 0}
-            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
-          >
-            {intl.formatMessage({ id: 'pages.userManagement.bulkActivate' })}
-          </Button>
-          <Button
-            key="deactivate"
-            onClick={() => handleBulkAction('deactivate')}
-            disabled={selectedRows.length === 0}
-            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
-          >
-            {intl.formatMessage({ id: 'pages.userManagement.bulkDeactivate' })}
-          </Button>
-          <Button
-            key="delete"
-            danger
-            onClick={() => handleBulkAction('delete')}
-            disabled={selectedRows.length === 0}
-            aria-label={intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
-          >
-            {intl.formatMessage({ id: 'pages.userManagement.bulkDelete' })}
-          </Button>
           {/* 刷新和添加按钮 */}
           <Button
             key="refresh"
@@ -878,9 +842,6 @@ const UserManagement: React.FC = () => {
               search={false}
               request={fetchUsers}
               columns={columns}
-              rowSelection={{
-                onChange: handleRowSelectionChange,
-              }}
               pagination={{
                 pageSize: 10,
                 pageSizeOptions: [10, 20, 50, 100],
@@ -896,42 +857,71 @@ const UserManagement: React.FC = () => {
           </div>
 
           {/* 用户表单弹窗 */}
-          {formVisible && (
+          {/* 用户表单模态框（懒加载） */}
+          <React.Suspense fallback={null}>
             <Modal
-              title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : intl.formatMessage({ id: 'pages.userManagement.addUser' })}
+              title={editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : (editingUser === null ? "添加成员" : intl.formatMessage({ id: 'pages.userManagement.createUser' }))}
               open={formVisible}
-              onCancel={handleFormClose}
+              onCancel={() => {
+                setFormVisible(false);
+                setEditingUser(null);
+              }}
               footer={null}
-              width={isMobile ? '100%' : 600}
-              destroyOnHidden={true}
+              destroyOnClose
             >
               <UserForm
                 user={editingUser}
-                onSuccess={handleFormSuccess}
-                onCancel={handleFormClose}
+                onSuccess={() => {
+                  setFormVisible(false);
+                  setEditingUser(null);
+                  fetchUsers({
+                    current: searchParams.Page,
+                    pageSize: searchParams.PageSize,
+                  });
+                  message.success(
+                    editingUser
+                      ? intl.formatMessage({ id: 'pages.message.updateSuccess' })
+                      : intl.formatMessage({ id: 'pages.message.createSuccess' }),
+                  );
+                }}
+                onCancel={() => {
+                  setFormVisible(false);
+                  setEditingUser(null);
+                }}
               />
             </Modal>
-          )}
+          </React.Suspense>
 
           {/* 用户详情抽屉 */}
           <Drawer
             title={intl.formatMessage({ id: 'pages.userDetail.title' })}
             open={detailVisible}
-            onClose={handleDetailClose}
+            onClose={() => {
+              setDetailVisible(false);
+              setViewingUser(null);
+            }}
             size={600}
+            destroyOnClose
           >
-            {viewingUser && (
-              <UserDetail
-                user={viewingUser}
-                onClose={handleDetailClose}
-              />
-            )}
+            <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>}>
+              {viewingUser && (
+                <UserDetail
+                  user={viewingUser}
+                  onClose={() => {
+                    setDetailVisible(false);
+                    setViewingUser(null);
+                  }}
+                />
+              )}
+            </React.Suspense>
           </Drawer>
         </>
       )}
 
       {activeTab === 'requests' && (
-        <JoinRequestsTable companyId={currentCompanyId} />
+        <React.Suspense fallback={null}>
+          <JoinRequestsTable companyId={currentCompanyId} />
+        </React.Suspense>
       )}
     </PageContainer>
   );

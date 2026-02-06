@@ -69,13 +69,6 @@ public class CreateUserManagementRequest
     public string? PhoneNumber { get; set; }
 
     /// <summary>
-    /// 密码（至少6个字符）
-    /// </summary>
-    [Required(ErrorMessage = "密码不能为空")]
-    [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
-    public string Password { get; set; } = string.Empty;
-
-    /// <summary>
     /// 角色ID列表
     /// </summary>
     public List<string>? RoleIds { get; set; }

@@ -158,7 +158,7 @@ public class UserController : BaseApiController
     {
         // 使用扩展方法简化参数验证
         request.Username.EnsureNotEmpty("用户名");
-        request.Password.EnsureNotEmpty("密码");
+        // request.Password.EnsureNotEmpty("密码"); // 关联已有用户时不需要密码
 
         var user = await _userService.CreateUserManagementAsync(request);
         return Success(user, ErrorMessages.CreateSuccess);

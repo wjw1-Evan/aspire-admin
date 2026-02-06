@@ -58,7 +58,6 @@ export default {
   'menu.xiaoke-management.chat-history.desc': '查看和管理聊天记录',
   'menu.password-book': '密码本',
   'menu.password-book.desc': '安全保存和管理账号密码',
-  'menu.pending-join-requests': '待审批申请',
   'menu.account': '个人页',
   'menu.account.center': '个人中心',
   'menu.account.center.desc': '管理个人信息和设置',
@@ -114,4 +113,5 @@ export default {
   'menu.cloud-storage-recycle.desc': '管理已删除的文件',
   'menu.cloud-storage-quota': '存储管理',
   'menu.cloud-storage-quota.desc': '管理存储配额和使用统计',
+  'menu.pending-join-requests': '加入申请',
 };

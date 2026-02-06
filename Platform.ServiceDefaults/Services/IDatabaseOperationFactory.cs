@@ -92,6 +92,11 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     Task<List<T>> FindAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null, ProjectionDefinition<T>? projection = null);
 
     /// <summary>
+    /// 执行查询操作（包含软删除记录）
+    /// </summary>
+    Task<List<T>> FindIncludingDeletedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null, ProjectionDefinition<T>? projection = null);
+
+    /// <summary>
     /// 执行分页查询操作
     /// </summary>
     Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10, ProjectionDefinition<T>? projection = null);

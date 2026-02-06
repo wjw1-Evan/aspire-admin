@@ -1,9 +1,12 @@
 import React, { useRef } from 'react';
-import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Tag, Space, App, Popconfirm, theme } from 'antd';
+import { Tag, Space, App, Popconfirm, theme, Button } from 'antd';
 import { request, useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { cancelJoinRequest } from '@/services/company';
+import { UndoOutlined } from '@ant-design/icons';
+import DataTable from '@/components/DataTable';
+import type { ActionType } from '@/types/pro-components';
+import type { ColumnsType } from 'antd/es/table';
 
 interface MyJoinRequestsTableProps {
     // 可以添加 props
@@ -30,7 +33,7 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
             const response = await cancelJoinRequest(id);
             if (response.success) {
                 message.success('申请已撤销');
-                actionRef.current?.reload();
+                actionRef.current?.reload?.();
             } else {
                 message.error(response.errorMessage || '撤销失败');
             }
@@ -39,45 +42,52 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
         }
     };
 
-    const columns: ProColumns<JoinRequestDetail>[] = [
+    const columns: ColumnsType<JoinRequestDetail> = [
         {
             title: '企业名称',
             dataIndex: 'companyName',
+            key: 'companyName',
             width: 200,
         },
         {
             title: '申请理由',
             dataIndex: 'reason',
+            key: 'reason',
             ellipsis: true,
-            search: false,
+            render: (text) => text || '-',
         },
         {
             title: '状态',
             dataIndex: 'status',
-            valueEnum: {
-                pending: { text: '待审核', status: 'Processing' },
-                approved: { text: '已批准', status: 'Success' },
-                rejected: { text: '已拒绝', status: 'Error' },
-                cancelled: { text: '已取消', status: 'Default' },
+            key: 'status',
+            render: (status: string) => {
+                const statusMap: Record<string, { text: string; color: string }> = {
+                    pending: { text: intl.formatMessage({ id: 'pages.status.pending', defaultMessage: '待审核' }), color: 'processing' },
+                    approved: { text: intl.formatMessage({ id: 'pages.status.approved', defaultMessage: '已通过' }), color: 'success' },
+                    rejected: { text: intl.formatMessage({ id: 'pages.status.rejected', defaultMessage: '已拒绝' }), color: 'error' },
+                    cancelled: { text: intl.formatMessage({ id: 'pages.status.cancelled', defaultMessage: '已取消' }), color: 'default' },
+                };
+                const config = statusMap[status] || { text: status, color: 'default' };
+                return <Tag color={config.color}>{config.text}</Tag>;
             },
         },
         {
             title: '申请时间',
             dataIndex: 'createdAt',
-            valueType: 'dateTime',
-            sorter: (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
-            search: false,
+            key: 'createdAt',
+            sorter: true,
+            render: (text: string) => text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-',
         },
         {
             title: '审核人',
             dataIndex: 'reviewedByName',
-            search: false,
+            key: 'reviewedByName',
             render: (text) => text || '-',
         },
         {
             title: '备注',
             dataIndex: 'rejectReason',
-            search: false,
+            key: 'rejectReason',
             render: (text, record) => {
                 if (record.status === 'rejected') {
                     return <span style={{ color: token.colorError }}>拒绝原因: {text}</span>;
@@ -87,7 +97,9 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
         },
         {
             title: '操作',
-            valueType: 'option',
+            key: 'action',
+            fixed: 'right',
+            width: 120,
             render: (_, record) => {
                 if (record.status === 'pending') {
                     return (
@@ -97,7 +109,14 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
                             okText="确定"
                             cancelText="取消"
                         >
-                            <a style={{ color: token.colorError }}>撤销</a>
+                            <Button
+                                type="link"
+                                size="small"
+                                danger
+                                icon={<UndoOutlined />}
+                            >
+                                撤销
+                            </Button>
                         </Popconfirm>
                     );
                 }
@@ -107,11 +126,9 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
     ];
 
     return (
-        <ProTable<JoinRequestDetail>
-            headerTitle="我的加入申请"
+        <DataTable<JoinRequestDetail>
             actionRef={actionRef}
             rowKey="id"
-            search={false}
             request={async () => {
                 const result = await request('/api/company/my-join-requests');
                 return {

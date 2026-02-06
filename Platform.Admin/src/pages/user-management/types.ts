@@ -68,7 +68,7 @@ export interface CreateUserRequest {
   username: string;
   email?: string;
   phoneNumber?: string;
-  password: string;
+  password?: string;
   roleIds?: string[];
   isActive: boolean;
   remark?: string;

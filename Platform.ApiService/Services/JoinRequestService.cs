@@ -278,9 +278,15 @@ public class JoinRequestService : IJoinRequestService
         // 1. 获取申请记录
         var request = await _joinRequestFactory.GetByIdAsync(requestId);
 
-        if (request == null || request.Status != "pending")
+        if (request == null)
         {
-            throw new KeyNotFoundException("申请不存在或已处理");
+            throw new KeyNotFoundException("申请不存在");
+        }
+
+        // 如果已经是批准状态，直接返回成功（或更新角色）
+        if (request.Status == "approved")
+        {
+            return true;
         }
 
         // 2. 验证审核人是否是该企业的管理员
@@ -331,20 +337,43 @@ public class JoinRequestService : IJoinRequestService
             }
         }
 
-        // 5. 创建用户-企业关联
-        var userCompany = new UserCompany
+        // 5. 创建或激活用户-企业关联
+        var existingMembershipFilter = _userCompanyFactory.CreateFilterBuilder()
+            .Equal(uc => uc.UserId, request.UserId)
+            .Equal(uc => uc.CompanyId, request.CompanyId)
+            .Build();
+
+        // 修复：使用 FindIncludingDeletedAsync 获取包含软删除在内的记录，避免唯一索引冲突
+        var memberships = await _userCompanyFactory.FindIncludingDeletedAsync(existingMembershipFilter);
+        var existingMembership = memberships.FirstOrDefault();
+
+        if (existingMembership == null)
         {
-            UserId = request.UserId,
-            CompanyId = request.CompanyId,
-            RoleIds = roleIds,
-            IsAdmin = false,
-            Status = "active",
-            JoinedAt = DateTime.UtcNow,  // 业务字段，需要手动设置
-            ApprovedBy = adminUserId,
-            ApprovedAt = DateTime.UtcNow  // 业务字段，需要手动设置
-            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
-        };
-        await _userCompanyFactory.CreateAsync(userCompany);
+            var userCompany = new UserCompany
+            {
+                UserId = request.UserId,
+                CompanyId = request.CompanyId,
+                RoleIds = roleIds,
+                IsAdmin = false,
+                Status = "active",
+                JoinedAt = DateTime.UtcNow,
+                ApprovedBy = adminUserId,
+                ApprovedAt = DateTime.UtcNow
+            };
+            await _userCompanyFactory.CreateAsync(userCompany);
+        }
+        else if (existingMembership.Status != "active" || existingMembership.IsDeleted)
+        {
+            // 如果已经被软删除或处于非活跃状态，则重新激活
+            var updateMFilter = _userCompanyFactory.CreateFilterBuilder().Equal(uc => uc.Id, existingMembership.Id).Build();
+            var updateM = _userCompanyFactory.CreateUpdateBuilder()
+                .Set(uc => uc.IsDeleted, false)
+                .Set(uc => uc.Status, "active")
+                .Set(uc => uc.RoleIds, roleIds)
+                .Set(uc => uc.UpdatedAt, DateTime.UtcNow)
+                .Build();
+            await _userCompanyFactory.FindOneAndUpdateAsync(updateMFilter, updateM);
+        }
 
         // 6. 更新申请状态
         var filter = _joinRequestFactory.CreateFilterBuilder().Equal(jr => jr.Id, request.Id).Build();
@@ -376,9 +405,14 @@ public class JoinRequestService : IJoinRequestService
         // 1. 获取申请记录
         var request = await _joinRequestFactory.GetByIdAsync(requestId);
 
-        if (request == null || request.Status != "pending")
+        if (request == null)
         {
-            throw new KeyNotFoundException("申请不存在或已处理");
+            throw new KeyNotFoundException("申请不存在");
+        }
+
+        if (request.Status == "rejected")
+        {
+            return true;
         }
 
         // 2. 验证审核人是否是该企业的管理员
@@ -387,7 +421,22 @@ public class JoinRequestService : IJoinRequestService
             throw new UnauthorizedAccessException("只有企业管理员可以审核申请");
         }
 
-        // 3. 更新申请状态
+        // 3. 处理状态回退：如果之前是“已批准”，需要停用或删除 UserCompany 记录
+        if (request.Status == "approved")
+        {
+            var membershipFilter = _userCompanyFactory.CreateFilterBuilder()
+                .Equal(uc => uc.UserId, request.UserId)
+                .Equal(uc => uc.CompanyId, request.CompanyId)
+                .Build();
+            var memberships = await _userCompanyFactory.FindAsync(membershipFilter);
+            foreach (var m in memberships)
+            {
+                var delFilter = _userCompanyFactory.CreateFilterBuilder().Equal(uc => uc.Id, m.Id).Build();
+                await _userCompanyFactory.FindOneAndSoftDeleteAsync(delFilter);
+            }
+        }
+
+        // 4. 更新申请状态
         var filter = _joinRequestFactory.CreateFilterBuilder().Equal(jr => jr.Id, request.Id).Build();
         var update = _joinRequestFactory.CreateUpdateBuilder()
             .Set(jr => jr.Status, "rejected")

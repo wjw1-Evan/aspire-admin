@@ -21,7 +21,8 @@
 
   .flagWrapper {
     font-size: 20px;
-    /* 图标大小对齐 */
+    /* 强制使用系统表情符号字体，移除中文字体干扰 */
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols, sans-serif !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -69,6 +70,8 @@
     .menuIcon {
       margin-right: 12px;
       font-size: 18px;
+      /* 强制使用系统表情符号字体，移除中文字体干扰 */
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols, sans-serif !important;
       display: inline-flex;
       align-items: center;
       justify-content: center;

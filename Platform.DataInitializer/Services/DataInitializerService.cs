@@ -83,6 +83,7 @@ public class DataInitializerService : IDataInitializerService
         // 2. 创建全局系统菜单
         await CreateSystemMenusAsync();
 
+
         _logger.LogInformation("所有初始化操作执行完成");
     }
 
@@ -766,21 +767,8 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
-        // 加入申请管理
-        menus.Add(new Menu
-        {
-            Name = "pending-join-requests",
-            Title = "待审批申请",
-            Path = "/join-requests/pending",
-            Component = "./join-requests/pending",
-            Icon = "user-add",
-            ParentId = "system",
-            SortOrder = 7,
-            IsEnabled = true,
-            IsDeleted = false,
-            CreatedAt = now,
-            UpdatedAt = now
-        });
+
+
 
         return menus;
     }
@@ -824,8 +812,7 @@ public class DataInitializerService : IDataInitializerService
             "cloud-storage-shared" => "cloud-storage",
             "cloud-storage-recycle" => "cloud-storage",
             "cloud-storage-quota" => "cloud-storage",
-            // 加入申请
-            "pending-join-requests" => "system",
+
             _ => null
         };
     }

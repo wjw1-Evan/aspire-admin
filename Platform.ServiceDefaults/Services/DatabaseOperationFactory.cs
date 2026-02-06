@@ -465,6 +465,23 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     }
 
     /// <summary>
+    /// 执行查询操作（包含软删除记录）
+    /// </summary>
+    public async Task<List<T>> FindIncludingDeletedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int? limit = null, ProjectionDefinition<T>? projection = null)
+    {
+        var baseFilter = filter ?? Builders<T>.Filter.Empty;
+        var finalFilter = await ApplyTenantFilterAsync(baseFilter).ConfigureAwait(false);
+        var finalSort = sort ?? Builders<T>.Sort.Descending(e => e.CreatedAt);
+
+        var findOptions = new FindOptions<T> { Sort = finalSort, Limit = limit };
+        if (projection != null)
+            findOptions.Projection = projection;
+
+        var cursor = await _collection.FindAsync(finalFilter, findOptions).ConfigureAwait(false);
+        return await cursor.ToListAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// 执行分页查询操作
     /// </summary>
     public async Task<(List<T> items, long total)> FindPagedAsync(FilterDefinition<T>? filter = null, SortDefinition<T>? sort = null, int page = 1, int pageSize = 10, ProjectionDefinition<T>? projection = null)

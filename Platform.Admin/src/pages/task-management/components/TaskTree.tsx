@@ -141,27 +141,16 @@ const TaskTree: React.FC<TaskTreeProps> = ({ projectId }) => {
         }}
       />
 
-      {formVisible && (
-        <Modal
-          title={editingTask ? '编辑任务' : '新建任务'}
-          open={formVisible}
-          onCancel={() => setFormVisible(false)}
-          footer={null}
-          width={600}
-          destroyOnHidden
-        >
-          <TaskForm
-            open={formVisible}
-            task={editingTask}
-            projectId={projectId}
-            onSuccess={() => {
-              setFormVisible(false);
-              loadTasks();
-            }}
-            onClose={() => setFormVisible(false)}
-          />
-        </Modal>
-      )}
+      <TaskForm
+        open={formVisible}
+        task={editingTask}
+        projectId={projectId}
+        onSuccess={() => {
+          setFormVisible(false);
+          loadTasks();
+        }}
+        onClose={() => setFormVisible(false)}
+      />
     </div>
   );
 };

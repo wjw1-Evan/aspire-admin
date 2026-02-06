@@ -512,7 +512,6 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
           open={formVisible}
           onCancel={handleCloseForm}
           footer={null}
-          width={isMobile ? '100%' : 600}
           destroyOnHidden
         >
           <ProjectForm

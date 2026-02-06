@@ -82,7 +82,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
       }
       open={true}
       onClose={onClose}
-      size={isMobile ? 'large' : 1400}
+      size={isMobile ? 'large' : 900}
     >
       <Tabs
         items={[

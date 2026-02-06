@@ -130,20 +130,22 @@ public class TaskService : ITaskService
     /// <returns>任务列表响应</returns>
     public async System.Threading.Tasks.Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request, string companyId)
     {
-        var filters = new List<FilterDefinition<TaskModel>>
-        {
-        };
+        var filters = new List<FilterDefinition<TaskModel>>();
+        filters.Add(Builders<TaskModel>.Filter.Eq(t => t.CompanyId, companyId));
 
-        // 搜索关键词
+        // 基础搜索过滤
         if (!string.IsNullOrEmpty(request.Search))
         {
-            var pattern = $".*{System.Text.RegularExpressions.Regex.Escape(request.Search)}.*";
-            var regex = new BsonRegularExpression(pattern, "i");
-            var searchFilter = Builders<TaskModel>.Filter.Or(
-                Builders<TaskModel>.Filter.Regex("taskName", regex),
-                Builders<TaskModel>.Filter.Regex("description", regex)
-            );
-            filters.Add(searchFilter);
+            filters.Add(Builders<TaskModel>.Filter.Or(
+                Builders<TaskModel>.Filter.Regex(t => t.TaskName, new BsonRegularExpression(request.Search, "i")),
+                Builders<TaskModel>.Filter.Regex(t => t.Description, new BsonRegularExpression(request.Search, "i"))
+            ));
+        }
+
+        // 项目过滤
+        if (!string.IsNullOrEmpty(request.ProjectId))
+        {
+            filters.Add(Builders<TaskModel>.Filter.Eq(t => t.ProjectId, request.ProjectId));
         }
 
         // 状态过滤
@@ -1025,6 +1027,24 @@ public class TaskService : ITaskService
                 UploadedAt = a.UploadedAt,
                 UploadedBy = a.UploadedBy
             }).ToList();
+        }
+
+        // 获取项目信息
+        if (!string.IsNullOrEmpty(task.ProjectId))
+        {
+            try
+            {
+                var projectService = _serviceProvider.GetRequiredService<IProjectService>();
+                var project = await projectService.GetProjectByIdAsync(task.ProjectId);
+                if (project != null)
+                {
+                    dto.ProjectName = project.Name;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"获取项目信息失败: {ex.Message}");
+            }
         }
 
         return dto;

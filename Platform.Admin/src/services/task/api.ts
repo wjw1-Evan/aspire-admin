@@ -69,10 +69,10 @@ export interface TaskDto {
   attachments: TaskAttachmentDto[];
   updatedAt: string;
   updatedBy?: string;
-  projectId?: string;
-  parentTaskId?: string;
   sortOrder?: number;
   duration?: number;
+  projectId?: string;
+  projectName?: string;
   children?: TaskDto[];
 }
 
@@ -179,6 +179,7 @@ export interface TaskQueryRequest {
   sortBy?: string;
   sortOrder?: string;
   tags?: string[];
+  projectId?: string;
 }
 
 /**

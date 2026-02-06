@@ -208,6 +208,9 @@ public class TaskQueryRequest
 
     /// <summary>标签过滤</summary>
     public List<string>? Tags { get; set; }
+
+    /// <summary>项目ID过滤</summary>
+    public string? ProjectId { get; set; }
 }
 
 /// <summary>
@@ -307,6 +310,9 @@ public class TaskDto
 
     /// <summary>所属项目ID</summary>
     public string? ProjectId { get; set; }
+
+    /// <summary>所属项目名称</summary>
+    public string? ProjectName { get; set; }
 
     /// <summary>父任务ID</summary>
     public string? ParentTaskId { get; set; }

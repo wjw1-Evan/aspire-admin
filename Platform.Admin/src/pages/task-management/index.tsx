@@ -58,6 +58,7 @@ import TaskForm from './components/TaskForm';
 import TaskDetail from './components/TaskDetail';
 import TaskExecutionPanel from './components/TaskExecutionPanel';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
+import { getProjectList, type ProjectDto } from '@/services/task/project';
 import { StatCard } from '@/components';
 
 // 提取纯函数到组件外部，避免每次渲染都重新创建
@@ -125,6 +126,8 @@ const TaskManagement: React.FC = () => {
   const [editingTask, setEditingTask] = useState<TaskDto | null>(null);
   const [viewingTask, setViewingTask] = useState<TaskDto | null>(null);
   const [statistics, setStatistics] = useState<TaskStatistics | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [selectedRows, setSelectedRows] = useState<TaskDto[]>([]);
   const [searchParams, setSearchParams] = useState({
     page: 1,
@@ -136,6 +139,7 @@ const TaskManagement: React.FC = () => {
     priority: undefined as number | undefined,
     assignedTo: undefined as string | undefined,
     taskType: undefined as string | undefined,
+    projectId: undefined as string | undefined,
   });
 
   // 🔧 修复：使用 ref 存储搜索参数，避免 fetchTasks 函数重新创建导致重复请求
@@ -149,6 +153,7 @@ const TaskManagement: React.FC = () => {
     priority: undefined as number | undefined,
     assignedTo: undefined as string | undefined,
     taskType: undefined as string | undefined,
+    projectId: undefined as string | undefined,
   });
   const { styles } = useCommonStyles();
 
@@ -164,10 +169,23 @@ const TaskManagement: React.FC = () => {
     }
   }, []);
 
-  // 初始化时获取统计信息
+  // 加载项目列表
+  const loadProjects = useCallback(async () => {
+    try {
+      const response = await getProjectList({ page: 1, pageSize: 1000 });
+      if (response.success && response.data) {
+        setProjects(response.data.projects);
+      }
+    } catch (error) {
+      console.error('加载项目列表失败:', error);
+    }
+  }, []);
+
+  // 初始化时获取统计信息和项目列表
   useEffect(() => {
     fetchStatistics();
-  }, [fetchStatistics]);
+    loadProjects();
+  }, [fetchStatistics, loadProjects]);
 
   // 处理 URL 查询参数（taskId, status, priority, search 等）
   useEffect(() => {
@@ -260,6 +278,7 @@ const TaskManagement: React.FC = () => {
       priority: searchParamsRef.current.priority,
       assignedTo: searchParamsRef.current.assignedTo,
       taskType: searchParamsRef.current.taskType,
+      projectId: searchParamsRef.current.projectId,
       sortBy,
       sortOrder,
     };
@@ -379,6 +398,7 @@ const TaskManagement: React.FC = () => {
       priority: values.priority,
       assignedTo: values.assignedTo,
       taskType: values.taskType,
+      projectId: values.projectId,
     };
     // 更新 ref 和 state
     searchParamsRef.current = newSearchParams;
@@ -400,6 +420,7 @@ const TaskManagement: React.FC = () => {
       priority: undefined as number | undefined,
       assignedTo: undefined as string | undefined,
       taskType: undefined as string | undefined,
+      projectId: undefined as string | undefined,
     };
     // 更新 ref 和 state
     searchParamsRef.current = resetParams;
@@ -427,6 +448,13 @@ const TaskManagement: React.FC = () => {
       key: 'taskType',
       width: 100,
       render: (text: string) => <Tag>{text || '-'}</Tag>,
+    },
+    {
+      title: '项目名称',
+      dataIndex: 'projectName',
+      key: 'projectName',
+      width: 150,
+      render: (text: string) => text || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.status' }),
@@ -690,7 +718,7 @@ const TaskManagement: React.FC = () => {
           <Form.Item name="taskType" label="任务类型">
             <Select
               placeholder="请选择或输入"
-              style={{ width: 150 }}
+              style={{ width: 130 }}
               allowClear
               showSearch
               options={[
@@ -701,6 +729,19 @@ const TaskManagement: React.FC = () => {
                 { label: '其他', value: '其他' },
               ]}
             />
+          </Form.Item>
+          <Form.Item name="projectId" label="项目">
+            <Select
+              placeholder="所属项目"
+              style={{ width: 180 }}
+              allowClear
+              showSearch
+              optionFilterProp="children"
+            >
+              {projects.map(p => (
+                <Select.Option key={p.id} value={p.id}>{p.name}</Select.Option>
+              ))}
+            </Select>
           </Form.Item>
           <Form.Item>
             <Space>

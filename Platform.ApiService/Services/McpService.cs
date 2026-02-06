@@ -953,6 +953,118 @@ public class McpService : IMcpService
                     }
                 }
             },
+            new()
+            {
+                Name = "get_todos",
+                Description = "获取待办事项列表。支持 sortBy: dueDate, priority, datetime",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 10, ["minimum"] = 1, ["maximum"] = 100 },
+                        ["sortBy"] = new Dictionary<string, object> { ["type"] = "string", ["default"] = "dueDate" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "create_todo",
+                Description = "创建一个新的待办事项",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "title" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["title"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办标题" },
+                        ["description"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办描述（可选）" },
+                        ["priority"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "优先级（0=低, 1=中, 2=高, 3=紧急）", ["default"] = 1 },
+                        ["dueDate"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "截止日期（ISO格式，可选）" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "update_todo",
+                Description = "更新待办事项信息",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "id" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办ID" },
+                        ["title"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "新标题（可选）" },
+                        ["description"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "新描述（可选）" },
+                        ["priority"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "新优先级（可选）" },
+                        ["dueDate"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "新截止日期（可选）" },
+                        ["isCompleted"] = new Dictionary<string, object> { ["type"] = "boolean", ["description"] = "是否已完成（可选）" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "complete_todo",
+                Description = "将待办事项标记为已完成",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "id" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办ID" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "delete_todo",
+                Description = "删除指定的待办事项",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "id" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办ID" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_system_messages",
+                Description = "获取系统的所有消息通知列表",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 10, ["minimum"] = 1, ["maximum"] = 100 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "mark_multiple_notifications_read",
+                Description = "批量将通知标记为已读",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "ids" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["ids"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "array",
+                            ["items"] = new Dictionary<string, object> { ["type"] = "string" },
+                            ["description"] = "通知ID列表"
+                        }
+                    }
+                }
+            },
             // 小科配置管理相关工具
             new()
             {
@@ -1090,6 +1202,13 @@ public class McpService : IMcpService
                 "get_unread_notification_stats" => await HandleGetUnreadNotificationStatsAsync(arguments, currentUserId),
                 "mark_notification_read" => await HandleMarkNotificationReadAsync(arguments, currentUserId),
                 "get_task_notifications" => await HandleGetTaskNotificationsAsync(arguments, currentUserId),
+                "get_todos" => await HandleGetTodosAsync(arguments, currentUserId),
+                "create_todo" => await HandleCreateTodoAsync(arguments, currentUserId),
+                "update_todo" => await HandleUpdateTodoAsync(arguments, currentUserId),
+                "complete_todo" => await HandleCompleteTodoAsync(arguments, currentUserId),
+                "delete_todo" => await HandleDeleteTodoAsync(arguments, currentUserId),
+                "get_system_messages" => await HandleGetSystemMessagesAsync(arguments, currentUserId),
+                "mark_multiple_notifications_read" => await HandleMarkMultipleNotificationsReadAsync(arguments, currentUserId),
                 // 小科配置管理相关
                 "get_xiaoke_configs" => await HandleGetXiaokeConfigsAsync(arguments, currentUserId),
                 "get_xiaoke_config" => await HandleGetXiaokeConfigAsync(arguments, currentUserId),
@@ -2294,6 +2413,113 @@ public class McpService : IMcpService
             pageSize = result.PageSize,
             success = result.Success
         };
+    }
+
+    private async Task<object> HandleGetTodosAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 10, maxPageSize: 100);
+        var sortBy = arguments.ContainsKey("sortBy") ? (arguments["sortBy"]?.ToString() ?? "dueDate") : "dueDate";
+
+        var result = await _unifiedNotificationService.GetTodosAsync(page, pageSize, sortBy);
+        return new
+        {
+            todos = result.Todos,
+            total = result.Total,
+            page = result.Page,
+            pageSize = result.PageSize,
+            success = result.Success
+        };
+    }
+
+    private async Task<object> HandleCreateTodoAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("title") || arguments["title"] is null)
+        {
+            return new { error = "缺少必需的参数: title" };
+        }
+
+        var request = new CreateTodoRequest
+        {
+            Title = arguments["title"]!.ToString()!,
+            Description = arguments.ContainsKey("description") ? arguments["description"]?.ToString() : null,
+            Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var p) ? p : 1,
+            DueDate = arguments.ContainsKey("dueDate") && DateTime.TryParse(arguments["dueDate"]?.ToString(), out var d) ? d : null
+        };
+
+        var todo = await _unifiedNotificationService.CreateTodoAsync(request);
+        return new { success = true, id = todo.Id, title = todo.Title };
+    }
+
+    private async Task<object> HandleUpdateTodoAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("id") || arguments["id"] is null)
+        {
+            return new { error = "缺少必需的参数: id" };
+        }
+
+        var id = arguments["id"]!.ToString()!;
+        var request = new UpdateTodoRequest
+        {
+            Title = arguments.ContainsKey("title") ? arguments["title"]?.ToString() : null,
+            Description = arguments.ContainsKey("description") ? arguments["description"]?.ToString() : null,
+            Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var p) ? p : null,
+            DueDate = arguments.ContainsKey("dueDate") && DateTime.TryParse(arguments["dueDate"]?.ToString(), out var d) ? d : null,
+            IsCompleted = arguments.ContainsKey("isCompleted") && bool.TryParse(arguments["isCompleted"]?.ToString(), out var c) ? c : null
+        };
+
+        var todo = await _unifiedNotificationService.UpdateTodoAsync(id, request);
+        return new { success = todo != null, id = todo?.Id };
+    }
+
+    private async Task<object> HandleCompleteTodoAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("id") || arguments["id"] is null)
+        {
+            return new { error = "缺少必需的参数: id" };
+        }
+
+        var id = arguments["id"]!.ToString()!;
+        var ok = await _unifiedNotificationService.CompleteTodoAsync(id);
+        return new { success = ok };
+    }
+
+    private async Task<object> HandleDeleteTodoAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("id") || arguments["id"] is null)
+        {
+            return new { error = "缺少必需的参数: id" };
+        }
+
+        var id = arguments["id"]!.ToString()!;
+        var ok = await _unifiedNotificationService.DeleteTodoAsync(id);
+        return new { success = ok };
+    }
+
+    private async Task<object> HandleGetSystemMessagesAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 10, maxPageSize: 100);
+
+        var result = await _unifiedNotificationService.GetSystemMessagesAsync(page, pageSize);
+        return new
+        {
+            messages = result.Messages,
+            total = result.Total,
+            page = result.Page,
+            pageSize = result.PageSize,
+            success = result.Success
+        };
+    }
+
+    private async Task<object> HandleMarkMultipleNotificationsReadAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.ContainsKey("ids") || arguments["ids"] is not List<object> ids)
+        {
+            return new { error = "缺少必需的参数: ids (Array)" };
+        }
+
+        var idList = ids.Select(o => o.ToString()!).ToList();
+        var ok = await _unifiedNotificationService.MarkMultipleAsReadAsync(idList);
+        return new { success = ok };
     }
 
     #endregion

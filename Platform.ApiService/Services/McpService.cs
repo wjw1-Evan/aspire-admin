@@ -22,6 +22,9 @@ public class McpService : IMcpService
     private readonly IUserActivityLogService _activityLogService;
     private readonly ISocialService _socialService;
     private readonly ITaskService _taskService;
+    private readonly IProjectService _projectService;
+    private readonly IDocumentService _documentService;
+    private readonly ICloudStorageService _cloudStorageService;
     private readonly IUnifiedNotificationService _unifiedNotificationService;
     private readonly IXiaokeConfigService? _xiaokeConfigService;
     private readonly ILogger<McpService> _logger;
@@ -44,6 +47,9 @@ public class McpService : IMcpService
     /// <param name="activityLogService">活动日志服务</param>
     /// <param name="socialService">社交服务</param>
     /// <param name="taskService">任务服务</param>
+    /// <param name="projectService">项目服务</param>
+    /// <param name="documentService">公文服务</param>
+    /// <param name="cloudStorageService">云存储服务</param>
     /// <param name="unifiedNotificationService">统一通知服务</param>
     /// <param name="xiaokeConfigService">小科配置服务（可选）</param>
     /// <param name="logger">日志记录器</param>
@@ -60,9 +66,12 @@ public class McpService : IMcpService
         IUserActivityLogService activityLogService,
         ISocialService socialService,
         ITaskService taskService,
+        IProjectService projectService,
+        IDocumentService documentService,
+        ICloudStorageService cloudStorageService,
         IUnifiedNotificationService unifiedNotificationService,
         IXiaokeConfigService? xiaokeConfigService,
-         ILogger<McpService> logger)
+        ILogger<McpService> logger)
     {
         _userFactory = userFactory;
         _sessionFactory = sessionFactory;
@@ -76,9 +85,12 @@ public class McpService : IMcpService
         _activityLogService = activityLogService;
         _socialService = socialService;
         _taskService = taskService;
+        _projectService = projectService;
+        _documentService = documentService;
+        _cloudStorageService = cloudStorageService;
         _unifiedNotificationService = unifiedNotificationService;
         _xiaokeConfigService = xiaokeConfigService;
-         _logger = logger;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -441,6 +453,11 @@ public class McpService : IMcpService
                             ["type"] = "string",
                             ["description"] = "分配给的用户ID"
                         },
+                        ["projectId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "项目ID（可选）"
+                        },
                         ["search"] = new Dictionary<string, object>
                         {
                             ["type"] = "string",
@@ -517,6 +534,11 @@ public class McpService : IMcpService
                         {
                             ["type"] = "string",
                             ["description"] = "分配给的用户ID（可选）"
+                        },
+                        ["projectId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "项目ID（可选）"
                         },
                         ["estimatedDuration"] = new Dictionary<string, object>
                         {
@@ -702,6 +724,16 @@ public class McpService : IMcpService
                             ["type"] = "integer",
                             ["description"] = "任务状态（可选）"
                         },
+                        ["projectId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "项目ID（可选）"
+                        },
+                        ["search"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "搜索关键词（可选）"
+                        },
                         ["page"] = new Dictionary<string, object>
                         {
                             ["type"] = "integer",
@@ -719,6 +751,156 @@ public class McpService : IMcpService
                         }
                     }
                 }
+            },
+            // 项目管理相关工具
+            new()
+            {
+                Name = "get_projects",
+                Description = "获取项目列表。支持按关键词、状态等条件查询项目。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["search"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" },
+                        ["isArchived"] = new Dictionary<string, object> { ["type"] = "boolean", ["description"] = "是否已归档" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_project_detail",
+                Description = "获取项目详细信息。包括项目基本信息、成员列表。项目ID必填。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "projectId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["projectId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目ID" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "create_project",
+                Description = "创建新项目。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "name" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目名称" },
+                        ["description"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目描述" },
+                        ["startDate"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "开始时间 (ISO 8601)" },
+                        ["endDate"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "结束时间 (ISO 8601)" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_project_statistics",
+                Description = "获取项目统计信息。",
+                InputSchema = new Dictionary<string, object> { ["type"] = "object", ["properties"] = new Dictionary<string, object>() }
+            },
+            // 公文管理相关工具
+            new()
+            {
+                Name = "get_documents",
+                Description = "获取公文列表。支持按关键词、状态、分类等条件查询公文。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" },
+                        ["status"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "公文状态 (0=草稿, 1=审批中, 2=已通过, 3=已驳回)" },
+                        ["documentType"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "公文类型" },
+                        ["category"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "分类" },
+                        ["filterType"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "筛选类型 (all, my, pending, approved, rejected)" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_document_detail",
+                Description = "获取公文详细信息。公文ID必填。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "documentId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["documentId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "公文ID" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_document_statistics",
+                Description = "获取公文统计信息。",
+                InputSchema = new Dictionary<string, object> { ["type"] = "object", ["properties"] = new Dictionary<string, object>() }
+            },
+            // 云存储相关工具
+            new()
+            {
+                Name = "get_file_items",
+                Description = "列出文件夹内容。parentId 必填（根目录为 'root'）。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "parentId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["parentId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "父文件夹ID ('root' 表示根目录)" },
+                        ["search"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" },
+                        ["fileType"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "文件类型 (all, document, image, video, audio, archive, other)" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 50 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "search_files",
+                Description = "快速搜索全量文件。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "keyword" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "create_folder",
+                Description = "在指定父目录下创建新文件夹。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "name", "parentId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "文件夹名称" },
+                        ["parentId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "父文件夹ID" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_storage_usage",
+                Description = "获取当前用户的存储空间使用详情。",
+                InputSchema = new Dictionary<string, object> { ["type"] = "object", ["properties"] = new Dictionary<string, object>() }
             },
             // 通知中心相关工具
             new()
@@ -892,6 +1074,17 @@ public class McpService : IMcpService
                 "get_task_statistics" => await HandleGetTaskStatisticsAsync(arguments, currentUserId),
                 "get_my_task_count" => await HandleGetMyTaskCountAsync(arguments, currentUserId),
                 "get_my_tasks" => await HandleGetMyTasksAsync(arguments, currentUserId),
+                "get_projects" => await HandleGetProjectsAsync(arguments, currentUserId),
+                "get_project_detail" => await HandleGetProjectDetailAsync(arguments, currentUserId),
+                "create_project" => await HandleCreateProjectAsync(arguments, currentUserId),
+                "get_project_statistics" => await HandleGetProjectStatisticsAsync(arguments, currentUserId),
+                "get_documents" => await HandleGetDocumentsAsync(arguments, currentUserId),
+                "get_document_detail" => await HandleGetDocumentDetailAsync(arguments, currentUserId),
+                "get_document_statistics" => await HandleGetDocumentStatisticsAsync(arguments, currentUserId),
+                "get_file_items" => await HandleGetFileItemsAsync(arguments, currentUserId),
+                "search_files" => await HandleSearchFilesAsync(arguments, currentUserId),
+                "create_folder" => await HandleCreateFolderAsync(arguments, currentUserId),
+                "get_storage_usage" => await HandleGetStorageUsageAsync(arguments, currentUserId),
                 // 通知中心相关
                 "get_unified_notifications" => await HandleGetUnifiedNotificationsAsync(arguments, currentUserId),
                 "get_unread_notification_stats" => await HandleGetUnreadNotificationStatsAsync(arguments, currentUserId),
@@ -1552,7 +1745,7 @@ public class McpService : IMcpService
 
     private async Task<object> HandleGetAllRolesAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var includeStats = arguments.ContainsKey("includeStats") && 
+        var includeStats = arguments.ContainsKey("includeStats") &&
                           bool.TryParse(arguments["includeStats"]?.ToString(), out var stats) && stats;
 
         if (includeStats)
@@ -1652,12 +1845,12 @@ public class McpService : IMcpService
             PageSize = pageSize
         };
 
-        _logger.LogInformation("查询用户活动日志: UserId={UserId}, Action={Action}, Page={Page}, PageSize={PageSize}", 
+        _logger.LogInformation("查询用户活动日志: UserId={UserId}, Action={Action}, Page={Page}, PageSize={PageSize}",
             currentUserId, action, page, pageSize);
 
         var response = await _activityLogService.GetActivityLogsAsync(request);
 
-        _logger.LogInformation("活动日志查询结果: Total={Total}, ItemsCount={ItemsCount}", 
+        _logger.LogInformation("活动日志查询结果: Total={Total}, ItemsCount={ItemsCount}",
             response.Total, response.Data?.Count ?? 0);
 
         var items = (response.Data ?? Enumerable.Empty<UserActivityLog>()).Select(log => new
@@ -1702,7 +1895,8 @@ public class McpService : IMcpService
             Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null,
             Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null,
             Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var priority) ? priority : null,
-            AssignedTo = arguments.ContainsKey("assignedTo") ? arguments["assignedTo"]?.ToString() : null
+            AssignedTo = arguments.ContainsKey("assignedTo") ? arguments["assignedTo"]?.ToString() : null,
+            ProjectId = arguments.ContainsKey("projectId") ? arguments["projectId"]?.ToString() : null
         };
 
         var response = await _taskService.QueryTasksAsync(request, currentUser.CurrentCompanyId);
@@ -1807,7 +2001,8 @@ public class McpService : IMcpService
             PlannedStartTime = arguments.ContainsKey("plannedStartTime") && DateTime.TryParse(arguments["plannedStartTime"]?.ToString(), out var pst) ? pst : (DateTime?)null,
             PlannedEndTime = arguments.ContainsKey("plannedEndTime") && DateTime.TryParse(arguments["plannedEndTime"]?.ToString(), out var pet) ? pet : (DateTime?)null,
             ParticipantIds = arguments.ContainsKey("participantIds") && arguments["participantIds"] is List<object> participants ? participants.Cast<string>().ToList() : new List<string>(),
-            Remarks = arguments.ContainsKey("remarks") ? arguments["remarks"]?.ToString() : null
+            Remarks = arguments.ContainsKey("remarks") ? arguments["remarks"]?.ToString() : null,
+            ProjectId = arguments.ContainsKey("projectId") ? arguments["projectId"]?.ToString() : null
         };
 
         var task = await _taskService.CreateTaskAsync(request, currentUserId, currentUser.CurrentCompanyId);
@@ -2007,7 +2202,9 @@ public class McpService : IMcpService
             Page = page,
             PageSize = pageSize,
             AssignedTo = currentUserId,
-            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null
+            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null,
+            ProjectId = arguments.ContainsKey("projectId") ? arguments["projectId"]?.ToString() : null,
+            Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null
         };
 
         var response = await _taskService.QueryTasksAsync(request, currentUser.CurrentCompanyId);
@@ -2344,6 +2541,279 @@ public class McpService : IMcpService
             createdAt = config.CreatedAt,
             updatedAt = config.UpdatedAt
         };
+    }
+
+    #endregion
+
+    #region 项目管理相关
+
+    private async Task<object> HandleGetProjectsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            return new { error = "无法确定当前企业" };
+        }
+
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
+        var request = new ProjectQueryRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null,
+            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null
+        };
+
+        var response = await _projectService.GetProjectsListAsync(request, currentUser.CurrentCompanyId);
+
+        return new
+        {
+            projects = response.Projects.Select(p => new
+            {
+                id = p.Id,
+                name = p.Name,
+                description = p.Description,
+                startDate = p.StartDate,
+                endDate = p.EndDate,
+                status = p.Status,
+                statusName = p.StatusName,
+                memberCount = response.Total, // 这里简化处理
+                progress = p.Progress
+            }).ToList(),
+            total = response.Total,
+            page = response.Page,
+            pageSize = response.PageSize
+        };
+    }
+
+    private async Task<object> HandleGetProjectDetailAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var projectId = arguments.ContainsKey("projectId") ? arguments["projectId"]?.ToString() : null;
+        if (string.IsNullOrEmpty(projectId)) return new { error = "未提供项目ID" };
+
+        var project = await _projectService.GetProjectByIdAsync(projectId);
+        if (project == null) return new { error = "项目不存在" };
+
+        var members = await _projectService.GetProjectMembersAsync(projectId);
+
+        return new
+        {
+            project = new
+            {
+                id = project.Id,
+                name = project.Name,
+                description = project.Description,
+                startDate = project.StartDate,
+                endDate = project.EndDate,
+                status = project.Status,
+                progress = project.Progress
+            },
+            members = members.Select(m => new { userId = m.UserId, username = m.UserName, role = m.Role }).ToList()
+        };
+    }
+
+    private async Task<object> HandleCreateProjectAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var name = arguments.ContainsKey("name") ? arguments["name"]?.ToString() : null;
+        if (string.IsNullOrEmpty(name)) return new { error = "项目名称必填" };
+
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            return new { error = "无法确定当前企业" };
+        }
+
+        var request = new CreateProjectRequest
+        {
+            Name = name,
+            Description = arguments.ContainsKey("description") ? arguments["description"]?.ToString() : null,
+            StartDate = arguments.ContainsKey("startDate") && DateTime.TryParse(arguments["startDate"]?.ToString(), out var start) ? start : null,
+            EndDate = arguments.ContainsKey("endDate") && DateTime.TryParse(arguments["endDate"]?.ToString(), out var end) ? end : null
+        };
+
+        var project = await _projectService.CreateProjectAsync(request, currentUserId, currentUser.CurrentCompanyId);
+        return new { success = true, projectId = project.Id, projectName = project.Name };
+    }
+
+    private async Task<object> HandleGetProjectStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        {
+            return new { error = "无法确定当前企业" };
+        }
+
+        var stats = await _projectService.GetProjectStatisticsAsync(currentUser.CurrentCompanyId);
+        return stats;
+    }
+
+    #endregion
+
+    #region 公文管理相关
+
+    private async Task<object> HandleGetDocumentsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
+        var request = new DocumentQueryParams
+        {
+            Page = page,
+            PageSize = pageSize,
+            Keyword = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null,
+            DocumentType = arguments.ContainsKey("documentType") ? arguments["documentType"]?.ToString() : null,
+            Category = arguments.ContainsKey("category") ? arguments["category"]?.ToString() : null,
+            FilterType = arguments.ContainsKey("filterType") ? arguments["filterType"]?.ToString() : null
+        };
+
+        if (arguments.ContainsKey("status") && Enum.TryParse<DocumentStatus>(arguments["status"]?.ToString(), out var status))
+        {
+            request.Status = status;
+        }
+
+        var (items, total) = await _documentService.GetDocumentsAsync(request);
+
+        return new
+        {
+            documents = items.Select(d => new
+            {
+                id = d.Id,
+                title = d.Title,
+                documentType = d.DocumentType,
+                category = d.Category,
+                status = d.Status,
+                createdBy = d.CreatedBy,
+                createdAt = d.CreatedAt,
+                workflowInstanceId = d.WorkflowInstanceId
+            }).ToList(),
+            total = total,
+            page = page,
+            pageSize = pageSize
+        };
+    }
+
+    private async Task<object> HandleGetDocumentDetailAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var documentId = arguments.ContainsKey("documentId") ? arguments["documentId"]?.ToString() : null;
+        if (string.IsNullOrEmpty(documentId)) return new { error = "未提供公文ID" };
+
+        var doc = await _documentService.GetDocumentAsync(documentId);
+        if (doc == null) return new { error = "公文不存在" };
+
+        return new
+        {
+            id = doc.Id,
+            title = doc.Title,
+            content = doc.Content,
+            documentType = doc.DocumentType,
+            category = doc.Category,
+            status = doc.Status,
+            formData = doc.FormData,
+            attachmentIds = doc.AttachmentIds,
+            createdBy = doc.CreatedBy,
+            createdAt = doc.CreatedAt,
+            workflowInstanceId = doc.WorkflowInstanceId
+        };
+    }
+
+    private async Task<object> HandleGetDocumentStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var stats = await _documentService.GetStatisticsAsync();
+        return stats;
+    }
+
+    #endregion
+
+    #region 云存储相关工具处理方法
+
+    private async Task<object> HandleGetFileItemsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var parentId = arguments.ContainsKey("parentId") ? (arguments["parentId"]?.ToString() ?? "root") : "root";
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 50, maxPageSize: 200);
+
+        var query = new FileListQuery
+        {
+            Page = page,
+            PageSize = pageSize
+        };
+
+        if (arguments.ContainsKey("search"))
+        {
+            // 如果提供了 search，直接使用搜索逻辑
+            return await HandleSearchFilesAsync(arguments, currentUserId);
+        }
+
+        if (arguments.ContainsKey("fileType") && Enum.TryParse<FileItemType>(arguments["fileType"]?.ToString(), out var type))
+        {
+            query.Type = type;
+        }
+
+        var response = await _cloudStorageService.GetFileItemsAsync(parentId, query);
+
+        return new
+        {
+            items = response.Data.Select(i => new
+            {
+                id = i.Id,
+                name = i.Name,
+                type = i.Type, // folder or file
+                size = i.Size,
+                mimeType = i.MimeType,
+                parentId = i.ParentId,
+                updatedAt = i.UpdatedAt
+            }).ToList(),
+            total = response.Total,
+            page = response.Page,
+            pageSize = response.PageSize
+        };
+    }
+
+    private async Task<object> HandleSearchFilesAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var keyword = arguments.ContainsKey("keyword") ? (arguments["keyword"]?.ToString() ?? "") : (arguments.ContainsKey("search") ? (arguments["search"]?.ToString() ?? "") : "");
+        if (string.IsNullOrEmpty(keyword)) return new { error = "关键词必填" };
+
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
+
+        var request = new FileSearchQuery
+        {
+            Keyword = keyword,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        var response = await _cloudStorageService.SearchFilesAsync(request);
+
+        return new
+        {
+            items = response.Data.Select(i => new
+            {
+                id = i.Id,
+                name = i.Name,
+                type = i.Type,
+                size = i.Size,
+                path = i.Path,
+                updatedAt = i.UpdatedAt
+            }).ToList(),
+            total = response.Total,
+            page = response.Page,
+            pageSize = response.PageSize
+        };
+    }
+
+    private async Task<object> HandleCreateFolderAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var name = arguments.ContainsKey("name") ? arguments["name"]?.ToString() : null;
+        var parentId = arguments.ContainsKey("parentId") ? (arguments["parentId"]?.ToString() ?? "root") : "root";
+
+        if (string.IsNullOrEmpty(name)) return new { error = "文件夹名称必填" };
+
+        var folder = await _cloudStorageService.CreateFolderAsync(name, parentId);
+        return new { success = true, folderId = folder.Id, folderName = folder.Name };
+    }
+
+    private async Task<object> HandleGetStorageUsageAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var usage = await _cloudStorageService.GetStorageUsageAsync(currentUserId);
+        return usage;
     }
 
     #endregion

@@ -22,6 +22,7 @@ import {
   Switch,
   Steps,
   theme,
+  Spin,
 } from 'antd';
 import {
   FileTextOutlined,
@@ -81,8 +82,9 @@ import {
 import { type FormDefinition } from '@/services/form/api';
 import { getStatusMeta, documentStatusMap, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
 import dayjs from 'dayjs';
-import ReactFlow, { Background, Controls, MiniMap, type Edge as FlowEdge, type Node as FlowNode } from 'reactflow';
-import 'reactflow/dist/style.css';
+import type { Edge as FlowEdge, Node as FlowNode } from 'reactflow';
+
+const WorkflowViewer = React.lazy(() => import('./components/WorkflowViewer'));
 
 const DocumentManagement: React.FC = () => {
   const intl = useIntl();
@@ -973,25 +975,9 @@ const DocumentManagement: React.FC = () => {
                           overflow: 'hidden',
                         }}
                       >
-                        {graphNodes.length > 0 ? (
-                          <ReactFlow
-                            nodes={graphNodes}
-                            edges={graphEdges}
-                            fitView
-                            nodesDraggable={false}
-                            nodesConnectable={false}
-                            elementsSelectable={false}
-                            proOptions={{ hideAttribution: true }}
-                          >
-                            <MiniMap pannable zoomable />
-                            <Controls showInteractive={false} />
-                            <Background gap={12} size={1} />
-                          </ReactFlow>
-                        ) : (
-                          <div style={{ padding: 12, color: '#999' }}>
-                            {intl.formatMessage({ id: 'pages.workflow.graph.empty', defaultMessage: '暂无流程图数据' })}
-                          </div>
-                        )}
+                        <React.Suspense fallback={<div style={{ padding: 20, textAlign: 'center' }}><Spin /></div>}>
+                          <WorkflowViewer nodes={graphNodes} edges={graphEdges} />
+                        </React.Suspense>
                       </div>
                     </div>
                   )}

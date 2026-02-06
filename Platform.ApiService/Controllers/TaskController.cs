@@ -602,7 +602,7 @@ public class TaskController : BaseApiController
             // 异常消息格式："前置任务 {taskId} 不存在" 或 "后续任务 {taskId} 不存在"
             var message = ex.Message;
             string taskId;
-            
+
             if (message.Contains("前置任务"))
             {
                 taskId = request.PredecessorTaskId;
@@ -616,7 +616,7 @@ public class TaskController : BaseApiController
                 // 如果无法确定，默认使用前置任务ID
                 taskId = request.PredecessorTaskId;
             }
-            
+
             return NotFoundError("任务", taskId);
         }
         catch (InvalidOperationException ex)

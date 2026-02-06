@@ -150,7 +150,7 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({
               {mode === 'progress' ? (
                 <>
                   <Alert
-                    message="更新进度"
+                    title="更新进度"
                     description="更新任务的执行进度，任务状态将变为'执行中'"
                     type="info"
                     style={{ marginBottom: 16 }}
@@ -200,7 +200,7 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({
               ) : (
                 <>
                   <Alert
-                    message="完成任务"
+                    title="完成任务"
                     description="标记任务为已完成，需要指定执行结果"
                     type="warning"
                     style={{ marginBottom: 16 }}

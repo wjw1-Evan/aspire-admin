@@ -762,6 +762,13 @@ export default {
   'pages.projectManagement.views.project': '项目视图',
   'pages.projectManagement.views.gantt': '甘特图',
   'pages.projectManagement.gantt.title': '甘特图',
+  'pages.projectManagement.gantt.noTasks': '当前暂无任务',
+  'pages.projectManagement.gantt.table.taskName': '任务名称',
+  'pages.projectManagement.gantt.table.progress': '进度',
+  'pages.projectManagement.gantt.table.timeline': '时间轴',
+  'pages.projectManagement.gantt.criticalPath': '关键路径',
+  'pages.projectManagement.gantt.selectProject': '选择项目',
+  'pages.projectManagement.gantt.allProjects': '所有项目',
 
   // 任务管理
   'pages.taskManagement.title': '任务管理',
@@ -858,7 +865,7 @@ export default {
   'pages.taskManagement.message.completeFailed': '任务完成失败',
   'pages.taskManagement.message.cancelSuccess': '任务取消成功',
   'pages.taskManagement.message.cancelFailed': '任务取消失败',
-  'pages.taskManagement.message.confirmDelete': '确定要删除这个任务吗？',
+  'pages.taskManagement.message.confirmDelete': '确定要删除这个任务及其所有子任务吗？',
   'pages.taskManagement.message.confirmCancel': '确定要取消这个任务吗？',
   'pages.taskManagement.execution.status': '执行状态',
   'pages.taskManagement.execution.message': '执行信息',

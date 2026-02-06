@@ -829,7 +829,7 @@ export default {
   'pages.taskManagement.message.completeFailed': 'Failed to complete task',
   'pages.taskManagement.message.cancelSuccess': 'Task cancelled successfully',
   'pages.taskManagement.message.cancelFailed': 'Failed to cancel task',
-  'pages.taskManagement.message.confirmDelete': 'Are you sure you want to delete this task?',
+  'pages.taskManagement.message.confirmDelete': 'Are you sure you want to delete this task and all its subtasks?',
   'pages.taskManagement.message.confirmCancel': 'Are you sure you want to cancel this task?',
   'pages.taskManagement.execution.status': 'Execution Status',
   'pages.taskManagement.execution.message': 'Execution Message',

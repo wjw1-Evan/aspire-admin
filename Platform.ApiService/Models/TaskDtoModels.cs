@@ -203,6 +203,9 @@ public class TaskQueryRequest
     /// <summary>排序顺序</summary>
     public string SortOrder { get; set; } = "desc";
 
+    /// <summary>是否只查询根任务（默认为 true，搜索时除外）</summary>
+    public bool? OnlyRoot { get; set; }
+
     /// <summary>标签过滤</summary>
     public List<string>? Tags { get; set; }
 }
@@ -315,7 +318,7 @@ public class TaskDto
     public int? Duration { get; set; }
 
     /// <summary>子任务列表</summary>
-    public List<TaskDto> Children { get; set; } = new();
+    public List<TaskDto>? Children { get; set; }
 }
 
 /// <summary>

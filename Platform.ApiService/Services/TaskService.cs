@@ -115,7 +115,7 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<TaskDto?> GetTaskByIdAsync(string taskId)
     {
         var task = await _taskFactory.GetByIdAsync(taskId);
-        
+
         if (task == null)
             return null;
 
@@ -176,6 +176,17 @@ public class TaskService : ITaskService
             filters.Add(Builders<TaskModel>.Filter.Eq(t => t.TaskType, request.TaskType));
         }
 
+        // 只有在没有特定搜索且明确要求或默认情况下，才只查询根任务
+        var onlyRoot = request.OnlyRoot ?? string.IsNullOrEmpty(request.Search);
+        if (onlyRoot)
+        {
+            filters.Add(Builders<TaskModel>.Filter.Or(
+                Builders<TaskModel>.Filter.Eq(t => t.ParentTaskId, null),
+                Builders<TaskModel>.Filter.Eq(t => t.ParentTaskId, ""),
+                Builders<TaskModel>.Filter.Exists(t => t.ParentTaskId, false)
+            ));
+        }
+
         // 日期范围过滤
         if (request.StartDate.HasValue || request.EndDate.HasValue)
         {
@@ -219,7 +230,36 @@ public class TaskService : ITaskService
         var taskDtos = new List<TaskDto>();
         foreach (var task in tasks)
         {
-            taskDtos.Add(await ConvertToTaskDtoAsync(task));
+            var dto = await ConvertToTaskDtoAsync(task);
+
+            // 如果是树形展示（不进行全局搜索时），加载第一层子任务
+            if (onlyRoot)
+            {
+                var children = await _taskFactory.FindAsync(
+                    _taskFactory.CreateFilterBuilder()
+                        .Equal(t => t.ParentTaskId, task.Id)
+                        .Build());
+                if (children.Any())
+                {
+                    dto.Children ??= new List<TaskDto>();
+                    foreach (var child in children.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt))
+                    {
+                        dto.Children.Add(await ConvertToTaskDtoAsync(child));
+                    }
+                }
+                else
+                {
+                    // 如果确实没有子任务，将 Children 设为 null，这样 antd 就不会显示加号了
+                    dto.Children = null;
+                }
+            }
+            else
+            {
+                // 非根模式下，不需要展开功能
+                dto.Children = null;
+            }
+
+            taskDtos.Add(dto);
         }
 
         return new TaskListResponse
@@ -240,7 +280,7 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
-        
+
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
@@ -366,7 +406,7 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<TaskDto> AssignTaskAsync(AssignTaskRequest request, string userId)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
-        
+
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
@@ -427,7 +467,7 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request, string userId)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
-        
+
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
@@ -515,7 +555,7 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request, string userId)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
-        
+
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
@@ -601,7 +641,7 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<TaskDto> CancelTaskAsync(string taskId, string userId, string? remarks = null)
     {
         var task = await _taskFactory.GetByIdAsync(taskId);
-        
+
         if (task == null)
             throw new KeyNotFoundException($"任务 {taskId} 不存在");
 
@@ -659,9 +699,31 @@ public class TaskService : ITaskService
     /// <returns>删除是否成功</returns>
     public async System.Threading.Tasks.Task<bool> DeleteTaskAsync(string taskId, string userId)
     {
-        var filter = Builders<TaskModel>.Filter.Eq(t => t.Id, taskId);
-        var result = await _taskFactory.FindOneAndSoftDeleteAsync(filter);
-        return result != null;
+        // 收集所有需要删除的任务ID（包括任务本身及其所有后代任务）
+        var idsToDelete = new List<string> { taskId };
+        await GetAllDescendantIdsAsync(taskId, idsToDelete);
+
+        // 执行批量软删除
+        var modifiedCount = await _taskFactory.SoftDeleteManyAsync(idsToDelete);
+        return modifiedCount > 0;
+    }
+
+    /// <summary>
+    /// 递归获取所有后代任务的ID
+    /// </summary>
+    private async System.Threading.Tasks.Task GetAllDescendantIdsAsync(string parentId, List<string> allIds)
+    {
+        var children = await _taskFactory.FindAsync(
+            Builders<TaskModel>.Filter.Eq(t => t.ParentTaskId, parentId));
+
+        foreach (var child in children)
+        {
+            if (!string.IsNullOrEmpty(child.Id))
+            {
+                allIds.Add(child.Id);
+                await GetAllDescendantIdsAsync(child.Id, allIds);
+            }
+        }
     }
 
     /// <summary>
@@ -910,8 +972,8 @@ public class TaskService : ITaskService
                 if (createdByUser != null)
                 {
                     // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name) 
-                        ? $"{createdByUser.Username} ({createdByUser.Name})" 
+                    dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name)
+                        ? $"{createdByUser.Username} ({createdByUser.Name})"
                         : createdByUser.Username;
                 }
             }
@@ -922,8 +984,8 @@ public class TaskService : ITaskService
                 if (assignedToUser != null)
                 {
                     // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.AssignedToName = !string.IsNullOrWhiteSpace(assignedToUser.Name) 
-                        ? $"{assignedToUser.Username} ({assignedToUser.Name})" 
+                    dto.AssignedToName = !string.IsNullOrWhiteSpace(assignedToUser.Name)
+                        ? $"{assignedToUser.Username} ({assignedToUser.Name})"
                         : assignedToUser.Username;
                 }
             }
@@ -994,8 +1056,8 @@ public class TaskService : ITaskService
                 if (user != null)
                 {
                     // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.ExecutedByName = !string.IsNullOrWhiteSpace(user.Name) 
-                        ? $"{user.Username} ({user.Name})" 
+                    dto.ExecutedByName = !string.IsNullOrWhiteSpace(user.Name)
+                        ? $"{user.Username} ({user.Name})"
                         : user.Username;
                 }
             }
@@ -1097,7 +1159,9 @@ public class TaskService : ITaskService
             else if (taskMap.ContainsKey(task.ParentTaskId))
             {
                 // 子任务，添加到父任务的 Children 列表
-                taskMap[task.ParentTaskId].Children.Add(task);
+                var parent = taskMap[task.ParentTaskId];
+                parent.Children ??= new List<TaskDto>();
+                parent.Children.Add(task);
             }
             else
             {
@@ -1109,7 +1173,14 @@ public class TaskService : ITaskService
         // 对每个节点的子任务进行排序
         foreach (var task in allTasks)
         {
-            task.Children = task.Children.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt).ToList();
+            if (task.Children != null && task.Children.Any())
+            {
+                task.Children = task.Children.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt).ToList();
+            }
+            else
+            {
+                task.Children = null;
+            }
         }
 
         return rootTasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt).ToList();
@@ -1119,11 +1190,11 @@ public class TaskService : ITaskService
     /// 添加任务依赖
     /// </summary>
     public async System.Threading.Tasks.Task<string> AddTaskDependencyAsync(
-        string predecessorTaskId, 
-        string successorTaskId, 
-        int dependencyType, 
-        int lagDays, 
-        string userId, 
+        string predecessorTaskId,
+        string successorTaskId,
+        int dependencyType,
+        int lagDays,
+        string userId,
         string companyId)
     {
         // 检查任务是否存在
@@ -1217,11 +1288,11 @@ public class TaskService : ITaskService
             Builders<TaskDependency>.Filter.Eq(d => d.PredecessorTaskId, taskId),
             Builders<TaskDependency>.Filter.Eq(d => d.SuccessorTaskId, taskId)
         );
-        
+
         var filter = dependencyFactory.CreateFilterBuilder()
             .Custom(orFilter)
             .Build();
-            
+
         var dependencies = await dependencyFactory.FindAsync(filter);
 
         var dependencyDtos = new List<TaskDependencyDto>();
@@ -1270,7 +1341,7 @@ public class TaskService : ITaskService
         var taskGraph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
         var inDegree = tasks.ToDictionary(t => t.Id!, t => 0);
 
-        foreach (var dep in dependencies.Where(d => 
+        foreach (var dep in dependencies.Where(d =>
             tasks.Any(t => t.Id == d.PredecessorTaskId || t.Id == d.SuccessorTaskId)))
         {
             if (taskGraph.ContainsKey(dep.PredecessorTaskId) && taskGraph.ContainsKey(dep.SuccessorTaskId))
@@ -1295,19 +1366,19 @@ public class TaskService : ITaskService
             var current = queue.Dequeue();
             if (!taskGraph.ContainsKey(current))
                 continue;
-                
+
             foreach (var next in taskGraph[current])
             {
                 if (!taskGraph.ContainsKey(next))
                     continue;
-                    
+
                 var currentTask = tasks.FirstOrDefault(t => t.Id == current);
                 var nextTask = tasks.FirstOrDefault(t => t.Id == next);
-                
+
                 if (currentTask == null || nextTask == null)
                     continue;
-                    
-                var duration = currentTask.Duration ?? 
+
+                var duration = currentTask.Duration ??
                     (currentTask.PlannedEndTime.HasValue && currentTask.PlannedStartTime.HasValue
                         ? (int)(currentTask.PlannedEndTime.Value - currentTask.PlannedStartTime.Value).TotalDays
                         : 1);
@@ -1324,7 +1395,7 @@ public class TaskService : ITaskService
         var latestStart = tasks.ToDictionary(t => t.Id!, t => earliestStart.Values.Max());
         var reverseGraph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
 
-        foreach (var dep in dependencies.Where(d => 
+        foreach (var dep in dependencies.Where(d =>
             tasks.Any(t => t.Id == d.PredecessorTaskId || t.Id == d.SuccessorTaskId)))
         {
             if (reverseGraph.ContainsKey(dep.SuccessorTaskId) && reverseGraph.ContainsKey(dep.PredecessorTaskId))
@@ -1336,9 +1407,9 @@ public class TaskService : ITaskService
         var endTasks = tasks.Where(t => taskGraph.ContainsKey(t.Id!) && taskGraph[t.Id!].Count == 0).ToList();
         if (endTasks.Count > 0)
         {
-            var maxEndTime = endTasks.Max(t => 
+            var maxEndTime = endTasks.Max(t =>
             {
-                var taskDuration = t.Duration ?? 
+                var taskDuration = t.Duration ??
                     (t.PlannedEndTime.HasValue && t.PlannedStartTime.HasValue
                         ? (int)(t.PlannedEndTime.Value - t.PlannedStartTime.Value).TotalDays
                         : 1);
@@ -1346,7 +1417,7 @@ public class TaskService : ITaskService
             });
             foreach (var endTask in endTasks)
             {
-                var endTaskDuration = endTask.Duration ?? 
+                var endTaskDuration = endTask.Duration ??
                     (endTask.PlannedEndTime.HasValue && endTask.PlannedStartTime.HasValue
                         ? (int)(endTask.PlannedEndTime.Value - endTask.PlannedStartTime.Value).TotalDays
                         : 1);
@@ -1361,17 +1432,17 @@ public class TaskService : ITaskService
                 if (visited.Contains(current) || !reverseGraph.ContainsKey(current))
                     continue;
                 visited.Add(current);
-                
+
                 foreach (var prev in reverseGraph[current])
                 {
                     if (!taskGraph.ContainsKey(prev))
                         continue;
-                        
+
                     var prevTask = tasks.FirstOrDefault(t => t.Id == prev);
                     if (prevTask == null)
                         continue;
-                        
-                    var duration = prevTask.Duration ?? 
+
+                    var duration = prevTask.Duration ??
                         (prevTask.PlannedEndTime.HasValue && prevTask.PlannedStartTime.HasValue
                             ? (int)(prevTask.PlannedEndTime.Value - prevTask.PlannedStartTime.Value).TotalDays
                             : 1);

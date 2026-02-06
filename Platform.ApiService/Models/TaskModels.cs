@@ -14,22 +14,22 @@ public enum TaskStatus
 {
     /// <summary>待分配</summary>
     Pending = 0,
-    
+
     /// <summary>已分配</summary>
     Assigned = 1,
-    
+
     /// <summary>执行中</summary>
     InProgress = 2,
-    
+
     /// <summary>已完成</summary>
     Completed = 3,
-    
+
     /// <summary>已取消</summary>
     Cancelled = 4,
-    
+
     /// <summary>失败</summary>
     Failed = 5,
-    
+
     /// <summary>暂停</summary>
     Paused = 6
 }
@@ -41,13 +41,13 @@ public enum TaskPriority
 {
     /// <summary>低</summary>
     Low = 0,
-    
+
     /// <summary>中</summary>
     Medium = 1,
-    
+
     /// <summary>高</summary>
     High = 2,
-    
+
     /// <summary>紧急</summary>
     Urgent = 3
 }
@@ -59,16 +59,16 @@ public enum TaskExecutionResult
 {
     /// <summary>未执行</summary>
     NotExecuted = 0,
-    
+
     /// <summary>成功</summary>
     Success = 1,
-    
+
     /// <summary>失败</summary>
     Failed = 2,
-    
+
     /// <summary>超时</summary>
     Timeout = 3,
-    
+
     /// <summary>被中断</summary>
     Interrupted = 4
 }

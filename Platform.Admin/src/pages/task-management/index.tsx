@@ -422,6 +422,13 @@ const TaskManagement: React.FC = () => {
       ),
     },
     {
+      title: '任务类型',
+      dataIndex: 'taskType',
+      key: 'taskType',
+      width: 100,
+      render: (text: string) => <Tag>{text || '-'}</Tag>,
+    },
+    {
       title: intl.formatMessage({ id: 'pages.taskManagement.table.status' }),
       dataIndex: 'statusName',
       key: 'status',
@@ -679,6 +686,21 @@ const TaskManagement: React.FC = () => {
               <Select.Option value={TaskStatus.Completed}>{intl.formatMessage({ id: 'pages.taskManagement.status.completed' })}</Select.Option>
               <Select.Option value={TaskStatus.Cancelled}>{intl.formatMessage({ id: 'pages.taskManagement.status.cancelled' })}</Select.Option>
             </Select>
+          </Form.Item>
+          <Form.Item name="taskType" label="任务类型">
+            <Select
+              placeholder="请选择或输入"
+              style={{ width: 150 }}
+              allowClear
+              showSearch
+              options={[
+                { label: '开发', value: '开发' },
+                { label: '设计', value: '设计' },
+                { label: '测试', value: '测试' },
+                { label: '文档', value: '文档' },
+                { label: '其他', value: '其他' },
+              ]}
+            />
           </Form.Item>
           <Form.Item>
             <Space>

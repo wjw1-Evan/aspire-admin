@@ -113,7 +113,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       form.setFieldsValue({
         taskName: task.taskName,
         description: task.description,
-        taskType: task.taskType,
+        taskType: task.taskType ? [task.taskType] : undefined,
         priority: task.priority,
         assignedUserIds,
         plannedStartTime: task.plannedStartTime ? dayjs(task.plannedStartTime) : undefined,
@@ -154,7 +154,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       const data: any = {
         taskName: values.taskName,
         description: values.description,
-        taskType: values.taskType,
+        taskType: Array.isArray(values.taskType) ? values.taskType[0] : values.taskType,
         priority: values.priority,
         assignedTo,
         plannedStartTime: values.plannedStartTime?.toISOString(),
@@ -244,16 +244,18 @@ const TaskForm: React.FC<TaskFormProps> = ({
             <Form.Item
               label="任务类型"
               name="taskType"
-              rules={[{ required: true, message: '请选择任务类型' }]}
+              rules={[{ required: true, message: '请输入或选择任务类型' }]}
             >
               <Select
-                placeholder="请选择任务类型"
+                mode="tags"
+                maxCount={1}
+                placeholder="请输入或选择任务类型"
                 options={[
-                  { label: '开发', value: 'Development' },
-                  { label: '设计', value: 'Design' },
-                  { label: '测试', value: 'Testing' },
-                  { label: '文档', value: 'Documentation' },
-                  { label: '其他', value: 'Other' },
+                  { label: '开发', value: '开发' },
+                  { label: '设计', value: '设计' },
+                  { label: '测试', value: '测试' },
+                  { label: '文档', value: '文档' },
+                  { label: '其他', value: '其他' },
                 ]}
               />
             </Form.Item>

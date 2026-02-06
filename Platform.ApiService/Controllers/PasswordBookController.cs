@@ -155,12 +155,12 @@ public class PasswordBookController : BaseApiController
     /// </summary>
     [HttpPost("generate")]
     [RequireMenu("password-book")]
-    public async Task<IActionResult> GeneratePassword([FromBody] GeneratePasswordRequest request)
+    public IActionResult GeneratePassword([FromBody] GeneratePasswordRequest request)
     {
         if (request.Length < 8 || request.Length > 32)
             return Error("INVALID_REQUEST", "密码长度必须在8-32之间");
 
-        if (!request.IncludeUppercase && !request.IncludeLowercase && 
+        if (!request.IncludeUppercase && !request.IncludeLowercase &&
             !request.IncludeNumbers && !request.IncludeSpecialChars)
             return Error("INVALID_REQUEST", "至少需要选择一种字符类型");
 
@@ -181,7 +181,7 @@ public class PasswordBookController : BaseApiController
     /// </summary>
     [HttpPost("check-strength")]
     [RequireMenu("password-book")]
-    public async Task<IActionResult> CheckPasswordStrength([FromBody] Dictionary<string, string> request)
+    public IActionResult CheckPasswordStrength([FromBody] Dictionary<string, string> request)
     {
         if (!request.TryGetValue("password", out var password) || string.IsNullOrEmpty(password))
             return Error("INVALID_REQUEST", "密码不能为空");

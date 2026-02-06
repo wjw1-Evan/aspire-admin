@@ -55,9 +55,9 @@ public class ResponseFormattingMiddleware
         }
 
         // 检查是否是流式请求（在调用 _next 之前检查，避免缓冲 SSE 流）
-        var isStreamingRequest = context.Request.Query.ContainsKey("stream") && 
+        var isStreamingRequest = context.Request.Query.ContainsKey("stream") &&
                                  context.Request.Query["stream"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
-        
+
         // 如果是流式请求，直接传递，不进行缓冲和格式化
         if (isStreamingRequest)
         {
@@ -128,7 +128,6 @@ public class ResponseFormattingMiddleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred: {Message}", ex.Message);
 
                 // 如果响应已经开始发送，则无法修改
                 if (context.Response.HasStarted)
@@ -169,42 +168,42 @@ public class ResponseFormattingMiddleware
     private static bool ShouldSkip(HttpContext context)
     {
         var path = context.Request.Path.Value?.ToLower() ?? string.Empty;
-        
+
         // 跳过健康检查端点
-        if (path.StartsWith("/health") || path.StartsWith("/healthz"))
+        if (path.Contains("/health") || path.Contains("/healthz"))
         {
             return true;
         }
-        
+
         // 跳过 Scalar API 文档端点
-        if (path.StartsWith("/scalar"))
+        if (path.Contains("/scalar"))
         {
             return true;
         }
-        
-        // 跳过 OpenAPI 文档端点（.NET 9 原生）
-        if (path.StartsWith("/openapi"))
+
+        // 跳过 OpenAPI 文档端点（.NET 9/10 原生）
+        if (path.Contains("/openapi"))
         {
             return true;
         }
-        
+
         // 跳过 SSE 端点（Server-Sent Events）
         if (path.Contains("/chat/sse") || path.Contains("/api/chat/sse"))
         {
             return true;
         }
-        
+
         // 跳过流式响应（检查查询参数或响应 Content-Type）
         var query = context.Request.Query;
         if (query.ContainsKey("stream") && query["stream"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
-        
+
         // 如果响应 Content-Type 是 text/event-stream，跳过格式化（SSE 流）
         // 注意：这里需要在 InvokeAsync 中检查，因为 Content-Type 可能在控制器中设置
         // 但我们可以先检查请求路径和查询参数
-        
+
         return false;
     }
 

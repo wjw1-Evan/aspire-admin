@@ -28,7 +28,7 @@ namespace Platform.ApiService.Controllers
         /// <param name="amount">目标配额（字节）。</param>
         /// <returns>设置结果。</returns>
         [HttpPost("add")] // Endpoint to add quota
-        public async Task<IActionResult> AddQuota(string userId, long amount)
+        public async Task<IActionResult> AddQuota([FromQuery] string userId, [FromQuery] long amount)
         {
             var result = await _storageQuotaService.SetUserQuotaAsync(userId, amount);
             return Ok(result);
@@ -41,7 +41,7 @@ namespace Platform.ApiService.Controllers
         /// <param name="amount">要减少的配额值（字节）。</param>
         /// <returns>操作结果。</returns>
         [HttpDelete("remove")] // Endpoint to remove quota
-        public async Task<IActionResult> RemoveQuota(string userId, long amount)
+        public async Task<IActionResult> RemoveQuota([FromQuery] string userId, [FromQuery] long amount)
         {
             // Logic to remove quota
             return Ok();

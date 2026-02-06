@@ -114,14 +114,14 @@ public class ActivityLogMiddleware
         var pathString = path.Value?.ToLower() ?? string.Empty;
 
         // 检查预定义的排除路径
-        if (ExcludedPaths.Any(excludedPath => pathString.StartsWith(excludedPath.ToLower())))
+        if (ExcludedPaths.Any(excludedPath => pathString.Contains(excludedPath.ToLower())))
         {
             return true;
         }
 
         // 检查配置的排除路径
         var configuredExcludedPaths = _configuration.GetSection("ActivityLog:ExcludedPaths").Get<string[]>();
-        if (configuredExcludedPaths != null && configuredExcludedPaths.Any(excludedPath => pathString.StartsWith(excludedPath.ToLower())))
+        if (configuredExcludedPaths != null && configuredExcludedPaths.Any(excludedPath => pathString.Contains(excludedPath.ToLower())))
         {
             return true;
         }

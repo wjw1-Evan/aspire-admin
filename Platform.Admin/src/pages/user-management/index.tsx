@@ -36,11 +36,13 @@ import {
   TeamOutlined,
   CheckCircleOutlined,
   ReloadOutlined,
+  CrownOutlined, // Added
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchFormCard from '@/components/SearchFormCard';
 import { getAllRoles } from '@/services/role/api';
+import { getCurrentCompany } from '@/services/company'; // Added
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import type { ApiResponse } from '@/types/unified-api';
 import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
@@ -102,12 +104,20 @@ const UserManagement: React.FC = () => {
   });
 
   // 加载角色列表
-  React.useEffect(() => {
+  const [currentCompany, setCurrentCompany] = useState<API.Company | null>(null);
+
+  useEffect(() => {
+    // 获取当前企业信息（用于判断是否为创建人）
+    getCurrentCompany().then((res) => {
+      if (res.success && res.data) {
+        setCurrentCompany(res.data);
+      }
+    });
+
     const fetchRoles = async () => {
       try {
         const response = await getAllRoles();
         if (response.success && response.data) {
-          // 创建角色 ID 到名称的映射
           const map: Record<string, string> = {};
           response.data.roles.forEach((role) => {
             if (role.id) {
@@ -122,6 +132,7 @@ const UserManagement: React.FC = () => {
     };
     fetchRoles();
   }, []);
+
 
   // 获取用户统计信息
   const fetchStatistics = useCallback(async () => {
@@ -532,6 +543,11 @@ const UserManagement: React.FC = () => {
           >
             {text}
           </a>
+          {currentCompany?.createdBy === record.id && (
+            <Tag icon={<CrownOutlined />} color="gold" title={intl.formatMessage({ id: 'pages.userManagement.role.creator', defaultMessage: 'Creator' })}>
+              {intl.formatMessage({ id: 'pages.userManagement.role.creator', defaultMessage: 'Creator' })}
+            </Tag>
+          )}
         </Space>
       ),
     },
@@ -662,7 +678,7 @@ const UserManagement: React.FC = () => {
         );
       },
     },
-  ], [roleMap, intl, handleToggleStatus, handleDelete]);
+  ], [roleMap, intl, handleToggleStatus, handleDelete, currentCompany]);
 
   // 行选择变化处理
   const handleRowSelectionChange = useCallback((_: React.Key[], selectedRows: AppUser[]) => {

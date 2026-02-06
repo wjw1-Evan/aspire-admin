@@ -418,6 +418,7 @@ export default {
   'pages.userManagement.search.placeholder': '用户名或邮箱',
   'pages.userManagement.role.label': '角色',
   'pages.userManagement.role.placeholder': '选择角色',
+  'pages.userManagement.role.creator': '创建人',
   'pages.userManagement.status.label': '状态',
   'pages.userManagement.status.placeholder': '选择状态',
   'pages.userManagement.status.activated': '已激活',

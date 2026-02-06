@@ -280,6 +280,7 @@ declare namespace API {
     expiresAt?: string;
     createdAt?: string;
     updatedAt?: string;
+    createdBy?: string;
   };
 
   type RegisterCompanyRequest = {

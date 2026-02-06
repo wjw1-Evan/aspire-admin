@@ -211,52 +211,9 @@ public class UserService(
             return existingUser;
         }
 
-        // 5. 新用户创建逻辑
-        if (string.IsNullOrEmpty(request.Password))
-        {
-            throw new ArgumentException("创建新用户时密码不能为空");
-        }
-        _validationService.ValidatePassword(request.Password);
-        _validationService.ValidateEmail(request.Email);
-
-        await _uniquenessChecker.EnsureUsernameUniqueAsync(request.Username);
-        if (!string.IsNullOrEmpty(request.Email))
-        {
-            await _uniquenessChecker.EnsureEmailUniqueAsync(request.Email);
-        }
-
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-        var newUser = new User
-        {
-            Username = request.Username,
-            Email = request.Email,
-            PasswordHash = passwordHash,
-            CurrentCompanyId = companyId,
-            IsActive = request.IsActive,
-            Remark = request.Remark
-        };
-
-        if (!string.IsNullOrEmpty(request.PhoneNumber))
-        {
-            newUser.PhoneNumber = request.PhoneNumber.Trim();
-        }
-
-        var createdUser = await _userFactory.CreateAsync(newUser);
-
-        var newUserCompany = new UserCompany
-        {
-            UserId = createdUser.Id!,
-            CompanyId = companyId,
-            RoleIds = roleIds,
-            IsAdmin = false,
-            Status = SystemConstants.UserStatus.Active,
-            JoinedAt = DateTime.UtcNow
-        };
-
-        await _userCompanyFactory.CreateAsync(newUserCompany);
-
-        return createdUser;
+        // 5. 如果用户不存在，抛出异常（仅支持添加现有用户）
+        // 修复：必须选择现有用户，不支持在此处创建新用户
+        throw new InvalidOperationException($"用户 {request.Username} 不存在，请先选择现有用户或联系管理员创建用户。");
     }
 
     /// <inheritdoc/>

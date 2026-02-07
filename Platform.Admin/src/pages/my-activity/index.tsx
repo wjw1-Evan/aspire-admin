@@ -111,61 +111,79 @@ const getActionTagColor = (action: string): string => {
 };
 
 const getActionText = (action: string): string => {
+  if (!action) return '-';
+  const a = action.toLowerCase();
+
   const textMap: Record<string, string> = {
     // 认证相关
-    login: '登录',
-    logout: '登出',
-    refresh_token: '刷新Token',
-    register: '注册',
-    // 用户相关
-    view_profile: '查看个人信息',
-    update_profile: '更新个人信息',
-    change_password: '修改密码',
-    view_activity_logs: '查看活动日志',
-    activate_user: '启用用户',
-    deactivate_user: '禁用用户',
-    bulk_action: '批量操作',
-    update_user_role: '更新用户角色',
-    create_user: '创建用户',
-    view_users: '查看用户列表',
-    view_statistics: '查看统计',
-    view_user: '查看用户',
-    update_user: '更新用户',
-    delete_user: '删除用户',
-    // 角色相关
-    view_roles: '查看角色',
-    create_role: '创建角色',
-    update_role: '更新角色',
-    delete_role: '删除角色',
-    // 菜单相关
-    view_menus: '查看菜单',
-    create_menu: '创建菜单',
-    update_menu: '更新菜单',
-    delete_menu: '删除菜单',
-    // 通知相关
-    view_notices: '查看通知',
-    create_notice: '创建通知',
-    update_notice: '更新通知',
-    delete_notice: '删除通知',
-    // 标签相关
-    view_tags: '查看标签',
-    create_tag: '创建标签',
-    update_tag: '更新标签',
-    delete_tag: '删除标签',
-    // 规则相关
-    view_rules: '查看规则',
-    create_rule: '创建规则',
-    update_rule: '更新规则',
-    delete_rule: '删除规则',
-    // 权限相关
-    view_permissions: '查看权限',
-    create_permission: '创建权限',
-    update_permission: '更新权限',
-    delete_permission: '删除权限',
-    // 其他
-    view_current_user: '查看当前用户',
+    'login': '登录',
+    'logout': '登出',
+    'refresh_token': '刷新令牌',
+    'register': '注册',
+
+    // 基础操作
+    'create': '创建',
+    'update': '更新',
+    'delete': '删除',
+    'view': '查看',
+    'export': '导出数据',
+    'import': '导入数据',
+
+    // 用户与账户
+    'view_profile': '查看个人信息',
+    'update_profile': '更新个人资料',
+    'change_password': '修改密码',
+    'view_activity_logs': '查看活动日志',
+    'activate_user': '启用用户',
+    'deactivate_user': '禁用用户',
+    'update_user_role': '分配角色',
+    'create_user': '创建用户',
+    'view_users': '查询用户',
+    'view_statistics': '查看统计',
+    'view_user': '查看用户详情',
+    'update_user': '完善用户信息',
+    'delete_user': '注销用户',
+    'view_current_user': '查询当前用户',
+
+    // 资源与管理
+    'view_roles': '查询角色',
+    'create_role': '创建角色',
+    'update_role': '修改角色',
+    'delete_role': '删除角色',
+
+    'view_menus': '查询菜单',
+    'create_menu': '添加菜单',
+    'update_menu': '配置菜单',
+    'delete_menu': '删除菜单',
+
+    'view_notices': '浏览通知',
+    'create_notice': '发布通知',
+    'update_notice': '修改通知',
+    'delete_notice': '撤回通知',
+
+    'view_rules': '查询规则',
+    'create_rule': '新建规则',
+    'update_rule': '调整规则',
+    'delete_rule': '移除规则',
+
+    'view_permissions': '查询权限',
+    'create_permission': '定义权限',
+    'update_permission': '配置权限',
+    'delete_permission': '注回权限',
+
+    'bulk_action': '执行批量操作',
   };
-  return textMap[action] || action;
+
+  // 映射成功直接返回
+  if (textMap[a]) return textMap[a];
+
+  // 尝试前缀匹配
+  if (a.startsWith('create_')) return `创建${textMap[a.replace('create_', '')] || action.replace('create_', '')}`;
+  if (a.startsWith('update_')) return `更新${textMap[a.replace('update_', '')] || action.replace('update_', '')}`;
+  if (a.startsWith('delete_')) return `删除${textMap[a.replace('delete_', '')] || action.replace('delete_', '')}`;
+  if (a.startsWith('view_')) return `查看${textMap[a.replace('view_', '')] || action.replace('view_', '')}`;
+
+  return action;
 };
 
 const MyActivity: React.FC = () => {

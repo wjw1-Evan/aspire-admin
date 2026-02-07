@@ -98,22 +98,106 @@ export const flattenMenus = (menus: API.MenuTreeNode[]): API.MenuTreeNode[] => {
 
 // 获取活动类型对应的颜色
 export const getActivityColor = (action?: string): string => {
-    if (!action) return 'blue';
+    if (!action) return 'default';
+    const a = action.toLowerCase();
 
     const colorMap: Record<string, string> = {
+        // 核心认证与通用
         'login': 'green',
-        'logout': 'red',
+        'logout': 'default',
+        'refresh_token': 'geekblue',
+        'register': 'blue',
+
+        // 基础 CRUD
         'create': 'blue',
         'update': 'orange',
         'delete': 'red',
         'view': 'cyan',
         'export': 'purple',
-        'import': 'purple',
+        'import': 'magenta',
+
+        // 业务状态
+        'activate_user': 'green',
+        'deactivate_user': 'volcano',
         'change_password': 'orange',
-        'refresh_token': 'blue'
+
+        // 角色/权限/系统
+        'create_role': 'blue',
+        'update_role': 'orange',
+        'delete_role': 'red',
+        'update_user_role': 'gold',
+        'bulk_action': 'magenta',
     };
 
-    return colorMap[action.toLowerCase()] || 'blue';
+    // 模糊匹配子项 (如 create_user)
+    if (colorMap[a]) return colorMap[a];
+    if (a.includes('create')) return 'blue';
+    if (a.includes('delete') || a.includes('remove')) return 'red';
+    if (a.includes('update') || a.includes('edit')) return 'orange';
+    if (a.includes('view') || a.includes('get')) return 'cyan';
+
+    return 'default';
+};
+
+// 获取活动类型的中文描述
+export const getActionText = (action: string): string => {
+    if (!action) return '-';
+    const a = action.toLowerCase();
+
+    const textMap: Record<string, string> = {
+        // 认证相关
+        'login': '登录',
+        'logout': '登出',
+        'refresh_token': '刷新令牌',
+        'register': '注册',
+
+        // 基础操作
+        'create': '创建',
+        'update': '更新',
+        'delete': '删除',
+        'view': '查看',
+        'export': '导出',
+        'import': '导入',
+
+        // 用户/账户
+        'view_profile': '查看个人资料',
+        'update_profile': '更新个人资料',
+        'change_password': '修改密码',
+        'view_activity_logs': '查看活动日志',
+        'activate_user': '启用用户',
+        'deactivate_user': '禁用用户',
+        'update_user_role': '分配角色',
+        'create_user': '创建用户',
+        'view_users': '查询用户',
+        'delete_user': '删除用户',
+        'view_statistics': '查看统计',
+
+        // 业务对象
+        'create_role': '创建角色',
+        'update_role': '更新角色',
+        'delete_role': '删除角色',
+        'view_roles': '查看角色',
+
+        'create_menu': '创建菜单',
+        'update_menu': '更新菜单',
+        'delete_menu': '删除菜单',
+
+        'create_notice': '发布通知',
+        'update_notice': '修改通知',
+        'delete_notice': '删除通知',
+
+        'bulk_action': '批量操作',
+    };
+
+    if (textMap[a]) return textMap[a];
+
+    // 处理复合动作 (如 create_project -> 创建)
+    if (a.startsWith('create_')) return `创建${textMap[a.replace('create_', '')] || ''}`;
+    if (a.startsWith('update_')) return `更新${textMap[a.replace('update_', '')] || ''}`;
+    if (a.startsWith('delete_')) return `删除${textMap[a.replace('delete_', '')] || ''}`;
+    if (a.startsWith('view_')) return `查看${textMap[a.replace('view_', '')] || ''}`;
+
+    return action;
 };
 
 // 获取资源使用率对应的颜色

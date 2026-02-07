@@ -23,7 +23,6 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
             onClick={disabled ? undefined : onClick}
             style={{
                 width: '100%',
-                height: '100%',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 borderRadius: '12px',
                 border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
@@ -31,9 +30,9 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
                 opacity: disabled ? 0.6 : 1,
                 backgroundColor: token?.colorBgContainer || '#ffffff',
             }}
-            styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
+            styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column' } }}
         >
-            <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                 <div
                     style={{
                         width: 40,
@@ -57,31 +56,14 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
                     </Text>
                     <Paragraph
                         type="secondary"
-                        style={{ fontSize: '12px', lineHeight: '1.5', margin: 0, height: '36px', overflow: 'hidden' }}
+                        style={{ fontSize: '12px', lineHeight: '1.5', margin: 0,  overflow: 'hidden' }}
                         ellipsis={{ rows: 2 }}
                     >
                         {description}
                     </Paragraph>
                 </div>
             </div>
-            <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
-                <div
-                    style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: token?.colorFillTertiary || '#f5f5f5',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: token?.colorTextTertiary || '#bfbfbf',
-                        fontSize: '10px',
-                        transition: 'all 0.3s'
-                    }}
-                >
-                    <RightOutlined />
-                </div>
-            </div>
+
         </Card>
     );
 };

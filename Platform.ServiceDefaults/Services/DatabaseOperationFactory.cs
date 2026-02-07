@@ -61,13 +61,11 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     // ========== 公共辅助 ==========
 
     /// <summary>
-    /// 获取当前操作者信息（用户ID和用户名）
+    /// 获取当前操作者信息（用户ID）
     /// </summary>
-    private async Task<(string? userId, string? username)> GetActorAsync()
+    private string? GetActorUserId()
     {
-        var userId = _tenantContext.GetCurrentUserId();
-        var username = await _tenantContext.GetCurrentUsernameAsync().ConfigureAwait(false);
-        return (userId, username);
+        return _tenantContext.GetCurrentUserId();
     }
 
     /// <summary>
@@ -97,9 +95,9 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         }
     }
 
-    private async Task<UpdateDefinition<T>> WithUpdateAuditAsync(UpdateDefinition<T> update)
+    private UpdateDefinition<T> WithUpdateAudit(UpdateDefinition<T> update)
     {
-        var (userId, username) = await GetActorAsync().ConfigureAwait(false);
+        var userId = GetActorUserId();
         var builder = Builders<T>.Update;
         var audit = new List<UpdateDefinition<T>>
         {
@@ -110,17 +108,13 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         {
             audit.Add(builder.Set("updatedBy", userId));
         }
-        if (!string.IsNullOrEmpty(username))
-        {
-            audit.Add(builder.Set("updatedByUsername", username));
-        }
 
         return builder.Combine(update, builder.Combine(audit));
     }
 
-    private async Task<UpdateDefinition<T>> WithSoftDeleteAuditAsync(UpdateDefinition<T> update)
+    private UpdateDefinition<T> WithSoftDeleteAudit(UpdateDefinition<T> update)
     {
-        var (userId, _) = await GetActorAsync().ConfigureAwait(false);
+        var userId = GetActorUserId();
         var builder = Builders<T>.Update;
         var audit = new List<UpdateDefinition<T>>
         {
@@ -179,17 +173,17 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         entity.UpdatedAt = DateTime.UtcNow;
         entity.IsDeleted = false;
 
-        // 设置创建人（通过反射设置审计字段）
-        var (userId, username) = await GetActorAsync().ConfigureAwait(false);
+        // 设置创建人
+        var userId = GetActorUserId();
         if (entity is IOperationTrackable op)
         {
-            op.CreatedBy = userId;
-            op.CreatedByUsername = username;
+            if (!string.IsNullOrEmpty(userId)) op.CreatedBy = userId;
+            op.LastOperationType = "CREATE";
+            op.LastOperationAt = DateTime.UtcNow;
         }
         else
         {
             SetAuditProperty(entity, "CreatedBy", userId);
-            SetAuditProperty(entity, "CreatedByUsername", username);
         }
 
         // 写入企业隔离字段
@@ -216,40 +210,45 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     /// </summary>
     /// <param name="entity">要创建的实体</param>
     /// <param name="userId">用户ID（可选，如果提供则使用此值，否则从 TenantContext 获取）</param>
-    /// <param name="username">用户名（可选，如果提供则使用此值，否则从 TenantContext 获取）</param>
-    public async Task<T> CreateAsync(T entity, string? userId, string? username)
+    /// <param name="username">用户名（已废弃，保留参数兼容性）</param>
+    public async Task<T> CreateAsync(T entity, string? userId, string? username = null)
     {
         // 设置时间戳
         entity.CreatedAt = DateTime.UtcNow;
         entity.UpdatedAt = DateTime.UtcNow;
         entity.IsDeleted = false;
 
-        // 如果未提供 userId 或 username，尝试从 TenantContext 获取（可能失败，如果 HttpContext 已释放）
-        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(username))
+        // 如果未提供 userId，尝试从 TenantContext 获取
+        if (string.IsNullOrEmpty(userId))
         {
             try
             {
-                var (contextUserId, contextUsername) = await GetActorAsync().ConfigureAwait(false);
-                userId ??= contextUserId;
-                username ??= contextUsername;
+                userId = GetActorUserId();
             }
             catch (ObjectDisposedException)
             {
-                // HttpContext 已释放，使用提供的值或默认值
-                // 这在后台线程场景中是预期的
+                // HttpContext 已释放，使用提供的值
             }
         }
 
-        // 设置创建人（通过反射设置审计字段）
+        // 设置创建人 (优先使用传入的 userId，其次保留实体已有的值)
         if (entity is IOperationTrackable op)
         {
-            op.CreatedBy = userId;
-            op.CreatedByUsername = username;
+            // 优先使用传入的 userId，如果没有则保留实体上已有的 CreatedBy
+            if (!string.IsNullOrEmpty(userId))
+            {
+                op.CreatedBy = userId;
+            }
+            // 如果实体上没有 CreatedBy 且 userId 也是空的，则保持为 null
+            op.LastOperationType = "CREATE";
+            op.LastOperationAt = DateTime.UtcNow;
         }
         else
         {
-            SetAuditProperty(entity, "CreatedBy", userId);
-            SetAuditProperty(entity, "CreatedByUsername", username);
+            if (!string.IsNullOrEmpty(userId))
+            {
+                SetAuditProperty(entity, "CreatedBy", userId);
+            }
         }
 
         // 写入企业隔离字段
@@ -300,7 +299,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         if (entityList.Count == 0)
             return entityList;
 
-        var (uid, uname) = await GetActorAsync().ConfigureAwait(false);
+        var uid = GetActorUserId();
         var now = DateTime.UtcNow;
 
         foreach (var entity in entityList)
@@ -311,12 +310,12 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
             if (entity is IOperationTrackable op)
             {
                 op.CreatedBy = uid;
-                op.CreatedByUsername = uname;
+                op.LastOperationType = "CREATE";
+                op.LastOperationAt = now;
             }
             else
             {
                 SetAuditProperty(entity, "CreatedBy", uid);
-                SetAuditProperty(entity, "CreatedByUsername", uname);
             }
 
             if (entity is IMultiTenant multiTenant)
@@ -352,16 +351,16 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
     {
         // 更新审计字段
         replacement.UpdatedAt = DateTime.UtcNow;
-        var (userId, username) = await GetActorAsync().ConfigureAwait(false);
+        var userId = GetActorUserId();
         if (replacement is IOperationTrackable op)
         {
             op.UpdatedBy = userId;
-            op.UpdatedByUsername = username;
+            op.LastOperationType = "UPDATE";
+            op.LastOperationAt = DateTime.UtcNow;
         }
         else
         {
             SetAuditProperty(replacement, "UpdatedBy", userId);
-            SetAuditProperty(replacement, "UpdatedByUsername", username);
         }
 
         var result = await _collection.FindOneAndReplaceAsync(filter, replacement, options).ConfigureAwait(false);
@@ -377,7 +376,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var tenantFilter = await ApplyTenantFilterAsync(filter).ConfigureAwait(false);
 
         // 确保更新时间戳与更新人
-        var updateWithTimestamp = await WithUpdateAuditAsync(update).ConfigureAwait(false);
+        var updateWithTimestamp = WithUpdateAudit(update);
 
         return await _collection.FindOneAndUpdateAsync(tenantFilter, updateWithTimestamp, options).ConfigureAwait(false);
     }
@@ -390,7 +389,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 应用多租户过滤
         var tenantFilter = await ApplyTenantFilterAsync(filter).ConfigureAwait(false);
 
-        var update = await WithSoftDeleteAuditAsync(Builders<T>.Update.Combine()).ConfigureAwait(false);
+        var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
         return await _collection.FindOneAndUpdateAsync(tenantFilter, update, options).ConfigureAwait(false);
     }
@@ -415,7 +414,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var tenantFilter = await ApplyTenantFilterAsync(filter).ConfigureAwait(false);
 
         // 确保更新时间戳与更新人
-        var updateWithTimestamp = await WithUpdateAuditAsync(update).ConfigureAwait(false);
+        var updateWithTimestamp = WithUpdateAudit(update);
 
         var result = await _collection.UpdateManyAsync(tenantFilter, updateWithTimestamp).ConfigureAwait(false);
         return result.ModifiedCount;
@@ -432,7 +431,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
 
         var filter = Builders<T>.Filter.In(e => e.Id, idList);
         var finalFilter = await ApplyDefaultFiltersAsync(filter).ConfigureAwait(false);
-        var update = await WithSoftDeleteAuditAsync(Builders<T>.Update.Combine()).ConfigureAwait(false);
+        var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
         var result = await _collection.UpdateManyAsync(finalFilter, update).ConfigureAwait(false);
         return result.ModifiedCount;
@@ -613,7 +612,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         var finalFilter = ApplySoftDeleteFilter(filter);
 
         // 确保更新时间戳与更新人
-        var updateWithTimestamp = await WithUpdateAuditAsync(update).ConfigureAwait(false);
+        var updateWithTimestamp = WithUpdateAudit(update);
 
         var result = await _collection.FindOneAndUpdateAsync(finalFilter, updateWithTimestamp, options).ConfigureAwait(false);
         return result;
@@ -627,7 +626,7 @@ public class DatabaseOperationFactory<T> : IDatabaseOperationFactory<T> where T 
         // 只应用软删除过滤
         var finalFilter = ApplySoftDeleteFilter(filter);
 
-        var update = await WithSoftDeleteAuditAsync(Builders<T>.Update.Combine()).ConfigureAwait(false);
+        var update = WithSoftDeleteAudit(Builders<T>.Update.Combine());
 
         var result = await _collection.FindOneAndUpdateAsync(finalFilter, update, options).ConfigureAwait(false);
         return result;

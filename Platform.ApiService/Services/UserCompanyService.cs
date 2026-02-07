@@ -131,6 +131,7 @@ public class UserCompanyService : IUserCompanyService
     /// <param name="menuService">菜单服务</param>
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="jwtService">JWT 服务</param>
+    /// <param name="logger">日志记录器</param>
     public UserCompanyService(
         IDatabaseOperationFactory<UserCompany> userCompanyFactory,
         IDatabaseOperationFactory<AppUser> userFactory,

@@ -3,6 +3,7 @@ using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
@@ -12,13 +13,6 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface ICompanyService
 {
-    /// <summary>
-    /// 企业注册（创建企业和管理员账户）
-    /// </summary>
-    /// <param name="request">企业注册请求</param>
-    /// <returns>注册的企业信息</returns>
-    Task<Company> RegisterCompanyAsync(RegisterCompanyRequest request);
-
     /// <summary>
     /// 创建企业（已登录用户创建企业）
     /// </summary>
@@ -120,111 +114,6 @@ public class CompanyService : ICompanyService
     }
 
     /// <summary>
-    /// 企业注册
-    /// </summary>
-    public async Task<Company> RegisterCompanyAsync(RegisterCompanyRequest request)
-    {
-        // 验证企业代码格式
-        request.CompanyCode.EnsureValidUsername(nameof(request.CompanyCode));
-
-        // 检查企业代码是否已存在
-        var existingCompany = await GetCompanyByCodeAsync(request.CompanyCode);
-        if (existingCompany != null)
-        {
-            throw new InvalidOperationException(CompanyErrorMessages.CompanyCodeExists);
-        }
-
-        // 1. 创建企业
-        var company = new Company
-        {
-            Name = request.CompanyName,
-            Code = request.CompanyCode.ToLower(),
-            Description = request.CompanyDescription,
-            Industry = request.Industry,
-            ContactName = request.ContactName ?? request.AdminUsername,
-            ContactEmail = request.AdminEmail,
-            ContactPhone = request.ContactPhone,
-            IsActive = true,
-            MaxUsers = CompanyConstants.DefaultMaxUsers
-            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
-        };
-
-        await _companyFactory.CreateAsync(company);
-        _logger.LogInformation("企业创建成功: {CompanyName} ({CompanyCode})", company.Name, company.Code);
-
-        try
-        {
-            // 2. 获取所有全局菜单
-            var allMenus = await _menuFactory.FindAsync();
-            var allMenuIds = allMenus.Select(m => m.Id!).ToList();
-            _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
-
-            // 3. 创建默认管理员角色（拥有所有菜单访问权限）
-            var adminRole = new Role
-            {
-                Name = "管理员",
-                Description = "系统管理员，拥有所有菜单访问权限",
-                CompanyId = company.Id!,
-                MenuIds = allMenuIds,
-                IsActive = true
-                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
-            };
-            await _roleFactory.CreateAsync(adminRole);
-            _logger.LogInformation("为企业 {CompanyId} 创建管理员角色: {RoleId}", company.Id!, adminRole.Id!);
-
-            // 4. 创建管理员用户
-            var adminUser = new AppUser
-            {
-                Username = request.AdminUsername,
-                Email = request.AdminEmail,
-                PasswordHash = _passwordHasher.HashPassword(request.AdminPassword),
-                CurrentCompanyId = company.Id!,  // v3.1: 使用 CurrentCompanyId
-                // v3.1: 角色信息现在存储在 UserCompany.RoleIds 中，而不是 AppUser.RoleIds
-                IsActive = true
-                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
-            };
-            await _userFactory.CreateAsync(adminUser);
-            _logger.LogInformation("为企业 {CompanyId} 创建管理员用户: {Username}", company.Id!, adminUser.Username!);
-
-            // 5. ✅ P0修复：创建 UserCompany 关联记录
-            var userCompany = new UserCompany
-            {
-                UserId = adminUser.Id!,
-                CompanyId = company.Id!,
-                RoleIds = new List<string> { adminRole.Id! },
-                IsAdmin = true,  // 标记为企业管理员
-                Status = "active",
-                JoinedAt = DateTime.UtcNow  // 业务字段，需要手动设置
-                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
-            };
-            await _userCompanyFactory.CreateAsync(userCompany);
-            _logger.LogInformation("为用户 {UserId} 创建企业关联记录，角色: {RoleIds}",
-                adminUser.Id!, string.Join(", ", userCompany.RoleIds));
-
-            // 6. ✅ v6.1修复：设置企业创建人信息
-            // 因为是在注册流程中（未登录），DatabaseOperationFactory.CreateAsync(company) 时没有当前用户上下文
-            // 导致 CreatedBy 为空。手动更新为新创建的管理员用户。
-            var companyFilter = _companyFactory.CreateFilterBuilder().Equal(c => c.Id, company.Id!).Build();
-            var companyUpdate = _companyFactory.CreateUpdateBuilder()
-                .Set(c => c.CreatedBy, adminUser.Id)
-                .Set(c => c.CreatedByUsername, adminUser.Username)
-                .Build();
-            await _companyFactory.FindOneAndUpdateWithoutTenantFilterAsync(companyFilter, companyUpdate);
-            _logger.LogInformation("已更新企业 {CompanyId} 的创建人为新注册用户: {Username}", company.Id, adminUser.Username);
-
-            return company;
-        }
-        catch (Exception ex)
-        {
-            // 如果后续步骤失败，删除已创建的企业
-            var filter = _companyFactory.CreateFilterBuilder().Equal(c => c.Id, company.Id!).Build();
-            await _companyFactory.FindOneAndSoftDeleteAsync(filter);
-            _logger.LogError(ex, "企业注册失败: {CompanyId}", company.Id!);
-            throw new InvalidOperationException($"企业注册失败: {ex.Message}", ex);
-        }
-    }
-
-    /// <summary>
     /// v3.1: 已登录用户创建企业（当前用户自动成为管理员并拥有全部权限）
     /// </summary>
     public async Task<Company> CreateCompanyAsync(CreateCompanyRequest request, string userId)
@@ -306,12 +195,12 @@ public class CompanyService : ICompanyService
                 ContactEmail = request.ContactEmail,
                 ContactPhone = request.ContactPhone,
                 IsActive = true,
-                MaxUsers = request.MaxUsers > 0 ? request.MaxUsers : CompanyConstants.DefaultMaxUsers
-                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
+                MaxUsers = request.MaxUsers > 0 ? request.MaxUsers : CompanyConstants.DefaultMaxUsers,
+                CreatedBy = currentUser.Id  // ✅ 显式设置创建人ID
             };
 
-            await _companyFactory.CreateAsync(company, currentUser.Id, currentUser.Username);
-            _logger.LogInformation("创建企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
+            await _companyFactory.CreateAsync(company, currentUser.Id, null);
+            _logger.LogInformation("创建企业: {CompanyName} ({CompanyCode}), ID: {CompanyId}, CreatedBy: {CreatedBy}", company.Name, company.Code, company.Id, company.CreatedBy);
 
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
             var menuFilter = _menuFactory.CreateFilterBuilder()
@@ -554,14 +443,15 @@ public class CompanyService : ICompanyService
 
         var results = new List<CompanySearchResult>();
 
-        // 批量查询创建人信息
+        // 批量查询创建人信息 (核心修复：使用 FindWithoutTenantFilterAsync 确保跨租户可见性)
         var creatorIds = companies.Select(c => c.CreatedBy).Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
         var creators = new Dictionary<string, AppUser>();
         if (creatorIds.Any())
         {
             var creatorFilter = _userFactory.CreateFilterBuilder().In(u => u.Id, creatorIds).Build();
-            var creatorList = await _userFactory.FindAsync(creatorFilter);
-            creators = creatorList.ToDictionary(u => u.Id!, u => u);
+            // ✅ 使用 FindWithoutTenantFilterAsync 确保即便 AppUser 系统有潜在过滤也能查到全局创建者
+            var creatorList = await _userFactory.FindWithoutTenantFilterAsync(creatorFilter);
+            creators = creatorList.Where(u => u.Id != null).ToDictionary(u => u.Id!, u => u);
         }
 
         foreach (var company in companies)
@@ -603,11 +493,24 @@ public class CompanyService : ICompanyService
             var memberCountList = await _userCompanyFactory.FindAsync(memberCountFilter);
             var memberCount = memberCountList.Count;
 
-            // 获取创建人名称（优先从实时查询结果获取最新名称，兜底使用企业模型冗余存储的名称）
-            var creatorName = company.CreatedByUsername ?? "Unknown";
+            // 获取创建人名称 (仅通过ID查询)
+            string? creatorName = null;
             if (!string.IsNullOrEmpty(company.CreatedBy) && creators.TryGetValue(company.CreatedBy, out var creator))
             {
-                creatorName = creator.Username ?? creator.Name ?? creatorName;
+                creatorName = !string.IsNullOrWhiteSpace(creator.Name) ? creator.Name :
+                             (!string.IsNullOrWhiteSpace(creator.Username) ? creator.Username : null);
+            }
+
+            if (string.IsNullOrWhiteSpace(creatorName))
+            {
+                creatorName = "Unknown";
+            }
+
+            // 修复 IsCreator 判断：确保 ID 比较不受大小写或空格影响
+            var isCreator = false;
+            if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(company.CreatedBy))
+            {
+                isCreator = string.Equals(company.CreatedBy.Trim(), userId.Trim(), StringComparison.OrdinalIgnoreCase);
             }
 
             results.Add(new CompanySearchResult
@@ -616,7 +519,7 @@ public class CompanyService : ICompanyService
                 IsMember = membership != null && membership.Status == "active",
                 HasPendingRequest = pendingRequest != null,
                 RequestId = pendingRequest?.Id,
-                IsCreator = company.CreatedBy == userId,
+                IsCreator = isCreator,
                 CreatorName = creatorName,
                 MemberStatus = membership?.Status,
                 MemberCount = (int)memberCount

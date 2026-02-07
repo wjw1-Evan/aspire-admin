@@ -6,7 +6,7 @@ namespace Platform.ServiceDefaults.Models;
 /// <summary>
 /// 基础实体类 - 所有微服务通用
 /// </summary>
-public abstract class BaseEntity
+public abstract class BaseEntity : IOperationTrackable
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
@@ -25,22 +25,25 @@ public abstract class BaseEntity
     public DateTime? DeletedAt { get; set; }
 
     [BsonElement("deletedBy")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? DeletedBy { get; set; }
 
     [BsonElement("deletedReason")]
     public string? DeletedReason { get; set; }
 
     [BsonElement("createdBy")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? CreatedBy { get; set; }
 
-    [BsonElement("createdByUsername")]
-    public string? CreatedByUsername { get; set; }
-
     [BsonElement("updatedBy")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? UpdatedBy { get; set; }
 
-    [BsonElement("updatedByUsername")]
-    public string? UpdatedByUsername { get; set; }
+    [BsonElement("lastOperationType")]
+    public string? LastOperationType { get; set; }
+
+    [BsonElement("lastOperationAt")]
+    public DateTime? LastOperationAt { get; set; }
 
     /// <summary>
     /// 构造函数 - 生成新的ObjectId

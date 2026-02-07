@@ -713,12 +713,12 @@ public class AuthService : IAuthService
                 Name = $"{user.Username} 的企业",
                 Code = $"personal-{user.Id}",  // 使用用户ID保证唯一
                 Description = "个人企业",
-                IsActive = true
-                // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
+                IsActive = true,
+                CreatedBy = user.Id  // ✅ 显式设置创建人ID
             };
 
-            await _companyFactory.CreateAsync(company);
-            _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
+            await _companyFactory.CreateAsync(company, user.Id, null);
+            _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode}), CreatedBy: {CreatedBy}", company.Name, company.Code, company.CreatedBy);
 
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
             // DatabaseOperationFactory 会自动应用 IsDeleted = false 的软删除过滤
@@ -800,12 +800,11 @@ public class AuthService : IAuthService
                 Description = "个人企业",
                 IsActive = true,
                 MaxUsers = 50,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedBy = user.Id  // ✅ 显式设置创建人ID
             };
 
-            await _companyFactory.CreateAsync(company);
-            _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
+            await _companyFactory.CreateAsync(company, user.Id, null);
+            _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode}), CreatedBy: {CreatedBy}", company.Name, company.Code, company.CreatedBy);
 
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
             // DatabaseOperationFactory 会自动应用 IsDeleted = false 的软删除过滤

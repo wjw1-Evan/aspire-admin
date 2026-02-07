@@ -36,68 +36,6 @@ public class CompanyController : BaseApiController
     }
 
     /// <summary>
-    /// 企业注册
-    /// </summary>
-    /// <param name="request">注册请求</param>
-    /// <remarks>
-    /// 企业注册将自动创建：
-    /// 1. 企业信息
-    /// 2. 默认权限集
-    /// 3. 管理员角色（拥有所有权限）
-    /// 4. 默认菜单
-    /// 5. 管理员用户
-    /// 
-    /// 示例请求：
-    /// ```json
-    /// {
-    ///   "companyName": "示例公司",
-    ///   "companyCode": "example-company",
-    ///   "companyDescription": "一家示例公司",
-    ///   "industry": "互联网",
-    ///   "adminUsername": "admin",
-    ///   "adminPassword": "admin123",
-    ///   "adminEmail": "admin@example.com",
-    ///   "contactName": "张三",
-    ///   "contactPhone": "13800138000"
-    /// }
-    /// ```
-    /// </remarks>
-    [HttpPost("register")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterCompanyRequest request)
-    {
-        // 验证必需参数
-        request.CompanyName.EnsureNotEmpty("企业名称");
-        request.CompanyCode.EnsureNotEmpty("企业代码");
-        request.AdminUsername.EnsureNotEmpty("管理员用户名");
-        request.AdminPassword.EnsureValidPassword();
-        request.AdminEmail.EnsureValidEmail();
-
-        var company = await _companyService.RegisterCompanyAsync(request);
-
-        // 自动登录：创建管理员的登录请求（v3.1: 不需要企业代码）
-        var loginRequest = new LoginRequest
-        {
-            Username = request.AdminUsername,
-            Password = request.AdminPassword,
-            AutoLogin = true
-        };
-
-        var loginResult = await _authService.LoginAsync(loginRequest);
-
-        // 返回企业信息和登录令牌
-        var result = new RegisterCompanyResult
-        {
-            Company = company,
-            Token = loginResult.data?.Token,
-            RefreshToken = loginResult.data?.RefreshToken,
-            ExpiresAt = loginResult.data?.ExpiresAt
-        };
-
-        return Success(result, "企业注册成功，已自动登录");
-    }
-
-    /// <summary>
     /// v3.1: 创建企业（当前用户自动成为管理员并拥有全部权限）
     /// </summary>
     /// <param name="request">创建企业请求</param>

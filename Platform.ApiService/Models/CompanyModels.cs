@@ -195,72 +195,6 @@ public class UpdateCompanyRequest
 }
 
 /// <summary>
-/// 企业注册请求
-/// </summary>
-public class RegisterCompanyRequest
-{
-    /// <summary>
-    /// 企业名称
-    /// </summary>
-    [Required(ErrorMessage = "企业名称不能为空")]
-    [StringLength(100, MinimumLength = 2, ErrorMessage = "企业名称长度必须在2-100个字符之间")]
-    public string CompanyName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 企业代码（唯一标识）
-    /// </summary>
-    [Required(ErrorMessage = "企业代码不能为空")]
-    [StringLength(20, MinimumLength = 3, ErrorMessage = "企业代码长度必须在3-20个字符之间")]
-    [RegularExpression("^[a-zA-Z0-9_-]+$", ErrorMessage = "企业代码只能包含字母、数字、下划线和横线")]
-    public string CompanyCode { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 企业描述
-    /// </summary>
-    [StringLength(500, ErrorMessage = "描述长度不能超过500个字符")]
-    public string? CompanyDescription { get; set; }
-
-    /// <summary>
-    /// 所属行业
-    /// </summary>
-    [StringLength(50, ErrorMessage = "行业长度不能超过50个字符")]
-    public string? Industry { get; set; }
-
-    /// <summary>
-    /// 管理员用户名
-    /// </summary>
-    [Required(ErrorMessage = "管理员用户名不能为空")]
-    [StringLength(50, MinimumLength = 3, ErrorMessage = "管理员用户名长度必须在3-50个字符之间")]
-    public string AdminUsername { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 管理员密码
-    /// </summary>
-    [Required(ErrorMessage = "管理员密码不能为空")]
-    [StringLength(100, MinimumLength = 6, ErrorMessage = "管理员密码长度至少6个字符")]
-    public string AdminPassword { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 管理员邮箱
-    /// </summary>
-    [Required(ErrorMessage = "管理员邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "管理员邮箱格式不正确")]
-    public string AdminEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 联系人姓名
-    /// </summary>
-    [StringLength(50, ErrorMessage = "联系人长度不能超过50个字符")]
-    public string? ContactName { get; set; }
-
-    /// <summary>
-    /// 联系人电话
-    /// </summary>
-    [Phone(ErrorMessage = "联系电话格式不正确")]
-    public string? ContactPhone { get; set; }
-}
-
-/// <summary>
 /// 企业统计信息
 /// </summary>
 public class CompanyStatistics
@@ -305,30 +239,3 @@ public class CompanyStatistics
     /// </summary>
     public DateTime? ExpiresAt { get; set; }
 }
-
-/// <summary>
-/// 企业注册结果
-/// </summary>
-public class RegisterCompanyResult
-{
-    /// <summary>
-    /// 企业信息
-    /// </summary>
-    public Company? Company { get; set; }
-
-    /// <summary>
-    /// JWT Token
-    /// </summary>
-    public string? Token { get; set; }
-
-    /// <summary>
-    /// 刷新 Token
-    /// </summary>
-    public string? RefreshToken { get; set; }
-
-    /// <summary>
-    /// Token 过期时间
-    /// </summary>
-    public DateTime? ExpiresAt { get; set; }
-}
-

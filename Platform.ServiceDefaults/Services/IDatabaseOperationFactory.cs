@@ -41,7 +41,7 @@ public interface IDatabaseOperationFactory<T> where T : class, IEntity, ISoftDel
     /// </summary>
     /// <param name="entity">要创建的实体</param>
     /// <param name="userId">用户ID（可选，如果提供则使用此值，否则从 TenantContext 获取）</param>
-    /// <param name="username">用户名（可选，如果提供则使用此值，否则从 TenantContext 获取）</param>
+    /// <param name="username">用户名（已废弃，不再使用）</param>
     Task<T> CreateAsync(T entity, string? userId, string? username);
 
     /// <summary>

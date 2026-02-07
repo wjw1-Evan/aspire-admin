@@ -14,19 +14,9 @@ public interface IOperationTrackable
     string? CreatedBy { get; set; }
 
     /// <summary>
-    /// 创建人用户名
-    /// </summary>
-    string? CreatedByUsername { get; set; }
-
-    /// <summary>
     /// 最后更新人ID
     /// </summary>
     string? UpdatedBy { get; set; }
-
-    /// <summary>
-    /// 最后更新人用户名
-    /// </summary>
-    string? UpdatedByUsername { get; set; }
 
     /// <summary>
     /// 最后操作类型（CREATE, UPDATE, DELETE）

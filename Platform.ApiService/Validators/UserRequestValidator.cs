@@ -22,13 +22,6 @@ public static class UserRequestValidator
             errors.Add(usernameError!);
         }
 
-        // 验证密码
-        var (isPasswordValid, passwordError) = ValidationHelper.ValidatePassword(request.Password);
-        if (!isPasswordValid)
-        {
-            errors.Add(passwordError!);
-        }
-
         // 验证邮箱（可选）
         if (!string.IsNullOrEmpty(request.Email))
         {

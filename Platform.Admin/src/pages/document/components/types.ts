@@ -3,7 +3,9 @@
  */
 
 import type { FormDefinition, WorkflowDefinition } from '@/services/workflow/api';
-import type { Document, DocumentStatistics } from '@/services/document/api';
+import type { Document, DocumentStatistics, DocumentQueryParams } from '@/services/document/api';
+import { type FormInstance } from 'antd/es/form';
+import { type UploadProps } from 'antd/es/upload';
 
 // 可退回节点
 export interface ReturnableNode {
@@ -70,5 +72,43 @@ export interface DocumentDetailDrawerProps {
     nodeForms: Record<string, NodeFormData>;
 }
 
+// 统计组件 Props
+export interface DocumentStatisticsProps {
+    statistics: DocumentStatistics | null;
+}
+
+// 搜索组件 Props
+export interface DocumentSearchFormProps {
+    form: FormInstance;
+    onSearch: (values: any) => void;
+    onReset: () => void;
+}
+
+// 提交审核 Modal Props
+export interface DocumentSubmitModalProps {
+    visible: boolean;
+    onOk: () => void;
+    onCancel: () => void;
+    workflows: any[];
+    selectedWorkflowId: string;
+    onWorkflowChange: (value: string) => void;
+}
+
+// 创建并启动流程 Modal Props
+export interface DocumentCreateModalProps {
+    visible: boolean;
+    isFormStep: boolean;
+    nextStepLoading: boolean;
+    onOk: () => void;
+    onCancel: () => void;
+    workflows: any[];
+    selectedWorkflowId: string;
+    onWorkflowChange: (value: string) => void;
+    workflowFormDef: FormDefinition | null;
+    workflowInitialValues: Record<string, any>;
+    wfForm: FormInstance;
+    wfUploadProps: UploadProps;
+}
+
 // 重导出服务类型
-export type { Document, DocumentStatistics, FormDefinition, WorkflowDefinition };
+export type { Document, DocumentStatistics, FormDefinition, WorkflowDefinition, DocumentQueryParams };

@@ -43,14 +43,24 @@ const SelectLang: React.FC = () => {
         ),
     }));
 
-    const currentLocaleInfo = locales.find((locale) => locale.value === currentLocale);
+    // 为当前语言找到匹配的配置逻辑：
+    // 1. 精确匹配 (如 en-US)
+    // 2. 前缀匹配 (如 en-GB 匹配 en-US)
+    // 3. 浏览器语言匹配 (navigator.language)
+    // 4. 默认 fallback (locales[0])
+    const currentLocaleInfo =
+        locales.find((l) => l.value === currentLocale) ||
+        locales.find((l) => l.value.split('-')[0] === currentLocale.split('-')[0]) ||
+        locales.find((l) => l.value === navigator.language) ||
+        locales.find((l) => l.value.split('-')[0] === navigator.language.split('-')[0]) ||
+        locales[0];
 
     return (
         <Dropdown
             menu={{
                 items: menuItems,
                 onClick: handleMenuClick,
-                selectedKeys: [currentLocale],
+                selectedKeys: [currentLocaleInfo?.value || currentLocale],
             }}
             placement="bottomRight"
             trigger={['hover']}

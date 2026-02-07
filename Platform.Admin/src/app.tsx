@@ -195,6 +195,7 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[], depth = 1): any[]
         // 原始图标存入 rawIcon 供自主补全
         rawIcon: iconComponent,
         locale: localeKey,
+        sortOrder: menu.sortOrder,
       };
 
       if (menu.isExternal) {
@@ -206,8 +207,16 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[], depth = 1): any[]
       }
 
       return menuItem;
+    })
+    .sort((a, b) => {
+      // 1. 优先按照后端定义的 sortOrder 排序
+      if (a.sortOrder !== b.sortOrder) {
+        return (a.sortOrder || 0) - (b.sortOrder || 0);
+      }
+      return 0;
     });
 }
+
 
 const LocationReporter = ({ currentUser, location }: { currentUser: any, location: any }) => {
   const hasStartedRef = useRef(false);

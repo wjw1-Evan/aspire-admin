@@ -34,12 +34,6 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                     <Space>
                         <DatabaseOutlined />
                         <span>{intl.formatMessage({ id: 'pages.welcome.systemResources' })}</span>
-                        <Tag
-                            color="blue"
-                            style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
-                        >
-                            {intl.formatMessage({ id: 'pages.welcome.systemResources.updateInterval' })}
-                        </Tag>
                     </Space>
                 }
                 style={{ marginTop: '16px', borderRadius: '12px' }}
@@ -61,12 +55,6 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                 <Space>
                     <DatabaseOutlined />
                     <span>{intl.formatMessage({ id: 'pages.welcome.systemResources' })}</span>
-                    <Tag
-                        color="blue"
-                        style={{ paddingInline: 6, lineHeight: '20px', fontSize: 12 }}
-                    >
-                        {intl.formatMessage({ id: 'pages.welcome.systemResources.updateInterval' })}
-                    </Tag>
                 </Space>
             }
             style={{ marginTop: '16px', borderRadius: '12px' }}

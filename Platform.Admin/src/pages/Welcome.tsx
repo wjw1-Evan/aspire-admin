@@ -115,7 +115,7 @@ const Welcome: React.FC = () => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 定时轮询系统资源更新（每 1 秒）
+  // 定时轮询系统资源更新（每 5 秒）
   useEffect(() => {
     if (!currentUser) return;
 
@@ -129,8 +129,8 @@ const Welcome: React.FC = () => {
     // 立即获取一次
     performFetch();
 
-    // 设置定时器，每 1 秒轮询一次
-    const intervalId = setInterval(performFetch, 1000);
+    // 设置定时器，每 5 秒轮询一次（降低频率以减少内存和网络压力）
+    const intervalId = setInterval(performFetch, 5000);
 
     // 监听可见性变化，当回到页面时立即刷新
     const handleVisibilityChange = () => {

@@ -296,11 +296,11 @@ await _factory.CreateAsync(entity, userId: "user123", username: "admin");
 
 ### Q: 如何查询已删除的记录？
 
-A: 工厂默认过滤已删除记录。如需查询已删除记录，需要直接使用 `IMongoCollection`（不推荐，仅在特殊场景使用）。
+A: 请使用 `FindIncludingDeletedAsync` 方法。工厂默认的 `FindAsync` 会自动过滤已删除记录。**严禁**直接使用 `IMongoCollection` 查询。
 
 ### Q: 如何跨企业查询？
 
-A: 工厂设计为单企业隔离。如需跨企业查询，需要特殊处理（如系统管理员功能），此时应直接使用 `IMongoCollection` 并手动处理权限。
+A: 仅在系统管理员或后台任务等特殊场景下，可使用 `FindWithoutTenantFilterAsync`、`GetByIdWithoutTenantFilterAsync` 等带 `WithoutTenantFilter` 后缀的方法。使用这些方法时必须确保有明确的权限控制与审计记录。**严禁**直接使用 `IMongoCollection`。
 
 ### Q: 如何自定义集合名称？
 

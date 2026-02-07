@@ -6,7 +6,7 @@ alwaysApply: true
 
 ## 核心架构原则
 
-- **多租户隔离**：所有实体访问统一走 `IDatabaseOperationFactory<T>`，禁止直接注入或使用 `IMongoCollection<T>` / `IMongoDatabase`。实现 `IMultiTenant` 自动附加 `CompanyId` 过滤。
+- **数据操作规范**：所有数据操作（含查询、更新、删除、跨租户操作）必须统一使用 `IDatabaseOperationFactory<T>`，**严禁**直接注入或使用 `IMongoCollection<T>` / `IMongoDatabase`。实现 `IMultiTenant` 自动附加 `CompanyId` 过滤。
 - **企业上下文唯一入口**：除 `userId`（JWT claim）外，企业/角色/权限信息统一通过 `ITenantContext` 读取，禁止从 JWT 直接取 `companyId`、`roles` 等。
 - **菜单级权限**：后端统一使用 `[RequireMenu("menu-name")]`（`Platform.ApiService.Attributes.RequireMenuAttribute`）做鉴权，禁止旧的 `HasPermission()` / `RequirePermission()`。前端不隐藏按钮，真实权限以后端判定。
 - **统一响应**：HTTP API 必须返回 `ApiResponse<T>`，采用 camelCase，忽略 null，枚举序列化为 camelCase 字符串。
@@ -36,7 +36,7 @@ alwaysApply: true
 
 ## 禁用模式
 
-- 直接访问 Mongo（必须通过工厂）
+- 直接访问 Mongo（**严禁**，所有操作必须通过工厂）
 - 硬编码企业ID（必须通过 `ITenantContext`）
 - 同步等待异步（`.Result`/`.Wait()`）
 - 缺失权限检查（必须使用 `[RequireMenu]`）

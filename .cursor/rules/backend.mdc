@@ -25,7 +25,7 @@ appliesTo:
 - **前端翻译**：菜单翻译键格式为 `menu.模块.资源`（使用 `.` 分隔），在 `src/locales/*/menu.ts` 中维护
 
 ## 数据访问与审计
-- **工厂模式**：仅可通过 `IDatabaseOperationFactory<T>` 访问 Mongo 集合，禁止直接注入 `IMongoCollection<T>`/`IMongoDatabase`。工厂通过 `services.AddDatabaseFactory()` 统一注册。
+- **数据工厂**：所有数据操作必须使用 `IDatabaseOperationFactory<T>`，包含查询软删除（`FindIncludingDeletedAsync`）与跨租户查询（`FindWithoutTenantFilterAsync`），**严禁**直接注入 `IMongoCollection<T>`/`IMongoDatabase`。工厂通过 `services.AddDatabaseFactory()` 统一注册。
 - **原子操作**：实体创建/更新/删除必须使用工厂提供的原子方法：
   - `CreateAsync` / `CreateManyAsync`：创建实体（自动设置 `CreatedAt`、`CreatedBy` 等）
   - `FindOneAndUpdateAsync`：查找并更新（自动设置 `UpdatedAt`、`UpdatedBy` 等）

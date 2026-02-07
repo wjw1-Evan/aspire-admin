@@ -115,8 +115,8 @@
     ```
 
 - **禁止行为**：
-  - 禁止在控制器或服务中直接注入 `IMongoCollection<T>` 或 `IMongoDatabase` 处理业务数据。
-  - 禁止绕过工厂自行维护审计字段或多租户过滤逻辑。
+  - **严禁**在控制器或服务中直接注入 `IMongoCollection<T>` 或 `IMongoDatabase`。所有数据操作必须使用 `IDatabaseOperationFactory<T>`。
+  - **严禁**绕过工厂自行维护审计字段或多租户过滤逻辑。
 
 ### 6. 实体基类与接口规范
 

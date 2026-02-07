@@ -201,6 +201,17 @@ public class CompanyService : ICompanyService
             _logger.LogInformation("为用户 {UserId} 创建企业关联记录，角色: {RoleIds}",
                 adminUser.Id!, string.Join(", ", userCompany.RoleIds));
 
+            // 6. ✅ v6.1修复：设置企业创建人信息
+            // 因为是在注册流程中（未登录），DatabaseOperationFactory.CreateAsync(company) 时没有当前用户上下文
+            // 导致 CreatedBy 为空。手动更新为新创建的管理员用户。
+            var companyFilter = _companyFactory.CreateFilterBuilder().Equal(c => c.Id, company.Id!).Build();
+            var companyUpdate = _companyFactory.CreateUpdateBuilder()
+                .Set(c => c.CreatedBy, adminUser.Id)
+                .Set(c => c.CreatedByUsername, adminUser.Username)
+                .Build();
+            await _companyFactory.FindOneAndUpdateWithoutTenantFilterAsync(companyFilter, companyUpdate);
+            _logger.LogInformation("已更新企业 {CompanyId} 的创建人为新注册用户: {Username}", company.Id, adminUser.Username);
+
             return company;
         }
         catch (Exception ex)
@@ -299,7 +310,7 @@ public class CompanyService : ICompanyService
                 // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
             };
 
-            await _companyFactory.CreateAsync(company);
+            await _companyFactory.CreateAsync(company, currentUser.Id, currentUser.Username);
             _logger.LogInformation("创建企业: {CompanyName} ({CompanyCode})", company.Name, company.Code);
 
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
@@ -592,11 +603,11 @@ public class CompanyService : ICompanyService
             var memberCountList = await _userCompanyFactory.FindAsync(memberCountFilter);
             var memberCount = memberCountList.Count;
 
-            // 获取创建人名称
-            var creatorName = "Unknown";
+            // 获取创建人名称（优先从实时查询结果获取最新名称，兜底使用企业模型冗余存储的名称）
+            var creatorName = company.CreatedByUsername ?? "Unknown";
             if (!string.IsNullOrEmpty(company.CreatedBy) && creators.TryGetValue(company.CreatedBy, out var creator))
             {
-                creatorName = creator.Username ?? creator.Name ?? "Unknown";
+                creatorName = creator.Username ?? creator.Name ?? creatorName;
             }
 
             results.Add(new CompanySearchResult

@@ -10,7 +10,6 @@ import {
   EyeOutlined,
   PartitionOutlined,
   ReloadOutlined,
-  SettingOutlined,
 } from '@ant-design/icons';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
@@ -21,9 +20,8 @@ import {
   updateWorkflow,
   type WorkflowDefinition,
 } from '@/services/workflow/api';
-import WorkflowDesigner from './components/WorkflowDesigner';
 import WorkflowCreateForm from './components/WorkflowCreateForm';
-import BulkOperationsPanel from './components/BulkOperationsPanel';
+import WorkflowEditForm from './components/WorkflowEditForm';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import useCommonStyles from '@/hooks/useCommonStyles';
@@ -44,11 +42,7 @@ const WorkflowManagement: React.FC = () => {
   const [designerVisible, setDesignerVisible] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowDefinition | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
-  const [previewGraph, setPreviewGraph] = useState<any>(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [bulkOperationsVisible, setBulkOperationsVisible] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [selectedRows, setSelectedRows] = useState<WorkflowDefinition[]>([]);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState({
     current: 1,
@@ -71,25 +65,6 @@ const WorkflowManagement: React.FC = () => {
     actionRef.current?.reload?.();
   };
 
-  // 处理批量操作
-  const handleBulkOperations = () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning(intl.formatMessage({ id: 'pages.workflow.bulk.noSelection' }));
-      return;
-    }
-    setBulkOperationsVisible(true);
-  };
-
-  // 批量操作成功后的回调
-  const handleBulkOperationSuccess = () => {
-    // 清空选择
-    setSelectedRowKeys([]);
-    setSelectedRows([]);
-    // 刷新列表
-    actionRef.current?.reload?.();
-    // 关闭面板
-    setBulkOperationsVisible(false);
-  };
 
   // 搜索
   const handleSearch = (values: any) => {
@@ -139,7 +114,7 @@ const WorkflowManagement: React.FC = () => {
       const response = await getWorkflowList(requestData);
       if (response.success && response.data) {
         return {
-          data: response.data.list || response.data.data || [], // 兼容不同的响应格式
+          data: response.data.list || [], // 根据 API 定义返回 list
           success: true,
           total: response.data.total || 0,
         };
@@ -156,6 +131,18 @@ const WorkflowManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.workflow.table.name' }),
       dataIndex: 'name',
       ellipsis: true,
+      render: (name, record) => (
+        <Button
+          type="link"
+          style={{ padding: 0 }}
+          onClick={() => {
+            setEditingWorkflow(record);
+            setPreviewVisible(true);
+          }}
+        >
+          {name}
+        </Button>
+      ),
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.category' }),
@@ -185,20 +172,9 @@ const WorkflowManagement: React.FC = () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.action' }),
-      width: 200,
+      width: 150,
       render: (_, record) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => {
-              setPreviewGraph(record.graph);
-              setPreviewVisible(true);
-            }}
-          >
-            {intl.formatMessage({ id: 'pages.workflow.action.preview' })}
-          </Button>
           <Button
             type="link"
             size="small"
@@ -243,25 +219,6 @@ const WorkflowManagement: React.FC = () => {
     },
   ];
 
-  const handleSave = async (graph: any) => {
-    try {
-      if (editingWorkflow) {
-        const response = await updateWorkflow(editingWorkflow.id!, { graph });
-        if (response.success) {
-          message.success(intl.formatMessage({ id: 'pages.workflow.message.saveSuccess' }));
-          setDesignerVisible(false);
-          setEditingWorkflow(null);
-          actionRef.current?.reload?.();
-        }
-      } else {
-        // 创建新流程的逻辑在创建页面处理
-        message.info(intl.formatMessage({ id: 'pages.workflow.create.message.designFirst' }));
-      }
-    } catch (error) {
-      console.error('保存失败:', error);
-      message.error(intl.formatMessage({ id: 'pages.workflow.message.saveFailed' }));
-    }
-  };
 
 
   return (
@@ -275,14 +232,6 @@ const WorkflowManagement: React.FC = () => {
       style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
-          <Button
-            key="bulk"
-            icon={<SettingOutlined />}
-            onClick={handleBulkOperations}
-            disabled={selectedRowKeys.length === 0}
-          >
-            {intl.formatMessage({ id: 'pages.workflow.bulk.operations' })} ({selectedRowKeys.length})
-          </Button>
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
@@ -370,16 +319,6 @@ const WorkflowManagement: React.FC = () => {
           showTotal: (total) => `共 ${total} 条`,
         }}
         scroll={{ x: 'max-content' }}
-        rowSelection={{
-          selectedRowKeys,
-          onChange: (keys, rows) => {
-            setSelectedRowKeys(keys);
-            setSelectedRows(rows);
-          },
-          getCheckboxProps: (record) => ({
-            disabled: false, // 所有行都可以选择
-          }),
-        }}
       />
 
       {/* 创建流程模态窗体 */}
@@ -388,9 +327,10 @@ const WorkflowManagement: React.FC = () => {
         open={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
         footer={null}
-        width={isMobile ? '100%' : 800}
+        width="95%"
         style={{ top: 20 }}
-        styles={{ body: { maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' } }}
+        styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }}
+        destroyOnClose
       >
         <WorkflowCreateForm
           onSuccess={() => {
@@ -406,7 +346,7 @@ const WorkflowManagement: React.FC = () => {
       {/* 编辑/预览流程模态窗体 */}
       <Modal
         title={
-          editingWorkflow
+          editingWorkflow && designerVisible
             ? intl.formatMessage({ id: 'pages.workflow.action.edit' })
             : intl.formatMessage({ id: 'pages.workflow.action.preview' })
         }
@@ -415,36 +355,31 @@ const WorkflowManagement: React.FC = () => {
           setDesignerVisible(false);
           setPreviewVisible(false);
           setEditingWorkflow(null);
-          setPreviewGraph(null);
         }}
         footer={null}
-        width="90%"
+        width="95%"
         style={{ top: 20 }}
-        styles={{ body: { height: 'calc(100vh - 120px)' } }}
+        styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }}
+        destroyOnClose
       >
-        <WorkflowDesigner
-          open={designerVisible || previewVisible}
-          graph={editingWorkflow?.graph || previewGraph}
-          onSave={handleSave}
-          onClose={() => {
-            setDesignerVisible(false);
-            setPreviewVisible(false);
-          }}
-        />
+        {editingWorkflow && (
+          <WorkflowEditForm
+            workflow={editingWorkflow}
+            readOnly={previewVisible}
+            onSuccess={() => {
+              setDesignerVisible(false);
+              setEditingWorkflow(null);
+              actionRef.current?.reload?.();
+            }}
+            onCancel={() => {
+              setDesignerVisible(false);
+              setPreviewVisible(false);
+              setEditingWorkflow(null);
+            }}
+          />
+        )}
       </Modal>
 
-      {/* 批量操作面板 */}
-      <BulkOperationsPanel
-        visible={bulkOperationsVisible}
-        onClose={() => setBulkOperationsVisible(false)}
-        selectedWorkflowIds={selectedRowKeys.map(key => String(key))}
-        selectedWorkflows={selectedRows.map(row => ({
-          id: row.id!,
-          name: row.name,
-          category: row.category,
-        }))}
-        onSuccess={handleBulkOperationSuccess}
-      />
 
     </PageContainer >
   );

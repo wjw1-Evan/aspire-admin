@@ -61,6 +61,7 @@ interface WorkflowDesignerProps {
   graph?: WorkflowGraph;
   onSave?: (graph: WorkflowGraph) => void;
   onClose?: () => void;
+  readOnly?: boolean;
 }
 
 // 节点类型配置
@@ -169,6 +170,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   graph,
   onSave,
   onClose,
+  readOnly,
 }) => {
   const intl = useIntl();
   const message = useMessage();
@@ -553,91 +555,105 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
   return (
     <div className="workflow-designer-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Card
-        className="workflow-toolbar"
-        style={{ marginBottom: 16, backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(8px)', zIndex: 10, borderBottom: '1px solid #f0f0f0' }}
-        styles={{ body: { padding: '12px' } }}
-      >
-        <Space>
-          <Button
-            icon={<PlayCircleOutlined style={{ color: '#52c41a' }} />}
-            onClick={() => addNode('start')}
-            size="small"
-          >
-            {intl.formatMessage({ id: 'pages.workflow.designer.addStart' })}
-          </Button>
-          <Button
-            icon={<UserOutlined style={{ color: '#1890ff' }} />}
-            onClick={() => addNode('approval')}
-            size="small"
-          >
-            {intl.formatMessage({ id: 'pages.workflow.designer.addApproval' })}
-          </Button>
-          <Button
-            icon={<BranchesOutlined style={{ color: '#fa8c16' }} />}
-            onClick={() => addNode('condition')}
-            size="small"
-          >
-            {intl.formatMessage({ id: 'pages.workflow.designer.addCondition' })}
-          </Button>
-          <Button
-            icon={<NodeIndexOutlined style={{ color: '#722ed1' }} />}
-            onClick={() => addNode('parallel')}
-            size="small"
-          >
-            {intl.formatMessage({ id: 'pages.workflow.designer.addParallel' })}
-          </Button>
-          <Button
-            icon={<StopOutlined style={{ color: '#ff4d4f' }} />}
-            onClick={() => addNode('end')}
-            size="small"
-          >
-            {intl.formatMessage({ id: 'pages.workflow.designer.addEnd' })}
-          </Button>
-          <Divider orientation="vertical" />
-          {onSave && (
-            <>
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                onClick={handleDeleteSelectedNode}
-                disabled={!selectedNode}
-                size="small"
-              >
-                {intl.formatMessage({ id: 'pages.button.delete' })}
-              </Button>
-              <Divider orientation="vertical" />
-            </>
-          )}
-          {onSave && (
+      {!readOnly && (
+        <Card
+          className="workflow-toolbar"
+          style={{ marginBottom: 16, backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(8px)', zIndex: 10, borderBottom: '1px solid #f0f0f0' }}
+          styles={{ body: { padding: '12px' } }}
+        >
+          <Space>
             <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={handleSave}
+              icon={<PlayCircleOutlined style={{ color: '#52c41a' }} />}
+              onClick={() => addNode('start')}
               size="small"
             >
-              {intl.formatMessage({ id: 'pages.workflow.designer.save' })}
+              {intl.formatMessage({ id: 'pages.workflow.designer.addStart' })}
             </Button>
-          )}
-          <Button
-            icon={<CheckCircleOutlined />}
-            onClick={validateWorkflow}
-            size="small"
-          >
-            {intl.formatMessage({ id: 'pages.workflow.designer.validate' })}
-          </Button>
-        </Space>
-      </Card>
+            <Button
+              icon={<UserOutlined style={{ color: '#1890ff' }} />}
+              onClick={() => addNode('approval')}
+              size="small"
+            >
+              {intl.formatMessage({ id: 'pages.workflow.designer.addApproval' })}
+            </Button>
+            <Button
+              icon={<BranchesOutlined style={{ color: '#fa8c16' }} />}
+              onClick={() => addNode('condition')}
+              size="small"
+            >
+              {intl.formatMessage({ id: 'pages.workflow.designer.addCondition' })}
+            </Button>
+            <Button
+              icon={<NodeIndexOutlined style={{ color: '#722ed1' }} />}
+              onClick={() => addNode('parallel')}
+              size="small"
+            >
+              {intl.formatMessage({ id: 'pages.workflow.designer.addParallel' })}
+            </Button>
+            <Button
+              icon={<StopOutlined style={{ color: '#ff4d4f' }} />}
+              onClick={() => addNode('end')}
+              size="small"
+            >
+              {intl.formatMessage({ id: 'pages.workflow.designer.addEnd' })}
+            </Button>
+            <Divider orientation="vertical" />
+            {onSave && (
+              <>
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={handleDeleteSelectedNode}
+                  disabled={!selectedNode}
+                  size="small"
+                >
+                  {intl.formatMessage({ id: 'pages.button.delete' })}
+                </Button>
+                <Divider orientation="vertical" />
+              </>
+            )}
+            {onSave && (
+              <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                onClick={handleSave}
+                size="small"
+              >
+                {intl.formatMessage({ id: 'pages.workflow.designer.save' })}
+              </Button>
+            )}
+            <Button
+              icon={<CheckCircleOutlined />}
+              onClick={() => {
+                if (validateWorkflow()) {
+                  message.success(intl.formatMessage({ id: 'pages.message.success' }));
+                }
+              }}
+              size="small"
+            >
+              {intl.formatMessage({ id: 'pages.workflow.designer.validate' })}
+            </Button>
+            {onClose && (
+              <Button onClick={onClose} size="small">
+                {intl.formatMessage({ id: 'pages.button.cancel' })}
+              </Button>
+            )}
+          </Space>
+        </Card>
+      )}
 
       <div style={{ flex: 1, border: '1px solid #d9d9d9', borderRadius: '4px' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
+          onNodesChange={readOnly ? undefined : onNodesChange}
+          onEdgesChange={readOnly ? undefined : onEdgesChange}
+          onConnect={readOnly ? undefined : onConnect}
           onNodeClick={onNodeClick}
+          nodesDraggable={!readOnly}
+          nodesConnectable={!readOnly}
+          elementsSelectable={!readOnly}
           fitView
         >
           <Background />

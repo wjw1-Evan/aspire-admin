@@ -3,7 +3,7 @@ import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import type { LayoutSettings } from '@/types/layout';
 import { history, request as requestClient } from '@umijs/max';
 import React, { useEffect, useRef, useMemo } from 'react';
-import { App } from 'antd';
+import { App, Space } from 'antd';
 import { setAppInstance } from '@/utils/antdAppInstance';
 import {
   AvatarDropdown,
@@ -146,10 +146,10 @@ function getIconComponent(iconName?: string): React.ReactNode {
 }
 
 /**
- * 将菜单树转换为 ProLayout 菜单格式
- * 生成正确的 locale 键用于多语言支持
+ * 将后端返回的菜单树转换为 ProLayout 要求的格式
+ * ⚡ 优化：引入 depth 参数。只有第一层级设置 icon，防止一二级图标渲染冲突。
  */
-function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
+function convertMenuTreeToProLayout(menus: API.MenuTreeNode[], depth = 1): any[] {
   return menus
     .filter((menu) => !menu.hideInMenu)
     .map((menu) => {
@@ -186,10 +186,14 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
         localeKey = `menu.${menu.name}`;
       }
 
+      const iconComponent = getIconComponent(menu.icon);
       const menuItem: any = {
         name: menu.name,
         path: menu.path,
-        icon: getIconComponent(menu.icon),
+        // 关键优化：只有第一层传 icon 给渲染框架，防止重影
+        icon: depth === 1 ? iconComponent : undefined,
+        // 原始图标存入 rawIcon 供自主补全
+        rawIcon: iconComponent,
         locale: localeKey,
       };
 
@@ -198,7 +202,7 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
       }
 
       if (menu.children && menu.children.length > 0) {
-        menuItem.routes = convertMenuTreeToProLayout(menu.children);
+        menuItem.children = convertMenuTreeToProLayout(menu.children as any, depth + 1);
       }
 
       return menuItem;
@@ -434,7 +438,39 @@ export const layout: RunTimeLayoutConfig = ({
       );
     },
     menuHeaderRender: false,
+    // 🔧 自定义子文件夹渲染
+    subMenuItemRender: (item: any, dom: React.ReactNode) => {
+      // 如果没有 icon 属性但有 rawIcon，说明是需要手动显示的二级文件夹
+      if (!item.icon && item.rawIcon) {
+        return (
+          <Space size={8}>
+            {item.rawIcon}
+            {dom}
+          </Space>
+        );
+      }
+      return dom;
+    },
+    // 🔧 自定义菜单项渲染
+    menuItemRender: (item: any, dom: React.ReactNode) => {
+      // 如果没有 icon 属性但有 rawIcon，说明是需要手动显示的二级菜单项
+      if (!item.icon && item.rawIcon) {
+        return (
+          <Space size={8}>
+            {item.rawIcon}
+            {dom}
+          </Space>
+        );
+      }
+      return dom;
+    },
+
+
+
+
     childrenRender: (children) => {
+
+
       return (
         <App>
           <AppWrapper currentUser={initialState?.currentUser}>{children}</AppWrapper>

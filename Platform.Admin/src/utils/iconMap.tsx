@@ -70,6 +70,19 @@ import {
     SearchOutlined,
     ToolOutlined,
     VerifiedOutlined,
+    RobotOutlined,
+    CommentOutlined,
+    CustomerServiceOutlined,
+    BulbOutlined,
+    ThunderboltOutlined,
+    ExperimentOutlined,
+    ScheduleOutlined,
+    PieChartOutlined,
+    DesktopOutlined,
+    AlertOutlined,
+    BarChartOutlined,
+    BankOutlined,
+    FormOutlined,
 } from '@ant-design/icons';
 
 /**
@@ -150,6 +163,19 @@ export const CORE_ICON_MAP: Record<string, React.ReactNode> = {
     SearchOutlined: <SearchOutlined />,
     ToolOutlined: <ToolOutlined />,
     VerifiedOutlined: <VerifiedOutlined />,
+    RobotOutlined: <RobotOutlined />,
+    CommentOutlined: <CommentOutlined />,
+    CustomerServiceOutlined: <CustomerServiceOutlined />,
+    BulbOutlined: <BulbOutlined />,
+    ThunderboltOutlined: <ThunderboltOutlined />,
+    ExperimentOutlined: <ExperimentOutlined />,
+    ScheduleOutlined: <ScheduleOutlined />,
+    PieChartOutlined: <PieChartOutlined />,
+    DesktopOutlined: <DesktopOutlined />,
+    AlertOutlined: <AlertOutlined />,
+    BarChartOutlined: <BarChartOutlined />,
+    BankOutlined: <BankOutlined />,
+    FormOutlined: <FormOutlined />,
 };
 
 /**

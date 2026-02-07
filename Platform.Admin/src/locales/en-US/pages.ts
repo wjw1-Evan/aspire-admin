@@ -1,4 +1,5 @@
 export default {
+  'pages.common.more': 'More',
   'pages.layouts.userLayout.title':
     'Enterprise Multi-Tenant Microservices Management Platform',
   'pages.login.title': '{title}',

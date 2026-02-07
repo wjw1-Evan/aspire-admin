@@ -1,4 +1,5 @@
 export default {
+  'pages.common.more': '更多',
   'pages.layouts.userLayout.title':
     '企业级多租户微服务管理平台',
   'pages.login.title': '{title}',

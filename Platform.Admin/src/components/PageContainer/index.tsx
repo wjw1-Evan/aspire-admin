@@ -51,8 +51,12 @@ interface PageContainerProps {
 /**
  * PageContainer 替代组件
  * 用于替换 @ant-design/pro-components 的 PageContainer
+ * 
+ * 优化点：
+ * 1. 使用 React.memo 避免 Parent 重渲染导致的子组件无效渲染
+ * 2. 精细化 useMemo 依赖，避免 initialState 中无关数据变化触发面包屑重算
  */
-const PageContainer: React.FC<PageContainerProps> = ({
+const PageContainer: React.FC<PageContainerProps> = React.memo(({
   children,
   style,
   title,
@@ -66,7 +70,10 @@ const PageContainer: React.FC<PageContainerProps> = ({
   ...restProps
 }) => {
   const location = useLocation();
+  // 仅监听 initialState 变化
   const { initialState } = useModel('@@initialState');
+  // 提取菜单数据作为依赖项
+  const userMenus = useMemo(() => (initialState as any)?.currentUser?.menus as MenuTreeNode[] | undefined, [initialState]);
 
   const defaultStyle: React.CSSProperties = {
     paddingBlock: 12,
@@ -78,7 +85,6 @@ const PageContainer: React.FC<PageContainerProps> = ({
     const traverse = (nodes: MenuTreeNode[], parents: MenuTreeNode[]): MenuTreeNode[] | null => {
       for (const node of nodes) {
         const newParents = [...parents, node];
-        // 跳过隐藏或禁用的菜单在面包屑中展示（但如果路径正好匹配，仍允许显示）
         if (node.path === targetPath) {
           return newParents;
         }
@@ -95,10 +101,8 @@ const PageContainer: React.FC<PageContainerProps> = ({
   // 自动生成完整面包屑链： 首页 > 父级... > 当前
   const autoItems: BreadcrumbItemType[] = useMemo(() => {
     try {
-      const userMenus = (initialState as any)?.currentUser?.menus as MenuTreeNode[] | undefined;
       const homeItem: BreadcrumbItemType = { title: '首页' };
       if (!userMenus || userMenus.length === 0) {
-        // 没有菜单数据时，仅展示 首页 + 当前标题/路径尾部
         const lastSegment = location.pathname.split('/').filter(Boolean).pop();
         const currentTitle = (typeof title === 'string' && title) || lastSegment || '当前页面';
         return [homeItem, { title: currentTitle }];
@@ -106,20 +110,19 @@ const PageContainer: React.FC<PageContainerProps> = ({
 
       const chain = findChainByPath(userMenus, location.pathname);
       if (!chain || chain.length === 0) {
-        // 未在菜单中匹配到，降级为 首页 + 当前标题
         const lastSegment = location.pathname.split('/').filter(Boolean).pop();
         const currentTitle = (typeof title === 'string' && title) || lastSegment || '当前页面';
         return [homeItem, { title: currentTitle }];
       }
 
-      // 过滤掉 welcome（首页）自身，避免重复
       const filtered = chain.filter((n) => n.path !== '/welcome');
       const items = filtered.map<BreadcrumbItemType>((n) => ({ title: n.title || n.name }));
       return [homeItem, ...items];
     } catch {
       return [];
     }
-  }, [initialState, location.pathname, title]);
+    // 依赖项精简：只在菜单数据、路径或标题变化时重算
+  }, [userMenus, location.pathname, title]);
 
   const finalItems = breadcrumbItems.length > 0 ? breadcrumbItems : autoItems;
 
@@ -133,7 +136,6 @@ const PageContainer: React.FC<PageContainerProps> = ({
     return (
       <div style={defaultStyle} {...restProps}>
         {BreadcrumbView}
-        {/* antd v6: Card 的 bordered 已弃用，改用样式移除边框 */}
         <Card
           title={title}
           extra={extra}
@@ -155,6 +157,9 @@ const PageContainer: React.FC<PageContainerProps> = ({
       {children}
     </div>
   );
-};
+});
+
+PageContainer.displayName = 'PageContainer';
 
 export default PageContainer;
+

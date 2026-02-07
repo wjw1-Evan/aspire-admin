@@ -19,8 +19,9 @@ export interface StatCardProps {
  * - 图标在左，数值和标题在右侧垂直排列
  * - 卡片内边距：10px 12px
  * - 图标尺寸：20px，数值字号：20px，标题字号：12px
+ * - 使用 React.memo 优化渲染性能
  */
-const StatCard: React.FC<StatCardProps> = ({
+const StatCard: React.FC<StatCardProps> = React.memo(({
   title,
   value,
   icon,
@@ -81,8 +82,11 @@ const StatCard: React.FC<StatCardProps> = ({
       </div>
     </Card>
   );
-};
+});
+
+StatCard.displayName = 'StatCard';
 
 export default StatCard;
+
 
 

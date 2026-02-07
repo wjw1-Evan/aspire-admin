@@ -47,7 +47,7 @@ const StatCard: React.FC<StatCardProps> = React.memo(({ title, value, suffix, ic
             <span style={{
                 fontSize: '20px',
                 color: color,
-                opacity: 0.15,
+                opacity: 1,
                 borderRadius: '50%',
                 width: '40px',
                 height: '40px',

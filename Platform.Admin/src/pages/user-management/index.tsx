@@ -41,6 +41,7 @@ import {
 import { request } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchFormCard from '@/components/SearchFormCard';
+import { useTableResize } from '@/hooks/useTableResize';
 import { getAllRoles } from '@/services/role/api';
 import { getCurrentCompany } from '@/services/company'; // Added
 import { getUserStatistics } from '@/services/ant-design-pro/api';
@@ -389,141 +390,9 @@ const UserManagement: React.FC = () => {
     }
   }, [intl, fetchStatistics]);
 
-  /**
-   * 初始化列宽调整功能
-   */
-  useEffect(() => {
-    if (!tableRef.current) return;
+  // 🔧 使用自定义 Hook 替代繁琐的内联 DOM 逻辑，提升代码可维护性
+  useTableResize(tableRef, activeTab === 'members');
 
-    const initResizeHandlers = () => {
-      const table = tableRef.current;
-      if (!table) return;
-
-      const thead = table.querySelector('thead');
-      if (!thead) return;
-
-      const headers = thead.querySelectorAll('th');
-      let isResizing = false;
-      let currentHeader: HTMLElement | null = null;
-      let startX = 0;
-      let startWidth = 0;
-
-      const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
-        // 只允许在表头右边缘 5px 内拖动
-        const rect = header.getBoundingClientRect();
-        const edgeThreshold = 5;
-        const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
-
-        if (!isNearRightEdge) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        isResizing = true;
-        currentHeader = header;
-        startX = e.clientX;
-        startWidth = header.offsetWidth;
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-      };
-
-      const handleMouseMove = (e: MouseEvent) => {
-        if (!isResizing || !currentHeader) return;
-
-        const diff = e.clientX - startX;
-        const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
-        currentHeader.style.width = `${newWidth}px`;
-        currentHeader.style.minWidth = `${newWidth}px`;
-        currentHeader.style.maxWidth = `${newWidth}px`;
-      };
-
-      const handleMouseUp = () => {
-        isResizing = false;
-        currentHeader = null;
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      };
-
-      headers.forEach((header) => {
-        const headerEl = header as HTMLElement;
-        headerEl.style.position = 'relative';
-        headerEl.style.cursor = 'default';
-
-        const mouseMoveHandler = (e: MouseEvent) => {
-          const rect = headerEl.getBoundingClientRect();
-          const edgeThreshold = 5;
-          const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
-
-          if (isNearRightEdge && !isResizing) {
-            headerEl.style.cursor = 'col-resize';
-          } else if (!isResizing) {
-            headerEl.style.cursor = 'default';
-          }
-        };
-
-        headerEl.addEventListener('mousemove', mouseMoveHandler);
-        (headerEl as any)._mouseMoveHandler = mouseMoveHandler;
-
-        const mouseDownHandler = (e: MouseEvent) => {
-          handleMouseDown(e, headerEl);
-        };
-        headerEl.addEventListener('mousedown', mouseDownHandler);
-        (headerEl as any)._mouseDownHandler = mouseDownHandler;
-      });
-    };
-
-    // 延迟初始化，确保表格已渲染
-    let timer: NodeJS.Timeout | null = setTimeout(() => {
-      initResizeHandlers();
-    }, 300);
-
-    // 监听表格变化，重新初始化
-    const observer = new MutationObserver(() => {
-      // 防抖，避免频繁初始化
-      if (timer) {
-        clearTimeout(timer);
-      }
-      timer = setTimeout(() => {
-        initResizeHandlers();
-      }, 300);
-    });
-
-    if (tableRef.current) {
-      observer.observe(tableRef.current, {
-        childList: true,
-        subtree: true,
-      });
-    }
-
-    return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      observer.disconnect();
-
-      // 清理事件监听器
-      if (tableRef.current) {
-        const thead = tableRef.current.querySelector('thead');
-        if (thead) {
-          const headers = thead.querySelectorAll('th');
-          headers.forEach((header) => {
-            const headerEl = header as HTMLElement;
-            if ((headerEl as any)._mouseMoveHandler) {
-              headerEl.removeEventListener('mousemove', (headerEl as any)._mouseMoveHandler);
-            }
-            if ((headerEl as any)._mouseDownHandler) {
-              headerEl.removeEventListener('mousedown', (headerEl as any)._mouseDownHandler);
-            }
-          });
-        }
-      }
-    };
-  }, []);
 
   // 表格列定义（记忆化，避免不必要渲染）
   const columns: ColumnsType<AppUser> = useMemo(() => [

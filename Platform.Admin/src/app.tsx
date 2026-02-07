@@ -14,11 +14,9 @@ import {
   SelectLang,
   Question,
 } from '@/components';
-import AiAssistant from '@/components/AiAssistant';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { getUserMenus } from '@/services/menu/api';
 import { getMyPermissions } from '@/services/permission';
-import LocationService from '@/services/social/locationService';
 import { getUserAvatar } from '@/utils/avatar';
 import { tokenUtils } from '@/utils/token';
 import TokenRefreshManager from '@/utils/tokenRefreshManager';
@@ -26,8 +24,13 @@ import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './request-error-config';
 import { getIconFromMap } from '@/utils/iconMap';
 
+// 🚀 核心优化：全量 Layout 系统中剥离大型组件（AiAssistant 是真正的 React 组件，可以使用 lazy）
+const AiAssistant = React.lazy(() => import('@/components/AiAssistant'));
+// LocationService 是服务类而非组件，不需要用 React.lazy，我们在组件内部动态 import 它即可
+
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
+
 
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
@@ -201,6 +204,50 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[]): any[] {
       return menuItem;
     });
 }
+
+const LocationReporter = ({ currentUser, location }: { currentUser: any, location: any }) => {
+  const hasStartedRef = useRef(false);
+
+  useEffect(() => {
+    const shouldReportPages = ['/welcome'];
+    const shouldReport = shouldReportPages.some(page => location.pathname === page || location.pathname.startsWith(page));
+
+    if (currentUser && shouldReport && !hasStartedRef.current) {
+      hasStartedRef.current = true;
+      const timer = setTimeout(async () => {
+        // 动态加载 LocationService 实例
+        const { default: service } = await import('@/services/social/locationService');
+        service.startPeriodicReporting(true).catch(() => { });
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if ((!shouldReport || !currentUser) && hasStartedRef.current) {
+      import('@/services/social/locationService').then(({ default: service }) => {
+        service.stopPeriodicReporting();
+      });
+      hasStartedRef.current = false;
+    }
+    return undefined;
+  }, [currentUser, location.pathname]);
+
+  return null;
+};
+
+const AppWrapper = ({ children, currentUser }: { children: React.ReactNode, currentUser: any }) => {
+  const app = App.useApp();
+  useEffect(() => {
+    setAppInstance(app);
+  }, [app]);
+
+  return (
+    <>
+      {children}
+      <React.Suspense fallback={null}>
+        {currentUser && <AiAssistant />}
+        {currentUser && <LocationReporter currentUser={currentUser} location={history.location} />}
+      </React.Suspense>
+    </>
+  );
+};
 
 // ProLayout 支持的api https://procomponents.ant.design/components/layout
 export const layout: RunTimeLayoutConfig = ({
@@ -388,49 +435,13 @@ export const layout: RunTimeLayoutConfig = ({
     },
     menuHeaderRender: false,
     childrenRender: (children) => {
-      const LocationReporter = () => {
-        const hasStartedRef = useRef(false);
-        const { location } = history;
-
-        useEffect(() => {
-          const shouldReportPages = ['/welcome'];
-          const shouldReport = shouldReportPages.some(page => location.pathname === page || location.pathname.startsWith(page));
-
-          if (initialState?.currentUser && shouldReport && !hasStartedRef.current) {
-            hasStartedRef.current = true;
-            setTimeout(() => {
-              LocationService.startPeriodicReporting(true).catch(() => { });
-            }, 1000);
-          } else if ((!shouldReport || !initialState?.currentUser) && hasStartedRef.current) {
-            LocationService.stopPeriodicReporting();
-            hasStartedRef.current = false;
-          }
-        }, [initialState?.currentUser, location.pathname]);
-
-        return null;
-      };
-
-      const AppWrapper = () => {
-        const app = App.useApp();
-        useEffect(() => {
-          setAppInstance(app);
-        }, [app]);
-
-        return (
-          <>
-            {children}
-            {initialState?.currentUser && <AiAssistant />}
-            {initialState?.currentUser && <LocationReporter />}
-          </>
-        );
-      };
-
       return (
         <App>
-          <AppWrapper />
+          <AppWrapper currentUser={initialState?.currentUser}>{children}</AppWrapper>
         </App>
       );
     },
+
     ...(initialState?.settings
       ? {
         ...initialState.settings,

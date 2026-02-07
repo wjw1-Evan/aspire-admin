@@ -29,7 +29,7 @@ const AiAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
-  
+
   // 对话框尺寸状态
   const [dialogSize, setDialogSize] = useState({ width: 400, height: 600 });
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -41,6 +41,17 @@ const AiAssistant: React.FC = () => {
   const [streamingMessages, setStreamingMessages] = useState<Record<string, string>>({});
 
   const isValidObjectId = useCallback((id?: string) => !!id && /^[a-fA-F0-9]{24}$/.test(id), []);
+
+  // 组件卸载时强制清理所有全局监听器，防止面板未关闭即跳转导致的内存泄漏
+  useEffect(() => {
+    return () => {
+      if ((window as any)._aiAssistantCleanup) (window as any)._aiAssistantCleanup();
+      if ((window as any)._aiAssistantCleanupHeight) (window as any)._aiAssistantCleanupHeight();
+      if ((window as any)._aiAssistantCleanupBoth) (window as any)._aiAssistantCleanupBoth();
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, []);
 
   /**
    * 初始化会话
@@ -94,7 +105,7 @@ const AiAssistant: React.FC = () => {
       sending,
       currentUser: !!currentUser,
     });
-    
+
     // 注意：用户ID由后端从token中获取，前端只需要检查用户是否登录
     if (!inputValue.trim() || sending || !currentUser) {
       console.log('[AiAssistant] 发送消息被阻止:', {
@@ -127,7 +138,7 @@ const AiAssistant: React.FC = () => {
     const userMessage = inputValue.trim();
     setInputValue('');
     setSending(true);
-    
+
     // 先添加用户消息到界面（乐观更新）
     // 注意：senderId 用于前端显示，实际发送时后端会从token中获取用户ID
     // 这里使用临时ID，等后端返回真实消息后再替换
@@ -148,10 +159,10 @@ const AiAssistant: React.FC = () => {
 
       // 使用流式接口发送消息并接收 AI 回复
       console.log('[AiAssistant] 发送消息到后端（流式）:', userMessage);
-      
+
       // 保存会话 ID，用于回调中验证
       const sessionIdForCallbacks = currentSession.id;
-      
+
       let userMessageId: string | null = null;
       let assistantMessageId: string | null = null;
 
@@ -209,7 +220,7 @@ const AiAssistant: React.FC = () => {
               return;
             }
             console.log('[AiAssistant] 收到流式增量内容:', { sessionId, messageId, delta, deltaLength: delta.length });
-            
+
             // 累积流式内容（使用状态，确保触发重新渲染）
             setStreamingMessages((prev) => {
               const currentContent = prev[messageId] || '';
@@ -220,7 +231,7 @@ const AiAssistant: React.FC = () => {
                 [messageId]: newContent,
               };
             });
-            
+
             // 确保消息在列表中（如果不在，创建临时消息）
             // 注意：实际内容从 streamingMessages 状态读取，在 useMemo 中合并
             setMessages((prev) => {
@@ -407,15 +418,13 @@ const AiAssistant: React.FC = () => {
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              
+
               const startX = e.clientX;
               const startWidth = dialogSize.width;
 
               const handleMouseMove = (e: MouseEvent) => {
                 const diffX = startX - e.clientX; // 向左拖拽增加宽度
-                
                 const newWidth = Math.max(300, Math.min(800, startWidth + diffX));
-                
                 setDialogSize(prev => ({ ...prev, width: newWidth }));
               };
 
@@ -430,6 +439,12 @@ const AiAssistant: React.FC = () => {
               document.addEventListener('mouseup', handleMouseUp);
               document.body.style.cursor = 'ew-resize';
               document.body.style.userSelect = 'none';
+
+              // 🛡️ 容错处理：记录到全局以便卸载时强制清理
+              (window as any)._aiAssistantCleanup = () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+              };
             }}
             style={{
               position: 'absolute',
@@ -447,15 +462,13 @@ const AiAssistant: React.FC = () => {
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              
+
               const startY = e.clientY;
               const startHeight = dialogSize.height;
 
               const handleMouseMove = (e: MouseEvent) => {
                 const diffY = startY - e.clientY; // 向上拖拽增加高度
-                
                 const newHeight = Math.max(400, Math.min(1000, startHeight + diffY));
-                
                 setDialogSize(prev => ({ ...prev, height: newHeight }));
               };
 
@@ -470,6 +483,12 @@ const AiAssistant: React.FC = () => {
               document.addEventListener('mouseup', handleMouseUp);
               document.body.style.cursor = 'ns-resize';
               document.body.style.userSelect = 'none';
+
+              // 🛡️ 容错处理
+              (window as any)._aiAssistantCleanupHeight = () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+              };
             }}
             style={{
               position: 'absolute',
@@ -482,12 +501,13 @@ const AiAssistant: React.FC = () => {
               backgroundColor: 'transparent',
             }}
           />
+
           {/* 左上角调整宽度和高度手柄 */}
           <div
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              
+
               const startX = e.clientX;
               const startY = e.clientY;
               const startWidth = dialogSize.width;
@@ -496,10 +516,10 @@ const AiAssistant: React.FC = () => {
               const handleMouseMove = (e: MouseEvent) => {
                 const diffX = startX - e.clientX; // 向左拖拽增加宽度
                 const diffY = startY - e.clientY; // 向上拖拽增加高度
-                
+
                 const newWidth = Math.max(300, Math.min(800, startWidth + diffX));
                 const newHeight = Math.max(400, Math.min(1000, startHeight + diffY));
-                
+
                 setDialogSize({ width: newWidth, height: newHeight });
               };
 
@@ -514,6 +534,12 @@ const AiAssistant: React.FC = () => {
               document.addEventListener('mouseup', handleMouseUp);
               document.body.style.cursor = 'nwse-resize';
               document.body.style.userSelect = 'none';
+
+              // 🛡️ 容错处理
+              (window as any)._aiAssistantCleanupBoth = () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+              };
             }}
             style={{
               position: 'absolute',
@@ -564,13 +590,13 @@ const AiAssistant: React.FC = () => {
             ) : (
               <>
                 {displayMessages.map((msg, idx) => {
-                    const isAssistant = msg.senderId === AI_ASSISTANT_ID;
-                    // 判断是否为当前用户的消息（用于前端显示）
-                    // 注意：实际用户ID由后端从token中获取，这里只是用于前端显示判断
-                    const currentUserId = currentUser?.userid || (currentUser as any)?.id;
-                    const isUser = currentUserId && msg.senderId === currentUserId;
+                  const isAssistant = msg.senderId === AI_ASSISTANT_ID;
+                  // 判断是否为当前用户的消息（用于前端显示）
+                  // 注意：实际用户ID由后端从token中获取，这里只是用于前端显示判断
+                  const currentUserId = currentUser?.userid || (currentUser as any)?.id;
+                  const isUser = currentUserId && msg.senderId === currentUserId;
 
-                    return (
+                  return (
                     <div
                       key={msg.id || idx}
                       style={{
@@ -601,8 +627,8 @@ const AiAssistant: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    );
-                  })}
+                  );
+                })}
               </>
             )}
           </div>

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, Space, Timeline, Typography } from 'antd';
-import { ClockCircleOutlined, LinkOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import { Card, Space, Timeline, Typography, Button } from 'antd';
+import { ClockCircleOutlined, LinkOutlined, RightOutlined } from '@ant-design/icons';
+import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import dayjs from 'dayjs';
 import { getActivityColor } from '../utils';
@@ -26,7 +26,21 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ recentActiv
                     <span>{intl.formatMessage({ id: 'pages.welcome.recentActivities' })}</span>
                 </Space>
             }
+            extra={
+                <Button
+                    type="link"
+                    size="small"
+                    onClick={() => history.push('/system/my-activity')}
+                    style={{ padding: 0 }}
+                >
+                    <Space size={4}>
+                        {intl.formatMessage({ id: 'pages.common.more', defaultMessage: '更多' })}
+                        <RightOutlined style={{ fontSize: '10px' }} />
+                    </Space>
+                </Button>
+            }
             className={styles.card}
+
             style={{ height: '100%' }}
         >
             <Timeline

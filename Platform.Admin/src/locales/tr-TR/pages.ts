@@ -853,6 +853,7 @@ export default {
   'pages.help.tab.quickStart': 'Quick Start',
   'pages.help.tab.versionHistory': 'Version History',
   'pages.help.tab.features': 'Features',
+  'pages.help.tab.architecture': 'Architecture',
   'pages.help.tab.faq': 'FAQ',
   'pages.help.tab.tech': 'Technical Support',
   'pages.help.tab.development': 'Development',

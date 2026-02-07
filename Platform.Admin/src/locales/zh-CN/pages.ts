@@ -895,6 +895,7 @@ export default {
   'pages.help.tab.quickStart': '快速开始',
   'pages.help.tab.versionHistory': '版本历史',
   'pages.help.tab.features': '功能说明',
+  'pages.help.tab.architecture': '系统架构',
   'pages.help.tab.faq': '常见问题',
   'pages.help.tab.tech': '技术支持',
   'pages.help.tab.development': '二次开发',

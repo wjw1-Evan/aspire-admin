@@ -8,21 +8,23 @@ type IntlShape = ReturnType<typeof useIntl>;
 export const getIconComponent = (iconName?: string): React.ReactNode => {
     if (!iconName) return null;
 
-    // 处理格式：Outlined, Filled, TwoTone
+    // 1. 尝试直接获取 (例如 'UserOutlined')
     let Component = (AntdIcons as any)[iconName];
 
-    // 如果没有找到，尝试添加后缀
-    if (!Component && !iconName.endsWith('Outlined') && !iconName.endsWith('Filled') && !iconName.endsWith('TwoTone')) {
-        Component = (AntdIcons as any)[`${iconName}Outlined`];
-    }
-
-    // 如果还是没有，尝试处理可能的 kebab-case (e.g. user-add -> UserAddOutlined)
-    if (!Component && iconName.includes('-')) {
+    // 2. 尝试处理 kebab-case 并转为 PascalCase (e.g. user-add -> UserAddOutlined)
+    if (!Component) {
         const pascalCase = iconName
             .split('-')
             .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
             .join('');
-        Component = (AntdIcons as any)[`${pascalCase}Outlined`];
+
+        Component = (AntdIcons as any)[pascalCase] || (AntdIcons as any)[`${pascalCase}Outlined`];
+    }
+
+    // 3. 如果还是没有找到，尝试将首字母大写并加上 Outlined 后缀 (e.g. user -> UserOutlined)
+    if (!Component && !iconName.endsWith('Outlined') && !iconName.endsWith('Filled') && !iconName.endsWith('TwoTone')) {
+        const capitalized = iconName.charAt(0).toUpperCase() + iconName.slice(1);
+        Component = (AntdIcons as any)[`${capitalized}Outlined`];
     }
 
     return Component ? React.createElement(Component) : null;
@@ -30,19 +32,30 @@ export const getIconComponent = (iconName?: string): React.ReactNode => {
 
 // 根据路径获取菜单颜色
 export const getMenuColor = (path: string): string => {
-    if (path.startsWith('/system/user')) return '#1890ff';
-    if (path.startsWith('/system/role')) return '#722ed1';
-    if (path.startsWith('/system/menu')) return '#fa8c16';
-    if (path.startsWith('/system/company')) return '#eb2f96'; // Magenta
+    const p = path.toLowerCase();
 
-    if (path.startsWith('/iot-platform/device')) return '#13c2c2'; // Cyan
-    if (path.startsWith('/iot-platform/product')) return '#52c41a'; // Green
-    if (path.startsWith('/iot-platform/dashboard')) return '#fadb14'; // Gold
+    // 系统管理
+    if (p.startsWith('/system/user')) return '#1890ff'; // Daybreak Blue
+    if (p.startsWith('/system/role')) return '#722ed1'; // Golden Purple
+    if (p.startsWith('/system/menu')) return '#fa8c16'; // Sunset Orange
+    if (p.startsWith('/system/company') || p.startsWith('/system/company-management')) return '#eb2f96'; // Magenta
+    if (p.startsWith('/system/organization')) return '#2f54eb'; // Geekblue
+    if (p.startsWith('/system/my-activity') || p.startsWith('/user-log')) return '#52c41a'; // Polar Green
 
-    if (path.startsWith('/project-management')) return '#fa541c'; // Volcano
+    // 协作与流程
+    if (p.startsWith('/workflow')) return '#13c2c2'; // Cyan
+    if (p.startsWith('/document')) return '#faad14'; // Gold
+    if (p.startsWith('/project-management') || p.startsWith('/task-management')) return '#fa541c'; // Volcano
 
-    if (path.startsWith('/account/center')) return '#2f54eb'; // Geekblue
-    if (path.startsWith('/account/settings')) return '#595959'; // Grey
+    // 物联网与网盘
+    if (p.startsWith('/iot-platform')) return '#2f54eb'; // Geekblue
+    if (p.startsWith('/cloud-storage')) return '#1890ff'; // Daybreak Blue
+
+    // 其他功能
+    if (p.startsWith('/xiaoke-management')) return '#eb2f96'; // Magenta
+    if (p.startsWith('/password-book')) return '#52c41a'; // Polar Green
+    if (p.startsWith('/account/center')) return '#722ed1'; // Golden Purple
+    if (p.startsWith('/account/settings')) return '#595959'; // Grey
 
     // 默认颜色循环
     const colors = ['#1890ff', '#52c41a', '#fa8c16', '#eb2f96', '#722ed1', '#13c2c2', '#fa541c', '#2f54eb'];

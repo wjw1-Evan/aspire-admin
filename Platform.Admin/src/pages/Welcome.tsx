@@ -29,7 +29,6 @@ const Welcome: React.FC = () => {
   const [taskStatistics, setTaskStatistics] = useState<import('@/services/task/api').TaskStatistics | null>(null);
   const [todoTasks, setTodoTasks] = useState<import('@/services/task/api').TaskDto[]>([]);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
-  const [recentActivities, setRecentActivities] = useState<(API.UserActivityLog & { fullUrl?: string; path?: string; queryString?: string; httpMethod?: string })[]>([]);
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,10 +41,9 @@ const Welcome: React.FC = () => {
   const fetchStatistics = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, companyRes, activitiesRes, taskStatsRes, todoTasksRes] = await Promise.all([
+      const [statsRes, companyRes, taskStatsRes, todoTasksRes] = await Promise.all([
         getUserStatistics(),
         getCurrentCompany(),
-        getUserActivityLogs({ limit: 5 }),
         getTaskStatistics(),
         getMyTodoTasks()
       ]);
@@ -55,9 +53,6 @@ const Welcome: React.FC = () => {
       }
       if (companyRes && companyRes.data) {
         setCompanyInfo(companyRes.data);
-      }
-      if (activitiesRes && activitiesRes.data) {
-        setRecentActivities(activitiesRes.data);
       }
       if (taskStatsRes && taskStatsRes.data) {
         setTaskStatistics(taskStatsRes.data);
@@ -198,7 +193,6 @@ const Welcome: React.FC = () => {
             {/* 最近活动 */}
             <div style={{ flex: '1 1 50%', minWidth: '300px', padding: '8px' }}>
               <RecentActivitiesCard
-                recentActivities={recentActivities}
                 currentUser={currentUser}
               />
             </div>

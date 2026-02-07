@@ -148,4 +148,11 @@ public class UserRoleService(
         var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter);
         return userCompanies.Select(uc => uc.UserId).Distinct().ToList();
     }
+
+    /// <inheritdoc/>
+    public async Task<int> CountAsync()
+    {
+        // _roleFactory.CountAsync() 会自动应用企业过滤（Role 实现了 IMultiTenant）
+        return (int)await _roleFactory.CountAsync();
+    }
 }

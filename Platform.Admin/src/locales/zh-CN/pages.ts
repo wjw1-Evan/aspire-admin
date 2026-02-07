@@ -608,6 +608,8 @@ export default {
   'pages.welcome.stats.activeUsers': '活跃用户',
   'pages.welcome.stats.adminUsers': '管理员',
   'pages.welcome.stats.newUsersToday': '今日新增',
+  'pages.welcome.stats.totalRoles': '角色总数',
+  'pages.welcome.stats.totalOrganizations': '组织节点',
   'pages.welcome.quickActions': '快速操作',
   'pages.welcome.quickActions.userManagement.title': '用户管理',
   'pages.welcome.quickActions.userManagement.desc': '管理系统用户',

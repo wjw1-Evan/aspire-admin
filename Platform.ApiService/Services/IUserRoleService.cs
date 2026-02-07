@@ -32,4 +32,9 @@ public interface IUserRoleService
     /// 根据角色ID获取用户ID列表
     /// </summary>
     Task<List<string>> GetUserIdsByRolesAsync(List<string> roleIds, string companyId);
+
+    /// <summary>
+    /// 统计当前企业的角色总数
+    /// </summary>
+    Task<int> CountAsync();
 }

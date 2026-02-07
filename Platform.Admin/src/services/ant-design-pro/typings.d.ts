@@ -485,6 +485,8 @@ declare namespace API {
     newUsersToday: number;
     newUsersThisWeek: number;
     newUsersThisMonth: number;
+    totalRoles: number;
+    totalOrganizations: number;
   };
 }
 

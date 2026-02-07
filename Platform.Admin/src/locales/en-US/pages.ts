@@ -573,6 +573,8 @@ export default {
   'pages.welcome.stats.activeUsers': 'Active Users',
   'pages.welcome.stats.adminUsers': 'Administrators',
   'pages.welcome.stats.newUsersToday': 'New Today',
+  'pages.welcome.stats.totalRoles': 'Total Roles',
+  'pages.welcome.stats.totalOrganizations': 'Total Organizations',
   'pages.welcome.quickActions': 'Quick Actions',
   'pages.welcome.quickActions.userManagement.title': 'User Management',
   'pages.welcome.quickActions.userManagement.desc': 'Manage system users',

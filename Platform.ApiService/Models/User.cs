@@ -444,6 +444,16 @@ public class UserStatisticsResponse
     /// 本月新增用户数
     /// </summary>
     public int NewUsersThisMonth { get; set; }
+
+    /// <summary>
+    /// 角色总数
+    /// </summary>
+    public int TotalRoles { get; set; }
+
+    /// <summary>
+    /// 组织节点总数
+    /// </summary>
+    public int TotalOrganizations { get; set; }
 }
 
 /// <summary>

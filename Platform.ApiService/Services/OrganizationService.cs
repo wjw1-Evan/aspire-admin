@@ -75,6 +75,12 @@ public interface IOrganizationService
     /// <param name="request">移除请求</param>
     /// <returns>是否成功</returns>
     Task<bool> RemoveUserAsync(RemoveUserOrganizationRequest request);
+
+    /// <summary>
+    /// 统计当前企业的组织节点总数
+    /// </summary>
+    /// <returns>节点总数</returns>
+    Task<int> CountAsync();
 }
 
 /// <summary>
@@ -585,5 +591,12 @@ public class OrganizationService : IOrganizationService
                 throw new InvalidOperationException(OrganizationErrorMessages.OrganizationCodeExists);
             }
         }
+    }
+
+    /// <inheritdoc/>
+    public async Task<int> CountAsync()
+    {
+        // _organizationFactory.CountAsync() 会自动应用企业过滤（OrganizationUnit 实现了 IMultiTenant）
+        return (int)await _organizationFactory.CountAsync();
     }
 }

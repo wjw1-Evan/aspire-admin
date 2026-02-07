@@ -19,6 +19,7 @@ namespace Platform.ApiService.Services;
 /// <param name="validationService">字段验证服务</param>
 /// <param name="userRoleService">用户角色服务</param>
 /// <param name="userOrganizationService">用户组织架构服务</param>
+/// <param name="organizationService">组织架构服务</param>
 /// <param name="userActivityLogService">用户活动日志服务</param>
 /// <param name="menuAccessService">菜单访问权限服务</param>
 public class UserService(
@@ -29,6 +30,7 @@ public class UserService(
     IFieldValidationService validationService,
     IUserRoleService userRoleService,
     IUserOrganizationService userOrganizationService,
+    IOrganizationService organizationService,
     IUserActivityLogService userActivityLogService,
     IMenuAccessService menuAccessService) : IUserService
 {
@@ -43,6 +45,7 @@ public class UserService(
     // Injected new services
     private readonly IUserRoleService _userRoleService = userRoleService;
     private readonly IUserOrganizationService _userOrganizationService = userOrganizationService;
+    private readonly IOrganizationService _organizationService = organizationService;
     private readonly IUserActivityLogService _userActivityLogService = userActivityLogService;
     private readonly IMenuAccessService _menuAccessService = menuAccessService;
 
@@ -639,6 +642,9 @@ public class UserService(
             .Build();
         var newUsersThisMonth = await _userFactory.CountAsync(monthFilter);
 
+        var totalRoles = await _userRoleService.CountAsync();
+        var totalOrganizations = await _organizationService.CountAsync();
+
         return new UserStatisticsResponse
         {
             TotalUsers = (int)totalUsers,
@@ -648,7 +654,9 @@ public class UserService(
             RegularUsers = (int)regularUsers,
             NewUsersToday = (int)newUsersToday,
             NewUsersThisWeek = (int)newUsersThisWeek,
-            NewUsersThisMonth = (int)newUsersThisMonth
+            NewUsersThisMonth = (int)newUsersThisMonth,
+            TotalRoles = totalRoles,
+            TotalOrganizations = totalOrganizations
         };
     }
 

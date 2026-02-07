@@ -1,7 +1,7 @@
 import { UserOutlined } from '@ant-design/icons';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import type { LayoutSettings } from '@/types/layout';
-import { history, request as requestClient } from '@umijs/max';
+import { history, request as requestClient, Link } from '@umijs/max';
 import React, { useEffect, useRef, useMemo } from 'react';
 import { App, Space } from 'antd';
 import { setAppInstance } from '@/utils/antdAppInstance';
@@ -202,7 +202,7 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[], depth = 1): any[]
       }
 
       if (menu.children && menu.children.length > 0) {
-        menuItem.children = convertMenuTreeToProLayout(menu.children as any, depth + 1);
+        menuItem.routes = convertMenuTreeToProLayout(menu.children as any, depth + 1);
       }
 
       return menuItem;
@@ -451,19 +451,23 @@ export const layout: RunTimeLayoutConfig = ({
       }
       return dom;
     },
-    // 🔧 自定义菜单项渲染
+    // 🔧 自定义菜单项渲染：确保点击跳转正常
     menuItemRender: (item: any, dom: React.ReactNode) => {
-      // 如果没有 icon 属性但有 rawIcon，说明是需要手动显示的二级菜单项
-      if (!item.icon && item.rawIcon) {
-        return (
-          <Space size={8}>
-            {item.rawIcon}
-            {dom}
-          </Space>
-        );
+      // 构造菜单内容（如果是二级菜单则补全图标）
+      const renderDom = (!item.icon && item.rawIcon) ? (
+        <Space size={8}>
+          {item.rawIcon}
+          {dom}
+        </Space>
+      ) : dom;
+
+      // 如果有路径且不是外部链接，包裹 Link 组件实现跳转
+      if (item.path && !item.isExternal) {
+        return <Link to={item.path}>{renderDom}</Link>;
       }
-      return dom;
+      return renderDom;
     },
+
 
 
 

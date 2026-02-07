@@ -210,6 +210,37 @@ export default [
     ],
   },
   {
+    path: '/park-management',
+    hideInMenu: true, // 使用数据库菜单
+    routes: [
+      {
+        path: '/park-management/asset',
+        component: './park-management/asset',
+        hideInMenu: true,
+      },
+      {
+        path: '/park-management/investment',
+        component: './park-management/investment',
+        hideInMenu: true,
+      },
+      {
+        path: '/park-management/tenant',
+        component: './park-management/tenant',
+        hideInMenu: true,
+      },
+      {
+        path: '/park-management/enterprise-service',
+        component: './park-management/enterprise-service',
+        hideInMenu: true,
+      },
+      {
+        path: '/park-management/statistics',
+        component: './park-management/statistics',
+        hideInMenu: true,
+      },
+    ],
+  },
+  {
     path: '/cloud-storage',
     hideInMenu: true, // 使用数据库菜单
     routes: [

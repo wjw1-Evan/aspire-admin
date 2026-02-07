@@ -113,5 +113,18 @@ export default {
   'menu.cloud-storage-recycle.desc': '管理已删除的文件',
   'menu.cloud-storage-quota': '存储管理',
   'menu.cloud-storage-quota.desc': '管理存储配额和使用统计',
+  // 园区管理
+  'menu.park-management': '园区管理',
+  'menu.park-management.desc': '园区综合管理功能',
+  'menu.park-management-asset': '资产管理',
+  'menu.park-management-asset.desc': '管理园区楼宇房源资产',
+  'menu.park-management-investment': '招商管理',
+  'menu.park-management-investment.desc': '管理招商线索与项目',
+  'menu.park-management-tenant': '租户管理',
+  'menu.park-management-tenant.desc': '管理租户企业与合同',
+  'menu.park-management-enterprise-service': '企业服务',
+  'menu.park-management-enterprise-service.desc': '管理园区企业服务申请',
+  'menu.park-management-statistics': '统计报表',
+  'menu.park-management-statistics.desc': '园区各项业务数据统计与分析',
   'menu.pending-join-requests': '加入申请',
 };

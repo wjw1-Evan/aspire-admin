@@ -767,8 +767,99 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
+        // 园区管理父菜单
+        menus.Add(new Menu
+        {
+            Name = "park-management",
+            Title = "园区管理",
+            Path = "/park-management",
+            Icon = "bank",
+            SortOrder = 10,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
 
+        // 园区管理子菜单：资产管理
+        menus.Add(new Menu
+        {
+            Name = "park-management-asset",
+            Title = "资产管理",
+            Path = "/park-management/asset",
+            Component = "./park-management/asset",
+            Icon = "home",
+            ParentId = "park-management",
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
 
+        // 园区管理子菜单：招商管理
+        menus.Add(new Menu
+        {
+            Name = "park-management-investment",
+            Title = "招商管理",
+            Path = "/park-management/investment",
+            Component = "./park-management/investment",
+            Icon = "fund",
+            ParentId = "park-management",
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 园区管理子菜单：租户管理
+        menus.Add(new Menu
+        {
+            Name = "park-management-tenant",
+            Title = "租户管理",
+            Path = "/park-management/tenant",
+            Component = "./park-management/tenant",
+            Icon = "team",
+            ParentId = "park-management",
+            SortOrder = 3,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 园区管理子菜单：企业服务
+        menus.Add(new Menu
+        {
+            Name = "park-management-enterprise-service",
+            Title = "企业服务",
+            Path = "/park-management/enterprise-service",
+            Component = "./park-management/enterprise-service",
+            Icon = "customer-service",
+            ParentId = "park-management",
+            SortOrder = 4,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 园区管理子菜单：统计报表
+        menus.Add(new Menu
+        {
+            Name = "park-management-statistics",
+            Title = "统计报表",
+            Path = "/park-management/statistics",
+            Component = "./park-management/statistics",
+            Icon = "bar-chart",
+            ParentId = "park-management",
+            SortOrder = 5,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
 
         return menus;
     }
@@ -812,6 +903,12 @@ public class DataInitializerService : IDataInitializerService
             "cloud-storage-shared" => "cloud-storage",
             "cloud-storage-recycle" => "cloud-storage",
             "cloud-storage-quota" => "cloud-storage",
+            // 园区管理子菜单
+            "park-management-asset" => "park-management",
+            "park-management-investment" => "park-management",
+            "park-management-tenant" => "park-management",
+            "park-management-enterprise-service" => "park-management",
+            "park-management-statistics" => "park-management",
 
             _ => null
         };

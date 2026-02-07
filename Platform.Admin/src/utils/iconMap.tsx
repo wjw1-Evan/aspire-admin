@@ -83,6 +83,7 @@ import {
     BarChartOutlined,
     BankOutlined,
     FormOutlined,
+    FundOutlined,
 } from '@ant-design/icons';
 
 /**
@@ -176,6 +177,7 @@ export const CORE_ICON_MAP: Record<string, React.ReactNode> = {
     BarChartOutlined: <BarChartOutlined />,
     BankOutlined: <BankOutlined />,
     FormOutlined: <FormOutlined />,
+    FundOutlined: <FundOutlined />,
 };
 
 /**

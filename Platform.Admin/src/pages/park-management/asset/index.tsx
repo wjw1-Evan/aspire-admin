@@ -1,13 +1,15 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, Drawer, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Table, Badge, Statistic, Progress, Popconfirm, Flex } from 'antd';
+import { Card, Form, Input, Select, Button, Modal, Drawer, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Table, Badge, Statistic, Progress, Popconfirm, Flex, Upload } from 'antd';
+import type { UploadFile } from 'antd';
 import { useIntl, useModel } from '@umijs/max';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, EnvironmentOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, EnvironmentOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
 import { DataTable } from '@/components/DataTable';
 import SearchFormCard from '@/components/SearchFormCard';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
+import * as cloudService from '@/services/cloud-storage/api';
 import type { Building, PropertyUnit, AssetStatistics, LeaseContract } from '@/services/park';
 import dayjs from 'dayjs';
 import styles from './index.less';
@@ -35,6 +37,10 @@ const AssetManagement: React.FC = () => {
     const [currentUnit, setCurrentUnit] = useState<PropertyUnit | null>(null);
     const [buildings, setBuildings] = useState<Building[]>([]);
     const [isEdit, setIsEdit] = useState(false);
+
+    // Upload State
+    const [uploadModalVisible, setUploadModalVisible] = useState(false);
+    const [attachmentList, setAttachmentList] = useState<UploadFile[]>([]);
 
     // 加载统计数据
     const loadStatistics = useCallback(async () => {
@@ -261,6 +267,7 @@ const AssetManagement: React.FC = () => {
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditUnit(record)}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
+
                     <Popconfirm
                         title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })}
                         onConfirm={() => handleDeleteUnit(record.id)}
@@ -335,6 +342,16 @@ const AssetManagement: React.FC = () => {
         setCurrentBuilding(building);
         setIsEdit(true);
         buildingForm.setFieldsValue(building);
+        setAttachmentList((building.attachments || []).map((url, index) => {
+            const fileName = url.split('/').pop() || 'file';
+            const decodedName = decodeURIComponent(fileName);
+            return {
+                uid: `-${index}`,
+                name: decodedName,
+                status: 'done',
+                url: url,
+            };
+        }));
         setBuildingModalVisible(true);
     };
 
@@ -359,6 +376,7 @@ const AssetManagement: React.FC = () => {
         setCurrentBuilding(null);
         setIsEdit(false);
         buildingForm.resetFields();
+        setAttachmentList([]);
         setBuildingModalVisible(true);
     };
 
@@ -367,9 +385,19 @@ const AssetManagement: React.FC = () => {
             const values = await buildingForm.validateFields();
             setLoading(true);
 
+            // Process attachments
+            const attachmentUrls = attachmentList.map(item => {
+                if (item.response && item.response.data && item.response.data.path) {
+                    return item.response.data.path;
+                }
+                return item.url;
+            }).filter(url => url) as string[];
+
+            const submitValues = { ...values, attachments: attachmentUrls };
+
             const res = isEdit && currentBuilding
-                ? await parkService.updateBuilding(currentBuilding.id, values)
-                : await parkService.createBuilding(values);
+                ? await parkService.updateBuilding(currentBuilding.id, submitValues)
+                : await parkService.createBuilding(submitValues);
 
             if (res.success) {
                 message.success(intl.formatMessage({
@@ -392,6 +420,17 @@ const AssetManagement: React.FC = () => {
         setCurrentUnit(unit);
         setIsEdit(true);
         unitForm.setFieldsValue(unit);
+        // Load attachments
+        setAttachmentList((unit.attachments || []).map((url, index) => {
+            const fileName = url.split('/').pop() || 'file';
+            const decodedName = decodeURIComponent(fileName);
+            return {
+                uid: `-${index}`,
+                name: decodedName,
+                status: 'done',
+                url: url,
+            };
+        }));
         setUnitModalVisible(true);
     };
 
@@ -415,6 +454,7 @@ const AssetManagement: React.FC = () => {
         setCurrentUnit(null);
         setIsEdit(false);
         unitForm.resetFields();
+        setAttachmentList([]);
         setUnitModalVisible(true);
     };
 
@@ -423,9 +463,19 @@ const AssetManagement: React.FC = () => {
             const values = await unitForm.validateFields();
             setLoading(true);
 
+            // Process attachments
+            const attachmentUrls = attachmentList.map(item => {
+                if (item.response && item.response.data && item.response.data.path) {
+                    return item.response.data.path;
+                }
+                return item.url;
+            }).filter(url => url) as string[];
+
+            const submitValues = { ...values, attachments: attachmentUrls };
+
             const res = isEdit && currentUnit
-                ? await parkService.updatePropertyUnit(currentUnit.id, values)
-                : await parkService.createPropertyUnit(values);
+                ? await parkService.updatePropertyUnit(currentUnit.id, submitValues)
+                : await parkService.createPropertyUnit(submitValues);
 
             if (res.success) {
                 message.success(intl.formatMessage({
@@ -730,6 +780,34 @@ const AssetManagement: React.FC = () => {
                     >
                         <Input.TextArea rows={3} placeholder="请输入描述信息" />
                     </Form.Item>
+
+                    <Form.Item
+                        label={intl.formatMessage({ id: 'pages.park.asset.building.uploadTitle', defaultMessage: '楼宇附件' })}
+                    >
+                        <Upload
+                            action="/api/cloud-storage/upload"
+                            listType="picture"
+                            fileList={attachmentList}
+                            onChange={({ fileList }) => setAttachmentList(fileList)}
+                            headers={{
+                                Authorization: `Bearer ${localStorage.getItem('token')}`,
+                            }}
+                            data={(file) => ({
+                                file: file,
+                                isPublic: false,
+                                description: 'Building Attachment'
+                            })}
+                        >
+                            <Button icon={<UploadOutlined />}>
+                                {intl.formatMessage({ id: 'common.upload', defaultMessage: '上传附件' })}
+                            </Button>
+                        </Upload>
+                        <div style={{ marginTop: 8 }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                                {intl.formatMessage({ id: 'pages.park.asset.building.uploadDesc', defaultMessage: '楼宇附件（如外观图、平面图等），支持图片和文档格式' })}
+                            </Text>
+                        </div>
+                    </Form.Item>
                 </Form>
             </Modal>
 
@@ -829,6 +907,34 @@ const AssetManagement: React.FC = () => {
                     >
                         <Input.TextArea rows={3} placeholder="请输入描述信息" />
                     </Form.Item>
+
+                    <Form.Item
+                        label={intl.formatMessage({ id: 'pages.park.asset.uploadTitle', defaultMessage: '房源附件' })}
+                    >
+                        <Upload
+                            action="/api/cloud-storage/upload"
+                            listType="picture"
+                            fileList={attachmentList}
+                            onChange={({ fileList }) => setAttachmentList(fileList)}
+                            headers={{
+                                Authorization: `Bearer ${localStorage.getItem('token')}`,
+                            }}
+                            data={(file) => ({
+                                file: file,
+                                isPublic: false,
+                                description: 'Property Unit Attachment'
+                            })}
+                        >
+                            <Button icon={<UploadOutlined />}>
+                                {intl.formatMessage({ id: 'common.upload', defaultMessage: '上传附件' })}
+                            </Button>
+                        </Upload>
+                        <div style={{ marginTop: 8 }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                                {intl.formatMessage({ id: 'pages.park.asset.uploadDesc', defaultMessage: '房源附件（如平面图、实景图等），支持图片和文档格式' })}
+                            </Text>
+                        </div>
+                    </Form.Item>
                 </Form>
             </Modal>
 
@@ -837,7 +943,7 @@ const AssetManagement: React.FC = () => {
                 title={currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })}
                 open={detailDrawerVisible}
                 onClose={() => setDetailDrawerVisible(false)}
-                styles={{ wrapper: { width: 640 } }}
+                width={640}
             >
                 {currentBuilding && (
                     <div>
@@ -972,6 +1078,8 @@ const AssetManagement: React.FC = () => {
                     </Flex>
                 )}
             </Drawer>
+
+
         </PageContainer>
     );
 };

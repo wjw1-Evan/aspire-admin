@@ -1,5 +1,6 @@
 export default {
   'pages.common.more': 'More',
+  'common.upload': 'Upload Attachment',
   'pages.layouts.userLayout.title':
     'Enterprise Multi-Tenant Microservices Management Platform',
   'pages.login.title': '{title}',
@@ -1637,6 +1638,8 @@ export default {
   'pages.park.asset.building.createTitle': 'Create Building',
   'pages.park.asset.building.editTitle': 'Edit Building',
   'pages.park.asset.building.detailTitle': 'Building Details',
+  'pages.park.asset.building.uploadTitle': 'Building Attachments',
+  'pages.park.asset.building.uploadDesc': 'Upload attachments (e.g., floor plans, exterior photos), supports images and documents',
   'pages.park.asset.buildingDetail': 'Building Details',
   'pages.park.asset.unitDetail': 'Unit Details',
   'pages.park.asset.editBuilding': 'Edit Building',
@@ -1653,6 +1656,8 @@ export default {
   'pages.park.asset.property.facilities': 'Facilities',
   'pages.park.asset.property.createTitle': 'Create Property',
   'pages.park.asset.property.editTitle': 'Edit Property',
+  'pages.park.asset.uploadTitle': 'Unit Attachments',
+  'pages.park.asset.uploadDesc': 'Upload attachments (e.g., floor plans, photos), supports images and documents',
   'pages.park.asset.status.active': 'Active',
   'pages.park.asset.status.maintenance': 'Under Maintenance',
   'pages.park.asset.status.inactive': 'Inactive',

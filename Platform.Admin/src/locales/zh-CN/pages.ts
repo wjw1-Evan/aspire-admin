@@ -1,5 +1,6 @@
 export default {
   'pages.common.more': '更多',
+  'common.upload': '上传附件',
   'pages.layouts.userLayout.title':
     '企业级多租户微服务管理平台',
   'pages.login.title': '{title}',
@@ -1708,6 +1709,8 @@ export default {
   'pages.park.asset.building.createTitle': '新建楼宇',
   'pages.park.asset.building.editTitle': '编辑楼宇',
   'pages.park.asset.building.detailTitle': '楼宇详情',
+  'pages.park.asset.building.uploadTitle': '楼宇附件',
+  'pages.park.asset.building.uploadDesc': '楼宇附件（如外观图、平面图等），支持图片和文档格式',
   'pages.park.asset.property.unitNumber': '房号',
   'pages.park.asset.property.building': '所属楼宇',
   'pages.park.asset.property.floor': '楼层',
@@ -1719,7 +1722,10 @@ export default {
   'pages.park.asset.property.leaseEnd': '租约到期',
   'pages.park.asset.property.facilities': '配套设施',
   'pages.park.asset.property.createTitle': '新建房源',
+
   'pages.park.asset.property.editTitle': '编辑房源',
+  'pages.park.asset.uploadTitle': '房源附件',
+  'pages.park.asset.uploadDesc': '房源附件（如平面图、实景图等），支持图片和文档格式',
   'pages.park.asset.status.active': '使用中',
   'pages.park.asset.status.maintenance': '维护中',
   'pages.park.asset.status.inactive': '已停用',

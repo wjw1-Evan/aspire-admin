@@ -79,6 +79,10 @@ public class Building : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
     /// <summary>楼宇图片集</summary>
     [BsonElement("images")]
     public List<string>? Images { get; set; }
+
+    /// <summary>附件列表</summary>
+    [BsonElement("attachments")]
+    public List<string>? Attachments { get; set; }
 }
 
 /// <summary>
@@ -147,6 +151,10 @@ public class PropertyUnit : MultiTenantEntity, IEntity, ISoftDeletable, ITimesta
     /// <summary>图片集</summary>
     [BsonElement("images")]
     public List<string>? Images { get; set; }
+
+    /// <summary>附件列表</summary>
+    [BsonElement("attachments")]
+    public List<string>? Attachments { get; set; }
 }
 
 #endregion
@@ -787,6 +795,12 @@ public class BuildingDto
 
     /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>图片列表</summary>
+    public List<string>? Images { get; set; }
+
+    /// <summary>附件列表</summary>
+    public List<string>? Attachments { get; set; }
 }
 
 /// <summary>
@@ -824,7 +838,11 @@ public class CreateBuildingRequest
 
     /// <summary>图片列表</summary>
     public List<string>? Images { get; set; }
+
+    /// <summary>附件列表</summary>
+    public List<string>? Attachments { get; set; }
 }
+
 
 /// <summary>
 /// 更新楼宇请求
@@ -929,6 +947,9 @@ public class PropertyUnitDto
 
     /// <summary>租赁历史</summary>
     public List<LeaseContractDto>? LeaseHistory { get; set; }
+
+    /// <summary>附件列表</summary>
+    public List<string>? Attachments { get; set; }
 }
 
 /// <summary>
@@ -967,6 +988,9 @@ public class CreatePropertyUnitRequest
 
     /// <summary>图片列表</summary>
     public List<string>? Images { get; set; }
+
+    /// <summary>附件列表</summary>
+    public List<string>? Attachments { get; set; }
 }
 
 /// <summary>

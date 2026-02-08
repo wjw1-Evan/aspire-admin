@@ -72,6 +72,7 @@ export interface Building {
     totalUnits: number;
     availableUnits: number;
     createdAt: string;
+    attachments?: string[];
 }
 
 export interface PropertyUnit {
@@ -90,6 +91,8 @@ export interface PropertyUnit {
     currentTenantName?: string;
     leaseEndDate?: string;
     facilities?: string[];
+    images?: string[];
+    attachments?: string[];
     leaseHistory?: LeaseContract[];
 }
 

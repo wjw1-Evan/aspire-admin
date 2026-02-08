@@ -110,7 +110,8 @@ public class ParkAssetService : IParkAssetService
             YearBuilt = request.YearBuilt,
             Description = request.Description,
             CoverImage = request.CoverImage,
-            Images = request.Images
+            Images = request.Images,
+            Attachments = request.Attachments
         };
 
         await _buildingFactory.CreateAsync(building);
@@ -137,6 +138,7 @@ public class ParkAssetService : IParkAssetService
         building.Description = request.Description;
         building.CoverImage = request.CoverImage;
         building.Images = request.Images;
+        building.Attachments = request.Attachments;
         building.Status = request.Status ?? building.Status;
 
         await _buildingFactory.FindOneAndReplaceAsync(_buildingFactory.CreateFilterBuilder().Equal(b => b.Id, id).Build(), building);
@@ -186,7 +188,9 @@ public class ParkAssetService : IParkAssetService
             CoverImage = building.CoverImage,
             TotalUnits = units.Count,
             AvailableUnits = units.Count(u => u.Status == "Available"),
-            CreatedAt = building.CreatedAt
+            Images = building.Images,
+            CreatedAt = building.CreatedAt,
+            Attachments = building.Attachments
         };
     }
 
@@ -273,7 +277,8 @@ public class ParkAssetService : IParkAssetService
             UnitType = request.UnitType ?? "Office",
             Description = request.Description,
             Facilities = request.Facilities,
-            Images = request.Images
+            Images = request.Images,
+            Attachments = request.Attachments
         };
 
         await _unitFactory.CreateAsync(unit);
@@ -298,6 +303,7 @@ public class ParkAssetService : IParkAssetService
         unit.Description = request.Description;
         unit.Facilities = request.Facilities;
         unit.Images = request.Images;
+        unit.Attachments = request.Attachments;
 
         await _unitFactory.FindOneAndReplaceAsync(_unitFactory.CreateFilterBuilder().Equal(p => p.Id, id).Build(), unit);
 
@@ -339,7 +345,8 @@ public class ParkAssetService : IParkAssetService
             Status = unit.Status,
             CurrentTenantId = unit.CurrentTenantId,
             LeaseEndDate = unit.LeaseEndDate,
-            Facilities = unit.Facilities
+            Facilities = unit.Facilities,
+            Attachments = unit.Attachments
         };
 
         if (includeHistory)

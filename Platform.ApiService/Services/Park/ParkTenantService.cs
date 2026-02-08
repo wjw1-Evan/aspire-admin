@@ -631,14 +631,40 @@ public class ParkTenantService : IParkTenantService
         decimal totalExpected = 0;
         foreach (var c in contracts)
         {
-            var intersectionStart = c.StartDate > start ? c.StartDate : start;
-            var cEnd = c.EndDate;
-            var intersectionEnd = cEnd < end ? cEnd : end;
+            // Calculate effective overlap duration
+            var overlapStart = c.StartDate > start ? c.StartDate : start;
+            // Treat Contract EndDate as inclusive (end of that day)
+            var cEndInclusive = c.EndDate.Date.AddDays(1).AddTicks(-1);
+            var overlapEnd = cEndInclusive < end ? cEndInclusive : end;
 
-            if (intersectionStart < intersectionEnd)
+            if (overlapStart < overlapEnd)
             {
-                var days = (intersectionEnd - intersectionStart).TotalDays;
-                totalExpected += c.MonthlyRent * (decimal)(days / 30.4375);
+                // Calculate rent month by month for precision
+                var curr = overlapStart;
+                while (curr < overlapEnd)
+                {
+                    var daysInMonth = DateTime.DaysInMonth(curr.Year, curr.Month);
+                    // End of the current month
+                    var monthEnd = new DateTime(curr.Year, curr.Month, daysInMonth).AddDays(1).AddTicks(-1);
+
+                    // Determine segment end in this month
+                    var segmentEnd = overlapEnd < monthEnd ? overlapEnd : monthEnd;
+
+                    // Calculate duration in days (including fractional days)
+                    var durationDays = (segmentEnd - curr).TotalDays;
+
+                    // Add pro-rated rent: (Duration / DaysInMonth) * MonthlyRent
+                    // We interpret MonthlyRent as price for the full month
+                    if (durationDays > 0)
+                    {
+                        totalExpected += c.MonthlyRent * (decimal)(durationDays / daysInMonth);
+                    }
+
+                    // Move to start of next month for next iteration
+                    // Ensure we move past the current segment or month end
+                    if (segmentEnd >= overlapEnd) break;
+                    curr = monthEnd.AddTicks(1);
+                }
             }
         }
         var collectionRate = totalExpected > 0 ? (double)Math.Round(totalReceived / totalExpected * 100, 2) : 0;

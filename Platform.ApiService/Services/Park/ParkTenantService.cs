@@ -417,8 +417,13 @@ public class ParkTenantService : IParkTenantService
             activeContracts = contracts.Where(c => c.Status == "Active").ToList();
         }
 
-        // Filter tenants that entered during the period
+        // Filter tenants that entered during the period (Flow)
         var newTenantsInPeriod = tenants.Where(t => t.EntryDate.HasValue && t.EntryDate.Value >= start && t.EntryDate.Value <= end).ToList();
+
+        // Filter tenants that existed at the end of the period (Stock)
+        // Note: Using CreatedAt or EntryDate to determine existence. Assuming EntryDate is more business-relevant.
+        // If EntryDate is null, fallback to CreatedAt.
+        var allTenantsAtEnd = tenants.Where(t => (t.EntryDate ?? t.CreatedAt) <= end).ToList();
 
         // Total Contracts = Contracts starting in this period
         var newContractsInPeriod = contracts.Where(c => c.StartDate >= start && c.StartDate <= end).ToList();
@@ -428,22 +433,74 @@ public class ParkTenantService : IParkTenantService
         // Expiring Contracts = Contracts ending in this period
         var expiringContracts = contracts.Count(c => c.EndDate >= start && c.EndDate <= end);
 
+        // Helper to calculate stock metrics at a specific date
+        (int ActiveTenants, decimal MonthlyRent) CalculateMetricsAtDate(DateTime date)
+        {
+            var activeTenants = tenants.Count(t => (t.EntryDate ?? t.CreatedAt) <= date && t.Status == "Active");
+            var activeContracts = contracts.Where(c => c.Status == "Active" && c.StartDate <= date && (c.EndDate >= date || c.EndDate == null)).ToList();
+            // Note: simple "Active" check might not work for historical dates if status is updated on DB.
+            // But we don't have historical status tracking in this simple model.
+            // We can approximate by checking date ranges.
+            // Improved approximation:
+            var contractsActiveAtDate = contracts.Where(c => c.StartDate <= date && c.EndDate >= date).ToList();
+            var monthlyRent = contractsActiveAtDate.Sum(c => c.MonthlyRent);
+
+            // For tenants, "Status == Active" is current state. Historical state is hard.
+            // Using "EntryDate <= date" gives us total tenants. "Active" is hard.
+            // Assuming most tenants stay active, or using EntryDate <= date as proxy for "Total Tenants at date".
+            // Let's use (EntryDate <= date) as "Total Tenants".
+            // If we strictly want "ActiveTenants", we'd need history.
+            // Let's assume (EntryDate <= date) * (Current Active Rate)? No.
+            // Let's use `tenants.Count(t => (t.EntryDate ?? t.CreatedAt) <= date)` as base for comparison?
+            // User asks for "ActiveTenantsYoY".
+            // Let's use "Total Tenants" for comparison if "Active" cannot be determined historically.
+            // Actually, comparing Total Tenants (Stock) is safer.
+            // But let's try to query contracts to see who was active.
+            // Construct set of TenantIds from active contracts at that date.
+            var tenantIdsWithActiveContracts = contractsActiveAtDate.Select(c => c.TenantId).Distinct().ToList();
+            var activeTenantsCount = tenants.Count(t => tenantIdsWithActiveContracts.Contains(t.Id));
+
+            return (activeTenantsCount, monthlyRent);
+        }
+
+        var (currentActiveTenants, currentMonthlyRent) = (activeContracts.Count > 0 ? activeContracts.Select(c => c.TenantId).Distinct().Count() : 0, activeContracts.Sum(c => c.MonthlyRent));
+        // Better to use the helper ensuring consistency
+        var (calcActiveTenants, calcMonthlyRent) = CalculateMetricsAtDate(end);
+
+        // Re-aligning with current logic:
+        // Current logic uses `allTenantsAtEnd.Count(t => t.Status == "Active")` which relies on CURRENT status.
+        // This is incorrect for historical.
+        // So the Helper approach using Contracts to determine "Active" at that time is BETTER.
+        // It's more accurate than using current status flag.
+
+        var momDate = end.AddMonths(-1);
+        var (momActiveTenants, momMonthlyRent) = CalculateMetricsAtDate(momDate);
+
+        var yoyDate = end.AddYears(-1);
+        var (yoyActiveTenants, yoyMonthlyRent) = CalculateMetricsAtDate(yoyDate);
+
+        double? CalculateGrowth(decimal current, decimal previous)
+        {
+            if (previous == 0) return current > 0 ? 100 : 0;
+            return (double)Math.Round((current - previous) / previous * 100, 2);
+        }
+
         return new TenantStatisticsResponse
         {
-            TotalTenants = newTenantsInPeriod.Count,
-            ActiveTenants = newTenantsInPeriod.Count(t => t.Status == "Active"),
-            TotalContracts = newContractsInPeriod.Count,
+            TotalTenants = allTenantsAtEnd.Count,
+            ActiveTenants = calcActiveTenants, // use calculated value based on contracts for consistency with YoY
+            TotalContracts = contracts.Count(c => c.StartDate <= end),
             ActiveContracts = activeContracts.Count,
             ExpiringContracts = expiringContracts,
-            TotalMonthlyRent = activeContracts.Sum(c => c.MonthlyRent),
-            TenantsByIndustry = newTenantsInPeriod
+            TotalMonthlyRent = calcMonthlyRent, // use calculated value
+            TenantsByIndustry = allTenantsAtEnd
                 .Where(t => !string.IsNullOrEmpty(t.Industry))
                 .GroupBy(t => t.Industry!)
                 .ToDictionary(g => g.Key, g => g.Count()),
-            MonthlyRentYoY = (double?)12.8m, // Mock data
-            MonthlyRentMoM = (double?)3.5m, // Mock data
-            ActiveTenantsYoY = (double?)8.0m, // Mock data
-            ActiveTenantsMoM = (double?)2.0m // Mock data
+            MonthlyRentYoY = CalculateGrowth(calcMonthlyRent, yoyMonthlyRent),
+            MonthlyRentMoM = CalculateGrowth(calcMonthlyRent, momMonthlyRent),
+            ActiveTenantsYoY = CalculateGrowth((decimal)calcActiveTenants, (decimal)yoyActiveTenants),
+            ActiveTenantsMoM = CalculateGrowth((decimal)calcActiveTenants, (decimal)momActiveTenants)
         };
     }
 

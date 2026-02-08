@@ -2032,5 +2032,8 @@ export default {
   'pages.park.statistics.year': '年',
   'pages.park.statistics.yoy': '同比',
   'pages.park.statistics.mom': '环比',
+  'pages.park.statistics.aiReport': 'AI 分析报告',
+  'pages.park.statistics.aiReportTitle': 'AI 运营分析报告',
+  'pages.park.statistics.generatingReport': '正在生成报告，可能需要几十秒...',
 };
 

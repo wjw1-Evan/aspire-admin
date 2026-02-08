@@ -46,6 +46,13 @@ export async function getServiceStatistics(period?: StatisticsPeriod, startDate?
     });
 }
 
+export async function generateAiReport(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+    return request<ApiResponse<string>>('/api/park/statistics/ai-report', {
+        method: 'GET',
+        params: { period, startDate, endDate },
+    });
+}
+
 // ===== 资产管理 API =====
 
 export interface Building {

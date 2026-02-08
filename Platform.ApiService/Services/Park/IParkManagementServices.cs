@@ -260,3 +260,14 @@ public interface IParkEnterpriseServiceService
     /// </summary>
     Task<ServiceStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
 }
+
+/// <summary>
+/// 园区统计报表服务接口
+/// </summary>
+public interface IParkStatisticsService
+{
+    /// <summary>
+    /// 生成 AI 统计报告
+    /// </summary>
+    Task<string> GenerateAiReportAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
+}

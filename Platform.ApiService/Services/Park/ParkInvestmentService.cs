@@ -352,23 +352,60 @@ public class ParkInvestmentService : IParkInvestmentService
         var leadsInPeriod = leads.Where(l => l.CreatedAt >= start && l.CreatedAt <= end).ToList();
         var projectsInPeriod = projects.Where(p => p.CreatedAt >= start && p.CreatedAt <= end).ToList();
 
+        // Stock metrics (State at 'end' date)
+        var totalLeadsAtEnd = leads.Count(l => l.CreatedAt <= end);
+        var totalProjectsAtEnd = projects.Count(p => p.CreatedAt <= end);
+        var qualifiedLeads = leads.Count(l => l.CreatedAt <= end && l.Status == "Qualified");
+        var signedProjectsTotal = projects.Count(p => p.CreatedAt <= end && p.Stage == "Completed");
+
+        // Flow metrics (Activity during period)
         var newLeadsInPeriod = leadsInPeriod.Count;
-        var signedProjects = projectsInPeriod.Count(p => p.Stage == "Completed");
+        var signedProjectsInPeriod = projects.Count(p => p.Stage == "Completed" && p.ExpectedSignDate >= start && p.ExpectedSignDate <= end); // Using ExpectedSignDate as proxy for SignDate
+
+        // Helper to calculate flow metrics in a specific period
+        (int NewLeads, int SignedProjects) CalculateFlowMetrics(DateTime pStart, DateTime pEnd)
+        {
+            var newLeads = leads.Count(l => l.CreatedAt >= pStart && l.CreatedAt <= pEnd);
+            var signedProjects = projects.Count(p => p.Stage == "Completed" && p.ExpectedSignDate >= pStart && p.ExpectedSignDate <= pEnd); // Using ExpectedSignDate as proxy
+            return (newLeads, signedProjects);
+        }
+
+        var (currentNewLeads, currentSignedProjects) = (newLeadsInPeriod, signedProjectsInPeriod);
+
+        // Conversion Rate: Total Qualified / Total Leads (Cumulative effectiveness)
+        var conversionRate = totalLeadsAtEnd > 0 ? Math.Round((decimal)qualifiedLeads / totalLeadsAtEnd * 100, 2) : 0;
+
+        // MoM Comparison (Previous Period - shift by 1 stats period unit if standard, or same duration)
+        // Assuming -1 Month for simplicity as per previous logic
+        var momStart = start.AddMonths(-1);
+        var momEnd = end.AddMonths(-1);
+        var (momNewLeads, momSignedProjects) = CalculateFlowMetrics(momStart, momEnd);
+
+        // YoY Comparison (Same period last year)
+        var yoyStart = start.AddYears(-1);
+        var yoyEnd = end.AddYears(-1);
+        var (yoyNewLeads, yoySignedProjects) = CalculateFlowMetrics(yoyStart, yoyEnd);
+
+        double? CalculateGrowth(decimal current, decimal previous)
+        {
+            if (previous == 0) return current > 0 ? 100 : 0;
+            return (double)Math.Round((current - previous) / previous * 100, 2);
+        }
 
         return new InvestmentStatisticsResponse
         {
-            TotalLeads = leadsInPeriod.Count,
+            TotalLeads = totalLeadsAtEnd,
             NewLeadsThisMonth = newLeadsInPeriod,
-            TotalProjects = projectsInPeriod.Count,
-            ProjectsInNegotiation = projectsInPeriod.Count(p => p.Stage == "Negotiation"),
-            SignedProjects = signedProjects,
-            ConversionRate = leadsInPeriod.Count > 0 ? Math.Round((decimal)signedProjects / leadsInPeriod.Count * 100, 2) : 0,
-            LeadsByStatus = leadsInPeriod.GroupBy(l => l.Status).ToDictionary(g => g.Key, g => g.Count()),
-            ProjectsByStage = projectsInPeriod.GroupBy(p => p.Stage).ToDictionary(g => g.Key, g => g.Count()),
-            NewLeadsYoY = (double?)15.5m, // Mock data
-            NewLeadsMoM = (double?)8.2m, // Mock data
-            SignedProjectsYoY = (double?)10.0m, // Mock data
-            SignedProjectsMoM = (double?)5.0m // Mock data
+            TotalProjects = totalProjectsAtEnd,
+            ProjectsInNegotiation = projects.Count(p => p.Stage == "Negotiation" && p.CreatedAt <= end),
+            SignedProjects = signedProjectsTotal,
+            ConversionRate = conversionRate,
+            LeadsByStatus = leads.Where(l => l.CreatedAt <= end).GroupBy(l => l.Status).ToDictionary(g => g.Key, g => g.Count()),
+            ProjectsByStage = projects.Where(p => p.CreatedAt <= end).GroupBy(p => p.Stage).ToDictionary(g => g.Key, g => g.Count()),
+            NewLeadsYoY = CalculateGrowth(currentNewLeads, yoyNewLeads),
+            NewLeadsMoM = CalculateGrowth(currentNewLeads, momNewLeads),
+            SignedProjectsYoY = CalculateGrowth(currentSignedProjects, yoySignedProjects),
+            SignedProjectsMoM = CalculateGrowth(currentSignedProjects, momSignedProjects)
         };
     }
 

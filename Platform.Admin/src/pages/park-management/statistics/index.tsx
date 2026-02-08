@@ -1,8 +1,9 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Table, Radio, DatePicker } from 'antd';
+import { Card, Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Table, Radio, DatePicker, Modal } from 'antd';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
+import { marked } from 'marked';
 import {
     BankOutlined,
     TeamOutlined,
@@ -19,6 +20,7 @@ import {
     ClockCircleOutlined,
     SyncOutlined,
     WarningOutlined,
+    RobotOutlined,
 } from '@ant-design/icons';
 import PageContainer from '@/components/PageContainer';
 import * as parkService from '@/services/park';
@@ -52,6 +54,44 @@ const StatisticsPage: React.FC = () => {
         tenant: null,
         service: null,
     });
+
+    const [aiReportVisible, setAiReportVisible] = useState(false);
+    const [aiReportLoading, setAiReportLoading] = useState(false);
+    const [aiReportContent, setAiReportContent] = useState('');
+
+    const handleGenerateAiReport = async () => {
+        setAiReportLoading(true);
+        setAiReportVisible(true);
+        setAiReportContent(''); // Clear previous content
+
+        try {
+            let startDate: string | undefined;
+            let endDate: string | undefined;
+
+            if (period === StatisticsPeriod.Custom && dateRange) {
+                startDate = dateRange[0].startOf('day').toISOString();
+                endDate = dateRange[1].endOf('day').toISOString();
+            }
+
+            const res = await parkService.generateAiReport(period, startDate, endDate);
+            if (res.success && res.data) {
+                try {
+                    const html = await marked.parse(res.data);
+                    setAiReportContent(html);
+                } catch (parseError) {
+                    console.error('Markdown parse error:', parseError);
+                    setAiReportContent(res.data);
+                }
+            } else {
+                setAiReportContent('生成报告失败，请稍后重试。');
+            }
+        } catch (error) {
+            console.error('Failed to generate AI report:', error);
+            setAiReportContent('生成报告失败，请稍后重试。');
+        } finally {
+            setAiReportLoading(false);
+        }
+    };
 
     // 加载所有统计数据
     const loadAllStatistics = useCallback(async () => {
@@ -906,6 +946,9 @@ const StatisticsPage: React.FC = () => {
                             }
                         }}
                     />
+                    <Button icon={<RobotOutlined />} onClick={handleGenerateAiReport} type="primary" style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>
+                        {intl.formatMessage({ id: 'pages.park.statistics.aiReport', defaultMessage: 'AI 分析报告' })}
+                    </Button>
                     <Button icon={<ReloadOutlined />} onClick={loadAllStatistics} type="primary" ghost>
                         {intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}
                     </Button>
@@ -923,6 +966,27 @@ const StatisticsPage: React.FC = () => {
                     />
                 </Spin>
             </div>
+
+            <Modal
+                title={
+                    <Space>
+                        <RobotOutlined style={{ color: '#722ed1' }} />
+                        {intl.formatMessage({ id: 'pages.park.statistics.aiReportTitle', defaultMessage: 'AI 运营分析报告' })}
+                    </Space>
+                }
+                open={aiReportVisible}
+                onCancel={() => setAiReportVisible(false)}
+                footer={null}
+                width={900}
+                styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}
+            >
+                <Spin spinning={aiReportLoading} tip={intl.formatMessage({ id: 'pages.park.statistics.generatingReport', defaultMessage: '正在生成报告，可能需要几十秒...' })}>
+                    <div
+                        dangerouslySetInnerHTML={{ __html: aiReportContent }}
+                        style={{ fontSize: 15, lineHeight: 1.8 }}
+                    />
+                </Spin>
+            </Modal>
         </PageContainer>
     );
 };

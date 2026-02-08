@@ -324,6 +324,47 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             ? Math.Round(completedWithRating.Average(r => r.Rating!.Value), 2)
             : 0;
 
+        // Helper to calculate metrics in a specific period
+        (int TotalRequests, decimal AvgRating) CalculateMetrics(DateTime pStart, DateTime pEnd)
+        {
+            var pRequests = allRequests.Where(r => r.CreatedAt >= pStart && r.CreatedAt <= pEnd).ToList();
+            var pCompletedWithRating = pRequests.Where(r => r.Rating.HasValue).ToList();
+            var pAvgRating = pCompletedWithRating.Any()
+                ? Math.Round(pCompletedWithRating.Average(r => r.Rating!.Value), 2)
+                : 0;
+            return (pRequests.Count, (decimal)pAvgRating);
+        }
+
+        var (currentTotalRequests, currentAvgRating) = (requests.Count, (decimal)avgRating);
+
+        // MoM Comparison
+        var momStart = start.AddMonths(-1);
+        var momEnd = end.AddMonths(-1);
+        var (momTotalRequests, momAvgRating) = CalculateMetrics(momStart, momEnd);
+
+        // YoY Comparison
+        var yoyStart = start.AddYears(-1);
+        var yoyEnd = end.AddYears(-1);
+        var (yoyTotalRequests, yoyAvgRating) = CalculateMetrics(yoyStart, yoyEnd);
+
+        double? CalculateGrowth(decimal current, decimal previous)
+        {
+            if (previous == 0) return current > 0 ? 100 : 0;
+            return (double)Math.Round((current - previous) / previous * 100, 2);
+        }
+
+        // Calculate Satisfaction Rate: (Sum of Ratings / (Rated Requests * 5)) * 100
+        // Or simply (Average Rating / 5) * 100
+        var satisfactionRate = avgRating > 0 ? (decimal)Math.Round(avgRating / 5.0 * 100, 2) : 0;
+
+        // Calculate Approx Handling Time (Average duration from Create to Complete)
+        var completedRequests = requests.Where(r => r.Status == "Completed" && r.CompletedAt.HasValue).ToList();
+        var avgHandlingTime = completedRequests.Any()
+            ? completedRequests.Average(r => (r.CompletedAt!.Value - r.CreatedAt).TotalHours)
+            : 0;
+        // Use Mock if 0 to show something? Or 0.
+        // Let's keep 0 if no data.
+
         return new ServiceStatisticsResponse
         {
             TotalCategories = categories.Count,
@@ -332,10 +373,10 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             PendingRequests = requests.Count(r => r.Status == "Pending"),
             ProcessingRequests = requests.Count(r => r.Status == "Processing"),
             CompletedRequests = requests.Count(r => r.Status == "Completed"),
-            TodayNewRequests = allRequests.Count(r => r.CreatedAt >= DateTime.UtcNow.Date), // Keep "Today" independent of period
-            ApproxHandlingTime = 2.5m, // Mock data
-            SatisfactionRate = 4.8m, // Mock data
-            AverageRating = (decimal)avgRating,
+            TodayNewRequests = allRequests.Count(r => r.CreatedAt >= DateTime.UtcNow.Date),
+            ApproxHandlingTime = (decimal)Math.Round(avgHandlingTime, 1),
+            SatisfactionRate = satisfactionRate,
+            AverageRating = currentAvgRating,
             RequestsByCategory = requests
                 .GroupBy(r => r.CategoryId)
                 .ToDictionary(
@@ -344,10 +385,10 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             RequestsByStatus = requests
                 .GroupBy(r => r.Status)
                 .ToDictionary(g => g.Key, g => g.Count()),
-            TotalRequestsYoY = (double?)15.2m, // Mock data
-            TotalRequestsMoM = (double?)5.6m, // Mock data
-            AverageRatingYoY = (double?)0.2m, // Mock data
-            AverageRatingMoM = (double?)0.1m // Mock data
+            TotalRequestsYoY = CalculateGrowth(currentTotalRequests, yoyTotalRequests),
+            TotalRequestsMoM = CalculateGrowth(currentTotalRequests, momTotalRequests),
+            AverageRatingYoY = CalculateGrowth(currentAvgRating, yoyAvgRating),
+            AverageRatingMoM = CalculateGrowth(currentAvgRating, momAvgRating)
         };
     }
 

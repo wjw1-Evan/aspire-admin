@@ -222,6 +222,9 @@ public class ParkTenantService : IParkTenantService
         return new LeaseContractListResponse { Contracts = contracts, Total = (int)total };
     }
 
+    /// <summary>
+    /// 获取合同详情
+    /// </summary>
     public async Task<LeaseContractDto?> GetContractByIdAsync(string id)
     {
         var contract = await _contractFactory.GetByIdAsync(id);
@@ -283,6 +286,9 @@ public class ParkTenantService : IParkTenantService
         return await MapToContractDtoAsync(contract);
     }
 
+    /// <summary>
+    /// 更新合同
+    /// </summary>
     public async Task<LeaseContractDto?> UpdateContractAsync(string id, CreateLeaseContractRequest request)
     {
         var contract = await _contractFactory.GetByIdAsync(id);
@@ -304,6 +310,9 @@ public class ParkTenantService : IParkTenantService
         return await MapToContractDtoAsync(contract);
     }
 
+    /// <summary>
+    /// 删除合同
+    /// </summary>
     public async Task<bool> DeleteContractAsync(string id)
     {
         var contract = await _contractFactory.GetByIdAsync(id);
@@ -316,6 +325,9 @@ public class ParkTenantService : IParkTenantService
         return result != null;
     }
 
+    /// <summary>
+    /// 续签合同
+    /// </summary>
     public async Task<LeaseContractDto?> RenewContractAsync(string id, CreateLeaseContractRequest request)
     {
         var oldContract = await _contractFactory.GetByIdAsync(id);
@@ -360,24 +372,71 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取租户统计数据
     /// </summary>
-    public async Task<TenantStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month)
+    public async Task<TenantStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
     {
         var tenants = await _tenantFactory.FindAsync();
         var contracts = await _contractFactory.FindAsync();
 
-        var activeContracts = contracts.Where(c => c.Status == "Active").ToList();
-        var expiringThreshold = DateTime.UtcNow.AddDays(30);
-        var expiringContracts = activeContracts.Count(c => c.EndDate <= expiringThreshold);
+        DateTime end = endDate ?? DateTime.UtcNow;
+        DateTime start;
+
+        if (period == StatisticsPeriod.Custom && startDate.HasValue)
+        {
+            start = startDate.Value;
+        }
+        else
+        {
+            start = period switch
+            {
+                StatisticsPeriod.Day => DateTime.UtcNow.Date,
+                StatisticsPeriod.Week => DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek),
+                StatisticsPeriod.Month => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1),
+                StatisticsPeriod.Year => new DateTime(DateTime.UtcNow.Year, 1, 1),
+                _ => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1)
+            };
+        }
+
+        // Get contracts active during the period
+        var activeContracts = contracts.Where(c => c.Status == "Active" || (c.StartDate <= end && c.EndDate >= start)).ToList();
+
+        // Use a 30 day window from the *end* of the period or just stick to "expiring soon from now"?
+        // Usually "Expiring Soon" is relative to "Now" for alerts. But for reports, maybe "Expired in this period"?
+        // Let's stick to "Expiring within 30 days from NOW" as it's an alert metric usually.
+        // Or if start/end is provided, maybe "Expiring in this period"?
+        // Let's keep existing logic for ExpiringContracts relative to NOW, but filter ActiveContracts based on period if Custom.
+
+        // Actually, let's just make it simple: filtering "active" contracts based on period intersection if Custom.
+        // If period is not Custom (current snapshot), use "Active" status.
+
+        if (period == StatisticsPeriod.Custom && startDate.HasValue)
+        {
+            activeContracts = contracts.Where(c => c.StartDate <= end && c.EndDate >= start).ToList();
+        }
+        else
+        {
+            activeContracts = contracts.Where(c => c.Status == "Active").ToList();
+        }
+
+        // Filter tenants that entered during the period
+        var newTenantsInPeriod = tenants.Where(t => t.EntryDate.HasValue && t.EntryDate.Value >= start && t.EntryDate.Value <= end).ToList();
+
+        // Total Contracts = Contracts starting in this period
+        var newContractsInPeriod = contracts.Where(c => c.StartDate >= start && c.StartDate <= end).ToList();
+
+        // Active Contracts = Contracts active during the period (Overlap) - ALREADY CALCULATED in activeContracts variable
+
+        // Expiring Contracts = Contracts ending in this period
+        var expiringContracts = contracts.Count(c => c.EndDate >= start && c.EndDate <= end);
 
         return new TenantStatisticsResponse
         {
-            TotalTenants = tenants.Count,
-            ActiveTenants = tenants.Count(t => t.Status == "Active"),
-            TotalContracts = contracts.Count,
+            TotalTenants = newTenantsInPeriod.Count,
+            ActiveTenants = newTenantsInPeriod.Count(t => t.Status == "Active"),
+            TotalContracts = newContractsInPeriod.Count,
             ActiveContracts = activeContracts.Count,
             ExpiringContracts = expiringContracts,
             TotalMonthlyRent = activeContracts.Sum(c => c.MonthlyRent),
-            TenantsByIndustry = tenants
+            TenantsByIndustry = newTenantsInPeriod
                 .Where(t => !string.IsNullOrEmpty(t.Industry))
                 .GroupBy(t => t.Industry!)
                 .ToDictionary(g => g.Key, g => g.Count()),

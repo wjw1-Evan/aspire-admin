@@ -12,6 +12,7 @@ public class ParkAssetService : IParkAssetService
     private readonly ILogger<ParkAssetService> _logger;
     private readonly IDatabaseOperationFactory<Building> _buildingFactory;
     private readonly IDatabaseOperationFactory<PropertyUnit> _unitFactory;
+    private readonly IDatabaseOperationFactory<LeaseContract> _contractFactory;
 
     /// <summary>
     /// 初始化资产管理服务
@@ -19,16 +20,21 @@ public class ParkAssetService : IParkAssetService
     public ParkAssetService(
         ILogger<ParkAssetService> logger,
         IDatabaseOperationFactory<Building> buildingFactory,
-        IDatabaseOperationFactory<PropertyUnit> unitFactory)
+        IDatabaseOperationFactory<PropertyUnit> unitFactory,
+        IDatabaseOperationFactory<LeaseContract> contractFactory)
     {
         _logger = logger;
         _buildingFactory = buildingFactory;
         _unitFactory = unitFactory;
+        _contractFactory = contractFactory;
     }
 
 
     #region 楼宇管理
 
+    /// <summary>
+    /// 获取楼宇列表
+    /// </summary>
     public async Task<BuildingListResponse> GetBuildingsAsync(BuildingListRequest request)
     {
         var filterBuilder = Builders<Building>.Filter;
@@ -182,6 +188,9 @@ public class ParkAssetService : IParkAssetService
 
     #region 房源管理
 
+    /// <summary>
+    /// 获取房源列表
+    /// </summary>
     public async Task<PropertyUnitListResponse> GetPropertyUnitsAsync(PropertyUnitListRequest request)
     {
         var filterBuilder = Builders<PropertyUnit>.Filter;
@@ -335,22 +344,52 @@ public class ParkAssetService : IParkAssetService
     /// <summary>
     /// 获取资产统计数据
     /// </summary>
-    public async Task<AssetStatisticsResponse> GetAssetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month)
+    public async Task<AssetStatisticsResponse> GetAssetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
     {
         var buildings = await _buildingFactory.FindAsync();
         var units = await _unitFactory.FindAsync();
+        var contracts = await _contractFactory.FindAsync();
+
+        DateTime start;
+        DateTime end = endDate ?? DateTime.UtcNow;
+
+        if (period == StatisticsPeriod.Custom && startDate.HasValue)
+        {
+            start = startDate.Value;
+        }
+        else
+        {
+            start = period switch
+            {
+                StatisticsPeriod.Day => DateTime.UtcNow.Date,
+                StatisticsPeriod.Week => DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek),
+                StatisticsPeriod.Month => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1),
+                StatisticsPeriod.Year => new DateTime(DateTime.UtcNow.Year, 1, 1),
+                _ => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1)
+            };
+        }
 
         var totalRentableArea = buildings.Sum(b => b.RentableArea);
-        var rentedUnits = units.Where(u => u.Status == "Rented").ToList();
+
+        // Find units that were rented during the period
+        // A unit is considered rented if it has a contract that overlaps with the period
+        var rentedUnitIds = contracts
+            .Where(c => (c.Status == "Active" || c.Status == "Renewed" || c.Status == "Expired" || c.Status == "Terminated") 
+                        && c.StartDate <= end 
+                        && c.EndDate >= start)
+            .SelectMany(c => c.UnitIds)
+            .Distinct()
+            .ToList();
+
+        var rentedUnits = units.Where(u => rentedUnitIds.Contains(u.Id)).ToList();
         var rentedArea = rentedUnits.Sum(u => u.Area);
 
-        // TODO: Implement actual YoY/MoM calculation based on period
         return new AssetStatisticsResponse
         {
             TotalBuildings = buildings.Count,
             TotalArea = buildings.Sum(b => b.TotalArea),
             TotalUnits = units.Count,
-            AvailableUnits = units.Count(u => u.Status == "Available"),
+            AvailableUnits = units.Count - rentedUnits.Count,
             RentedUnits = rentedUnits.Count,
             OccupancyRate = totalRentableArea > 0 ? (decimal)Math.Round((double)(rentedArea / totalRentableArea * 100), 2) : 0,
             TotalRentableArea = totalRentableArea,

@@ -234,12 +234,14 @@ public class ParkAssetController : ControllerBase
     /// 获取资产统计
     /// </summary>
     /// <param name="period">统计周期</param>
+    /// <param name="startDate">开始日期（自定义周期时必填）</param>
+    /// <param name="endDate">结束日期（自定义周期时必填）</param>
     [HttpGet("asset/statistics")]
-    public async Task<ActionResult<ApiResponse<AssetStatisticsResponse>>> GetAssetStatistics([FromQuery] StatisticsPeriod period = StatisticsPeriod.Month)
+    public async Task<ActionResult<ApiResponse<AssetStatisticsResponse>>> GetAssetStatistics([FromQuery] StatisticsPeriod period = StatisticsPeriod.Month, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
     {
         try
         {
-            var result = await _assetService.GetAssetStatisticsAsync(period);
+            var result = await _assetService.GetAssetStatisticsAsync(period, startDate, endDate);
             return Ok(ApiResponse<AssetStatisticsResponse>.SuccessResult(result));
         }
         catch (Exception ex)

@@ -5,6 +5,9 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
+/// <summary>
+/// 统计周期
+/// </summary>
 public enum StatisticsPeriod
 {
     /// <summary>天</summary>
@@ -14,7 +17,9 @@ public enum StatisticsPeriod
     /// <summary>月</summary>
     Month,
     /// <summary>年</summary>
-    Year
+    Year,
+    /// <summary>自定义</summary>
+    Custom
 }
 
 #region 资产管理模型 (Asset Management)
@@ -627,124 +632,300 @@ public class ServiceRequest : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
 
 // ===== 资产管理 DTOs =====
 
+/// <summary>
+/// 楼宇列表请求参数
+/// </summary>
 public class BuildingListRequest
 {
+    /// <summary>页码</summary>
     public int Page { get; set; } = 1;
+
+    /// <summary>每页大小</summary>
     public int PageSize { get; set; } = 10;
+
+    /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
+
+    /// <summary>状态</summary>
     public string? Status { get; set; }
+
+    /// <summary>楼宇类型</summary>
     public string? BuildingType { get; set; }
+
+    /// <summary>排序字段</summary>
     public string? SortBy { get; set; }
+
+    /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
 }
 
+/// <summary>
+/// 楼宇列表响应
+/// </summary>
 public class BuildingListResponse
 {
+    /// <summary>楼宇列表</summary>
     public List<BuildingDto> Buildings { get; set; } = new();
+
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 楼宇数据传输对象
+/// </summary>
 public class BuildingDto
 {
+    /// <summary>楼宇ID</summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>楼宇名称</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>地址</summary>
     public string? Address { get; set; }
+
+    /// <summary>总层数</summary>
     public int TotalFloors { get; set; }
+
+    /// <summary>总面积</summary>
     public decimal TotalArea { get; set; }
+
+    /// <summary>可租赁面积</summary>
     public decimal RentableArea { get; set; }
+
+    /// <summary>已出租面积</summary>
     public decimal RentedArea { get; set; }
+
+    /// <summary>出租率</summary>
     public decimal OccupancyRate { get; set; }
+
+    /// <summary>楼宇类型</summary>
     public string? BuildingType { get; set; }
+
+    /// <summary>建成年份</summary>
     public int YearBuilt { get; set; }
+
+    /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>描述</summary>
     public string? Description { get; set; }
+
+    /// <summary>封面图片</summary>
     public string? CoverImage { get; set; }
+
+    /// <summary>总单元数</summary>
     public int TotalUnits { get; set; }
+
+    /// <summary>可用单元数</summary>
     public int AvailableUnits { get; set; }
+
+    /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>
+/// 创建楼宇请求
+/// </summary>
 public class CreateBuildingRequest
 {
+    /// <summary>楼宇名称</summary>
     [Required]
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>地址</summary>
     public string? Address { get; set; }
+
+    /// <summary>总层数</summary>
     public int TotalFloors { get; set; }
+
+    /// <summary>总面积</summary>
     public decimal TotalArea { get; set; }
+
+    /// <summary>可租赁面积</summary>
     public decimal RentableArea { get; set; }
+
+    /// <summary>楼宇类型</summary>
     public string? BuildingType { get; set; }
+
+    /// <summary>建成年份</summary>
     public int YearBuilt { get; set; }
+
+    /// <summary>描述</summary>
     public string? Description { get; set; }
+
+    /// <summary>封面图片</summary>
     public string? CoverImage { get; set; }
+
+    /// <summary>图片列表</summary>
     public List<string>? Images { get; set; }
 }
 
+/// <summary>
+/// 更新楼宇请求
+/// </summary>
 public class UpdateBuildingRequest : CreateBuildingRequest
 {
+    /// <summary>状态</summary>
     public string? Status { get; set; }
 }
 
+/// <summary>
+/// 房源列表请求参数
+/// </summary>
 public class PropertyUnitListRequest
 {
+    /// <summary>页码</summary>
     public int Page { get; set; } = 1;
+
+    /// <summary>每页大小</summary>
     public int PageSize { get; set; } = 10;
+
+    /// <summary>楼宇ID</summary>
     public string? BuildingId { get; set; }
+
+    /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
+
+    /// <summary>状态</summary>
     public string? Status { get; set; }
+
+    /// <summary>单元类型</summary>
     public string? UnitType { get; set; }
+
+    /// <summary>楼层</summary>
     public int? Floor { get; set; }
+
+    /// <summary>排序字段</summary>
     public string? SortBy { get; set; }
+
+    /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
 }
 
+/// <summary>
+/// 房源列表响应
+/// </summary>
 public class PropertyUnitListResponse
 {
+    /// <summary>房源列表</summary>
     public List<PropertyUnitDto> Units { get; set; } = new();
+
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 房源数据传输对象
+/// </summary>
 public class PropertyUnitDto
 {
+    /// <summary>房源ID</summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>楼宇ID</summary>
     public string BuildingId { get; set; } = string.Empty;
+
+    /// <summary>楼宇名称</summary>
     public string? BuildingName { get; set; }
+
+    /// <summary>房号</summary>
     public string UnitNumber { get; set; } = string.Empty;
+
+    /// <summary>楼层</summary>
     public int Floor { get; set; }
+
+    /// <summary>面积</summary>
     public decimal Area { get; set; }
+
+    /// <summary>月租金</summary>
     public decimal MonthlyRent { get; set; }
+
+    /// <summary>日租金</summary>
     public decimal? DailyRent { get; set; }
+
+    /// <summary>单元类型</summary>
     public string UnitType { get; set; } = string.Empty;
+
+    /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>当前租户ID</summary>
     public string? CurrentTenantId { get; set; }
+
+    /// <summary>当前租户名称</summary>
     public string? CurrentTenantName { get; set; }
+
+    /// <summary>租约到期日</summary>
     public DateTime? LeaseEndDate { get; set; }
+
+    /// <summary>设施列表</summary>
     public List<string>? Facilities { get; set; }
 }
 
+/// <summary>
+/// 创建房源请求
+/// </summary>
 public class CreatePropertyUnitRequest
 {
+    /// <summary>楼宇ID</summary>
     [Required]
     public string BuildingId { get; set; } = string.Empty;
+
+    /// <summary>房号</summary>
     [Required]
     public string UnitNumber { get; set; } = string.Empty;
+
+    /// <summary>楼层</summary>
     public int Floor { get; set; }
+
+    /// <summary>面积</summary>
     public decimal Area { get; set; }
+
+    /// <summary>月租金</summary>
     public decimal MonthlyRent { get; set; }
+
+    /// <summary>日租金</summary>
     public decimal? DailyRent { get; set; }
+
+    /// <summary>单元类型</summary>
     public string? UnitType { get; set; }
+
+    /// <summary>描述</summary>
     public string? Description { get; set; }
+
+    /// <summary>设施列表</summary>
     public List<string>? Facilities { get; set; }
+
+    /// <summary>图片列表</summary>
     public List<string>? Images { get; set; }
 }
 
+/// <summary>
+/// 资产统计响应
+/// </summary>
 public class AssetStatisticsResponse
 {
+    /// <summary>楼宇总数</summary>
     public int TotalBuildings { get; set; }
+
+    /// <summary>总面积</summary>
     public decimal TotalArea { get; set; }
+
+    /// <summary>总单元数</summary>
     public int TotalUnits { get; set; }
+
+    /// <summary>可用单元数</summary>
     public int AvailableUnits { get; set; }
+
+    /// <summary>已租单元数</summary>
     public int RentedUnits { get; set; }
+
+    /// <summary>出租率</summary>
     public decimal OccupancyRate { get; set; }
+
+    /// <summary>总可租面积</summary>
     public decimal TotalRentableArea { get; set; }
     /// <summary>出租面积</summary>
     public decimal RentedArea { get; set; }
@@ -762,123 +943,305 @@ public class AssetStatisticsResponse
 
 // ===== 招商管理 DTOs =====
 
+/// <summary>
+/// 招商线索列表请求参数
+/// </summary>
 public class InvestmentLeadListRequest
 {
+    /// <summary>页码</summary>
     public int Page { get; set; } = 1;
+
+    /// <summary>每页大小</summary>
     public int PageSize { get; set; } = 10;
+
+    /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
+
+    /// <summary>状态</summary>
     public string? Status { get; set; }
+
+    /// <summary>来源</summary>
     public string? Source { get; set; }
+
+    /// <summary>优先级</summary>
     public string? Priority { get; set; }
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
+
+    /// <summary>排序字段</summary>
     public string? SortBy { get; set; }
+
+    /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
 }
 
+/// <summary>
+/// 招商线索列表响应
+/// </summary>
 public class InvestmentLeadListResponse
 {
+    /// <summary>线索列表</summary>
     public List<InvestmentLeadDto> Leads { get; set; } = new();
+
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 招商线索数据传输对象
+/// </summary>
 public class InvestmentLeadDto
 {
+    /// <summary>线索ID</summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>企业名称</summary>
     public string CompanyName { get; set; } = string.Empty;
+
+    /// <summary>联系人</summary>
     public string? ContactPerson { get; set; }
+
+    /// <summary>联系电话</summary>
     public string? Phone { get; set; }
+
+    /// <summary>邮箱</summary>
     public string? Email { get; set; }
+
+    /// <summary>行业</summary>
     public string? Industry { get; set; }
+
+    /// <summary>来源</summary>
     public string Source { get; set; } = string.Empty;
+
+    /// <summary>意向面积</summary>
     public decimal? IntendedArea { get; set; }
+
+    /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>优先级</summary>
     public string Priority { get; set; } = string.Empty;
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
+
+    /// <summary>分配给（名称）</summary>
     public string? AssignedToName { get; set; }
+
+    /// <summary>下次跟进日期</summary>
     public DateTime? NextFollowUpDate { get; set; }
+
+    /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>
+/// 创建招商线索请求
+/// </summary>
 public class CreateInvestmentLeadRequest
 {
+    /// <summary>企业名称</summary>
     [Required]
     public string CompanyName { get; set; } = string.Empty;
+
+    /// <summary>联系人</summary>
     public string? ContactPerson { get; set; }
+
+    /// <summary>联系电话</summary>
     public string? Phone { get; set; }
+
+    /// <summary>邮箱</summary>
     public string? Email { get; set; }
+
+    /// <summary>行业</summary>
     public string? Industry { get; set; }
+
+    /// <summary>来源</summary>
     public string? Source { get; set; }
+
+    /// <summary>意向面积</summary>
     public decimal? IntendedArea { get; set; }
+
+    /// <summary>预算</summary>
     public decimal? Budget { get; set; }
+
+    /// <summary>优先级</summary>
     public string? Priority { get; set; }
+
+    /// <summary>需求描述</summary>
     public string? Requirements { get; set; }
+
+    /// <summary>备注</summary>
     public string? Notes { get; set; }
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
+
+    /// <summary>下次跟进日期</summary>
     public DateTime? NextFollowUpDate { get; set; }
 }
 
+/// <summary>
+/// 招商项目列表请求参数
+/// </summary>
 public class InvestmentProjectListRequest
 {
+    /// <summary>页码</summary>
     public int Page { get; set; } = 1;
+
+    /// <summary>每页大小</summary>
     public int PageSize { get; set; } = 10;
+
+    /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
+
+    /// <summary>项目阶段</summary>
     public string? Stage { get; set; }
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
+
+    /// <summary>排序字段</summary>
     public string? SortBy { get; set; }
+
+    /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
 }
 
+/// <summary>
+/// 招商项目列表响应
+/// </summary>
 public class InvestmentProjectListResponse
 {
+    /// <summary>项目列表</summary>
     public List<InvestmentProjectDto> Projects { get; set; } = new();
+
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 招商项目数据传输对象
+/// </summary>
 public class InvestmentProjectDto
 {
+    /// <summary>项目ID</summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>线索ID</summary>
     public string? LeadId { get; set; }
+
+    /// <summary>项目名称</summary>
     public string ProjectName { get; set; } = string.Empty;
+
+    /// <summary>企业名称</summary>
     public string CompanyName { get; set; } = string.Empty;
+
+    /// <summary>联系人</summary>
     public string? ContactPerson { get; set; }
+
+    /// <summary>联系电话</summary>
     public string? Phone { get; set; }
+
+    /// <summary>意向面积</summary>
     public decimal? IntendedArea { get; set; }
+
+    /// <summary>提案租金</summary>
     public decimal? ProposedRent { get; set; }
+
+    /// <summary>项目阶段</summary>
     public string Stage { get; set; } = string.Empty;
+
+    /// <summary>预计签约日期</summary>
     public DateTime? ExpectedSignDate { get; set; }
+
+    /// <summary>成功概率</summary>
     public decimal? Probability { get; set; }
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
+
+    /// <summary>分配给（名称）</summary>
     public string? AssignedToName { get; set; }
+
+    /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>
+/// 创建招商项目请求
+/// </summary>
 public class CreateInvestmentProjectRequest
 {
+    /// <summary>线索ID</summary>
     public string? LeadId { get; set; }
+
+    /// <summary>项目名称</summary>
     [Required]
     public string ProjectName { get; set; } = string.Empty;
+
+    /// <summary>企业名称</summary>
     public string CompanyName { get; set; } = string.Empty;
+
+    /// <summary>联系人</summary>
     public string? ContactPerson { get; set; }
+
+    /// <summary>联系电话</summary>
     public string? Phone { get; set; }
+
+    /// <summary>意向单元ID集合</summary>
     public List<string>? IntendedUnitIds { get; set; }
+
+    /// <summary>意向面积</summary>
     public decimal? IntendedArea { get; set; }
+
+    /// <summary>提案租金</summary>
     public decimal? ProposedRent { get; set; }
+
+    /// <summary>项目阶段</summary>
     public string? Stage { get; set; }
+
+    /// <summary>预计签约日期</summary>
     public DateTime? ExpectedSignDate { get; set; }
+
+    /// <summary>成功概率</summary>
     public decimal? Probability { get; set; }
+
+    /// <summary>备注</summary>
     public string? Notes { get; set; }
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
 }
 
+/// <summary>
+/// 招商统计响应
+/// </summary>
 public class InvestmentStatisticsResponse
 {
+    /// <summary>总线索数</summary>
     public int TotalLeads { get; set; }
+
+    /// <summary>本月新增线索</summary>
     public int NewLeadsThisMonth { get; set; }
+
+    /// <summary>总项目数</summary>
     public int TotalProjects { get; set; }
+
+    /// <summary>洽谈中项目数</summary>
     public int ProjectsInNegotiation { get; set; }
+
+    /// <summary>已签约项目数</summary>
     public int SignedProjects { get; set; }
+
+    /// <summary>转化率</summary>
     public decimal ConversionRate { get; set; }
+
+    /// <summary>按状态统计线索</summary>
     public Dictionary<string, int> LeadsByStatus { get; set; } = new();
+
+    /// <summary>按阶段统计项目</summary>
     public Dictionary<string, int> ProjectsByStage { get; set; } = new();
 
     // 同比/环比
@@ -915,103 +1278,249 @@ public class ParkTenantListRequest
     public string? SortOrder { get; set; }
 }
 
+/// <summary>
+/// 租户列表响应
+/// </summary>
 public class ParkTenantListResponse
 {
+    /// <summary>租户列表</summary>
     public List<ParkTenantDto> Tenants { get; set; } = new();
+
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 租户数据传输对象
+/// </summary>
 public class ParkTenantDto
 {
+    /// <summary>租户ID</summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>租户名称</summary>
     public string TenantName { get; set; } = string.Empty;
+
+    /// <summary>联系人</summary>
     public string? ContactPerson { get; set; }
+
+    /// <summary>联系电话</summary>
     public string? Phone { get; set; }
+
+    /// <summary>邮箱</summary>
     public string? Email { get; set; }
+
+    /// <summary>行业</summary>
     public string? Industry { get; set; }
+
+    /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>入驻日期</summary>
     public DateTime? EntryDate { get; set; }
+
+    /// <summary>单元数量</summary>
     public int UnitCount { get; set; }
+
+    /// <summary>总面积</summary>
     public decimal TotalArea { get; set; }
+
+    /// <summary>活跃合同数</summary>
     public int ActiveContracts { get; set; }
+
+    /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>
+/// 创建租户请求
+/// </summary>
 public class CreateParkTenantRequest
 {
+    /// <summary>租户名称</summary>
     [Required]
     public string TenantName { get; set; } = string.Empty;
+
+    /// <summary>联系人</summary>
     public string? ContactPerson { get; set; }
+
+    /// <summary>联系电话</summary>
     public string? Phone { get; set; }
+
+    /// <summary>邮箱</summary>
     public string? Email { get; set; }
+
+    /// <summary>行业</summary>
     public string? Industry { get; set; }
+
+    /// <summary>营业执照</summary>
     public string? BusinessLicense { get; set; }
+
+    /// <summary>地址</summary>
     public string? Address { get; set; }
+
+    /// <summary>入驻日期</summary>
     public DateTime? EntryDate { get; set; }
+
+    /// <summary>备注</summary>
     public string? Notes { get; set; }
 }
 
+/// <summary>
+/// 租赁合同列表请求参数
+/// </summary>
 public class LeaseContractListRequest
 {
+    /// <summary>页码</summary>
     public int Page { get; set; } = 1;
+
+    /// <summary>每页大小</summary>
     public int PageSize { get; set; } = 10;
+
+    /// <summary>租户ID</summary>
     public string? TenantId { get; set; }
+
+    /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
+
+    /// <summary>状态</summary>
     public string? Status { get; set; }
+
+    /// <summary>是否即将到期（30天内）</summary>
     public bool? ExpiringWithin30Days { get; set; }
+
+    /// <summary>排序字段</summary>
     public string? SortBy { get; set; }
+
+    /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
 }
 
+/// <summary>
+/// 租赁合同列表响应
+/// </summary>
 public class LeaseContractListResponse
 {
+    /// <summary>合同列表</summary>
     public List<LeaseContractDto> Contracts { get; set; } = new();
+
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 租赁合同数据传输对象
+/// </summary>
 public class LeaseContractDto
 {
+    /// <summary>合同ID</summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>租户ID</summary>
     public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>租户名称</summary>
     public string? TenantName { get; set; }
+
+    /// <summary>合同编号</summary>
     public string ContractNumber { get; set; } = string.Empty;
+
+    /// <summary>单元ID列表</summary>
     public List<string> UnitIds { get; set; } = new();
+
+    /// <summary>单元编号列表</summary>
     public List<string>? UnitNumbers { get; set; }
+
+    /// <summary>开始日期</summary>
     public DateTime StartDate { get; set; }
+
+    /// <summary>结束日期</summary>
     public DateTime EndDate { get; set; }
+
+    /// <summary>月租金</summary>
     public decimal MonthlyRent { get; set; }
+
+    /// <summary>押金</summary>
     public decimal? Deposit { get; set; }
+
+    /// <summary>付款周期</summary>
     public string PaymentCycle { get; set; } = string.Empty;
+
+    /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>距离到期天数</summary>
     public int DaysUntilExpiry { get; set; }
+
+    /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>
+/// 创建租赁合同请求
+/// </summary>
 public class CreateLeaseContractRequest
 {
+    /// <summary>租户ID</summary>
     [Required]
     public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>合同编号</summary>
     [Required]
     public string ContractNumber { get; set; } = string.Empty;
+
+    /// <summary>单元ID列表</summary>
     public List<string> UnitIds { get; set; } = new();
+
+    /// <summary>开始日期</summary>
     public DateTime StartDate { get; set; }
+
+    /// <summary>结束日期</summary>
     public DateTime EndDate { get; set; }
+
+    /// <summary>月租金</summary>
     public decimal MonthlyRent { get; set; }
+
+    /// <summary>押金</summary>
     public decimal? Deposit { get; set; }
+
+    /// <summary>付款周期</summary>
     public string? PaymentCycle { get; set; }
+
+    /// <summary>付款日</summary>
     public int PaymentDay { get; set; } = 1;
+
+    /// <summary>合同条款</summary>
     public string? Terms { get; set; }
+
+    /// <summary>附件列表</summary>
     public List<string>? Attachments { get; set; }
 }
 
+/// <summary>
+/// 租户统计响应
+/// </summary>
 public class TenantStatisticsResponse
 {
+    /// <summary>总租户数</summary>
     public int TotalTenants { get; set; }
+
+    /// <summary>活跃租户数</summary>
     public int ActiveTenants { get; set; }
+
+    /// <summary>总合同数</summary>
     public int TotalContracts { get; set; }
+
+    /// <summary>活跃合同数</summary>
     public int ActiveContracts { get; set; }
+
+    /// <summary>即将到期合同数（30天内）</summary>
     public int ExpiringContracts { get; set; } // 30天内到期
+
+    /// <summary>月租金总额</summary>
     public decimal TotalMonthlyRent { get; set; }
+
+    /// <summary>按行业统计租户</summary>
     public Dictionary<string, int> TenantsByIndustry { get; set; } = new();
 
     // 同比/环比
@@ -1027,111 +1536,260 @@ public class TenantStatisticsResponse
 
 // ===== 企业服务 DTOs =====
 
+/// <summary>
+/// 服务分类列表响应
+/// </summary>
 public class ServiceCategoryListResponse
 {
+    /// <summary>分类列表</summary>
     public List<ServiceCategoryDto> Categories { get; set; } = new();
 }
 
+/// <summary>
+/// 服务分类数据传输对象
+/// </summary>
 public class ServiceCategoryDto
 {
+    /// <summary>分类ID</summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>分类名称</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>描述</summary>
     public string? Description { get; set; }
+
+    /// <summary>图标</summary>
     public string? Icon { get; set; }
+
+    /// <summary>排序</summary>
     public int SortOrder { get; set; }
+
+    /// <summary>是否启用</summary>
     public bool IsActive { get; set; }
+
+    /// <summary>请求数量</summary>
     public int RequestCount { get; set; }
 }
 
+/// <summary>
+/// 创建服务分类请求
+/// </summary>
 public class CreateServiceCategoryRequest
 {
+    /// <summary>分类名称</summary>
     [Required]
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>描述</summary>
     public string? Description { get; set; }
+
+    /// <summary>图标</summary>
     public string? Icon { get; set; }
+
+    /// <summary>排序</summary>
     public int SortOrder { get; set; }
 }
 
+/// <summary>
+/// 服务请求列表请求参数
+/// </summary>
 public class ServiceRequestListRequest
 {
+    /// <summary>页码</summary>
     public int Page { get; set; } = 1;
+
+    /// <summary>每页大小</summary>
     public int PageSize { get; set; } = 10;
+
+    /// <summary>分类ID</summary>
     public string? CategoryId { get; set; }
+
+    /// <summary>租户ID</summary>
     public string? TenantId { get; set; }
+
+    /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
+
+    /// <summary>状态</summary>
     public string? Status { get; set; }
+
+    /// <summary>优先级</summary>
     public string? Priority { get; set; }
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
+
+    /// <summary>排序字段</summary>
     public string? SortBy { get; set; }
+
+    /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
 }
 
+/// <summary>
+/// 服务请求列表响应
+/// </summary>
 public class ServiceRequestListResponse
 {
+    /// <summary>请求列表</summary>
     public List<ServiceRequestDto> Requests { get; set; } = new();
+
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 服务请求数据传输对象
+/// </summary>
 public class ServiceRequestDto
 {
+    /// <summary>请求ID</summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>分类ID</summary>
     public string CategoryId { get; set; } = string.Empty;
+
+    /// <summary>分类名称</summary>
     public string? CategoryName { get; set; }
+
+    /// <summary>租户ID</summary>
     public string? TenantId { get; set; }
+
+    /// <summary>租户名称</summary>
     public string? TenantName { get; set; }
+
+    /// <summary>标题</summary>
     public string Title { get; set; } = string.Empty;
+
+    /// <summary>描述</summary>
     public string? Description { get; set; }
+
+    /// <summary>联系人</summary>
     public string? ContactPerson { get; set; }
+
+    /// <summary>联系电话</summary>
     public string? ContactPhone { get; set; }
+
+    /// <summary>优先级</summary>
     public string Priority { get; set; } = string.Empty;
+
+    /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
+
+    /// <summary>分配给（名称）</summary>
     public string? AssignedToName { get; set; }
+
+    /// <summary>完成时间</summary>
     public DateTime? CompletedAt { get; set; }
+
     /// <summary>评分</summary>
     public int? Rating { get; set; }
+
     /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 }
 
+/// <summary>
+/// 创建服务请求请求
+/// </summary>
 public class CreateServiceRequestRequest
 {
+    /// <summary>分类ID</summary>
     [Required]
     public string CategoryId { get; set; } = string.Empty;
+
+    /// <summary>租户ID</summary>
     public string? TenantId { get; set; }
+
+    /// <summary>标题</summary>
     [Required]
     public string Title { get; set; } = string.Empty;
+
+    /// <summary>描述</summary>
     public string? Description { get; set; }
+
+    /// <summary>联系人</summary>
     public string? ContactPerson { get; set; }
+
+    /// <summary>联系电话</summary>
     public string? ContactPhone { get; set; }
+
+    /// <summary>优先级</summary>
     public string? Priority { get; set; }
+
+    /// <summary>附件列表</summary>
     public List<string>? Attachments { get; set; }
 }
 
+/// <summary>
+/// 更新服务请求状态请求
+/// </summary>
 public class UpdateServiceRequestStatusRequest
 {
+    /// <summary>状态</summary>
     [Required]
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
+
+    /// <summary>解决方案</summary>
     public string? Resolution { get; set; }
 }
 
+/// <summary>
+/// 服务统计响应
+/// </summary>
 public class ServiceStatisticsResponse
 {
+    /// <summary>总分类数</summary>
     public int TotalCategories { get; set; }
+
+    /// <summary>活跃分类数</summary>
     public int ActiveCategories { get; set; }
+
+    /// <summary>总请求数</summary>
     public int TotalRequests { get; set; }
+
+    /// <summary>待处理请求数</summary>
     public int PendingRequests { get; set; }
+
+    /// <summary>处理中请求数</summary>
     public int ProcessingRequests { get; set; }
+
+    /// <summary>已完成请求数</summary>
     public int CompletedRequests { get; set; }
+
+    /// <summary>今日新增请求数</summary>
+    public int TodayNewRequests { get; set; }
+
+    /// <summary>平均处理时间（小时）</summary>
+    public decimal ApproxHandlingTime { get; set; }
+
+    /// <summary>满意度</summary>
+    public decimal SatisfactionRate { get; set; }
+
+    /// <summary>平均评分</summary>
     public decimal AverageRating { get; set; }
+
+    /// <summary>按分类统计请求</summary>
     public Dictionary<string, int> RequestsByCategory { get; set; } = new();
+
+    /// <summary>按状态统计请求</summary>
     public Dictionary<string, int> RequestsByStatus { get; set; } = new();
 
     // 同比/环比
+    /// <summary>总请求数同比</summary>
     public double? TotalRequestsYoY { get; set; }
+    /// <summary>总请求数环比</summary>
     public double? TotalRequestsMoM { get; set; }
+    /// <summary>平均评分同比</summary>
     public double? AverageRatingYoY { get; set; }
+    /// <summary>平均评分环比</summary>
     public double? AverageRatingMoM { get; set; }
 }
 

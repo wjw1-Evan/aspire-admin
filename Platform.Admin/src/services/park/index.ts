@@ -6,6 +6,44 @@ export enum StatisticsPeriod {
     Week = 1,
     Month = 2,
     Year = 3,
+    Custom = 4,
+}
+
+// ... (rest of the file until getAssetStatistics)
+
+// Statistics
+export async function getAssetStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+    return request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', {
+        method: 'GET',
+        params: { period, startDate, endDate },
+    });
+}
+
+// ... (rest of the file until getInvestmentStatistics)
+
+export async function getInvestmentStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+    return request<ApiResponse<InvestmentStatistics>>('/api/park/investment/statistics', {
+        method: 'GET',
+        params: { period, startDate, endDate },
+    });
+}
+
+// ... (rest of the file until getTenantStatistics)
+
+export async function getTenantStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+    return request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics', {
+        method: 'GET',
+        params: { period, startDate, endDate },
+    });
+}
+
+// ... (rest of the file until getServiceStatistics)
+
+export async function getServiceStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+    return request<ApiResponse<ServiceStatistics>>('/api/park/services/statistics', {
+        method: 'GET',
+        params: { period, startDate, endDate },
+    });
 }
 
 // ===== 资产管理 API =====
@@ -125,13 +163,7 @@ export async function deletePropertyUnit(id: string) {
     return request<ApiResponse<boolean>>(`/api/park/properties/${id}`, { method: 'DELETE' });
 }
 
-// Statistics
-export async function getAssetStatistics(period?: StatisticsPeriod) {
-    return request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', {
-        method: 'GET',
-        params: { period },
-    });
-}
+
 
 // ===== 招商管理 API =====
 
@@ -249,12 +281,7 @@ export async function deleteProject(id: string) {
     return request<ApiResponse<boolean>>(`/api/park/investment/projects/${id}`, { method: 'DELETE' });
 }
 
-export async function getInvestmentStatistics(period?: StatisticsPeriod) {
-    return request<ApiResponse<InvestmentStatistics>>('/api/park/investment/statistics', {
-        method: 'GET',
-        params: { period },
-    });
-}
+
 
 // ===== 租户管理 API =====
 
@@ -373,12 +400,7 @@ export async function renewContract(id: string, data: Partial<LeaseContract>) {
     return request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}/renew`, { method: 'POST', data });
 }
 
-export async function getTenantStatistics(period?: StatisticsPeriod) {
-    return request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics', {
-        method: 'GET',
-        params: { period },
-    });
-}
+
 
 // ===== 企业服务 API =====
 
@@ -488,9 +510,4 @@ export async function rateServiceRequest(id: string, data: { rating: number; fee
     return request<ApiResponse<boolean>>(`/api/park/services/requests/${id}/rate`, { method: 'POST', data });
 }
 
-export async function getServiceStatistics(period?: StatisticsPeriod) {
-    return request<ApiResponse<ServiceStatistics>>('/api/park/services/statistics', {
-        method: 'GET',
-        params: { period },
-    });
-}
+

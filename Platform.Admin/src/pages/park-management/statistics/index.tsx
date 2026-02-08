@@ -1,6 +1,8 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Table, Radio } from 'antd';
+import { Card, Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Table, Radio, DatePicker } from 'antd';
 import { useIntl } from '@umijs/max';
+import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import {
     BankOutlined,
     TeamOutlined,
@@ -25,6 +27,7 @@ import type { AssetStatistics, InvestmentStatistics, TenantStatistics, ServiceSt
 import styles from './index.less';
 
 const { Text, Title } = Typography;
+const { RangePicker } = DatePicker;
 
 interface AllStatistics {
     asset: AssetStatistics | null;
@@ -37,7 +40,12 @@ const StatisticsPage: React.FC = () => {
     const intl = useIntl();
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<string>('overview');
-    const [period, setPeriod] = useState<StatisticsPeriod>(StatisticsPeriod.Month);
+    // Default to Custom period with current month selected
+    const [period, setPeriod] = useState<StatisticsPeriod>(StatisticsPeriod.Custom);
+    const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>([
+        dayjs().startOf('month'),
+        dayjs().endOf('month')
+    ]);
     const [statistics, setStatistics] = useState<AllStatistics>({
         asset: null,
         investment: null,
@@ -49,11 +57,19 @@ const StatisticsPage: React.FC = () => {
     const loadAllStatistics = useCallback(async () => {
         setLoading(true);
         try {
+            let startDate: string | undefined;
+            let endDate: string | undefined;
+
+            if (period === StatisticsPeriod.Custom && dateRange) {
+                startDate = dateRange[0].startOf('day').toISOString();
+                endDate = dateRange[1].endOf('day').toISOString();
+            }
+
             const [assetRes, investmentRes, tenantRes, serviceRes] = await Promise.all([
-                parkService.getAssetStatistics(period),
-                parkService.getInvestmentStatistics(period),
-                parkService.getTenantStatistics(period),
-                parkService.getServiceStatistics(period),
+                parkService.getAssetStatistics(period, startDate, endDate),
+                parkService.getInvestmentStatistics(period, startDate, endDate),
+                parkService.getTenantStatistics(period, startDate, endDate),
+                parkService.getServiceStatistics(period, startDate, endDate),
             ]);
 
             setStatistics({
@@ -67,10 +83,12 @@ const StatisticsPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [period]);
+    }, [period, dateRange]);
 
     useEffect(() => {
-        loadAllStatistics();
+        if (period !== StatisticsPeriod.Custom || (period === StatisticsPeriod.Custom && dateRange)) {
+            loadAllStatistics();
+        }
     }, [loadAllStatistics]);
 
     // 渲染 YoY/MoM 趋势
@@ -878,12 +896,16 @@ const StatisticsPage: React.FC = () => {
             extra={[
                 <Space key="period-selection">
                     <Text strong>{intl.formatMessage({ id: 'pages.park.statistics.period', defaultMessage: '统计周期' })}:</Text>
-                    <Radio.Group value={period} onChange={(e) => setPeriod(e.target.value)} buttonStyle="solid">
-                        <Radio.Button value={StatisticsPeriod.Day}>{intl.formatMessage({ id: 'pages.park.statistics.day', defaultMessage: '日' })}</Radio.Button>
-                        <Radio.Button value={StatisticsPeriod.Week}>{intl.formatMessage({ id: 'pages.park.statistics.week', defaultMessage: '周' })}</Radio.Button>
-                        <Radio.Button value={StatisticsPeriod.Month}>{intl.formatMessage({ id: 'pages.park.statistics.month', defaultMessage: '月' })}</Radio.Button>
-                        <Radio.Button value={StatisticsPeriod.Year}>{intl.formatMessage({ id: 'pages.park.statistics.year', defaultMessage: '年' })}</Radio.Button>
-                    </Radio.Group>
+                    <RangePicker
+                        value={dateRange}
+                        onChange={(dates) => {
+                            if (dates && dates[0] && dates[1]) {
+                                setDateRange([dates[0], dates[1]]);
+                            } else {
+                                setDateRange(null);
+                            }
+                        }}
+                    />
                     <Button icon={<ReloadOutlined />} onClick={loadAllStatistics} type="primary" ghost>
                         {intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}
                     </Button>

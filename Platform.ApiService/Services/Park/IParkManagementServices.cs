@@ -60,7 +60,7 @@ public interface IParkAssetService
     /// <summary>
     /// 获取资产统计数据
     /// </summary>
-    Task<AssetStatisticsResponse> GetAssetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month);
+    Task<AssetStatisticsResponse> GetAssetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
 }
 
 /// <summary>
@@ -126,7 +126,7 @@ public interface IParkInvestmentService
     /// <summary>
     /// 获取招商统计数据
     /// </summary>
-    Task<InvestmentStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month);
+    Task<InvestmentStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
 }
 
 /// <summary>
@@ -192,7 +192,7 @@ public interface IParkTenantService
     /// <summary>
     /// 获取租户与合同统计数据
     /// </summary>
-    Task<TenantStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month);
+    Task<TenantStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
 }
 
 /// <summary>
@@ -258,5 +258,5 @@ public interface IParkEnterpriseServiceService
     /// <summary>
     /// 获取企业服务统计数据
     /// </summary>
-    Task<ServiceStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month);
+    Task<ServiceStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
 }

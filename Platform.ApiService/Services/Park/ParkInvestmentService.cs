@@ -292,6 +292,9 @@ public class ParkInvestmentService : IParkInvestmentService
         return MapToProjectDto(project);
     }
 
+    /// <summary>
+    /// 删除项目
+    /// </summary>
     public async Task<bool> DeleteProjectAsync(string id)
     {
         var result = await _projectFactory.FindOneAndSoftDeleteAsync(Builders<InvestmentProject>.Filter.Eq(p => p.Id, id));
@@ -322,33 +325,46 @@ public class ParkInvestmentService : IParkInvestmentService
     /// <summary>
     /// 获取招商统计数据
     /// </summary>
-    public async Task<InvestmentStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month)
+    public async Task<InvestmentStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
     {
         var leads = await _leadFactory.FindAsync();
         var projects = await _projectFactory.FindAsync();
 
-        var threshold = period switch
-        {
-            StatisticsPeriod.Day => DateTime.UtcNow.Date,
-            StatisticsPeriod.Week => DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek),
-            StatisticsPeriod.Month => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1),
-            StatisticsPeriod.Year => new DateTime(DateTime.UtcNow.Year, 1, 1),
-            _ => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1)
-        };
+        DateTime start;
+        DateTime end = endDate ?? DateTime.UtcNow;
 
-        var newLeadsInPeriod = leads.Count(l => l.CreatedAt >= threshold);
-        var signedProjects = projects.Count(p => p.Stage == "Completed");
+        if (period == StatisticsPeriod.Custom && startDate.HasValue)
+        {
+            start = startDate.Value;
+        }
+        else
+        {
+            start = period switch
+            {
+                StatisticsPeriod.Day => DateTime.UtcNow.Date,
+                StatisticsPeriod.Week => DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek),
+                StatisticsPeriod.Month => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1),
+                StatisticsPeriod.Year => new DateTime(DateTime.UtcNow.Year, 1, 1),
+                _ => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1)
+            };
+        }
+
+        var leadsInPeriod = leads.Where(l => l.CreatedAt >= start && l.CreatedAt <= end).ToList();
+        var projectsInPeriod = projects.Where(p => p.CreatedAt >= start && p.CreatedAt <= end).ToList();
+
+        var newLeadsInPeriod = leadsInPeriod.Count;
+        var signedProjects = projectsInPeriod.Count(p => p.Stage == "Completed");
 
         return new InvestmentStatisticsResponse
         {
-            TotalLeads = leads.Count,
+            TotalLeads = leadsInPeriod.Count,
             NewLeadsThisMonth = newLeadsInPeriod,
-            TotalProjects = projects.Count,
-            ProjectsInNegotiation = projects.Count(p => p.Stage == "Negotiation"),
+            TotalProjects = projectsInPeriod.Count,
+            ProjectsInNegotiation = projectsInPeriod.Count(p => p.Stage == "Negotiation"),
             SignedProjects = signedProjects,
-            ConversionRate = leads.Count > 0 ? Math.Round((decimal)signedProjects / leads.Count * 100, 2) : 0,
-            LeadsByStatus = leads.GroupBy(l => l.Status).ToDictionary(g => g.Key, g => g.Count()),
-            ProjectsByStage = projects.GroupBy(p => p.Stage).ToDictionary(g => g.Key, g => g.Count()),
+            ConversionRate = leadsInPeriod.Count > 0 ? Math.Round((decimal)signedProjects / leadsInPeriod.Count * 100, 2) : 0,
+            LeadsByStatus = leadsInPeriod.GroupBy(l => l.Status).ToDictionary(g => g.Key, g => g.Count()),
+            ProjectsByStage = projectsInPeriod.GroupBy(p => p.Stage).ToDictionary(g => g.Key, g => g.Count()),
             NewLeadsYoY = (double?)15.5m, // Mock data
             NewLeadsMoM = (double?)8.2m, // Mock data
             SignedProjectsYoY = (double?)10.0m, // Mock data

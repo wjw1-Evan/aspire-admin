@@ -1,8 +1,8 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, Drawer, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Table, Badge, Statistic, Progress, Popconfirm, Flex, Upload } from 'antd';
+import { Card, Form, Input, Select, Button, Modal, Drawer, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Table, Badge, Statistic, Progress, Popconfirm, Flex, Upload, DatePicker } from 'antd';
 import type { UploadFile } from 'antd';
 import { useIntl, useModel } from '@umijs/max';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, EnvironmentOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, EnvironmentOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, PaperClipOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
 import { DataTable } from '@/components/DataTable';
@@ -341,7 +341,10 @@ const AssetManagement: React.FC = () => {
     const handleEditBuilding = (building: Building) => {
         setCurrentBuilding(building);
         setIsEdit(true);
-        buildingForm.setFieldsValue(building);
+        buildingForm.setFieldsValue({
+            ...building,
+            deliveryDate: building.deliveryDate ? dayjs(building.deliveryDate) : undefined,
+        });
         setAttachmentList((building.attachments || []).map((url, index) => {
             const fileName = url.split('/').pop() || 'file';
             const decodedName = decodeURIComponent(fileName);
@@ -393,7 +396,11 @@ const AssetManagement: React.FC = () => {
                 return item.url;
             }).filter(url => url) as string[];
 
-            const submitValues = { ...values, attachments: attachmentUrls };
+            const submitValues = {
+                ...values,
+                deliveryDate: values.deliveryDate ? values.deliveryDate.toISOString() : undefined,
+                attachments: attachmentUrls
+            };
 
             const res = isEdit && currentBuilding
                 ? await parkService.updateBuilding(currentBuilding.id, submitValues)
@@ -544,10 +551,16 @@ const AssetManagement: React.FC = () => {
                 <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
-                            title={intl.formatMessage({ id: 'pages.park.asset.stats.buildings', defaultMessage: '楼宇总数' })}
+                            title={intl.formatMessage({ id: 'pages.park.asset.stats.properties', defaultMessage: '物业总数' })}
                             value={statistics.totalBuildings}
                             icon={<BankOutlined />}
                             color="#1890ff"
+                            suffix={statistics.totalBuildingsMoM !== undefined && (
+                                <div style={{ fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, color: statistics.totalBuildingsMoM >= 0 ? '#52c41a' : '#ff4d4f' }}>
+                                    {statistics.totalBuildingsMoM >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                                    <span>{Math.abs(statistics.totalBuildingsMoM).toFixed(1)}%</span>
+                                </div>
+                            )}
                         />
                     </Col>
                     <Col xs={24} sm={12} md={6}>
@@ -722,7 +735,7 @@ const AssetManagement: React.FC = () => {
                         <Input placeholder="请输入楼宇地址" />
                     </Form.Item>
                     <Row gutter={16}>
-                        <Col span={8}>
+                        <Col span={12}>
                             <Form.Item
                                 name="totalFloors"
                                 label={intl.formatMessage({ id: 'pages.park.asset.building.floors', defaultMessage: '总楼层' })}
@@ -731,7 +744,7 @@ const AssetManagement: React.FC = () => {
                                 <InputNumber min={1} max={200} style={{ width: '100%' }} placeholder="楼层数" />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
+                        <Col span={12}>
                             <Form.Item
                                 name="totalArea"
                                 label={intl.formatMessage({ id: 'pages.park.asset.building.totalArea', defaultMessage: '总面积 (m²)' })}
@@ -740,17 +753,9 @@ const AssetManagement: React.FC = () => {
                                 <InputNumber min={0} style={{ width: '100%' }} placeholder="总面积" />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
-                            <Form.Item
-                                name="rentableArea"
-                                label={intl.formatMessage({ id: 'pages.park.asset.building.rentableArea', defaultMessage: '可租面积 (m²)' })}
-                            >
-                                <InputNumber min={0} style={{ width: '100%' }} placeholder="可租面积" />
-                            </Form.Item>
-                        </Col>
                     </Row>
                     <Row gutter={16}>
-                        <Col span={12}>
+                        <Col span={8}>
                             <Form.Item
                                 name="yearBuilt"
                                 label={intl.formatMessage({ id: 'pages.park.asset.building.year', defaultMessage: '建成年份' })}
@@ -758,7 +763,16 @@ const AssetManagement: React.FC = () => {
                                 <InputNumber min={1900} max={2100} style={{ width: '100%' }} placeholder="建成年份" />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col span={8}>
+                            <Form.Item
+                                name="deliveryDate"
+                                label={intl.formatMessage({ id: 'pages.park.asset.building.deliveryDate', defaultMessage: '交付/取得日期' })}
+                                rules={[{ required: true, message: '请选择日期' }]}
+                            >
+                                <DatePicker style={{ width: '100%' }} placeholder="选择日期" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
                             <Form.Item
                                 name="status"
                                 label={intl.formatMessage({ id: 'common.status', defaultMessage: '状态' })}
@@ -960,8 +974,8 @@ const AssetManagement: React.FC = () => {
                             <Descriptions.Item label="地址" span={2}>{currentBuilding.address || '-'}</Descriptions.Item>
                             <Descriptions.Item label="总楼层">{currentBuilding.totalFloors}层</Descriptions.Item>
                             <Descriptions.Item label="建成年份">{currentBuilding.yearBuilt || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="交付/取得日期">{currentBuilding.deliveryDate ? dayjs(currentBuilding.deliveryDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
                             <Descriptions.Item label="总面积">{currentBuilding.totalArea?.toLocaleString()} m²</Descriptions.Item>
-                            <Descriptions.Item label="可租面积">{currentBuilding.rentableArea?.toLocaleString()} m²</Descriptions.Item>
                             <Descriptions.Item label="已租面积">{currentBuilding.rentedArea?.toLocaleString()} m²</Descriptions.Item>
                             <Descriptions.Item label="出租率">
                                 <Progress percent={currentBuilding.occupancyRate} size="small" style={{ width: 100 }} />

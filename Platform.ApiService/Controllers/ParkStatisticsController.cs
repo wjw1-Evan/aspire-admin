@@ -26,15 +26,16 @@ public class ParkStatisticsController : ControllerBase
     /// <summary>
     /// 生成 AI 统计报告
     /// </summary>
-    [HttpGet("ai-report")]
+    [HttpPost("ai-report")]
     public async Task<ActionResult<ApiResponse<string>>> GenerateAiReport(
         [FromQuery] StatisticsPeriod period = StatisticsPeriod.Month,
         [FromQuery] DateTime? startDate = null,
-        [FromQuery] DateTime? endDate = null)
+        [FromQuery] DateTime? endDate = null,
+        [FromBody] object? statisticsData = null)
     {
         try
         {
-            var result = await _statisticsService.GenerateAiReportAsync(period, startDate, endDate);
+            var result = await _statisticsService.GenerateAiReportAsync(period, startDate, endDate, statisticsData);
             return Ok(ApiResponse<string>.SuccessResult(result));
         }
         catch (Exception ex)

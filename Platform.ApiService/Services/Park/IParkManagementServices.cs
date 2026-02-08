@@ -284,5 +284,5 @@ public interface IParkStatisticsService
     /// <summary>
     /// 生成 AI 统计报告
     /// </summary>
-    Task<string> GenerateAiReportAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
+    Task<string> GenerateAiReportAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null);
 }

@@ -49,10 +49,6 @@ public class Building : MultiTenantEntity
     [BsonElement("totalArea")]
     public decimal TotalArea { get; set; }
 
-    /// <summary>可租赁面积</summary>
-    [BsonElement("rentableArea")]
-    public decimal RentableArea { get; set; }
-
     /// <summary>楼宇类型</summary>
     [StringLength(50)]
     [BsonElement("buildingType")]
@@ -61,6 +57,11 @@ public class Building : MultiTenantEntity
     /// <summary>建成年份</summary>
     [BsonElement("yearBuilt")]
     public int YearBuilt { get; set; }
+
+    /// <summary>交付/取得日期</summary>
+    [Required]
+    [BsonElement("deliveryDate")]
+    public DateTime? DeliveryDate { get; set; }
 
     /// <summary>状态</summary>
     [StringLength(20)]
@@ -763,9 +764,6 @@ public class BuildingDto
     /// <summary>总面积</summary>
     public decimal TotalArea { get; set; }
 
-    /// <summary>可租赁面积</summary>
-    public decimal RentableArea { get; set; }
-
     /// <summary>已出租面积</summary>
     public decimal RentedArea { get; set; }
 
@@ -777,6 +775,9 @@ public class BuildingDto
 
     /// <summary>建成年份</summary>
     public int YearBuilt { get; set; }
+
+    /// <summary>交付/取得日期</summary>
+    public DateTime? DeliveryDate { get; set; }
 
     /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
@@ -821,14 +822,15 @@ public class CreateBuildingRequest
     /// <summary>总面积</summary>
     public decimal TotalArea { get; set; }
 
-    /// <summary>可租赁面积</summary>
-    public decimal RentableArea { get; set; }
-
     /// <summary>楼宇类型</summary>
     public string? BuildingType { get; set; }
 
     /// <summary>建成年份</summary>
     public int YearBuilt { get; set; }
+
+    /// <summary>交付/取得日期</summary>
+    [Required]
+    public DateTime? DeliveryDate { get; set; }
 
     /// <summary>描述</summary>
     public string? Description { get; set; }
@@ -1030,6 +1032,10 @@ public class AssetStatisticsResponse
     public double? RentedAreaYoY { get; set; }
     /// <summary>出租面积环比</summary>
     public double? RentedAreaMoM { get; set; }
+    /// <summary>楼宇总数同比</summary>
+    public double? TotalBuildingsYoY { get; set; }
+    /// <summary>楼宇总数环比</summary>
+    public double? TotalBuildingsMoM { get; set; }
 }
 
 // ===== 招商管理 DTOs =====

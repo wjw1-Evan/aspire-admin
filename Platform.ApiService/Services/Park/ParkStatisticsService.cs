@@ -47,27 +47,39 @@ public class ParkStatisticsService : IParkStatisticsService
     /// 生成 AI 统计报告
     /// </summary>
     public async Task<string> GenerateAiReportAsync(StatisticsPeriod period = StatisticsPeriod.Month,
-        DateTime? startDate = null, DateTime? endDate = null)
+        DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null)
     {
         // 1. 获取所有模块统计数据
-        var assetStats = await _assetService.GetAssetStatisticsAsync(period, startDate, endDate);
-        var investmentStats = await _investmentService.GetStatisticsAsync(period, startDate, endDate);
-        var tenantStats = await _tenantService.GetStatisticsAsync(period, startDate, endDate);
-        var serviceStats = await _enterpriseService.GetStatisticsAsync(period, startDate, endDate);
-
-        // 2. 准备提示词上下文
+        object statsData;
         var periodDesc = period == StatisticsPeriod.Custom
             ? $"{startDate:yyyy-MM-dd} 至 {endDate:yyyy-MM-dd}"
             : period.ToString();
 
-        var statsData = new
+        if (statisticsData != null)
         {
-            Period = periodDesc,
-            Asset = assetStats,
-            Investment = investmentStats,
-            Tenant = tenantStats,
-            Service = serviceStats
-        };
+            statsData = new
+            {
+                Period = periodDesc,
+                Data = statisticsData
+            };
+        }
+        else
+        {
+            var assetStats = await _assetService.GetAssetStatisticsAsync(period, startDate, endDate);
+            var investmentStats = await _investmentService.GetStatisticsAsync(period, startDate, endDate);
+            var tenantStats = await _tenantService.GetStatisticsAsync(period, startDate, endDate);
+            var serviceStats = await _enterpriseService.GetStatisticsAsync(period, startDate, endDate);
+
+            statsData = new
+            {
+                Period = periodDesc,
+                Asset = assetStats,
+                Investment = investmentStats,
+                Tenant = tenantStats,
+                Service = serviceStats
+            };
+        }
+
 
         var statsJson = JsonSerializer.Serialize(statsData, new JsonSerializerOptions { WriteIndented = true });
 
@@ -80,7 +92,7 @@ public class ParkStatisticsService : IParkStatisticsService
 报告要求：
 1. **总体概览**：简要总结本周期通过关键指标体现的园区运营状况，重点提及关键绩效指标的完成情况。
 2. **各模块详细分析**：
-   - **资产管理**：重点分析出租率、空置率的 **同比/环比变化**，以及可能的原因。
+   - **资产管理**：重点分析出租率、空置率以及资产规模（物业总数）的 **同比/环比变化**，以及可能的原因。
    - **招商管理**：分析线索获取能力（新增线索同比/环比）、转化效率、项目签约进度及招商漏斗健康度。
    - **租户管理**：关注租户总量变化（同比/环比）、合同到期风险及行业分布集中度。**重点分析收缴情况**（实收、应收、收缴率），识别欠费风险。
    - **企业服务**：评估服务响应效率、客户满意度及同比/环比趋势。

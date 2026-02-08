@@ -74,7 +74,7 @@ const StatisticsPage: React.FC = () => {
             }
 
             const apiPeriod = typeof period === 'string' ? StatisticsPeriod.Custom : period;
-            const res = await parkService.generateAiReport(apiPeriod, startDate, endDate);
+            const res = await parkService.generateAiReport(apiPeriod, startDate, endDate, statistics);
             if (res.success && res.data) {
                 try {
                     const html = await marked.parse(res.data);
@@ -155,7 +155,7 @@ const StatisticsPage: React.FC = () => {
 
     // 综合概览卡片
     const renderOverviewCards = () => {
-        const { asset, investment, tenant } = statistics;
+        const { asset, investment, tenant, service } = statistics;
 
         const calculatedOccupancyRate = asset && asset.totalRentableArea > 0
             ? (asset.rentedArea / asset.totalRentableArea) * 100
@@ -163,100 +163,131 @@ const StatisticsPage: React.FC = () => {
 
         const isYearly = period === StatisticsPeriod.Year || (period as any) === 'last_year';
 
+        // Derived Metrics
+        const collectionRate = (tenant && tenant.totalExpected && tenant.totalExpected > 0)
+            ? ((tenant.totalReceived / tenant.totalExpected) * 100).toFixed(1)
+            : 0;
+        const vacantArea = asset ? asset.totalRentableArea - asset.rentedArea : 0;
+
         return (
-            <Row gutter={[16, 16]} className={styles['stat-cards']}>
-                {/* 1. 营收表现 (Revenue) */}
-                <Col xs={24} sm={12} lg={6}>
-                    <Card className={styles['stat-card']}>
-                        <Statistic
-                            title={intl.formatMessage({ id: 'pages.park.statistics.totalReceived', defaultMessage: '实收租金' })}
-                            value={tenant?.totalReceived || 0}
-                            prefix="¥"
-                            precision={2}
-                            styles={{ content: { color: '#cf1322' } }} // Money Red
-                        />
-                        <div style={{ marginTop: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                {intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收租金' })}: ¥{(tenant?.totalExpected || 0).toLocaleString()}
-                            </Text>
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(tenant?.rentIncomeMoM, false)}
-                            </div>
-                        </div>
-                    </Card>
-                </Col>
-
-                {/* 2. 资产运营 (Occupancy) */}
-                <Col xs={24} sm={12} lg={6}>
-                    <Card className={styles['stat-card']}>
-                        <Statistic
-                            title={intl.formatMessage({ id: 'pages.park.statistics.occupancyRate', defaultMessage: '综合出租率' })}
-                            value={calculatedOccupancyRate}
-                            precision={1}
-                            suffix="%"
-                            styles={{ content: { color: calculatedOccupancyRate >= 80 ? '#52c41a' : calculatedOccupancyRate >= 50 ? '#faad14' : '#f5222d' } }}
-                        />
-                        <div style={{ marginTop: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                {intl.formatMessage({ id: 'pages.park.statistics.rentedArea', defaultMessage: '已出租' })}: {(asset?.rentedArea || 0).toLocaleString()} ㎡
-                            </Text>
-                            <Progress
-                                percent={calculatedOccupancyRate}
-                                size="small"
-                                showInfo={false}
-                                strokeColor={calculatedOccupancyRate >= 80 ? '#52c41a' : calculatedOccupancyRate >= 50 ? '#faad14' : '#f5222d'}
-                                style={{ marginTop: 4 }}
+            <>
+                <Row gutter={[16, 16]} className={styles['stat-cards']}>
+                    {/* 1. 营收表现 (Revenue) */}
+                    <Col xs={24} sm={12} lg={6}>
+                        <Card className={styles['stat-card']}>
+                            <Statistic
+                                title={intl.formatMessage({ id: 'pages.park.statistics.totalReceived', defaultMessage: '实收租金' })}
+                                value={tenant?.totalReceived || 0}
+                                prefix="¥"
+                                precision={2}
+                                styles={{ content: { color: '#cf1322' } }} // Money Red
                             />
-                        </div>
-                    </Card>
-                </Col>
-
-                {/* 3. 招商增长 (Growth) */}
-                <Col xs={24} sm={12} lg={6}>
-                    <Card className={styles['stat-card']}>
-                        <Statistic
-                            title={isYearly
-                                ? intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisYear', defaultMessage: '本年新增线索' })
-                                : intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增线索' })
-                            }
-                            value={investment?.newLeadsThisMonth || 0}
-                            prefix={<ArrowUpOutlined />}
-                            styles={{ content: { color: '#1890ff' } }}
-                        />
-                        <div style={{ marginTop: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                {intl.formatMessage({ id: 'pages.park.statistics.projectsInNegotiation', defaultMessage: '洽谈中项目' })}: {investment?.projectsInNegotiation || 0}
-                            </Text>
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(investment?.newLeadsMoM, false)}
+                            <div style={{ marginTop: 8 }}>
+                                <Space split={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收租金' })}: ¥{(tenant?.totalExpected || 0).toLocaleString()}
+                                    </Text>
+                                    <Text type="secondary" style={{ fontSize: 12, color: Number(collectionRate) >= 90 ? '#52c41a' : '#faad14' }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.collectionRate', defaultMessage: '收缴率' })}: {collectionRate}%
+                                    </Text>
+                                </Space>
+                                <div style={{ marginTop: 4 }}>
+                                    {renderTrend(tenant?.rentIncomeMoM, false)}
+                                </div>
                             </div>
-                        </div>
-                    </Card>
-                </Col>
+                        </Card>
+                    </Col>
 
-                {/* 4. 租户风险 (Risk/Status) */}
-                <Col xs={24} sm={12} lg={6}>
-                    <Card className={styles['stat-card']}>
-                        <Statistic
-                            title={intl.formatMessage({ id: 'pages.park.statistics.activeTenants', defaultMessage: '在租租户' })}
-                            value={tenant?.activeTenants || 0}
-                            suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.tenant', defaultMessage: '家' })}
-                            styles={{ content: { color: '#722ed1' } }}
-                        />
-                        <div style={{ marginTop: 8 }}>
-                            <Space wrap>
-                                <Text type="secondary" style={{ fontSize: 12 }}>
-                                    {intl.formatMessage({ id: 'pages.park.statistics.expiringContracts', defaultMessage: '即将到期' })}:
-                                </Text>
-                                <Tag color="warning">{tenant?.expiringContracts || 0}</Tag>
-                            </Space>
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(tenant?.totalTenantsYoY, true)}
+                    {/* 2. 资产运营 (Occupancy) */}
+                    <Col xs={24} sm={12} lg={6}>
+                        <Card className={styles['stat-card']}>
+                            <Statistic
+                                title={intl.formatMessage({ id: 'pages.park.statistics.occupancyRate', defaultMessage: '综合出租率' })}
+                                value={calculatedOccupancyRate}
+                                precision={1}
+                                suffix="%"
+                                styles={{ content: { color: calculatedOccupancyRate >= 80 ? '#52c41a' : calculatedOccupancyRate >= 50 ? '#faad14' : '#f5222d' } }}
+                            />
+                            <div style={{ marginTop: 8 }}>
+                                <Space split={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.rentedArea', defaultMessage: '已出租' })}: {(asset?.rentedArea || 0).toLocaleString()}㎡
+                                    </Text>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.availableArea', defaultMessage: '空置' })}: {vacantArea.toLocaleString()}㎡
+                                    </Text>
+                                </Space>
+                                <Progress
+                                    percent={calculatedOccupancyRate}
+                                    size="small"
+                                    showInfo={false}
+                                    strokeColor={calculatedOccupancyRate >= 80 ? '#52c41a' : calculatedOccupancyRate >= 50 ? '#faad14' : '#f5222d'}
+                                    style={{ marginTop: 4 }}
+                                />
                             </div>
-                        </div>
-                    </Card>
-                </Col>
-            </Row>
+                        </Card>
+                    </Col>
+
+                    {/* 3. 招商增长 (Growth) */}
+                    <Col xs={24} sm={12} lg={6}>
+                        <Card className={styles['stat-card']}>
+                            <Statistic
+                                title={isYearly
+                                    ? intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisYear', defaultMessage: '本年新增线索' })
+                                    : intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增线索' })
+                                }
+                                value={investment?.newLeadsThisMonth || 0}
+                                prefix={<ArrowUpOutlined />}
+                                styles={{ content: { color: '#1890ff' } }}
+                            />
+                            <div style={{ marginTop: 8 }}>
+                                <Space split={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.projectsInNegotiation', defaultMessage: '洽谈中' })}: {investment?.projectsInNegotiation || 0}
+                                    </Text>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.conversionRate', defaultMessage: '转化' })}: {Number(investment?.conversionRate || 0).toFixed(1)}%
+                                    </Text>
+                                </Space>
+                                <div style={{ marginTop: 4 }}>
+                                    {renderTrend(investment?.newLeadsMoM, false)}
+                                </div>
+                            </div>
+                        </Card>
+                    </Col>
+
+                    {/* 4. 租户风险 (Risk/Status) */}
+                    <Col xs={24} sm={12} lg={6}>
+                        <Card className={styles['stat-card']}>
+                            <Statistic
+                                title={intl.formatMessage({ id: 'pages.park.statistics.activeTenants', defaultMessage: '在租租户' })}
+                                value={tenant?.activeTenants || 0}
+                                suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.tenant', defaultMessage: '家' })}
+                                styles={{ content: { color: '#722ed1' } }}
+                            />
+                            <div style={{ marginTop: 8 }}>
+                                <Space split={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.expiringContracts', defaultMessage: '到期' })}:
+                                        <span style={{ color: '#faad14', marginLeft: 4 }}>{tenant?.expiringContracts || 0}</span>
+                                    </Text>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.pendingRequests', defaultMessage: '工单' })}:
+                                        <span style={{ color: (service?.pendingRequests || 0) > 0 ? '#faad14' : 'inherit', marginLeft: 4 }}>{service?.pendingRequests || 0}</span>
+                                    </Text>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {intl.formatMessage({ id: 'pages.park.statistics.averageRating', defaultMessage: '评分' })}:
+                                        <span style={{ color: '#faad14', marginLeft: 4 }}>{service?.averageRating || 5.0}★</span>
+                                    </Text>
+                                </Space>
+                                <div style={{ marginTop: 4 }}>
+                                    {renderTrend(tenant?.totalTenantsYoY, true)}
+                                </div>
+                            </div>
+                        </Card>
+                    </Col>
+                </Row>
+            </>
         );
     };
 
@@ -390,11 +421,12 @@ const StatisticsPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}>
                         <Card>
                             <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.totalBuildings', defaultMessage: '楼宇总数' })}
+                                title={intl.formatMessage({ id: 'pages.park.statistics.assetScale', defaultMessage: '资产规模' })}
                                 value={asset.totalBuildings}
-                                suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.building', defaultMessage: '栋' })}
+                                suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.property', defaultMessage: '个' })}
                                 prefix={<BankOutlined style={{ color: '#1890ff' }} />}
                             />
+                            {renderTrend(asset.totalBuildingsMoM, false)}
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>

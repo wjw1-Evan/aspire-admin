@@ -105,9 +105,9 @@ public class ParkAssetService : IParkAssetService
             Address = request.Address,
             TotalFloors = request.TotalFloors,
             TotalArea = request.TotalArea,
-            RentableArea = request.RentableArea,
             BuildingType = request.BuildingType,
             YearBuilt = request.YearBuilt,
+            DeliveryDate = request.DeliveryDate,
             Description = request.Description,
             CoverImage = request.CoverImage,
             Images = request.Images,
@@ -132,9 +132,9 @@ public class ParkAssetService : IParkAssetService
         building.Address = request.Address;
         building.TotalFloors = request.TotalFloors;
         building.TotalArea = request.TotalArea;
-        building.RentableArea = request.RentableArea;
         building.BuildingType = request.BuildingType;
         building.YearBuilt = request.YearBuilt;
+        building.DeliveryDate = request.DeliveryDate;
         building.Description = request.Description;
         building.CoverImage = request.CoverImage;
         building.Images = request.Images;
@@ -168,8 +168,8 @@ public class ParkAssetService : IParkAssetService
         var rentedUnits = units.Where(u => u.Status == "Rented").ToList();
         var rentedArea = rentedUnits.Sum(u => u.Area);
 
-        // 如果楼宇本身没填可租面积，则以旗下所有房源面积之和作为分母
-        var totalRentableArea = building.RentableArea > 0 ? building.RentableArea : units.Sum(u => u.Area);
+        // 以旗下所有房源面积之和作为分母
+        var totalRentableArea = units.Sum(u => u.Area);
 
         return new BuildingDto
         {
@@ -178,11 +178,11 @@ public class ParkAssetService : IParkAssetService
             Address = building.Address,
             TotalFloors = building.TotalFloors,
             TotalArea = building.TotalArea,
-            RentableArea = building.RentableArea,
             RentedArea = rentedArea,
             OccupancyRate = totalRentableArea > 0 ? Math.Round(rentedArea / totalRentableArea * 100, 2) : 0,
             BuildingType = building.BuildingType,
             YearBuilt = building.YearBuilt,
+            DeliveryDate = building.DeliveryDate,
             Status = building.Status,
             Description = building.Description,
             CoverImage = building.CoverImage,
@@ -411,16 +411,15 @@ public class ParkAssetService : IParkAssetService
             };
         }
 
-        var totalRentableArea = buildings.Sum(b => b.RentableArea);
-        // 如果楼宇都没填可租面积，则以所有房源面积之和作为分母
-        if (totalRentableArea == 0)
-        {
-            totalRentableArea = units.Sum(u => u.Area);
-        }
-
         // Helper function to calculate metrics at a specific date
-        (decimal OccupancyRate, decimal RentedArea, int RentedUnitsCount) CalculateMetricsAtDate(DateTime date)
+        (decimal OccupancyRate, decimal RentedArea, int RentedUnitsCount, int TotalBuildingsCount, decimal RentableAreaAtDate) CalculateMetricsAtDate(DateTime date)
         {
+            var activeBuildingsAtDate = buildings.Where(b => b.DeliveryDate == null || b.DeliveryDate <= date).ToList();
+            var activeBuildingIds = activeBuildingsAtDate.Select(b => b.Id).ToList();
+            var activeUnitsAtDate = units.Where(u => activeBuildingIds.Contains(u.BuildingId)).ToList();
+
+            var rentableAreaAtDate = activeUnitsAtDate.Sum(u => u.Area);
+
             var activeContractsAtDate = contracts
                 .Where(c => (c.Status == "Active" || c.Status == "Renewed")
                             && c.StartDate <= date
@@ -432,47 +431,53 @@ public class ParkAssetService : IParkAssetService
                 .Distinct()
                 .ToList();
 
-            var rentedUnitsAtDate = units.Where(u => rentedUnitIdsAtDate.Contains(u.Id)).ToList();
+            var rentedUnitsAtDate = activeUnitsAtDate.Where(u => rentedUnitIdsAtDate.Contains(u.Id)).ToList();
             var rentedAreaAtDate = rentedUnitsAtDate.Sum(u => u.Area);
-            var occupancyRateAtDate = totalRentableArea > 0 ? (decimal)Math.Round((double)(rentedAreaAtDate / totalRentableArea * 100), 2) : 0;
+            var occupancyRateAtDate = rentableAreaAtDate > 0 ? (decimal)Math.Round((double)(rentedAreaAtDate / rentableAreaAtDate * 100), 2) : 0;
 
-            return (occupancyRateAtDate, rentedAreaAtDate, rentedUnitsAtDate.Count);
+            return (occupancyRateAtDate, rentedAreaAtDate, rentedUnitsAtDate.Count, activeBuildingsAtDate.Count, rentableAreaAtDate);
         }
 
-        // For current metrics, we use the actual unit status to ensure consistency with the unit list
-        var currentRentedUnitsList = units.Where(u => u.Status == "Rented").ToList();
-        var currentRentedArea = currentRentedUnitsList.Sum(u => u.Area);
-        var currentRentedUnits = currentRentedUnitsList.Count;
-        var currentOccupancyRate = totalRentableArea > 0 ? (decimal)Math.Round((double)(currentRentedArea / totalRentableArea * 100), 2) : 0;
+        // Metrics at the end of the selected period
+        var (currentOccupancyRate, currentRentedArea, currentRentedUnits, currentTotalBuildings, currentTotalRentableArea) = CalculateMetricsAtDate(end);
+        var activeBuildingsAtEnd = buildings.Where(b => b.DeliveryDate == null || b.DeliveryDate <= end).ToList();
+        var currentTotalArea = activeBuildingsAtEnd.Sum(b => b.TotalArea);
 
-        // MoM Comparison (Previous Month/Period) - Must use contracts for historical data
+        // Only count units belonging to buildings delivered by end of period
+        var activeBuildingIdsAtEnd = activeBuildingsAtEnd.Select(b => b.Id).ToList();
+        var activeUnitsAtEnd = units.Where(u => activeBuildingIdsAtEnd.Contains(u.BuildingId)).ToList();
+        var currentTotalUnits = activeUnitsAtEnd.Count;
+
+        // MoM Comparison (Previous Month/Period)
         var momDate = end.AddMonths(-1);
-        var (momOccupancyRate, momRentedArea, _) = CalculateMetricsAtDate(momDate);
+        var (momOccupancyRate, momRentedArea, _, momTotalBuildings, _) = CalculateMetricsAtDate(momDate);
 
         // YoY Comparison (Same time last year)
         var yoyDate = end.AddYears(-1);
-        var (yoyOccupancyRate, yoyRentedArea, _) = CalculateMetricsAtDate(yoyDate);
+        var (yoyOccupancyRate, yoyRentedArea, _, yoyTotalBuildings, _) = CalculateMetricsAtDate(yoyDate);
 
         double? CalculateGrowth(decimal current, decimal previous)
         {
-            if (previous == 0) return current > 0 ? 100 : 0; // If previous was 0, growth is 100% or 0%
+            if (previous == 0) return current > 0 ? 100 : 0;
             return (double)Math.Round((current - previous) / previous * 100, 2);
         }
 
         return new AssetStatisticsResponse
         {
-            TotalBuildings = buildings.Count,
-            TotalArea = buildings.Sum(b => b.TotalArea),
-            TotalUnits = units.Count,
-            AvailableUnits = units.Count - currentRentedUnits,
+            TotalBuildings = currentTotalBuildings,
+            TotalArea = currentTotalArea,
+            TotalUnits = currentTotalUnits,
+            AvailableUnits = currentTotalUnits - currentRentedUnits,
             RentedUnits = currentRentedUnits,
             OccupancyRate = currentOccupancyRate,
-            TotalRentableArea = totalRentableArea,
+            TotalRentableArea = currentTotalRentableArea,
             RentedArea = currentRentedArea,
             OccupancyRateYoY = CalculateGrowth(currentOccupancyRate, yoyOccupancyRate),
             OccupancyRateMoM = CalculateGrowth(currentOccupancyRate, momOccupancyRate),
             RentedAreaYoY = CalculateGrowth(currentRentedArea, yoyRentedArea),
-            RentedAreaMoM = CalculateGrowth(currentRentedArea, momRentedArea)
+            RentedAreaMoM = CalculateGrowth(currentRentedArea, momRentedArea),
+            TotalBuildingsYoY = CalculateGrowth(currentTotalBuildings, yoyTotalBuildings),
+            TotalBuildingsMoM = CalculateGrowth(currentTotalBuildings, momTotalBuildings)
         };
     }
 

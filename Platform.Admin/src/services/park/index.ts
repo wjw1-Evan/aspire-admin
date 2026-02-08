@@ -46,10 +46,11 @@ export async function getServiceStatistics(period?: StatisticsPeriod, startDate?
     });
 }
 
-export async function generateAiReport(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+export async function generateAiReport(period?: StatisticsPeriod, startDate?: string, endDate?: string, data?: any) {
     return request<ApiResponse<string>>('/api/park/statistics/ai-report', {
-        method: 'GET',
+        method: 'POST',
         params: { period, startDate, endDate },
+        data,
     });
 }
 
@@ -61,11 +62,11 @@ export interface Building {
     address?: string;
     totalFloors: number;
     totalArea: number;
-    rentableArea: number;
     rentedArea: number;
     occupancyRate: number;
     buildingType?: string;
     yearBuilt: number;
+    deliveryDate?: string;
     status: string;
     description?: string;
     coverImage?: string;
@@ -107,6 +108,8 @@ export interface AssetStatistics {
     rentedArea: number;
     occupancyRateYoY?: number;
     occupancyRateMoM?: number;
+    totalBuildingsYoY?: number;
+    totalBuildingsMoM?: number;
 }
 
 export interface BuildingListRequest {

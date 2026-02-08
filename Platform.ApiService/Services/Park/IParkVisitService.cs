@@ -34,10 +34,7 @@ public interface IParkVisitService
     /// </summary>
     Task<bool> DeleteVisitTaskAsync(string id);
 
-    /// <summary>
-    /// 派发走访任务
-    /// </summary>
-    Task<VisitTaskDto?> DispatchVisitTaskAsync(string id);
+
 
     #endregion
 
@@ -95,7 +92,12 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访统计数据
     /// </summary>
-    Task<VisitStatisticsDto> GetVisitStatisticsAsync();
+    Task<VisitStatisticsDto> GetVisitStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
+
+    /// <summary>
+    /// 生成走访 AI 分析报告
+    /// </summary>
+    Task<string> GenerateAiReportAsync(VisitStatisticsDto stats);
 
     #endregion
 }

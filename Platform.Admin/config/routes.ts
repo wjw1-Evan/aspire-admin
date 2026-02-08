@@ -228,6 +228,11 @@ export default [
         component: './park-management/visit-knowledge-base',
         hideInMenu: true,
       },
+      {
+        path: '/visit-management/statistics',
+        component: './park-management/visit-statistics',
+        hideInMenu: true,
+      },
     ],
   },
   {

@@ -19,6 +19,7 @@ import {
     Descriptions,
     Popconfirm,
     Divider,
+    AutoComplete,
 } from 'antd';
 import {
     PlusOutlined,
@@ -33,7 +34,6 @@ import {
     EditOutlined,
     DeleteOutlined,
     EyeOutlined,
-    SendOutlined,
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
@@ -104,36 +104,36 @@ const VisitTask: React.FC = () => {
 
     const columns = [
         {
-            title: '企管员',
-            dataIndex: 'managerName',
-            key: 'managerName',
-            width: 150,
+            title: '任务标题',
+            dataIndex: 'title',
+            key: 'title',
+            width: 200,
+            ellipsis: true,
             render: (text: string, record: VisitTaskType) => (
-                <Space>
-                    <UserOutlined style={{ color: '#1890ff' }} />
-                    <a onClick={() => { setSelectedTask(record); setDetailVisible(true); }}>
-                        {text}
-                    </a>
-                </Space>
+                <a onClick={() => { setSelectedTask(record); setDetailVisible(true); }}>
+                    {text}
+                </a>
             ),
         },
         {
-            title: '手机号',
-            dataIndex: 'phone',
-            key: 'phone',
-            width: 130,
-        },
-        {
-            title: '管辖范围',
-            dataIndex: 'jurisdiction',
-            key: 'jurisdiction',
-            ellipsis: true,
+            title: '走访类型',
+            dataIndex: 'visitType',
+            key: 'visitType',
+            width: 120,
         },
         {
             title: '受访企业',
             dataIndex: 'tenantName',
             key: 'tenantName',
+            width: 150,
+            ellipsis: true,
             render: (text: string) => text || '-',
+        },
+        {
+            title: '企管员',
+            dataIndex: 'managerName',
+            key: 'managerName',
+            width: 120,
         },
         {
             title: '走访日期',
@@ -167,22 +167,7 @@ const VisitTask: React.FC = () => {
                     >
                         查看
                     </Button>
-                    {record.status === 'Pending' && (
-                        <Popconfirm
-                            title="确定要派发该走访任务吗？"
-                            onConfirm={() => handleDispatch(record.id)}
-                            okText="确定"
-                            cancelText="取消"
-                        >
-                            <Button
-                                type="link"
-                                size="small"
-                                icon={<SendOutlined />}
-                            >
-                                派发
-                            </Button>
-                        </Popconfirm>
-                    )}
+
                     <Button
                         type="link"
                         size="small"
@@ -224,29 +209,28 @@ const VisitTask: React.FC = () => {
         }
     };
 
-    const handleDispatch = async (id: string) => {
-        try {
-            setLoading(true);
-            const res = await visitService.dispatchTask(id);
-            if (res.success) {
-                message.success('派发成功');
-                actionRef.current?.reload();
-                loadStatistics();
-            }
-        } catch (error) {
-            message.error('派发失败');
-        } finally {
-            setLoading(false);
-        }
-    };
+
 
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
             setLoading(true);
+
+            // Resolve Tenant ID from TenantName
+            const targetTenant = tenants.find(t => t.tenantName === values.tenantName);
+            let finalTenantId = targetTenant?.id;
+
+            // Protection: If editing and name hasn't changed, preserve original ID 
+            // (addresses case where tenant is not in the loaded 'tenants' list)
+            if (editingTask && values.tenantName === editingTask.tenantName) {
+                finalTenantId = editingTask.tenantId;
+            }
+
             const submitData = {
                 ...values,
                 visitDate: values.visitDate ? values.visitDate.toISOString() : undefined,
+                tenantId: finalTenantId,
+                tenantName: values.tenantName,
             };
 
             const res = editingTask
@@ -331,7 +315,15 @@ const VisitTask: React.FC = () => {
             <SearchFormCard>
                 <Form form={searchForm} layout="inline" onFinish={handleSearch}>
                     <Form.Item name="search">
-                        <Input placeholder="搜索关键字..." style={{ width: 200 }} allowClear />
+                        <Input placeholder="任务标题/企管员/手机号" style={{ width: 220 }} allowClear />
+                    </Form.Item>
+                    <Form.Item name="visitType">
+                        <Select placeholder="走访类型" style={{ width: 140 }} allowClear>
+                            <Select.Option value="日常走访">日常走访</Select.Option>
+                            <Select.Option value="安全检查">安全检查</Select.Option>
+                            <Select.Option value="政策宣讲">政策宣讲</Select.Option>
+                            <Select.Option value="需求调研">需求调研</Select.Option>
+                        </Select>
                     </Form.Item>
                     <Form.Item name="status">
                         <Select placeholder="状态" style={{ width: 120 }} allowClear>
@@ -382,45 +374,124 @@ const VisitTask: React.FC = () => {
                 destroyOnClose
             >
                 <Form form={form} layout="vertical">
+                    <Divider>基本信息</Divider>
+                    <Row gutter={16}>
+                        <Col span={24}>
+                            <Form.Item name="title" label="任务标题" rules={[{ required: true, message: '请输入任务标题' }]}>
+                                <Input placeholder="如：XX企业日常走访" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item name="managerName" label="企管员姓名" rules={[{ required: true, message: '请输入企管员姓名' }]}>
+                            <Form.Item name="managerName" label="企管员" rules={[{ required: true, message: '请输入企管员姓名' }]}>
                                 <Input placeholder="请输入姓名" />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item name="phone" label="手机号" rules={[{ required: true, message: '请输入手机号' }]}>
+                            <Form.Item name="phone" label="手机号">
                                 <Input placeholder="请输入手机号" />
                             </Form.Item>
                         </Col>
                     </Row>
-                    <Form.Item name="jurisdiction" label="管辖范围">
-                        <Input.TextArea rows={2} placeholder="请输入管辖范围" />
-                    </Form.Item>
-                    <Form.Item name="tenantId" label="受访企业">
-                        <Select placeholder="请选择企业" allowClear showSearch optionFilterProp="label">
-                            {tenants.map(tenant => (
-                                <Select.Option key={tenant.id} value={tenant.id} label={tenant.tenantName}>
-                                    {tenant.tenantName}
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item name="visitLocation" label="走访地点">
-                                <Input placeholder="请输入走访地点" />
+                            <Form.Item name="visitType" label="走访类型" initialValue="日常走访">
+                                <Select>
+                                    <Select.Option value="日常走访">日常走访</Select.Option>
+                                    <Select.Option value="安全检查">安全检查</Select.Option>
+                                    <Select.Option value="政策宣讲">政策宣讲</Select.Option>
+                                    <Select.Option value="需求调研">需求调研</Select.Option>
+                                    <Select.Option value="其他">其他</Select.Option>
+                                </Select>
                             </Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item name="visitDate" label="走访日期">
-                                <DatePicker style={{ width: '100%' }} />
+                            <Form.Item name="visitMethod" label="走访方式" initialValue="实地走访">
+                                <Select>
+                                    <Select.Option value="实地走访">实地走访</Select.Option>
+                                    <Select.Option value="电话沟通">电话沟通</Select.Option>
+                                    <Select.Option value="微信联系">微信联系</Select.Option>
+                                </Select>
                             </Form.Item>
                         </Col>
                     </Row>
-                    <Form.Item name="details" label="任务详情">
-                        <Input.TextArea rows={3} placeholder="请输入任务详情" />
+                    <Form.Item name="details" label="计划说明">
+                        <Input.TextArea rows={2} placeholder="请输入计划说明或初始备注" />
                     </Form.Item>
+
+                    <Divider>企业与受访人</Divider>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="tenantName" label="受访企业" rules={[{ required: true, message: '请输入或选择受访企业' }]}>
+                                <AutoComplete
+                                    placeholder="请输入或选择企业"
+                                    options={tenants.map(t => ({ value: t.tenantName }))}
+                                    filterOption={(inputValue, option) =>
+                                        option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                                    }
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="visitLocation" label="走访地点">
+                                <Input placeholder="地址/会议室" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={8}>
+                            <Form.Item name="intervieweeName" label="受访人姓名">
+                                <Input placeholder="姓名" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="intervieweePosition" label="职务">
+                                <Input placeholder="职位" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="intervieweePhone" label="联系方式">
+                                <Input placeholder="电话/微信" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="visitDate" label="走访时间">
+                                <DatePicker style={{ width: '100%' }} showTime format="YYYY-MM-DD HH:mm" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="visitor" label="执行走访人">
+                                <Input placeholder="实际走访人" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {editingTask && (
+                        <>
+                            <Divider>走访结果与反馈</Divider>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="status" label="任务状态">
+                                        <Select>
+                                            <Select.Option value="Pending">待派发</Select.Option>
+                                            <Select.Option value="InProgress">进行中</Select.Option>
+                                            <Select.Option value="Completed">已完成</Select.Option>
+                                            <Select.Option value="Cancelled">已取消</Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Form.Item name="content" label="走访纪要">
+                                <Input.TextArea rows={4} placeholder="详细记录走访沟通内容" />
+                            </Form.Item>
+                            <Form.Item name="feedback" label="企业诉求/反馈">
+                                <Input.TextArea rows={2} placeholder="企业提出的问题或建议" />
+                            </Form.Item>
+                        </>
+                    )}
                 </Form>
             </Modal>
 
@@ -438,26 +509,40 @@ const VisitTask: React.FC = () => {
             >
                 {selectedTask ? (
                     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                        <Descriptions title="基本信息" bordered column={1}>
+                        <Descriptions title="基本信息" bordered column={2}>
+                            <Descriptions.Item label="任务标题" span={2}>{selectedTask.title}</Descriptions.Item>
+                            <Descriptions.Item label="走访类型">{selectedTask.visitType}</Descriptions.Item>
+                            <Descriptions.Item label="走访方式">{selectedTask.visitMethod}</Descriptions.Item>
                             <Descriptions.Item label="企管员">{selectedTask.managerName}</Descriptions.Item>
                             <Descriptions.Item label="联系电话">{selectedTask.phone}</Descriptions.Item>
-                            <Descriptions.Item label="状态">
+                            <Descriptions.Item label="任务状态">
                                 <Tag color={statusMap[selectedTask.status]?.color} icon={statusMap[selectedTask.status]?.icon}>
                                     {statusMap[selectedTask.status]?.text}
                                 </Tag>
                             </Descriptions.Item>
-                            <Descriptions.Item label="创建时间">{dayjs(selectedTask.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+                            <Descriptions.Item label="创建时间">{dayjs(selectedTask.createdAt).format('YYYY-MM-DD')}</Descriptions.Item>
+                            <Descriptions.Item label="计划说明" span={2}>{selectedTask.details || '-'}</Descriptions.Item>
                         </Descriptions>
 
                         <Divider />
 
-                        <Descriptions title="任务内容" bordered column={1}>
-                            <Descriptions.Item label="管辖范围">{selectedTask.jurisdiction || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="受访企业">{selectedTask.tenantName || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="走访地点">{selectedTask.visitLocation || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="走访日期">{selectedTask.visitDate ? dayjs(selectedTask.visitDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                            <Descriptions.Item label="详情说明">
-                                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.details || '-'}</Text>
+                        <Descriptions title="受访信息" bordered column={2}>
+                            <Descriptions.Item label="受访企业" span={2}>{selectedTask.tenantName || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="受访人">{selectedTask.intervieweeName || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="职务">{selectedTask.intervieweePosition || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="走访地点" span={2}>{selectedTask.visitLocation || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="走访时间">{selectedTask.visitDate ? dayjs(selectedTask.visitDate).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
+                            <Descriptions.Item label="执行人">{selectedTask.visitor || '-'}</Descriptions.Item>
+                        </Descriptions>
+
+                        <Divider />
+
+                        <Descriptions title="走访结果" bordered column={1}>
+                            <Descriptions.Item label="走访纪要">
+                                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.content || '暂无记录'}</Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="企业诉求/反馈">
+                                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.feedback || '暂无反馈'}</Text>
                             </Descriptions.Item>
                         </Descriptions>
                     </Space>

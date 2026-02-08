@@ -721,12 +721,23 @@ public class VisitTask : MultiTenantEntity, IEntity, ISoftDeletable, ITimestampe
     [BsonElement("phone")]
     public string Phone { get; set; } = string.Empty;
 
-    /// <summary>管辖范围</summary>
-    [StringLength(500)]
-    [BsonElement("jurisdiction")]
-    public string? Jurisdiction { get; set; }
+    /// <summary>任务标题/主题</summary>
+    [Required]
+    [StringLength(200)]
+    [BsonElement("title")]
+    public string Title { get; set; } = string.Empty;
 
-    /// <summary>任务详情/描述</summary>
+    /// <summary>走访类型 (日常走访、安全检查、政策宣讲、需球调研、其他)</summary>
+    [StringLength(50)]
+    [BsonElement("visitType")]
+    public string VisitType { get; set; } = "日常走访";
+
+    /// <summary>走访方式 (实地走访、电话沟通、微信联系)</summary>
+    [StringLength(50)]
+    [BsonElement("visitMethod")]
+    public string VisitMethod { get; set; } = "实地走访";
+
+    /// <summary>计划/任务说明</summary>
     [StringLength(2000)]
     [BsonElement("details")]
     public string? Details { get; set; }
@@ -735,23 +746,62 @@ public class VisitTask : MultiTenantEntity, IEntity, ISoftDeletable, ITimestampe
     [BsonElement("tenantId")]
     public string? TenantId { get; set; }
 
+    /// <summary>受访企业名称 (冗余)</summary>
+    [BsonElement("tenantName")]
+    public string? TenantName { get; set; }
+
     /// <summary>受访地点</summary>
     [StringLength(500)]
     [BsonElement("visitLocation")]
     public string? VisitLocation { get; set; }
 
-    /// <summary>走访日期</summary>
+    /// <summary>计划/实际走访日期</summary>
     [BsonElement("visitDate")]
     public DateTime? VisitDate { get; set; }
 
-    /// <summary>状态</summary>
+    /// <summary>状态 (Pending-待走访, Completed-已完成, Cancelled-已取消)</summary>
     [StringLength(20)]
     [BsonElement("status")]
-    public string Status { get; set; } = "Pending"; // Pending, InProgress, Completed, Cancelled
+    public string Status { get; set; } = "Pending";
 
     /// <summary>关联问卷ID</summary>
     [BsonElement("questionnaireId")]
     public string? QuestionnaireId { get; set; }
+
+    /// <summary>走访执行人</summary>
+    [StringLength(100)]
+    [BsonElement("visitor")]
+    public string? Visitor { get; set; }
+
+    // --- 走访结果/记录字段 ---
+
+    /// <summary>受访人姓名</summary>
+    [BsonElement("intervieweeName")]
+    public string? IntervieweeName { get; set; }
+
+    /// <summary>受访人职务</summary>
+    [BsonElement("intervieweePosition")]
+    public string? IntervieweePosition { get; set; }
+
+    /// <summary>受访人联系方式</summary>
+    [BsonElement("intervieweePhone")]
+    public string? IntervieweePhone { get; set; }
+
+    /// <summary>走访纪要/内容记录</summary>
+    [BsonElement("content")]
+    public string? Content { get; set; }
+
+    /// <summary>现场照片列表</summary>
+    [BsonElement("photos")]
+    public List<string> Photos { get; set; } = new();
+
+    /// <summary>附件列表</summary>
+    [BsonElement("attachments")]
+    public List<string> Attachments { get; set; } = new();
+
+    /// <summary>企业反馈/诉求</summary>
+    [BsonElement("feedback")]
+    public string? Feedback { get; set; }
 }
 
 /// <summary>
@@ -2152,6 +2202,9 @@ public class VisitTaskListRequest
     public int PageSize { get; set; } = 10;
     public string? Search { get; set; }
     public string? Status { get; set; }
+    public string? VisitType { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
 }
 
 /// <summary>
@@ -2166,30 +2219,54 @@ public class VisitTaskListResponse
 public class VisitTaskDto
 {
     public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
     public string ManagerName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
-    public string? Jurisdiction { get; set; }
+    public string VisitType { get; set; } = string.Empty;
+    public string VisitMethod { get; set; } = string.Empty;
     public string? Details { get; set; }
     public string? TenantId { get; set; }
     public string? TenantName { get; set; }
     public string? VisitLocation { get; set; }
     public DateTime? VisitDate { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string? Visitor { get; set; }
+
+    public string? IntervieweeName { get; set; }
+    public string? IntervieweePosition { get; set; }
+    public string? Content { get; set; }
+    public List<string> Photos { get; set; } = new();
+    public string? Feedback { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }
 
 public class CreateVisitTaskRequest
 {
     [Required]
-    public string ManagerName { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
     [Required]
+    public string ManagerName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
-    public string? Jurisdiction { get; set; }
+    public string VisitType { get; set; } = "日常走访";
+    public string VisitMethod { get; set; } = "实地走访";
     public string? Details { get; set; }
     public string? TenantId { get; set; }
+    public string? TenantName { get; set; }
     public string? VisitLocation { get; set; }
     public DateTime? VisitDate { get; set; }
     public string? QuestionnaireId { get; set; }
+    public string? Visitor { get; set; }
+    public string? Status { get; set; }
+
+    // 结果填报
+    public string? IntervieweeName { get; set; }
+    public string? IntervieweePosition { get; set; }
+    public string? IntervieweePhone { get; set; }
+    public string? Content { get; set; }
+    public List<string>? Photos { get; set; }
+    public List<string>? Attachments { get; set; }
+    public string? Feedback { get; set; }
 }
 
 /// <summary>
@@ -2288,6 +2365,18 @@ public class VisitStatisticsDto
 
     /// <summary>平均评分</summary>
     public decimal AverageScore { get; set; }
+
+    /// <summary>按类型统计走访任务</summary>
+    public Dictionary<string, int> TasksByType { get; set; } = new();
+
+    /// <summary>按状态统计走访任务</summary>
+    public Dictionary<string, int> TasksByStatus { get; set; } = new();
+
+    /// <summary>企管员走访排行 (姓名 -> 走访数)</summary>
+    public Dictionary<string, int> ManagerRanking { get; set; } = new();
+
+    /// <summary>最近6个月的走访趋势 (月份 -> 走访数)</summary>
+    public Dictionary<string, int> MonthlyTrends { get; set; } = new();
 }
 
 #endregion

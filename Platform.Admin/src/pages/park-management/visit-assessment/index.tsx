@@ -1,265 +1,251 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Button,
-    Space,
-    Tag,
-    Modal,
-    Form,
-    Input,
-    App,
-    Typography,
     Card,
+    Typography,
+    Space,
+    Table,
+    Button,
+    Tag,
+    Input,
+    Rate,
+    App,
     Row,
     Col,
-    Rate,
-    Empty,
-    Grid,
     Drawer,
     Descriptions,
     Divider,
 } from 'antd';
 import {
+    SearchOutlined,
     ReloadOutlined,
-    UserOutlined,
-    EnvironmentOutlined,
-    CalendarOutlined,
-    CheckCircleOutlined,
-    StarOutlined,
-    FieldTimeOutlined,
-    EyeOutlined,
-    SyncOutlined,
+    StarFilled,
+    FileSearchOutlined,
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
-import DataTable from '@/components/DataTable';
-import StatCard from '@/components/StatCard';
-import SearchFormCard from '@/components/SearchFormCard';
 import * as visitService from '@/services/visit';
-import type { VisitAssessment as VisitAssessmentType, VisitStatistics } from '@/services/visit';
-import dayjs from 'dayjs';
+import type { VisitAssessment } from '@/services/visit';
 import styles from './index.less';
 
 const { Text } = Typography;
-const { useBreakpoint } = Grid;
 
-const VisitAssessment: React.FC = () => {
+const VisitAssessmentList: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
-    const [searchForm] = Form.useForm();
-    const [statistics, setStatistics] = useState<VisitStatistics | null>(null);
-    const [detailVisible, setDetailVisible] = useState(false);
-    const [selectedAssessment, setSelectedAssessment] = useState<VisitAssessmentType | null>(null);
-    const actionRef = useRef<any>(null);
-    const screens = useBreakpoint();
+    const [loading, setLoading] = useState(false);
+    const [data, setData] = useState<VisitAssessment[]>([]);
+    const [total, setTotal] = useState(0);
+    const [current, setCurrent] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [search, setSearch] = useState('');
 
-    const loadStatistics = useCallback(async () => {
+    const [detailVisible, setDetailVisible] = useState(false);
+    const [selectedRecord, setSelectedRecord] = useState<VisitAssessment | null>(null);
+
+    const loadData = useCallback(async (page: number, size: number, query: string) => {
+        setLoading(true);
         try {
-            const res = await visitService.getVisitStatistics();
+            const res = await visitService.getAssessments({
+                page,
+                pageSize: size,
+                search: query,
+            });
             if (res.success && res.data) {
-                setStatistics(res.data);
+                setData(res.data.assessments);
+                setTotal(res.data.total);
             }
         } catch (error) {
-            console.error('Failed to load statistics:', error);
+            console.error('Failed to load assessments:', error);
+            message.error(intl.formatMessage({ id: 'pages.park.common.failed', defaultMessage: '加载失败' }));
+        } finally {
+            setLoading(false);
         }
-    }, []);
+    }, [intl, message]);
 
     useEffect(() => {
-        loadStatistics();
-    }, [loadStatistics]);
+        loadData(current, pageSize, search);
+    }, [loadData, current, pageSize, search]);
+
+    const handleSearch = (value: string) => {
+        setSearch(value);
+        setCurrent(1);
+    };
+
+    const handleRefresh = () => {
+        loadData(current, pageSize, search);
+    };
+
+    const showDetail = (record: VisitAssessment) => {
+        setSelectedRecord(record);
+        setDetailVisible(true);
+    };
 
     const columns = [
         {
-            title: '受访者',
+            title: intl.formatMessage({ id: 'pages.park.common.time', defaultMessage: '评价时间' }),
+            dataIndex: 'createdAt',
+            width: 180,
+            render: (text: string) => text ? new Date(text).toLocaleString() : '-',
+        },
+        {
+            title: intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' }),
             dataIndex: 'visitorName',
-            key: 'visitorName',
             width: 150,
-            render: (text: string) => (
-                <Space>
-                    <UserOutlined style={{ color: '#1890ff' }} />
-                    {text}
+            ellipsis: true,
+            render: (text: string, record: VisitAssessment) => (
+                <Space direction="vertical" size={0}>
+                    <Text strong>{text || '-'}</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>{record.location || '-'}</Text>
                 </Space>
             ),
         },
         {
-            title: '手机号',
-            dataIndex: 'phone',
-            key: 'phone',
-            width: 130,
-        },
-        {
-            title: '走访地点',
-            dataIndex: 'location',
-            key: 'location',
+            title: intl.formatMessage({ id: 'pages.park.visit.task', defaultMessage: '关联任务' }),
+            dataIndex: 'taskDescription',
             ellipsis: true,
+            render: (text: string) => text || '-',
         },
         {
-            title: '评分',
+            title: intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '满意度' }),
             dataIndex: 'score',
-            key: 'score',
-            width: 160,
-            render: (score: number) => <Rate disabled defaultValue={score} />,
+            width: 150,
+            render: (score: number) => (
+                <Rate disabled defaultValue={score} character={<StarFilled />} style={{ fontSize: 14 }} />
+            ),
         },
         {
-            title: '评价',
+            title: intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '评语' }),
             dataIndex: 'comments',
-            key: 'comments',
             ellipsis: true,
+            render: (text: string) => text || '-',
         },
         {
-            title: '考核时间',
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-            width: 180,
-            render: (text: string) => text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-',
-        },
-        {
-            title: '操作',
+            title: intl.formatMessage({ id: 'pages.park.common.actions', defaultMessage: '操作' }),
             key: 'action',
             width: 100,
-            fixed: 'right',
-            render: (_: any, record: VisitAssessmentType) => (
+            fixed: 'right' as const,
+            render: (_: any, record: VisitAssessment) => (
                 <Button
                     type="link"
-                    size="small"
-                    icon={<EyeOutlined />}
-                    onClick={() => { setSelectedAssessment(record); setDetailVisible(true); }}
+                    onClick={() => showDetail(record)}
+                    icon={<FileSearchOutlined />}
                 >
-                    查看
+                    {intl.formatMessage({ id: 'pages.park.common.view', defaultMessage: '详情' })}
                 </Button>
             ),
         },
     ];
 
-    const handleSearch = () => {
-        actionRef.current?.reload();
-    };
-
-    const handleReset = () => {
-        searchForm.resetFields();
-        handleSearch();
-    };
-
     return (
         <PageContainer
-            title="走访考核管理"
-            extra={
-                <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>
-                        刷新
-                    </Button>
-                </Space>
-            }
+            title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价明细' })}
         >
-            {statistics && (
-                <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                    <Col xs={24} sm={12} md={6}>
-                        <StatCard
-                            title="累计评价数"
-                            value={statistics.totalAssessments ?? 0}
-                            icon={<CheckCircleOutlined />}
-                            color="#1890ff"
+            <Card className={styles.searchCard}>
+                <Row gutter={16}>
+                    <Col flex="auto">
+                        <Input.Search
+                            placeholder={intl.formatMessage({ id: 'pages.park.common.search.placeholder', defaultMessage: '搜索受访企业或企管员' })}
+                            onSearch={handleSearch}
+                            enterButton={<SearchOutlined />}
+                            allowClear
                         />
                     </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <StatCard
-                            title="平均评分"
-                            value={statistics.averageScore ?? 0}
-                            icon={<StarOutlined />}
-                            suffix="分"
-                            color="#fadb14"
-                        />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <StatCard
-                            title="本月走访数"
-                            value={statistics.completedTasksThisMonth ?? 0}
-                            icon={<FieldTimeOutlined />}
-                            color="#52c41a"
-                        />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <StatCard
-                            title="待评价任务"
-                            value={statistics.pendingTasks ?? 0}
-                            icon={<SyncOutlined />}
-                            color="#faad14"
-                        />
+                    <Col>
+                        <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>
+                            {intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}
+                        </Button>
                     </Col>
                 </Row>
-            )}
+            </Card>
 
-            <SearchFormCard>
-                <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-                    <Form.Item name="search">
-                        <Input placeholder="搜索受访者/地点..." style={{ width: 200 }} allowClear />
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">搜索</Button>
-                            <Button onClick={handleReset} icon={<ReloadOutlined />}>重置</Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
-
-            <Card>
-                <DataTable<VisitAssessmentType>
-                    columns={columns as any}
-                    request={async (params: any) => {
-                        const searchValues = searchForm.getFieldsValue();
-                        const res = await visitService.getAssessments({
-                            page: params.current || 1,
-                            pageSize: params.pageSize || 10,
-                            ...searchValues,
-                        });
-                        if (res.success && res.data) {
-                            return { data: res.data.assessments, total: res.data.total, success: true };
-                        }
-                        return { data: [], total: 0, success: false };
-                    }}
-                    actionRef={actionRef}
+            <Card className={styles.tableCard} styles={{ body: { padding: 0 } }}>
+                <Table
+                    columns={columns}
+                    dataSource={data}
+                    loading={loading}
                     rowKey="id"
-                    search={false}
+                    pagination={{
+                        total,
+                        current,
+                        pageSize,
+                        onChange: (page, size) => {
+                            setCurrent(page);
+                            setPageSize(size);
+                        },
+                        showSizeChanger: true,
+                        showTotal: (t) => `${intl.formatMessage({ id: 'pages.park.common.total', defaultMessage: '共' })} ${t} ${intl.formatMessage({ id: 'pages.park.common.items', defaultMessage: '条' })}`,
+                    }}
                     scroll={{ x: 1000 }}
                 />
             </Card>
 
             <Drawer
-                title="走访考核详情"
-                open={detailVisible}
+                title={intl.formatMessage({ id: 'pages.park.visit.assessmentDetail', defaultMessage: '走访评价详情' })}
+                placement="right"
                 onClose={() => setDetailVisible(false)}
-                width={640}
-                extra={
-                    <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-                }
+                open={detailVisible}
+                width={500}
             >
-                {selectedAssessment ? (
-                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                        <Descriptions title="基本信息" bordered column={1}>
-                            <Descriptions.Item label="受访者">{selectedAssessment.visitorName}</Descriptions.Item>
-                            <Descriptions.Item label="联系电话">{selectedAssessment.phone}</Descriptions.Item>
-                            <Descriptions.Item label="走访地点">{selectedAssessment.location}</Descriptions.Item>
-                            <Descriptions.Item label="考核时间">{dayjs(selectedAssessment.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
-                        </Descriptions>
+                {selectedRecord && (
+                    <div className={styles.detailContainer}>
+                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                            <Text type="secondary">{intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '总体满意程度' })}</Text>
+                            <div style={{ marginTop: 8 }}>
+                                <Rate disabled value={selectedRecord.score} style={{ fontSize: 24 }} />
+                            </div>
+                        </div>
 
                         <Divider />
 
-                        <Descriptions title="评分评价" bordered column={1}>
-                            <Descriptions.Item label="满意度评分">
-                                <Rate disabled defaultValue={selectedAssessment.score} />
+                        <Descriptions column={1} bordered size="small">
+                            <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访对象' })}>
+                                {selectedRecord.visitorName}
                             </Descriptions.Item>
-                            <Descriptions.Item label="走访内容/目的">
-                                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedAssessment.taskDescription || '-'}</Text>
+                            <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })}>
+                                {selectedRecord.phone || '-'}
                             </Descriptions.Item>
-                            <Descriptions.Item label="评价详情">
-                                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedAssessment.comments || '-'}</Text>
+                            <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })}>
+                                {selectedRecord.location || '-'}
                             </Descriptions.Item>
                         </Descriptions>
-                    </Space>
-                ) : <Empty />}
+
+                        <Divider orientation={"left" as any} plain>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                                {intl.formatMessage({ id: 'pages.park.visit.taskInfo', defaultMessage: '走访任务信息' })}
+                            </Text>
+                        </Divider>
+
+                        <div style={{ padding: '0 4px' }}>
+                            <Text strong>{intl.formatMessage({ id: 'pages.park.visit.taskDescription', defaultMessage: '任务内容描述' })}：</Text>
+                            <div style={{ marginTop: 8, padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
+                                {selectedRecord.taskDescription || '-'}
+                            </div>
+                        </div>
+
+                        <Divider orientation={"left" as any} plain>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                                {intl.formatMessage({ id: 'pages.park.visit.assessmentComments', defaultMessage: '评价与建议' })}
+                            </Text>
+                        </Divider>
+
+                        <div style={{ padding: '0 4px', marginBottom: 24 }}>
+                            <Text strong>{intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '详细评语' })}：</Text>
+                            <div style={{ marginTop: 8, padding: 12, border: '1px solid #f0f0f0', borderRadius: 8, minHeight: 100 }}>
+                                {selectedRecord.comments || intl.formatMessage({ id: 'pages.park.common.noData', defaultMessage: '暂无评价内容' })}
+                            </div>
+                        </div>
+
+                        <Divider />
+                        <Space direction="vertical" size={2} style={{ width: '100%', textAlign: 'right' }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                                {intl.formatMessage({ id: 'pages.park.common.createdAt', defaultMessage: '提交时间' })}: {new Date(selectedRecord.createdAt).toLocaleString()}
+                            </Text>
+                        </Space>
+                    </div>
+                )}
             </Drawer>
         </PageContainer>
     );
 };
 
-export default VisitAssessment;
+export default VisitAssessmentList;

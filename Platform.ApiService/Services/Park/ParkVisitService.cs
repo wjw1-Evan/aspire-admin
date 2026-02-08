@@ -1,6 +1,10 @@
 using Platform.ApiService.Models;
 using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
+using System.Text.Json;
+using Microsoft.Extensions.Options;
+using OpenAI;
+using OpenAI.Chat;
 
 namespace Platform.ApiService.Services;
 
@@ -15,6 +19,8 @@ public class ParkVisitService : IParkVisitService
     private readonly IDatabaseOperationFactory<VisitQuestion> _questionFactory;
     private readonly IDatabaseOperationFactory<VisitQuestionnaire> _questionnaireFactory;
     private readonly IDatabaseOperationFactory<ParkTenant> _tenantFactory;
+    private readonly OpenAIClient _openAiClient;
+    private readonly AiCompletionOptions _aiOptions;
 
     /// <summary>
     /// 初始化走访管理服务
@@ -25,7 +31,9 @@ public class ParkVisitService : IParkVisitService
         IDatabaseOperationFactory<VisitAssessment> assessmentFactory,
         IDatabaseOperationFactory<VisitQuestion> questionFactory,
         IDatabaseOperationFactory<VisitQuestionnaire> questionnaireFactory,
-        IDatabaseOperationFactory<ParkTenant> tenantFactory)
+        IDatabaseOperationFactory<ParkTenant> tenantFactory,
+        OpenAIClient openAiClient,
+        IOptions<AiCompletionOptions> aiOptions)
     {
         _logger = logger;
         _visitTaskFactory = visitTaskFactory;
@@ -33,6 +41,8 @@ public class ParkVisitService : IParkVisitService
         _questionFactory = questionFactory;
         _questionnaireFactory = questionnaireFactory;
         _tenantFactory = tenantFactory;
+        _openAiClient = openAiClient;
+        _aiOptions = aiOptions.Value;
     }
 
     #region 走访任务
@@ -71,15 +81,23 @@ public class ParkVisitService : IParkVisitService
             tasks.Add(new VisitTaskDto
             {
                 Id = item.Id,
+                Title = item.Title,
                 ManagerName = item.ManagerName,
                 Phone = item.Phone,
-                Jurisdiction = item.Jurisdiction,
+                VisitType = item.VisitType,
+                VisitMethod = item.VisitMethod,
                 Details = item.Details,
                 TenantId = item.TenantId,
-                TenantName = tenant?.TenantName,
+                TenantName = tenant?.TenantName ?? item.TenantName,
                 VisitLocation = item.VisitLocation,
                 VisitDate = item.VisitDate,
                 Status = item.Status,
+                Visitor = item.Visitor,
+                IntervieweeName = item.IntervieweeName,
+                IntervieweePosition = item.IntervieweePosition,
+                Content = item.Content,
+                Photos = item.Photos,
+                Feedback = item.Feedback,
                 CreatedAt = item.CreatedAt
             });
         }
@@ -103,15 +121,23 @@ public class ParkVisitService : IParkVisitService
         return new VisitTaskDto
         {
             Id = item.Id,
+            Title = item.Title,
             ManagerName = item.ManagerName,
             Phone = item.Phone,
-            Jurisdiction = item.Jurisdiction,
+            VisitType = item.VisitType,
+            VisitMethod = item.VisitMethod,
             Details = item.Details,
             TenantId = item.TenantId,
-            TenantName = tenant?.TenantName,
+            TenantName = tenant?.TenantName ?? item.TenantName,
             VisitLocation = item.VisitLocation,
             VisitDate = item.VisitDate,
             Status = item.Status,
+            Visitor = item.Visitor,
+            IntervieweeName = item.IntervieweeName,
+            IntervieweePosition = item.IntervieweePosition,
+            Content = item.Content,
+            Photos = item.Photos,
+            Feedback = item.Feedback,
             CreatedAt = item.CreatedAt
         };
     }
@@ -123,15 +149,26 @@ public class ParkVisitService : IParkVisitService
     {
         var task = new VisitTask
         {
+            Title = request.Title,
             ManagerName = request.ManagerName,
             Phone = request.Phone,
-            Jurisdiction = request.Jurisdiction,
+            VisitType = request.VisitType,
+            VisitMethod = request.VisitMethod,
             Details = request.Details,
             TenantId = request.TenantId,
+            TenantName = request.TenantName,
             VisitLocation = request.VisitLocation,
             VisitDate = request.VisitDate,
             QuestionnaireId = request.QuestionnaireId,
-            Status = "Pending"
+            Visitor = request.Visitor,
+            Status = request.Status ?? "Pending",
+            IntervieweeName = request.IntervieweeName,
+            IntervieweePosition = request.IntervieweePosition,
+            IntervieweePhone = request.IntervieweePhone,
+            Content = request.Content,
+            Photos = request.Photos ?? new List<string>(),
+            Attachments = request.Attachments ?? new List<string>(),
+            Feedback = request.Feedback
         };
 
         await _visitTaskFactory.CreateAsync(task);
@@ -148,14 +185,30 @@ public class ParkVisitService : IParkVisitService
         var task = await _visitTaskFactory.GetByIdAsync(id);
         if (task == null) return null;
 
+        task.Title = request.Title;
         task.ManagerName = request.ManagerName;
         task.Phone = request.Phone;
-        task.Jurisdiction = request.Jurisdiction;
+        task.VisitType = request.VisitType;
+        task.VisitMethod = request.VisitMethod;
         task.Details = request.Details;
         task.TenantId = request.TenantId;
+        task.TenantName = request.TenantName;
         task.VisitLocation = request.VisitLocation;
         task.VisitDate = request.VisitDate;
         task.QuestionnaireId = request.QuestionnaireId;
+        task.Visitor = request.Visitor;
+        task.IntervieweeName = request.IntervieweeName;
+        task.IntervieweePosition = request.IntervieweePosition;
+        task.IntervieweePhone = request.IntervieweePhone;
+        task.Content = request.Content;
+        if (request.Photos != null) task.Photos = request.Photos;
+        if (request.Attachments != null) task.Attachments = request.Attachments;
+        task.Feedback = request.Feedback;
+
+        if (!string.IsNullOrEmpty(request.Status))
+        {
+            task.Status = request.Status;
+        }
 
         await _visitTaskFactory.FindOneAndReplaceAsync(_visitTaskFactory.CreateFilterBuilder().Equal(t => t.Id, id).Build(), task);
 
@@ -171,19 +224,7 @@ public class ParkVisitService : IParkVisitService
         return deleted != null;
     }
 
-    /// <summary>
-    /// 派发走访任务
-    /// </summary>
-    public async Task<VisitTaskDto?> DispatchVisitTaskAsync(string id)
-    {
-        var task = await _visitTaskFactory.GetByIdAsync(id);
-        if (task == null || task.Status != "Pending") return null;
 
-        task.Status = "InProgress";
-        await _visitTaskFactory.FindOneAndReplaceAsync(_visitTaskFactory.CreateFilterBuilder().Equal(t => t.Id, id).Build(), task);
-
-        return await GetVisitTaskByIdAsync(id);
-    }
 
     #endregion
 
@@ -245,6 +286,16 @@ public class ParkVisitService : IParkVisitService
             Score = request.Score,
             Comments = request.Comments
         };
+
+        // 如果关联了任务，且没有指定走访人（受访者），尝试从任务中获取
+        if (!string.IsNullOrEmpty(assessment.TaskId) && string.IsNullOrEmpty(assessment.VisitorName))
+        {
+            var task = await _visitTaskFactory.GetByIdAsync(assessment.TaskId);
+            if (task != null && !string.IsNullOrEmpty(task.Visitor))
+            {
+                assessment.VisitorName = task.Visitor;
+            }
+        }
 
         await _assessmentFactory.CreateAsync(assessment);
         return new VisitAssessmentDto
@@ -415,57 +466,165 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访统计数据
     /// </summary>
-    public async Task<VisitStatisticsDto> GetVisitStatisticsAsync()
+    public async Task<VisitStatisticsDto> GetVisitStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
     {
-        // 1. 待处理任务 (Pending)
+        // 1. 获取周期范围
+        var now = DateTime.Now;
+        var startOfPeriod = startDate ?? (period switch
+        {
+            StatisticsPeriod.Day => now.Date,
+            StatisticsPeriod.Week => now.AddDays(-(int)now.DayOfWeek),
+            StatisticsPeriod.Year => new DateTime(now.Year, 1, 1),
+            _ => new DateTime(now.Year, now.Month, 1)
+        });
+        var endOfPeriod = endDate ?? now;
+
+        // 基础指标使用的 Filter
+        var periodFilter = _visitTaskFactory.CreateFilterBuilder()
+            .GreaterThanOrEqual(t => t.VisitDate, startOfPeriod)
+            .LessThanOrEqual(t => t.VisitDate, endOfPeriod)
+            .Build();
+
+        // 1. 基础指标
         var pendingFilter = _visitTaskFactory.CreateFilterBuilder()
             .Equal(t => t.Status, "Pending")
+            .GreaterThanOrEqual(t => t.VisitDate, startOfPeriod)
+            .LessThanOrEqual(t => t.VisitDate, endOfPeriod)
             .Build();
         var pendingTasks = await _visitTaskFactory.CountAsync(pendingFilter);
 
-        // 2. 本月已完成走访
-        var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
         var completedMonthFilter = _visitTaskFactory.CreateFilterBuilder()
             .Equal(t => t.Status, "Completed")
-            .GreaterThanOrEqual(t => t.VisitDate, firstDayOfMonth)
+            .GreaterThanOrEqual(t => t.VisitDate, startOfPeriod)
+            .LessThanOrEqual(t => t.VisitDate, endOfPeriod)
             .Build();
         var completedTasksThisMonth = await _visitTaskFactory.CountAsync(completedMonthFilter);
 
-        // 3. 活跃企管员 (使用聚合进行去重计数)
-        // 注意：AggregateAsync 会自动添加多租户和软删除过滤的 $match 阶段
-        var managersPipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
-        {
-            new MongoDB.Bson.BsonDocument("$group", new MongoDB.Bson.BsonDocument("_id", "$managerName")),
-            new MongoDB.Bson.BsonDocument("$count", "count")
-        });
-        var managerResult = await _visitTaskFactory.AggregateAsync(managersPipeline);
-        var activeManagers = managerResult.FirstOrDefault()?.GetValue("count", 0).AsInt32 ?? 0;
-
-        // 4. 完成率
-        var totalTasks = await _visitTaskFactory.CountAsync();
-        var completedFilter = _visitTaskFactory.CreateFilterBuilder().Equal(t => t.Status, "Completed").Build();
-        var completedTasks = await _visitTaskFactory.CountAsync(completedFilter);
+        var totalTasks = await _visitTaskFactory.CountAsync(periodFilter);
+        var completedTasks = await _visitTaskFactory.CountAsync(completedMonthFilter);
         decimal completionRate = totalTasks > 0 ? (decimal)completedTasks * 100 / totalTasks : 0;
 
-        // 5. 累计评价数
-        var totalAssessments = await _assessmentFactory.CountAsync();
+        var assessmentPeriodFilter = _assessmentFactory.CreateFilterBuilder()
+            .GreaterThanOrEqual(a => a.CreatedAt, startOfPeriod)
+            .LessThanOrEqual(a => a.CreatedAt, endOfPeriod)
+            .Build();
 
-        // 6. 平均评分 (使用聚合)
+        var totalAssessments = await _assessmentFactory.CountAsync(assessmentPeriodFilter);
         var averageScore = 0m;
         if (totalAssessments > 0)
         {
             var scorePipeline = PipelineDefinition<VisitAssessment, MongoDB.Bson.BsonDocument>.Create(new[]
             {
-                new MongoDB.Bson.BsonDocument("$group", new MongoDB.Bson.BsonDocument {
+                new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("createdAt", new MongoDB.Bson.BsonDocument {
+                    { "$gte", startOfPeriod },
+                    { "$lte", endOfPeriod }
+                }) } },
+                new MongoDB.Bson.BsonDocument { { "$group", new MongoDB.Bson.BsonDocument {
                     { "_id", 1 },
                     { "average", new MongoDB.Bson.BsonDocument("$avg", "$score") }
-                })
+                } } }
             });
             var scoreResult = await _assessmentFactory.AggregateAsync(scorePipeline);
             var avgValue = scoreResult.FirstOrDefault()?.GetValue("average", 0);
-            if (avgValue != null)
+            if (avgValue != null) averageScore = (decimal)avgValue.ToDouble();
+        }
+
+        // 2. 按类型统计
+        var tasksByType = new Dictionary<string, int>();
+        var typePipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
+        {
+            new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("visitDate", new MongoDB.Bson.BsonDocument {
+                { "$gte", startOfPeriod },
+                { "$lte", endOfPeriod }
+            }) } },
+            new MongoDB.Bson.BsonDocument {
+                { "$group", new MongoDB.Bson.BsonDocument {
+                    { "_id", "$visitType" },
+                    { "count", new MongoDB.Bson.BsonDocument("$sum", 1) }
+                }}
+            }
+        });
+        var typeResults = await _visitTaskFactory.AggregateAsync(typePipeline);
+        foreach (var doc in typeResults)
+        {
+            var type = doc.GetValue("_id", "其他").AsString;
+            var count = doc.GetValue("count", 0).AsInt32;
+            tasksByType[type] = count;
+        }
+
+        // 3. 按状态统计
+        var tasksByStatus = new Dictionary<string, int>();
+        var statusPipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
+        {
+            new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("visitDate", new MongoDB.Bson.BsonDocument {
+                { "$gte", startOfPeriod },
+                { "$lte", endOfPeriod }
+            }) } },
+            new MongoDB.Bson.BsonDocument {
+                { "$group", new MongoDB.Bson.BsonDocument {
+                    { "_id", "$status" },
+                    { "count", new MongoDB.Bson.BsonDocument("$sum", 1) }
+                }}
+            }
+        });
+        var statusResults = await _visitTaskFactory.AggregateAsync(statusPipeline);
+        foreach (var doc in statusResults)
+        {
+            var status = doc.GetValue("_id", "Unknown").AsString;
+            var count = doc.GetValue("count", 0).AsInt32;
+            tasksByStatus[status] = count;
+        }
+
+        // 4. 企管员走访排行
+        var managerRanking = new Dictionary<string, int>();
+        var managerRankingPipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
+        {
+            new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("visitDate", new MongoDB.Bson.BsonDocument {
+                { "$gte", startOfPeriod },
+                { "$lte", endOfPeriod }
+            }) } },
+            new MongoDB.Bson.BsonDocument {
+                { "$group", new MongoDB.Bson.BsonDocument {
+                    { "_id", "$managerName" },
+                    { "count", new MongoDB.Bson.BsonDocument("$sum", 1) }
+                }}
+            },
+            new MongoDB.Bson.BsonDocument { { "$sort", new MongoDB.Bson.BsonDocument("count", -1) } },
+            new MongoDB.Bson.BsonDocument { { "$limit", 10 } }
+        });
+        var rankingResults = await _visitTaskFactory.AggregateAsync(managerRankingPipeline);
+        foreach (var doc in rankingResults)
+        {
+            var name = doc.GetValue("_id", "未知").AsString;
+            var count = doc.GetValue("count", 0).AsInt32;
+            managerRanking[name] = count;
+        }
+
+        // 5. 趋势分析 (最近6个月)
+        var monthlyTrends = new Dictionary<string, int>();
+        var sixMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-5);
+
+        var trendPipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
+        {
+            new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("visitDate", new MongoDB.Bson.BsonDocument("$gte", sixMonthsAgo)) } },
+            new MongoDB.Bson.BsonDocument {
+                { "$group", new MongoDB.Bson.BsonDocument {
+                    { "_id", new MongoDB.Bson.BsonDocument("$dateToString", new MongoDB.Bson.BsonDocument {
+                        { "format", "%Y-%m" },
+                        { "date", "$visitDate" }
+                    })},
+                    { "count", new MongoDB.Bson.BsonDocument("$sum", 1) }
+                }}
+            },
+            new MongoDB.Bson.BsonDocument { { "$sort", new MongoDB.Bson.BsonDocument("_id", 1) } }
+        });
+        var trendResults = await _visitTaskFactory.AggregateAsync(trendPipeline);
+        foreach (var doc in trendResults)
+        {
+            var month = doc.GetValue("_id", "").AsString;
+            if (!string.IsNullOrEmpty(month))
             {
-                averageScore = (decimal)avgValue.ToDouble();
+                monthlyTrends[month] = doc.GetValue("count", 0).AsInt32;
             }
         }
 
@@ -473,11 +632,88 @@ public class ParkVisitService : IParkVisitService
         {
             PendingTasks = (int)pendingTasks,
             CompletedTasksThisMonth = (int)completedTasksThisMonth,
-            ActiveManagers = activeManagers,
+            ActiveManagers = managerRanking.Count,
             CompletionRate = Math.Round(completionRate, 1),
             TotalAssessments = (int)totalAssessments,
-            AverageScore = Math.Round(averageScore, 1)
+            AverageScore = Math.Round(averageScore, 1),
+            TasksByType = tasksByType,
+            TasksByStatus = tasksByStatus,
+            ManagerRanking = managerRanking,
+            MonthlyTrends = monthlyTrends
         };
+    }
+
+    /// <summary>
+    /// 生成走访 AI 分析报告
+    /// </summary>
+    public async Task<string> GenerateAiReportAsync(VisitStatisticsDto stats)
+    {
+        var statsJson = JsonSerializer.Serialize(stats, new JsonSerializerOptions { WriteIndented = true });
+        // 3. 构建 Prompt
+        var systemPrompt = "你是一个专业的高级园区企管运营专家。请根据提供的园区企业走访运营数据，通过 markdown 格式生成一份深度走访调研分析报告。报告应不仅包含现状分析，还应提供洞察与改进建议。";
+        var userPrompt = $@"请基于以下走访统计数据生成分析报告：
+
+{statsJson}
+
+报告要求：
+1. **📊 走访执行概览**：
+   - 总结本阶段走访任务的完成情况（完成数、平均完成率）。
+   - 分析企管员的活跃度（活跃企管员数量）。
+   - 使用表格对比各类走访任务的数量占比。
+
+2. **⭐ 走访满意度与质量分析**：
+   - 分析企业对园区走访服务的平均满意度评分。
+   - 评估走访评价的总量与走访任务完成量的匹配度。
+   - 使用 ⬆️ ⬇️ 表示满意度趋势。
+
+3. **🔍 关键洞察与发现**：
+   - 识别走访过程中发现的核心问题或亮点。
+   - 分析不同月份的走访趋势变化。
+
+4. **🏆 效能评估 (企管员排行)**：
+   - 识别表现突出的企管员及其贡献。
+   - 引用优秀案例或高频次走访的行为价值。
+
+5. **💡 改进建议与行动计划**：
+   - 基于现有数据，提出至少 3 条具体的运营改进建议。
+   - 建议如何提升低频次月份的走访覆盖率。
+
+请使用 Markdown 格式输出，排版需精美：
+- **使用 Emoji 图标**：在标题和关键指标前使用合适的 Emoji 增强可读性。
+- **使用表格**：务必使用标准的 Markdown 表格语法展示数据对比。
+- **高亮关键数据**：使用 **加粗** 或 `代码块` 突出核心指标。
+- **引用块**：使用 > 引用块展示核心洞察。
+
+语气需专业、严谨且富有洞察力。";
+
+        try
+        {
+            var model = string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model;
+            _logger.LogInformation("开始生成走访 AI 报告，使用的模型：{Model}", model);
+            var chatClient = _openAiClient.GetChatClient(model);
+
+            var messages = new List<OpenAI.Chat.ChatMessage>
+            {
+                new SystemChatMessage(systemPrompt),
+                new UserChatMessage(userPrompt)
+            };
+
+            var options = new ChatCompletionOptions
+            {
+                Temperature = 0.7f,
+                MaxOutputTokenCount = 2000
+            };
+
+            var completion = await chatClient.CompleteChatAsync(messages, options);
+            var result = completion.Value.Content[0].Text;
+            _logger.LogInformation("走访 AI 报告生成成功，内容长度：{Length}", result.Length);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "生成走访 AI 报告失败");
+            return $"生成分析报告时发生错误：{ex.Message}。";
+        }
     }
 
     #endregion

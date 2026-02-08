@@ -939,6 +939,22 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
+        // 走访管理子菜单：走访统计
+        menus.Add(new Menu
+        {
+            Name = "park-management-visit-statistics",
+            Title = "走访统计",
+            Path = "/visit-management/statistics",
+            Component = "./park-management/visit-statistics",
+            Icon = "bar-chart",
+            ParentId = "visit-management",
+            SortOrder = 4,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
         return menus;
     }
 
@@ -991,6 +1007,7 @@ public class DataInitializerService : IDataInitializerService
             "park-management-visit-task" => "visit-management",
             "park-management-visit-assessment" => "visit-management",
             "park-management-visit-knowledge-base" => "visit-management",
+            "park-management-visit-statistics" => "visit-management",
 
             _ => null
         };
@@ -1008,9 +1025,9 @@ public class DataInitializerService : IDataInitializerService
 
             var roles = _database.GetCollection<BsonDocument>("roles");
 
-            // 查找所有名为“管理员”的角色
+            // 查找所有名为“管理员”或“超级管理员”的角色
             var filter = Builders<BsonDocument>.Filter.And(
-                Builders<BsonDocument>.Filter.Eq("name", "管理员"),
+                Builders<BsonDocument>.Filter.In("name", new BsonArray { "管理员", "超级管理员" }),
                 Builders<BsonDocument>.Filter.Eq("isDeleted", false)
             );
 

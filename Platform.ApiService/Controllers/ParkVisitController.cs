@@ -83,16 +83,7 @@ public class ParkVisitController : BaseApiController
         return Success(result);
     }
 
-    /// <summary>
-    /// 派发走访任务
-    /// </summary>
-    [HttpPost("task/{id}/dispatch")]
-    [RequireMenu("park-management-visit-task")]
-    public async Task<IActionResult> DispatchTask(string id)
-    {
-        var result = await _visitService.DispatchVisitTaskAsync(id);
-        return result != null ? Success(result) : NotFound();
-    }
+
 
     #endregion
 
@@ -196,14 +187,27 @@ public class ParkVisitController : BaseApiController
 
     /// <summary>
     /// 获取走访管理统计数据
-    /// 只要拥有走访任务、考核或知识库中任意一个菜单权限即可访问
     /// </summary>
     [HttpGet("statistics")]
-    [RequireMenu("park-management-visit-task", "park-management-visit-assessment", "park-management-visit-knowledge-base")]
-    public async Task<IActionResult> GetStatistics()
+    [RequireMenu("park-management-visit-statistics")]
+    public async Task<IActionResult> GetStatistics(
+        [FromQuery] StatisticsPeriod period = StatisticsPeriod.Month,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
     {
-        var result = await _visitService.GetVisitStatisticsAsync();
+        var result = await _visitService.GetVisitStatisticsAsync(period, startDate, endDate);
         return Success(result);
+    }
+
+    /// <summary>
+    /// 生成走访 AI 分析报告
+    /// </summary>
+    [HttpPost("statistics/ai-report")]
+    [RequireMenu("park-management-visit-statistics")]
+    public async Task<IActionResult> GenerateAiReport([FromBody] VisitStatisticsDto stats)
+    {
+        var result = await _visitService.GenerateAiReportAsync(stats);
+        return Success(data: result);
     }
 
     #endregion

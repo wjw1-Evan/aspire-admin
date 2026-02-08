@@ -1,0 +1,125 @@
+.statistics-page {
+    .stat-cards {
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        height: 100%;
+        border-radius: 8px;
+        transition: all 0.3s;
+
+        &:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+    }
+
+    .chart-card {
+        margin-bottom: 24px;
+        border-radius: 8px;
+
+        .ant-card-head-title {
+            font-weight: 600;
+        }
+    }
+
+    .overview-section {
+        margin-bottom: 24px;
+    }
+
+    .chart-container {
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .loading-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+    }
+
+    .trend-up {
+        color: #52c41a;
+        font-size: 12px;
+    }
+
+    .trend-down {
+        color: #f5222d;
+        font-size: 12px;
+    }
+
+    .stat-description {
+        color: rgba(0, 0, 0, 0.45);
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .refresh-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+
+        @media (max-width: 1200px) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .chart-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        margin-bottom: 24px;
+
+        @media (max-width: 992px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .full-width-chart {
+        margin-bottom: 24px;
+    }
+}
+
+.markdown-body {
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 16px;
+    }
+
+    th, td {
+        border: 1px solid #d9d9d9;
+        padding: 8px 12px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #fafafa;
+        font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+        background-color: #fbfbfb;
+    }
+
+    blockquote {
+        margin: 0 0 16px;
+        padding: 0 1em;
+        color: #6a737d;
+        border-left: 0.25em solid #dfe2e5;
+    }
+}

@@ -136,5 +136,7 @@ export default {
   'menu.park-management-visit-assessment.desc': '管理走访任务考核情况',
   'menu.park-management-visit-knowledge-base': '走访知识库',
   'menu.park-management-visit-knowledge-base.desc': '走访问题与问卷管理',
+  'menu.park-management-visit-statistics': '走访统计报表',
+  'menu.park-management-visit-statistics.desc': '企管员走访数据统计与 AI 分析',
   'menu.pending-join-requests': '加入申请',
 };

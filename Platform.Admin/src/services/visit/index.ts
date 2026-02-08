@@ -1,17 +1,33 @@
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/types/unified-api';
 
+export enum StatisticsPeriod {
+    Day = 0,
+    Week = 1,
+    Month = 2,
+    Year = 3,
+    Custom = 4,
+}
+
 export interface VisitTask {
     id: string;
+    title: string;
     managerName: string;
     phone: string;
-    jurisdiction?: string;
+    visitType: string;
+    visitMethod: string;
     details?: string;
     tenantId?: string;
     tenantName?: string;
     visitLocation?: string;
     visitDate?: string;
+    visitor?: string;
     status: string;
+    intervieweeName?: string;
+    intervieweePosition?: string;
+    content?: string;
+    photos?: string[];
+    feedback?: string;
     createdAt: string;
 }
 
@@ -25,6 +41,28 @@ export interface VisitAssessment {
     score: number;
     comments?: string;
     createdAt: string;
+}
+export interface CreateVisitTaskRequest {
+    title: string;
+    managerName: string;
+    phone: string;
+    visitType: string;
+    visitMethod: string;
+    details?: string;
+    tenantId?: string;
+    tenantName?: string;
+    visitLocation?: string;
+    visitDate?: string;
+    questionnaireId?: string;
+    visitor?: string;
+    status?: string;
+    intervieweeName?: string;
+    intervieweePosition?: string;
+    intervieweePhone?: string;
+    content?: string;
+    photos?: string[];
+    attachments?: string[];
+    feedback?: string;
 }
 
 export interface VisitQuestion {
@@ -49,6 +87,7 @@ export interface VisitTaskListRequest {
     pageSize: number;
     search?: string;
     status?: string;
+    visitType?: string;
     managerName?: string;
     tenantId?: string;
     sortBy?: string;
@@ -73,8 +112,12 @@ export interface VisitStatistics {
     completedTasksThisMonth: number;
     activeManagers: number;
     completionRate: number;
-    totalAssessments?: number;
-    averageScore?: number;
+    totalAssessments: number;
+    averageScore: number;
+    tasksByType: Record<string, number>;
+    tasksByStatus: Record<string, number>;
+    managerRanking: Record<string, number>;
+    monthlyTrends: Record<string, number>;
 }
 
 // Tasks
@@ -101,9 +144,7 @@ export async function deleteTask(id: string) {
     return request<ApiResponse<boolean>>(`/api/park-management/visit/task/${id}`, { method: 'DELETE' });
 }
 
-export async function dispatchTask(id: string) {
-    return request<ApiResponse<VisitTask>>(`/api/park-management/visit/task/${id}/dispatch`, { method: 'POST' });
-}
+
 
 // Assessments
 export async function getAssessments(params: VisitAssessmentListRequest) {
@@ -148,8 +189,17 @@ export async function createQuestionnaire(data: any) {
 }
 
 // Statistics
-export async function getVisitStatistics() {
+export async function getVisitStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
     return request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics', {
         method: 'GET',
+        params: { period, startDate, endDate },
+    });
+}
+
+export async function generateVisitAiReport(data: VisitStatistics) {
+    return request<ApiResponse<string>>('/api/park-management/visit/statistics/ai-report', {
+        method: 'POST',
+        data,
+        timeout: 120000,
     });
 }

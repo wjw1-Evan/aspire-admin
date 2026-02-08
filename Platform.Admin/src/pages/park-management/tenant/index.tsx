@@ -1,14 +1,14 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, DatePicker, Drawer, List, Badge, Flex, Upload } from 'antd';
-import { useIntl } from '@umijs/max';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, DatePicker, Drawer, List, Badge, Flex, Upload, Table, Empty, Rate, Timeline } from 'antd';
+import { useIntl, history } from '@umijs/max';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CustomerServiceOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
 import { DataTable } from '@/components/DataTable';
 import SearchFormCard from '@/components/SearchFormCard';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
-import type { ParkTenant, LeaseContract, TenantStatistics, PropertyUnit } from '@/services/park';
+import type { ParkTenant, LeaseContract, TenantStatistics, PropertyUnit, ServiceRequest, LeasePaymentRecord } from '@/services/park';
 import * as cloudService from '@/services/cloud-storage/api';
 import dayjs from 'dayjs';
 import type { UploadFile, UploadProps } from 'antd';
@@ -41,6 +41,11 @@ const TenantManagement: React.FC = () => {
     const [allUnits, setAllUnits] = useState<PropertyUnit[]>([]);
     const [isEdit, setIsEdit] = useState(false);
     const [contractFileList, setContractFileList] = useState<UploadFile[]>([]);
+    const [tenantServiceRequests, setTenantServiceRequests] = useState<ServiceRequest[]>([]);
+    const [tenantPayments, setTenantPayments] = useState<(LeasePaymentRecord & { contractNumber?: string })[]>([]);
+    const [tenantContracts, setTenantContracts] = useState<LeaseContract[]>([]);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailTab, setDetailTab] = useState('info');
 
     const loadStatistics = useCallback(async () => {
         try {
@@ -158,12 +163,15 @@ const TenantManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }),
             valueType: 'option',
-            width: 180,
+            width: 220,
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewTenant(record)}>
                         {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
+                    </Button>
+                    <Button type="link" size="small" icon={<CustomerServiceOutlined />} onClick={() => history.push(`/park-management/enterprise-service?tenantId=${record.id}&tenantName=${encodeURIComponent(record.tenantName)}`)}>
+                        {intl.formatMessage({ id: 'pages.park.tenant.serviceRequest', defaultMessage: '服务' })}
                     </Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditTenant(record)}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
@@ -219,9 +227,16 @@ const TenantManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.contract.rent', defaultMessage: '月租金' }),
             dataIndex: 'monthlyRent',
-            width: 120,
+            width: 100,
             align: 'right',
             render: (rent) => `¥${rent?.toLocaleString()}`,
+        },
+        {
+            title: intl.formatMessage({ id: 'pages.park.contract.propertyFee', defaultMessage: '物业费' }),
+            dataIndex: 'propertyFee',
+            width: 100,
+            align: 'right',
+            render: (fee) => fee ? `¥${fee?.toLocaleString()}` : '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.contract.deposit', defaultMessage: '押金' }),
@@ -294,7 +309,45 @@ const TenantManagement: React.FC = () => {
         } catch (error) { return { data: [], total: 0, success: false }; }
     };
 
-    const handleViewTenant = (tenant: ParkTenant) => { setCurrentTenant(tenant); setDetailDrawerVisible(true); };
+    const handleViewTenant = async (tenant: ParkTenant) => {
+        setCurrentTenant(tenant);
+        setDetailTab('info');
+        setDetailDrawerVisible(true);
+        setDetailLoading(true);
+        try {
+            // Load service requests for this tenant
+            const serviceRes = await parkService.getServiceRequests({
+                page: 1,
+                pageSize: 100,
+                tenantId: tenant.id
+            });
+            if (serviceRes.success && serviceRes.data) {
+                setTenantServiceRequests(serviceRes.data.requests);
+            }
+            // Load contracts for this tenant
+            const contractRes = await parkService.getContracts({
+                page: 1,
+                pageSize: 100,
+                tenantId: tenant.id
+            });
+            if (contractRes.success && contractRes.data) {
+                setTenantContracts(contractRes.data.contracts);
+                // Load payments for all contracts
+                const allPayments: LeasePaymentRecord[] = [];
+                for (const contract of contractRes.data.contracts) {
+                    const paymentRes = await parkService.getPaymentRecords(contract.id);
+                    if (paymentRes.success && paymentRes.data) {
+                        allPayments.push(...paymentRes.data.map(p => ({ ...p, contractNumber: contract.contractNumber })));
+                    }
+                }
+                setTenantPayments(allPayments);
+            }
+        } catch (error) {
+            console.error('Failed to load tenant details:', error);
+        } finally {
+            setDetailLoading(false);
+        }
+    };
     const handleViewContract = (contract: LeaseContract) => { setCurrentContract(contract); setContractDetailDrawerVisible(true); };
     const handleEditTenant = (tenant: ParkTenant) => { setCurrentTenant(tenant); setIsEdit(true); tenantForm.setFieldsValue({ ...tenant, entryDate: tenant.entryDate ? dayjs(tenant.entryDate) : undefined }); setTenantModalVisible(true); };
     const handleDeleteTenant = async (id: string) => { setLoading(true); try { const res = await parkService.deleteTenant(id); if (res.success) { message.success('删除成功'); tenantTableRef.current?.reload(); loadStatistics(); loadTenants(); } } catch (e) { message.error('删除失败'); } finally { setLoading(false); } };
@@ -549,7 +602,7 @@ const TenantManagement: React.FC = () => {
                         />
                     </Form.Item>
                     <Row gutter={16}><Col span={12}><Form.Item name="startDate" label="开始日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item></Col><Col span={12}><Form.Item name="endDate" label="结束日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item></Col></Row>
-                    <Row gutter={16}><Col span={8}><Form.Item name="monthlyRent" label="月租金" rules={[{ required: true }]}><InputNumber min={0} style={{ width: '100%' }} placeholder="月租金" /></Form.Item></Col><Col span={8}><Form.Item name="deposit" label="押金"><InputNumber min={0} style={{ width: '100%' }} placeholder="押金" /></Form.Item></Col><Col span={8}><Form.Item name="paymentCycle" label="付款周期"><Select placeholder="请选择" options={[{ label: '月付', value: 'Monthly' }, { label: '季付', value: 'Quarterly' }, { label: '年付', value: 'Yearly' }]} /></Form.Item></Col></Row>
+                    <Row gutter={16}><Col span={6}><Form.Item name="monthlyRent" label="月租金" rules={[{ required: true }]}><InputNumber min={0} style={{ width: '100%' }} placeholder="月租金" /></Form.Item></Col><Col span={6}><Form.Item name="propertyFee" label="物业费/月"><InputNumber min={0} style={{ width: '100%' }} placeholder="物业费" /></Form.Item></Col><Col span={6}><Form.Item name="deposit" label="押金"><InputNumber min={0} style={{ width: '100%' }} placeholder="押金" /></Form.Item></Col><Col span={6}><Form.Item name="paymentCycle" label="付款周期"><Select placeholder="请选择" options={[{ label: '月付', value: 'Monthly' }, { label: '季付', value: 'Quarterly' }, { label: '年付', value: 'Yearly' }]} /></Form.Item></Col></Row>
                     <Form.Item label="合同附件">
                         <Upload {...uploadProps}>
                             <Button icon={<UploadOutlined />}>点击上传</Button>
@@ -560,19 +613,100 @@ const TenantManagement: React.FC = () => {
                 </Form>
             </Modal>
 
-            <Drawer title={currentTenant?.tenantName || '租户详情'} open={detailDrawerVisible} onClose={() => setDetailDrawerVisible(false)} styles={{ wrapper: { width: 640 } }}>
+            <Drawer
+                title={currentTenant?.tenantName || '租户详情'}
+                open={detailDrawerVisible}
+                onClose={() => { setDetailDrawerVisible(false); setTenantServiceRequests([]); setTenantPayments([]); setTenantContracts([]); }}
+                styles={{ wrapper: { width: 720 } }}
+                loading={detailLoading}
+            >
                 {currentTenant && (
-                    <Descriptions bordered column={2} size="small">
-                        <Descriptions.Item label="租户名称">{currentTenant.tenantName}</Descriptions.Item>
-                        <Descriptions.Item label="行业">{currentTenant.industry || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="联系人">{currentTenant.contactPerson || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="电话">{currentTenant.phone || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="邮箱" span={2}>{currentTenant.email || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="入驻日期">{currentTenant.entryDate ? dayjs(currentTenant.entryDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="状态"><Tag color={tenantStatusOptions.find(o => o.value === currentTenant.status)?.color}>{tenantStatusOptions.find(o => o.value === currentTenant.status)?.label || currentTenant.status}</Tag></Descriptions.Item>
-                        <Descriptions.Item label="租用单元">{currentTenant.unitCount}个</Descriptions.Item>
-                        <Descriptions.Item label="有效合同">{currentTenant.activeContracts}份</Descriptions.Item>
-                    </Descriptions>
+                    <Flex vertical gap={24}>
+                        {/* 基本信息 */}
+                        <div>
+                            <Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>基本信息</Text>
+                            <Descriptions bordered column={2} size="small">
+                                <Descriptions.Item label="租户名称">{currentTenant.tenantName}</Descriptions.Item>
+                                <Descriptions.Item label="行业">{currentTenant.industry || '-'}</Descriptions.Item>
+                                <Descriptions.Item label="联系人">{currentTenant.contactPerson || '-'}</Descriptions.Item>
+                                <Descriptions.Item label="电话">{currentTenant.phone || '-'}</Descriptions.Item>
+                                <Descriptions.Item label="邮箱" span={2}>{currentTenant.email || '-'}</Descriptions.Item>
+                                <Descriptions.Item label="入驻日期">{currentTenant.entryDate ? dayjs(currentTenant.entryDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
+                                <Descriptions.Item label="状态"><Tag color={tenantStatusOptions.find(o => o.value === currentTenant.status)?.color}>{tenantStatusOptions.find(o => o.value === currentTenant.status)?.label || currentTenant.status}</Tag></Descriptions.Item>
+                                <Descriptions.Item label="租用单元">{currentTenant.unitCount}个</Descriptions.Item>
+                                <Descriptions.Item label="有效合同">{currentTenant.activeContracts}份</Descriptions.Item>
+                            </Descriptions>
+                        </div>
+
+                        {/* 合同记录 */}
+                        <div>
+                            <Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>合同记录 ({tenantContracts.length})</Text>
+                            {tenantContracts.length > 0 ? (
+                                <Table
+                                    size="small"
+                                    dataSource={tenantContracts}
+                                    rowKey="id"
+                                    pagination={false}
+                                    columns={[
+                                        { title: '合同编号', dataIndex: 'contractNumber', width: 120 },
+                                        { title: '月租金', dataIndex: 'monthlyRent', width: 100, render: (v: number) => `¥${v?.toLocaleString()}` },
+                                        { title: '起止日期', key: 'dates', width: 180, render: (_, r: LeaseContract) => `${dayjs(r.startDate).format('YYYY-MM-DD')} ~ ${dayjs(r.endDate).format('YYYY-MM-DD')}` },
+                                        { title: '状态', dataIndex: 'status', width: 80, render: (s: string) => <Tag color={contractStatusOptions.find(o => o.value === s)?.color}>{contractStatusOptions.find(o => o.value === s)?.label || s}</Tag> },
+                                    ]}
+                                />
+                            ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无合同记录" />}
+                        </div>
+
+                        {/* 服务申请 */}
+                        <div>
+                            <Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>服务申请 ({tenantServiceRequests.length})</Text>
+                            {tenantServiceRequests.length > 0 ? (
+                                <Table
+                                    size="small"
+                                    dataSource={tenantServiceRequests}
+                                    rowKey="id"
+                                    pagination={false}
+                                    columns={[
+                                        { title: '标题', dataIndex: 'title', ellipsis: true },
+                                        { title: '类别', dataIndex: 'categoryName', width: 80 },
+                                        {
+                                            title: '状态', dataIndex: 'status', width: 80, render: (s: string) => {
+                                                const statusMap: Record<string, { label: string; color: string }> = {
+                                                    'Pending': { label: '待处理', color: 'orange' },
+                                                    'Processing': { label: '处理中', color: 'processing' },
+                                                    'Completed': { label: '已完成', color: 'green' },
+                                                    'Cancelled': { label: '已取消', color: 'default' },
+                                                };
+                                                return <Tag color={statusMap[s]?.color}>{statusMap[s]?.label || s}</Tag>;
+                                            }
+                                        },
+                                        { title: '评分', dataIndex: 'rating', width: 100, render: (r: number) => r ? <Rate disabled value={r} style={{ fontSize: 12 }} /> : '-' },
+                                        { title: '创建时间', dataIndex: 'createdAt', width: 100, render: (d: string) => dayjs(d).format('MM-DD HH:mm') },
+                                    ]}
+                                />
+                            ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无服务申请" />}
+                        </div>
+
+                        {/* 缴费记录 */}
+                        <div>
+                            <Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>缴费记录 ({tenantPayments.length})</Text>
+                            {tenantPayments.length > 0 ? (
+                                <Table
+                                    size="small"
+                                    dataSource={tenantPayments}
+                                    rowKey="id"
+                                    pagination={false}
+                                    columns={[
+                                        { title: '合同', dataIndex: 'contractNumber', width: 100 },
+                                        { title: '金额', dataIndex: 'amount', width: 100, render: (v: number) => <Text type="success">¥{v?.toLocaleString()}</Text> },
+                                        { title: '缴费日期', dataIndex: 'paymentDate', width: 100, render: (d: string) => dayjs(d).format('YYYY-MM-DD') },
+                                        { title: '方式', dataIndex: 'paymentMethod', width: 80 },
+                                        { title: '备注', dataIndex: 'notes', ellipsis: true },
+                                    ]}
+                                />
+                            ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无缴费记录" />}
+                        </div>
+                    </Flex>
                 )}
             </Drawer>
 
@@ -585,6 +719,7 @@ const TenantManagement: React.FC = () => {
                             <Descriptions.Item label="开始日期">{dayjs(currentContract.startDate as string).format('YYYY-MM-DD')}</Descriptions.Item>
                             <Descriptions.Item label="结束日期">{dayjs(currentContract.endDate as string).format('YYYY-MM-DD')}</Descriptions.Item>
                             <Descriptions.Item label="月租金">¥{currentContract.monthlyRent?.toLocaleString()}</Descriptions.Item>
+                            <Descriptions.Item label="物业费/月">{currentContract.propertyFee ? `¥${currentContract.propertyFee?.toLocaleString()}` : '-'}</Descriptions.Item>
                             <Descriptions.Item label="押金">¥{currentContract.deposit?.toLocaleString()}</Descriptions.Item>
                             <Descriptions.Item label="到期状态" span={2}>
                                 {currentContract.status === 'Active' && typeof currentContract.daysUntilExpiry === 'number' ? (

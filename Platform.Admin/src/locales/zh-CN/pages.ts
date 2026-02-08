@@ -1871,6 +1871,7 @@ export default {
   'pages.park.tenant.status.active': '正常',
   'pages.park.tenant.status.inactive': '已退出',
   'pages.park.tenant.status.suspended': '已暂停',
+  'pages.park.tenant.serviceRequest': '服务申请',
   'pages.park.tenant.contractStatus.draft': '草稿',
   'pages.park.tenant.contractStatus.active': '生效中',
   'pages.park.tenant.contractStatus.expired': '已到期',
@@ -1969,6 +1970,7 @@ export default {
   'pages.park.contract.period': '租期',
   'pages.park.contract.rent': '租金',
   'pages.park.contract.deposit': '押金',
+  'pages.park.contract.propertyFee': '物业费',
   'pages.park.contract.expiry': '到期日',
   'pages.park.contract.status': '状态',
 

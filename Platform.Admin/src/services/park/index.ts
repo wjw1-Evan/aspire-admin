@@ -324,6 +324,7 @@ export interface LeaseContract {
     endDate: string;
     monthlyRent: number;
     deposit?: number;
+    propertyFee?: number;
     paymentCycle: string;
     status: string;
     daysUntilExpiry: number;

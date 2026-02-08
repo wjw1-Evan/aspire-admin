@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, Rate, Switch, Drawer, List, Avatar, Empty, Flex } from 'antd';
-import { useIntl } from '@umijs/max';
+import { useIntl, useSearchParams, history } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlined, FormOutlined, CheckCircleOutlined, ClockCircleOutlined, StarOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
@@ -8,7 +8,7 @@ import { DataTable } from '@/components/DataTable';
 import SearchFormCard from '@/components/SearchFormCard';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
-import type { ServiceCategory, ServiceRequest, ServiceStatistics } from '@/services/park';
+import type { ServiceCategory, ServiceRequest, ServiceStatistics, ParkTenant } from '@/services/park';
 import dayjs from 'dayjs';
 import styles from './index.less';
 
@@ -38,6 +38,7 @@ const EnterpriseService: React.FC = () => {
     const [currentCategory, setCurrentCategory] = useState<ServiceCategory | null>(null);
     const [currentRequest, setCurrentRequest] = useState<ServiceRequest | null>(null);
     const [isEdit, setIsEdit] = useState(false);
+    const [tenants, setTenants] = useState<ParkTenant[]>([]);
 
     const loadStatistics = useCallback(async () => {
         try {
@@ -53,7 +54,28 @@ const EnterpriseService: React.FC = () => {
         } catch (error) { console.error(error); }
     }, []);
 
-    useEffect(() => { loadStatistics(); loadCategories(); }, [loadStatistics, loadCategories]);
+    const loadTenants = useCallback(async () => {
+        try {
+            const res = await parkService.getTenants({ page: 1, pageSize: 500 });
+            if (res.success && res.data?.tenants) setTenants(res.data.tenants);
+        } catch (error) { console.error(error); }
+    }, []);
+
+    useEffect(() => { loadStatistics(); loadCategories(); loadTenants(); }, [loadStatistics, loadCategories, loadTenants]);
+
+    // Handle URL parameters from tenant list quick action
+    const [searchParams] = useSearchParams();
+    useEffect(() => {
+        const tenantId = searchParams.get('tenantId');
+        const tenantName = searchParams.get('tenantName');
+        if (tenantId) {
+            // Auto-open the request form with tenant pre-selected
+            requestForm.setFieldsValue({ tenantId });
+            setRequestModalVisible(true);
+            // Clear URL params after handling (optional, to prevent re-opening on refresh)
+            history.replace('/park-management/enterprise-service');
+        }
+    }, [searchParams, requestForm]);
 
     const priorityOptions = [
         { label: '紧急', value: 'Urgent', color: 'red' },
@@ -86,6 +108,12 @@ const EnterpriseService: React.FC = () => {
             dataIndex: 'categoryName',
             width: 100,
             render: (text) => <Tag>{text || '-'}</Tag>,
+        },
+        {
+            title: intl.formatMessage({ id: 'pages.park.service.request.tenant', defaultMessage: '所属租户' }),
+            dataIndex: 'tenantName',
+            width: 150,
+            render: (text) => text || <Text type="secondary">-</Text>,
         },
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.contact', defaultMessage: '联系人' }),
@@ -332,7 +360,32 @@ const EnterpriseService: React.FC = () => {
 
             <Modal title="新增服务申请" open={requestModalVisible} onOk={handleRequestSubmit} onCancel={() => setRequestModalVisible(false)} confirmLoading={loading} width={640}>
                 <Form form={requestForm} layout="vertical">
-                    <Row gutter={16}><Col span={12}><Form.Item name="categoryId" label="服务类别" rules={[{ required: true }]}><Select placeholder="请选择类别" options={categories.filter(c => c.isActive).map(c => ({ label: c.name, value: c.id }))} /></Form.Item></Col><Col span={12}><Form.Item name="priority" label="优先级"><Select placeholder="请选择" options={priorityOptions} /></Form.Item></Col></Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="tenantId" label="所属租户">
+                                <Select
+                                    placeholder="请选择租户"
+                                    allowClear
+                                    showSearch
+                                    optionFilterProp="label"
+                                    options={tenants.map(t => ({ label: t.tenantName, value: t.id }))}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="categoryId" label="服务类别" rules={[{ required: true }]}>
+                                <Select placeholder="请选择类别" options={categories.filter(c => c.isActive).map(c => ({ label: c.name, value: c.id }))} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="priority" label="优先级">
+                                <Select placeholder="请选择" options={priorityOptions} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12} />
+                    </Row>
                     <Form.Item name="title" label="标题" rules={[{ required: true }]}><Input placeholder="请输入服务申请标题" /></Form.Item>
                     <Form.Item name="description" label="详细描述"><Input.TextArea rows={3} placeholder="请详细描述您的需求" /></Form.Item>
                     <Row gutter={16}><Col span={12}><Form.Item name="contactPerson" label="联系人"><Input placeholder="联系人" /></Form.Item></Col><Col span={12}><Form.Item name="contactPhone" label="联系电话"><Input placeholder="联系电话" /></Form.Item></Col></Row>
@@ -358,6 +411,7 @@ const EnterpriseService: React.FC = () => {
                 {currentRequest && (
                     <Descriptions bordered column={2} size="small">
                         <Descriptions.Item label="服务标题" span={2}>{currentRequest.title}</Descriptions.Item>
+                        <Descriptions.Item label="所属租户">{currentRequest.tenantName || '-'}</Descriptions.Item>
                         <Descriptions.Item label="类别">{currentRequest.categoryName || '-'}</Descriptions.Item>
                         <Descriptions.Item label="优先级"><Tag color={priorityOptions.find(o => o.value === currentRequest.priority)?.color}>{priorityOptions.find(o => o.value === currentRequest.priority)?.label || currentRequest.priority}</Tag></Descriptions.Item>
                         <Descriptions.Item label="状态"><Tag color={statusOptions.find(o => o.value === currentRequest.status)?.color}>{statusOptions.find(o => o.value === currentRequest.status)?.label || currentRequest.status}</Tag></Descriptions.Item>

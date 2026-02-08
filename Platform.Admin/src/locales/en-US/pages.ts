@@ -1759,6 +1759,7 @@ export default {
   'pages.park.tenant.status.active': 'Active',
   'pages.park.tenant.status.inactive': 'Inactive',
   'pages.park.tenant.status.suspended': 'Suspended',
+  'pages.park.tenant.serviceRequest': 'Service Request',
   'pages.park.tenant.contractStatus.draft': 'Draft',
   'pages.park.tenant.contractStatus.active': 'Active',
   'pages.park.tenant.contractStatus.expired': 'Expired',

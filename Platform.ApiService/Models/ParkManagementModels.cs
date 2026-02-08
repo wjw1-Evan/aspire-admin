@@ -437,6 +437,10 @@ public class LeaseContract : MultiTenantEntity, IEntity, ISoftDeletable, ITimest
     [BsonElement("deposit")]
     public decimal? Deposit { get; set; }
 
+    /// <summary>物业费（月）</summary>
+    [BsonElement("propertyFee")]
+    public decimal? PropertyFee { get; set; }
+
     /// <summary>付款周期</summary>
     [StringLength(20)]
     [BsonElement("paymentCycle")]
@@ -1491,6 +1495,9 @@ public class LeaseContractDto
     /// <summary>押金</summary>
     public decimal? Deposit { get; set; }
 
+    /// <summary>物业费（月）</summary>
+    public decimal? PropertyFee { get; set; }
+
     /// <summary>付款周期</summary>
     public string PaymentCycle { get; set; } = string.Empty;
 
@@ -1594,6 +1601,9 @@ public class CreateLeaseContractRequest
 
     /// <summary>押金</summary>
     public decimal? Deposit { get; set; }
+
+    /// <summary>物业费（月）</summary>
+    public decimal? PropertyFee { get; set; }
 
     /// <summary>付款周期</summary>
     public string? PaymentCycle { get; set; }

@@ -177,7 +177,7 @@ const StatisticsPage: React.FC = () => {
                             value={asset?.occupancyRate || 0}
                             prefix={<HomeOutlined style={{ color: (asset?.occupancyRate || 0) >= 80 ? '#52c41a' : (asset?.occupancyRate || 0) >= 50 ? '#faad14' : '#f5222d' }} />}
                             suffix="%"
-                            valueStyle={{ color: (asset?.occupancyRate || 0) >= 80 ? '#52c41a' : (asset?.occupancyRate || 0) >= 50 ? '#faad14' : '#f5222d' }}
+                            styles={{ content: { color: (asset?.occupancyRate || 0) >= 80 ? '#52c41a' : (asset?.occupancyRate || 0) >= 50 ? '#faad14' : '#f5222d' } }}
                         />
                         <div style={{ marginTop: 8 }}>
                             <Progress percent={asset?.occupancyRate || 0} size="small" showInfo={false} strokeColor={(asset?.occupancyRate || 0) >= 80 ? '#52c41a' : (asset?.occupancyRate || 0) >= 50 ? '#faad14' : '#f5222d'} />
@@ -211,7 +211,7 @@ const StatisticsPage: React.FC = () => {
                             title={intl.formatMessage({ id: 'pages.park.statistics.monthlyRent', defaultMessage: '月租金收入' })}
                             value={tenant?.totalMonthlyRent || 0}
                             prefix="¥"
-                            valueStyle={{ color: '#1890ff' }}
+                            styles={{ content: { color: '#1890ff' } }}
                             precision={2}
                         />
                         <div style={{ marginTop: 8 }}>
@@ -256,7 +256,7 @@ const StatisticsPage: React.FC = () => {
                                     <Statistic
                                         title={intl.formatMessage({ id: 'pages.park.statistics.totalLeads', defaultMessage: '线索总数' })}
                                         value={investment?.totalLeads || 0}
-                                        valueStyle={{ color: '#1890ff' }}
+                                        styles={{ content: { color: '#1890ff' } }}
                                     />
                                     {renderTrend(investment?.totalLeadsYoY, true)}
                                 </Col>
@@ -265,7 +265,7 @@ const StatisticsPage: React.FC = () => {
                                         title={intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })}
                                         value={investment?.newLeadsThisMonth || 0}
                                         prefix={<ArrowUpOutlined />}
-                                        valueStyle={{ color: '#52c41a' }}
+                                        styles={{ content: { color: '#52c41a' } }}
                                     />
                                     {renderTrend(investment?.newLeadsMoM, false)}
                                 </Col>
@@ -273,7 +273,7 @@ const StatisticsPage: React.FC = () => {
                                     <Statistic
                                         title={intl.formatMessage({ id: 'pages.park.statistics.projectsInNegotiation', defaultMessage: '洽谈中项目' })}
                                         value={investment?.projectsInNegotiation || 0}
-                                        valueStyle={{ color: '#faad14' }}
+                                        styles={{ content: { color: '#faad14' } }}
                                     />
                                 </Col>
                                 <Col span={12}>
@@ -281,7 +281,7 @@ const StatisticsPage: React.FC = () => {
                                         title={intl.formatMessage({ id: 'pages.park.statistics.conversionRate', defaultMessage: '转化率' })}
                                         value={((investment?.conversionRate || 0) * 100).toFixed(1)}
                                         suffix="%"
-                                        valueStyle={{ color: (investment?.conversionRate || 0) >= 0.3 ? '#52c41a' : '#faad14' }}
+                                        styles={{ content: { color: (investment?.conversionRate || 0) >= 0.3 ? '#52c41a' : '#faad14' } }}
                                     />
                                     {renderTrend(investment?.conversionRateYoY, true)}
                                 </Col>
@@ -305,7 +305,7 @@ const StatisticsPage: React.FC = () => {
                                     <Statistic
                                         title={intl.formatMessage({ id: 'pages.park.statistics.totalRequests', defaultMessage: '服务请求总数' })}
                                         value={service?.totalRequests || 0}
-                                        valueStyle={{ color: '#1890ff' }}
+                                        styles={{ content: { color: '#1890ff' } }}
                                     />
                                     {renderTrend(service?.totalRequestsMoM, false)}
                                 </Col>
@@ -314,7 +314,7 @@ const StatisticsPage: React.FC = () => {
                                         title={intl.formatMessage({ id: 'pages.park.statistics.pendingRequests', defaultMessage: '待处理' })}
                                         value={service?.pendingRequests || 0}
                                         prefix={<ClockCircleOutlined />}
-                                        valueStyle={{ color: '#faad14' }}
+                                        styles={{ content: { color: '#faad14' } }}
                                     />
                                 </Col>
                                 <Col span={12}>
@@ -322,7 +322,7 @@ const StatisticsPage: React.FC = () => {
                                         title={intl.formatMessage({ id: 'pages.park.statistics.completedRequests', defaultMessage: '已完成' })}
                                         value={service?.completedRequests || 0}
                                         prefix={<CheckCircleOutlined />}
-                                        valueStyle={{ color: '#52c41a' }}
+                                        styles={{ content: { color: '#52c41a' } }}
                                     />
                                 </Col>
                                 <Col span={12}>
@@ -392,7 +392,7 @@ const StatisticsPage: React.FC = () => {
                                 value={asset.occupancyRate}
                                 suffix="%"
                                 precision={1}
-                                valueStyle={{ color: asset.occupancyRate >= 80 ? '#52c41a' : asset.occupancyRate >= 50 ? '#faad14' : '#f5222d' }}
+                                styles={{ content: { color: asset.occupancyRate >= 80 ? '#52c41a' : asset.occupancyRate >= 50 ? '#faad14' : '#f5222d' } }}
                             />
                             <div style={{ marginTop: 4 }}>
                                 {renderTrend(asset.occupancyRateYoY)}
@@ -425,7 +425,7 @@ const StatisticsPage: React.FC = () => {
                                             title={intl.formatMessage({ id: 'pages.park.statistics.rentedArea', defaultMessage: '已出租面积' })}
                                             value={asset.rentedArea}
                                             suffix="㎡"
-                                            valueStyle={{ color: '#52c41a' }}
+                                            styles={{ content: { color: '#52c41a' } }}
                                         />
                                     </Col>
                                     <Col span={12}>
@@ -433,7 +433,7 @@ const StatisticsPage: React.FC = () => {
                                             title={intl.formatMessage({ id: 'pages.park.statistics.availableArea', defaultMessage: '可租面积' })}
                                             value={asset.totalRentableArea - asset.rentedArea}
                                             suffix="㎡"
-                                            valueStyle={{ color: '#faad14' }}
+                                            styles={{ content: { color: '#faad14' } }}
                                         />
                                     </Col>
                                 </Row>
@@ -463,7 +463,7 @@ const StatisticsPage: React.FC = () => {
                                             title={intl.formatMessage({ id: 'pages.park.statistics.rentedUnits', defaultMessage: '已出租房源' })}
                                             value={asset.rentedUnits}
                                             suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.unit', defaultMessage: '套' })}
-                                            valueStyle={{ color: '#52c41a' }}
+                                            styles={{ content: { color: '#52c41a' } }}
                                         />
                                     </Col>
                                     <Col span={12}>
@@ -471,7 +471,7 @@ const StatisticsPage: React.FC = () => {
                                             title={intl.formatMessage({ id: 'pages.park.statistics.availableUnits', defaultMessage: '空置房源' })}
                                             value={asset.availableUnits}
                                             suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.unit', defaultMessage: '套' })}
-                                            valueStyle={{ color: '#faad14' }}
+                                            styles={{ content: { color: '#faad14' } }}
                                         />
                                     </Col>
                                 </Row>
@@ -520,7 +520,7 @@ const StatisticsPage: React.FC = () => {
                             <Statistic
                                 title={intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })}
                                 value={investment.newLeadsThisMonth}
-                                valueStyle={{ color: '#52c41a' }}
+                                styles={{ content: { color: '#52c41a' } }}
                                 prefix={<ArrowUpOutlined />}
                             />
                             <div style={{ marginTop: 4 }}>
@@ -543,7 +543,7 @@ const StatisticsPage: React.FC = () => {
                                 title={intl.formatMessage({ id: 'pages.park.statistics.conversionRate', defaultMessage: '转化率' })}
                                 value={(investment.conversionRate * 100).toFixed(1)}
                                 suffix="%"
-                                valueStyle={{ color: investment.conversionRate >= 0.3 ? '#52c41a' : '#faad14' }}
+                                styles={{ content: { color: investment.conversionRate >= 0.3 ? '#52c41a' : '#faad14' } }}
                             />
                             <div style={{ marginTop: 4 }}>
                                 {renderTrend(investment.conversionRateYoY)}
@@ -657,7 +657,7 @@ const StatisticsPage: React.FC = () => {
                             <Statistic
                                 title={intl.formatMessage({ id: 'pages.park.statistics.activeTenants', defaultMessage: '在租租户' })}
                                 value={tenant.activeTenants}
-                                valueStyle={{ color: '#52c41a' }}
+                                styles={{ content: { color: '#52c41a' } }}
                             />
                             <div style={{ marginTop: 4 }}>
                                 {renderTrend(tenant.activeTenantsMoM, false)}
@@ -678,7 +678,7 @@ const StatisticsPage: React.FC = () => {
                             <Statistic
                                 title={intl.formatMessage({ id: 'pages.park.statistics.expiringContracts', defaultMessage: '即将到期' })}
                                 value={tenant.expiringContracts}
-                                valueStyle={{ color: tenant.expiringContracts > 0 ? '#faad14' : '#52c41a' }}
+                                styles={{ content: { color: tenant.expiringContracts > 0 ? '#faad14' : '#52c41a' } }}
                                 prefix={tenant.expiringContracts > 0 ? <WarningOutlined /> : <CheckCircleOutlined />}
                             />
                         </Card>
@@ -728,7 +728,7 @@ const StatisticsPage: React.FC = () => {
                                     value={tenant.totalMonthlyRent}
                                     prefix="¥"
                                     precision={2}
-                                    valueStyle={{ fontSize: 36, color: '#1890ff' }}
+                                    styles={{ content: { fontSize: 36, color: '#1890ff' } }}
                                 />
                                 <div style={{ marginTop: 8 }}>
                                     <Space size={16}>
@@ -789,7 +789,7 @@ const StatisticsPage: React.FC = () => {
                             <Statistic
                                 title={intl.formatMessage({ id: 'pages.park.statistics.pendingRequests', defaultMessage: '待处理' })}
                                 value={service.pendingRequests}
-                                valueStyle={{ color: service.pendingRequests > 10 ? '#f5222d' : '#faad14' }}
+                                styles={{ content: { color: service.pendingRequests > 10 ? '#f5222d' : '#faad14' } }}
                                 prefix={<ClockCircleOutlined />}
                             />
                         </Card>
@@ -799,7 +799,7 @@ const StatisticsPage: React.FC = () => {
                             <Statistic
                                 title={intl.formatMessage({ id: 'pages.park.statistics.completedRequests', defaultMessage: '已完成' })}
                                 value={service.completedRequests}
-                                valueStyle={{ color: '#52c41a' }}
+                                styles={{ content: { color: '#52c41a' } }}
                                 prefix={<CheckCircleOutlined />}
                             />
                         </Card>
@@ -934,13 +934,62 @@ const StatisticsPage: React.FC = () => {
         <PageContainer
             title={intl.formatMessage({ id: 'pages.park.statistics.title', defaultMessage: '统计报表' })}
             extra={[
-                <Space key="period-selection">
-                    <Text strong>{intl.formatMessage({ id: 'pages.park.statistics.period', defaultMessage: '统计周期' })}:</Text>
+                <Space key="period-selection" wrap>
+                    <Radio.Group
+                        value={period}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriod(val);
+
+                            let start: Dayjs = dayjs().startOf('month');
+                            let end: Dayjs = dayjs().endOf('month');
+
+                            if (val === StatisticsPeriod.Day) {
+                                start = dayjs().startOf('day');
+                                end = dayjs().endOf('day');
+                            } else if (val === StatisticsPeriod.Week) {
+                                start = dayjs().startOf('week');
+                                end = dayjs().endOf('week');
+                            } else if (val === StatisticsPeriod.Month) {
+                                start = dayjs().startOf('month');
+                                end = dayjs().endOf('month');
+                            } else if (val === StatisticsPeriod.Year) {
+                                start = dayjs().startOf('year');
+                                end = dayjs().endOf('year');
+                            } else if (val === 'last_week') {
+                                start = dayjs().subtract(1, 'week').startOf('week');
+                                end = dayjs().subtract(1, 'week').endOf('week');
+                                setPeriod(StatisticsPeriod.Custom);
+                            } else if (val === 'last_month') {
+                                start = dayjs().subtract(1, 'month').startOf('month');
+                                end = dayjs().subtract(1, 'month').endOf('month');
+                                setPeriod(StatisticsPeriod.Custom);
+                            } else if (val === 'last_year') {
+                                start = dayjs().subtract(1, 'year').startOf('year');
+                                end = dayjs().subtract(1, 'year').endOf('year');
+                                setPeriod(StatisticsPeriod.Custom);
+                            }
+
+                            setDateRange([start, end]);
+                        }}
+                        optionType="button"
+                        buttonStyle="solid"
+                        size="middle"
+                    >
+                        <Radio.Button value={StatisticsPeriod.Week}>{intl.formatMessage({ id: 'pages.park.statistics.thisWeek', defaultMessage: '本周' })}</Radio.Button>
+                        <Radio.Button value="last_week">{intl.formatMessage({ id: 'pages.park.statistics.lastWeek', defaultMessage: '上周' })}</Radio.Button>
+                        <Radio.Button value={StatisticsPeriod.Month}>{intl.formatMessage({ id: 'pages.park.statistics.thisMonth', defaultMessage: '本月' })}</Radio.Button>
+                        <Radio.Button value="last_month">{intl.formatMessage({ id: 'pages.park.statistics.lastMonth', defaultMessage: '上月' })}</Radio.Button>
+                        <Radio.Button value={StatisticsPeriod.Year}>{intl.formatMessage({ id: 'pages.park.statistics.thisYear', defaultMessage: '今年' })}</Radio.Button>
+                        <Radio.Button value="last_year">{intl.formatMessage({ id: 'pages.park.statistics.lastYear', defaultMessage: '去年' })}</Radio.Button>
+                        <Radio.Button value={StatisticsPeriod.Custom}>{intl.formatMessage({ id: 'pages.park.statistics.custom', defaultMessage: '自定义' })}</Radio.Button>
+                    </Radio.Group>
                     <RangePicker
                         value={dateRange}
                         onChange={(dates) => {
                             if (dates && dates[0] && dates[1]) {
                                 setDateRange([dates[0], dates[1]]);
+                                setPeriod(StatisticsPeriod.Custom);
                             } else {
                                 setDateRange(null);
                             }

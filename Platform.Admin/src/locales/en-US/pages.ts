@@ -1888,6 +1888,9 @@ export default {
   'pages.park.statistics.unit.building': 'Bldg',
   'pages.park.statistics.unit.tenant': 'Company',
   'pages.park.statistics.unit.unit': 'Unit',
+  'pages.park.investment.convertSuccess': 'Conversion Success',
+  'pages.park.contract.addContract': 'Add Contract',
+  'pages.park.contract.renew': 'Renew',
 
   // Period Selection and YoY/MoM
   'pages.park.statistics.period': 'Statistics Period',
@@ -1897,5 +1900,15 @@ export default {
   'pages.park.statistics.year': 'Year',
   'pages.park.statistics.yoy': 'YoY',
   'pages.park.statistics.mom': 'MoM',
+  'pages.park.statistics.thisWeek': 'This Week',
+  'pages.park.statistics.lastWeek': 'Last Week',
+  'pages.park.statistics.thisMonth': 'This Month',
+  'pages.park.statistics.lastMonth': 'Last Month',
+  'pages.park.statistics.thisYear': 'This Year',
+  'pages.park.statistics.lastYear': 'Last Year',
+  'pages.park.statistics.custom': 'Custom',
+  'pages.park.statistics.aiReport': 'AI Analysis Report',
+  'pages.park.statistics.aiReportTitle': 'AI Operations Analysis Report',
+  'pages.park.statistics.generatingReport': 'Generating report, this may take a few seconds...',
 };
 

@@ -387,6 +387,8 @@ export interface TenantStatistics {
     monthlyRentYoY?: number;
     monthlyRentMoM?: number;
     activeTenantsYoY?: number;
+    yearlyEstimate?: number;
+    rentIncome?: number;
 }
 
 export interface TenantListRequest {

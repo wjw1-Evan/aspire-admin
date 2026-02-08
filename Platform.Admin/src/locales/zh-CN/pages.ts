@@ -2061,6 +2061,8 @@ export default {
   'pages.park.statistics.thisYear': '今年',
   'pages.park.statistics.lastYear': '去年',
   'pages.park.statistics.custom': '自定义',
+  'pages.park.statistics.newLeadsThisYear': '本年新增线索',
+  'pages.park.statistics.yearRent': '年租金收入',
   'pages.park.statistics.aiReport': 'AI 分析报告',
   'pages.park.statistics.aiReportTitle': 'AI 运营分析报告',
   'pages.park.statistics.generatingReport': '正在生成报告，可能需要几十秒...',

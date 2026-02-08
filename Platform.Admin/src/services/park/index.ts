@@ -84,11 +84,13 @@ export interface PropertyUnit {
     monthlyRent: number;
     dailyRent?: number;
     unitType: string;
+    description?: string;
     status: string;
     currentTenantId?: string;
     currentTenantName?: string;
     leaseEndDate?: string;
     facilities?: string[];
+    leaseHistory?: LeaseContract[];
 }
 
 export interface AssetStatistics {
@@ -156,6 +158,10 @@ export async function getPropertyUnits(params: PropertyUnitListRequest) {
         method: 'POST',
         data: params,
     });
+}
+
+export async function getPropertyUnit(id: string) {
+    return request<ApiResponse<PropertyUnit>>(`/api/park/properties/${id}`, { method: 'GET' });
 }
 
 export async function createPropertyUnit(data: Partial<PropertyUnit>) {
@@ -321,7 +327,35 @@ export interface LeaseContract {
     paymentCycle: string;
     status: string;
     daysUntilExpiry: number;
+    terms?: string;
+    paymentDay?: number;
+    attachments?: string[];
+    paymentRecords?: LeasePaymentRecord[];
     createdAt: string;
+}
+
+export interface LeasePaymentRecord {
+    id: string;
+    contractId: string;
+    tenantId: string;
+    amount: number;
+    paymentDate: string;
+    paymentMethod?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    notes?: string;
+    handledBy?: string;
+    createdAt: string;
+}
+
+export interface CreateLeasePaymentRecordRequest {
+    contractId: string;
+    amount: number;
+    paymentDate: string;
+    paymentMethod?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    notes?: string;
 }
 
 export interface TenantStatistics {
@@ -332,10 +366,16 @@ export interface TenantStatistics {
     expiringContracts: number;
     totalMonthlyRent: number;
     tenantsByIndustry: Record<string, number>;
+    totalReceived: number;
+    totalExpected: number;
+    collectionRate: number;
     totalTenantsYoY?: number;
     activeTenantsMoM?: number;
     rentIncomeYoY?: number;
     rentIncomeMoM?: number;
+    monthlyRentYoY?: number;
+    monthlyRentMoM?: number;
+    activeTenantsYoY?: number;
 }
 
 export interface TenantListRequest {
@@ -395,6 +435,10 @@ export async function createContract(data: Partial<LeaseContract>) {
     return request<ApiResponse<LeaseContract>>('/api/park/contracts', { method: 'POST', data });
 }
 
+export async function getContract(id: string) {
+    return request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`, { method: 'GET' });
+}
+
 export async function updateContract(id: string, data: Partial<LeaseContract>) {
     return request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`, { method: 'PUT', data });
 }
@@ -405,6 +449,18 @@ export async function deleteContract(id: string) {
 
 export async function renewContract(id: string, data: Partial<LeaseContract>) {
     return request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}/renew`, { method: 'POST', data });
+}
+
+export async function createPaymentRecord(data: CreateLeasePaymentRecordRequest) {
+    return request<ApiResponse<LeasePaymentRecord>>('/api/park/contracts/payments', { method: 'POST', data });
+}
+
+export async function getPaymentRecords(contractId: string) {
+    return request<ApiResponse<LeasePaymentRecord[]>>(`/api/park/contracts/${contractId}/payments`, { method: 'GET' });
+}
+
+export async function deletePaymentRecord(id: string) {
+    return request<ApiResponse<boolean>>(`/api/park/contracts/payments/${id}`, { method: 'DELETE' });
 }
 
 

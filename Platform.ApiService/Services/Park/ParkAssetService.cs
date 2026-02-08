@@ -13,6 +13,7 @@ public class ParkAssetService : IParkAssetService
     private readonly IDatabaseOperationFactory<Building> _buildingFactory;
     private readonly IDatabaseOperationFactory<PropertyUnit> _unitFactory;
     private readonly IDatabaseOperationFactory<LeaseContract> _contractFactory;
+    private readonly IDatabaseOperationFactory<ParkTenant> _tenantFactory;
 
     /// <summary>
     /// 初始化资产管理服务
@@ -21,12 +22,14 @@ public class ParkAssetService : IParkAssetService
         ILogger<ParkAssetService> logger,
         IDatabaseOperationFactory<Building> buildingFactory,
         IDatabaseOperationFactory<PropertyUnit> unitFactory,
-        IDatabaseOperationFactory<LeaseContract> contractFactory)
+        IDatabaseOperationFactory<LeaseContract> contractFactory,
+        IDatabaseOperationFactory<ParkTenant> tenantFactory)
     {
         _logger = logger;
         _buildingFactory = buildingFactory;
         _unitFactory = unitFactory;
         _contractFactory = contractFactory;
+        _tenantFactory = tenantFactory;
     }
 
 
@@ -163,6 +166,9 @@ public class ParkAssetService : IParkAssetService
         var rentedUnits = units.Where(u => u.Status == "Rented").ToList();
         var rentedArea = rentedUnits.Sum(u => u.Area);
 
+        // 如果楼宇本身没填可租面积，则以旗下所有房源面积之和作为分母
+        var totalRentableArea = building.RentableArea > 0 ? building.RentableArea : units.Sum(u => u.Area);
+
         return new BuildingDto
         {
             Id = building.Id,
@@ -172,7 +178,7 @@ public class ParkAssetService : IParkAssetService
             TotalArea = building.TotalArea,
             RentableArea = building.RentableArea,
             RentedArea = rentedArea,
-            OccupancyRate = building.RentableArea > 0 ? Math.Round(rentedArea / building.RentableArea * 100, 2) : 0,
+            OccupancyRate = totalRentableArea > 0 ? Math.Round(rentedArea / totalRentableArea * 100, 2) : 0,
             BuildingType = building.BuildingType,
             YearBuilt = building.YearBuilt,
             Status = building.Status,
@@ -248,7 +254,7 @@ public class ParkAssetService : IParkAssetService
     public async Task<PropertyUnitDto?> GetPropertyUnitByIdAsync(string id)
     {
         var unit = await _unitFactory.GetByIdAsync(id);
-        return unit != null ? await MapToPropertyUnitDtoAsync(unit) : null;
+        return unit != null ? await MapToPropertyUnitDtoAsync(unit, true) : null;
     }
 
     /// <summary>
@@ -315,11 +321,11 @@ public class ParkAssetService : IParkAssetService
         return deleted != null;
     }
 
-    private async Task<PropertyUnitDto> MapToPropertyUnitDtoAsync(PropertyUnit unit)
+    private async Task<PropertyUnitDto> MapToPropertyUnitDtoAsync(PropertyUnit unit, bool includeHistory = false)
     {
         var building = await _buildingFactory.GetByIdAsync(unit.BuildingId);
 
-        return new PropertyUnitDto
+        var dto = new PropertyUnitDto
         {
             Id = unit.Id,
             BuildingId = unit.BuildingId,
@@ -335,6 +341,35 @@ public class ParkAssetService : IParkAssetService
             LeaseEndDate = unit.LeaseEndDate,
             Facilities = unit.Facilities
         };
+
+        if (includeHistory)
+        {
+            var contracts = await _contractFactory.FindAsync(Builders<LeaseContract>.Filter.AnyEq(c => c.UnitIds, unit.Id));
+            var leaseHistory = new List<LeaseContractDto>();
+
+            foreach (var contract in contracts.OrderByDescending(c => c.CreatedAt))
+            {
+                var tenant = await _tenantFactory.GetByIdAsync(contract.TenantId);
+                leaseHistory.Add(new LeaseContractDto
+                {
+                    Id = contract.Id,
+                    TenantId = contract.TenantId,
+                    TenantName = tenant?.TenantName,
+                    ContractNumber = contract.ContractNumber,
+                    StartDate = contract.StartDate,
+                    EndDate = contract.EndDate,
+                    Status = contract.Status,
+                    MonthlyRent = contract.MonthlyRent,
+                    Deposit = contract.Deposit,
+                    PaymentCycle = contract.PaymentCycle,
+                    UnitIds = contract.UnitIds,
+                    CreatedAt = contract.CreatedAt
+                });
+            }
+            dto.LeaseHistory = leaseHistory;
+        }
+
+        return dto;
     }
 
     #endregion
@@ -370,12 +405,17 @@ public class ParkAssetService : IParkAssetService
         }
 
         var totalRentableArea = buildings.Sum(b => b.RentableArea);
+        // 如果楼宇都没填可租面积，则以所有房源面积之和作为分母
+        if (totalRentableArea == 0)
+        {
+            totalRentableArea = units.Sum(u => u.Area);
+        }
 
         // Helper function to calculate metrics at a specific date
         (decimal OccupancyRate, decimal RentedArea, int RentedUnitsCount) CalculateMetricsAtDate(DateTime date)
         {
             var activeContractsAtDate = contracts
-                .Where(c => (c.Status == "Active" || c.Status == "Renewed" || c.Status == "Expired" || c.Status == "Terminated")
+                .Where(c => (c.Status == "Active" || c.Status == "Renewed")
                             && c.StartDate <= date
                             && c.EndDate >= date)
                 .ToList();
@@ -392,9 +432,13 @@ public class ParkAssetService : IParkAssetService
             return (occupancyRateAtDate, rentedAreaAtDate, rentedUnitsAtDate.Count);
         }
 
-        var (currentOccupancyRate, currentRentedArea, currentRentedUnits) = CalculateMetricsAtDate(end);
+        // For current metrics, we use the actual unit status to ensure consistency with the unit list
+        var currentRentedUnitsList = units.Where(u => u.Status == "Rented").ToList();
+        var currentRentedArea = currentRentedUnitsList.Sum(u => u.Area);
+        var currentRentedUnits = currentRentedUnitsList.Count;
+        var currentOccupancyRate = totalRentableArea > 0 ? (decimal)Math.Round((double)(currentRentedArea / totalRentableArea * 100), 2) : 0;
 
-        // MoM Comparison (Previous Month/Period)
+        // MoM Comparison (Previous Month/Period) - Must use contracts for historical data
         var momDate = end.AddMonths(-1);
         var (momOccupancyRate, momRentedArea, _) = CalculateMetricsAtDate(momDate);
 

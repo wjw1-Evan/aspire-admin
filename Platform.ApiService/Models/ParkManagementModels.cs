@@ -462,6 +462,51 @@ public class LeaseContract : MultiTenantEntity, IEntity, ISoftDeletable, ITimest
 }
 
 /// <summary>
+/// 租赁合同付款记录
+/// </summary>
+[BsonIgnoreExtraElements]
+public class LeasePaymentRecord : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+{
+    /// <summary>合同ID</summary>
+    [BsonElement("contractId")]
+    public string ContractId { get; set; } = string.Empty;
+
+    /// <summary>租户ID</summary>
+    [BsonElement("tenantId")]
+    public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>付款金额</summary>
+    [BsonElement("amount")]
+    public decimal Amount { get; set; }
+
+    /// <summary>付款日期</summary>
+    [BsonElement("paymentDate")]
+    public DateTime PaymentDate { get; set; }
+
+    /// <summary>付款方式</summary>
+    [StringLength(50)]
+    [BsonElement("paymentMethod")]
+    public string? PaymentMethod { get; set; }
+
+    /// <summary>账期开始</summary>
+    [BsonElement("periodStart")]
+    public DateTime? PeriodStart { get; set; }
+
+    /// <summary>账期结束</summary>
+    [BsonElement("periodEnd")]
+    public DateTime? PeriodEnd { get; set; }
+
+    /// <summary>备注</summary>
+    [StringLength(500)]
+    [BsonElement("notes")]
+    public string? Notes { get; set; }
+
+    /// <summary>经办人</summary>
+    [BsonElement("handledBy")]
+    public string? HandledBy { get; set; }
+}
+
+/// <summary>
 /// 租金账单
 /// </summary>
 [BsonIgnoreExtraElements]
@@ -862,6 +907,9 @@ public class PropertyUnitDto
 
     /// <summary>设施列表</summary>
     public List<string>? Facilities { get; set; }
+
+    /// <summary>租赁历史</summary>
+    public List<LeaseContractDto>? LeaseHistory { get; set; }
 }
 
 /// <summary>
@@ -1446,6 +1494,15 @@ public class LeaseContractDto
     /// <summary>付款周期</summary>
     public string PaymentCycle { get; set; } = string.Empty;
 
+    /// <summary>付款日</summary>
+    public int PaymentDay { get; set; }
+
+    /// <summary>合同条款</summary>
+    public string? Terms { get; set; }
+
+    /// <summary>附件列表</summary>
+    public List<string>? Attachments { get; set; }
+
     /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
 
@@ -1454,6 +1511,60 @@ public class LeaseContractDto
 
     /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>付款记录</summary>
+    public List<LeasePaymentRecordDto>? PaymentRecords { get; set; }
+}
+
+/// <summary>
+/// 租赁合同付款记录 DTO
+/// </summary>
+public class LeasePaymentRecordDto
+{
+    /// <summary>ID</summary>
+    public string Id { get; set; } = string.Empty;
+    /// <summary>合同ID</summary>
+    public string ContractId { get; set; } = string.Empty;
+    /// <summary>租户ID</summary>
+    public string TenantId { get; set; } = string.Empty;
+    /// <summary>金额</summary>
+    public decimal Amount { get; set; }
+    /// <summary>付款日期</summary>
+    public DateTime PaymentDate { get; set; }
+    /// <summary>付款方式</summary>
+    public string? PaymentMethod { get; set; }
+    /// <summary>账期开始</summary>
+    public DateTime? PeriodStart { get; set; }
+    /// <summary>账期结束</summary>
+    public DateTime? PeriodEnd { get; set; }
+    /// <summary>备注</summary>
+    public string? Notes { get; set; }
+    /// <summary>经办人</summary>
+    public string? HandledBy { get; set; }
+    /// <summary>创建时间</summary>
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// 创建付款记录请求
+/// </summary>
+public class CreateLeasePaymentRecordRequest
+{
+    /// <summary>合同ID</summary>
+    [Required]
+    public string ContractId { get; set; } = string.Empty;
+    /// <summary>金额</summary>
+    public decimal Amount { get; set; }
+    /// <summary>付款日期</summary>
+    public DateTime PaymentDate { get; set; }
+    /// <summary>付款方式</summary>
+    public string? PaymentMethod { get; set; }
+    /// <summary>账期开始</summary>
+    public DateTime? PeriodStart { get; set; }
+    /// <summary>账期结束</summary>
+    public DateTime? PeriodEnd { get; set; }
+    /// <summary>备注</summary>
+    public string? Notes { get; set; }
 }
 
 /// <summary>
@@ -1522,6 +1633,15 @@ public class TenantStatisticsResponse
 
     /// <summary>按行业统计租户</summary>
     public Dictionary<string, int> TenantsByIndustry { get; set; } = new();
+
+    /// <summary>总实收金额</summary>
+    public decimal TotalReceived { get; set; }
+
+    /// <summary>总应收金额（基于合同月租金）</summary>
+    public decimal TotalExpected { get; set; }
+
+    /// <summary>收缴率</summary>
+    public double CollectionRate { get; set; }
 
     // 同比/环比
     /// <summary>月租金同比</summary>

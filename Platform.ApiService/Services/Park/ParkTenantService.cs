@@ -13,6 +13,7 @@ public class ParkTenantService : IParkTenantService
     private readonly IDatabaseOperationFactory<ParkTenant> _tenantFactory;
     private readonly IDatabaseOperationFactory<LeaseContract> _contractFactory;
     private readonly IDatabaseOperationFactory<PropertyUnit> _unitFactory;
+    private readonly IDatabaseOperationFactory<LeasePaymentRecord> _paymentFactory;
     private readonly ILogger<ParkTenantService> _logger;
 
     /// <summary>
@@ -22,11 +23,13 @@ public class ParkTenantService : IParkTenantService
         IDatabaseOperationFactory<ParkTenant> tenantFactory,
         IDatabaseOperationFactory<LeaseContract> contractFactory,
         IDatabaseOperationFactory<PropertyUnit> unitFactory,
+        IDatabaseOperationFactory<LeasePaymentRecord> paymentFactory,
         ILogger<ParkTenantService> logger)
     {
         _tenantFactory = tenantFactory;
         _contractFactory = contractFactory;
         _unitFactory = unitFactory;
+        _paymentFactory = paymentFactory;
         _logger = logger;
     }
 
@@ -252,6 +255,14 @@ public class ParkTenantService : IParkTenantService
             Status = "Active"
         };
 
+        // 如果没有提供合同编号，则自动生成
+        if (string.IsNullOrWhiteSpace(contract.ContractNumber))
+        {
+            var dateStr = DateTime.Now.ToString("yyyyMMdd");
+            var count = await _contractFactory.CountAsync(Builders<LeaseContract>.Filter.Regex(c => c.ContractNumber, new MongoDB.Bson.BsonRegularExpression($"^HT-{dateStr}", "i")));
+            contract.ContractNumber = $"HT-{dateStr}-{(count + 1):D3}";
+        }
+
         await _contractFactory.CreateAsync(contract);
 
         // 更新租户的单元列表
@@ -294,9 +305,16 @@ public class ParkTenantService : IParkTenantService
         var contract = await _contractFactory.GetByIdAsync(id);
         if (contract == null) return null;
 
+        var oldUnitIds = contract.UnitIds ?? new List<string>();
+        var newUnitIds = request.UnitIds ?? new List<string>();
+
+        // 识别移除的单元和新增的单元
+        var removedUnitIds = oldUnitIds.Except(newUnitIds).ToList();
+        var addedUnitIds = newUnitIds.Except(oldUnitIds).ToList();
+
         contract.TenantId = request.TenantId;
         contract.ContractNumber = request.ContractNumber;
-        contract.UnitIds = request.UnitIds;
+        contract.UnitIds = newUnitIds;
         contract.StartDate = request.StartDate;
         contract.EndDate = request.EndDate;
         contract.MonthlyRent = request.MonthlyRent;
@@ -307,6 +325,56 @@ public class ParkTenantService : IParkTenantService
         contract.Attachments = request.Attachments;
 
         await _contractFactory.FindOneAndReplaceAsync(Builders<LeaseContract>.Filter.Eq(c => c.Id, id), contract);
+
+        // 处理移除的单元：恢复为 Available
+        foreach (var unitId in removedUnitIds)
+        {
+            var unit = await _unitFactory.GetByIdAsync(unitId);
+            if (unit != null)
+            {
+                unit.Status = "Available";
+                unit.CurrentTenantId = null;
+                unit.LeaseStartDate = null;
+                unit.LeaseEndDate = null;
+                await _unitFactory.FindOneAndReplaceAsync(Builders<PropertyUnit>.Filter.Eq(u => u.Id, unit.Id), unit);
+            }
+        }
+
+        // 处理新增的单元：设为 Rented
+        foreach (var unitId in addedUnitIds)
+        {
+            var unit = await _unitFactory.GetByIdAsync(unitId);
+            if (unit != null)
+            {
+                unit.Status = "Rented";
+                unit.CurrentTenantId = request.TenantId;
+                unit.LeaseStartDate = request.StartDate;
+                unit.LeaseEndDate = request.EndDate;
+                await _unitFactory.FindOneAndReplaceAsync(Builders<PropertyUnit>.Filter.Eq(u => u.Id, unit.Id), unit);
+            }
+        }
+
+        // 更新租户的单元列表
+        var tenant = await _tenantFactory.GetByIdAsync(request.TenantId);
+        if (tenant != null)
+        {
+            tenant.UnitIds ??= new List<string>();
+            // 移除旧的
+            foreach (var unitId in removedUnitIds)
+            {
+                tenant.UnitIds.Remove(unitId);
+            }
+            // 添加新的
+            foreach (var unitId in addedUnitIds)
+            {
+                if (!tenant.UnitIds.Contains(unitId))
+                {
+                    tenant.UnitIds.Add(unitId);
+                }
+            }
+            await _tenantFactory.FindOneAndReplaceAsync(Builders<ParkTenant>.Filter.Eq(t => t.Id, tenant.Id), tenant);
+        }
+
         return await MapToContractDtoAsync(contract);
     }
 
@@ -347,13 +415,21 @@ public class ParkTenantService : IParkTenantService
         var tenant = await _tenantFactory.GetByIdAsync(contract.TenantId);
         var daysUntilExpiry = (contract.EndDate - DateTime.UtcNow).Days;
 
+        var unitNumbers = new List<string>();
+        if (contract.UnitIds != null && contract.UnitIds.Any())
+        {
+            var units = await _unitFactory.FindAsync(Builders<PropertyUnit>.Filter.In(u => u.Id, contract.UnitIds));
+            unitNumbers = units.Select(u => u.UnitNumber).ToList();
+        }
+
         return new LeaseContractDto
         {
             Id = contract.Id,
             TenantId = contract.TenantId,
-            TenantName = tenant?.TenantName,
+            TenantName = tenant?.TenantName ?? string.Empty,
             ContractNumber = contract.ContractNumber,
-            UnitIds = contract.UnitIds,
+            UnitIds = contract.UnitIds ?? new List<string>(),
+            UnitNumbers = unitNumbers,
             StartDate = contract.StartDate,
             EndDate = contract.EndDate,
             MonthlyRent = contract.MonthlyRent,
@@ -361,7 +437,71 @@ public class ParkTenantService : IParkTenantService
             PaymentCycle = contract.PaymentCycle,
             Status = contract.Status,
             DaysUntilExpiry = daysUntilExpiry,
-            CreatedAt = contract.CreatedAt
+            Terms = contract.Terms,
+            PaymentDay = contract.PaymentDay,
+            Attachments = contract.Attachments,
+            CreatedAt = contract.CreatedAt,
+            PaymentRecords = (await GetPaymentRecordsByContractIdAsync(contract.Id))
+        };
+    }
+
+    /// <summary>
+    /// 创建合同付款记录
+    /// </summary>
+    public async Task<LeasePaymentRecordDto> CreatePaymentRecordAsync(CreateLeasePaymentRecordRequest request)
+    {
+        var contract = await _contractFactory.GetByIdAsync(request.ContractId);
+        if (contract == null) throw new InvalidOperationException("合同不存在");
+
+        var record = new LeasePaymentRecord
+        {
+            ContractId = request.ContractId,
+            TenantId = contract.TenantId,
+            Amount = request.Amount,
+            PaymentDate = request.PaymentDate,
+            PaymentMethod = request.PaymentMethod,
+            PeriodStart = request.PeriodStart,
+            PeriodEnd = request.PeriodEnd,
+            Notes = request.Notes
+        };
+
+        await _paymentFactory.CreateAsync(record);
+        return MapToPaymentRecordDto(record);
+    }
+
+    /// <summary>
+    /// 获取合同付款记录列表
+    /// </summary>
+    public async Task<List<LeasePaymentRecordDto>> GetPaymentRecordsByContractIdAsync(string contractId)
+    {
+        var filter = Builders<LeasePaymentRecord>.Filter.Eq(r => r.ContractId, contractId);
+        var records = await _paymentFactory.FindAsync(filter);
+        return records.OrderByDescending(r => r.PaymentDate).Select(MapToPaymentRecordDto).ToList();
+    }
+
+    /// <summary>
+    /// 删除合同付款记录
+    /// </summary>
+    public async Task<bool> DeletePaymentRecordAsync(string id)
+    {
+        return (await _paymentFactory.SoftDeleteManyAsync(new[] { id })) > 0;
+    }
+
+    private LeasePaymentRecordDto MapToPaymentRecordDto(LeasePaymentRecord record)
+    {
+        return new LeasePaymentRecordDto
+        {
+            Id = record.Id,
+            ContractId = record.ContractId,
+            TenantId = record.TenantId,
+            Amount = record.Amount,
+            PaymentDate = record.PaymentDate,
+            PaymentMethod = record.PaymentMethod,
+            PeriodStart = record.PeriodStart,
+            PeriodEnd = record.PeriodEnd,
+            Notes = record.Notes,
+            HandledBy = record.HandledBy,
+            CreatedAt = record.CreatedAt
         };
     }
 
@@ -376,6 +516,7 @@ public class ParkTenantService : IParkTenantService
     {
         var tenants = await _tenantFactory.FindAsync();
         var contracts = await _contractFactory.FindAsync();
+        var payments = await _paymentFactory.FindAsync();
 
         DateTime end = endDate ?? DateTime.UtcNow;
         DateTime start;
@@ -437,7 +578,7 @@ public class ParkTenantService : IParkTenantService
         (int ActiveTenants, decimal MonthlyRent) CalculateMetricsAtDate(DateTime date)
         {
             var activeTenants = tenants.Count(t => (t.EntryDate ?? t.CreatedAt) <= date && t.Status == "Active");
-            var activeContracts = contracts.Where(c => c.Status == "Active" && c.StartDate <= date && (c.EndDate >= date || c.EndDate == null)).ToList();
+            var activeContracts = contracts.Where(c => c.Status == "Active" && c.StartDate <= date && c.EndDate >= date).ToList();
             // Note: simple "Active" check might not work for historical dates if status is updated on DB.
             // But we don't have historical status tracking in this simple model.
             // We can approximate by checking date ranges.
@@ -485,6 +626,23 @@ public class ParkTenantService : IParkTenantService
             return (double)Math.Round((current - previous) / previous * 100, 2);
         }
 
+        // Collection Status
+        var totalReceived = payments.Where(p => p.PaymentDate >= start && p.PaymentDate <= end).Sum(p => p.Amount);
+        decimal totalExpected = 0;
+        foreach (var c in contracts)
+        {
+            var intersectionStart = c.StartDate > start ? c.StartDate : start;
+            var cEnd = c.EndDate;
+            var intersectionEnd = cEnd < end ? cEnd : end;
+
+            if (intersectionStart < intersectionEnd)
+            {
+                var days = (intersectionEnd - intersectionStart).TotalDays;
+                totalExpected += c.MonthlyRent * (decimal)(days / 30.4375);
+            }
+        }
+        var collectionRate = totalExpected > 0 ? (double)Math.Round(totalReceived / totalExpected * 100, 2) : 0;
+
         return new TenantStatisticsResponse
         {
             TotalTenants = allTenantsAtEnd.Count,
@@ -497,6 +655,9 @@ public class ParkTenantService : IParkTenantService
                 .Where(t => !string.IsNullOrEmpty(t.Industry))
                 .GroupBy(t => t.Industry!)
                 .ToDictionary(g => g.Key, g => g.Count()),
+            TotalReceived = totalReceived,
+            TotalExpected = totalExpected,
+            CollectionRate = collectionRate,
             MonthlyRentYoY = CalculateGrowth(calcMonthlyRent, yoyMonthlyRent),
             MonthlyRentMoM = CalculateGrowth(calcMonthlyRent, momMonthlyRent),
             ActiveTenantsYoY = CalculateGrowth((decimal)calcActiveTenants, (decimal)yoyActiveTenants),

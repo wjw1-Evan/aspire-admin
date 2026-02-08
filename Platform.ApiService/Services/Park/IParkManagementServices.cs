@@ -193,6 +193,21 @@ public interface IParkTenantService
     /// 获取租户与合同统计数据
     /// </summary>
     Task<TenantStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
+
+    /// <summary>
+    /// 创建合同付款记录
+    /// </summary>
+    Task<LeasePaymentRecordDto> CreatePaymentRecordAsync(CreateLeasePaymentRecordRequest request);
+
+    /// <summary>
+    /// 获取合同付款记录列表
+    /// </summary>
+    Task<List<LeasePaymentRecordDto>> GetPaymentRecordsByContractIdAsync(string contractId);
+
+    /// <summary>
+    /// 删除合同付款记录
+    /// </summary>
+    Task<bool> DeletePaymentRecordAsync(string id);
 }
 
 /// <summary>

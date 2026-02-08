@@ -8,7 +8,7 @@ import { DataTable } from '@/components/DataTable';
 import SearchFormCard from '@/components/SearchFormCard';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
-import type { Building, PropertyUnit, AssetStatistics } from '@/services/park';
+import type { Building, PropertyUnit, AssetStatistics, LeaseContract } from '@/services/park';
 import styles from './index.less';
 
 const { Text, Title } = Typography;
@@ -29,6 +29,7 @@ const AssetManagement: React.FC = () => {
     const [buildingModalVisible, setBuildingModalVisible] = useState(false);
     const [unitModalVisible, setUnitModalVisible] = useState(false);
     const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
+    const [unitDetailDrawerVisible, setUnitDetailDrawerVisible] = useState(false);
     const [currentBuilding, setCurrentBuilding] = useState<Building | null>(null);
     const [currentUnit, setCurrentUnit] = useState<PropertyUnit | null>(null);
     const [buildings, setBuildings] = useState<Building[]>([]);
@@ -176,7 +177,7 @@ const AssetManagement: React.FC = () => {
             render: (_, record) => (
                 <Space>
                     <HomeOutlined style={{ color: '#52c41a' }} />
-                    {record.unitNumber}
+                    <a onClick={() => handleViewUnit(record)}>{record.unitNumber}</a>
                 </Space>
             ),
         },
@@ -238,6 +239,9 @@ const AssetManagement: React.FC = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewUnit(record)}>
+                        {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
+                    </Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditUnit(record)}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
@@ -296,6 +300,21 @@ const AssetManagement: React.FC = () => {
     const handleViewBuilding = (building: Building) => {
         setCurrentBuilding(building);
         setDetailDrawerVisible(true);
+    };
+
+    const handleViewUnit = async (unit: PropertyUnit) => {
+        setLoading(true);
+        try {
+            const res = await parkService.getPropertyUnit(unit.id);
+            if (res.success && res.data) {
+                setCurrentUnit(res.data);
+                setUnitDetailDrawerVisible(true);
+            }
+        } catch (error) {
+            message.error('获取房源详情失败');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleEditBuilding = (building: Building) => {
@@ -831,6 +850,99 @@ const AssetManagement: React.FC = () => {
                             </div>
                         )}
                     </div>
+                )}
+            </Drawer>
+
+            {/* 房源详情抽屉 */}
+            <Drawer
+                title={currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })}
+                open={unitDetailDrawerVisible}
+                onClose={() => setUnitDetailDrawerVisible(false)}
+                styles={{ wrapper: { width: 800 } }}
+            >
+                {currentUnit && (
+                    <Tabs
+                        defaultActiveKey="basic"
+                        items={[
+                            {
+                                key: 'basic',
+                                label: '基本信息',
+                                children: (
+                                    <div style={{ padding: '16px 0' }}>
+                                        <Descriptions bordered column={2} size="small">
+                                            <Descriptions.Item label="房源编号">{currentUnit.unitNumber}</Descriptions.Item>
+                                            <Descriptions.Item label="所属楼宇">{currentUnit.buildingName}</Descriptions.Item>
+                                            <Descriptions.Item label="所在楼层">{currentUnit.floor}F</Descriptions.Item>
+                                            <Descriptions.Item label="房源面积">{currentUnit.area} m²</Descriptions.Item>
+                                            <Descriptions.Item label="房源类型">{currentUnit.unitType === 'Office' ? '办公' : currentUnit.unitType === 'Commercial' ? '商铺' : currentUnit.unitType || '其他'}</Descriptions.Item>
+                                            <Descriptions.Item label="月租金">¥{currentUnit.monthlyRent?.toLocaleString()}</Descriptions.Item>
+                                            <Descriptions.Item label="状态">
+                                                <Tag color={currentUnit.status === 'Available' ? 'green' : 'blue'}>
+                                                    {currentUnit.status === 'Available' ? '空置' : '已出租'}
+                                                </Tag>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="当前租客">{currentUnit.currentTenantName || '-'}</Descriptions.Item>
+                                            <Descriptions.Item label="租约到期">{currentUnit.leaseEndDate ? new Date(currentUnit.leaseEndDate).toLocaleDateString() : '-'}</Descriptions.Item>
+                                        </Descriptions>
+                                        {currentUnit.description && (
+                                            <div style={{ marginTop: 24 }}>
+                                                <Title level={5}>描述信息</Title>
+                                                <Text>{currentUnit.description}</Text>
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            },
+                            {
+                                key: 'history',
+                                label: '出租历史',
+                                children: (
+                                    <Table<LeaseContract>
+                                        dataSource={currentUnit.leaseHistory || []}
+                                        rowKey="id"
+                                        size="small"
+                                        pagination={false}
+                                        columns={[
+                                            {
+                                                title: '租户名称',
+                                                dataIndex: 'tenantName',
+                                                key: 'tenantName',
+                                            },
+                                            {
+                                                title: '合同编号',
+                                                dataIndex: 'contractNumber',
+                                                key: 'contractNumber',
+                                            },
+                                            {
+                                                title: '租期',
+                                                key: 'period',
+                                                render: (_, record) => (
+                                                    <span>
+                                                        {new Date(record.startDate).toLocaleDateString()} ~ {new Date(record.endDate).toLocaleDateString()}
+                                                    </span>
+                                                ),
+                                            },
+                                            {
+                                                title: '租金',
+                                                dataIndex: 'monthlyRent',
+                                                key: 'monthlyRent',
+                                                render: (val) => `¥${val?.toLocaleString()}`,
+                                            },
+                                            {
+                                                title: '状态',
+                                                dataIndex: 'status',
+                                                key: 'status',
+                                                render: (status) => {
+                                                    const color = status === 'Active' ? 'green' : status === 'Expired' ? 'gray' : 'blue';
+                                                    return <Tag color={color}>{status}</Tag>;
+                                                }
+                                            }
+                                        ]}
+                                    />
+                                )
+                            }
+                        ]}
+                    />
                 )}
             </Drawer>
         </PageContainer>

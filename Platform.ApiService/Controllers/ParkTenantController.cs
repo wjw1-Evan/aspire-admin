@@ -227,7 +227,7 @@ public class ParkTenantController : ControllerBase
     }
 
     /// <summary>
-    /// 续签合同
+    /// 续签合同失败: {Id}
     /// </summary>
     [HttpPost("contracts/{id}/renew")]
     public async Task<ActionResult<ApiResponse<LeaseContractDto>>> RenewContract(string id, [FromBody] CreateLeaseContractRequest request)
@@ -246,6 +246,59 @@ public class ParkTenantController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 创建合同付款记录
+    /// </summary>
+    [HttpPost("contracts/payments")]
+    public async Task<ActionResult<ApiResponse<LeasePaymentRecordDto>>> CreatePaymentRecord([FromBody] CreateLeasePaymentRecordRequest request)
+    {
+        try
+        {
+            var result = await _tenantService.CreatePaymentRecordAsync(request);
+            return Ok(ApiResponse<LeasePaymentRecordDto>.SuccessResult(result));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "创建合同付款记录失败");
+            return Ok(ApiResponse<LeasePaymentRecordDto>.ErrorResult("ERROR", "创建合同付款记录失败: " + ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// 获取合同付款记录列表
+    /// </summary>
+    [HttpGet("contracts/{id}/payments")]
+    public async Task<ActionResult<ApiResponse<List<LeasePaymentRecordDto>>>> GetPaymentRecords(string id)
+    {
+        try
+        {
+            var result = await _tenantService.GetPaymentRecordsByContractIdAsync(id);
+            return Ok(ApiResponse<List<LeasePaymentRecordDto>>.SuccessResult(result));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取合同付款记录列表失败: {Id}", id);
+            return Ok(ApiResponse<List<LeasePaymentRecordDto>>.ErrorResult("ERROR", "获取合同付款记录列表失败"));
+        }
+    }
+
+    /// <summary>
+    /// 删除合同付款记录
+    /// </summary>
+    [HttpDelete("contracts/payments/{id}")]
+    public async Task<ActionResult<ApiResponse<bool>>> DeletePaymentRecord(string id)
+    {
+        try
+        {
+            var result = await _tenantService.DeletePaymentRecordAsync(id);
+            return Ok(ApiResponse<bool>.SuccessResult(result));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "删除合同付款记录失败: {Id}", id);
+            return Ok(ApiResponse<bool>.ErrorResult("ERROR", "删除合同付款记录失败: " + ex.Message));
+        }
+    }
     #endregion
 
     #region 统计

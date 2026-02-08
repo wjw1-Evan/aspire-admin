@@ -144,7 +144,7 @@ const StatisticsPage: React.FC = () => {
             <Space size={4} style={{ fontSize: 12, color }}>
                 <span>{label}</span>
                 {isUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                <span>{Math.abs(value * 100).toFixed(1)}%</span>
+                <span>{Math.abs(value).toFixed(1)}%</span>
             </Space>
         );
     };
@@ -279,9 +279,9 @@ const StatisticsPage: React.FC = () => {
                                 <Col span={12}>
                                     <Statistic
                                         title={intl.formatMessage({ id: 'pages.park.statistics.conversionRate', defaultMessage: '转化率' })}
-                                        value={((investment?.conversionRate || 0) * 100).toFixed(1)}
+                                        value={Number(investment?.conversionRate || 0).toFixed(1)}
                                         suffix="%"
-                                        styles={{ content: { color: (investment?.conversionRate || 0) >= 0.3 ? '#52c41a' : '#faad14' } }}
+                                        styles={{ content: { color: (investment?.conversionRate || 0) >= 30 ? '#52c41a' : '#faad14' } }}
                                     />
                                     {renderTrend(investment?.conversionRateYoY, true)}
                                 </Col>
@@ -541,9 +541,9 @@ const StatisticsPage: React.FC = () => {
                         <Card>
                             <Statistic
                                 title={intl.formatMessage({ id: 'pages.park.statistics.conversionRate', defaultMessage: '转化率' })}
-                                value={(investment.conversionRate * 100).toFixed(1)}
+                                value={Number(investment.conversionRate).toFixed(1)}
                                 suffix="%"
-                                styles={{ content: { color: investment.conversionRate >= 0.3 ? '#52c41a' : '#faad14' } }}
+                                styles={{ content: { color: investment.conversionRate >= 30 ? '#52c41a' : '#faad14' } }}
                             />
                             <div style={{ marginTop: 4 }}>
                                 {renderTrend(investment.conversionRateYoY)}
@@ -745,6 +745,46 @@ const StatisticsPage: React.FC = () => {
                                     </Text>
                                 </div>
                             </div>
+                        </Card>
+                    </Col>
+                </Row>
+                <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
+                    <Col span={24}>
+                        <Card title={intl.formatMessage({ id: 'pages.park.statistics.collectionStatus', defaultMessage: '收缴情况' })}>
+                            <Row gutter={16}>
+                                <Col span={8}>
+                                    <Statistic
+                                        title={intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收总额' })}
+                                        value={tenant.totalExpected}
+                                        prefix="¥"
+                                        precision={2}
+                                    />
+                                </Col>
+                                <Col span={8}>
+                                    <Statistic
+                                        title={intl.formatMessage({ id: 'pages.park.statistics.totalReceived', defaultMessage: '实收总额' })}
+                                        value={tenant.totalReceived}
+                                        prefix="¥"
+                                        precision={2}
+                                        valueStyle={{ color: '#52c41a' }}
+                                    />
+                                </Col>
+                                <Col span={8}>
+                                    <Statistic
+                                        title={intl.formatMessage({ id: 'pages.park.statistics.collectionRate', defaultMessage: '收缴率' })}
+                                        value={tenant.collectionRate}
+                                        suffix="%"
+                                        precision={1}
+                                        valueStyle={{ color: tenant.collectionRate >= 90 ? '#52c41a' : '#faad14' }}
+                                    />
+                                    <Progress
+                                        percent={tenant.collectionRate}
+                                        showInfo={false}
+                                        status={tenant.collectionRate >= 90 ? 'success' : 'active'}
+                                        strokeColor={tenant.collectionRate >= 90 ? '#52c41a' : '#faad14'}
+                                    />
+                                </Col>
+                            </Row>
                         </Card>
                     </Col>
                 </Row>

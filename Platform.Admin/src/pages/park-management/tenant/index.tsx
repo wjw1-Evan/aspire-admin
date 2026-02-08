@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, DatePicker, Drawer, List, Badge, Flex, Upload, Table, Empty, Rate, Timeline } from 'antd';
+import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, DatePicker, Drawer, List, Badge, Flex, Upload, Table, Empty, Rate, Timeline, Radio } from 'antd';
 import { useIntl, history } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CustomerServiceOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -24,6 +24,7 @@ const TenantManagement: React.FC = () => {
     const { message } = App.useApp();
     const [tenantForm] = Form.useForm();
     const [contractForm] = Form.useForm();
+    const pricingMethodWatch = Form.useWatch('rentalPricingMethod', contractForm);
     const [searchForm] = Form.useForm();
 
     const [paymentForm] = Form.useForm();
@@ -239,6 +240,13 @@ const TenantManagement: React.FC = () => {
             render: (fee) => fee ? `¥${fee?.toLocaleString()}` : '-',
         },
         {
+            title: intl.formatMessage({ id: 'pages.park.contract.totalAmount', defaultMessage: '合同总额' }),
+            dataIndex: 'totalAmount',
+            width: 120,
+            align: 'right',
+            render: (total) => total ? `¥${total?.toLocaleString()}` : '-',
+        },
+        {
             title: intl.formatMessage({ id: 'pages.park.contract.deposit', defaultMessage: '押金' }),
             dataIndex: 'deposit',
             width: 100,
@@ -410,7 +418,7 @@ const TenantManagement: React.FC = () => {
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
 
-    const handleAddPayment = () => { paymentForm.resetFields(); paymentForm.setFieldsValue({ paymentDate: dayjs(), amount: currentContract?.monthlyRent }); setPaymentModalVisible(true); };
+    const handleAddPayment = () => { paymentForm.resetFields(); paymentForm.setFieldsValue({ paymentDate: dayjs(), amount: currentContract?.monthlyRent, paymentType: 'Rent' }); setPaymentModalVisible(true); };
     const handlePaymentSubmit = async () => {
         try {
             if (!currentContract) return;
@@ -583,7 +591,39 @@ const TenantManagement: React.FC = () => {
             </Modal>
 
             <Modal title={isEdit ? '编辑合同' : '新增合同'} open={contractModalVisible} onOk={handleContractSubmit} onCancel={() => setContractModalVisible(false)} confirmLoading={loading} width={640}>
-                <Form form={contractForm} layout="vertical">
+                <Form
+                    form={contractForm}
+                    layout="vertical"
+                    initialValues={{ rentalPricingMethod: 'PerSqmPerDay', propertyFee: 0, deposit: 0, totalAmount: 0, paymentCycle: 'Monthly' }}
+                    onValuesChange={(changedValues, allValues) => {
+                        let { startDate, endDate, monthlyRent, propertyFee, unitIds, unitPrice } = allValues;
+
+                        // Auto-calculate monthly rent
+                        if (changedValues.unitIds || changedValues.unitPrice !== undefined) {
+                            if (unitIds && unitIds.length > 0 && unitPrice) {
+                                const selectedUnits = allUnits.filter(u => unitIds.includes(u.id));
+                                const totalArea = selectedUnits.reduce((acc, curr) => acc + (curr.area || 0), 0);
+                                // Calculate monthly rent: UnitPrice * Area * 30 (Assume 30 days/month)
+                                const rent = unitPrice * totalArea * 30;
+                                monthlyRent = Number(rent.toFixed(2));
+                                contractForm.setFieldValue('monthlyRent', monthlyRent);
+                            }
+                        }
+
+                        // Auto-calculate total amount
+                        if ((changedValues.startDate || changedValues.endDate || changedValues.monthlyRent !== undefined || changedValues.propertyFee !== undefined || changedValues.unitPrice !== undefined) && startDate && endDate) {
+                            const start = dayjs(startDate);
+                            const end = dayjs(endDate);
+                            if (end.isAfter(start)) {
+                                const months = end.diff(start, 'month', true);
+                                const rent = Number(monthlyRent) || 0;
+                                const fee = Number(propertyFee) || 0;
+                                const total = (rent + fee) * months;
+                                contractForm.setFieldValue('totalAmount', Number(total.toFixed(2)));
+                            }
+                        }
+                    }}
+                >
                     <Row gutter={16}>
                         <Col span={12}><Form.Item name="tenantId" label="租户" rules={[{ required: true }]}><Select showSearch placeholder="请选择租户" options={tenants.map(t => ({ label: t.tenantName, value: t.id }))} filterOption={(input, option) => (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())} /></Form.Item></Col>
                         <Col span={12}><Form.Item name="contractNumber" label="合同编号"><Input placeholder="不填则自动生成" /></Form.Item></Col>
@@ -602,7 +642,24 @@ const TenantManagement: React.FC = () => {
                         />
                     </Form.Item>
                     <Row gutter={16}><Col span={12}><Form.Item name="startDate" label="开始日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item></Col><Col span={12}><Form.Item name="endDate" label="结束日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item></Col></Row>
-                    <Row gutter={16}><Col span={6}><Form.Item name="monthlyRent" label="月租金" rules={[{ required: true }]}><InputNumber min={0} style={{ width: '100%' }} placeholder="月租金" /></Form.Item></Col><Col span={6}><Form.Item name="propertyFee" label="物业费/月"><InputNumber min={0} style={{ width: '100%' }} placeholder="物业费" /></Form.Item></Col><Col span={6}><Form.Item name="deposit" label="押金"><InputNumber min={0} style={{ width: '100%' }} placeholder="押金" /></Form.Item></Col><Col span={6}><Form.Item name="paymentCycle" label="付款周期"><Select placeholder="请选择" options={[{ label: '月付', value: 'Monthly' }, { label: '季付', value: 'Quarterly' }, { label: '年付', value: 'Yearly' }]} /></Form.Item></Col></Row>
+
+                    <Form.Item name="rentalPricingMethod" hidden initialValue="PerSqmPerDay"><Input /></Form.Item>
+
+                    <Row gutter={16}>
+                        <Col span={6}>
+                            <Form.Item name="unitPrice" label="单价(元/㎡/天)" rules={[{ required: true }]}>
+                                <InputNumber min={0} step={0.01} style={{ width: '100%' }} placeholder="单价" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={6}><Form.Item name="monthlyRent" label="月租金(自动计算)" rules={[{ required: true }]}><InputNumber min={0} style={{ width: '100%' }} placeholder="月租金" /></Form.Item></Col>
+                        <Col span={6}><Form.Item name="propertyFee" label="物业费/月" rules={[{ required: true }]}><InputNumber min={0} style={{ width: '100%' }} placeholder="物业费" /></Form.Item></Col>
+                        <Col span={6}><Form.Item name="deposit" label="押金" rules={[{ required: true }]}><InputNumber min={0} style={{ width: '100%' }} placeholder="押金" /></Form.Item></Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                        <Col span={12}><Form.Item name="paymentCycle" label="付款周期" rules={[{ required: true }]}><Select placeholder="请选择" options={[{ label: '月付', value: 'Monthly' }, { label: '季付', value: 'Quarterly' }, { label: '年付', value: 'Yearly' }]} /></Form.Item></Col>
+                        <Col span={12}><Form.Item name="totalAmount" label="合同总额 (自动计算)" rules={[{ required: true }]}><InputNumber min={0} style={{ width: '100%' }} placeholder="自动计算合同总额" /></Form.Item></Col>
+                    </Row>
                     <Form.Item label="合同附件">
                         <Upload {...uploadProps}>
                             <Button icon={<UploadOutlined />}>点击上传</Button>
@@ -650,6 +707,7 @@ const TenantManagement: React.FC = () => {
                                     columns={[
                                         { title: '合同编号', dataIndex: 'contractNumber', width: 120 },
                                         { title: '月租金', dataIndex: 'monthlyRent', width: 100, render: (v: number) => `¥${v?.toLocaleString()}` },
+                                        { title: '预估总额', dataIndex: 'totalAmount', width: 100, render: (v: number) => v ? `¥${v?.toLocaleString()}` : '-' },
                                         { title: '起止日期', key: 'dates', width: 180, render: (_, r: LeaseContract) => `${dayjs(r.startDate).format('YYYY-MM-DD')} ~ ${dayjs(r.endDate).format('YYYY-MM-DD')}` },
                                         { title: '状态', dataIndex: 'status', width: 80, render: (s: string) => <Tag color={contractStatusOptions.find(o => o.value === s)?.color}>{contractStatusOptions.find(o => o.value === s)?.label || s}</Tag> },
                                     ]}
@@ -698,6 +756,20 @@ const TenantManagement: React.FC = () => {
                                     pagination={false}
                                     columns={[
                                         { title: '合同', dataIndex: 'contractNumber', width: 100 },
+                                        {
+                                            title: '类型',
+                                            dataIndex: 'paymentType',
+                                            width: 80,
+                                            render: (t: string) => {
+                                                const typeMap: Record<string, { label: string; color: string }> = {
+                                                    'Rent': { label: '房租', color: 'blue' },
+                                                    'PropertyFee': { label: '物业费', color: 'orange' },
+                                                    'Deposit': { label: '押金', color: 'purple' },
+                                                    'Other': { label: '其他', color: 'default' },
+                                                };
+                                                return <Tag color={typeMap[t]?.color || 'default'}>{typeMap[t]?.label || t || '房租'}</Tag>;
+                                            }
+                                        },
                                         { title: '金额', dataIndex: 'amount', width: 100, render: (v: number) => <Text type="success">¥{v?.toLocaleString()}</Text> },
                                         { title: '缴费日期', dataIndex: 'paymentDate', width: 100, render: (d: string) => dayjs(d).format('YYYY-MM-DD') },
                                         { title: '方式', dataIndex: 'paymentMethod', width: 80 },
@@ -720,6 +792,7 @@ const TenantManagement: React.FC = () => {
                             <Descriptions.Item label="结束日期">{dayjs(currentContract.endDate as string).format('YYYY-MM-DD')}</Descriptions.Item>
                             <Descriptions.Item label="月租金">¥{currentContract.monthlyRent?.toLocaleString()}</Descriptions.Item>
                             <Descriptions.Item label="物业费/月">{currentContract.propertyFee ? `¥${currentContract.propertyFee?.toLocaleString()}` : '-'}</Descriptions.Item>
+                            <Descriptions.Item label="合同总额">{currentContract.totalAmount ? `¥${currentContract.totalAmount?.toLocaleString()}` : '-'}</Descriptions.Item>
                             <Descriptions.Item label="押金">¥{currentContract.deposit?.toLocaleString()}</Descriptions.Item>
                             <Descriptions.Item label="到期状态" span={2}>
                                 {currentContract.status === 'Active' && typeof currentContract.daysUntilExpiry === 'number' ? (
@@ -798,7 +871,23 @@ const TenantManagement: React.FC = () => {
                                         ]}
                                     >
                                         <List.Item.Meta
-                                            title={<Space><Text strong>¥{item.amount.toLocaleString()}</Text><Tag color="blue">{item.paymentMethod || '其他'}</Tag></Space>}
+                                            title={
+                                                <Space>
+                                                    <Text strong>¥{item.amount.toLocaleString()}</Text>
+                                                    <Tag color={
+                                                        item.paymentType === 'Rent' ? 'blue' :
+                                                            item.paymentType === 'PropertyFee' ? 'orange' :
+                                                                item.paymentType === 'Deposit' ? 'purple' : 'default'
+                                                    }>
+                                                        {
+                                                            item.paymentType === 'Rent' ? '房租' :
+                                                                item.paymentType === 'PropertyFee' ? '物业费' :
+                                                                    item.paymentType === 'Deposit' ? '押金' : '其他'
+                                                        }
+                                                    </Tag>
+                                                    <Tag color="cyan">{item.paymentMethod || '其他'}</Tag>
+                                                </Space>
+                                            }
                                             description={
                                                 <Space direction="vertical" size={0}>
                                                     <Text type="secondary">付款日期: {dayjs(item.paymentDate).format('YYYY-MM-DD')}</Text>
@@ -819,8 +908,9 @@ const TenantManagement: React.FC = () => {
             <Modal title="添加付款记录" open={paymentModalVisible} onOk={handlePaymentSubmit} onCancel={() => setPaymentModalVisible(false)} confirmLoading={loading} width={480}>
                 <Form form={paymentForm} layout="vertical">
                     <Row gutter={16}>
-                        <Col span={12}><Form.Item name="amount" label="付款金额" rules={[{ required: true }]}><InputNumber prefix="¥" style={{ width: '100%' }} placeholder="金额" /></Form.Item></Col>
-                        <Col span={12}><Form.Item name="paymentDate" label="付款日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
+                        <Col span={8}><Form.Item name="amount" label="付款金额" rules={[{ required: true }]}><InputNumber prefix="¥" style={{ width: '100%' }} placeholder="金额" /></Form.Item></Col>
+                        <Col span={8}><Form.Item name="paymentType" label="款项类型" rules={[{ required: true }]}><Select placeholder="请选择" options={[{ label: '房租', value: 'Rent' }, { label: '物业费', value: 'PropertyFee' }, { label: '押金', value: 'Deposit' }, { label: '其他', value: 'Other' }]} /></Form.Item></Col>
+                        <Col span={8}><Form.Item name="paymentDate" label="付款日期" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
                     </Row>
                     <Row gutter={16}>
                         <Col span={12}><Form.Item name="paymentMethod" label="付款方式"><Select placeholder="付款方式" options={[{ label: '银行转账', value: 'BankTransfer' }, { label: '微信支付', value: 'WeChat' }, { label: '支付宝', value: 'Alipay' }, { label: '现金', value: 'Cash' }]} /></Form.Item></Col>

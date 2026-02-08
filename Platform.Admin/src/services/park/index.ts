@@ -323,8 +323,11 @@ export interface LeaseContract {
     startDate: string;
     endDate: string;
     monthlyRent: number;
+    rentalPricingMethod?: string;
+    unitPrice?: number;
     deposit?: number;
     propertyFee?: number;
+    totalAmount?: number;
     paymentCycle: string;
     status: string;
     daysUntilExpiry: number;
@@ -340,6 +343,7 @@ export interface LeasePaymentRecord {
     contractId: string;
     tenantId: string;
     amount: number;
+    paymentType?: string;
     paymentDate: string;
     paymentMethod?: string;
     periodStart?: string;
@@ -352,6 +356,7 @@ export interface LeasePaymentRecord {
 export interface CreateLeasePaymentRecordRequest {
     contractId: string;
     amount: number;
+    paymentType: string;
     paymentDate: string;
     paymentMethod?: string;
     periodStart?: string;

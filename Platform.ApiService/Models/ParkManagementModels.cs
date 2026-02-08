@@ -412,7 +412,6 @@ public class LeaseContract : MultiTenantEntity, IEntity, ISoftDeletable, ITimest
     public string TenantId { get; set; } = string.Empty;
 
     /// <summary>合同编号</summary>
-    [Required]
     [StringLength(100)]
     [BsonElement("contractNumber")]
     public string ContractNumber { get; set; } = string.Empty;
@@ -433,6 +432,14 @@ public class LeaseContract : MultiTenantEntity, IEntity, ISoftDeletable, ITimest
     [BsonElement("monthlyRent")]
     public decimal MonthlyRent { get; set; }
 
+    /// <summary>租赁计费方式</summary>
+    [BsonElement("rentalPricingMethod")]
+    public string RentalPricingMethod { get; set; } = "FixedMonthly"; // FixedMonthly (按月), PerSqmPerDay (按平米天)
+
+    /// <summary>单价</summary>
+    [BsonElement("unitPrice")]
+    public decimal? UnitPrice { get; set; }
+
     /// <summary>押金</summary>
     [BsonElement("deposit")]
     public decimal? Deposit { get; set; }
@@ -440,6 +447,10 @@ public class LeaseContract : MultiTenantEntity, IEntity, ISoftDeletable, ITimest
     /// <summary>物业费（月）</summary>
     [BsonElement("propertyFee")]
     public decimal? PropertyFee { get; set; }
+
+    /// <summary>合同总额</summary>
+    [BsonElement("totalAmount")]
+    public decimal? TotalAmount { get; set; }
 
     /// <summary>付款周期</summary>
     [StringLength(20)]
@@ -478,6 +489,10 @@ public class LeasePaymentRecord : MultiTenantEntity, IEntity, ISoftDeletable, IT
     /// <summary>租户ID</summary>
     [BsonElement("tenantId")]
     public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>付款类型</summary>
+    [BsonElement("paymentType")]
+    public string PaymentType { get; set; } = "Rent"; // Rent, PropertyFee, Deposit, Other
 
     /// <summary>付款金额</summary>
     [BsonElement("amount")]
@@ -1492,11 +1507,20 @@ public class LeaseContractDto
     /// <summary>月租金</summary>
     public decimal MonthlyRent { get; set; }
 
+    /// <summary>租赁计费方式</summary>
+    public string RentalPricingMethod { get; set; } = string.Empty;
+
+    /// <summary>单价</summary>
+    public decimal? UnitPrice { get; set; }
+
     /// <summary>押金</summary>
     public decimal? Deposit { get; set; }
 
     /// <summary>物业费（月）</summary>
     public decimal? PropertyFee { get; set; }
+
+    /// <summary>合同总额</summary>
+    public decimal? TotalAmount { get; set; }
 
     /// <summary>付款周期</summary>
     public string PaymentCycle { get; set; } = string.Empty;
@@ -1536,6 +1560,8 @@ public class LeasePaymentRecordDto
     public string TenantId { get; set; } = string.Empty;
     /// <summary>金额</summary>
     public decimal Amount { get; set; }
+    /// <summary>付款类型</summary>
+    public string PaymentType { get; set; } = "Rent";
     /// <summary>付款日期</summary>
     public DateTime PaymentDate { get; set; }
     /// <summary>付款方式</summary>
@@ -1562,6 +1588,8 @@ public class CreateLeasePaymentRecordRequest
     public string ContractId { get; set; } = string.Empty;
     /// <summary>金额</summary>
     public decimal Amount { get; set; }
+    /// <summary>付款类型</summary>
+    public string PaymentType { get; set; } = "Rent";
     /// <summary>付款日期</summary>
     public DateTime PaymentDate { get; set; }
     /// <summary>付款方式</summary>
@@ -1584,7 +1612,6 @@ public class CreateLeaseContractRequest
     public string TenantId { get; set; } = string.Empty;
 
     /// <summary>合同编号</summary>
-    [Required]
     public string ContractNumber { get; set; } = string.Empty;
 
     /// <summary>单元ID列表</summary>
@@ -1599,11 +1626,20 @@ public class CreateLeaseContractRequest
     /// <summary>月租金</summary>
     public decimal MonthlyRent { get; set; }
 
+    /// <summary>租赁计费方式</summary>
+    public string? RentalPricingMethod { get; set; }
+
+    /// <summary>单价</summary>
+    public decimal? UnitPrice { get; set; }
+
     /// <summary>押金</summary>
     public decimal? Deposit { get; set; }
 
     /// <summary>物业费（月）</summary>
     public decimal? PropertyFee { get; set; }
+
+    /// <summary>合同总额</summary>
+    public decimal? TotalAmount { get; set; }
 
     /// <summary>付款周期</summary>
     public string? PaymentCycle { get; set; }
@@ -1652,6 +1688,12 @@ public class TenantStatisticsResponse
 
     /// <summary>收缴率</summary>
     public double CollectionRate { get; set; }
+
+    /// <summary>按费用类型统计实收金额</summary>
+    public Dictionary<string, decimal> ReceivedByPaymentType { get; set; } = new();
+
+    /// <summary>有效合同总金额 (合同总额字段之和)</summary>
+    public decimal TotalContractAmount { get; set; }
 
     // 同比/环比
     /// <summary>月租金同比</summary>

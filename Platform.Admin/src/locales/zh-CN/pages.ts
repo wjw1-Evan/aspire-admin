@@ -1971,6 +1971,7 @@ export default {
   'pages.park.contract.rent': '租金',
   'pages.park.contract.deposit': '押金',
   'pages.park.contract.propertyFee': '物业费',
+  'pages.park.contract.totalAmount': '合同总额',
   'pages.park.contract.expiry': '到期日',
   'pages.park.contract.status': '状态',
 

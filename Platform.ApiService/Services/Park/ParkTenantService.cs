@@ -247,7 +247,11 @@ public class ParkTenantService : IParkTenantService
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             MonthlyRent = request.MonthlyRent,
+            RentalPricingMethod = request.RentalPricingMethod ?? "FixedMonthly",
+            UnitPrice = request.UnitPrice,
             Deposit = request.Deposit,
+            PropertyFee = request.PropertyFee,
+            TotalAmount = request.TotalAmount,
             PaymentCycle = request.PaymentCycle ?? "Monthly",
             PaymentDay = request.PaymentDay,
             Terms = request.Terms,
@@ -318,7 +322,11 @@ public class ParkTenantService : IParkTenantService
         contract.StartDate = request.StartDate;
         contract.EndDate = request.EndDate;
         contract.MonthlyRent = request.MonthlyRent;
+        contract.RentalPricingMethod = request.RentalPricingMethod ?? "FixedMonthly";
+        contract.UnitPrice = request.UnitPrice;
         contract.Deposit = request.Deposit;
+        contract.PropertyFee = request.PropertyFee;
+        contract.TotalAmount = request.TotalAmount;
         contract.PaymentCycle = request.PaymentCycle ?? contract.PaymentCycle;
         contract.PaymentDay = request.PaymentDay;
         contract.Terms = request.Terms;
@@ -433,7 +441,11 @@ public class ParkTenantService : IParkTenantService
             StartDate = contract.StartDate,
             EndDate = contract.EndDate,
             MonthlyRent = contract.MonthlyRent,
+            RentalPricingMethod = contract.RentalPricingMethod,
+            UnitPrice = contract.UnitPrice,
             Deposit = contract.Deposit,
+            PropertyFee = contract.PropertyFee,
+            TotalAmount = contract.TotalAmount,
             PaymentCycle = contract.PaymentCycle,
             Status = contract.Status,
             DaysUntilExpiry = daysUntilExpiry,
@@ -460,6 +472,7 @@ public class ParkTenantService : IParkTenantService
             Amount = request.Amount,
             PaymentDate = request.PaymentDate,
             PaymentMethod = request.PaymentMethod,
+            PaymentType = request.PaymentType ?? "Rent",
             PeriodStart = request.PeriodStart,
             PeriodEnd = request.PeriodEnd,
             Notes = request.Notes
@@ -497,6 +510,7 @@ public class ParkTenantService : IParkTenantService
             Amount = record.Amount,
             PaymentDate = record.PaymentDate,
             PaymentMethod = record.PaymentMethod,
+            PaymentType = record.PaymentType,
             PeriodStart = record.PeriodStart,
             PeriodEnd = record.PeriodEnd,
             Notes = record.Notes,

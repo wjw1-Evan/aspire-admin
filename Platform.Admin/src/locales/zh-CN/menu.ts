@@ -128,5 +128,13 @@ export default {
   'menu.park-management-contract.desc': '管理租赁合同与缴费记录',
   'menu.park-management-statistics': '统计报表',
   'menu.park-management-statistics.desc': '园区各项业务数据统计与分析',
+  'menu.visit-management': '走访管理',
+  'menu.visit-management.desc': '管理走访任务、考核及知识库',
+  'menu.park-management-visit-task': '走访任务',
+  'menu.park-management-visit-task.desc': '管理企管员走访任务',
+  'menu.park-management-visit-assessment': '走访考核',
+  'menu.park-management-visit-assessment.desc': '管理走访任务考核情况',
+  'menu.park-management-visit-knowledge-base': '走访知识库',
+  'menu.park-management-visit-knowledge-base.desc': '走访问题与问卷管理',
   'menu.pending-join-requests': '加入申请',
 };

@@ -767,6 +767,20 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
+        // 走访管理父菜单
+        menus.Add(new Menu
+        {
+            Name = "visit-management",
+            Title = "走访管理",
+            Path = "/visit-management",
+            Icon = "schedule",
+            SortOrder = 10,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
         // 园区管理父菜单
         menus.Add(new Menu
         {
@@ -774,7 +788,7 @@ public class DataInitializerService : IDataInitializerService
             Title = "园区管理",
             Path = "/park-management",
             Icon = "bank",
-            SortOrder = 10,
+            SortOrder = 11,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -877,6 +891,54 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
+        // 走访管理子菜单：走访任务
+        menus.Add(new Menu
+        {
+            Name = "park-management-visit-task",
+            Title = "走访任务",
+            Path = "/visit-management/task",
+            Component = "./park-management/visit-task",
+            Icon = "schedule",
+            ParentId = "visit-management",
+            SortOrder = 1,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 走访管理子菜单：走访考核
+        menus.Add(new Menu
+        {
+            Name = "park-management-visit-assessment",
+            Title = "走访考核",
+            Path = "/visit-management/assessment",
+            Component = "./park-management/visit-assessment",
+            Icon = "check-square",
+            ParentId = "visit-management",
+            SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 走访管理子菜单：走访知识库
+        menus.Add(new Menu
+        {
+            Name = "park-management-visit-knowledge-base",
+            Title = "走访知识库",
+            Path = "/visit-management/knowledge-base",
+            Component = "./park-management/visit-knowledge-base",
+            Icon = "database",
+            ParentId = "visit-management",
+            SortOrder = 3,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
         return menus;
     }
 
@@ -926,6 +988,9 @@ public class DataInitializerService : IDataInitializerService
             "park-management-contract" => "park-management",
             "park-management-enterprise-service" => "park-management",
             "park-management-statistics" => "park-management",
+            "park-management-visit-task" => "visit-management",
+            "park-management-visit-assessment" => "visit-management",
+            "park-management-visit-knowledge-base" => "visit-management",
 
             _ => null
         };

@@ -210,6 +210,27 @@ export default [
     ],
   },
   {
+    path: '/visit-management',
+    hideInMenu: true,
+    routes: [
+      {
+        path: '/visit-management/task',
+        component: './park-management/visit-task',
+        hideInMenu: true,
+      },
+      {
+        path: '/visit-management/assessment',
+        component: './park-management/visit-assessment',
+        hideInMenu: true,
+      },
+      {
+        path: '/visit-management/knowledge-base',
+        component: './park-management/visit-knowledge-base',
+        hideInMenu: true,
+      },
+    ],
+  },
+  {
     path: '/park-management',
     hideInMenu: true, // 使用数据库菜单
     routes: [

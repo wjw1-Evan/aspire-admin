@@ -1,0 +1,38 @@
+ 
+
+.container {
+    padding: 24px;
+}
+
+.statCard {
+    :global {
+        .ant-card-body {
+            padding: 20px 24px;
+        }
+    }
+}
+
+.searchCard {
+    margin-bottom: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.tableCard {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+    :global {
+        .ant-table-thead>tr>th {
+            background: #fafafa;
+            font-weight: 600;
+        }
+    }
+}
+
+@media screen and (max-width: @screen-md) {
+    .container {
+        padding: 16px;
+    }
+}

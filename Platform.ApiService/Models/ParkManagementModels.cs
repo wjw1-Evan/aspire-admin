@@ -701,6 +701,152 @@ public class ServiceRequest : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
 
 #endregion
 
+#region 走访管理模型 (Visit Management)
+
+/// <summary>
+/// 走访任务
+/// </summary>
+[BsonIgnoreExtraElements]
+public class VisitTask : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+{
+    /// <summary>企管员姓名</summary>
+    [Required]
+    [StringLength(100)]
+    [BsonElement("managerName")]
+    public string ManagerName { get; set; } = string.Empty;
+
+    /// <summary>企管员手机号</summary>
+    [Required]
+    [StringLength(20)]
+    [BsonElement("phone")]
+    public string Phone { get; set; } = string.Empty;
+
+    /// <summary>管辖范围</summary>
+    [StringLength(500)]
+    [BsonElement("jurisdiction")]
+    public string? Jurisdiction { get; set; }
+
+    /// <summary>任务详情/描述</summary>
+    [StringLength(2000)]
+    [BsonElement("details")]
+    public string? Details { get; set; }
+
+    /// <summary>受访企业ID</summary>
+    [BsonElement("tenantId")]
+    public string? TenantId { get; set; }
+
+    /// <summary>受访地点</summary>
+    [StringLength(500)]
+    [BsonElement("visitLocation")]
+    public string? VisitLocation { get; set; }
+
+    /// <summary>走访日期</summary>
+    [BsonElement("visitDate")]
+    public DateTime? VisitDate { get; set; }
+
+    /// <summary>状态</summary>
+    [StringLength(20)]
+    [BsonElement("status")]
+    public string Status { get; set; } = "Pending"; // Pending, InProgress, Completed, Cancelled
+
+    /// <summary>关联问卷ID</summary>
+    [BsonElement("questionnaireId")]
+    public string? QuestionnaireId { get; set; }
+}
+
+/// <summary>
+/// 走访考核情况
+/// </summary>
+[BsonIgnoreExtraElements]
+public class VisitAssessment : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+{
+    /// <summary>关联走访任务ID</summary>
+    [BsonElement("taskId")]
+    public string TaskId { get; set; } = string.Empty;
+
+    /// <summary>走访人姓名</summary>
+    [BsonElement("visitorName")]
+    public string VisitorName { get; set; } = string.Empty;
+
+    /// <summary>手机号</summary>
+    [BsonElement("phone")]
+    public string Phone { get; set; } = string.Empty;
+
+    /// <summary>走访地点</summary>
+    [BsonElement("location")]
+    public string Location { get; set; } = string.Empty;
+
+    /// <summary>走访任务描述</summary>
+    [BsonElement("taskDescription")]
+    public string TaskDescription { get; set; } = string.Empty;
+
+    /// <summary>考核评分</summary>
+    [BsonElement("score")]
+    public int Score { get; set; } // 1-100
+
+    /// <summary>考核意见/评语</summary>
+    [StringLength(1000)]
+    [BsonElement("comments")]
+    public string? Comments { get; set; }
+}
+
+/// <summary>
+/// 走访高频问题 (知识库)
+/// </summary>
+[BsonIgnoreExtraElements]
+public class VisitQuestion : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+{
+    /// <summary>问题内容</summary>
+    [Required]
+    [StringLength(1000)]
+    [BsonElement("content")]
+    public string Content { get; set; } = string.Empty;
+
+    /// <summary>问题分类</summary>
+    [StringLength(100)]
+    [BsonElement("category")]
+    public string? Category { get; set; }
+
+    /// <summary>标准回答/解析</summary>
+    [StringLength(2000)]
+    [BsonElement("answer")]
+    public string? Answer { get; set; }
+
+    /// <summary>是否常用</summary>
+    [BsonElement("isFrequentlyUsed")]
+    public bool IsFrequentlyUsed { get; set; }
+}
+
+/// <summary>
+/// 走访问卷模板
+/// </summary>
+[BsonIgnoreExtraElements]
+public class VisitQuestionnaire : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+{
+    /// <summary>问卷名称</summary>
+    [Required]
+    [StringLength(200)]
+    [BsonElement("title")]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>走访目的</summary>
+    [StringLength(500)]
+    [BsonElement("purpose")]
+    public string? Purpose { get; set; }
+
+    /// <summary>包含的问题ID集合</summary>
+    [BsonElement("questionIds")]
+    public List<string> QuestionIds { get; set; } = new();
+
+    /// <summary>备注</summary>
+    [StringLength(1000)]
+    [BsonElement("notes")]
+    public string? Notes { get; set; }
+}
+
+#endregion
+
+
 #region DTOs
 
 // ===== 资产管理 DTOs =====
@@ -1995,4 +2141,154 @@ public class ServiceStatisticsResponse
     public double? AverageRatingMoM { get; set; }
 }
 
+// ===== 走访管理 DTOs =====
+
+/// <summary>
+/// 走访任务列表请求
+/// </summary>
+public class VisitTaskListRequest
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public string? Search { get; set; }
+    public string? Status { get; set; }
+}
+
+/// <summary>
+/// 走访任务响应
+/// </summary>
+public class VisitTaskListResponse
+{
+    public List<VisitTaskDto> Tasks { get; set; } = new();
+    public int Total { get; set; }
+}
+
+public class VisitTaskDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string ManagerName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string? Jurisdiction { get; set; }
+    public string? Details { get; set; }
+    public string? TenantId { get; set; }
+    public string? TenantName { get; set; }
+    public string? VisitLocation { get; set; }
+    public DateTime? VisitDate { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+public class CreateVisitTaskRequest
+{
+    [Required]
+    public string ManagerName { get; set; } = string.Empty;
+    [Required]
+    public string Phone { get; set; } = string.Empty;
+    public string? Jurisdiction { get; set; }
+    public string? Details { get; set; }
+    public string? TenantId { get; set; }
+    public string? VisitLocation { get; set; }
+    public DateTime? VisitDate { get; set; }
+    public string? QuestionnaireId { get; set; }
+}
+
+/// <summary>
+/// 走访考核列表请求
+/// </summary>
+public class VisitAssessmentListRequest
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public string? Search { get; set; }
+}
+
+public class VisitAssessmentListResponse
+{
+    public List<VisitAssessmentDto> Assessments { get; set; } = new();
+    public int Total { get; set; }
+}
+
+public class VisitAssessmentDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string TaskId { get; set; } = string.Empty;
+    public string VisitorName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Location { get; set; } = string.Empty;
+    public string TaskDescription { get; set; } = string.Empty;
+    public int Score { get; set; }
+    public string? Comments { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// 知识库问题列表请求
+/// </summary>
+public class VisitQuestionListRequest
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public string? Search { get; set; }
+    public string? Category { get; set; }
+}
+
+public class VisitQuestionListResponse
+{
+    public List<VisitQuestionDto> Questions { get; set; } = new();
+    public int Total { get; set; }
+}
+
+public class VisitQuestionDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public string? Category { get; set; }
+    public string? Answer { get; set; }
+    public bool IsFrequentlyUsed { get; set; }
+}
+
+/// <summary>
+/// 走访问卷列表响应
+/// </summary>
+public class VisitQuestionnaireListResponse
+{
+    public List<VisitQuestionnaireDto> Questionnaires { get; set; } = new();
+    public int Total { get; set; }
+}
+
+public class VisitQuestionnaireDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Purpose { get; set; }
+    public List<string> QuestionIds { get; set; } = new();
+    public int QuestionCount => QuestionIds.Count;
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// 走访统计数据
+/// </summary>
+public class VisitStatisticsDto
+{
+    /// <summary>待处理任务数</summary>
+    public int PendingTasks { get; set; }
+
+    /// <summary>本月完成走访数</summary>
+    public int CompletedTasksThisMonth { get; set; }
+
+    /// <summary>活跃企管员数</summary>
+    public int ActiveManagers { get; set; }
+
+    /// <summary>完成率</summary>
+    public decimal CompletionRate { get; set; }
+
+    /// <summary>累计评价数</summary>
+    public int TotalAssessments { get; set; }
+
+    /// <summary>平均评分</summary>
+    public decimal AverageScore { get; set; }
+}
+
 #endregion
+

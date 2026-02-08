@@ -2048,5 +2048,11 @@ export default {
   'pages.park.statistics.aiReport': 'AI 分析报告',
   'pages.park.statistics.aiReportTitle': 'AI 运营分析报告',
   'pages.park.statistics.generatingReport': '正在生成报告，可能需要几十秒...',
+
+  // Collection Status
+  'pages.park.statistics.collectionStatus': '收缴状态',
+  'pages.park.statistics.totalExpected': '应收租金',
+  'pages.park.statistics.totalReceived': '实收租金',
+  'pages.park.statistics.collectionRate': '收缴率',
 };
 

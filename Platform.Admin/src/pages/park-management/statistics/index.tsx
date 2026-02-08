@@ -1071,6 +1071,7 @@ const StatisticsPage: React.FC = () => {
             >
                 <Spin spinning={aiReportLoading} tip={intl.formatMessage({ id: 'pages.park.statistics.generatingReport', defaultMessage: '正在生成报告，可能需要几十秒...' })}>
                     <div
+                        className={styles['markdown-body']}
                         dangerouslySetInnerHTML={{ __html: aiReportContent }}
                         style={{ fontSize: 15, lineHeight: 1.8 }}
                     />

@@ -538,24 +538,21 @@ public class ParkTenantService : IParkTenantService
         }
 
         // Get contracts active during the period
-        var activeContracts = contracts.Where(c => c.Status == "Active" || (c.StartDate <= end && c.EndDate >= start)).ToList();
+        List<LeaseContract> activeContracts;
 
-        // Use a 30 day window from the *end* of the period or just stick to "expiring soon from now"?
-        // Usually "Expiring Soon" is relative to "Now" for alerts. But for reports, maybe "Expired in this period"?
-        // Let's stick to "Expiring within 30 days from NOW" as it's an alert metric usually.
-        // Or if start/end is provided, maybe "Expiring in this period"?
-        // Let's keep existing logic for ExpiringContracts relative to NOW, but filter ActiveContracts based on period if Custom.
-
-        // Actually, let's just make it simple: filtering "active" contracts based on period intersection if Custom.
-        // If period is not Custom (current snapshot), use "Active" status.
-
+        // For Custom period, filter by date range AND valid status
+        // For standard periods, use current "Active" status
         if (period == StatisticsPeriod.Custom && startDate.HasValue)
         {
-            activeContracts = contracts.Where(c => c.StartDate <= end && c.EndDate >= start).ToList();
+            // Include contracts that overlap with the period AND are not terminated/draft
+            activeContracts = contracts.Where(c =>
+                (c.Status == "Active" || c.Status == "Renewed") &&
+                c.StartDate <= end &&
+                c.EndDate >= start).ToList();
         }
         else
         {
-            activeContracts = contracts.Where(c => c.Status == "Active").ToList();
+            activeContracts = contracts.Where(c => c.Status == "Active" || c.Status == "Renewed").ToList();
         }
 
         // Filter tenants that entered during the period (Flow)
@@ -571,33 +568,26 @@ public class ParkTenantService : IParkTenantService
 
         // Active Contracts = Contracts active during the period (Overlap) - ALREADY CALCULATED in activeContracts variable
 
-        // Expiring Contracts = Contracts ending in this period
-        var expiringContracts = contracts.Count(c => c.EndDate >= start && c.EndDate <= end);
+        // Expiring Contracts = Active contracts ending within 30 days from now (alert metric)
+        var now = DateTime.UtcNow;
+        var thirtyDaysFromNow = now.AddDays(30);
+        var expiringContracts = contracts.Count(c =>
+            (c.Status == "Active" || c.Status == "Renewed") &&
+            c.EndDate >= now &&
+            c.EndDate <= thirtyDaysFromNow);
 
         // Helper to calculate stock metrics at a specific date
         (int ActiveTenants, decimal MonthlyRent) CalculateMetricsAtDate(DateTime date)
         {
-            var activeTenants = tenants.Count(t => (t.EntryDate ?? t.CreatedAt) <= date && t.Status == "Active");
-            var activeContracts = contracts.Where(c => c.Status == "Active" && c.StartDate <= date && c.EndDate >= date).ToList();
-            // Note: simple "Active" check might not work for historical dates if status is updated on DB.
-            // But we don't have historical status tracking in this simple model.
-            // We can approximate by checking date ranges.
-            // Improved approximation:
-            var contractsActiveAtDate = contracts.Where(c => c.StartDate <= date && c.EndDate >= date).ToList();
+            // For historical dates, we approximate "active" contracts by date range
+            // We exclude terminated contracts as they shouldn't count historically
+            var contractsActiveAtDate = contracts.Where(c =>
+                (c.Status != "Terminated" && c.Status != "Draft") &&
+                c.StartDate <= date &&
+                c.EndDate >= date).ToList();
             var monthlyRent = contractsActiveAtDate.Sum(c => c.MonthlyRent);
 
-            // For tenants, "Status == Active" is current state. Historical state is hard.
-            // Using "EntryDate <= date" gives us total tenants. "Active" is hard.
-            // Assuming most tenants stay active, or using EntryDate <= date as proxy for "Total Tenants at date".
-            // Let's use (EntryDate <= date) as "Total Tenants".
-            // If we strictly want "ActiveTenants", we'd need history.
-            // Let's assume (EntryDate <= date) * (Current Active Rate)? No.
-            // Let's use `tenants.Count(t => (t.EntryDate ?? t.CreatedAt) <= date)` as base for comparison?
-            // User asks for "ActiveTenantsYoY".
-            // Let's use "Total Tenants" for comparison if "Active" cannot be determined historically.
-            // Actually, comparing Total Tenants (Stock) is safer.
-            // But let's try to query contracts to see who was active.
-            // Construct set of TenantIds from active contracts at that date.
+            // Determine active tenants by contracts active at that date
             var tenantIdsWithActiveContracts = contractsActiveAtDate.Select(c => c.TenantId).Distinct().ToList();
             var activeTenantsCount = tenants.Count(t => tenantIdsWithActiveContracts.Contains(t.Id));
 
@@ -608,11 +598,6 @@ public class ParkTenantService : IParkTenantService
         // Better to use the helper ensuring consistency
         var (calcActiveTenants, calcMonthlyRent) = CalculateMetricsAtDate(end);
 
-        // Re-aligning with current logic:
-        // Current logic uses `allTenantsAtEnd.Count(t => t.Status == "Active")` which relies on CURRENT status.
-        // This is incorrect for historical.
-        // So the Helper approach using Contracts to determine "Active" at that time is BETTER.
-        // It's more accurate than using current status flag.
 
         var momDate = end.AddMonths(-1);
         var (momActiveTenants, momMonthlyRent) = CalculateMetricsAtDate(momDate);
@@ -629,7 +614,9 @@ public class ParkTenantService : IParkTenantService
         // Collection Status
         var totalReceived = payments.Where(p => p.PaymentDate >= start && p.PaymentDate <= end).Sum(p => p.Amount);
         decimal totalExpected = 0;
-        foreach (var c in contracts)
+        // Only calculate expected rent from active/renewed contracts (exclude Terminated, Draft, Expired)
+        var validContractsForBilling = contracts.Where(c => c.Status == "Active" || c.Status == "Renewed").ToList();
+        foreach (var c in validContractsForBilling)
         {
             // Calculate effective overlap duration
             var overlapStart = c.StartDate > start ? c.StartDate : start;

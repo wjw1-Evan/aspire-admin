@@ -1914,5 +1914,11 @@ export default {
   'pages.park.statistics.aiReport': 'AI Analysis Report',
   'pages.park.statistics.aiReportTitle': 'AI Operations Analysis Report',
   'pages.park.statistics.generatingReport': 'Generating report, this may take a few seconds...',
+
+  // Collection Status
+  'pages.park.statistics.collectionStatus': 'Collection Status',
+  'pages.park.statistics.totalExpected': 'Expected Rent',
+  'pages.park.statistics.totalReceived': 'Received Rent',
+  'pages.park.statistics.collectionRate': 'Collection Rate',
 };
 

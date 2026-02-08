@@ -372,8 +372,8 @@ public class ParkInvestmentService : IParkInvestmentService
 
         var (currentNewLeads, currentSignedProjects) = (newLeadsInPeriod, signedProjectsInPeriod);
 
-        // Conversion Rate: Total Qualified / Total Leads (Cumulative effectiveness)
-        var conversionRate = totalLeadsAtEnd > 0 ? Math.Round((decimal)qualifiedLeads / totalLeadsAtEnd * 100, 2) : 0;
+        // Conversion Rate: Signed Projects / Total Leads (Lead-to-signing effectiveness)
+        var conversionRate = totalLeadsAtEnd > 0 ? Math.Round((decimal)signedProjectsTotal / totalLeadsAtEnd * 100, 2) : 0;
 
         // MoM Comparison (Previous Period - shift by 1 stats period unit if standard, or same duration)
         // Assuming -1 Month for simplicity as per previous logic

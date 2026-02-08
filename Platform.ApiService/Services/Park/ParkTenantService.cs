@@ -668,6 +668,13 @@ public class ParkTenantService : IParkTenantService
                 }
             }
         }
+        var paymentsInPeriod = payments.Where(p => p.PaymentDate >= start && p.PaymentDate <= end).ToList();
+        var receivedByPaymentType = paymentsInPeriod
+            .GroupBy(p => p.PaymentType ?? "Rent")
+            .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
+
+        var totalContractAmount = activeContracts.Sum(c => c.TotalAmount ?? 0);
+
         var collectionRate = totalExpected > 0 ? (double)Math.Round(totalReceived / totalExpected * 100, 2) : 0;
 
         return new TenantStatisticsResponse
@@ -683,7 +690,9 @@ public class ParkTenantService : IParkTenantService
                 .GroupBy(t => t.Industry!)
                 .ToDictionary(g => g.Key, g => g.Count()),
             TotalReceived = totalReceived,
+            ReceivedByPaymentType = receivedByPaymentType,
             TotalExpected = totalExpected,
+            TotalContractAmount = totalContractAmount,
             CollectionRate = collectionRate,
             MonthlyRentYoY = CalculateGrowth(calcMonthlyRent, yoyMonthlyRent),
             MonthlyRentMoM = CalculateGrowth(calcMonthlyRent, momMonthlyRent),

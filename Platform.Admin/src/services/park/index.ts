@@ -375,6 +375,8 @@ export interface TenantStatistics {
     totalReceived: number;
     totalExpected: number;
     collectionRate: number;
+    receivedByPaymentType: Record<string, number>;
+    totalContractAmount: number;
     totalTenantsYoY?: number;
     activeTenantsMoM?: number;
     rentIncomeYoY?: number;

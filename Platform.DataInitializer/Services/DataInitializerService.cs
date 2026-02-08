@@ -829,6 +829,22 @@ public class DataInitializerService : IDataInitializerService
             UpdatedAt = now
         });
 
+        // 园区管理子菜单：合同管理
+        menus.Add(new Menu
+        {
+            Name = "park-management-contract",
+            Title = "合同管理",
+            Path = "/park-management/contract",
+            Component = "./park-management/contract",
+            Icon = "file-done",
+            ParentId = "park-management",
+            SortOrder = 4,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
         // 园区管理子菜单：企业服务
         menus.Add(new Menu
         {
@@ -838,7 +854,7 @@ public class DataInitializerService : IDataInitializerService
             Component = "./park-management/enterprise-service",
             Icon = "customer-service",
             ParentId = "park-management",
-            SortOrder = 4,
+            SortOrder = 5,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -854,7 +870,7 @@ public class DataInitializerService : IDataInitializerService
             Component = "./park-management/statistics",
             Icon = "bar-chart",
             ParentId = "park-management",
-            SortOrder = 5,
+            SortOrder = 6,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -907,6 +923,7 @@ public class DataInitializerService : IDataInitializerService
             "park-management-asset" => "park-management",
             "park-management-investment" => "park-management",
             "park-management-tenant" => "park-management",
+            "park-management-contract" => "park-management",
             "park-management-enterprise-service" => "park-management",
             "park-management-statistics" => "park-management",
 

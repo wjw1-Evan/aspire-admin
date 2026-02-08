@@ -229,6 +229,11 @@ export default [
         hideInMenu: true,
       },
       {
+        path: '/park-management/contract',
+        component: './park-management/contract',
+        hideInMenu: true,
+      },
+      {
         path: '/park-management/enterprise-service',
         component: './park-management/enterprise-service',
         hideInMenu: true,

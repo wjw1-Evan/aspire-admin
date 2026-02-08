@@ -124,6 +124,8 @@ export default {
   'menu.park-management-tenant.desc': '管理租户企业与合同',
   'menu.park-management-enterprise-service': '企业服务',
   'menu.park-management-enterprise-service.desc': '管理园区企业服务申请',
+  'menu.park-management-contract': '合同管理',
+  'menu.park-management-contract.desc': '管理租赁合同与缴费记录',
   'menu.park-management-statistics': '统计报表',
   'menu.park-management-statistics.desc': '园区各项业务数据统计与分析',
   'menu.pending-join-requests': '加入申请',

@@ -119,7 +119,6 @@ export default {
   'menu.cloud-storage-recycle': 'Recycle Bin',
   'menu.cloud-storage-recycle.desc': 'Manage deleted files',
   'menu.cloud-storage-quota': 'Storage Quota',
-  'menu.cloud-storage-quota': 'Storage Quota',
   'menu.cloud-storage-quota.desc': 'Manage storage quota and usage',
   // Park Management
   'menu.park-management': 'Park Management',
@@ -132,6 +131,8 @@ export default {
   'menu.park-management-tenant.desc': 'Manage tenant companies and contracts',
   'menu.park-management-enterprise-service': 'Enterprise Service',
   'menu.park-management-enterprise-service.desc': 'Manage service requests',
+  'menu.park-management-contract': 'Contract Management',
+  'menu.park-management-contract.desc': 'Manage lease contracts and payments',
   'menu.park-management-statistics': 'Statistics',
   'menu.park-management-statistics.desc': 'Park data statistics and analysis',
   'menu.pending-join-requests': 'Join Requests',

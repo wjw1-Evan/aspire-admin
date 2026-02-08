@@ -1868,9 +1868,9 @@ export default {
   'pages.park.tenant.contract.createTitle': '新建合同',
   'pages.park.tenant.contract.editTitle': '编辑合同',
   'pages.park.tenant.contract.renew': '续签合同',
-  'pages.park.tenant.status.active': '正常',
-  'pages.park.tenant.status.inactive': '已退出',
-  'pages.park.tenant.status.suspended': '已暂停',
+  'pages.park.tenant.status.active': '活跃',
+  'pages.park.tenant.status.expiring': '即将到期',
+  'pages.park.tenant.status.moved': '已退租',
   'pages.park.tenant.serviceRequest': '服务申请',
   'pages.park.tenant.contractStatus.draft': '草稿',
   'pages.park.tenant.contractStatus.active': '生效中',
@@ -1953,7 +1953,7 @@ export default {
   'pages.park.investment.editLead': '编辑线索',
   'pages.park.investment.editProject': '编辑项目',
   'pages.park.contract.addContract': '新增合同',
-  'pages.park.contract.renew': '续约',
+  'pages.park.contract.renew': '续签',
 
   // Park Tenant Management Compatibility Aliases
   'pages.park.tenant.name': '租户名称',
@@ -1962,6 +1962,7 @@ export default {
   'pages.park.tenant.entryDate': '入驻日期',
   'pages.park.tenant.units': '租用房源',
   'pages.park.tenant.status': '状态',
+
   'pages.park.tenant.addTenant': '新增租户',
 
   // Park Contract Management Compatibility Aliases
@@ -1974,6 +1975,11 @@ export default {
   'pages.park.contract.totalAmount': '合同总额',
   'pages.park.contract.expiry': '到期日',
   'pages.park.contract.status': '状态',
+  'pages.park.contract.status.active': '有效',
+  'pages.park.contract.status.pending': '待生效',
+  'pages.park.contract.status.expired': '已到期',
+  'pages.park.contract.status.renewed': '已续签',
+  'pages.park.contract.status.terminated': '已终止',
 
   // Park Enterprise Service Compatibility Aliases
   'pages.park.service.request.createdAt': '创建时间',
@@ -2051,6 +2057,7 @@ export default {
   'pages.park.statistics.aiReport': 'AI 分析报告',
   'pages.park.statistics.aiReportTitle': 'AI 运营分析报告',
   'pages.park.statistics.generatingReport': '正在生成报告，可能需要几十秒...',
+
 
   // Collection Status
   'pages.park.statistics.collectionStatus': '收缴状态',

@@ -637,6 +637,12 @@ const StatisticsPage: React.FC = () => {
             count,
         }));
 
+        const paymentTypeData = Object.entries(tenant.receivedByPaymentType || {}).map(([type, amount]) => ({
+            key: type,
+            type: type === 'Rent' ? '房租' : type === 'PropertyFee' ? '物业费' : type === 'Deposit' ? '押金' : '其他',
+            amount,
+        }));
+
         return (
             <div>
                 <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -676,10 +682,11 @@ const StatisticsPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}>
                         <Card>
                             <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.expiringContracts', defaultMessage: '即将到期' })}
-                                value={tenant.expiringContracts}
-                                styles={{ content: { color: tenant.expiringContracts > 0 ? '#faad14' : '#52c41a' } }}
-                                prefix={tenant.expiringContracts > 0 ? <WarningOutlined /> : <CheckCircleOutlined />}
+                                title="有效合同总额"
+                                value={tenant.totalContractAmount || 0}
+                                prefix="¥"
+                                precision={2}
+                                styles={{ content: { color: '#13c2c2' } }}
                             />
                         </Card>
                     </Col>
@@ -721,30 +728,32 @@ const StatisticsPage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col xs={24} lg={12}>
-                        <Card title={intl.formatMessage({ id: 'pages.park.statistics.rentIncome', defaultMessage: '租金收入' })} className={styles['chart-card']}>
-                            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                                <Statistic
-                                    title={intl.formatMessage({ id: 'pages.park.statistics.monthlyRent', defaultMessage: '月租金收入' })}
-                                    value={tenant.totalMonthlyRent}
-                                    prefix="¥"
-                                    precision={2}
-                                    styles={{ content: { fontSize: 36, color: '#1890ff' } }}
+                        <Card title="实收金额构成" className={styles['chart-card']}>
+                            {paymentTypeData.length > 0 ? (
+                                <Table
+                                    dataSource={paymentTypeData}
+                                    pagination={false}
+                                    size="small"
+                                    columns={[
+                                        { title: '费用类型', dataIndex: 'type', render: (t) => <Tag color="cyan">{t}</Tag> },
+                                        { title: '实收金额', dataIndex: 'amount', render: (a) => <Text strong>¥{a.toLocaleString()}</Text> },
+                                        {
+                                            title: '占比',
+                                            render: (_, record) => {
+                                                const percent = tenant.totalReceived > 0
+                                                    ? ((record.amount / tenant.totalReceived) * 100).toFixed(1)
+                                                    : 0;
+                                                return <Progress percent={Number(percent)} size="small" strokeColor="#13c2c2" />;
+                                            }
+                                        }
+                                    ]}
                                 />
-                                <div style={{ marginTop: 8 }}>
-                                    <Space size={16}>
-                                        {renderTrend(tenant.rentIncomeYoY, true)}
-                                        {renderTrend(tenant.rentIncomeMoM, false)}
-                                    </Space>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                    <Statistic title="实收总额" value={tenant.totalReceived} prefix="¥" precision={2} />
+                                    <Empty description="暂无详细构成数据" />
                                 </div>
-                                <div style={{ marginTop: 16 }}>
-                                    <Text type="secondary">
-                                        {intl.formatMessage({ id: 'pages.park.statistics.yearlyEstimate', defaultMessage: '预计年收入' })}:
-                                        <Text strong style={{ marginLeft: 8, fontSize: 18 }}>
-                                            ¥{(tenant.totalMonthlyRent * 12).toLocaleString()}
-                                        </Text>
-                                    </Text>
-                                </div>
-                            </div>
+                            )}
                         </Card>
                     </Col>
                 </Row>
@@ -752,7 +761,7 @@ const StatisticsPage: React.FC = () => {
                     <Col span={24}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.collectionStatus', defaultMessage: '收缴情况' })}>
                             <Row gutter={16}>
-                                <Col span={8}>
+                                <Col span={6}>
                                     <Statistic
                                         title={intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收总额' })}
                                         value={tenant.totalExpected}
@@ -760,7 +769,7 @@ const StatisticsPage: React.FC = () => {
                                         precision={2}
                                     />
                                 </Col>
-                                <Col span={8}>
+                                <Col span={6}>
                                     <Statistic
                                         title={intl.formatMessage({ id: 'pages.park.statistics.totalReceived', defaultMessage: '实收总额' })}
                                         value={tenant.totalReceived}
@@ -769,7 +778,15 @@ const StatisticsPage: React.FC = () => {
                                         valueStyle={{ color: '#52c41a' }}
                                     />
                                 </Col>
-                                <Col span={8}>
+                                <Col span={6}>
+                                    <Statistic
+                                        title="即将到期合同"
+                                        value={tenant.expiringContracts}
+                                        valueStyle={{ color: tenant.expiringContracts > 0 ? '#faad14' : '#52c41a' }}
+                                        prefix={tenant.expiringContracts > 0 ? <WarningOutlined /> : <CheckCircleOutlined />}
+                                    />
+                                </Col>
+                                <Col span={6}>
                                     <Statistic
                                         title={intl.formatMessage({ id: 'pages.park.statistics.collectionRate', defaultMessage: '收缴率' })}
                                         value={tenant.collectionRate}

@@ -1757,8 +1757,8 @@ export default {
   'pages.park.tenant.contract.editTitle': 'Edit Contract',
   'pages.park.tenant.contract.renew': 'Renew Contract',
   'pages.park.tenant.status.active': 'Active',
-  'pages.park.tenant.status.inactive': 'Inactive',
-  'pages.park.tenant.status.suspended': 'Suspended',
+  'pages.park.tenant.status.expiring': 'Expiring',
+  'pages.park.tenant.status.moved': 'Moved',
   'pages.park.tenant.serviceRequest': 'Service Request',
   'pages.park.tenant.contractStatus.draft': 'Draft',
   'pages.park.tenant.contractStatus.active': 'Active',
@@ -1896,6 +1896,12 @@ export default {
   'pages.park.investment.convertSuccess': 'Conversion Success',
   'pages.park.contract.addContract': 'Add Contract',
   'pages.park.contract.renew': 'Renew',
+
+  'pages.park.contract.status.active': 'Active',
+  'pages.park.contract.status.pending': 'Pending',
+  'pages.park.contract.status.expired': 'Expired',
+  'pages.park.contract.status.renewed': 'Renewed',
+  'pages.park.contract.status.terminated': 'Terminated',
 
   // Period Selection and YoY/MoM
   'pages.park.statistics.period': 'Statistics Period',

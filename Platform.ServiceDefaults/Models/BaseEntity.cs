@@ -6,7 +6,7 @@ namespace Platform.ServiceDefaults.Models;
 /// <summary>
 /// 基础实体类 - 所有微服务通用
 /// </summary>
-public abstract class BaseEntity : IOperationTrackable
+public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOperationTrackable
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

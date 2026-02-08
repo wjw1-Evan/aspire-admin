@@ -775,14 +775,14 @@ const StatisticsPage: React.FC = () => {
                                         value={tenant.totalReceived}
                                         prefix="¥"
                                         precision={2}
-                                        valueStyle={{ color: '#52c41a' }}
+                                        styles={{ content: { color: '#52c41a' } }}
                                     />
                                 </Col>
                                 <Col span={6}>
                                     <Statistic
                                         title="即将到期合同"
                                         value={tenant.expiringContracts}
-                                        valueStyle={{ color: tenant.expiringContracts > 0 ? '#faad14' : '#52c41a' }}
+                                        styles={{ content: { color: tenant.expiringContracts > 0 ? '#faad14' : '#52c41a' } }}
                                         prefix={tenant.expiringContracts > 0 ? <WarningOutlined /> : <CheckCircleOutlined />}
                                     />
                                 </Col>
@@ -792,7 +792,7 @@ const StatisticsPage: React.FC = () => {
                                         value={tenant.collectionRate}
                                         suffix="%"
                                         precision={1}
-                                        valueStyle={{ color: tenant.collectionRate >= 90 ? '#52c41a' : '#faad14' }}
+                                        styles={{ content: { color: tenant.collectionRate >= 90 ? '#52c41a' : '#faad14' } }}
                                     />
                                     <Progress
                                         percent={tenant.collectionRate}

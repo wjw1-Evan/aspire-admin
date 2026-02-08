@@ -330,7 +330,7 @@ const WorkflowManagement: React.FC = () => {
         width="95%"
         style={{ top: 20 }}
         styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }}
-        destroyOnClose
+        destroyOnHidden
       >
         <WorkflowCreateForm
           onSuccess={() => {
@@ -360,7 +360,7 @@ const WorkflowManagement: React.FC = () => {
         width="95%"
         style={{ top: 20 }}
         styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }}
-        destroyOnClose
+        destroyOnHidden
       >
         {editingWorkflow && (
           <WorkflowEditForm

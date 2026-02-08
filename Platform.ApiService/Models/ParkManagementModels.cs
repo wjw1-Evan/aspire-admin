@@ -28,7 +28,7 @@ public enum StatisticsPeriod
 /// 楼宇信息
 /// </summary>
 [BsonIgnoreExtraElements]
-public class Building : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class Building : MultiTenantEntity
 {
     /// <summary>楼宇名称</summary>
     [Required]
@@ -89,7 +89,7 @@ public class Building : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
 /// 房源/可租赁单元
 /// </summary>
 [BsonIgnoreExtraElements]
-public class PropertyUnit : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class PropertyUnit : MultiTenantEntity
 {
     /// <summary>所属楼宇ID</summary>
     [BsonElement("buildingId")]

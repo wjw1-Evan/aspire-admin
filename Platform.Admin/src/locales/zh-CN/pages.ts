@@ -1958,6 +1958,7 @@ export default {
   'pages.park.investment.convertToProject': '转为项目',
   'pages.park.investment.editLead': '编辑线索',
   'pages.park.investment.editProject': '编辑项目',
+  'pages.park.service.addCategory': '新增分类',
   'pages.park.contract.addContract': '新增合同',
   'pages.park.contract.renew': '续签',
 

@@ -281,7 +281,7 @@ public class DataInitializerService : IDataInitializerService
             Title = "系统管理",
             Path = "/system",
             Icon = "setting",
-            SortOrder = 9,
+            SortOrder = 99,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -1043,7 +1043,7 @@ public class DataInitializerService : IDataInitializerService
                 // 找出缺失的菜单ID
                 var missingMenuIds = allMenuIds.Except(existingMenuIds).ToList();
 
-                if (missingMenuIds.Any())
+                if (missingMenuIds.Count > 0)
                 {
                     // 使用 $addToSet 批量添加缺失的菜单ID，避免重复
                     var update = Builders<BsonDocument>.Update.AddToSetEach("menuIds", missingMenuIds);

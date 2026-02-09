@@ -2200,12 +2200,19 @@ public class ServiceStatisticsResponse
 /// </summary>
 public class VisitTaskListRequest
 {
+    /// <summary>当前页码</summary>
     public int Page { get; set; } = 1;
+    /// <summary>每页数量</summary>
     public int PageSize { get; set; } = 10;
+    /// <summary>搜索关键词（标题/负责人）</summary>
     public string? Search { get; set; }
+    /// <summary>任务状态（未开始/进行中/已完成）</summary>
     public string? Status { get; set; }
+    /// <summary>走访类型（日常走访/专项检查等）</summary>
     public string? VisitType { get; set; }
+    /// <summary>开始时间</summary>
     public DateTime? StartDate { get; set; }
+    /// <summary>结束时间</summary>
     public DateTime? EndDate { get; set; }
 }
 
@@ -2214,63 +2221,113 @@ public class VisitTaskListRequest
 /// </summary>
 public class VisitTaskListResponse
 {
+    /// <summary>任务列表</summary>
     public List<VisitTaskDto> Tasks { get; set; } = new();
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 走访任务数据对象
+/// </summary>
 public class VisitTaskDto
 {
+    /// <summary>任务ID</summary>
     public string Id { get; set; } = string.Empty;
+    /// <summary>任务标题</summary>
     public string Title { get; set; } = string.Empty;
+    /// <summary>负责人姓名</summary>
     public string ManagerName { get; set; } = string.Empty;
+    /// <summary>联系电话</summary>
     public string Phone { get; set; } = string.Empty;
+    /// <summary>走访类型</summary>
     public string VisitType { get; set; } = string.Empty;
+    /// <summary>走访方式</summary>
     public string VisitMethod { get; set; } = string.Empty;
+    /// <summary>详情描述</summary>
     public string? Details { get; set; }
+    /// <summary>关联企业ID</summary>
     public string? TenantId { get; set; }
+    /// <summary>关联企业名称</summary>
     public string? TenantName { get; set; }
+    /// <summary>走访地点</summary>
     public string? VisitLocation { get; set; }
+    /// <summary>计划走访日期</summary>
     public DateTime? VisitDate { get; set; }
+    /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
+    /// <summary>走访人员</summary>
     public string? Visitor { get; set; }
 
+    /// <summary>受访人姓名</summary>
     public string? IntervieweeName { get; set; }
+    /// <summary>受访人职务</summary>
     public string? IntervieweePosition { get; set; }
+    /// <summary>走访内容记录</summary>
     public string? Content { get; set; }
+    /// <summary>照片列表</summary>
     public List<string> Photos { get; set; } = new();
+    /// <summary>反馈问题</summary>
     public string? Feedback { get; set; }
 
+    /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>关联考核评分</summary>
     public int? AssessmentScore { get; set; }
+    /// <summary>关联考核ID</summary>
     public string? AssessmentId { get; set; }
 }
 
+/// <summary>
+/// 创建走访任务请求
+/// </summary>
 public class CreateVisitTaskRequest
 {
+    /// <summary>任务标题</summary>
     [Required]
     public string Title { get; set; } = string.Empty;
+
+    /// <summary>负责人姓名</summary>
     [Required]
     public string ManagerName { get; set; } = string.Empty;
+    /// <summary>联系电话</summary>
     public string Phone { get; set; } = string.Empty;
+    /// <summary>走访类型（默认：日常走访）</summary>
     public string VisitType { get; set; } = "日常走访";
+    /// <summary>走访方式（默认：实地走访）</summary>
     public string VisitMethod { get; set; } = "实地走访";
+    /// <summary>详情描述</summary>
     public string? Details { get; set; }
+    /// <summary>关联企业ID</summary>
     public string? TenantId { get; set; }
+    /// <summary>关联企业名称</summary>
     public string? TenantName { get; set; }
+    /// <summary>走访地点</summary>
     public string? VisitLocation { get; set; }
+    /// <summary>计划走访日期</summary>
     public DateTime? VisitDate { get; set; }
+    /// <summary>关联问卷ID</summary>
     public string? QuestionnaireId { get; set; }
+    /// <summary>走访人员</summary>
     public string? Visitor { get; set; }
+    /// <summary>状态</summary>
     public string? Status { get; set; }
 
     // 结果填报
+    /// <summary>受访人姓名</summary>
     public string? IntervieweeName { get; set; }
+    /// <summary>受访人职务</summary>
     public string? IntervieweePosition { get; set; }
+    /// <summary>受访人电话</summary>
     public string? IntervieweePhone { get; set; }
+    /// <summary>走访内容记录</summary>
     public string? Content { get; set; }
+    /// <summary>照片列表</summary>
     public List<string>? Photos { get; set; }
+    /// <summary>附件列表</summary>
     public List<string>? Attachments { get; set; }
+    /// <summary>反馈问题</summary>
     public string? Feedback { get; set; }
 }
 
@@ -2279,27 +2336,47 @@ public class CreateVisitTaskRequest
 /// </summary>
 public class VisitAssessmentListRequest
 {
+    /// <summary>当前页码</summary>
     public int Page { get; set; } = 1;
+    /// <summary>每页数量</summary>
     public int PageSize { get; set; } = 10;
+    /// <summary>搜索关键词（走访对象/评估人）</summary>
     public string? Search { get; set; }
 }
 
+/// <summary>
+/// 走访考核列表响应
+/// </summary>
 public class VisitAssessmentListResponse
 {
+    /// <summary>考核记录列表</summary>
     public List<VisitAssessmentDto> Assessments { get; set; } = new();
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 走访考核数据对象
+/// </summary>
 public class VisitAssessmentDto
 {
+    /// <summary>考核ID</summary>
     public string Id { get; set; } = string.Empty;
+    /// <summary>关联任务ID</summary>
     public string TaskId { get; set; } = string.Empty;
+    /// <summary>评估人姓名</summary>
     public string VisitorName { get; set; } = string.Empty;
+    /// <summary>评估人电话</summary>
     public string Phone { get; set; } = string.Empty;
+    /// <summary>走访地点</summary>
     public string Location { get; set; } = string.Empty;
+    /// <summary>任务描述</summary>
     public string TaskDescription { get; set; } = string.Empty;
+    /// <summary>评分</summary>
     public int Score { get; set; }
+    /// <summary>评价内容</summary>
     public string? Comments { get; set; }
+    /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 }
 
@@ -2308,24 +2385,41 @@ public class VisitAssessmentDto
 /// </summary>
 public class VisitQuestionListRequest
 {
+    /// <summary>当前页码</summary>
     public int Page { get; set; } = 1;
+    /// <summary>每页数量</summary>
     public int PageSize { get; set; } = 10;
+    /// <summary>搜索关键词（问题内容）</summary>
     public string? Search { get; set; }
+    /// <summary>分类（问题分类/场景）</summary>
     public string? Category { get; set; }
 }
 
+/// <summary>
+/// 知识库问题列表响应
+/// </summary>
 public class VisitQuestionListResponse
 {
+    /// <summary>问题列表</summary>
     public List<VisitQuestionDto> Questions { get; set; } = new();
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 知识库问题数据对象
+/// </summary>
 public class VisitQuestionDto
 {
+    /// <summary>问题ID</summary>
     public string Id { get; set; } = string.Empty;
+    /// <summary>问题内容</summary>
     public string Content { get; set; } = string.Empty;
+    /// <summary>问题分类</summary>
     public string? Category { get; set; }
+    /// <summary>参考答案</summary>
     public string? Answer { get; set; }
+    /// <summary>是否常用问题</summary>
     public bool IsFrequentlyUsed { get; set; }
 }
 
@@ -2334,17 +2428,28 @@ public class VisitQuestionDto
 /// </summary>
 public class VisitQuestionnaireListResponse
 {
+    /// <summary>问卷列表</summary>
     public List<VisitQuestionnaireDto> Questionnaires { get; set; } = new();
+    /// <summary>总数</summary>
     public int Total { get; set; }
 }
 
+/// <summary>
+/// 走访问卷数据对象
+/// </summary>
 public class VisitQuestionnaireDto
 {
+    /// <summary>问卷ID</summary>
     public string Id { get; set; } = string.Empty;
+    /// <summary>问卷标题</summary>
     public string Title { get; set; } = string.Empty;
+    /// <summary>问卷用途/描述</summary>
     public string? Purpose { get; set; }
+    /// <summary>包含的问题ID列表</summary>
     public List<string> QuestionIds { get; set; } = new();
+    /// <summary>问题数量</summary>
     public int QuestionCount => QuestionIds.Count;
+    /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
 }
 

@@ -17,6 +17,11 @@ public class ParkStatisticsController : ControllerBase
     private readonly IParkStatisticsService _statisticsService;
     private readonly ILogger<ParkStatisticsController> _logger;
 
+    /// <summary>
+    /// 初始化园区统计报表控制器
+    /// </summary>
+    /// <param name="statisticsService">统计服务</param>
+    /// <param name="logger">日志记录器</param>
     public ParkStatisticsController(IParkStatisticsService statisticsService, ILogger<ParkStatisticsController> logger)
     {
         _statisticsService = statisticsService;

@@ -23,27 +23,17 @@ public interface IDataInitializerService
 /// 负责执行所有必要的数据库初始化操作
 /// 单实例运行，无需分布式锁
 /// </summary>
-public class DataInitializerService : IDataInitializerService
+/// <param name="database">MongoDB 数据库实例</param>
+/// <param name="logger">日志记录器</param>
+/// <param name="loggerFactory">日志工厂，用于创建子日志记录器</param>
+public class DataInitializerService(
+    IMongoDatabase database,
+    ILogger<DataInitializerService> logger,
+    ILoggerFactory loggerFactory) : IDataInitializerService
 {
-    private readonly IMongoDatabase _database;
-    private readonly ILogger<DataInitializerService> _logger;
-    private readonly ILoggerFactory _loggerFactory;
-
-    /// <summary>
-    /// 初始化数据初始化服务
-    /// </summary>
-    /// <param name="database">MongoDB 数据库实例</param>
-    /// <param name="logger">日志记录器</param>
-    /// <param name="loggerFactory">日志工厂，用于创建子日志记录器</param>
-    public DataInitializerService(
-        IMongoDatabase database,
-        ILogger<DataInitializerService> logger,
-        ILoggerFactory loggerFactory)
-    {
-        _database = database;
-        _logger = logger;
-        _loggerFactory = loggerFactory;
-    }
+    private readonly IMongoDatabase _database = database;
+    private readonly ILogger<DataInitializerService> _logger = logger;
+    private readonly ILoggerFactory _loggerFactory = loggerFactory;
 
     /// <summary>
     /// 执行数据初始化

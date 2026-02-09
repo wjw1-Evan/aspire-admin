@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, Typography, Progress, Tag, Empty, Button, Space, Table, DatePicker, Modal } from 'antd';
+import { Card, Row, Col, Statistic, Spin, Typography, Progress, Tag, Empty, Button, Space, Table, DatePicker, Modal, Radio } from 'antd';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
@@ -295,10 +295,49 @@ const VisitStatisticsPage: React.FC = () => {
         <PageContainer
             title={intl.formatMessage({ id: 'pages.park.visit.statistics', defaultMessage: '走访统计报表' })}
             extra={[
-                <Space key="controls" wrap>
+                <Space key="period-selection" wrap>
+                    <Radio.Group
+                        value={period}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriod(val);
+
+                            let start: Dayjs = dayjs().startOf('month');
+                            let end: Dayjs = dayjs().endOf('month');
+
+                            if (val === StatisticsPeriod.Month) {
+                                start = dayjs().startOf('month');
+                                end = dayjs().endOf('month');
+                            } else if (val === StatisticsPeriod.Year) {
+                                start = dayjs().startOf('year');
+                                end = dayjs().endOf('year');
+                            } else if (val === 'last_year') {
+                                start = dayjs().subtract(1, 'year').startOf('year');
+                                end = dayjs().subtract(1, 'year').endOf('year');
+                                setPeriod(StatisticsPeriod.Custom);
+                            }
+
+                            setDateRange([start, end]);
+                        }}
+                        optionType="button"
+                        buttonStyle="solid"
+                        size="middle"
+                    >
+                        <Radio.Button value={StatisticsPeriod.Month}>{intl.formatMessage({ id: 'pages.park.statistics.thisMonth', defaultMessage: '本月' })}</Radio.Button>
+                        <Radio.Button value={StatisticsPeriod.Year}>{intl.formatMessage({ id: 'pages.park.statistics.thisYear', defaultMessage: '今年' })}</Radio.Button>
+                        <Radio.Button value="last_year">{intl.formatMessage({ id: 'pages.park.statistics.lastYear', defaultMessage: '去年' })}</Radio.Button>
+                        <Radio.Button value={StatisticsPeriod.Custom}>{intl.formatMessage({ id: 'pages.park.statistics.custom', defaultMessage: '自定义' })}</Radio.Button>
+                    </Radio.Group>
                     <RangePicker
                         value={dateRange}
-                        onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs])}
+                        onChange={(dates) => {
+                            if (dates && dates[0] && dates[1]) {
+                                setDateRange([dates[0] as Dayjs, dates[1] as Dayjs]);
+                                setPeriod(StatisticsPeriod.Custom);
+                            } else {
+                                setDateRange(null);
+                            }
+                        }}
                     />
                     <Button icon={<ReloadOutlined />} onClick={loadStatistics} loading={loading}>
                         {intl.formatMessage({ id: 'pages.common.refresh', defaultMessage: '刷新' })}
@@ -312,7 +351,7 @@ const VisitStatisticsPage: React.FC = () => {
                     >
                         {intl.formatMessage({ id: 'pages.park.visit.statistics.aiReport', defaultMessage: '走访 AI 分析报告' })}
                     </Button>
-                </Space>,
+                </Space>
             ]}
         >
             <div className={styles['statistics-page']}>

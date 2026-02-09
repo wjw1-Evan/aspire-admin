@@ -113,15 +113,20 @@ const VisitAssessmentList: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        if (assessmentVisible && selectedTask) {
+            assessmentForm.setFieldsValue({
+                visitorName: selectedTask.intervieweeName || selectedTask.tenantName,
+                phone: selectedTask.phone,
+                location: selectedTask.visitLocation,
+                score: 5,
+                comments: '',
+            });
+        }
+    }, [assessmentVisible, selectedTask, assessmentForm]);
+
     const handleAssess = (task: visitService.VisitTask) => {
         setSelectedTask(task);
-        assessmentForm.setFieldsValue({
-            visitorName: task.intervieweeName || task.tenantName,
-            phone: task.phone,
-            location: task.visitLocation,
-            score: 5,
-            comments: '',
-        });
         setAssessmentVisible(true);
     };
 

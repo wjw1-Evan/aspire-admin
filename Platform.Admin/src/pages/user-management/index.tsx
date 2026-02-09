@@ -752,7 +752,7 @@ const UserManagement: React.FC = () => {
                 setEditingUser(null);
               }}
               footer={null}
-              destroyOnClose
+              destroyOnHidden
             >
               <UserForm
                 user={editingUser}
@@ -801,14 +801,17 @@ const UserManagement: React.FC = () => {
             </React.Suspense>
           </Drawer>
         </>
-      )}
+      )
+      }
 
-      {activeTab === 'requests' && (
-        <React.Suspense fallback={null}>
-          <JoinRequestsTable companyId={currentCompanyId} />
-        </React.Suspense>
-      )}
-    </PageContainer>
+      {
+        activeTab === 'requests' && (
+          <React.Suspense fallback={null}>
+            <JoinRequestsTable companyId={currentCompanyId} />
+          </React.Suspense>
+        )
+      }
+    </PageContainer >
   );
 };
 

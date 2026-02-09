@@ -95,6 +95,19 @@ const VisitTask: React.FC = () => {
         loadStatistics();
     }, [loadStatistics]);
 
+    useEffect(() => {
+        if (isModalVisible) {
+            if (editingTask) {
+                form.setFieldsValue({
+                    ...editingTask,
+                    visitDate: editingTask.visitDate ? dayjs(editingTask.visitDate) : undefined
+                });
+            } else {
+                form.resetFields();
+            }
+        }
+    }, [isModalVisible, editingTask, form]);
+
     const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
         'Pending': { text: '待派发', color: 'orange', icon: <SyncOutlined spin /> },
         'InProgress': { text: '进行中', color: 'blue', icon: <SyncOutlined spin /> },
@@ -276,7 +289,7 @@ const VisitTask: React.FC = () => {
                     <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>
                         刷新
                     </Button>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTask(null); form.resetFields(); setIsModalVisible(true); }}>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTask(null); setIsModalVisible(true); }}>
                         新增任务
                     </Button>
                 </Space>
@@ -378,7 +391,7 @@ const VisitTask: React.FC = () => {
                 onCancel={() => { setIsModalVisible(false); setEditingTask(null); form.resetFields(); }}
                 width={640}
                 confirmLoading={loading}
-                destroyOnClose
+                destroyOnHidden
             >
                 <Form form={form} layout="vertical">
                     <Divider>基本信息</Divider>
@@ -510,7 +523,7 @@ const VisitTask: React.FC = () => {
                 extra={
                     <Space>
                         <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-                        <Button type="primary" icon={<EditOutlined />} onClick={() => { setDetailVisible(false); setEditingTask(selectedTask); form.setFieldsValue({ ...selectedTask, visitDate: selectedTask?.visitDate ? dayjs(selectedTask.visitDate) : undefined }); setIsModalVisible(true); }}>编辑</Button>
+                        <Button type="primary" icon={<EditOutlined />} onClick={() => { setDetailVisible(false); setEditingTask(selectedTask); setIsModalVisible(true); }}>编辑</Button>
                     </Space>
                 }
             >

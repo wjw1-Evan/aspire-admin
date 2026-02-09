@@ -2105,6 +2105,6 @@ export default {
   'pages.park.visit.taskDescription': '任务内容',
   'pages.park.visit.assessmentComments': '评价建议',
   'pages.park.visit.statistics.failed': '生成报告失败，请稍后重试。',
-  'pages.park.visit.statistics.generatingReport': '正在生成分析报告，请稍后...',
+  'pages.park.visit.statistics.generatingReport': '正在生成报告，可能需要几十秒...',
 };
 

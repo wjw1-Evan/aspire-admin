@@ -309,6 +309,7 @@ const VisitStatisticsPage: React.FC = () => {
                     icon={<RobotOutlined />}
                     onClick={handleGenerateAiReport}
                     disabled={!statistics}
+                    style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
                 >
                     {intl.formatMessage({ id: 'pages.park.visit.statistics.aiReport', defaultMessage: '走访 AI 分析报告' })}
                 </Button>,
@@ -329,38 +330,17 @@ const VisitStatisticsPage: React.FC = () => {
                     }
                     open={aiReportVisible}
                     onCancel={() => setAiReportVisible(false)}
-                    footer={[
-                        <Button key="close" onClick={() => setAiReportVisible(false)}>
-                            {intl.formatMessage({ id: 'pages.modal.cancel', defaultMessage: '关闭' })}
-                        </Button>,
-                        <Button
-                            key="regenerate"
-                            type="primary"
-                            icon={<ReloadOutlined />}
-                            onClick={handleGenerateAiReport}
-                            loading={aiReportLoading}
-                        >
-                            {intl.formatMessage({ id: 'pages.common.refresh', defaultMessage: '重新生成' })}
-                        </Button>,
-                    ]}
-                    width={800}
-                    styles={{ body: { minHeight: 400 } }}
+                    footer={null}
+                    width={900}
+                    styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}
                 >
-                    {aiReportLoading ? (
-                        <div className={styles['loading-container']}>
-                            <Space orientation="vertical" align="center">
-                                <Spin size="large" />
-                                <Text type="secondary">
-                                    {intl.formatMessage({ id: 'pages.park.visit.statistics.generatingReport', defaultMessage: '正在生成分析报告，请稍后...' })}
-                                </Text>
-                            </Space>
-                        </div>
-                    ) : (
+                    <Spin spinning={aiReportLoading} tip={intl.formatMessage({ id: 'pages.park.visit.statistics.generatingReport', defaultMessage: '正在生成报告，可能需要几十秒...' })}>
                         <div
                             className={styles['markdown-body']}
                             dangerouslySetInnerHTML={{ __html: aiReportContent }}
+                            style={{ fontSize: 15, lineHeight: 1.8 }}
                         />
-                    )}
+                    </Spin>
                 </Modal>
             </div>
         </PageContainer>

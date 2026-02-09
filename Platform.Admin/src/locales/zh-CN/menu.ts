@@ -28,6 +28,7 @@ export default {
   'menu.project-management.desc': '项目管理功能',
   'menu.project-management.task': '任务管理',
   'menu.project-management.project': '项目列表',
+  'menu.project-management.statistics': '统计报表',
   // 项目管理菜单描述
   'menu.project-management.task.desc': '查看和管理项目任务',
   'menu.project-management.project.desc': '查看和管理项目列表',

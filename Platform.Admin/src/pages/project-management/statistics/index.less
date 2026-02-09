@@ -1,0 +1,195 @@
+.statistics-page {
+    .stat-cards {
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        height: 100%;
+        border-radius: 8px;
+        transition: all 0.3s;
+
+        &:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        // 修正 Statistic 的样式
+        :global {
+            .ant-statistic-title {
+                font-size: 14px;
+                color: rgba(0, 0, 0, 0.45);
+                margin-bottom: 8px;
+            }
+
+            .ant-statistic-content {
+                font-size: 30px;
+                font-weight: 600;
+                line-height: 1.2;
+                color: rgba(0, 0, 0, 0.85);
+            }
+
+            .ant-statistic-content-suffix {
+                font-size: 16px;
+                color: rgba(0, 0, 0, 0.45);
+                margin-left: 4px;
+            }
+
+            .ant-statistic-content-prefix {
+                margin-right: 4px;
+            }
+
+            .ant-card-body {
+                padding: 24px;
+            }
+        }
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        font-size: 24px;
+
+        &.blue {
+            background-color: #e6f7ff;
+            color: #1890ff;
+        }
+
+        &.green {
+            background-color: #f6ffed;
+            color: #52c41a;
+        }
+
+        &.orange {
+            background-color: #fff7e6;
+            color: #fa8c16;
+        }
+
+        &.red {
+            background-color: #fff1f0;
+            color: #f5222d;
+        }
+
+        &.cyan {
+            background-color: #e6fffb;
+            color: #13c2c2;
+        }
+
+        &.purple {
+            background-color: #f9f0ff;
+            color: #722ed1;
+        }
+    }
+
+    .chart-card {
+        margin-bottom: 24px;
+        border-radius: 8px;
+
+        .ant-card-head-title {
+            font-weight: 600;
+        }
+    }
+
+    .sub-stat-row {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #f0f0f0;
+
+        :global {
+            .ant-statistic-title {
+                font-size: 12px;
+                margin-bottom: 4px;
+            }
+
+            .ant-statistic-content {
+                font-size: 16px;
+            }
+        }
+    }
+
+    .progress-wrapper {
+        margin-top: 16px;
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.45);
+        }
+    }
+
+    .markdown-body {
+        font-size: 14px;
+        line-height: 1.8;
+        color: #24292e;
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            color: #1f1f1f;
+        }
+
+        h1 {
+            font-size: 20px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        h3 {
+            font-size: 16px;
+        }
+
+        ul,
+        ol {
+            padding-left: 20px;
+            margin-bottom: 16px;
+        }
+
+        li {
+            margin-bottom: 4px;
+        }
+
+        p {
+            margin-bottom: 16px;
+        }
+
+        blockquote {
+            padding: 12px 16px;
+            color: #666;
+            background-color: #fafafa;
+            border-left: 4px solid #1890ff;
+            margin: 0 0 16px 0;
+            border-radius: 2px;
+
+            p:last-child {
+                margin-bottom: 0;
+            }
+        }
+
+        code {
+            padding: 2px 6px;
+            font-size: 90%;
+            background-color: rgba(0, 0, 0, 0.06);
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        }
+    }
+}

@@ -285,7 +285,7 @@ public class DataInitializerService(
             Path = "/system/user-management",
             Component = "./user-management",
             Icon = "user",
-            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "system",
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
@@ -300,7 +300,7 @@ public class DataInitializerService(
             Path = "/system/role-management",
             Component = "./role-management",
             Icon = "team",
-            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "system",
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
@@ -315,7 +315,7 @@ public class DataInitializerService(
             Path = "/system/company-management",
             Component = "./company/settings",
             Icon = "bank",
-            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "system",
             SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
@@ -330,7 +330,7 @@ public class DataInitializerService(
             Path = "/system/organization",
             Component = "./organization",
             Icon = "apartment",
-            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "system",
             SortOrder = 5,
             IsEnabled = true,
             IsDeleted = false,
@@ -345,7 +345,7 @@ public class DataInitializerService(
             Path = "/system/my-activity",
             Component = "./my-activity",
             Icon = "history",
-            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "system",
             SortOrder = 4,
             IsEnabled = true,
             IsDeleted = false,
@@ -361,7 +361,7 @@ public class DataInitializerService(
             Path = "/user-log",
             Component = "./user-log",
             Icon = "file-text",
-            ParentId = "system",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "system",
             SortOrder = 6,
             IsEnabled = true,
             IsDeleted = false,
@@ -408,7 +408,7 @@ public class DataInitializerService(
             Path = "/task-management",
             Component = "./task-management",
             Icon = "schedule",
-            ParentId = "project-management",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "project-management",
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
@@ -424,8 +424,24 @@ public class DataInitializerService(
             Path = "/project-management/project",
             Component = "./project-management",
             Icon = "project",
-            ParentId = "project-management",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "project-management",
             SortOrder = 2,
+            IsEnabled = true,
+            IsDeleted = false,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        // 项目管理子菜单：统计报表
+        menus.Add(new Menu
+        {
+            Name = "project-management-statistics",
+            Title = "统计报表",
+            Path = "/project-management/statistics",
+            Component = "./project-management/statistics",
+            Icon = "bar-chart",
+            ParentId = "project-management",
+            SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,
@@ -456,7 +472,7 @@ public class DataInitializerService(
             Path = "/iot-platform/gateway-management",
             Component = "./iot-platform/gateway-management",
             Icon = "cloud-server",
-            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "iot-platform",
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
@@ -471,7 +487,7 @@ public class DataInitializerService(
             Path = "/iot-platform/device-management",
             Component = "./iot-platform/device-management",
             Icon = "desktop",
-            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "iot-platform",
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
@@ -486,7 +502,7 @@ public class DataInitializerService(
             Path = "/iot-platform/datapoint-management",
             Component = "./iot-platform/datapoint-management",
             Icon = "database",
-            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "iot-platform",
             SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
@@ -501,7 +517,7 @@ public class DataInitializerService(
             Path = "/iot-platform/event-management",
             Component = "./iot-platform/event-management",
             Icon = "alert",
-            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "iot-platform",
             SortOrder = 4,
             IsEnabled = true,
             IsDeleted = false,
@@ -516,7 +532,7 @@ public class DataInitializerService(
             Path = "/iot-platform/data-center",
             Component = "./iot-platform/data-center",
             Icon = "bar-chart",
-            ParentId = "iot-platform",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "iot-platform",
             SortOrder = 5,
             IsEnabled = true,
             IsDeleted = false,
@@ -546,7 +562,7 @@ public class DataInitializerService(
             Path = "/xiaoke-management/config",
             Component = "./xiaoke-management/config",
             Icon = "setting",
-            ParentId = "xiaoke-management",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "xiaoke-management",
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
@@ -562,7 +578,7 @@ public class DataInitializerService(
             Path = "/xiaoke-management/chat-history",
             Component = "./xiaoke-management/chat-history",
             Icon = "message",
-            ParentId = "xiaoke-management",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "xiaoke-management",
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
@@ -592,7 +608,7 @@ public class DataInitializerService(
             Path = "/workflow/list",
             Component = "./workflow/list",
             Icon = "apartment",
-            ParentId = "workflow",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "workflow",
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
@@ -608,7 +624,7 @@ public class DataInitializerService(
             Path = "/workflow/forms",
             Component = "./workflow/forms",
             Icon = "form",
-            ParentId = "workflow",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "workflow",
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
@@ -624,7 +640,7 @@ public class DataInitializerService(
             Path = "/workflow/monitor",
             Component = "./workflow/monitor",
             Icon = "monitor",
-            ParentId = "workflow",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "workflow",
             SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
@@ -654,7 +670,7 @@ public class DataInitializerService(
             Path = "/document/list",
             Component = "./document/list",
             Icon = "file-text",
-            ParentId = "document",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "document",
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
@@ -670,7 +686,7 @@ public class DataInitializerService(
             Path = "/document/approval",
             Component = "./document/approval",
             Icon = "check-circle",
-            ParentId = "document",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "document",
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
@@ -700,7 +716,7 @@ public class DataInitializerService(
             Path = "/cloud-storage/files",
             Component = "./cloud-storage/files",
             Icon = "folder",
-            ParentId = "cloud-storage",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "cloud-storage",
             SortOrder = 1,
             IsEnabled = true,
             IsDeleted = false,
@@ -716,7 +732,7 @@ public class DataInitializerService(
             Path = "/cloud-storage/shared",
             Component = "./cloud-storage/shared",
             Icon = "share-alt",
-            ParentId = "cloud-storage",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "cloud-storage",
             SortOrder = 2,
             IsEnabled = true,
             IsDeleted = false,
@@ -732,7 +748,7 @@ public class DataInitializerService(
             Path = "/cloud-storage/recycle",
             Component = "./cloud-storage/recycle",
             Icon = "delete",
-            ParentId = "cloud-storage",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "cloud-storage",
             SortOrder = 3,
             IsEnabled = true,
             IsDeleted = false,
@@ -748,7 +764,7 @@ public class DataInitializerService(
             Path = "/cloud-storage/quota",
             Component = "./cloud-storage/quota",
             Icon = "pie-chart",
-            ParentId = "cloud-storage",  // 临时使用名称，后续会替换为实际 ID
+            ParentId = "cloud-storage",
             SortOrder = 4,
             IsEnabled = true,
             IsDeleted = false,

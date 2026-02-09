@@ -17,6 +17,8 @@ public enum StatisticsPeriod
     Week,
     /// <summary>月</summary>
     Month,
+    /// <summary>季</summary>
+    Quarter,
     /// <summary>年</summary>
     Year,
     /// <summary>自定义</summary>

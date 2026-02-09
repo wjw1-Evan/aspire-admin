@@ -342,6 +342,9 @@ public class TaskStatistics
     /// <summary>失败任务数</summary>
     public int FailedTasks { get; set; }
 
+    /// <summary>逾期任务数</summary>
+    public int OverdueTasks { get; set; }
+
     /// <summary>平均完成时间（分钟）</summary>
     public double AverageCompletionTime { get; set; }
 

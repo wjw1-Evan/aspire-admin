@@ -27,6 +27,13 @@ public class McpService : IMcpService
     private readonly ICloudStorageService _cloudStorageService;
     private readonly IUnifiedNotificationService _unifiedNotificationService;
     private readonly IXiaokeConfigService? _xiaokeConfigService;
+    private readonly IIoTService _iotService;
+    private readonly IParkAssetService _parkAssetService;
+    private readonly IParkInvestmentService _parkInvestmentService;
+    private readonly IParkTenantService _parkTenantService;
+    private readonly IParkEnterpriseServiceService _parkEnterpriseService;
+    private readonly IParkVisitService _parkVisitService;
+    private readonly IPasswordBookService _passwordBookService;
     private readonly ILogger<McpService> _logger;
     private List<McpTool>? _cachedTools;
     private DateTime _toolsCacheTime = DateTime.MinValue;
@@ -52,6 +59,13 @@ public class McpService : IMcpService
     /// <param name="cloudStorageService">云存储服务</param>
     /// <param name="unifiedNotificationService">统一通知服务</param>
     /// <param name="xiaokeConfigService">小科配置服务（可选）</param>
+    /// <param name="iotService">物联网服务</param>
+    /// <param name="parkAssetService">园区资产服务</param>
+    /// <param name="parkInvestmentService">园区招商服务</param>
+    /// <param name="parkTenantService">园区租户服务</param>
+    /// <param name="parkEnterpriseService">园区企业服务</param>
+    /// <param name="parkVisitService">园区走访服务</param>
+    /// <param name="passwordBookService">密码本服务</param>
     /// <param name="logger">日志记录器</param>
     public McpService(
         IDatabaseOperationFactory<AppUser> userFactory,
@@ -71,6 +85,13 @@ public class McpService : IMcpService
         ICloudStorageService cloudStorageService,
         IUnifiedNotificationService unifiedNotificationService,
         IXiaokeConfigService? xiaokeConfigService,
+        IIoTService iotService,
+        IParkAssetService parkAssetService,
+        IParkInvestmentService parkInvestmentService,
+        IParkTenantService parkTenantService,
+        IParkEnterpriseServiceService parkEnterpriseService,
+        IParkVisitService parkVisitService,
+        IPasswordBookService passwordBookService,
         ILogger<McpService> logger)
     {
         _userFactory = userFactory;
@@ -90,6 +111,13 @@ public class McpService : IMcpService
         _cloudStorageService = cloudStorageService;
         _unifiedNotificationService = unifiedNotificationService;
         _xiaokeConfigService = xiaokeConfigService;
+        _iotService = iotService;
+        _parkAssetService = parkAssetService;
+        _parkInvestmentService = parkInvestmentService;
+        _parkTenantService = parkTenantService;
+        _parkEnterpriseService = parkEnterpriseService;
+        _parkVisitService = parkVisitService;
+        _passwordBookService = passwordBookService;
         _logger = logger;
     }
 
@@ -1130,6 +1158,145 @@ public class McpService : IMcpService
                     ["type"] = "object",
                     ["properties"] = new Dictionary<string, object>()
                 }
+            },
+            // 物联网相关工具
+            new()
+            {
+                Name = "get_iot_gateways",
+                Description = "获取物联网网关列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_iot_devices",
+                Description = "获取物联网设备列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["gatewayId"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_iot_platform_statistics",
+                Description = "获取物联网平台整体统计数据。",
+                InputSchema = new Dictionary<string, object> { ["type"] = "object", ["properties"] = new Dictionary<string, object>() }
+            },
+            // 园区管理相关工具
+            new()
+            {
+                Name = "get_park_buildings",
+                Description = "获取园区楼宇列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_park_leads",
+                Description = "获取园区招商线索列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_park_tenants",
+                Description = "获取园区租户列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_park_contracts",
+                Description = "获取园区租赁合同列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["status"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            // 园区走访相关工具
+            new()
+            {
+                Name = "get_park_visit_tasks",
+                Description = "获取园区走访任务列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["status"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_park_visit_statistics",
+                Description = "获取园区走访统计数据。",
+                InputSchema = new Dictionary<string, object> { ["type"] = "object", ["properties"] = new Dictionary<string, object>() }
+            },
+            // 密码本相关工具
+            new()
+            {
+                Name = "get_password_book_entries",
+                Description = "获取当前用户的密码本条目列表（不含密码）。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["category"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
             }
         };
 
@@ -1213,6 +1380,19 @@ public class McpService : IMcpService
                 "get_xiaoke_configs" => await HandleGetXiaokeConfigsAsync(arguments, currentUserId),
                 "get_xiaoke_config" => await HandleGetXiaokeConfigAsync(arguments, currentUserId),
                 "get_default_xiaoke_config" => await HandleGetDefaultXiaokeConfigAsync(arguments, currentUserId),
+                // 物联网相关
+                "get_iot_gateways" => await HandleGetIoTGatewaysAsync(arguments, currentUserId),
+                "get_iot_devices" => await HandleGetIoTDevicesAsync(arguments, currentUserId),
+                "get_iot_platform_statistics" => await HandleGetIoTPlatformStatisticsAsync(arguments, currentUserId),
+                // 园区管理相关
+                "get_park_buildings" => await HandleGetParkBuildingsAsync(arguments, currentUserId),
+                "get_park_leads" => await HandleGetParkLeadsAsync(arguments, currentUserId),
+                "get_park_tenants" => await HandleGetParkTenantsAsync(arguments, currentUserId),
+                "get_park_contracts" => await HandleGetParkContractsAsync(arguments, currentUserId),
+                "get_park_visit_tasks" => await HandleGetParkVisitTasksAsync(arguments, currentUserId),
+                "get_park_visit_statistics" => await HandleGetParkVisitStatisticsAsync(arguments, currentUserId),
+                // 密码本相关
+                "get_password_book_entries" => await HandleGetPasswordBookEntriesAsync(arguments, currentUserId),
                 _ => throw new ArgumentException($"未知的工具: {toolName}")
             };
 
@@ -3040,6 +3220,120 @@ public class McpService : IMcpService
     {
         var usage = await _cloudStorageService.GetStorageUsageAsync(currentUserId);
         return usage;
+    }
+
+    #endregion
+
+    #region 物联网相关工具处理方法
+
+    private async Task<object> HandleGetIoTGatewaysAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var keyword = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null;
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var (items, total) = await _iotService.GetGatewaysAsync(keyword, null, page, pageSize);
+        return new { items, total, page, pageSize };
+    }
+
+    private async Task<object> HandleGetIoTDevicesAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var gatewayId = arguments.ContainsKey("gatewayId") ? arguments["gatewayId"]?.ToString() : null;
+        var keyword = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null;
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var (items, total) = await _iotService.GetDevicesAsync(gatewayId, keyword, page, pageSize);
+        return new { items, total, page, pageSize };
+    }
+
+    private async Task<object> HandleGetIoTPlatformStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        return await _iotService.GetPlatformStatisticsAsync();
+    }
+
+    #endregion
+
+    #region 园区管理相关工具处理方法
+
+    private async Task<object> HandleGetParkBuildingsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var request = new BuildingListRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            Search = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null
+        };
+        return await _parkAssetService.GetBuildingsAsync(request);
+    }
+
+    private async Task<object> HandleGetParkLeadsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var request = new InvestmentLeadListRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            Search = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null
+        };
+        return await _parkInvestmentService.GetLeadsAsync(request);
+    }
+
+    private async Task<object> HandleGetParkTenantsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var request = new ParkTenantListRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            Search = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null
+        };
+        return await _parkTenantService.GetTenantsAsync(request);
+    }
+
+    private async Task<object> HandleGetParkContractsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var request = new LeaseContractListRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            Status = arguments.ContainsKey("status") ? arguments["status"]?.ToString() : null
+        };
+        return await _parkTenantService.GetContractsAsync(request);
+    }
+
+    private async Task<object> HandleGetParkVisitTasksAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var request = new VisitTaskListRequest
+        {
+            Page = page,
+            PageSize = pageSize,
+            Search = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null,
+            Status = arguments.ContainsKey("status") ? arguments["status"]?.ToString() : null
+        };
+        return await _parkVisitService.GetVisitTasksAsync(request);
+    }
+
+    private async Task<object> HandleGetParkVisitStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        return await _parkVisitService.GetVisitStatisticsAsync();
+    }
+
+    #endregion
+
+    #region 密码本相关工具处理方法
+
+    private async Task<object> HandleGetPasswordBookEntriesAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var request = new PasswordBookQueryRequest
+        {
+            Current = page,
+            PageSize = pageSize,
+            Keyword = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null,
+            Category = arguments.ContainsKey("category") ? arguments["category"]?.ToString() : null
+        };
+        var (items, total) = await _passwordBookService.GetEntriesAsync(request);
+        return new { items, total, page = page, pageSize = pageSize };
     }
 
     #endregion

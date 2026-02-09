@@ -24,6 +24,14 @@ public class ProjectStatisticsService(
     private readonly IMongoCollection<Milestone> _milestones = database.GetCollection<Milestone>("milestones");
     private readonly AiCompletionOptions _aiOptions = aiOptions.Value;
 
+    /// <summary>
+    /// 获取仪表盘统计数据
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="period">统计周期</param>
+    /// <param name="startDate">开始日期</param>
+    /// <param name="endDate">结束日期</param>
+    /// <returns>仪表盘统计数据</returns>
     public async Task<ProjectDashboardStatistics> GetDashboardStatisticsAsync(string companyId, StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
     {
         // 1. Determine date range
@@ -129,6 +137,15 @@ public class ProjectStatisticsService(
         return stats;
     }
 
+    /// <summary>
+    /// 生成 AI 分析报告
+    /// </summary>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="period">统计周期</param>
+    /// <param name="startDate">开始日期</param>
+    /// <param name="endDate">结束日期</param>
+    /// <param name="statisticsData">现有统计数据（可选）</param>
+    /// <returns>AI 生成的项目管理分析报告 (Markdown 格式)</returns>
     public async Task<string> GenerateAiReportAsync(string companyId, StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null)
     {
         try
@@ -150,7 +167,7 @@ public class ProjectStatisticsService(
             {
                 // Fetch dashboard statistics if data not provided
                 var dashboardStats = await GetDashboardStatisticsAsync(companyId, period, startDate, endDate);
-                
+
                 statsData = new
                 {
                     Period = periodDesc,

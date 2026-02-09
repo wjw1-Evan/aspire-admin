@@ -161,7 +161,6 @@ public class DataInitializerService : IDataInitializerService
                 }
                 else
                 {
-                    _logger.LogDebug("⏭️  菜单已存在: {Name} ({Title})", menu.Name, menu.Title);
                     skippedCount++;
                     if (!string.IsNullOrEmpty(existingMenu.Id))
                     {
@@ -230,9 +229,9 @@ public class DataInitializerService : IDataInitializerService
                     }
                     else
                     {
-                        _logger.LogDebug("⏭️  菜单已存在: {Name} ({Title})", menu.Name, menu.Title);
+                        // Menu exists and parentId matches, do nothing
+                        skippedCount++;
                     }
-                    skippedCount++;
                 }
             }
 
@@ -243,7 +242,7 @@ public class DataInitializerService : IDataInitializerService
 
             // 3. 刷新现有管理员角色的菜单权限（确保新菜单对旧企业管理员可见）
             var allMenuIds = expectedMenus.Select(m => m.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
-            await RefreshAdminRolesMenusAsync(allMenuIds!);
+
         }
         catch (Exception ex)
         {
@@ -1013,53 +1012,4 @@ public class DataInitializerService : IDataInitializerService
         };
     }
 
-    /// <summary>
-    /// 刷新所有企业的“管理员”角色菜单
-    /// 确保新添加的系统菜单能够自动分配给现有企业的管理员
-    /// </summary>
-    private async Task RefreshAdminRolesMenusAsync(List<string> allMenuIds)
-    {
-        try
-        {
-            _logger.LogInformation("开始刷新现有管理员角色的菜单权限...");
-
-            var roles = _database.GetCollection<BsonDocument>("roles");
-
-            // 查找所有名为“管理员”或“超级管理员”的角色
-            var filter = Builders<BsonDocument>.Filter.And(
-                Builders<BsonDocument>.Filter.In("name", new BsonArray { "管理员", "超级管理员" }),
-                Builders<BsonDocument>.Filter.Eq("isDeleted", false)
-            );
-
-            var adminRoles = await roles.Find(filter).ToListAsync();
-            int updatedCount = 0;
-
-            foreach (var role in adminRoles)
-            {
-                var roleId = role.GetValue("_id").ToString();
-                var companyId = role.GetValue("companyId", "").ToString();
-                var existingMenuIds = role.GetValue("menuIds", new BsonArray()).AsBsonArray.Select(x => x.ToString()).ToList();
-
-                // 找出缺失的菜单ID
-                var missingMenuIds = allMenuIds.Except(existingMenuIds).ToList();
-
-                if (missingMenuIds.Count > 0)
-                {
-                    // 使用 $addToSet 批量添加缺失的菜单ID，避免重复
-                    var update = Builders<BsonDocument>.Update.AddToSetEach("menuIds", missingMenuIds);
-                    await roles.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", role.GetValue("_id")), update);
-
-                    _logger.LogInformation("✅ 已为企业 {CompanyId} 的管理员角色同步 {Count} 个新菜单", companyId, missingMenuIds.Count);
-                    updatedCount++;
-                }
-            }
-
-            _logger.LogInformation("管理员角色权限刷新完成，共更新 {Count} 个角色", updatedCount);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "刷新管理员角色菜单权限失败");
-            // 注意：刷新权限失败不应中断整个初始化流程
-        }
-    }
 }

@@ -78,6 +78,7 @@ public class ParkVisitService : IParkVisitService
         foreach (var item in items)
         {
             var tenant = string.IsNullOrEmpty(item.TenantId) ? null : await _tenantFactory.GetByIdAsync(item.TenantId);
+            var assessment = (await _assessmentFactory.FindAsync(Builders<VisitAssessment>.Filter.Eq(a => a.TaskId, item.Id), limit: 1)).FirstOrDefault();
             tasks.Add(new VisitTaskDto
             {
                 Id = item.Id,
@@ -98,7 +99,9 @@ public class ParkVisitService : IParkVisitService
                 Content = item.Content,
                 Photos = item.Photos,
                 Feedback = item.Feedback,
-                CreatedAt = item.CreatedAt
+                CreatedAt = item.CreatedAt,
+                AssessmentId = assessment?.Id,
+                AssessmentScore = assessment?.Score
             });
         }
 
@@ -118,6 +121,7 @@ public class ParkVisitService : IParkVisitService
         if (item == null) return null;
 
         var tenant = string.IsNullOrEmpty(item.TenantId) ? null : await _tenantFactory.GetByIdAsync(item.TenantId);
+        var assessment = (await _assessmentFactory.FindAsync(Builders<VisitAssessment>.Filter.Eq(a => a.TaskId, item.Id), limit: 1)).FirstOrDefault();
         return new VisitTaskDto
         {
             Id = item.Id,
@@ -138,7 +142,9 @@ public class ParkVisitService : IParkVisitService
             Content = item.Content,
             Photos = item.Photos,
             Feedback = item.Feedback,
-            CreatedAt = item.CreatedAt
+            CreatedAt = item.CreatedAt,
+            AssessmentId = assessment?.Id,
+            AssessmentScore = assessment?.Score
         };
     }
 

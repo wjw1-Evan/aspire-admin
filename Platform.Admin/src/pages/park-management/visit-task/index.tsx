@@ -155,7 +155,7 @@ const VisitTask: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 120,
+            width: 160,
             fixed: 'right',
             render: (_: any, record: VisitTaskType) => (
                 <Space size="small">
@@ -168,29 +168,35 @@ const VisitTask: React.FC = () => {
                         查看
                     </Button>
 
-                    <Button
-                        type="link"
-                        size="small"
-                        icon={<EditOutlined />}
-                        onClick={() => { setEditingTask(record); form.setFieldsValue({ ...record, visitDate: record.visitDate ? dayjs(record.visitDate) : undefined }); setIsModalVisible(true); }}
-                    >
-                        编辑
-                    </Button>
-                    <Popconfirm
-                        title="确定要删除这条走访任务吗？"
-                        onConfirm={() => handleDelete(record.id)}
-                        okText="确定"
-                        cancelText="取消"
-                    >
+
+                    {record.status !== 'Completed' && (
                         <Button
                             type="link"
                             size="small"
-                            danger
-                            icon={<DeleteOutlined />}
+                            icon={<EditOutlined />}
+                            onClick={() => { setEditingTask(record); form.setFieldsValue({ ...record, visitDate: record.visitDate ? dayjs(record.visitDate) : undefined }); setIsModalVisible(true); }}
                         >
-                            删除
+                            编辑
                         </Button>
-                    </Popconfirm>
+                    )}
+
+                    {record.status !== 'Completed' && (
+                        <Popconfirm
+                            title="确定要删除这条走访任务吗？"
+                            onConfirm={() => handleDelete(record.id)}
+                            okText="确定"
+                            cancelText="取消"
+                        >
+                            <Button
+                                type="link"
+                                size="small"
+                                danger
+                                icon={<DeleteOutlined />}
+                            >
+                                删除
+                            </Button>
+                        </Popconfirm>
+                    )}
                 </Space>
             ),
         },
@@ -260,6 +266,7 @@ const VisitTask: React.FC = () => {
         searchForm.resetFields();
         handleSearch();
     };
+
 
     return (
         <PageContainer
@@ -548,6 +555,7 @@ const VisitTask: React.FC = () => {
                     </Space>
                 ) : <Empty />}
             </Drawer>
+
         </PageContainer>
     );
 };

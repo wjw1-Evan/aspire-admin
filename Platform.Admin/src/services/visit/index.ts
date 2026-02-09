@@ -29,6 +29,8 @@ export interface VisitTask {
     photos?: string[];
     feedback?: string;
     createdAt: string;
+    assessmentScore?: number;
+    assessmentId?: string;
 }
 
 export interface VisitAssessment {

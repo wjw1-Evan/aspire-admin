@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Attributes;
 
 namespace Platform.ApiService.Models;
 
@@ -707,6 +708,7 @@ public class ServiceRequest : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
 /// 走访任务
 /// </summary>
 [BsonIgnoreExtraElements]
+[Platform.ServiceDefaults.Attributes.BsonCollectionName("visittasks")]
 public class VisitTask : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
 {
     /// <summary>企管员姓名</summary>
@@ -2239,6 +2241,9 @@ public class VisitTaskDto
     public string? Feedback { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public int? AssessmentScore { get; set; }
+    public string? AssessmentId { get; set; }
 }
 
 public class CreateVisitTaskRequest

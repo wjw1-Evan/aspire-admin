@@ -14,17 +14,23 @@ import {
     Drawer,
     Descriptions,
     Divider,
+    Form,
+    Modal,
 } from 'antd';
 import {
     SearchOutlined,
     ReloadOutlined,
     StarFilled,
     FileSearchOutlined,
+    EditOutlined,
+    StarOutlined,
+    HistoryOutlined,
+    CheckCircleOutlined,
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
 import * as visitService from '@/services/visit';
-import type { VisitAssessment } from '@/services/visit';
+import dayjs from 'dayjs';
 import styles from './index.less';
 
 const { Text } = Typography;
@@ -33,29 +39,35 @@ const VisitAssessmentList: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const [loading, setLoading] = useState(false);
-    const [data, setData] = useState<VisitAssessment[]>([]);
+    const [data, setData] = useState<visitService.VisitTask[]>([]);
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [search, setSearch] = useState('');
 
     const [detailVisible, setDetailVisible] = useState(false);
-    const [selectedRecord, setSelectedRecord] = useState<VisitAssessment | null>(null);
+    const [selectedAssessment, setSelectedAssessment] = useState<visitService.VisitAssessment | null>(null);
+
+    const [assessmentVisible, setAssessmentVisible] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<visitService.VisitTask | null>(null);
+    const [assessmentForm] = Form.useForm();
 
     const loadData = useCallback(async (page: number, size: number, query: string) => {
         setLoading(true);
         try {
-            const res = await visitService.getAssessments({
+            const res = await visitService.getTasks({
                 page,
                 pageSize: size,
                 search: query,
+                status: 'Completed',
             });
+
             if (res.success && res.data) {
-                setData(res.data.assessments);
+                setData(res.data.tasks);
                 setTotal(res.data.total);
             }
         } catch (error) {
-            console.error('Failed to load assessments:', error);
+            console.error('Failed to load visit data:', error);
             message.error(intl.formatMessage({ id: 'pages.park.common.failed', defaultMessage: '加载失败' }));
         } finally {
             setLoading(false);
@@ -75,70 +87,144 @@ const VisitAssessmentList: React.FC = () => {
         loadData(current, pageSize, search);
     };
 
-    const showDetail = (record: VisitAssessment) => {
-        setSelectedRecord(record);
-        setDetailVisible(true);
+    const showDetail = async (record: visitService.VisitTask) => {
+        if (!record.assessmentId) return;
+
+        try {
+            // We fetch the full assessment detail to be sure we have everything
+            // or we use what we have in the task DTO.
+            // Given the current Drawer needs a VisitAssessment type:
+            const assessmentDetail: visitService.VisitAssessment = {
+                id: record.assessmentId,
+                taskId: record.id,
+                visitorName: record.intervieweeName || record.tenantName || '',
+                phone: record.phone,
+                location: record.visitLocation || '',
+                taskDescription: record.title,
+                score: record.assessmentScore || 0,
+                comments: record.feedback || '', // Map feedback to comments if appropriate
+                createdAt: record.createdAt,
+            };
+
+            setSelectedAssessment(assessmentDetail);
+            setDetailVisible(true);
+        } catch (error) {
+            message.error('无法加载评价详情');
+        }
+    };
+
+    const handleAssess = (task: visitService.VisitTask) => {
+        setSelectedTask(task);
+        assessmentForm.setFieldsValue({
+            visitorName: task.intervieweeName || task.tenantName,
+            phone: task.phone,
+            location: task.visitLocation,
+            score: 5,
+            comments: '',
+        });
+        setAssessmentVisible(true);
+    };
+
+    const handleAssessmentSubmit = async (values: any) => {
+        if (!selectedTask) return;
+
+        try {
+            const assessmentData = {
+                taskId: selectedTask.id,
+                visitorName: values.visitorName,
+                phone: values.phone,
+                location: values.location,
+                taskDescription: selectedTask.title,
+                score: values.score,
+                comments: values.comments,
+            };
+
+            const res = await visitService.createAssessment(assessmentData);
+            if (res.success) {
+                message.success(intl.formatMessage({ id: 'pages.park.common.success', defaultMessage: '评价提交成功' }));
+                setAssessmentVisible(false);
+                setSelectedTask(null);
+                assessmentForm.resetFields();
+                loadData(current, pageSize, search);
+            }
+        } catch (error) {
+            console.error('Failed to submit assessment:', error);
+            message.error(intl.formatMessage({ id: 'pages.park.common.failed', defaultMessage: '评价提交失败' }));
+        }
     };
 
     const columns = [
         {
-            title: intl.formatMessage({ id: 'pages.park.common.time', defaultMessage: '评价时间' }),
-            dataIndex: 'createdAt',
-            width: 180,
-            render: (text: string) => text ? new Date(text).toLocaleString() : '-',
+            title: intl.formatMessage({ id: 'pages.park.visit.visitDate', defaultMessage: '走访时间' }),
+            dataIndex: 'visitDate',
+            width: 170,
+            render: (text: string) => text ? dayjs(text).format('YYYY-MM-DD HH:mm') : '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' }),
-            dataIndex: 'visitorName',
-            width: 150,
+            dataIndex: 'tenantName',
+            width: 180,
             ellipsis: true,
-            render: (text: string, record: VisitAssessment) => (
+            render: (text: string, record: visitService.VisitTask) => (
                 <Space direction="vertical" size={0}>
                     <Text strong>{text || '-'}</Text>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>{record.location || '-'}</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>{record.visitLocation || '-'}</Text>
                 </Space>
             ),
         },
         {
-            title: intl.formatMessage({ id: 'pages.park.visit.task', defaultMessage: '关联任务' }),
-            dataIndex: 'taskDescription',
+            title: intl.formatMessage({ id: 'pages.park.visit.task', defaultMessage: '走访任务' }),
+            dataIndex: 'title',
             ellipsis: true,
             render: (text: string) => text || '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '满意度' }),
-            dataIndex: 'score',
+            dataIndex: 'assessmentScore',
             width: 150,
-            render: (score: number) => (
-                <Rate disabled defaultValue={score} character={<StarFilled />} style={{ fontSize: 14 }} />
+            render: (score: number | undefined) => (
+                score !== undefined && score !== null ? (
+                    <Rate disabled value={score} character={<StarFilled />} style={{ fontSize: 14 }} />
+                ) : (
+                    <Tag color="warning">待评价</Tag>
+                )
             ),
-        },
-        {
-            title: intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '评语' }),
-            dataIndex: 'comments',
-            ellipsis: true,
-            render: (text: string) => text || '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.common.actions', defaultMessage: '操作' }),
             key: 'action',
-            width: 100,
+            width: 120,
             fixed: 'right' as const,
-            render: (_: any, record: VisitAssessment) => (
-                <Button
-                    type="link"
-                    onClick={() => showDetail(record)}
-                    icon={<FileSearchOutlined />}
-                >
-                    {intl.formatMessage({ id: 'pages.park.common.view', defaultMessage: '详情' })}
-                </Button>
+            render: (_: any, record: visitService.VisitTask) => (
+                <Space size="small">
+                    {record.assessmentId ? (
+                        <Button
+                            type="link"
+                            size="small"
+                            onClick={() => showDetail(record)}
+                            icon={<FileSearchOutlined />}
+                        >
+                            {intl.formatMessage({ id: 'pages.park.common.view', defaultMessage: '详情' })}
+                        </Button>
+                    ) : (
+                        <Button
+                            type="link"
+                            size="small"
+                            onClick={() => handleAssess(record)}
+                            icon={<StarOutlined />}
+                            style={{ color: '#52c41a' }}
+                        >
+                            {intl.formatMessage({ id: 'pages.park.visit.assess', defaultMessage: '评价' })}
+                        </Button>
+                    )}
+                </Space>
             ),
         },
     ];
 
     return (
         <PageContainer
-            title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价明细' })}
+            title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价管理' })}
         >
             <Card className={styles.searchCard}>
                 <Row gutter={16}>
@@ -158,7 +244,7 @@ const VisitAssessmentList: React.FC = () => {
                 </Row>
             </Card>
 
-            <Card className={styles.tableCard} styles={{ body: { padding: 0 } }}>
+            <Card className={styles.tableCard} styles={{ body: { padding: '16px 24px' } }}>
                 <Table
                     columns={columns}
                     dataSource={data}
@@ -186,12 +272,12 @@ const VisitAssessmentList: React.FC = () => {
                 open={detailVisible}
                 width={500}
             >
-                {selectedRecord && (
+                {selectedAssessment && (
                     <div className={styles.detailContainer}>
                         <div style={{ textAlign: 'center', marginBottom: 24 }}>
                             <Text type="secondary">{intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '总体满意程度' })}</Text>
                             <div style={{ marginTop: 8 }}>
-                                <Rate disabled value={selectedRecord.score} style={{ fontSize: 24 }} />
+                                <Rate disabled value={selectedAssessment.score} style={{ fontSize: 24 }} />
                             </div>
                         </div>
 
@@ -199,13 +285,13 @@ const VisitAssessmentList: React.FC = () => {
 
                         <Descriptions column={1} bordered size="small">
                             <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访对象' })}>
-                                {selectedRecord.visitorName}
+                                {selectedAssessment.visitorName}
                             </Descriptions.Item>
                             <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })}>
-                                {selectedRecord.phone || '-'}
+                                {selectedAssessment.phone || '-'}
                             </Descriptions.Item>
                             <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })}>
-                                {selectedRecord.location || '-'}
+                                {selectedAssessment.location || '-'}
                             </Descriptions.Item>
                         </Descriptions>
 
@@ -218,7 +304,7 @@ const VisitAssessmentList: React.FC = () => {
                         <div style={{ padding: '0 4px' }}>
                             <Text strong>{intl.formatMessage({ id: 'pages.park.visit.taskDescription', defaultMessage: '任务内容描述' })}：</Text>
                             <div style={{ marginTop: 8, padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
-                                {selectedRecord.taskDescription || '-'}
+                                {selectedAssessment.taskDescription || '-'}
                             </div>
                         </div>
 
@@ -231,19 +317,87 @@ const VisitAssessmentList: React.FC = () => {
                         <div style={{ padding: '0 4px', marginBottom: 24 }}>
                             <Text strong>{intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '详细评语' })}：</Text>
                             <div style={{ marginTop: 8, padding: 12, border: '1px solid #f0f0f0', borderRadius: 8, minHeight: 100 }}>
-                                {selectedRecord.comments || intl.formatMessage({ id: 'pages.park.common.noData', defaultMessage: '暂无评价内容' })}
+                                {selectedAssessment.comments || intl.formatMessage({ id: 'pages.park.common.noData', defaultMessage: '暂无评价内容' })}
                             </div>
                         </div>
 
                         <Divider />
                         <Space direction="vertical" size={2} style={{ width: '100%', textAlign: 'right' }}>
                             <Text type="secondary" style={{ fontSize: 12 }}>
-                                {intl.formatMessage({ id: 'pages.park.common.createdAt', defaultMessage: '提交时间' })}: {new Date(selectedRecord.createdAt).toLocaleString()}
+                                {intl.formatMessage({ id: 'pages.park.common.createdAt', defaultMessage: '走访发生时间' })}: {dayjs(selectedAssessment.createdAt).format('YYYY-MM-DD HH:mm')}
                             </Text>
                         </Space>
                     </div>
                 )}
             </Drawer>
+
+            <Modal
+                title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '添加走访评价' })}
+                open={assessmentVisible}
+                onCancel={() => setAssessmentVisible(false)}
+                footer={null}
+                width={600}
+                destroyOnClose
+            >
+                {selectedTask && (
+                    <Form
+                        form={assessmentForm}
+                        layout="vertical"
+                        onFinish={handleAssessmentSubmit}
+                    >
+                        <Form.Item
+                            label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' })}
+                            name="visitorName"
+                            rules={[{ required: true, message: '请输入受访人/企业名称' }]}
+                        >
+                            <Input placeholder="请输入受访人/企业名称" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })}
+                            name="phone"
+                        >
+                            <Input placeholder="请输入联系电话" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })}
+                            name="location"
+                        >
+                            <Input placeholder="请输入走访地点" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label={intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '满意度评分' })}
+                            name="score"
+                            rules={[{ required: true, message: '请选择满意度评分' }]}
+                        >
+                            <Rate />
+                        </Form.Item>
+
+                        <Form.Item
+                            label={intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '评价意见' })}
+                            name="comments"
+                        >
+                            <Input.TextArea
+                                rows={4}
+                                placeholder="请输入评价意见（选填）"
+                            />
+                        </Form.Item>
+
+                        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+                            <Space>
+                                <Button onClick={() => setAssessmentVisible(false)}>
+                                    {intl.formatMessage({ id: 'pages.park.common.cancel', defaultMessage: '取消' })}
+                                </Button>
+                                <Button type="primary" htmlType="submit">
+                                    {intl.formatMessage({ id: 'pages.park.common.submit', defaultMessage: '提交评价' })}
+                                </Button>
+                            </Space>
+                        </Form.Item>
+                    </Form>
+                )}
+            </Modal>
         </PageContainer>
     );
 };

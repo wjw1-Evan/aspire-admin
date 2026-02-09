@@ -295,24 +295,24 @@ const VisitStatisticsPage: React.FC = () => {
         <PageContainer
             title={intl.formatMessage({ id: 'pages.park.visit.statistics', defaultMessage: '走访统计报表' })}
             extra={[
-                <RangePicker
-                    key="range"
-                    value={dateRange}
-                    onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs])}
-                />,
-                <Button key="refresh" icon={<ReloadOutlined />} onClick={loadStatistics} loading={loading}>
-                    {intl.formatMessage({ id: 'pages.common.refresh', defaultMessage: '刷新' })}
-                </Button>,
-                <Button
-                    key="ai"
-                    type="primary"
-                    icon={<RobotOutlined />}
-                    onClick={handleGenerateAiReport}
-                    disabled={!statistics}
-                    style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
-                >
-                    {intl.formatMessage({ id: 'pages.park.visit.statistics.aiReport', defaultMessage: '走访 AI 分析报告' })}
-                </Button>,
+                <Space key="controls" wrap>
+                    <RangePicker
+                        value={dateRange}
+                        onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs])}
+                    />
+                    <Button icon={<ReloadOutlined />} onClick={loadStatistics} loading={loading}>
+                        {intl.formatMessage({ id: 'pages.common.refresh', defaultMessage: '刷新' })}
+                    </Button>
+                    <Button
+                        type="primary"
+                        icon={<RobotOutlined />}
+                        onClick={handleGenerateAiReport}
+                        disabled={!statistics}
+                        style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
+                    >
+                        {intl.formatMessage({ id: 'pages.park.visit.statistics.aiReport', defaultMessage: '走访 AI 分析报告' })}
+                    </Button>
+                </Space>,
             ]}
         >
             <div className={styles['statistics-page']}>

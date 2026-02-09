@@ -183,7 +183,7 @@ const StatisticsPage: React.FC = () => {
                                 styles={{ content: { color: '#cf1322' } }} // Money Red
                             />
                             <div style={{ marginTop: 8 }}>
-                                <Space split={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
+                                <Space separator={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
                                     <Text type="secondary" style={{ fontSize: 12 }}>
                                         {intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收租金' })}: ¥{(tenant?.totalExpected || 0).toLocaleString()}
                                     </Text>
@@ -209,7 +209,7 @@ const StatisticsPage: React.FC = () => {
                                 styles={{ content: { color: calculatedOccupancyRate >= 80 ? '#52c41a' : calculatedOccupancyRate >= 50 ? '#faad14' : '#f5222d' } }}
                             />
                             <div style={{ marginTop: 8 }}>
-                                <Space split={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
+                                <Space separator={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
                                     <Text type="secondary" style={{ fontSize: 12 }}>
                                         {intl.formatMessage({ id: 'pages.park.statistics.rentedArea', defaultMessage: '已出租' })}: {(asset?.rentedArea || 0).toLocaleString()}㎡
                                     </Text>
@@ -241,7 +241,7 @@ const StatisticsPage: React.FC = () => {
                                 styles={{ content: { color: '#1890ff' } }}
                             />
                             <div style={{ marginTop: 8 }}>
-                                <Space split={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
+                                <Space separator={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
                                     <Text type="secondary" style={{ fontSize: 12 }}>
                                         {intl.formatMessage({ id: 'pages.park.statistics.projectsInNegotiation', defaultMessage: '洽谈中' })}: {investment?.projectsInNegotiation || 0}
                                     </Text>
@@ -266,7 +266,7 @@ const StatisticsPage: React.FC = () => {
                                 styles={{ content: { color: '#722ed1' } }}
                             />
                             <div style={{ marginTop: 8 }}>
-                                <Space split={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
+                                <Space separator={<div style={{ width: 1, height: 10, background: '#f0f0f0' }} />}>
                                     <Text type="secondary" style={{ fontSize: 12 }}>
                                         {intl.formatMessage({ id: 'pages.park.statistics.expiringContracts', defaultMessage: '到期' })}:
                                         <span style={{ color: '#faad14', marginLeft: 4 }}>{tenant?.expiringContracts || 0}</span>

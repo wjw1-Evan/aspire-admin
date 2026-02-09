@@ -1684,6 +1684,11 @@ export default {
   'pages.park.common.success': '操作成功',
   'pages.park.common.failed': '操作失败',
   'pages.park.common.deleteConfirm': '确定要删除吗？',
+  'pages.park.common.time': '评价时间',
+  'pages.park.common.search.placeholder': '搜索受访企业或企管员',
+  'pages.park.common.refresh': '刷新',
+  'pages.park.common.total': '共',
+  'pages.park.common.items': '条',
 
   // 资产管理 (Asset Management)
   'pages.park.asset.title': '资产管理',
@@ -2104,6 +2109,13 @@ export default {
   'pages.park.visit.taskInfo': '任务背景',
   'pages.park.visit.taskDescription': '任务内容',
   'pages.park.visit.assessmentComments': '评价建议',
+  'pages.park.visit.assessmentRecords': '评价记录',
+  'pages.park.visit.pendingAssessment': '待评价任务',
+  'pages.park.visit.taskTitle': '任务标题',
+  'pages.park.visit.tenantName': '受访企业',
+  'pages.park.visit.managerName': '企管员',
+  'pages.park.visit.visitDate': '走访日期',
+  'pages.park.visit.assess': '评价',
   'pages.park.visit.statistics.failed': '生成报告失败，请稍后重试。',
   'pages.park.visit.statistics.generatingReport': '正在生成报告，可能需要几十秒...',
 };

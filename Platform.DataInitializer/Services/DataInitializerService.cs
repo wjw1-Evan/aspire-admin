@@ -593,7 +593,7 @@ public class DataInitializerService(
             Title = "工作流管理",
             Path = "/workflow",
             Icon = "apartment",
-            SortOrder = 2,
+            SortOrder = 80,
             IsEnabled = true,
             IsDeleted = false,
             CreatedAt = now,

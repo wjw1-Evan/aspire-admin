@@ -37,7 +37,7 @@
     "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
-    "@umijs/max": "^4.6.26",
+    "@umijs/max": "^4.6.27",
     "cross-env": "^10.1.0",
     "typescript": "^5.9.3",
     "umi-presets-pro": "^2.0.3"

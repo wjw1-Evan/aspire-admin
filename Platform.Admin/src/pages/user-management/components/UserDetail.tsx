@@ -151,6 +151,17 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
           <Descriptions.Item
             label={
               <Space>
+                <UserOutlined />
+                {intl.formatMessage({ id: 'pages.account.center.name', defaultMessage: 'Name' })}
+              </Space>
+            }
+          >
+            {user.name || '-'}
+          </Descriptions.Item>
+
+          <Descriptions.Item
+            label={
+              <Space>
                 <MailOutlined />
                 {intl.formatMessage({ id: 'pages.userDetail.email' })}
               </Space>
@@ -168,6 +179,17 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             }
           >
             {user.phoneNumber || '-'}
+          </Descriptions.Item>
+
+          <Descriptions.Item
+            label={
+              <Space>
+                <CalendarOutlined />
+                {intl.formatMessage({ id: 'pages.account.center.age', defaultMessage: 'Age' })}
+              </Space>
+            }
+          >
+            {user.age || '-'}
           </Descriptions.Item>
 
           <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })}>

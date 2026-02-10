@@ -421,6 +421,13 @@ const UserManagement: React.FC = () => {
       ),
     },
     {
+      title: intl.formatMessage({ id: 'pages.account.center.name', defaultMessage: 'Name' }),
+      dataIndex: 'name',
+      key: 'name',
+      ellipsis: true,
+      render: (text: string) => text || '-',
+    },
+    {
       title: intl.formatMessage({ id: 'pages.table.email' }),
       dataIndex: 'email',
       key: 'email',
@@ -433,6 +440,14 @@ const UserManagement: React.FC = () => {
       key: 'phoneNumber',
       ellipsis: true,
       render: (text: string) => text || '-',
+      responsive: ['lg'],
+    },
+    {
+      title: intl.formatMessage({ id: 'pages.account.center.age', defaultMessage: 'Age' }),
+      dataIndex: 'age',
+      key: 'age',
+      width: 80,
+      render: (text: number) => text || '-',
       responsive: ['lg'],
     },
     {

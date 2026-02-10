@@ -178,66 +178,43 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         isActive: true,
       }}
     >
-      <Form.Item
-        name="username"
-        label="选择用户"
-        tooltip={!isEdit ? "请通过用户名搜索并添加系统中已存在的用户" : undefined}
-        rules={[
-          { required: true, message: '请输入用户名' },
-          { min: 3, max: 20, message: '用户名长度为3-20个字符' },
-          { pattern: /^\w+$/, message: '用户名只能包含字母、数字和下划线' },
-        ]}
-      >
-        {isEdit ? (
-          <Input placeholder="请输入用户名" disabled />
-        ) : (
-          <Select
-            showSearch
-            placeholder="搜索系统已有用户"
-            onSearch={handleUserSearch}
-            onSelect={handleUserSelect}
-            onChange={handleUserChange}
-            filterOption={false}
-            allowClear
-            suffixIcon={<SearchOutlined />}
-            notFoundContent={searchingUsers ? <Spin size="small" /> : '未找到相关用户'}
+      {!isEdit && (
+        <>
+          <Form.Item
+            name="username"
+            label="选择用户"
+            tooltip={!isEdit ? "请通过用户名搜索并添加系统中已存在的用户" : undefined}
+            rules={[
+              { required: true, message: '请输入用户名' },
+              { min: 3, max: 20, message: '用户名长度为3-20个字符' },
+              { pattern: /^\w+$/, message: '用户名只能包含字母、数字和下划线' },
+            ]}
           >
-            {userOptions.map((u) => (
-              <Select.Option key={u.id} value={u.username} user={u}>
-                <Space>
-                  <span>{u.username}</span>
-                  <span style={{ color: '#aaa', fontSize: '12px' }}>
-                    {u.email ? `(${u.email})` : (u.phoneNumber ? `(${u.phoneNumber})` : '')}
-                  </span>
-                </Space>
-              </Select.Option>
-            ))}
-          </Select>
-        )}
-      </Form.Item>
-
-      <Form.Item
-        name="email"
-        label="邮箱"
-        rules={[
-          { type: 'email', message: '请输入有效的邮箱地址' },
-        ]}
-      >
-        <Input placeholder="请输入邮箱地址" disabled={isEdit || !!selectedUser} />
-      </Form.Item>
-
-      <Form.Item
-        name="phoneNumber"
-        label="手机号"
-        rules={[
-          {
-            pattern: /^1[3-9]\d{9}$/,
-            message: '请输入有效的中国手机号（11位数字，以1开头）',
-          },
-        ]}
-      >
-        <Input placeholder="请输入手机号" maxLength={11} disabled={isEdit || !!selectedUser} />
-      </Form.Item>
+            <Select
+              showSearch
+              placeholder="搜索系统已有用户"
+              onSearch={handleUserSearch}
+              onSelect={handleUserSelect}
+              onChange={handleUserChange}
+              filterOption={false}
+              allowClear
+              suffixIcon={<SearchOutlined />}
+              notFoundContent={searchingUsers ? <Spin size="small" /> : '未找到相关用户'}
+            >
+              {userOptions.map((u) => (
+                <Select.Option key={u.id} value={u.username} user={u}>
+                  <Space>
+                    <span>{u.username}</span>
+                    <span style={{ color: '#aaa', fontSize: '12px' }}>
+                      {u.email ? `(${u.email})` : (u.phoneNumber ? `(${u.phoneNumber})` : '')}
+                    </span>
+                  </Space>
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </>
+      )}
 
 
 

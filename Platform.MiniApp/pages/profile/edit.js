@@ -20,7 +20,7 @@ Page(withAuth({
                 formData: {
                     name: userInfo.name || '',
                     email: userInfo.email || '',
-                    phoneNumber: userInfo.phoneNumber || '',
+                    phoneNumber: userInfo.phone || userInfo.phoneNumber || '',
                     age: userInfo.age || 0,
                     avatar: userInfo.avatar || ''
                 }
@@ -55,7 +55,11 @@ Page(withAuth({
                 wx.showToast({ title: '保存成功', icon: 'success' });
                 // 更新本地缓存
                 const userInfo = wx.getStorageSync('userInfo');
-                wx.setStorageSync('userInfo', { ...userInfo, ...formData });
+                wx.setStorageSync('userInfo', {
+                    ...userInfo,
+                    ...formData,
+                    phone: formData.phoneNumber // 同时更新 phone 字段，保持一致
+                });
 
                 setTimeout(() => {
                     wx.navigateBack();

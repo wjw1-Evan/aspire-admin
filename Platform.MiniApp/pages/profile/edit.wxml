@@ -1,5 +1,10 @@
 <view class="container">
   <view class="form-container">
+    <view class="avatar-wrapper" bindtap="chooseAvatar">
+      <image class="avatar" src="{{formData.avatar || '/assets/logo.png'}}" mode="aspectFill"></image>
+      <text class="avatar-tip">点击更换头像</text>
+    </view>
+
     <view class="form-item">
       <text class="label">姓名</text>
       <input class="input" value="{{formData.name}}" placeholder="请输入姓名" bindinput="onInput" data-field="name" />

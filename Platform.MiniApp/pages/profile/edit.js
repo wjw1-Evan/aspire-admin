@@ -28,6 +28,57 @@ Page(withAuth({
         }
     },
 
+    chooseAvatar() {
+        wx.chooseMedia({
+            count: 1,
+            mediaType: ['image'],
+            sourceType: ['album', 'camera'],
+            success: async (res) => {
+                const tempFilePath = res.tempFiles[0].tempFilePath;
+
+                // 上传头像
+                wx.showLoading({ title: '上传中...' });
+                const apiUrl = wx.getStorageSync('apiUrl') || 'https://aspire-admin.zeabur.app';
+                try {
+                    const uploadRes = await new Promise((resolve, reject) => {
+                        wx.uploadFile({
+                            url: `${apiUrl}/api/cloud-storage/upload`,
+                            filePath: tempFilePath,
+                            name: 'File', // 后端要求 File
+                            formData: {
+                                'Overwrite': 'true' // 头像上传通常覆盖或后端处理
+                            },
+                            header: {
+                                'Authorization': `Bearer ${wx.getStorageSync('token')}`
+                            },
+                            success: (res) => resolve(res),
+                            fail: (err) => reject(err)
+                        });
+                    });
+
+                    if (uploadRes.statusCode === 200) {
+                        const data = JSON.parse(uploadRes.data);
+                        if (data.success) {
+                            this.setData({
+                                'formData.avatar': data.data.url
+                            });
+                            wx.showToast({ title: '上传成功', icon: 'success' });
+                        } else {
+                            wx.showToast({ title: '上传失败', icon: 'none' });
+                        }
+                    } else {
+                        wx.showToast({ title: '上传失败', icon: 'none' });
+                    }
+                } catch (err) {
+                    console.error('Upload avatar failed', err);
+                    wx.showToast({ title: '上传出错', icon: 'none' });
+                } finally {
+                    wx.hideLoading();
+                }
+            }
+        });
+    },
+
     onInput(e) {
         const { field } = e.currentTarget.dataset;
         const { value } = e.detail;

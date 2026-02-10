@@ -10,16 +10,34 @@
   align-items: center;
 }
 .app-icon {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 20rpx;
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 32rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 50rpx;
-  margin-bottom: 12rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  background: #fff;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.bg-blue { background: #e6f7ff; }
-.bg-orange { background: #fff7e6; }
-.bg-green { background: #f6ffed; }
-.app-name { font-size: 24rpx; color: #595959; }
+
+.app-card:active .app-icon {
+  transform: scale(0.9);
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.iconfont {
+  font-size: 60rpx;
+}
+
+.color-blue .iconfont { color: #1890ff; }
+.color-orange .iconfont { color: #fa8c16; }
+.color-green .iconfont { color: #52c41a; }
+.color-purple .iconfont { color: #722ed1; }
+
+.app-name { 
+  font-size: 26rpx; 
+  color: #262626;
+  font-weight: 500;
+}

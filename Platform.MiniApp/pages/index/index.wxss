@@ -30,6 +30,13 @@
   display: block;
 }
 
+.company-subtitle {
+  font-size: 20rpx;
+  color: rgba(0, 0, 0, 0.35);
+  margin-top: 4rpx;
+  display: block;
+}
+
 .date-badge {
   background: #fff;
   padding: 8rpx 20rpx;
@@ -80,10 +87,14 @@
   font-size: 40rpx;
 }
 
+.stat-icon .iconfont {
+  font-size: 48rpx;
+}
+
 .color-primary { color: #1890ff; }
 .color-success { color: #52c41a; }
-.icon-bg-primary { background: rgba(24, 144, 255, 0.1); }
-.icon-bg-success { background: rgba(82, 196, 26, 0.1); }
+.icon-bg-primary { background: transparent; }
+.icon-bg-success { background: transparent; }
 
 /* Panels */
 .panel {
@@ -142,18 +153,23 @@
 .action-box {
   width: 96rpx;
   height: 96rpx;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 16rpx;
   transition: all 0.3s;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
 }
 
-.action-char {
+.action-item:active .action-box {
+  transform: translateY(-4rpx);
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.action-box .iconfont {
   color: #fff;
-  font-size: 36rpx;
-  font-weight: 500;
+  font-size: 48rpx;
 }
 
 .bg-blue { background-color: #1890ff; }

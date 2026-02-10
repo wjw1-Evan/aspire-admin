@@ -52,6 +52,7 @@
 .tag-group {
   display: flex;
   gap: 12rpx;
+  flex-wrap: wrap;
 }
 
 .role-tag {

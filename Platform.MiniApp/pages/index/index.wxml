@@ -6,7 +6,8 @@
         <text class="hi">您好，</text>
         <text class="user-name">{{userInfo.name || '管理员'}}</text>
       </view>
-      <text class="sub-greeting">欢迎回到 Aspire 数字化管理平台</text>
+      <text class="sub-greeting">欢迎回到 {{userInfo.currentCompanyDisplayName || 'Aspire 数字化管理平台'}}</text>
+      <text class="company-subtitle" wx:if="{{userInfo.currentCompanyName}}">{{userInfo.currentCompanyName}}</text>
     </view>
     <view class="date-badge">{{currentDate}}</view>
   </view>
@@ -18,14 +19,18 @@
         <text class="stat-num color-primary">{{todoTasks || 0}}</text>
         <text class="stat-title">待办任务</text>
       </view>
-      <view class="stat-icon icon-bg-primary">📋</view>
+      <view class="stat-icon icon-bg-primary">
+        <text class="iconfont icon-task"></text>
+      </view>
     </view>
     <view class="stat-card" bindtap="navigateToProject">
       <view class="stat-content">
         <text class="stat-num color-success">{{activeProjects || 0}}</text>
         <text class="stat-title">活跃项目</text>
       </view>
-      <view class="stat-icon icon-bg-success">🚀</view>
+      <view class="stat-icon icon-bg-success">
+        <text class="iconfont icon-project"></text>
+      </view>
     </view>
   </view>
 
@@ -38,25 +43,25 @@
     <view class="action-grid">
       <view class="action-item" bindtap="navigateToProject">
         <view class="action-box bg-blue">
-          <text class="action-char">项</text>
+          <text class="iconfont icon-project"></text>
         </view>
         <text class="action-name">项目管理</text>
       </view>
       <view class="action-item" bindtap="navigateToTask">
         <view class="action-box bg-orange">
-          <text class="action-char">任</text>
+          <text class="iconfont icon-task"></text>
         </view>
         <text class="action-name">任务管理</text>
       </view>
       <view class="action-item" bindtap="navigateToStatistics">
         <view class="action-box bg-purple">
-          <text class="action-char">报</text>
+          <text class="iconfont icon-statistics"></text>
         </view>
         <text class="action-name">统计报表</text>
       </view>
       <view class="action-item" bindtap="navigateToProfile">
         <view class="action-box bg-green">
-          <text class="action-char">个</text>
+          <text class="iconfont icon-profile"></text>
         </view>
         <text class="action-name">个人中心</text>
       </view>

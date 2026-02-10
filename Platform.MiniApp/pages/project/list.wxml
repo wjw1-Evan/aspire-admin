@@ -24,7 +24,7 @@
   <!-- Search Bar -->
   <view class="search-section card-style">
     <view class="search-box">
-      <icon type="search" size="16" color="#999"></icon>
+      <text class="iconfont icon-search search-icon"></text>
       <input 
         class="search-input" 
         placeholder="搜索项目名称..." 
@@ -88,8 +88,7 @@
     <view class="no-more" wx:if="{{!hasMore && projects.length > 0}}">没有更多项目了</view>
   </view>
 
-  <!-- Floating Action Button -->
   <view class="fab-btn" bindtap="goToCreate">
-    <text class="plus">+</text>
+    <text class="iconfont icon-plus"></text>
   </view>
 </view>

@@ -89,6 +89,6 @@
 
   <!-- Floating Action Button -->
   <view class="fab-btn" bindtap="goToCreate">
-    <text class="plus">+</text>
+    <text class="iconfont icon-plus"></text>
   </view>
 </view>

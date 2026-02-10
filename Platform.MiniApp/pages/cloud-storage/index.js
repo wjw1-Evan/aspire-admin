@@ -71,13 +71,13 @@ Page(withAuth({
 
     getFileIcon(name, mime) {
         const ext = name.split('.').pop().toLowerCase();
-        if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return '🖼️';
-        if (['pdf'].includes(ext)) return '📕';
-        if (['doc', 'docx'].includes(ext)) return '📘';
-        if (['xls', 'xlsx'].includes(ext)) return '📗';
-        if (['ppt', 'pptx'].includes(ext)) return '📙';
-        if (['zip', 'rar', '7z'].includes(ext)) return '📦';
-        return '📄';
+        if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'icon-file-image';
+        if (['pdf'].includes(ext)) return 'icon-file-pdf';
+        if (['doc', 'docx'].includes(ext)) return 'icon-file-word';
+        if (['xls', 'xlsx'].includes(ext)) return 'icon-file-excel';
+        if (['ppt', 'pptx'].includes(ext)) return 'icon-file-ppt';
+        if (['zip', 'rar', '7z'].includes(ext)) return 'icon-file-zip';
+        return 'icon-file';
     },
 
     onItemClick(e) {

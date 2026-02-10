@@ -68,8 +68,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40rpx;
   margin-right: 24rpx;
+}
+
+.file-icon .iconfont {
+  font-size: 50rpx;
 }
 
 .file-icon.folder {
@@ -104,10 +107,9 @@
   padding: 20rpx;
 }
 
-.action-dots {
+.file-action .iconfont {
   font-size: 40rpx;
   color: #ccc;
-  line-height: 1;
 }
 
 /* FAB */
@@ -130,10 +132,9 @@
   transition: all 0.3s;
 }
 
-.fab-icon {
+.fab-icon .iconfont {
   font-size: 60rpx;
   color: #fff;
-  line-height: 1;
 }
 
 .fab-icon.rotate {
@@ -241,8 +242,7 @@
   color: #999;
 }
 
-.empty-icon {
-  font-size: 120rpx;
-  margin-bottom: 40rpx;
-  opacity: 0.3;
+.empty-icon .iconfont {
+  font-size: 150rpx;
+  color: #ddd;
 }

@@ -59,6 +59,11 @@
   padding: 0 24rpx;
 }
 
+.search-icon {
+  color: #999;
+  font-size: 32rpx;
+}
+
 .search-input {
   flex: 1;
   margin-left: 12rpx;
@@ -177,6 +182,7 @@
   align-items: center;
   box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.4);
   z-index: 100;
+  transition: all 0.3s;
 }
 
 .fab-btn:active {
@@ -184,9 +190,7 @@
   transform: scale(0.95);
 }
 
-.fab-btn .plus {
+.fab-btn .iconfont {
   color: #ffffff;
-  font-size: 60rpx;
-  font-weight: 300;
-  margin-top: -6rpx;
+  font-size: 50rpx;
 }

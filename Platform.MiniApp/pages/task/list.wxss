@@ -197,6 +197,7 @@
   align-items: center;
   box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.4);
   z-index: 100;
+  transition: all 0.3s;
 }
 
 .fab-btn:active {
@@ -204,9 +205,7 @@
   transform: scale(0.95);
 }
 
-.fab-btn .plus {
+.fab-btn .iconfont {
   color: #ffffff;
-  font-size: 60rpx;
-  font-weight: 300;
-  margin-top: -6rpx;
+  font-size: 50rpx;
 }

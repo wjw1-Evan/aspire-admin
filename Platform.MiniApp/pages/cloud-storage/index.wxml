@@ -24,8 +24,8 @@
         data-item="{{item}}"
       >
         <view class="file-icon {{item.type === 1 ? 'folder' : 'file'}}">
-           <text wx:if="{{item.type === 1}}">📁</text>
-           <text wx:else>{{item.icon || '📄'}}</text>
+           <text wx:if="{{item.type === 1}}" class="iconfont icon-folder"></text>
+           <text wx:else class="iconfont {{item.icon || 'icon-file'}}"></text>
         </view>
         <view class="file-info">
           <text class="file-name">{{item.name}}</text>
@@ -35,14 +35,16 @@
           </view>
         </view>
         <view class="file-action" catchtap="showActionMenu" data-item="{{item}}">
-          <text class="action-dots">...</text>
+          <text class="iconfont icon-more"></text>
         </view>
       </view>
     </view>
 
     <!-- Empty State -->
     <view class="empty-state" wx:elif="{{!loading}}">
-      <view class="empty-icon">📂</view>
+      <view class="empty-icon">
+        <text class="iconfont icon-folder"></text>
+      </view>
       <text>当前目录下空空如也</text>
     </view>
   </scroll-view>
@@ -50,20 +52,26 @@
   <!-- Floating Action Buttons -->
   <view class="fab-group">
     <view class="fab-btn main-fab" bindtap="toggleFab">
-      <text class="fab-icon {{showFabMenu ? 'rotate' : ''}}">+</text>
+      <text class="iconfont icon-plus fab-icon {{showFabMenu ? 'rotate' : ''}}"></text>
     </view>
     
     <view class="fab-menu {{showFabMenu ? 'show' : ''}}">
       <view class="fab-item" bindtap="uploadImage">
-        <view class="fab-item-icon bg-blue">🖼️</view>
+        <view class="fab-item-icon bg-blue">
+          <text class="iconfont icon-file-image"></text>
+        </view>
         <text class="fab-item-text">上传图片</text>
       </view>
       <view class="fab-item" bindtap="uploadFile">
-        <view class="fab-item-icon bg-orange">文档</view>
+        <view class="fab-item-icon bg-orange">
+          <text class="iconfont icon-file"></text>
+        </view>
         <text class="fab-item-text">微信文件</text>
       </view>
       <view class="fab-item" bindtap="showCreateFolder">
-        <view class="fab-item-icon bg-green">📁</view>
+        <view class="fab-item-icon bg-green">
+          <text class="iconfont icon-folder"></text>
+        </view>
         <text class="fab-item-text">新建目录</text>
       </view>
     </view>

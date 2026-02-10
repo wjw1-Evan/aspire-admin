@@ -21,6 +21,13 @@ Page(withAuth({
             if (res.success) {
                 this.setData({ userInfo: res.data });
                 wx.setStorageSync('userInfo', res.data);
+
+                // 动态设置导航栏标题
+                if (res.data.currentCompanyDisplayName) {
+                    wx.setNavigationBarTitle({
+                        title: res.data.currentCompanyDisplayName
+                    });
+                }
             }
         } catch (err) {
             console.error('Fetch user info failed', err);

@@ -1,0 +1,73 @@
+<view class="container" wx:if="{{project}}">
+  <!-- Header Card -->
+  <view class="detail-header card-style">
+    <view class="title-row">
+      <text class="project-title">{{project.name}}</text>
+      <view class="status-tag status-{{project.status}}">{{statusMap[project.status]}}</view>
+    </view>
+    <view class="progress-bar-container">
+      <view class="progress-label">
+        <text>总体进度</text>
+        <text class="percent">{{project.progress}}%</text>
+      </view>
+      <progress 
+        percent="{{project.progress}}" 
+        stroke-width="8" 
+        color="#1890ff" 
+        active 
+        border-radius="4"
+      />
+    </view>
+    <view class="header-actions">
+      <button class="btn-tasks" bindtap="viewProjectTasks">查看相关任务</button>
+      <button class="btn-create-task" bindtap="goToCreateTask">新建任务</button>
+    </view>
+  </view>
+
+  <!-- Info Section -->
+  <view class="section-title">基本信息</view>
+  <view class="info-group card-style">
+    <view class="info-item">
+      <text class="label">负责人</text>
+      <text class="value">{{project.managerName || '未指定'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">优先级</text>
+      <view class="priority-tag priority-{{project.priority}}">{{priorityMap[project.priority]}}</view>
+    </view>
+    <view class="info-item">
+      <text class="label">开始日期</text>
+      <text class="value">{{project.startDate || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">截止日期</text>
+      <text class="value">{{project.endDate || '-'}}</text>
+    </view>
+  </view>
+
+  <!-- Description -->
+  <view class="section-title">项目描述</view>
+  <view class="description-card card-style">
+    <text class="desc-text">{{project.description || '暂无描述信息'}}</text>
+  </view>
+
+  <!-- Members Section -->
+  <view class="section-title">项目成员 ({{members.length}})</view>
+  <view class="member-list card-style">
+    <view class="member-item" wx:for="{{members}}" wx:key="userId">
+      <image class="member-avatar" src="{{item.avatar || '/assets/logo.png'}}" mode="aspectFill"></image>
+      <view class="member-info">
+        <text class="member-name">{{item.name}}</text>
+        <text class="member-role">{{item.role || '成员'}}</text>
+      </view>
+    </view>
+    <view class="empty-members" wx:if="{{members.length === 0}}">暂无项目成员</view>
+  </view>
+
+  <view class="bottom-placeholder"></view>
+</view>
+
+<view class="loading-state" wx:else>
+  <view class="loading-icon"></view>
+  <text>加载中...</text>
+</view>

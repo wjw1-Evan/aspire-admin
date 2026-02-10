@@ -1,0 +1,67 @@
+<view class="container">
+  <form bindsubmit="handleSubmit">
+    <view class="form-group card-style">
+      <view class="form-item">
+        <text class="label">任务名称</text>
+        <input name="taskName" placeholder="请输入任务名称" placeholder-class="placeholder" />
+      </view>
+
+      <view class="form-item">
+        <text class="label">任务类型</text>
+        <picker bindchange="onTypeChange" value="{{typeIndex}}" range="{{typeOptions}}">
+          <view class="picker-value">{{typeOptions[typeIndex]}}</view>
+        </picker>
+      </view>
+
+      <view class="form-item vertical">
+        <text class="label">任务描述</text>
+        <textarea name="description" placeholder="请输入任务描述..." placeholder-class="placeholder"></textarea>
+      </view>
+    </view>
+
+    <view class="section-title">分派与权重</view>
+    <view class="form-group card-style">
+      <view class="form-item">
+        <text class="label">负责人</text>
+        <picker bindchange="onUserChange" value="{{userIndex}}" range="{{userList}}" range-key="name">
+          <view class="picker-value">{{userList[userIndex].name || '请选择'}}</view>
+        </picker>
+      </view>
+
+      <view class="form-item">
+        <text class="label">优先级</text>
+        <picker bindchange="onPriorityChange" value="{{priorityIndex}}" range="{{priorityOptions}}" range-key="label">
+          <view class="picker-value">{{priorityOptions[priorityIndex].label}}</view>
+        </picker>
+      </view>
+
+      <view class="form-item">
+        <text class="label">所属项目</text>
+        <picker bindchange="onProjectChange" value="{{projectIndex}}" range="{{projectList}}" range-key="name">
+          <view class="picker-value">{{projectList[projectIndex].name || '请选择'}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="section-title">计划周期</view>
+    <view class="form-group card-style">
+      <view class="form-item">
+        <text class="label">开始日期</text>
+        <picker mode="date" bindchange="onStartDateChange" value="{{startDate}}">
+          <view class="picker-value">{{startDate || '请选择'}}</view>
+        </picker>
+      </view>
+
+      <view class="form-item">
+        <text class="label">截至日期</text>
+        <picker mode="date" bindchange="onEndDateChange" value="{{endDate}}">
+          <view class="picker-value">{{endDate || '请选择'}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="btn-area">
+      <button form-type="submit" type="primary" loading="{{submitting}}">发布任务</button>
+    </view>
+  </form>
+</view>

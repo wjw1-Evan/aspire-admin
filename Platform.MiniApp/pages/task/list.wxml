@@ -1,0 +1,94 @@
+<view class="container">
+  <!-- Statistics Section -->
+  <view class="stats-overview card-style" wx:if="{{statistics}}">
+    <view class="stats-item">
+      <text class="num">{{statistics.totalTasks || 0}}</text>
+      <text class="label">总任务</text>
+    </view>
+    <view class="stats-item">
+      <text class="num primary">{{statistics.inProgressTasks || 0}}</text>
+      <text class="label">进行中</text>
+    </view>
+    <view class="stats-item">
+      <text class="num success">{{statistics.completedTasks || 0}}</text>
+      <text class="label">已完成</text>
+    </view>
+    <view class="stats-item">
+      <text class="num danger">{{statistics.completionRate || 0}}%</text>
+      <text class="label">完成率</text>
+    </view>
+  </view>
+
+  <!-- Filter Tabs -->
+  <scroll-view class="filter-tabs" scroll-x enable-flex>
+    <view 
+      class="tab-item {{currentStatus === item.value ? 'active' : ''}}" 
+      wx:for="{{statusTabs}}" 
+      wx:key="value"
+      bindtap="switchTab"
+      data-status="{{item.value}}"
+    >
+      {{item.label}}
+    </view>
+  </scroll-view>
+
+  <!-- Task List -->
+  <view class="task-list">
+    <block wx:if="{{tasks.length > 0}}">
+      <view 
+        class="task-card card-style" 
+        wx:for="{{tasks}}" 
+        wx:key="id"
+        bindtap="goToDetail"
+        data-id="{{item.id}}"
+      >
+        <view class="task-header">
+          <view class="title-area">
+            <text class="task-name">{{item.taskName}}</text>
+            <text class="project-tag" wx:if="{{item.projectName}}">{{item.projectName}}</text>
+          </view>
+          <view class="priority-tag priority-{{item.priority}}">{{priorityMap[item.priority]}}</view>
+        </view>
+
+        <view class="task-info">
+          <view class="info-row">
+            <text class="label">负责人：</text>
+            <text class="value">{{item.assignedToName || '未分配'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">截止期：</text>
+            <text class="value">{{item.plannedEndTime || '-'}}</text>
+          </view>
+        </view>
+
+        <view class="progress-bar-wrap">
+          <view class="progress-text">
+            <text class="status-text {{'status-' + item.status}}">{{statusMap[item.status]}}</text>
+            <text class="percent">{{item.completionPercentage}}%</text>
+          </view>
+          <progress 
+            percent="{{item.completionPercentage}}" 
+            stroke-width="4" 
+            color="#1890ff" 
+            border-radius="2"
+          />
+        </view>
+      </view>
+    </block>
+
+    <!-- Empty State -->
+    <view class="empty-state" wx:else>
+      <image src="/assets/logo.png" mode="aspectFit" class="empty-icon"></image>
+      <text class="empty-text">暂无相关任务</text>
+    </view>
+
+    <!-- Loading -->
+    <view class="loading-bar" wx:if="{{loading}}">加载中...</view>
+    <view class="no-more" wx:if="{{!hasMore && tasks.length > 0}}">到底了~</view>
+  </view>
+
+  <!-- Floating Action Button -->
+  <view class="fab-btn" bindtap="goToCreate">
+    <text class="plus">+</text>
+  </view>
+</view>

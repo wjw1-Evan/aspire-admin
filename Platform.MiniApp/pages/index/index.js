@@ -26,6 +26,12 @@ Page(withAuth({
         }
     },
 
+    navigateToProject() {
+        wx.navigateTo({
+            url: '/pages/project/list',
+        });
+    },
+
     onLoad() {
         this.updateDate();
     },

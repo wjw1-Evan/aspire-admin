@@ -1,0 +1,76 @@
+<view class="container" wx:if="{{task}}">
+  <!-- Status Header -->
+  <view class="detail-header card-style {{'bg-status-' + task.status}}">
+    <view class="status-top">
+      <text class="status-name">{{statusMap[task.status]}}</text>
+      <text class="task-id">ID: {{task.id}}</text>
+    </view>
+    <view class="task-main-title">{{task.taskName}}</view>
+  </view>
+
+  <!-- Progress Card -->
+  <view class="progress-card card-style">
+    <view class="info-row">
+      <text class="label">当前进度</text>
+      <text class="value percent">{{task.completionPercentage}}%</text>
+    </view>
+    <progress 
+      percent="{{task.completionPercentage}}" 
+      stroke-width="8" 
+      color="#1890ff" 
+      active 
+      border-radius="4"
+    />
+  </view>
+
+  <!-- Base Info -->
+  <view class="section-title">核心信息</view>
+  <view class="info-group card-style">
+    <view class="info-item">
+      <text class="label">负责人</text>
+      <text class="value">{{task.assignedToName || '未分配'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">优先级</text>
+      <view class="priority-tag priority-{{task.priority}}">{{priorityMap[task.priority]}}</view>
+    </view>
+    <view class="info-item">
+      <text class="label">所属项目</text>
+      <text class="value">{{task.projectName || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">计划结束</text>
+      <text class="value">{{task.plannedEndTime || '-'}}</text>
+    </view>
+  </view>
+
+  <!-- Description -->
+  <view class="section-title">详细描述</view>
+  <view class="desc-card card-style">
+    <text class="desc-content">{{task.description || '暂无详细描述'}}</text>
+  </view>
+
+  <!-- Time Info -->
+  <view class="section-title">时间轨迹</view>
+  <view class="info-group card-style">
+    <view class="info-item">
+      <text class="label">创建时间</text>
+      <text class="value">{{task.createdAt || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">开始时间</text>
+      <text class="value">{{task.actualStartTime || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">完成时间</text>
+      <text class="value">{{task.actualEndTime || '-'}}</text>
+    </view>
+  </view>
+
+  <view class="bottom-padding"></view>
+</view>
+
+<view class="loading-full" wx:else>
+  <view class="loading-spinner"></view>
+  <text>任务加载中...</text>
+</view>

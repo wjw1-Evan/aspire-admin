@@ -36,7 +36,7 @@
       <text class="panel-more">更多</text>
     </view>
     <view class="action-grid">
-      <view class="action-item">
+      <view class="action-item" bindtap="navigateToProject">
         <view class="action-box bg-blue">
           <text class="action-char">项</text>
         </view>

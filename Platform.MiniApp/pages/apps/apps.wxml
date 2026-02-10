@@ -8,6 +8,14 @@
       <view class="app-icon bg-orange">🔧</view>
       <text class="app-name">工单管理</text>
     </view>
+    <view class="app-card" bindtap="navigateToTask">
+      <view class="app-icon bg-orange">任务</view>
+      <text class="app-name">任务管理</text>
+    </view>
+    <view class="app-card" bindtap="navigateToProject">
+      <view class="app-icon bg-blue">项</view>
+      <text class="app-name">项目管理</text>
+    </view>
     <view class="app-card">
       <view class="app-icon bg-green">👥</view>
       <text class="app-name">人员档案</text>

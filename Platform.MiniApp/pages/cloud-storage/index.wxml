@@ -1,0 +1,89 @@
+<view class="container">
+  <!-- Breadcrumb / Header Navigation -->
+  <view class="nav-header card-style">
+    <view class="breadcrumb">
+      <view class="bread-item {{pathStack.length === 0 ? 'active' : ''}}" bindtap="navToRoot">全部文件</view>
+      <block wx:for="{{pathStack}}" wx:key="id">
+        <text class="separator">/</text>
+        <view class="bread-item {{index === pathStack.length - 1 ? 'active' : ''}}" bindtap="navToFolder" data-index="{{index}}">{{item.name}}</view>
+      </block>
+    </view>
+  </view>
+
+  <loading wx:if="{{loading && !isRefreshing}}" />
+
+  <!-- File List -->
+  <scroll-view scroll-y class="file-list-scroll">
+    <view class="file-list" wx:if="{{fileList.length > 0}}">
+      <view 
+        class="file-item" 
+        wx:for="{{fileList}}" 
+        wx:key="id" 
+        bindtap="onItemClick" 
+        bindlongpress="onItemLongPress"
+        data-item="{{item}}"
+      >
+        <view class="file-icon {{item.type === 1 ? 'folder' : 'file'}}">
+           <text wx:if="{{item.type === 1}}">📁</text>
+           <text wx:else>{{item.icon || '📄'}}</text>
+        </view>
+        <view class="file-info">
+          <text class="file-name">{{item.name}}</text>
+          <view class="file-meta">
+            <text class="file-date">{{item.displayTime}}</text>
+            <text class="file-size" wx:if="{{item.type === 0}}">{{item.displaySize}}</text>
+          </view>
+        </view>
+        <view class="file-action" catchtap="showActionMenu" data-item="{{item}}">
+          <text class="action-dots">...</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-state" wx:elif="{{!loading}}">
+      <view class="empty-icon">📂</view>
+      <text>当前目录下空空如也</text>
+    </view>
+  </scroll-view>
+
+  <!-- Floating Action Buttons -->
+  <view class="fab-group">
+    <view class="fab-btn main-fab" bindtap="toggleFab">
+      <text class="fab-icon {{showFabMenu ? 'rotate' : ''}}">+</text>
+    </view>
+    
+    <view class="fab-menu {{showFabMenu ? 'show' : ''}}">
+      <view class="fab-item" bindtap="uploadImage">
+        <view class="fab-item-icon bg-blue">🖼️</view>
+        <text class="fab-item-text">上传图片</text>
+      </view>
+      <view class="fab-item" bindtap="uploadFile">
+        <view class="fab-item-icon bg-orange">文档</view>
+        <text class="fab-item-text">微信文件</text>
+      </view>
+      <view class="fab-item" bindtap="showCreateFolder">
+        <view class="fab-item-icon bg-green">📁</view>
+        <text class="fab-item-text">新建目录</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Create Folder Dialog -->
+  <view class="modal-mask" wx:if="{{showFolderModal}}" bindtap="closeFolderModal">
+    <view class="modal-content" catchtap="prevent">
+      <view class="modal-header">新建文件夹</view>
+      <input 
+        class="modal-input" 
+        placeholder="请输入文件夹名称" 
+        focus="{{showFolderModal}}"
+        bindinput="onFolderNameInput"
+        value="{{newFolderName}}"
+      />
+      <view class="modal-footer">
+        <button class="btn-cancel" bindtap="closeFolderModal">取消</button>
+        <button class="btn-confirm" bindtap="confirmCreateFolder">确认</button>
+      </view>
+    </view>
+  </view>
+</view>

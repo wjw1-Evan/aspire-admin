@@ -12,7 +12,7 @@
       <view class="app-icon bg-blue">项</view>
       <text class="app-name">项目管理</text>
     </view>
-    <view class="app-card">
+    <view class="app-card" bindtap="navigateToCloudStorage">
       <view class="app-icon bg-green">📂</view>
       <text class="app-name">云盘文件</text>
     </view>

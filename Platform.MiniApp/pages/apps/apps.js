@@ -23,6 +23,12 @@ Page(withAuth({
         });
     },
 
+    navigateToCloudStorage() {
+        wx.navigateTo({
+            url: '/pages/cloud-storage/index'
+        });
+    },
+
     navigateToProfile() {
         wx.switchTab({
             url: '/pages/profile/profile'

@@ -13,7 +13,8 @@
     "pages/project/create",
     "pages/task/create",
     "pages/statistics/index",
-    "pages/statistics/report"
+    "pages/statistics/report",
+    "pages/cloud-storage/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

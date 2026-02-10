@@ -13,19 +13,19 @@
 
   <!-- Stats Grid -->
   <view class="stats-grid">
-    <view class="stat-card">
+    <view class="stat-card" bindtap="navigateToTask">
       <view class="stat-content">
-        <text class="stat-num color-primary">24</text>
-        <text class="stat-title">待处理单据</text>
+        <text class="stat-num color-primary">{{todoTasks || 0}}</text>
+        <text class="stat-title">待办任务</text>
       </view>
       <view class="stat-icon icon-bg-primary">📋</view>
     </view>
-    <view class="stat-card">
+    <view class="stat-card" bindtap="navigateToProject">
       <view class="stat-content">
-        <text class="stat-num color-success">156</text>
-        <text class="stat-title">活跃资产</text>
+        <text class="stat-num color-success">{{activeProjects || 0}}</text>
+        <text class="stat-title">活跃项目</text>
       </view>
-      <view class="stat-icon icon-bg-success">🏢</view>
+      <view class="stat-icon icon-bg-success">🚀</view>
     </view>
   </view>
 
@@ -33,7 +33,7 @@
   <view class="panel">
     <view class="panel-header">
       <text class="panel-title">常用功能</text>
-      <text class="panel-more">更多</text>
+      <text class="panel-more" bindtap="switchTabToApps">查看全部</text>
     </view>
     <view class="action-grid">
       <view class="action-item" bindtap="navigateToProject">
@@ -42,23 +42,23 @@
         </view>
         <text class="action-name">项目管理</text>
       </view>
-      <view class="action-item">
-        <view class="action-box bg-green">
-          <text class="action-char">企</text>
-        </view>
-        <text class="action-name">企业入驻</text>
-      </view>
-      <view class="action-item">
-        <view class="action-box bg-purple">
-          <text class="action-char">访</text>
-        </view>
-        <text class="action-name">访客登记</text>
-      </view>
-      <view class="action-item">
+      <view class="action-item" bindtap="navigateToTask">
         <view class="action-box bg-orange">
-          <text class="action-char">巡</text>
+          <text class="action-char">任</text>
         </view>
-        <text class="action-name">安全巡检</text>
+        <text class="action-name">任务管理</text>
+      </view>
+      <view class="action-item" bindtap="navigateToStatistics">
+        <view class="action-box bg-purple">
+          <text class="action-char">报</text>
+        </view>
+        <text class="action-name">统计报表</text>
+      </view>
+      <view class="action-item" bindtap="navigateToProfile">
+        <view class="action-box bg-green">
+          <text class="action-char">个</text>
+        </view>
+        <text class="action-name">个人中心</text>
       </view>
     </view>
   </view>

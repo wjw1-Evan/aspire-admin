@@ -21,5 +21,11 @@ Page(withAuth({
         wx.navigateTo({
             url: '/pages/task/list',
         });
+    },
+
+    navigateToProfile() {
+        wx.switchTab({
+            url: '/pages/profile/profile'
+        });
     }
 }));

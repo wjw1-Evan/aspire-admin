@@ -9,6 +9,7 @@ Page(withAuth({
 
     onShow() {
         this.fetchUserInfo();
+        this.fetchDashboardStats();
     },
 
     async fetchUserInfo() {
@@ -26,10 +27,40 @@ Page(withAuth({
         }
     },
 
+    async fetchDashboardStats() {
+        try {
+            // Fetch task statistics
+            const taskRes = await request({ url: '/api/task/statistics' });
+            // Fetch project statistics
+            const projRes = await request({ url: '/api/project/list', method: 'POST', data: { page: 1, pageSize: 1 } });
+
+            this.setData({
+                todoTasks: taskRes.success ? taskRes.data.totalTasks : 0,
+                activeProjects: projRes.success ? projRes.data.total : 0
+            });
+        } catch (err) {
+            console.warn('Fetch dashboard stats failed', err);
+        }
+    },
+
     navigateToProject() {
-        wx.navigateTo({
-            url: '/pages/project/list',
-        });
+        wx.navigateTo({ url: '/pages/project/list' });
+    },
+
+    navigateToTask() {
+        wx.navigateTo({ url: '/pages/task/list' });
+    },
+
+    navigateToStatistics() {
+        wx.navigateTo({ url: '/pages/statistics/index' });
+    },
+
+    navigateToProfile() {
+        wx.switchTab({ url: '/pages/profile/profile' });
+    },
+
+    switchTabToApps() {
+        wx.switchTab({ url: '/pages/apps/apps' });
     },
 
     onLoad() {

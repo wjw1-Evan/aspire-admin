@@ -1,0 +1,84 @@
+<view class="container">
+  <!-- Header Section -->
+  <view class="dashboard-header">
+    <view class="user-profile">
+      <view class="greeting">
+        <text class="hi">您好，</text>
+        <text class="user-name">{{userInfo.displayName || '管理员'}}</text>
+      </view>
+      <text class="sub-greeting">欢迎回到 Aspire 数字化管理平台</text>
+    </view>
+    <view class="date-badge">{{currentDate}}</view>
+  </view>
+
+  <!-- Stats Grid -->
+  <view class="stats-grid">
+    <view class="stat-card">
+      <view class="stat-content">
+        <text class="stat-num color-primary">24</text>
+        <text class="stat-title">待处理单据</text>
+      </view>
+      <view class="stat-icon icon-bg-primary">📋</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-content">
+        <text class="stat-num color-success">156</text>
+        <text class="stat-title">活跃资产</text>
+      </view>
+      <view class="stat-icon icon-bg-success">🏢</view>
+    </view>
+  </view>
+
+  <!-- Rapid Actions -->
+  <view class="panel">
+    <view class="panel-header">
+      <text class="panel-title">常用功能</text>
+      <text class="panel-more">更多</text>
+    </view>
+    <view class="action-grid">
+      <view class="action-item">
+        <view class="action-box bg-blue">
+          <text class="action-char">项</text>
+        </view>
+        <text class="action-name">项目管理</text>
+      </view>
+      <view class="action-item">
+        <view class="action-box bg-green">
+          <text class="action-char">企</text>
+        </view>
+        <text class="action-name">企业入驻</text>
+      </view>
+      <view class="action-item">
+        <view class="action-box bg-purple">
+          <text class="action-char">访</text>
+        </view>
+        <text class="action-name">访客登记</text>
+      </view>
+      <view class="action-item">
+        <view class="action-box bg-orange">
+          <text class="action-char">巡</text>
+        </view>
+        <text class="action-name">安全巡检</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Recent Activity -->
+  <view class="panel">
+    <view class="panel-header">
+      <text class="panel-title">最新公告</text>
+    </view>
+    <view class="msg-list">
+      <view class="msg-item">
+        <view class="msg-tag tag-blue">公告</view>
+        <text class="msg-text">2026年度园区安全生产检查通知</text>
+        <text class="msg-time">1小时前</text>
+      </view>
+      <view class="msg-item">
+        <view class="msg-tag tag-orange">预警</view>
+        <text class="msg-text">3号楼变压器运行负载异常提示</text>
+        <text class="msg-time">3小时前</text>
+      </view>
+    </view>
+  </view>
+</view>

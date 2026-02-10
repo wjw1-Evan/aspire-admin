@@ -97,6 +97,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:15000",  // API网关
                 "http://localhost:15001",  // 管理后台
                 "http://localhost:15002",  // 移动应用
+                "http://localhost:15003",  // 微信小程序
             ];
 
             policy.WithOrigins(allowedOrigins)

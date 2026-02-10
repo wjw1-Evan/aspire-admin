@@ -1,0 +1,54 @@
+<view class="container">
+  <view class="login-box">
+    <view class="header">
+      <image class="logo" src="/assets/logo.png" mode="aspectFit"></image>
+      <view class="title-group">
+        <text class="title">Aspire Admin</text>
+        <text class="subtitle">让管理更高效，让数据更有价值</text>
+      </view>
+    </view>
+
+    <view class="form">
+      <view class="input-item">
+        <view class="input-label">账号</view>
+        <input 
+          class="input" 
+          placeholder="请输入用户名" 
+          placeholder-class="placeholder"
+          bindinput="onUsernameInput" 
+          value="{{username}}"
+        />
+      </view>
+      
+      <view class="input-item">
+        <view class="input-label">密码</view>
+        <input 
+          class="input" 
+          password 
+          placeholder="请输入密码" 
+          placeholder-class="placeholder"
+          bindinput="onPasswordInput" 
+          value="{{password}}"
+        />
+      </view>
+
+      <button 
+        class="login-btn {{loading ? 'btn-loading' : ''}}" 
+        bindtap="handleLogin" 
+        loading="{{loading}}"
+        disabled="{{loading}}"
+      >
+        立即登录
+      </button>
+      
+      <view class="extra-actions">
+        <text class="action-text">忘记密码？</text>
+        <text class="action-text">注册账号</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <text class="footer-copy">© 2026 Aspire Digital Group</text>
+  </view>
+</view>

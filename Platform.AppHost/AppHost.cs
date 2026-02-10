@@ -109,6 +109,18 @@ builder.AddNpmApp("app", "../Platform.App")
                        service.Ports = new List<string> { "15002:8081" };
                    });
 
+// 添加微信小程序 (WeChat Mini Program)
+builder.AddNpmApp("miniapp", "../Platform.MiniApp")
+    .WithReference(yarp)
+    .WaitFor(yarp)
+    .WithEnvironment("BROWSER", "none")
+    .WithEnvironment("NODE_ENV", "development")
+    .WithHttpEndpoint(env: "PORT", port: 15003, targetPort: 15004)
+    .WithNpmPackageInstallation();
+
+
+
+
 // 配置 Scalar API 文档
 // 使用 .NET 10 原生 OpenAPI 支持
 // 默认端点是 /openapi/v1.json

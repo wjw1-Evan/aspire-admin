@@ -101,6 +101,8 @@ const UserCenter: React.FC = () => {
 
   // 处理受保护的头像加载
   useEffect(() => {
+    let activeObjectUrl: string | undefined = undefined;
+
     const loadProtectedAvatar = async () => {
       const url = userProfile?.avatar;
       if (url && url.startsWith('http')) {
@@ -115,9 +117,8 @@ const UserCenter: React.FC = () => {
           if (response.ok) {
             const blob = await response.blob();
             const objectUrl = URL.createObjectURL(blob);
+            activeObjectUrl = objectUrl;
             setAvatarUrl(objectUrl);
-            // 清理函数
-            return () => URL.revokeObjectURL(objectUrl);
           } else {
             // 如果 fetch 失败，回退到原始 URL (可能是 404 或其他，让 img 标签处理)
             setAvatarUrl(url);
@@ -132,6 +133,12 @@ const UserCenter: React.FC = () => {
     };
 
     loadProtectedAvatar();
+
+    return () => {
+      if (activeObjectUrl) {
+        URL.revokeObjectURL(activeObjectUrl);
+      }
+    };
   }, [userProfile?.avatar]);
 
   // 获取用户信息

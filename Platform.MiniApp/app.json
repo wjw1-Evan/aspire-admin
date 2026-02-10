@@ -3,7 +3,9 @@
     "pages/index/index",
     "pages/apps/apps",
     "pages/login/login",
-    "pages/profile/profile"
+    "pages/profile/profile",
+    "pages/profile/edit",
+    "pages/profile/password"
   ],
   "window": {
     "backgroundTextStyle": "light",

@@ -1,13 +1,28 @@
-Page({
+const { request } = require('../../utils/request');
+const { withAuth } = require('../../utils/auth');
+
+Page(withAuth({
     data: {
         userInfo: null,
         currentDate: ''
     },
 
     onShow() {
-        const userInfo = wx.getStorageSync('userInfo');
-        if (userInfo) {
-            this.setData({ userInfo });
+        this.fetchUserInfo();
+    },
+
+    async fetchUserInfo() {
+        try {
+            const res = await request({
+                url: '/api/user/me',
+                method: 'GET'
+            });
+            if (res.success) {
+                this.setData({ userInfo: res.data });
+                wx.setStorageSync('userInfo', res.data);
+            }
+        } catch (err) {
+            console.error('Fetch user info failed', err);
         }
     },
 
@@ -25,4 +40,4 @@ Page({
             currentDate: `${year}年${month}月${day}日 ${week}`
         });
     }
-});
+}));

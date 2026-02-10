@@ -31,8 +31,25 @@ const isAuthenticated = () => {
     return !!wx.getStorageSync('token');
 };
 
+const withAuth = (pageConfig) => {
+    const originalOnShow = pageConfig.onShow;
+    pageConfig.onShow = function (options) {
+        if (!isAuthenticated()) {
+            wx.reLaunch({
+                url: '/pages/login/login',
+            });
+            return;
+        }
+        if (originalOnShow) {
+            originalOnShow.call(this, options);
+        }
+    };
+    return pageConfig;
+};
+
 module.exports = {
     login,
     logout,
-    isAuthenticated
+    isAuthenticated,
+    withAuth
 };

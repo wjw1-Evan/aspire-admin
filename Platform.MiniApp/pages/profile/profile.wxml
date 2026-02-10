@@ -4,9 +4,9 @@
     <view class="user-block">
       <image class="avatar" src="{{userInfo.avatar || '/assets/logo.png'}}" mode="aspectFill"></image>
       <view class="info">
-        <text class="nickname">{{userInfo.displayName || '未登录用户'}}</text>
+        <text class="nickname">{{userInfo.name || '未登录用户'}}</text>
         <view class="tag-group">
-          <text class="role-tag">{{userInfo.currentAuthority || 'Guest'}}</text>
+          <text class="role-tag">{{userInfo.roles[0] || 'Guest'}}</text>
           <text class="status-tag">在职</text>
         </view>
       </view>
@@ -15,14 +15,14 @@
 
   <!-- Menu Groups -->
   <view class="menu-group card-style">
-    <view class="menu-item" bindtap="navigateToSelf">
+    <view class="menu-item" bindtap="navigateToEdit">
       <view class="item-left">
         <text class="icon">👤</text>
         <text class="label">账户设置</text>
       </view>
       <text class="arrow"></text>
     </view>
-    <view class="menu-item" bindtap="changePassword">
+    <view class="menu-item" bindtap="navigateToPassword">
       <view class="item-left">
         <text class="icon">🔒</text>
         <text class="label">安全中心</text>

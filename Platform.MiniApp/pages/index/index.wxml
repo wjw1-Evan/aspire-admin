@@ -4,7 +4,7 @@
     <view class="user-profile">
       <view class="greeting">
         <text class="hi">您好，</text>
-        <text class="user-name">{{userInfo.displayName || '管理员'}}</text>
+        <text class="user-name">{{userInfo.name || '管理员'}}</text>
       </view>
       <text class="sub-greeting">欢迎回到 Aspire 数字化管理平台</text>
     </view>

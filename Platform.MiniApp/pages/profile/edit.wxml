@@ -1,0 +1,27 @@
+<view class="container">
+  <view class="form-container">
+    <view class="form-item">
+      <text class="label">姓名</text>
+      <input class="input" value="{{formData.name}}" placeholder="请输入姓名" bindinput="onInput" data-field="name" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">邮箱</text>
+      <input class="input" value="{{formData.email}}" placeholder="请输入邮箱" bindinput="onInput" data-field="email" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">手机号</text>
+      <input class="input" value="{{formData.phoneNumber}}" placeholder="请输入手机号" bindinput="onInput" data-field="phoneNumber" maxlength="11" type="number" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">年龄</text>
+      <input class="input" value="{{formData.age}}" placeholder="请输入年龄" bindinput="onInput" data-field="age" type="number" />
+    </view>
+  </view>
+
+  <view class="btn-area">
+    <button class="submit-btn" bindtap="handleSubmit" loading="{{loading}}" disabled="{{loading}}">保存修改</button>
+  </view>
+</view>

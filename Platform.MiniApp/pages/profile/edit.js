@@ -1,5 +1,6 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const app = getApp();
 
 Page(withAuth({
     data: {
@@ -15,14 +16,30 @@ Page(withAuth({
 
     onLoad() {
         const userInfo = wx.getStorageSync('userInfo');
-        if (userInfo) {
-            this.setData({
-                formData: {
-                    name: userInfo.name || '',
-                    email: userInfo.email || '',
-                    phoneNumber: userInfo.phone || userInfo.phoneNumber || '',
-                    age: userInfo.age || 0,
-                    avatar: userInfo.avatar || ''
+        const displayAvatar = (userInfo.avatar && userInfo.avatar.startsWith('http')) ? '' : (userInfo.avatar || '');
+
+        this.setData({
+            displayAvatar,
+            formData: {
+                name: userInfo.name || '',
+                email: userInfo.email || '',
+                phoneNumber: userInfo.phone || userInfo.phoneNumber || '',
+                age: userInfo.age || 0,
+                avatar: userInfo.avatar || ''
+            }
+        });
+
+        // 如果有头像且是远程链接，尝试下载以正确显示
+        if (userInfo.avatar && userInfo.avatar.startsWith('http')) {
+            wx.downloadFile({
+                url: userInfo.avatar,
+                header: {
+                    'Authorization': `Bearer ${wx.getStorageSync('token')}`
+                },
+                success: (res) => {
+                    if (res.statusCode === 200) {
+                        this.setData({ localAvatar: res.tempFilePath });
+                    }
                 }
             });
         }
@@ -38,7 +55,7 @@ Page(withAuth({
 
                 // 上传头像
                 wx.showLoading({ title: '上传中...' });
-                const apiUrl = wx.getStorageSync('apiUrl') || 'https://aspire-admin.zeabur.app';
+                const apiUrl = app.globalData.baseUrl;
                 try {
                     const uploadRes = await new Promise((resolve, reject) => {
                         wx.uploadFile({
@@ -59,8 +76,11 @@ Page(withAuth({
                     if (uploadRes.statusCode === 200) {
                         const data = JSON.parse(uploadRes.data);
                         if (data.success) {
+                            // 使用临时路径立即展示，解决上传后不刷新问题
+                            const avatarUrl = `${apiUrl}/api/cloud-storage/${data.data.id}/download`;
                             this.setData({
-                                'formData.avatar': data.data.url
+                                'formData.avatar': avatarUrl,
+                                'localAvatar': tempFilePath
                             });
                             wx.showToast({ title: '上传成功', icon: 'success' });
                         } else {

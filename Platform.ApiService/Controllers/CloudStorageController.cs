@@ -13,7 +13,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/cloud-storage")]
-[RequireMenu("cloud-storage")]
 public class CloudStorageController : BaseApiController
 {
     private readonly ICloudStorageService _cloudStorageService;
@@ -101,7 +100,6 @@ public class CloudStorageController : BaseApiController
     /// <param name="request">上传文件请求</param>
     /// <returns>上传的文件信息</returns>
     [HttpPost("upload")]
-    [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> UploadFile([FromForm] UploadFileRequest request)
     {
         var validation = ValidateModelState();
@@ -169,7 +167,6 @@ public class CloudStorageController : BaseApiController
     /// <returns>文件项详情</returns>
     [HttpGet("{id}")]
     [HttpGet("files/{id}")] // 兼容前端 /files/{id}
-    [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> GetFileItem(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -375,7 +372,6 @@ public class CloudStorageController : BaseApiController
     /// <returns>文件流</returns>
     [HttpGet("{id}/download")]
     [HttpGet("files/{id}/download")] // 兼容前端 /files/{id}/download
-    [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> DownloadFile(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -447,7 +443,6 @@ public class CloudStorageController : BaseApiController
     /// <returns>预览信息</returns>
     [HttpGet("{id}/preview")]
     [HttpGet("files/{id}/preview")] // 兼容前端 /files/{id}/preview
-    [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> PreviewFile(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -476,7 +471,6 @@ public class CloudStorageController : BaseApiController
     /// <returns>缩略图流</returns>
     [HttpGet("{id}/thumbnail")]
     [HttpGet("files/{id}/thumbnail")] // 兼容前端 /files/{id}/thumbnail
-    [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> GetThumbnail(string id)
     {
         if (string.IsNullOrWhiteSpace(id))

@@ -17,8 +17,32 @@ Page(withAuth({
                 method: 'GET'
             });
             if (res.success) {
-                this.setData({ userInfo: res.data });
-                wx.setStorageSync('userInfo', res.data);
+                const userInfo = res.data;
+                const displayUserInfo = { ...userInfo };
+
+                // 处理受保护的头像图片下载
+                if (userInfo.avatar && userInfo.avatar.startsWith('http')) {
+                    // 先清空显示，避免 401 错误
+                    displayUserInfo.avatar = '';
+                    this.setData({ userInfo: displayUserInfo });
+
+                    wx.downloadFile({
+                        url: userInfo.avatar,
+                        header: {
+                            'Authorization': `Bearer ${wx.getStorageSync('token')}`
+                        },
+                        success: (downloadRes) => {
+                            if (downloadRes.statusCode === 200) {
+                                displayUserInfo.avatar = downloadRes.tempFilePath;
+                                this.setData({ userInfo: displayUserInfo });
+                            }
+                        }
+                    });
+                } else {
+                    this.setData({ userInfo });
+                }
+
+                wx.setStorageSync('userInfo', userInfo); // Store original data with URL
             }
         } catch (err) {
             console.error('Fetch user info failed', err);

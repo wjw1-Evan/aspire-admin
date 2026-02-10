@@ -92,11 +92,47 @@ const UserCenter: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [form] = Form.useForm();
   const { styles } = useStyles();
   const { styles: commonStyles } = useCommonStyles();
   const intl = useIntl();
   const { message } = App.useApp();
+
+  // 处理受保护的头像加载
+  useEffect(() => {
+    const loadProtectedAvatar = async () => {
+      const url = userProfile?.avatar;
+      if (url && url.startsWith('http')) {
+        try {
+          // 尝试直接加载（对于公共图片）
+          // 但为了处理受保护图片，我们直接使用带 token 的 fetch
+          const token = localStorage.getItem('token');
+          const response = await fetch(url, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            setAvatarUrl(objectUrl);
+            // 清理函数
+            return () => URL.revokeObjectURL(objectUrl);
+          } else {
+            // 如果 fetch 失败，回退到原始 URL (可能是 404 或其他，让 img 标签处理)
+            setAvatarUrl(url);
+          }
+        } catch (error) {
+          console.error('Failed to load protected avatar:', error);
+          setAvatarUrl(url);
+        }
+      } else {
+        setAvatarUrl(url);
+      }
+    };
+
+    loadProtectedAvatar();
+  }, [userProfile?.avatar]);
 
   // 获取用户信息
   const fetchUserProfile = async () => {
@@ -290,7 +326,7 @@ const UserCenter: React.FC = () => {
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <Avatar
                   size={80}
-                  src={getUserAvatar(avatarPreview || userProfile.avatar)}
+                  src={getUserAvatar(avatarPreview || avatarUrl)}
                   icon={<UserOutlined />}
                 />
                 <label
@@ -374,7 +410,7 @@ const UserCenter: React.FC = () => {
             ) : (
               <Avatar
                 size={80}
-                src={getUserAvatar(userProfile.avatar)}
+                src={getUserAvatar(avatarUrl)}
                 icon={<UserOutlined />}
               />
             )}

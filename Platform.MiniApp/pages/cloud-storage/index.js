@@ -1,5 +1,6 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const app = getApp();
 
 Page(withAuth({
     data: {
@@ -106,13 +107,22 @@ Page(withAuth({
                 method: 'GET'
             });
 
-            const apiUrl = wx.getStorageSync('apiUrl') || '';
+            const apiUrl = app.globalData.baseUrl;
             if (res.success && res.data.isPreviewable) {
                 // If it's an image, use previewImage
                 const ext = item.name.split('.').pop().toLowerCase();
                 if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
-                    wx.previewImage({
-                        urls: [res.data.previewUrl || `${apiUrl}/api/cloud-storage/${item.id}/download`]
+                    // Download first to handle auth headers
+                    wx.downloadFile({
+                        url: res.data.previewUrl || `${apiUrl}/api/cloud-storage/${item.id}/download`,
+                        header: { 'Authorization': `Bearer ${wx.getStorageSync('token')}` },
+                        success: (downloadRes) => {
+                            if (downloadRes.statusCode === 200) {
+                                wx.previewImage({
+                                    urls: [downloadRes.tempFilePath]
+                                });
+                            }
+                        }
                     });
                 } else {
                     // For docs, download and open
@@ -132,7 +142,7 @@ Page(withAuth({
 
     downloadAndOpenDoc(item) {
         wx.showLoading({ title: '正在下载文件' });
-        const apiUrl = wx.getStorageSync('apiUrl') || '';
+        const apiUrl = app.globalData.baseUrl;
         const downloadUrl = `${apiUrl}/api/cloud-storage/${item.id}/download`;
         const token = wx.getStorageSync('token');
 
@@ -210,7 +220,7 @@ Page(withAuth({
     async doUpload(filePath, type, originalName) {
         wx.showLoading({ title: '上传中' });
         const token = wx.getStorageSync('token');
-        const apiUrl = wx.getStorageSync('apiUrl') || '';
+        const apiUrl = app.globalData.baseUrl;
 
         wx.uploadFile({
             url: `${apiUrl}/api/cloud-storage/upload`,

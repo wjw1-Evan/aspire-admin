@@ -1,0 +1,57 @@
+.container {
+  padding: 30rpx;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+}
+
+.card-style {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.report-header .sparkle {
+  font-size: 40rpx;
+  margin-right: 16rpx;
+}
+
+.report-header .title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.report-content {
+  margin-bottom: 60rpx;
+}
+
+.report-footer {
+  text-align: center;
+  padding-top: 40rpx;
+  border-top: 1rpx dotted #eee;
+}
+
+.report-footer text {
+  font-size: 22rpx;
+  color: #bbb;
+  display: block;
+  margin-bottom: 30rpx;
+}
+
+.share-btn {
+  background: #f0f7ff;
+  color: #1890ff;
+  font-size: 28rpx;
+  border-radius: 40rpx;
+  border: 1rpx solid #1890ff;
+}

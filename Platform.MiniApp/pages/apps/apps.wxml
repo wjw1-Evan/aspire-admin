@@ -1,6 +1,6 @@
 <view class="container">
   <view class="apps-grid">
-    <view class="app-card">
+    <view class="app-card" bindtap="navigateToStatistics">
       <view class="app-icon bg-blue">📊</view>
       <text class="app-name">统计报表</text>
     </view>

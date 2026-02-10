@@ -1,0 +1,17 @@
+<view class="container">
+  <view class="report-card card-style">
+    <view class="report-header">
+      <text class="sparkle">✨</text>
+      <text class="title">AI 项目运营深度分析</text>
+    </view>
+    
+    <view class="report-content">
+      <rich-text nodes="{{content}}"></rich-text>
+    </view>
+    
+    <view class="report-footer">
+      <text>以上报告由 AI 自动生成，仅供运营参考</text>
+      <button class="share-btn" open-type="share">分享报告</button>
+    </view>
+  </view>
+</view>

@@ -11,6 +11,12 @@ Page(withAuth({
         });
     },
 
+    navigateToStatistics() {
+        wx.navigateTo({
+            url: '/pages/statistics/index'
+        });
+    },
+
     navigateToTask() {
         wx.navigateTo({
             url: '/pages/task/list',

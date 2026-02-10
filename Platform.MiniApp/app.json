@@ -11,7 +11,9 @@
     "pages/task/list",
     "pages/task/detail",
     "pages/project/create",
-    "pages/task/create"
+    "pages/task/create",
+    "pages/statistics/index",
+    "pages/statistics/report"
   ],
   "window": {
     "backgroundTextStyle": "light",

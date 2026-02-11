@@ -24,6 +24,7 @@ Platform/
 ├── Platform.ApiService/       # 多租户 REST API 服务 (MongoDB + IDatabaseOperationFactory)
 ├── Platform.Admin/            # 管理后台 (React 19 + Ant Design 6 + UmiJS)
 ├── Platform.App/              # 移动端 (React Native + Expo Router)
+├── Platform.MiniApp/          # 微信小程序 (原生开发)
 └── Platform.ServiceDefaults/  # 统一的服务发现、观测与安全默认配置
 ```
 
@@ -54,7 +55,17 @@ Platform/
 ## 📱 移动应用 (Platform.App)
 
 - **核心场景**：实时移动办公审批、AI 聊天辅助、同事圈/附近的人（LBS）、附件在线预览与统一通知触达。
-- **技术特色**：Expo Router 文件式路由、内置多主题系统、地理位置服务与离线网络缓存。
+- **技术特色**：Expo Router 文件式路由、内置多主题系统、地理位置服务与离线 network 缓存。
+
+## 🍵 微信小程序 (Platform.MiniApp)
+
+- **核心场景**：轻量级办公协同、任务即时处理、移动报表查看、云存储文件浏览。
+- **核心功能**：
+  - **首页概览**：集成统计看板、快捷应用入口。
+  - **项目协同**：完整的项目列表、任务树查看与详情追踪，支持移动端任务创建。
+  - **智能报表**：AI 驱动的数据统计分析报告。
+  - **个人中心**：资料维护、安全设置（密码修改）与权限实时同步。
+- **技术特色**：原生原生小程序开发、轻量化 UI 设计、高性能数据加载。
 
 ## 🌐 国际化支持 (i18n)
 
@@ -92,6 +103,7 @@ Platform/
    ```bash
    (cd Platform.Admin && npm install)
    (cd Platform.App && npm install)
+   (cd Platform.MiniApp && npm install)
    ```
 
 3. **配置 OpenAI** (可选)
